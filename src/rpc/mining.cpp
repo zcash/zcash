@@ -218,7 +218,7 @@ UniValue generate(const UniValue& params, bool fHelp)
         CBlock *pblock = &pblocktemplate->block;
         {
             LOCK(cs_main);
-            IncrementExtraNonce(pblock, chainActive.Tip(), nExtraNonce);
+            IncrementExtraNonce(pblocktemplate.get(), chainActive.Tip(), nExtraNonce, Params().GetConsensus());
         }
 
         // Hash state
@@ -444,7 +444,8 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             "{\n"
             "  \"version\" : n,                     (numeric) The block version\n"
             "  \"previousblockhash\" : \"xxxx\",      (string) The hash of current highest block\n"
-            "  \"lightclientroothash\" : \"xxxx\",    (string) The hash of the light client root field in the block header\n"
+            "  \"blockcommitmentshash\" : \"xxxx\",   (string) The hash of the block commitments field in the block header\n"
+            "  \"lightclientroothash\" : \"xxxx\",    (string) (DEPRECATED) The hash of the light client root field in the block header\n"
             "  \"finalsaplingroothash\" : \"xxxx\",   (string) (DEPRECATED) The hash of the light client root field in the block header\n"
             "  \"transactions\" : [                 (array) contents of non-coinbase transactions that should be included in the next block\n"
             "      {\n"
@@ -756,6 +757,8 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     result.pushKV("capabilities", aCaps);
     result.pushKV("version", pblock->nVersion);
     result.pushKV("previousblockhash", pblock->hashPrevBlock.GetHex());
+    result.pushKV("blockcommitmentshash", pblock->hashBlockCommitments.GetHex());
+    // Deprecated; remove in a future release.
     result.pushKV("lightclientroothash", pblock->hashBlockCommitments.GetHex());
     // Deprecated; remove in a future release.
     result.pushKV("finalsaplingroothash", pblock->hashBlockCommitments.GetHex());

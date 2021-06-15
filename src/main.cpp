@@ -2998,6 +2998,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
 
+    // Derive the various block commitments.
+    auto hashAuthDataRoot = block.BuildAuthDataMerkleTree();
+    auto hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
+
     view.PushAnchor(sprout_tree);
     view.PushAnchor(sapling_tree);
     if (!fJustCheck) {
@@ -3012,10 +3016,37 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
             pindex->hashFinalSaplingRoot = sapling_tree.root();
         }
+
+        // - If this block is before NU5 activation:
+        //   - hashAuthDataRoot and hashFinalOrchardRoot are always null.
+        //   - We don't set hashChainHistoryRoot here to maintain the invariant
+        //     documented in CBlockIndex (which was ensured in AddToBlockIndex).
+        // - If this block is on or after NU5 activation, this is where we set
+        //   the correct values of hashAuthDataRoot, hashFinalOrchardRoot, and
+        //   hashChainHistoryRoot; in particular, blocks that are never passed
+        //   to ConnectBlock() (and thus never on the main chain) will stay with
+        //   these set to null.
+        if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+            pindex->hashAuthDataRoot = hashAuthDataRoot;
+            pindex->hashFinalOrchardRoot = uint256(); // TODO: replace with Orchard tree root
+            pindex->hashChainHistoryRoot = hashChainHistoryRoot;
+        }
     }
     blockundo.old_sprout_tree_root = old_sprout_tree_root;
 
-    if (IsActivationHeight(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
+    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+        // If NU5 is active, block.hashBlockCommitments must be the top digest
+        // of the ZIP 244 block commitments linked list.
+        // https://zips.z.cash/zip-0244#block-header-changes
+        uint256 hashBlockCommitments = DeriveBlockCommitmentsHash(
+            hashChainHistoryRoot,
+            hashAuthDataRoot);
+        if (block.hashBlockCommitments != hashBlockCommitments) {
+            return state.DoS(100,
+                error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)"),
+                REJECT_INVALID, "bad-block-commitments-hash");
+        }
+    } else if (IsActivationHeight(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
         // In the block that activates ZIP 221, block.hashBlockCommitments MUST
         // be set to all zero bytes.
         if (!block.hashBlockCommitments.IsNull()) {
@@ -3032,7 +3063,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // - If the previous block is in this epoch, this block would affect
         //   this epoch's tree root, but as we haven't updated the tree for this
         //   block yet, view.GetHistoryRoot() returns the root we need.
-        if (block.hashBlockCommitments != view.GetHistoryRoot(prevConsensusBranchId)) {
+        if (block.hashBlockCommitments != hashChainHistoryRoot) {
             return state.DoS(100,
                 error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be history tree root)"),
                 REJECT_INVALID, "bad-heartwood-root-in-block");
@@ -3910,14 +3941,22 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block, const Consensus::Params&
         pindexNew->pprev = (*miPrev).second;
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
 
-        if (IsActivationHeight(pindexNew->nHeight, consensusParams, Consensus::UPGRADE_HEARTWOOD)) {
-            // hashFinalSaplingRoot is currently null, and will be set correctly in ConnectBlock.
+        if (consensusParams.NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_NU5)) {
+            // The following hashes are currently null, and will be set correctly in
+            // ConnectBlock:
+            // - hashFinalSaplingRoot
+            // - hashFinalOrchardRoot
+            // - hashChainHistoryRoot
+        } else if (IsActivationHeight(pindexNew->nHeight, consensusParams, Consensus::UPGRADE_HEARTWOOD)) {
+            // hashFinalSaplingRoot and hashFinalOrchardRoot are currently null, and will
+            // be set correctly in ConnectBlock.
             // hashChainHistoryRoot is null.
         } else if (consensusParams.NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-            // hashFinalSaplingRoot is currently null, and will be set correctly in ConnectBlock.
+            // hashFinalSaplingRoot and hashFinalOrchardRoot are currently null, and will
+            // be set correctly in ConnectBlock.
             pindexNew->hashChainHistoryRoot = pindexNew->hashBlockCommitments;
         } else {
-            // hashChainHistoryRoot is null.
+            // hashFinalOrchardRoot and hashChainHistoryRoot are null.
             pindexNew->hashFinalSaplingRoot = pindexNew->hashBlockCommitments;
         }
 

@@ -621,7 +621,12 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
 
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-        if (IsActivationHeight(nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
+        if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
+            // hashBlockCommitments depends on the block transactions, so we have to
+            // update it whenever the coinbase transaction changes. Leave it unset here,
+            // like hashMerkleRoot, and instead cache what we will need to calculate it.
+            pblocktemplate->hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
+        } else if (IsActivationHeight(nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
             pblock->hashBlockCommitments.SetNull();
         } else if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD)) {
             pblock->hashBlockCommitments = view.GetHistoryRoot(prevConsensusBranchId);
@@ -682,8 +687,13 @@ void GetMinerAddress(MinerAddress &minerAddress)
     }
 }
 
-void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
+void IncrementExtraNonce(
+    CBlockTemplate* pblocktemplate,
+    const CBlockIndex* pindexPrev,
+    unsigned int& nExtraNonce,
+    const Consensus::Params& consensusParams)
 {
+    CBlock *pblock = &pblocktemplate->block;
     // Update nExtraNonce
     static uint256 hashPrevBlock;
     if (hashPrevBlock != pblock->hashPrevBlock)
@@ -699,6 +709,11 @@ void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned
 
     pblock->vtx[0] = txCoinbase;
     pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+    if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
+        pblock->hashBlockCommitments = DeriveBlockCommitmentsHash(
+            pblocktemplate->hashChainHistoryRoot,
+            pblock->BuildAuthDataMerkleTree());
+    }
 }
 
 static bool ProcessBlockFound(const CBlock* pblock, const CChainParams& chainparams)
@@ -797,7 +812,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
                 return;
             }
             CBlock *pblock = &pblocktemplate->block;
-            IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
+            IncrementExtraNonce(pblocktemplate.get(), pindexPrev, nExtraNonce, chainparams.GetConsensus());
 
             LogPrintf("Running ZcashMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
                 ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));

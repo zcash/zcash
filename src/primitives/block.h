@@ -10,6 +10,11 @@
 #include "serialize.h"
 #include "uint256.h"
 
+// Derives the ZIP 244 block commitments hash.
+uint256 DeriveBlockCommitmentsHash(
+    uint256 hashChainHistoryRoot,
+    uint256 hashAuthDataRoot);
+
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
  * requirements.  When they solve the proof-of-work, they broadcast the block

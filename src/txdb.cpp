@@ -560,7 +560,9 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
                 pindexNew->nSaplingValue  = diskindex.nSaplingValue;
                 pindexNew->hashFinalSaplingRoot = diskindex.hashFinalSaplingRoot;
+                pindexNew->hashFinalOrchardRoot = diskindex.hashFinalOrchardRoot;
                 pindexNew->hashChainHistoryRoot = diskindex.hashChainHistoryRoot;
+                pindexNew->hashAuthDataRoot = diskindex.hashAuthDataRoot;
 
                 // Consistency checks
                 auto header = pindexNew->GetBlockHeader();
@@ -588,7 +590,12 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                     // a non-upgraded peer. However that case the entry will be
                     // marked as consensus-invalid.
                     //
-                    if (diskindex.nClientVersion >= CHAIN_HISTORY_ROOT_VERSION &&
+                    if (diskindex.nClientVersion >= NU5_DATA_VERSION &&
+                        chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_NU5)) {
+                        // From NU5 onwards we don't enforce a consistency check, because
+                        // after ZIP 244, hashBlockCommitments will not match any stored
+                        // commitment.
+                    } else if (diskindex.nClientVersion >= CHAIN_HISTORY_ROOT_VERSION &&
                         chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
                         if (pindexNew->hashBlockCommitments != pindexNew->hashChainHistoryRoot) {
                             return error(

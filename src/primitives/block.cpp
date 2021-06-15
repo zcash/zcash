@@ -14,6 +14,20 @@
 
 const unsigned char ZCASH_AUTH_DATA_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
     {'Z','c','a','s','h','A','u','t','h','D','a','t','H','a','s','h'};
+const unsigned char ZCASH_BLOCK_COMMITMENTS_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
+    {'Z','c','a','s','h','B','l','o','c','k','C','o','m','m','i','t'};
+
+uint256 DeriveBlockCommitmentsHash(
+    uint256 hashChainHistoryRoot,
+    uint256 hashAuthDataRoot)
+{
+    // https://zips.z.cash/zip-0244#block-header-changes
+    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_BLOCK_COMMITMENTS_HASH_PERSONALIZATION);
+    ss << hashChainHistoryRoot;
+    ss << hashAuthDataRoot;
+    ss << uint256(); // terminator
+    return ss.GetHash();
+}
 
 uint256 CBlockHeader::GetHash() const
 {
