@@ -2732,7 +2732,8 @@ static bool ShouldCheckTransactions(const CChainParams& chainparams, const CBloc
 }
 
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex,
-                  CCoinsViewCache& view, const CChainParams& chainparams, bool fJustCheck)
+                  CCoinsViewCache& view, const CChainParams& chainparams,
+                  bool fJustCheck, bool fCheckAuthDataRoot)
 {
     AssertLockHeld(cs_main);
 
@@ -3035,16 +3036,18 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     blockundo.old_sprout_tree_root = old_sprout_tree_root;
 
     if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
-        // If NU5 is active, block.hashBlockCommitments must be the top digest
-        // of the ZIP 244 block commitments linked list.
-        // https://zips.z.cash/zip-0244#block-header-changes
-        uint256 hashBlockCommitments = DeriveBlockCommitmentsHash(
-            hashChainHistoryRoot,
-            hashAuthDataRoot);
-        if (block.hashBlockCommitments != hashBlockCommitments) {
-            return state.DoS(100,
-                error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)"),
-                REJECT_INVALID, "bad-block-commitments-hash");
+        if (fCheckAuthDataRoot) {
+            // If NU5 is active, block.hashBlockCommitments must be the top digest
+            // of the ZIP 244 block commitments linked list.
+            // https://zips.z.cash/zip-0244#block-header-changes
+            uint256 hashBlockCommitments = DeriveBlockCommitmentsHash(
+                hashChainHistoryRoot,
+                hashAuthDataRoot);
+            if (block.hashBlockCommitments != hashBlockCommitments) {
+                return state.DoS(100,
+                    error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)"),
+                    REJECT_INVALID, "bad-block-commitments-hash");
+            }
         }
     } else if (IsActivationHeight(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
         // In the block that activates ZIP 221, block.hashBlockCommitments MUST
@@ -4604,7 +4607,7 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
         return false;
     if (!ContextualCheckBlock(block, state, chainparams, pindexPrev, true))
         return false;
-    if (!ConnectBlock(block, state, &indexDummy, viewNew, chainparams, true))
+    if (!ConnectBlock(block, state, &indexDummy, viewNew, chainparams, true, fCheckMerkleRoot))
         return false;
     assert(state.IsValid());
 
