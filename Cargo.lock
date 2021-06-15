@@ -1030,7 +1030,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orchard"
 version = "0.0.0"
-source = "git+https://github.com/zcash/orchard.git?rev=63ca1f8d3aaa5bdf136f8ab8e6fab26af1d73002#63ca1f8d3aaa5bdf136f8ab8e6fab26af1d73002"
+source = "git+https://github.com/zcash/orchard.git?rev=f7c64e0437040d831e61711cd9e5695b001cb5cb#f7c64e0437040d831e61711cd9e5695b001cb5cb"
 dependencies = [
  "aes",
  "arrayvec 0.7.0",
@@ -1046,7 +1046,7 @@ dependencies = [
  "rand",
  "reddsa",
  "subtle",
- "zcash_note_encryption 0.0.0 (git+https://github.com/zcash/librustzcash.git?rev=cc533a9da4f6a7209a7be05f82b12a03969152c9)",
+ "zcash_note_encryption",
 ]
 
 [[package]]
@@ -1688,20 +1688,6 @@ dependencies = [
 [[package]]
 name = "zcash_note_encryption"
 version = "0.0.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=cc533a9da4f6a7209a7be05f82b12a03969152c9#cc533a9da4f6a7209a7be05f82b12a03969152c9"
-dependencies = [
- "blake2b_simd",
- "byteorder",
- "crypto_api_chachapoly",
- "ff",
- "group",
- "rand_core 0.6.2",
- "subtle",
-]
-
-[[package]]
-name = "zcash_note_encryption"
-version = "0.0.0"
 source = "git+https://github.com/zcash/librustzcash.git?rev=d88e40113c8dadea751dfcdd72ee90868f9655ff#d88e40113c8dadea751dfcdd72ee90868f9655ff"
 dependencies = [
  "blake2b_simd",
@@ -1740,7 +1726,7 @@ dependencies = [
  "rand_core 0.6.2",
  "sha2",
  "subtle",
- "zcash_note_encryption 0.0.0 (git+https://github.com/zcash/librustzcash.git?rev=d88e40113c8dadea751dfcdd72ee90868f9655ff)",
+ "zcash_note_encryption",
 ]
 
 [[package]]
