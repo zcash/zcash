@@ -461,6 +461,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
         // so.
         CAmount sproutValue = 0;
         CAmount saplingValue = 0;
+        CAmount orchardValue = 0;
         bool monitoring_pool_balances = true;
         if (chainparams.ZIP209Enabled()) {
             if (pindexPrev->nChainSproutValue) {
@@ -470,6 +471,11 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
             }
             if (pindexPrev->nChainSaplingValue) {
                 saplingValue = *pindexPrev->nChainSaplingValue;
+            } else {
+                monitoring_pool_balances = false;
+            }
+            if (pindexPrev->nChainOrchardValue) {
+                orchardValue = *pindexPrev->nChainOrchardValue;
             } else {
                 monitoring_pool_balances = false;
             }
@@ -535,8 +541,10 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
 
                 CAmount sproutValueDummy = sproutValue;
                 CAmount saplingValueDummy = saplingValue;
+                CAmount orchardValueDummy = orchardValue;
 
                 saplingValueDummy += -tx.valueBalance;
+                orchardValueDummy += -tx.GetOrchardBundle().GetValueBalance();
 
                 for (auto js : tx.vJoinSplit) {
                     sproutValueDummy += js.vpub_old;
@@ -551,9 +559,14 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
                     LogPrintf("CreateNewBlock(): tx %s appears to violate Sapling turnstile\n", tx.GetHash().ToString());
                     continue;
                 }
+                if (orchardValueDummy < 0) {
+                    LogPrintf("CreateNewBlock(): tx %s appears to violate Orchard turnstile\n", tx.GetHash().ToString());
+                    continue;
+                }
 
                 sproutValue = sproutValueDummy;
                 saplingValue = saplingValueDummy;
+                orchardValue = orchardValueDummy;
             }
 
             UpdateCoins(tx, view, nHeight);

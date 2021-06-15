@@ -60,6 +60,12 @@ public:
     /// Orchard component.
     bool IsPresent() const { return (bool)inner; }
 
+    /// Returns the net value entering or exiting the Orchard pool as a result of this
+    /// bundle.
+    CAmount GetValueBalance() const {
+        return orchard_bundle_value_balance(inner.get());
+    }
+
     /// Queues this bundle's signatures for validation.
     ///
     /// `txid` must be for the transaction this bundle is within.

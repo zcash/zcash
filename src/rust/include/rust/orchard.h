@@ -44,6 +44,11 @@ bool orchard_bundle_serialize(
     void* stream,
     write_callback_t write_cb);
 
+/// Returns the value balance for this Orchard bundle.
+///
+/// A transaction with no Orchard component has a value balance of zero.
+int64_t orchard_bundle_value_balance(const OrchardBundlePtr* bundle);
+
 /// Initializes a new Orchard batch validator.
 ///
 /// Please free this with `orchard_batch_validation_free` when you are done with
