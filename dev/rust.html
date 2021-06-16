@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>&quot;Coins&quot; view - The zcashd Book</title>
+        <title>Rust in zcashd - The zcashd Book</title>
                 
 
         <!-- Custom HTML head -->
@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">zcashd</a></li><li class="chapter-item expanded "><a href="../user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../user/metrics.html"><strong aria-hidden="true">1.1.</strong> Metrics</a></li></ol></li><li class="chapter-item expanded "><a href="../dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../dev/rust.html"><strong aria-hidden="true">2.1.</strong> Rust in zcashd</a></li></ol></li><li class="chapter-item expanded "><a href="../design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain state</a></li><li class="chapter-item expanded "><a href="../design/coins-view.html" class="active"><strong aria-hidden="true">3.2.</strong> &quot;Coins&quot; view</a></li></ol></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">zcashd</a></li><li class="chapter-item expanded "><a href="../user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../user/metrics.html"><strong aria-hidden="true">1.1.</strong> Metrics</a></li></ol></li><li class="chapter-item expanded "><a href="../dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../dev/rust.html" class="active"><strong aria-hidden="true">2.1.</strong> Rust in zcashd</a></li></ol></li><li class="chapter-item expanded "><a href="../design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain state</a></li><li class="chapter-item expanded "><a href="../design/coins-view.html"><strong aria-hidden="true">3.2.</strong> &quot;Coins&quot; view</a></li></ol></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -143,24 +143,61 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="coins-view"><a class="header" href="#coins-view">&quot;Coins&quot; view</a></h1>
-<p>TBD</p>
-<h2 id="notes"><a class="header" href="#notes">Notes</a></h2>
-<ul>
-<li>This is the main context in which <code>CTxOut::IsNull()</code> is used. The other is a
-single spot in the mempool code. Once we've backported the
-<a href="https://github.com/bitcoin/bitcoin/pull/10195">per-txout CoinsDB</a> we can
-hopefully eliminate this method.</li>
-</ul>
+                        <h1 id="rust-in-zcashd"><a class="header" href="#rust-in-zcashd">Rust in <code>zcashd</code></a></h1>
+<p><code>zcashd</code> is primarily a C++ codebase, but most new code is being written in Rust
+where possible.</p>
+<h2 id="adding-new-dependencies-in-online-rust-mode"><a class="header" href="#adding-new-dependencies-in-online-rust-mode">Adding new dependencies in online-Rust mode</a></h2>
+<p>The <code>zcashd</code> build system pins all dependencies, and in order to faciliate
+deterministic builds, <code>cargo</code> is configured to run in offline mode with vendored
+crates. This means that if, for example, you add the <code>foobar</code> crate to
+<code>Cargo.toml</code>, you will likely see an error similar to this:</p>
+<pre><code>$ cargo check
+error: no matching package named `foobar` found
+location searched: registry `https://github.com/rust-lang/crates.io-index`
+required by package `librustzcash v0.2.0 (/path/to/zcash)`
+</code></pre>
+<p>Instead, you first need to build <code>zcashd</code> in online-Rust mode:</p>
+<pre><code>CONFIGURE_FLAGS=--enable-online-rust ./zcutil/build.sh
+</code></pre>
+<p>After doing so, you can add a new dependency as follows:</p>
+<ol>
+<li>Add the new dependency to <code>Cargo.toml</code>.</li>
+<li>Run <code>cargo check</code> to update the <code>Cargo.lock</code> file.</li>
+<li>Commit <code>Cargo.toml</code> and <code>Cargo.lock</code>.</li>
+</ol>
+<h2 id="using-a-local-rust-dependency"><a class="header" href="#using-a-local-rust-dependency">Using a local Rust dependency</a></h2>
+<p>During development, you can use a locally checked out version of a dependency
+by applying a <a href="https://doc.rust-lang.org/cargo/reference/overriding-dependencies.html#the-patch-section"><code>cargo</code> patch</a>.</p>
+<p>For example, to use a local version of the <code>orchard</code> crate that includes a new
+API, add the following patch to <code>Cargo.toml</code>:</p>
+<pre><code>[dependencies]
+# This dependency is listed with a version, meaning it comes from crates.io; the
+# patch goes into a [patch.crates-io] section.
+orchard = &quot;0.0&quot;
+...
+
+[patch.crates-io]
+# Comment out any existing patch, if present.
+# orchard = { git = &quot;https://github.com/zcash/orchard.git&quot;, rev = &quot;...&quot; }
+
+# Add this patch (both relative and absolute paths work):
+orchard = { path = &quot;../relative/path/to/orchard&quot; }
+</code></pre>
+<p>Usually you can apply a patch to use a locally checked out dependency without
+needing to build <code>zcashd</code> in online-Rust mode. However, if your local changes
+include a new dependency, you will need to ensure you are in online-Rust mode.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                                                    <a rel="prev" href="../design/chain-state.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                                    <a rel="prev" href="../dev.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
+                                                    <a rel="next" href="../design.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
                         
                         <div style="clear: both"></div>
                     </nav>
@@ -168,10 +205,13 @@ hopefully eliminate this method.</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                                    <a rel="prev" href="../design/chain-state.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <a rel="prev" href="../dev.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
+                                    <a rel="next" href="../design.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
                             </nav>
 
         </div>
