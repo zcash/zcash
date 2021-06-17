@@ -38,23 +38,27 @@ class AuthDataRootTest(BitcoinTestFramework):
         self.nodes[0].generate(2)
         self.sync_all()
 
-        # Before NU5 activation, the hashBlockCommitments field of the block
-        # header contains the root of the ZIP 221 history tree.
-        block_before = self.nodes[0].getblock('202')
-        assert_equal(block_before['blockcommitments'], block_before['chainhistoryroot'])
+        # For blocks prior to NU5 activation, the hashBlockCommitments field of
+        # the block header contains the root of the ZIP 221 history tree.
+        for i in range(3):
+            block_before = self.nodes[0].getblock('%d' % (202 + i))
+            assert_equal(block_before['blockcommitments'], block_before['chainhistoryroot'])
 
-        # Generate blocks until we are on NU5 rules.
-        self.nodes[0].generate(3)
-        self.sync_all()
+            self.nodes[0].generate(1)
+            self.sync_all()
 
         # From NU5 activation, the hashBlockCommitments field of the block
         # header contains a hash of various block commitments (per ZIP 244).
-        block_after = self.nodes[0].getblock('205')
-        block_commitments = bytes_to_hex_str(derive_block_commitments_hash(
-            hex_str_to_bytes(block_after['chainhistoryroot'])[::-1],
-            hex_str_to_bytes(block_after['authdataroot'])[::-1],
-        )[::-1])
-        assert_equal(block_after['blockcommitments'], block_commitments)
+        for i in range(2):
+            block_after = self.nodes[0].getblock('%d' % (205 + i))
+            block_commitments = bytes_to_hex_str(derive_block_commitments_hash(
+                hex_str_to_bytes(block_after['chainhistoryroot'])[::-1],
+                hex_str_to_bytes(block_after['authdataroot'])[::-1],
+            )[::-1])
+            assert_equal(block_after['blockcommitments'], block_commitments)
+
+            self.nodes[0].generate(1)
+            self.sync_all()
 
 
 if __name__ == '__main__':
