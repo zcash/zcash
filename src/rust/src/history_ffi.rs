@@ -1,7 +1,7 @@
 use std::slice;
 
 use libc::{c_uchar, size_t};
-use zcash_history::{Entry as MMREntry, NodeData as MMRNodeData, Tree as MMRTree};
+use zcash_history::{Entry as MMREntry, NodeData as MMRNodeData, Tree as MMRTree, V1};
 
 fn construct_mmr_tree(
     // Consensus branch id
@@ -18,7 +18,7 @@ fn construct_mmr_tree(
     p_len: size_t,
     // Extra nodes loaded (for deletion) count
     e_len: size_t,
-) -> Result<MMRTree, &'static str> {
+) -> Result<MMRTree<V1>, &'static str> {
     let (indices, nodes) = unsafe {
         (
             slice::from_raw_parts(ni_ptr, p_len + e_len),

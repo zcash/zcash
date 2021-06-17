@@ -1,4 +1,4 @@
-use zcash_history::{Entry, EntryLink, NodeData};
+use zcash_history::{Entry, EntryLink, NodeData, V1};
 
 use crate::history_ffi::{librustzcash_mmr_append, librustzcash_mmr_delete};
 
@@ -6,14 +6,14 @@ const NODE_DATA_16L: &[u8] = include_bytes!("./res/tree16.dat");
 const NODE_DATA_1023L: &[u8] = include_bytes!("./res/tree1023.dat");
 
 struct TreeView {
-    peaks: Vec<(u32, Entry)>,
-    extra: Vec<(u32, Entry)>,
+    peaks: Vec<(u32, Entry<V1>)>,
+    extra: Vec<(u32, Entry<V1>)>,
 }
 
-fn draft(into: &mut Vec<(u32, Entry)>, nodes: &[NodeData], peak_pos: usize, h: u32) {
+fn draft(into: &mut Vec<(u32, Entry<V1>)>, nodes: &[NodeData], peak_pos: usize, h: u32) {
     let node_data = nodes[peak_pos - 1].clone();
-    let peak: Entry = match h {
-        0 => node_data.into(),
+    let peak = match h {
+        0 => Entry::new_leaf(node_data),
         _ => Entry::new(
             node_data,
             EntryLink::Stored((peak_pos - (1 << h) - 1) as u32),

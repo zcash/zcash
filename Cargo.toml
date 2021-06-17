@@ -62,6 +62,7 @@ codegen-units = 1
 ed25519-zebra = { git = "https://github.com/ZcashFoundation/ed25519-zebra.git", rev = "d3512400227a362d08367088ffaa9bd4142a69c7" }
 halo2 = { git = "https://github.com/zcash/halo2.git", rev = "d04b532368d05b505e622f8cac4c0693574fbd93" }
 orchard = { git = "https://github.com/zcash/orchard.git", rev = "f7c64e0437040d831e61711cd9e5695b001cb5cb" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "d88e40113c8dadea751dfcdd72ee90868f9655ff" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "d88e40113c8dadea751dfcdd72ee90868f9655ff" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "d88e40113c8dadea751dfcdd72ee90868f9655ff" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "fe4b63c8fe7300ebc9cd7a1242867525ccfe1e13" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "fe4b63c8fe7300ebc9cd7a1242867525ccfe1e13" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "fe4b63c8fe7300ebc9cd7a1242867525ccfe1e13" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "fe4b63c8fe7300ebc9cd7a1242867525ccfe1e13" }
