@@ -64,7 +64,7 @@ public:
 };
 
 HistoryNode getLeafN(uint64_t block_num) {
-    HistoryNode node = libzcash::NewLeaf(
+    HistoryNode node = libzcash::NewV1Leaf(
         uint256(),
         block_num*10,
         block_num*13,

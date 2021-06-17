@@ -43,8 +43,8 @@ public:
     void Truncate(HistoryIndex newLength);
 };
 
-// New history node with metadata based on block state.
-HistoryNode NewLeaf(
+// New V1 history node with metadata based on block state.
+HistoryNode NewV1Leaf(
     uint256 commitment,
     uint32_t time,
     uint32_t target,
@@ -54,11 +54,27 @@ HistoryNode NewLeaf(
     uint64_t saplingTxCount
 );
 
+// New V2 history node with metadata based on block state.
+HistoryNode NewV2Leaf(
+    uint256 commitment,
+    uint32_t time,
+    uint32_t target,
+    uint256 saplingRoot,
+    uint256 orchardRoot,
+    uint256 totalWork,
+    uint64_t height,
+    uint64_t saplingTxCount,
+    uint64_t orchardTxCount
+);
+
 // Convert history node to tree node (with children references)
 HistoryEntry NodeToEntry(const HistoryNode node, uint32_t left, uint32_t right);
 
 // Convert history node to leaf node (end nodes without children)
 HistoryEntry LeafToEntry(const HistoryNode node);
+
+// Returns true if this epoch used the V1 history tree format.
+bool IsV1HistoryTree(uint32_t epochId);
 
 }
 

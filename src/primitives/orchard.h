@@ -56,6 +56,10 @@ public:
         inner.reset(bundle);
     }
 
+    /// Returns true if this contains an Orchard bundle, or false if there is no
+    /// Orchard component.
+    bool IsPresent() const { return (bool)inner; }
+
     /// Queues this bundle's signatures for validation.
     ///
     /// `txid` must be for the transaction this bundle is within.
