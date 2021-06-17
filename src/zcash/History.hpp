@@ -9,6 +9,8 @@
 #include "streams.h"
 #include "uint256.h"
 
+#include <rust/history.h>
+
 #include "librustzcash.h"
 
 namespace libzcash {
