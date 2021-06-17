@@ -3000,8 +3000,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     // Derive the various block commitments.
-    auto hashAuthDataRoot = block.BuildAuthDataMerkleTree();
-    auto hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
+    // We only derive them if they will be used for this block.
+    std::optional<uint256> hashAuthDataRoot;
+    std::optional<uint256> hashChainHistoryRoot;
+    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+        hashAuthDataRoot = block.BuildAuthDataMerkleTree();
+    }
+    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+        hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
+    }
 
     view.PushAnchor(sprout_tree);
     view.PushAnchor(sapling_tree);
@@ -3028,9 +3035,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //   to ConnectBlock() (and thus never on the main chain) will stay with
         //   these set to null.
         if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
-            pindex->hashAuthDataRoot = hashAuthDataRoot;
+            pindex->hashAuthDataRoot = hashAuthDataRoot.value();
             pindex->hashFinalOrchardRoot = uint256(); // TODO: replace with Orchard tree root
-            pindex->hashChainHistoryRoot = hashChainHistoryRoot;
+            pindex->hashChainHistoryRoot = hashChainHistoryRoot.value();
         }
     }
     blockundo.old_sprout_tree_root = old_sprout_tree_root;
@@ -3041,8 +3048,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             // of the ZIP 244 block commitments linked list.
             // https://zips.z.cash/zip-0244#block-header-changes
             uint256 hashBlockCommitments = DeriveBlockCommitmentsHash(
-                hashChainHistoryRoot,
-                hashAuthDataRoot);
+                hashChainHistoryRoot.value(),
+                hashAuthDataRoot.value());
             if (block.hashBlockCommitments != hashBlockCommitments) {
                 return state.DoS(100,
                     error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)"),
@@ -3066,7 +3073,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // - If the previous block is in this epoch, this block would affect
         //   this epoch's tree root, but as we haven't updated the tree for this
         //   block yet, view.GetHistoryRoot() returns the root we need.
-        if (block.hashBlockCommitments != hashChainHistoryRoot) {
+        if (block.hashBlockCommitments != hashChainHistoryRoot.value()) {
             return state.DoS(100,
                 error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be history tree root)"),
                 REJECT_INVALID, "bad-heartwood-root-in-block");
