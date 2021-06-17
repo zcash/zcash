@@ -236,6 +236,7 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.pushKV("blockcommitments", blockindex->hashBlockCommitments.GetHex());
     result.pushKV("authdataroot", blockindex->hashAuthDataRoot.GetHex());
     result.pushKV("finalsaplingroot", blockindex->hashFinalSaplingRoot.GetHex());
+    result.pushKV("finalorchardroot", blockindex->hashFinalOrchardRoot.GetHex());
     result.pushKV("chainhistoryroot", blockindex->hashChainHistoryRoot.GetHex());
     UniValue txs(UniValue::VARR);
     for (const CTransaction&tx : block.vtx)

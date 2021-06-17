@@ -3,6 +3,10 @@ import struct
 from typing import (List, Optional)
 
 from .mininode import (CBlockHeader, block_work_from_compact, ser_compactsize, ser_uint256)
+from .util import (
+    NU5_BRANCH_ID,
+    assert_equal,
+)
 
 def H(msg: bytes, consensusBranchId: int) -> bytes:
     digest = blake2b(
@@ -28,12 +32,28 @@ class ZcashMMRNode():
     nEarliestHeight: int
     nLatestHeight: int
     nSaplingTxCount: int # number of Sapling transactions in block
+    hashEarliestOrchardRoot: bytes # left child's Orchard root
+    hashLatestOrchardRoot: bytes # right child's Orchard root
+    nOrchardTxCount: int # number of Orchard transactions in block
 
     consensusBranchId: bytes
 
     @classmethod
-    def from_block(Z, block: CBlockHeader, height, sapling_root, sapling_tx_count, consensusBranchId) -> 'ZcashMMRNode':
+    def from_block(
+        Z, block: CBlockHeader, height,
+        sapling_root, sapling_tx_count,
+        consensusBranchId,
+        v2_data=None
+    ) -> 'ZcashMMRNode':
         '''Create a leaf node from a block'''
+        if v2_data is not None:
+            assert_equal(consensusBranchId, NU5_BRANCH_ID)
+            orchard_root = v2_data[0]
+            orchard_tx_count = v2_data[1]
+        else:
+            orchard_root = None
+            orchard_tx_count = None
+
         node = Z()
         node.left_child = None
         node.right_child = None
@@ -48,6 +68,9 @@ class ZcashMMRNode():
         node.nEarliestHeight = height
         node.nLatestHeight = height
         node.nSaplingTxCount = sapling_tx_count
+        node.hashEarliestOrchardRoot = orchard_root
+        node.hashLatestOrchardRoot = orchard_root
+        node.nOrchardTxCount = orchard_tx_count
         node.consensusBranchId = consensusBranchId
         return node
 
@@ -65,6 +88,10 @@ class ZcashMMRNode():
         buf += ser_compactsize(self.nEarliestHeight)
         buf += ser_compactsize(self.nLatestHeight)
         buf += ser_compactsize(self.nSaplingTxCount)
+        if self.hashEarliestOrchardRoot is not None:
+            buf += self.hashEarliestOrchardRoot
+            buf += self.hashLatestOrchardRoot
+            buf += ser_compactsize(self.nOrchardTxCount)
         return buf
 
 def make_parent(
@@ -87,6 +114,12 @@ def make_parent(
     parent.nEarliestHeight = left_child.nEarliestHeight
     parent.nLatestHeight = right_child.nLatestHeight
     parent.nSaplingTxCount = left_child.nSaplingTxCount + right_child.nSaplingTxCount
+    parent.hashEarliestOrchardRoot = left_child.hashEarliestOrchardRoot
+    parent.hashLatestOrchardRoot = right_child.hashLatestOrchardRoot
+    parent.nOrchardTxCount = \
+        left_child.nOrchardTxCount + right_child.nOrchardTxCount \
+        if left_child.nOrchardTxCount is not None and right_child.nOrchardTxCount is not None \
+        else None
     parent.consensusBranchId = left_child.consensusBranchId
     return parent
 
