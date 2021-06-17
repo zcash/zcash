@@ -1,6 +1,6 @@
 use zcash_history::{Entry, EntryLink, NodeData};
 
-use crate::{librustzcash_mmr_append, librustzcash_mmr_delete};
+use crate::history_ffi::{librustzcash_mmr_append, librustzcash_mmr_delete};
 
 const NODE_DATA_16L: &[u8] = include_bytes!("./res/tree16.dat");
 const NODE_DATA_1023L: &[u8] = include_bytes!("./res/tree1023.dat");
