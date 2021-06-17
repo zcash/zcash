@@ -23,7 +23,7 @@
 #include "zcash/Proof.hpp"
 
 #include <rust/ed25519/types.h>
-#include <rust/orchard.h>
+#include <primitives/orchard.h>
 
 // Overwinter transaction version group id
 static constexpr uint32_t OVERWINTER_VERSION_GROUP_ID = 0x03C48270;
@@ -324,65 +324,6 @@ public:
 
     std::vector<SpendDescription> GetV4ShieldedSpend();
     std::vector<OutputDescription> GetV4ShieldedOutput();
-};
-
-/**
- * The Orchard component of a transaction.
- */
-class OrchardBundle
-{
-private:
-    /// An optional Orchard bundle (with `nullptr` corresponding to `None`).
-    /// Memory is allocated by Rust.
-    std::unique_ptr<OrchardBundlePtr, decltype(&orchard_bundle_free)> inner;
-
-public:
-    OrchardBundle() : inner(nullptr, orchard_bundle_free) {}
-
-    OrchardBundle(OrchardBundle&& bundle) : inner(std::move(bundle.inner)) {}
-    OrchardBundle(const OrchardBundle& bundle) :
-        inner(orchard_bundle_clone(bundle.inner.get()), orchard_bundle_free) {}
-    OrchardBundle& operator=(OrchardBundle&& bundle)
-    {
-        if (this != &bundle) {
-            inner = std::move(bundle.inner);
-        }
-        return *this;
-    }
-    OrchardBundle& operator=(const OrchardBundle& bundle)
-    {
-        if (this != &bundle) {
-            inner.reset(orchard_bundle_clone(bundle.inner.get()));
-        }
-        return *this;
-    }
-
-    template<typename Stream>
-    void Serialize(Stream& s) const {
-        RustStream rs(s);
-        if (!orchard_bundle_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
-            throw std::ios_base::failure("Failed to serialize v5 Orchard bundle");
-        }
-    }
-
-    template<typename Stream>
-    void Unserialize(Stream& s) {
-        RustStream rs(s);
-        OrchardBundlePtr* bundle;
-        if (!orchard_bundle_parse(&rs, RustStream<Stream>::read_callback, &bundle)) {
-            throw std::ios_base::failure("Failed to parse v5 Orchard bundle");
-        }
-        inner.reset(bundle);
-    }
-
-    /// Queues this bundle's signatures for validation.
-    ///
-    /// `txid` must be for the transaction this bundle is within.
-    void QueueSignatureValidation(
-        orchard::AuthValidator& batch, const uint256& txid) const
-    {
-        batch.Queue(inner.get(), txid.begin());
-    }
 };
 
 template <typename Stream>
