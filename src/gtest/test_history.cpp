@@ -81,34 +81,36 @@ TEST(History, Smoky) {
     FakeCoinsViewDB fakeDB;
     CCoinsViewCache view(&fakeDB);
 
+    uint32_t epochId = 0;
+
     // Test initial value
-    EXPECT_EQ(view.GetHistoryLength(0), 0);
+    EXPECT_EQ(view.GetHistoryLength(epochId), 0);
 
-    view.PushHistoryNode(1, getLeafN(1));
+    view.PushHistoryNode(epochId, getLeafN(1));
 
-    EXPECT_EQ(view.GetHistoryLength(1), 1);
+    EXPECT_EQ(view.GetHistoryLength(epochId), 1);
 
-    view.PushHistoryNode(1, getLeafN(2));
+    view.PushHistoryNode(epochId, getLeafN(2));
 
-    EXPECT_EQ(view.GetHistoryLength(1), 3);
+    EXPECT_EQ(view.GetHistoryLength(epochId), 3);
 
-    view.PushHistoryNode(1, getLeafN(3));
+    view.PushHistoryNode(epochId, getLeafN(3));
 
-    EXPECT_EQ(view.GetHistoryLength(1), 4);
+    EXPECT_EQ(view.GetHistoryLength(epochId), 4);
 
-    view.PushHistoryNode(1, getLeafN(4));
+    view.PushHistoryNode(epochId, getLeafN(4));
 
-    uint256 h4Root = view.GetHistoryRoot(1);
+    uint256 h4Root = view.GetHistoryRoot(epochId);
 
-    EXPECT_EQ(view.GetHistoryLength(1), 7);
+    EXPECT_EQ(view.GetHistoryLength(epochId), 7);
 
-    view.PushHistoryNode(1, getLeafN(5));
-    EXPECT_EQ(view.GetHistoryLength(1), 8);
+    view.PushHistoryNode(epochId, getLeafN(5));
+    EXPECT_EQ(view.GetHistoryLength(epochId), 8);
 
-    view.PopHistoryNode(1);
+    view.PopHistoryNode(epochId);
 
-    EXPECT_EQ(view.GetHistoryLength(1), 7);
-    EXPECT_EQ(h4Root, view.GetHistoryRoot(1));
+    EXPECT_EQ(view.GetHistoryLength(epochId), 7);
+    EXPECT_EQ(h4Root, view.GetHistoryRoot(epochId));
 }
 
 
@@ -117,56 +119,60 @@ TEST(History, EpochBoundaries) {
     FakeCoinsViewDB fakeDB;
     CCoinsViewCache view(&fakeDB);
 
-    view.PushHistoryNode(1, getLeafN(1));
+    // Test with the Heartwood and Canopy epochs
+    uint32_t epoch1 = 0xf5b9230b;
+    uint32_t epoch2 = 0xe9ff75a6;
 
-    EXPECT_EQ(view.GetHistoryLength(1), 1);
+    view.PushHistoryNode(epoch1, getLeafN(1));
 
-    view.PushHistoryNode(1, getLeafN(2));
+    EXPECT_EQ(view.GetHistoryLength(epoch1), 1);
 
-    EXPECT_EQ(view.GetHistoryLength(1), 3);
+    view.PushHistoryNode(epoch1, getLeafN(2));
 
-    view.PushHistoryNode(1, getLeafN(3));
+    EXPECT_EQ(view.GetHistoryLength(epoch1), 3);
 
-    EXPECT_EQ(view.GetHistoryLength(1), 4);
+    view.PushHistoryNode(epoch1, getLeafN(3));
 
-    view.PushHistoryNode(1, getLeafN(4));
+    EXPECT_EQ(view.GetHistoryLength(epoch1), 4);
 
-    uint256 h4Root = view.GetHistoryRoot(1);
+    view.PushHistoryNode(epoch1, getLeafN(4));
 
-    EXPECT_EQ(view.GetHistoryLength(1), 7);
+    uint256 h4Root = view.GetHistoryRoot(epoch1);
 
-    view.PushHistoryNode(1, getLeafN(5));
-    EXPECT_EQ(view.GetHistoryLength(1), 8);
+    EXPECT_EQ(view.GetHistoryLength(epoch1), 7);
+
+    view.PushHistoryNode(epoch1, getLeafN(5));
+    EXPECT_EQ(view.GetHistoryLength(epoch1), 8);
 
 
-    // New Epoch(2)
-    view.PushHistoryNode(2, getLeafN(6));
-    EXPECT_EQ(view.GetHistoryLength(1), 8);
-    EXPECT_EQ(view.GetHistoryLength(2), 1);
+    // Move to Canopy epoch
+    view.PushHistoryNode(epoch2, getLeafN(6));
+    EXPECT_EQ(view.GetHistoryLength(epoch1), 8);
+    EXPECT_EQ(view.GetHistoryLength(epoch2), 1);
 
-    view.PushHistoryNode(2, getLeafN(7));
-    EXPECT_EQ(view.GetHistoryLength(1), 8);
-    EXPECT_EQ(view.GetHistoryLength(2), 3);
+    view.PushHistoryNode(epoch2, getLeafN(7));
+    EXPECT_EQ(view.GetHistoryLength(epoch1), 8);
+    EXPECT_EQ(view.GetHistoryLength(epoch2), 3);
 
-    view.PushHistoryNode(2, getLeafN(8));
-    EXPECT_EQ(view.GetHistoryLength(1), 8);
-    EXPECT_EQ(view.GetHistoryLength(2), 4);
+    view.PushHistoryNode(epoch2, getLeafN(8));
+    EXPECT_EQ(view.GetHistoryLength(epoch1), 8);
+    EXPECT_EQ(view.GetHistoryLength(epoch2), 4);
 
     // Rolling epoch back to 1
-    view.PopHistoryNode(2);
-    EXPECT_EQ(view.GetHistoryLength(2), 3);
+    view.PopHistoryNode(epoch2);
+    EXPECT_EQ(view.GetHistoryLength(epoch2), 3);
 
-    view.PopHistoryNode(2);
-    EXPECT_EQ(view.GetHistoryLength(2), 1);
-    EXPECT_EQ(view.GetHistoryLength(1), 8);
+    view.PopHistoryNode(epoch2);
+    EXPECT_EQ(view.GetHistoryLength(epoch2), 1);
+    EXPECT_EQ(view.GetHistoryLength(epoch1), 8);
 
     // And even rolling epoch 1 back a bit
-    view.PopHistoryNode(1);
-    EXPECT_EQ(view.GetHistoryLength(1), 7);
+    view.PopHistoryNode(epoch1);
+    EXPECT_EQ(view.GetHistoryLength(epoch1), 7);
 
     // And also rolling epoch 2 back to 0
-    view.PopHistoryNode(2);
-    EXPECT_EQ(view.GetHistoryLength(2), 0);
+    view.PopHistoryNode(epoch2);
+    EXPECT_EQ(view.GetHistoryLength(epoch2), 0);
 
 }
 
