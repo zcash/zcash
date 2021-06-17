@@ -77,6 +77,7 @@ pub extern "C" fn orchard_bundle_serialize(
 }
 
 #[no_mangle]
+
 pub extern "C" fn orchard_bundle_value_balance(bundle: *const Bundle<Authorized, Amount>) -> i64 {
     unsafe { bundle.as_ref() }
         .map(|bundle| (*bundle.value_balance()).into())
@@ -115,6 +116,50 @@ pub extern "C" fn orchard_bundle_validate(bundle: *const Bundle<Authorized, Amou
         // The Orchard component of a transaction without an Orchard bundle is by
         // definition valid.
         true
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_bundle_actions_len(bundle: *const Bundle<Authorized, Amount>) -> usize {
+    if let Some(bundle) = unsafe { bundle.as_ref() } {
+        bundle.actions().len()
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_bundle_nullifiers(
+    bundle: *const Bundle<Authorized, Amount>,
+    nullifiers_ret: *mut [u8; 32],
+    nullifiers_len: usize,
+) -> bool {
+    if let Some(bundle) = unsafe { bundle.as_ref() } {
+        let res = unsafe {
+            assert!(!nullifiers_ret.is_null());
+            std::slice::from_raw_parts_mut(nullifiers_ret, nullifiers_len)
+        };
+
+        for (action, nf_ret) in bundle.actions().iter().zip(res.iter_mut()) {
+            nf_ret.copy_from_slice(&action.nullifier().to_bytes());
+        }
+        true
+    } else {
+        false
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_bundle_anchor(
+    bundle: *const Bundle<Authorized, Amount>,
+    anchor_ret: *mut [u8; 32],
+) -> bool {
+    if let Some((bundle, ret)) = unsafe { bundle.as_ref() }.zip(unsafe { anchor_ret.as_mut() }) {
+        ret.copy_from_slice(&bundle.anchor().to_bytes());
+
+        true
+    } else {
+        false
     }
 }
 

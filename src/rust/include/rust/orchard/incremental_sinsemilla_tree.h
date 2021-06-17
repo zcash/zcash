@@ -68,6 +68,24 @@ bool orchard_merkle_frontier_append_bundle(
         const OrchardBundlePtr* bundle
         );
 
+// Compute the root of the provided orchard Merkle frontier
+//
+// If no error occurs, `digest_ret` will point to the resulting
+// digest and this procedure returns `true`.
+// If an error occurs, `digest_ret` will be unaltered and this
+// procedure returns `false`.
+bool orchard_merkle_frontier_root(
+        const OrchardMerkleFrontierPtr* tree_ptr,
+        unsigned char* digest_ret
+        );
+
+// The total number of leaves that have been appended to obtain
+// the current state of the frontier. Subtract 1 from this value
+// to obtain the position of the most recently appended leaf.
+size_t orchard_merkle_frontier_num_leaves(
+        const OrchardMerkleFrontierPtr* tree_ptr
+        );
+
 /// Pointer to an Orchard incremental sinsemilla tree
 struct IncrementalSinsemillaTreePtr;
 typedef struct IncrementalSinsemillaTreePtr IncrementalSinsemillaTreePtr;
@@ -139,7 +157,8 @@ bool incremental_sinsemilla_tree_root(
         );
 
 // Return the empty leaf value for the incremental sinsemilla tree.
-bool incremental_sinsemilla_tree_empty_leaf(
+bool incremental_sinsemilla_tree_empty_root(
+        size_t depth,
         unsigned char* digest_ret
         );
 

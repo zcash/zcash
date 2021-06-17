@@ -285,3 +285,12 @@ TEST(merkletree, testZeroElements) {
         ASSERT_TRUE(newTree.root() == oldroot);
     }
 }
+
+TEST(orchardMerkleTree, emptyroot) {
+    // This literal is the depth-32 empty tree root with the bytes reversed to
+    // account for the fact that uint256S() loads a big-endian representation of
+    // an integer which converted to little-endian internally.
+    uint256 expected = uint256S("2fd8e51a03d9bbe2dd809831b1497aeb68a6e37ddf707ced4aa2d8dff13529ae");
+
+    ASSERT_EQ(OrchardMerkleTree::empty_root(), expected);
+}

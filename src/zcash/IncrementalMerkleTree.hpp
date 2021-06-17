@@ -11,6 +11,9 @@
 #include "Zcash.h"
 #include "zcash/util.h"
 
+#include <primitives/orchard.h>
+#include <rust/orchard/incremental_sinsemilla_tree.h>
+
 namespace libzcash {
 
 class MerklePath {
@@ -253,7 +256,92 @@ typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libz
 typedef libzcash::IncrementalMerkleTree<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::PedersenHash> SaplingMerkleTree;
 typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::PedersenHash> SaplingTestingMerkleTree;
 
+//typedef libzcash::IncrementalMerkleTree<ORCHARD_INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::PedersenHash> OrchardMerkleTree;
+//typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::PedersenHash> OrchardTestingMerkleTree;
+
 typedef libzcash::IncrementalWitness<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::PedersenHash> SaplingWitness;
 typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::PedersenHash> SaplingTestingWitness;
+
+class OrchardMerkleTree
+{
+private:
+    /// An optional incremental sinsemilla tree (with `nullptr` corresponding to `None`).
+    /// Memory is allocated by Rust.
+    std::unique_ptr<OrchardMerkleFrontierPtr, decltype(&orchard_merkle_frontier_free)> inner;
+public:
+    OrchardMerkleTree() : inner(orchard_merkle_frontier_empty(), orchard_merkle_frontier_free) {}
+
+    OrchardMerkleTree(OrchardMerkleTree&& frontier) : inner(std::move(frontier.inner)) {}
+
+    OrchardMerkleTree(const OrchardMerkleTree& frontier) :
+        inner(orchard_merkle_frontier_clone(frontier.inner.get()), orchard_merkle_frontier_free) {}
+
+    OrchardMerkleTree& operator=(OrchardMerkleTree&& frontier)
+    {
+        if (this != &frontier) {
+            inner = std::move(frontier.inner);
+        }
+        return *this;
+    }
+    OrchardMerkleTree& operator=(const OrchardMerkleTree& frontier)
+    {
+        if (this != &frontier) {
+            inner.reset(orchard_merkle_frontier_clone(frontier.inner.get()));
+        }
+        return *this;
+    }
+
+    template<typename Stream>
+    void Serialize(Stream& s) const {
+        RustStream rs(s);
+        if (!orchard_merkle_frontier_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
+            throw std::ios_base::failure("Failed to serialize v5 Orchard tree");
+        }
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream& s) {
+        RustStream rs(s);
+        OrchardMerkleFrontierPtr* tree = orchard_merkle_frontier_parse(
+                &rs, RustStream<Stream>::read_callback);
+        if (tree == NULL) {
+            throw std::ios_base::failure("Failed to parse v5 Orchard tree");
+        }
+        inner.reset(tree);
+    }
+
+    size_t DynamicMemoryUsage() const {
+        // left + right are always allocated
+        size_t result = 32 + 32;
+        size_t len = orchard_merkle_frontier_num_leaves(inner.get());
+        if (len > 0) {
+            size_t position = len - 1;
+            for (size_t i = 1; i < 32; i++) {
+                // add the size of a hash for each parent position; we skip i == 0
+                // as we've already accounted for it in `left + right`
+                if ((position & (1 << i)) != 0) {
+                    result += 32;
+                }
+            }
+        }
+        return result;
+    }
+
+    bool AppendBundle(const OrchardBundle& bundle) {
+       return orchard_merkle_frontier_append_bundle(inner.get(), bundle.inner.get());
+    }
+
+    const uint256 root() const {
+        uint256 value;
+        orchard_merkle_frontier_root(inner.get(), value.begin());
+        return value;
+    }
+
+    static uint256 empty_root() {
+        uint256 value;
+        incremental_sinsemilla_tree_empty_root(32, value.begin());
+        return value;
+    }
+};
 
 #endif /* ZC_INCREMENTALMERKLETREE_H_ */

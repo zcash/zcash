@@ -22,8 +22,10 @@ using namespace std;
 // previously used by DB_SAPLING_ANCHOR and DB_BEST_SAPLING_ANCHOR.
 static const char DB_SPROUT_ANCHOR = 'A';
 static const char DB_SAPLING_ANCHOR = 'Z';
+static const char DB_ORCHARD_ANCHOR = 'Y';
 static const char DB_NULLIFIER = 's';
 static const char DB_SAPLING_NULLIFIER = 'S';
+static const char DB_ORCHARD_NULLIFIER = 'O';
 static const char DB_COINS = 'c';
 static const char DB_BLOCK_FILES = 'f';
 static const char DB_TXINDEX = 't';
@@ -32,6 +34,7 @@ static const char DB_BLOCK_INDEX = 'b';
 static const char DB_BEST_BLOCK = 'B';
 static const char DB_BEST_SPROUT_ANCHOR = 'a';
 static const char DB_BEST_SAPLING_ANCHOR = 'z';
+static const char DB_BEST_ORCHARD_ANCHOR = 'y';
 static const char DB_FLAG = 'F';
 static const char DB_REINDEX_FLAG = 'R';
 static const char DB_LAST_BLOCK = 'l';
@@ -50,10 +53,22 @@ static const char DB_BLOCKHASHINDEX = 'h';
 CCoinsViewDB::CCoinsViewDB(std::string dbName, size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / dbName, nCacheSize, fMemory, fWipe) {
 }
 
-CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe) 
+CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe)
 {
 }
 
+//template <typename MerkleTree, char ANCHOR_KEY>
+//bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, MerkleTree &tree) const {
+//    if (rt == MerkleTree::empty_root()) {
+//        MerkleTree new_tree;
+//        tree = new_tree;
+//        return true;
+//    }
+//
+//    bool read = db.Read(make_pair(ANCHOR_KEY, rt), tree);
+//
+//    return read;
+//}
 
 bool CCoinsViewDB::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
     if (rt == SproutMerkleTree::empty_root()) {
@@ -79,6 +94,18 @@ bool CCoinsViewDB::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree
     return read;
 }
 
+bool CCoinsViewDB::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const {
+    if (rt == OrchardMerkleTree::empty_root()) {
+        OrchardMerkleTree new_tree;
+        tree = new_tree;
+        return true;
+    }
+
+    bool read = db.Read(make_pair(DB_ORCHARD_ANCHOR, rt), tree);
+
+    return read;
+}
+
 bool CCoinsViewDB::GetNullifier(const uint256 &nf, ShieldedType type) const {
     bool spent = false;
     char dbChar;
@@ -88,6 +115,9 @@ bool CCoinsViewDB::GetNullifier(const uint256 &nf, ShieldedType type) const {
             break;
         case SAPLING:
             dbChar = DB_SAPLING_NULLIFIER;
+            break;
+        case ORCHARD:
+            dbChar = DB_ORCHARD_NULLIFIER;
             break;
         default:
             throw runtime_error("Unknown shielded type");
@@ -112,7 +142,7 @@ uint256 CCoinsViewDB::GetBestBlock() const {
 
 uint256 CCoinsViewDB::GetBestAnchor(ShieldedType type) const {
     uint256 hashBestAnchor;
-    
+
     switch (type) {
         case SPROUT:
             if (!db.Read(DB_BEST_SPROUT_ANCHOR, hashBestAnchor))
@@ -120,6 +150,10 @@ uint256 CCoinsViewDB::GetBestAnchor(ShieldedType type) const {
             break;
         case SAPLING:
             if (!db.Read(DB_BEST_SAPLING_ANCHOR, hashBestAnchor))
+                return SaplingMerkleTree::empty_root();
+            break;
+        case ORCHARD:
+            if (!db.Read(DB_BEST_ORCHARD_ANCHOR, hashBestAnchor))
                 return SaplingMerkleTree::empty_root();
             break;
         default:
@@ -245,10 +279,13 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               const uint256 &hashBlock,
                               const uint256 &hashSproutAnchor,
                               const uint256 &hashSaplingAnchor,
+                              const uint256 &hashOrchardAnchor,
                               CAnchorsSproutMap &mapSproutAnchors,
                               CAnchorsSaplingMap &mapSaplingAnchors,
+                              CAnchorsOrchardMap &mapOrchardAnchors,
                               CNullifiersMap &mapSproutNullifiers,
                               CNullifiersMap &mapSaplingNullifiers,
+                              CNullifiersMap &mapOrchardNullifiers,
                               CHistoryCacheMap &historyCacheMap) {
     CDBBatch batch(db);
     size_t count = 0;
@@ -267,9 +304,11 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
 
     ::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry, SproutMerkleTree>(batch, mapSproutAnchors, DB_SPROUT_ANCHOR);
     ::BatchWriteAnchors<CAnchorsSaplingMap, CAnchorsSaplingMap::iterator, CAnchorsSaplingCacheEntry, SaplingMerkleTree>(batch, mapSaplingAnchors, DB_SAPLING_ANCHOR);
+    ::BatchWriteAnchors<CAnchorsOrchardMap, CAnchorsOrchardMap::iterator, CAnchorsOrchardCacheEntry, OrchardMerkleTree>(batch, mapOrchardAnchors, DB_ORCHARD_ANCHOR);
 
     ::BatchWriteNullifiers(batch, mapSproutNullifiers, DB_NULLIFIER);
     ::BatchWriteNullifiers(batch, mapSaplingNullifiers, DB_SAPLING_NULLIFIER);
+    ::BatchWriteNullifiers(batch, mapOrchardNullifiers, DB_ORCHARD_NULLIFIER);
 
     ::BatchWriteHistory(batch, historyCacheMap);
 
@@ -279,6 +318,8 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
         batch.Write(DB_BEST_SPROUT_ANCHOR, hashSproutAnchor);
     if (!hashSaplingAnchor.IsNull())
         batch.Write(DB_BEST_SAPLING_ANCHOR, hashSaplingAnchor);
+    if (!hashOrchardAnchor.IsNull())
+        batch.Write(DB_BEST_ORCHARD_ANCHOR, hashOrchardAnchor);
 
     LogPrint("coindb", "Committing %u changed transactions (out of %u) to coin database...\n", (unsigned int)changed, (unsigned int)count);
     return db.WriteBatch(batch);

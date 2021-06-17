@@ -1,13 +1,19 @@
 use bincode;
-use incrementalmerkletree::{Tree, Frontier, Hashable, bridgetree::{self, BridgeTree}};
+use incrementalmerkletree::{
+    bridgetree::{self, BridgeTree},
+    Altitude, Frontier, Hashable, Tree,
+};
 use std::ptr;
 
 use orchard::{bundle::Authorized, tree::OrchardIncrementalTreeDigest};
 
 use zcash_primitives::transaction::components::Amount;
 
-use crate::orchard_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb, error};
+use crate::orchard_ffi::{error, CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
 
+//
+// Operations on Merkle frontiers.
+//
 
 #[no_mangle]
 pub extern "C" fn orchard_merkle_frontier_empty(
@@ -115,6 +121,20 @@ pub extern "C" fn orchard_merkle_frontier_root(
         false
     }
 }
+
+#[no_mangle]
+pub extern "C" fn orchard_merkle_frontier_num_leaves(
+    tree: *mut bridgetree::Frontier<OrchardIncrementalTreeDigest>,
+) -> usize {
+    unsafe { tree.as_ref() }
+        .and_then(|t| t.position())
+        .map_or(0, |p| <usize>::from(p) + 1)
+}
+
+//
+// Operations on incremental merkle trees with interstitial
+// witnesses.
+//
 
 #[no_mangle]
 pub extern "C" fn incremental_sinsemilla_tree_empty(
@@ -248,16 +268,18 @@ pub extern "C" fn incremental_sinsemilla_tree_root(
 }
 
 #[no_mangle]
-pub extern "C" fn incremental_sinsemilla_tree_empty_leaf(
-    root_ret: *mut [u8; 32],
-) {
+pub extern "C" fn incremental_sinsemilla_tree_empty_root(depth: usize, root_ret: *mut [u8; 32]) {
     let root_ret = unsafe {
         root_ret
             .as_mut()
             .expect("Cannot return to the null pointer.")
     };
 
-    let digest = OrchardIncrementalTreeDigest::empty_leaf().to_bytes().unwrap();
-    
+    let altitude = Altitude::from(depth as u32);
+
+    let digest = OrchardIncrementalTreeDigest::empty_root(altitude)
+        .to_bytes()
+        .unwrap();
+
     root_ret.copy_from_slice(&digest);
 }

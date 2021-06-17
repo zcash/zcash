@@ -5,7 +5,12 @@
 #ifndef ZCASH_PRIMITIVES_ORCHARD_H
 #define ZCASH_PRIMITIVES_ORCHARD_H
 
+#include "streams.h"
+
+#include <amount.h>
 #include <rust/orchard.h>
+
+class OrchardMerkleTree;
 
 /**
  * The Orchard component of a transaction.
@@ -17,12 +22,15 @@ private:
     /// Memory is allocated by Rust.
     std::unique_ptr<OrchardBundlePtr, decltype(&orchard_bundle_free)> inner;
 
+    friend class OrchardMerkleTree;
 public:
     OrchardBundle() : inner(nullptr, orchard_bundle_free) {}
 
     OrchardBundle(OrchardBundle&& bundle) : inner(std::move(bundle.inner)) {}
+
     OrchardBundle(const OrchardBundle& bundle) :
         inner(orchard_bundle_clone(bundle.inner.get()), orchard_bundle_free) {}
+
     OrchardBundle& operator=(OrchardBundle&& bundle)
     {
         if (this != &bundle) {
@@ -30,6 +38,7 @@ public:
         }
         return *this;
     }
+
     OrchardBundle& operator=(const OrchardBundle& bundle)
     {
         if (this != &bundle) {
@@ -82,6 +91,22 @@ public:
         orchard::AuthValidator& batch, const uint256& txid) const
     {
         batch.Queue(inner.get(), txid.begin());
+    }
+
+    const std::vector<uint256> GetNullifiers() const {
+        size_t actions_len = orchard_bundle_actions_len(inner.get());
+        std::vector<uint256> result(actions_len);
+        orchard_bundle_nullifiers(inner.get(), result.data(), actions_len);
+        return result;
+    }
+
+    const uint256 GetAnchor() const {
+        uint256 result;
+        if (orchard_bundle_anchor(inner.get(), result.begin())) {
+            return result;
+        } else {
+            throw std::runtime_error("cannot obtain Orchard anchor from empty bundle");
+        }
     }
 };
 
