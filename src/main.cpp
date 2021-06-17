@@ -3945,18 +3945,21 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block, const Consensus::Params&
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
 
         if (consensusParams.NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_NU5)) {
-            // The following hashes are currently null, and will be set correctly in
+            // The following hashes will be null if this block has never been
+            // connected to a main chain; they will be (re)set correctly in
             // ConnectBlock:
             // - hashFinalSaplingRoot
             // - hashFinalOrchardRoot
             // - hashChainHistoryRoot
         } else if (IsActivationHeight(pindexNew->nHeight, consensusParams, Consensus::UPGRADE_HEARTWOOD)) {
-            // hashFinalSaplingRoot and hashFinalOrchardRoot are currently null, and will
-            // be set correctly in ConnectBlock.
+            // hashFinalSaplingRoot and hashFinalOrchardRoot will be null if this block has
+            // never been connected to a main chain; they will be (re)set correctly in
+            // ConnectBlock.
             // hashChainHistoryRoot is null.
         } else if (consensusParams.NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-            // hashFinalSaplingRoot and hashFinalOrchardRoot are currently null, and will
-            // be set correctly in ConnectBlock.
+            // hashFinalSaplingRoot and hashFinalOrchardRoot will be null if this block has
+            // never been connected to a main chain; they will be (re)set correctly in
+            // ConnectBlock.
             pindexNew->hashChainHistoryRoot = pindexNew->hashBlockCommitments;
         } else {
             // hashFinalOrchardRoot and hashChainHistoryRoot are null.
