@@ -162,8 +162,8 @@ extern CAddrMan addrman;
 /** Maximum number of connections to simultaneously allow (aka connection slots) */
 extern int nMaxConnections;
 
-extern std::vector<CNode*> vNodes;
 extern CCriticalSection cs_vNodes;
+extern std::vector<CNode*> vNodes GUARDED_BY(cs_vNodes);
 extern std::map<CInv, CDataStream> mapRelay;
 extern std::deque<std::pair<int64_t, CInv> > vRelayExpiration;
 extern CCriticalSection cs_mapRelay;
@@ -184,7 +184,7 @@ struct LocalServiceInfo {
 };
 
 extern CCriticalSection cs_mapLocalHost;
-extern std::map<CNetAddr, LocalServiceInfo> mapLocalHost;
+extern std::map<CNetAddr, LocalServiceInfo> mapLocalHost GUARDED_BY(cs_mapLocalHost);
 
 class CNodeStats
 {
@@ -257,13 +257,13 @@ class CNode
 public:
     // socket
     std::atomic<uint64_t> nServices;
-    SOCKET hSocket;
+    SOCKET hSocket GUARDED_BY(cs_hSocket);
     CDataStream ssSend;
     std::string strSendCommand; // Current command being assembled in ssSend
     size_t nSendSize; // total size of all vSendMsg entries
     size_t nSendOffset; // offset inside the first vSendMsg already sent
-    uint64_t nSendBytes;
-    std::deque<CSerializeData> vSendMsg;
+    uint64_t nSendBytes GUARDED_BY(cs_vSend);
+    std::deque<CSerializeData> vSendMsg GUARDED_BY(cs_vSend);
     CCriticalSection cs_vSend;
     CCriticalSection cs_hSocket;
     CCriticalSection cs_vRecv;
@@ -271,7 +271,7 @@ public:
     std::deque<CInv> vRecvGetData;
     std::deque<CNetMessage> vRecvMsg;
     CCriticalSection cs_vRecvMsg;
-    uint64_t nRecvBytes;
+    uint64_t nRecvBytes GUARDED_BY(cs_vRecv);
     int nRecvVersion;
 
     std::atomic<int64_t> nLastSend;
@@ -284,7 +284,7 @@ public:
     // to be printed out, displayed to humans in various forms and so on. So we sanitize it and
     // store the sanitized version in cleanSubVer. The original should be used when dealing with
     // the network or wire types and the cleaned string used when displayed or logged.
-    std::string strSubVer, cleanSubVer;
+    std::string strSubVer GUARDED_BY(cs_SubVer), cleanSubVer GUARDED_BY(cs_SubVer);
     CCriticalSection cs_SubVer; // used for both cleanSubVer and strSubVer
     bool fWhitelisted; // This peer can bypass DoS banning.
     bool fOneShot;
@@ -301,7 +301,7 @@ public:
     bool fSentAddr;
     CSemaphoreGrant grantOutbound;
     CCriticalSection cs_filter;
-    CBloomFilter* pfilter;
+    CBloomFilter* pfilter PT_GUARDED_BY(cs_filter);
     NodeId id;
     std::atomic<int> nRefCount;
 
@@ -315,9 +315,9 @@ protected:
 
     // Denial-of-service detection/prevention
     // Key is IP address, value is banned-until-time
-    static banmap_t setBanned;
+    static banmap_t setBanned GUARDED_BY(cs_setBanned);
     static CCriticalSection cs_setBanned;
-    static bool setBannedIsDirty;
+    static bool setBannedIsDirty GUARDED_BY(cs_setBanned);
 
     // Whitelisted ranges. Any node connecting from these is automatically
     // whitelisted (as well as those connecting to whitelisted binds).
@@ -338,7 +338,7 @@ public:
     std::set<uint256> setKnown;
 
     // inventory based relay
-    CRollingBloomFilter filterInventoryKnown;
+    CRollingBloomFilter filterInventoryKnown GUARDED_BY(cs_inventory);
     std::vector<CInv> vInventoryToSend;
     CCriticalSection cs_inventory;
     std::set<uint256> setAskFor;
@@ -379,9 +379,9 @@ private:
 
 
     mutable CCriticalSection cs_addrName;
-    std::string addrName;
+    std::string addrName GUARDED_BY(cs_addrName);
 
-    CService addrLocal;
+    CService addrLocal GUARDED_BY(cs_addrLocal);
     mutable CCriticalSection cs_addrLocal;
 public:
 

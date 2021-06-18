@@ -56,8 +56,8 @@ CTxMemPoolEntry::GetPriority(unsigned int currentHeight) const
     return dResult;
 }
 
-CTxMemPool::CTxMemPool(const CFeeRate& _minRelayFee) :
-    nTransactionsUpdated(0)
+CTxMemPool::CTxMemPool(const CFeeRate& _minRelayFee)
+    : nTransactionsUpdated(0)
 {
     // Sanity checks off by default for performance, because otherwise
     // accepting transactions becomes O(N^2) where N is the number
@@ -89,13 +89,11 @@ void CTxMemPool::pruneSpent(const uint256 &hashTx, CCoins &coins)
 
 unsigned int CTxMemPool::GetTransactionsUpdated() const
 {
-    LOCK(cs);
     return nTransactionsUpdated;
 }
 
 void CTxMemPool::AddTransactionsUpdated(unsigned int n)
 {
-    LOCK(cs);
     nTransactionsUpdated += n;
 }
 
@@ -239,71 +237,69 @@ void CTxMemPool::removeSpentIndex(const uint256 txhash)
 void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& removed, bool fRecursive)
 {
     // Remove transaction from memory pool
+    AssertLockHeld(cs);
+    std::deque<uint256> txToRemove;
+    txToRemove.push_back(origTx.GetHash());
+    if (fRecursive && !mapTx.count(origTx.GetHash())) {
+        // If recursively removing but origTx isn't in the mempool
+        // be sure to remove any children that are in the pool. This can
+        // happen during chain re-orgs if origTx isn't re-accepted into
+        // the mempool for any reason.
+        for (unsigned int i = 0; i < origTx.vout.size(); i++) {
+            std::map<COutPoint, CInPoint>::iterator it = mapNextTx.find(COutPoint(origTx.GetHash(), i));
+            if (it == mapNextTx.end())
+                continue;
+            txToRemove.push_back(it->second.ptx->GetHash());
+        }
+    }
+    while (!txToRemove.empty())
     {
-        LOCK(cs);
-        std::deque<uint256> txToRemove;
-        txToRemove.push_back(origTx.GetHash());
-        if (fRecursive && !mapTx.count(origTx.GetHash())) {
-            // If recursively removing but origTx isn't in the mempool
-            // be sure to remove any children that are in the pool. This can
-            // happen during chain re-orgs if origTx isn't re-accepted into
-            // the mempool for any reason.
-            for (unsigned int i = 0; i < origTx.vout.size(); i++) {
-                std::map<COutPoint, CInPoint>::iterator it = mapNextTx.find(COutPoint(origTx.GetHash(), i));
+        uint256 hash = txToRemove.front();
+        txToRemove.pop_front();
+        if (!mapTx.count(hash))
+            continue;
+        const CTransaction& tx = mapTx.find(hash)->GetTx();
+        if (fRecursive) {
+            for (unsigned int i = 0; i < tx.vout.size(); i++) {
+                std::map<COutPoint, CInPoint>::iterator it = mapNextTx.find(COutPoint(hash, i));
                 if (it == mapNextTx.end())
                     continue;
                 txToRemove.push_back(it->second.ptx->GetHash());
             }
         }
-        while (!txToRemove.empty())
-        {
-            uint256 hash = txToRemove.front();
-            txToRemove.pop_front();
-            if (!mapTx.count(hash))
-                continue;
-            const CTransaction& tx = mapTx.find(hash)->GetTx();
-            if (fRecursive) {
-                for (unsigned int i = 0; i < tx.vout.size(); i++) {
-                    std::map<COutPoint, CInPoint>::iterator it = mapNextTx.find(COutPoint(hash, i));
-                    if (it == mapNextTx.end())
-                        continue;
-                    txToRemove.push_back(it->second.ptx->GetHash());
-                }
+        mapRecentlyAddedTx.erase(hash);
+        for (const CTxIn& txin : tx.vin)
+            mapNextTx.erase(txin.prevout);
+        for (const JSDescription& joinsplit : tx.vJoinSplit) {
+            for (const uint256& nf : joinsplit.nullifiers) {
+                mapSproutNullifiers.erase(nf);
             }
-            mapRecentlyAddedTx.erase(hash);
-            for (const CTxIn& txin : tx.vin)
-                mapNextTx.erase(txin.prevout);
-            for (const JSDescription& joinsplit : tx.vJoinSplit) {
-                for (const uint256& nf : joinsplit.nullifiers) {
-                    mapSproutNullifiers.erase(nf);
-                }
-            }
-            for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-                mapSaplingNullifiers.erase(spendDescription.nullifier);
-            }
-            removed.push_back(tx);
-            totalTxSize -= mapTx.find(hash)->GetTxSize();
-            cachedInnerUsage -= mapTx.find(hash)->DynamicMemoryUsage();
-            mapTx.erase(hash);
-            nTransactionsUpdated++;
-            minerPolicyEstimator->removeTx(hash);
+        }
+        for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+            mapSaplingNullifiers.erase(spendDescription.nullifier);
+        }
+        removed.push_back(tx);
+        totalTxSize -= mapTx.find(hash)->GetTxSize();
+        cachedInnerUsage -= mapTx.find(hash)->DynamicMemoryUsage();
+        mapTx.erase(hash);
+        nTransactionsUpdated++;
+        minerPolicyEstimator->removeTx(hash);
 
-            // insightexplorer
-            if (fAddressIndex)
-                removeAddressIndex(hash);
-            if (fSpentIndex)
-                removeSpentIndex(hash);
-        }
-        for (CTransaction tx : removed) {
-            weightedTxTree->remove(tx.GetHash());
-        }
+        // insightexplorer
+        if (fAddressIndex)
+            removeAddressIndex(hash);
+        if (fSpentIndex)
+            removeSpentIndex(hash);
+    }
+    for (CTransaction tx : removed) {
+        weightedTxTree->remove(tx.GetHash());
     }
 }
 
 void CTxMemPool::removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags)
 {
     // Remove transactions spending a coinbase which are now immature and no-longer-final transactions
-    LOCK(cs);
+    AssertLockHeld(cs);
     list<CTransaction> transactionsToRemove;
     for (indexed_transaction_set::const_iterator it = mapTx.begin(); it != mapTx.end(); it++) {
         const CTransaction& tx = it->GetTx();
@@ -374,7 +370,7 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
 {
     // Remove transactions which depend on inputs of tx, recursively
     list<CTransaction> result;
-    LOCK(cs);
+    AssertLockHeld(cs);
     for (const CTxIn &txin : tx.vin) {
         std::map<COutPoint, CInPoint>::iterator it = mapNextTx.find(txin.prevout);
         if (it != mapNextTx.end()) {
@@ -436,7 +432,7 @@ std::vector<uint256> CTxMemPool::removeExpired(unsigned int nBlockHeight)
 void CTxMemPool::removeForBlock(const std::vector<CTransaction>& vtx, unsigned int nBlockHeight,
                                 std::list<CTransaction>& conflicts, bool fCurrentEstimate)
 {
-    LOCK(cs);
+    AssertLockHeld(cs);
     std::vector<CTxMemPoolEntry> entries;
     for (const CTransaction& tx : vtx)
     {
@@ -491,6 +487,7 @@ void CTxMemPool::clear()
 
 void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 {
+    LOCK(cs);
     if (nCheckFrequency == 0)
         return;
 
@@ -505,7 +502,6 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
     CCoinsViewCache mempoolDuplicate(const_cast<CCoinsViewCache*>(pcoins));
     const int64_t nSpendHeight = GetSpendHeight(mempoolDuplicate);
 
-    LOCK(cs);
     std::list<const CTxMemPoolEntry*> waitingOnDependants;
     for (indexed_transaction_set::const_iterator it = mapTx.begin(); it != mapTx.end(); it++) {
         unsigned int i = 0;

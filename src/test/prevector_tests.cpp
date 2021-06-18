@@ -178,7 +178,7 @@ public:
     prevector_tester() {
         seed_insecure_rand();
         rand_seed = insecure_rand_seed;
-        rand_cache = insecure_rand_ctx;
+        rand_cache = g_insecure_rand_ctx;
     }
 };
 

@@ -1193,7 +1193,7 @@ struct tallyitem
     }
 };
 
-UniValue ListReceived(const UniValue& params, bool fByAccounts)
+UniValue ListReceived(const UniValue& params, bool fByAccounts) EXCLUSIVE_LOCKS_REQUIRED(cs_main, pwalletMain->cs_wallet)
 {
     // Minimum confirmations
     int nMinDepth = 1;
@@ -1396,7 +1396,7 @@ static void MaybePushAddress(UniValue & entry, const CTxDestination &dest)
     }
 }
 
-void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, UniValue& ret, const isminefilter& filter)
+void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, UniValue& ret, const isminefilter& filter) EXCLUSIVE_LOCKS_REQUIRED(pwalletMain->cs_wallet)
 {
     CAmount nFee;
     string strSentAccount;
@@ -2493,8 +2493,12 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
     UniValue results(UniValue::VARR);
     vector<COutput> vecOutputs;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    {
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    }
+
+    LOCK(pwalletMain->cs_wallet);
     for (const COutput& out : vecOutputs) {
         if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
             continue;
@@ -2514,8 +2518,10 @@ UniValue listunspent(const UniValue& params, bool fHelp)
         if (fValidAddress) {
             entry.pushKV("address", keyIO.EncodeDestination(address));
 
-            if (pwalletMain->mapAddressBook.count(address))
-                entry.pushKV("account", pwalletMain->mapAddressBook[address].name);
+            auto i = pwalletMain->mapAddressBook.find(address);
+            if (i != pwalletMain->mapAddressBook.end()) {
+                entry.pushKV("account", i->second.name);
+            }
 
             if (scriptPubKey.IsPayToScriptHash()) {
                 const CScriptID& hash = std::get<CScriptID>(address);

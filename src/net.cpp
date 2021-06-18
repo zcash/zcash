@@ -59,8 +59,8 @@ bool fDiscover = true;
 bool fListen = true;
 uint64_t nLocalServices = NODE_NETWORK;
 CCriticalSection cs_mapLocalHost;
-map<CNetAddr, LocalServiceInfo> mapLocalHost;
-static bool vfLimited[NET_MAX] = {};
+map<CNetAddr, LocalServiceInfo> mapLocalHost GUARDED_BY(cs_mapLocalHost);
+static bool vfLimited[NET_MAX] GUARDED_BY(cs_mapLocalHost) = {};
 static CNode* pnodeLocalHost = NULL;
 uint64_t nLocalHostNonce = 0;
 static std::vector<ListenSocket> vhListenSocket;
@@ -71,13 +71,13 @@ std::string strSubVersion;
 
 vector<CNode*> vNodes;
 CCriticalSection cs_vNodes;
-map<CInv, CDataStream> mapRelay;
-deque<pair<int64_t, CInv> > vRelayExpiration;
 CCriticalSection cs_mapRelay;
+map<CInv, CDataStream> mapRelay GUARDED_BY(cs_mapRelay);
+deque<pair<int64_t, CInv> > vRelayExpiration GUARDED_BY(cs_mapRelay);
 limitedmap<CInv, int64_t> mapAlreadyAskedFor(MAX_INV_SZ);
 
-static deque<string> vOneShots;
 static CCriticalSection cs_vOneShots;
+static deque<string> vOneShots GUARDED_BY(cs_vOneShots);
 
 static set<CNetAddr> setservAddNodeAddresses;
 static CCriticalSection cs_setservAddNodeAddresses;
@@ -676,6 +676,10 @@ void CNode::copyStats(CNodeStats &stats)
     stats.fInbound = fInbound;
     stats.nStartingHeight = nStartingHeight;
     {
+        LOCK(cs_filter);
+        stats.fRelayTxes = fRelayTxes;
+    }
+    {
         LOCK(cs_vSend);
         stats.nSendBytes = nSendBytes;
     }
@@ -683,7 +687,10 @@ void CNode::copyStats(CNodeStats &stats)
         LOCK(cs_vRecv);
         stats.nRecvBytes = nRecvBytes;
     }
-    stats.fWhitelisted = fWhitelisted;
+    {
+        LOCK(cs_vNodes);
+        stats.fWhitelisted = fWhitelisted;
+    }
 
     // It is common for nodes with good ping times to suddenly become lagged,
     // due to a new block arriving or other large transfer.
@@ -797,15 +804,7 @@ int CNetMessage::readData(const char *pch, unsigned int nBytes)
 }
 
 
-
-
-
-
-
-
-
-// requires LOCK(cs_vSend)
-void SocketSendData(CNode *pnode)
+void SocketSendData(CNode *pnode) EXCLUSIVE_LOCKS_REQUIRED(pnode->cs_vSend)
 {
     std::deque<CSerializeData>::iterator it = pnode->vSendMsg.begin();
 

@@ -25,7 +25,7 @@ namespace Checkpoints {
     static const double SIGCHECK_VERIFICATION_FACTOR = 5.0;
 
     //! Guess how far we are in the verification process at the given block index
-    double GuessVerificationProgress(const CCheckpointData& data, CBlockIndex *pindex, bool fSigchecks) {
+    double GuessVerificationProgress(const CCheckpointData& data, const CBlockIndex *pindex, bool fSigchecks) {
         if (pindex==NULL)
             return 0.0;
 

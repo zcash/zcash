@@ -9,7 +9,7 @@
 #include "random.h"
 
 extern uint256 insecure_rand_seed;
-extern FastRandomContext insecure_rand_ctx;
+thread_local extern FastRandomContext g_insecure_rand_ctx;
 
 static inline void seed_insecure_rand(bool fDeterministic = false)
 {
@@ -18,12 +18,12 @@ static inline void seed_insecure_rand(bool fDeterministic = false)
     } else {
         insecure_rand_seed = GetRandHash();
     }
-    insecure_rand_ctx = FastRandomContext(insecure_rand_seed);
+    g_insecure_rand_ctx = FastRandomContext(insecure_rand_seed);
 }
 
 static inline uint32_t insecure_rand(void)
 {
-    return insecure_rand_ctx.rand32();
+    return g_insecure_rand_ctx.rand32();
 }
 
 #endif

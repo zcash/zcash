@@ -58,6 +58,7 @@ CDBEnv::CDBEnv() : dbenv(NULL)
 
 CDBEnv::~CDBEnv()
 {
+    LOCK(cs_db);
     EnvShutdown();
     delete dbenv;
     dbenv = NULL;
