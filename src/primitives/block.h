@@ -10,6 +10,11 @@
 #include "serialize.h"
 #include "uint256.h"
 
+// Derives the ZIP 244 block commitments hash.
+uint256 DeriveBlockCommitmentsHash(
+    uint256 hashChainHistoryRoot,
+    uint256 hashAuthDataRoot);
+
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
  * requirements.  When they solve the proof-of-work, they broadcast the block
@@ -26,7 +31,7 @@ public:
     int32_t nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
-    uint256 hashLightClientRoot;
+    uint256 hashBlockCommitments;
     uint32_t nTime;
     uint32_t nBits;
     uint256 nNonce;
@@ -44,7 +49,7 @@ public:
         READWRITE(this->nVersion);
         READWRITE(hashPrevBlock);
         READWRITE(hashMerkleRoot);
-        READWRITE(hashLightClientRoot);
+        READWRITE(hashBlockCommitments);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -56,7 +61,7 @@ public:
         nVersion = CBlockHeader::CURRENT_VERSION;
         hashPrevBlock.SetNull();
         hashMerkleRoot.SetNull();
-        hashLightClientRoot.SetNull();
+        hashBlockCommitments.SetNull();
         nTime = 0;
         nBits = 0;
         nNonce = uint256();
@@ -118,7 +123,7 @@ public:
         block.nVersion       = nVersion;
         block.hashPrevBlock  = hashPrevBlock;
         block.hashMerkleRoot = hashMerkleRoot;
-        block.hashLightClientRoot = hashLightClientRoot;
+        block.hashBlockCommitments = hashBlockCommitments;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
@@ -163,7 +168,7 @@ public:
         READWRITE(this->nVersion);
         READWRITE(hashPrevBlock);
         READWRITE(hashMerkleRoot);
-        READWRITE(hashLightClientRoot);
+        READWRITE(hashBlockCommitments);
         READWRITE(nTime);
         READWRITE(nBits);
     }

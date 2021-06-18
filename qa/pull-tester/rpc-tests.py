@@ -116,6 +116,7 @@ BASE_SCRIPTS= [
     'framework.py',
     'sapling_rewind_check.py',
     'feature_zip221.py',
+    'feature_zip244_blockcommitments.py',
     'upgrade_golden.py',
     'post_heartwood_rollback.py',
     'feature_logging.py',

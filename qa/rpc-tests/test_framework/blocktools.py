@@ -4,6 +4,8 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+from pyblake2 import blake2b
+
 from .mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
 from .script import CScript, OP_0, OP_EQUAL, OP_HASH160, OP_TRUE, OP_CHECKSIG
 
@@ -28,6 +30,15 @@ def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoo
     block.hashMerkleRoot = block.calc_merkle_root()
     block.calc_sha256()
     return block
+
+def derive_block_commitments_hash(chain_history_root, auth_data_root):
+    digest = blake2b(
+        digest_size=32,
+        person=b'ZcashBlockCommit')
+    digest.update(chain_history_root)
+    digest.update(auth_data_root)
+    digest.update(b'\x00' * 32)
+    return digest.digest()
 
 def serialize_script_num(value):
     r = bytearray(0)

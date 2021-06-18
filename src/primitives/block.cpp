@@ -14,6 +14,20 @@
 
 const unsigned char ZCASH_AUTH_DATA_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
     {'Z','c','a','s','h','A','u','t','h','D','a','t','H','a','s','h'};
+const unsigned char ZCASH_BLOCK_COMMITMENTS_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
+    {'Z','c','a','s','h','B','l','o','c','k','C','o','m','m','i','t'};
+
+uint256 DeriveBlockCommitmentsHash(
+    uint256 hashChainHistoryRoot,
+    uint256 hashAuthDataRoot)
+{
+    // https://zips.z.cash/zip-0244#block-header-changes
+    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_BLOCK_COMMITMENTS_HASH_PERSONALIZATION);
+    ss << hashChainHistoryRoot;
+    ss << hashAuthDataRoot;
+    ss << uint256(); // terminator
+    return ss.GetHash();
+}
 
 uint256 CBlockHeader::GetHash() const
 {
@@ -164,12 +178,12 @@ uint256 CBlock::BuildAuthDataMerkleTree() const
 std::string CBlock::ToString() const
 {
     std::stringstream s;
-    s << strprintf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, hashLightClientRoot=%s, nTime=%u, nBits=%08x, nNonce=%s, vtx=%u)\n",
+    s << strprintf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, hashBlockCommitments=%s, nTime=%u, nBits=%08x, nNonce=%s, vtx=%u)\n",
         GetHash().ToString(),
         nVersion,
         hashPrevBlock.ToString(),
         hashMerkleRoot.ToString(),
-        hashLightClientRoot.ToString(),
+        hashBlockCommitments.ToString(),
         nTime, nBits, nNonce.ToString(),
         vtx.size());
     for (unsigned int i = 0; i < vtx.size(); i++)

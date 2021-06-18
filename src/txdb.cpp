@@ -549,7 +549,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                 pindexNew->hashSproutAnchor     = diskindex.hashSproutAnchor;
                 pindexNew->nVersion       = diskindex.nVersion;
                 pindexNew->hashMerkleRoot = diskindex.hashMerkleRoot;
-                pindexNew->hashLightClientRoot  = diskindex.hashLightClientRoot;
+                pindexNew->hashBlockCommitments  = diskindex.hashBlockCommitments;
                 pindexNew->nTime          = diskindex.nTime;
                 pindexNew->nBits          = diskindex.nBits;
                 pindexNew->nNonce         = diskindex.nNonce;
@@ -560,7 +560,9 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
                 pindexNew->nSaplingValue  = diskindex.nSaplingValue;
                 pindexNew->hashFinalSaplingRoot = diskindex.hashFinalSaplingRoot;
+                pindexNew->hashFinalOrchardRoot = diskindex.hashFinalOrchardRoot;
                 pindexNew->hashChainHistoryRoot = diskindex.hashChainHistoryRoot;
+                pindexNew->hashAuthDataRoot = diskindex.hashAuthDataRoot;
 
                 // Consistency checks
                 auto header = pindexNew->GetBlockHeader();
@@ -588,18 +590,23 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                     // a non-upgraded peer. However that case the entry will be
                     // marked as consensus-invalid.
                     //
-                    if (diskindex.nClientVersion >= CHAIN_HISTORY_ROOT_VERSION &&
+                    if (diskindex.nClientVersion >= NU5_DATA_VERSION &&
+                        chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_NU5)) {
+                        // From NU5 onwards we don't enforce a consistency check, because
+                        // after ZIP 244, hashBlockCommitments will not match any stored
+                        // commitment.
+                    } else if (diskindex.nClientVersion >= CHAIN_HISTORY_ROOT_VERSION &&
                         chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-                        if (pindexNew->hashLightClientRoot != pindexNew->hashChainHistoryRoot) {
+                        if (pindexNew->hashBlockCommitments != pindexNew->hashChainHistoryRoot) {
                             return error(
-                                "LoadBlockIndex(): block index inconsistency detected (post-Heartwood; hashLightClientRoot %s != hashChainHistoryRoot %s): %s",
-                                pindexNew->hashLightClientRoot.ToString(), pindexNew->hashChainHistoryRoot.ToString(), pindexNew->ToString());
+                                "LoadBlockIndex(): block index inconsistency detected (post-Heartwood; hashBlockCommitments %s != hashChainHistoryRoot %s): %s",
+                                pindexNew->hashBlockCommitments.ToString(), pindexNew->hashChainHistoryRoot.ToString(), pindexNew->ToString());
                         }
                     } else {
-                        if (pindexNew->hashLightClientRoot != pindexNew->hashFinalSaplingRoot) {
+                        if (pindexNew->hashBlockCommitments != pindexNew->hashFinalSaplingRoot) {
                             return error(
-                                "LoadBlockIndex(): block index inconsistency detected (pre-Heartwood; hashLightClientRoot %s != hashFinalSaplingRoot %s): %s",
-                                pindexNew->hashLightClientRoot.ToString(), pindexNew->hashFinalSaplingRoot.ToString(), pindexNew->ToString());
+                                "LoadBlockIndex(): block index inconsistency detected (pre-Heartwood; hashBlockCommitments %s != hashFinalSaplingRoot %s): %s",
+                                pindexNew->hashBlockCommitments.ToString(), pindexNew->hashFinalSaplingRoot.ToString(), pindexNew->ToString());
                         }
                     }
                 }

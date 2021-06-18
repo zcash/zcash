@@ -252,6 +252,7 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<Ed25519Signature*>(&joinSplitSig) = tx.joinSplitSig;
     *const_cast<binding_sig_t*>(&bindingSig) = tx.bindingSig;
     *const_cast<uint256*>(&hash) = tx.hash;
+    *const_cast<uint256*>(&authDigest) = tx.authDigest;
     return *this;
 }
 

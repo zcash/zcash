@@ -18,6 +18,7 @@
 static const int SPROUT_VALUE_VERSION = 1001400;
 static const int SAPLING_VALUE_VERSION = 1010100;
 static const int CHAIN_HISTORY_ROOT_VERSION = 2010200;
+static const int NU5_DATA_VERSION = 4050000;
 
 /**
  * Maximum amount of time that a block timestamp is allowed to be ahead of the
@@ -231,6 +232,14 @@ public:
     //! Persisted at each activation height, memory-only for intervening blocks.
     std::optional<uint32_t> nCachedBranchId;
 
+    //! Root of the ZIP 244 authorizing data commitment tree for this block.
+    //!
+    //! - For blocks prior to (not including) the NU5 activation block, this is always
+    //!   null.
+    //! - For blocks including and after the NU5 activation block, this is only set once
+    //!   a block has been connected to the main chain, and will be null otherwise.
+    uint256 hashAuthDataRoot;
+
     //! The anchor for the tree state up to the start of this block
     uint256 hashSproutAnchor;
 
@@ -258,23 +267,34 @@ public:
     //! Root of the Sapling commitment tree as of the end of this block.
     //!
     //! - For blocks prior to (not including) the Heartwood activation block, this is
-    //!   always equal to hashLightClientRoot.
+    //!   always equal to hashBlockCommitments.
     //! - For blocks including and after the Heartwood activation block, this is only set
     //!   once a block has been connected to the main chain, and will be null otherwise.
     uint256 hashFinalSaplingRoot;
+
+    //! Root of the Orchard commitment tree as of the end of this block.
+    //!
+    //! - For blocks prior to (not including) the NU5 activation block, this is always
+    //!   null.
+    //! - For blocks including and after the NU5 activation block, this is only set
+    //!   once a block has been connected to the main chain, and will be null otherwise.
+    uint256 hashFinalOrchardRoot;
 
     //! Root of the ZIP 221 history tree as of the end of the previous block.
     //!
     //! - For blocks prior to and including the Heartwood activation block, this is
     //!   always null.
-    //! - For blocks after (not including) the Heartwood activation block, this is
-    //!   always equal to hashLightClientRoot.
+    //! - For blocks after (not including) the Heartwood activation block, and prior to
+    //!   (not including) the NU5 activation block, this is always equal to
+    //!   hashBlockCommitments.
+    //! - For blocks including and after the NU5 activation block, this is only set
+    //!   once a block has been connected to the main chain, and will be null otherwise.
     uint256 hashChainHistoryRoot;
 
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
-    uint256 hashLightClientRoot;
+    uint256 hashBlockCommitments;
     unsigned int nTime;
     unsigned int nBits;
     uint256 nNonce;
@@ -297,8 +317,12 @@ public:
         nChainTx = 0;
         nStatus = 0;
         nCachedBranchId = std::nullopt;
+        hashAuthDataRoot = uint256();
         hashSproutAnchor = uint256();
         hashFinalSproutRoot = uint256();
+        hashFinalSaplingRoot = uint256();
+        hashFinalOrchardRoot = uint256();
+        hashChainHistoryRoot = uint256();
         nSequenceId = 0;
         nSproutValue = std::nullopt;
         nChainSproutValue = std::nullopt;
@@ -307,7 +331,7 @@ public:
 
         nVersion       = 0;
         hashMerkleRoot = uint256();
-        hashLightClientRoot = uint256();
+        hashBlockCommitments = uint256();
         nTime          = 0;
         nBits          = 0;
         nNonce         = uint256();
@@ -325,7 +349,7 @@ public:
 
         nVersion       = block.nVersion;
         hashMerkleRoot = block.hashMerkleRoot;
-        hashLightClientRoot = block.hashLightClientRoot;
+        hashBlockCommitments = block.hashBlockCommitments;
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
@@ -357,7 +381,7 @@ public:
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
         block.hashMerkleRoot = hashMerkleRoot;
-        block.hashLightClientRoot = hashLightClientRoot;
+        block.hashBlockCommitments = hashBlockCommitments;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
@@ -486,7 +510,7 @@ public:
         READWRITE(this->nVersion);
         READWRITE(hashPrev);
         READWRITE(hashMerkleRoot);
-        READWRITE(hashLightClientRoot);
+        READWRITE(hashBlockCommitments);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -512,7 +536,15 @@ public:
         } else if (ser_action.ForRead()) {
             // For block indices written before the client was Heartwood-aware,
             // these are always identical.
-            hashFinalSaplingRoot = hashLightClientRoot;
+            hashFinalSaplingRoot = hashBlockCommitments;
+        }
+
+        // Only read/write NU5 data if the client version used to create this
+        // index was storing them. For block indices written before the client
+        // was NU5-aware, these are always null / zero.
+        if ((s.GetType() & SER_DISK) && (nVersion >= NU5_DATA_VERSION)) {
+            READWRITE(hashAuthDataRoot);
+            READWRITE(hashFinalOrchardRoot);
         }
 
         // If you have just added new serialized fields above, remember to add
@@ -525,7 +557,7 @@ public:
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
         block.hashMerkleRoot  = hashMerkleRoot;
-        block.hashLightClientRoot = hashLightClientRoot;
+        block.hashBlockCommitments = hashBlockCommitments;
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;

@@ -67,6 +67,9 @@ public:
 struct CBlockTemplate
 {
     CBlock block;
+    // Cached whenever we update `block`, so we can update hashBlockCommitments
+    // when we change the coinbase transaction.
+    uint256 hashChainHistoryRoot;
     std::vector<CAmount> vTxFees;
     std::vector<int64_t> vTxSigOps;
 };
@@ -80,7 +83,11 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
 /** Get -mineraddress */
 void GetMinerAddress(MinerAddress &minerAddress);
 /** Modify the extranonce in a block */
-void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned int& nExtraNonce);
+void IncrementExtraNonce(
+    CBlockTemplate* pblocktemplate,
+    const CBlockIndex* pindexPrev,
+    unsigned int& nExtraNonce,
+    const Consensus::Params& consensusParams);
 /** Run the miner threads */
 void GenerateBitcoins(bool fGenerate, int nThreads, const CChainParams& chainparams);
 #endif

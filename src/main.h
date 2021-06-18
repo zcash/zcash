@@ -486,7 +486,8 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state,
  *  Validity checks that depend on the UTXO set are also done; ConnectBlock()
  *  can fail if those validity checks fail (among other reasons). */
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins,
-                  const CChainParams& chainparams, bool fJustCheck = false);
+                  const CChainParams& chainparams,
+                  bool fJustCheck = false, bool fCheckAuthDataRoot = true);
 
 /**
  * Check a block is completely valid from start to finish (only works on top
