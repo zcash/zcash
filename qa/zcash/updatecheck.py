@@ -126,10 +126,7 @@ class Version(list):
     def __init__(self, version_tuple):
         for part in version_tuple:
             if part: # skip None's which can come from optional regexp groups
-                if str(part).isdigit():
-                    self.append(int(part))
-                else:
-                    self.append(part)
+                self.append(int(part)) if str(part).isdigit() else self.append(part)
 
     def __str__(self):
         return '.'.join(map(str, self))
@@ -177,7 +174,7 @@ class GithubTagReleaseLister:
             match = re.match(self.regex, tag)
             if (expected and not match) or (match and not expected) or (match and Version(match.groups()) != list(expected)):
                 groups = str(match.groups())
-                raise RuntimeError("GitHub tag regex test case [" + tag + "] failed, got [" + groups + "].")
+                raise RuntimeError("GitHub tag regex test case [%s] failed, got [%s]." % (tag, groups))
 
     def known_releases(self):
         release_versions = []
@@ -186,7 +183,7 @@ class GithubTagReleaseLister:
         # sanity check against the test cases
         for tag, expected in self.testcases.items():
             if tag not in all_tags:
-                raise RuntimeError("Didn't find expected tag [" + tag + "].")
+                raise RuntimeError("Didn't find expected tag [%s]." % tag)
 
         for tag_name in all_tags:
             match = re.match(self.regex, tag_name)
@@ -293,7 +290,7 @@ class PostponedUpdates():
                     if datetime.datetime.utcnow() < postpone_expiration:
                         self.postponedlist[(postponed_name, str(postponed_version))] = True
                 else:
-                    raise RuntimeError("Could not parse line in postponed-updates.txt:" + line)
+                    raise RuntimeError("Could not parse line in postponed-updates.txt: %s" % line)
 
 
     def is_postponed(self, name, version):
@@ -339,7 +336,7 @@ def main():
         if dep in unchecked_dependencies:
             unchecked_dependencies.remove(dep)
         else:
-            print("Error: Please remove " + dep + " from the list of unchecked dependencies.")
+            print("Error: Please remove %s from the list of unchecked dependencies." % dep)
             status = 3
 
     # Exit early so the problem is clear from the output.
@@ -381,7 +378,7 @@ def main():
 
     if len(unchecked_dependencies) > 0:
         unchecked_dependencies.sort()
-        print("WARNING: The following dependencies are not being checked for updates by this script: " + ', '.join(unchecked_dependencies))
+        print("WARNING: The following dependencies are not being checked for updates by this script: %s" % ', '.join(unchecked_dependencies))
         sys.exit(2)
 
     if len(sys.argv) == 2 and sys.argv[1] == "--functionality-test":
