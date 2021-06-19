@@ -125,10 +125,7 @@ def ensure_no_dot_so_in_depends():
         print("Did you build the ./depends tree?")
         print("Are you on a currently unsupported architecture?")
 
-    if exit_code == 0:
-        print("PASS.")
-    else:
-        print("FAIL.")
+    print("PASS.") if exit_code == 0 else print("FAIL.")
 
     return exit_code == 0
 
