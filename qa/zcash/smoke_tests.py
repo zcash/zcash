@@ -338,10 +338,7 @@ def transaction_chain(zcash):
         results['5c'] = False
 
     # Set up beginning and end of the chain
-    print('#')
-    print('# Initialising transaction chain')
-    print('#')
-    print()
+    print('\n#\n# Initialising transaction chain\n#\n')
     if zcash.use_faucet:
         print('Tapping the testnet faucet for testing funds...')
         chain_end = get_zfaucet_taddr()
@@ -352,11 +349,9 @@ def transaction_chain(zcash):
         if not zcash.validateaddress(chain_end)['isvalid']:
             print('Invalid transparent address')
             return results
-        print()
-        print('Please send at least 0.01 ZEC/TAZ to the following address:')
+        print('\nPlease send at least 0.01 ZEC/TAZ to the following address:')
         print(sprout_zaddr_1)
-        print()
-        input('Press Enter once the funds have been sent.')
+        input('\nPress Enter once the funds have been sent.')
     print()
 
     # Wait to receive starting balance
@@ -366,11 +361,7 @@ def transaction_chain(zcash):
     #
     # Start the transaction chain!
     #
-    print()
-    print('#')
-    print('# Starting transaction chain')
-    print('#')
-    print()
+    print('\n#\n# Starting transaction chain\n#\n')
     try:
         #
         # First, split the funds across all three pools
@@ -629,25 +620,20 @@ def transaction_chain(zcash):
         #
         # End the chain by returning the remaining funds
         #
-        print()
-        print('#')
-        print('# Finishing transaction chain')
-        print('#')
+        print('\n#\n# Finishing transaction chain\n#')
         all_addrs = [
             sprout_zaddr_1, sprout_zaddr_2, sprout_zaddr_3,
             taddr_1, taddr_2, taddr_3, taddr_4, taddr_5,
             sapling_zaddr_1, sapling_zaddr_2, sapling_zaddr_3,
         ]
 
-        print()
-        print('Waiting for all transactions to be mined')
+        print('\nWaiting for all transactions to be mined')
         for addr in all_addrs:
             balance = Decimal(zcash.z_getbalance(addr, 0)).quantize(Decimal('1.00000000'))
             if balance > 0:
                 wait_for_balance(zcash, addr, balance)
 
-        print()
-        print('Returning remaining balance minus fees')
+        print('\nReturning remaining balance minus fees')
         for addr in all_addrs:
             balance = Decimal(zcash.z_getbalance(addr)).quantize(Decimal('1.00000000'))
             if balance > 0:
@@ -869,8 +855,7 @@ def main():
         ))
 
     if not passed:
-        print()
-        print("!!! One or more smoke test stages failed !!!")
+        print("\n!!! One or more smoke test stages failed !!!")
         sys.exit(1)
 
 
