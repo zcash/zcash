@@ -10,6 +10,7 @@
 #include "main.h"
 #include "pow.h"
 #include "uint256.h"
+#include "zcash/History.hpp"
 
 #include <stdint.h>
 
@@ -145,14 +146,30 @@ HistoryNode CCoinsViewDB::GetHistoryAt(uint32_t epochId, HistoryIndex index) con
         throw runtime_error("History data inconsistent - reindex?");
     }
 
-    // Read mmrNode into tmp std::array
-    std::array<unsigned char, NODE_SERIALIZED_LENGTH> tmpMmrNode;
+    if (libzcash::IsV1HistoryTree(epochId)) {
+        // History nodes serialized by `zcashd` versions that were unaware of NU5, used
+        // the previous shorter maximum serialized length. Because we stored this as an
+        // array, we can't just read the current (longer) maximum serialized length, as
+        // it will result in an exception for those older nodes.
+        //
+        // Instead, we always read an array of the older length. This works as expected
+        // for V1 nodes serialized by older clients, while for V1 nodes serialized by
+        // NU5-aware clients this is guaranteed to ignore only trailing zero bytes.
+        std::array<unsigned char, NODE_V1_SERIALIZED_LENGTH> tmpMmrNode;
+        if (!db.Read(make_pair(DB_MMR_NODE, make_pair(epochId, index)), tmpMmrNode)) {
+            throw runtime_error("History data inconsistent (expected node not found) - reindex?");
+        }
+        std::copy(std::begin(tmpMmrNode), std::end(tmpMmrNode), mmrNode.bytes);
+    } else {
+        // Read mmrNode into tmp std::array
+        std::array<unsigned char, NODE_SERIALIZED_LENGTH> tmpMmrNode;
 
-    if (!db.Read(make_pair(DB_MMR_NODE, make_pair(epochId, index)), tmpMmrNode)) {
-        throw runtime_error("History data inconsistent (expected node not found) - reindex?");
+        if (!db.Read(make_pair(DB_MMR_NODE, make_pair(epochId, index)), tmpMmrNode)) {
+            throw runtime_error("History data inconsistent (expected node not found) - reindex?");
+        }
+
+        std::copy(std::begin(tmpMmrNode), std::end(tmpMmrNode), mmrNode.bytes);
     }
-
-    std::copy(std::begin(tmpMmrNode), std::end(tmpMmrNode), mmrNode.bytes);
 
     return mmrNode;
 }

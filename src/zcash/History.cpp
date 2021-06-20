@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 
+#include "consensus/upgrades.h"
 #include "serialize.h"
 #include "streams.h"
 #include "uint256.h"
@@ -46,10 +47,13 @@ HistoryNode NewNode(
         uint32_t endTarget,
         uint256 startSaplingRoot,
         uint256 endSaplingRoot,
+        std::optional<uint256> startOrchardRoot,
+        std::optional<uint256> endOrchardRoot,
         uint256 subtreeTotalWork,
         uint64_t startHeight,
         uint64_t endHeight,
-        uint64_t saplingTxCount
+        uint64_t saplingTxCount,
+        std::optional<uint64_t> orchardTxCount
     )
 {
     CDataStream buf(SER_DISK, 0);
@@ -66,13 +70,19 @@ HistoryNode NewNode(
     buf << COMPACTSIZE(startHeight);
     buf << COMPACTSIZE(endHeight);
     buf << COMPACTSIZE(saplingTxCount);
+    if (startOrchardRoot) {
+        // If startOrchardRoot is provided, assume all V2 fields are.
+        buf << startOrchardRoot.value();
+        buf << endOrchardRoot.value();
+        buf << COMPACTSIZE(orchardTxCount.value());
+    }
 
     assert(buf.size() <= NODE_SERIALIZED_LENGTH);
     std::copy(std::begin(buf), std::end(buf), result.bytes);
     return result;
 }
 
-HistoryNode NewLeaf(
+HistoryNode NewV1Leaf(
     uint256 commitment,
     uint32_t time,
     uint32_t target,
@@ -89,10 +99,42 @@ HistoryNode NewLeaf(
         target,
         saplingRoot,
         saplingRoot,
+        std::nullopt,
+        std::nullopt,
         totalWork,
         height,
         height,
-        saplingTxCount
+        saplingTxCount,
+        std::nullopt
+    );
+}
+
+HistoryNode NewV2Leaf(
+    uint256 commitment,
+    uint32_t time,
+    uint32_t target,
+    uint256 saplingRoot,
+    uint256 orchardRoot,
+    uint256 totalWork,
+    uint64_t height,
+    uint64_t saplingTxCount,
+    uint64_t orchardTxCount
+) {
+    return NewNode(
+        commitment,
+        time,
+        time,
+        target,
+        target,
+        saplingRoot,
+        saplingRoot,
+        orchardRoot,
+        orchardRoot,
+        totalWork,
+        height,
+        height,
+        saplingTxCount,
+        orchardTxCount
     );
 }
 
@@ -132,6 +174,17 @@ HistoryEntry LeafToEntry(const HistoryNode node) {
     std::copy(std::begin(buf), std::end(buf), result.bytes);
 
     return result;
+}
+
+bool IsV1HistoryTree(uint32_t epochId) {
+    return (
+        epochId == NetworkUpgradeInfo[Consensus::BASE_SPROUT].nBranchId ||
+        epochId == NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId ||
+        epochId == NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId ||
+        epochId == NetworkUpgradeInfo[Consensus::UPGRADE_BLOSSOM].nBranchId ||
+        epochId == NetworkUpgradeInfo[Consensus::UPGRADE_HEARTWOOD].nBranchId ||
+        epochId == NetworkUpgradeInfo[Consensus::UPGRADE_CANOPY].nBranchId
+    );
 }
 
 }
