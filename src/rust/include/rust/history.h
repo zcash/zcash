@@ -31,6 +31,11 @@ static_assert(alignof(HistoryEntry) == 1, "HistoryEntry struct alignment is not 
 #ifdef __cplusplus
 extern "C" {
 #endif
+/// Appends a leaf to the given history tree.
+///
+/// `t_len` must be at least 1.
+///
+/// Aborts if `cbranch` is not a valid consensus branch ID.
 uint32_t librustzcash_mmr_append(
     uint32_t cbranch,
     uint32_t t_len,
@@ -41,6 +46,11 @@ uint32_t librustzcash_mmr_append(
     unsigned char* rt_ret,
     HistoryNode* buf_ret);
 
+/// Deletes the most recently-appended leaf from the given history tree.
+///
+/// `t_len` must be at least 1.
+///
+/// Aborts if `cbranch` is not a valid consensus branch ID.
 uint32_t librustzcash_mmr_delete(
     uint32_t cbranch,
     uint32_t t_len,
@@ -50,6 +60,9 @@ uint32_t librustzcash_mmr_delete(
     size_t e_len,
     unsigned char* rt_ret);
 
+/// Returns the hash of the given history tree node.
+///
+/// Aborts if `cbranch` is not a valid consensus branch ID.
 uint32_t librustzcash_mmr_hash_node(
     uint32_t cbranch,
     const HistoryNode* n_ptr,
