@@ -32,9 +32,10 @@ class ZcashMMRNode():
     nEarliestHeight: int
     nLatestHeight: int
     nSaplingTxCount: int # number of Sapling transactions in block
-    hashEarliestOrchardRoot: bytes # left child's Orchard root
-    hashLatestOrchardRoot: bytes # right child's Orchard root
-    nOrchardTxCount: int # number of Orchard transactions in block
+    # NU5 only.
+    hashEarliestOrchardRoot: Optional[bytes] # left child's Orchard root
+    hashLatestOrchardRoot: Optional[bytes] # right child's Orchard root
+    nOrchardTxCount: Optional[int] # number of Orchard transactions in block
 
     consensusBranchId: bytes
 
@@ -116,10 +117,10 @@ def make_parent(
     parent.nSaplingTxCount = left_child.nSaplingTxCount + right_child.nSaplingTxCount
     parent.hashEarliestOrchardRoot = left_child.hashEarliestOrchardRoot
     parent.hashLatestOrchardRoot = right_child.hashLatestOrchardRoot
-    parent.nOrchardTxCount = \
-        left_child.nOrchardTxCount + right_child.nOrchardTxCount \
-        if left_child.nOrchardTxCount is not None and right_child.nOrchardTxCount is not None \
-        else None
+    parent.nOrchardTxCount = (
+        left_child.nOrchardTxCount + right_child.nOrchardTxCount
+        if left_child.nOrchardTxCount is not None and right_child.nOrchardTxCount is not None
+        else None)
     parent.consensusBranchId = left_child.consensusBranchId
     return parent
 

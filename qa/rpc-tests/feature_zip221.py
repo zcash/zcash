@@ -9,8 +9,8 @@ from test_framework.mininode import (CBlockHeader)
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     BLOSSOM_BRANCH_ID,
-    CANOPY_BRANCH_ID,
     HEARTWOOD_BRANCH_ID,
+    CANOPY_BRANCH_ID,
     NU5_BRANCH_ID,
     assert_equal,
     bytes_to_hex_str,
