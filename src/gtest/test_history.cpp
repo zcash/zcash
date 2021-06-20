@@ -174,6 +174,10 @@ TEST(History, EpochBoundaries) {
     view.PopHistoryNode(epoch2);
     EXPECT_EQ(view.GetHistoryLength(epoch2), 0);
 
+    // Trying to truncate an empty tree is a no-op
+    view.PopHistoryNode(epoch2);
+    EXPECT_EQ(view.GetHistoryLength(epoch2), 0);
+
 }
 
 TEST(History, GarbageMemoryHash) {
