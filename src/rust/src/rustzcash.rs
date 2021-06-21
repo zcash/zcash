@@ -25,6 +25,7 @@ use bls12_381::Bls12;
 use group::{cofactor::CofactorGroup, GroupEncoding};
 use libc::{c_uchar, size_t};
 use rand_core::{OsRng, RngCore};
+use tracing::info;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
@@ -83,6 +84,9 @@ static mut SPROUT_GROTH16_VK: Option<PreparedVerifyingKey<Bls12>> = None;
 static mut SAPLING_SPEND_PARAMS: Option<Parameters<Bls12>> = None;
 static mut SAPLING_OUTPUT_PARAMS: Option<Parameters<Bls12>> = None;
 static mut SPROUT_GROTH16_PARAMS_PATH: Option<PathBuf> = None;
+
+static mut ORCHARD_PK: Option<orchard::circuit::ProvingKey> = None;
+static mut ORCHARD_VK: Option<orchard::circuit::VerifyingKey> = None;
 
 /// Converts CtOption<t> into Option<T>
 fn de_ct<T>(ct: CtOption<T>) -> Option<T> {
@@ -155,6 +159,11 @@ pub extern "C" fn librustzcash_init_zksnark_params(
     // Load params
     let params = load_parameters(spend_path, output_path, sprout_path);
 
+    // Generate Orchard parameters.
+    info!(target: "main", "Loading Orchard parameters");
+    let orchard_pk = orchard::circuit::ProvingKey::build();
+    let orchard_vk = orchard::circuit::VerifyingKey::build();
+
     // Caller is responsible for calling this function once, so
     // these global mutations are safe.
     unsafe {
@@ -165,6 +174,9 @@ pub extern "C" fn librustzcash_init_zksnark_params(
         SAPLING_SPEND_VK = Some(params.spend_vk);
         SAPLING_OUTPUT_VK = Some(params.output_vk);
         SPROUT_GROTH16_VK = params.sprout_vk;
+
+        ORCHARD_PK = Some(orchard_pk);
+        ORCHARD_VK = Some(orchard_vk);
     }
 }
 
