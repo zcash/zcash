@@ -2807,6 +2807,20 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                              REJECT_INVALID, "turnstile-violation-sapling-shielded-pool");
             }
         }
+
+        // Orchard
+        //
+        // If we've reached ConnectBlock, we have all transactions of
+        // parents and can expect nChainOrchardValue not to be std::nullopt.
+        // However, the miner and mining RPCs may not have populated this
+        // value and will call `TestBlockValidity`. So, we act
+        // conditionally.
+        if (pindex->nChainOrchardValue) {
+            if (*pindex->nChainOrchardValue < 0) {
+                return state.DoS(100, error("ConnectBlock(): turnstile violation in Orchard shielded value pool"),
+                                 REJECT_INVALID, "turnstile-violation-orchard");
+            }
+        }
     }
 
     // Do not allow blocks that contain transactions which 'overwrite' older transactions,
@@ -3385,6 +3399,13 @@ struct PoolMetrics {
         } else {
             stats.created = 0;
         }
+
+        return stats;
+    }
+
+    static PoolMetrics Orchard(CBlockIndex *pindex, CCoinsViewCache *view) {
+        PoolMetrics stats;
+        stats.value = pindex->nChainOrchardValue;
 
         return stats;
     }
@@ -4055,12 +4076,16 @@ bool ReceivedBlockTransactions(
     pindexNew->nChainTx = 0;
     CAmount sproutValue = 0;
     CAmount saplingValue = 0;
+    CAmount orchardValue = 0;
     for (auto tx : block.vtx) {
         // Negative valueBalance "takes" money from the transparent value pool
         // and adds it to the Sapling value pool. Positive valueBalance "gives"
         // money to the transparent value pool, removing from the Sapling value
         // pool. So we invert the sign here.
         saplingValue += -tx.valueBalance;
+
+        // Orchard valueBalance behaves the same way as Sapling valueBalance.
+        orchardValue += -tx.GetOrchardBundle().GetValueBalance();
 
         for (auto js : tx.vJoinSplit) {
             sproutValue += js.vpub_old;
@@ -4071,6 +4096,8 @@ bool ReceivedBlockTransactions(
     pindexNew->nChainSproutValue = std::nullopt;
     pindexNew->nSaplingValue = saplingValue;
     pindexNew->nChainSaplingValue = std::nullopt;
+    pindexNew->nOrchardValue = orchardValue;
+    pindexNew->nChainOrchardValue = std::nullopt;
     pindexNew->nFile = pos.nFile;
     pindexNew->nDataPos = pos.nPos;
     pindexNew->nUndoPos = 0;
@@ -4099,9 +4126,15 @@ bool ReceivedBlockTransactions(
                 } else {
                     pindex->nChainSaplingValue = std::nullopt;
                 }
+                if (pindex->pprev->nChainOrchardValue) {
+                    pindex->nChainOrchardValue = *pindex->pprev->nChainOrchardValue + pindex->nOrchardValue;
+                } else {
+                    pindex->nChainOrchardValue = std::nullopt;
+                }
             } else {
                 pindex->nChainSproutValue = pindex->nSproutValue;
                 pindex->nChainSaplingValue = pindex->nSaplingValue;
+                pindex->nChainOrchardValue = pindex->nOrchardValue;
             }
 
             // Fall back to hardcoded Sprout value pool balance
@@ -4849,16 +4882,23 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                     } else {
                         pindex->nChainSaplingValue = std::nullopt;
                     }
+                    if (pindex->pprev->nChainOrchardValue) {
+                        pindex->nChainOrchardValue = *pindex->pprev->nChainOrchardValue + pindex->nOrchardValue;
+                    } else {
+                        pindex->nChainOrchardValue = std::nullopt;
+                    }
                 } else {
                     pindex->nChainTx = 0;
                     pindex->nChainSproutValue = std::nullopt;
                     pindex->nChainSaplingValue = std::nullopt;
+                    pindex->nChainOrchardValue = std::nullopt;
                     mapBlocksUnlinked.insert(std::make_pair(pindex->pprev, pindex));
                 }
             } else {
                 pindex->nChainTx = pindex->nTx;
                 pindex->nChainSproutValue = pindex->nSproutValue;
                 pindex->nChainSaplingValue = pindex->nSaplingValue;
+                pindex->nChainOrchardValue = pindex->nOrchardValue;
             }
 
             // Fall back to hardcoded Sprout value pool balance
@@ -4870,6 +4910,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
             if (fExperimentalDeveloperSetPoolSizeZero) {
                 pindex->nChainSproutValue = 0;
                 pindex->nChainSaplingValue = 0;
+                pindex->nChainOrchardValue = 0;
             }
         }
         // Construct in-memory chain of branch IDs.

@@ -74,6 +74,15 @@ pub extern "C" fn orchard_bundle_serialize(
     }
 }
 
+#[no_mangle]
+pub extern "C" fn orchard_bundle_value_balance(bundle: *const Bundle<Authorized, Amount>) -> i64 {
+    unsafe { bundle.as_ref() }
+        .map(|bundle| (*bundle.value_balance()).into())
+        // From section 7.1 of the Zcash prototol spec:
+        // If valueBalanceOrchard is not present, then v^balanceOrchard is defined to be 0.
+        .unwrap_or(0)
+}
+
 /// A signature within an authorized Orchard bundle.
 #[derive(Debug)]
 struct BundleSignature {

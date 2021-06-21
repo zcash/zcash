@@ -264,6 +264,15 @@ public:
     //! Will be std::nullopt if nChainTx is zero.
     std::optional<CAmount> nChainSaplingValue;
 
+    //! Change in value held by the Orchard circuit over this block.
+    //! Not a std::optional because this was added before Orchard activated, so we can
+    //! rely on the invariant that every block before this was added had nOrchardValue = 0.
+    CAmount nOrchardValue;
+
+    //! (memory only) Total value held by the Orchard circuit up to and including this block.
+    //! Will be std::nullopt if and only if nChainTx is zero.
+    std::optional<CAmount> nChainOrchardValue;
+
     //! Root of the Sapling commitment tree as of the end of this block.
     //!
     //! - For blocks prior to (not including) the Heartwood activation block, this is
@@ -328,6 +337,8 @@ public:
         nChainSproutValue = std::nullopt;
         nSaplingValue = 0;
         nChainSaplingValue = std::nullopt;
+        nOrchardValue = 0;
+        nChainOrchardValue = std::nullopt;
 
         nVersion       = 0;
         hashMerkleRoot = uint256();
@@ -545,6 +556,7 @@ public:
         if ((s.GetType() & SER_DISK) && (nVersion >= NU5_DATA_VERSION)) {
             READWRITE(hashAuthDataRoot);
             READWRITE(hashFinalOrchardRoot);
+            READWRITE(nOrchardValue);
         }
 
         // If you have just added new serialized fields above, remember to add
