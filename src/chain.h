@@ -270,7 +270,7 @@ public:
     CAmount nOrchardValue;
 
     //! (memory only) Total value held by the Orchard circuit up to and including this block.
-    //! Will be std::nullopt if nChainTx is zero.
+    //! Will be std::nullopt if and only if nChainTx is zero.
     std::optional<CAmount> nChainOrchardValue;
 
     //! Root of the Sapling commitment tree as of the end of this block.

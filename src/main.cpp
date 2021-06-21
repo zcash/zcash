@@ -2818,7 +2818,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (pindex->nChainOrchardValue) {
             if (*pindex->nChainOrchardValue < 0) {
                 return state.DoS(100, error("ConnectBlock(): turnstile violation in Orchard shielded value pool"),
-                                REJECT_INVALID, "turnstile-violation-orchard");
+                                 REJECT_INVALID, "turnstile-violation-orchard");
             }
         }
     }
