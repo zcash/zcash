@@ -83,6 +83,39 @@ pub extern "C" fn orchard_bundle_value_balance(bundle: *const Bundle<Authorized,
         .unwrap_or(0)
 }
 
+/// Validates the given Orchard bundle against bundle-specific consensus rules.
+///
+/// If `bundle == nullptr`, this returns `true`.
+///
+/// ## Consensus rules
+///
+/// [§4.6](https://zips.z.cash/protocol/protocol.pdf#actiondesc):
+/// - Canonical element encodings are enforced by [`orchard_bundle_parse`].
+/// - SpendAuthSig^Orchard validity is enforced by [`BatchValidator`] via
+///   [`orchard_batch_validate`].
+/// - Proof validity is enforced here.
+///
+/// [§7.1](https://zips.z.cash/protocol/protocol.pdf#txnencodingandconsensus):
+/// - `bindingSigOrchard` validity is enforced by [`BatchValidator`] via
+///   [`orchard_batch_validate`].
+#[no_mangle]
+pub extern "C" fn orchard_bundle_validate(bundle: *const Bundle<Authorized, Amount>) -> bool {
+    if let Some(bundle) = unsafe { bundle.as_ref() } {
+        let vk = unsafe { crate::ORCHARD_VK.as_ref() }.unwrap();
+
+        if bundle.verify_proof(vk).is_err() {
+            error!("Invalid Orchard proof");
+            return false;
+        }
+
+        true
+    } else {
+        // The Orchard component of a transaction without an Orchard bundle is by
+        // definition valid.
+        true
+    }
+}
+
 /// A signature within an authorized Orchard bundle.
 #[derive(Debug)]
 struct BundleSignature {
