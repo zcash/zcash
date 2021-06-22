@@ -1062,14 +1062,17 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
         }
     }
 
-    OrchardMerkleTree tree;
-    if (!GetOrchardAnchorAt(tx.GetOrchardBundle().GetAnchor(), tree)) {
-        auto txid = tx.GetHash().ToString();
-        auto anchor = tx.GetOrchardBundle().GetAnchor().ToString();
-        TracingWarn("consensus", "Transaction uses unknown Orchard anchor",
-            "txid", txid.c_str(),
-            "anchor", anchor.c_str());
-        return UnsatisfiedShieldedReq::OrchardUnknownAnchor;
+    std::optional<uint256> root = tx.GetOrchardBundle().GetAnchor();
+    if (root) {
+        OrchardMerkleTree tree;
+        if (!GetOrchardAnchorAt(root.value(), tree)) {
+            auto txid = tx.GetHash().ToString();
+            auto anchor = root.value().ToString();
+            TracingWarn("consensus", "Transaction uses unknown Orchard anchor",
+                "txid", txid.c_str(),
+                "anchor", anchor.c_str());
+            return UnsatisfiedShieldedReq::OrchardUnknownAnchor;
+        }
     }
 
     return std::nullopt;

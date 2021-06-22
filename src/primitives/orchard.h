@@ -100,12 +100,12 @@ public:
         return result;
     }
 
-    const uint256 GetAnchor() const {
+    const std::optional<uint256> GetAnchor() const {
         uint256 result;
         if (orchard_bundle_anchor(inner.get(), result.begin())) {
             return result;
         } else {
-            throw std::runtime_error("cannot obtain Orchard anchor from empty bundle");
+            return std::nullopt;
         }
     }
 };
