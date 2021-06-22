@@ -1,5 +1,6 @@
-use std::ptr;
+use std::{mem, ptr};
 
+use libc::size_t;
 use orchard::{
     bundle::Authorized,
     primitives::redpallas::{self, Binding, SpendAuth},
@@ -30,6 +31,18 @@ pub extern "C" fn orchard_bundle_free(bundle: *mut Bundle<Authorized, Amount>) {
     if !bundle.is_null() {
         drop(unsafe { Box::from_raw(bundle) });
     }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_bundle_recursive_dynamic_usage(
+    bundle: *const Bundle<Authorized, Amount>,
+) -> size_t {
+    unsafe { bundle.as_ref() }
+        // Bundles are boxed on the heap, so we count their own size as well as the size
+        // of `Vec`s they allocate.
+        .map(|bundle| mem::size_of_val(bundle) + bundle.dynamic_usage())
+        // If the transaction has no Orchard component, nothing is allocated for it.
+        .unwrap_or(0)
 }
 
 #[no_mangle]

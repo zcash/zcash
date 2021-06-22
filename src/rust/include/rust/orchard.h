@@ -27,6 +27,9 @@ OrchardBundlePtr* orchard_bundle_clone(const OrchardBundlePtr* bundle);
 /// Frees an Orchard bundle returned from `orchard_parse_bundle`.
 void orchard_bundle_free(OrchardBundlePtr* bundle);
 
+/// Returns the amount of dynamically-allocated memory used by this bundle.
+size_t orchard_bundle_recursive_dynamic_usage(const OrchardBundlePtr* bundle);
+
 /// Parses an authorized Orchard bundle from the given stream.
 ///
 /// - If no error occurs, `bundle_ret` will point to a Rust-allocated Orchard bundle.

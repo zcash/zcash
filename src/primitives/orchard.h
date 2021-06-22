@@ -47,6 +47,10 @@ public:
         return *this;
     }
 
+    size_t RecursiveDynamicUsage() const {
+        return orchard_bundle_recursive_dynamic_usage(inner.get());
+    }
+
     template<typename Stream>
     void Serialize(Stream& s) const {
         RustStream rs(s);
