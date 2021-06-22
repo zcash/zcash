@@ -135,17 +135,21 @@ pub extern "C" fn orchard_bundle_nullifiers(
     nullifiers_len: usize,
 ) -> bool {
     if let Some(bundle) = unsafe { bundle.as_ref() } {
-        let res = unsafe {
-            assert!(!nullifiers_ret.is_null());
-            std::slice::from_raw_parts_mut(nullifiers_ret, nullifiers_len)
-        };
+        if nullifiers_len == bundle.actions().len() {
+            let res = unsafe {
+                assert!(!nullifiers_ret.is_null());
+                std::slice::from_raw_parts_mut(nullifiers_ret, nullifiers_len)
+            };
 
-        for (action, nf_ret) in bundle.actions().iter().zip(res.iter_mut()) {
-            nf_ret.copy_from_slice(&action.nullifier().to_bytes());
+            for (action, nf_ret) in bundle.actions().iter().zip(res.iter_mut()) {
+                *nf_ret = action.nullifier().to_bytes();
+            }
+            true
+        } else {
+            false
         }
-        true
     } else {
-        false
+        nullifiers_len == 0
     }
 }
 
