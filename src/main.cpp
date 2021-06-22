@@ -3027,14 +3027,15 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             sapling_tree.append(outputDescription.cmu);
         }
 
+        orchard_tree.AppendBundle(tx.GetOrchardBundle());
+
         if (!(tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty())) {
             total_sapling_tx += 1;
         }
+
         if (tx.GetOrchardBundle().IsPresent()) {
             total_orchard_tx += 1;
         }
-
-        orchard_tree.AppendBundle(tx.GetOrchardBundle());
 
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
@@ -3053,6 +3054,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     view.PushAnchor(sprout_tree);
     view.PushAnchor(sapling_tree);
+    view.PushAnchor(orchard_tree);
     if (!fJustCheck) {
         pindex->hashFinalSproutRoot = sprout_tree.root();
         // - If this block is before Heartwood activation, then we don't set
@@ -3077,7 +3079,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //   these set to null.
         if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
             pindex->hashAuthDataRoot = hashAuthDataRoot.value();
-            pindex->hashFinalOrchardRoot = uint256(); // TODO: replace with Orchard tree root
+            pindex->hashFinalOrchardRoot = orchard_tree.root(),
             pindex->hashChainHistoryRoot = hashChainHistoryRoot.value();
         }
     }
