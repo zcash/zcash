@@ -3,6 +3,7 @@
 #include "crosschain.h"
 #include "cc/CCinclude.h"
 #include "komodo_defs.h"
+#include "komodo_hardfork.h"
 #include <cstring>
 
 extern pthread_mutex_t staked_mutex;
