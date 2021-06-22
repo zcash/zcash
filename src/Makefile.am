@@ -52,6 +52,7 @@ LIBSECP256K1=secp256k1/libsecp256k1.la
 LIBCRYPTOCONDITIONS=cryptoconditions/libcryptoconditions_core.la
 LIBSNARK=snark/libsnark.a
 LIBUNIVALUE=univalue/libunivalue.la
+LIBCC=libcc.la
 LIBZCASH=libzcash.a
 
 if ENABLE_ZMQ
@@ -72,6 +73,7 @@ $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 
 LIBSNARK_CXXFLAGS = $(AM_CXXFLAGS) $(PIC_FLAGS) -DBINARY_OUTPUT -DNO_PT_COMPRESSION=1 -fstack-protector-all
 LIBSNARK_CONFIG_FLAGS = CURVE=ALT_BN128 NO_PROCPS=1 NO_DOCS=1 STATIC=1 NO_SUPERCOP=1 FEATUREFLAGS=-DMONTGOMERY_OUTPUT NO_COPY_DEPINST=1 NO_COMPILE_LIBGTEST=1
+LIBSNARK_OPTFLAGS = $(CPPFLAGS) -march=x86-64
 if HAVE_OPENMP
 LIBSNARK_CONFIG_FLAGS += MULTICORE=1
 endif
@@ -80,7 +82,7 @@ LIBSNARK_CONFIG_FLAGS += PLATFORM=darwin
 endif
 
 $(LIBSNARK): $(wildcard snark/src/*)
-	$(AM_V_at) CC="$(CC)" CXX="$(CXX)" AR="$(AR)" CXXFLAGS="$(LIBSNARK_CXXFLAGS)" $(MAKE) $(AM_MAKEFLAGS) -C snark/ DEPINST="$(LIBSNARK_DEPINST)" $(LIBSNARK_CONFIG_FLAGS) OPTFLAGS="-O2 -march=x86-64"
+	$(AM_V_at) CC="$(CC)" CXX="$(CXX)" AR="$(AR)" CXXFLAGS="$(LIBSNARK_CXXFLAGS)" $(MAKE) $(AM_MAKEFLAGS) -C snark/ DEPINST="$(LIBSNARK_DEPINST)" $(LIBSNARK_CONFIG_FLAGS) OPTFLAGS="$(LIBSNARK_OPTFLAGS)"
 
 libsnark-tests: $(wildcard snark/src/*)
 	$(AM_V_at) CC="$(CC)" CXX="$(CXX)" AR="$(AR)" CXXFLAGS="$(LIBSNARK_CXXFLAGS)" $(MAKE) $(AM_MAKEFLAGS) -C snark/ check DEPINST="$(LIBSNARK_DEPINST)" $(LIBSNARK_CONFIG_FLAGS) OPTFLAGS="-O2 -march=x86-64"
@@ -113,7 +115,7 @@ if ENABLE_PROTON
 EXTRA_LIBRARIES += $(LIBBITCOIN_PROTON)
 endif
 
-lib_LTLIBRARIES = $(LIBZCASH_CONSENSUS)
+lib_LTLIBRARIES = $(LIBZCASH_CONSENSUS) $(LIBCC)
 
 bin_PROGRAMS =
 noinst_PROGRAMS =
@@ -503,6 +505,11 @@ libbitcoin_common_a_SOURCES = \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
+# a shared library for cryptoconditions
+libcc_la_SOURCES = cc/cclib.cpp
+libcc_la_CPPFLAGS = -DBUILD_CUSTOMCC -I../secp256k1/include -I../depends/$(shell echo `../depends/config.guess`/include) -I./univalue/include -I./cryptoconditions/include -I./cryptoconditions/src -I./cryptoconditions/src/asn -I. -I./cc
+libcc_la_LDFLAGS = -version-info 0:0:0
+
 # util: shared between all executables.
 # This library *must* be included to make sure that the glibc
 # backward-compatibility objects and their sanity checks are linked.
@@ -591,17 +598,8 @@ komodod_LDADD += \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBVERUS_CRYPTO) \
   $(LIBVERUS_PORTABLE_CRYPTO) \
-  $(LIBZCASH_LIBS)
-
-if TARGET_DARWIN
-komodod_LDADD += libcc.dylib $(LIBSECP256K1)
-endif
-if TARGET_WINDOWS
-komodod_LDADD += libcc.dll $(LIBSECP256K1)
-endif
-if TARGET_LINUX
-komodod_LDADD += libcc.so $(LIBSECP256K1)
-endif
+  $(LIBZCASH_LIBS) \
+  $(LIBCC)
 
 if ENABLE_PROTON
 komodod_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)
@@ -690,7 +688,6 @@ komodo_tx_LDADD = \
   $(LIBCRYPTOCONDITIONS)
 
 komodo_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
-#
 
 # zcash protocol primitives #
 libzcash_a_SOURCES = \
@@ -702,7 +699,7 @@ libzcash_a_SOURCES = \
 	zcash/Note.cpp \
 	zcash/prf.cpp \
 	zcash/util.cpp \
-  zcash/zip32.cpp \
+    zcash/zip32.cpp \
 	zcash/circuit/commitment.tcc \
 	zcash/circuit/gadget.tcc \
 	zcash/circuit/merkle.tcc \
@@ -710,15 +707,17 @@ libzcash_a_SOURCES = \
 	zcash/circuit/prfs.tcc \
 	zcash/circuit/utils.tcc
 
-libzcash_a_CPPFLAGS = -DMULTICORE -fopenmp -fPIC -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS $(HARDENED_CPPFLAGS) $(HARDENED_CXXFLAGS) $(HARDENED_LDFLAGS) -pipe $(SAN_LDFLAGS) -O1 -g -Wstack-protector $(SAN_CXXFLAGS) -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
-
-#libzcash_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-#libzcash_a_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
-#libzcash_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) -DMONTGOMERY_OUTPUT
-
+libzcash_a_CPPFLAGS = -DMULTICORE -fopenmp -fPIC -DBINARY_OUTPUT -DCURVE_ALT_BN128 \
+  -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS $(HARDENED_CPPFLAGS) \
+  $(HARDENED_CXXFLAGS) $(HARDENED_LDFLAGS) -pipe $(SAN_LDFLAGS) \
+  -Wstack-protector $(SAN_CXXFLAGS) -fstack-protector-all \
+  -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
 libzcash_a_CXXFLAGS = $(SAN_CXXFLAGS) $(HARDENED_CXXFLAGS) -fwrapv -fno-strict-aliasing
 libzcash_a_LDFLAGS = $(SAN_LDFLAGS) $(HARDENED_LDFLAGS)
 libzcash_a_CPPFLAGS += -DMONTGOMERY_OUTPUT
+#libzcash_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+#libzcash_a_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+#libzcash_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) -DMONTGOMERY_OUTPUT
 
 # zcashconsensus library #
 if BUILD_BITCOIN_LIBS
@@ -761,7 +760,7 @@ EXTRA_DIST = leveldb snark
 clean-local:
 	-$(MAKE) -C leveldb clean
 	-$(MAKE) -C secp256k1 clean
-	-$(MAKE) -C snark clean
+	-$(MAKE) -C snark clean-all
 	-$(MAKE) -C univalue clean
 	rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
 	-rm -f config.h
@@ -791,7 +790,7 @@ endif
 	$(AM_V_GEN) $(PROTOC) --cpp_out=$(@D) --proto_path=$(abspath $(<D) $<)
 
 if ENABLE_TESTS
-include Makefile.ktest.include
+#include Makefile.ktest.include
 #include Makefile.test.include
 #include Makefile.gtest.include
 endif
