@@ -760,10 +760,14 @@ EXTRA_DIST = leveldb snark
 clean-local:
 	-$(MAKE) -C leveldb clean
 	-$(MAKE) -C secp256k1 clean
-	-$(MAKE) -C snark clean-all
+	-$(MAKE) -C snark clean
 	-$(MAKE) -C univalue clean
 	rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
 	-rm -f config.h
+
+clean-all: clean-local
+	-$(MAKE) -C snark clean-all
+	-$(MAKE) -C univalue clean-all
 
 .rc.o:
 	@test -f $(WINDRES)
@@ -790,7 +794,7 @@ endif
 	$(AM_V_GEN) $(PROTOC) --cpp_out=$(@D) --proto_path=$(abspath $(<D) $<)
 
 if ENABLE_TESTS
-#include Makefile.ktest.include
+include Makefile.ktest.include
 #include Makefile.test.include
 #include Makefile.gtest.include
 endif
