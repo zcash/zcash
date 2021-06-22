@@ -3,10 +3,10 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "chain.h"
-#include "key_io.h"
-#include "rpc/server.h"
 #include "init.h"
+#include "key_io.h"
 #include "main.h"
+#include "rpc/server.h"
 #include "script/script.h"
 #include "script/standard.h"
 #include "sync.h"
@@ -33,14 +33,16 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys);
 UniValue importwallet_impl(const UniValue& params, bool fImportZKeys);
 
 
-std::string static EncodeDumpTime(int64_t nTime) {
+std::string static EncodeDumpTime(int64_t nTime)
+{
     return DateTimeStrFormat("%Y-%m-%dT%H:%M:%SZ", nTime);
 }
 
-int64_t static DecodeDumpTime(const std::string &str) {
+int64_t static DecodeDumpTime(const std::string& str)
+{
     static const boost::posix_time::ptime epoch = boost::posix_time::from_time_t(0);
     static const std::locale loc(std::locale::classic(),
-        new boost::posix_time::time_input_facet("%Y-%m-%dT%H:%M:%SZ"));
+                                 new boost::posix_time::time_input_facet("%Y-%m-%dT%H:%M:%SZ"));
     std::istringstream iss(str);
     iss.imbue(loc);
     boost::posix_time::ptime ptime(boost::date_time::not_a_date_time);
@@ -50,7 +52,8 @@ int64_t static DecodeDumpTime(const std::string &str) {
     return (ptime - epoch).total_seconds();
 }
 
-std::string static EncodeDumpString(const std::string &str) {
+std::string static EncodeDumpString(const std::string& str)
+{
     std::stringstream ret;
     for (unsigned char c : str) {
         if (c <= 32 || c >= 128 || c == '%') {
@@ -62,13 +65,14 @@ std::string static EncodeDumpString(const std::string &str) {
     return ret.str();
 }
 
-std::string DecodeDumpString(const std::string &str) {
+std::string DecodeDumpString(const std::string& str)
+{
     std::stringstream ret;
     for (unsigned int pos = 0; pos < str.length(); pos++) {
         unsigned char c = str[pos];
-        if (c == '%' && pos+2 < str.length()) {
-            c = (((str[pos+1]>>6)*9+((str[pos+1]-'0')&15)) << 4) | 
-                ((str[pos+2]>>6)*9+((str[pos+2]-'0')&15));
+        if (c == '%' && pos + 2 < str.length()) {
+            c = (((str[pos + 1] >> 6) * 9 + ((str[pos + 1] - '0') & 15)) << 4) |
+                ((str[pos + 2] >> 6) * 9 + ((str[pos + 2] - '0') & 15));
             pos += 2;
         }
         ret << c;
@@ -80,7 +84,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
             "importprivkey \"zcashprivkey\" ( \"label\" rescan )\n"
@@ -91,15 +95,11 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
-            "\nDump a private key\n"
-            + HelpExampleCli("dumpprivkey", "\"myaddress\"") +
-            "\nImport the private key with rescan\n"
-            + HelpExampleCli("importprivkey", "\"mykey\"") +
-            "\nImport using a label and without rescan\n"
-            + HelpExampleCli("importprivkey", "\"mykey\" \"testing\" false") +
-            "\nAs a JSON-RPC call\n"
-            + HelpExampleRpc("importprivkey", "\"mykey\", \"testing\", false")
-        );
+            "\nDump a private key\n" +
+            HelpExampleCli("dumpprivkey", "\"myaddress\"") +
+            "\nImport the private key with rescan\n" + HelpExampleCli("importprivkey", "\"mykey\"") +
+            "\nImport using a label and without rescan\n" + HelpExampleCli("importprivkey", "\"mykey\" \"testing\" false") +
+            "\nAs a JSON-RPC call\n" + HelpExampleRpc("importprivkey", "\"mykey\", \"testing\", false"));
 
     if (fPruneMode)
         throw JSONRPCError(RPC_WALLET_ERROR, "Importing keys is disabled in pruned mode");
@@ -121,7 +121,8 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     KeyIO keyIO(Params());
 
     CKey key = keyIO.DecodeSecret(strSecret);
-    if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
+    if (!key.IsValid())
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
 
     CPubKey pubkey = key.GetPubKey();
     assert(key.VerifyPubKey(pubkey));
@@ -189,7 +190,7 @@ UniValue importaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() < 1 || params.size() > 4)
         throw runtime_error(
             "importaddress \"address\" ( \"label\" rescan p2sh )\n"
@@ -204,13 +205,10 @@ UniValue importaddress(const UniValue& params, bool fHelp)
             "\nNote: If you import a non-standard raw script in hex form, outputs sending to it will be treated\n"
             "as change, and not show up in many RPCs.\n"
             "\nExamples:\n"
-            "\nImport a script with rescan\n"
-            + HelpExampleCli("importaddress", "\"myscript\"") +
-            "\nImport using a label without rescan\n"
-            + HelpExampleCli("importaddress", "\"myscript\" \"testing\" false") +
-            "\nAs a JSON-RPC call\n"
-            + HelpExampleRpc("importaddress", "\"myscript\", \"testing\", false")
-        );
+            "\nImport a script with rescan\n" +
+            HelpExampleCli("importaddress", "\"myscript\"") +
+            "\nImport using a label without rescan\n" + HelpExampleCli("importaddress", "\"myscript\" \"testing\" false") +
+            "\nAs a JSON-RPC call\n" + HelpExampleRpc("importaddress", "\"myscript\", \"testing\", false"));
 
     if (fPruneMode)
         throw JSONRPCError(RPC_WALLET_ERROR, "Importing addresses is disabled in pruned mode");
@@ -245,8 +243,7 @@ UniValue importaddress(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Zcash address or script");
     }
 
-    if (fRescan)
-    {
+    if (fRescan) {
         pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
         pwalletMain->ReacceptWalletTransactions();
     }
@@ -269,13 +266,10 @@ UniValue importpubkey(const UniValue& params, bool fHelp)
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
             "\nNote: This call can take minutes to complete if rescan is true.\n"
             "\nExamples:\n"
-            "\nImport a public key with rescan\n"
-            + HelpExampleCli("importpubkey", "\"mypubkey\"") +
-            "\nImport using a label without rescan\n"
-            + HelpExampleCli("importpubkey", "\"mypubkey\" \"testing\" false") +
-            "\nAs a JSON-RPC call\n"
-            + HelpExampleRpc("importpubkey", "\"mypubkey\", \"testing\", false")
-        );
+            "\nImport a public key with rescan\n" +
+            HelpExampleCli("importpubkey", "\"mypubkey\"") +
+            "\nImport using a label without rescan\n" + HelpExampleCli("importpubkey", "\"mypubkey\" \"testing\" false") +
+            "\nAs a JSON-RPC call\n" + HelpExampleRpc("importpubkey", "\"mypubkey\", \"testing\", false"));
 
     if (fPruneMode)
         throw JSONRPCError(RPC_WALLET_ERROR, "Importing public keys is disabled in pruned mode");
@@ -301,8 +295,7 @@ UniValue importpubkey(const UniValue& params, bool fHelp)
     ImportAddress(pubKey.GetID(), strLabel);
     ImportScript(GetScriptForRawPubKey(pubKey), strLabel, false);
 
-    if (fRescan)
-    {
+    if (fRescan) {
         pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
         pwalletMain->ReacceptWalletTransactions();
     }
@@ -323,22 +316,19 @@ UniValue z_importwallet(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"filename\"    (string, required) The wallet file\n"
             "\nExamples:\n"
-            "\nDump the wallet\n"
-            + HelpExampleCli("z_exportwallet", "\"nameofbackup\"") +
-            "\nImport the wallet\n"
-            + HelpExampleCli("z_importwallet", "\"path/to/exportdir/nameofbackup\"") +
-            "\nImport using the json rpc call\n"
-            + HelpExampleRpc("z_importwallet", "\"path/to/exportdir/nameofbackup\"")
-        );
+            "\nDump the wallet\n" +
+            HelpExampleCli("z_exportwallet", "\"nameofbackup\"") +
+            "\nImport the wallet\n" + HelpExampleCli("z_importwallet", "\"path/to/exportdir/nameofbackup\"") +
+            "\nImport using the json rpc call\n" + HelpExampleRpc("z_importwallet", "\"path/to/exportdir/nameofbackup\""));
 
-	return importwallet_impl(params, true);
+    return importwallet_impl(params, true);
 }
 
 UniValue importwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "importwallet \"filename\"\n"
@@ -346,15 +336,12 @@ UniValue importwallet(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"filename\"    (string, required) The wallet file\n"
             "\nExamples:\n"
-            "\nDump the wallet\n"
-            + HelpExampleCli("dumpwallet", "\"nameofbackup\"") +
-            "\nImport the wallet\n"
-            + HelpExampleCli("importwallet", "\"path/to/exportdir/nameofbackup\"") +
-            "\nImport using the json rpc call\n"
-            + HelpExampleRpc("importwallet", "\"path/to/exportdir/nameofbackup\"")
-        );
+            "\nDump the wallet\n" +
+            HelpExampleCli("dumpwallet", "\"nameofbackup\"") +
+            "\nImport the wallet\n" + HelpExampleCli("importwallet", "\"path/to/exportdir/nameofbackup\"") +
+            "\nImport using the json rpc call\n" + HelpExampleRpc("importwallet", "\"path/to/exportdir/nameofbackup\""));
 
-	return importwallet_impl(params, false);
+    return importwallet_impl(params, false);
 }
 
 UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
@@ -403,7 +390,7 @@ UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
             if (IsValidSpendingKey(spendingkey)) {
                 auto addResult = std::visit(
                     AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, hdKeypath, seedFpStr, true), spendingkey);
-                if (addResult == KeyAlreadyExists){
+                if (addResult == KeyAlreadyExists) {
                     LogPrint("zrpc", "Skipping import of zaddr (key already present)\n");
                 } else if (addResult == KeyNotAdded) {
                     // Something went wrong
@@ -454,7 +441,7 @@ UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
     file.close();
     pwalletMain->ShowProgress("", 100); // hide progress dialog in GUI
 
-    CBlockIndex *pindex = chainActive.Tip();
+    CBlockIndex* pindex = chainActive.Tip();
     while (pindex && pindex->pprev && pindex->GetBlockTime() > nTimeBegin - TIMESTAMP_WINDOW) {
         pindex = pindex->pprev;
     }
@@ -476,7 +463,7 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "dumpprivkey \"t-addr\"\n"
@@ -486,11 +473,8 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
             "1. \"t-addr\"   (string, required) The transparent address for the private key\n"
             "\nResult:\n"
             "\"key\"         (string) The private key\n"
-            "\nExamples:\n"
-            + HelpExampleCli("dumpprivkey", "\"myaddress\"")
-            + HelpExampleCli("importprivkey", "\"mykey\"")
-            + HelpExampleRpc("dumpprivkey", "\"myaddress\"")
-        );
+            "\nExamples:\n" +
+            HelpExampleCli("dumpprivkey", "\"myaddress\"") + HelpExampleCli("importprivkey", "\"mykey\"") + HelpExampleRpc("dumpprivkey", "\"myaddress\""));
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -503,7 +487,7 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
     if (!IsValidDestination(dest)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Zcash address");
     }
-    const CKeyID *keyID = std::get_if<CKeyID>(&dest);
+    const CKeyID* keyID = std::get_if<CKeyID>(&dest);
     if (!keyID) {
         throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to a key");
     }
@@ -515,12 +499,11 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
 }
 
 
-
 UniValue z_exportwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "z_exportwallet \"filename\"\n"
@@ -529,12 +512,10 @@ UniValue z_exportwallet(const UniValue& params, bool fHelp)
             "1. \"filename\"    (string, required) The filename, saved in folder set by zcashd -exportdir option\n"
             "\nResult:\n"
             "\"path\"           (string) The full path of the destination file\n"
-            "\nExamples:\n"
-            + HelpExampleCli("z_exportwallet", "\"test\"")
-            + HelpExampleRpc("z_exportwallet", "\"test\"")
-        );
+            "\nExamples:\n" +
+            HelpExampleCli("z_exportwallet", "\"test\"") + HelpExampleRpc("z_exportwallet", "\"test\""));
 
-	return dumpwallet_impl(params, true);
+    return dumpwallet_impl(params, true);
 }
 
 UniValue dumpwallet(const UniValue& params, bool fHelp)
@@ -550,12 +531,10 @@ UniValue dumpwallet(const UniValue& params, bool fHelp)
             "1. \"filename\"    (string, required) The filename, saved in folder set by zcashd -exportdir option\n"
             "\nResult:\n"
             "\"path\"           (string) The full path of the destination file\n"
-            "\nExamples:\n"
-            + HelpExampleCli("dumpwallet", "\"test\"")
-            + HelpExampleRpc("dumpwallet", "\"test\"")
-        );
+            "\nExamples:\n" +
+            HelpExampleCli("dumpwallet", "\"test\"") + HelpExampleRpc("dumpwallet", "\"test\""));
 
-	return dumpwallet_impl(params, false);
+    return dumpwallet_impl(params, false);
 }
 
 UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
@@ -595,7 +574,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
     pwalletMain->GetAllReserveKeys(setKeyPool);
 
     // sort time/key pairs
-    std::vector<std::pair<int64_t, CKeyID> > vKeyBirth;
+    std::vector<std::pair<int64_t, CKeyID>> vKeyBirth;
     for (std::map<CKeyID, int64_t>::const_iterator it = mapKeyBirth.begin(); it != mapKeyBirth.end(); it++) {
         vKeyBirth.push_back(std::make_pair(it->second, it->first));
     }
@@ -617,8 +596,8 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
         file << "\n";
     }
     file << "\n";
-    for (std::vector<std::pair<int64_t, CKeyID> >::const_iterator it = vKeyBirth.begin(); it != vKeyBirth.end(); it++) {
-        const CKeyID &keyid = it->second;
+    for (std::vector<std::pair<int64_t, CKeyID>>::const_iterator it = vKeyBirth.begin(); it != vKeyBirth.end(); it++) {
+        const CKeyID& keyid = it->second;
         std::string strTime = EncodeDumpTime(it->first);
         std::string strAddr = keyIO.EncodeDestination(keyid);
         CKey key;
@@ -696,17 +675,12 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
             "  \"address\" : \"address|DefaultAddress\",    (string) The address corresponding to the spending key (for Sapling, this is the default address).\n"
             "}\n"
             "\nExamples:\n"
-            "\nExport a zkey\n"
-            + HelpExampleCli("z_exportkey", "\"myaddress\"") +
-            "\nImport the zkey with rescan\n"
-            + HelpExampleCli("z_importkey", "\"mykey\"") +
-            "\nImport the zkey with partial rescan\n"
-            + HelpExampleCli("z_importkey", "\"mykey\" whenkeyisnew 30000") +
-            "\nRe-import the zkey with longer partial rescan\n"
-            + HelpExampleCli("z_importkey", "\"mykey\" yes 20000") +
-            "\nAs a JSON-RPC call\n"
-            + HelpExampleRpc("z_importkey", "\"mykey\", \"no\"")
-        );
+            "\nExport a zkey\n" +
+            HelpExampleCli("z_exportkey", "\"myaddress\"") +
+            "\nImport the zkey with rescan\n" + HelpExampleCli("z_importkey", "\"mykey\"") +
+            "\nImport the zkey with partial rescan\n" + HelpExampleCli("z_importkey", "\"mykey\" whenkeyisnew 30000") +
+            "\nRe-import the zkey with longer partial rescan\n" + HelpExampleCli("z_importkey", "\"mykey\" yes 20000") +
+            "\nAs a JSON-RPC call\n" + HelpExampleRpc("z_importkey", "\"mykey\", \"no\""));
 
     if (fPruneMode)
         throw JSONRPCError(RPC_WALLET_ERROR, "Importing keys is disabled in pruned mode");
@@ -729,8 +703,8 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
             } else {
                 // Handle older API
                 UniValue jVal;
-                if (!jVal.read(std::string("[")+rescan+std::string("]")) ||
-                    !jVal.isArray() || jVal.size()!=1 || !jVal[0].isBool()) {
+                if (!jVal.read(std::string("[") + rescan + std::string("]")) ||
+                    !jVal.isArray() || jVal.size() != 1 || !jVal[0].isBool()) {
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
                         "rescan must be \"yes\", \"no\" or \"whenkeyisnew\"");
@@ -769,10 +743,10 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     if (addResult == KeyNotAdded) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
     }
-    
+
     // whenever a key is imported, we need to scan the whole chain
     pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
-    
+
     // We want to scan for transactions and notes
     if (fRescan) {
         pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
@@ -801,17 +775,12 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
             "  \"address\" : \"address|DefaultAddress\",    (string) The address corresponding to the viewing key (for Sapling, this is the default address).\n"
             "}\n"
             "\nExamples:\n"
-            "\nImport a viewing key\n"
-            + HelpExampleCli("z_importviewingkey", "\"vkey\"") +
-            "\nImport the viewing key without rescan\n"
-            + HelpExampleCli("z_importviewingkey", "\"vkey\", no") +
-            "\nImport the viewing key with partial rescan\n"
-            + HelpExampleCli("z_importviewingkey", "\"vkey\" whenkeyisnew 30000") +
-            "\nRe-import the viewing key with longer partial rescan\n"
-            + HelpExampleCli("z_importviewingkey", "\"vkey\" yes 20000") +
-            "\nAs a JSON-RPC call\n"
-            + HelpExampleRpc("z_importviewingkey", "\"vkey\", \"no\"")
-        );
+            "\nImport a viewing key\n" +
+            HelpExampleCli("z_importviewingkey", "\"vkey\"") +
+            "\nImport the viewing key without rescan\n" + HelpExampleCli("z_importviewingkey", "\"vkey\", no") +
+            "\nImport the viewing key with partial rescan\n" + HelpExampleCli("z_importviewingkey", "\"vkey\" whenkeyisnew 30000") +
+            "\nRe-import the viewing key with longer partial rescan\n" + HelpExampleCli("z_importviewingkey", "\"vkey\" yes 20000") +
+            "\nAs a JSON-RPC call\n" + HelpExampleRpc("z_importviewingkey", "\"vkey\", \"no\""));
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -891,11 +860,8 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
             "1. \"zaddr\"   (string, required) The zaddr for the private key\n"
             "\nResult:\n"
             "\"key\"                  (string) The private key\n"
-            "\nExamples:\n"
-            + HelpExampleCli("z_exportkey", "\"myaddress\"")
-            + HelpExampleCli("z_importkey", "\"mykey\"")
-            + HelpExampleRpc("z_exportkey", "\"myaddress\"")
-        );
+            "\nExamples:\n" +
+            HelpExampleCli("z_exportkey", "\"myaddress\"") + HelpExampleCli("z_importkey", "\"mykey\"") + HelpExampleRpc("z_exportkey", "\"myaddress\""));
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -931,10 +897,8 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
             "1. \"zaddr\"   (string, required) The zaddr for the viewing key\n"
             "\nResult:\n"
             "\"vkey\"                  (string) The viewing key\n"
-            "\nExamples:\n"
-            + HelpExampleCli("z_exportviewingkey", "\"myaddress\"")
-            + HelpExampleRpc("z_exportviewingkey", "\"myaddress\"")
-        );
+            "\nExamples:\n" +
+            HelpExampleCli("z_exportviewingkey", "\"myaddress\"") + HelpExampleRpc("z_exportviewingkey", "\"myaddress\""));
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 

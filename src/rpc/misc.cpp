@@ -4,9 +4,9 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "clientversion.h"
+#include "experimental_features.h"
 #include "init.h"
 #include "key_io.h"
-#include "experimental_features.h"
 #include "main.h"
 #include "net.h"
 #include "netbase.h"
@@ -63,14 +63,14 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             "  \"keypoololdest\": xxxxxx,    (numeric) the timestamp (seconds since GMT epoch) of the oldest pre-generated key in the key pool\n"
             "  \"keypoolsize\": xxxx,        (numeric) how many new keys are pre-generated\n"
             "  \"unlocked_until\": ttt,      (numeric) the timestamp in seconds since epoch (midnight Jan 1 1970 GMT) that the wallet is unlocked for transfers, or 0 if the wallet is locked\n"
-            "  \"paytxfee\": x.xxxx,         (numeric) the transaction fee set in " + CURRENCY_UNIT + "/kB\n"
-            "  \"relayfee\": x.xxxx,         (numeric) minimum relay fee for non-free transactions in " + CURRENCY_UNIT + "/kB\n"
-            "  \"errors\": \"...\"           (string) any error messages\n"
-            "}\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getinfo", "")
-            + HelpExampleRpc("getinfo", "")
-        );
+            "  \"paytxfee\": x.xxxx,         (numeric) the transaction fee set in " +
+            CURRENCY_UNIT + "/kB\n"
+                            "  \"relayfee\": x.xxxx,         (numeric) minimum relay fee for non-free transactions in " +
+            CURRENCY_UNIT + "/kB\n"
+                            "  \"errors\": \"...\"           (string) any error messages\n"
+                            "}\n"
+                            "\nExamples:\n" +
+            HelpExampleCli("getinfo", "") + HelpExampleRpc("getinfo", ""));
 
 #ifdef ENABLE_WALLET
     LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
@@ -89,28 +89,28 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.pushKV("walletversion", pwalletMain->GetVersion());
-        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance()));
+        obj.pushKV("balance", ValueFromAmount(pwalletMain->GetBalance()));
     }
 #endif
-    obj.pushKV("blocks",        (int)chainActive.Height());
-    obj.pushKV("timeoffset",    0);
-    obj.pushKV("connections",   (int)vNodes.size());
-    obj.pushKV("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string()));
-    obj.pushKV("difficulty",    (double)GetDifficulty());
-    obj.pushKV("testnet",       Params().TestnetToBeDeprecatedFieldRPC());
+    obj.pushKV("blocks", (int)chainActive.Height());
+    obj.pushKV("timeoffset", 0);
+    obj.pushKV("connections", (int)vNodes.size());
+    obj.pushKV("proxy", (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string()));
+    obj.pushKV("difficulty", (double)GetDifficulty());
+    obj.pushKV("testnet", Params().TestnetToBeDeprecatedFieldRPC());
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.pushKV("keypoololdest", pwalletMain->GetOldestKeyPoolTime());
-        obj.pushKV("keypoolsize",   (int)pwalletMain->GetKeyPoolSize());
+        obj.pushKV("keypoolsize", (int)pwalletMain->GetKeyPoolSize());
     }
     if (pwalletMain && pwalletMain->IsCrypted())
         obj.pushKV("unlocked_until", nWalletUnlockTime);
-    obj.pushKV("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK()));
+    obj.pushKV("paytxfee", ValueFromAmount(payTxFee.GetFeePerK()));
 #endif
-    obj.pushKV("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK()));
+    obj.pushKV("relayfee", ValueFromAmount(::minRelayTxFee.GetFeePerK()));
     auto warnings = GetWarnings("statusbar");
-    obj.pushKV("errors",           warnings.first);
-    obj.pushKV("errorstimestamp",  warnings.second);
+    obj.pushKV("errors", warnings.first);
+    obj.pushKV("errorstimestamp", warnings.second);
     return obj;
 }
 
@@ -118,9 +118,10 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 class DescribeAddressVisitor
 {
 public:
-    UniValue operator()(const CNoDestination &dest) const { return UniValue(UniValue::VOBJ); }
+    UniValue operator()(const CNoDestination& dest) const { return UniValue(UniValue::VOBJ); }
 
-    UniValue operator()(const CKeyID &keyID) const {
+    UniValue operator()(const CKeyID& keyID) const
+    {
         UniValue obj(UniValue::VOBJ);
         CPubKey vchPubKey;
         obj.pushKV("isscript", false);
@@ -131,7 +132,8 @@ public:
         return obj;
     }
 
-    UniValue operator()(const CScriptID &scriptID) const {
+    UniValue operator()(const CScriptID& scriptID) const
+    {
         KeyIO keyIO(Params());
         UniValue obj(UniValue::VOBJ);
         CScript subscript;
@@ -175,10 +177,8 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
             "  \"iscompressed\" : true|false,    (boolean) If the address is compressed\n"
             "  \"account\" : \"account\"         (string) DEPRECATED. The account associated with the address, \"\" is the default account\n"
             "}\n"
-            "\nExamples:\n"
-            + HelpExampleCli("validateaddress", "\"1PSSGeFHDnKNxiEyFrD1wcEaHr9hrQDDWc\"")
-            + HelpExampleRpc("validateaddress", "\"1PSSGeFHDnKNxiEyFrD1wcEaHr9hrQDDWc\"")
-        );
+            "\nExamples:\n" +
+            HelpExampleCli("validateaddress", "\"1PSSGeFHDnKNxiEyFrD1wcEaHr9hrQDDWc\"") + HelpExampleRpc("validateaddress", "\"1PSSGeFHDnKNxiEyFrD1wcEaHr9hrQDDWc\""));
 
 #ifdef ENABLE_WALLET
     LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
@@ -192,8 +192,7 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("isvalid", isValid);
-    if (isValid)
-    {
+    if (isValid) {
         std::string currentAddress = keyIO.EncodeDestination(dest);
         ret.pushKV("address", currentAddress);
 
@@ -203,7 +202,7 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 #ifdef ENABLE_WALLET
         isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
         ret.pushKV("ismine", (mine & ISMINE_SPENDABLE) ? true : false);
-        ret.pushKV("iswatchonly", (mine & ISMINE_WATCH_ONLY) ? true: false);
+        ret.pushKV("iswatchonly", (mine & ISMINE_WATCH_ONLY) ? true : false);
         UniValue detail = std::visit(DescribeAddressVisitor(), dest);
         ret.pushKVs(detail);
         if (pwalletMain && pwalletMain->mapAddressBook.count(dest))
@@ -217,9 +216,10 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 class DescribePaymentAddressVisitor
 {
 public:
-    UniValue operator()(const libzcash::InvalidEncoding &zaddr) const { return UniValue(UniValue::VOBJ); }
+    UniValue operator()(const libzcash::InvalidEncoding& zaddr) const { return UniValue(UniValue::VOBJ); }
 
-    UniValue operator()(const libzcash::SproutPaymentAddress &zaddr) const {
+    UniValue operator()(const libzcash::SproutPaymentAddress& zaddr) const
+    {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("type", "sprout");
         obj.pushKV("payingkey", zaddr.a_pk.GetHex());
@@ -232,7 +232,8 @@ public:
         return obj;
     }
 
-    UniValue operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
+    UniValue operator()(const libzcash::SaplingPaymentAddress& zaddr) const
+    {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("type", "sapling");
         obj.pushKV("diversifier", HexStr(zaddr.d));
@@ -266,10 +267,8 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
             "  \"diversifiedtransmissionkey\" : \"hex\", (string) [sapling] The hex value of pk_d\n"
 
             "}\n"
-            "\nExamples:\n"
-            + HelpExampleCli("z_validateaddress", "\"zcWsmqT4X2V4jgxbgiCzyrAfRT1vi1F4sn7M5Pkh66izzw8Uk7LBGAH3DtcSMJeUb2pi3W4SQF8LMKkU2cUuVP68yAGcomL\"")
-            + HelpExampleRpc("z_validateaddress", "\"zcWsmqT4X2V4jgxbgiCzyrAfRT1vi1F4sn7M5Pkh66izzw8Uk7LBGAH3DtcSMJeUb2pi3W4SQF8LMKkU2cUuVP68yAGcomL\"")
-        );
+            "\nExamples:\n" +
+            HelpExampleCli("z_validateaddress", "\"zcWsmqT4X2V4jgxbgiCzyrAfRT1vi1F4sn7M5Pkh66izzw8Uk7LBGAH3DtcSMJeUb2pi3W4SQF8LMKkU2cUuVP68yAGcomL\"") + HelpExampleRpc("z_validateaddress", "\"zcWsmqT4X2V4jgxbgiCzyrAfRT1vi1F4sn7M5Pkh66izzw8Uk7LBGAH3DtcSMJeUb2pi3W4SQF8LMKkU2cUuVP68yAGcomL\""));
 
 
 #ifdef ENABLE_WALLET
@@ -285,8 +284,7 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
 
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("isvalid", isValid);
-    if (isValid)
-    {
+    if (isValid) {
         ret.pushKV("address", strAddress);
         UniValue detail = std::visit(DescribePaymentAddressVisitor(), address);
         ret.pushKVs(detail);
@@ -309,7 +307,8 @@ CScript _createmultisig_redeemScript(const UniValue& params)
     if ((int)keys.size() < nRequired)
         throw runtime_error(
             strprintf("not enough keys supplied "
-                      "(got %u keys, but need at least %d to redeem)", keys.size(), nRequired));
+                      "(got %u keys, but need at least %d to redeem)",
+                      keys.size(), nRequired));
     if (keys.size() > 16)
         throw runtime_error("Number of addresses involved in the multisignature address creation > 16\nReduce the number");
 
@@ -317,14 +316,13 @@ CScript _createmultisig_redeemScript(const UniValue& params)
 
     std::vector<CPubKey> pubkeys;
     pubkeys.resize(keys.size());
-    for (unsigned int i = 0; i < keys.size(); i++)
-    {
+    for (unsigned int i = 0; i < keys.size(); i++) {
         const std::string& ks = keys[i].get_str();
 #ifdef ENABLE_WALLET
         // Case 1: Bitcoin address and we have full public key:
         CTxDestination dest = keyIO.DecodeDestination(ks);
         if (pwalletMain && IsValidDestination(dest)) {
-            const CKeyID *keyID = std::get_if<CKeyID>(&dest);
+            const CKeyID* keyID = std::get_if<CKeyID>(&dest);
             if (!keyID) {
                 throw std::runtime_error(strprintf("%s does not refer to a key", ks));
             }
@@ -333,62 +331,56 @@ CScript _createmultisig_redeemScript(const UniValue& params)
                 throw std::runtime_error(strprintf("no full public key for address %s", ks));
             }
             if (!vchPubKey.IsFullyValid())
-                throw runtime_error(" Invalid public key: "+ks);
+                throw runtime_error(" Invalid public key: " + ks);
             pubkeys[i] = vchPubKey;
         }
 
         // Case 2: hex public key
         else
 #endif
-        if (IsHex(ks))
-        {
+            if (IsHex(ks)) {
             CPubKey vchPubKey(ParseHex(ks));
             if (!vchPubKey.IsFullyValid())
-                throw runtime_error(" Invalid public key: "+ks);
+                throw runtime_error(" Invalid public key: " + ks);
             pubkeys[i] = vchPubKey;
-        }
-        else
-        {
-            throw runtime_error(" Invalid public key: "+ks);
+        } else {
+            throw runtime_error(" Invalid public key: " + ks);
         }
     }
     CScript result = GetScriptForMultisig(nRequired, pubkeys);
 
     if (result.size() > MAX_SCRIPT_ELEMENT_SIZE)
         throw runtime_error(
-                strprintf("redeemScript exceeds size limit: %d > %d", result.size(), MAX_SCRIPT_ELEMENT_SIZE));
+            strprintf("redeemScript exceeds size limit: %d > %d", result.size(), MAX_SCRIPT_ELEMENT_SIZE));
 
     return result;
 }
 
 UniValue createmultisig(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() < 2 || params.size() > 2)
-    {
+    if (fHelp || params.size() < 2 || params.size() > 2) {
         string msg = "createmultisig nrequired [\"key\",...]\n"
-            "\nCreates a multi-signature address with n signature of m keys required.\n"
-            "It returns a json object with the address and redeemScript.\n"
+                     "\nCreates a multi-signature address with n signature of m keys required.\n"
+                     "It returns a json object with the address and redeemScript.\n"
 
-            "\nArguments:\n"
-            "1. nrequired      (numeric, required) The number of required signatures out of the n keys or addresses.\n"
-            "2. \"keys\"       (string, required) A json array of keys which are Zcash addresses or hex-encoded public keys\n"
-            "     [\n"
-            "       \"key\"    (string) Zcash address or hex-encoded public key\n"
-            "       ,...\n"
-            "     ]\n"
+                     "\nArguments:\n"
+                     "1. nrequired      (numeric, required) The number of required signatures out of the n keys or addresses.\n"
+                     "2. \"keys\"       (string, required) A json array of keys which are Zcash addresses or hex-encoded public keys\n"
+                     "     [\n"
+                     "       \"key\"    (string) Zcash address or hex-encoded public key\n"
+                     "       ,...\n"
+                     "     ]\n"
 
-            "\nResult:\n"
-            "{\n"
-            "  \"address\":\"multisigaddress\",  (string) The value of the new multisig address.\n"
-            "  \"redeemScript\":\"script\"       (string) The string value of the hex-encoded redemption script.\n"
-            "}\n"
+                     "\nResult:\n"
+                     "{\n"
+                     "  \"address\":\"multisigaddress\",  (string) The value of the new multisig address.\n"
+                     "  \"redeemScript\":\"script\"       (string) The string value of the hex-encoded redemption script.\n"
+                     "}\n"
 
-            "\nExamples:\n"
-            "\nCreate a multisig address from 2 addresses\n"
-            + HelpExampleCli("createmultisig", "2 \"[\\\"t16sSauSf5pF2UkUwvKGq4qjNRzBZYqgEL5\\\",\\\"t171sgjn4YtPu27adkKGrdDwzRTxnRkBfKV\\\"]\"") +
-            "\nAs a json rpc call\n"
-            + HelpExampleRpc("createmultisig", "2, \"[\\\"t16sSauSf5pF2UkUwvKGq4qjNRzBZYqgEL5\\\",\\\"t171sgjn4YtPu27adkKGrdDwzRTxnRkBfKV\\\"]\"")
-        ;
+                     "\nExamples:\n"
+                     "\nCreate a multisig address from 2 addresses\n" +
+                     HelpExampleCli("createmultisig", "2 \"[\\\"t16sSauSf5pF2UkUwvKGq4qjNRzBZYqgEL5\\\",\\\"t171sgjn4YtPu27adkKGrdDwzRTxnRkBfKV\\\"]\"") +
+                     "\nAs a json rpc call\n" + HelpExampleRpc("createmultisig", "2, \"[\\\"t16sSauSf5pF2UkUwvKGq4qjNRzBZYqgEL5\\\",\\\"t171sgjn4YtPu27adkKGrdDwzRTxnRkBfKV\\\"]\"");
         throw runtime_error(msg);
     }
 
@@ -417,21 +409,17 @@ UniValue verifymessage(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "true|false   (boolean) If the signature is verified or not.\n"
             "\nExamples:\n"
-            "\nUnlock the wallet for 30 seconds\n"
-            + HelpExampleCli("walletpassphrase", "\"mypassphrase\" 30") +
-            "\nCreate the signature\n"
-            + HelpExampleCli("signmessage", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\" \"my message\"") +
-            "\nVerify the signature\n"
-            + HelpExampleCli("verifymessage", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\" \"signature\" \"my message\"") +
-            "\nAs json rpc\n"
-            + HelpExampleRpc("verifymessage", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\", \"signature\", \"my message\"")
-        );
+            "\nUnlock the wallet for 30 seconds\n" +
+            HelpExampleCli("walletpassphrase", "\"mypassphrase\" 30") +
+            "\nCreate the signature\n" + HelpExampleCli("signmessage", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\" \"my message\"") +
+            "\nVerify the signature\n" + HelpExampleCli("verifymessage", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\" \"signature\" \"my message\"") +
+            "\nAs json rpc\n" + HelpExampleRpc("verifymessage", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\", \"signature\", \"my message\""));
 
     LOCK(cs_main);
 
-    string strAddress  = params[0].get_str();
-    string strSign     = params[1].get_str();
-    string strMessage  = params[2].get_str();
+    string strAddress = params[0].get_str();
+    string strSign = params[1].get_str();
+    string strMessage = params[2].get_str();
 
     KeyIO keyIO(Params());
     CTxDestination destination = keyIO.DecodeDestination(strAddress);
@@ -439,7 +427,7 @@ UniValue verifymessage(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
     }
 
-    const CKeyID *keyID = std::get_if<CKeyID>(&destination);
+    const CKeyID* keyID = std::get_if<CKeyID>(&destination);
     if (!keyID) {
         throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to key");
     }
@@ -469,8 +457,7 @@ UniValue setmocktime(const UniValue& params, bool fHelp)
             "\nSet the local time to given timestamp (-regtest only)\n"
             "\nArguments:\n"
             "1. timestamp  (integer, required) Unix seconds-since-epoch timestamp\n"
-            "   Pass 0 to go back to using the system time."
-        );
+            "   Pass 0 to go back to using the system time.");
 
     if (!Params().MineBlocksOnDemand())
         throw runtime_error("setmocktime for regression testing (-regtest mode) only");
@@ -502,10 +489,9 @@ UniValue getexperimentalfeatures(const UniValue& params, bool fHelp)
             "  [\n"
             "     \"experimentalfeature\"     (string) The enabled experimental feature\n"
             "     ,...\n"
-            "  ],\n"            "\nExamples:\n"
-            + HelpExampleCli("getexperimentalfeatures", "")
-            + HelpExampleRpc("getexperimentalfeatures", "")
-        );
+            "  ],\n"
+            "\nExamples:\n" +
+            HelpExampleCli("getexperimentalfeatures", "") + HelpExampleRpc("getexperimentalfeatures", ""));
 
     LOCK(cs_main);
     UniValue experimentalfeatures(UniValue::VARR);
@@ -517,7 +503,9 @@ UniValue getexperimentalfeatures(const UniValue& params, bool fHelp)
 
 // insightexplorer
 static bool getAddressFromIndex(
-    int type, const uint160 &hash, std::string &address)
+    int type,
+    const uint160& hash,
+    std::string& address)
 {
     KeyIO keyIO(Params());
     if (type == CScript::P2SH) {
@@ -533,7 +521,9 @@ static bool getAddressFromIndex(
 // This function accepts an address and returns in the output parameters
 // the version and raw bytes for the RIPEMD-160 hash.
 static bool getIndexKey(
-    const CTxDestination& dest, uint160& hashBytes, int& type)
+    const CTxDestination& dest,
+    uint160& hashBytes,
+    int& type)
 {
     if (!IsValidDestination(dest)) {
         return false;
@@ -556,7 +546,7 @@ static bool getIndexKey(
 // insightexplorer
 static bool getAddressesFromParams(
     const UniValue& params,
-    std::vector<std::pair<uint160, int>> &addresses)
+    std::vector<std::pair<uint160, int>>& addresses)
 {
     std::vector<std::string> param_addresses;
     if (params[0].isStr()) {
@@ -565,7 +555,7 @@ static bool getAddressesFromParams(
         UniValue addressValues = find_value(params[0].get_obj(), "addresses");
         if (!addressValues.isArray()) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-                "Addresses is expected to be an array");
+                               "Addresses is expected to be an array");
         }
         for (const auto& it : addressValues.getValues()) {
             param_addresses.push_back(it.get_str());
@@ -598,8 +588,8 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "getaddressmempool {\"addresses\": [\"taddr\", ...]}\n"
-            "\nReturns all mempool deltas for an address.\n"
-            + disabledMsg +
+            "\nReturns all mempool deltas for an address.\n" +
+            disabledMsg +
             "\nArguments:\n"
             "{\n"
             "  \"addresses\":\n"
@@ -622,14 +612,12 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             "    \"prevout\"  (string) The previous transaction output index (if spending)\n"
             "  }\n"
             "]\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getaddressmempool", "'{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}'")
-            + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}")
-        );
+            "\nExamples:\n" +
+            HelpExampleCli("getaddressmempool", "'{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}'") + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}"));
 
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressmempool is disabled. "
-            "Run './zcash-cli help getaddressmempool' for instructions on how to enable this feature.");
+                                           "Run './zcash-cli help getaddressmempool' for instructions on how to enable this feature.");
     }
 
     std::vector<std::pair<uint160, int>> addresses;
@@ -640,10 +628,10 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
     std::vector<std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta>> indexes;
     mempool.getAddressIndex(addresses, indexes);
     std::sort(indexes.begin(), indexes.end(),
-        [](const std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta>& a,
-           const std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta>& b) -> bool {
-               return a.second.time < b.second.time;
-           });
+              [](const std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta>& a,
+                 const std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta>& b) -> bool {
+                  return a.second.time < b.second.time;
+              });
 
     UniValue result(UniValue::VARR);
 
@@ -677,8 +665,8 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "getaddressutxos {\"addresses\": [\"taddr\", ...], (\"chainInfo\": true|false)}\n"
-            "\nReturns all unspent outputs for an address.\n"
-            + disabledMsg +
+            "\nReturns all unspent outputs for an address.\n" +
+            disabledMsg +
             "\nArguments:\n"
             "{\n"
             "  \"addresses\":\n"
@@ -717,14 +705,12 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             "  \"hash\"              (string)  The block hash\n"
             "  \"height\"            (numeric) The block height\n"
             "}\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getaddressutxos", "'{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"chainInfo\": true}'")
-            + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"chainInfo\": true}")
-            );
+            "\nExamples:\n" +
+            HelpExampleCli("getaddressutxos", "'{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"chainInfo\": true}'") + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"chainInfo\": true}"));
 
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressutxos is disabled. "
-            "Run './zcash-cli help getaddressutxos' for instructions on how to enable this feature.");
+                                           "Run './zcash-cli help getaddressutxos' for instructions on how to enable this feature.");
     }
 
     bool includeChainInfo = false;
@@ -745,9 +731,9 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
         }
     }
     std::sort(unspentOutputs.begin(), unspentOutputs.end(),
-        [](const CAddressUnspentDbEntry& a, const CAddressUnspentDbEntry& b) -> bool {
-            return a.second.blockHeight < b.second.blockHeight;
-        });
+              [](const CAddressUnspentDbEntry& a, const CAddressUnspentDbEntry& b) -> bool {
+                  return a.second.blockHeight < b.second.blockHeight;
+              });
 
     UniValue utxos(UniValue::VARR);
     for (const auto& it : unspentOutputs) {
@@ -772,7 +758,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ);
     result.pushKV("utxos", utxos);
 
-    LOCK(cs_main);  // for chainActive
+    LOCK(cs_main); // for chainActive
     result.pushKV("hash", chainActive.Tip()->GetBlockHash().GetHex());
     result.pushKV("height", (int)chainActive.Height());
     return result;
@@ -791,16 +777,16 @@ static void getHeightRange(const UniValue& params, int& start, int& end)
             end = endValue.get_int();
             if (start <= 0 || end <= 0) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-                    "Start and end are expected to be greater than zero");
+                                   "Start and end are expected to be greater than zero");
             }
             if (end < start) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-                    "End value is expected to be greater than start");
+                                   "End value is expected to be greater than start");
             }
         }
     }
 
-    LOCK(cs_main);  // for chainActive
+    LOCK(cs_main); // for chainActive
     if (start > chainActive.Height() || end > chainActive.Height()) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Start or end is outside chain range");
     }
@@ -809,9 +795,10 @@ static void getHeightRange(const UniValue& params, int& start, int& end)
 // Parse an address list then fetch the corresponding addressindex information.
 static void getAddressesInHeightRange(
     const UniValue& params,
-    int start, int end,
+    int start,
+    int end,
     std::vector<std::pair<uint160, int>>& addresses,
-    std::vector<std::pair<CAddressIndexKey, CAmount>> &addressIndex)
+    std::vector<std::pair<CAddressIndexKey, CAmount>>& addressIndex)
 {
     if (!getAddressesFromParams(params, addresses)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
@@ -819,7 +806,7 @@ static void getAddressesInHeightRange(
     for (const auto& it : addresses) {
         if (!GetAddressIndex(it.first, it.second, addressIndex, start, end)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-                "No information available for address");
+                               "No information available for address");
         }
     }
 }
@@ -836,8 +823,8 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "getaddressdeltas {\"addresses\": [\"taddr\", ...], (\"start\": n), (\"end\": n), (\"chainInfo\": true|false)}\n"
             "\nReturns all changes for an address.\n"
             "\nReturns information about all changes to the given transparent addresses within the given (inclusive)\n"
-            "\nblock height range, default is the full blockchain.\n"
-            + disabledMsg +
+            "\nblock height range, default is the full blockchain.\n" +
+            disabledMsg +
             "\nArguments:\n"
             "{\n"
             "  \"addresses\":\n"
@@ -884,14 +871,12 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "      \"height\"        (numeric) The height of the end block\n"
             "    }\n"
             "}\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getaddressdeltas", "'{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000, \"chainInfo\": true}'")
-            + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000, \"chainInfo\": true}")
-        );
+            "\nExamples:\n" +
+            HelpExampleCli("getaddressdeltas", "'{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000, \"chainInfo\": true}'") + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000, \"chainInfo\": true}"));
 
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressdeltas is disabled. "
-            "Run './zcash-cli help getaddressdeltas' for instructions on how to enable this feature.");
+                                           "Run './zcash-cli help getaddressdeltas' for instructions on how to enable this feature.");
     }
 
     int start = 0;
@@ -936,7 +921,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
     UniValue startInfo(UniValue::VOBJ);
     UniValue endInfo(UniValue::VOBJ);
     {
-        LOCK(cs_main);  // for chainActive
+        LOCK(cs_main); // for chainActive
         if (start > chainActive.Height() || end > chainActive.Height()) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Start or end is outside chain range");
         }
@@ -963,8 +948,8 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "getaddressbalance {\"addresses\": [\"taddr\", ...]}\n"
-            "\nReturns the balance for addresses.\n"
-            + disabledMsg +
+            "\nReturns the balance for addresses.\n" +
+            disabledMsg +
             "\nArguments:\n"
             "{\n"
             "  \"addresses:\"\n"
@@ -980,14 +965,12 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
             "  \"balance\"  (string) The current balance in zatoshis\n"
             "  \"received\"  (string) The total number of zatoshis received (including change)\n"
             "}\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}'")
-            + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}")
-        );
+            "\nExamples:\n" +
+            HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}'") + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}"));
 
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressbalance is disabled. "
-            "Run './zcash-cli help getaddressbalance' for instructions on how to enable this feature.");
+                                           "Run './zcash-cli help getaddressbalance' for instructions on how to enable this feature.");
     }
 
     std::vector<std::pair<uint160, int>> addresses;
@@ -1021,8 +1004,8 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
         throw runtime_error(
             "getaddresstxids {\"addresses\": [\"taddr\", ...], (\"start\": n), (\"end\": n)}\n"
             "\nReturns the txids for given transparent addresses within the given (inclusive)\n"
-            "\nblock height range, default is the full blockchain.\n"
-            + disabledMsg +
+            "\nblock height range, default is the full blockchain.\n" +
+            disabledMsg +
             "\nArguments:\n"
             "{\n"
             "  \"addresses\":\n"
@@ -1040,14 +1023,12 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
             "  \"transactionid\"  (string) The transaction id\n"
             "  ,...\n"
             "]\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getaddresstxids", "'{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000}'")
-            + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000}")
-        );
+            "\nExamples:\n" +
+            HelpExampleCli("getaddresstxids", "'{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000}'") + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000}"));
 
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddresstxids is disabled. "
-            "Run './zcash-cli help getaddresstxids' for instructions on how to enable this feature.");
+                                           "Run './zcash-cli help getaddresstxids' for instructions on how to enable this feature.");
     }
 
     int start = 0;
@@ -1085,8 +1066,8 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1 || !params[0].isObject())
         throw runtime_error(
             "getspentinfo {\"txid\": \"txidhex\", \"index\": n}\n"
-            "\nReturns the txid and index where an output is spent.\n"
-            + disabledMsg +
+            "\nReturns the txid and index where an output is spent.\n" +
+            disabledMsg +
             "\nArguments:\n"
             "{\n"
             "  \"txid\"   (string) The hex string of the txid\n"
@@ -1098,14 +1079,12 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
             "  \"index\"  (number) The spending (vin, input) index\n"
             "  ,...\n"
             "}\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getspentinfo", "'{\"txid\": \"33990288fb116981260be1de10b8c764f997674545ab14f9240f00346333b780\", \"index\": 4}'")
-            + HelpExampleRpc("getspentinfo", "{\"txid\": \"33990288fb116981260be1de10b8c764f997674545ab14f9240f00346333b780\", \"index\": 4}")
-        );
+            "\nExamples:\n" +
+            HelpExampleCli("getspentinfo", "'{\"txid\": \"33990288fb116981260be1de10b8c764f997674545ab14f9240f00346333b780\", \"index\": 4}'") + HelpExampleRpc("getspentinfo", "{\"txid\": \"33990288fb116981260be1de10b8c764f997674545ab14f9240f00346333b780\", \"index\": 4}"));
 
     if (!fExperimentalInsightExplorer) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getspentinfo is disabled. "
-            "Run './zcash-cli help getspentinfo' for instructions on how to enable this feature.");
+                                           "Run './zcash-cli help getspentinfo' for instructions on how to enable this feature.");
     }
 
     UniValue txidValue = find_value(params[0].get_obj(), "txid");
@@ -1168,41 +1147,40 @@ UniValue getmemoryinfo(const UniValue& params, bool fHelp)
             "    \"chunks_free\": xxxxx,   (numeric) Number unused chunks\n"
             "  }\n"
             "}\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getmemoryinfo", "")
-            + HelpExampleRpc("getmemoryinfo", "")
-        );
+            "\nExamples:\n" +
+            HelpExampleCli("getmemoryinfo", "") + HelpExampleRpc("getmemoryinfo", ""));
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("locked", RPCLockedMemoryInfo());
     return obj;
 }
 
 static const CRPCCommand commands[] =
-{ //  category              name                      actor (function)         okSafeMode
-  //  --------------------- ------------------------  -----------------------  ----------
-    { "control",            "getinfo",                &getinfo,                true  }, /* uses wallet if enabled */
-    { "control",            "getmemoryinfo",          &getmemoryinfo,          true  },
-    { "util",               "validateaddress",        &validateaddress,        true  }, /* uses wallet if enabled */
-    { "util",               "z_validateaddress",      &z_validateaddress,      true  }, /* uses wallet if enabled */
-    { "util",               "createmultisig",         &createmultisig,         true  },
-    { "util",               "verifymessage",          &verifymessage,          true  },
-    { "control",            "getexperimentalfeatures",&getexperimentalfeatures,true  },
+    {
+        //  category              name                      actor (function)         okSafeMode
+        //  --------------------- ------------------------  -----------------------  ----------
+        {"control", "getinfo", &getinfo, true}, /* uses wallet if enabled */
+        {"control", "getmemoryinfo", &getmemoryinfo, true},
+        {"util", "validateaddress", &validateaddress, true},     /* uses wallet if enabled */
+        {"util", "z_validateaddress", &z_validateaddress, true}, /* uses wallet if enabled */
+        {"util", "createmultisig", &createmultisig, true},
+        {"util", "verifymessage", &verifymessage, true},
+        {"control", "getexperimentalfeatures", &getexperimentalfeatures, true},
 
-    // START insightexplorer
-    /* Address index */
-    { "addressindex",       "getaddresstxids",        &getaddresstxids,        false }, /* insight explorer */
-    { "addressindex",       "getaddressbalance",      &getaddressbalance,      false }, /* insight explorer */
-    { "addressindex",       "getaddressdeltas",       &getaddressdeltas,       false }, /* insight explorer */
-    { "addressindex",       "getaddressutxos",        &getaddressutxos,        false }, /* insight explorer */
-    { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  }, /* insight explorer */
-    { "blockchain",         "getspentinfo",           &getspentinfo,           false }, /* insight explorer */
-    // END insightexplorer
+        // START insightexplorer
+        /* Address index */
+        {"addressindex", "getaddresstxids", &getaddresstxids, false},     /* insight explorer */
+        {"addressindex", "getaddressbalance", &getaddressbalance, false}, /* insight explorer */
+        {"addressindex", "getaddressdeltas", &getaddressdeltas, false},   /* insight explorer */
+        {"addressindex", "getaddressutxos", &getaddressutxos, false},     /* insight explorer */
+        {"addressindex", "getaddressmempool", &getaddressmempool, true},  /* insight explorer */
+        {"blockchain", "getspentinfo", &getspentinfo, false},             /* insight explorer */
+        // END insightexplorer
 
-    /* Not shown in help */
-    { "hidden",             "setmocktime",            &setmocktime,            true  },
+        /* Not shown in help */
+        {"hidden", "setmocktime", &setmocktime, true},
 };
 
-void RegisterMiscRPCCommands(CRPCTable &tableRPC)
+void RegisterMiscRPCCommands(CRPCTable& tableRPC)
 {
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
         tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
