@@ -57,19 +57,6 @@ CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(Get
 {
 }
 
-//template <typename MerkleTree, char ANCHOR_KEY>
-//bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, MerkleTree &tree) const {
-//    if (rt == MerkleTree::empty_root()) {
-//        MerkleTree new_tree;
-//        tree = new_tree;
-//        return true;
-//    }
-//
-//    bool read = db.Read(make_pair(ANCHOR_KEY, rt), tree);
-//
-//    return read;
-//}
-
 bool CCoinsViewDB::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
     if (rt == SproutMerkleTree::empty_root()) {
         SproutMerkleTree new_tree;

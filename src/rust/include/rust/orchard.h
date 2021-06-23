@@ -64,21 +64,22 @@ int64_t orchard_bundle_value_balance(const OrchardBundlePtr* bundle);
 /// - `bindingSigOrchard` validity is enforced by `orchard_batch_validate`.
 bool orchard_bundle_validate(const OrchardBundlePtr* bundle);
 
-/// Return the number of actions associated with the bundle.
+/// Returns the number of actions associated with the bundle.
 size_t orchard_bundle_actions_len(const OrchardBundlePtr* bundle);
 
-/// Return the nullifiers for the bundle by copying them into the provided
+/// Returns the nullifiers for the bundle by copying them into the provided
 /// vector of 32-byte arrays `nullifiers_ret`, which should be sized to the
 /// number of anchors.
 ///
-/// Returns `false` if the bundle was absent, `true` otherwise.
+/// Returns `false` if the number of nullifiers specified varies from the
+/// number of the actions in the bundle, `true` otherwise.
 bool orchard_bundle_nullifiers(
     const OrchardBundlePtr* bundle,
     void* nullifiers_ret,
     size_t nullifiers_len
     );
 
-/// Return the anchor for the bundle by copying them into
+/// Returns the anchor for the bundle by copying them into
 /// the provided value.
 ///
 /// Returns `false` if the bundle was absent, `true` otherwise.
