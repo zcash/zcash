@@ -2123,7 +2123,7 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
         return NullUniValue;
 
     std::string disabledMsg = "";
-    if (!fExperimentalDeveloperEncryptWallet) {
+    if (!fReindex) {
         disabledMsg = experimentalDisabledHelpMsg("encryptwallet", {"developerencryptwallet"});
     }
 
@@ -2156,7 +2156,7 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
 
     if (fHelp)
         return true;
-    if (!fExperimentalDeveloperEncryptWallet) {
+    if (!fReindex) {
         throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: wallet encryption is disabled.");
     }
     if (pwalletMain->IsCrypted())
@@ -4678,7 +4678,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         return NullUniValue;
 
     string enableArg = "zmergetoaddress";
-    auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-" + enableArg, false);
+    auto fEnableMergeToAddress = fReindex && GetBoolArg("-" + enableArg, false);
     std::string strDisabledMsg = "";
     if (!fEnableMergeToAddress) {
         strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArg) + "\n";
