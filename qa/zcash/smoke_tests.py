@@ -166,6 +166,7 @@ def wait_for_balance(zcash, zaddr, expected=None):
                     ttl = 300
 
 def wait_and_check_balance(results, case, zcash, addr, expected):
+    time.sleep(5)
     balance = wait_for_balance(zcash, addr, expected)
     if balance != expected and results is not None and len(case) > 0:
         results[case] = False
