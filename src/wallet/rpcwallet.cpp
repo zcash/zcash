@@ -4677,11 +4677,13 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    string enableArg = "zmergetoaddress";
+    std::vector<std::string> enableArgs;
+    std::string enableArg = "zmergetoaddress";
+    enableArgs.push_back(enableArg);
     auto fEnableMergeToAddress = fReindex && GetBoolArg("-" + enableArg, false);
     std::string strDisabledMsg = "";
     if (!fEnableMergeToAddress) {
-        strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArg) + "\n";
+        strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArgs) + "\n";
     }
 
     if (fHelp || params.size() < 2 || params.size() > 6)
