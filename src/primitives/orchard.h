@@ -56,6 +56,25 @@ public:
         inner.reset(bundle);
     }
 
+    /// Returns true if this contains an Orchard bundle, or false if there is no
+    /// Orchard component.
+    bool IsPresent() const { return (bool)inner; }
+
+    /// Returns the net value entering or exiting the Orchard pool as a result of this
+    /// bundle.
+    CAmount GetValueBalance() const {
+        return orchard_bundle_value_balance(inner.get());
+    }
+
+    /// Returns true if this Orchard bundle satisfies the bundle-specific consensus rules,
+    /// or if this does not contain an Orchard bundle.
+    ///
+    /// This does not validate the bundle's signatures; use `QueueSignatureValidation` for
+    /// those checks.
+    bool CheckBundleSpecificConsensusRules() const {
+        return orchard_bundle_validate(inner.get());
+    }
+
     /// Queues this bundle's signatures for validation.
     ///
     /// `txid` must be for the transaction this bundle is within.

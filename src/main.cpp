@@ -1209,8 +1209,19 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
         // Sapling zk-SNARK proofs are checked in librustzcash_sapling_check_{spend,output},
         // called from ContextualCheckTransaction.
 
+        // Check bundle-specific Orchard consensus rules. Since we check encoding
+        // consensus rules at parse time, and signature validation is batched, all we are
+        // checking here is proof validity. Once we implement batched proof verification,
+        // this will move into orchardAuth.
+        auto orchardBundle = tx.GetOrchardBundle();
+        if (!orchardBundle.CheckBundleSpecificConsensusRules()) {
+            return state.DoS(
+                100, error("CheckTransaction(): Orchard bundle proof does not verify"),
+                REJECT_INVALID, "bad-txns-orchard-verification-failed");
+        }
+
         // Queue Orchard signatures to be batch-validated.
-        tx.GetOrchardBundle().QueueSignatureValidation(orchardAuth, tx.GetHash());
+        orchardBundle.QueueSignatureValidation(orchardAuth, tx.GetHash());
 
         return true;
     }
@@ -2732,7 +2743,8 @@ static bool ShouldCheckTransactions(const CChainParams& chainparams, const CBloc
 }
 
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex,
-                  CCoinsViewCache& view, const CChainParams& chainparams, bool fJustCheck)
+                  CCoinsViewCache& view, const CChainParams& chainparams,
+                  bool fJustCheck, bool fCheckAuthDataRoot)
 {
     AssertLockHeld(cs_main);
 
@@ -2806,6 +2818,20 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                              REJECT_INVALID, "turnstile-violation-sapling-shielded-pool");
             }
         }
+
+        // Orchard
+        //
+        // If we've reached ConnectBlock, we have all transactions of
+        // parents and can expect nChainOrchardValue not to be std::nullopt.
+        // However, the miner and mining RPCs may not have populated this
+        // value and will call `TestBlockValidity`. So, we act
+        // conditionally.
+        if (pindex->nChainOrchardValue) {
+            if (*pindex->nChainOrchardValue < 0) {
+                return state.DoS(100, error("ConnectBlock(): turnstile violation in Orchard shielded value pool"),
+                                 REJECT_INVALID, "turnstile-violation-orchard");
+            }
+        }
     }
 
     // Do not allow blocks that contain transactions which 'overwrite' older transactions,
@@ -2863,6 +2889,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto prevConsensusBranchId = CurrentEpochBranchId(pindex->nHeight - 1, chainparams.GetConsensus());
 
     size_t total_sapling_tx = 0;
+    size_t total_orchard_tx = 0;
 
     std::vector<PrecomputedTransactionData> txdata;
     txdata.reserve(block.vtx.size()); // Required so that pointers to individual PrecomputedTransactionData don't get invalidated
@@ -2993,9 +3020,23 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (!(tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty())) {
             total_sapling_tx += 1;
         }
+        if (tx.GetOrchardBundle().IsPresent()) {
+            total_orchard_tx += 1;
+        }
 
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
+    }
+
+    // Derive the various block commitments.
+    // We only derive them if they will be used for this block.
+    std::optional<uint256> hashAuthDataRoot;
+    std::optional<uint256> hashChainHistoryRoot;
+    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+        hashAuthDataRoot = block.BuildAuthDataMerkleTree();
+    }
+    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+        hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
     }
 
     view.PushAnchor(sprout_tree);
@@ -3012,19 +3053,48 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
             pindex->hashFinalSaplingRoot = sapling_tree.root();
         }
+
+        // - If this block is before NU5 activation:
+        //   - hashAuthDataRoot and hashFinalOrchardRoot are always null.
+        //   - We don't set hashChainHistoryRoot here to maintain the invariant
+        //     documented in CBlockIndex (which was ensured in AddToBlockIndex).
+        // - If this block is on or after NU5 activation, this is where we set
+        //   the correct values of hashAuthDataRoot, hashFinalOrchardRoot, and
+        //   hashChainHistoryRoot; in particular, blocks that are never passed
+        //   to ConnectBlock() (and thus never on the main chain) will stay with
+        //   these set to null.
+        if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+            pindex->hashAuthDataRoot = hashAuthDataRoot.value();
+            pindex->hashFinalOrchardRoot = uint256(); // TODO: replace with Orchard tree root
+            pindex->hashChainHistoryRoot = hashChainHistoryRoot.value();
+        }
     }
     blockundo.old_sprout_tree_root = old_sprout_tree_root;
 
-    if (IsActivationHeight(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
-        // In the block that activates ZIP 221, block.hashLightClientRoot MUST
+    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+        if (fCheckAuthDataRoot) {
+            // If NU5 is active, block.hashBlockCommitments must be the top digest
+            // of the ZIP 244 block commitments linked list.
+            // https://zips.z.cash/zip-0244#block-header-changes
+            uint256 hashBlockCommitments = DeriveBlockCommitmentsHash(
+                hashChainHistoryRoot.value(),
+                hashAuthDataRoot.value());
+            if (block.hashBlockCommitments != hashBlockCommitments) {
+                return state.DoS(100,
+                    error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be ZIP 244 block commitment)"),
+                    REJECT_INVALID, "bad-block-commitments-hash");
+            }
+        }
+    } else if (IsActivationHeight(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
+        // In the block that activates ZIP 221, block.hashBlockCommitments MUST
         // be set to all zero bytes.
-        if (!block.hashLightClientRoot.IsNull()) {
+        if (!block.hashBlockCommitments.IsNull()) {
             return state.DoS(100,
-                error("ConnectBlock(): block's hashLightClientRoot is incorrect (should be null)"),
+                error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be null)"),
                 REJECT_INVALID, "bad-heartwood-root-in-block");
         }
     } else if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-        // If Heartwood is active, block.hashLightClientRoot must be the same as
+        // If Heartwood is active, block.hashBlockCommitments must be the same as
         // the root of the history tree for the previous block. We only store
         // one tree per epoch, so we have two possible cases:
         // - If the previous block is in the previous epoch, this block won't
@@ -3032,32 +3102,47 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // - If the previous block is in this epoch, this block would affect
         //   this epoch's tree root, but as we haven't updated the tree for this
         //   block yet, view.GetHistoryRoot() returns the root we need.
-        if (block.hashLightClientRoot != view.GetHistoryRoot(prevConsensusBranchId)) {
+        if (block.hashBlockCommitments != hashChainHistoryRoot.value()) {
             return state.DoS(100,
-                error("ConnectBlock(): block's hashLightClientRoot is incorrect (should be history tree root)"),
+                error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be history tree root)"),
                 REJECT_INVALID, "bad-heartwood-root-in-block");
         }
     } else if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_SAPLING)) {
-        // If Sapling is active, block.hashLightClientRoot must be the
+        // If Sapling is active, block.hashBlockCommitments must be the
         // same as the root of the Sapling tree
-        if (block.hashLightClientRoot != sapling_tree.root()) {
+        if (block.hashBlockCommitments != sapling_tree.root()) {
             return state.DoS(100,
-                error("ConnectBlock(): block's hashLightClientRoot is incorrect (should be Sapling tree root)"),
+                error("ConnectBlock(): block's hashBlockCommitments is incorrect (should be Sapling tree root)"),
                 REJECT_INVALID, "bad-sapling-root-in-block");
         }
     }
 
     // History read/write is started with Heartwood update.
     if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-        auto historyNode = libzcash::NewLeaf(
-            block.GetHash(),
-            block.nTime,
-            block.nBits,
-            pindex->hashFinalSaplingRoot,
-            ArithToUint256(GetBlockProof(*pindex)),
-            pindex->nHeight,
-            total_sapling_tx
-        );
+        HistoryNode historyNode;
+        if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+            historyNode = libzcash::NewV2Leaf(
+                block.GetHash(),
+                block.nTime,
+                block.nBits,
+                pindex->hashFinalSaplingRoot,
+                pindex->hashFinalOrchardRoot,
+                ArithToUint256(GetBlockProof(*pindex)),
+                pindex->nHeight,
+                total_sapling_tx,
+                total_orchard_tx
+            );
+        } else {
+            historyNode = libzcash::NewV1Leaf(
+                block.GetHash(),
+                block.nTime,
+                block.nBits,
+                pindex->hashFinalSaplingRoot,
+                ArithToUint256(GetBlockProof(*pindex)),
+                pindex->nHeight,
+                total_sapling_tx
+            );
+        }
 
         view.PushHistoryNode(consensusBranchId, historyNode);
     }
@@ -3325,6 +3410,13 @@ struct PoolMetrics {
         } else {
             stats.created = 0;
         }
+
+        return stats;
+    }
+
+    static PoolMetrics Orchard(CBlockIndex *pindex, CCoinsViewCache *view) {
+        PoolMetrics stats;
+        stats.value = pindex->nChainOrchardValue;
 
         return stats;
     }
@@ -3910,15 +4002,26 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block, const Consensus::Params&
         pindexNew->pprev = (*miPrev).second;
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
 
-        if (IsActivationHeight(pindexNew->nHeight, consensusParams, Consensus::UPGRADE_HEARTWOOD)) {
-            // hashFinalSaplingRoot is currently null, and will be set correctly in ConnectBlock.
+        if (consensusParams.NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_NU5)) {
+            // The following hashes will be null if this block has never been
+            // connected to a main chain; they will be (re)set correctly in
+            // ConnectBlock:
+            // - hashFinalSaplingRoot
+            // - hashFinalOrchardRoot
+            // - hashChainHistoryRoot
+        } else if (IsActivationHeight(pindexNew->nHeight, consensusParams, Consensus::UPGRADE_HEARTWOOD)) {
+            // hashFinalSaplingRoot and hashFinalOrchardRoot will be null if this block has
+            // never been connected to a main chain; they will be (re)set correctly in
+            // ConnectBlock.
             // hashChainHistoryRoot is null.
         } else if (consensusParams.NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-            // hashFinalSaplingRoot is currently null, and will be set correctly in ConnectBlock.
-            pindexNew->hashChainHistoryRoot = pindexNew->hashLightClientRoot;
+            // hashFinalSaplingRoot and hashFinalOrchardRoot will be null if this block has
+            // never been connected to a main chain; they will be (re)set correctly in
+            // ConnectBlock.
+            pindexNew->hashChainHistoryRoot = pindexNew->hashBlockCommitments;
         } else {
-            // hashChainHistoryRoot is null.
-            pindexNew->hashFinalSaplingRoot = pindexNew->hashLightClientRoot;
+            // hashFinalOrchardRoot and hashChainHistoryRoot are null.
+            pindexNew->hashFinalSaplingRoot = pindexNew->hashBlockCommitments;
         }
 
         pindexNew->BuildSkip();
@@ -3984,12 +4087,16 @@ bool ReceivedBlockTransactions(
     pindexNew->nChainTx = 0;
     CAmount sproutValue = 0;
     CAmount saplingValue = 0;
+    CAmount orchardValue = 0;
     for (auto tx : block.vtx) {
         // Negative valueBalance "takes" money from the transparent value pool
         // and adds it to the Sapling value pool. Positive valueBalance "gives"
         // money to the transparent value pool, removing from the Sapling value
         // pool. So we invert the sign here.
         saplingValue += -tx.valueBalance;
+
+        // Orchard valueBalance behaves the same way as Sapling valueBalance.
+        orchardValue += -tx.GetOrchardBundle().GetValueBalance();
 
         for (auto js : tx.vJoinSplit) {
             sproutValue += js.vpub_old;
@@ -4000,6 +4107,8 @@ bool ReceivedBlockTransactions(
     pindexNew->nChainSproutValue = std::nullopt;
     pindexNew->nSaplingValue = saplingValue;
     pindexNew->nChainSaplingValue = std::nullopt;
+    pindexNew->nOrchardValue = orchardValue;
+    pindexNew->nChainOrchardValue = std::nullopt;
     pindexNew->nFile = pos.nFile;
     pindexNew->nDataPos = pos.nPos;
     pindexNew->nUndoPos = 0;
@@ -4028,9 +4137,15 @@ bool ReceivedBlockTransactions(
                 } else {
                     pindex->nChainSaplingValue = std::nullopt;
                 }
+                if (pindex->pprev->nChainOrchardValue) {
+                    pindex->nChainOrchardValue = *pindex->pprev->nChainOrchardValue + pindex->nOrchardValue;
+                } else {
+                    pindex->nChainOrchardValue = std::nullopt;
+                }
             } else {
                 pindex->nChainSproutValue = pindex->nSproutValue;
                 pindex->nChainSaplingValue = pindex->nSaplingValue;
+                pindex->nChainOrchardValue = pindex->nOrchardValue;
             }
 
             // Fall back to hardcoded Sprout value pool balance
@@ -4565,7 +4680,7 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
         return false;
     if (!ContextualCheckBlock(block, state, chainparams, pindexPrev, true))
         return false;
-    if (!ConnectBlock(block, state, &indexDummy, viewNew, chainparams, true))
+    if (!ConnectBlock(block, state, &indexDummy, viewNew, chainparams, true, fCheckMerkleRoot))
         return false;
     assert(state.IsValid());
 
@@ -4778,16 +4893,23 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                     } else {
                         pindex->nChainSaplingValue = std::nullopt;
                     }
+                    if (pindex->pprev->nChainOrchardValue) {
+                        pindex->nChainOrchardValue = *pindex->pprev->nChainOrchardValue + pindex->nOrchardValue;
+                    } else {
+                        pindex->nChainOrchardValue = std::nullopt;
+                    }
                 } else {
                     pindex->nChainTx = 0;
                     pindex->nChainSproutValue = std::nullopt;
                     pindex->nChainSaplingValue = std::nullopt;
+                    pindex->nChainOrchardValue = std::nullopt;
                     mapBlocksUnlinked.insert(std::make_pair(pindex->pprev, pindex));
                 }
             } else {
                 pindex->nChainTx = pindex->nTx;
                 pindex->nChainSproutValue = pindex->nSproutValue;
                 pindex->nChainSaplingValue = pindex->nSaplingValue;
+                pindex->nChainOrchardValue = pindex->nOrchardValue;
             }
 
             // Fall back to hardcoded Sprout value pool balance
@@ -4799,6 +4921,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
             if (fExperimentalDeveloperSetPoolSizeZero) {
                 pindex->nChainSproutValue = 0;
                 pindex->nChainSaplingValue = 0;
+                pindex->nChainOrchardValue = 0;
             }
         }
         // Construct in-memory chain of branch IDs.

@@ -44,6 +44,26 @@ bool orchard_bundle_serialize(
     void* stream,
     write_callback_t write_cb);
 
+/// Returns the value balance for this Orchard bundle.
+///
+/// A transaction with no Orchard component has a value balance of zero.
+int64_t orchard_bundle_value_balance(const OrchardBundlePtr* bundle);
+
+/// Validates the given Orchard bundle against bundle-specific consensus rules.
+///
+/// If `bundle == nullptr`, this returns `true`.
+///
+/// ## Consensus rules
+///
+/// [§4.6](https://zips.z.cash/protocol/protocol.pdf#actiondesc):
+/// - Canonical element encodings are enforced by `orchard_bundle_parse`.
+/// - SpendAuthSig^Orchard validity is enforced by `orchard_batch_validate`.
+/// - Proof validity is enforced here.
+///
+/// [§7.1](https://zips.z.cash/protocol/protocol.pdf#txnencodingandconsensus):
+/// - `bindingSigOrchard` validity is enforced by `orchard_batch_validate`.
+bool orchard_bundle_validate(const OrchardBundlePtr* bundle);
+
 /// Initializes a new Orchard batch validator.
 ///
 /// Please free this with `orchard_batch_validation_free` when you are done with

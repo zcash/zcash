@@ -10,6 +10,7 @@
 #include "main.h"
 #include "pow.h"
 #include "uint256.h"
+#include "zcash/History.hpp"
 
 #include <stdint.h>
 
@@ -145,14 +146,30 @@ HistoryNode CCoinsViewDB::GetHistoryAt(uint32_t epochId, HistoryIndex index) con
         throw runtime_error("History data inconsistent - reindex?");
     }
 
-    // Read mmrNode into tmp std::array
-    std::array<unsigned char, NODE_SERIALIZED_LENGTH> tmpMmrNode;
+    if (libzcash::IsV1HistoryTree(epochId)) {
+        // History nodes serialized by `zcashd` versions that were unaware of NU5, used
+        // the previous shorter maximum serialized length. Because we stored this as an
+        // array, we can't just read the current (longer) maximum serialized length, as
+        // it will result in an exception for those older nodes.
+        //
+        // Instead, we always read an array of the older length. This works as expected
+        // for V1 nodes serialized by older clients, while for V1 nodes serialized by
+        // NU5-aware clients this is guaranteed to ignore only trailing zero bytes.
+        std::array<unsigned char, NODE_V1_SERIALIZED_LENGTH> tmpMmrNode;
+        if (!db.Read(make_pair(DB_MMR_NODE, make_pair(epochId, index)), tmpMmrNode)) {
+            throw runtime_error("History data inconsistent (expected node not found) - reindex?");
+        }
+        std::copy(std::begin(tmpMmrNode), std::end(tmpMmrNode), mmrNode.bytes);
+    } else {
+        // Read mmrNode into tmp std::array
+        std::array<unsigned char, NODE_SERIALIZED_LENGTH> tmpMmrNode;
 
-    if (!db.Read(make_pair(DB_MMR_NODE, make_pair(epochId, index)), tmpMmrNode)) {
-        throw runtime_error("History data inconsistent (expected node not found) - reindex?");
+        if (!db.Read(make_pair(DB_MMR_NODE, make_pair(epochId, index)), tmpMmrNode)) {
+            throw runtime_error("History data inconsistent (expected node not found) - reindex?");
+        }
+
+        std::copy(std::begin(tmpMmrNode), std::end(tmpMmrNode), mmrNode.bytes);
     }
-
-    std::copy(std::begin(tmpMmrNode), std::end(tmpMmrNode), mmrNode.bytes);
 
     return mmrNode;
 }
@@ -549,7 +566,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                 pindexNew->hashSproutAnchor     = diskindex.hashSproutAnchor;
                 pindexNew->nVersion       = diskindex.nVersion;
                 pindexNew->hashMerkleRoot = diskindex.hashMerkleRoot;
-                pindexNew->hashLightClientRoot  = diskindex.hashLightClientRoot;
+                pindexNew->hashBlockCommitments  = diskindex.hashBlockCommitments;
                 pindexNew->nTime          = diskindex.nTime;
                 pindexNew->nBits          = diskindex.nBits;
                 pindexNew->nNonce         = diskindex.nNonce;
@@ -559,8 +576,11 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                 pindexNew->nTx            = diskindex.nTx;
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
                 pindexNew->nSaplingValue  = diskindex.nSaplingValue;
+                pindexNew->nOrchardValue  = diskindex.nOrchardValue;
                 pindexNew->hashFinalSaplingRoot = diskindex.hashFinalSaplingRoot;
+                pindexNew->hashFinalOrchardRoot = diskindex.hashFinalOrchardRoot;
                 pindexNew->hashChainHistoryRoot = diskindex.hashChainHistoryRoot;
+                pindexNew->hashAuthDataRoot = diskindex.hashAuthDataRoot;
 
                 // Consistency checks
                 auto header = pindexNew->GetBlockHeader();
@@ -588,18 +608,23 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                     // a non-upgraded peer. However that case the entry will be
                     // marked as consensus-invalid.
                     //
-                    if (diskindex.nClientVersion >= CHAIN_HISTORY_ROOT_VERSION &&
+                    if (diskindex.nClientVersion >= NU5_DATA_VERSION &&
+                        chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_NU5)) {
+                        // From NU5 onwards we don't enforce a consistency check, because
+                        // after ZIP 244, hashBlockCommitments will not match any stored
+                        // commitment.
+                    } else if (diskindex.nClientVersion >= CHAIN_HISTORY_ROOT_VERSION &&
                         chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-                        if (pindexNew->hashLightClientRoot != pindexNew->hashChainHistoryRoot) {
+                        if (pindexNew->hashBlockCommitments != pindexNew->hashChainHistoryRoot) {
                             return error(
-                                "LoadBlockIndex(): block index inconsistency detected (post-Heartwood; hashLightClientRoot %s != hashChainHistoryRoot %s): %s",
-                                pindexNew->hashLightClientRoot.ToString(), pindexNew->hashChainHistoryRoot.ToString(), pindexNew->ToString());
+                                "LoadBlockIndex(): block index inconsistency detected (post-Heartwood; hashBlockCommitments %s != hashChainHistoryRoot %s): %s",
+                                pindexNew->hashBlockCommitments.ToString(), pindexNew->hashChainHistoryRoot.ToString(), pindexNew->ToString());
                         }
                     } else {
-                        if (pindexNew->hashLightClientRoot != pindexNew->hashFinalSaplingRoot) {
+                        if (pindexNew->hashBlockCommitments != pindexNew->hashFinalSaplingRoot) {
                             return error(
-                                "LoadBlockIndex(): block index inconsistency detected (pre-Heartwood; hashLightClientRoot %s != hashFinalSaplingRoot %s): %s",
-                                pindexNew->hashLightClientRoot.ToString(), pindexNew->hashFinalSaplingRoot.ToString(), pindexNew->ToString());
+                                "LoadBlockIndex(): block index inconsistency detected (pre-Heartwood; hashBlockCommitments %s != hashFinalSaplingRoot %s): %s",
+                                pindexNew->hashBlockCommitments.ToString(), pindexNew->hashFinalSaplingRoot.ToString(), pindexNew->ToString());
                         }
                     }
                 }

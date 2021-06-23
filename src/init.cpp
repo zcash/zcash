@@ -737,7 +737,7 @@ static void ZC_LoadParams(
 
     gettimeofday(&tv_end, 0);
     elapsed = float(tv_end.tv_sec-tv_start.tv_sec) + (tv_end.tv_usec-tv_start.tv_usec)/float(1000000);
-    LogPrintf("Loaded Sapling parameters in %fs seconds.\n", elapsed);
+    LogPrintf("Loaded proof system parameters in %fs seconds.\n", elapsed);
 }
 
 bool AppInitServers(boost::thread_group& threadGroup)
