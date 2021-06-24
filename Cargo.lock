@@ -649,9 +649,9 @@ dependencies = [
 
 [[package]]
 name = "hermit-abi"
-version = "0.1.18"
+version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "322f4de77956e22ed0e5032c359a0f1273f1f7f0d79bfa3b8ffbc730d7fbcc5c"
+checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
 dependencies = [
  "libc",
 ]
@@ -1050,7 +1050,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orchard"
 version = "0.0.0"
-source = "git+https://github.com/nuttycom/orchard.git?branch=incremental_merkle_tree#52394b8e8d16cf848519975ca6b1c6c2ca908a43"
+source = "git+https://github.com/nuttycom/orchard.git?branch=incremental_merkle_tree#90d0c254cf319b0a7637da5205633109c803a9e1"
 dependencies = [
  "aes",
  "arrayvec 0.7.1",
