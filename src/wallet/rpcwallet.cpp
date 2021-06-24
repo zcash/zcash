@@ -7,6 +7,7 @@
 #include "consensus/upgrades.h"
 #include "consensus/params.h"
 #include "core_io.h"
+#include "experimental_features.h"
 #include "rpc/docbuilder.h"
 #include "init.h"
 #include "key_io.h"
@@ -2123,7 +2124,7 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
         return NullUniValue;
 
     std::string disabledMsg = "";
-    if (!fReindex) {
+    if (!fExperimentalDeveloperEncryptWallet) {
         disabledMsg = experimentalDisabledHelpMsg("encryptwallet", {"developerencryptwallet"});
     }
 
@@ -2156,7 +2157,7 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
 
     if (fHelp)
         return true;
-    if (!fReindex) {
+    if (!fExperimentalDeveloperEncryptWallet) {
         throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: wallet encryption is disabled.");
     }
     if (pwalletMain->IsCrypted())
@@ -4677,21 +4678,11 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    std::vector<std::string> enableArgs;
-    std::string enableArg = "zmergetoaddress";
-    enableArgs.push_back(enableArg);
-    auto fEnableMergeToAddress = fReindex && GetBoolArg("-" + enableArg, false);
-    std::string strDisabledMsg = "";
-    if (!fEnableMergeToAddress) {
-        strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArgs) + "\n";
-    }
-
     if (fHelp || params.size() < 2 || params.size() > 6)
         throw runtime_error(
             RpcDocBuilder("z_mergetoaddress")
                 .SetDescription(
-                    strDisabledMsg
-                    + "Merge multiple UTXOs and notes into a single UTXO or note.  Coinbase UTXOs are ignored; use `z_shieldcoinbase`\n"
+                    "Merge multiple UTXOs and notes into a single UTXO or note.  Coinbase UTXOs are ignored; use `z_shieldcoinbase`\n"
                     "to combine those into a single note.\n"
                     "\n"
                     "This is an asynchronous operation, and UTXOs selected for merging will be locked.  If there is an error, they\n"
