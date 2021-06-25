@@ -326,6 +326,9 @@ struct CNullifiersCacheEntry
     CNullifiersCacheEntry() : entered(false), flags(0) {}
 };
 
+/// These identify the value pool, and as such, Canopy (for example)
+/// isn't here, since value created during the Canopy network upgrade
+/// is part of the Saplingn pool.
 enum ShieldedType
 {
     SPROUT,

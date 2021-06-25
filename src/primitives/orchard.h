@@ -108,6 +108,14 @@ public:
             return std::nullopt;
         }
     }
+
+    bool OutputsEnabled() const {
+        return inner && orchard_bundle_outputs_enabled(inner.get());
+    }
+
+    bool SpendsEnabled() const {
+        return inner && orchard_bundle_spends_enabled(inner.get());
+    }
 };
 
 #endif // ZCASH_PRIMITIVES_ORCHARD_H

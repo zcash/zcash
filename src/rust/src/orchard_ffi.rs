@@ -271,3 +271,19 @@ pub extern "C" fn orchard_batch_validate(batch: *const BatchValidator) -> bool {
         true
     }
 }
+
+#[no_mangle]
+pub extern "C" fn orchard_bundle_outputs_enabled(
+    bundle: *const Bundle<Authorized, Amount>,
+) -> bool {
+    let bundle = unsafe { bundle.as_ref() };
+    bundle.map(|b| b.flags().outputs_enabled()).unwrap_or(false)
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_bundle_spends_enabled(
+    bundle: *const Bundle<Authorized, Amount>,
+) -> bool {
+    let bundle = unsafe { bundle.as_ref() };
+    bundle.map(|b| b.flags().spends_enabled()).unwrap_or(false)
+}

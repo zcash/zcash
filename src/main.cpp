@@ -829,7 +829,10 @@ bool ContextualCheckTransaction(
     assert(!saplingActive || overwinterActive); // Sapling cannot be active unless Overwinter is
     assert(!heartwoodActive || saplingActive);  // Heartwood cannot be active unless Sapling is
     assert(!canopyActive || heartwoodActive);   // Canopy cannot be active unless Heartwood is
-    assert(!futureActive || canopyActive);      // ZFUTURE must always include the latest live version
+    assert(!nu5Active || canopyActive);         // Nu5 cannot be active unless Canopy is
+    assert(!futureActive || nu5Active);         // ZFUTURE must always include the latest live version
+
+    auto const orchard_bundle = tx.GetOrchardBundle();
 
     // Rules that apply only to Sprout
     if (beforeOverwinter) {
@@ -869,6 +872,8 @@ bool ContextualCheckTransaction(
         // Rules that became inactive after Sapling activation.
         if (!saplingActive) {
             // Reject transactions with invalid version
+            // LMR XXX NU5 spec p. 118 says this should check exact match 3,
+            // wouldn't this code allow it to be 1 or 2?
             if (tx.nVersion > OVERWINTER_MAX_TX_VERSION ) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -898,21 +903,13 @@ bool ContextualCheckTransaction(
             }
 
             // Reject transactions with invalid version
+            // LMR XXX different from spec which requires exact match 4
+            // (so if version is 1, 2, or 3, it won't be rejected here)
             if (tx.nVersion > SAPLING_MAX_TX_VERSION) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
                     error("ContextualCheckTransaction(): Sapling version too high"),
                     REJECT_INVALID, "bad-tx-sapling-version-too-high");
-            }
-        }
-
-        if (!futureActive) {
-            // Reject transactions with invalid version group id
-            if (tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
-                return state.DoS(
-                    dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckTransaction(): invalid Sapling tx version"),
-                    REJECT_INVALID, "bad-sapling-tx-version-group-id");
             }
         }
     } else {
@@ -973,6 +970,8 @@ bool ContextualCheckTransaction(
                 }
 
                 // ZIP 207: detect shielded funding stream elements
+                // XXX LMR seems like this could have been moved to the canopyActive section
+                // below (and then the initializing of fundingStreamElements too)
                 if (canopyActive) {
                     libzcash::SaplingPaymentAddress zaddr(encPlaintext->d, outPlaintext->pk_d);
                     for (auto it = fundingStreamElements.begin(); it != fundingStreamElements.end(); ++it) {
@@ -989,6 +988,8 @@ bool ContextualCheckTransaction(
                 // to 0x02. This applies even during the grace period, and also applies to
                 // funding stream outputs sent to shielded payment addresses, if any.
                 // https://zips.z.cash/zip-0212#consensus-rule-change-for-coinbase-transactions
+                // XXX LMR spec p 107 also says that pre-Canopy, leading byte must be 0x01, doesn't
+                // look like we're checking that.
                 if (canopyActive != (encPlaintext->get_leadbyte() == 0x02)) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
@@ -997,6 +998,7 @@ bool ContextualCheckTransaction(
                         "bad-cb-output-desc-invalid-note-plaintext-version");
                 }
             }
+            // XXX need similar checks for Orchard outputs
         }
     } else {
         // Rules that apply generally before Heartwood. These were
@@ -1004,12 +1006,18 @@ bool ContextualCheckTransaction(
         // after Heartwood activation.
 
         if (tx.IsCoinBase()) {
-            // A coinbase transaction cannot have output descriptions
+            // A coinbase transaction cannot have shielded outputs
             if (tx.vShieldedOutput.size() > 0)
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
                     error("ContextualCheckTransaction(): coinbase has output descriptions"),
                     REJECT_INVALID, "bad-cb-has-output-description");
+            if (orchard_bundle.SpendsEnabled()) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): coinbase has orchard shielded spends"),
+                    REJECT_INVALID, "bad-cb-has-orchard-spends");
+            }
         }
     }
 
@@ -1045,11 +1053,53 @@ bool ContextualCheckTransaction(
         // after Canopy activation.
     }
 
+    // Rules that apply to Nu5 or later:
+    if (nu5Active) {
+        if (tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID) {
+            if (tx.nVersion < ZIP225_MIN_TX_VERSION) {
+                return state.DoS(
+                    dosLevelConstricting,
+                    error("ContextualCheckTransaction(): ZIP225 version too low"),
+                    REJECT_INVALID, "bad-tx-zip225-version-too-low");
+            }
+
+            // Reject transactions with invalid version
+            if (tx.nVersion > ZIP225_MAX_TX_VERSION) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): ZIP225 version too high"),
+                    REJECT_INVALID, "bad-tx-zip225-version-too-high");
+            }
+        }
+        if (!futureActive) {
+            // Reject transactions with invalid version group id
+            // XXX LMR should this also allow SAPLING_VERSION_GROUP_ID here?
+            // I think not, because old line 907 did not allow OVERWINTER_GROUP_ID.
+            if (tx.nVersionGroupId != ZIP225_VERSION_GROUP_ID) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): invalid ZIP225 tx version"),
+                    REJECT_INVALID, "bad-zip225-tx-version-group-id");
+            }
+        }
+        // XXX Do we need to call an orchard check function through the ffi?
+    } else {
+        // Rules that apply generally before Nu5. These were
+        // previously noncontextual checks that became contextual
+        // after Nu5 activation.
+        if (tx.GetOrchardBundle().IsPresent()) {
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckTransaction(): transaction has Orchard actions"),
+                REJECT_INVALID, "bad-tx-has-orchard-actions");
+        }
+    }
+
     // Rules that apply to the future epoch
     if (futureActive) {
         switch (tx.nVersionGroupId) {
             case ZFUTURE_VERSION_GROUP_ID:
-                if (tx.nVersion <= SAPLING_MAX_TX_VERSION) {
+                if (tx.nVersion <= ZIP225_MAX_TX_VERSION) {
                     return state.DoS(
                         dosLevelConstricting,
                         error("ContextualCheckTransaction(): Future version too low"),
@@ -1057,15 +1107,15 @@ bool ContextualCheckTransaction(
                 }
 
                 // Reject transactions with invalid version
-                if (tx.nVersion > SAPLING_MAX_TX_VERSION + 1) {
+                if (tx.nVersion > ZIP225_MAX_TX_VERSION + 1) {
                     return state.DoS(
                         dosLevelPotentiallyRelaxing,
                         error("ContextualCheckTransaction(): Future version too high"),
                         REJECT_INVALID, "bad-tx-zfuture-version-too-high");
                 }
                 break;
-            case SAPLING_VERSION_GROUP_ID:
-                // Allow V4 transactions while futureActive
+            case ZIP225_VERSION_GROUP_ID:
+                // Allow V5 transactions while futureActive
                 break;
             default:
                 return state.DoS(
@@ -1084,7 +1134,9 @@ bool ContextualCheckTransaction(
 
     if (!tx.vJoinSplit.empty() ||
         !tx.vShieldedSpend.empty() ||
-        !tx.vShieldedOutput.empty())
+        !tx.vShieldedOutput.empty() ||
+        orchard_bundle.SpendsEnabled() ||
+        orchard_bundle.OutputsEnabled())
     {
         // Empty output script.
         CScript scriptCode;
@@ -1187,6 +1239,9 @@ bool ContextualCheckTransaction(
 
         librustzcash_sapling_verification_ctx_free(ctx);
     }
+    if (orchard_bundle.IsPresent()) {
+        // XXX add similar block for orchard checks
+    }
     return true;
 }
 
@@ -1275,6 +1330,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
         if (tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID &&
                 tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID &&
+                tx.nVersionGroupId != ZIP225_VERSION_GROUP_ID &&
                 tx.nVersionGroupId != ZFUTURE_VERSION_GROUP_ID) {
             return state.DoS(100, error("CheckTransaction(): unknown tx version group id"),
                     REJECT_INVALID, "bad-tx-version-group-id");
@@ -1284,17 +1340,28 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                             REJECT_INVALID, "bad-tx-expiry-height-too-high");
         }
     }
+    auto orchard_bundle = tx.GetOrchardBundle();
 
     // Transactions containing empty `vin` must have either non-empty
     // `vJoinSplit` or non-empty `vShieldedSpend`.
-    if (tx.vin.empty() && tx.vJoinSplit.empty() && tx.vShieldedSpend.empty())
+    if (tx.vin.empty() &&
+        tx.vJoinSplit.empty() &&
+        tx.vShieldedSpend.empty() &&
+        !orchard_bundle.SpendsEnabled())
+    {
         return state.DoS(10, error("CheckTransaction(): vin empty"),
                          REJECT_INVALID, "bad-txns-vin-empty");
+    }
     // Transactions containing empty `vout` must have either non-empty
     // `vJoinSplit` or non-empty `vShieldedOutput`.
-    if (tx.vout.empty() && tx.vJoinSplit.empty() && tx.vShieldedOutput.empty())
+    if (tx.vout.empty() &&
+        tx.vJoinSplit.empty() &&
+        tx.vShieldedOutput.empty() &&
+        !orchard_bundle.OutputsEnabled())
+    {
         return state.DoS(10, error("CheckTransaction(): vout empty"),
                          REJECT_INVALID, "bad-txns-vout-empty");
+    }
 
     // Size limits
     static_assert(MAX_BLOCK_SIZE >= MAX_TX_SIZE_AFTER_SAPLING); // sanity
@@ -1320,13 +1387,13 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for non-zero valueBalance when there are no Sapling inputs or outputs
-    if (tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty() && tx.valueBalance != 0) {
+    if (tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty() && tx.valueBalance != 0) { // XXX value balance ffi
         return state.DoS(100, error("CheckTransaction(): tx.valueBalance has no sources or sinks"),
                             REJECT_INVALID, "bad-txns-valuebalance-nonzero");
     }
 
-    // Check for overflow valueBalance
-    if (tx.valueBalance > MAX_MONEY || tx.valueBalance < -MAX_MONEY) {
+    // Check for overflow valueBalance XXX rename to sapling value balance, add orchard value balance checks
+    if (tx.valueBalance > MAX_MONEY || tx.valueBalance < -MAX_MONEY) { // XXX need value balance ffi
         return state.DoS(100, error("CheckTransaction(): abs(tx.valueBalance) too large"),
                             REJECT_INVALID, "bad-txns-valuebalance-toolarge");
     }
@@ -1402,9 +1469,14 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                                     REJECT_INVALID, "bad-txns-txintotal-toolarge");
             }
         }
+        // XXX add orchard block, similar to sapling
     }
 
     // Check for duplicate inputs
+    // XXX LMR in this loop, should we call ContextualCheckInputs()?
+    // that would check, for example, spec rule:
+    // A transaction with one or more transparent inputs from coinbase transactions
+    // MUST have no transparent outputs (i.e. tx_out_count MUST be 0)
     set<COutPoint> vInOutPoints;
     for (const CTxIn& txin : tx.vin)
     {
@@ -1442,6 +1514,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             vSaplingNullifiers.insert(spend_desc.nullifier);
         }
     }
+    // XXX similar for orchard
 
     // Check for duplicate orchard nullifiers in this transaction
     {
@@ -1468,6 +1541,9 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             return state.DoS(100, error("CheckTransaction(): coinbase has spend descriptions"),
                              REJECT_INVALID, "bad-cb-has-spend-description");
         // See ContextualCheckTransaction for consensus rules on coinbase output descriptions.
+        if (orchard_bundle.SpendsEnabled())
+            return state.DoS(100, error("CheckTransaction(): coinbase has Orchard spends"),
+                             REJECT_INVALID, "bad-cb-has-orchard-spend");
 
         if (tx.vin[0].scriptSig.size() < 2 || tx.vin[0].scriptSig.size() > 100)
             return state.DoS(100, error("CheckTransaction(): coinbase script size"),
