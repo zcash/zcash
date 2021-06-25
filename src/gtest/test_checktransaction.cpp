@@ -58,6 +58,7 @@ public:
 
 void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranchId);
 
+// TODO If creating a zip225 (v5) tx, we need to be told whether to create sprout elements or orchard elements.
 CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH_ID) {
     CMutableTransaction mtx;
     if (consensusBranchId == NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId) {
@@ -68,6 +69,11 @@ CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH
         mtx.fOverwintered = true;
         mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
         mtx.nVersion = SAPLING_TX_VERSION;
+    } else if (consensusBranchId == NetworkUpgradeInfo[Consensus::UPGRADE_NU5].nBranchId) {
+        mtx.fOverwintered = true;
+        mtx.nVersionGroupId = ZIP225_VERSION_GROUP_ID;
+        mtx.nVersion = ZIP225_TX_VERSION;
+        mtx.nConsensusBranchId = consensusBranchId; // XXX should this be moved outside the conditional?
     } else if (consensusBranchId != SPROUT_BRANCH_ID) {
         // Unsupported consensus branch ID
         assert(false);
@@ -124,6 +130,8 @@ void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranch
 TEST(ChecktransactionTests, ValidTransaction) {
     CMutableTransaction mtx = GetValidTransaction();
     CTransaction tx(mtx);
+    EXPECT_FALSE(tx.GetOrchardBundle().OutputsEnabled());
+    EXPECT_FALSE(tx.GetOrchardBundle().SpendsEnabled());
     MockCValidationState state;
     EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
 }

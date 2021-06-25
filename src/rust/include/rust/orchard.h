@@ -108,6 +108,15 @@ void orchard_batch_add_bundle(
 ///
 /// Returns false if any item in the batch is invalid.
 bool orchard_batch_validate(const OrchardBatchValidatorPtr* batch);
+
+/// Returns whether the Orchard bundle is present and outputs
+/// are enabled.
+bool orchard_bundle_outputs_enabled(const OrchardBundlePtr* bundle);
+
+/// Returns whether the Orchard bundle is present and spends
+/// are enabled.
+bool orchard_bundle_spends_enabled(const OrchardBundlePtr* bundle);
+
 #ifdef __cplusplus
 }
 #endif
