@@ -1445,12 +1445,12 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
 
     // Check for duplicate orchard nullifiers in this transaction
     {
-        set<uint256> vOrchardNullifiers;
+        std::set<uint256> vOrchardNullifiers;
         for (const uint256& nf : tx.GetOrchardBundle().GetNullifiers())
         {
             if (vOrchardNullifiers.count(nf))
                 return state.DoS(100, error("CheckTransaction(): duplicate nullifiers"),
-                            REJECT_INVALID, "bad-spend-description-nullifiers-duplicate");
+                            REJECT_INVALID, "bad-orchard-nullifiers-duplicate");
 
             vOrchardNullifiers.insert(nf);
         }
