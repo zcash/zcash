@@ -3,7 +3,7 @@ use incrementalmerkletree::{
     bridgetree::{self, BridgeTree},
     Altitude, Frontier, Hashable, Tree,
 };
-use std::mem::size_of;
+use std::mem::size_of_val;
 use std::ptr;
 
 use orchard::{bundle::Authorized, tree::OrchardIncrementalTreeDigest};
@@ -98,13 +98,13 @@ pub extern "C" fn orchard_merkle_frontier_append_bundle(
             }
         }
     }
-    
+
     true
 }
 
 #[no_mangle]
 pub extern "C" fn orchard_merkle_frontier_root(
-    tree: *mut bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *const bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
     root_ret: *mut [u8; 32],
 ) -> bool {
     let tree = unsafe {
@@ -128,7 +128,7 @@ pub extern "C" fn orchard_merkle_frontier_root(
 
 #[no_mangle]
 pub extern "C" fn orchard_merkle_frontier_num_leaves(
-    tree: *mut bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *const bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
 ) -> usize {
     let tree = unsafe {
         tree.as_ref()
@@ -138,18 +138,16 @@ pub extern "C" fn orchard_merkle_frontier_num_leaves(
     tree.position().map_or(0, |p| <usize>::from(p) + 1)
 }
 
-
 #[no_mangle]
 pub extern "C" fn orchard_merkle_frontier_dynamic_mem_usage(
-    tree: *mut bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *const bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
 ) -> usize {
     let tree = unsafe {
         tree.as_ref()
             .expect("Orchard note commitment tree pointer may not be null.")
     };
 
-    size_of::<Box<bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>>>()
-        + tree.dynamic_memory_usage()
+    size_of_val(tree) + tree.dynamic_memory_usage()
 }
 
 //
@@ -235,7 +233,7 @@ pub extern "C" fn incremental_sinsemilla_tree_append_bundle(
                 return false;
             }
         }
-    } 
+    }
 
     true
 }
@@ -266,11 +264,11 @@ pub extern "C" fn incremental_sinsemilla_tree_rewind(
 
 #[no_mangle]
 pub extern "C" fn incremental_sinsemilla_tree_root(
-    tree: *mut BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *const BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
     root_ret: *mut [u8; 32],
 ) -> bool {
     let tree = unsafe {
-        tree.as_mut()
+        tree.as_ref()
             .expect("Orchard note commitment tree pointer may not be null.")
     };
 

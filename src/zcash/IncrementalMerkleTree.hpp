@@ -308,7 +308,7 @@ public:
     }
 
     size_t DynamicMemoryUsage() const {
-       return orchard_merkle_frontier_dynamic_mem_usage(inner.get());
+        return orchard_merkle_frontier_dynamic_mem_usage(inner.get());
     }
 
     bool AppendBundle(const OrchardBundle& bundle) {

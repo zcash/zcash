@@ -44,7 +44,7 @@ OrchardMerkleFrontierPtr* orchard_merkle_frontier_parse(
         void* stream,
         read_callback_t read_cb);
 
-// Serializes an Orchar Merkle frontier to a stream.
+// Serializes an Orchard Merkle frontier to a stream.
 //
 // Returns `false` if an error occurs while writing to the stream.
 bool orchard_merkle_frontier_serialize(
