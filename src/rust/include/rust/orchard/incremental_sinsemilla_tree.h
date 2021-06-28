@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef ZCASH_RUST_INCLUDE_INCREMENTAL_MERKLE_H
-#define ZCASH_RUST_INCLUDE_INCREMENTAL_MERKLE_H
+#ifndef ZCASH_RUST_INCLUDE_RUST_ORCHARD_INCREMENTAL_SINSEMILLA_TREE_H
+#define ZCASH_RUST_INCLUDE_RUST_ORCHARD_INCREMENTAL_SINSEMILLA_TREE_H
 
 #include "rust/streams.h"
 
@@ -166,4 +166,4 @@ bool incremental_sinsemilla_tree_empty_root(
 }
 #endif
 
-#endif // ZCASH_RUST_INCLUDE_INCREMENTAL_MERKLE_H
+#endif // ZCASH_RUST_INCLUDE_RUST_ORCHARD_INCREMENTAL_SINSEMILLA_TREE_H
