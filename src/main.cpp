@@ -901,14 +901,22 @@ bool ContextualCheckTransaction(
                     REJECT_INVALID, "bad-tx-sapling-version-too-low");
             }
 
-            // Reject transactions with invalid version
-            // LMR XXX different from spec which requires exact match 4
-            // (so if version is 1, 2, or 3, it won't be rejected here)
             if (tx.nVersion > SAPLING_MAX_TX_VERSION) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
                     error("ContextualCheckTransaction(): Sapling version too high"),
                     REJECT_INVALID, "bad-tx-sapling-version-too-high");
+            }
+        }
+
+        // Rules that became inactive after NU5 activation.
+        if (!nu5Active) {
+            // Reject transactions with invalid version group id
+            if (tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): invalid Sapling tx version"),
+                    REJECT_INVALID, "bad-sapling-tx-version-group-id");
             }
         }
     } else {
@@ -969,8 +977,6 @@ bool ContextualCheckTransaction(
                 }
 
                 // ZIP 207: detect shielded funding stream elements
-                // XXX LMR seems like this could have been moved to the canopyActive section
-                // below (and then the initializing of fundingStreamElements too)
                 if (canopyActive) {
                     libzcash::SaplingPaymentAddress zaddr(encPlaintext->d, outPlaintext->pk_d);
                     for (auto it = fundingStreamElements.begin(); it != fundingStreamElements.end(); ++it) {
@@ -987,9 +993,9 @@ bool ContextualCheckTransaction(
                 // to 0x02. This applies even during the grace period, and also applies to
                 // funding stream outputs sent to shielded payment addresses, if any.
                 // https://zips.z.cash/zip-0212#consensus-rule-change-for-coinbase-transactions
-                // XXX LMR spec p 107 also says that pre-Canopy, leading byte must be 0x01, doesn't
-                // look like we're checking that.
-                if (canopyActive != (encPlaintext->get_leadbyte() == 0x02)) {
+                auto leadByte = encPlaintext->get_leadbyte();
+                assert(leadByte == 0x01 || leadByte == 0x02);
+                if (canopyActive != (leadByte == 0x02)) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
                         error("ContextualCheckTransaction(): coinbase output description has invalid note plaintext version"),
@@ -997,7 +1003,6 @@ bool ContextualCheckTransaction(
                         "bad-cb-output-desc-invalid-note-plaintext-version");
                 }
             }
-            // XXX need similar checks for Orchard outputs
         }
     } else {
         // Rules that apply generally before Heartwood. These were
@@ -1011,12 +1016,6 @@ bool ContextualCheckTransaction(
                     dosLevelPotentiallyRelaxing,
                     error("ContextualCheckTransaction(): coinbase has output descriptions"),
                     REJECT_INVALID, "bad-cb-has-output-description");
-            if (orchard_bundle.SpendsEnabled()) {
-                return state.DoS(
-                    dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckTransaction(): coinbase has orchard shielded spends"),
-                    REJECT_INVALID, "bad-cb-has-orchard-spends");
-            }
         }
     }
 
@@ -1072,16 +1071,13 @@ bool ContextualCheckTransaction(
         }
         if (!futureActive) {
             // Reject transactions with invalid version group id
-            // XXX LMR should this also allow SAPLING_VERSION_GROUP_ID here?
-            // I think not, because old line 907 did not allow OVERWINTER_GROUP_ID.
-            if (tx.nVersionGroupId != ZIP225_VERSION_GROUP_ID) {
+            if (!(tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID || tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID)) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckTransaction(): invalid ZIP225 tx version"),
-                    REJECT_INVALID, "bad-zip225-tx-version-group-id");
+                    error("ContextualCheckTransaction(): invalid NU5 tx version"),
+                    REJECT_INVALID, "bad-nu5-tx-version-group-id");
             }
         }
-        // XXX Do we need to call an orchard check function through the ffi?
     } else {
         // Rules that apply generally before NU5. These were previously
         // noncontextual checks that became contextual after NU5 activation.
@@ -1117,6 +1113,9 @@ bool ContextualCheckTransaction(
                         error("ContextualCheckTransaction(): Future version too high"),
                         REJECT_INVALID, "bad-tx-zfuture-version-too-high");
                 }
+                break;
+            case SAPLING_VERSION_GROUP_ID:
+                // Allow V4 transactions while futureActive
                 break;
             case ZIP225_VERSION_GROUP_ID:
                 // Allow V5 transactions while futureActive
