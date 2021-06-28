@@ -1443,6 +1443,19 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
     }
 
+    // Check for duplicate orchard nullifiers in this transaction
+    {
+        set<uint256> vOrchardNullifiers;
+        for (const uint256& nf : tx.GetOrchardBundle().GetNullifiers())
+        {
+            if (vOrchardNullifiers.count(nf))
+                return state.DoS(100, error("CheckTransaction(): duplicate nullifiers"),
+                            REJECT_INVALID, "bad-spend-description-nullifiers-duplicate");
+
+            vOrchardNullifiers.insert(nf);
+        }
+    }
+
     if (tx.IsCoinBase())
     {
         // There should be no joinsplits in a coinbase transaction
@@ -2886,13 +2899,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     SaplingMerkleTree sapling_tree;
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
-    // We don't perform the same check that Sprout does against an old tree root
-    // here because Sapling does not have interstitial tree states.
 
     OrchardMerkleTree orchard_tree;
     assert(view.GetOrchardAnchorAt(view.GetBestAnchor(ORCHARD), orchard_tree));
-    // We don't perform the same check that Sprout does against an old tree root
-    // here because Orchard does not have interstitial tree states.
 
     // Grab the consensus branch ID for this block and its parent
     auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
