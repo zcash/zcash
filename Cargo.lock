@@ -482,7 +482,7 @@ checksum = "c34f04666d835ff5d62e058c3995147c06f42fe86ff053337632bca83e42702d"
 [[package]]
 name = "equihash"
 version = "0.1.0"
-source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#0fa09e052226ef70e5487be66ede75de11c30206"
+source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#c74d311d6d1b25472806bc1269623222dd3769f8"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -722,7 +722,7 @@ dependencies = [
 [[package]]
 name = "incrementalmerkletree"
 version = "0.1.0"
-source = "git+https://github.com/nuttycom/incrementalmerkletree.git?branch=merkle_bridge#cf68d49d3f63279dac6b2ec704927ceadca156ee"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "serde",
 ]
@@ -1050,7 +1050,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orchard"
 version = "0.0.0"
-source = "git+https://github.com/nuttycom/orchard.git?branch=incremental_merkle_tree#90d0c254cf319b0a7637da5205633109c803a9e1"
+source = "git+https://github.com/nuttycom/orchard.git?branch=incremental_merkle_tree#cc708a6b4aba8b39c4745c3dd0f944c1b49a844d"
 dependencies = [
  "aes",
  "arrayvec 0.7.1",
@@ -1700,7 +1700,7 @@ dependencies = [
 [[package]]
 name = "zcash_history"
 version = "0.2.0"
-source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#0fa09e052226ef70e5487be66ede75de11c30206"
+source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#c74d311d6d1b25472806bc1269623222dd3769f8"
 dependencies = [
  "bigint",
  "blake2b_simd",
@@ -1710,7 +1710,7 @@ dependencies = [
 [[package]]
 name = "zcash_note_encryption"
 version = "0.0.0"
-source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#0fa09e052226ef70e5487be66ede75de11c30206"
+source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#c74d311d6d1b25472806bc1269623222dd3769f8"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -1724,7 +1724,7 @@ dependencies = [
 [[package]]
 name = "zcash_primitives"
 version = "0.5.0"
-source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#0fa09e052226ef70e5487be66ede75de11c30206"
+source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#c74d311d6d1b25472806bc1269623222dd3769f8"
 dependencies = [
  "aes",
  "bitvec",
@@ -1754,7 +1754,7 @@ dependencies = [
 [[package]]
 name = "zcash_proofs"
 version = "0.5.0"
-source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#0fa09e052226ef70e5487be66ede75de11c30206"
+source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#c74d311d6d1b25472806bc1269623222dd3769f8"
 dependencies = [
  "bellman",
  "blake2b_simd",

@@ -64,7 +64,6 @@ codegen-units = 1
 [patch.crates-io]
 ed25519-zebra = { git = "https://github.com/ZcashFoundation/ed25519-zebra.git", rev = "d3512400227a362d08367088ffaa9bd4142a69c7" }
 halo2 = { git = "https://github.com/zcash/halo2.git", rev = "d04b532368d05b505e622f8cac4c0693574fbd93" }
-incrementalmerkletree = { git = "https://github.com/nuttycom/incrementalmerkletree.git", branch = "merkle_bridge" }
 orchard = { git = "https://github.com/nuttycom/orchard.git", branch = "incremental_merkle_tree" }
 zcash_history = { git = "https://github.com/nuttycom/librustzcash.git", branch = "incremental_merkle_tree" }
 zcash_note_encryption = { git = "https://github.com/nuttycom/librustzcash.git", branch = "incremental_merkle_tree" }
