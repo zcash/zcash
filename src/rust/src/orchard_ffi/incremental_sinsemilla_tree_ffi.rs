@@ -3,6 +3,7 @@ use incrementalmerkletree::{
     bridgetree::{self, BridgeTree},
     Altitude, Frontier, Hashable, Tree,
 };
+use std::mem::size_of;
 use std::ptr;
 
 use orchard::{bundle::Authorized, tree::OrchardIncrementalTreeDigest};
@@ -135,6 +136,20 @@ pub extern "C" fn orchard_merkle_frontier_num_leaves(
     };
 
     tree.position().map_or(0, |p| <usize>::from(p) + 1)
+}
+
+
+#[no_mangle]
+pub extern "C" fn orchard_merkle_frontier_dynamic_mem_usage(
+    tree: *mut bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+) -> usize {
+    let tree = unsafe {
+        tree.as_ref()
+            .expect("Orchard note commitment tree pointer may not be null.")
+    };
+
+    size_of::<Box<bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>>>()
+        + tree.dynamic_memory_usage()
 }
 
 //

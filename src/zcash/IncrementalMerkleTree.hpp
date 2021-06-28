@@ -301,27 +301,14 @@ public:
         RustStream rs(s);
         OrchardMerkleFrontierPtr* tree = orchard_merkle_frontier_parse(
                 &rs, RustStream<Stream>::read_callback);
-        if (tree == NULL) {
+        if (tree == nullptr) {
             throw std::ios_base::failure("Failed to parse v5 Orchard tree");
         }
         inner.reset(tree);
     }
 
     size_t DynamicMemoryUsage() const {
-        // left + right are always allocated
-        size_t result = 32 + 32;
-        size_t len = orchard_merkle_frontier_num_leaves(inner.get());
-        if (len > 0) {
-            size_t position = len - 1;
-            for (size_t i = 1; i < 32; i++) {
-                // add the size of a hash for each parent position; we skip i == 0
-                // as we've already accounted for it in `left + right`
-                if ((position & (1 << i)) != 0) {
-                    result += 32;
-                }
-            }
-        }
-        return result;
+       return orchard_merkle_frontier_dynamic_mem_usage(inner.get());
     }
 
     bool AppendBundle(const OrchardBundle& bundle) {

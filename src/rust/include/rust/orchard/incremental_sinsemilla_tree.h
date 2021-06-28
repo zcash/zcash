@@ -77,6 +77,10 @@ bool orchard_merkle_frontier_root(
 size_t orchard_merkle_frontier_num_leaves(
         const OrchardMerkleFrontierPtr* tree_ptr);
 
+// Estimate the amount of memory consumed by the merkle frontier.
+size_t orchard_merkle_frontier_dynamic_mem_usage(
+        const OrchardMerkleFrontierPtr* tree_ptr);
+
 /// Pointer to an Orchard incremental Sinsemilla tree
 struct IncrementalSinsemillaTreePtr;
 typedef struct IncrementalSinsemillaTreePtr IncrementalSinsemillaTreePtr;
