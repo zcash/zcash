@@ -141,7 +141,7 @@ uint256 CCoinsViewDB::GetBestAnchor(ShieldedType type) const {
             break;
         case ORCHARD:
             if (!db.Read(DB_BEST_ORCHARD_ANCHOR, hashBestAnchor))
-                return SaplingMerkleTree::empty_root();
+                return OrchardMerkleTree::empty_root();
             break;
         default:
             throw runtime_error("Unknown shielded type");
