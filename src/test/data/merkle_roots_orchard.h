@@ -4,6 +4,9 @@ struct OrchardMerkleTestVec {
     std::vector<unsigned char> anchor;
 };
 
+// These constants were derived by generation using the property-testing
+// infrastructure of librustzcash. Anchor values were computed
+// using https://github.com/zcash-hackworks/zcash-test-vectors/pull/39/files#diff-53efbb4ad196b84742420f65d1ef919a9dc4385bb0f2cb2b8903031a003886a3
 static const std::vector<OrchardMerkleTestVec> merkle_roots_orchard =
 {{
     .bundle = {
