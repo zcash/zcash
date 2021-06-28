@@ -146,7 +146,6 @@ bool incremental_sinsemilla_tree_root(
 
 // Return the empty leaf value for the incremental Sinsemilla tree.
 bool incremental_sinsemilla_tree_empty_root(
-        size_t depth,
         unsigned char* digest_ret);
 
 #ifdef __cplusplus

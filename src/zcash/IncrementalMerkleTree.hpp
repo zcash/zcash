@@ -262,7 +262,7 @@ typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libz
 class OrchardMerkleTree
 {
 private:
-    /// An optional incremental Sinsemilla tree (with `nullptr` corresponding to `None`).
+    /// An incremental Sinsemilla tree; this pointer may never be null.
     /// Memory is allocated by Rust.
     std::unique_ptr<OrchardMerkleFrontierPtr, decltype(&orchard_merkle_frontier_free)> inner;
 public:
@@ -336,7 +336,7 @@ public:
 
     static uint256 empty_root() {
         uint256 value;
-        incremental_sinsemilla_tree_empty_root(32, value.begin());
+        incremental_sinsemilla_tree_empty_root(value.begin());
         return value;
     }
 };

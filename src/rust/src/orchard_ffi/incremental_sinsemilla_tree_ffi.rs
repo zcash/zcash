@@ -12,6 +12,7 @@ use zcash_primitives::transaction::components::Amount;
 use crate::orchard_ffi::{error, CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
 
 pub const MERKLE_DEPTH: u8 = 32;
+pub const MAX_CHECKPOINTS: usize = 100;
 
 //
 // Operations on Merkle frontiers.
@@ -66,7 +67,7 @@ pub extern "C" fn orchard_merkle_frontier_serialize(
 ) -> bool {
     let tree = unsafe {
         tree.as_ref()
-            .expect("Orchard tree pointer may not be null.")
+            .expect("Orchard note commitment tree pointer may not be null.")
     };
 
     let writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
@@ -95,11 +96,9 @@ pub extern "C" fn orchard_merkle_frontier_append_bundle(
                 return false;
             }
         }
-
-        true
-    } else {
-        false
     }
+    
+    true
 }
 
 #[no_mangle]
@@ -107,18 +106,20 @@ pub extern "C" fn orchard_merkle_frontier_root(
     tree: *mut bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
     root_ret: *mut [u8; 32],
 ) -> bool {
+    let tree = unsafe {
+        tree.as_ref()
+            .expect("Orchard note commitment tree pointer may not be null.")
+    };
+
     let root_ret = unsafe {
         root_ret
             .as_mut()
             .expect("Cannot return to the null pointer.")
     };
-    if let Some(tree) = unsafe { tree.as_ref() } {
-        if let Some(root) = tree.root().to_bytes() {
-            root_ret.copy_from_slice(&root);
-            true
-        } else {
-            false
-        }
+
+    if let Some(root) = tree.root().to_bytes() {
+        root_ret.copy_from_slice(&root);
+        true
     } else {
         false
     }
@@ -128,9 +129,12 @@ pub extern "C" fn orchard_merkle_frontier_root(
 pub extern "C" fn orchard_merkle_frontier_num_leaves(
     tree: *mut bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
 ) -> usize {
-    unsafe { tree.as_ref() }
-        .and_then(|t| t.position())
-        .map_or(0, |p| <usize>::from(p) + 1)
+    let tree = unsafe {
+        tree.as_ref()
+            .expect("Orchard note commitment tree pointer may not be null.")
+    };
+
+    tree.position().map_or(0, |p| <usize>::from(p) + 1)
 }
 
 //
@@ -141,7 +145,7 @@ pub extern "C" fn orchard_merkle_frontier_num_leaves(
 #[no_mangle]
 pub extern "C" fn incremental_sinsemilla_tree_empty(
 ) -> *mut BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH> {
-    let empty_tree = BridgeTree::<OrchardIncrementalTreeDigest, MERKLE_DEPTH>::new(100);
+    let empty_tree = BridgeTree::<OrchardIncrementalTreeDigest, MERKLE_DEPTH>::new(MAX_CHECKPOINTS);
     Box::into_raw(Box::new(empty_tree))
 }
 
@@ -187,7 +191,7 @@ pub extern "C" fn incremental_sinsemilla_tree_serialize(
 ) -> bool {
     let tree = unsafe {
         tree.as_ref()
-            .expect("Orchard tree pointer may not be null.")
+            .expect("Orchard note commitment tree pointer may not be null.")
     };
 
     let writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
@@ -216,11 +220,9 @@ pub extern "C" fn incremental_sinsemilla_tree_append_bundle(
                 return false;
             }
         }
+    } 
 
-        true
-    } else {
-        false
-    }
+    true
 }
 
 #[no_mangle]
@@ -229,7 +231,7 @@ pub extern "C" fn incremental_sinsemilla_tree_checkpoint(
 ) {
     let tree = unsafe {
         tree.as_mut()
-            .expect("Orchard tree pointer may not be null.")
+            .expect("Orchard note commitment tree pointer may not be null.")
     };
 
     tree.checkpoint()
@@ -241,7 +243,7 @@ pub extern "C" fn incremental_sinsemilla_tree_rewind(
 ) -> bool {
     let tree = unsafe {
         tree.as_mut()
-            .expect("Orchard tree pointer may not be null.")
+            .expect("Orchard note commitment tree pointer may not be null.")
     };
 
     tree.rewind()
@@ -252,32 +254,34 @@ pub extern "C" fn incremental_sinsemilla_tree_root(
     tree: *mut BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
     root_ret: *mut [u8; 32],
 ) -> bool {
+    let tree = unsafe {
+        tree.as_mut()
+            .expect("Orchard note commitment tree pointer may not be null.")
+    };
+
     let root_ret = unsafe {
         root_ret
             .as_mut()
             .expect("Cannot return to the null pointer.")
     };
-    if let Some(tree) = unsafe { tree.as_ref() } {
-        if let Some(root) = tree.root().to_bytes() {
-            root_ret.copy_from_slice(&root);
-            true
-        } else {
-            false
-        }
+
+    if let Some(root) = tree.root().to_bytes() {
+        root_ret.copy_from_slice(&root);
+        true
     } else {
         false
     }
 }
 
 #[no_mangle]
-pub extern "C" fn incremental_sinsemilla_tree_empty_root(depth: usize, root_ret: *mut [u8; 32]) {
+pub extern "C" fn incremental_sinsemilla_tree_empty_root(root_ret: *mut [u8; 32]) {
     let root_ret = unsafe {
         root_ret
             .as_mut()
             .expect("Cannot return to the null pointer.")
     };
 
-    let altitude = Altitude::from(depth as u8);
+    let altitude = Altitude::from(MERKLE_DEPTH);
 
     let digest = OrchardIncrementalTreeDigest::empty_root(altitude)
         .to_bytes()
