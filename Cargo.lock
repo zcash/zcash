@@ -1050,7 +1050,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orchard"
 version = "0.0.0"
-source = "git+https://github.com/nuttycom/orchard.git?branch=incremental_merkle_tree#cc708a6b4aba8b39c4745c3dd0f944c1b49a844d"
+source = "git+https://github.com/zcash/orchard.git?rev=1f861423c2d8e4d1f8415f9a634084fc5ca608da#1f861423c2d8e4d1f8415f9a634084fc5ca608da"
 dependencies = [
  "aes",
  "arrayvec 0.7.1",
