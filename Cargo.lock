@@ -482,7 +482,7 @@ checksum = "c34f04666d835ff5d62e058c3995147c06f42fe86ff053337632bca83e42702d"
 [[package]]
 name = "equihash"
 version = "0.1.0"
-source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#c74d311d6d1b25472806bc1269623222dd3769f8"
+source = "git+https://github.com/zcash/librustzcash.git?rev=02052526925fba9389f1428d6df254d4dec967e6#02052526925fba9389f1428d6df254d4dec967e6"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -723,6 +723,7 @@ dependencies = [
 name = "incrementalmerkletree"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16d75fb342984cc8cea665a9ef5607b4956569839ca098172082fa1b19bdaf02"
 dependencies = [
  "serde",
 ]
@@ -1151,9 +1152,9 @@ dependencies = [
 
 [[package]]
 name = "pin-project-lite"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc0e1f259c92177c30a4c9d177246edd0a3568b25756a977d0632cf8fa37e905"
+checksum = "8d31d11c69a6b52a174b42bdc0c30e5e11670f90788b2c471c31c1d17d449443"
 
 [[package]]
 name = "pin-utils"
@@ -1605,9 +1606,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-subscriber"
-version = "0.2.18"
+version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa5553bf0883ba7c9cbe493b085c29926bd41b66afc31ff72cf17ff4fb60dcd5"
+checksum = "ab69019741fca4d98be3c62d2b75254528b5432233fd8a4d2739fec20278de48"
 dependencies = [
  "ansi_term",
  "chrono",
@@ -1700,7 +1701,7 @@ dependencies = [
 [[package]]
 name = "zcash_history"
 version = "0.2.0"
-source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#c74d311d6d1b25472806bc1269623222dd3769f8"
+source = "git+https://github.com/zcash/librustzcash.git?rev=02052526925fba9389f1428d6df254d4dec967e6#02052526925fba9389f1428d6df254d4dec967e6"
 dependencies = [
  "bigint",
  "blake2b_simd",
@@ -1710,7 +1711,7 @@ dependencies = [
 [[package]]
 name = "zcash_note_encryption"
 version = "0.0.0"
-source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#c74d311d6d1b25472806bc1269623222dd3769f8"
+source = "git+https://github.com/zcash/librustzcash.git?rev=02052526925fba9389f1428d6df254d4dec967e6#02052526925fba9389f1428d6df254d4dec967e6"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -1724,7 +1725,7 @@ dependencies = [
 [[package]]
 name = "zcash_primitives"
 version = "0.5.0"
-source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#c74d311d6d1b25472806bc1269623222dd3769f8"
+source = "git+https://github.com/zcash/librustzcash.git?rev=02052526925fba9389f1428d6df254d4dec967e6#02052526925fba9389f1428d6df254d4dec967e6"
 dependencies = [
  "aes",
  "bitvec",
@@ -1754,7 +1755,7 @@ dependencies = [
 [[package]]
 name = "zcash_proofs"
 version = "0.5.0"
-source = "git+https://github.com/nuttycom/librustzcash.git?branch=incremental_merkle_tree#c74d311d6d1b25472806bc1269623222dd3769f8"
+source = "git+https://github.com/zcash/librustzcash.git?rev=02052526925fba9389f1428d6df254d4dec967e6#02052526925fba9389f1428d6df254d4dec967e6"
 dependencies = [
  "bellman",
  "blake2b_simd",
