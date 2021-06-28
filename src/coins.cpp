@@ -701,6 +701,11 @@ void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {
         ret.first->second.entered = spent;
         ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
     }
+    for (const uint256& nf : tx.GetOrchardBundle().GetNullifiers()) {
+        std::pair<CNullifiersMap::iterator, bool> ret = cacheOrchardNullifiers.insert(std::make_pair(nf, CNullifiersCacheEntry()));
+        ret.first->second.entered = spent;
+        ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
+    }
 }
 
 bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) const {
