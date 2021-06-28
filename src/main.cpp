@@ -902,14 +902,21 @@ bool ContextualCheckTransaction(
                     REJECT_INVALID, "bad-tx-sapling-version-too-low");
             }
 
-            // Reject transactions with invalid version
-            // LMR XXX different from spec which requires exact match 4
-            // (so if version is 1, 2, or 3, it won't be rejected here)
             if (tx.nVersion > SAPLING_MAX_TX_VERSION) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
                     error("ContextualCheckTransaction(): Sapling version too high"),
                     REJECT_INVALID, "bad-tx-sapling-version-too-high");
+            }
+        }
+
+        if (!(nu5Active || futureActive)) {
+            // Reject transactions with invalid version group id
+            if (tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): invalid Sapling tx version"),
+                    REJECT_INVALID, "bad-sapling-tx-version-group-id");
             }
         }
     } else {
@@ -988,9 +995,11 @@ bool ContextualCheckTransaction(
                 // to 0x02. This applies even during the grace period, and also applies to
                 // funding stream outputs sent to shielded payment addresses, if any.
                 // https://zips.z.cash/zip-0212#consensus-rule-change-for-coinbase-transactions
-                // XXX LMR spec p 107 also says that pre-Canopy, leading byte must be 0x01, doesn't
-                // look like we're checking that.
-                if (canopyActive != (encPlaintext->get_leadbyte() == 0x02)) {
+                if (canopyActive && encPlaintext->get_leadbyte() == 0x02) {
+                    // OK, post-Canopy
+                } else if (!canopyActive && encPlaintext->get_leadbyte() == 0x01) {
+                    // OK, pre-Canopy
+                } else {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
                         error("ContextualCheckTransaction(): coinbase output description has invalid note plaintext version"),
@@ -1073,15 +1082,14 @@ bool ContextualCheckTransaction(
         }
         if (!futureActive) {
             // Reject transactions with invalid version group id
-            // XXX LMR should this also allow SAPLING_VERSION_GROUP_ID here?
-            // I think not, because old line 907 did not allow OVERWINTER_GROUP_ID.
-            if (tx.nVersionGroupId != ZIP225_VERSION_GROUP_ID) {
+            if (!(tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID || tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID)) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckTransaction(): invalid ZIP225 tx version"),
-                    REJECT_INVALID, "bad-zip225-tx-version-group-id");
+                    error("ContextualCheckTransaction(): invalid NU5 tx version"),
+                    REJECT_INVALID, "bad-nu5-tx-version-group-id");
             }
         }
+
         // XXX Do we need to call an orchard check function through the ffi?
     } else {
         // Rules that apply generally before Nu5. These were
@@ -1113,6 +1121,9 @@ bool ContextualCheckTransaction(
                         error("ContextualCheckTransaction(): Future version too high"),
                         REJECT_INVALID, "bad-tx-zfuture-version-too-high");
                 }
+                break;
+            case SAPLING_VERSION_GROUP_ID:
+                // Allow V4 transactions while futureActive
                 break;
             case ZIP225_VERSION_GROUP_ID:
                 // Allow V5 transactions while futureActive
