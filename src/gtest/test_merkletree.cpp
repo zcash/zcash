@@ -5,6 +5,7 @@
 #include "test/data/merkle_witness_serialization.json.h"
 #include "test/data/merkle_path.json.h"
 #include "test/data/merkle_commitments.json.h"
+#include "test/data/merkle_roots_orchard.h"
 
 #include "test/data/merkle_roots_sapling.json.h"
 #include "test/data/merkle_serialization_sapling.json.h"
@@ -283,5 +284,31 @@ TEST(merkletree, testZeroElements) {
         }
 
         ASSERT_TRUE(newTree.root() == oldroot);
+    }
+}
+
+TEST(orchardMerkleTree, emptyroot) {
+    // This literal is the depth-32 empty tree root with the bytes reversed, to
+    // account for the fact that uint256S() loads a big-endian representation of
+    // an integer, which is converted to little-endian internally.
+    uint256 expected = uint256S("2fd8e51a03d9bbe2dd809831b1497aeb68a6e37ddf707ced4aa2d8dff13529ae");
+
+    ASSERT_EQ(OrchardMerkleTree::empty_root(), expected);
+}
+
+TEST(orchardMerkleTree, appendBundle) {
+    OrchardMerkleTree newTree;
+
+    ASSERT_EQ(newTree.root(), OrchardMerkleTree::empty_root());
+
+    for (int i = 0; i < 1; i++) {
+        CDataStream ssBundleData(merkle_roots_orchard[i].bundle, SER_NETWORK, PROTOCOL_VERSION);
+        OrchardBundle b;
+        ssBundleData >> b;
+        newTree.AppendBundle(b);
+
+        uint256 anchor(merkle_roots_orchard[i].anchor);
+
+        ASSERT_EQ(newTree.root(), anchor);
     }
 }

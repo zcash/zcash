@@ -122,9 +122,11 @@ namespace {
         switch (shieldedReq) {
             case UnsatisfiedShieldedReq::SproutDuplicateNullifier:
             case UnsatisfiedShieldedReq::SaplingDuplicateNullifier:
+            case UnsatisfiedShieldedReq::OrchardDuplicateNullifier:
                 return REJECT_DUPLICATE;
             case UnsatisfiedShieldedReq::SproutUnknownAnchor:
             case UnsatisfiedShieldedReq::SaplingUnknownAnchor:
+            case UnsatisfiedShieldedReq::OrchardUnknownAnchor:
                 return REJECT_INVALID;
         }
     }
@@ -136,6 +138,8 @@ namespace {
             case UnsatisfiedShieldedReq::SproutUnknownAnchor:       return "bad-txns-sprout-unknown-anchor";
             case UnsatisfiedShieldedReq::SaplingDuplicateNullifier: return "bad-txns-sapling-duplicate-nullifier";
             case UnsatisfiedShieldedReq::SaplingUnknownAnchor:      return "bad-txns-sapling-unknown-anchor";
+            case UnsatisfiedShieldedReq::OrchardDuplicateNullifier: return "bad-txns-orchard-duplicate-nullifier";
+            case UnsatisfiedShieldedReq::OrchardUnknownAnchor:      return "bad-txns-orchard-unknown-anchor";
         }
     }
 
@@ -1436,6 +1440,19 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                             REJECT_INVALID, "bad-spend-description-nullifiers-duplicate");
 
             vSaplingNullifiers.insert(spend_desc.nullifier);
+        }
+    }
+
+    // Check for duplicate orchard nullifiers in this transaction
+    {
+        std::set<uint256> vOrchardNullifiers;
+        for (const uint256& nf : tx.GetOrchardBundle().GetNullifiers())
+        {
+            if (vOrchardNullifiers.count(nf))
+                return state.DoS(100, error("CheckTransaction(): duplicate nullifiers"),
+                            REJECT_INVALID, "bad-orchard-nullifiers-duplicate");
+
+            vOrchardNullifiers.insert(nf);
         }
     }
 
@@ -2874,7 +2891,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // This should never fail: we should always be able to get the root
     // that is on the tip of our chain
     assert(view.GetSproutAnchorAt(old_sprout_tree_root, sprout_tree));
-
     {
         // Consistency check: the root of the tree we're given should
         // match what we asked for.
@@ -2883,6 +2899,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     SaplingMerkleTree sapling_tree;
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
+
+    OrchardMerkleTree orchard_tree;
+    assert(view.GetOrchardAnchorAt(view.GetBestAnchor(ORCHARD), orchard_tree));
 
     // Grab the consensus branch ID for this block and its parent
     auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
@@ -3017,9 +3036,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             sapling_tree.append(outputDescription.cmu);
         }
 
+        orchard_tree.AppendBundle(tx.GetOrchardBundle());
+
         if (!(tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty())) {
             total_sapling_tx += 1;
         }
+
         if (tx.GetOrchardBundle().IsPresent()) {
             total_orchard_tx += 1;
         }
@@ -3041,6 +3063,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     view.PushAnchor(sprout_tree);
     view.PushAnchor(sapling_tree);
+    view.PushAnchor(orchard_tree);
     if (!fJustCheck) {
         pindex->hashFinalSproutRoot = sprout_tree.root();
         // - If this block is before Heartwood activation, then we don't set
@@ -3065,7 +3088,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         //   these set to null.
         if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
             pindex->hashAuthDataRoot = hashAuthDataRoot.value();
-            pindex->hashFinalOrchardRoot = uint256(); // TODO: replace with Orchard tree root
+            pindex->hashFinalOrchardRoot = orchard_tree.root(),
             pindex->hashChainHistoryRoot = hashChainHistoryRoot.value();
         }
     }

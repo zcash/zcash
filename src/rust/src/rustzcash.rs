@@ -25,12 +25,12 @@ use bls12_381::Bls12;
 use group::{cofactor::CofactorGroup, GroupEncoding};
 use libc::{c_uchar, size_t};
 use rand_core::{OsRng, RngCore};
-use tracing::info;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::slice;
 use subtle::CtOption;
+use tracing::info;
 
 #[cfg(not(target_os = "windows"))]
 use std::ffi::OsStr;

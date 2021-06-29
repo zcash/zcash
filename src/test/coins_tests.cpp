@@ -28,16 +28,20 @@ class CCoinsViewTest : public CCoinsView
     uint256 hashBestBlock_;
     uint256 hashBestSproutAnchor_;
     uint256 hashBestSaplingAnchor_;
+    uint256 hashBestOrchardAnchor_;
     std::map<uint256, CCoins> map_;
     std::map<uint256, SproutMerkleTree> mapSproutAnchors_;
     std::map<uint256, SaplingMerkleTree> mapSaplingAnchors_;
+    std::map<uint256, OrchardMerkleTree> mapOrchardAnchors_;
     std::map<uint256, bool> mapSproutNullifiers_;
     std::map<uint256, bool> mapSaplingNullifiers_;
+    std::map<uint256, bool> mapOrchardNullifiers_;
 
 public:
     CCoinsViewTest() {
         hashBestSproutAnchor_ = SproutMerkleTree::empty_root();
         hashBestSaplingAnchor_ = SaplingMerkleTree::empty_root();
+        hashBestOrchardAnchor_ = OrchardMerkleTree::empty_root();
     }
 
     bool GetSproutAnchorAt(const uint256& rt, SproutMerkleTree &tree) const {
@@ -72,6 +76,22 @@ public:
         }
     }
 
+    bool GetOrchardAnchorAt(const uint256& rt, OrchardMerkleTree &tree) const {
+        if (rt == OrchardMerkleTree::empty_root()) {
+            OrchardMerkleTree new_tree;
+            tree = new_tree;
+            return true;
+        }
+
+        std::map<uint256, OrchardMerkleTree>::const_iterator it = mapOrchardAnchors_.find(rt);
+        if (it == mapOrchardAnchors_.end()) {
+            return false;
+        } else {
+            tree = it->second;
+            return true;
+        }
+    }
+
     bool GetNullifier(const uint256 &nf, ShieldedType type) const
     {
         const std::map<uint256, bool>* mapToUse;
@@ -81,6 +101,9 @@ public:
                 break;
             case SAPLING:
                 mapToUse = &mapSaplingNullifiers_;
+                break;
+            case ORCHARD:
+                mapToUse = &mapOrchardNullifiers_;
                 break;
             default:
                 throw std::runtime_error("Unknown shielded type");
@@ -102,6 +125,9 @@ public:
                 break;
             case SAPLING:
                 return hashBestSaplingAnchor_;
+                break;
+            case ORCHARD:
+                return hashBestOrchardAnchor_;
                 break;
             default:
                 throw std::runtime_error("Unknown shielded type");
@@ -168,10 +194,13 @@ public:
                     const uint256& hashBlock,
                     const uint256& hashSproutAnchor,
                     const uint256& hashSaplingAnchor,
+                    const uint256& hashOrchardAnchor,
                     CAnchorsSproutMap& mapSproutAnchors,
                     CAnchorsSaplingMap& mapSaplingAnchors,
+                    CAnchorsOrchardMap& mapOrchardAnchors,
                     CNullifiersMap& mapSproutNullifiers,
                     CNullifiersMap& mapSaplingNullifiers,
+                    CNullifiersMap& mapOrchardNullifiers,
                     CHistoryCacheMap &historyCacheMap)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
@@ -188,9 +217,11 @@ public:
 
         BatchWriteAnchors<SproutMerkleTree, CAnchorsSproutMap, CAnchorsSproutCacheEntry>(mapSproutAnchors, mapSproutAnchors_);
         BatchWriteAnchors<SaplingMerkleTree, CAnchorsSaplingMap, CAnchorsSaplingCacheEntry>(mapSaplingAnchors, mapSaplingAnchors_);
+        BatchWriteAnchors<OrchardMerkleTree, CAnchorsOrchardMap, CAnchorsOrchardCacheEntry>(mapOrchardAnchors, mapOrchardAnchors_);
 
         BatchWriteNullifiers(mapSproutNullifiers, mapSproutNullifiers_);
         BatchWriteNullifiers(mapSaplingNullifiers, mapSaplingNullifiers_);
+        BatchWriteNullifiers(mapOrchardNullifiers, mapOrchardNullifiers_);
 
         if (!hashBlock.IsNull())
             hashBestBlock_ = hashBlock;
@@ -198,6 +229,8 @@ public:
             hashBestSproutAnchor_ = hashSproutAnchor;
         if (!hashSaplingAnchor.IsNull())
             hashBestSaplingAnchor_ = hashSaplingAnchor;
+        if (!hashOrchardAnchor.IsNull())
+            hashBestOrchardAnchor_ = hashOrchardAnchor;
         return true;
     }
 
@@ -215,8 +248,10 @@ public:
         size_t ret = memusage::DynamicUsage(cacheCoins) +
                      memusage::DynamicUsage(cacheSproutAnchors) +
                      memusage::DynamicUsage(cacheSaplingAnchors) +
+                     memusage::DynamicUsage(cacheOrchardAnchors) +
                      memusage::DynamicUsage(cacheSproutNullifiers) +
                      memusage::DynamicUsage(cacheSaplingNullifiers) +
+                     memusage::DynamicUsage(cacheOrchardNullifiers) +
                      memusage::DynamicUsage(historyCacheMap);
         for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
             ret += it->second.coins.DynamicMemoryUsage();
@@ -246,6 +281,8 @@ public:
         SpendDescription sd;
         sd.nullifier = saplingNullifier;
         mutableTx.vShieldedSpend.push_back(sd);
+
+        // TODO: Orchard nullifier
 
         tx = CTransaction(mutableTx);
     }
@@ -285,7 +322,7 @@ void checkNullifierCache(const CCoinsViewCacheTest &cache, const TxWithNullifier
 BOOST_AUTO_TEST_CASE(nullifier_regression_test)
 {
     // Correct behavior:
-    {
+    BOOST_TEST_CONTEXT("add-remove without flush") {
         CCoinsViewTest base;
         CCoinsViewCacheTest cache1(&base);
 
@@ -304,7 +341,7 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
     }
 
     // Also correct behavior:
-    {
+    BOOST_TEST_CONTEXT("add-remove with flush") {
         CCoinsViewTest base;
         CCoinsViewCacheTest cache1(&base);
 
@@ -324,7 +361,7 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
     }
 
     // Works because we bring it from the parent cache:
-    {
+    BOOST_TEST_CONTEXT("remove from parent") {
         CCoinsViewTest base;
         CCoinsViewCacheTest cache1(&base);
 
@@ -348,7 +385,7 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
     }
 
     // Was broken:
-    {
+    BOOST_TEST_CONTEXT("remove from child") {
         CCoinsViewTest base;
         CCoinsViewCacheTest cache1(&base);
 

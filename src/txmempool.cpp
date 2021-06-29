@@ -121,6 +121,9 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
         mapSaplingNullifiers[spendDescription.nullifier] = &tx;
     }
+    for (const uint256 &orchardNullifier : tx.GetOrchardBundle().GetNullifiers()) {
+        mapOrchardNullifiers[orchardNullifier] = &tx;
+    }
     nTransactionsUpdated++;
     totalTxSize += entry.GetTxSize();
     cachedInnerUsage += entry.DynamicMemoryUsage();
@@ -281,6 +284,9 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
             for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
                 mapSaplingNullifiers.erase(spendDescription.nullifier);
             }
+            for (const uint256 &orchardNullifier : tx.GetOrchardBundle().GetNullifiers()) {
+                mapOrchardNullifiers.erase(orchardNullifier);
+            }
             removed.push_back(tx);
             totalTxSize -= mapTx.find(hash)->GetTxSize();
             cachedInnerUsage -= mapTx.find(hash)->DynamicMemoryUsage();
@@ -400,6 +406,15 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
         std::map<uint256, const CTransaction*>::iterator it = mapSaplingNullifiers.find(spendDescription.nullifier);
         if (it != mapSaplingNullifiers.end()) {
+            const CTransaction &txConflict = *it->second;
+            if (txConflict != tx) {
+                remove(txConflict, removed, true);
+            }
+        }
+    }
+    for (const uint256 &orchardNullifier : tx.GetOrchardBundle().GetNullifiers()) {
+        std::map<uint256, const CTransaction*>::iterator it = mapOrchardNullifiers.find(orchardNullifier);
+        if (it != mapOrchardNullifiers.end()) {
             const CTransaction &txConflict = *it->second;
             if (txConflict != tx) {
                 remove(txConflict, removed, true);
@@ -616,6 +631,9 @@ void CTxMemPool::checkNullifiers(ShieldedType type) const
         case SAPLING:
             mapToUse = &mapSaplingNullifiers;
             break;
+        case ORCHARD:
+            mapToUse = &mapOrchardNullifiers;
+            break;
         default:
             throw runtime_error("Unknown nullifier type");
     }
@@ -736,6 +754,8 @@ bool CTxMemPool::nullifierExists(const uint256& nullifier, ShieldedType type) co
             return mapSproutNullifiers.count(nullifier);
         case SAPLING:
             return mapSaplingNullifiers.count(nullifier);
+        case ORCHARD:
+            return mapOrchardNullifiers.count(nullifier);
         default:
             throw runtime_error("Unknown nullifier type");
     }
@@ -811,7 +831,9 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
     total += memusage::DynamicUsage(mapRecentlyAddedTx);
 
     // Nullifier set tracking
-    total += memusage::DynamicUsage(mapSproutNullifiers) + memusage::DynamicUsage(mapSaplingNullifiers);
+    total += memusage::DynamicUsage(mapSproutNullifiers) +
+             memusage::DynamicUsage(mapSaplingNullifiers) +
+             memusage::DynamicUsage(mapOrchardNullifiers);
 
     // DoS mitigation
     total += memusage::DynamicUsage(recentlyEvicted) + memusage::DynamicUsage(weightedTxTree);
