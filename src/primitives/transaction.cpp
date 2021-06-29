@@ -131,7 +131,7 @@ CMutableTransaction::CMutableTransaction() : nVersion(CTransaction::SPROUT_MIN_C
 CMutableTransaction::CMutableTransaction(const CTransaction& tx) : nVersion(tx.nVersion), fOverwintered(tx.fOverwintered), nVersionGroupId(tx.nVersionGroupId), nExpiryHeight(tx.nExpiryHeight),
                                                                    nConsensusBranchId(tx.GetConsensusBranchId()),
                                                                    vin(tx.vin), vout(tx.vout), nLockTime(tx.nLockTime),
-                                                                   valueBalanceSapling(tx.valueBalanceSapling), vShieldedSpend(tx.vShieldedSpend), vShieldedOutput(tx.vShieldedOutput),
+                                                                   valueBalanceSapling(tx.GetValueBalanceSapling()), vShieldedSpend(tx.vShieldedSpend), vShieldedOutput(tx.vShieldedOutput),
                                                                    orchardBundle(tx.GetOrchardBundle()),
                                                                    vJoinSplit(tx.vJoinSplit), joinSplitPubKey(tx.joinSplitPubKey), joinSplitSig(tx.joinSplitSig),
                                                                    bindingSig(tx.bindingSig)
@@ -243,7 +243,7 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<std::vector<CTxOut>*>(&vout) = tx.vout;
     *const_cast<unsigned int*>(&nLockTime) = tx.nLockTime;
     *const_cast<uint32_t*>(&nExpiryHeight) = tx.nExpiryHeight;
-    *const_cast<CAmount*>(&valueBalanceSapling) = tx.valueBalanceSapling;
+    valueBalanceSapling = tx.valueBalanceSapling;
     *const_cast<std::vector<SpendDescription>*>(&vShieldedSpend) = tx.vShieldedSpend;
     *const_cast<std::vector<OutputDescription>*>(&vShieldedOutput) = tx.vShieldedOutput;
     orchardBundle = tx.orchardBundle;

@@ -543,7 +543,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
                 CAmount saplingValueDummy = saplingValue;
                 CAmount orchardValueDummy = orchardValue;
 
-                saplingValueDummy += -tx.valueBalanceSapling;
+                saplingValueDummy += -tx.GetValueBalanceSapling();
                 orchardValueDummy += -tx.GetOrchardBundle().GetValueBalance();
 
                 for (auto js : tx.vJoinSplit) {

@@ -227,8 +227,8 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
     entry.pushKV("vjoinsplit", vjoinsplit);
 
     if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
-        entry.pushKV("valueBalance", ValueFromAmount(tx.valueBalanceSapling));
-        entry.pushKV("valueBalanceZat", tx.valueBalanceSapling);
+        entry.pushKV("valueBalance", ValueFromAmount(tx.GetValueBalanceSapling()));
+        entry.pushKV("valueBalanceZat", tx.GetValueBalanceSapling());
         UniValue vspenddesc = TxShieldedSpendsToJSON(tx);
         entry.pushKV("vShieldedSpend", vspenddesc);
         UniValue voutputdesc = TxShieldedOutputsToJSON(tx);
