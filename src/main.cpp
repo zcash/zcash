@@ -1143,6 +1143,7 @@ bool ContextualCheckTransaction(
     uint256 dataToBeSigned;
     uint256 prevDataToBeSigned;
 
+    // Create signature hashes for shielded components.
     if (!tx.vJoinSplit.empty() ||
         !tx.vShieldedSpend.empty() ||
         !tx.vShieldedOutput.empty() ||
@@ -1250,9 +1251,7 @@ bool ContextualCheckTransaction(
 
         librustzcash_sapling_verification_ctx_free(ctx);
     }
-    if (orchard_bundle.IsPresent()) {
-        // XXX add similar block for orchard checks
-    }
+
     return true;
 }
 
