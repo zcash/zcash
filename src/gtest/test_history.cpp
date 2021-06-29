@@ -8,12 +8,17 @@
 class FakeCoinsViewDB : public CCoinsView {
 public:
     FakeCoinsViewDB() {}
+    ~FakeCoinsViewDB() {}
 
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
         return false;
     }
 
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
+        return false;
+    }
+
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
         return false;
     }
 
@@ -39,27 +44,35 @@ public:
         return a;
     }
 
-    bool BatchWrite(CCoinsMap &mapCoins,
-                    const uint256 &hashBlock,
-                    const uint256 &hashSproutAnchor,
-                    const uint256 &hashSaplingAnchor,
-                    CAnchorsSproutMap &mapSproutAnchors,
-                    CAnchorsSaplingMap &mapSaplingAnchors,
-                    CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap saplingNullifiersMap) {
-        return false;
-    }
-
-    bool GetStats(CCoinsStats &stats) const {
-        return false;
-    }
-
     HistoryIndex GetHistoryLength(uint32_t branchId) const {
         return 0;
     }
 
     HistoryNode GetHistoryAt(uint32_t branchId, HistoryIndex index) const {
         return HistoryNode();
+    }
+
+    uint256 GetHistoryRoot(uint32_t epochId) const {
+        return uint256();
+    }
+
+    bool BatchWrite(CCoinsMap &mapCoins,
+                    const uint256 &hashBlock,
+                    const uint256 &hashSproutAnchor,
+                    const uint256 &hashSaplingAnchor,
+                    const uint256 &hashOrchardAnchor,
+                    CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
+                    CAnchorsOrchardMap &mapOrchardAnchors,
+                    CNullifiersMap &mapSproutNullifiers,
+                    CNullifiersMap &mapSaplingNullifiers,
+                    CNullifiersMap &mapOrchardNullifiers,
+                    CHistoryCacheMap &historyCacheMap) {
+        return false;
+    }
+
+    bool GetStats(CCoinsStats &stats) const {
+        return false;
     }
 };
 

@@ -281,7 +281,7 @@ BOOST_DATA_TEST_CASE(AreInputsStandard, boost::unit_test::data::xrange(static_ca
 {
     LOCK(cs_main);
     uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
-    CCoinsView coinsDummy;
+    CCoinsViewDummy coinsDummy;
     CCoinsViewCache coins(&coinsDummy);
     CBasicKeyStore keystore;
     CKey key[6];

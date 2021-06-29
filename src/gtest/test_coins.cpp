@@ -161,6 +161,14 @@ public:
 
     uint256 GetBestBlock() const { return hashBestBlock_; }
 
+    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const {
+        throw std::runtime_error("`GetHistoryAt` unimplemented for mock CCoinsViewTest");
+    }
+    uint256 GetHistoryRoot(uint32_t epochId) const {
+        throw std::runtime_error("`GetHistoryRoot` unimplemented for mock CCoinsViewTest");
+    }
+
     void BatchWriteNullifiers(CNullifiersMap& mapNullifiers, std::map<uint256, bool>& cacheNullifiers)
     {
         for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end(); ) {
@@ -282,7 +290,7 @@ public:
         JSDescription jsd;
         jsd.nullifiers[0] = sproutNullifier;
         mutableTx.vJoinSplit.emplace_back(jsd);
-        
+
         saplingNullifier = GetRandHash();
         SpendDescription sd;
         sd.nullifier = saplingNullifier;
@@ -685,7 +693,7 @@ template<typename Tree> void anchorsFlushImpl(ShieldedType type)
         cache.PushAnchor(tree);
         cache.Flush();
     }
-    
+
     {
         CCoinsViewCacheTest cache(&base);
         Tree tree;
@@ -775,7 +783,7 @@ template<typename Tree> void anchorsTestImpl(ShieldedType type)
         {
             Tree test_tree2;
             GetAnchorAt(cache, newrt, test_tree2);
-            
+
             EXPECT_TRUE(test_tree2.root() == newrt);
         }
 

@@ -81,6 +81,7 @@ protected:
     CCoinsViewDB(std::string dbName, size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 public:
     CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
+    ~CCoinsViewDB() {}
 
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;

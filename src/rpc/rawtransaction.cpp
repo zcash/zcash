@@ -1036,7 +1036,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     CMutableTransaction mergedTx(txVariants[0]);
 
     // Fetch previous transactions (inputs):
-    CCoinsView viewDummy;
+    CCoinsViewDummy viewDummy;
     CCoinsViewCache view(&viewDummy);
     {
         LOCK(mempool.cs);

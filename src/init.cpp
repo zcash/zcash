@@ -154,6 +154,8 @@ class CCoinsViewErrorCatcher : public CCoinsViewBacked
 {
 public:
     CCoinsViewErrorCatcher(CCoinsView* view) : CCoinsViewBacked(view) {}
+    ~CCoinsViewErrorCatcher() {}
+
     bool GetCoins(const uint256 &txid, CCoins &coins) const {
         try {
             return CCoinsViewBacked::GetCoins(txid, coins);

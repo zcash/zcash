@@ -378,7 +378,7 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& strInput)
     // starts as a clone of the raw tx:
     CMutableTransaction mergedTx(txVariants[0]);
     bool fComplete = true;
-    CCoinsView viewDummy;
+    CCoinsViewDummy viewDummy;
     CCoinsViewCache view(&viewDummy);
 
     if (!registers.count("privatekeys"))
