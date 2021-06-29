@@ -660,6 +660,7 @@ private:
     /// The consensus branch ID that this transaction commits to.
     /// Serialized from v5 onwards.
     std::optional<uint32_t> nConsensusBranchId;
+    CAmount valueBalanceSapling;
     OrchardBundle orchardBundle;
 
     /** Memory only. */
@@ -715,7 +716,6 @@ public:
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
     const uint32_t nExpiryHeight;
-    const CAmount valueBalanceSapling;
     const std::vector<SpendDescription> vShieldedSpend;
     const std::vector<OutputDescription> vShieldedOutput;
     const std::vector<JSDescription> vJoinSplit;
@@ -797,7 +797,7 @@ public:
                     saplingBundle.GetV4ShieldedSpend();
                 *const_cast<std::vector<OutputDescription>*>(&vShieldedOutput) =
                     saplingBundle.GetV4ShieldedOutput();
-                *const_cast<CAmount*>(&valueBalanceSapling) = saplingBundle.valueBalanceSapling;
+                valueBalanceSapling = saplingBundle.valueBalanceSapling;
                 *const_cast<binding_sig_t*>(&bindingSig) = saplingBundle.bindingSigSapling;
             } else {
                 SaplingBundle saplingBundle(
@@ -819,7 +819,7 @@ public:
                 READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
             }
             if (isSaplingV4 || isFuture) {
-                READWRITE(*const_cast<CAmount*>(&valueBalanceSapling));
+                READWRITE(valueBalanceSapling);
                 READWRITE(*const_cast<std::vector<SpendDescription>*>(&vShieldedSpend));
                 READWRITE(*const_cast<std::vector<OutputDescription>*>(&vShieldedOutput));
             }
@@ -874,6 +874,16 @@ public:
         return nConsensusBranchId;
     }
 
+    /**
+     * Returns the Sapling value balance for the transaction.
+     */
+    const CAmount& GetValueBalanceSapling() const {
+        return valueBalanceSapling;
+    }
+
+    /**
+     * Returns the Orchard bundle for the transaction.
+     */
     const OrchardBundle& GetOrchardBundle() const {
         return orchardBundle;
     }

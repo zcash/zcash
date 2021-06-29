@@ -1288,7 +1288,7 @@ uint256 SignatureHash(
         ss << txTo.nExpiryHeight;
         if (sigversion == SIGVERSION_SAPLING) {
             // Sapling value balance
-            ss << txTo.valueBalanceSapling;
+            ss << txTo.GetValueBalanceSapling();
         }
         // Sighash type
         ss << nHashType;
