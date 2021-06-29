@@ -818,6 +818,8 @@ bool ContextualCheckTransaction(
         isInitBlockDownload(chainparams.GetConsensus()) ? 0 : DOS_LEVEL_MEMPOOL);
 
     auto consensus = chainparams.GetConsensus();
+    auto consensusBranchId = CurrentEpochBranchId(nHeight, consensus);
+
     bool overwinterActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_OVERWINTER);
     bool saplingActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING);
     bool beforeOverwinter = !overwinterActive;
@@ -1053,6 +1055,31 @@ bool ContextualCheckTransaction(
 
     // Rules that apply to NU5 or later:
     if (nu5Active) {
+        // Reject transactions with invalid version group id
+        if (!futureActive) {
+            if (!(tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID || tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID)) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): invalid NU5 tx version"),
+                    REJECT_INVALID, "bad-nu5-tx-version-group-id");
+            }
+        }
+
+        // Check that the consensus branch ID is unset in Sapling V4 transactions
+        if (tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
+            // NOTE: This is an internal zcashd consistency
+            // check; it does not correspond to a consensus rule in the
+            // protocol specification, but is instead an artifact of the
+            // internal zcashd transaction representation.
+            if (tx.GetConsensusBranchId()) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): pre-NU5 transaction has consensus branch id set"),
+                    REJECT_INVALID, "bad-tx-has-consensus-branch-id");
+            }
+        }
+
+        // Reject transactions with invalid version
         if (tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID) {
             if (tx.nVersion < ZIP225_MIN_TX_VERSION) {
                 return state.DoS(
@@ -1061,12 +1088,19 @@ bool ContextualCheckTransaction(
                     REJECT_INVALID, "bad-tx-zip225-version-too-low");
             }
 
-            // Reject transactions with invalid version
             if (tx.nVersion > ZIP225_MAX_TX_VERSION) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
                     error("ContextualCheckTransaction(): ZIP225 version too high"),
                     REJECT_INVALID, "bad-tx-zip225-version-too-high");
+            }
+
+            // tx.nConsensusBranchId must match the current consensus branch id
+            if (!(tx.GetConsensusBranchId() && *tx.GetConsensusBranchId() == consensusBranchId)) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): transaction's consensus branch id does not match the current consensus branch"),
+                    REJECT_INVALID, "bad-tx-consensus-branch-id-mismatch");
             }
         }
 
@@ -1095,16 +1129,6 @@ bool ContextualCheckTransaction(
         if (tx.IsCoinBase()) {
             // TODO: Check that Orchard coinbase outputs can be decrypted with the all-zeros OVK
         }
-
-        if (!futureActive) {
-            // Reject transactions with invalid version group id
-            if (!(tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID || tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID)) {
-                return state.DoS(
-                    dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckTransaction(): invalid NU5 tx version"),
-                    REJECT_INVALID, "bad-nu5-tx-version-group-id");
-            }
-        }
     } else {
         // Rules that apply generally before NU5. These were previously
         // noncontextual checks that became contextual after NU5 activation.
@@ -1119,6 +1143,17 @@ bool ContextualCheckTransaction(
                 dosLevelPotentiallyRelaxing,
                 error("ContextualCheckTransaction(): pre-NU5 transaction has Orchard actions"),
                 REJECT_INVALID, "bad-tx-has-orchard-actions");
+        }
+
+        // Check that the consensus branch ID is unset prior to NU5. NOTE: This
+        // is an internal zcashd consistency check; it does not correspond to a
+        // consensus rule in the protocol specification, but is instead an
+        // artifact of the internal zcashd transaction representation.
+        if (tx.GetConsensusBranchId()) {
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckTransaction(): pre-NU5 transaction has consensus branch id set"),
+                REJECT_INVALID, "bad-tx-has-consensus-branch-id");
         }
     }
 
@@ -1157,7 +1192,6 @@ bool ContextualCheckTransaction(
         // Rules that apply generally before the next release epoch
     }
 
-    auto consensusBranchId = CurrentEpochBranchId(nHeight, consensus);
     auto prevConsensusBranchId = PrevEpochBranchId(consensusBranchId, consensus);
     uint256 dataToBeSigned;
     uint256 prevDataToBeSigned;
