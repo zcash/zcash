@@ -1455,13 +1455,13 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for non-zero valueBalanceSapling when there are no Sapling inputs or outputs
-    if (tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty() && tx.GetValueBalanceSapling() != 0) { // XXX value balance ffi
+    if (tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty() && tx.GetValueBalanceSapling() != 0) {
         return state.DoS(100, error("CheckTransaction(): tx.valueBalanceSapling has no sources or sinks"),
                             REJECT_INVALID, "bad-txns-valuebalance-nonzero");
     }
 
-    // Check for overflow valueBalanceSapling XXX rename to sapling value balance, add orchard value balance checks
-    if (tx.GetValueBalanceSapling() > MAX_MONEY || tx.GetValueBalanceSapling() < -MAX_MONEY) { // XXX need value balance ffi
+    // Check for overflow valueBalanceSapling
+    if (tx.GetValueBalanceSapling() > MAX_MONEY || tx.GetValueBalanceSapling() < -MAX_MONEY) {
         return state.DoS(100, error("CheckTransaction(): abs(tx.valueBalanceSapling) too large"),
                             REJECT_INVALID, "bad-txns-valuebalance-toolarge");
     }
@@ -1473,6 +1473,30 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         if (!MoneyRange(nValueOut)) {
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
                                 REJECT_INVALID, "bad-txns-txouttotal-toolarge");
+        }
+    }
+
+    auto valueBalanceOrchard = orchard_bundle.GetValueBalance();
+
+    // Check for non-zero valueBalanceOrchard when there are no Orchard inputs or outputs
+    if (!orchard_bundle.SpendsEnabled() && !orchard_bundle.OutputsEnabled() && valueBalanceOrchard != 0) {
+        return state.DoS(100, error("CheckTransaction(): tx.valueBalanceOrchard has no sources or sinks"),
+                         REJECT_INVALID, "bad-txns-valuebalance-nonzero");
+    }
+
+    // Check for overflow valueBalanceOrchard
+    if (valueBalanceOrchard > MAX_MONEY || valueBalanceOrchard < -MAX_MONEY) {
+        return state.DoS(100, error("CheckTransaction(): abs(tx.valueBalanceOrchard) too large"),
+                         REJECT_INVALID, "bad-txns-valuebalance-toolarge");
+    }
+
+    if (valueBalanceOrchard <= 0) {
+        // NB: negative valueBalanceOrchard "takes" money from the transparent value pool just as outputs do
+        nValueOut += -valueBalanceOrchard;
+
+        if (!MoneyRange(nValueOut)) {
+            return state.DoS(100, error("CheckTransaction(): txout total out of range"),
+                             REJECT_INVALID, "bad-txns-txouttotal-toolarge");
         }
     }
 
@@ -1534,10 +1558,20 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
 
             if (!MoneyRange(nValueIn)) {
                 return state.DoS(100, error("CheckTransaction(): txin total out of range"),
+                                 REJECT_INVALID, "bad-txns-txintotal-toolarge");
+            }
+        }
+
+        // Also check for Orchard
+        if (valueBalanceOrchard >= 0) {
+            // NB: positive valueBalanceOrchard "adds" money to the transparent value pool, just as inputs do
+            nValueIn += valueBalanceOrchard;
+
+            if (!MoneyRange(nValueIn)) {
+                return state.DoS(100, error("CheckTransaction(): txin total out of range"),
                                     REJECT_INVALID, "bad-txns-txintotal-toolarge");
             }
         }
-        // XXX add orchard block, similar to sapling
     }
 
     // Check for duplicate inputs
@@ -1578,7 +1612,6 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             vSaplingNullifiers.insert(spend_desc.nullifier);
         }
     }
-    // XXX similar for orchard
 
     // Check for duplicate orchard nullifiers in this transaction
     {
