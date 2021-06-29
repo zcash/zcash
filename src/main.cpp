@@ -1451,13 +1451,13 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for non-zero valueBalanceSapling when there are no Sapling inputs or outputs
-    if (tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty() && tx.GetValueBalanceSapling() != 0) { // XXX value balance ffi
+    if (tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty() && tx.GetValueBalanceSapling() != 0) {
         return state.DoS(100, error("CheckTransaction(): tx.valueBalanceSapling has no sources or sinks"),
                             REJECT_INVALID, "bad-txns-valuebalance-nonzero");
     }
 
-    // Check for overflow valueBalanceSapling XXX rename to sapling value balance, add orchard value balance checks
-    if (tx.GetValueBalanceSapling() > MAX_MONEY || tx.GetValueBalanceSapling() < -MAX_MONEY) { // XXX need value balance ffi
+    // Check for overflow valueBalanceSapling
+    if (tx.GetValueBalanceSapling() > MAX_MONEY || tx.GetValueBalanceSapling() < -MAX_MONEY) {
         return state.DoS(100, error("CheckTransaction(): abs(tx.valueBalanceSapling) too large"),
                             REJECT_INVALID, "bad-txns-valuebalance-toolarge");
     }
@@ -1469,6 +1469,28 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         if (!MoneyRange(nValueOut)) {
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
                                 REJECT_INVALID, "bad-txns-txouttotal-toolarge");
+        }
+    }
+
+    // Check for non-zero valueBalanceOrchard when there are no Orchard inputs or outputs
+    if (!orchard_bundle.SpendsEnabled() && !orchard_bundle.OutputsEnabled() && orchard_bundle.GetValueBalance() != 0) {
+        return state.DoS(100, error("CheckTransaction(): tx.valueBalanceOrchard has no sources or sinks"),
+                         REJECT_INVALID, "bad-txns-valuebalance-nonzero");
+    }
+
+    // Check for overflow valueBalanceOrchard
+    if (orchard_bundle.GetValueBalance() > MAX_MONEY || orchard_bundle.GetValueBalance() < -MAX_MONEY) {
+        return state.DoS(100, error("CheckTransaction(): abs(tx.valueBalanceOrchard) too large"),
+                         REJECT_INVALID, "bad-txns-valuebalance-toolarge");
+    }
+
+    if (orchard_bundle.GetValueBalance() <= 0) {
+        // NB: negative valueBalanceOrchard "takes" money from the transparent value pool just as outputs do
+        nValueOut += -orchard_bundle.GetValueBalance();
+
+        if (!MoneyRange(nValueOut)) {
+            return state.DoS(100, error("CheckTransaction(): txout total out of range"),
+                             REJECT_INVALID, "bad-txns-txouttotal-toolarge");
         }
     }
 
@@ -1533,12 +1555,21 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                                     REJECT_INVALID, "bad-txns-txintotal-toolarge");
             }
         }
-        // XXX add orchard block, similar to sapling
+
+        // Also check for Orchard
+        if (orchard_bundle.GetValueBalance() >= 0) {
+            // NB: positive valueBalanceOrchard "adds" money to the transparent value pool, just as inputs do
+            nValueIn += orchard_bundle.GetValueBalance();
+
+            if (!MoneyRange(nValueIn)) {
+                return state.DoS(100, error("CheckTransaction(): txin total out of range"),
+                                    REJECT_INVALID, "bad-txns-txintotal-toolarge");
+            }
+        }
     }
 
     // Check for duplicate inputs
-    // XXX LMR in this loop, should we call ContextualCheckInputs()?
-    // that would check, for example, spec rule:
+    //
     // A transaction with one or more transparent inputs from coinbase transactions
     // MUST have no transparent outputs (i.e. tx_out_count MUST be 0)
     set<COutPoint> vInOutPoints;
@@ -1578,7 +1609,6 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             vSaplingNullifiers.insert(spend_desc.nullifier);
         }
     }
-    // XXX similar for orchard
 
     // Check for duplicate orchard nullifiers in this transaction
     {
