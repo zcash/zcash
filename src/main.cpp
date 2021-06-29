@@ -872,8 +872,7 @@ bool ContextualCheckTransaction(
         // Rules that became inactive after Sapling activation.
         if (!saplingActive) {
             // Reject transactions with invalid version
-            // LMR XXX NU5 spec p. 118 says this should check exact match 3,
-            // wouldn't this code allow it to be 1 or 2?
+            // OVERWINTER_MIN_TX_VERSION is checked against as a non-contextual check.
             if (tx.nVersion > OVERWINTER_MAX_TX_VERSION ) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -910,7 +909,7 @@ bool ContextualCheckTransaction(
             }
         }
 
-        if (!(nu5Active || futureActive)) {
+        if (!nu5Active) {
             // Reject transactions with invalid version group id
             if (tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
                 return state.DoS(
@@ -977,8 +976,6 @@ bool ContextualCheckTransaction(
                 }
 
                 // ZIP 207: detect shielded funding stream elements
-                // XXX LMR seems like this could have been moved to the canopyActive section
-                // below (and then the initializing of fundingStreamElements too)
                 if (canopyActive) {
                     libzcash::SaplingPaymentAddress zaddr(encPlaintext->d, outPlaintext->pk_d);
                     for (auto it = fundingStreamElements.begin(); it != fundingStreamElements.end(); ++it) {
@@ -995,11 +992,9 @@ bool ContextualCheckTransaction(
                 // to 0x02. This applies even during the grace period, and also applies to
                 // funding stream outputs sent to shielded payment addresses, if any.
                 // https://zips.z.cash/zip-0212#consensus-rule-change-for-coinbase-transactions
-                if (canopyActive && encPlaintext->get_leadbyte() == 0x02) {
-                    // OK, post-Canopy
-                } else if (!canopyActive && encPlaintext->get_leadbyte() == 0x01) {
-                    // OK, pre-Canopy
-                } else {
+                auto leadByte = encPlaintext->get_leadbyte();
+                assert(leadByte == 0x01 || leadByte == 0x02);
+                if (canopyActive != (leadByte == 0x02)) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
                         error("ContextualCheckTransaction(): coinbase output description has invalid note plaintext version"),
@@ -1007,7 +1002,6 @@ bool ContextualCheckTransaction(
                         "bad-cb-output-desc-invalid-note-plaintext-version");
                 }
             }
-            // XXX need similar checks for Orchard outputs
         }
     } else {
         // Rules that apply generally before Heartwood. These were
@@ -1021,12 +1015,6 @@ bool ContextualCheckTransaction(
                     dosLevelPotentiallyRelaxing,
                     error("ContextualCheckTransaction(): coinbase has output descriptions"),
                     REJECT_INVALID, "bad-cb-has-output-description");
-            if (orchard_bundle.SpendsEnabled()) {
-                return state.DoS(
-                    dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckTransaction(): coinbase has orchard shielded spends"),
-                    REJECT_INVALID, "bad-cb-has-orchard-spends");
-            }
         }
     }
 
@@ -1080,6 +1068,40 @@ bool ContextualCheckTransaction(
                     REJECT_INVALID, "bad-tx-zip225-version-too-high");
             }
         }
+
+        //nSpendsSapling, nOutputsSapling, and nActionsOrchard MUST all be less than 2^16
+        size_t max_spends = 1 << 16;
+        if (tx.vShieldedSpend.size() >= max_spends) {
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckTransaction(): More than 2^16 Sapling spends"),
+                REJECT_INVALID, "bad-tx-too-many-sapling-spends");
+        }
+        if (tx.vShieldedOutput.size() >= max_spends) {
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckTransaction(): More than 2^16 Sapling outputs"),
+                REJECT_INVALID, "bad-tx-too-many-sapling-outputs");
+        }
+        if (tx.GetOrchardBundle().GetNumActions() >= max_spends) {
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckTransaction(): More than 2^16 Orchard actions"),
+                REJECT_INVALID, "bad-tx-too-many-orchard-actions");
+        }
+
+        if (tx.IsCoinBase()) {
+            // A coinbase transaction cannot have Orchard spends.
+            if (orchard_bundle.SpendsEnabled()) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): coinbase has orchard shielded spends"),
+                    REJECT_INVALID, "bad-cb-has-orchard-spends");
+            }
+
+            // Check that Orchard coinbase outputs can be decrypted with the all-zeros OVK
+        }
+
         if (!futureActive) {
             // Reject transactions with invalid version group id
             if (!(tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID || tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID)) {
@@ -1089,8 +1111,6 @@ bool ContextualCheckTransaction(
                     REJECT_INVALID, "bad-nu5-tx-version-group-id");
             }
         }
-
-        // XXX Do we need to call an orchard check function through the ffi?
     } else {
         // Rules that apply generally before Nu5. These were
         // previously noncontextual checks that became contextual
