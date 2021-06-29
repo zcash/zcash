@@ -1291,7 +1291,7 @@ bool ContextualCheckTransaction(
 
         if (!librustzcash_sapling_final_check(
             ctx,
-            tx.valueBalance,
+            tx.valueBalanceSapling,
             tx.bindingSig.begin(),
             dataToBeSigned.begin()
         ))
@@ -1450,21 +1450,21 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                              REJECT_INVALID, "bad-txns-txouttotal-toolarge");
     }
 
-    // Check for non-zero valueBalance when there are no Sapling inputs or outputs
-    if (tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty() && tx.valueBalance != 0) { // XXX value balance ffi
-        return state.DoS(100, error("CheckTransaction(): tx.valueBalance has no sources or sinks"),
+    // Check for non-zero valueBalanceSapling when there are no Sapling inputs or outputs
+    if (tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty() && tx.valueBalanceSapling != 0) { // XXX value balance ffi
+        return state.DoS(100, error("CheckTransaction(): tx.valueBalanceSapling has no sources or sinks"),
                             REJECT_INVALID, "bad-txns-valuebalance-nonzero");
     }
 
-    // Check for overflow valueBalance XXX rename to sapling value balance, add orchard value balance checks
-    if (tx.valueBalance > MAX_MONEY || tx.valueBalance < -MAX_MONEY) { // XXX need value balance ffi
-        return state.DoS(100, error("CheckTransaction(): abs(tx.valueBalance) too large"),
+    // Check for overflow valueBalanceSapling XXX rename to sapling value balance, add orchard value balance checks
+    if (tx.valueBalanceSapling > MAX_MONEY || tx.valueBalanceSapling < -MAX_MONEY) { // XXX need value balance ffi
+        return state.DoS(100, error("CheckTransaction(): abs(tx.valueBalanceSapling) too large"),
                             REJECT_INVALID, "bad-txns-valuebalance-toolarge");
     }
 
-    if (tx.valueBalance <= 0) {
-        // NB: negative valueBalance "takes" money from the transparent value pool just as outputs do
-        nValueOut += -tx.valueBalance;
+    if (tx.valueBalanceSapling <= 0) {
+        // NB: negative valueBalanceSapling "takes" money from the transparent value pool just as outputs do
+        nValueOut += -tx.valueBalanceSapling;
 
         if (!MoneyRange(nValueOut)) {
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
@@ -1524,9 +1524,9 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
 
         // Also check for Sapling
-        if (tx.valueBalance >= 0) {
-            // NB: positive valueBalance "adds" money to the transparent value pool, just as inputs do
-            nValueIn += tx.valueBalance;
+        if (tx.valueBalanceSapling >= 0) {
+            // NB: positive valueBalanceSapling "adds" money to the transparent value pool, just as inputs do
+            nValueIn += tx.valueBalanceSapling;
 
             if (!MoneyRange(nValueIn)) {
                 return state.DoS(100, error("CheckTransaction(): txin total out of range"),
@@ -4252,13 +4252,13 @@ bool ReceivedBlockTransactions(
     CAmount saplingValue = 0;
     CAmount orchardValue = 0;
     for (auto tx : block.vtx) {
-        // Negative valueBalance "takes" money from the transparent value pool
-        // and adds it to the Sapling value pool. Positive valueBalance "gives"
+        // Negative valueBalanceSapling "takes" money from the transparent value pool
+        // and adds it to the Sapling value pool. Positive valueBalanceSapling "gives"
         // money to the transparent value pool, removing from the Sapling value
         // pool. So we invert the sign here.
-        saplingValue += -tx.valueBalance;
+        saplingValue += -tx.valueBalanceSapling;
 
-        // Orchard valueBalance behaves the same way as Sapling valueBalance.
+        // Orchard valueBalanceSapling behaves the same way as Sapling valueBalanceSapling.
         orchardValue += -tx.GetOrchardBundle().GetValueBalance();
 
         for (auto js : tx.vJoinSplit) {

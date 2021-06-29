@@ -102,7 +102,7 @@ TEST(TransactionBuilder, TransparentToSapling)
     EXPECT_EQ(tx.vJoinSplit.size(), 0);
     EXPECT_EQ(tx.vShieldedSpend.size(), 0);
     EXPECT_EQ(tx.vShieldedOutput.size(), 1);
-    EXPECT_EQ(tx.valueBalance, -40000);
+    EXPECT_EQ(tx.valueBalanceSapling, -40000);
 
     CValidationState state;
     EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 2, true));
@@ -139,7 +139,7 @@ TEST(TransactionBuilder, SaplingToSapling) {
     EXPECT_EQ(tx.vJoinSplit.size(), 0);
     EXPECT_EQ(tx.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx.vShieldedOutput.size(), 2);
-    EXPECT_EQ(tx.valueBalance, 10000);
+    EXPECT_EQ(tx.valueBalanceSapling, 10000);
 
     CValidationState state;
     EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 3, true));
@@ -177,7 +177,7 @@ TEST(TransactionBuilder, SaplingToSprout) {
     EXPECT_EQ(tx.vJoinSplit[0].vpub_new, 0);
     EXPECT_EQ(tx.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx.vShieldedOutput.size(), 1);
-    EXPECT_EQ(tx.valueBalance, 35000);
+    EXPECT_EQ(tx.valueBalanceSapling, 35000);
 
     CValidationState state;
     EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 3, true));
@@ -238,7 +238,7 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     EXPECT_EQ(tx.vJoinSplit[2].vpub_new, 10000);
     EXPECT_EQ(tx.vShieldedSpend.size(), 0);
     EXPECT_EQ(tx.vShieldedOutput.size(), 1);
-    EXPECT_EQ(tx.valueBalance, -5000);
+    EXPECT_EQ(tx.valueBalanceSapling, -5000);
 
     CValidationState state;
     EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 4, true));
@@ -365,7 +365,7 @@ TEST(TransactionBuilder, ChangeOutput)
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 1);
         EXPECT_EQ(tx.vShieldedOutput.size(), 1);
-        EXPECT_EQ(tx.valueBalance, -15000);
+        EXPECT_EQ(tx.valueBalanceSapling, -15000);
     }
 
     // Change to a Sapling address
@@ -380,7 +380,7 @@ TEST(TransactionBuilder, ChangeOutput)
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 0);
         EXPECT_EQ(tx.vShieldedOutput.size(), 1);
-        EXPECT_EQ(tx.valueBalance, -15000);
+        EXPECT_EQ(tx.valueBalanceSapling, -15000);
     }
 
     // Change to a transparent address
@@ -395,7 +395,7 @@ TEST(TransactionBuilder, ChangeOutput)
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 0);
         EXPECT_EQ(tx.vShieldedOutput.size(), 0);
-        EXPECT_EQ(tx.valueBalance, 0);
+        EXPECT_EQ(tx.valueBalanceSapling, 0);
         EXPECT_EQ(tx.vout[0].nValue, 15000);
     }
 
@@ -427,7 +427,7 @@ TEST(TransactionBuilder, SetFee)
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 1);
         EXPECT_EQ(tx.vShieldedOutput.size(), 2);
-        EXPECT_EQ(tx.valueBalance, 10000);
+        EXPECT_EQ(tx.valueBalanceSapling, 10000);
     }
 
     // Configured fee
@@ -443,7 +443,7 @@ TEST(TransactionBuilder, SetFee)
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 1);
         EXPECT_EQ(tx.vShieldedOutput.size(), 2);
-        EXPECT_EQ(tx.valueBalance, 20000);
+        EXPECT_EQ(tx.valueBalanceSapling, 20000);
     }
 
     // Revert to default

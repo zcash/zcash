@@ -199,7 +199,7 @@ void TransactionBuilder::AddSaplingSpend(
     }
 
     spends.emplace_back(expsk, note, anchor, witness);
-    mtx.valueBalance += note.value();
+    mtx.valueBalanceSapling += note.value();
 }
 
 void TransactionBuilder::AddSaplingOutput(
@@ -221,7 +221,7 @@ void TransactionBuilder::AddSaplingOutput(
 
     auto note = libzcash::SaplingNote(to, value, zip_212_enabled);
     outputs.emplace_back(ovk, note, memo);
-    mtx.valueBalance -= value;
+    mtx.valueBalanceSapling -= value;
 }
 
 void TransactionBuilder::AddSproutInput(
@@ -307,7 +307,7 @@ TransactionBuilderResult TransactionBuilder::Build()
     //
 
     // Valid change
-    CAmount change = mtx.valueBalance - fee;
+    CAmount change = mtx.valueBalanceSapling - fee;
     for (auto jsInput : jsInputs) {
         change += jsInput.note.value();
     }
@@ -460,7 +460,7 @@ TransactionBuilderResult TransactionBuilder::Build()
     }
     librustzcash_sapling_binding_sig(
         ctx,
-        mtx.valueBalance,
+        mtx.valueBalanceSapling,
         dataToBeSigned.begin(),
         mtx.bindingSig.data());
 
