@@ -35,3 +35,39 @@ bool IsValidViewingKey(const libzcash::ViewingKey& vk) {
 bool IsValidSpendingKey(const libzcash::SpendingKey& zkey) {
     return !std::holds_alternative<libzcash::InvalidEncoding>(zkey);
 }
+
+std::optional<libzcash::RawAddress> RecipientForPaymentAddress::operator()(
+    const libzcash::InvalidEncoding& no) const
+{
+    return std::nullopt;
+}
+
+std::optional<libzcash::RawAddress> RecipientForPaymentAddress::operator()(
+    const libzcash::SproutPaymentAddress &zaddr) const
+{
+    return zaddr;
+}
+
+std::optional<libzcash::RawAddress> RecipientForPaymentAddress::operator()(
+    const libzcash::SaplingPaymentAddress &zaddr) const
+{
+    return zaddr;
+}
+
+std::set<libzcash::RawAddress> GetRawAddresses::operator()(
+    const libzcash::InvalidEncoding& no) const
+{
+    return {};
+}
+
+std::set<libzcash::RawAddress> GetRawAddresses::operator()(
+    const libzcash::SproutPaymentAddress &zaddr) const
+{
+    return {zaddr};
+}
+
+std::set<libzcash::RawAddress> GetRawAddresses::operator()(
+    const libzcash::SaplingPaymentAddress &zaddr) const
+{
+    return {zaddr};
+}

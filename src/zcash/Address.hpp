@@ -8,12 +8,16 @@
 #include <variant>
 
 namespace libzcash {
+/** Protocol addresses that can receive funds in a transaction. */
+typedef std::variant<SproutPaymentAddress, SaplingPaymentAddress> RawAddress;
+
 class InvalidEncoding {
 public:
     friend bool operator==(const InvalidEncoding &a, const InvalidEncoding &b) { return true; }
     friend bool operator<(const InvalidEncoding &a, const InvalidEncoding &b) { return true; }
 };
 
+/** Addresses that can appear in a string encoding. */
 typedef std::variant<InvalidEncoding, SproutPaymentAddress, SaplingPaymentAddress> PaymentAddress;
 typedef std::variant<InvalidEncoding, SproutViewingKey, SaplingExtendedFullViewingKey> ViewingKey;
 typedef std::variant<InvalidEncoding, SproutSpendingKey, SaplingExtendedSpendingKey> SpendingKey;
@@ -42,5 +46,29 @@ bool IsValidViewingKey(const libzcash::ViewingKey& vk);
 
 /** Check whether a SpendingKey is not an InvalidEncoding. */
 bool IsValidSpendingKey(const libzcash::SpendingKey& zkey);
+
+/**
+ * Returns the protocol address that should be used in transaction outputs.
+ */
+class RecipientForPaymentAddress {
+public:
+    RecipientForPaymentAddress() {}
+
+    std::optional<libzcash::RawAddress> operator()(const libzcash::InvalidEncoding& no) const;
+    std::optional<libzcash::RawAddress> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
+    std::optional<libzcash::RawAddress> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+};
+
+/**
+ * Returns all protocol addresses contained within the given payment address.
+ */
+class GetRawAddresses {
+public:
+    GetRawAddresses() {}
+
+    std::set<libzcash::RawAddress> operator()(const libzcash::InvalidEncoding& no) const;
+    std::set<libzcash::RawAddress> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
+    std::set<libzcash::RawAddress> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+};
 
 #endif // ZC_ADDRESS_H_
