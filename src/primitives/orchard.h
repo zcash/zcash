@@ -93,6 +93,10 @@ public:
         batch.Queue(inner.get(), txid.begin());
     }
 
+    const size_t GetNumActions() const {
+        return orchard_bundle_actions_len(inner.get());
+    }
+
     const std::vector<uint256> GetNullifiers() const {
         size_t actions_len = orchard_bundle_actions_len(inner.get());
         std::vector<uint256> result(actions_len);

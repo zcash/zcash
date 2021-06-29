@@ -1069,6 +1069,33 @@ bool ContextualCheckTransaction(
                     REJECT_INVALID, "bad-tx-zip225-version-too-high");
             }
         }
+
+
+        // nSpendsSapling, nOutputsSapling, and nActionsOrchard MUST all be less than 2^16
+        size_t max_elements = (1 << 16) - 1;
+        if (tx.vShieldedSpend.size() > max_elements) {
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckTransaction(): 2^16 or more Sapling spends"),
+                REJECT_INVALID, "bad-tx-too-many-sapling-spends");
+        }
+        if (tx.vShieldedOutput.size() > max_elements) {
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckTransaction(): 2^16 or more Sapling outputs"),
+                REJECT_INVALID, "bad-tx-too-many-sapling-outputs");
+        }
+        if (orchard_bundle.GetNumActions() > max_elements) {
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckTransaction(): 2^16 or more Orchard actions"),
+                REJECT_INVALID, "bad-tx-too-many-orchard-actions");
+        }
+
+        if (tx.IsCoinBase()) {
+            // TODO: Check that Orchard coinbase outputs can be decrypted with the all-zeros OVK
+        }
+
         if (!futureActive) {
             // Reject transactions with invalid version group id
             if (!(tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID || tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID)) {
