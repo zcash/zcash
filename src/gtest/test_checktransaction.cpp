@@ -324,7 +324,7 @@ TEST(ChecktransactionTests, BadTxnsTxouttotalToolargeOutputs) {
 
 TEST(ChecktransactionTests, ValueBalanceNonZero) {
     CMutableTransaction mtx = GetValidTransaction();
-    mtx.valueBalance = 10;
+    mtx.valueBalanceSapling = 10;
 
     CTransaction tx(mtx);
 
@@ -336,7 +336,7 @@ TEST(ChecktransactionTests, ValueBalanceNonZero) {
 TEST(ChecktransactionTests, PositiveValueBalanceTooLarge) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vShieldedSpend.resize(1);
-    mtx.valueBalance = MAX_MONEY + 1;
+    mtx.valueBalanceSapling = MAX_MONEY + 1;
 
     CTransaction tx(mtx);
 
@@ -348,7 +348,7 @@ TEST(ChecktransactionTests, PositiveValueBalanceTooLarge) {
 TEST(ChecktransactionTests, NegativeValueBalanceTooLarge) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vShieldedSpend.resize(1);
-    mtx.valueBalance = -(MAX_MONEY + 1);
+    mtx.valueBalanceSapling = -(MAX_MONEY + 1);
 
     CTransaction tx(mtx);
 
@@ -361,7 +361,7 @@ TEST(ChecktransactionTests, ValueBalanceOverflowsTotal) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vShieldedSpend.resize(1);
     mtx.vout[0].nValue = 1;
-    mtx.valueBalance = -MAX_MONEY;
+    mtx.valueBalanceSapling = -MAX_MONEY;
 
     CTransaction tx(mtx);
 
@@ -859,7 +859,7 @@ TEST(ChecktransactionTests, SaplingSproutInputSumsTooLarge) {
         EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
     }
 
-    mtx.valueBalance = (MAX_MONEY / 2) + 10;
+    mtx.valueBalanceSapling = (MAX_MONEY / 2) + 10;
 
     {
         UNSAFE_CTransaction tx(mtx);
@@ -1221,7 +1221,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsShieldedCoinbase) {
     RegtestDeactivateHeartwood();
 }
 
-// Check that the consensus rules relevant to valueBalance, vShieldedOutput, and
+// Check that the consensus rules relevant to valueBalanceSapling, vShieldedOutput, and
 // bindingSig from https://zips.z.cash/protocol/protocol.pdf#txnencoding are
 // applied to coinbase transactions.
 TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
@@ -1242,10 +1242,10 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     mtx.vin[0].prevout.SetNull();
     mtx.vin[0].scriptSig << 123;
     mtx.vJoinSplit.resize(0);
-    mtx.valueBalance = -1000;
+    mtx.valueBalanceSapling = -1000;
 
     // Coinbase transaction should fail non-contextual checks with no shielded
-    // outputs and non-zero valueBalance.
+    // outputs and non-zero valueBalanceSapling.
     {
         CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
@@ -1261,10 +1261,10 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     librustzcash_sapling_proving_ctx_free(ctx);
     mtx.vShieldedOutput.push_back(odesc);
 
-    // Coinbase transaction should fail non-contextual checks with valueBalance
+    // Coinbase transaction should fail non-contextual checks with valueBalanceSapling
     // out of range.
     {
-        mtx.valueBalance = MAX_MONEY + 1;
+        mtx.valueBalanceSapling = MAX_MONEY + 1;
         EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
         UNSAFE_CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
@@ -1274,7 +1274,7 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
         EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
     }
     {
-        mtx.valueBalance = -MAX_MONEY - 1;
+        mtx.valueBalanceSapling = -MAX_MONEY - 1;
         EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
         UNSAFE_CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
@@ -1284,7 +1284,7 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
         EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
     }
 
-    mtx.valueBalance = -1000;
+    mtx.valueBalanceSapling = -1000;
     CTransaction tx(mtx);
     EXPECT_TRUE(tx.IsCoinBase());
 

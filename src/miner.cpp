@@ -126,13 +126,13 @@ class AddFundingStreamValueToTx
 {
 private:
     CMutableTransaction &mtx;
-    void* ctx; 
+    void* ctx;
     const CAmount fundingStreamValue;
     const libzcash::Zip212Enabled zip212Enabled;
 public:
     AddFundingStreamValueToTx(
-            CMutableTransaction &mtx, 
-            void* ctx, 
+            CMutableTransaction &mtx,
+            void* ctx,
             const CAmount fundingStreamValue,
             const libzcash::Zip212Enabled zip212Enabled): mtx(mtx), ctx(ctx), fundingStreamValue(fundingStreamValue), zip212Enabled(zip212Enabled) {}
 
@@ -144,7 +144,7 @@ public:
         auto odesc = output.Build(ctx);
         if (odesc) {
             mtx.vShieldedOutput.push_back(odesc.value());
-            mtx.valueBalance -= fundingStreamValue;
+            mtx.valueBalanceSapling -= fundingStreamValue;
             return true;
         } else {
             return false;
@@ -231,7 +231,7 @@ public:
 
         bool success = librustzcash_sapling_binding_sig(
             ctx,
-            mtx.valueBalance,
+            mtx.valueBalanceSapling,
             dataToBeSigned.begin(),
             mtx.bindingSig.data());
 
@@ -248,7 +248,7 @@ public:
         auto ctx = librustzcash_sapling_proving_ctx_init();
 
         auto miner_reward = SetFoundersRewardAndGetMinerValue(ctx);
-        mtx.valueBalance -= miner_reward;
+        mtx.valueBalanceSapling -= miner_reward;
 
         uint256 ovk;
 
@@ -543,7 +543,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
                 CAmount saplingValueDummy = saplingValue;
                 CAmount orchardValueDummy = orchardValue;
 
-                saplingValueDummy += -tx.valueBalance;
+                saplingValueDummy += -tx.valueBalanceSapling;
                 orchardValueDummy += -tx.GetOrchardBundle().GetValueBalance();
 
                 for (auto js : tx.vJoinSplit) {

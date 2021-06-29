@@ -4423,10 +4423,10 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
             //  A transaction is "finalized" iff it has at least 10 confirmations.
             // TODO: subject to change, if the recommended number of confirmations changes.
             if (tx.GetDepthInMainChain() >= 10) {
-                finalizedMigratedAmount -= tx.valueBalance;
+                finalizedMigratedAmount -= tx.valueBalanceSapling;
                 ++numFinalizedMigrationTxs;
             } else {
-                unfinalizedMigratedAmount -= tx.valueBalance;
+                unfinalizedMigratedAmount -= tx.valueBalanceSapling;
             }
             // If the transaction is in the mempool it will not be associated with a block yet
             if (tx.hashBlock.IsNull() || mapBlockIndex[tx.hashBlock] == nullptr) {
