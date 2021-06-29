@@ -477,7 +477,7 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         CValidationState state;
 
         newTx.vJoinSplit.push_back(JSDescription());
-        
+
         JSDescription *jsdesc = &newTx.vJoinSplit[0];
         jsdesc->vpub_old = -1;
 
@@ -921,7 +921,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
             SignatureHash(
                 scriptCode, tx, nIn,
                 SIGHASH_ALL,
-                amount, tx.GetConsensusBranchId()
+                amount, *tx.GetConsensusBranchId()
             ).GetHex(),
             test[6].getValStr());
 
@@ -930,7 +930,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
                 SignatureHash(
                     scriptCode, tx, nIn,
                     SIGHASH_NONE,
-                    amount, tx.GetConsensusBranchId()
+                    amount, *tx.GetConsensusBranchId()
                 ).GetHex(),
                 test[7].getValStr());
         }
@@ -940,7 +940,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
                 SignatureHash(
                     scriptCode, tx, nIn,
                     SIGHASH_SINGLE,
-                    amount, tx.GetConsensusBranchId()
+                    amount, *tx.GetConsensusBranchId()
                 ).GetHex(),
                 test[8].getValStr());
         }
@@ -950,7 +950,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
                 SignatureHash(
                     scriptCode, tx, nIn,
                     SIGHASH_ALL | SIGHASH_ANYONECANPAY,
-                    amount, tx.GetConsensusBranchId()
+                    amount, *tx.GetConsensusBranchId()
                 ).GetHex(),
                 test[9].getValStr());
         }
@@ -960,7 +960,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
                 SignatureHash(
                     scriptCode, tx, nIn,
                     SIGHASH_NONE | SIGHASH_ANYONECANPAY,
-                    amount, tx.GetConsensusBranchId()
+                    amount, *tx.GetConsensusBranchId()
                 ).GetHex(),
                 test[10].getValStr());
         }
@@ -970,7 +970,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
                 SignatureHash(
                     scriptCode, tx, nIn,
                     SIGHASH_SINGLE | SIGHASH_ANYONECANPAY,
-                    amount, tx.GetConsensusBranchId()
+                    amount, *tx.GetConsensusBranchId()
                 ).GetHex(),
                 test[11].getValStr());
         }

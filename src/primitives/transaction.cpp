@@ -186,7 +186,7 @@ void CTransaction::UpdateHash() const
 
 CTransaction::CTransaction() : nVersion(CTransaction::SPROUT_MIN_CURRENT_VERSION),
                                fOverwintered(false), nVersionGroupId(0), nExpiryHeight(0),
-                               nConsensusBranchId(0),
+                               nConsensusBranchId(std::nullopt),
                                vin(), vout(), nLockTime(0),
                                valueBalance(0), vShieldedSpend(), vShieldedOutput(),
                                orchardBundle(),

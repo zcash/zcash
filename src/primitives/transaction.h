@@ -659,7 +659,7 @@ class CTransaction
 private:
     /// The consensus branch ID that this transaction commits to.
     /// Serialized from v5 onwards.
-    uint32_t nConsensusBranchId;
+    std::optional<uint32_t> nConsensusBranchId;
     OrchardBundle orchardBundle;
 
     /** Memory only. */
@@ -781,7 +781,7 @@ public:
 
         if (isZip225V5) {
             // Common Transaction Fields (plus version bytes above)
-            READWRITE(nConsensusBranchId);
+            READWRITE(*nConsensusBranchId);
             READWRITE(*const_cast<uint32_t*>(&nLockTime));
             READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
 
@@ -870,7 +870,7 @@ public:
         return header;
     }
 
-    uint32_t GetConsensusBranchId() const {
+    std::optional<uint32_t> GetConsensusBranchId() const {
         return nConsensusBranchId;
     }
 
@@ -929,7 +929,7 @@ struct CMutableTransaction
     uint32_t nVersionGroupId;
     /// The consensus branch ID that this transaction commits to.
     /// Serialized from v5 onwards.
-    uint32_t nConsensusBranchId;
+    std::optional<uint32_t> nConsensusBranchId;
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
@@ -991,7 +991,7 @@ struct CMutableTransaction
 
         if (isZip225V5) {
             // Common Transaction Fields (plus version bytes above)
-            READWRITE(nConsensusBranchId);
+            READWRITE(*nConsensusBranchId);
             READWRITE(nLockTime);
             READWRITE(nExpiryHeight);
 
