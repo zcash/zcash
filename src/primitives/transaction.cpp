@@ -275,6 +275,16 @@ CAmount CTransaction::GetValueOut() const
         }
     }
 
+    auto valueBalanceOrchard = orchardBundle.GetValueBalance();
+    if (valueBalanceOrchard <= 0) {
+        // NB: negative valueBalanceOrchard "takes" money from the transparent value pool just as outputs do
+        nValueOut += -valueBalanceOrchard;
+
+        if (!MoneyRange(-valueBalanceOrchard) || !MoneyRange(nValueOut)) {
+            throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
+        }
+    }
+
     for (std::vector<JSDescription>::const_iterator it(vJoinSplit.begin()); it != vJoinSplit.end(); ++it)
     {
         // NB: vpub_old "takes" money from the transparent value pool just as outputs do
@@ -295,6 +305,16 @@ CAmount CTransaction::GetShieldedValueIn() const
         nValue += valueBalanceSapling;
 
         if (!MoneyRange(valueBalanceSapling) || !MoneyRange(nValue)) {
+            throw std::runtime_error("CTransaction::GetShieldedValueIn(): value out of range");
+        }
+    }
+
+    auto valueBalanceOrchard = orchardBundle.GetValueBalance();
+    if (valueBalanceOrchard >= 0) {
+        // NB: positive valueBalanceOrchard "gives" money to the transparent value pool just as inputs do
+        nValue += valueBalanceOrchard;
+
+        if (!MoneyRange(valueBalanceOrchard) || !MoneyRange(nValue)) {
             throw std::runtime_error("CTransaction::GetShieldedValueIn(): value out of range");
         }
     }
@@ -348,7 +368,7 @@ std::string CTransaction::ToString() const
             vout.size(),
             nLockTime);
     } else if (nVersion >= SAPLING_MIN_TX_VERSION) {
-        str += strprintf("CTransaction(hash=%s, ver=%d, fOverwintered=%d, nVersionGroupId=%08x, vin.size=%u, vout.size=%u, nLockTime=%u, nExpiryHeight=%u, valueBalanceSapling=%u, vShieldedSpend.size=%u, vShieldedOutput.size=%u)\n",
+        str += strprintf("CTransaction(hash=%s, ver=%d, fOverwintered=%d, nVersionGroupId=%08x, vin.size=%u, vout.size=%u, nLockTime=%u, nExpiryHeight=%u, valueBalanceSapling=%u, vSaplingSpend.size=%u, vSaplingOutput.size=%u",
             GetHash().ToString().substr(0,10),
             nVersion,
             fOverwintered,
@@ -360,6 +380,12 @@ std::string CTransaction::ToString() const
             valueBalanceSapling,
             vShieldedSpend.size(),
             vShieldedOutput.size());
+        if (nVersion >= ZIP225_MIN_TX_VERSION) {
+            str += strprintf(", valueBalanceOrchard=%u, vOrchardAction.size",
+                orchardBundle.GetValueBalance(),
+                orchardBundle.GetNumActions());
+        }
+        str += ")\n";
     } else if (nVersion >= 3) {
         str += strprintf("CTransaction(hash=%s, ver=%d, fOverwintered=%d, nVersionGroupId=%08x, vin.size=%u, vout.size=%u, nLockTime=%u, nExpiryHeight=%u)\n",
             GetHash().ToString().substr(0,10),
