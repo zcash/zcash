@@ -1102,6 +1102,14 @@ bool ContextualCheckTransaction(
                     error("ContextualCheckTransaction(): transaction's consensus branch id does not match the current consensus branch"),
                     REJECT_INVALID, "bad-tx-consensus-branch-id-mismatch");
             }
+
+            // v5 transactions must have empty joinSplits
+            if (!(tx.vJoinSplit.empty())) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckTransaction(): Sprout JoinSplits not allowed in ZIP225 transactions"),
+                    REJECT_INVALID, "bad-tx-has-joinsplits");
+            }
         }
 
 
@@ -1405,10 +1413,13 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
     auto orchard_bundle = tx.GetOrchardBundle();
 
-    // Transactions must contain some potential source of funds. This
-    // rejects obviously-invalid transaction constructions early, but
-    // cannot prevent e.g. a pure Sapling transaction with only dummy
-    // spends (which is undetectable).
+    // Transactions must contain some potential source of funds. This rejects
+    // obviously-invalid transaction constructions early, but cannot prevent
+    // e.g. a pure Sapling transaction with only dummy spends (which is
+    // undetectable). Contextual checks ensure that only one of Sprout
+    // joinsplits or Orchard actions may be present.
+    // Note that orchard_bundle.SpendsEnabled() is false when no
+    // Orchard bundle is present, i.e. when nActionsOrchard == 0.
     if (tx.vin.empty() &&
         tx.vJoinSplit.empty() &&
         tx.vShieldedSpend.empty() &&
@@ -1417,11 +1428,14 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         return state.DoS(10, error("CheckTransaction(): no source of funds"),
                          REJECT_INVALID, "bad-txns-no-source-of-funds");
     }
-    // Transactions must contain some potential useful sink of funds.
-    // This rejects obviously-invalid transaction constructions early,
-    // but cannot prevent e.g. a pure Sapling transaction with only
-    // dummy outputs (which is undetectable), and does not prevent
-    // transparent transactions from sending all funds to miners.
+    // Transactions must contain some potential useful sink of funds.  This
+    // rejects obviously-invalid transaction constructions early, but cannot
+    // prevent e.g. a pure Sapling transaction with only dummy outputs (which
+    // is undetectable), and does not prevent transparent transactions from
+    // sending all funds to miners.  Contextual checks ensure that only one of
+    // Sprout joinsplits or Orchard actions may be present.
+    // Note that orchard_bundle.OutputsEnabled() is false when no
+    // Orchard bundle is present, i.e. when nActionsOrchard == 0.
     if (tx.vout.empty() &&
         tx.vJoinSplit.empty() &&
         tx.vShieldedOutput.empty() &&
