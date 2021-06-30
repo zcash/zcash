@@ -100,7 +100,8 @@ public:
     const std::vector<uint256> GetNullifiers() const {
         size_t actions_len = orchard_bundle_actions_len(inner.get());
         std::vector<uint256> result(actions_len);
-        orchard_bundle_nullifiers(inner.get(), result.data(), actions_len);
+        auto nullifiers_ok = orchard_bundle_nullifiers(inner.get(), result.data(), actions_len);
+        assert(nullifiers_ok);
         return result;
     }
 

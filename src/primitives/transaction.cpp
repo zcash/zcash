@@ -261,16 +261,23 @@ CAmount CTransaction::GetValueOut() const
     CAmount nValueOut = 0;
     for (std::vector<CTxOut>::const_iterator it(vout.begin()); it != vout.end(); ++it)
     {
+        if (!MoneyRange(it->nValue)) {
+            throw std::runtime_error("CTransaction::GetValueOut(): nValue out of range");
+        }
         nValueOut += it->nValue;
-        if (!MoneyRange(it->nValue) || !MoneyRange(nValueOut))
-            throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
+        if (!MoneyRange(nValueOut)) {
+            throw std::runtime_error("CTransaction::GetValueOut(): nValueOut out of range");
+        }
     }
 
     if (valueBalanceSapling <= 0) {
         // NB: negative valueBalanceSapling "takes" money from the transparent value pool just as outputs do
+        if (valueBalanceSapling < -MAX_MONEY) {
+            throw std::runtime_error("CTransaction::GetValueOut(): valueBalanceSapling out of range");
+        }
         nValueOut += -valueBalanceSapling;
 
-        if (!MoneyRange(-valueBalanceSapling) || !MoneyRange(nValueOut)) {
+        if (!MoneyRange(nValueOut)) {
             throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
         }
     }
@@ -278,9 +285,12 @@ CAmount CTransaction::GetValueOut() const
     auto valueBalanceOrchard = orchardBundle.GetValueBalance();
     if (valueBalanceOrchard <= 0) {
         // NB: negative valueBalanceOrchard "takes" money from the transparent value pool just as outputs do
+        if (valueBalanceOrchard < -MAX_MONEY) {
+            throw std::runtime_error("CTransaction::GetValueOut(): valueBalanceOrchard out of range");
+        }
         nValueOut += -valueBalanceOrchard;
 
-        if (!MoneyRange(-valueBalanceOrchard) || !MoneyRange(nValueOut)) {
+        if (!MoneyRange(nValueOut)) {
             throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
         }
     }
@@ -288,10 +298,13 @@ CAmount CTransaction::GetValueOut() const
     for (std::vector<JSDescription>::const_iterator it(vJoinSplit.begin()); it != vJoinSplit.end(); ++it)
     {
         // NB: vpub_old "takes" money from the transparent value pool just as outputs do
+        if (!MoneyRange(it->vpub_old)) {
+            throw std::runtime_error("CTransaction::GetValueOut(): vpub_old out of range");
+        }
         nValueOut += it->vpub_old;
-
-        if (!MoneyRange(it->vpub_old) || !MoneyRange(nValueOut))
+        if (!MoneyRange(nValueOut)) {
             throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
+        }
     }
     return nValueOut;
 }
@@ -302,9 +315,12 @@ CAmount CTransaction::GetShieldedValueIn() const
 
     if (valueBalanceSapling >= 0) {
         // NB: positive valueBalanceSapling "gives" money to the transparent value pool just as inputs do
+        if (valueBalanceSapling > MAX_MONEY) {
+            throw std::runtime_error("CTransaction::GetShieldedValueIn(): valueBalanceSapling out of range");
+        }
         nValue += valueBalanceSapling;
 
-        if (!MoneyRange(valueBalanceSapling) || !MoneyRange(nValue)) {
+        if (!MoneyRange(nValue)) {
             throw std::runtime_error("CTransaction::GetShieldedValueIn(): value out of range");
         }
     }
@@ -312,20 +328,25 @@ CAmount CTransaction::GetShieldedValueIn() const
     auto valueBalanceOrchard = orchardBundle.GetValueBalance();
     if (valueBalanceOrchard >= 0) {
         // NB: positive valueBalanceOrchard "gives" money to the transparent value pool just as inputs do
+        if (valueBalanceOrchard > MAX_MONEY) {
+            throw std::runtime_error("CTransaction::GetShieldedValueIn(): valueBalanceOrchard out of range");
+        }
         nValue += valueBalanceOrchard;
-
-        if (!MoneyRange(valueBalanceOrchard) || !MoneyRange(nValue)) {
-            throw std::runtime_error("CTransaction::GetShieldedValueIn(): value out of range");
+        if (!MoneyRange(nValue)) {
+            throw std::runtime_error("CTransaction::GetShieldedValueIn(): nValue out of range");
         }
     }
 
     for (std::vector<JSDescription>::const_iterator it(vJoinSplit.begin()); it != vJoinSplit.end(); ++it)
     {
         // NB: vpub_new "gives" money to the transparent value pool just as inputs do
+        if (!MoneyRange(it->vpub_new)) {
+            throw std::runtime_error("CTransaction::GetShieldedValueIn(): vpub_new out of range");
+        }
         nValue += it->vpub_new;
-
-        if (!MoneyRange(it->vpub_new) || !MoneyRange(nValue))
+        if (!MoneyRange(nValue)) {
             throw std::runtime_error("CTransaction::GetShieldedValueIn(): value out of range");
+        }
     }
 
     return nValue;
