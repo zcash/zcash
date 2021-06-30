@@ -48,6 +48,17 @@ public:
     MinerAddress operator()(const libzcash::SaplingPaymentAddress &addr) const {
         return addr;
     }
+    MinerAddress operator()(const libzcash::UnifiedAddress &addr) const {
+        auto recipient = RecipientForPaymentAddress()(addr);
+        if (recipient) {
+            return std::visit(ExtractMinerAddress(), *recipient);
+        } else {
+            // Either the UA only contains unknown shielded receivers (unlikely that we
+            // wouldn't know about them), or it only contains transparent receivers
+            // (which are invalid).
+            return InvalidMinerAddress();
+        }
+    }
 };
 
 class KeepMinerAddress

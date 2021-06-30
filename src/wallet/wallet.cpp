@@ -5201,6 +5201,12 @@ bool PaymentAddressBelongsToWallet::operator()(const libzcash::SaplingPaymentAdd
         m_wallet->HaveSaplingFullViewingKey(ivk);
 }
 
+bool PaymentAddressBelongsToWallet::operator()(const libzcash::UnifiedAddress &uaddr) const
+{
+    // TODO
+    return false;
+}
+
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::InvalidEncoding& no) const
 {
     return false;
@@ -5236,6 +5242,13 @@ std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
 }
 
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
+    const libzcash::UnifiedAddress &uaddr) const
+{
+    // TODO
+    return libzcash::ViewingKey();
+}
+
+std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::InvalidEncoding& no) const
 {
     // Defaults to InvalidEncoding
@@ -5255,6 +5268,12 @@ bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SaplingPayment
     return m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
         m_wallet->GetSaplingFullViewingKey(ivk, extfvk) &&
         m_wallet->HaveSaplingSpendingKey(extfvk);
+}
+
+bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::UnifiedAddress &uaddr) const
+{
+    // TODO
+    return false;
 }
 
 bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::InvalidEncoding& no) const
@@ -5282,6 +5301,13 @@ std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()
     } else {
         return std::nullopt;
     }
+}
+
+std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
+    const libzcash::UnifiedAddress &uaddr) const
+{
+    // TODO
+    return libzcash::SpendingKey();
 }
 
 std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
