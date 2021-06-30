@@ -2,11 +2,13 @@ use std::ptr;
 
 use orchard::{
     bundle::Authorized,
+    keys::OutgoingViewingKey,
     primitives::redpallas::{self, Binding, SpendAuth},
-    Bundle,
+    Bundle, OrchardDomain,
 };
 use rand_core::OsRng;
 use tracing::{debug, error};
+use zcash_note_encryption::try_output_recovery_with_ovk;
 use zcash_primitives::transaction::{
     components::{orchard as orchard_serialization, Amount},
     TxId,
@@ -284,4 +286,35 @@ pub extern "C" fn orchard_bundle_outputs_enabled(
 pub extern "C" fn orchard_bundle_spends_enabled(bundle: *const Bundle<Authorized, Amount>) -> bool {
     let bundle = unsafe { bundle.as_ref() };
     bundle.map(|b| b.flags().spends_enabled()).unwrap_or(false)
+}
+
+/// Returns whether all actions contained in the Orchard bundle
+/// can be decrypted with the all-zeros OVK. Returns `true`
+/// if no Orchard actions are present.
+///
+/// This should only be called on an Orchard bundle that is
+/// an element of a coinbase transaction.
+#[no_mangle]
+pub extern "C" fn orchard_bundle_coinbase_outputs_are_valid(
+    bundle: *const Bundle<Authorized, Amount>,
+) -> bool {
+    if let Some(bundle) = unsafe { bundle.as_ref() } {
+        for act in bundle.actions() {
+            if try_output_recovery_with_ovk(
+                &OrchardDomain::for_action(act),
+                &OutgoingViewingKey::from([0u8; 32]),
+                act,
+                act.cv_net(),
+                &act.encrypted_note().out_ciphertext,
+            )
+            .is_none()
+            {
+                return false;
+            }
+        }
+    }
+
+    // Either there are no Orchard actions, or all of the outputs
+    // are decryptable with the all-zeros OVK.
+    true
 }

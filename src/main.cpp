@@ -1135,7 +1135,12 @@ bool ContextualCheckTransaction(
         }
 
         if (tx.IsCoinBase()) {
-            // TODO: Check that Orchard coinbase outputs can be decrypted with the all-zeros OVK
+            if (!orchard_bundle.CoinbaseOutputsAreValid()) {
+                return state.DoS(
+                    DOS_LEVEL_BLOCK,
+                    error("ContextualCheckTransaction(): Orchard coinbase action has invalid ciphertext"),
+                    REJECT_INVALID, "bad-cb-action-invalid-ciphertext");
+            }
         } else {
             // ZIP 203: From NU5, the upper limit on nExpiryHeight is removed for coinbase
             // transactions.

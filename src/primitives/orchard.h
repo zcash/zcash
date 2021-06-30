@@ -121,6 +121,10 @@ public:
     bool SpendsEnabled() const {
         return orchard_bundle_spends_enabled(inner.get());
     }
+
+    bool CoinbaseOutputsAreValid() const {
+        return orchard_bundle_coinbase_outputs_are_valid(inner.get());
+    }
 };
 
 #endif // ZCASH_PRIMITIVES_ORCHARD_H
