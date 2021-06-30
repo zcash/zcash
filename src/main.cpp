@@ -911,6 +911,7 @@ bool ContextualCheckTransaction(
             }
         }
 
+        // Rules that became inactive after NU5 activation.
         if (!nu5Active) {
             // Reject transactions with invalid version group id
             if (tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
@@ -1125,24 +1126,22 @@ bool ContextualCheckTransaction(
         }
 
         if (tx.IsCoinBase()) {
-            // A coinbase transaction cannot have Orchard spends.
-            if (orchard_bundle.SpendsEnabled()) {
-                return state.DoS(
-                    dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckTransaction(): coinbase has orchard shielded spends"),
-                    REJECT_INVALID, "bad-cb-has-orchard-spends");
-            }
-
             // Check that Orchard coinbase outputs can be decrypted with the all-zeros OVK
         }
     } else {
         // Rules that apply generally before Nu5. These were
         // previously noncontextual checks that became contextual
         // after Nu5 activation.
+
+        // Check that Orchard transaction components are not present prior to
+        // NU5. NOTE: This is an internal zcashd consistency check; it does not
+        // correspond to a consensus rule in the protocol specification, but is
+        // instead an artifact of the internal zcashd transaction
+        // representation.
         if (orchard_bundle.IsPresent()) {
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
-                error("ContextualCheckTransaction(): transaction has Orchard actions"),
+                error("ContextualCheckTransaction(): pre-NU5 transaction has Orchard actions"),
                 REJECT_INVALID, "bad-tx-has-orchard-actions");
         }
 
@@ -1198,11 +1197,11 @@ bool ContextualCheckTransaction(
     uint256 prevDataToBeSigned;
 
     // Create signature hashes for shielded components.
+    // Orchard signatures are checked in CheckTransaction, so we
+    // don't need to take Orchard into account here.
     if (!tx.vJoinSplit.empty() ||
         !tx.vShieldedSpend.empty() ||
-        !tx.vShieldedOutput.empty() ||
-        orchard_bundle.SpendsEnabled() ||
-        orchard_bundle.OutputsEnabled())
+        !tx.vShieldedOutput.empty())
     {
         // Empty output script.
         CScript scriptCode;
@@ -1406,8 +1405,10 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
     auto orchard_bundle = tx.GetOrchardBundle();
 
-    // Transactions containing empty `vin` must have either non-empty
-    // `vJoinSplit` or non-empty `vShieldedSpend`.
+    // Transactions must contain some potential source of funds. This
+    // rejects obviously-invalid transaction constructions early, but
+    // cannot prevent e.g. a pure Sapling transaction with only dummy
+    // spends (which is undetectable).
     if (tx.vin.empty() &&
         tx.vJoinSplit.empty() &&
         tx.vShieldedSpend.empty() &&
@@ -1416,8 +1417,11 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         return state.DoS(10, error("CheckTransaction(): vin empty"),
                          REJECT_INVALID, "bad-txns-vin-empty");
     }
-    // Transactions containing empty `vout` must have either non-empty
-    // `vJoinSplit` or non-empty `vShieldedOutput`.
+    // Transactions must contain some potential useful sink of funds.
+    // This rejects obviously-invalid transaction constructions early,
+    // but cannot prevent e.g. a pure Sapling transaction with only
+    // dummy outputs (which is undetectable), and does not prevent
+    // transparent transactions from sending all funds to miners.
     if (tx.vout.empty() &&
         tx.vJoinSplit.empty() &&
         tx.vShieldedOutput.empty() &&
@@ -1472,21 +1476,23 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
     }
 
+    auto valueBalanceOrchard = orchard_bundle.GetValueBalance();
+
     // Check for non-zero valueBalanceOrchard when there are no Orchard inputs or outputs
-    if (!orchard_bundle.SpendsEnabled() && !orchard_bundle.OutputsEnabled() && orchard_bundle.GetValueBalance() != 0) {
+    if (!orchard_bundle.SpendsEnabled() && !orchard_bundle.OutputsEnabled() && valueBalanceOrchard != 0) {
         return state.DoS(100, error("CheckTransaction(): tx.valueBalanceOrchard has no sources or sinks"),
                          REJECT_INVALID, "bad-txns-valuebalance-nonzero");
     }
 
     // Check for overflow valueBalanceOrchard
-    if (orchard_bundle.GetValueBalance() > MAX_MONEY || orchard_bundle.GetValueBalance() < -MAX_MONEY) {
+    if (valueBalanceOrchard > MAX_MONEY || valueBalanceOrchard < -MAX_MONEY) {
         return state.DoS(100, error("CheckTransaction(): abs(tx.valueBalanceOrchard) too large"),
                          REJECT_INVALID, "bad-txns-valuebalance-toolarge");
     }
 
-    if (orchard_bundle.GetValueBalance() <= 0) {
+    if (valueBalanceOrchard <= 0) {
         // NB: negative valueBalanceOrchard "takes" money from the transparent value pool just as outputs do
-        nValueOut += -orchard_bundle.GetValueBalance();
+        nValueOut += -valueBalanceOrchard;
 
         if (!MoneyRange(nValueOut)) {
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
@@ -1557,9 +1563,9 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
 
         // Also check for Orchard
-        if (orchard_bundle.GetValueBalance() >= 0) {
+        if (valueBalanceOrchard >= 0) {
             // NB: positive valueBalanceOrchard "adds" money to the transparent value pool, just as inputs do
-            nValueIn += orchard_bundle.GetValueBalance();
+            nValueIn += valueBalanceOrchard;
 
             if (!MoneyRange(nValueIn)) {
                 return state.DoS(100, error("CheckTransaction(): txin total out of range"),
@@ -1569,9 +1575,6 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for duplicate inputs
-    //
-    // A transaction with one or more transparent inputs from coinbase transactions
-    // MUST have no transparent outputs (i.e. tx_out_count MUST be 0)
     set<COutPoint> vInOutPoints;
     for (const CTxIn& txin : tx.vin)
     {
@@ -4288,7 +4291,7 @@ bool ReceivedBlockTransactions(
         // pool. So we invert the sign here.
         saplingValue += -tx.GetValueBalanceSapling();
 
-        // Orchard valueBalanceSapling behaves the same way as Sapling valueBalanceSapling.
+        // valueBalanceOrchard behaves the same way as valueBalanceSapling.
         orchardValue += -tx.GetOrchardBundle().GetValueBalance();
 
         for (auto js : tx.vJoinSplit) {
