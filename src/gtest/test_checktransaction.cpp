@@ -769,7 +769,7 @@ TEST(ChecktransactionTests, OverwinterExpiryHeight) {
         CTransaction tx(mtx);
         MockCValidationState state;
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-expiry-height-too-high", false)).Times(1);
-        CheckTransactionWithoutProofVerification(tx, state);
+        ContextualCheckTransaction(tx, state, Params(), 1, true);
     }
 
     {

@@ -1136,10 +1136,24 @@ bool ContextualCheckTransaction(
 
         if (tx.IsCoinBase()) {
             // TODO: Check that Orchard coinbase outputs can be decrypted with the all-zeros OVK
+        } else {
+            // ZIP 203: From NU5, the upper limit on nExpiryHeight is removed for coinbase
+            // transactions.
+            if (tx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
+                return state.DoS(100, error("CheckTransaction(): expiry height is too high"),
+                                 REJECT_INVALID, "bad-tx-expiry-height-too-high");
+            }
         }
     } else {
         // Rules that apply generally before NU5. These were previously
         // noncontextual checks that became contextual after NU5 activation.
+
+        if (tx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("CheckTransaction(): expiry height is too high"),
+                REJECT_INVALID, "bad-tx-expiry-height-too-high");
+        }
 
         // Check that Orchard transaction components are not present prior to
         // NU5. NOTE: This is an internal zcashd consistency check; it does not
@@ -1405,10 +1419,6 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                 tx.nVersionGroupId != ZFUTURE_VERSION_GROUP_ID) {
             return state.DoS(100, error("CheckTransaction(): unknown tx version group id"),
                     REJECT_INVALID, "bad-tx-version-group-id");
-        }
-        if (tx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
-            return state.DoS(100, error("CheckTransaction(): expiry height is too high"),
-                            REJECT_INVALID, "bad-tx-expiry-height-too-high");
         }
     }
     auto orchard_bundle = tx.GetOrchardBundle();
@@ -4669,6 +4679,15 @@ bool ContextualCheckBlock(
         if (block.vtx[0].vin[0].scriptSig.size() < expect.size() ||
             !std::equal(expect.begin(), expect.end(), block.vtx[0].vin[0].scriptSig.begin())) {
             return state.DoS(100, error("%s: block height mismatch in coinbase", __func__),
+                             REJECT_INVALID, "bad-cb-height");
+        }
+    }
+
+    // ZIP 203: From NU5 onwards, nExpiryHeight is set to the block height in coinbase
+    // transactions.
+    if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
+        if (block.vtx[0].nExpiryHeight != nHeight) {
+            return state.DoS(100, error("%s: block height mismatch in nExpiryHeight", __func__),
                              REJECT_INVALID, "bad-cb-height");
         }
     }
