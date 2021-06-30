@@ -696,12 +696,10 @@ void GetMinerAddress(MinerAddress &minerAddress)
         mAddr->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
         minerAddress = mAddr;
     } else {
-        // Try a Sapling address
-        auto zaddr = keyIO.DecodePaymentAddress(mAddrArg);
-        if (IsValidPaymentAddress(zaddr)) {
-            if (std::get_if<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
-                minerAddress = std::get<libzcash::SaplingPaymentAddress>(zaddr);
-            }
+        // Try a payment address
+        auto zaddr = std::visit(ExtractMinerAddress(), keyIO.DecodePaymentAddress(mAddrArg));
+        if (std::visit(IsValidMinerAddress(), zaddr)) {
+            minerAddress = zaddr;
         }
     }
 }

@@ -29,7 +29,26 @@ public:
     friend bool operator<(const InvalidMinerAddress &a, const InvalidMinerAddress &b) { return true; }
 };
 
-typedef std::variant<InvalidMinerAddress, libzcash::SaplingPaymentAddress, boost::shared_ptr<CReserveScript>> MinerAddress;
+typedef std::variant<
+    InvalidMinerAddress,
+    libzcash::SaplingPaymentAddress,
+    boost::shared_ptr<CReserveScript>> MinerAddress;
+
+class ExtractMinerAddress
+{
+public:
+    ExtractMinerAddress() {}
+
+    MinerAddress operator()(const libzcash::InvalidEncoding &invalid) const {
+        return InvalidMinerAddress();
+    }
+    MinerAddress operator()(const libzcash::SproutPaymentAddress &addr) const {
+        return InvalidMinerAddress();
+    }
+    MinerAddress operator()(const libzcash::SaplingPaymentAddress &addr) const {
+        return addr;
+    }
+};
 
 class KeepMinerAddress
 {
