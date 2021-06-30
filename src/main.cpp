@@ -1126,7 +1126,12 @@ bool ContextualCheckTransaction(
         }
 
         if (tx.IsCoinBase()) {
-            // Check that Orchard coinbase outputs can be decrypted with the all-zeros OVK
+            if (!orchard_bundle.HasValidCoinbaseOutputs()) {
+                return state.DoS(
+                    DOS_LEVEL_BLOCK,
+                    error("ContextualCheckTransaction(): Orchard coinbase action has invalid ciphertext"),
+                    REJECT_INVALID, "bad-cb-action-invalid-ciphertext");
+            }
         }
     } else {
         // Rules that apply generally before Nu5. These were

@@ -117,6 +117,10 @@ bool orchard_bundle_outputs_enabled(const OrchardBundlePtr* bundle);
 /// are enabled.
 bool orchard_bundle_spends_enabled(const OrchardBundlePtr* bundle);
 
+/// Returns whether all actions contained in the Orchard bundle
+/// can be decrypted with the all-zeros OVK.
+bool orchard_bundle_has_valid_coinbase_outputs(const OrchardBundlePtr* bundle);
+
 #ifdef __cplusplus
 }
 #endif

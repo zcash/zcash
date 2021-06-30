@@ -30,7 +30,7 @@ group = "0.10"
 incrementalmerkletree = "0.1"
 libc = "0.2"
 jubjub = "0.7"
-nonempty = "0.6"
+nonempty = "0.7"
 orchard = "0.0"
 subtle = "2.2"
 rand_core = "0.6"
@@ -65,8 +65,8 @@ codegen-units = 1
 ed25519-zebra = { git = "https://github.com/ZcashFoundation/ed25519-zebra.git", rev = "d3512400227a362d08367088ffaa9bd4142a69c7" }
 halo2 = { git = "https://github.com/zcash/halo2.git", rev = "d04b532368d05b505e622f8cac4c0693574fbd93" }
 incrementalmerkletree = { git = "https://github.com/zcash/incrementalmerkletree", rev = "8b59049f1746827ffa3763efa8af948f680491d0" }
-orchard = { git = "https://github.com/zcash/orchard.git", rev = "1f861423c2d8e4d1f8415f9a634084fc5ca608da" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "02052526925fba9389f1428d6df254d4dec967e6" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "02052526925fba9389f1428d6df254d4dec967e6" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "02052526925fba9389f1428d6df254d4dec967e6" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "02052526925fba9389f1428d6df254d4dec967e6" }
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "21b77d6ec56fc7e37aab9da68e88bc5dd754fe10" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "3cab105c9c3bf4ba31f779095d939ad0c7057539" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "3cab105c9c3bf4ba31f779095d939ad0c7057539" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "3cab105c9c3bf4ba31f779095d939ad0c7057539" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "3cab105c9c3bf4ba31f779095d939ad0c7057539" }
