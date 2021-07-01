@@ -744,17 +744,16 @@ TEST(ChecktransactionTests, OverwinterValidTx) {
 }
 
 TEST(ChecktransactionTests, OverwinterExpiryHeight) {
-    CMutableTransaction mtx = GetValidTransaction();
+    const auto& params = RegtestActivateOverwinter();
+    CMutableTransaction mtx = GetValidTransaction(0x5ba81b19);
     mtx.vJoinSplit.resize(0);
-    mtx.fOverwintered = true;
-    mtx.nVersion = OVERWINTER_TX_VERSION;
-    mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
     mtx.nExpiryHeight = 0;
 
     {
         CTransaction tx(mtx);
         MockCValidationState state;
         EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, params, 1, true));
     }
 
     {
@@ -762,23 +761,28 @@ TEST(ChecktransactionTests, OverwinterExpiryHeight) {
         CTransaction tx(mtx);
         MockCValidationState state;
         EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, params, 1, true));
     }
 
     {
         mtx.nExpiryHeight = TX_EXPIRY_HEIGHT_THRESHOLD;
         CTransaction tx(mtx);
         MockCValidationState state;
+        EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-expiry-height-too-high", false)).Times(1);
-        ContextualCheckTransaction(tx, state, Params(), 1, true);
+        ContextualCheckTransaction(tx, state, params, 1, true);
     }
 
     {
         mtx.nExpiryHeight = std::numeric_limits<uint32_t>::max();
         CTransaction tx(mtx);
         MockCValidationState state;
+        EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-tx-expiry-height-too-high", false)).Times(1);
-        CheckTransactionWithoutProofVerification(tx, state);
+        ContextualCheckTransaction(tx, state, params, 1, true);
     }
+
+    RegtestDeactivateSapling();
 }
 
 TEST(checktransaction_tests, BlossomExpiryHeight) {

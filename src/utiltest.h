@@ -37,6 +37,9 @@ struct TestSaplingNote {
     SaplingMerkleTree tree;
 };
 
+const CChainParams& RegtestActivateOverwinter();
+void RegtestDeactivateOverwinter();
+
 const Consensus::Params& RegtestActivateSapling();
 
 void RegtestDeactivateSapling();
