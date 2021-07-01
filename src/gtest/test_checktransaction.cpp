@@ -146,7 +146,7 @@ TEST(ChecktransactionTests, BadTxnsVinEmpty) {
 
     CTransaction tx(mtx);
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-vin-empty", false)).Times(1);
+    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-no-source-of-funds", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
@@ -158,7 +158,7 @@ TEST(ChecktransactionTests, BadTxnsVoutEmpty) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-vout-empty", false)).Times(1);
+    EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-no-sink-of-funds", false)).Times(1);
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
