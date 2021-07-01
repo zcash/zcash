@@ -196,6 +196,16 @@ CWalletTx GetValidSproutSpend(const libzcash::SproutSpendingKey& sk,
     return wtx;
 }
 
+const CChainParams& RegtestActivateOverwinter() {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    return Params();
+}
+
+void RegtestDeactivateOverwinter() {
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
 // Sapling
 const Consensus::Params& RegtestActivateSapling() {
     SelectParams(CBaseChainParams::REGTEST);

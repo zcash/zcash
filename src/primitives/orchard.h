@@ -97,10 +97,15 @@ public:
         batch.Queue(inner.get(), txid.begin());
     }
 
+    const size_t GetNumActions() const {
+        return orchard_bundle_actions_len(inner.get());
+    }
+
     const std::vector<uint256> GetNullifiers() const {
         size_t actions_len = orchard_bundle_actions_len(inner.get());
         std::vector<uint256> result(actions_len);
-        orchard_bundle_nullifiers(inner.get(), result.data(), actions_len);
+        auto nullifiers_ok = orchard_bundle_nullifiers(inner.get(), result.data(), actions_len);
+        assert(nullifiers_ok);
         return result;
     }
 
@@ -111,6 +116,18 @@ public:
         } else {
             return std::nullopt;
         }
+    }
+
+    bool OutputsEnabled() const {
+        return orchard_bundle_outputs_enabled(inner.get());
+    }
+
+    bool SpendsEnabled() const {
+        return orchard_bundle_spends_enabled(inner.get());
+    }
+
+    bool CoinbaseOutputsAreValid() const {
+        return orchard_bundle_coinbase_outputs_are_valid(inner.get());
     }
 };
 

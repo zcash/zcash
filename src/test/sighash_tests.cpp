@@ -147,7 +147,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
         RandomScript(txout.scriptPubKey);
     }
     if (tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
-        tx.valueBalance = insecure_rand() % 100000000;
+        tx.valueBalanceSapling = insecure_rand() % 100000000;
         for (int spend = 0; spend < shielded_spends; spend++) {
             SpendDescription sdesc;
             zcash_test_harness_random_jubjub_point(sdesc.cv.begin());
