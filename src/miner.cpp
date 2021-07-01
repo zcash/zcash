@@ -293,8 +293,14 @@ CMutableTransaction CreateCoinbaseTransaction(const CChainParams& chainparams, C
         CMutableTransaction mtx = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
         mtx.vin.resize(1);
         mtx.vin[0].prevout.SetNull();
-        // Set to 0 so expiry height does not apply to coinbase txs
-        mtx.nExpiryHeight = 0;
+        if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
+            // ZIP 203: From NU5 onwards, nExpiryHeight is set to the block height in
+            // coinbase transactions.
+            mtx.nExpiryHeight = nHeight;
+        } else {
+            // Set to 0 so expiry height does not apply to coinbase txs
+            mtx.nExpiryHeight = 0;
+        }
 
         // Add outputs and sign
         std::visit(
