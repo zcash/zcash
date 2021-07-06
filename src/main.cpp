@@ -1112,7 +1112,6 @@ bool ContextualCheckTransaction(
             }
         }
 
-
         // nSpendsSapling, nOutputsSapling, and nActionsOrchard MUST all be less than 2^16
         size_t max_elements = (1 << 16) - 1;
         if (tx.vShieldedSpend.size() > max_elements) {
@@ -1132,6 +1131,13 @@ bool ContextualCheckTransaction(
                 dosLevelPotentiallyRelaxing,
                 error("ContextualCheckTransaction(): 2^16 or more Orchard actions"),
                 REJECT_INVALID, "bad-tx-too-many-orchard-actions");
+        }
+
+        if (orchard_bundle.GetNumActions() > 0 && !orchard_bundle.OutputsEnabled() && !orchard_bundle.SpendsEnabled()) {
+            return state.DoS(
+                dosLevelPotentiallyRelaxing,
+                error("ContextualCheckTransaction(): Orchard actions are present, but flags do not permit Orchard spends or outputs"),
+                REJECT_INVALID, "bad-tx-orchard-flags-disable-actions");
         }
 
         if (tx.IsCoinBase()) {
