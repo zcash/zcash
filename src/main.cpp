@@ -3238,7 +3238,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             sapling_tree.append(outputDescription.cmu);
         }
 
-        orchard_tree.AppendBundle(tx.GetOrchardBundle());
+        if (!orchard_tree.AppendBundle(tx.GetOrchardBundle())) {
+            return state.DoS(100,
+                error("ConnectBlock(): the Orchard commitment tree is full."),
+                REJECT_INVALID, "orchard-commitment-tree-full");
+        };
 
         if (!(tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty())) {
             total_sapling_tx += 1;
