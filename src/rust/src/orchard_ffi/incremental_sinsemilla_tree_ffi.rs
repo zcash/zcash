@@ -6,7 +6,7 @@ use incrementalmerkletree::{
 use std::mem::size_of_val;
 use std::ptr;
 
-use orchard::{bundle::Authorized, tree::OrchardIncrementalTreeDigest};
+use orchard::{bundle::Authorized, tree::MerkleCrhOrchardOutput};
 
 use zcash_primitives::transaction::components::Amount;
 
@@ -21,15 +21,15 @@ pub const MAX_CHECKPOINTS: usize = 100;
 
 #[no_mangle]
 pub extern "C" fn orchard_merkle_frontier_empty(
-) -> *mut bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH> {
-    let empty_tree = bridgetree::Frontier::<OrchardIncrementalTreeDigest, MERKLE_DEPTH>::new();
+) -> *mut bridgetree::Frontier<MerkleCrhOrchardOutput, MERKLE_DEPTH> {
+    let empty_tree = bridgetree::Frontier::<MerkleCrhOrchardOutput, MERKLE_DEPTH>::new();
     Box::into_raw(Box::new(empty_tree))
 }
 
 #[no_mangle]
 pub extern "C" fn orchard_merkle_frontier_clone(
-    tree: *const bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
-) -> *mut bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH> {
+    tree: *const bridgetree::Frontier<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
+) -> *mut bridgetree::Frontier<MerkleCrhOrchardOutput, MERKLE_DEPTH> {
     unsafe { tree.as_ref() }
         .map(|tree| Box::into_raw(Box::new(tree.clone())))
         .unwrap_or(std::ptr::null_mut())
@@ -37,7 +37,7 @@ pub extern "C" fn orchard_merkle_frontier_clone(
 
 #[no_mangle]
 pub extern "C" fn orchard_merkle_frontier_free(
-    tree: *mut bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *mut bridgetree::Frontier<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
 ) {
     if !tree.is_null() {
         drop(unsafe { Box::from_raw(tree) });
@@ -48,7 +48,7 @@ pub extern "C" fn orchard_merkle_frontier_free(
 pub extern "C" fn orchard_merkle_frontier_parse(
     stream: Option<StreamObj>,
     read_cb: Option<ReadCb>,
-) -> *mut bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH> {
+) -> *mut bridgetree::Frontier<MerkleCrhOrchardOutput, MERKLE_DEPTH> {
     let reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
 
     match bincode::deserialize_from(reader) {
@@ -62,7 +62,7 @@ pub extern "C" fn orchard_merkle_frontier_parse(
 
 #[no_mangle]
 pub extern "C" fn orchard_merkle_frontier_serialize(
-    tree: *const bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *const bridgetree::Frontier<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
     stream: Option<StreamObj>,
     write_cb: Option<WriteCb>,
 ) -> bool {
@@ -83,7 +83,7 @@ pub extern "C" fn orchard_merkle_frontier_serialize(
 
 #[no_mangle]
 pub extern "C" fn orchard_merkle_frontier_append_bundle(
-    tree: *mut bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *mut bridgetree::Frontier<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
     bundle: *const orchard::Bundle<Authorized, Amount>,
 ) -> bool {
     let tree = unsafe {
@@ -92,7 +92,7 @@ pub extern "C" fn orchard_merkle_frontier_append_bundle(
     };
     if let Some(bundle) = unsafe { bundle.as_ref() } {
         for action in bundle.actions().iter() {
-            if !tree.append(&OrchardIncrementalTreeDigest::from_cmx(action.cmx())) {
+            if !tree.append(&MerkleCrhOrchardOutput::from_cmx(action.cmx())) {
                 error!("Orchard note commitment tree is full.");
                 return false;
             }
@@ -104,9 +104,9 @@ pub extern "C" fn orchard_merkle_frontier_append_bundle(
 
 #[no_mangle]
 pub extern "C" fn orchard_merkle_frontier_root(
-    tree: *const bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *const bridgetree::Frontier<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
     root_ret: *mut [u8; 32],
-) -> bool {
+) {
     let tree = unsafe {
         tree.as_ref()
             .expect("Orchard note commitment tree pointer may not be null.")
@@ -118,17 +118,12 @@ pub extern "C" fn orchard_merkle_frontier_root(
             .expect("Cannot return to the null pointer.")
     };
 
-    if let Some(root) = tree.root().to_bytes() {
-        root_ret.copy_from_slice(&root);
-        true
-    } else {
-        false
-    }
+    *root_ret = tree.root().to_bytes();
 }
 
 #[no_mangle]
 pub extern "C" fn orchard_merkle_frontier_num_leaves(
-    tree: *const bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *const bridgetree::Frontier<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
 ) -> usize {
     let tree = unsafe {
         tree.as_ref()
@@ -140,7 +135,7 @@ pub extern "C" fn orchard_merkle_frontier_num_leaves(
 
 #[no_mangle]
 pub extern "C" fn orchard_merkle_frontier_dynamic_mem_usage(
-    tree: *const bridgetree::Frontier<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *const bridgetree::Frontier<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
 ) -> usize {
     let tree = unsafe {
         tree.as_ref()
@@ -157,15 +152,15 @@ pub extern "C" fn orchard_merkle_frontier_dynamic_mem_usage(
 
 #[no_mangle]
 pub extern "C" fn incremental_sinsemilla_tree_empty(
-) -> *mut BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH> {
-    let empty_tree = BridgeTree::<OrchardIncrementalTreeDigest, MERKLE_DEPTH>::new(MAX_CHECKPOINTS);
+) -> *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH> {
+    let empty_tree = BridgeTree::<MerkleCrhOrchardOutput, MERKLE_DEPTH>::new(MAX_CHECKPOINTS);
     Box::into_raw(Box::new(empty_tree))
 }
 
 #[no_mangle]
 pub extern "C" fn incremental_sinsemilla_tree_clone(
-    tree: *const BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
-) -> *mut BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH> {
+    tree: *const BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
+) -> *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH> {
     unsafe { tree.as_ref() }
         .map(|tree| Box::into_raw(Box::new(tree.clone())))
         .unwrap_or(std::ptr::null_mut())
@@ -173,7 +168,7 @@ pub extern "C" fn incremental_sinsemilla_tree_clone(
 
 #[no_mangle]
 pub extern "C" fn incremental_sinsemilla_tree_free(
-    tree: *mut BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
 ) {
     if !tree.is_null() {
         drop(unsafe { Box::from_raw(tree) });
@@ -184,7 +179,7 @@ pub extern "C" fn incremental_sinsemilla_tree_free(
 pub extern "C" fn incremental_sinsemilla_tree_parse(
     stream: Option<StreamObj>,
     read_cb: Option<ReadCb>,
-) -> *mut BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH> {
+) -> *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH> {
     let reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
 
     match bincode::deserialize_from(reader) {
@@ -198,7 +193,7 @@ pub extern "C" fn incremental_sinsemilla_tree_parse(
 
 #[no_mangle]
 pub extern "C" fn incremental_sinsemilla_tree_serialize(
-    tree: *const BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *const BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
     stream: Option<StreamObj>,
     write_cb: Option<WriteCb>,
 ) -> bool {
@@ -219,7 +214,7 @@ pub extern "C" fn incremental_sinsemilla_tree_serialize(
 
 #[no_mangle]
 pub extern "C" fn incremental_sinsemilla_tree_append_bundle(
-    tree: *mut BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
     bundle: *const orchard::Bundle<Authorized, Amount>,
 ) -> bool {
     let tree = unsafe {
@@ -228,7 +223,7 @@ pub extern "C" fn incremental_sinsemilla_tree_append_bundle(
     };
     if let Some(bundle) = unsafe { bundle.as_ref() } {
         for action in bundle.actions().iter() {
-            if !tree.append(&OrchardIncrementalTreeDigest::from_cmx(action.cmx())) {
+            if !tree.append(&MerkleCrhOrchardOutput::from_cmx(action.cmx())) {
                 error!("Orchard note commitment tree is full.");
                 return false;
             }
@@ -240,7 +235,7 @@ pub extern "C" fn incremental_sinsemilla_tree_append_bundle(
 
 #[no_mangle]
 pub extern "C" fn incremental_sinsemilla_tree_checkpoint(
-    tree: *mut BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
 ) {
     let tree = unsafe {
         tree.as_mut()
@@ -252,7 +247,7 @@ pub extern "C" fn incremental_sinsemilla_tree_checkpoint(
 
 #[no_mangle]
 pub extern "C" fn incremental_sinsemilla_tree_rewind(
-    tree: *mut BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
 ) -> bool {
     let tree = unsafe {
         tree.as_mut()
@@ -264,9 +259,9 @@ pub extern "C" fn incremental_sinsemilla_tree_rewind(
 
 #[no_mangle]
 pub extern "C" fn incremental_sinsemilla_tree_root(
-    tree: *const BridgeTree<OrchardIncrementalTreeDigest, MERKLE_DEPTH>,
+    tree: *const BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
     root_ret: *mut [u8; 32],
-) -> bool {
+) {
     let tree = unsafe {
         tree.as_ref()
             .expect("Orchard note commitment tree pointer may not be null.")
@@ -278,12 +273,7 @@ pub extern "C" fn incremental_sinsemilla_tree_root(
             .expect("Cannot return to the null pointer.")
     };
 
-    if let Some(root) = tree.root().to_bytes() {
-        root_ret.copy_from_slice(&root);
-        true
-    } else {
-        false
-    }
+    *root_ret = tree.root().to_bytes();
 }
 
 #[no_mangle]
@@ -296,9 +286,7 @@ pub extern "C" fn incremental_sinsemilla_tree_empty_root(root_ret: *mut [u8; 32]
 
     let altitude = Altitude::from(MERKLE_DEPTH);
 
-    let digest = OrchardIncrementalTreeDigest::empty_root(altitude)
-        .to_bytes()
-        .unwrap();
+    let digest = MerkleCrhOrchardOutput::empty_root(altitude).to_bytes();
 
-    root_ret.copy_from_slice(&digest);
+    *root_ret = digest;
 }

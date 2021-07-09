@@ -61,13 +61,8 @@ bool orchard_merkle_frontier_append_bundle(
         OrchardMerkleFrontierPtr* tree_ptr,
         const OrchardBundlePtr* bundle);
 
-// Compute the root of the provided orchard Merkle frontier
-//
-// If the bottom value is not derived by the Sinsemilla hash, `digest_ret` will
-// point to the resulting digest and this procedure returns `true`.
-// If the Sinsemilla hash returns the bottom value, `digest_ret` will be
-// unaltered and this procedure returns `false`.
-bool orchard_merkle_frontier_root(
+// Computes the root of the provided orchard Merkle frontier
+void orchard_merkle_frontier_root(
         const OrchardMerkleFrontierPtr* tree_ptr,
         unsigned char* digest_ret);
 
@@ -138,18 +133,13 @@ void incremental_sinsemilla_tree_checkpoint(
 bool incremental_sinsemilla_tree_rewind(
         IncrementalSinsemillaTreePtr* tree_ptr);
 
-// Compute the root of the provided incremental Sinsemilla tree.
-//
-// If the bottom value is not derived by the Sinsemilla hash, `digest_ret` will
-// point to the resulting digest and this procedure returns `true`.
-// If the Sinsemilla hash returns the bottom value, `digest_ret` will be
-// unaltered and this procedure returns `false`.
-bool incremental_sinsemilla_tree_root(
+// Computes the root of the provided incremental Sinsemilla tree.
+void incremental_sinsemilla_tree_root(
         const IncrementalSinsemillaTreePtr* tree_ptr,
         unsigned char* digest_ret);
 
-// Return the empty leaf value for the incremental Sinsemilla tree.
-bool incremental_sinsemilla_tree_empty_root(
+// Computes the empty leaf value for the incremental Sinsemilla tree.
+void incremental_sinsemilla_tree_empty_root(
         unsigned char* digest_ret);
 
 #ifdef __cplusplus
