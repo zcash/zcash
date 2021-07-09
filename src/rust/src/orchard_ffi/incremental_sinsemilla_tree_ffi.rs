@@ -118,7 +118,7 @@ pub extern "C" fn orchard_merkle_frontier_root(
             .expect("Cannot return to the null pointer.")
     };
 
-    root_ret.copy_from_slice(&tree.root().to_bytes());
+    *root_ret = tree.root().to_bytes();
 }
 
 #[no_mangle]
@@ -273,7 +273,7 @@ pub extern "C" fn incremental_sinsemilla_tree_root(
             .expect("Cannot return to the null pointer.")
     };
 
-    root_ret.copy_from_slice(&tree.root().to_bytes());
+    *root_ret = tree.root().to_bytes();
 }
 
 #[no_mangle]
@@ -288,5 +288,5 @@ pub extern "C" fn incremental_sinsemilla_tree_empty_root(root_ret: *mut [u8; 32]
 
     let digest = MerkleCrhOrchardOutput::empty_root(altitude).to_bytes();
 
-    root_ret.copy_from_slice(&digest);
+    *root_ret = digest;
 }
