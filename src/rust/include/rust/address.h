@@ -22,6 +22,7 @@ typedef void (*get_receiver_t)(const void* ua, size_t index, unsigned char* data
 /// Parses a unified address from the given string.
 bool zcash_address_parse_unified(
     const char* str,
+    const char* network,
     void* ua,
     raw_to_receiver_t sapling_cb,
     raw_to_receiver_t p2sh_cb,
@@ -32,6 +33,7 @@ bool zcash_address_parse_unified(
 ///
 /// Returns nullptr if the unified address is invalid.
 char* zcash_address_serialize_unified(
+    const char* network,
     const void* ua,
     size_t receivers_len,
     get_typecode_t typecode_cb,

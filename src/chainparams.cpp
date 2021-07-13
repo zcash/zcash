@@ -84,7 +84,7 @@ const arith_uint256 maxUint = UintToArith256(uint256S("fffffffffffffffffffffffff
 class CMainParams : public CChainParams {
 public:
     CMainParams() {
-        strNetworkID = "main";
+        keyConstants.strNetworkID = "main";
         strCurrencyUnits = "ZEC";
         bip44CoinType = 133; // As registered in https://github.com/satoshilabs/slips/blob/master/slip-0044.md
         consensus.fCoinbaseMustBeShielded = true;
@@ -368,7 +368,7 @@ static CMainParams mainParams;
 class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
-        strNetworkID = "test";
+        keyConstants.strNetworkID = "test";
         strCurrencyUnits = "TAZ";
         bip44CoinType = 1;
         consensus.fCoinbaseMustBeShielded = true;
@@ -620,7 +620,7 @@ static CTestNetParams testNetParams;
 class CRegTestParams : public CChainParams {
 public:
     CRegTestParams() {
-        strNetworkID = "regtest";
+        keyConstants.strNetworkID = "regtest";
         strCurrencyUnits = "REG";
         bip44CoinType = 1;
         consensus.fCoinbaseMustBeShielded = false;

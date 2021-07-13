@@ -23,6 +23,18 @@ pub type GetReceiverLenCb =
 pub type GetReceiverDataCb =
     unsafe extern "C" fn(ua: Option<UnifiedAddressObj>, index: usize, data: *mut u8);
 
+fn network_from_cstr(network: *const c_char) -> Option<Network> {
+    match unsafe { CStr::from_ptr(network) }.to_str().unwrap() {
+        "main" => Some(Network::Main),
+        "test" => Some(Network::Test),
+        "regtest" => Some(Network::Regtest),
+        s => {
+            tracing::error!("Unsupported network type string '{}'", s);
+            None
+        }
+    }
+}
+
 struct UnifiedAddressHelper {
     net: Network,
     ua: unified::Address,
@@ -40,13 +52,22 @@ impl FromAddress for UnifiedAddressHelper {
 impl UnifiedAddressHelper {
     fn to_cpp(
         self,
+        network: Network,
         ua_obj: Option<UnifiedAddressObj>,
         sapling_cb: Option<AddReceiverCb>,
         p2sh_cb: Option<AddReceiverCb>,
         p2pkh_cb: Option<AddReceiverCb>,
         unknown_cb: Option<UnknownReceiverCb>,
     ) -> bool {
-        // TODO: Check the network.
+        if self.net != network {
+            tracing::error!(
+                "Unified Address is for {:?} but node is on {:?}",
+                self.net,
+                network
+            );
+            return false;
+        }
+
         self.ua
             .receivers()
             .into_iter()
@@ -95,12 +116,17 @@ impl UnifiedAddressHelper {
 #[no_mangle]
 pub extern "C" fn zcash_address_parse_unified(
     encoded: *const c_char,
+    network: *const c_char,
     ua_obj: Option<UnifiedAddressObj>,
     sapling_cb: Option<AddReceiverCb>,
     p2sh_cb: Option<AddReceiverCb>,
     p2pkh_cb: Option<AddReceiverCb>,
     unknown_cb: Option<UnknownReceiverCb>,
 ) -> bool {
+    let network = match network_from_cstr(network) {
+        Some(net) => net,
+        None => return false,
+    };
     let encoded = unsafe { CStr::from_ptr(encoded) }.to_str().unwrap();
 
     let addr = match ZcashAddress::try_from_encoded(encoded) {
@@ -119,17 +145,23 @@ pub extern "C" fn zcash_address_parse_unified(
         }
     };
 
-    ua.to_cpp(ua_obj, sapling_cb, p2sh_cb, p2pkh_cb, unknown_cb)
+    ua.to_cpp(network, ua_obj, sapling_cb, p2sh_cb, p2pkh_cb, unknown_cb)
 }
 
 #[no_mangle]
 pub extern "C" fn zcash_address_serialize_unified(
+    network: *const c_char,
     ua_obj: Option<UnifiedAddressObj>,
     receivers_len: usize,
     typecode_cb: Option<GetTypecodeCb>,
     receiver_len_cb: Option<GetReceiverLenCb>,
     receiver_cb: Option<GetReceiverDataCb>,
 ) -> *mut c_char {
+    let network = match network_from_cstr(network) {
+        Some(net) => net,
+        None => return ptr::null_mut(),
+    };
+
     let receivers: Vec<unified::Receiver> = (0..receivers_len)
         .map(
             |i| match unsafe { (typecode_cb.unwrap())(ua_obj, i) }.into() {
@@ -176,8 +208,7 @@ pub extern "C" fn zcash_address_serialize_unified(
         }
     };
 
-    // TODO: Set the network.
-    let addr = ZcashAddress::from_unified(Network::Main, ua);
+    let addr = ZcashAddress::from_unified(network, ua);
 
     CString::new(addr.to_string()).unwrap().into_raw()
 }

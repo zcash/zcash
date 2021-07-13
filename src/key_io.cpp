@@ -137,6 +137,7 @@ public:
     {
         // Serialize the UA to a C-string.
         auto encoded = zcash_address_serialize_unified(
+            keyConstants.NetworkIDString().c_str(),
             &uaddr,
             uaddr.size(),
             GetTypecode,
@@ -450,6 +451,7 @@ libzcash::PaymentAddress KeyIO::DecodePaymentAddress(const std::string& str)
     libzcash::UnifiedAddress ua;
     if (zcash_address_parse_unified(
         str.c_str(),
+        keyConstants.NetworkIDString().c_str(),
         &ua,
         AddSaplingReceiver,
         AddP2SHReceiver,
