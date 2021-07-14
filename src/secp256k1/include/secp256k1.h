@@ -793,6 +793,31 @@ SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_ec_pubkey_combine(
     size_t n
 ) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3);
 
+/** Compute a tagged hash as defined in BIP-340.
+ *
+ *  This is useful for creating a message hash and achieving domain separation
+ *  through an application-specific tag. This function returns
+ *  SHA256(SHA256(tag)||SHA256(tag)||msg). Therefore, tagged hash
+ *  implementations optimized for a specific tag can precompute the SHA256 state
+ *  after hashing the tag hashes.
+ *
+ *  Returns 0 if the arguments are invalid and 1 otherwise.
+ *  Args:    ctx: pointer to a context object
+ *  Out:  hash32: pointer to a 32-byte array to store the resulting hash
+ *  In:      tag: pointer to an array containing the tag
+ *        taglen: length of the tag array
+ *           msg: pointer to an array containing the message
+ *        msglen: length of the message array
+ */
+SECP256K1_API SECP256K1_WARN_UNUSED_RESULT int secp256k1_tagged_sha256(
+    const secp256k1_context* ctx,
+    unsigned char *hash32,
+    const unsigned char *tag,
+    size_t taglen,
+    const unsigned char *msg,
+    size_t msglen
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(5);
+
 #ifdef __cplusplus
 }
 #endif

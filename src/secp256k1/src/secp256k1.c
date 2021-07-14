@@ -790,6 +790,19 @@ int secp256k1_ec_pubkey_combine(const secp256k1_context* ctx, secp256k1_pubkey *
     return 1;
 }
 
+int secp256k1_tagged_sha256(const secp256k1_context* ctx, unsigned char *hash32, const unsigned char *tag, size_t taglen, const unsigned char *msg, size_t msglen) {
+    secp256k1_sha256 sha;
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(hash32 != NULL);
+    ARG_CHECK(tag != NULL);
+    ARG_CHECK(msg != NULL);
+
+    secp256k1_sha256_initialize_tagged(&sha, tag, taglen);
+    secp256k1_sha256_write(&sha, msg, msglen);
+    secp256k1_sha256_finalize(&sha, hash32);
+    return 1;
+}
+
 #ifdef ENABLE_MODULE_ECDH
 # include "modules/ecdh/main_impl.h"
 #endif

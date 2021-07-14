@@ -1,21 +1,28 @@
 env:
-  WIDEMUL: auto
+  ### compiler options
+  HOST:
+  # Specific warnings can be disabled with -Wno-error=foo.
+  # -pedantic-errors is not equivalent to -Werror=pedantic and thus not implied by -Werror according to the GCC manual.
+  WERROR_CFLAGS: -Werror -pedantic-errors
+  MAKEFLAGS: -j2
+  BUILD: check
+  ### secp256k1 config
   STATICPRECOMPUTATION: yes
   ECMULTGENPRECISION: auto
   ASM: no
-  BUILD: check
+  WIDEMUL: auto
   WITH_VALGRIND: yes
   EXTRAFLAGS:
-  HOST:
+  ### secp256k1 modules
+  EXPERIMENTAL: no
   ECDH: no
   RECOVERY: no
   SCHNORRSIG: no
-  EXPERIMENTAL: no
-  CTIMETEST: yes
-  BENCH: yes
+  ### test options
   TEST_ITERS:
+  BENCH: yes
   BENCH_ITERS: 2
-  MAKEFLAGS: -j2
+  CTIMETEST: yes
 
 cat_logs_snippet: &CAT_LOGS
   always:
@@ -313,3 +320,23 @@ task:
     - ./ci/cirrus.sh
   << : *CAT_LOGS
 
+task:
+  name: "C++ -fpermissive"
+  container:
+    dockerfile: ci/linux-debian.Dockerfile
+    cpu: 1
+    memory: 1G
+  env:
+    # ./configure correctly errors out when given CC=g++.
+    # We hack around this by passing CC=g++ only to make.
+    CC: gcc
+    MAKEFLAGS: -j2 CC=g++ CFLAGS=-fpermissive
+    WERROR_CFLAGS:
+    EXPERIMENTAL: yes
+    ECDH: yes
+    RECOVERY: yes
+    SCHNORRSIG: yes
+  << : *MERGE_BASE
+  test_script:
+    - ./ci/cirrus.sh
+  << : *CAT_LOGS
