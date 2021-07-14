@@ -4,6 +4,17 @@ name: Lints
 on: pull_request
 
 jobs:
+  commit-script-check:
+    name: Scripted diffs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Check scripted diffs
+        run: ./test/lint/commit-script-check.sh ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+
   general-lints:
     name: General
     runs-on: ubuntu-latest
