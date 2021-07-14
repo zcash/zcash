@@ -1,0 +1,43 @@
+name: Lints
+
+# We only run these lints on trial-merges of PRs to reduce noise.
+on: pull_request
+
+jobs:
+  general-lints:
+    name: General
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Include guards
+        run: ./test/lint/lint-include-guards.sh
+        if: always()
+
+      - name: Includes
+        run: ./test/lint/lint-includes.sh
+        if: always()
+
+      - name: Locale dependence
+        run: ./test/lint/lint-locale-dependence.sh
+        if: always()
+
+      - name: Python UTF-8 encoding
+        run: ./test/lint/lint-python-utf8-encoding.sh
+        if: always()
+
+      - name: Shebang
+        run: ./test/lint/lint-shebang.sh
+        if: always()
+
+      - name: Shell locale
+        run: ./test/lint/lint-shell-locale.sh
+        if: always()
+
+      - name: Shellcheck
+        run: ./test/lint/lint-shell.sh
+        if: always()
+
+      - name: Whitespace
+        run: ./test/lint/lint-whitespace.sh
+        if: always()
