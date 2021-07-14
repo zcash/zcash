@@ -568,7 +568,7 @@ checksum = "c34f04666d835ff5d62e058c3995147c06f42fe86ff053337632bca83e42702d"
 [[package]]
 name = "equihash"
 version = "0.1.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=19a97f16945c68c33aedcc89f2a4f4d398658b05#19a97f16945c68c33aedcc89f2a4f4d398658b05"
+source = "git+https://github.com/nuttycom/librustzcash.git?rev=d796f338adbb76b6292d9bee7f43cb5fb17f55ea#d796f338adbb76b6292d9bee7f43cb5fb17f55ea"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -1169,7 +1169,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orchard"
 version = "0.0.0"
-source = "git+https://github.com/zcash/orchard.git?rev=d0baa18fc6105df4a7847de2b6dc50c5919b3123#d0baa18fc6105df4a7847de2b6dc50c5919b3123"
+source = "git+https://github.com/nuttycom/orchard.git?rev=77be35591255de9e86bdfb8e2dcc5af739e4fd52#77be35591255de9e86bdfb8e2dcc5af739e4fd52"
 dependencies = [
  "aes 0.6.0",
  "arrayvec 0.7.1",
@@ -1247,9 +1247,9 @@ dependencies = [
 
 [[package]]
 name = "pasta_curves"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "179df750e20069669699f537ec0c4bcb248283f45a78b8c66d797fb73dbbb455"
+checksum = "9a21914ddc589b74e7638091c8e91a4e8b083ee5e1d0066d64407131b7570799"
 dependencies = [
  "blake2b_simd",
  "ff",
@@ -1854,7 +1854,7 @@ dependencies = [
 [[package]]
 name = "zcash_address"
 version = "0.0.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=19a97f16945c68c33aedcc89f2a4f4d398658b05#19a97f16945c68c33aedcc89f2a4f4d398658b05"
+source = "git+https://github.com/nuttycom/librustzcash.git?rev=d796f338adbb76b6292d9bee7f43cb5fb17f55ea#d796f338adbb76b6292d9bee7f43cb5fb17f55ea"
 dependencies = [
  "bech32",
  "blake2b_simd",
@@ -1864,7 +1864,7 @@ dependencies = [
 [[package]]
 name = "zcash_history"
 version = "0.2.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=19a97f16945c68c33aedcc89f2a4f4d398658b05#19a97f16945c68c33aedcc89f2a4f4d398658b05"
+source = "git+https://github.com/nuttycom/librustzcash.git?rev=d796f338adbb76b6292d9bee7f43cb5fb17f55ea#d796f338adbb76b6292d9bee7f43cb5fb17f55ea"
 dependencies = [
  "bigint",
  "blake2b_simd",
@@ -1874,7 +1874,7 @@ dependencies = [
 [[package]]
 name = "zcash_note_encryption"
 version = "0.0.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=19a97f16945c68c33aedcc89f2a4f4d398658b05#19a97f16945c68c33aedcc89f2a4f4d398658b05"
+source = "git+https://github.com/nuttycom/librustzcash.git?rev=d796f338adbb76b6292d9bee7f43cb5fb17f55ea#d796f338adbb76b6292d9bee7f43cb5fb17f55ea"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -1888,7 +1888,7 @@ dependencies = [
 [[package]]
 name = "zcash_primitives"
 version = "0.5.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=19a97f16945c68c33aedcc89f2a4f4d398658b05#19a97f16945c68c33aedcc89f2a4f4d398658b05"
+source = "git+https://github.com/nuttycom/librustzcash.git?rev=d796f338adbb76b6292d9bee7f43cb5fb17f55ea#d796f338adbb76b6292d9bee7f43cb5fb17f55ea"
 dependencies = [
  "aes 0.7.4",
  "bip0039",
@@ -1920,7 +1920,7 @@ dependencies = [
 [[package]]
 name = "zcash_proofs"
 version = "0.5.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=19a97f16945c68c33aedcc89f2a4f4d398658b05#19a97f16945c68c33aedcc89f2a4f4d398658b05"
+source = "git+https://github.com/nuttycom/librustzcash.git?rev=d796f338adbb76b6292d9bee7f43cb5fb17f55ea#d796f338adbb76b6292d9bee7f43cb5fb17f55ea"
 dependencies = [
  "bellman",
  "blake2b_simd",

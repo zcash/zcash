@@ -5,7 +5,8 @@ use orchard::{
     bundle::Authorized,
     keys::OutgoingViewingKey,
     primitives::redpallas::{self, Binding, SpendAuth},
-    Bundle, OrchardDomain,
+    Bundle, 
+    note_encryption::OrchardDomain,
 };
 use rand_core::OsRng;
 use tracing::{debug, error};
