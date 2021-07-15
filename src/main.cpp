@@ -37,6 +37,7 @@
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 #include "warnings.h"
 
+#include <algorithm>
 #include <atomic>
 #include <sstream>
 #include <variant>
@@ -6671,6 +6672,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         }
         pfrom->m_addr_token_timestamp = current_time;
 
+        std::shuffle(vAddr.begin(), vAddr.end(), ZcashRandomEngine());
         for (CAddress& addr : vAddr)
         {
             boost::this_thread::interruption_point();
