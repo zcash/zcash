@@ -1,0 +1,86 @@
+name: Lints
+
+# We only run these lints on trial-merges of PRs to reduce noise.
+on: pull_request
+
+jobs:
+  commit-script-check:
+    name: Scripted diffs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Check scripted diffs
+        run: ./test/lint/commit-script-check.sh ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+
+  general-lints:
+    name: General
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Include guards
+        run: ./test/lint/lint-include-guards.sh
+        if: always()
+
+      - name: Includes
+        run: ./test/lint/lint-includes.sh
+        if: always()
+
+      - name: Locale dependence
+        run: ./test/lint/lint-locale-dependence.sh
+        if: always()
+
+      - name: Python UTF-8 encoding
+        run: ./test/lint/lint-python-utf8-encoding.sh
+        if: always()
+
+      - name: Shebang
+        run: ./test/lint/lint-shebang.sh
+        if: always()
+
+      - name: Shell locale
+        run: ./test/lint/lint-shell-locale.sh
+        if: always()
+
+      - name: Shellcheck
+        run: ./test/lint/lint-shell.sh
+        if: always()
+
+      - name: Whitespace
+        run: ./test/lint/lint-whitespace.sh
+        if: always()
+
+  rust-clippy:
+    name: Clippy (1.51.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.51.0
+          components: clippy
+          override: true
+      - name: Run clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          name: Clippy (1.51.0)
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features --all-targets -- -D warnings
+
+  rustfmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.51.0
+          override: true
+      - run: rustup component add rustfmt
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: -- --check
