@@ -51,6 +51,16 @@ public:
     MinerAddress operator()(const libzcash::UnifiedAddress &addr) const {
         auto recipient = RecipientForPaymentAddress()(addr);
         if (recipient) {
+            // This looks like a recursive call, but we are actually calling
+            // ExtractMinerAddress with a different type:
+            // - libzcash::PaymentAddress has a libzcash::UnifiedAddress
+            //   alternative, which invokes this method.
+            // - RecipientForPaymentAddress() returns libzcash::RawAddress,
+            //   which does not have a libzcash::UnifiedAddress alternative.
+            //
+            // This works because std::visit does not require the visitor to
+            // solely match the std::variant, only that it can handle all of
+            // the variant's alternatives.
             return std::visit(ExtractMinerAddress(), *recipient);
         } else {
             // Either the UA only contains unknown shielded receivers (unlikely that we
