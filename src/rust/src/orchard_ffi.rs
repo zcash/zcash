@@ -20,6 +20,7 @@ use zcash_primitives::transaction::{
 use crate::streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
 
 mod incremental_merkle_tree_ffi;
+mod keys;
 
 #[no_mangle]
 pub extern "C" fn orchard_bundle_clone(
@@ -94,7 +95,6 @@ pub extern "C" fn orchard_bundle_serialize(
 }
 
 #[no_mangle]
-
 pub extern "C" fn orchard_bundle_value_balance(bundle: *const Bundle<Authorized, Amount>) -> i64 {
     unsafe { bundle.as_ref() }
         .map(|bundle| (*bundle.value_balance()).into())

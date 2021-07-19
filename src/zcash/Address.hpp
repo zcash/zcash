@@ -2,6 +2,7 @@
 #define ZC_ADDRESS_H_
 
 #include "uint256.h"
+#include "zcash/address/orchard.hpp"
 #include "zcash/address/sapling.hpp"
 #include "zcash/address/sprout.hpp"
 #include "zcash/address/zip32.h"
