@@ -317,6 +317,31 @@ public:
     }
 };
 
+// OrchardNoteData that keeps track of how we decrypted an Orchard decrypted note.
+// It stores just the IVK and the (cached) nullifier; witness data
+// will be stored on the global tree.
+class OrchardNoteData
+{
+private:
+    libzcash::OrchardIncomingViewingKey ivk;
+    uint256 nullifier;
+public:
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        int nVersion = s.GetVersion();
+        // TODO: what's this about?
+        //if (!(s.GetType() & SER_GETHASH)) {
+        //    READWRITE(nVersion);
+        //}
+
+        //TODO:
+        // READWRITE(ivk);
+        READWRITE(nullifier);
+    }
+};
+
 typedef std::map<JSOutPoint, SproutNoteData> mapSproutNoteData_t;
 typedef std::map<SaplingOutPoint, SaplingNoteData> mapSaplingNoteData_t;
 
