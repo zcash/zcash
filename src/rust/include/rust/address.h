@@ -29,7 +29,7 @@ bool zcash_address_parse_unified(
     raw_to_receiver_t p2pkh_cb,
     unknown_receiver_t unknown_cb);
 
-/// Serializes the given unified addres to a string.
+/// Serializes the given unified address to a string.
 ///
 /// Returns nullptr if the unified address is invalid.
 char* zcash_address_serialize_unified(
