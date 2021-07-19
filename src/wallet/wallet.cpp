@@ -236,6 +236,46 @@ bool CWallet::AddSaplingPaymentAddress(
     return CWalletDB(strWalletFile).WriteSaplingPaymentAddress(addr, ivk);
 }
 
+// Add spending key to keystore
+bool CWallet::AddOrchardZKey(const libzcash::OrchardSpendingKey &sk)
+{
+    AssertLockHeld(cs_wallet); // orchardWallet
+
+    if (IsCrypted()) {
+        // encrypted storage of Orchard spending keys is not supported
+        return false;
+    }
+
+    orchardWallet.AddSpendingKey(sk);
+
+    if (!fFileBacked) {
+        return true;
+    }
+
+    return true; // TODO ORCHARD: persist spending key
+}
+
+bool CWallet::AddOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk)
+{
+    AssertLockHeld(cs_wallet); // orchardWallet
+    orchardWallet.AddFullViewingKey(fvk);
+
+    if (!fFileBacked) {
+        return true;
+    }
+
+    return true; // TODO ORCHARD: persist fvk
+}
+
+// Loads a payment address -> incoming viewing key map entry
+// to the in-memory wallet's keystore.
+bool CWallet::LoadOrchardRawAddress(
+    const libzcash::OrchardRawAddress &addr,
+    const libzcash::OrchardIncomingViewingKey &ivk)
+{
+    AssertLockHeld(cs_wallet); // orchardWallet
+    return orchardWallet.AddRawAddress(addr, ivk);
+}
 
 // Add spending key to keystore and persist to disk
 bool CWallet::AddSproutZKey(const libzcash::SproutSpendingKey &key)
@@ -534,6 +574,8 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
         if (!AddSaplingPaymentAddress(saplingXFVK.GetChangeIVK(), saplingXFVK.GetChangeAddress())) {
             throw std::runtime_error("CWallet::GenerateUnifiedSpendingKeyForAccount(): Failed to add Sapling change address to the wallet.");
         };
+
+        // TODO ORCHARD: Add Orchard component to the wallet
 
         auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
         if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {
@@ -1070,9 +1112,11 @@ void CWallet::ChainTipAdded(const CBlockIndex *pindex,
 
 void CWallet::ChainTip(const CBlockIndex *pindex,
                        const CBlock *pblock,
+                       // If this is None, it indicates a rollback and we will decrement the
+                       // witnesses / rewind the tree
                        std::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added)
 {
-    if (added) {
+    if (added.has_value()) {
         ChainTipAdded(pindex, pblock, added->first, added->second);
         // Prevent migration transactions from being created when node is syncing after launch,
         // and also when node wakes up from suspension/hibernation and incoming blocks are old.
@@ -2084,6 +2128,9 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
        ::CopyPreviousWitnesses(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize);
     }
 
+    // ORCHARD: Add a checkpoint before we add information from the new block
+    orchardWallet.CheckpointNoteCommitmentTree();
+
     if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
         nWitnessCacheSize += 1;
     }
@@ -2134,6 +2181,9 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
             }
         }
     }
+
+    // ORCHARD: Update the Orchard note commitment tree.
+    assert(orchardWallet.AppendNoteCommitments(pindex->nHeight, *pblock));
 
     // Update witness heights
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -2196,6 +2246,9 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
     nWitnessCacheSize -= 1;
     // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
     assert(nWitnessCacheSize > 0);
+
+    // ORCHARD: rewind to the last checkpoint.
+    orchardWallet.RewindToLastCheckpoint();
 
     // For performance reasons, we write out the witness cache in
     // CWallet::SetBestChain() (which also ensures that overall consistency
@@ -2445,6 +2498,9 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
         SaplingNoteData nd = item.second;
 
         if (nd.witnesses.empty()) {
+            // The Sapling nullifier depends upon the position of the note in the
+            // note commitment tree.
+            //
             // If there are no witnesses, erase the nullifier and associated mapping.
             if (item.second.nullifier) {
                 mapSaplingNullifiersToNotes.erase(item.second.nullifier.value());
@@ -2671,20 +2727,31 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 {
     {
         AssertLockHeld(cs_wallet);
+
+        // Check whether the transaction is already known by the wallet.
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
+
+        // Sprout
         auto sproutNoteData = FindMySproutNotes(tx);
+
+        // Sapling
         auto saplingNoteDataAndAddressesToAdd = FindMySaplingNotes(tx, nHeight);
         auto saplingNoteData = saplingNoteDataAndAddressesToAdd.first;
-        auto addressesToAdd = saplingNoteDataAndAddressesToAdd.second;
-        for (const auto &addressToAdd : addressesToAdd) {
+        auto saplingAddressesToAdd = saplingNoteDataAndAddressesToAdd.second;
+        for (const auto &addressToAdd : saplingAddressesToAdd) {
+            // Add mapping between address and IVK for easy future lookup.
             if (!AddSaplingPaymentAddress(addressToAdd.second, addressToAdd.first)) {
                 return false;
             }
         }
-        if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
+
+        // Orchard
+        orchardWallet.AddNotesIfInvolvingMe(tx);
+
+        if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0 || orchardWallet.TxContainsMyNotes(tx.GetHash()))
         {
-            CWalletTx wtx(this,tx);
+            CWalletTx wtx(this, tx);
 
             if (sproutNoteData.size() > 0) {
                 wtx.SetSproutNoteData(sproutNoteData);
@@ -2698,8 +2765,9 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
             if (pblock)
                 wtx.SetMerkleBranch(*pblock);
 
-            // Do not flush the wallet here for performance reasons
-            // this is safe, as in case of a crash, we rescan the necessary blocks on startup through our SetBestChain-mechanism
+            // Do not flush the wallet here for performance reasons; this is
+            // safe, as in case of a crash, we rescan the necessary blocks on
+            // startup through our SetBestChain-mechanism
             CWalletDB walletdb(strWalletFile, "r+", false);
 
             return AddToWallet(wtx, false, &walletdb);

@@ -21,6 +21,7 @@
 #include "validationinterface.h"
 #include "script/ismine.h"
 #include "wallet/crypter.h"
+#include "wallet/orchard.h"
 #include "wallet/walletdb.h"
 #include "wallet/rpcwallet.h"
 #include "zcash/address/unified.h"
@@ -449,6 +450,10 @@ public:
     mapValue_t mapValue;
     mapSproutNoteData_t mapSproutNoteData;
     mapSaplingNoteData_t mapSaplingNoteData;
+    // ORCHARD note data is not stored with the CMerkleTx directly, but is
+    // accessible via pwallet->orchardWallet. Here we just store the indices
+    // of the actions that belong to this wallet.
+    std::vector<size_t> vOrchardActionIndices;
     std::vector<std::pair<std::string, std::string> > vOrderForm;
     unsigned int fTimeReceivedIsTxTime;
     unsigned int nTimeReceived; //!< time received by this node
@@ -559,6 +564,11 @@ public:
 
         if (fOverwintered && nVersion >= SAPLING_TX_VERSION) {
             READWRITE(mapSaplingNoteData);
+        }
+
+        if (fOverwintered && nVersion >= ZIP225_TX_VERSION) {
+            // ORCHARD TODO: serialize/deserialize orchard bits using a pointer
+            // to the Orchard wallet & the txid as referents
         }
 
         if (ser_action.ForRead())
@@ -1055,6 +1065,8 @@ private:
             const CKey& secret,
             const HDKeyPath& keyPath);
 
+    std::map<libzcash::OrchardIncomingViewingKey, CKeyMetadata> mapOrchardZKeyMetadata;
+
 protected:
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);
     void MarkAffectedTransactionsDirty(const CTransaction& tx);
@@ -1064,6 +1076,11 @@ protected:
 
     /* the network ID string for the network for which this wallet was created */
     std::string networkIdString;
+
+    /* The Orchard subset of wallet data. As many operations as possible are
+     * delegated to the Orchard wallet.
+     */
+    OrchardWallet orchardWallet;
 
 public:
     /*
@@ -1426,6 +1443,20 @@ public:
     //! Adds an encrypted spending key to the store, without saving it to disk (used by LoadWallet)
     bool LoadCryptedSaplingZKey(const libzcash::SaplingExtendedFullViewingKey &extfvk,
                                 const std::vector<unsigned char> &vchCryptedSecret);
+
+    //
+    // Orchard Keys
+    //
+
+    bool AddOrchardZKey(const libzcash::OrchardSpendingKey &sk);
+    bool AddOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk);
+    /**
+     * Adds an address/ivk mapping to the in-memory wallet. Returns `true`
+     * if the provided IVK corresponds to an FVK known by the wallet.
+     */
+    bool LoadOrchardRawAddress(
+        const libzcash::OrchardRawAddress &addr,
+        const libzcash::OrchardIncomingViewingKey &ivk);
 
     //
     // Unified keys, addresses, and accounts
