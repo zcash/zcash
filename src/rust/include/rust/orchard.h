@@ -183,6 +183,7 @@ public:
         return orchard_batch_validate(inner.get());
     }
 };
+
 } // namespace orchard
 #endif
 

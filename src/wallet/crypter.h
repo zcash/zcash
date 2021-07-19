@@ -256,7 +256,6 @@ public:
         const libzcash::SaplingExtendedFullViewingKey &extfvk,
         libzcash::SaplingExtendedSpendingKey &skOut) const;
 
-
     /**
      * Wallet status (encrypted, locked) changed.
      * Note: Called without locks held.

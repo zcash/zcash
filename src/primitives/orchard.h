@@ -8,9 +8,12 @@
 #include "streams.h"
 
 #include <amount.h>
-#include <rust/orchard.h>
+#include "rust/orchard.h"
+#include "rust/orchard/wallet.h"
+#include "zcash/address/orchard.hpp"
 
 class OrchardMerkleFrontier;
+class OrchardWallet;
 
 /**
  * The Orchard component of a transaction.
@@ -23,6 +26,7 @@ private:
     std::unique_ptr<OrchardBundlePtr, decltype(&orchard_bundle_free)> inner;
 
     friend class OrchardMerkleFrontier;
+    friend class OrchardWallet;
 public:
     OrchardBundle() : inner(nullptr, orchard_bundle_free) {}
 

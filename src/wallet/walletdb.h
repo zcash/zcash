@@ -244,10 +244,23 @@ public:
                           const std::vector<unsigned char>& vchCryptedSecret,
                           const CKeyMetadata &keyMeta);
 
+
     bool WriteSproutViewingKey(const libzcash::SproutViewingKey &vk);
     bool EraseSproutViewingKey(const libzcash::SproutViewingKey &vk);
     bool WriteSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
     bool EraseSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
+
+    // TODO: ORCHARD
+    // bool WriteOrchardZKey(const libzcash::OrchardIncomingViewingKey &ivk,
+    //                       const libzcash::OrchardExtendedSpendingKey &key,
+    //                       const CKeyMetadata  &keyMeta);
+    // bool WriteOrchardPaymentAddress(const libzcash::OrchardPaymentAddress &addr,
+    //                                 const libzcash::OrchardIncomingViewingKey &ivk);
+    // bool WriteCryptedOrchardZKey(const libzcash::OrchardExtendedFullViewingKey &extfvk,
+    //                       const std::vector<unsigned char>& vchCryptedSecret,
+    //                       const CKeyMetadata &keyMeta);
+    // bool WriteOrchardExtendedFullViewingKey(const libzcash::OrchardExtendedFullViewingKey &extfvk);
+    // bool EraseOrchardExtendedFullViewingKey(const libzcash::OrchardExtendedFullViewingKey &extfvk);
 
     static void IncrementUpdateCounter();
     static unsigned int GetUpdateCounter();
