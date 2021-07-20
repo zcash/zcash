@@ -448,7 +448,7 @@ class FakeCoinsViewDB : public CCoinsView {
     uint256 hash;
     SproutMerkleTree sproutTree;
     SaplingMerkleTree saplingTree;
-    OrchardMerkleTree orchardTree;
+    OrchardMerkleFrontier orchardTree;
 
 public:
     FakeCoinsViewDB(std::string dbName, uint256& hash) : db(GetDataDir() / dbName, 100, false, false), hash(hash) {}
@@ -469,7 +469,7 @@ public:
         return false;
     }
 
-    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const {
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
         if (rt == orchardTree.root()) {
             tree = orchardTree;
             return true;

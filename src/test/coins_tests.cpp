@@ -32,7 +32,7 @@ class CCoinsViewTest : public CCoinsView
     std::map<uint256, CCoins> map_;
     std::map<uint256, SproutMerkleTree> mapSproutAnchors_;
     std::map<uint256, SaplingMerkleTree> mapSaplingAnchors_;
-    std::map<uint256, OrchardMerkleTree> mapOrchardAnchors_;
+    std::map<uint256, OrchardMerkleFrontier> mapOrchardAnchors_;
     std::map<uint256, bool> mapSproutNullifiers_;
     std::map<uint256, bool> mapSaplingNullifiers_;
     std::map<uint256, bool> mapOrchardNullifiers_;
@@ -41,7 +41,7 @@ public:
     CCoinsViewTest() {
         hashBestSproutAnchor_ = SproutMerkleTree::empty_root();
         hashBestSaplingAnchor_ = SaplingMerkleTree::empty_root();
-        hashBestOrchardAnchor_ = OrchardMerkleTree::empty_root();
+        hashBestOrchardAnchor_ = OrchardMerkleFrontier::empty_root();
     }
 
     bool GetSproutAnchorAt(const uint256& rt, SproutMerkleTree &tree) const {
@@ -76,14 +76,14 @@ public:
         }
     }
 
-    bool GetOrchardAnchorAt(const uint256& rt, OrchardMerkleTree &tree) const {
-        if (rt == OrchardMerkleTree::empty_root()) {
-            OrchardMerkleTree new_tree;
+    bool GetOrchardAnchorAt(const uint256& rt, OrchardMerkleFrontier &tree) const {
+        if (rt == OrchardMerkleFrontier::empty_root()) {
+            OrchardMerkleFrontier new_tree;
             tree = new_tree;
             return true;
         }
 
-        std::map<uint256, OrchardMerkleTree>::const_iterator it = mapOrchardAnchors_.find(rt);
+        std::map<uint256, OrchardMerkleFrontier>::const_iterator it = mapOrchardAnchors_.find(rt);
         if (it == mapOrchardAnchors_.end()) {
             return false;
         } else {
@@ -217,7 +217,7 @@ public:
 
         BatchWriteAnchors<SproutMerkleTree, CAnchorsSproutMap, CAnchorsSproutCacheEntry>(mapSproutAnchors, mapSproutAnchors_);
         BatchWriteAnchors<SaplingMerkleTree, CAnchorsSaplingMap, CAnchorsSaplingCacheEntry>(mapSaplingAnchors, mapSaplingAnchors_);
-        BatchWriteAnchors<OrchardMerkleTree, CAnchorsOrchardMap, CAnchorsOrchardCacheEntry>(mapOrchardAnchors, mapOrchardAnchors_);
+        BatchWriteAnchors<OrchardMerkleFrontier, CAnchorsOrchardMap, CAnchorsOrchardCacheEntry>(mapOrchardAnchors, mapOrchardAnchors_);
 
         BatchWriteNullifiers(mapSproutNullifiers, mapSproutNullifiers_);
         BatchWriteNullifiers(mapSaplingNullifiers, mapSaplingNullifiers_);
