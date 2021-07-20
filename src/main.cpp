@@ -3098,7 +3098,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     SaplingMerkleTree sapling_tree;
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
 
-    OrchardMerkleTree orchard_tree;
+    OrchardMerkleFrontier orchard_tree;
     assert(view.GetOrchardAnchorAt(view.GetBestAnchor(ORCHARD), orchard_tree));
 
     // Grab the consensus branch ID for this block and its parent

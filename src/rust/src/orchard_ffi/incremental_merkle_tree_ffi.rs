@@ -154,14 +154,14 @@ pub extern "C" fn orchard_merkle_frontier_dynamic_mem_usage(
 //
 
 #[no_mangle]
-pub extern "C" fn incremental_sinsemilla_tree_empty(
+pub extern "C" fn orchard_witness_tree_empty(
 ) -> *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH> {
     let empty_tree = BridgeTree::<MerkleCrhOrchardOutput, MERKLE_DEPTH>::new(MAX_CHECKPOINTS);
     Box::into_raw(Box::new(empty_tree))
 }
 
 #[no_mangle]
-pub extern "C" fn incremental_sinsemilla_tree_clone(
+pub extern "C" fn orchard_witness_tree_clone(
     tree: *const BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
 ) -> *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH> {
     unsafe { tree.as_ref() }
@@ -170,7 +170,7 @@ pub extern "C" fn incremental_sinsemilla_tree_clone(
 }
 
 #[no_mangle]
-pub extern "C" fn incremental_sinsemilla_tree_free(
+pub extern "C" fn orchard_witness_tree_free(
     tree: *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
 ) {
     if !tree.is_null() {
@@ -179,7 +179,7 @@ pub extern "C" fn incremental_sinsemilla_tree_free(
 }
 
 #[no_mangle]
-pub extern "C" fn incremental_sinsemilla_tree_parse(
+pub extern "C" fn orchard_witness_tree_parse(
     stream: Option<StreamObj>,
     read_cb: Option<ReadCb>,
 ) -> *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH> {
@@ -195,7 +195,7 @@ pub extern "C" fn incremental_sinsemilla_tree_parse(
 }
 
 #[no_mangle]
-pub extern "C" fn incremental_sinsemilla_tree_serialize(
+pub extern "C" fn orchard_witness_tree_serialize(
     tree: *const BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
     stream: Option<StreamObj>,
     write_cb: Option<WriteCb>,
@@ -216,7 +216,7 @@ pub extern "C" fn incremental_sinsemilla_tree_serialize(
 }
 
 #[no_mangle]
-pub extern "C" fn incremental_sinsemilla_tree_append_bundle(
+pub extern "C" fn orchard_witness_tree_append_bundle(
     tree: *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
     bundle: *const orchard::Bundle<Authorized, Amount>,
 ) -> bool {
@@ -237,7 +237,7 @@ pub extern "C" fn incremental_sinsemilla_tree_append_bundle(
 }
 
 #[no_mangle]
-pub extern "C" fn incremental_sinsemilla_tree_checkpoint(
+pub extern "C" fn orchard_witness_tree_checkpoint(
     tree: *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
 ) {
     let tree = unsafe {
@@ -249,7 +249,7 @@ pub extern "C" fn incremental_sinsemilla_tree_checkpoint(
 }
 
 #[no_mangle]
-pub extern "C" fn incremental_sinsemilla_tree_rewind(
+pub extern "C" fn orchard_witness_tree_rewind(
     tree: *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
 ) -> bool {
     let tree = unsafe {
@@ -261,7 +261,7 @@ pub extern "C" fn incremental_sinsemilla_tree_rewind(
 }
 
 #[no_mangle]
-pub extern "C" fn incremental_sinsemilla_tree_root(
+pub extern "C" fn orchard_witness_tree_root(
     tree: *const BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
     root_ret: *mut [u8; 32],
 ) {
@@ -280,7 +280,7 @@ pub extern "C" fn incremental_sinsemilla_tree_root(
 }
 
 #[no_mangle]
-pub extern "C" fn incremental_sinsemilla_tree_empty_root(root_ret: *mut [u8; 32]) {
+pub extern "C" fn orchard_witness_tree_empty_root(root_ret: *mut [u8; 32]) {
     let root_ret = unsafe {
         root_ret
             .as_mut()

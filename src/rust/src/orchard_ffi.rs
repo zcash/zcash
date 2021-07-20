@@ -18,7 +18,7 @@ use zcash_primitives::transaction::{
 
 use crate::streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
 
-mod incremental_sinsemilla_tree_ffi;
+mod incremental_merkle_tree_ffi;
 mod keys;
 
 #[no_mangle]

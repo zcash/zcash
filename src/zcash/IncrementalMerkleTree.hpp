@@ -12,7 +12,7 @@
 #include "zcash/util.h"
 
 #include <primitives/orchard.h>
-#include <rust/orchard/incremental_sinsemilla_tree.h>
+#include <rust/orchard/incremental_merkle_tree.h>
 
 namespace libzcash {
 
@@ -259,28 +259,28 @@ typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, l
 typedef libzcash::IncrementalWitness<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::PedersenHash> SaplingWitness;
 typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::PedersenHash> SaplingTestingWitness;
 
-class OrchardMerkleTree
+class OrchardMerkleFrontier
 {
 private:
     /// An incremental Sinsemilla tree; this pointer may never be null.
     /// Memory is allocated by Rust.
     std::unique_ptr<OrchardMerkleFrontierPtr, decltype(&orchard_merkle_frontier_free)> inner;
 public:
-    OrchardMerkleTree() : inner(orchard_merkle_frontier_empty(), orchard_merkle_frontier_free) {}
+    OrchardMerkleFrontier() : inner(orchard_merkle_frontier_empty(), orchard_merkle_frontier_free) {}
 
-    OrchardMerkleTree(OrchardMerkleTree&& frontier) : inner(std::move(frontier.inner)) {}
+    OrchardMerkleFrontier(OrchardMerkleFrontier&& frontier) : inner(std::move(frontier.inner)) {}
 
-    OrchardMerkleTree(const OrchardMerkleTree& frontier) :
+    OrchardMerkleFrontier(const OrchardMerkleFrontier& frontier) :
         inner(orchard_merkle_frontier_clone(frontier.inner.get()), orchard_merkle_frontier_free) {}
 
-    OrchardMerkleTree& operator=(OrchardMerkleTree&& frontier)
+    OrchardMerkleFrontier& operator=(OrchardMerkleFrontier&& frontier)
     {
         if (this != &frontier) {
             inner = std::move(frontier.inner);
         }
         return *this;
     }
-    OrchardMerkleTree& operator=(const OrchardMerkleTree& frontier)
+    OrchardMerkleFrontier& operator=(const OrchardMerkleFrontier& frontier)
     {
         if (this != &frontier) {
             inner.reset(orchard_merkle_frontier_clone(frontier.inner.get()));
@@ -323,9 +323,73 @@ public:
 
     static uint256 empty_root() {
         uint256 value;
-        incremental_sinsemilla_tree_empty_root(value.begin());
+        orchard_witness_tree_empty_root(value.begin());
         return value;
     }
+};
+
+
+class OrchardWitnessTree
+{
+private:
+    /// An incremental Merkle tree; this pointer may never be null.
+    /// Memory is allocated by Rust.
+    std::unique_ptr<OrchardWitnessTreePtr, decltype(&orchard_witness_tree_free)> inner;
+public:
+    OrchardWitnessTree() : inner(orchard_witness_tree_empty(), orchard_witness_tree_free) {}
+
+    OrchardWitnessTree(OrchardWitnessTree&& frontier) : inner(std::move(frontier.inner)) {}
+
+    OrchardWitnessTree(const OrchardWitnessTree& frontier) :
+        inner(orchard_witness_tree_clone(frontier.inner.get()), orchard_witness_tree_free) {}
+
+    OrchardWitnessTree& operator=(OrchardWitnessTree&& frontier)
+    {
+        if (this != &frontier) {
+            inner = std::move(frontier.inner);
+        }
+        return *this;
+    }
+    OrchardWitnessTree& operator=(const OrchardWitnessTree& frontier)
+    {
+        if (this != &frontier) {
+            inner.reset(orchard_witness_tree_clone(frontier.inner.get()));
+        }
+        return *this;
+    }
+
+    template<typename Stream>
+    void Serialize(Stream& s) const {
+        RustStream rs(s);
+        if (!orchard_witness_tree_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
+            throw std::ios_base::failure("Failed to serialize v5 Orchard tree");
+        }
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream& s) {
+        RustStream rs(s);
+        OrchardWitnessTreePtr* tree = orchard_witness_tree_parse(
+                &rs, RustStream<Stream>::read_callback);
+        if (tree == nullptr) {
+            throw std::ios_base::failure("Failed to parse v5 Orchard tree");
+        }
+        inner.reset(tree);
+    }
+
+//    size_t DynamicMemoryUsage() const {
+//        return orchard_witness_tree_dynamic_mem_usage(inner.get());
+//    }
+
+    bool AppendBundle(const OrchardBundle& bundle) {
+       return orchard_witness_tree_append_bundle(inner.get(), bundle.inner.get());
+    }
+
+//    const uint256 root() const {
+//        uint256 value;
+//        orchard_witness_tree_root(inner.get(), value.begin());
+//        return value;
+//    }
 };
 
 #endif /* ZC_INCREMENTALMERKLETREE_H_ */

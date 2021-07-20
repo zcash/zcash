@@ -76,39 +76,40 @@ size_t orchard_merkle_frontier_num_leaves(
 size_t orchard_merkle_frontier_dynamic_mem_usage(
         const OrchardMerkleFrontierPtr* tree_ptr);
 
-/// Pointer to an Orchard incremental Sinsemilla tree
-struct IncrementalSinsemillaTreePtr;
-typedef struct IncrementalSinsemillaTreePtr IncrementalSinsemillaTreePtr;
 
-// Create an empty incremental Sinsemilla tree.
+/// Pointer to an Orchard incremental Merkle tree
+struct OrchardWitnessTreePtr;
+typedef struct OrchardWitnessTreePtr OrchardWitnessTreePtr;
+
+// Create an empty incremental Merkle tree.
 //
 // Memory allocated to the resulting value must be manually freed.
-IncrementalSinsemillaTreePtr* incremental_sinsemilla_tree_empty();
+OrchardWitnessTreePtr* orchard_witness_tree_empty();
 
-// Clones the given incremental Sinsemilla tree and returns
+// Clones the given incremental Merkle tree and returns
 // a pointer to the newly created tree. Both the original
 // tree's memory and the newly allocated one need to be freed
 // independently.
-IncrementalSinsemillaTreePtr* incremental_sinsemilla_tree_clone(
-        const IncrementalSinsemillaTreePtr* tree_ptr);
+OrchardWitnessTreePtr* orchard_witness_tree_clone(
+        const OrchardWitnessTreePtr* tree_ptr);
 
-// Free the memory allocated for the given incremental Sinsemilla tree.
-void incremental_sinsemilla_tree_free(
-        IncrementalSinsemillaTreePtr* tree_ptr);
+// Free the memory allocated for the given incremental Merkle tree.
+void orchard_witness_tree_free(
+        OrchardWitnessTreePtr* tree_ptr);
 
-// Parses an incremental Sinsemilla tree from a stream. If parsing
+// Parses an incremental Merkle tree from a stream. If parsing
 // fails, this will return the null pointer.
 //
 // Memory allocated to the resulting value must be manually freed.
-IncrementalSinsemillaTreePtr* incremental_sinsemilla_tree_parse(
+OrchardWitnessTreePtr* orchard_witness_tree_parse(
         void* stream,
         read_callback_t read_cb);
 
-// Serializes an incremental Sinsemilla tree to a stream.
+// Serializes an incremental Merkle tree to a stream.
 //
 // Returns false if an error occurs while writing to the stream.
-bool incremental_sinsemilla_tree_serialize(
-        const IncrementalSinsemillaTreePtr* tree_ptr,
+bool orchard_witness_tree_serialize(
+        const OrchardWitnessTreePtr* tree_ptr,
         void* stream,
         write_callback_t write_cb);
 
@@ -117,29 +118,29 @@ bool incremental_sinsemilla_tree_serialize(
 //
 // Returns `true` if the append succeeds, `false` if the
 // tree is full.
-bool incremental_sinsemilla_tree_append_bundle(
-        IncrementalSinsemillaTreePtr* tree_ptr,
+bool orchard_witness_tree_append_bundle(
+        OrchardWitnessTreePtr* tree_ptr,
         const OrchardBundlePtr* bundle);
 
 // Save the current state of the incremental merkle tree
 // as a point to which the tree can be rewound.
-void incremental_sinsemilla_tree_checkpoint(
-        IncrementalSinsemillaTreePtr* tree_ptr);
+void orchard_witness_tree_checkpoint(
+        OrchardWitnessTreePtr* tree_ptr);
 
 // Rewind the incremental merkle tree to the latest checkpoint.
 //
 // Returns `true` if the rewind succeeds, `false` if the attempted
 // rewind would require the destruction of witness data.
-bool incremental_sinsemilla_tree_rewind(
-        IncrementalSinsemillaTreePtr* tree_ptr);
+bool orchard_witness_tree_rewind(
+        OrchardWitnessTreePtr* tree_ptr);
 
-// Computes the root of the provided incremental Sinsemilla tree.
-void incremental_sinsemilla_tree_root(
-        const IncrementalSinsemillaTreePtr* tree_ptr,
+// Computes the root of the provided incremental Merkle tree.
+void orchard_witness_tree_root(
+        const OrchardWitnessTreePtr* tree_ptr,
         unsigned char* digest_ret);
 
-// Computes the empty leaf value for the incremental Sinsemilla tree.
-void incremental_sinsemilla_tree_empty_root(
+// Computes the empty leaf value for the incremental Merkle tree.
+void orchard_witness_tree_empty_root(
         unsigned char* digest_ret);
 
 #ifdef __cplusplus
