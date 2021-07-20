@@ -81,9 +81,9 @@ bool CCoinsViewDB::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree
     return read;
 }
 
-bool CCoinsViewDB::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const {
-    if (rt == OrchardMerkleTree::empty_root()) {
-        OrchardMerkleTree new_tree;
+bool CCoinsViewDB::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
+    if (rt == OrchardMerkleFrontier::empty_root()) {
+        OrchardMerkleFrontier new_tree;
         tree = new_tree;
         return true;
     }
@@ -141,7 +141,7 @@ uint256 CCoinsViewDB::GetBestAnchor(ShieldedType type) const {
             break;
         case ORCHARD:
             if (!db.Read(DB_BEST_ORCHARD_ANCHOR, hashBestAnchor))
-                return OrchardMerkleTree::empty_root();
+                return OrchardMerkleFrontier::empty_root();
             break;
         default:
             throw runtime_error("Unknown shielded type");
@@ -291,7 +291,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
 
     ::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry, SproutMerkleTree>(batch, mapSproutAnchors, DB_SPROUT_ANCHOR);
     ::BatchWriteAnchors<CAnchorsSaplingMap, CAnchorsSaplingMap::iterator, CAnchorsSaplingCacheEntry, SaplingMerkleTree>(batch, mapSaplingAnchors, DB_SAPLING_ANCHOR);
-    ::BatchWriteAnchors<CAnchorsOrchardMap, CAnchorsOrchardMap::iterator, CAnchorsOrchardCacheEntry, OrchardMerkleTree>(batch, mapOrchardAnchors, DB_ORCHARD_ANCHOR);
+    ::BatchWriteAnchors<CAnchorsOrchardMap, CAnchorsOrchardMap::iterator, CAnchorsOrchardCacheEntry, OrchardMerkleFrontier>(batch, mapOrchardAnchors, DB_ORCHARD_ANCHOR);
 
     ::BatchWriteNullifiers(batch, mapSproutNullifiers, DB_NULLIFIER);
     ::BatchWriteNullifiers(batch, mapSaplingNullifiers, DB_SAPLING_NULLIFIER);

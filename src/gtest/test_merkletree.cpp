@@ -293,13 +293,13 @@ TEST(orchardMerkleTree, emptyroot) {
     // an integer, which is converted to little-endian internally.
     uint256 expected = uint256S("2fd8e51a03d9bbe2dd809831b1497aeb68a6e37ddf707ced4aa2d8dff13529ae");
 
-    ASSERT_EQ(OrchardMerkleTree::empty_root(), expected);
+    ASSERT_EQ(OrchardMerkleFrontier::empty_root(), expected);
 }
 
 TEST(orchardMerkleTree, appendBundle) {
-    OrchardMerkleTree newTree;
+    OrchardMerkleFrontier newTree;
 
-    ASSERT_EQ(newTree.root(), OrchardMerkleTree::empty_root());
+    ASSERT_EQ(newTree.root(), OrchardMerkleFrontier::empty_root());
 
     for (int i = 0; i < 1; i++) {
         CDataStream ssBundleData(merkle_roots_orchard[i].bundle, SER_NETWORK, PROTOCOL_VERSION);
