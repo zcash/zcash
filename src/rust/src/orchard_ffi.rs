@@ -94,7 +94,6 @@ pub extern "C" fn orchard_bundle_serialize(
 }
 
 #[no_mangle]
-
 pub extern "C" fn orchard_bundle_value_balance(bundle: *const Bundle<Authorized, Amount>) -> i64 {
     unsafe { bundle.as_ref() }
         .map(|bundle| (*bundle.value_balance()).into())
