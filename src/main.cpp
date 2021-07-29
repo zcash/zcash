@@ -1112,34 +1112,6 @@ bool ContextualCheckTransaction(
             }
         }
 
-        // nSpendsSapling, nOutputsSapling, and nActionsOrchard MUST all be less than 2^16
-        size_t max_elements = (1 << 16) - 1;
-        if (tx.vShieldedSpend.size() > max_elements) {
-            return state.DoS(
-                dosLevelPotentiallyRelaxing,
-                error("ContextualCheckTransaction(): 2^16 or more Sapling spends"),
-                REJECT_INVALID, "bad-tx-too-many-sapling-spends");
-        }
-        if (tx.vShieldedOutput.size() > max_elements) {
-            return state.DoS(
-                dosLevelPotentiallyRelaxing,
-                error("ContextualCheckTransaction(): 2^16 or more Sapling outputs"),
-                REJECT_INVALID, "bad-tx-too-many-sapling-outputs");
-        }
-        if (orchard_bundle.GetNumActions() > max_elements) {
-            return state.DoS(
-                dosLevelPotentiallyRelaxing,
-                error("ContextualCheckTransaction(): 2^16 or more Orchard actions"),
-                REJECT_INVALID, "bad-tx-too-many-orchard-actions");
-        }
-
-        if (orchard_bundle.GetNumActions() > 0 && !orchard_bundle.OutputsEnabled() && !orchard_bundle.SpendsEnabled()) {
-            return state.DoS(
-                dosLevelPotentiallyRelaxing,
-                error("ContextualCheckTransaction(): Orchard actions are present, but flags do not permit Orchard spends or outputs"),
-                REJECT_INVALID, "bad-tx-orchard-flags-disable-actions");
-        }
-
         if (tx.IsCoinBase()) {
             if (!orchard_bundle.CoinbaseOutputsAreValid()) {
                 return state.DoS(
@@ -1511,13 +1483,38 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
     }
 
-    auto valueBalanceOrchard = orchard_bundle.GetValueBalance();
-
-    // Check for non-zero valueBalanceOrchard when there are no Orchard inputs or outputs
-    if (!orchard_bundle.SpendsEnabled() && !orchard_bundle.OutputsEnabled() && valueBalanceOrchard != 0) {
-        return state.DoS(100, error("CheckTransaction(): tx.valueBalanceOrchard has no sources or sinks"),
-                         REJECT_INVALID, "bad-txns-valuebalance-nonzero");
+    // nSpendsSapling, nOutputsSapling, and nActionsOrchard MUST all be less than 2^16
+    size_t max_elements = (1 << 16) - 1;
+    if (tx.vShieldedSpend.size() > max_elements) {
+        return state.DoS(
+            dosLevelPotentiallyRelaxing,
+            error("ContextualCheckTransaction(): 2^16 or more Sapling spends"),
+            REJECT_INVALID, "bad-tx-too-many-sapling-spends");
     }
+    if (tx.vShieldedOutput.size() > max_elements) {
+        return state.DoS(
+            dosLevelPotentiallyRelaxing,
+            error("ContextualCheckTransaction(): 2^16 or more Sapling outputs"),
+            REJECT_INVALID, "bad-tx-too-many-sapling-outputs");
+    }
+    if (orchard_bundle.GetNumActions() > max_elements) {
+        return state.DoS(
+            dosLevelPotentiallyRelaxing,
+            error("ContextualCheckTransaction(): 2^16 or more Orchard actions"),
+            REJECT_INVALID, "bad-tx-too-many-orchard-actions");
+    }
+
+    // Check that if neither Orchard spends nor outputs are enabled, the transaction contains
+    // no Orchard actions. This subsumes the check that valueBalanceOrchard must equal zero
+    // in the case that both spends and outputs are disabled.
+    if (orchard_bundle.GetNumActions() > 0 && !orchard_bundle.OutputsEnabled() && !orchard_bundle.SpendsEnabled()) {
+        return state.DoS(
+            100,
+            error("ContextualCheckTransaction(): Orchard actions are present, but flags do not permit Orchard spends or outputs"),
+            REJECT_INVALID, "bad-tx-orchard-flags-disable-actions");
+    }
+
+    auto valueBalanceOrchard = orchard_bundle.GetValueBalance();
 
     // Check for overflow valueBalanceOrchard
     if (valueBalanceOrchard > MAX_MONEY || valueBalanceOrchard < -MAX_MONEY) {
