@@ -6,6 +6,7 @@
 #define ZCASH_ORCHARD_WALLET_H
 
 #include "rust/orchard/wallet.h"
+#include "zcash/address/orchard.hpp"
 
 class OrchardWallet
 {
@@ -66,6 +67,21 @@ public:
                 inner.get(),
                 txid.begin());
     }
+
+    bool AddSpendingKey(const libzcash::OrchardSpendingKey& sk) {
+        orchard_wallet_add_spending_key(inner.get(), sk.inner.get());
+        return true;
+    }
+
+    bool AddFullViewingKey(const libzcash::OrchardFullViewingKey& fvk) {
+        orchard_wallet_add_full_viewing_key(inner.get(), fvk.inner.get());
+        return true;
+    }
+
+    //bool AddIncomingViewingKey(const libzcash::OrchardPaymentAddress& addr,
+    //                           const libzcash::OrchardIncomingViewingKey& ivk) {
+    //    orchard_wallet_add_incoming_viewing_key(inner.get(), fvk.inner.get());
+    //}
 
     // TODO: Serialization
 };

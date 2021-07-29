@@ -8,6 +8,8 @@
 #include "streams.h"
 #include "rust/orchard/keys.h"
 
+class OrchardWallet;
+
 namespace libzcash {
 
 class OrchardRawAddress
@@ -72,12 +74,21 @@ public: //FIXME
     }
 };
 
+class OrchardSpendingKey;
+
 
 class OrchardIncomingViewingKey
 {
 private:
+public: // FIXME
     std::unique_ptr<OrchardIncomingViewingKeyPtr, decltype(&orchard_incoming_viewing_key_free)> inner;
-public:
+
+    OrchardIncomingViewingKey(OrchardIncomingViewingKeyPtr* key) : inner(key, orchard_incoming_viewing_key_free) {}
+
+    friend class OrchardSpendingKey;
+    friend class OrchardWallet;
+
+//public:
     OrchardIncomingViewingKey() : inner(nullptr, orchard_incoming_viewing_key_free) {}
 
     OrchardIncomingViewingKey(OrchardIncomingViewingKey&& key) : inner(std::move(key.inner)) {}
@@ -119,15 +130,25 @@ public:
         inner.reset(key);
     }
 
+    friend bool operator<(const OrchardIncomingViewingKey& c1, const OrchardIncomingViewingKey& c2) {
+        return orchard_incoming_viewing_key_lt(c1.inner.get(), c2.inner.get());
+    }
+
+    //static bool lt(const OrchardIncomingViewingKey &c1, const OrchardIncomingViewingKey &c2) {
+    //    return orchard_incoming_viewing_key_lt(c1.inner.get(), c2.inner.get());
+    //}
 };
+
 
 class OrchardFullViewingKey
 {
 private:
+public: //FIXME
     std::unique_ptr<OrchardFullViewingKeyPtr, decltype(&orchard_full_viewing_key_free)> inner;
-public:
     OrchardFullViewingKey() : inner(nullptr, orchard_full_viewing_key_free) {}
 
+    friend class OrchardWallet;
+//public:
     OrchardFullViewingKey(OrchardFullViewingKey&& key) : inner(std::move(key.inner)) {}
 
     OrchardFullViewingKey(const OrchardFullViewingKey& key) :
@@ -165,6 +186,59 @@ public:
             throw std::ios_base::failure("Failed to parse Orchard full viewing key");
         }
         inner.reset(key);
+    }
+};
+
+class OrchardSpendingKey
+{
+private:
+public: //FIXME
+    std::unique_ptr<OrchardSpendingKeyPtr, decltype(&orchard_spending_key_free)> inner;
+    OrchardSpendingKey() : inner(nullptr, orchard_spending_key_free) {}
+
+    friend class OrchardWallet;
+//public:
+    OrchardSpendingKey(OrchardSpendingKey&& key) : inner(std::move(key.inner)) {}
+
+    OrchardSpendingKey(const OrchardSpendingKey& key) :
+        inner(orchard_spending_key_clone(key.inner.get()), orchard_spending_key_free) {}
+
+    OrchardSpendingKey& operator=(OrchardSpendingKey&& key)
+    {
+        if (this != &key) {
+            inner = std::move(key.inner);
+        }
+        return *this;
+    }
+
+    OrchardSpendingKey& operator=(const OrchardSpendingKey& key)
+    {
+        if (this != &key) {
+            inner.reset(orchard_spending_key_clone(key.inner.get()));
+        }
+        return *this;
+    }
+
+    template<typename Stream>
+    void Serialize(Stream& s) const {
+        RustStream rs(s);
+        if (!orchard_spending_key_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
+            throw std::ios_base::failure("Failed to serialize Orchard full viewing key");
+        }
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream& s) {
+        RustStream rs(s);
+        OrchardSpendingKeyPtr* key;
+        if (!orchard_spending_key_parse(&rs, RustStream<Stream>::read_callback, &key)) {
+            throw std::ios_base::failure("Failed to parse Orchard full viewing key");
+        }
+        inner.reset(key);
+    }
+
+    const OrchardIncomingViewingKey GetIncomingViewingKey() const {
+        return OrchardIncomingViewingKey(orchard_spending_key_to_incoming_viewing_key(inner.get()));
     }
 };
 

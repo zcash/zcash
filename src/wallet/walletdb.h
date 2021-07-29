@@ -11,6 +11,7 @@
 #include "key.h"
 #include "keystore.h"
 #include "zcash/Address.hpp"
+#include "zcash/address/orchard.hpp"
 
 #include <list>
 #include <stdint.h>
@@ -251,16 +252,16 @@ public:
     bool EraseSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
 
     // TODO: ORCHARD
-    // bool WriteOrchardZKey(const libzcash::OrchardIncomingViewingKey &ivk,
-    //                       const libzcash::OrchardExtendedSpendingKey &key,
-    //                       const CKeyMetadata  &keyMeta);
+    bool WriteOrchardZKey(const libzcash::OrchardIncomingViewingKey &ivk,
+                          const libzcash::OrchardSpendingKey &key,
+                          const CKeyMetadata &keyMeta);
+    bool WriteOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk);
+    bool EraseOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk);
     // bool WriteOrchardPaymentAddress(const libzcash::OrchardPaymentAddress &addr,
     //                                 const libzcash::OrchardIncomingViewingKey &ivk);
     // bool WriteCryptedOrchardZKey(const libzcash::OrchardExtendedFullViewingKey &extfvk,
     //                       const std::vector<unsigned char>& vchCryptedSecret,
     //                       const CKeyMetadata &keyMeta);
-    // bool WriteOrchardExtendedFullViewingKey(const libzcash::OrchardExtendedFullViewingKey &extfvk);
-    // bool EraseOrchardExtendedFullViewingKey(const libzcash::OrchardExtendedFullViewingKey &extfvk);
 
     static void IncrementUpdateCounter();
     static unsigned int GetUpdateCounter();

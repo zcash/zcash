@@ -67,11 +67,18 @@ bool orchard_incoming_viewing_key_parse(
 
 /// Serializes an authorized Orchard incoming_viewing_key to the given stream
 ///
-/// If `incoming_viewing_key == nullptr`, this serializes `nActionsOrchard = 0`.
+/// If `incoming_viewing_key == nullptr`, this will return `false`
 bool orchard_incoming_viewing_key_serialize(
     const OrchardIncomingViewingKeyPtr* incoming_viewing_key,
     void* stream,
     write_callback_t write_cb);
+
+/**
+ * Implements the "less than" operation for comparing two keys.
+ */
+bool orchard_incoming_viewing_key_lt(
+    const OrchardIncomingViewingKeyPtr* k0,
+    const OrchardIncomingViewingKeyPtr* k1);
 
 //
 // Full Viewing Keys
@@ -100,11 +107,47 @@ bool orchard_full_viewing_key_parse(
 
 /// Serializes an authorized Orchard full_viewing_key to the given stream
 ///
-/// If `full_viewing_key == nullptr`, this serializes `nActionsOrchard = 0`.
+/// If `full_viewing_key == nullptr`, this will return `false`
 bool orchard_full_viewing_key_serialize(
     const OrchardFullViewingKeyPtr* full_viewing_key,
     void* stream,
     write_callback_t write_cb);
+
+//
+// Spending Keys
+//
+struct OrchardSpendingKeyPtr;
+typedef struct OrchardSpendingKeyPtr OrchardSpendingKeyPtr;
+
+// Clones the given Orchard spending key and returns
+// a pointer to the newly created value. Both the original
+// one's memory and the newly allocated one need to be freed
+// independently.
+OrchardSpendingKeyPtr* orchard_spending_key_clone(
+        const OrchardSpendingKeyPtr* ptr);
+
+// Free the memory allocated for the given Orchard spending key
+void orchard_spending_key_free(OrchardSpendingKeyPtr* ptr);
+
+/// Parses an authorized Orchard spending_key from the given stream.
+///
+/// - If no error occurs, `spending_key_ret` will point to a Rust-allocated Orchard spending_key.
+/// - If an error occurs, `spending_key_ret` will be unaltered.
+bool orchard_spending_key_parse(
+    void* stream,
+    read_callback_t read_cb,
+    OrchardSpendingKeyPtr** spending_key_ret);
+
+/// Serializes an authorized Orchard spending_key to the given stream
+///
+/// If `spending_key == nullptr`, this will return `false`
+bool orchard_spending_key_serialize(
+    const OrchardSpendingKeyPtr* spending_key,
+    void* stream,
+    write_callback_t write_cb);
+
+OrchardIncomingViewingKeyPtr* orchard_spending_key_to_incoming_viewing_key(
+    const OrchardSpendingKeyPtr* spending_key);
 
 #ifdef __cplusplus
 }

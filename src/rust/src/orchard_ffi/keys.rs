@@ -1,6 +1,6 @@
 use std::io::{Read, Write};
 
-use orchard::keys::{FullViewingKey, IncomingViewingKey};
+use orchard::keys::{FullViewingKey, IncomingViewingKey, SpendingKey};
 use orchard::Address;
 
 use crate::orchard_ffi::{error, CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
@@ -138,6 +138,14 @@ pub extern "C" fn orchard_incoming_viewing_key_serialize(
     }
 }
 
+#[no_mangle]
+pub extern "C" fn orchard_incoming_viewing_key_lt(
+    k0: *const IncomingViewingKey,
+    k1: *const IncomingViewingKey,
+) -> bool {
+    k0 < k1
+}
+
 //
 // Full viewing keys
 //
@@ -196,4 +204,84 @@ pub extern "C" fn orchard_full_viewing_key_serialize(
             false
         }
     }
+}
+
+//
+// Spending keys
+//
+
+#[no_mangle]
+pub extern "C" fn orchard_spending_key_clone(key: *const SpendingKey) -> *mut SpendingKey {
+    unsafe { key.as_ref() }
+        .map(|key| Box::into_raw(Box::new(key.clone())))
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_spending_key_free(key: *mut SpendingKey) {
+    if !key.is_null() {
+        drop(unsafe { Box::from_raw(key) });
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_spending_key_parse(
+    stream: Option<StreamObj>,
+    read_cb: Option<ReadCb>,
+) -> *mut SpendingKey {
+    let mut reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
+
+    let mut buf = [0u8; 32];
+    match reader.read_exact(&mut buf) {
+        Err(e) => {
+            error!(
+                "Stream failure reading bytes of Orchard spending key: {}",
+                e
+            );
+            std::ptr::null_mut()
+        }
+        Ok(()) => {
+            let sk_opt = SpendingKey::from_bytes(buf);
+            if sk_opt.is_some().into() {
+                Box::into_raw(Box::new(sk_opt.unwrap()))
+            } else {
+                error!("Failed to parse Orchard spending key.");
+                std::ptr::null_mut()
+            }
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_spending_key_serialize(
+    key: *const SpendingKey,
+    stream: Option<StreamObj>,
+    write_cb: Option<WriteCb>,
+) -> bool {
+    let key = unsafe {
+        key.as_ref()
+            .expect("Orchard spending key pointer may not be null.")
+    };
+
+    let mut writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
+    match writer.write_all(key.to_bytes()) {
+        Ok(()) => true,
+        Err(e) => {
+            error!("Stream failure writing Orchard spending key: {}", e);
+            false
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_spending_key_to_incoming_viewing_key(
+    key: *const SpendingKey,
+) -> *mut IncomingViewingKey {
+    unsafe { key.as_ref() }
+        .map(|key| {
+            Box::into_raw(Box::new(IncomingViewingKey::from(&FullViewingKey::from(
+                key,
+            ))))
+        })
+        .unwrap_or(std::ptr::null_mut())
 }

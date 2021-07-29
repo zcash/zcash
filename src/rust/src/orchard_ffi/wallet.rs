@@ -10,7 +10,7 @@ use zcash_primitives::{
 
 use orchard::{
     bundle::Authorized,
-    keys::{FullViewingKey, IncomingViewingKey},
+    keys::{FullViewingKey, IncomingViewingKey, SpendingKey},
     tree::MerkleHashOrchard,
     Address, Bundle, Note,
 };
@@ -43,10 +43,54 @@ struct WalletTx {
     decrypted_notes: BTreeMap<usize, DecryptedNote>,
 }
 
-pub struct Wallet {
-    last_observed: Option<LastObserved>,
+#[derive(Debug, Clone)]
+struct KeyMetadata {
+    version: i32,
+    create_time: u64,
+    hd_key_path: Option<String>,
+    seed_fingerprint: [u8; 32],
+}
+
+struct KeyStore {
     payment_addresses: BTreeMap<IncomingViewingKey, Vec<Address>>,
     incoming_viewing_keys: BTreeMap<IncomingViewingKey, FullViewingKey>,
+    spending_keys: BTreeMap<FullViewingKey, SpendingKey>,
+}
+
+impl KeyStore {
+    pub fn empty() -> Self {
+        KeyStore {
+            payment_addresses: BTreeMap::new(),
+            incoming_viewing_keys: BTreeMap::new(),
+            spending_keys: BTreeMap::new(),
+        }
+    }
+
+    pub fn add_full_viewing_key(&mut self, fvk: &FullViewingKey) {
+        let ivk = IncomingViewingKey::from(fvk);
+
+        self.incoming_viewing_keys.insert(ivk, fvk.clone());
+    }
+
+    pub fn add_spending_key(&mut self, sk: &SpendingKey) {
+        let fvk = FullViewingKey::from(sk);
+
+        self.add_full_viewing_key(&fvk);
+        self.spending_keys.insert(fvk, sk.clone());
+    }
+
+    pub fn append_payment_address(&mut self, ivk: &IncomingViewingKey, addr: &Address) {
+        // TODO: avoid duplicate addresses?
+        self.payment_addresses
+            .entry(ivk.clone())
+            .or_insert(vec![])
+            .push(*addr);
+    }
+}
+
+pub struct Wallet {
+    last_observed: Option<LastObserved>,
+    key_store: KeyStore,
     witness_tree: BridgeTree<MerkleHashOrchard, MERKLE_DEPTH>,
     wallet_txs: HashMap<TxId, WalletTx>,
 }
@@ -60,9 +104,8 @@ pub enum WalletError {
 impl Wallet {
     pub fn empty() -> Self {
         Wallet {
+            key_store: KeyStore::empty(),
             last_observed: None,
-            payment_addresses: BTreeMap::new(),
-            incoming_viewing_keys: BTreeMap::new(),
             witness_tree: BridgeTree::new(MAX_CHECKPOINTS),
             wallet_txs: HashMap::new(),
         }
@@ -90,6 +133,7 @@ impl Wallet {
         };
 
         let keys = self
+            .key_store
             .incoming_viewing_keys
             .keys()
             .cloned()
@@ -104,11 +148,7 @@ impl Wallet {
                 memo,
             };
             wallet_tx.decrypted_notes.insert(action_idx, note_data);
-            // TODO: avoid duplicates?
-            self.payment_addresses
-                .entry(ivk.clone())
-                .or_insert(vec![])
-                .push(recipient);
+            self.key_store.append_payment_address(&ivk, &recipient);
         }
 
         if !wallet_tx.decrypted_notes.is_empty() {
@@ -243,6 +283,25 @@ pub extern "C" fn orchard_wallet_append_bundle_commitments(
         }
         None => true,
     }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_add_spending_key(wallet: *mut Wallet, sk: *const SpendingKey) {
+    let wallet = unsafe { &mut *wallet };
+    let sk = unsafe { &*sk };
+
+    wallet.key_store.add_spending_key(sk);
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_add_full_viewing_key(
+    wallet: *mut Wallet,
+    fvk: *const FullViewingKey,
+) {
+    let wallet = unsafe { &mut *wallet };
+    let fvk = unsafe { &*fvk };
+
+    wallet.key_store.add_full_viewing_key(fvk);
 }
 
 #[no_mangle]
