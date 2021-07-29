@@ -3240,7 +3240,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
         if (!orchard_tree.AppendBundle(tx.GetOrchardBundle())) {
             return state.DoS(100,
-                error("ConnectBlock(): the Orchard commitment tree is full."),
+                error("ConnectBlock(): block would overfill the Orchard commitment tree."),
                 REJECT_INVALID, "orchard-commitment-tree-full");
         };
 
