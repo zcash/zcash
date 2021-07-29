@@ -21,6 +21,7 @@
 #include "validationinterface.h"
 #include "script/ismine.h"
 #include "wallet/crypter.h"
+#include "wallet/orchard.h"
 #include "wallet/walletdb.h"
 #include "wallet/rpcwallet.h"
 #include "zcash/Address.hpp"
@@ -320,25 +321,25 @@ public:
 // OrchardNoteData that keeps track of how we decrypted an Orchard decrypted note.
 // It stores just the IVK and the (cached) nullifier; witness data
 // will be stored on the global tree.
-class OrchardNoteData
-{
-private:
-    libzcash::OrchardIncomingViewingKey ivk;
-    uint256 nullifier;
-public:
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
-        int nVersion = s.GetVersion();
-        if (!(s.GetType() & SER_GETHASH)) {
-            READWRITE(nVersion);
-        }
-
-        READWRITE(ivk);
-        READWRITE(nullifier);
-    }
-};
+// class OrchardNoteData
+// {
+// private:
+//     libzcash::OrchardIncomingViewingKey ivk;
+//     uint256 nullifier;
+// public:
+//     ADD_SERIALIZE_METHODS;
+//
+//     template <typename Stream, typename Operation>
+//     inline void SerializationOp(Stream& s, Operation ser_action) {
+//         int nVersion = s.GetVersion();
+//         if (!(s.GetType() & SER_GETHASH)) {
+//             READWRITE(nVersion);
+//         }
+//
+//         READWRITE(ivk);
+//         READWRITE(nullifier);
+//     }
+// };
 
 typedef std::map<JSOutPoint, SproutNoteData> mapSproutNoteData_t;
 typedef std::map<SaplingOutPoint, SaplingNoteData> mapSaplingNoteData_t;
@@ -459,6 +460,10 @@ public:
     mapValue_t mapValue;
     mapSproutNoteData_t mapSproutNoteData;
     mapSaplingNoteData_t mapSaplingNoteData;
+    // ORCHARD note data is not stored with the CMerkleTx directly, but is
+    // accessible via pwallet->orchardWallet. Here we just store the indices
+    // of the actions that belong to this wallet.
+    std::vector<size_t> vOrchardActionIndices;
     std::vector<std::pair<std::string, std::string> > vOrderForm;
     unsigned int fTimeReceivedIsTxTime;
     unsigned int nTimeReceived; //!< time received by this node
@@ -569,6 +574,12 @@ public:
 
         if (fOverwintered && nVersion >= SAPLING_TX_VERSION) {
             READWRITE(mapSaplingNoteData);
+        }
+
+        if (fOverwintered && nVersion >= ZIP225_TX_VERSION) {
+            // TODO: serialize/deserialize orchard bits using a pointer
+            // to the Orchard wallet & the txid as referents
+
         }
 
         if (ser_action.ForRead())
@@ -832,11 +843,10 @@ protected:
     /* the hd chain data model (chain counters) */
     CHDChain hdChain;
 
-    /* The Orchard note commitment tree. Unlike with Sprout and Sapling,
-     * a single note commitment tree is shared across all transactions
-     * and is used to track all notes known by the wallet.
+    /* The Orchard subset of wallet data. As many operations as possible are
+     * delegated to the Orchard wallet.
      */
-    OrchardWitnessTree orchardTree;
+    OrchardWallet orchardWallet;
 
 public:
     /*
@@ -1114,6 +1124,7 @@ public:
     //! Adds an encrypted spending key to the store, without saving it to disk (used by LoadWallet)
     bool LoadCryptedSaplingZKey(const libzcash::SaplingExtendedFullViewingKey &extfvk,
                                 const std::vector<unsigned char> &vchCryptedSecret);
+
 
     /**
      * Increment the next transaction order id

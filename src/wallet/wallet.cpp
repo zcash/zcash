@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2014-2021 The Zcash Developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -723,6 +724,7 @@ std::set<std::pair<libzcash::RawAddress, uint256>> CWallet::GetNullifiersForAddr
             }
         }
     }
+
     return nullifierSet;
 }
 
@@ -1197,7 +1199,8 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
        ::CopyPreviousWitnesses(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize);
     }
 
-    // TODO ORCHARD: Add a checkpoint before we add information from the new block
+    // ORCHARD: Add a checkpoint before we add information from the new block
+    orchardWallet.CheckpointNoteCommitmentTree();
 
     if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
         nWitnessCacheSize += 1;
@@ -1210,6 +1213,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
         pblock = &block;
     }
 
+    auto txidx = 0;
     for (const CTransaction& tx : pblock->vtx) {
         auto hash = tx.GetHash();
         bool txIsOurs = mapWallet.count(hash);
@@ -1248,7 +1252,11 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                 ::WitnessNoteIfMine(mapWallet[hash].mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize, outPoint, saplingTree.witness());
             }
         }
-        // TODO: Orchard
+
+        // ORCHARD: Update the Orchard note commitment tree and perform trial decryption,
+        // capturing the data necessary to witness the notes that are ours.
+        orchardWallet.AppendNoteCommitments(pindex->nHeight, txidx, tx);
+        txidx += 1;
     }
 
     // Update witness heights
@@ -1302,6 +1310,7 @@ void DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t n
     }
 
     // TODO ORCHARD: rewind to the last checkpoint
+
 }
 
 void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
@@ -1792,20 +1801,31 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 {
     {
         AssertLockHeld(cs_wallet);
+
+        // Check whether the transaction is already known by the wallet.
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
+
+        // Sprout
         auto sproutNoteData = FindMySproutNotes(tx);
+
+        // Sapling
         auto saplingNoteDataAndAddressesToAdd = FindMySaplingNotes(tx, nHeight);
         auto saplingNoteData = saplingNoteDataAndAddressesToAdd.first;
-        auto addressesToAdd = saplingNoteDataAndAddressesToAdd.second;
-        for (const auto &addressToAdd : addressesToAdd) {
+        auto saplingAddressesToAdd = saplingNoteDataAndAddressesToAdd.second;
+        for (const auto &addressToAdd : saplingAddressesToAdd) {
+            // Add mapping between address and IVK for easy future lookup.
             if (!AddSaplingIncomingViewingKey(addressToAdd.second, addressToAdd.first)) {
                 return false;
             }
         }
-        if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
+
+        // Orchard
+        auto myOrchardActions = orchardWallet.AddNotes(tx);
+
+        if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0 || orchardWallet.IsMine(tx.GetHash()))
         {
-            CWalletTx wtx(this,tx);
+            CWalletTx wtx(this, tx);
 
             if (sproutNoteData.size() > 0) {
                 wtx.SetSproutNoteData(sproutNoteData);
@@ -1819,8 +1839,9 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
             if (pblock)
                 wtx.SetMerkleBranch(*pblock);
 
-            // Do not flush the wallet here for performance reasons
-            // this is safe, as in case of a crash, we rescan the necessary blocks on startup through our SetBestChain-mechanism
+            // Do not flush the wallet here for performance reasons; this is
+            // safe, as in case of a crash, we rescan the necessary blocks on
+            // startup through our SetBestChain-mechanism
             CWalletDB walletdb(strWalletFile, "r+", false);
 
             return AddToWallet(wtx, false, &walletdb);
@@ -3836,7 +3857,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                         vin.scriptSig = CScript();
                 }
 
-                // Embed the constructed transaction data in wtxNew.
+                // Embed the constructed transaction data in wtxNew,
+                // throw up in mouth.
                 *static_cast<CTransaction*>(&wtxNew) = CTransaction(txNew);
 
                 // Limit size

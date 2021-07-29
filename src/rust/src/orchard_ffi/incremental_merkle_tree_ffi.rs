@@ -1,6 +1,6 @@
 use incrementalmerkletree::{
     bridgetree::{self, BridgeTree},
-    Altitude, Frontier, Hashable, Tree,
+    Altitude, Frontier, Hashable,
 };
 use std::mem::size_of_val;
 use std::ptr;
@@ -216,52 +216,7 @@ pub extern "C" fn orchard_witness_tree_serialize(
 }
 
 #[no_mangle]
-pub extern "C" fn orchard_witness_tree_append_bundle(
-    tree: *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
-    bundle: *const orchard::Bundle<Authorized, Amount>,
-) -> bool {
-    let tree = unsafe {
-        tree.as_mut()
-            .expect("Orchard note commitment tree pointer may not be null.")
-    };
-    if let Some(bundle) = unsafe { bundle.as_ref() } {
-        for action in bundle.actions().iter() {
-            if !tree.append(&MerkleCrhOrchardOutput::from_cmx(action.cmx())) {
-                error!("Orchard note commitment tree is full.");
-                return false;
-            }
-        }
-    }
-
-    true
-}
-
-#[no_mangle]
-pub extern "C" fn orchard_witness_tree_checkpoint(
-    tree: *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
-) {
-    let tree = unsafe {
-        tree.as_mut()
-            .expect("Orchard note commitment tree pointer may not be null.")
-    };
-
-    tree.checkpoint()
-}
-
-#[no_mangle]
-pub extern "C" fn orchard_witness_tree_rewind(
-    tree: *mut BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
-) -> bool {
-    let tree = unsafe {
-        tree.as_mut()
-            .expect("Orchard note commitment tree pointer may not be null.")
-    };
-
-    tree.rewind()
-}
-
-#[no_mangle]
-pub extern "C" fn orchard_witness_tree_root(
+pub extern "C" fn orchard_merkle_tree_root(
     tree: *const BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
     root_ret: *mut [u8; 32],
 ) {
@@ -280,7 +235,7 @@ pub extern "C" fn orchard_witness_tree_root(
 }
 
 #[no_mangle]
-pub extern "C" fn orchard_witness_tree_empty_root(root_ret: *mut [u8; 32]) {
+pub extern "C" fn orchard_merkle_tree_empty_root(root_ret: *mut [u8; 32]) {
     let root_ret = unsafe {
         root_ret
             .as_mut()

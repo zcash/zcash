@@ -18,8 +18,9 @@ use zcash_primitives::transaction::{
 
 use crate::streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
 
-mod incremental_merkle_tree_ffi;
-mod keys;
+pub mod incremental_merkle_tree_ffi;
+pub mod keys;
+pub mod wallet;
 
 #[no_mangle]
 pub extern "C" fn orchard_bundle_clone(
@@ -182,6 +183,11 @@ pub extern "C" fn orchard_bundle_anchor(
         false
     }
 }
+
+//#[no_mangle]
+//pub extern "C" fn orchard_bundle_trial_decrypt(
+//    bundle: *const Bundle<Authorized, Amount>,
+//    viewing_keys:
 
 /// A signature within an authorized Orchard bundle.
 #[derive(Debug)]

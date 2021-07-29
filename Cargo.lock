@@ -1169,7 +1169,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orchard"
 version = "0.0.0"
-source = "git+https://github.com/nuttycom/orchard.git?rev=77be35591255de9e86bdfb8e2dcc5af739e4fd52#77be35591255de9e86bdfb8e2dcc5af739e4fd52"
+source = "git+https://github.com/nuttycom/orchard.git?rev=071a913d567fe169a02b6a057306e9ab4324f66b#071a913d567fe169a02b6a057306e9ab4324f66b"
 dependencies = [
  "aes 0.6.0",
  "arrayvec 0.7.1",

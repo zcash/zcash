@@ -323,7 +323,7 @@ public:
 
     static uint256 empty_root() {
         uint256 value;
-        orchard_witness_tree_empty_root(value.begin());
+        orchard_merkle_tree_empty_root(value.begin());
         return value;
     }
 };
@@ -379,16 +379,6 @@ public:
 
 //    size_t DynamicMemoryUsage() const {
 //        return orchard_witness_tree_dynamic_mem_usage(inner.get());
-//    }
-
-    bool AppendBundle(const OrchardBundle& bundle) {
-       return orchard_witness_tree_append_bundle(inner.get(), bundle.inner.get());
-    }
-
-//    const uint256 root() const {
-//        uint256 value;
-//        orchard_witness_tree_root(inner.get(), value.begin());
-//        return value;
 //    }
 };
 

@@ -113,34 +113,8 @@ bool orchard_witness_tree_serialize(
         void* stream,
         write_callback_t write_cb);
 
-// For each action in the provided bundle, append its
-// commitment to the incremental Merkle tree.
-//
-// Returns `true` if the append succeeds, `false` if the
-// tree is full.
-bool orchard_witness_tree_append_bundle(
-        OrchardWitnessTreePtr* tree_ptr,
-        const OrchardBundlePtr* bundle);
-
-// Save the current state of the incremental merkle tree
-// as a point to which the tree can be rewound.
-void orchard_witness_tree_checkpoint(
-        OrchardWitnessTreePtr* tree_ptr);
-
-// Rewind the incremental merkle tree to the latest checkpoint.
-//
-// Returns `true` if the rewind succeeds, `false` if the attempted
-// rewind would require the destruction of witness data.
-bool orchard_witness_tree_rewind(
-        OrchardWitnessTreePtr* tree_ptr);
-
-// Computes the root of the provided incremental Merkle tree.
-void orchard_witness_tree_root(
-        const OrchardWitnessTreePtr* tree_ptr,
-        unsigned char* digest_ret);
-
 // Computes the empty leaf value for the incremental Merkle tree.
-void orchard_witness_tree_empty_root(
+void orchard_merkle_tree_empty_root(
         unsigned char* digest_ret);
 
 #ifdef __cplusplus

@@ -230,7 +230,7 @@ public:
             mi++;
         }
     }
-    //! Sapling 
+    //! Sapling
     virtual bool AddCryptedSaplingSpendingKey(
         const libzcash::SaplingExtendedFullViewingKey &extfvk,
         const std::vector<unsigned char> &vchCryptedSecret);
@@ -250,7 +250,6 @@ public:
     bool GetSaplingSpendingKey(
         const libzcash::SaplingExtendedFullViewingKey &extfvk,
         libzcash::SaplingExtendedSpendingKey &skOut) const;
-
 
     /**
      * Wallet status (encrypted, locked) changed.

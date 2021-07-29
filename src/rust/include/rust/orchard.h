@@ -16,6 +16,10 @@ extern "C" {
 struct OrchardBundlePtr;
 typedef struct OrchardBundlePtr OrchardBundlePtr;
 
+/// Pointer to an vector of Orchard action indices within a bundle.
+struct OrchardActionsIdxPtr;
+typedef struct OrchardActionsIdxPtr OrchardActionsIdxPtr;
+
 struct OrchardBatchValidatorPtr;
 typedef struct OrchardBatchValidatorPtr OrchardBatchValidatorPtr;
 
@@ -183,6 +187,7 @@ public:
         return orchard_batch_validate(inner.get());
     }
 };
+
 } // namespace orchard
 #endif
 
