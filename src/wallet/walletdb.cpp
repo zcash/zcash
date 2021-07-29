@@ -159,7 +159,9 @@ bool CWalletDB::WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey)
     return Write(std::make_pair(std::string("mkey"), nID), kMasterKey, true);
 }
 
-bool CWalletDB::WriteZKey(const libzcash::SproutPaymentAddress& addr, const libzcash::SproutSpendingKey& key, const CKeyMetadata &keyMeta)
+bool CWalletDB::WriteZKey(const libzcash::SproutPaymentAddress& addr,
+                const libzcash::SproutSpendingKey& key,
+                const CKeyMetadata &keyMeta)
 {
     nWalletDBUpdateCounter++;
 
@@ -215,6 +217,36 @@ bool CWalletDB::EraseSaplingExtendedFullViewingKey(
     nWalletDBUpdateCounter++;
     return Erase(std::make_pair(std::string("sapextfvk"), extfvk));
 }
+
+//
+// Orchard key serialization
+//
+
+bool CWalletDB::WriteOrchardZKey(const libzcash::OrchardIncomingViewingKey &ivk,
+                const libzcash::OrchardSpendingKey &key,
+                const CKeyMetadata &keyMeta)
+{
+    nWalletDBUpdateCounter++;
+
+    if (!Write(std::make_pair(std::string("orczkeymeta"), ivk), keyMeta))
+        return false;
+
+    return Write(std::make_pair(std::string("orczkey"), ivk), key, false);
+}
+bool CWalletDB::WriteOrchardFullViewingKey(
+    const libzcash::OrchardFullViewingKey &fvk)
+{
+    nWalletDBUpdateCounter++;
+    return Write(std::make_pair(std::string("orcfvk"), fvk), '1');
+}
+bool CWalletDB::EraseOrchardFullViewingKey(
+    const libzcash::OrchardFullViewingKey &fvk)
+{
+    nWalletDBUpdateCounter++;
+    return Erase(std::make_pair(std::string("orcfvk"), fvk));
+}
+
+///
 
 bool CWalletDB::WriteCScript(const uint160& hash, const CScript& redeemScript)
 {

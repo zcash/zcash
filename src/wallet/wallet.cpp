@@ -217,6 +217,44 @@ bool CWallet::AddSaplingIncomingViewingKey(
     return true;
 }
 
+// Add spending key to keystore
+bool CWallet::AddOrchardZKey(const libzcash::OrchardSpendingKey &sk)
+{
+    AssertLockHeld(cs_wallet);
+
+    if (IsCrypted()) {
+        return false;
+    } else {
+        orchardWallet.AddSpendingKey(sk);
+
+        if (fFileBacked) {
+            auto ivk = sk.GetIncomingViewingKey();
+            return CWalletDB(strWalletFile).WriteOrchardZKey(ivk, sk, mapOrchardZKeyMetadata[ivk]);
+        } else {
+            return true;
+        }
+    }
+}
+
+bool CWallet::AddOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk)
+{
+    AssertLockHeld(cs_wallet);
+    orchardWallet.AddFullViewingKey(fvk);
+
+    if (fFileBacked) {
+        return CWalletDB(strWalletFile).WriteOrchardFullViewingKey(fvk);
+    } else {
+        return true;
+    }
+}
+
+// Add payment address -> incoming viewing key map entry
+// bool CWallet::AddOrchardIncomingViewingKey(
+//     const libzcash::OrchardIncomingViewingKey &ivk,
+//     const libzcash::OrchardPaymentAddress &addr)
+// {
+// }
+
 
 // Add spending key to keystore and persist to disk
 bool CWallet::AddSproutZKey(const libzcash::SproutSpendingKey &key)
@@ -418,6 +456,33 @@ bool CWallet::LoadSaplingPaymentAddress(
 {
     return CCryptoKeyStore::AddSaplingIncomingViewingKey(ivk, addr);
 }
+
+void CWallet::LoadOrchardZKeyMetadata(const libzcash::OrchardIncomingViewingKey &ivk, const CKeyMetadata &meta)
+{
+    AssertLockHeld(cs_wallet);
+    mapOrchardZKeyMetadata[ivk] = meta;
+}
+
+bool CWallet::LoadOrchardZKey(const libzcash::OrchardSpendingKey &key)
+{
+    AssertLockHeld(cs_wallet);
+    // Add only to the in-memory wallet during load
+    return orchardWallet.AddSpendingKey(key);
+}
+
+bool CWallet::LoadOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk)
+{
+    AssertLockHeld(cs_wallet);
+    // Add only to the in-memory wallet during load
+    return orchardWallet.AddFullViewingKey(fvk);
+}
+
+//bool CWallet::LoadOrchardPaymentAddress(
+//    const libzcash::OrchardPaymentAddress &addr,
+//    const libzcash::OrchardIncomingViewingKey &ivk)
+//{
+//    return orchardWallet.AddIncomingViewingKey(ivk, addr);
+//}
 
 bool CWallet::LoadZKey(const libzcash::SproutSpendingKey &key)
 {
@@ -5409,6 +5474,43 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
         }
     }
 }
+
+//KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::OrchardSpendingKey &sk) const {
+//    //auto fvk = sk.ToXFVK();
+//    //auto ivk = extfvk.fvk.in_viewing_key();
+//    KeyIO keyIO(Params());
+//    {
+//        if (log){
+//            LogPrint("zrpc", "Importing ozaddr %s...\n", keyIO.EncodePaymentAddress(sk.DefaultAddress()));
+//        }
+//        // Don't throw error in case a key is already there
+//        if (m_wallet->HaveOrchardSpendingKey(extfvk)) {
+//            return KeyAlreadyExists;
+//        } else {
+//            if (!m_wallet-> AddOrchardZKey(sk)) {
+//                return KeyNotAdded;
+//            }
+//
+//            // Orchard addresses can't have been used in transactions prior to activation.
+//            if (params.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight == Consensus::NetworkUpgrade::ALWAYS_ACTIVE) {
+//                m_wallet->mapOrchardZKeyMetadata[ivk].nCreateTime = nTime;
+//            } else {
+//                // 154051200 seconds from epoch is Friday, 26 October 2018 00:00:00 GMT - definitely before Orchard activates
+//                m_wallet->mapOrchardZKeyMetadata[ivk].nCreateTime = std::max((int64_t) 154051200, nTime);
+//            }
+//            if (hdKeypath) {
+//                m_wallet->mapOrchardZKeyMetadata[ivk].hdKeypath = hdKeypath.value();
+//            }
+//            if (seedFpStr) {
+//                uint256 seedFp;
+//                seedFp.SetHex(seedFpStr.value());
+//                m_wallet->mapOrchardZKeyMetadata[ivk].seedFp = seedFp;
+//            }
+//            return KeyAdded;
+//        }
+//    }
+//}
+
 
 KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::InvalidEncoding& no) const {
     throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");

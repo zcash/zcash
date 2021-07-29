@@ -127,13 +127,13 @@ pub extern "C" fn orchard_merkle_frontier_root(
 #[no_mangle]
 pub extern "C" fn orchard_merkle_frontier_num_leaves(
     tree: *const bridgetree::Frontier<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
-) -> usize {
+) -> u64 {
     let tree = unsafe {
         tree.as_ref()
             .expect("Orchard note commitment tree pointer may not be null.")
     };
 
-    tree.position().map_or(0, |p| (<u64>::from(p) + 1) as usize)
+    tree.position().map_or(0, |p| <u64>::from(p) + 1)
 }
 
 #[no_mangle]

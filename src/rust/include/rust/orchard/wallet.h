@@ -5,6 +5,8 @@
 #ifndef ZCASH_RUST_INCLUDE_RUST_ORCHARD_WALLET_H
 #define ZCASH_RUST_INCLUDE_RUST_ORCHARD_WALLET_H
 
+#include "rust/orchard/keys.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -75,6 +77,14 @@ bool orchard_wallet_append_bundle_commitments(
 bool orchard_wallet_tx_is_mine(
         const OrchardWalletPtr* wallet,
         const unsigned char* txid);
+
+void orchard_wallet_add_spending_key(
+        const OrchardWalletPtr* wallet,
+        const OrchardSpendingKeyPtr* sk);
+
+void orchard_wallet_add_full_viewing_key(
+        const OrchardWalletPtr* wallet,
+        const OrchardFullViewingKeyPtr* fvk);
 
 /**
  * A type-safe pointer type for per-transaction data stored by the Orchard wallet.

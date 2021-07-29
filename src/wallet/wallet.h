@@ -836,6 +836,8 @@ private:
     void SyncMetaData(std::pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator>);
     void ChainTipAdded(const CBlockIndex *pindex, const CBlock *pblock, SproutMerkleTree sproutTree, SaplingMerkleTree saplingTree);
 
+    std::map<libzcash::OrchardIncomingViewingKey, CKeyMetadata> mapOrchardZKeyMetadata;
+
 protected:
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);
     void MarkAffectedTransactionsDirty(const CTransaction& tx);
@@ -1124,6 +1126,19 @@ public:
     //! Adds an encrypted spending key to the store, without saving it to disk (used by LoadWallet)
     bool LoadCryptedSaplingZKey(const libzcash::SaplingExtendedFullViewingKey &extfvk,
                                 const std::vector<unsigned char> &vchCryptedSecret);
+
+    /**
+     * Orchard Keys
+     */
+    bool AddOrchardZKey(const libzcash::OrchardSpendingKey &sk);
+    bool AddOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk);
+
+    void LoadOrchardZKeyMetadata(const libzcash::OrchardIncomingViewingKey &ivk, const CKeyMetadata &meta);
+    bool LoadOrchardZKey(const libzcash::OrchardSpendingKey &key);
+    bool LoadOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk);
+    //bool LoadOrchardPaymentAddress(
+    //    const libzcash::OrchardPaymentAddress &addr,
+    //    const libzcash::OrchardIncomingViewingKey &ivk);
 
 
     /**
