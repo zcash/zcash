@@ -1961,24 +1961,14 @@ UniValue PricesRekt(int64_t txfee, uint256 bettxid, int32_t rektheight)
         for (int i = 0; i<1000000; i++, nonce++)
         {
             CMutableTransaction tmpmtx = mtx;
-            //int32_t len;
-            //uint8_t txbuf[32768];
 
             rawtx = FinalizeCCTx(0, cp, tmpmtx, mypk, txfee, prices_finalopret(true, bettxid, mypk, betinfo.lastheight, betinfo.averageCostbasis, betinfo.lastprice, betinfo.liquidationprice, betinfo.equity, myfee, nonce));
-            //if ((len = (int32_t)rawtx.size()) > 0 && len < sizeof(txbuf) / sizeof(txbuf[0]) * 2)
-            //{
-            //    len >>= 1;  // sizeof hex divide by 2
-                //decode_hex(txbuf, len, (char *)rawtx.c_str());
-                //bits256 hash = bits256_doublesha256(0, txbuf, len);
-                uint256 hash = tmpmtx.GetHash();
-                //if ((hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0)
-                if ((hash.begin()[0] & 0xff) == 0 && (hash.begin()[31] & 0xff) == 0)
-                {
-                    fprintf(stderr, "found valid txid after %d iterations %u\n", i, (uint32_t)time(NULL));
-                    return(prices_rawtxresult(result, rawtx, 0));
-                }
-                //fprintf(stderr,"%02x%02x ",hash.bytes[0],hash.bytes[31]);
-            //}
+            uint256 hash = tmpmtx.GetHash();
+            if ((hash.begin()[0] & 0xff) == 0 && (hash.begin()[31] & 0xff) == 0)
+            {
+                fprintf(stderr, "found valid txid after %d iterations %u\n", i, (uint32_t)time(NULL));
+                return(prices_rawtxresult(result, rawtx, 0));
+            }
         }
         fprintf(stderr, "couldnt generate valid txid %u\n", (uint32_t)time(NULL));
 

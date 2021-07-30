@@ -12,7 +12,7 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
-
+#include "hex.h"
 #include "CCfaucet.h"
 #include "../txmempool.h"
 
@@ -202,7 +202,7 @@ UniValue FaucetGet(const CPubKey& pk, uint64_t txfee)
             if ( (len= (int32_t)result[JSON_HEXTX].getValStr().size()) > 0 && len < 65536 )
             {
                 len >>= 1;
-                decode_hex(buf,len,(char *)result[JSON_HEXTX].getValStr().c_str());
+                decode_hex(buf,len,result[JSON_HEXTX].getValStr().c_str());
                 hash = bits256_doublesha256(0,buf,len);
                 if ( (hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0 )
                 {

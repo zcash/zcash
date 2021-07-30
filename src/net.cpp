@@ -467,12 +467,7 @@ void CNode::PushVersion()
         LogPrint("net", "send version message: version %d, blocks=%d, us=%s, peer=%d\n", PROTOCOL_VERSION, nBestHeight, addrMe.ToString(), id);
     PushMessage("version", PROTOCOL_VERSION, nLocalServices, nTime, addrYou, addrMe,
                 nLocalHostNonce, strSubVersion, nBestHeight, true);
-//fprintf(stderr,"KOMODO_NSPV.%d PUSH services.%llx\n",KOMODO_NSPV,(long long)nLocalServices);
 }
-
-
-
-
 
 std::map<CSubNet, int64_t> CNode::setBanned;
 CCriticalSection CNode::cs_setBanned;

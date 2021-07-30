@@ -12,7 +12,7 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
-
+#include "hex.h"
 #include "key_io.h"
 #include "CCinclude.h"
 #include "CCassets.h"

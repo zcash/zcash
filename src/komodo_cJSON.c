@@ -28,6 +28,7 @@
 #include "cJSON.h"
 #include "komodo_cJSON.h"
 #include "cJSON.c"
+#include "hex.h"
 
 #ifndef DBL_EPSILON
 #define DBL_EPSILON 2.2204460492503131E-16

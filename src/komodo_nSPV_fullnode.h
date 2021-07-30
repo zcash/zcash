@@ -729,7 +729,7 @@ uint8_t *NSPV_getrawtx(CTransaction &tx,uint256 &hashBlock,int32_t *txlenp,uint2
         if ( *txlenp > 0 )
         {
             rawtx = (uint8_t *)calloc(1,*txlenp);
-            decode_hex(rawtx,*txlenp,(char *)strHex.c_str());
+            decode_hex(rawtx,*txlenp,strHex.c_str());
         }
     }
     return(rawtx);

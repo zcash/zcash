@@ -26,6 +26,7 @@
 #include "chain.h"
 #include "core_io.h"
 #include "crosschain.h"
+#include "hex.h"
 
 #define FAUCET2SIZE COIN
 #define EVAL_FAUCET2 EVAL_FIRSTUSER
@@ -612,7 +613,7 @@ std::string CClib_rawtxgen(struct CCcontract_info *cp,uint8_t funcid,cJSON *para
             if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
             {
                 len >>= 1;
-                decode_hex(buf,len,(char *)rawhex.c_str());
+                decode_hex(buf,len,rawhex.c_str());
                 hash = bits256_doublesha256(0,buf,len);
                 if ( (hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0 )
                 {
