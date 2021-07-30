@@ -1093,10 +1093,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (mapArgs.count("-mineraddress")) {
         CTxDestination addr = keyIO.DecodeDestination(mapArgs["-mineraddress"]);
         if (!IsValidDestination(addr)) {
-            // Try a Sapling address
+            // Try a payment address
             auto zaddr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
-            if (!IsValidPaymentAddress(zaddr) ||
-                std::get_if<libzcash::SaplingPaymentAddress>(&zaddr) == nullptr)
+            if (!std::visit(IsValidMinerAddress(), std::visit(ExtractMinerAddress(), zaddr)))
             {
                 return InitError(strprintf(
                     _("Invalid address for -mineraddress=<addr>: '%s' (must be a Sapling or transparent address)"),

@@ -244,6 +244,13 @@ public:
 #endif
         return obj;
     }
+
+    UniValue operator()(const libzcash::UnifiedAddress &uaddr) const {
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("type", "unified");
+        // TODO: More information.
+        return obj;
+    }
 };
 
 UniValue z_validateaddress(const UniValue& params, bool fHelp)

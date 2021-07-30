@@ -1273,9 +1273,9 @@ public:
     void AddPendingSaplingMigrationTx(const CTransaction& tx);
     /** Saves witness caches and best block locator to disk. */
     void SetBestChain(const CBlockLocator& loc);
-    std::set<std::pair<libzcash::PaymentAddress, uint256>> GetNullifiersForAddresses(const std::set<libzcash::PaymentAddress> & addresses);
-    bool IsNoteSproutChange(const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet, const libzcash::PaymentAddress & address, const JSOutPoint & entry);
-    bool IsNoteSaplingChange(const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet, const libzcash::PaymentAddress & address, const SaplingOutPoint & entry);
+    std::set<std::pair<libzcash::RawAddress, uint256>> GetNullifiersForAddresses(const std::set<libzcash::RawAddress> & addresses);
+    bool IsNoteSproutChange(const std::set<std::pair<libzcash::RawAddress, uint256>> & nullifierSet, const libzcash::RawAddress & address, const JSOutPoint & entry);
+    bool IsNoteSaplingChange(const std::set<std::pair<libzcash::RawAddress, uint256>> & nullifierSet, const libzcash::RawAddress & address, const SaplingOutPoint & entry);
 
     DBErrors LoadWallet(bool& fFirstRunRet);
     DBErrors ZapWalletTx(std::vector<CWalletTx>& vWtx);
@@ -1392,7 +1392,7 @@ public:
        if a spending key is required, and if they are locked */
     void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
-                          std::set<libzcash::PaymentAddress>& filterAddresses,
+                          std::set<libzcash::RawAddress>& filterAddresses,
                           int minDepth=1,
                           int maxDepth=INT_MAX,
                           bool ignoreSpent=true,
@@ -1478,6 +1478,7 @@ public:
 
     bool operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     bool operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    bool operator()(const libzcash::UnifiedAddress &uaddr) const;
     bool operator()(const libzcash::InvalidEncoding& no) const;
 };
 
@@ -1490,6 +1491,7 @@ public:
 
     std::optional<libzcash::ViewingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     std::optional<libzcash::ViewingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    std::optional<libzcash::ViewingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
     std::optional<libzcash::ViewingKey> operator()(const libzcash::InvalidEncoding& no) const;
 };
 
@@ -1502,6 +1504,7 @@ public:
 
     bool operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     bool operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    bool operator()(const libzcash::UnifiedAddress &uaddr) const;
     bool operator()(const libzcash::InvalidEncoding& no) const;
 };
 
@@ -1514,6 +1517,7 @@ public:
 
     std::optional<libzcash::SpendingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     std::optional<libzcash::SpendingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    std::optional<libzcash::SpendingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
     std::optional<libzcash::SpendingKey> operator()(const libzcash::InvalidEncoding& no) const;
 };
 

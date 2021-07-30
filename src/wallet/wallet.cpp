@@ -684,10 +684,10 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
     SetBestChainINTERNAL(walletdb, loc);
 }
 
-std::set<std::pair<libzcash::PaymentAddress, uint256>> CWallet::GetNullifiersForAddresses(
-        const std::set<libzcash::PaymentAddress> & addresses)
+std::set<std::pair<libzcash::RawAddress, uint256>> CWallet::GetNullifiersForAddresses(
+        const std::set<libzcash::RawAddress> & addresses)
 {
-    std::set<std::pair<libzcash::PaymentAddress, uint256>> nullifierSet;
+    std::set<std::pair<libzcash::RawAddress, uint256>> nullifierSet;
     // Sapling ivk -> list of addrs map
     // (There may be more than one diversified address for a given ivk.)
     std::map<libzcash::SaplingIncomingViewingKey, std::vector<libzcash::SaplingPaymentAddress>> ivkMap;
@@ -725,8 +725,8 @@ std::set<std::pair<libzcash::PaymentAddress, uint256>> CWallet::GetNullifiersFor
 }
 
 bool CWallet::IsNoteSproutChange(
-        const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet,
-        const PaymentAddress & address,
+        const std::set<std::pair<libzcash::RawAddress, uint256>> & nullifierSet,
+        const libzcash::RawAddress & address,
         const JSOutPoint & jsop)
 {
     // A Note is marked as "change" if the address that received it
@@ -748,8 +748,8 @@ bool CWallet::IsNoteSproutChange(
     return false;
 }
 
-bool CWallet::IsNoteSaplingChange(const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet,
-        const libzcash::PaymentAddress & address,
+bool CWallet::IsNoteSaplingChange(const std::set<std::pair<libzcash::RawAddress, uint256>> & nullifierSet,
+        const libzcash::RawAddress & address,
         const SaplingOutPoint & op)
 {
     // A Note is marked as "change" if the address that received it
@@ -5034,11 +5034,14 @@ void CWallet::GetFilteredNotes(
     bool ignoreSpent,
     bool requireSpendingKey)
 {
-    std::set<PaymentAddress> filterAddresses;
+    std::set<libzcash::RawAddress> filterAddresses;
 
     KeyIO keyIO(Params());
     if (address.length() > 0) {
-        filterAddresses.insert(keyIO.DecodePaymentAddress(address));
+        auto addr = keyIO.DecodePaymentAddress(address);
+        for (const auto ra : std::visit(GetRawAddresses(), addr)) {
+            filterAddresses.insert(ra);
+        }
     }
 
     GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
@@ -5052,7 +5055,7 @@ void CWallet::GetFilteredNotes(
 void CWallet::GetFilteredNotes(
     std::vector<SproutNoteEntry>& sproutEntries,
     std::vector<SaplingNoteEntry>& saplingEntries,
-    std::set<PaymentAddress>& filterAddresses,
+    std::set<libzcash::RawAddress>& filterAddresses,
     int minDepth,
     int maxDepth,
     bool ignoreSpent,
@@ -5198,6 +5201,12 @@ bool PaymentAddressBelongsToWallet::operator()(const libzcash::SaplingPaymentAdd
         m_wallet->HaveSaplingFullViewingKey(ivk);
 }
 
+bool PaymentAddressBelongsToWallet::operator()(const libzcash::UnifiedAddress &uaddr) const
+{
+    // TODO
+    return false;
+}
+
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::InvalidEncoding& no) const
 {
     return false;
@@ -5233,6 +5242,13 @@ std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
 }
 
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
+    const libzcash::UnifiedAddress &uaddr) const
+{
+    // TODO
+    return libzcash::ViewingKey();
+}
+
+std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::InvalidEncoding& no) const
 {
     // Defaults to InvalidEncoding
@@ -5252,6 +5268,12 @@ bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SaplingPayment
     return m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
         m_wallet->GetSaplingFullViewingKey(ivk, extfvk) &&
         m_wallet->HaveSaplingSpendingKey(extfvk);
+}
+
+bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::UnifiedAddress &uaddr) const
+{
+    // TODO
+    return false;
 }
 
 bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::InvalidEncoding& no) const
@@ -5279,6 +5301,13 @@ std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()
     } else {
         return std::nullopt;
     }
+}
+
+std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
+    const libzcash::UnifiedAddress &uaddr) const
+{
+    // TODO
+    return libzcash::SpendingKey();
 }
 
 std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(

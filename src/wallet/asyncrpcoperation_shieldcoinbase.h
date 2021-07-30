@@ -105,6 +105,7 @@ public:
 
     bool operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     bool operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    bool operator()(const libzcash::UnifiedAddress &uaddr) const;
     bool operator()(const libzcash::InvalidEncoding& no) const;
 };
 
