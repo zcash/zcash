@@ -2,6 +2,10 @@
 
 #include <algorithm>
 
+const uint8_t ZCASH_UA_TYPECODE_P2PKH = 0x00;
+const uint8_t ZCASH_UA_TYPECODE_P2SH = 0x01;
+const uint8_t ZCASH_UA_TYPECODE_SAPLING = 0x02;
+
 namespace libzcash {
 
 std::vector<const Receiver*> UnifiedAddress::GetSorted() const {
@@ -68,19 +72,19 @@ bool IsValidSpendingKey(const libzcash::SpendingKey& zkey) {
 uint8_t TypecodeForReceiver::operator()(
     const libzcash::SaplingPaymentAddress &zaddr) const
 {
-    return 0x02;
+    return ZCASH_UA_TYPECODE_SAPLING;
 }
 
 uint8_t TypecodeForReceiver::operator()(
     const libzcash::P2SHAddress &p2sh) const
 {
-    return 0x01;
+    return ZCASH_UA_TYPECODE_P2SH;
 }
 
 uint8_t TypecodeForReceiver::operator()(
     const libzcash::P2PKHAddress &p2sh) const
 {
-    return 0x00;
+    return ZCASH_UA_TYPECODE_P2PKH;
 }
 
 uint8_t TypecodeForReceiver::operator()(
