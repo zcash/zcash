@@ -1487,19 +1487,19 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     size_t max_elements = (1 << 16) - 1;
     if (tx.vShieldedSpend.size() > max_elements) {
         return state.DoS(
-            dosLevelPotentiallyRelaxing,
+            100,
             error("ContextualCheckTransaction(): 2^16 or more Sapling spends"),
             REJECT_INVALID, "bad-tx-too-many-sapling-spends");
     }
     if (tx.vShieldedOutput.size() > max_elements) {
         return state.DoS(
-            dosLevelPotentiallyRelaxing,
+            100,
             error("ContextualCheckTransaction(): 2^16 or more Sapling outputs"),
             REJECT_INVALID, "bad-tx-too-many-sapling-outputs");
     }
     if (orchard_bundle.GetNumActions() > max_elements) {
         return state.DoS(
-            dosLevelPotentiallyRelaxing,
+            100,
             error("ContextualCheckTransaction(): 2^16 or more Orchard actions"),
             REJECT_INVALID, "bad-tx-too-many-orchard-actions");
     }
