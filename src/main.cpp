@@ -1488,19 +1488,19 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     if (tx.vShieldedSpend.size() > max_elements) {
         return state.DoS(
             100,
-            error("ContextualCheckTransaction(): 2^16 or more Sapling spends"),
+            error("CheckTransaction(): 2^16 or more Sapling spends"),
             REJECT_INVALID, "bad-tx-too-many-sapling-spends");
     }
     if (tx.vShieldedOutput.size() > max_elements) {
         return state.DoS(
             100,
-            error("ContextualCheckTransaction(): 2^16 or more Sapling outputs"),
+            error("CheckTransaction(): 2^16 or more Sapling outputs"),
             REJECT_INVALID, "bad-tx-too-many-sapling-outputs");
     }
     if (orchard_bundle.GetNumActions() > max_elements) {
         return state.DoS(
             100,
-            error("ContextualCheckTransaction(): 2^16 or more Orchard actions"),
+            error("CheckTransaction(): 2^16 or more Orchard actions"),
             REJECT_INVALID, "bad-tx-too-many-orchard-actions");
     }
 
@@ -1510,7 +1510,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     if (orchard_bundle.GetNumActions() > 0 && !orchard_bundle.OutputsEnabled() && !orchard_bundle.SpendsEnabled()) {
         return state.DoS(
             100,
-            error("ContextualCheckTransaction(): Orchard actions are present, but flags do not permit Orchard spends or outputs"),
+            error("CheckTransaction(): Orchard actions are present, but flags do not permit Orchard spends or outputs"),
             REJECT_INVALID, "bad-tx-orchard-flags-disable-actions");
     }
 
