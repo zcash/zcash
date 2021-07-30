@@ -70,13 +70,15 @@ static size_t GetReceiverLen(const void* ua, size_t index)
 
 class CopyDataForReceiver {
     unsigned char* data;
+    size_t length;
 
 public:
-    CopyDataForReceiver(unsigned char* data) : data(data) {}
+    CopyDataForReceiver(unsigned char* data, size_t length) : data(data), length(length) {}
 
     void operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << zaddr;
+        assert(length == ss.size());
         memcpy(data, ss.data(), ss.size());
     }
 
@@ -96,10 +98,10 @@ public:
 /**
  * `data` MUST be the correct length for the receiver at this index.
  */
-static void GetReceiver(const void* ua, size_t index, unsigned char* data)
+static void GetReceiver(const void* ua, size_t index, unsigned char* data, size_t length)
 {
     std::visit(
-        CopyDataForReceiver(data),
+        CopyDataForReceiver(data, length),
         reinterpret_cast<const libzcash::UnifiedAddress*>(ua)->GetReceiversAsParsed()[index]);
 }
 

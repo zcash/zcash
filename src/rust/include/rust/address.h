@@ -17,7 +17,7 @@ typedef bool (*unknown_receiver_t)(
     size_t len);
 typedef uint8_t (*get_typecode_t)(const void* ua, size_t index);
 typedef size_t (*get_receiver_len_t)(const void* ua, size_t index);
-typedef void (*get_receiver_t)(const void* ua, size_t index, unsigned char* data);
+typedef void (*get_receiver_t)(const void* ua, size_t index, unsigned char* data, size_t length);
 
 /// Parses a unified address from the given string.
 bool zcash_address_parse_unified(
