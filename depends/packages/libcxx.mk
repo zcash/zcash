@@ -8,10 +8,10 @@ ifneq ($(host_os),mingw32)
 $(package)_download_path=$(native_clang_download_path)
 $(package)_download_file_aarch64_linux=clang+llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
 $(package)_file_name_aarch64_linux=clang-llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
-$(package)_sha256_hash_aarch64_linux=39b3d3e3b534e327d90c77045058e5fc924b1a81d349eac2be6fb80f4a0e40d4
+$(package)_sha256_hash_aarch64_linux=3d4ad804b7c85007686548cbc917ab067bf17eaedeab43d9eb83d3a683d8e9d4
 $(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-16.04.tar.xz
 $(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-16.04.tar.xz
-$(package)_sha256_hash_linux=67f18660231d7dd09dc93502f712613247b7b4395e6f48c11226629b250b53c5
+$(package)_sha256_hash_linux=6b3cc55d3ef413be79785c4dc02828ab3bd6b887872b143e3091692fc6acefe7
 
 define $(package)_stage_cmds
   mkdir -p $($(package)_staging_prefix_dir)/lib && \
@@ -22,13 +22,13 @@ endef
 else
 # For Windows cross-compilation, use the MSYS2 binaries.
 $(package)_download_path=https://repo.msys2.org/mingw/x86_64
-$(package)_download_file=mingw-w64-x86_64-libc++-11.0.0-5-any.pkg.tar.zst
-$(package)_file_name=mingw-w64-x86_64-libcxx-11.0.0-5-any.pkg.tar.zst
-$(package)_sha256_hash=f12d5c51f6bfd9b59148e6ccece8d355b7bd5d4f8ee1fadb96d8d51930af2c6e
+$(package)_download_file=mingw-w64-x86_64-libc++-12.0.1-1-any.pkg.tar.zst
+$(package)_file_name=mingw-w64-x86_64-libcxx-12.0.1-1-any.pkg.tar.zst
+$(package)_sha256_hash=847d86435c35f12b4bc779c91c800a86499ba5c9d419d6ed5e2386c7582c2e81
 
-$(package)_libcxxabi_download_file=mingw-w64-x86_64-libc++abi-11.0.0-5-any.pkg.tar.zst
-$(package)_libcxxabi_file_name=mingw-w64-x86_64-libcxxabi-11.0.0-5-any.pkg.tar.zst
-$(package)_libcxxabi_sha256_hash=ecb590d2d208ab870452f8fa541d0d1aa599bd58e37a891c69fdf75e83ae13a6
+$(package)_libcxxabi_download_file=mingw-w64-x86_64-libc++abi-12.0.1-1-any.pkg.tar.zst
+$(package)_libcxxabi_file_name=mingw-w64-x86_64-libcxxabi-12.0.1-1-any.pkg.tar.zst
+$(package)_libcxxabi_sha256_hash=a60294cb611916f4b9db27b7a6f3d6dc0f75d9006ad6a5bb830427df9b5bc9d2
 
 $(package)_extra_sources += $($(package)_libcxxabi_file_name)
 
