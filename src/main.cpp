@@ -6680,11 +6680,12 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             boost::this_thread::interruption_point();
 
             // Apply rate limiting if the address is not whitelisted
-            if (!pfrom->IsWhitelistedRange(addr)) {
-                if (pfrom->m_addr_token_bucket < 1.0) {
+            if (pfrom->m_addr_token_bucket < 1.0) {
+                if (!pfrom->IsWhitelistedRange(addr)) {
                     ++num_rate_limit;
                     continue;
                 }
+            } else {
                 pfrom->m_addr_token_bucket -= 1.0;
             }
 
