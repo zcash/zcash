@@ -68,10 +68,10 @@ mod metrics_ffi;
 mod streams_ffi;
 mod tracing_ffi;
 
+mod address_ffi;
 mod history_ffi;
 mod orchard_ffi;
 mod transaction_ffi;
-mod address_ffi;
 
 mod test_harness_ffi;
 

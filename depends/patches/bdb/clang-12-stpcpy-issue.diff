@@ -1,0 +1,17 @@
+diff -ur db-6.2.23-orig/src/blob/blob_util.c db-6.2.23/src/blob/blob_util.c
+--- db-6.2.23-orig/src/blob/blob_util.c	2016-03-28 20:45:53.000000000 +0100
++++ db-6.2.23/src/blob/blob_util.c	2021-07-30 19:52:37.082811600 +0100
+@@ -544,7 +544,12 @@
+ 		goto err;
+ 
+ 	memset(path, 0, len);
+-	name_len += sprintf(path, "%s", blob_sub_dir);
++	// Clang 12 introduced an "libcall optimization" that lowers the above
++	// to stpcpy to avoid the machinery involved in parsing format strings.
++	// This causes build problems when cross-compiling to Windows with the
++	// version of mingw-w64 that Zcash supports. We haven't figured out why
++	// but in the meantime using "%s%s" inhibits the optimization.
++	name_len += sprintf(path, "%s%s", blob_sub_dir, "");
+ 
+ 	__blob_calculate_dirs(blob_id, path, &name_len, &depth);
+ 
