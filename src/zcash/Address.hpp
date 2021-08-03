@@ -23,7 +23,7 @@ public:
 };
 
 /** Protocol addresses that can receive funds in a transaction. */
-typedef std::variant<SproutPaymentAddress, SaplingPaymentAddress> RawAddress;
+typedef std::variant<SproutPaymentAddress, SaplingPaymentAddress, OrchardRawAddress> RawAddress;
 
 class InvalidEncoding {
 public:
@@ -95,6 +95,9 @@ private:
     std::vector<const Receiver*> sortedReceivers;
     size_t cur;
 };
+
+/** Select the Orchard addresses from a set of raw addresses. */
+std::vector<OrchardRawAddress> SelectOrchardAddrs(const std::set<RawAddress>& receivers);
 
 class UnifiedAddress {
     std::vector<Receiver> receivers;

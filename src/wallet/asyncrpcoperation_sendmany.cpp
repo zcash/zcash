@@ -938,7 +938,8 @@ bool AsyncRPCOperation_sendmany::load_inputs(TxValues& txValues) {
 bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
-    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, fromaddress_, mindepth_);
+    std::vector<OrchardNoteMetadata> orchardEntries;
+    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, fromaddress_, mindepth_);
 
     // If using the TransactionBuilder, we only want Sapling notes.
     // If not using it, we only want Sprout notes.

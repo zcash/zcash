@@ -1389,18 +1389,20 @@ public:
     uint32_t BIP44CoinType();
 
     /* Find notes filtered by payment address, min depth, ability to spend */
-    void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
-                          std::vector<SaplingNoteEntry>& saplingEntries,
-                          std::string address,
+    void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntriesRet,
+                          std::vector<SaplingNoteEntry>& saplingEntriesRet,
+                          std::vector<OrchardNoteMetadata>& orchardNotesRet,
+                          const std::string address,
                           int minDepth=1,
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true);
 
     /* Find notes filtered by payment addresses, min depth, max depth, if they are spent,
        if a spending key is required, and if they are locked */
-    void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
-                          std::vector<SaplingNoteEntry>& saplingEntries,
-                          std::set<libzcash::RawAddress>& filterAddresses,
+    void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntriesRet,
+                          std::vector<SaplingNoteEntry>& saplingEntriesRet,
+                          std::vector<OrchardNoteMetadata>& orchardNotesRet,
+                          const std::set<libzcash::RawAddress>& filterAddresses,
                           int minDepth=1,
                           int maxDepth=INT_MAX,
                           bool ignoreSpent=true,

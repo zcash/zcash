@@ -26,6 +26,7 @@
 #include "script/sign.h"
 #include "timedata.h"
 #include "utilmoneystr.h"
+#include "zcash/Address.hpp"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "crypter.h"
@@ -5261,9 +5262,10 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
  * These notes are decrypted and added to the output parameter vector, outEntries.
  */
 void CWallet::GetFilteredNotes(
-    std::vector<SproutNoteEntry>& sproutEntries,
-    std::vector<SaplingNoteEntry>& saplingEntries,
-    std::string address,
+    std::vector<SproutNoteEntry>& sproutEntriesRet,
+    std::vector<SaplingNoteEntry>& saplingEntriesRet,
+    std::vector<OrchardNoteMetadata>& orchardNotesRet,
+    const std::string address,
     int minDepth,
     bool ignoreSpent,
     bool requireSpendingKey)
@@ -5278,7 +5280,12 @@ void CWallet::GetFilteredNotes(
         }
     }
 
-    GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
+    GetFilteredNotes(
+            sproutEntriesRet,
+            saplingEntriesRet,
+            orchardNotesRet,
+            filterAddresses,
+            minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
 }
 
 /**
@@ -5287,9 +5294,10 @@ void CWallet::GetFilteredNotes(
  * These notes are decrypted and added to the output parameter vector, outEntries.
  */
 void CWallet::GetFilteredNotes(
-    std::vector<SproutNoteEntry>& sproutEntries,
-    std::vector<SaplingNoteEntry>& saplingEntries,
-    std::set<libzcash::RawAddress>& filterAddresses,
+    std::vector<SproutNoteEntry>& sproutEntriesRet,
+    std::vector<SaplingNoteEntry>& saplingEntriesRet,
+    std::vector<OrchardNoteMetadata>& orchardNotesRet,
+    const std::set<libzcash::RawAddress>& filterAddresses,
     int minDepth,
     int maxDepth,
     bool ignoreSpent,
@@ -5310,7 +5318,7 @@ void CWallet::GetFilteredNotes(
         }
 
         // Filter coinbase transactions that don't have Sapling outputs
-        if (wtx.IsCoinBase() && wtx.mapSaplingNoteData.empty()) {
+        if (wtx.IsCoinBase() && wtx.mapSaplingNoteData.empty() && true/* TODO ORCHARD */) {
             continue;
         }
 
@@ -5362,7 +5370,7 @@ void CWallet::GetFilteredNotes(
                         hSig,
                         (unsigned char) j);
 
-                sproutEntries.push_back(SproutNoteEntry {
+                sproutEntriesRet.push_back(SproutNoteEntry {
                     jsop, pa, plaintext.note(pa), plaintext.memo(), wtx.GetDepthInMainChain() });
 
             } catch (const note_decryption_failed &err) {
@@ -5409,9 +5417,22 @@ void CWallet::GetFilteredNotes(
             }
 
             auto note = notePt.note(nd.ivk).value();
-            saplingEntries.push_back(SaplingNoteEntry {
+            saplingEntriesRet.push_back(SaplingNoteEntry {
                 op, pa, note, notePt.memo(), wtx.GetDepthInMainChain() });
         }
+    }
+
+    auto orchardAddresses = SelectOrchardAddrs(filterAddresses);
+    orchardWallet.GetFilteredNotes(
+            orchardNotesRet,
+            orchardAddresses,
+            ignoreSpent,
+            requireSpendingKey);
+
+    for (auto &orchardNoteMeta : orchardNotesRet) {
+        auto wtx = GetWalletTx(orchardNoteMeta.op.hash);
+        if (wtx)
+            orchardNoteMeta.confirmations = wtx->GetDepthInMainChain();
     }
 }
 

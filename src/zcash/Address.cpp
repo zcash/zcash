@@ -8,6 +8,16 @@ const uint8_t ZCASH_UA_TYPECODE_SAPLING = 0x02;
 
 namespace libzcash {
 
+std::vector<OrchardRawAddress> SelectOrchardAddrs(const std::set<RawAddress>& receivers) {
+    std::vector<OrchardRawAddress> result;
+    for (const RawAddress& rawAddr : receivers) {
+        if (std::holds_alternative<OrchardRawAddress>(rawAddr)) {
+            result.push_back(std::get<OrchardRawAddress>(rawAddr));
+        }
+    }
+    return result;
+}
+
 std::vector<const Receiver*> UnifiedAddress::GetSorted() const {
     std::vector<const libzcash::Receiver*> sorted;
     for (const auto& receiver : receivers) {

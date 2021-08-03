@@ -5,9 +5,21 @@
 #ifndef ZCASH_ORCHARD_WALLET_H
 #define ZCASH_ORCHARD_WALLET_H
 
+#include <array>
+
+#include "primitives/transaction.h"
 #include "rust/orchard/keys.h"
 #include "rust/orchard/wallet.h"
 #include "zcash/address/orchard.hpp"
+
+struct OrchardNoteMetadata
+{
+    OrchardOutPoint op;
+    libzcash::OrchardRawAddress address;
+    CAmount noteValue;
+    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    int confirmations;
+};
 
 class OrchardWallet
 {
@@ -83,6 +95,44 @@ public:
                                const libzcash::OrchardRawAddress& addr) {
         orchard_wallet_add_incoming_viewing_key(inner.get(), ivk.inner.get(), addr.inner.get());
         return true;
+    }
+
+    static void PushOrchardNoteMeta(void* orchardNotesRet, RawOrchardNoteMetadata rawNoteMeta) {
+        uint256 txid;
+        std::move(std::begin(rawNoteMeta.txid), std::end(rawNoteMeta.txid), txid.begin());
+        OrchardOutPoint op(txid, rawNoteMeta.actionIdx);
+        OrchardNoteMetadata noteMeta;
+        noteMeta.op = op;
+        noteMeta.address = libzcash::OrchardRawAddress(rawNoteMeta.addr);
+        noteMeta.noteValue = rawNoteMeta.noteValue;
+        std::move(std::begin(rawNoteMeta.memo), std::end(rawNoteMeta.memo), noteMeta.memo.begin());
+        // TODO: noteMeta.confirmations is only available from the C++ wallet
+
+        reinterpret_cast<std::vector<OrchardNoteMetadata>*>(orchardNotesRet)->push_back(noteMeta);
+    }
+
+    void GetFilteredNotes(
+        std::vector<OrchardNoteMetadata>& orchardNotesRet,
+        const std::vector<libzcash::OrchardRawAddress>& addrs,
+        bool ignoreSpent,
+        bool requireSpendingKey) {
+
+        std::vector<OrchardRawAddressPtr*> addr_ptrs;
+        std::transform(
+                addrs.begin(), addrs.end(), std::back_inserter(addr_ptrs),
+                [](const libzcash::OrchardRawAddress& addr) {
+                    return addr.inner.get();
+                });
+
+        orchard_wallet_get_filtered_notes(
+            inner.get(),
+            addr_ptrs.data(),
+            addr_ptrs.size(),
+            ignoreSpent,
+            requireSpendingKey,
+            &orchardNotesRet,
+            PushOrchardNoteMeta
+            );
     }
 
     // TODO: Serialization
