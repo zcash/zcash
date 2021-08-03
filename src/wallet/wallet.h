@@ -645,15 +645,16 @@ public:
     std::set<uint256> GetConflicts() const;
 };
 
-class AddrSet {
+class NoteFilter {
 private:
     std::set<libzcash::SproutPaymentAddress> sproutAddresses;
     std::set<libzcash::SaplingPaymentAddress> saplingAddresses;
+    std::set<libzcash::OrchardRawAddress> orchardAddresses;
 
-    AddrSet() {}
+    NoteFilter() {}
 public:
-    static AddrSet Empty() { return AddrSet(); }
-    static AddrSet ForPaymentAddresses(const std::vector<libzcash::PaymentAddress>& addrs);
+    static NoteFilter Empty() { return NoteFilter(); }
+    static NoteFilter ForPaymentAddresses(const std::vector<libzcash::PaymentAddress>& addrs);
 
     const std::set<libzcash::SproutPaymentAddress>& GetSproutAddresses() const {
         return sproutAddresses;
@@ -663,8 +664,15 @@ public:
         return saplingAddresses;
     }
 
+    const std::set<libzcash::OrchardRawAddress>& GetOrchardAddresses() const {
+        return orchardAddresses;
+    }
+
     bool IsEmpty() const {
-        return sproutAddresses.empty() && saplingAddresses.empty();
+        return
+            sproutAddresses.empty() &&
+            saplingAddresses.empty() &&
+            orchardAddresses.empty();
     }
 
     bool HasSproutAddress(libzcash::SproutPaymentAddress addr) const {
@@ -673,6 +681,10 @@ public:
 
     bool HasSaplingAddress(libzcash::SaplingPaymentAddress addr) const {
         return saplingAddresses.count(addr) > 0;
+    }
+
+    bool HasOrchardAddress(libzcash::OrchardRawAddress addr) const {
+        return orchardAddresses.count(addr) > 0;
     }
 };
 
@@ -1751,13 +1763,14 @@ public:
      * Check whether the wallet contains spending keys for all the addresses
      * contained in the given address set.
      */
-    bool HasSpendingKeys(const AddrSet& noteFilter) const;
+    bool HasSpendingKeys(const NoteFilter& noteFilter) const;
 
     /* Find notes filtered by payment addresses, min depth, max depth, if they are spent,
        if a spending key is required, and if they are locked */
-    void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
-                          std::vector<SaplingNoteEntry>& saplingEntries,
-                          const std::optional<AddrSet>& noteFilter,
+    void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntriesRet,
+                          std::vector<SaplingNoteEntry>& saplingEntriesRet,
+                          std::vector<OrchardNoteMetadata>& orchardNotesRet,
+                          const std::optional<NoteFilter>& noteFilter,
                           int minDepth=1,
                           int maxDepth=INT_MAX,
                           bool ignoreSpent=true,

@@ -5,9 +5,45 @@
 #ifndef ZCASH_WALLET_ORCHARD_H
 #define ZCASH_WALLET_ORCHARD_H
 
+#include <array>
+
+#include "primitives/transaction.h"
 #include "rust/orchard/keys.h"
 #include "rust/orchard/wallet.h"
 #include "zcash/address/orchard.hpp"
+
+class OrchardNoteMetadata
+{
+private:
+    OrchardOutPoint op;
+    libzcash::OrchardRawAddress address;
+    CAmount noteValue;
+    std::array<uint8_t, ZC_MEMO_SIZE> memo;
+    int confirmations;
+public:
+    OrchardNoteMetadata(
+        OrchardOutPoint op,
+        const libzcash::OrchardRawAddress& address,
+        CAmount noteValue,
+        const std::array<unsigned char, ZC_MEMO_SIZE>& memo):
+        op(op), address(address), noteValue(noteValue), memo(memo), confirmations(0) {}
+
+    const OrchardOutPoint& GetOutPoint() const {
+        return op;
+    }
+
+    void SetConfirmations(int c) {
+        confirmations = c;
+    }
+
+    int GetConfirmations() const {
+        return confirmations;
+    }
+
+    CAmount GetNoteValue() const {
+        return noteValue;
+    }
+};
 
 class OrchardWallet
 {
@@ -85,6 +121,13 @@ public:
         orchard_wallet_add_full_viewing_key(inner.get(), fvk.inner.get());
     }
 
+    std::optional<libzcash::OrchardIncomingViewingKey> GetIncomingViewingKeyForAddress(
+            const libzcash::OrchardRawAddress& addr) const {
+        auto ivkPtr = orchard_wallet_get_ivk_for_address(inner.get(), addr.inner.get());
+        if (ivkPtr == nullptr) return std::nullopt;
+        return libzcash::OrchardIncomingViewingKey(ivkPtr);
+    }
+
     /**
      * Adds an address/IVK pair to the wallet, and returns `true` if the
      * IVK corresponds to a full viewing key known to the wallet, `false`
@@ -94,6 +137,42 @@ public:
             const libzcash::OrchardRawAddress& addr,
             const libzcash::OrchardIncomingViewingKey& ivk) {
         return orchard_wallet_add_raw_address(inner.get(), addr.inner.get(), ivk.inner.get());
+    }
+
+    static void PushOrchardNoteMeta(void* orchardNotesRet, RawOrchardNoteMetadata rawNoteMeta) {
+        uint256 txid;
+        std::move(std::begin(rawNoteMeta.txid), std::end(rawNoteMeta.txid), txid.begin());
+        OrchardOutPoint op(txid, rawNoteMeta.actionIdx);
+        // TODO: what's the efficient way to copy the memo in the OrchardNoteMetadata
+        // constructor?
+        std::array<uint8_t, ZC_MEMO_SIZE> memo;
+        std::move(std::begin(rawNoteMeta.memo), std::end(rawNoteMeta.memo), memo.begin());
+        OrchardNoteMetadata noteMeta(
+                op,
+                libzcash::OrchardRawAddress(rawNoteMeta.addr),
+                rawNoteMeta.noteValue,
+                memo);
+        // TODO: noteMeta.confirmations is only available from the C++ wallet
+
+        reinterpret_cast<std::vector<OrchardNoteMetadata>*>(orchardNotesRet)->push_back(noteMeta);
+    }
+
+    void GetFilteredNotes(
+        std::vector<OrchardNoteMetadata>& orchardNotesRet,
+        const std::optional<libzcash::OrchardIncomingViewingKey>& ivk,
+        bool ignoreSpent,
+        bool ignoreLocked,
+        bool requireSpendingKey) const {
+
+        orchard_wallet_get_filtered_notes(
+            inner.get(),
+            ivk.has_value() ? ivk.value().inner.get() : nullptr,
+            ignoreSpent,
+            ignoreLocked,
+            requireSpendingKey,
+            &orchardNotesRet,
+            PushOrchardNoteMeta
+            );
     }
 };
 

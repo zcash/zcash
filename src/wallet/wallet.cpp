@@ -27,6 +27,7 @@
 #include "timedata.h"
 #include "utilmoneystr.h"
 #include "util/match.h"
+#include "zcash/Address.hpp"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "crypter.h"
@@ -6014,8 +6015,8 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
     return ::AcceptToMemoryPool(Params(), mempool, state, *this, fLimitFree, NULL, fRejectAbsurdFee);
 }
 
-AddrSet AddrSet::ForPaymentAddresses(const std::vector<libzcash::PaymentAddress>& paymentAddrs) {
-    AddrSet addrs;
+NoteFilter NoteFilter::ForPaymentAddresses(const std::vector<libzcash::PaymentAddress>& paymentAddrs) {
+    NoteFilter addrs;
     for (const auto& addr: paymentAddrs) {
         std::visit(match {
             [&](const CKeyID& keyId) { },
@@ -6041,12 +6042,13 @@ AddrSet AddrSet::ForPaymentAddresses(const std::vector<libzcash::PaymentAddress>
     return addrs;
 }
 
-bool CWallet::HasSpendingKeys(const AddrSet& addrSet) const {
+bool CWallet::HasSpendingKeys(const NoteFilter& addrSet) const {
     for (const auto& zaddr : addrSet.GetSproutAddresses()) {
         if (!HaveSproutSpendingKey(zaddr)) {
             return false;
         }
     }
+
     for (const auto& zaddr : addrSet.GetSaplingAddresses()) {
         if (!HaveSaplingSpendingKeyForAddress(zaddr)) {
             return false;
@@ -6068,9 +6070,10 @@ bool CWallet::HasSpendingKeys(const AddrSet& addrSet) const {
  * will be unmodified.
  */
 void CWallet::GetFilteredNotes(
-    std::vector<SproutNoteEntry>& sproutEntries,
-    std::vector<SaplingNoteEntry>& saplingEntries,
-    const std::optional<AddrSet>& noteFilter,
+    std::vector<SproutNoteEntry>& sproutEntriesRet,
+    std::vector<SaplingNoteEntry>& saplingEntriesRet,
+    std::vector<OrchardNoteMetadata>& orchardNotesRet,
+    const std::optional<NoteFilter>& noteFilter,
     int minDepth,
     int maxDepth,
     bool ignoreSpent,
@@ -6095,7 +6098,7 @@ void CWallet::GetFilteredNotes(
         }
 
         // Filter coinbase transactions that don't have Sapling outputs
-        if (wtx.IsCoinBase() && wtx.mapSaplingNoteData.empty()) {
+        if (wtx.IsCoinBase() && wtx.mapSaplingNoteData.empty() && true/* TODO ORCHARD */) {
             continue;
         }
 
@@ -6147,7 +6150,7 @@ void CWallet::GetFilteredNotes(
                         hSig,
                         (unsigned char) j);
 
-                sproutEntries.push_back(SproutNoteEntry {
+                sproutEntriesRet.push_back(SproutNoteEntry {
                     jsop, pa, plaintext.note(pa), plaintext.memo(), wtx.GetDepthInMainChain() });
 
             } catch (const note_decryption_failed &err) {
@@ -6194,8 +6197,39 @@ void CWallet::GetFilteredNotes(
             }
 
             auto note = notePt.note(nd.ivk).value();
-            saplingEntries.push_back(SaplingNoteEntry {
+            saplingEntriesRet.push_back(SaplingNoteEntry {
                 op, pa, note, notePt.memo(), wtx.GetDepthInMainChain() });
+        }
+    }
+
+    if (noteFilter.has_value()) {
+        for (const OrchardRawAddress& addr: noteFilter.value().GetOrchardAddresses()) {
+            auto ivk = orchardWallet.GetIncomingViewingKeyForAddress(addr);
+            if (ivk.has_value()) {
+                orchardWallet.GetFilteredNotes(
+                        orchardNotesRet,
+                        ivk.value(),
+                        ignoreSpent,
+                        ignoreLocked,
+                        requireSpendingKey);
+            }
+        }
+    } else {
+        // return all Orchard notes
+        orchardWallet.GetFilteredNotes(
+                orchardNotesRet,
+                std::nullopt,
+                ignoreSpent,
+                ignoreLocked,
+                requireSpendingKey);
+    }
+
+    for (auto &orchardNoteMeta : orchardNotesRet) {
+        auto wtx = GetWalletTx(orchardNoteMeta.GetOutPoint().hash);
+        if (wtx) {
+            orchardNoteMeta.SetConfirmations(wtx->GetDepthInMainChain());
+        } else {
+            throw std::runtime_error("Wallet inconsistency: We have an Orchard WalletTx without a corresponding CWalletTx");
         }
     }
 }

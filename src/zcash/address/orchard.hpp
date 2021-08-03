@@ -51,6 +51,10 @@ public:
         }
         return *this;
     }
+
+    friend bool operator<(const OrchardRawAddress& c1, const OrchardRawAddress& c2) {
+        return orchard_address_lt(c1.inner.get(), c2.inner.get());
+    }
 };
 
 class OrchardIncomingViewingKey

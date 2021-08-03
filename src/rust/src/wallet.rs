@@ -1,6 +1,6 @@
 use incrementalmerkletree::{bridgetree::BridgeTree, Frontier, Tree};
 use libc::c_uchar;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use tracing::error;
 
 use zcash_primitives::{
@@ -29,6 +29,12 @@ pub struct LastObserved {
     block_tx_idx: usize,
 }
 
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct OutPoint {
+    txid: TxId,
+    action_idx: usize,
+}
+
 #[derive(Debug, Clone)]
 pub struct DecryptedNote {
     note: Note,
@@ -36,7 +42,18 @@ pub struct DecryptedNote {
 }
 
 struct TxNotes {
+    txid: TxId,
     decrypted_notes: BTreeMap<usize, DecryptedNote>,
+}
+
+/// A type used to pass note metadata across the FFI boundary
+#[repr(C)]
+pub struct NoteMetadata {
+    txid: [u8; 32],
+    action_idx: u32,
+    recipient: *const Address,
+    note_value: i64,
+    memo: [u8; 512],
 }
 
 struct KeyStore {
@@ -73,6 +90,16 @@ impl KeyStore {
             .insert(OrderedAddress::new(addr), ivk);
         has_fvk
     }
+
+    pub fn spending_key_for_ivk(&self, ivk: &IncomingViewingKey) -> Option<&SpendingKey> {
+        self.viewing_keys
+            .get(ivk)
+            .and_then(|fvk| self.spending_keys.get(fvk))
+    }
+
+    pub fn ivk_for_address(&self, addr: &Address) -> Option<&IncomingViewingKey> {
+        self.payment_addresses.get(&OrderedAddress::new(*addr))
+    }
 }
 
 pub struct Wallet {
@@ -86,6 +113,10 @@ pub struct Wallet {
     witness_tree: BridgeTree<MerkleHashOrchard, MERKLE_DEPTH>,
     /// The block height and transaction index of the note most recently added to `witness_tree`
     last_observed: Option<LastObserved>,
+    /// Notes marked as locked (currently reserved for pending transactions)
+    locked_notes: HashSet<OutPoint>,
+    /// Notes marked as spent
+    spent_notes: HashSet<OutPoint>,
 }
 
 #[derive(Debug, Clone)]
@@ -101,6 +132,8 @@ impl Wallet {
             wallet_tx_notes: HashMap::new(),
             witness_tree: BridgeTree::new(MAX_CHECKPOINTS),
             last_observed: None,
+            locked_notes: HashSet::new(),
+            spent_notes: HashSet::new(),
         }
     }
 
@@ -121,6 +154,7 @@ impl Wallet {
         bundle: &Bundle<Authorized, Amount>,
     ) -> Vec<usize> {
         let mut tx_notes = TxNotes {
+            txid: *txid,
             decrypted_notes: BTreeMap::new(),
         };
 
@@ -198,6 +232,45 @@ impl Wallet {
 
     pub fn tx_contains_my_notes(&self, txid: &TxId) -> bool {
         self.wallet_tx_notes.get(txid).is_some()
+    }
+
+    pub fn get_filtered_notes(
+        &self,
+        ivk: Option<&IncomingViewingKey>,
+        ignore_spent: bool,
+        ignore_locked: bool,
+        require_spending_key: bool,
+    ) -> Vec<(OutPoint, DecryptedNote)> {
+        self.wallet_tx_notes
+            .values()
+            .flat_map(|tx_notes| {
+                tx_notes
+                    .decrypted_notes
+                    .iter()
+                    .filter_map(move |(idx, dnote)| {
+                        let outpoint = OutPoint {
+                            txid: tx_notes.txid,
+                            action_idx: *idx,
+                        };
+
+                        self.key_store
+                            .ivk_for_address(&dnote.note.recipient())
+                            // if `ivk` is `None`, return all notes that match the other conditions
+                            .filter(|dnote_ivk| ivk.iter().all(|ivk| ivk == dnote_ivk))
+                            .and_then(|dnote_ivk| {
+                                if (ignore_spent && self.spent_notes.contains(&outpoint))
+                                    || (ignore_locked && self.locked_notes.contains(&outpoint))
+                                    || (require_spending_key
+                                        && self.key_store.spending_key_for_ivk(dnote_ivk).is_none())
+                                {
+                                    None
+                                } else {
+                                    Some((outpoint, (*dnote).clone()))
+                                }
+                            })
+                    })
+            })
+            .collect()
     }
 }
 
@@ -294,6 +367,21 @@ pub extern "C" fn orchard_wallet_add_raw_address(
 }
 
 #[no_mangle]
+pub extern "C" fn orchard_wallet_get_ivk_for_address(
+    wallet: *const Wallet,
+    addr: *const Address,
+) -> *mut IncomingViewingKey {
+    let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
+    let addr = unsafe { addr.as_ref() }.expect("Address may not be null.");
+
+    wallet
+        .key_store
+        .ivk_for_address(addr)
+        .map(|ivk| Box::into_raw(Box::new(ivk.clone())))
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
 pub extern "C" fn orchard_wallet_tx_contains_my_notes(
     wallet: *const Wallet,
     txid: *const [c_uchar; 32],
@@ -302,4 +390,39 @@ pub extern "C" fn orchard_wallet_tx_contains_my_notes(
     let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
 
     wallet.tx_contains_my_notes(&txid)
+}
+
+pub type VecObj = std::ptr::NonNull<libc::c_void>;
+pub type PushCb = unsafe extern "C" fn(obj: Option<VecObj>, meta: NoteMetadata);
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_get_filtered_notes(
+    wallet: *const Wallet,
+    ivk: *const IncomingViewingKey,
+    ignore_spent: bool,
+    ignore_locked: bool,
+    require_spending_key: bool,
+    result: Option<VecObj>,
+    push_cb: Option<PushCb>,
+) {
+    let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
+    let ivk = unsafe { ivk.as_ref() };
+
+    for (outpoint, dnote) in
+        wallet.get_filtered_notes(ivk, ignore_spent, ignore_locked, require_spending_key)
+    {
+        let recipient = Box::new(dnote.note.recipient());
+        unsafe {
+            (push_cb.unwrap())(
+                result,
+                NoteMetadata {
+                    txid: *outpoint.txid.as_ref(),
+                    action_idx: outpoint.action_idx as u32,
+                    recipient: Box::into_raw(recipient),
+                    note_value: dnote.note.value().inner() as i64,
+                    memo: dnote.memo,
+                },
+            )
+        };
+    }
 }

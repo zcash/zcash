@@ -2313,7 +2313,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    std::optional<AddrSet> noteFilter = std::nullopt;
+    std::optional<NoteFilter> noteFilter = std::nullopt;
     std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> sproutNullifiers;
     std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> saplingNullifiers;
 
@@ -2340,7 +2340,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             sourceAddrs.push_back(zaddr.value());
         }
 
-        noteFilter = AddrSet::ForPaymentAddresses(sourceAddrs);
+        noteFilter = NoteFilter::ForPaymentAddresses(sourceAddrs);
         sproutNullifiers = pwalletMain->GetSproutNullifiers(noteFilter.value().GetSproutAddresses());
         saplingNullifiers = pwalletMain->GetSaplingNullifiers(noteFilter.value().GetSaplingAddresses());
 
@@ -2365,7 +2365,8 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
 
     std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
-    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, noteFilter, nMinDepth, nMaxDepth, true, !fIncludeWatchonly, false);
+    std::vector<OrchardNoteMetadata> orchardEntries;
+    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, noteFilter, nMinDepth, nMaxDepth, true, !fIncludeWatchonly, false);
 
     for (auto & entry : sproutEntries) {
         UniValue obj(UniValue::VOBJ);
@@ -3382,14 +3383,15 @@ CAmount getBalanceZaddr(std::optional<libzcash::PaymentAddress> address, int min
     CAmount balance = 0;
     std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
+    std::vector<OrchardNoteMetadata> orchardEntries;
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    std::optional<AddrSet> noteFilter = std::nullopt;
+    std::optional<NoteFilter> noteFilter = std::nullopt;
     if (address.has_value()) {
-        noteFilter = AddrSet::ForPaymentAddresses(std::vector({address.value()}));
+        noteFilter = NoteFilter::ForPaymentAddresses(std::vector({address.value()}));
     }
 
-    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, noteFilter, minDepth, maxDepth, true, ignoreUnspendable);
+    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, noteFilter, minDepth, maxDepth, true, ignoreUnspendable);
     for (auto & entry : sproutEntries) {
         balance += CAmount(entry.note.value());
     }
@@ -3477,8 +3479,10 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
 
     std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
-    auto noteFilter = AddrSet::ForPaymentAddresses(std::vector({decoded.value()}));
-    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, noteFilter, nMinDepth, INT_MAX, false, false);
+    std::vector<OrchardNoteMetadata> orchardEntries;
+
+    auto noteFilter = NoteFilter::ForPaymentAddresses(std::vector({decoded.value()}));
+    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, noteFilter, nMinDepth, INT_MAX, false, false);
 
     auto push_transparent_result = [&](const CTxDestination& dest) -> void {
         const CScript scriptPubKey{GetScriptForDestination(dest)};
@@ -4698,9 +4702,10 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
     {
         std::vector<SproutNoteEntry> sproutEntries;
         std::vector<SaplingNoteEntry> saplingEntries;
+        std::vector<OrchardNoteMetadata> orchardEntries;
         // Here we are looking for any and all Sprout notes for which we have the spending key, including those
         // which are locked and/or only exist in the mempool, as they should be included in the unmigrated amount.
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, std::nullopt, 0, INT_MAX, true, true, false);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 0, INT_MAX, true, true, false);
         CAmount unmigratedAmount = 0;
         for (const auto& sproutEntry : sproutEntries) {
             unmigratedAmount += sproutEntry.note.value();
@@ -5304,11 +5309,12 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         // Get available notes
         std::vector<SproutNoteEntry> sproutEntries;
         std::vector<SaplingNoteEntry> saplingEntries;
-        std::optional<AddrSet> noteFilter =
+        std::vector<OrchardNoteMetadata> orchardEntries;
+        std::optional<NoteFilter> noteFilter =
             useAnySprout || useAnySapling ?
                 std::nullopt :
-                std::optional(AddrSet::ForPaymentAddresses(zaddrs));
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, noteFilter);
+                std::optional(NoteFilter::ForPaymentAddresses(zaddrs));
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, noteFilter);
 
         // If Sapling is not active, do not allow sending from a sapling addresses.
         if (!saplingActive && saplingEntries.size() > 0) {

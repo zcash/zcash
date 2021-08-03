@@ -5,7 +5,10 @@ use tracing::error;
 use orchard::keys::{DiversifierIndex, FullViewingKey, IncomingViewingKey, SpendingKey};
 use orchard::Address;
 
-use crate::streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
+use crate::{
+    streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb},
+    zcashd_orchard::OrderedAddress,
+};
 
 //
 // Addresses
@@ -23,6 +26,13 @@ pub extern "C" fn orchard_address_free(addr: *mut Address) {
     if !addr.is_null() {
         drop(unsafe { Box::from_raw(addr) });
     }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_address_lt(a0: *const Address, a1: *const Address) -> bool {
+    let a0 = unsafe { a0.as_ref() };
+    let a1 = unsafe { a1.as_ref() };
+    a0.map(|a| OrderedAddress::new(*a)) < a1.map(|a| OrderedAddress::new(*a))
 }
 
 //

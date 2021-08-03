@@ -523,6 +523,16 @@ public:
     std::string ToString() const;
 };
 
+/** An outpoint - a combination of a transaction hash and an index n into its orchard
+ * actions */
+class OrchardOutPoint : public BaseOutPoint
+{
+public:
+    OrchardOutPoint() : BaseOutPoint() {};
+    OrchardOutPoint(uint256 hashIn, uint32_t nIn) : BaseOutPoint(hashIn, nIn) {};
+    std::string ToString() const;
+};
+
 /** An input of a transaction.  It contains the location of the previous
  * transaction's output that it claims and a signature that matches the
  * output's public key.

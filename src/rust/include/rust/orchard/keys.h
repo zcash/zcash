@@ -32,6 +32,15 @@ OrchardRawAddressPtr* orchard_address_clone(
  */
 void orchard_address_free(OrchardRawAddressPtr* ptr);
 
+/**
+ * Implements the "less than" operation `k0 < k1` for comparing two Orchard
+ * addresses.  This is a comparison of the raw bytes, only useful for cases
+ * where a semantically irrelevant ordering is needed (such as for map keys.)
+ */
+bool orchard_address_lt(
+    const OrchardRawAddressPtr* k0,
+    const OrchardRawAddressPtr* k1);
+
 //
 // Incoming Viewing Keys
 //
