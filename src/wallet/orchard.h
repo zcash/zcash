@@ -5,6 +5,7 @@
 #ifndef ZCASH_ORCHARD_WALLET_H
 #define ZCASH_ORCHARD_WALLET_H
 
+#include "rust/orchard/keys.h"
 #include "rust/orchard/wallet.h"
 #include "zcash/address/orchard.hpp"
 
@@ -109,10 +110,11 @@ public:
         return true;
     }
 
-    //bool AddIncomingViewingKey(const libzcash::OrchardPaymentAddress& addr,
-    //                           const libzcash::OrchardIncomingViewingKey& ivk) {
-    //    orchard_wallet_add_incoming_viewing_key(inner.get(), fvk.inner.get());
-    //}
+    bool AddIncomingViewingKey(const libzcash::OrchardIncomingViewingKey& ivk,
+                               const libzcash::OrchardPaymentAddress& addr) {
+        orchard_wallet_add_incoming_viewing_key(inner.get(), ivk.inner.get(), addr.inner.get());
+        return true;
+    }
 
     //OrchardWalletTxData GetTxData(const uint256 txid) {
     //    // TODO

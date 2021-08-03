@@ -86,6 +86,11 @@ void orchard_wallet_add_full_viewing_key(
         const OrchardWalletPtr* wallet,
         const OrchardFullViewingKeyPtr* fvk);
 
+void orchard_wallet_add_incoming_viewing_key(
+        const OrchardWalletPtr* wallet,
+        const OrchardIncomingViewingKeyPtr* fvk,
+        const OrchardPaymentAddressPtr* addr);
+
 /**
  * A type-safe pointer type for per-transaction data stored by the Orchard wallet.
  *

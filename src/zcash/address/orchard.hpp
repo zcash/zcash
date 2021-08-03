@@ -15,8 +15,8 @@ namespace libzcash {
 class OrchardPaymentAddress
 {
 private:
+public: //FIXME
     std::unique_ptr<OrchardPaymentAddressPtr, decltype(&orchard_payment_address_free)> inner;
-public:
     OrchardPaymentAddress() : inner(nullptr, orchard_payment_address_free) {}
 
     OrchardPaymentAddress(OrchardPaymentAddress&& key) : inner(std::move(key.inner)) {}

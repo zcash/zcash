@@ -142,8 +142,27 @@ typedef std::variant<
     SproutPaymentAddress,
     SaplingPaymentAddress,
     UnifiedAddress> PaymentAddress;
-typedef std::variant<InvalidEncoding, SproutViewingKey, SaplingExtendedFullViewingKey> ViewingKey;
-typedef std::variant<InvalidEncoding, SproutSpendingKey, SaplingExtendedSpendingKey> SpendingKey;
+/** Viewing keys that can be transcoded to strings */
+typedef std::variant<
+    InvalidEncoding,
+    SproutViewingKey,
+    SaplingExtendedFullViewingKey> ViewingKey;
+/** Spending keys that can be transcoded to strings */
+typedef std::variant<
+    InvalidEncoding,
+    SproutSpendingKey,
+    SaplingExtendedSpendingKey> SpendingKey;
+
+///** Zcash raw full viewing keys */
+//typedef std::variant<
+//    SproutViewingKey,
+//    SaplingExtendedFullViewingKey,
+//    OrchardFullViewingKey> ViewingKey;
+///** Zcash raw spending keys */
+//typedef std::variant<
+//    SproutSpendingKey,
+//    SaplingExtendedSpendingKey,
+//    OrchardSpendingKey> SpendingKey;
 
 class AddressInfoFromSpendingKey {
 public:

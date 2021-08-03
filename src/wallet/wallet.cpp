@@ -217,6 +217,8 @@ bool CWallet::AddSaplingIncomingViewingKey(
     return true;
 }
 
+// TODO: CWallet::GenerateNewOrchardZKey()
+
 // Add spending key to keystore
 bool CWallet::AddOrchardZKey(const libzcash::OrchardSpendingKey &sk)
 {
@@ -248,13 +250,15 @@ bool CWallet::AddOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fv
     }
 }
 
-// Add payment address -> incoming viewing key map entry
-// bool CWallet::AddOrchardIncomingViewingKey(
-//     const libzcash::OrchardIncomingViewingKey &ivk,
-//     const libzcash::OrchardPaymentAddress &addr)
-// {
-// }
-
+//Add payment address -> incoming viewing key map entry
+bool CWallet::AddOrchardIncomingViewingKey(
+    const libzcash::OrchardIncomingViewingKey &ivk,
+    const libzcash::OrchardPaymentAddress &addr)
+{
+    // TODO: does it make sense to use `OrchardPaymentAddress` here, or should
+    // we instead use a UnifiedAddress?
+    return orchardWallet.AddIncomingViewingKey(ivk, addr);
+}
 
 // Add spending key to keystore and persist to disk
 bool CWallet::AddSproutZKey(const libzcash::SproutSpendingKey &key)
@@ -402,6 +406,12 @@ bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullVi
     return false;
 }
 
+//bool CWallet::AddCryptedOrchardSpendingKey(const libzcash::OrchardFullViewingKey &fvk,
+//                                           const std::vector<unsigned char> &vchCryptedSecret) {
+//    // TODO: ORCHARD
+//    return false;
+//}
+
 void CWallet::LoadKeyMetadata(const CPubKey &pubkey, const CKeyMetadata &meta)
 {
     AssertLockHeld(cs_wallet); // mapKeyMetadata
@@ -457,6 +467,14 @@ bool CWallet::LoadSaplingPaymentAddress(
     return CCryptoKeyStore::AddSaplingIncomingViewingKey(ivk, addr);
 }
 
+//bool CWallet::LoadCryptedOrchardZKey(
+//    const libzcash::OrchardFullViewingKey &fvk,
+//    const std::vector<unsigned char> &vchCryptedSecret)
+//{
+//     // TODO: ORCHARD
+//     return false;
+//}
+
 void CWallet::LoadOrchardZKeyMetadata(const libzcash::OrchardIncomingViewingKey &ivk, const CKeyMetadata &meta)
 {
     AssertLockHeld(cs_wallet);
@@ -477,12 +495,14 @@ bool CWallet::LoadOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &f
     return orchardWallet.AddFullViewingKey(fvk);
 }
 
-//bool CWallet::LoadOrchardPaymentAddress(
-//    const libzcash::OrchardPaymentAddress &addr,
-//    const libzcash::OrchardIncomingViewingKey &ivk)
-//{
-//    return orchardWallet.AddIncomingViewingKey(ivk, addr);
-//}
+bool CWallet::LoadOrchardPaymentAddress(
+    const libzcash::OrchardPaymentAddress &addr,
+    const libzcash::OrchardIncomingViewingKey &ivk)
+{
+    // TODO: Does it make sense to use `OrchardPaymentAddress` here?
+    return false;
+    //return orchardWallet.AddIncomingViewingKey(ivk, addr);
+}
 
 bool CWallet::LoadZKey(const libzcash::SproutSpendingKey &key)
 {
@@ -5487,7 +5507,7 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
 //        if (m_wallet->HaveOrchardSpendingKey(extfvk)) {
 //            return KeyAlreadyExists;
 //        } else {
-//            if (!m_wallet-> AddOrchardZKey(sk)) {
+//            if (!m_wallet->AddOrchardZKey(sk)) {
 //                return KeyNotAdded;
 //            }
 //
