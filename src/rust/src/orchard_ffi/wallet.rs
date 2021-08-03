@@ -1,6 +1,6 @@
 use incrementalmerkletree::{bridgetree::BridgeTree, Frontier, Tree};
 use libc::c_uchar;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use tracing::error;
 
 use zcash_primitives::{
@@ -31,6 +31,7 @@ pub struct OutPoint {
     action_idx: usize,
 }
 
+#[derive(Debug, Clone)]
 pub struct DecryptedNote {
     ivk: IncomingViewingKey,
     note: Note,
@@ -86,6 +87,15 @@ impl KeyStore {
             .or_insert(vec![])
             .push(*addr);
     }
+
+    pub fn has_spending_key_for_address(&self, addr: &Address) -> bool {
+        self.payment_addresses
+            .iter()
+            .find_map(|(k, ax)| if ax.contains(addr) { Some(k) } else { None })
+            .and_then(|ivk| self.incoming_viewing_keys.get(ivk))
+            .and_then(|fvk| self.spending_keys.get(fvk))
+            .is_some()
+    }
 }
 
 pub struct Wallet {
@@ -93,6 +103,7 @@ pub struct Wallet {
     key_store: KeyStore,
     witness_tree: BridgeTree<MerkleCrhOrchardOutput, MERKLE_DEPTH>,
     wallet_txs: HashMap<TxId, WalletTx>,
+    spent_notes: HashSet<OutPoint>,
 }
 
 #[derive(Debug, Clone)]
@@ -108,6 +119,7 @@ impl Wallet {
             last_observed: None,
             witness_tree: BridgeTree::new(MAX_CHECKPOINTS),
             wallet_txs: HashMap::new(),
+            spent_notes: HashSet::new(),
         }
     }
 
@@ -213,6 +225,41 @@ impl Wallet {
             _ => false,
         };
     }
+
+    // TODO: what are "locked" notes? re: ignoreLocked flag in CWallet::GetFilteredNotes
+    pub fn get_filtered_notes(
+        &self,
+        addr: &Address,
+        ignore_spent: bool,
+        require_spending_key: bool,
+    ) -> Vec<(OutPoint, DecryptedNote)> {
+        self.wallet_txs
+            .values()
+            .flat_map(|wallet_tx| {
+                wallet_tx.decrypted_notes.iter().filter_map(move |(idx, dnote)| {
+                    let outpoint = OutPoint {
+                        txid: wallet_tx.txid,
+                        action_idx: *idx,
+                    };
+                    if dnote.recipient == *addr {
+                        if ignore_spent
+                            && self.spent_notes.contains(&outpoint)
+                        {
+                            None
+                        } else if require_spending_key
+                            && self.key_store.has_spending_key_for_address(addr)
+                        {
+                            None
+                        } else {
+                            Some((outpoint, (*dnote).clone()))
+                        }
+                    } else {
+                        None
+                    }
+                })
+            })
+            .collect()
+    }
 }
 
 #[no_mangle]
@@ -294,7 +341,10 @@ pub extern "C" fn orchard_wallet_add_spending_key(wallet: *mut Wallet, sk: *cons
 }
 
 #[no_mangle]
-pub extern "C" fn orchard_wallet_add_full_viewing_key(wallet: *mut Wallet, fvk: *const FullViewingKey) {
+pub extern "C" fn orchard_wallet_add_full_viewing_key(
+    wallet: *mut Wallet,
+    fvk: *const FullViewingKey,
+) {
     let wallet = unsafe { &mut *wallet };
     let fvk = unsafe { &*fvk };
 
@@ -302,14 +352,17 @@ pub extern "C" fn orchard_wallet_add_full_viewing_key(wallet: *mut Wallet, fvk: 
 }
 
 #[no_mangle]
-pub extern "C" fn orchard_wallet_add_incoming_viewing_key(wallet: *mut Wallet, ivk: *const IncomingViewingKey, addr: *const Address) {
+pub extern "C" fn orchard_wallet_add_incoming_viewing_key(
+    wallet: *mut Wallet,
+    ivk: *const IncomingViewingKey,
+    addr: *const Address,
+) {
     let wallet = unsafe { &mut *wallet };
     let ivk = unsafe { &*ivk };
     let addr = unsafe { &*addr };
 
     wallet.key_store.append_payment_address(ivk, addr);
 }
-
 
 #[no_mangle]
 pub extern "C" fn orchard_wallet_tx_is_mine(

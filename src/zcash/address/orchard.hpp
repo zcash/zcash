@@ -40,6 +40,18 @@ public: //FIXME
         return *this;
     }
 
+    friend bool operator==(const OrchardPaymentAddress& a0, const OrchardPaymentAddress& a1)
+    {
+        // FIXME
+        return true;
+    }
+
+    friend bool operator<(const OrchardPaymentAddress& a0, const OrchardPaymentAddress& a1)
+    {
+        // FIXME
+        return true;
+    }
+
     template<typename Stream>
     void Serialize(Stream& s) const {
         RustStream rs(s);

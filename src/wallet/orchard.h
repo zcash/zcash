@@ -5,9 +5,19 @@
 #ifndef ZCASH_ORCHARD_WALLET_H
 #define ZCASH_ORCHARD_WALLET_H
 
+#include "primitives/transaction.h"
 #include "rust/orchard/keys.h"
 #include "rust/orchard/wallet.h"
 #include "zcash/address/orchard.hpp"
+
+struct OrchardNoteMetadata
+{
+    OrchardOutPoint op;
+    libzcash::UnifiedAddress address;
+    CAmount noteValue;
+    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    int confirmations;
+};
 
 //class OrchardWalletTxData
 //{
@@ -114,6 +124,14 @@ public:
                                const libzcash::OrchardPaymentAddress& addr) {
         orchard_wallet_add_incoming_viewing_key(inner.get(), ivk.inner.get(), addr.inner.get());
         return true;
+    }
+
+    void GetFilteredNotes(
+        std::vector<OrchardNoteMetadata>& orchardNotesRet,
+        const libzcash::OrchardPaymentAddress& addr,
+        bool ignoreSpent,
+        bool requireSpendingKey) {
+        // TODO
     }
 
     //OrchardWalletTxData GetTxData(const uint256 txid) {

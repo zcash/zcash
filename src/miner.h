@@ -48,6 +48,10 @@ public:
     MinerAddress operator()(const libzcash::SaplingPaymentAddress &addr) const {
         return addr;
     }
+    MinerAddress operator()(const libzcash::OrchardPaymentAddress &addr) const {
+        // FIXME: Miner support for Orchard addresses
+        return InvalidMinerAddress();
+    }
     MinerAddress operator()(const libzcash::UnifiedAddress &addr) const {
         auto recipient = RecipientForPaymentAddress()(addr);
         if (recipient) {

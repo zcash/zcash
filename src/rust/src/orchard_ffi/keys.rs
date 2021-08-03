@@ -1,6 +1,6 @@
 use std::io::{Read, Write};
 
-use orchard::keys::{SpendingKey, FullViewingKey, IncomingViewingKey};
+use orchard::keys::{FullViewingKey, IncomingViewingKey, SpendingKey};
 use orchard::Address;
 
 use crate::orchard_ffi::{error, CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
@@ -141,7 +141,8 @@ pub extern "C" fn orchard_incoming_viewing_key_serialize(
 #[no_mangle]
 pub extern "C" fn orchard_incoming_viewing_key_lt(
     k0: *const IncomingViewingKey,
-    k1: *const IncomingViewingKey) -> bool {
+    k1: *const IncomingViewingKey,
+) -> bool {
     k0 < k1
 }
 
@@ -170,9 +171,8 @@ pub extern "C" fn orchard_full_viewing_key_parse(
     stream: Option<StreamObj>,
     read_cb: Option<ReadCb>,
 ) -> *mut FullViewingKey {
-    let mut reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
+    let reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
 
-    let mut buf = [0u8; 96];
     match FullViewingKey::read(reader) {
         Err(e) => {
             error!(
@@ -211,9 +211,7 @@ pub extern "C" fn orchard_full_viewing_key_serialize(
 //
 
 #[no_mangle]
-pub extern "C" fn orchard_spending_key_clone(
-    key: *const SpendingKey,
-) -> *mut SpendingKey {
+pub extern "C" fn orchard_spending_key_clone(key: *const SpendingKey) -> *mut SpendingKey {
     unsafe { key.as_ref() }
         .map(|key| Box::into_raw(Box::new(key.clone())))
         .unwrap_or(std::ptr::null_mut())
@@ -250,7 +248,7 @@ pub extern "C" fn orchard_spending_key_parse(
                 error!("Failed to parse Orchard spending key.");
                 std::ptr::null_mut()
             }
-        } 
+        }
     }
 }
 
@@ -280,6 +278,10 @@ pub extern "C" fn orchard_spending_key_to_incoming_viewing_key(
     key: *const SpendingKey,
 ) -> *mut IncomingViewingKey {
     unsafe { key.as_ref() }
-        .map(|key| Box::into_raw(Box::new(IncomingViewingKey::from(&FullViewingKey::from(key)))))
+        .map(|key| {
+            Box::into_raw(Box::new(IncomingViewingKey::from(&FullViewingKey::from(
+                key,
+            ))))
+        })
         .unwrap_or(std::ptr::null_mut())
 }
