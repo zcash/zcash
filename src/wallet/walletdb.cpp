@@ -182,6 +182,17 @@ bool CWalletDB::WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
 
     return Write(std::make_pair(std::string("sapzkey"), ivk), key, false);
 }
+//bool CWalletDB::WriteOrchardZKey(const libzcash::OrchardIncomingViewingKey &ivk,
+//                const libzcash::OrchardSpendingKey &key,
+//                const CKeyMetadata &keyMeta)
+//{
+//    nWalletDBUpdateCounter++;
+//
+//    if (!Write(std::make_pair(std::string("orczkeymeta"), ivk), keyMeta))
+//        return false;
+//
+//    return Write(std::make_pair(std::string("orczkey"), ivk), key, false);
+//}
 
 bool CWalletDB::WriteSaplingPaymentAddress(
     const libzcash::SaplingPaymentAddress &addr,

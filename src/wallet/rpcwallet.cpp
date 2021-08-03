@@ -3799,7 +3799,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         }
     }
     // This logic will need to be updated if we add a new shielded pool
-    bool fromSprout = !(fromTaddr || fromSapling);
+    bool fromSprout = !(fromTaddr || fromSapling); //TODO: Orchard
 
     UniValue outputs = params[1].get_array();
 
@@ -4013,6 +4013,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     }
 
     // Builder (used if Sapling addresses are involved)
+    // TODO: ORCHARD
     std::optional<TransactionBuilder> builder;
     if (noSproutAddrs) {
         builder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, pwalletMain);

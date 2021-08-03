@@ -86,6 +86,11 @@ void orchard_wallet_add_full_viewing_key(
         const OrchardWalletPtr* wallet,
         const OrchardFullViewingKeyPtr* fvk);
 
+void orchard_wallet_add_incoming_viewing_key(
+        const OrchardWalletPtr* wallet,
+        const OrchardIncomingViewingKeyPtr* fvk,
+        const OrchardRawAddressPtr* addr);
+
 #ifdef __cplusplus
 }
 #endif

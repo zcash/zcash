@@ -1139,13 +1139,16 @@ public:
      */
     bool AddOrchardZKey(const libzcash::OrchardSpendingKey &sk);
     bool AddOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk);
+    bool AddOrchardIncomingViewingKey(
+        const libzcash::OrchardIncomingViewingKey &ivk,
+        const libzcash::OrchardRawAddress &addr);
 
     void LoadOrchardZKeyMetadata(const libzcash::OrchardIncomingViewingKey &ivk, const CKeyMetadata &meta);
     bool LoadOrchardZKey(const libzcash::OrchardSpendingKey &key);
     bool LoadOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk);
-    //bool LoadOrchardPaymentAddress(
-    //    const libzcash::OrchardPaymentAddress &addr,
-    //    const libzcash::OrchardIncomingViewingKey &ivk);
+    bool LoadOrchardRawAddress(
+        const libzcash::OrchardRawAddress &addr,
+        const libzcash::OrchardIncomingViewingKey &ivk);
 
 
     /**
@@ -1557,9 +1560,9 @@ public:
         bool _log
     ) : m_wallet(wallet), params(params), nTime(_nTime), hdKeypath(_hdKeypath), seedFpStr(_seedFp), log(_log) {}
 
-
     KeyAddResult operator()(const libzcash::SproutSpendingKey &sk) const;
     KeyAddResult operator()(const libzcash::SaplingExtendedSpendingKey &sk) const;
+    //KeyAddResult operator()(const libzcash::OrchardSpendingKey &sk) const;
     KeyAddResult operator()(const libzcash::InvalidEncoding& no) const;
 };
 

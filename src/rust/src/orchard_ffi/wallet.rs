@@ -305,6 +305,19 @@ pub extern "C" fn orchard_wallet_add_full_viewing_key(
 }
 
 #[no_mangle]
+pub extern "C" fn orchard_wallet_add_incoming_viewing_key(
+    wallet: *mut Wallet,
+    ivk: *const IncomingViewingKey,
+    addr: *const Address,
+) {
+    let wallet = unsafe { &mut *wallet };
+    let ivk = unsafe { &*ivk };
+    let addr = unsafe { &*addr };
+
+    wallet.key_store.append_payment_address(ivk, addr);
+}
+
+#[no_mangle]
 pub extern "C" fn orchard_wallet_tx_is_mine(
     wallet: *mut Wallet,
     txid: *const [c_uchar; 32],
