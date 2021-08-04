@@ -89,7 +89,27 @@ void orchard_wallet_add_full_viewing_key(
 void orchard_wallet_add_incoming_viewing_key(
         const OrchardWalletPtr* wallet,
         const OrchardIncomingViewingKeyPtr* fvk,
-        const OrchardPaymentAddressPtr* addr);
+        const OrchardRawAddressPtr* addr);
+
+struct RawOrchardNoteMetadata {
+    unsigned char txid[32];
+    uint32_t actionIdx;
+    OrchardRawAddressPtr* addr;
+    CAmount noteValue;
+    unsigned char memo[512];
+};
+
+typedef void (*push_callback_t)(void* context, const RawOrchardNoteMetadata noteMeta);
+
+void orchard_wallet_get_filtered_notes(
+        const OrchardWalletPtr* wallet,
+        OrchardRawAddressPtr** addrs,
+        size_t addrs_len,
+        bool ignoreSpent,
+        bool requireSpendingKey,
+        void* resultVector,
+        push_callback_t push_cb
+        );
 
 /**
  * A type-safe pointer type for per-transaction data stored by the Orchard wallet.

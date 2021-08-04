@@ -175,11 +175,13 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     // We currently have an unspent and unconfirmed note in the wallet (depth of -1)
     std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 0);
+    std::vector<OrchardNoteMetadata> orchardEntries;
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, "", 0);
     EXPECT_EQ(0, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", -1);
+    orchardEntries.clear();
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, "", -1);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
@@ -202,18 +204,21 @@ TEST(WalletTests, FindUnspentSproutNotes) {
 
 
     // We now have an unspent and confirmed note in the wallet (depth of 1)
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 0);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, "", 0);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 1);
+    orchardEntries.clear();
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, "", 1);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 2);
+    orchardEntries.clear();
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, "", 2);
     EXPECT_EQ(0, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
+    orchardEntries.clear();
 
 
     // Let's spend the note.
@@ -240,25 +245,29 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     EXPECT_TRUE(wallet.IsSproutSpent(nullifier));
 
     // The note has been spent.  By default, GetFilteredNotes() ignores spent notes.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 0);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, "", 0);
     EXPECT_EQ(0, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
+    orchardEntries.clear();
     // Let's include spent notes to retrieve it.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 0, false);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, "", 0, false);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
+    orchardEntries.clear();
     // The spent note has two confirmations.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 2, false);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, "", 2, false);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
+    orchardEntries.clear();
     // It does not have 3 confirmations.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 3, false);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, "", 3, false);
     EXPECT_EQ(0, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
+    orchardEntries.clear();
 
 
     // Let's receive a new note
@@ -298,25 +307,29 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     wallet.AddToWallet(wtx3, true, NULL);
 
     // We now have an unspent note which has one confirmation, in addition to our spent note.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 1);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, "", 1);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
+    orchardEntries.clear();
     // Let's return the spent note too.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 1, false);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, "", 1, false);
     EXPECT_EQ(2, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
+    orchardEntries.clear();
     // Increasing number of confirmations will exclude our new unspent note.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 2, false);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, "", 2, false);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
+    orchardEntries.clear();
     // If we also ignore spent notes at this depth, we won't find any notes.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, "", 2, true);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, "", 2, true);
     EXPECT_EQ(0, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
+    orchardEntries.clear();
 
     // Tear down
     chainActive.SetTip(NULL);

@@ -26,6 +26,7 @@
 #include "script/sign.h"
 #include "timedata.h"
 #include "utilmoneystr.h"
+#include "zcash/Address.hpp"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "crypter.h"
@@ -253,9 +254,9 @@ bool CWallet::AddOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fv
 //Add payment address -> incoming viewing key map entry
 bool CWallet::AddOrchardIncomingViewingKey(
     const libzcash::OrchardIncomingViewingKey &ivk,
-    const libzcash::OrchardPaymentAddress &addr)
+    const libzcash::OrchardRawAddress &addr)
 {
-    // TODO: does it make sense to use `OrchardPaymentAddress` here, or should
+    // TODO: does it make sense to use `OrchardRawAddress` here, or should
     // we instead use a UnifiedAddress?
     return orchardWallet.AddIncomingViewingKey(ivk, addr);
 }
@@ -495,11 +496,11 @@ bool CWallet::LoadOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &f
     return orchardWallet.AddFullViewingKey(fvk);
 }
 
-bool CWallet::LoadOrchardPaymentAddress(
-    const libzcash::OrchardPaymentAddress &addr,
+bool CWallet::LoadOrchardRawAddress(
+    const libzcash::OrchardRawAddress &addr,
     const libzcash::OrchardIncomingViewingKey &ivk)
 {
-    // TODO: Does it make sense to use `OrchardPaymentAddress` here?
+    // TODO: Does it make sense to use `OrchardRawAddress` here?
     return false;
     //return orchardWallet.AddIncomingViewingKey(ivk, addr);
 }
@@ -5283,13 +5284,17 @@ void CWallet::GetFilteredNotes(
         }
     }
 
-    auto zcashAddr = ZcashAddress(filterAddresses);
-    if (zcashAddr.GetOrchardReceiver()) {
-        orchardWallet.GetFilteredNotes(
-                orchardNotesRet,
-                zcashAddr.GetOrchardReceiver().value(),
-                ignoreSpent,
-                requireSpendingKey);
+    auto orchardAddresses = SelectOrchardAddrs(filterAddresses);
+    orchardWallet.GetFilteredNotes(
+            orchardNotesRet,
+            orchardAddresses,
+            ignoreSpent,
+            requireSpendingKey);
+
+    for (auto &orchardNoteMeta : orchardNotesRet) {
+        auto wtx = GetWalletTx(orchardNoteMeta.op.hash);
+        if (wtx)
+            orchardNoteMeta.confirmations = wtx->GetDepthInMainChain();
     }
 }
 

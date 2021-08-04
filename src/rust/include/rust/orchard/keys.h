@@ -13,18 +13,18 @@ extern "C" {
 
 // A pointer to an Orchard shielded payment address, as defined in
 // https://zips.z.cash/protocol/nu5.pdf#orchardpaymentaddrencoding
-struct OrchardPaymentAddressPtr;
-typedef struct OrchardPaymentAddressPtr OrchardPaymentAddressPtr;
+struct OrchardRawAddressPtr;
+typedef struct OrchardRawAddressPtr OrchardRawAddressPtr;
 
 // Clones the given Orchard payment address and returns
 // a pointer to the newly created value. Both the original
 // one's memory and the newly allocated one need to be freed
 // independently.
-OrchardPaymentAddressPtr* orchard_payment_address_clone(
-        const OrchardPaymentAddressPtr* ptr);
+OrchardRawAddressPtr* orchard_address_clone(
+        const OrchardRawAddressPtr* ptr);
 
 // Free the memory allocated for the given Orchard payment address
-void orchard_payment_address_free(OrchardPaymentAddressPtr* ptr);
+void orchard_address_free(OrchardRawAddressPtr* ptr);
 
 /// Parses an Orchard payment address from the given stream.
 ///
@@ -33,13 +33,13 @@ void orchard_payment_address_free(OrchardPaymentAddressPtr* ptr);
 bool orchard_payment_address_parse(
     void* stream,
     read_callback_t read_cb,
-    OrchardPaymentAddressPtr** payment_address_ret);
+    OrchardRawAddressPtr** payment_address_ret);
 
 /// Serializes an Orchard payment address to the given stream
 ///
 /// If `payment_address == nullptr`, this will return `false`
 bool orchard_payment_address_serialize(
-    const OrchardPaymentAddressPtr* payment_address,
+    const OrchardRawAddressPtr* payment_address,
     void* stream,
     write_callback_t write_cb);
 

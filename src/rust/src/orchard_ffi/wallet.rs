@@ -39,6 +39,15 @@ pub struct DecryptedNote {
     memo: [u8; 512],
 }
 
+#[repr(C)]
+pub struct NoteMetadata {
+    txid: [u8; 32],
+    action_idx: u32,
+    recipient: *const Address,
+    note_value: i64,
+    memo: [u8; 512],
+}
+
 struct WalletTx {
     txid: TxId,
     decrypted_notes: BTreeMap<usize, DecryptedNote>,
@@ -229,34 +238,37 @@ impl Wallet {
     // TODO: what are "locked" notes? re: ignoreLocked flag in CWallet::GetFilteredNotes
     pub fn get_filtered_notes(
         &self,
-        addr: &Address,
+        addrs: &[&Address],
         ignore_spent: bool,
         require_spending_key: bool,
     ) -> Vec<(OutPoint, DecryptedNote)> {
         self.wallet_txs
             .values()
             .flat_map(|wallet_tx| {
-                wallet_tx.decrypted_notes.iter().filter_map(move |(idx, dnote)| {
-                    let outpoint = OutPoint {
-                        txid: wallet_tx.txid,
-                        action_idx: *idx,
-                    };
-                    if dnote.recipient == *addr {
-                        if ignore_spent
-                            && self.spent_notes.contains(&outpoint)
-                        {
-                            None
-                        } else if require_spending_key
-                            && self.key_store.has_spending_key_for_address(addr)
-                        {
-                            None
-                        } else {
-                            Some((outpoint, (*dnote).clone()))
-                        }
-                    } else {
-                        None
-                    }
-                })
+                wallet_tx
+                    .decrypted_notes
+                    .iter()
+                    .filter_map(move |(idx, dnote)| {
+                        let outpoint = OutPoint {
+                            txid: wallet_tx.txid,
+                            action_idx: *idx,
+                        };
+
+                        addrs
+                            .iter()
+                            .find(|a| ***a == dnote.recipient)
+                            .and_then(|addr| {
+                                if ignore_spent && self.spent_notes.contains(&outpoint) {
+                                    None
+                                } else if require_spending_key
+                                    && self.key_store.has_spending_key_for_address(addr)
+                                {
+                                    None
+                                } else {
+                                    Some((outpoint, (*dnote).clone()))
+                                }
+                            })
+                    })
             })
             .collect()
     }
@@ -385,5 +397,42 @@ pub extern "C" fn orchard_wallet_tx_data_new() -> *mut Vec<usize> {
 pub extern "C" fn orchard_wallet_tx_data_free(tx_data: *mut Vec<usize>) {
     if !tx_data.is_null() {
         drop(unsafe { Box::from_raw(tx_data) });
+    }
+}
+
+pub type VecObj = std::ptr::NonNull<libc::c_void>;
+pub type PushCb = unsafe extern "C" fn(obj: Option<VecObj>, meta: NoteMetadata);
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_get_filtered_notes(
+    wallet: *const Wallet,
+    addrs: *const *const Address,
+    addrs_len: libc::size_t,
+    ignore_spent: bool,
+    require_spending_key: bool,
+    result: Option<VecObj>,
+    push_cb: Option<PushCb>,
+) {
+    let wallet = unsafe { &*wallet };
+    let addrs = unsafe { std::slice::from_raw_parts(addrs, addrs_len) };
+    let addrs: Vec<&Address> = addrs
+        .into_iter()
+        .map(|addr| unsafe { addr.as_ref().unwrap() })
+        .collect();
+
+    for (outpoint, dnote) in wallet.get_filtered_notes(&addrs, ignore_spent, require_spending_key) {
+        let recipient = Box::new(dnote.recipient);
+        unsafe {
+            (push_cb.unwrap())(
+                result,
+                NoteMetadata {
+                    txid: outpoint.txid.as_ref().clone(),
+                    action_idx: outpoint.action_idx as u32,
+                    recipient: Box::into_raw(recipient),
+                    note_value: dnote.note.value().inner() as i64,
+                    memo: dnote.memo.clone(),
+                },
+            )
+        };
     }
 }

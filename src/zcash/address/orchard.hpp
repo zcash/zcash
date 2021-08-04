@@ -12,19 +12,22 @@ class OrchardWallet;
 
 namespace libzcash {
 
-class OrchardPaymentAddress
+class OrchardRawAddress
 {
 private:
 public: //FIXME
-    std::unique_ptr<OrchardPaymentAddressPtr, decltype(&orchard_payment_address_free)> inner;
-    OrchardPaymentAddress() : inner(nullptr, orchard_payment_address_free) {}
+    std::unique_ptr<OrchardRawAddressPtr, decltype(&orchard_address_free)> inner;
 
-    OrchardPaymentAddress(OrchardPaymentAddress&& key) : inner(std::move(key.inner)) {}
+    OrchardRawAddress() : inner(nullptr, orchard_address_free) {}
 
-    OrchardPaymentAddress(const OrchardPaymentAddress& key) :
-        inner(orchard_payment_address_clone(key.inner.get()), orchard_payment_address_free) {}
+    OrchardRawAddress(OrchardRawAddressPtr* ptr) : inner(ptr, orchard_address_free) {}
 
-    OrchardPaymentAddress& operator=(OrchardPaymentAddress&& key)
+    OrchardRawAddress(OrchardRawAddress&& key) : inner(std::move(key.inner)) {}
+
+    OrchardRawAddress(const OrchardRawAddress& key) :
+        inner(orchard_address_clone(key.inner.get()), orchard_address_free) {}
+
+    OrchardRawAddress& operator=(OrchardRawAddress&& key)
     {
         if (this != &key) {
             inner = std::move(key.inner);
@@ -32,21 +35,21 @@ public: //FIXME
         return *this;
     }
 
-    OrchardPaymentAddress& operator=(const OrchardPaymentAddress& key)
+    OrchardRawAddress& operator=(const OrchardRawAddress& key)
     {
         if (this != &key) {
-            inner.reset(orchard_payment_address_clone(key.inner.get()));
+            inner.reset(orchard_address_clone(key.inner.get()));
         }
         return *this;
     }
 
-    friend bool operator==(const OrchardPaymentAddress& a0, const OrchardPaymentAddress& a1)
+    friend bool operator==(const OrchardRawAddress& a0, const OrchardRawAddress& a1)
     {
         // FIXME
         return true;
     }
 
-    friend bool operator<(const OrchardPaymentAddress& a0, const OrchardPaymentAddress& a1)
+    friend bool operator<(const OrchardRawAddress& a0, const OrchardRawAddress& a1)
     {
         // FIXME
         return true;
@@ -63,7 +66,7 @@ public: //FIXME
     template<typename Stream>
     void Unserialize(Stream& s) {
         RustStream rs(s);
-        OrchardPaymentAddressPtr* key;
+        OrchardRawAddressPtr* key;
         if (!orchard_payment_address_parse(&rs, RustStream<Stream>::read_callback, &key)) {
             throw std::ios_base::failure("Failed to parse Orchard incoming viewing key");
         }
@@ -238,7 +241,7 @@ public: //FIXME
         return OrchardIncomingViewingKey(orchard_spending_key_to_incoming_viewing_key(inner.get()));
     }
 
-//    const OrchardPaymentAddress DefaultAddress() const {
+//    const OrchardRawAddress DefaultAddress() const {
 //
 //    }
 };

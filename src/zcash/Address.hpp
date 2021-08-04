@@ -23,7 +23,7 @@ public:
 };
 
 /** Protocol addresses that can receive funds in a transaction. */
-typedef std::variant<SproutPaymentAddress, SaplingPaymentAddress, OrchardPaymentAddress> RawAddress;
+typedef std::variant<SproutPaymentAddress, SaplingPaymentAddress, OrchardRawAddress> RawAddress;
 
 class InvalidEncoding {
 public:
@@ -96,33 +96,8 @@ private:
     size_t cur;
 };
 
-class ZcashAddress {
-private:
-    std::optional<std::variant<P2SHAddress, P2PKHAddress>> transparentReceiver;
-    std::optional<SproutPaymentAddress> sproutReceiver;
-    std::optional<SaplingPaymentAddress> saplingReceiver;
-    std::optional<OrchardPaymentAddress> orchardReceiver;
-public:
-    ZcashAddress(std::set<RawAddress> receivers) {
-        for (const RawAddress& rawAddr : receivers) {
-            switch (rawAddr.index()) {
-                case 0:
-                    sproutReceiver = std::get<SproutPaymentAddress>(rawAddr);
-                    break;
-                case 1:
-                    saplingReceiver = std::get<SaplingPaymentAddress>(rawAddr);
-                    break;
-                case 2:
-                    orchardReceiver = std::get<OrchardPaymentAddress>(rawAddr);
-                    break;
-            }
-        }
-    }
-
-    const std::optional<OrchardPaymentAddress>& GetOrchardReceiver() const {
-        return orchardReceiver;
-    }
-};
+/** Select the Orchard addresses from a set of raw addresses. */
+std::vector<OrchardRawAddress> SelectOrchardAddrs(const std::set<RawAddress>& receivers);
 
 class UnifiedAddress {
     std::vector<Receiver> receivers;

@@ -48,7 +48,7 @@ public:
     MinerAddress operator()(const libzcash::SaplingPaymentAddress &addr) const {
         return addr;
     }
-    MinerAddress operator()(const libzcash::OrchardPaymentAddress &addr) const {
+    MinerAddress operator()(const libzcash::OrchardRawAddress &addr) const {
         // FIXME: Miner support for Orchard addresses
         return InvalidMinerAddress();
     }

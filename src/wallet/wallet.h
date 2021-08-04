@@ -1134,13 +1134,13 @@ public:
     bool AddOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk);
     bool AddOrchardIncomingViewingKey(
         const libzcash::OrchardIncomingViewingKey &ivk,
-        const libzcash::OrchardPaymentAddress &addr);
+        const libzcash::OrchardRawAddress &addr);
 
     void LoadOrchardZKeyMetadata(const libzcash::OrchardIncomingViewingKey &ivk, const CKeyMetadata &meta);
     bool LoadOrchardZKey(const libzcash::OrchardSpendingKey &key);
     bool LoadOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk);
-    bool LoadOrchardPaymentAddress(
-        const libzcash::OrchardPaymentAddress &addr,
+    bool LoadOrchardRawAddress(
+        const libzcash::OrchardRawAddress &addr,
         const libzcash::OrchardIncomingViewingKey &ivk);
 
 
