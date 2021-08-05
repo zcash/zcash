@@ -59,7 +59,7 @@ CTxMemPoolEntry::GetPriority(unsigned int currentHeight) const
 CTxMemPool::CTxMemPool(const CFeeRate& _minRelayFee) :
     nTransactionsUpdated(0)
 {
-    _clear(); //lock free clear
+    _clear(); // unlocked clear
 
     // Sanity checks off by default for performance, because otherwise
     // accepting transactions becomes O(N^2) where N is the number
