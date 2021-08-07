@@ -10,6 +10,7 @@ mod key_components;
 mod mmr;
 mod notes;
 mod signatures;
+mod zip339;
 
 #[test]
 fn sapling_generators() {
