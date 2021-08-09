@@ -88,7 +88,8 @@ enum komodo_event_type
     EVENT_U,
     EVENT_KMDHEIGHT,
     EVENT_OPRETURN,
-    EVENT_PRICEFEED
+    EVENT_PRICEFEED,
+    EVENT_REWIND
 };
 
 /***
@@ -112,6 +113,13 @@ public:
     int32_t height;
 };
 std::ostream& operator<<(std::ostream& os, const event& in);
+
+struct event_rewind : public event
+{
+    event_rewind() : event(komodo_event_type::EVENT_REWIND, 0) {}
+    event_rewind(uint8_t* data, long &pos, long data_len, int32_t height);
+};
+std::ostream& operator<<(std::ostream& os, const event_rewind& in);
 
 struct event_notarized : public event
 {

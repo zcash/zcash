@@ -163,6 +163,9 @@ std::ostream& operator<<(std::ostream& os, const event& in)
         case(EVENT_PRICEFEED):
             os << "V";
             break;
+        case(EVENT_REWIND):
+            os << "B";
+            break;
     }
     os << serializable<int32_t>(in.height);
     return os;
@@ -189,6 +192,17 @@ std::ostream& operator<<(std::ostream& os, const event_pubkeys& in)
     os << in.num;
     for(uint8_t i = 0; i < in.num-1; ++i)
         os << in.pubkeys[i];
+    return os;
+}
+
+event_rewind::event_rewind(uint8_t *data, long &pos, long data_len, int32_t height) : event(EVENT_REWIND, height)
+{
+    // nothing to do
+}
+std::ostream& operator<<(std::ostream& os, const event_rewind& in)
+{
+    const event& e = dynamic_cast<const event&>(in);
+    os << e;
     return os;
 }
 
