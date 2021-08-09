@@ -318,10 +318,6 @@ int32_t komodo_is_issuer();
 
 int32_t bitweight(uint64_t x);
 
-char hexbyte(int32_t c);
-
-int32_t init_hexbytes_noT(char *hexbytes,unsigned char *message,long len);
-
 char *bits256_str(char hexstr[65],bits256 x);
 
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
@@ -340,8 +336,6 @@ uint64_t komodo_block_prg(uint32_t nHeight);
 // the ASSETCHAINS_MAGIC number as well as the block height, providing different random numbers
 // for corresponding blocks across chains, but the same sequence in each chain
 int64_t komodo_block_unlocktime(uint32_t nHeight);
-
-int32_t safecopy(char *dest,char *src,long len);
 
 char *parse_conf_line(char *line,char *field);
 
