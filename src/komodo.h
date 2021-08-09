@@ -25,8 +25,6 @@
 
 #define KOMODO_ASSETCHAINS_WAITNOTARIZE
 #define KOMODO_PAXMAX (10000 * COIN)
-extern int32_t NOTARIZED_HEIGHT;
-uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID;
 
 #include "uthash.h"
 #include "utlist.h"
@@ -38,7 +36,6 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block);
 bool check_pprevnotarizedht();
 
 #include "komodo_structs.h"
-#include "komodo_globals.h"
 #include "komodo_utils.h"
 #include "komodo_curve25519.h"
 

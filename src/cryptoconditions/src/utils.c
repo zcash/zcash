@@ -19,7 +19,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "cJSON.h"
 #include "../include/cryptoconditions.h"
 #include "include/sha256.h"
 #include "asn/asn_application.h"

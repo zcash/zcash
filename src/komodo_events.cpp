@@ -13,7 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 #include "komodo_events.h"
-#include "komodo_globals.h"
+#include "komodo_extern_globals.h"
 #include "komodo_bitcoind.h" // komodo_verifynotarization
 #include "komodo_notary.h" // komodo_notarized_update
 #include "komodo_pax.h" // komodo_pvals

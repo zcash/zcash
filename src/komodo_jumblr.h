@@ -41,10 +41,7 @@ struct jumblr_item
     int64_t amount,fee,txfee; // fee and txfee not really used (yet)
     uint32_t spent,pad;
     char opid[66],src[128],dest[128],status;
-} *Jumblrs;
-
-char Jumblr_secretaddrs[JUMBLR_MAXSECRETADDRS][64],Jumblr_deposit[64];
-int32_t Jumblr_numsecretaddrs; // if 0 -> run silent mode
+};
 
 char *jumblr_issuemethod(char *userpass,char *method,char *params,uint16_t port);
 

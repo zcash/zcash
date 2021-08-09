@@ -13,9 +13,13 @@
  *                                                                            *
  ******************************************************************************/
 #include "komodo_jumblr.h"
+#include "komodo_extern_globals.h"
 #include "komodo_bitcoind.h" // komodo_issuemethod
 #include "komodo_utils.h" // clonestr
-#include "komodo_globals.h" //KMDUSERPASS
+
+char Jumblr_secretaddrs[JUMBLR_MAXSECRETADDRS][64],Jumblr_deposit[64];
+int32_t Jumblr_numsecretaddrs; // if 0 -> run silent mode
+jumblr_item *Jumblrs;
 
 char *jumblr_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 {

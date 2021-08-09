@@ -13,11 +13,32 @@
  *                                                                            *
  ******************************************************************************/
 #include "komodo.h"
+#include "komodo_extern_globals.h"
 #include "komodo_utils.h" // komodo_stateptrget
 #include "komodo_bitcoind.h" // komodo_checkcommission
-#include "komodo_globals.h" // komodo_baseid
 
-int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx);
+struct komodo_extremeprice
+{
+    uint256 blockhash;
+    uint32_t pricebits,timestamp;
+    int32_t height;
+    int16_t dir,ind;
+} ExtremePrice;
+
+uint32_t PriceCache[KOMODO_LOCALPRICE_CACHESIZE][KOMODO_MAXPRICES];//4+sizeof(Cryptos)/sizeof(*Cryptos)+sizeof(Forex)/sizeof(*Forex)];
+int64_t PriceMult[KOMODO_MAXPRICES];
+
+struct komodo_priceinfo
+{
+    FILE *fp;
+    char symbol[64];
+} PRICES[KOMODO_MAXPRICES];
+
+const char *Cryptos[] = { "KMD", "ETH" }; // must be on binance (for now)
+// "LTC", "BCHABC", "XMR", "IOTA", "ZEC", "WAVES",  "LSK", "DCR", "RVN", "DASH", "XEM", "BTS", "ICX", "HOT", "STEEM", "ENJ", "STRAT"
+const char *Forex[] =
+{ "BGN","NZD","ILS","RUB","CAD","PHP","CHF","AUD","JPY","TRY","HKD","MYR","HRK","CZK","IDR","DKK","NOK","HUF","GBP","MXN","THB","ISK","ZAR","BRL","SGD","PLN","INR","KRW","RON","CNY","SEK","EUR"
+}; // must be in ECB list
 
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base)
 {
@@ -710,14 +731,6 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                     }
                 }
             }
-        }
-    }
-    if ( height > 0 && ASSETCHAINS_MARMARA != 0 && (height & 1) == 0 )
-    {
-        if ( MarmaraValidateCoinbase(height,block.vtx[0]) < 0 )
-        {
-            fprintf(stderr,"MARMARA error ht.%d constrains even height blocks to pay 100%% to CC in vout0 with opreturn\n",height);
-            return(-1);
         }
     }
     // we don't want these checks in VRSC, leave it at the Sapling upgrade

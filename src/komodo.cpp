@@ -13,6 +13,8 @@
  *                                                                            *
  ******************************************************************************/
 #include "komodo.h"
+#include "komodo_extern_globals.h"
+#include "komodo_notary.h"
 
 void komodo_currentheight_set(int32_t height)
 {

@@ -12,13 +12,10 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
-
+#pragma once
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
 #include "komodo_defs.h"
-#include "komodo_globals.h"
 #include "komodo_cJSON.h"
-
-int32_t MarmaraValidateCoinbase(int32_t height,CTransaction tx);
 
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base);
 
@@ -99,28 +96,6 @@ extern std::vector<uint8_t> Mineropret; // opreturn data set by the data gatheri
 
 #define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"CBCOINBASE",cmdstr,0,0,0)
 
-const char *Cryptos[] = { "KMD", "ETH" }; // must be on binance (for now)
-// "LTC", "BCHABC", "XMR", "IOTA", "ZEC", "WAVES",  "LSK", "DCR", "RVN", "DASH", "XEM", "BTS", "ICX", "HOT", "STEEM", "ENJ", "STRAT"
-const char *Forex[] =
-{ "BGN","NZD","ILS","RUB","CAD","PHP","CHF","AUD","JPY","TRY","HKD","MYR","HRK","CZK","IDR","DKK","NOK","HUF","GBP","MXN","THB","ISK","ZAR","BRL","SGD","PLN","INR","KRW","RON","CNY","SEK","EUR"
-}; // must be in ECB list
-
-struct komodo_extremeprice
-{
-    uint256 blockhash;
-    uint32_t pricebits,timestamp;
-    int32_t height;
-    int16_t dir,ind;
-} ExtremePrice;
-
-struct komodo_priceinfo
-{
-    FILE *fp;
-    char symbol[64];
-} PRICES[KOMODO_MAXPRICES];
-
-uint32_t PriceCache[KOMODO_LOCALPRICE_CACHESIZE][KOMODO_MAXPRICES];//4+sizeof(Cryptos)/sizeof(*Cryptos)+sizeof(Forex)/sizeof(*Forex)];
-int64_t PriceMult[KOMODO_MAXPRICES];
 int32_t komodo_cbopretsize(uint64_t flags);
 
 void komodo_PriceCache_shift();

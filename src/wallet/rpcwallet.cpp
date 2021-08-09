@@ -5602,7 +5602,7 @@ int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits
 int32_t ensure_CCrequirements(uint8_t evalcode)
 {
     CCerror = "";
-    if ( ASSETCHAINS_CCDISABLES[evalcode] != 0 || (evalcode == EVAL_MARMARA && ASSETCHAINS_MARMARA == 0) )
+    if ( ASSETCHAINS_CCDISABLES[evalcode] != 0 )
     {
         // check if a height activation has been set. 
         fprintf(stderr, "evalcode.%i activates at height. %i current height.%i\n", evalcode, mapHeightEvalActivate[evalcode], komodo_currentheight());
@@ -6068,19 +6068,6 @@ UniValue pegsaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
     return(CCaddress(cp,(char *)"Pegs",pubkey));
-}
-
-UniValue marmaraaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)
-{
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
-    cp = CCinit(&C,EVAL_MARMARA);
-    if ( fHelp || params.size() > 1 )
-        throw runtime_error("Marmaraaddress [pubkey]\n");
-    if ( ensure_CCrequirements(cp->evalcode) < 0 )
-        throw runtime_error(CC_REQUIREMENTS_MSG);
-    if ( params.size() == 1 )
-        pubkey = ParseHex(params[0].get_str().c_str());
-    return(CCaddress(cp,(char *)"Marmara",pubkey));
 }
 
 UniValue paymentsaddress(const UniValue& params, bool fHelp, const CPubKey& mypk)

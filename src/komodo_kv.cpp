@@ -13,7 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 #include "komodo_kv.h"
-#include "komodo_globals.h" // KOMODO_KV_mutex
+#include "komodo_extern_globals.h"
 #include "komodo_utils.h" // portable_mutex_lock
 #include "komodo_curve25519.h" // komodo_kvsigverify
 

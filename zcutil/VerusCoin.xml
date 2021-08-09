@@ -252,7 +252,7 @@
                     <filename>${windows_folder_appdata}/ZcashParams/sprout-proving.key</filename>
                     <progressText>Zcash Params file: sprout-proving.key</progressText>
                     <showMessageOnError>0</showMessageOnError>
-                    <url>https://z.cash/downloads/sprout-proving.key</url>
+                    <url>https://z.cash/downloads/sprout-proving.key.deprecated-sworn-elves</url>
                 </httpGet>
             </actionList>
             <ruleList>

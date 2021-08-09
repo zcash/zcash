@@ -31,7 +31,6 @@ bool EnsureWalletIsAvailable(bool avoidException);
 extern bool fRequestShutdown;
 extern CScript KOMODO_EARLYTXID_SCRIPTPUB;
 
-int32_t MarmaraSignature(uint8_t *utxosig,CMutableTransaction &txNew);
 uint8_t DecodeMaramaraCoinbaseOpRet(const CScript scriptPubKey,CPubKey &pk,int32_t &height,int32_t &unlockht);
 uint32_t komodo_heightstamp(int32_t height);
 
