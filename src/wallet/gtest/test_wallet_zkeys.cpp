@@ -468,6 +468,9 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
     wallet.Unlock(strWalletPass);
     auto address2 = wallet.GenerateNewSaplingZKey();
 
+    // flush the wallet to prevent race conditions
+    wallet.Flush();
+
     // Create a new wallet from the existing wallet path
     CWallet wallet2("wallet_crypted_sapling.dat");
     ASSERT_EQ(DB_LOAD_OK, wallet2.LoadWallet(fFirstRun));
