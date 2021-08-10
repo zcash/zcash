@@ -30,7 +30,7 @@ void komodo_eventadd_notarized( komodo_state *sp, char *symbol, int32_t height, 
 {
     char *coin = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
 
-    if ( IS_KOMODO_NOTARY != 0 
+    if ( IS_KOMODO_NOTARY 
             && komodo_verifynotarization(symbol,ntz->dest,height,ntz->notarizedheight,ntz->blockhash, ntz->desttxid) < 0 )
     {
         static uint32_t counter;

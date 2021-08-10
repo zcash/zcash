@@ -15,6 +15,7 @@
 #pragma once
 
 #include "komodo_defs.h"
+#include "hex.h"
 
 int32_t komodo_kvcmp(uint8_t *refvalue,uint16_t refvaluesize,uint8_t *value,uint16_t valuesize);
 

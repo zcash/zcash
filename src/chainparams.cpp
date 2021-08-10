@@ -571,7 +571,7 @@ void *chainparams_commandline()
             pCurrentParams->SetNValue(ASSETCHAINS_NK[0]);
             pCurrentParams->SetKValue(ASSETCHAINS_NK[1]);
         }
-        if ( KOMODO_TESTNODE != 0 )
+        if ( IS_KOMODO_TESTNODE )
             pCurrentParams->SetMiningRequiresPeers(false);
         if ( ASSETCHAINS_RPCPORT == 0 )
             ASSETCHAINS_RPCPORT = ASSETCHAINS_P2PPORT + 1;

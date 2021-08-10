@@ -1284,7 +1284,7 @@ void komodo_args(char *argv0)
     IS_KOMODO_NOTARY = ntz_dest_path == "" ? 0 : 1;
 
 
-    IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
+    STAKED_NOTARY_ID = GetArg("-stakednotary", -1);
     KOMODO_NSPV = GetArg("-nSPV",0);
     memset(ccenables,0,sizeof(ccenables));
     memset(disablebits,0,sizeof(disablebits));
@@ -1293,18 +1293,16 @@ void komodo_args(char *argv0)
     {
         KOMODO_MININGTHREADS = GetArg("-genproclimit",-1);
     }
-    if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
-        fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
     DONATION_PUBKEY = GetArg("-donation", "");
     NOTARY_PUBKEY = GetArg("-pubkey", "");
-    KOMODO_DEALERNODE = GetArg("-dealer",0);
-    KOMODO_TESTNODE = GetArg("-testnode",0);
+    IS_KOMODO_DEALERNODE = GetArg("-dealer",0);
+    IS_KOMODO_TESTNODE = GetArg("-testnode",0);
     ASSETCHAINS_STAKED_SPLIT_PERCENTAGE = GetArg("-splitperc",0);
     if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
     {
         decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
         USE_EXTERNAL_PUBKEY = 1;
-        if ( IS_KOMODO_NOTARY == 0 )
+        if ( !IS_KOMODO_NOTARY )
         {
             // We dont have any chain data yet, so use system clock to guess. 
             // I think on season change should reccomend notaries to use -notary to avoid needing this. 
@@ -1313,17 +1311,17 @@ void komodo_args(char *argv0)
             {
                 if ( strcmp(NOTARY_PUBKEY.c_str(),notaries_elected[kmd_season-1][i][1]) == 0 )
                 {
-                    IS_KOMODO_NOTARY = 1;
+                    IS_KOMODO_NOTARY = true;
                     KOMODO_MININGTHREADS = 1;
                     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
-                    IS_STAKED_NOTARY = -1;
+                    STAKED_NOTARY_ID = -1;
                     fprintf(stderr,"running as notary.%d %s\n",i,notaries_elected[kmd_season-1][i][0]);
                     break;
                 }
             }
         }
     }
-    if ( IS_STAKED_NOTARY != -1 && IS_KOMODO_NOTARY == true ) {
+    if ( STAKED_NOTARY_ID != -1 && IS_KOMODO_NOTARY == true ) {
         fprintf(stderr, "Cannot be STAKED and KMD notary at the same time!\n");
         StartShutdown();
     }
@@ -1929,7 +1927,7 @@ void komodo_args(char *argv0)
                 sprintf(iter == 0 ? KMDUSERPASS : BTCUSERPASS,"%s:%s",username,password);
                 fclose(fp);
             } else printf("couldnt open.(%s) will not validate dest notarizations\n",fname);
-            if ( IS_KOMODO_NOTARY == 0 )
+            if ( !IS_KOMODO_NOTARY )
                 break;
         }
     }

@@ -480,13 +480,14 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
 
 void komodo_init(int32_t height)
 {
-    static int didinit; uint256 zero; int32_t k,n; uint8_t pubkeys[64][33];
-    if ( 0 && height != 0 )
-        printf("komodo_init ht.%d didinit.%d\n",height,didinit);
+    static int didinit; 
+    uint256 zero; 
+    int32_t k,n; 
+    uint8_t pubkeys[64][33];
     memset(&zero,0,sizeof(zero));
     if ( didinit == 0 )
     {
-        decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+        decode_hex(NOTARY_PUBKEY33,33,NOTARY_PUBKEY.c_str());
         if ( height >= 0 )
         {
             n = (int32_t)(sizeof(Notaries_genesis)/sizeof(*Notaries_genesis));
@@ -498,8 +499,6 @@ void komodo_init(int32_t height)
             }
             komodo_notarysinit(0,pubkeys,k);
         }
-        //for (i=0; i<sizeof(Minerids); i++)
-        //    Minerids[i] = -2;
         didinit = 1;
         komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,zero,0);
     }

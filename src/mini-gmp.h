@@ -62,11 +62,7 @@ see https://www.gnu.org/licenses/.  */
 extern "C" {
 #endif
 
-#ifndef _BITS256
-#define _BITS256
-union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
-typedef union _bits256 bits256;
-#endif
+#include "bits256.h"
 
 char *bitcoin_base58encode(char *coinaddr,uint8_t *data,int32_t datalen);
 

@@ -44,6 +44,7 @@
 #include <float.h>
 #include <memory.h>
 
+#include "bits256.h"
 #include "cJSON.h"
 
 #ifndef SATOSHIDEN

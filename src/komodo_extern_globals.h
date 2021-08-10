@@ -21,6 +21,8 @@
 #include <mutex>
 #include <cstdint>
 
+extern bool IS_KOMODO_NOTARY;
+extern bool IS_KOMODO_DEALERNODE;
 extern char KMDUSERPASS[8192+512+1];
 extern char BTCUSERPASS[8192]; 
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
@@ -45,8 +47,7 @@ extern int32_t KOMODO_CCACTIVATE;
 extern int32_t JUMBLR_PAUSE;
 extern int32_t NUM_PRICES; 
 extern int32_t KOMODO_MININGTHREADS;
-extern int32_t IS_KOMODO_NOTARY;
-extern int32_t IS_STAKED_NOTARY;
+extern int32_t STAKED_NOTARY_ID;
 extern int32_t USE_EXTERNAL_PUBKEY;
 extern int32_t KOMODO_CHOSEN_ONE;
 extern int32_t ASSETCHAINS_SEED;
@@ -55,11 +56,9 @@ extern int32_t KOMODO_EXTERNAL_NOTARIES;
 extern int32_t KOMODO_PASSPORT_INITDONE;
 extern int32_t KOMODO_EXTERNAL_NOTARIES;
 extern int32_t KOMODO_PAX;
-extern int32_t KOMODO_EXCHANGEWALLET;
 extern int32_t KOMODO_REWIND;
 extern int32_t STAKED_ERA;
 extern int32_t KOMODO_CONNECTING;
-extern int32_t KOMODO_DEALERNODE;
 extern int32_t KOMODO_EXTRASATOSHI;
 extern int32_t ASSETCHAINS_FOUNDERS;
 extern int32_t ASSETCHAINS_CBMATURITY;

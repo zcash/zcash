@@ -14,6 +14,7 @@
  ******************************************************************************/
 #pragma once
 #include "komodo_defs.h"
+#include "hex.h"
 #include "key_io.h"
 #include "cc/CCinclude.h"
 #include <string.h>

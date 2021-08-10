@@ -288,7 +288,6 @@ int64_t iguana_memfree(struct OS_memspace *mem,void *ptr,int32_t size);
 // generic functions
 bits256 iguana_merkle(char *symbol,bits256 *tree,int32_t txn_count);
 bits256 bits256_calctxid(char *symbol,uint8_t *serialized,int32_t len);
-int32_t unhex(char c);
 void touppercase(char *str);
 uint32_t is_ipaddr(char *str);
 void iguana_bitmap(char *space,int32_t max,char *name);
@@ -301,7 +300,6 @@ void reverse_hexstr(char *str);
 int32_t init_hexbytes_noT(char *hexbytes,uint8_t *message,long len);
 uint16_t parse_ipaddr(char *ipaddr,char *ip_port);
 int32_t bitweight(uint64_t x);
-uint8_t _decode_hex(char *hex);
 char *uppercase_str(char *buf,char *str);
 char *lowercase_str(char *buf,char *str);
 int32_t strsearch(char *strs[],int32_t num,char *name);
