@@ -63,6 +63,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, 0)
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert_equal(147, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # height + 1 + 40
+        self.sync_all() # Ensure the transaction has propagated to node 1
         self.nodes[1].generate(1)
         self.sync_all()
         assert_equal(20, Decimal(self.nodes[0].z_gettotalbalance()['private']))
