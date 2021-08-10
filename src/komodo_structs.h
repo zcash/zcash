@@ -117,7 +117,7 @@ std::ostream& operator<<(std::ostream& os, const event& in);
 struct event_rewind : public event
 {
     event_rewind() : event(komodo_event_type::EVENT_REWIND, 0) {}
-    event_rewind(int16_t ht) : event(EVENT_REWIND, ht) {}
+    event_rewind(int32_t ht) : event(EVENT_REWIND, ht) {}
     event_rewind(uint8_t* data, long &pos, long data_len, int32_t height);
 };
 std::ostream& operator<<(std::ostream& os, const event_rewind& in);
@@ -125,8 +125,9 @@ std::ostream& operator<<(std::ostream& os, const event_rewind& in);
 struct event_notarized : public event
 {
     event_notarized() : event(komodo_event_type::EVENT_NOTARIZED, 0), notarizedheight(0), MoMdepth(0) {}
-    event_notarized(uint16_t ht) : event(EVENT_NOTARIZED, ht), notarizedheight(0), MoMdepth(0) {}
+    event_notarized(int32_t ht) : event(EVENT_NOTARIZED, ht), notarizedheight(0), MoMdepth(0) {}
     event_notarized(uint8_t* data, long &pos, long data_len, int32_t height, bool includeMoM = false);
+    event_notarized(FILE* fp, int32_t ht, bool includeMoM = false);
     uint256 blockhash;
     uint256 desttxid;
     uint256 MoM; 
@@ -142,7 +143,7 @@ struct event_pubkeys : public event
      * Default ctor
      */
     event_pubkeys() : event(EVENT_PUBKEYS, 0), num(0) {}
-    event_pubkeys(uint16_t ht) : event(EVENT_PUBKEYS, ht), num(0) {}
+    event_pubkeys(int32_t ht) : event(EVENT_PUBKEYS, ht), num(0) {}
     /***
      * ctor from data stream
      * @param data the data stream
@@ -150,6 +151,7 @@ struct event_pubkeys : public event
      * @param data_len full length of data
      */
     event_pubkeys(uint8_t* data, long &pos, long data_len, int32_t height);
+    event_pubkeys(FILE* fp, int32_t height);
     uint8_t num; 
     uint8_t pubkeys[64][33]; 
 };
@@ -158,7 +160,7 @@ std::ostream& operator<<(std::ostream& os, const event_pubkeys& in);
 struct event_u : public event
 {
     event_u() : event(EVENT_U, 0) {}
-    event_u(uint16_t ht) : event(EVENT_U, ht) {}
+    event_u(int32_t ht) : event(EVENT_U, ht) {}
     event_u(uint8_t *data, long &pos, long data_len, int32_t height);
     uint8_t n;
     uint8_t nid;
@@ -170,8 +172,9 @@ std::ostream& operator<<(std::ostream& os, const event_u& in);
 struct event_kmdheight : public event
 {
     event_kmdheight() : event(EVENT_KMDHEIGHT, 0) {}
-    event_kmdheight(uint16_t ht) : event(EVENT_KMDHEIGHT, ht) {}
+    event_kmdheight(int32_t ht) : event(EVENT_KMDHEIGHT, ht) {}
     event_kmdheight(uint8_t *data, long &pos, long data_len, int32_t height, bool includeTimestamp = false);
+    event_kmdheight(FILE* fp, int32_t height, bool includeTimestamp = false);
     int32_t kheight = 0;
     uint32_t timestamp = 0;
 };
@@ -180,9 +183,9 @@ std::ostream& operator<<(std::ostream& os, const event_kmdheight& in);
 struct event_opreturn : public event 
 { 
     event_opreturn() : event(EVENT_OPRETURN, 0) {}
-    event_opreturn(uint16_t ht) : event(EVENT_OPRETURN, ht) {}
+    event_opreturn(int32_t ht) : event(EVENT_OPRETURN, ht) {}
     event_opreturn(uint8_t *data, long &pos, long data_len, int32_t height);
-    ~event_opreturn();
+    event_opreturn(FILE* fp, int32_t height);
     uint256 txid; 
     uint16_t vout;
     uint64_t value; 
@@ -193,8 +196,9 @@ std::ostream& operator<<(std::ostream& os, const event_opreturn& in);
 struct event_pricefeed : public event
 {
     event_pricefeed() : event(EVENT_PRICEFEED, 0) {}
-    event_pricefeed(uint16_t ht) : event(EVENT_PRICEFEED, ht) {}
-    event_pricefeed(uint8_t *data, long &pos, long data_len, int32_t height); 
+    event_pricefeed(int32_t ht) : event(EVENT_PRICEFEED, ht) {}
+    event_pricefeed(uint8_t *data, long &pos, long data_len, int32_t height);
+    event_pricefeed(FILE* fp, int32_t height); 
     uint8_t num; 
     uint32_t prices[35]; 
 };

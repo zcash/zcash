@@ -24,26 +24,8 @@
  * @param sp the state to add to
  * @param symbol
  * @param height
- * @param dest
- * @param notarized_hash
- * @param notarized_desttxid
- * @param notarizedheight
- * @param MoM
- * @param MoMdepth
+ * @param ntz the event
  */
-void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t height,char *dest,uint256 notarized_hash,
-        uint256 notarized_desttxid,int32_t notarizedheight,uint256 MoM,int32_t MoMdepth)
-{
-    std::shared_ptr<komodo::event_notarized> n = std::make_shared<komodo::event_notarized>(height);
-    n->blockhash = notarized_hash;
-    n->desttxid = notarized_desttxid;
-    n->notarizedheight = notarizedheight;
-    n->MoM = MoM;
-    n->MoMdepth = MoMdepth;
-    strncpy(n->dest, dest, sizeof(n->dest)-1);
-    komodo_eventadd_notarized(sp, symbol, height, n);
-}
-
 void komodo_eventadd_notarized( komodo_state *sp, char *symbol, int32_t height, std::shared_ptr<komodo::event_notarized> ntz)
 {
     char *coin = (ASSETCHAINS_SYMBOL[0] == 0) ? (char *)"KMD" : ASSETCHAINS_SYMBOL;
@@ -69,17 +51,8 @@ void komodo_eventadd_notarized( komodo_state *sp, char *symbol, int32_t height, 
  * @param sp where to add
  * @param symbol
  * @param height
- * @param num
- * @param pubkeys
+ * @param pk the event
  */
-void komodo_eventadd_pubkeys(struct komodo_state *sp,char *symbol,int32_t height,uint8_t num,uint8_t pubkeys[64][33])
-{
-    std::shared_ptr<komodo::event_pubkeys> p = std::make_shared<komodo::event_pubkeys>(height);
-    p->num = num;
-    memcpy(p->pubkeys, pubkeys, 33 * num);
-    komodo_eventadd_pubkeys(sp, symbol, height, p);
-}
-
 void komodo_eventadd_pubkeys(komodo_state *sp, char *symbol, int32_t height, std::shared_ptr<komodo::event_pubkeys> pk)
 {
     if (sp != nullptr)
@@ -94,20 +67,8 @@ void komodo_eventadd_pubkeys(komodo_state *sp, char *symbol, int32_t height, std
  * @param sp where to add
  * @param symbol
  * @param height
- * @param prices
- * @param num
+ * @param pf the event
  */
-void komodo_eventadd_pricefeed(struct komodo_state *sp,char *symbol,int32_t height,uint32_t *prices,uint8_t num)
-{
-    std::shared_ptr<komodo::event_pricefeed> f = std::make_shared<komodo::event_pricefeed>(height);
-    if ( num == sizeof(f->prices)/sizeof(*f->prices) )
-    {
-        f->num = num;
-        memcpy(f->prices, prices, sizeof(*f->prices) * num);
-        komodo_eventadd_pricefeed( sp, symbol, height, f);
-    }
-}
-
 void komodo_eventadd_pricefeed( komodo_state *sp, char *symbol, int32_t height, std::shared_ptr<komodo::event_pricefeed> pf)
 {
     if (sp != nullptr)
@@ -122,27 +83,8 @@ void komodo_eventadd_pricefeed( komodo_state *sp, char *symbol, int32_t height, 
  * @param sp where to add
  * @param symbol
  * @param height
- * @param txid
- * @param value
- * @param vout
- * @param buf
- * @param opretlen
+ * @param opret the event
  */
-void komodo_eventadd_opreturn(struct komodo_state *sp,char *symbol,int32_t height,uint256 txid,
-        uint64_t value,uint16_t vout,uint8_t *buf,uint16_t opretlen)
-{
-    if ( ASSETCHAINS_SYMBOL[0] != 0 )
-    {
-        std::shared_ptr<komodo::event_opreturn> o = std::make_shared<komodo::event_opreturn>(height);
-        o->txid = txid;
-        o->value = value;
-        o->vout = vout;
-        for(uint16_t i = 0; i < opretlen; ++i)
-            o->opret.push_back(buf[i]);
-        komodo_eventadd_opreturn(sp, symbol, height, o);
-    }
-}
-
 void komodo_eventadd_opreturn( komodo_state *sp, char *symbol, int32_t height, std::shared_ptr<komodo::event_opreturn> opret)
 {
         if ( sp != nullptr )
@@ -224,17 +166,8 @@ void komodo_setkmdheight(struct komodo_state *sp,int32_t kmdheight,uint32_t time
  * @param sp
  * @param symbol
  * @param height
- * @param kmdheight
- * @param timestamp
+ * @param kmdht the event
  */
-void komodo_eventadd_kmdheight(struct komodo_state *sp,char *symbol,int32_t height,int32_t kmdheight,uint32_t timestamp)
-{
-    std::shared_ptr<komodo::event_kmdheight> e = std::make_shared<komodo::event_kmdheight>(height);
-    e->timestamp = timestamp;
-    e->kheight = kmdheight;
-    komodo_eventadd_kmdheight(sp, symbol, height, e);
-}
-
 void komodo_eventadd_kmdheight(struct komodo_state *sp,char *symbol,int32_t height, std::shared_ptr<komodo::event_kmdheight> kmdht)
 {
     if (sp != nullptr)

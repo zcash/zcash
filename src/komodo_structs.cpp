@@ -185,6 +185,13 @@ event_pubkeys::event_pubkeys(uint8_t* data, long& pos, long data_len, int32_t he
     mem_nread(pubkeys, num, data, pos, data_len);
 }
 
+event_pubkeys::event_pubkeys(FILE* fp, int32_t height) : event(EVENT_PUBKEYS, height)
+{
+    num = fgetc(fp);
+    if ( fread(pubkeys,33,num,fp) != num )
+        throw parse_error("Illegal number of keys: " + std::to_string(num));
+}
+
 std::ostream& operator<<(std::ostream& os, const event_pubkeys& in)
 {
     const event& e = dynamic_cast<const event&>(in);
@@ -215,6 +222,23 @@ event_notarized::event_notarized(uint8_t *data, long &pos, long data_len, int32_
     {
         mem_read(this->MoM, data, pos, data_len);
         mem_read(this->MoMdepth, data, pos, data_len);
+    }
+}
+
+event_notarized::event_notarized(FILE* fp, int32_t height, bool includeMoM) : event(EVENT_NOTARIZED, height)
+{
+    if ( fread(&notarizedheight,1,sizeof(notarizedheight),fp) != sizeof(notarizedheight) )
+        throw parse_error("Invalid notarization height");
+    if ( fread(&blockhash,1,sizeof(blockhash),fp) != sizeof(blockhash) )
+        throw parse_error("Invalid block hash");
+    if ( fread(&desttxid,1,sizeof(desttxid),fp) != sizeof(desttxid) )
+        throw parse_error("Invalid Destination TXID");
+    if ( includeMoM )
+    {
+        if ( fread(&MoM,1,sizeof(MoM),fp) != sizeof(MoM) )
+            throw parse_error("Invalid MoM");
+        if ( fread(&MoMdepth,1,sizeof(MoMdepth),fp) != sizeof(MoMdepth) )
+            throw parse_error("Invalid MoMdepth");
     }
 }
 
@@ -258,6 +282,17 @@ event_kmdheight::event_kmdheight(uint8_t* data, long &pos, long data_len, int32_
         mem_read(this->timestamp, data, pos, data_len);
 }
 
+event_kmdheight::event_kmdheight(FILE *fp, int32_t height, bool includeTimestamp) : event(EVENT_KMDHEIGHT, height)
+{
+    if ( fread(&kheight,1,sizeof(kheight),fp) != sizeof(kheight) )
+        throw parse_error("Unable to parse KMD height");
+    if (includeTimestamp)
+    {
+        if ( fread( &timestamp, 1, sizeof(timestamp), fp) != sizeof(timestamp) )
+            throw parse_error("Unable to parse timestamp of KMD height");
+    }
+}
+
 std::ostream& operator<<(std::ostream& os, const event_kmdheight& in)
 {
     const event& e = dynamic_cast<const event&>(in);
@@ -274,13 +309,31 @@ event_opreturn::event_opreturn(uint8_t *data, long &pos, long data_len, int32_t 
     mem_read(this->value, data, pos, data_len);
     uint16_t oplen;
     mem_read(oplen, data, pos, data_len);
-    if (oplen < data_len - pos)
-        for(uint16_t i = 0; i < oplen; ++i)
-            this->opret.push_back(data[pos++]);
+    if (oplen <= data_len - pos)
+    {
+        this->opret = std::vector<uint8_t>( &data[pos], &data[pos] + oplen);
+        pos += oplen;
+    }
 }
 
-event_opreturn::~event_opreturn()
+event_opreturn::event_opreturn(FILE* fp, int32_t height) : event(EVENT_OPRETURN, height)
 {
+    if ( fread(&txid,1,sizeof(txid),fp) != sizeof(txid) )
+        throw parse_error("Unable to parse txid of opreturn record");
+    if ( fread(&vout,1,sizeof(vout),fp) != sizeof(vout) )
+        throw parse_error("Unable to parse vout of opreturn record");
+    if ( fread(&value,1,sizeof(value),fp) != sizeof(value) )
+        throw parse_error("Unable to parse value of opreturn record");
+    uint16_t oplen;
+    if ( fread(&oplen,1,sizeof(oplen),fp) != sizeof(oplen) )
+        throw parse_error("Unable to parse length of opreturn record");
+    uint8_t *b = new uint8_t[oplen];
+    size_t result = fread(b, 1, oplen, fp);
+    if (result == oplen)
+        this->opret = std::vector<uint8_t>( b, b + oplen);
+    delete b;
+    if (result != oplen)
+        throw parse_error("Unable to parse binary data of opreturn");
 }
 
 std::ostream& operator<<(std::ostream& os, const event_opreturn& in)
@@ -304,6 +357,13 @@ event_pricefeed::event_pricefeed(uint8_t *data, long &pos, long data_len, int32_
         mem_nread(this->prices, this->num, data, pos, data_len);
     else
         pos += num * sizeof(uint32_t);
+}
+
+event_pricefeed::event_pricefeed(FILE* fp, int32_t height) : event(EVENT_PRICEFEED, height)
+{
+    num = fgetc(fp);
+    if ( num * sizeof(uint32_t) <= sizeof(prices) && fread(prices,sizeof(uint32_t),num,fp) != num )
+        throw parse_error("Unable to parse price feed");
 }
 
 std::ostream& operator<<(std::ostream& os, const event_pricefeed& in)
