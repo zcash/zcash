@@ -88,13 +88,13 @@ void write_r_record(std::FILE* fp)
     // 8 byte ovalue
     // 2 byte olen
     // olen bytes of data
-    char data[65583] = {'R', 1, 0, 0, 0 };
+    char data[50] = {'R', 1, 0, 0, 0 };
     memset(&data[5], 1, 32); // txid
     memset(&data[37], 2, 2); // v
     memset(&data[39], 3, 8); // ovalue
-    unsigned char olen[2] = {254, 255}; // 65534
+    unsigned char olen[2] = {1,0}; // 1
     memcpy(&data[47], olen, 2);
-    memset(&data[49], 4, 65534);
+    memset(&data[49], 4, 1);
     std::fwrite(data, sizeof(data), 1, fp);
 }
 void write_v_record(std::FILE* fp)
@@ -106,6 +106,11 @@ void write_v_record(std::FILE* fp)
     char data[146] = {'V', 1, 0, 0, 0};
     memset(&data[5], 35, 1); // counter
     memset(&data[6], 1, 140); // data
+    std::fwrite(data, sizeof(data), 1, fp);
+}
+void write_b_record(std::FILE* fp)
+{
+    char data[] = {'B', 1, 0, 0, 0};
     std::fwrite(data, sizeof(data), 1, fp);
 }
 template<class T>
@@ -181,11 +186,13 @@ TEST(TestEvents, komodo_faststateinit_test)
             int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
             // compare results
             ASSERT_EQ(result, 1);
+            /* old way
             // The first and second event should be pub keys
             ASSERT_EQ(state->Komodo_numevents, 1);
             komodo_event* ev1 = state->Komodo_events[0];
             ASSERT_EQ(ev1->height, 1);
             ASSERT_EQ(ev1->type, 'P');
+            */
             // check that the new way is the same
             ASSERT_EQ(state->events.size(), 1);
             std::shared_ptr<komodo::event_pubkeys> ev2 = std::dynamic_pointer_cast<komodo::event_pubkeys>(state->events.front());
@@ -214,10 +221,12 @@ TEST(TestEvents, komodo_faststateinit_test)
             int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
             // compare results
             ASSERT_EQ(result, 1);
+            /* old way
             ASSERT_EQ(state->Komodo_numevents, 2);
             komodo_event* ev = state->Komodo_events[1];
             ASSERT_EQ(ev->height, 1);
             ASSERT_EQ(ev->type, 'N');
+            */
             // check that the new way is the same
             ASSERT_EQ(state->events.size(), 2);
             std::shared_ptr<komodo::event_notarized> ev2 = std::dynamic_pointer_cast<komodo::event_notarized>( *(++state->events.begin()) );
@@ -246,10 +255,12 @@ TEST(TestEvents, komodo_faststateinit_test)
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
             ASSERT_EQ(result, 1);
+            /* old way
             ASSERT_EQ(state->Komodo_numevents, 3);
             komodo_event* ev = state->Komodo_events[2];
             ASSERT_EQ(ev->height, 1);
             ASSERT_EQ(ev->type, 'N'); // code converts "M" to "N"
+            */
             // check that the new way is the same
             ASSERT_EQ(state->events.size(), 3);
             auto itr = state->events.begin();
@@ -280,7 +291,9 @@ TEST(TestEvents, komodo_faststateinit_test)
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
             ASSERT_EQ(result, 1);
+            /* old way
             ASSERT_EQ(state->Komodo_numevents, 3); // does not get added to state
+            */
             // check that the new way is the same
             ASSERT_EQ(state->events.size(), 3);
             auto itr = state->events.begin();
@@ -314,10 +327,12 @@ TEST(TestEvents, komodo_faststateinit_test)
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
             ASSERT_EQ(result, 1);
+            /* old way
             ASSERT_EQ(state->Komodo_numevents, 4);
             komodo_event* ev = state->Komodo_events[3];
             ASSERT_EQ(ev->height, 1);
             ASSERT_EQ(ev->type, 'K');            
+            */
             // check that the new way is the same
             ASSERT_EQ(state->events.size(), 4);
             auto itr = state->events.begin();
@@ -348,10 +363,12 @@ TEST(TestEvents, komodo_faststateinit_test)
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
             ASSERT_EQ(result, 1);
+            /* old way
             ASSERT_EQ(state->Komodo_numevents, 5);
             komodo_event* ev = state->Komodo_events[4];
             ASSERT_EQ(ev->height, 1);
             ASSERT_EQ(ev->type, 'K'); // changed from T to K
+            */
             // check that the new way is the same
             ASSERT_EQ(state->events.size(), 5);
             auto itr = state->events.begin();
@@ -382,10 +399,12 @@ TEST(TestEvents, komodo_faststateinit_test)
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
             ASSERT_EQ(result, 1);
+            /* old way
             ASSERT_EQ(state->Komodo_numevents, 6);
             komodo_event* ev = state->Komodo_events[5];
             ASSERT_EQ(ev->height, 1);
             ASSERT_EQ(ev->type, 'R');
+            */
             // check that the new way is the same
             ASSERT_EQ(state->events.size(), 6);
             auto itr = state->events.begin();
@@ -416,10 +435,12 @@ TEST(TestEvents, komodo_faststateinit_test)
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
             ASSERT_EQ(result, 1);
+            /* old way
             ASSERT_EQ(state->Komodo_numevents, 7);
             komodo_event* ev = state->Komodo_events[6];
             ASSERT_EQ(ev->height, 1);
             ASSERT_EQ(ev->type, 'V');
+            */
             // check that the new way is the same
             ASSERT_EQ(state->events.size(), 7);
             auto itr = state->events.begin();
@@ -430,6 +451,46 @@ TEST(TestEvents, komodo_faststateinit_test)
             // the serialized version should match the input
             ASSERT_TRUE(compare_serialization(full_filename, ev2));
         }
+        // record type B (rewind)
+        {
+            const std::string temp_filename = temp.native() + "/kmdtypeb.tmp";
+            char full_filename[temp_filename.size()+1];
+            strcpy(full_filename, temp_filename.c_str());
+            std::FILE* fp = std::fopen(full_filename, "wb+");
+            ASSERT_NE(fp, nullptr);
+            write_b_record(fp);
+            std::fclose(fp);
+            // verify file still exists
+            ASSERT_TRUE(boost::filesystem::exists(full_filename));
+            // attempt to read the file
+            char symbol[] = "TST";
+            komodo_state* state = komodo_stateptrget((char*)symbol);
+            ASSERT_NE(state, nullptr);
+            char* dest = (char*)"123456789012345";
+            // attempt to read the file
+            // NOTE: B records are not read in. Unsure if this is on purpose or an oversight
+            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            // compare results
+            ASSERT_EQ(result, 1);
+            /* old way
+            ASSERT_EQ(state->Komodo_numevents, 7);
+            komodo_event* ev = state->Komodo_events[6];
+            ASSERT_EQ(ev->height, 1);
+            ASSERT_EQ(ev->type, 'B');
+            */
+            // check that the new way is the same
+            ASSERT_EQ(state->events.size(), 7);
+            /*
+            auto itr = state->events.begin();
+            std::advance(itr, 6);
+            std::shared_ptr<komodo::event_rewind> ev2 = std::dynamic_pointer_cast<komodo::event_rewind>( *(itr) );
+            ASSERT_NE(ev2, nullptr);
+            ASSERT_EQ(ev2->height, 1);
+            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_REWIND);
+            // the serialized version should match the input
+            ASSERT_TRUE(compare_serialization(full_filename, ev2));
+            */
+        }        
         // all together in 1 file
         {
             const std::string temp_filename = temp.native() + "/combined_state.tmp";
@@ -455,10 +516,12 @@ TEST(TestEvents, komodo_faststateinit_test)
             int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
             // compare results
             ASSERT_EQ(result, 1);
+            /* ol d way
             ASSERT_EQ(state->Komodo_numevents, 14);
             komodo_event* ev1 = state->Komodo_events[7];
             ASSERT_EQ(ev1->height, 1);
             ASSERT_EQ(ev1->type, 'P');
+            */
             // check that the new way is the same
             ASSERT_EQ(state->events.size(), 14);
             auto itr = state->events.begin();

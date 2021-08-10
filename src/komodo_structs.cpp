@@ -270,17 +270,17 @@ std::ostream& operator<<(std::ostream& os, const event_kmdheight& in)
 event_opreturn::event_opreturn(uint8_t *data, long &pos, long data_len, int32_t height) : event(EVENT_OPRETURN, height)
 {
     mem_read(this->txid, data, pos, data_len);
-    mem_read(this->value, data, pos, data_len);
     mem_read(this->vout, data, pos, data_len);
-    mem_read(this->oplen, data, pos, data_len);
-    this->opret = new uint8_t[this->oplen];
-    mem_readn(this->opret, this->oplen, data, pos, data_len);
+    mem_read(this->value, data, pos, data_len);
+    uint16_t oplen;
+    mem_read(oplen, data, pos, data_len);
+    if (oplen < data_len - pos)
+        for(uint16_t i = 0; i < oplen; ++i)
+            this->opret.push_back(data[pos++]);
 }
 
 event_opreturn::~event_opreturn()
 {
-    if (opret != nullptr)
-        delete[] opret;
 }
 
 std::ostream& operator<<(std::ostream& os, const event_opreturn& in)
@@ -288,10 +288,10 @@ std::ostream& operator<<(std::ostream& os, const event_opreturn& in)
     const event& e = dynamic_cast<const event&>(in);
     os << e 
         << serializable<uint256>(in.txid)
-        << serializable<uint64_t>(in.value)
         << serializable<uint16_t>(in.vout)
-        << serializable<uint16_t>(in.oplen);
-    os.write( (const char*)in.opret, in.oplen);
+        << serializable<uint64_t>(in.value)
+        << serializable<uint16_t>(in.opret.size());
+    os.write( (const char*)in.opret.data(), in.opret.size());
     return os;
 }
 

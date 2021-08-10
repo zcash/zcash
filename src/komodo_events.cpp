@@ -46,7 +46,7 @@ void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t heig
     }
     else if ( strcmp(symbol,coin) == 0 )
     {
-        std::shared_ptr<komodo::event_notarized> n = std::make_shared<komodo::event_notarized>();
+        std::shared_ptr<komodo::event_notarized> n = std::make_shared<komodo::event_notarized>(height);
         n->blockhash = notarized_hash;
         n->desttxid = notarized_desttxid;
         n->notarizedheight = notarizedheight;
@@ -69,7 +69,7 @@ void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t heig
  */
 void komodo_eventadd_pubkeys(struct komodo_state *sp,char *symbol,int32_t height,uint8_t num,uint8_t pubkeys[64][33])
 {
-    std::shared_ptr<komodo::event_pubkeys> p = std::make_shared<komodo::event_pubkeys>();
+    std::shared_ptr<komodo::event_pubkeys> p = std::make_shared<komodo::event_pubkeys>(height);
     p->num = num;
     memcpy(p->pubkeys, pubkeys, 33 * num);
     sp->add_event(symbol, height, p);
@@ -87,7 +87,7 @@ void komodo_eventadd_pubkeys(struct komodo_state *sp,char *symbol,int32_t height
  */
 void komodo_eventadd_pricefeed(struct komodo_state *sp,char *symbol,int32_t height,uint32_t *prices,uint8_t num)
 {
-    std::shared_ptr<komodo::event_pricefeed> f = std::make_shared<komodo::event_pricefeed>();
+    std::shared_ptr<komodo::event_pricefeed> f = std::make_shared<komodo::event_pricefeed>(height);
     if ( num == sizeof(f->prices)/sizeof(*f->prices) )
     {
         f->num = num;
@@ -114,18 +114,13 @@ void komodo_eventadd_opreturn(struct komodo_state *sp,char *symbol,int32_t heigh
 {
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
-        std::shared_ptr<komodo::event_opreturn> o = std::make_shared<komodo::event_opreturn>();
-        // build a storage area
-        // JMJ TODO: This looks like a bad idea. Evaluate this code to see if a better way can be found (vector of bytes?)
-        uint8_t *opret = (uint8_t *)calloc(1,sizeof(komodo::event_opreturn) + opretlen + 16);
+        std::shared_ptr<komodo::event_opreturn> o = std::make_shared<komodo::event_opreturn>(height);
         o->txid = txid;
         o->value = value;
         o->vout = vout;
-        memcpy(opret, o.get(), sizeof(komodo::event_opreturn));
-        memcpy(&opret[sizeof(komodo::event_opreturn)], buf, opretlen);
-        o->oplen = opretlen + sizeof(komodo_event_opreturn);
+        for(uint16_t i = 0; i < opretlen; ++i)
+            o->opret.push_back(buf[i]);
         sp->add_event(symbol, height, o);
-        free(opret);
         if ( sp != 0 )
             komodo_opreturn(height,value,buf,opretlen,txid,vout,symbol);
     }
@@ -210,7 +205,7 @@ void komodo_eventadd_kmdheight(struct komodo_state *sp,char *symbol,int32_t heig
 {
     if ( kmdheight > 0 ) // height is advancing
     {
-        std::shared_ptr<komodo::event_kmdheight> e = std::shared_ptr<komodo::event_kmdheight>();
+        std::shared_ptr<komodo::event_kmdheight> e = std::make_shared<komodo::event_kmdheight>(height);
         e->timestamp = timestamp;
         e->kheight = kmdheight;
         sp->add_event(symbol, height, e);
@@ -219,7 +214,7 @@ void komodo_eventadd_kmdheight(struct komodo_state *sp,char *symbol,int32_t heig
     }
     else // rewinding
     {
-        std::shared_ptr<komodo::event_rewind> e = std::shared_ptr<komodo::event_rewind>();
+        std::shared_ptr<komodo::event_rewind> e = std::make_shared<komodo::event_rewind>(height);
         sp->add_event(symbol, height, e);
         if ( sp != 0 )
             komodo_event_rewind(sp,symbol,height);
