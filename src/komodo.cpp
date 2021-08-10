@@ -227,6 +227,14 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
     return(-1);
 }
 
+size_t write_event(std::shared_ptr<komodo::event> evt, FILE *fp)
+{
+    std::stringstream ss;
+    ss << evt;
+    std::string buf = ss.str();
+    return fwrite(buf.c_str(), buf.size(), 1, fp);
+}
+
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,
         uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,
         uint8_t numpvals,int32_t KMDheight,uint32_t KMDtimestamp,uint64_t opretvalue,
@@ -276,78 +284,39 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
     {
         if ( KMDheight != 0 )
         {
-            if ( KMDtimestamp != 0 )
-            {
-                fputc('T',fp);
-                if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
-                    errs++;
-                if ( fwrite(&KMDheight,1,sizeof(KMDheight),fp) != sizeof(KMDheight) )
-                    errs++;
-                if ( fwrite(&KMDtimestamp,1,sizeof(KMDtimestamp),fp) != sizeof(KMDtimestamp) )
-                    errs++;
-            }
-            else
-            {
-                fputc('K',fp);
-                if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
-                    errs++;
-                if ( fwrite(&KMDheight,1,sizeof(KMDheight),fp) != sizeof(KMDheight) )
-                    errs++;
-            }
             std::shared_ptr<komodo::event_kmdheight> kmd_ht = std::make_shared<komodo::event_kmdheight>(height);
             kmd_ht->kheight = KMDheight;
             kmd_ht->timestamp = KMDtimestamp;
+            write_event(kmd_ht, fp);
             komodo_eventadd_kmdheight(sp,symbol,height,kmd_ht);
         }
         else if ( opretbuf != 0 && opretlen > 0 )
         {
-            uint16_t olen = opretlen;
-            fputc('R',fp);
-            if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
-                errs++;
-            if ( fwrite(&txhash,1,sizeof(txhash),fp) != sizeof(txhash) )
-                errs++;
-            if ( fwrite(&vout,1,sizeof(vout),fp) != sizeof(vout) )
-                errs++;
-            if ( fwrite(&opretvalue,1,sizeof(opretvalue),fp) != sizeof(opretvalue) )
-                errs++;
-            if ( fwrite(&olen,1,sizeof(olen),fp) != olen )
-                errs++;
-            if ( fwrite(opretbuf,1,olen,fp) != olen )
-                errs++;
             std::shared_ptr<komodo::event_opreturn> evt = std::make_shared<komodo::event_opreturn>(height);
             evt->txid = txhash;
             evt->vout = vout;
             evt->value = opretvalue;
-            for(uint16_t i = 0; i < olen; ++i)
+            for(uint16_t i = 0; i < opretlen; ++i)
                 evt->opret.push_back(opretbuf[i]);
+            write_event(evt, fp);
             komodo_eventadd_opreturn(sp,symbol,height,evt);
         }
         else if ( notarypubs != 0 && numnotaries > 0 )
         {
-            printf("ht.%d func P[%d] errs.%d\n",height,numnotaries,errs);
-            fputc('P',fp);
-            if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
-                errs++;
-            fputc(numnotaries,fp);
-            if ( fwrite(notarypubs,33,numnotaries,fp) != numnotaries )
-                errs++;
             std::shared_ptr<komodo::event_pubkeys> pk = std::make_shared<komodo::event_pubkeys>(height);
             pk->num = numnotaries;
             memcpy(pk->pubkeys, notarypubs, 33 * 64);
+            write_event(pk, fp);
             komodo_eventadd_pubkeys(sp,symbol,height,pk);
         }
         else if ( voutmask != 0 && numvouts > 0 )
         {
-            fputc('U',fp);
-            if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
-                errs++;
-            fputc(numvouts,fp);
-            fputc(notaryid,fp);
-            if ( fwrite(&voutmask,1,sizeof(voutmask),fp) != sizeof(voutmask) )
-                errs++;
-            if ( fwrite(&txhash,1,sizeof(txhash),fp) != sizeof(txhash) )
-                errs++;
+            std::shared_ptr<komodo::event_u> evt = std::make_shared<komodo::event_u>(height);
+            evt->n = numvouts;
+            evt->nid = notaryid;
+            memcpy(evt->mask, &voutmask, sizeof(voutmask));
+            memcpy(evt->hash, &txhash, sizeof(txhash));
+           write_event(evt, fp);
         }
         else if ( pvals != 0 && numpvals > 0 )
         {
@@ -357,16 +326,11 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                     nonz++;
             if ( nonz >= 32 )
             {
-                fputc('V',fp);
-                if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
-                    errs++;
-                fputc(numpvals,fp);
-                if ( fwrite(pvals,sizeof(uint32_t),numpvals,fp) != numpvals )
-                    errs++;
                 std::shared_ptr<komodo::event_pricefeed> evt = std::make_shared<komodo::event_pricefeed>(height);
                 evt->num = numpvals;
                 for( uint8_t i = 0; i < evt->num; ++i)
                     evt->prices[i] = pvals[i];
+                write_event(evt, fp);
                 komodo_eventadd_pricefeed(sp,symbol,height,evt);
             }
         }
@@ -374,24 +338,6 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         {
             if ( sp != 0 )
             {
-                if ( sp->MoMdepth != 0 && sp->MoM != zero )
-                    fputc('M',fp);
-                else fputc('N',fp);
-                if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
-                    errs++;
-                if ( fwrite(&sp->NOTARIZED_HEIGHT,1,sizeof(sp->NOTARIZED_HEIGHT),fp) != sizeof(sp->NOTARIZED_HEIGHT) )
-                    errs++;
-                if ( fwrite(&sp->NOTARIZED_HASH,1,sizeof(sp->NOTARIZED_HASH),fp) != sizeof(sp->NOTARIZED_HASH) )
-                    errs++;
-                if ( fwrite(&sp->NOTARIZED_DESTTXID,1,sizeof(sp->NOTARIZED_DESTTXID),fp) != sizeof(sp->NOTARIZED_DESTTXID) )
-                    errs++;
-                if ( sp->MoMdepth != 0 && sp->MoM != zero )
-                {
-                    if ( fwrite(&sp->MoM,1,sizeof(sp->MoM),fp) != sizeof(sp->MoM) )
-                        errs++;
-                    if ( fwrite(&sp->MoMdepth,1,sizeof(sp->MoMdepth),fp) != sizeof(sp->MoMdepth) )
-                        errs++;
-                }
                 std::shared_ptr<komodo::event_notarized> evt = std::make_shared<komodo::event_notarized>(height);
                 memcpy(evt->dest, dest, 65);
                 evt->blockhash = sp->NOTARIZED_HASH;
@@ -399,6 +345,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 evt->notarizedheight = sp->NOTARIZED_HEIGHT;
                 evt->MoM = sp->MoM;
                 evt->MoMdepth = sp->MoMdepth;
+                write_event(evt, fp);
                 komodo_eventadd_notarized(sp,symbol,height,evt);
             }
         }
