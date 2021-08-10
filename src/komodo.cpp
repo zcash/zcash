@@ -185,7 +185,10 @@ int32_t memread(void *dest,int32_t size,uint8_t *filedata,long *fposp,long datal
 int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *fposp,long datalen,char *symbol,char *dest)
 {
     static int32_t errs;
-    int32_t func= -1,ht,notarized_height,MoMdepth,num,matched=0; uint256 MoM,notarized_hash,notarized_desttxid; uint8_t pubkeys[64][33]; long fpos = *fposp;
+    int32_t func= -1,ht,notarized_height,MoMdepth,num,matched=0; 
+    uint256 MoM,notarized_hash,notarized_desttxid; 
+    uint8_t pubkeys[64][33]; 
+    long fpos = *fposp;
     if ( fpos < datalen )
     {
         func = filedata[fpos++];
@@ -196,6 +199,8 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
             errs++;
         if ( func == 'P' )
         {
+            // old way:
+            /*
             if ( (num= filedata[fpos++]) <= 64 )
             {
                 if ( memread(pubkeys,33*num,filedata,&fpos,datalen) != 33*num )
@@ -207,9 +212,28 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
                         komodo_eventadd_pubkeys(sp,symbol,ht,num,pubkeys);
                 }
             } else printf("illegal num.%d\n",num);
+            */
+            // new way
+            try
+            {
+                std::shared_ptr<komodo::event_pubkeys> pk = std::make_shared<komodo::event_pubkeys>(filedata, fpos, datalen, ht);
+                if (sp != nullptr)
+                {
+                    if ( (KOMODO_EXTERNAL_NOTARIES && matched ) || (strcmp(symbol,"KMD") == 0 && !KOMODO_EXTERNAL_NOTARIES) )
+                    {
+                        komodo_eventadd_pubkeys(sp, symbol, ht, pk);
+                    }
+                }
+            }
+            catch( const komodo::parse_error& pe)
+            {
+                errs++;
+                printf("Unable to parse event_pubkeys: %s\n", pe.what());
+            }
         }
         else if ( func == 'N' || func == 'M' )
         {
+            /* old way:
             if ( memread(&notarized_height,sizeof(notarized_height),filedata,&fpos,datalen) != sizeof(notarized_height) )
                 errs++;
             if ( memread(&notarized_hash,sizeof(notarized_hash),filedata,&fpos,datalen) != sizeof(notarized_hash) )
@@ -222,8 +246,6 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
                     errs++;
                 if ( memread(&MoMdepth,sizeof(MoMdepth),filedata,&fpos,datalen) != sizeof(MoMdepth) )
                     errs++;
-                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && sp != 0 )
-                    printf("%s load[%s.%d -> %s] NOTARIZED %d %s MoM.%s %d CCid.%u\n",ASSETCHAINS_SYMBOL,symbol,sp->NUM_NPOINTS,dest,notarized_height,notarized_hash.ToString().c_str(),MoM.ToString().c_str(),MoMdepth&0xffff,(MoMdepth>>16)&0xffff);
             }
             else
             {
@@ -231,9 +253,22 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
                 MoMdepth = 0;
             }
             komodo_eventadd_notarized(sp,symbol,ht,dest,notarized_hash,notarized_desttxid,notarized_height,MoM,MoMdepth);
+            */ 
+           // new way
+           try
+           {
+               std::shared_ptr<komodo::event_notarized> ntz = 
+                    std::make_shared<komodo::event_notarized>(filedata, fpos, datalen, ht, func == 'M');
+               komodo_eventadd_notarized(sp, symbol, ht, ntz);
+           }
+           catch( const komodo::parse_error& pe)
+           {
+               errs++;
+           }
         }
         else if ( func == 'U' ) // deprecated
         {
+            /* old way: 
             uint8_t n,nid; uint256 hash; uint64_t mask;
             n = filedata[fpos++];
             nid = filedata[fpos++];
@@ -242,27 +277,53 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
                 errs++;
             if ( memread(&hash,sizeof(hash),filedata,&fpos,datalen) != sizeof(hash) )
                 errs++;
+            */
+            // new way
+           try
+           {
+               std::shared_ptr<komodo::event_u> u = 
+                    std::make_shared<komodo::event_u>(filedata, fpos, datalen, ht);
+           }
+           catch( const komodo::parse_error& pe)
+           {
+               errs++;
+           }
         }
-        else if ( func == 'K' )
+        else if ( func == 'K' || func == 'T' )
         {
+            /* old way:
             int32_t kheight;
             if ( memread(&kheight,sizeof(kheight),filedata,&fpos,datalen) != sizeof(kheight) )
                 errs++;
              komodo_eventadd_kmdheight(sp,symbol,ht,kheight,0);
+            */
+            // new way:
+           try
+           {
+                std::shared_ptr<komodo::event_kmdheight> kmd_ht = 
+                    std::make_shared<komodo::event_kmdheight>(filedata, fpos, datalen, ht, func == 'T');
+                komodo_eventadd_kmdheight(sp, symbol, ht, kmd_ht);
+           }
+           catch( const komodo::parse_error& pe)
+           {
+               errs++;
+           }
         }
         else if ( func == 'T' )
         {
+            /* old way:
             int32_t kheight,ktimestamp;
             if ( memread(&kheight,sizeof(kheight),filedata,&fpos,datalen) != sizeof(kheight) )
                 errs++;
             if ( memread(&ktimestamp,sizeof(ktimestamp),filedata,&fpos,datalen) != sizeof(ktimestamp) )
                 errs++;
-            //if ( matched != 0 ) global independent states -> inside *sp
-            //printf("%s.%d load[%s] ht.%d t.%u\n",ASSETCHAINS_SYMBOL,ht,symbol,kheight,ktimestamp);
             komodo_eventadd_kmdheight(sp,symbol,ht,kheight,ktimestamp);
+            */
+            // new way above
         }
         else if ( func == 'R' )
         {
+            /* old way:
             uint16_t olen,v; uint64_t ovalue; uint256 txid; uint8_t opret[16384*4];
             if ( memread(&txid,sizeof(txid),filedata,&fpos,datalen) != sizeof(txid) )
                 errs++;
@@ -290,6 +351,18 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
                     filedata[fpos++];
                 //printf("illegal olen.%u\n",olen);
             }
+            */
+            // new way
+           try
+           {
+                std::shared_ptr<komodo::event_opreturn> opret = 
+                    std::make_shared<komodo::event_opreturn>(filedata, fpos, datalen, ht);
+                komodo_eventadd_opreturn(sp, symbol, ht, opret);
+           }
+           catch( const komodo::parse_error& pe)
+           {
+               errs++;
+           }
         }
         else if ( func == 'D' )
         {
@@ -297,16 +370,28 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
         }
         else if ( func == 'V' )
         {
+            /* old way:
             int32_t numpvals; uint32_t pvals[128];
             numpvals = filedata[fpos++];
             if ( numpvals*sizeof(uint32_t) <= sizeof(pvals) && memread(pvals,(int32_t)(sizeof(uint32_t)*numpvals),filedata,&fpos,datalen) == numpvals*sizeof(uint32_t) )
             {
-                //if ( matched != 0 ) global shared state -> global PVALS
-                //printf("%s load[%s] prices %d\n",ASSETCHAINS_SYMBOL,symbol,ht);
                 komodo_eventadd_pricefeed(sp,symbol,ht,pvals,numpvals);
-                //printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
-            } else printf("error loading pvals[%d]\n",numpvals);
-        } // else printf("[%s] %s illegal func.(%d %c)\n",ASSETCHAINS_SYMBOL,symbol,func,func);
+            } 
+            else 
+                printf("error loading pvals[%d]\n",numpvals);
+            */
+            // new way:
+           try
+           {
+                std::shared_ptr<komodo::event_pricefeed> pf = 
+                    std::make_shared<komodo::event_pricefeed>(filedata, fpos, datalen, ht);
+                komodo_eventadd_pricefeed(sp, symbol, ht, pf);
+           }
+           catch( const komodo::parse_error& pe)
+           {
+               errs++;
+           }
+        }
         *fposp = fpos;
         return(func);
     }
