@@ -40,9 +40,11 @@ void komodo_eventadd_notarized( komodo_state *sp, char *symbol, int32_t height, 
     }
     else if ( strcmp(symbol,coin) == 0 )
     {
-        sp->add_event(symbol, height, ntz);
-        if ( sp != 0 )
+        if ( sp != nullptr )
+        {
+            sp->add_event(symbol, height, ntz);
             komodo_notarized_update(sp,height, ntz->notarizedheight, ntz->blockhash, ntz->desttxid, ntz->MoM, ntz->MoMdepth);
+        }
     }
 }
 
@@ -87,11 +89,11 @@ void komodo_eventadd_pricefeed( komodo_state *sp, char *symbol, int32_t height, 
  */
 void komodo_eventadd_opreturn( komodo_state *sp, char *symbol, int32_t height, std::shared_ptr<komodo::event_opreturn> opret)
 {
-        if ( sp != nullptr )
-        {
-            sp->add_event(symbol, height, opret);
-            komodo_opreturn(height, opret->value, opret->opret.data(), opret->opret.size(), opret->txid, opret->vout, symbol);
-        }
+    if ( sp != nullptr )
+    {
+        sp->add_event(symbol, height, opret);
+        komodo_opreturn(height, opret->value, opret->opret.data(), opret->opret.size(), opret->txid, opret->vout, symbol);
+    }
 }
 
 /*****
@@ -125,8 +127,8 @@ void komodo_event_undo(struct komodo_state *sp,struct komodo_event *ep)
 
 void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height)
 {
-    struct komodo_event *ep;
-    if ( sp != 0 )
+    komodo_event *ep = nullptr;
+    if ( sp != nullptr )
     {
         if ( ASSETCHAINS_SYMBOL[0] == 0 && height <= KOMODO_LASTMINED && prevKOMODO_LASTMINED != 0 )
         {
@@ -136,7 +138,7 @@ void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height)
         }
         while ( sp->Komodo_events != 0 && sp->Komodo_numevents > 0 )
         {
-            if ( (ep= sp->Komodo_events[sp->Komodo_numevents-1]) != 0 )
+            if ( (ep= sp->Komodo_events[sp->Komodo_numevents-1]) != nullptr )
             {
                 if ( ep->height < height )
                     break;
@@ -149,7 +151,7 @@ void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height)
 
 void komodo_setkmdheight(struct komodo_state *sp,int32_t kmdheight,uint32_t timestamp)
 {
-    if ( sp != 0 )
+    if ( sp != nullptr )
     {
         if ( kmdheight > sp->SAVEDHEIGHT )
         {

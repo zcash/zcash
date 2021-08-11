@@ -1,4 +1,19 @@
-#include <komodo_structs.h>
+/******************************************************************************
+ * Copyright © 2021 Komodo Core Deveelopers                                   *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+#include "komodo_structs.h"
+#include "mem_read.h"
 #include <mutex>
 
 extern std::mutex komodo_mutex;
@@ -65,63 +80,6 @@ std::ostream& operator<<(std::ostream& os, serializable<uint64_t> in)
         << (uint8_t) ((in.value & 0xff00000000000000) >> 56);
     return os;
 }
-
-/***
- * Read a chunk of memory
- */
-
-template<class T>
-std::size_t mem_read(T& dest, uint8_t *filedata, long &fpos, long datalen)
-{
-    if (fpos + sizeof(T) <= datalen)
-    {
-        memcpy( &dest, &filedata[fpos], sizeof(T) );
-        fpos += sizeof(T);
-        return sizeof(T);
-    }
-    throw parse_error("Invalid size: " + std::to_string(sizeof(T)) );
-}
-
-std::size_t mem_readn(void* dest, size_t num_bytes, uint8_t *filedata, long &fpos, long datalen)
-{
-    if (fpos + num_bytes <= datalen)
-    {
-        memcpy(dest, &filedata[fpos], num_bytes );
-        fpos += num_bytes;
-        return num_bytes;
-    }
-    throw parse_error("Invalid size: " + std::to_string(num_bytes) );
-}
-
-template<class T, std::size_t N>
-std::size_t mem_read(T(&dest)[N], uint8_t *filedata, long& fpos, long datalen)
-{
-    std::size_t sz = sizeof(T) * N;
-    if (fpos + sz <= datalen)
-    {
-        memcpy( &dest, &filedata[fpos], sz );
-        fpos += sz;
-        return sz;
-    }
-    throw parse_error("Invalid size: "  + std::to_string( sz ) );
-}
-
-/****
- * Read a size that is less than the array length
- */
-template<class T, std::size_t N>
-std::size_t mem_nread(T(&dest)[N], size_t num_elements, uint8_t *filedata, long& fpos, long datalen)
-{
-    std::size_t sz = sizeof(T) * num_elements;
-    if (fpos + sz <= datalen)
-    {
-        memcpy( &dest, &filedata[fpos], sz );
-        fpos += sz;
-        return sz;
-    }
-    throw parse_error("Invalid size: " + std::to_string(sz));
-}
-
 
 /****
  * This serializes the 5 byte header of an event
@@ -213,8 +171,10 @@ std::ostream& operator<<(std::ostream& os, const event_rewind& in)
     return os;
 }
 
-event_notarized::event_notarized(uint8_t *data, long &pos, long data_len, int32_t height, bool includeMoM) : event(EVENT_NOTARIZED, height)
+event_notarized::event_notarized(uint8_t *data, long &pos, long data_len, int32_t height, bool includeMoM) 
+        : event(EVENT_NOTARIZED, height), MoMdepth(0)
 {
+    MoM.SetNull();
     mem_read(this->notarizedheight, data, pos, data_len);
     mem_read(this->blockhash, data, pos, data_len);
     mem_read(this->desttxid, data, pos, data_len);
@@ -225,8 +185,10 @@ event_notarized::event_notarized(uint8_t *data, long &pos, long data_len, int32_
     }
 }
 
-event_notarized::event_notarized(FILE* fp, int32_t height, bool includeMoM) : event(EVENT_NOTARIZED, height)
+event_notarized::event_notarized(FILE* fp, int32_t height, bool includeMoM) 
+        : event(EVENT_NOTARIZED, height), MoMdepth(0)
 {
+    MoM.SetNull();
     if ( fread(&notarizedheight,1,sizeof(notarizedheight),fp) != sizeof(notarizedheight) )
         throw parse_error("Invalid notarization height");
     if ( fread(&blockhash,1,sizeof(blockhash),fp) != sizeof(blockhash) )
@@ -263,6 +225,18 @@ event_u::event_u(uint8_t *data, long &pos, long data_len, int32_t height) : even
     mem_read(this->nid, data, pos, data_len);
     mem_read(this->mask, data, pos, data_len);
     mem_read(this->hash, data, pos, data_len);
+}
+
+event_u::event_u(FILE *fp, int32_t height) : event(EVENT_U, height)
+{
+    if (fread(&n, 1, sizeof(n), fp) != sizeof(n))
+        throw parse_error("Unable to read n of event U from file");
+    if (fread(&nid, 1, sizeof(nid), fp) != sizeof(n))
+        throw parse_error("Unable to read nid of event U from file");
+    if (fread(&mask, 1, sizeof(mask), fp) != sizeof(mask))
+        throw parse_error("Unable to read mask of event U from file");
+    if (fread(&hash, 1, sizeof(hash), fp) != sizeof(hash))
+        throw parse_error("Unable to read hash of event U from file");
 }
 
 std::ostream& operator<<(std::ostream& os, const event_u& in)
@@ -327,13 +301,10 @@ event_opreturn::event_opreturn(FILE* fp, int32_t height) : event(EVENT_OPRETURN,
     uint16_t oplen;
     if ( fread(&oplen,1,sizeof(oplen),fp) != sizeof(oplen) )
         throw parse_error("Unable to parse length of opreturn record");
-    uint8_t *b = new uint8_t[oplen];
-    size_t result = fread(b, 1, oplen, fp);
-    if (result == oplen)
-        this->opret = std::vector<uint8_t>( b, b + oplen);
-    delete b;
-    if (result != oplen)
+    std::unique_ptr<uint8_t> b(new uint8_t[oplen]);
+    if ( fread(b.get(), 1, oplen, fp) != oplen)
         throw parse_error("Unable to parse binary data of opreturn");
+    this->opret = std::vector<uint8_t>( b.get(), b.get() + oplen);
 }
 
 std::ostream& operator<<(std::ostream& os, const event_opreturn& in)

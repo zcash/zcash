@@ -15,6 +15,7 @@
 #include "komodo.h"
 #include "komodo_extern_globals.h"
 #include "komodo_notary.h"
+#include "mem_read.h"
 
 void komodo_currentheight_set(int32_t height)
 {
@@ -23,7 +24,8 @@ void komodo_currentheight_set(int32_t height)
         sp->CURRENT_HEIGHT = height;
 }
 
-extern struct NSPV_inforesp NSPV_inforesult;
+extern NSPV_inforesp NSPV_inforesult;
+
 int32_t komodo_currentheight()
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
@@ -38,195 +40,147 @@ int32_t komodo_currentheight()
 
 int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char *dest)
 {
-    static int32_t errs;
-    int32_t func,ht,notarized_height,num,matched=0,MoMdepth; uint256 MoM,notarized_hash,notarized_desttxid; uint8_t pubkeys[64][33];
-    if ( (func= fgetc(fp)) != EOF )
+    int32_t func;
+
+    try
     {
-        if ( ASSETCHAINS_SYMBOL[0] == 0 && strcmp(symbol,"KMD") == 0 )
-            matched = 1;
-        else matched = (strcmp(symbol,ASSETCHAINS_SYMBOL) == 0);
-        if ( fread(&ht,1,sizeof(ht),fp) != sizeof(ht) )
-            errs++;
-        if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && func != 'T' )
-            printf("[%s] matched.%d fpos.%ld func.(%d %c) ht.%d\n",ASSETCHAINS_SYMBOL,matched,ftell(fp),func,func,ht);
-        if ( func == 'P' )
+        if ( (func= fgetc(fp)) != EOF )
         {
-            try
+            bool matched = false;
+            if ( ASSETCHAINS_SYMBOL[0] == 0 && strcmp(symbol,"KMD") == 0 )
+                matched = true;
+            else 
+                matched = (strcmp(symbol,ASSETCHAINS_SYMBOL) == 0);
+
+            int32_t ht;
+            if ( fread(&ht,1,sizeof(ht),fp) != sizeof(ht) )
+                throw komodo::parse_error("Unable to read height from file");
+            if ( func == 'P' )
             {
                 std::shared_ptr<komodo::event_pubkeys> pk = std::make_shared<komodo::event_pubkeys>(fp, ht);
-                if (sp != nullptr)
+                if ( (KOMODO_EXTERNAL_NOTARIES && matched ) || (strcmp(symbol,"KMD") == 0 && !KOMODO_EXTERNAL_NOTARIES) )
                 {
-                    if ( (KOMODO_EXTERNAL_NOTARIES && matched ) || (strcmp(symbol,"KMD") == 0 && !KOMODO_EXTERNAL_NOTARIES) )
-                    {
-                        komodo_eventadd_pubkeys(sp, symbol, ht, pk);
-                    }
+                    komodo_eventadd_pubkeys(sp, symbol, ht, pk);
                 }
             }
-            catch( const komodo::parse_error& pe)
+            else if ( func == 'N' || func == 'M' )
             {
-                errs++;
-                printf("Unable to parse event_pubkeys: %s\n", pe.what());
+                std::shared_ptr<komodo::event_notarized> evt = std::make_shared<komodo::event_notarized>(fp, ht, func == 'M');
+                komodo_eventadd_notarized(sp, symbol, ht, evt);
             }
-        }
-        else if ( func == 'N' || func == 'M' )
-        {
-            std::shared_ptr<komodo::event_notarized> evt = std::make_shared<komodo::event_notarized>(fp, ht, func == 'M');
-            komodo_eventadd_notarized(sp, symbol, ht, evt);
-        }
-        else if ( func == 'U' ) // deprecated
-        {
-            uint8_t n,nid; uint256 hash; uint64_t mask;
-            n = fgetc(fp);
-            nid = fgetc(fp);
-            if ( fread(&mask,1,sizeof(mask),fp) != sizeof(mask) )
-                errs++;
-            if ( fread(&hash,1,sizeof(hash),fp) != sizeof(hash) )
-                errs++;
-        }
-        else if ( func == 'K' || func == 'T')
-        {
-            std::shared_ptr<komodo::event_kmdheight> evt = std::make_shared<komodo::event_kmdheight>(fp, ht, func == 'T');
-            komodo_eventadd_kmdheight(sp, symbol, ht, evt);
-        }
-        else if ( func == 'R' )
-        {
-            std::shared_ptr<komodo::event_opreturn> evt = std::make_shared<komodo::event_opreturn>(fp, ht);
-            // check for oversized opret
-            if ( evt->opret.size() < 16384*4 )
-                komodo_eventadd_opreturn(sp, symbol, ht, evt);
-        }
-        else if ( func == 'D' )
-        {
-            printf("unexpected function D[%d]\n",ht);
-        }
-        else if ( func == 'V' )
-        {
-            std::shared_ptr<komodo::event_pricefeed> evt = std::make_shared<komodo::event_pricefeed>(fp, ht);
-            komodo_eventadd_pricefeed(sp, symbol, ht, evt);
-        }
-        return(func);
-    } else return(-1);
-}
-
-int32_t memread(void *dest,int32_t size,uint8_t *filedata,long *fposp,long datalen)
-{
-    if ( *fposp+size <= datalen )
-    {
-        memcpy(dest,&filedata[*fposp],size);
-        (*fposp) += size;
-        return(size);
+            else if ( func == 'U' ) // deprecated
+            {
+                std::shared_ptr<komodo::event_u> evt = std::make_shared<komodo::event_u>(fp, ht);
+            }
+            else if ( func == 'K' || func == 'T')
+            {
+                std::shared_ptr<komodo::event_kmdheight> evt = std::make_shared<komodo::event_kmdheight>(fp, ht, func == 'T');
+                komodo_eventadd_kmdheight(sp, symbol, ht, evt);
+            }
+            else if ( func == 'R' )
+            {
+                std::shared_ptr<komodo::event_opreturn> evt = std::make_shared<komodo::event_opreturn>(fp, ht);
+                // check for oversized opret
+                if ( evt->opret.size() < 16384*4 )
+                    komodo_eventadd_opreturn(sp, symbol, ht, evt);
+            }
+            else if ( func == 'D' )
+            {
+                printf("unexpected function D[%d]\n",ht);
+            }
+            else if ( func == 'V' )
+            {
+                std::shared_ptr<komodo::event_pricefeed> evt = std::make_shared<komodo::event_pricefeed>(fp, ht);
+                komodo_eventadd_pricefeed(sp, symbol, ht, evt);
+            }
+        } // retrieved the func
     }
-    return(-1);
+    catch(const komodo::parse_error& pe)
+    {
+        LogPrintf("Error occurred in parsestatefile: %s\n", pe.what());
+        func = -1;
+    }
+    return func;
 }
 
 int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *fposp,long datalen,char *symbol,char *dest)
 {
-    static int32_t errs;
-    int32_t func= -1,ht,notarized_height,MoMdepth,num,matched=0; 
-    uint256 MoM,notarized_hash,notarized_desttxid; 
-    uint8_t pubkeys[64][33]; 
-    long fpos = *fposp;
-    if ( fpos < datalen )
+    int32_t func = -1;
+
+    try
     {
-        func = filedata[fpos++];
-        if ( ASSETCHAINS_SYMBOL[0] == 0 && strcmp(symbol,"KMD") == 0 )
-            matched = 1;
-        else matched = (strcmp(symbol,ASSETCHAINS_SYMBOL) == 0);
-        if ( memread(&ht,sizeof(ht),filedata,&fpos,datalen) != sizeof(ht) )
-            errs++;
-        if ( func == 'P' )
+        long fpos = *fposp;
+        if ( fpos < datalen )
         {
-            try
+            func = filedata[fpos++];
+
+            bool matched = false;
+            if ( ASSETCHAINS_SYMBOL[0] == 0 && strcmp(symbol,"KMD") == 0 )
+                matched = true;
+            else 
+                matched = (strcmp(symbol,ASSETCHAINS_SYMBOL) == 0);
+
+            int32_t ht;
+            if ( mem_read(ht, filedata, fpos, datalen) != sizeof(ht) )
+                throw komodo::parse_error("Unable to parse height from file data");
+            if ( func == 'P' )
             {
                 std::shared_ptr<komodo::event_pubkeys> pk = std::make_shared<komodo::event_pubkeys>(filedata, fpos, datalen, ht);
-                if (sp != nullptr)
+                if ( (KOMODO_EXTERNAL_NOTARIES && matched ) || (strcmp(symbol,"KMD") == 0 && !KOMODO_EXTERNAL_NOTARIES) )
                 {
-                    if ( (KOMODO_EXTERNAL_NOTARIES && matched ) || (strcmp(symbol,"KMD") == 0 && !KOMODO_EXTERNAL_NOTARIES) )
-                    {
-                        komodo_eventadd_pubkeys(sp, symbol, ht, pk);
-                    }
+                    komodo_eventadd_pubkeys(sp, symbol, ht, pk);
                 }
             }
-            catch( const komodo::parse_error& pe)
+            else if ( func == 'N' || func == 'M' )
             {
-                errs++;
-                printf("Unable to parse event_pubkeys: %s\n", pe.what());
+                std::shared_ptr<komodo::event_notarized> ntz = 
+                        std::make_shared<komodo::event_notarized>(filedata, fpos, datalen, ht, func == 'M');
+                komodo_eventadd_notarized(sp, symbol, ht, ntz);
             }
-        }
-        else if ( func == 'N' || func == 'M' )
-        {
-           try
-           {
-               std::shared_ptr<komodo::event_notarized> ntz = 
-                    std::make_shared<komodo::event_notarized>(filedata, fpos, datalen, ht, func == 'M');
-               komodo_eventadd_notarized(sp, symbol, ht, ntz);
-           }
-           catch( const komodo::parse_error& pe)
-           {
-               errs++;
-           }
-        }
-        else if ( func == 'U' ) // deprecated
-        {
-           try
-           {
-               std::shared_ptr<komodo::event_u> u = 
-                    std::make_shared<komodo::event_u>(filedata, fpos, datalen, ht);
-           }
-           catch( const komodo::parse_error& pe)
-           {
-               errs++;
-           }
-        }
-        else if ( func == 'K' || func == 'T' )
-        {
-           try
-           {
+            else if ( func == 'U' ) // deprecated
+            {
+                std::shared_ptr<komodo::event_u> u = 
+                        std::make_shared<komodo::event_u>(filedata, fpos, datalen, ht);
+            }
+            else if ( func == 'K' || func == 'T' )
+            {
                 std::shared_ptr<komodo::event_kmdheight> kmd_ht = 
-                    std::make_shared<komodo::event_kmdheight>(filedata, fpos, datalen, ht, func == 'T');
+                        std::make_shared<komodo::event_kmdheight>(filedata, fpos, datalen, ht, func == 'T');
                 komodo_eventadd_kmdheight(sp, symbol, ht, kmd_ht);
-           }
-           catch( const komodo::parse_error& pe)
-           {
-               errs++;
-           }
-        }
-        else if ( func == 'R' )
-        {
-           try
-           {
+            }
+            else if ( func == 'R' )
+            {
                 std::shared_ptr<komodo::event_opreturn> opret = 
-                    std::make_shared<komodo::event_opreturn>(filedata, fpos, datalen, ht);
+                        std::make_shared<komodo::event_opreturn>(filedata, fpos, datalen, ht);
                 komodo_eventadd_opreturn(sp, symbol, ht, opret);
-           }
-           catch( const komodo::parse_error& pe)
-           {
-               errs++;
-           }
-        }
-        else if ( func == 'D' )
-        {
-            printf("unexpected function D[%d]\n",ht);
-        }
-        else if ( func == 'V' )
-        {
-           try
-           {
+            }
+            else if ( func == 'D' )
+            {
+                printf("unexpected function D[%d]\n",ht);
+            }
+            else if ( func == 'V' )
+            {
                 std::shared_ptr<komodo::event_pricefeed> pf = 
-                    std::make_shared<komodo::event_pricefeed>(filedata, fpos, datalen, ht);
+                        std::make_shared<komodo::event_pricefeed>(filedata, fpos, datalen, ht);
                 komodo_eventadd_pricefeed(sp, symbol, ht, pf);
-           }
-           catch( const komodo::parse_error& pe)
-           {
-               errs++;
-           }
+            }
+            *fposp = fpos;
         }
-        *fposp = fpos;
-        return(func);
     }
-    return(-1);
+    catch( const komodo::parse_error& pe)
+    {
+        LogPrintf("Unable to parse state file data. Error: %s\n", pe.what());
+        func = -1;
+    }
+    return func;
 }
 
+/***
+ * @brief persist event to file stream
+ * @param evt the event
+ * @param fp the file
+ * @returns the number of bytes written
+ */
 size_t write_event(std::shared_ptr<komodo::event> evt, FILE *fp)
 {
     std::stringstream ss;

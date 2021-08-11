@@ -135,8 +135,14 @@ struct event_pubkeys : public event
     /***
      * Default ctor
      */
-    event_pubkeys() : event(EVENT_PUBKEYS, 0), num(0) {}
-    event_pubkeys(int32_t ht) : event(EVENT_PUBKEYS, ht), num(0) {}
+    event_pubkeys() : event(EVENT_PUBKEYS, 0), num(0)
+    {
+        memset(pubkeys, 0, 64 * 33);
+    }
+    event_pubkeys(int32_t ht) : event(EVENT_PUBKEYS, ht), num(0) 
+    {
+        memset(pubkeys, 0, 64 * 33);
+    }
     /***
      * ctor from data stream
      * @param data the data stream
@@ -145,18 +151,27 @@ struct event_pubkeys : public event
      */
     event_pubkeys(uint8_t* data, long &pos, long data_len, int32_t height);
     event_pubkeys(FILE* fp, int32_t height);
-    uint8_t num; 
+    uint8_t num = 0; 
     uint8_t pubkeys[64][33]; 
 };
 std::ostream& operator<<(std::ostream& os, const event_pubkeys& in);
 
 struct event_u : public event
 {
-    event_u() : event(EVENT_U, 0) {}
-    event_u(int32_t ht) : event(EVENT_U, ht) {}
+    event_u() : event(EVENT_U, 0) 
+    {
+        memset(mask, 0, 8);
+        memset(hash, 0, 32);
+    }
+    event_u(int32_t ht) : event(EVENT_U, ht)
+    {
+        memset(mask, 0, 8);
+        memset(hash, 0, 32);
+    }
     event_u(uint8_t *data, long &pos, long data_len, int32_t height);
-    uint8_t n;
-    uint8_t nid;
+    event_u(FILE* fp, int32_t height);
+    uint8_t n = 0;
+    uint8_t nid = 0;
     uint8_t mask[8];
     uint8_t hash[32];
 };
@@ -175,24 +190,36 @@ std::ostream& operator<<(std::ostream& os, const event_kmdheight& in);
 
 struct event_opreturn : public event 
 { 
-    event_opreturn() : event(EVENT_OPRETURN, 0) {}
-    event_opreturn(int32_t ht) : event(EVENT_OPRETURN, ht) {}
+    event_opreturn() : event(EVENT_OPRETURN, 0) 
+    {
+        txid.SetNull();
+    }
+    event_opreturn(int32_t ht) : event(EVENT_OPRETURN, ht)
+    {
+        txid.SetNull();
+    }
     event_opreturn(uint8_t *data, long &pos, long data_len, int32_t height);
     event_opreturn(FILE* fp, int32_t height);
     uint256 txid; 
-    uint16_t vout;
-    uint64_t value; 
+    uint16_t vout = 0;
+    uint64_t value = 0; 
     std::vector<uint8_t> opret;
 };
 std::ostream& operator<<(std::ostream& os, const event_opreturn& in);
 
 struct event_pricefeed : public event
 {
-    event_pricefeed() : event(EVENT_PRICEFEED, 0) {}
-    event_pricefeed(int32_t ht) : event(EVENT_PRICEFEED, ht) {}
+    event_pricefeed() : event(EVENT_PRICEFEED, 0), num(0) 
+    {
+        memset(prices, 0, 35);
+    }
+    event_pricefeed(int32_t ht) : event(EVENT_PRICEFEED, ht)
+    {
+        memset(prices, 0, 35);
+    }
     event_pricefeed(uint8_t *data, long &pos, long data_len, int32_t height);
     event_pricefeed(FILE* fp, int32_t height); 
-    uint8_t num; 
+    uint8_t num = 0; 
     uint32_t prices[35]; 
 };
 std::ostream& operator<<(std::ostream& os, const event_pricefeed& in);
