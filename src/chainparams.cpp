@@ -184,6 +184,8 @@ public:
         vSeeds.clear();
 
         vSeeds.push_back(CDNSSeedData("kmd.sh", "seeds1.kmd.sh"));
+        vSeeds.push_back(CDNSSeedData("cipig.net", "kmdseed.cipig.net"));
+
         /*
         vSeeds.push_back(CDNSSeedData("komodoseeds.com", "kmd.komodoseeds.com"));
         vSeeds.push_back(CDNSSeedData("komodoseeds.com", "dynamic.komodoseeds.com"));
