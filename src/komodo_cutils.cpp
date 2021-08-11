@@ -2,6 +2,10 @@
 #include "stdlib.h" //malloc
 #include "hex.h"
 
+#ifdef __APPLE__
+#include <unistd.h> // sleep
+#endif
+
 int32_t safecopy(char *dest,char *src,long len)
 {
     int32_t i = -1;
