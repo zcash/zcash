@@ -4061,21 +4061,6 @@ bool CWallet::DelAddressBook(const CTxDestination& address)
     return CWalletDB(strWalletFile).EraseName(keyIO.EncodeDestination(address));
 }
 
-const std::string& CWallet::GetAccountName(const CScript& scriptPubKey) const
-{
-    CTxDestination address;
-    if (ExtractDestination(scriptPubKey, address) && !scriptPubKey.IsUnspendable()) {
-        auto mi = mapAddressBook.find(address);
-        if (mi != mapAddressBook.end()) {
-            return mi->second.name;
-        }
-    }
-    // A scriptPubKey that doesn't have an entry in the address book is
-    // associated with the default account ("").
-    const static std::string DEFAULT_ACCOUNT_NAME;
-    return DEFAULT_ACCOUNT_NAME;
-}
-
 bool CWallet::SetDefaultKey(const CPubKey &vchPubKey)
 {
     if (fFileBacked)
@@ -4355,20 +4340,6 @@ set< set<CTxDestination> > CWallet::GetAddressGroupings()
     }
 
     return ret;
-}
-
-std::set<CTxDestination> CWallet::GetAccountAddresses(const std::string& strAccount) const
-{
-    LOCK(cs_wallet);
-    set<CTxDestination> result;
-    for (const std::pair<CTxDestination, CAddressBookData>& item : mapAddressBook)
-    {
-        const CTxDestination& address = item.first;
-        const string& strName = item.second.name;
-        if (strName == strAccount)
-            result.insert(address);
-    }
-    return result;
 }
 
 bool CReserveKey::GetReservedKey(CPubKey& pubkey)

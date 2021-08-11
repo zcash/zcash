@@ -1156,8 +1156,6 @@ public:
     std::set< std::set<CTxDestination> > GetAddressGroupings();
     std::map<CTxDestination, CAmount> GetAddressBalances();
 
-    std::set<CTxDestination> GetAccountAddresses(const std::string& strAccount) const;
-
     std::optional<uint256> GetSproutNoteNullifier(
         const JSDescription& jsdesc,
         const libzcash::SproutPaymentAddress& address,
@@ -1210,8 +1208,6 @@ public:
     bool DelAddressBook(const CTxDestination& address);
 
     void UpdatedTransaction(const uint256 &hashTx);
-
-    const std::string& GetAccountName(const CScript& scriptPubKey) const;
 
     void Inventory(const uint256 &hash)
     {
