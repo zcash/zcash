@@ -6132,32 +6132,21 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
             }
             else if (inv.IsKnownType())
             {
-                // Check the mempool to see if a transaction is expiring soon.  If so, do not send to peer.
-                // Note that a transaction enters the mempool first, before the serialized form is cached
-                // in mapRelay after a successful relay.
-                bool isExpiringSoon = false;
+                // Send stream from relay memory
                 bool pushed = false;
-                CTransaction tx;
-                bool isInMempool = mempool.lookup(inv.hash, tx);
-                if (isInMempool) {
-                    isExpiringSoon = IsExpiringSoonTx(tx, currentHeight + 1);
-                }
-
-                if (!isExpiringSoon) {
-                    // Send stream from relay memory
-                    {
-                        LOCK(cs_mapRelay);
-                        map<uint256, CTransaction>::iterator mi = mapRelay.find(inv.hash);
-                        if (mi != mapRelay.end()) {
-                            pfrom->PushMessage(inv.GetCommand(), (*mi).second);
-                            pushed = true;
-                        }
+                {
+                    LOCK(cs_mapRelay);
+                    map<uint256, CTransaction>::iterator mi = mapRelay.find(inv.hash);
+                    if (mi != mapRelay.end() && !IsExpiringSoonTx((*mi).second, currentHeight + 1)) {
+                        pfrom->PushMessage(inv.GetCommand(), (*mi).second);
+                        pushed = true;
                     }
-                    if (!pushed && inv.type == MSG_TX) {
-                        if (isInMempool) {
-                            pfrom->PushMessage("tx", tx);
-                            pushed = true;
-                        }
+                }
+                if (!pushed && inv.type == MSG_TX) {
+                    CTransaction tx;
+                    if (mempool.lookup(inv.hash, tx) && !IsExpiringSoonTx(tx, currentHeight + 1)) {
+                        pfrom->PushMessage("tx", tx);
+                        pushed = true;
                     }
                 }
 
