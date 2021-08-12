@@ -492,7 +492,7 @@ void komodo_init(int32_t height)
     if ( didinit == 0 )
     {
         pthread_mutex_init(&komodo_mutex,NULL);
-        decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+        decode_hex(NOTARY_PUBKEY33,33,NOTARY_PUBKEY.c_str());
         if ( height >= 0 )
         {
             n = (int32_t)(sizeof(Notaries_genesis)/sizeof(*Notaries_genesis));

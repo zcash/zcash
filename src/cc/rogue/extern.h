@@ -194,7 +194,5 @@ void md_onsignal_exit(void);
 void md_onsignal_default(void);
 int md_issymlink(char *sp);
 
-int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
-
 #endif
 

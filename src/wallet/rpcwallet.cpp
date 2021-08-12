@@ -60,6 +60,7 @@
 #include <numeric>
 
 #include "komodo_defs.h"
+#include "hex.h"
 #include <string.h>
 
 using namespace std;
@@ -5489,7 +5490,6 @@ UniValue z_listoperationids(const UniValue& params, bool fHelp, const CPubKey& m
 
 
 #include "script/sign.h"
-int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 extern std::string NOTARY_PUBKEY;
 
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33, void *pTr)
@@ -5538,7 +5538,6 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33, void *
             continue;
         }
         utxovalue = (uint64_t)nValue;
-        //decode_hex((uint8_t *)&utxotxid,32,(char *)out.tx->GetHash().GetHex().c_str());
         utxotxid = out.tx->GetHash();
         utxovout = out.i;
         best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
@@ -5729,7 +5728,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
     {
         if (strlen(params[0].get_str().c_str()) == 66) 
         {
-            decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
+            decode_hex(pubkey33,33,params[0].get_str().c_str());
             pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
             CBitcoinAddress address(Raddress);
             bool isValid = address.IsValid();
@@ -5743,14 +5742,14 @@ UniValue setpubkey(const UniValue& params, bool fHelp, const CPubKey& mypk)
                 {
                     result.push_back(Pair("ismine", "true"));
                     std::string notaryname;
-                    if ( (IS_STAKED_NOTARY= StakedNotaryID(notaryname, Raddress)) > -1 ) 
+                    if ( (STAKED_NOTARY_ID= StakedNotaryID(notaryname, Raddress)) > -1 ) 
                     {
                         result.push_back(Pair("IsNotary", notaryname));
-                        IS_KOMODO_NOTARY = 0;
+                        IS_KOMODO_NOTARY = false;
                     }
                 }
                 NOTARY_PUBKEY = params[0].get_str();
-                decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+                decode_hex(NOTARY_PUBKEY33,33,NOTARY_PUBKEY.c_str());
                 USE_EXTERNAL_PUBKEY = 1;
                 NOTARY_ADDRESS = address.ToString();
             }

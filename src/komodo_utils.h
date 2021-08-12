@@ -13,6 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 #include "komodo_defs.h"
+#include "hex.h"
 #include "key_io.h"
 #include "cc/CCinclude.h"
 #include <string.h>
@@ -822,112 +823,6 @@ int32_t bitweight(uint64_t x)
     return(wt);
 }
 
-int32_t _unhex(char c)
-{
-    if ( c >= '0' && c <= '9' )
-        return(c - '0');
-    else if ( c >= 'a' && c <= 'f' )
-        return(c - 'a' + 10);
-    else if ( c >= 'A' && c <= 'F' )
-        return(c - 'A' + 10);
-    return(-1);
-}
-
-int32_t is_hexstr(char *str,int32_t n)
-{
-    int32_t i;
-    if ( str == 0 || str[0] == 0 )
-        return(0);
-    for (i=0; str[i]!=0; i++)
-    {
-        if ( n > 0 && i >= n )
-            break;
-        if ( _unhex(str[i]) < 0 )
-            break;
-    }
-    if ( n == 0 )
-        return(i);
-    return(i == n);
-}
-
-int32_t unhex(char c)
-{
-    int32_t hex;
-    if ( (hex= _unhex(c)) < 0 )
-    {
-        //printf("unhex: illegal hexchar.(%c)\n",c);
-    }
-    return(hex);
-}
-
-unsigned char _decode_hex(char *hex) { return((unhex(hex[0])<<4) | unhex(hex[1])); }
-
-int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex)
-{
-    int32_t adjust,i = 0;
-    //printf("decode.(%s)\n",hex);
-    if ( is_hexstr(hex,n) <= 0 )
-    {
-        memset(bytes,0,n);
-        return(n);
-    }
-    if ( hex[n-1] == '\n' || hex[n-1] == '\r' )
-        hex[--n] = 0;
-    if ( n == 0 || (hex[n*2+1] == 0 && hex[n*2] != 0) )
-    {
-        if ( n > 0 )
-        {
-            bytes[0] = unhex(hex[0]);
-            printf("decode_hex n.%d hex[0] (%c) -> %d hex.(%s) [n*2+1: %d] [n*2: %d %c] len.%ld\n",n,hex[0],bytes[0],hex,hex[n*2+1],hex[n*2],hex[n*2],(long)strlen(hex));
-        }
-        bytes++;
-        hex++;
-        adjust = 1;
-    } else adjust = 0;
-    if ( n > 0 )
-    {
-        for (i=0; i<n; i++)
-            bytes[i] = _decode_hex(&hex[i*2]);
-    }
-    //bytes[i] = 0;
-    return(n + adjust);
-}
-
-char hexbyte(int32_t c)
-{
-    c &= 0xf;
-    if ( c < 10 )
-        return('0'+c);
-    else if ( c < 16 )
-        return('a'+c-10);
-    else return(0);
-}
-
-int32_t init_hexbytes_noT(char *hexbytes,unsigned char *message,long len)
-{
-    int32_t i;
-    if ( len <= 0 )
-    {
-        hexbytes[0] = 0;
-        return(1);
-    }
-    for (i=0; i<len; i++)
-    {
-        hexbytes[i*2] = hexbyte((message[i]>>4) & 0xf);
-        hexbytes[i*2 + 1] = hexbyte(message[i] & 0xf);
-        //printf("i.%d (%02x) [%c%c]\n",i,message[i],hexbytes[i*2],hexbytes[i*2+1]);
-    }
-    hexbytes[len*2] = 0;
-    //printf("len.%ld\n",len*2+1);
-    return((int32_t)len*2+1);
-}
-
-char *bits256_str(char hexstr[65],bits256 x)
-{
-    init_hexbytes_noT(hexstr,x.bytes,sizeof(x));
-    return(hexstr);
-}
-
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp)
 {
     int32_t i; uint64_t x;
@@ -1695,37 +1590,44 @@ int8_t equihash_params_possible(uint64_t n, uint64_t k)
     return(-1);
 }
 
+/***
+ * Parse command line arguments
+ * @param argv0 the arguments
+ */
 void komodo_args(char *argv0)
 {
-    std::string name,addn,hexstr,symbol; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[32756],disablebits[32],*extraptr=0;
-    FILE *fp; uint64_t val; uint16_t port, dest_rpc_port; int32_t i,nonz=0,baseid,len,n,extralen = 0; uint64_t ccenables[256], ccEnablesHeight[512] = {0}; CTransaction earlytx; uint256 hashBlock;
+    uint8_t extrabuf[32756], *extraptr = 0;
+    int32_t i;
+    int32_t n;
+    int32_t nonz=0;
+    int32_t extralen = 0; 
+    uint64_t ccEnablesHeight[512] = {0}; 
 
     std::string ntz_dest_path;
     ntz_dest_path = GetArg("-notary", "");
-    IS_KOMODO_NOTARY = ntz_dest_path == "" ? 0 : 1;
+    IS_KOMODO_NOTARY = !ntz_dest_path.empty();
 
-
-    IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
+    STAKED_NOTARY_ID = GetArg("-stakednotary", -1);
     KOMODO_NSPV = GetArg("-nSPV",0);
-    memset(ccenables,0,sizeof(ccenables));
+    uint8_t disablebits[32];
     memset(disablebits,0,sizeof(disablebits));
     memset(ccEnablesHeight,0,sizeof(ccEnablesHeight));
     if ( GetBoolArg("-gen", false) != 0 )
     {
         KOMODO_MININGTHREADS = GetArg("-genproclimit",-1);
     }
-    if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
-        fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
+    if ( (IS_MODE_EXCHANGEWALLET = GetBoolArg("-exchange", false)) )
+        fprintf(stderr,"IS_MODE_EXCHANGEWALLET mode active\n");
     DONATION_PUBKEY = GetArg("-donation", "");
     NOTARY_PUBKEY = GetArg("-pubkey", "");
-    KOMODO_DEALERNODE = GetArg("-dealer",0);
-    KOMODO_TESTNODE = GetArg("-testnode",0);
+    IS_KOMODO_DEALERNODE = GetBoolArg("-dealer",false);
+    IS_KOMODO_TESTNODE = GetArg("-testnode",0);
     ASSETCHAINS_STAKED_SPLIT_PERCENTAGE = GetArg("-splitperc",0);
-    if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
+    if ( NOTARY_PUBKEY.size() == 66 )
     {
-        decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+        decode_hex(NOTARY_PUBKEY33,33,NOTARY_PUBKEY.c_str());
         USE_EXTERNAL_PUBKEY = 1;
-        if ( IS_KOMODO_NOTARY == 0 )
+        if ( !IS_KOMODO_NOTARY )
         {
             // We dont have any chain data yet, so use system clock to guess. 
             // I think on season change should reccomend notaries to use -notary to avoid needing this. 
@@ -1734,24 +1636,24 @@ void komodo_args(char *argv0)
             {
                 if ( strcmp(NOTARY_PUBKEY.c_str(),notaries_elected[kmd_season-1][i][1]) == 0 )
                 {
-                    IS_KOMODO_NOTARY = 1;
+                    IS_KOMODO_NOTARY = true;
                     KOMODO_MININGTHREADS = 1;
                     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
-                    IS_STAKED_NOTARY = -1;
+                    STAKED_NOTARY_ID = -1;
                     fprintf(stderr,"running as notary.%d %s\n",i,notaries_elected[kmd_season-1][i][0]);
                     break;
                 }
             }
         }
     }
-    if ( IS_STAKED_NOTARY != -1 && IS_KOMODO_NOTARY == true ) {
+    if ( STAKED_NOTARY_ID != -1 && IS_KOMODO_NOTARY ) {
         fprintf(stderr, "Cannot be STAKED and KMD notary at the same time!\n");
         StartShutdown();
     }
-	name = GetArg("-ac_name","");
+	std::string name = GetArg("-ac_name","");
     if ( argv0 != 0 )
     {
-        len = (int32_t)strlen(argv0);
+        size_t len = strlen(argv0);
         for (i=0; i<sizeof(argv0suffix)/sizeof(*argv0suffix); i++)
         {
             n = (int32_t)strlen(argv0suffix[i]);
@@ -1906,11 +1808,11 @@ void komodo_args(char *argv0)
                 fprintf(stderr,"%s ",ASSETCHAINS_STOCKS[i].c_str());
             fprintf(stderr,"%d -ac_stocks\n",(int32_t)ASSETCHAINS_STOCKS.size());
         }
-        hexstr = GetArg("-ac_mineropret","");
-        if ( hexstr.size() != 0 )
+        std::string hexstr = GetArg("-ac_mineropret","");
+        if ( !hexstr.empty() )
         {
             Mineropret.resize(hexstr.size()/2);
-            decode_hex(Mineropret.data(),hexstr.size()/2,(char *)hexstr.c_str());
+            decode_hex(Mineropret.data(),hexstr.size()/2,hexstr.c_str());
             for (i=0; i<Mineropret.size(); i++)
                 fprintf(stderr,"%02x",Mineropret[i]);
             fprintf(stderr," Mineropret\n");
@@ -1923,6 +1825,8 @@ void komodo_args(char *argv0)
         if ( ASSETCHAINS_CC != 0 )
         {
             uint8_t prevCCi = 0;
+            uint64_t ccenables[256];
+            memset(ccenables,0,sizeof(ccenables));
             ASSETCHAINS_CCLIB = GetArg("-ac_cclib","");
             Split(GetArg("-ac_ccenable",""), sizeof(ccenables)/sizeof(*ccenables),  ccenables, 0);
             for (i=nonz=0; i<0x100; i++)
@@ -2037,7 +1941,7 @@ void komodo_args(char *argv0)
             }
             if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 )
             {
-                decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
+                decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
                 calc_rmd160_sha256(ASSETCHAINS_OVERRIDE_PUBKEYHASH,ASSETCHAINS_OVERRIDE_PUBKEY33,33);
             }
             if ( ASSETCHAINS_COMMISSION == 0 && ASSETCHAINS_FOUNDERS != 0 )
@@ -2076,9 +1980,21 @@ void komodo_args(char *argv0)
             fprintf(stderr,"-ac_script and -ac_marmara are mutually exclusive\n");
             StartShutdown();
         }
-        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF|| ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 || ASSETCHAINS_BEAMPORT != 0 || ASSETCHAINS_CODAPORT != 0 || ASSETCHAINS_MARMARA != 0 || nonz > 0 || ASSETCHAINS_CCLIB.size() > 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 || ASSETCHAINS_NOTARY_PAY[0] != 0 || ASSETCHAINS_BLOCKTIME != 60 || ASSETCHAINS_CBOPRET != 0 || Mineropret.size() != 0 || (ASSETCHAINS_NK[0] != 0 && ASSETCHAINS_NK[1] != 0) || KOMODO_SNAPSHOT_INTERVAL != 0 || ASSETCHAINS_EARLYTXIDCONTRACT != 0 || ASSETCHAINS_CBMATURITY != 0 || ASSETCHAINS_ADAPTIVEPOW != 0 )
+        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 
+                || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 
+                || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 || ASSETCHAINS_FOUNDERS != 0 
+                || ASSETCHAINS_SCRIPTPUB.size() > 1 || ASSETCHAINS_SELFIMPORT.size() > 0 
+                || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 || ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF
+                || ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH || ASSETCHAINS_LWMAPOS != 0 || ASSETCHAINS_LASTERA > 0 
+                || ASSETCHAINS_BEAMPORT != 0 || ASSETCHAINS_CODAPORT != 0 || ASSETCHAINS_MARMARA != 0 || nonz > 0 
+                || ASSETCHAINS_CCLIB.size() > 0 || ASSETCHAINS_FOUNDERS_REWARD != 0 || ASSETCHAINS_NOTARY_PAY[0] != 0 
+                || ASSETCHAINS_BLOCKTIME != 60 || ASSETCHAINS_CBOPRET != 0 || Mineropret.size() != 0 
+                || (ASSETCHAINS_NK[0] != 0 && ASSETCHAINS_NK[1] != 0) || KOMODO_SNAPSHOT_INTERVAL != 0 
+                || ASSETCHAINS_EARLYTXIDCONTRACT != 0 || ASSETCHAINS_CBMATURITY != 0 || ASSETCHAINS_ADAPTIVEPOW != 0 )
         {
-            fprintf(stderr,"perc %.4f%% ac_pub=[%02x%02x%02x...] acsize.%d\n",dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2],(int32_t)ASSETCHAINS_SCRIPTPUB.size());
+            fprintf(stderr,"perc %.4f%% ac_pub=[%02x%02x%02x...] acsize.%d\n",dstr(ASSETCHAINS_COMMISSION)*100,
+                    ASSETCHAINS_OVERRIDE_PUBKEY33[0],ASSETCHAINS_OVERRIDE_PUBKEY33[1],ASSETCHAINS_OVERRIDE_PUBKEY33[2],
+                    (int32_t)ASSETCHAINS_SCRIPTPUB.size());
             extraptr = extrabuf;
             memcpy(extraptr,ASSETCHAINS_OVERRIDE_PUBKEY33,33), extralen = 33;
 
@@ -2125,7 +2041,7 @@ void komodo_args(char *argv0)
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_LWMAPOS),(void *)&ASSETCHAINS_LWMAPOS);
             }
 
-            val = ASSETCHAINS_COMMISSION | (((int64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffff) << 40) | ((ASSETCHAINS_PUBLIC != 0) << 7) | ((ASSETCHAINS_PRIVATE != 0) << 6) | ASSETCHAINS_TXPOW;
+            uint64_t val = ASSETCHAINS_COMMISSION | (((int64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffff) << 40) | ((ASSETCHAINS_PUBLIC != 0) << 7) | ((ASSETCHAINS_PRIVATE != 0) << 6) | ASSETCHAINS_TXPOW;
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(val),(void *)&val);
             
             if ( ASSETCHAINS_FOUNDERS != 0 )
@@ -2142,7 +2058,7 @@ void komodo_args(char *argv0)
             }
             if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
             {
-                decode_hex(&extraptr[extralen],ASSETCHAINS_SCRIPTPUB.size()/2,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
+                decode_hex(&extraptr[extralen],ASSETCHAINS_SCRIPTPUB.size()/2,ASSETCHAINS_SCRIPTPUB.c_str());
                 extralen += ASSETCHAINS_SCRIPTPUB.size()/2;
                 //extralen += iguana_rwnum(1,&extraptr[extralen],(int32_t)ASSETCHAINS_SCRIPTPUB.size(),(void *)ASSETCHAINS_SCRIPTPUB.c_str());
                 fprintf(stderr,"append ac_script %s\n",ASSETCHAINS_SCRIPTPUB.c_str());
@@ -2161,7 +2077,7 @@ void komodo_args(char *argv0)
                 extraptr[extralen++] = 'c';
             if ( ASSETCHAINS_MARMARA != 0 )
                 extraptr[extralen++] = ASSETCHAINS_MARMARA;
-fprintf(stderr,"extralen.%d before disable bits\n",extralen);
+            fprintf(stderr,"extralen.%d before disable bits\n",extralen);
             if ( nonz > 0 )
             {
                 memcpy(&extraptr[extralen],disablebits,sizeof(disablebits));
@@ -2190,7 +2106,7 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
                 {
                     for (i=0; i<ASSETCHAINS_PRICES.size(); i++)
                     {
-                        symbol = ASSETCHAINS_PRICES[i];
+                        std::string symbol = ASSETCHAINS_PRICES[i];
                         memcpy(&extraptr[extralen],(char *)symbol.c_str(),symbol.size());
                         extralen += symbol.size();
                     }
@@ -2199,7 +2115,7 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
                 {
                     for (i=0; i<ASSETCHAINS_STOCKS.size(); i++)
                     {
-                        symbol = ASSETCHAINS_STOCKS[i];
+                        std::string symbol = ASSETCHAINS_STOCKS[i];
                         memcpy(&extraptr[extralen],(char *)symbol.c_str(),symbol.size());
                         extralen += symbol.size();
                     }
@@ -2229,17 +2145,17 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
                 extraptr[extralen++] = ASSETCHAINS_ADAPTIVEPOW;
         }
         
-        addn = GetArg("-seednode","");
-        if ( strlen(addn.c_str()) > 0 )
+        std::string addn = GetArg("-seednode","");
+        if ( !addn.empty() )
             ASSETCHAINS_SEED = 1;
 
         strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
 
         MAX_MONEY = komodo_max_money();
 
+        int32_t baseid;
         if ( (baseid = komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
         {
-            //komodo_maxallowed(baseid);
             printf("baseid.%d MAX_MONEY.%s %.8f\n",baseid,ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         }
 
@@ -2248,7 +2164,6 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
         if ( KOMODO_BIT63SET(MAX_MONEY) != 0 )
             MAX_MONEY = KOMODO_MAXNVALUE;
         fprintf(stderr,"MAX_MONEY %llu %.8f\n",(long long)MAX_MONEY,(double)MAX_MONEY/SATOSHIDEN);
-        //printf("baseid.%d MAX_MONEY.%s %.8f\n",baseid,ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         uint16_t tmpport = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,extraptr,extralen);
         if ( GetArg("-port",0) != 0 )
         {
@@ -2256,7 +2171,8 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
             fprintf(stderr,"set p2pport.%u\n",ASSETCHAINS_P2PPORT);
         } else ASSETCHAINS_P2PPORT = tmpport;
 
-        while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
+        char *dirname;
+        while ( (dirname = (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
             fprintf(stderr,"waiting for datadir (%s)\n",dirname);
 #ifndef _WIN32
@@ -2265,7 +2181,6 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
             boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
 #endif
         }
-        //fprintf(stderr,"Got datadir.(%s)\n",dirname);
         if ( ASSETCHAINS_SYMBOL[0] != 0 )
         {
             int32_t komodo_baseid(char *origbase);
@@ -2275,6 +2190,7 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
                 fprintf(stderr,"cant have assetchain named KMD\n");
                 StartShutdown();
             }
+            uint16_t port;
             if ( (port= komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL)) != 0 )
                 ASSETCHAINS_RPCPORT = port;
             else komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT + 1);
@@ -2292,23 +2208,23 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
         }
         if ( ASSETCHAINS_RPCPORT == 0 )
             ASSETCHAINS_RPCPORT = ASSETCHAINS_P2PPORT + 1;
-        //ASSETCHAINS_NOTARIES = GetArg("-ac_notaries","");
-        //komodo_assetchain_pubkeys((char *)ASSETCHAINS_NOTARIES.c_str());
+        uint8_t magic[4];
         iguana_rwnum(1,magic,sizeof(ASSETCHAINS_MAGIC),(void *)&ASSETCHAINS_MAGIC);
-        for (i=0; i<4; i++)
-            sprintf(&magicstr[i<<1],"%02x",magic[i]);
-        magicstr[8] = 0;
 #ifndef FROM_CLI
-        sprintf(fname,"%s_7776",ASSETCHAINS_SYMBOL);
-        if ( (fp= fopen(fname,"wb")) != 0 )
+        std::string fname = std::string(ASSETCHAINS_SYMBOL) + "_7776";
+        FILE* fp;
+        if ( (fp= fopen(fname.c_str(),"wb")) != 0 )
         {
+            char magicstr[9];         
+            for (i=0; i<4; i++)
+                sprintf(&magicstr[i<<1],"%02x",magic[i]);
+            magicstr[8] = 0;
             int8_t notarypay = 0;
             if ( ASSETCHAINS_NOTARY_PAY[0] != 0 )
                 notarypay = 1;
             fprintf(fp,iguanafmtstr,name.c_str(),name.c_str(),name.c_str(),name.c_str(),magicstr,ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,"78.47.196.146",notarypay);
             fclose(fp);
-            //printf("created (%s)\n",fname);
-        } else printf("error creating (%s)\n",fname);
+        } else printf("error creating (%s)\n",fname.c_str());
 #endif
         if ( ASSETCHAINS_CC < 2 )
         {
@@ -2326,7 +2242,9 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
     }
     else
     {
-        char fname[512],username[512],password[4096]; int32_t iter; FILE *fp;
+        char fname[512],username[512],password[4096]; 
+        int32_t iter; 
+        FILE *fp;
         ASSETCHAINS_P2PPORT = 7770;
         ASSETCHAINS_RPCPORT = 7771;
         for (iter=0; iter<2; iter++)
@@ -2353,12 +2271,12 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
 #endif
             if ( (fp= fopen(fname,"rb")) != 0 )
             {
-                dest_rpc_port = _komodo_userpass(username,password,fp);
+                uint16_t dest_rpc_port = _komodo_userpass(username,password,fp);
                 DEST_PORT = iter == 1 ? dest_rpc_port : 0;
                 sprintf(iter == 0 ? KMDUSERPASS : BTCUSERPASS,"%s:%s",username,password);
                 fclose(fp);
             } else printf("couldnt open.(%s) will not validate dest notarizations\n",fname);
-            if ( IS_KOMODO_NOTARY == 0 )
+            if ( !IS_KOMODO_NOTARY )
                 break;
         }
     }
@@ -2366,7 +2284,6 @@ fprintf(stderr,"extralen.%d before disable bits\n",extralen);
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
         BITCOIND_RPCPORT = GetArg("-rpcport", ASSETCHAINS_RPCPORT);
-        //fprintf(stderr,"(%s) port.%u chain params initialized\n",ASSETCHAINS_SYMBOL,BITCOIND_RPCPORT);
         if ( strcmp("PIRATE",ASSETCHAINS_SYMBOL) == 0 && ASSETCHAINS_HALVING[0] == 77777 )
         {
             ASSETCHAINS_HALVING[0] *= 5;
