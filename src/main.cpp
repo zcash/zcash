@@ -7287,7 +7287,7 @@ public:
     bool operator()(std::set<uint256>::iterator a, std::set<uint256>::iterator b)
     {
         /* As std::make_heap produces a max-heap, we want the entries with the
-         * fewest ancestors/highest fee to sort later. */
+         * highest feerate to sort later. */
         return mp->CompareDepthAndScore(*b, *a);
     }
 };
@@ -7488,7 +7488,7 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                 for (std::set<uint256>::iterator it = pto->setInventoryTxToSend.begin(); it != pto->setInventoryTxToSend.end(); it++) {
                     vInvTx.push_back(it);
                 }
-                // Topologically and fee-rate sort the inventory we send for privacy and priority reasons.
+                // Sort the inventory we send for privacy and priority reasons.
                 // A heap is used so that not all items need sorting if only a few are being sent.
                 CompareInvMempoolOrder compareInvMempoolOrder(&mempool);
                 std::make_heap(vInvTx.begin(), vInvTx.end(), compareInvMempoolOrder);
