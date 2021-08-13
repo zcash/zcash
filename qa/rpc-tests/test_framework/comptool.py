@@ -289,6 +289,8 @@ class TestManager(object):
                         print('Block rejected with %s instead of expected %s: %064x' % (c.cb.block_reject_map[blockhash], outcome, blockhash))
                         return False
                 elif ((c.cb.bestblockhash == blockhash) != outcome):
+                    if outcome is True and blockhash in c.cb.block_reject_map:
+                        print('Block rejected with %s instead of accepted: %064x' % (c.cb.block_reject_map[blockhash], blockhash))
                     return False
             return True
 
