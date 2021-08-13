@@ -31,15 +31,17 @@ CTxMemPoolEntry::CTxMemPoolEntry():
 CTxMemPoolEntry::CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
                                  int64_t _nTime, double _dPriority,
                                  unsigned int _nHeight, bool poolHasNoInputsOf,
-                                 bool _spendsCoinbase, uint32_t _nBranchId):
+                                 bool _spendsCoinbase, unsigned int _sigOps, uint32_t _nBranchId):
     tx(_tx), nFee(_nFee), nTime(_nTime), dPriority(_dPriority), nHeight(_nHeight),
     hadNoDependencies(poolHasNoInputsOf),
-    spendsCoinbase(_spendsCoinbase), nBranchId(_nBranchId)
+    spendsCoinbase(_spendsCoinbase), sigOpCount(_sigOps), nBranchId(_nBranchId)
 {
     nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
     nModSize = tx.CalculateModifiedSize(nTxSize);
     nUsageSize = RecursiveDynamicUsage(tx);
     feeRate = CFeeRate(nFee, nTxSize);
+
+    feeDelta = 0;
 }
 
 CTxMemPoolEntry::CTxMemPoolEntry(const CTxMemPoolEntry& other)
@@ -56,7 +58,12 @@ CTxMemPoolEntry::GetPriority(unsigned int currentHeight) const
     return dResult;
 }
 
-CTxMemPool::CTxMemPool(const CFeeRate& _minRelayFee) :
+void CTxMemPoolEntry::UpdateFeeDelta(int64_t newFeeDelta)
+{
+    feeDelta = newFeeDelta;
+}
+
+CTxMemPool::CTxMemPool(const CFeeRate& _minReasonableRelayFee) :
     nTransactionsUpdated(0)
 {
     _clear(); // unlocked clear
@@ -66,7 +73,8 @@ CTxMemPool::CTxMemPool(const CFeeRate& _minRelayFee) :
     // of transactions in the pool
     nCheckFrequency = 0;
 
-    minerPolicyEstimator = new CBlockPolicyEstimator(_minRelayFee);
+    minerPolicyEstimator = new CBlockPolicyEstimator(_minReasonableRelayFee);
+    minReasonableRelayFee = _minReasonableRelayFee;
 }
 
 CTxMemPool::~CTxMemPool()
@@ -109,8 +117,12 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     // all the appropriate checks.
     LOCK(cs);
     weightedTxTree->add(WeightedTxInfo::from(entry.GetTx(), entry.GetFee()));
-    mapTx.insert(entry);
-    const CTransaction& tx = mapTx.find(hash)->GetTx();
+    indexed_transaction_set::iterator newit = mapTx.insert(entry).first;
+
+    // Update cachedInnerUsage to include contained transaction's usage.
+    cachedInnerUsage += entry.DynamicMemoryUsage();
+
+    const CTransaction& tx = newit->GetTx();
     mapRecentlyAddedTx[tx.GetHash()] = &tx;
     nRecentlyAddedSequence += 1;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
@@ -126,9 +138,18 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     for (const uint256 &orchardNullifier : tx.GetOrchardBundle().GetNullifiers()) {
         mapOrchardNullifiers[orchardNullifier] = &tx;
     }
+
+    // Update transaction's score for any feeDelta created by PrioritiseTransaction
+    std::map<uint256, std::pair<double, CAmount> >::const_iterator pos = mapDeltas.find(hash);
+    if (pos != mapDeltas.end()) {
+        const std::pair<double, CAmount> &deltas = pos->second;
+        if (deltas.second) {
+            mapTx.modify(newit, update_fee_delta(deltas.second));
+        }
+    }
+
     nTransactionsUpdated++;
     totalTxSize += entry.GetTxSize();
-    cachedInnerUsage += entry.DynamicMemoryUsage();
     minerPolicyEstimator->processTransaction(entry, fCurrentEstimate);
 
     return true;
@@ -653,6 +674,31 @@ void CTxMemPool::checkNullifiers(ShieldedType type) const
     }
 }
 
+bool CTxMemPool::CompareDepthAndScore(const uint256& hasha, const uint256& hashb)
+{
+    LOCK(cs);
+    indexed_transaction_set::const_iterator i = mapTx.find(hasha);
+    if (i == mapTx.end()) return false;
+    indexed_transaction_set::const_iterator j = mapTx.find(hashb);
+    if (j == mapTx.end()) return true;
+    // We don't actually compare by depth here because we haven't backported
+    // https://github.com/bitcoin/bitcoin/pull/6654
+    //
+    // But the method name is left as-is because renaming it is not worth the
+    // merge conflicts.
+    return CompareTxMemPoolEntryByScore()(*i, *j);
+}
+
+namespace {
+class DepthAndScoreComparator
+{
+    CTxMemPool *mp;
+public:
+    DepthAndScoreComparator(CTxMemPool *mempool) : mp(mempool) {}
+    bool operator()(const uint256& a, const uint256& b) { return mp->CompareDepthAndScore(a, b); }
+};
+}
+
 void CTxMemPool::queryHashes(std::vector<uint256>& vtxid)
 {
     vtxid.clear();
@@ -661,6 +707,8 @@ void CTxMemPool::queryHashes(std::vector<uint256>& vtxid)
     vtxid.reserve(mapTx.size());
     for (indexed_transaction_set::iterator mi = mapTx.begin(); mi != mapTx.end(); ++mi)
         vtxid.push_back(mi->GetTx().GetHash());
+
+    std::sort(vtxid.begin(), vtxid.end(), DepthAndScoreComparator(this));
 }
 
 bool CTxMemPool::lookup(uint256 hash, CTransaction& result) const
@@ -725,14 +773,18 @@ void CTxMemPool::PrioritiseTransaction(const uint256 hash, const std::string str
         std::pair<double, CAmount> &deltas = mapDeltas[hash];
         deltas.first += dPriorityDelta;
         deltas.second += nFeeDelta;
+        txiter it = mapTx.find(hash);
+        if (it != mapTx.end()) {
+            mapTx.modify(it, update_fee_delta(deltas.second));
+        }
     }
     LogPrintf("PrioritiseTransaction: %s priority += %f, fee += %d\n", strHash, dPriorityDelta, FormatMoney(nFeeDelta));
 }
 
-void CTxMemPool::ApplyDeltas(const uint256 hash, double &dPriorityDelta, CAmount &nFeeDelta)
+void CTxMemPool::ApplyDeltas(const uint256 hash, double &dPriorityDelta, CAmount &nFeeDelta) const
 {
     LOCK(cs);
-    std::map<uint256, std::pair<double, CAmount> >::iterator pos = mapDeltas.find(hash);
+    std::map<uint256, std::pair<double, CAmount> >::const_iterator pos = mapDeltas.find(hash);
     if (pos == mapDeltas.end())
         return;
     const std::pair<double, CAmount> &deltas = pos->second;
@@ -824,9 +876,9 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
 
     size_t total = 0;
 
-    // Estimate the overhead of mapTx to be 6 pointers + an allocation, as no exact formula for
+    // Estimate the overhead of mapTx to be 9 pointers + an allocation, as no exact formula for
     // boost::multi_index_contained is implemented.
-    total += memusage::MallocUsage(sizeof(CTxMemPoolEntry) + 6 * sizeof(void*)) * mapTx.size();
+    total += memusage::MallocUsage(sizeof(CTxMemPoolEntry) + 9 * sizeof(void*)) * mapTx.size();
 
     // Two metadata maps inherited from Bitcoin Core
     total += memusage::DynamicUsage(mapNextTx) + memusage::DynamicUsage(mapDeltas);

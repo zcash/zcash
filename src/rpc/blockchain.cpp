@@ -341,6 +341,7 @@ UniValue mempoolToJSON(bool fVerbose = false)
             UniValue info(UniValue::VOBJ);
             info.pushKV("size", (int)e.GetTxSize());
             info.pushKV("fee", ValueFromAmount(e.GetFee()));
+            info.pushKV("modifiedfee", ValueFromAmount(e.GetModifiedFee()));
             info.pushKV("time", e.GetTime());
             info.pushKV("height", (int)e.GetHeight());
             info.pushKV("startingpriority", e.GetPriority(e.GetHeight()));
@@ -395,6 +396,7 @@ UniValue getrawmempool(const UniValue& params, bool fHelp)
             "  \"transactionid\" : {       (json object)\n"
             "    \"size\" : n,             (numeric) transaction size in bytes\n"
             "    \"fee\" : n,              (numeric) transaction fee in " + CURRENCY_UNIT + "\n"
+            "    \"modifiedfee\" : n,      (numeric) transaction fee with fee deltas used for mining priority\n"
             "    \"time\" : n,             (numeric) local time transaction entered pool in seconds since 1 Jan 1970 GMT\n"
             "    \"height\" : n,           (numeric) block height when transaction entered pool\n"
             "    \"startingpriority\" : n, (numeric) priority when transaction entered pool\n"
