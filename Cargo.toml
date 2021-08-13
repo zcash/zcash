@@ -64,11 +64,12 @@ codegen-units = 1
 
 [patch.crates-io]
 ed25519-zebra = { git = "https://github.com/ZcashFoundation/ed25519-zebra.git", rev = "d3512400227a362d08367088ffaa9bd4142a69c7" }
-halo2 = { git = "https://github.com/zcash/halo2.git", rev = "d04b532368d05b505e622f8cac4c0693574fbd93" }
+halo2 = { git = "https://github.com/zcash/halo2.git", rev = "27c4187673a9c6ade13fbdbd4f20955530c22d7f" }
 incrementalmerkletree = { git = "https://github.com/zcash/incrementalmerkletree", rev = "8b59049f1746827ffa3763efa8af948f680491d0" }
-orchard = { git = "https://github.com/zcash/orchard.git", rev = "74df35ce890726478983fb892ff38a5e44ceb08a" }
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "1a40fc9ac82bf43da15cb36d3757fdf610be1bd2" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "1a40fc9ac82bf43da15cb36d3757fdf610be1bd2" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "1a40fc9ac82bf43da15cb36d3757fdf610be1bd2" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "1a40fc9ac82bf43da15cb36d3757fdf610be1bd2" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "1a40fc9ac82bf43da15cb36d3757fdf610be1bd2" }
+jubjub = { git = "https://github.com/zkcrypto/jubjub.git", rev = "96ab4162b83303378eae32a326b54d88b75bffc2" }
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "8454f86d423edbf0b53a1d5d32df1c691f8b7188" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "98dc330cdb1c96e980e62b5bc901edbaa128fea2" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "98dc330cdb1c96e980e62b5bc901edbaa128fea2" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "98dc330cdb1c96e980e62b5bc901edbaa128fea2" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "98dc330cdb1c96e980e62b5bc901edbaa128fea2" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "98dc330cdb1c96e980e62b5bc901edbaa128fea2" }
