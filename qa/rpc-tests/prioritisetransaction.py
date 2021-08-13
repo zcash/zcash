@@ -49,7 +49,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
         # With a rate of either 7tx/s or 14tx/s per peer (depending on whether
         # the connection is inbound or outbound), syncing this many transactions
         # could take up to 128s. So use a higher timeout on the mempool sync.
-        sync_mempools(self.nodes, timeout=150)
+        sync_mempools(self.nodes, timeout=200)
 
         # Create tx of lower value to be prioritized on node 0
         # Older transactions get mined first, so this lower value, newer tx is unlikely to be mined without prioritisation
