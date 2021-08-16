@@ -155,7 +155,7 @@ bool compare_serialization(const std::string& filename, std::shared_ptr<T> in)
  */
 TEST(TestEvents, komodo_faststateinit_test)
 {
-    char *symbol = "TST";
+    char symbol[] = "TST";
     strcpy(ASSETCHAINS_SYMBOL, symbol);
     KOMODO_EXTERNAL_NOTARIES = 1;
 
@@ -565,7 +565,7 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
 {
     // Nothing should be added to events if this is the komodo chain
 
-    char *symbol = "KMD";
+    char symbol[] = "KMD";
     ASSETCHAINS_SYMBOL[0] = 0;
     KOMODO_EXTERNAL_NOTARIES = 0;
 
@@ -573,6 +573,9 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
     boost::filesystem::create_directories(temp);
     try
     {
+        // NOTE: header contains a 5 byte header that is make up of
+        // an 8 bit identifier (i.e. 'P', 'N', etc.)
+        // plus a 32 bit height. Everything else is record specific
         // pubkey record
         {
             // create a binary file that should be readable by komodo
