@@ -301,10 +301,9 @@ event_opreturn::event_opreturn(FILE* fp, int32_t height) : event(EVENT_OPRETURN,
     uint16_t oplen;
     if ( fread(&oplen,1,sizeof(oplen),fp) != sizeof(oplen) )
         throw parse_error("Unable to parse length of opreturn record");
-    std::unique_ptr<uint8_t> b(new uint8_t[oplen]);
-    if ( fread(b.get(), 1, oplen, fp) != oplen)
+    this->opret.resize(oplen);
+    if ( fread(this->opret.data(), 1, oplen, fp) != oplen)
         throw parse_error("Unable to parse binary data of opreturn");
-    this->opret = std::vector<uint8_t>( b.get(), b.get() + oplen);
 }
 
 std::ostream& operator<<(std::ostream& os, const event_opreturn& in)
