@@ -270,14 +270,36 @@ struct komodo_ccdata
 
 struct komodo_state
 {
-    uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID,MoM;
-    int32_t SAVEDHEIGHT,CURRENT_HEIGHT,NOTARIZED_HEIGHT,MoMdepth;
+    uint256 NOTARIZED_HASH;
+    uint256 NOTARIZED_DESTTXID;
+    uint256 MoM;
+    int32_t SAVEDHEIGHT;
+    int32_t CURRENT_HEIGHT;
+    int32_t NOTARIZED_HEIGHT;
+    int32_t MoMdepth;
     uint32_t SAVEDTIMESTAMP;
-    uint64_t deposited,issued,withdrawn,approved,redeemed,shorted;
-    struct notarized_checkpoint *NPOINTS; 
-    int32_t NUM_NPOINTS,last_NPOINTSi;
+    uint64_t deposited;
+    uint64_t issued;
+    uint64_t withdrawn;
+    uint64_t approved;
+    uint64_t redeemed;
+    uint64_t shorted;
+    // notarized checkpoint
+    std::vector<notarized_checkpoint> NPOINTS; 
+    int32_t last_NPOINTSi;
+    // events
     std::list<std::shared_ptr<komodo::event>> events;
-    uint32_t RTbufs[64][3]; uint64_t RTmask;
+    // RT
+    uint32_t RTbufs[64][3]; 
+    uint64_t RTmask;
+    
+    /***
+     * @brief add an event to the history collection
+     * @param symbol the chain symbol
+     * @param height the height
+     * @param in the event to add
+     * @returns true on success
+     */
     bool add_event(const std::string& symbol, const uint32_t height, std::shared_ptr<komodo::event> in);
 };
 
