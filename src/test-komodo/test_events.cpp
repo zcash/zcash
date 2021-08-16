@@ -155,7 +155,8 @@ bool compare_serialization(const std::string& filename, std::shared_ptr<T> in)
  */
 TEST(TestEvents, komodo_faststateinit_test)
 {
-    strcpy(ASSETCHAINS_SYMBOL, "TST");
+    char *symbol = "TST";
+    strcpy(ASSETCHAINS_SYMBOL, symbol);
     KOMODO_EXTERNAL_NOTARIES = 1;
 
     boost::filesystem::path temp = boost::filesystem::unique_path();
@@ -172,34 +173,33 @@ TEST(TestEvents, komodo_faststateinit_test)
             char full_filename[temp_filename.size()+1];
             strcpy(full_filename, temp_filename.c_str());
             std::FILE* fp = std::fopen(full_filename, "wb+");
-            ASSERT_NE(fp, nullptr);
+            EXPECT_NE(fp, nullptr);
             write_p_record(fp);
             std::fclose(fp);
             // verify file still exists
-            ASSERT_TRUE(boost::filesystem::exists(full_filename));
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
             // attempt to read the file
-            char symbol[] = "TST";
             komodo_state* state = komodo_stateptrget((char*)symbol);
-            ASSERT_NE(state, nullptr);
+            EXPECT_NE(state, nullptr);
             char* dest = nullptr;
             // attempt to read the file
             int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
             // compare results
-            ASSERT_EQ(result, 1);
+            EXPECT_EQ(result, 1);
             /* old way
             // The first and second event should be pub keys
-            ASSERT_EQ(state->Komodo_numevents, 1);
+            EXPECT_EQ(state->Komodo_numevents, 1);
             komodo_event* ev1 = state->Komodo_events[0];
-            ASSERT_EQ(ev1->height, 1);
-            ASSERT_EQ(ev1->type, 'P');
+            EXPECT_EQ(ev1->height, 1);
+            EXPECT_EQ(ev1->type, 'P');
             */
             // check that the new way is the same
-            ASSERT_EQ(state->events.size(), 1);
+            EXPECT_EQ(state->events.size(), 1);
             std::shared_ptr<komodo::event_pubkeys> ev2 = std::dynamic_pointer_cast<komodo::event_pubkeys>(state->events.front());
-            ASSERT_EQ(ev2->height, 1);
-            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_PUBKEYS);
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_PUBKEYS);
             // the serialized version should match the input
-            ASSERT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
         }
         // notarized record
         {
@@ -207,33 +207,32 @@ TEST(TestEvents, komodo_faststateinit_test)
             char full_filename[temp_filename.size()+1];
             strcpy(full_filename, temp_filename.c_str());
             std::FILE* fp = std::fopen(full_filename, "wb+");
-            ASSERT_NE(fp, nullptr);
+            EXPECT_NE(fp, nullptr);
             write_n_record(fp);
             std::fclose(fp);
             // verify file still exists
-            ASSERT_TRUE(boost::filesystem::exists(full_filename));
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
             // attempt to read the file
-            char symbol[] = "TST";
             komodo_state* state = komodo_stateptrget((char*)symbol);
-            ASSERT_NE(state, nullptr);
+            EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
             int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
             // compare results
-            ASSERT_EQ(result, 1);
+            EXPECT_EQ(result, 1);
             /* old way
-            ASSERT_EQ(state->Komodo_numevents, 2);
+            EXPECT_EQ(state->Komodo_numevents, 2);
             komodo_event* ev = state->Komodo_events[1];
-            ASSERT_EQ(ev->height, 1);
-            ASSERT_EQ(ev->type, 'N');
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'N');
             */
             // check that the new way is the same
-            ASSERT_EQ(state->events.size(), 2);
+            EXPECT_EQ(state->events.size(), 2);
             std::shared_ptr<komodo::event_notarized> ev2 = std::dynamic_pointer_cast<komodo::event_notarized>( *(++state->events.begin()) );
-            ASSERT_EQ(ev2->height, 1);
-            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_NOTARIZED);
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_NOTARIZED);
             // the serialized version should match the input
-            ASSERT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
         }
         // notarized M record
         {
@@ -241,35 +240,34 @@ TEST(TestEvents, komodo_faststateinit_test)
             char full_filename[temp_filename.size()+1];
             strcpy(full_filename, temp_filename.c_str());
             std::FILE* fp = std::fopen(full_filename, "wb+");
-            ASSERT_NE(fp, nullptr);
+            EXPECT_NE(fp, nullptr);
             write_m_record(fp);
             std::fclose(fp);
             // verify file still exists
-            ASSERT_TRUE(boost::filesystem::exists(full_filename));
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
             // attempt to read the file
-            char symbol[] = "TST";
             komodo_state* state = komodo_stateptrget((char*)symbol);
-            ASSERT_NE(state, nullptr);
+            EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
-            ASSERT_EQ(result, 1);
+            EXPECT_EQ(result, 1);
             /* old way
-            ASSERT_EQ(state->Komodo_numevents, 3);
+            EXPECT_EQ(state->Komodo_numevents, 3);
             komodo_event* ev = state->Komodo_events[2];
-            ASSERT_EQ(ev->height, 1);
-            ASSERT_EQ(ev->type, 'N'); // code converts "M" to "N"
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'N'); // code converts "M" to "N"
             */
             // check that the new way is the same
-            ASSERT_EQ(state->events.size(), 3);
+            EXPECT_EQ(state->events.size(), 3);
             auto itr = state->events.begin();
             std::advance(itr, 2);
             std::shared_ptr<komodo::event_notarized> ev2 = std::dynamic_pointer_cast<komodo::event_notarized>( *(itr) );
-            ASSERT_EQ(ev2->height, 1);
-            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_NOTARIZED);
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_NOTARIZED);
             // the serialized version should match the input
-            ASSERT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
         }
         // record type "U" (deprecated)
         {
@@ -277,25 +275,24 @@ TEST(TestEvents, komodo_faststateinit_test)
             char full_filename[temp_filename.size()+1];
             strcpy(full_filename, temp_filename.c_str());
             std::FILE* fp = std::fopen(full_filename, "wb+");
-            ASSERT_NE(fp, nullptr);
+            EXPECT_NE(fp, nullptr);
             write_u_record(fp);
             std::fclose(fp);
             // verify file still exists
-            ASSERT_TRUE(boost::filesystem::exists(full_filename));
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
             // attempt to read the file
-            char symbol[] = "TST";
             komodo_state* state = komodo_stateptrget((char*)symbol);
-            ASSERT_NE(state, nullptr);
+            EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
-            ASSERT_EQ(result, 1);
+            EXPECT_EQ(result, 1);
             /* old way
-            ASSERT_EQ(state->Komodo_numevents, 3); // does not get added to state
+            EXPECT_EQ(state->Komodo_numevents, 3); // does not get added to state
             */
             // check that the new way is the same
-            ASSERT_EQ(state->events.size(), 3);
+            EXPECT_EQ(state->events.size(), 3);
             auto itr = state->events.begin();
             // this does not get added to state, so we need to serialize the object just
             // to verify serialization works as expected
@@ -305,7 +302,7 @@ TEST(TestEvents, komodo_faststateinit_test)
             ev2->nid = 'I';
             memset(ev2->mask, 1, 8);
             memset(ev2->hash, 2, 32);
-            ASSERT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
         }
         // record type K (KMD height)
         {
@@ -313,35 +310,34 @@ TEST(TestEvents, komodo_faststateinit_test)
             char full_filename[temp_filename.size()+1];
             strcpy(full_filename, temp_filename.c_str());
             std::FILE* fp = std::fopen(full_filename, "wb+");
-            ASSERT_NE(fp, nullptr);
+            EXPECT_NE(fp, nullptr);
             write_k_record(fp);
             std::fclose(fp);
             // verify file still exists
-            ASSERT_TRUE(boost::filesystem::exists(full_filename));
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
             // attempt to read the file
-            char symbol[] = "TST";
             komodo_state* state = komodo_stateptrget((char*)symbol);
-            ASSERT_NE(state, nullptr);
+            EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
-            ASSERT_EQ(result, 1);
+            EXPECT_EQ(result, 1);
             /* old way
-            ASSERT_EQ(state->Komodo_numevents, 4);
+            EXPECT_EQ(state->Komodo_numevents, 4);
             komodo_event* ev = state->Komodo_events[3];
-            ASSERT_EQ(ev->height, 1);
-            ASSERT_EQ(ev->type, 'K');            
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'K');            
             */
             // check that the new way is the same
-            ASSERT_EQ(state->events.size(), 4);
+            EXPECT_EQ(state->events.size(), 4);
             auto itr = state->events.begin();
             std::advance(itr, 3);
             std::shared_ptr<komodo::event_kmdheight> ev2 = std::dynamic_pointer_cast<komodo::event_kmdheight>( *(itr) );
-            ASSERT_EQ(ev2->height, 1);
-            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
             // the serialized version should match the input
-            ASSERT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
         }
         // record type T (KMD height with timestamp)
         {
@@ -349,35 +345,34 @@ TEST(TestEvents, komodo_faststateinit_test)
             char full_filename[temp_filename.size()+1];
             strcpy(full_filename, temp_filename.c_str());
             std::FILE* fp = std::fopen(full_filename, "wb+");
-            ASSERT_NE(fp, nullptr);
+            EXPECT_NE(fp, nullptr);
             write_t_record(fp);
             std::fclose(fp);
             // verify file still exists
-            ASSERT_TRUE(boost::filesystem::exists(full_filename));
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
             // attempt to read the file
-            char symbol[] = "TST";
             komodo_state* state = komodo_stateptrget((char*)symbol);
-            ASSERT_NE(state, nullptr);
+            EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
-            ASSERT_EQ(result, 1);
+            EXPECT_EQ(result, 1);
             /* old way
-            ASSERT_EQ(state->Komodo_numevents, 5);
+            EXPECT_EQ(state->Komodo_numevents, 5);
             komodo_event* ev = state->Komodo_events[4];
-            ASSERT_EQ(ev->height, 1);
-            ASSERT_EQ(ev->type, 'K'); // changed from T to K
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'K'); // changed from T to K
             */
             // check that the new way is the same
-            ASSERT_EQ(state->events.size(), 5);
+            EXPECT_EQ(state->events.size(), 5);
             auto itr = state->events.begin();
             std::advance(itr, 4);
             std::shared_ptr<komodo::event_kmdheight> ev2 = std::dynamic_pointer_cast<komodo::event_kmdheight>( *(itr) );
-            ASSERT_EQ(ev2->height, 1);
-            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
             // the serialized version should match the input
-            ASSERT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
         }
         // record type R (opreturn)
         {
@@ -385,35 +380,34 @@ TEST(TestEvents, komodo_faststateinit_test)
             char full_filename[temp_filename.size()+1];
             strcpy(full_filename, temp_filename.c_str());
             std::FILE* fp = std::fopen(full_filename, "wb+");
-            ASSERT_NE(fp, nullptr);
+            EXPECT_NE(fp, nullptr);
             write_r_record(fp);
             std::fclose(fp);
             // verify file still exists
-            ASSERT_TRUE(boost::filesystem::exists(full_filename));
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
             // attempt to read the file
-            char symbol[] = "TST";
             komodo_state* state = komodo_stateptrget((char*)symbol);
-            ASSERT_NE(state, nullptr);
+            EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
-            ASSERT_EQ(result, 1);
+            EXPECT_EQ(result, 1);
             /* old way
-            ASSERT_EQ(state->Komodo_numevents, 6);
+            EXPECT_EQ(state->Komodo_numevents, 6);
             komodo_event* ev = state->Komodo_events[5];
-            ASSERT_EQ(ev->height, 1);
-            ASSERT_EQ(ev->type, 'R');
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'R');
             */
             // check that the new way is the same
-            ASSERT_EQ(state->events.size(), 6);
+            EXPECT_EQ(state->events.size(), 6);
             auto itr = state->events.begin();
             std::advance(itr, 5);
             std::shared_ptr<komodo::event_opreturn> ev2 = std::dynamic_pointer_cast<komodo::event_opreturn>( *(itr) );
-            ASSERT_EQ(ev2->height, 1);
-            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_OPRETURN);
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_OPRETURN);
             // the serialized version should match the input
-            ASSERT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
         }
         // record type V
         {
@@ -421,35 +415,34 @@ TEST(TestEvents, komodo_faststateinit_test)
             char full_filename[temp_filename.size()+1];
             strcpy(full_filename, temp_filename.c_str());
             std::FILE* fp = std::fopen(full_filename, "wb+");
-            ASSERT_NE(fp, nullptr);
+            EXPECT_NE(fp, nullptr);
             write_v_record(fp);
             std::fclose(fp);
             // verify file still exists
-            ASSERT_TRUE(boost::filesystem::exists(full_filename));
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
             // attempt to read the file
-            char symbol[] = "TST";
             komodo_state* state = komodo_stateptrget((char*)symbol);
-            ASSERT_NE(state, nullptr);
+            EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
-            ASSERT_EQ(result, 1);
+            EXPECT_EQ(result, 1);
             /* old way
-            ASSERT_EQ(state->Komodo_numevents, 7);
+            EXPECT_EQ(state->Komodo_numevents, 7);
             komodo_event* ev = state->Komodo_events[6];
-            ASSERT_EQ(ev->height, 1);
-            ASSERT_EQ(ev->type, 'V');
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'V');
             */
             // check that the new way is the same
-            ASSERT_EQ(state->events.size(), 7);
+            EXPECT_EQ(state->events.size(), 7);
             auto itr = state->events.begin();
             std::advance(itr, 6);
             std::shared_ptr<komodo::event_pricefeed> ev2 = std::dynamic_pointer_cast<komodo::event_pricefeed>( *(itr) );
-            ASSERT_EQ(ev2->height, 1);
-            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_PRICEFEED);
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_PRICEFEED);
             // the serialized version should match the input
-            ASSERT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
         }
         // record type B (rewind)
         {
@@ -457,38 +450,37 @@ TEST(TestEvents, komodo_faststateinit_test)
             char full_filename[temp_filename.size()+1];
             strcpy(full_filename, temp_filename.c_str());
             std::FILE* fp = std::fopen(full_filename, "wb+");
-            ASSERT_NE(fp, nullptr);
+            EXPECT_NE(fp, nullptr);
             write_b_record(fp);
             std::fclose(fp);
             // verify file still exists
-            ASSERT_TRUE(boost::filesystem::exists(full_filename));
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
             // attempt to read the file
-            char symbol[] = "TST";
             komodo_state* state = komodo_stateptrget((char*)symbol);
-            ASSERT_NE(state, nullptr);
+            EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
             // NOTE: B records are not read in. Unsure if this is on purpose or an oversight
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
-            ASSERT_EQ(result, 1);
+            EXPECT_EQ(result, 1);
             /* old way
-            ASSERT_EQ(state->Komodo_numevents, 7);
+            EXPECT_EQ(state->Komodo_numevents, 7);
             komodo_event* ev = state->Komodo_events[6];
-            ASSERT_EQ(ev->height, 1);
-            ASSERT_EQ(ev->type, 'B');
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'B');
             */
             // check that the new way is the same
-            ASSERT_EQ(state->events.size(), 7);
+            EXPECT_EQ(state->events.size(), 7);
             /*
             auto itr = state->events.begin();
             std::advance(itr, 6);
             std::shared_ptr<komodo::event_rewind> ev2 = std::dynamic_pointer_cast<komodo::event_rewind>( *(itr) );
-            ASSERT_NE(ev2, nullptr);
-            ASSERT_EQ(ev2->height, 1);
-            ASSERT_EQ(ev2->type, komodo::komodo_event_type::EVENT_REWIND);
+            EXPECT_NE(ev2, nullptr);
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_REWIND);
             // the serialized version should match the input
-            ASSERT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
             */
         }        
         // all together in 1 file
@@ -497,7 +489,7 @@ TEST(TestEvents, komodo_faststateinit_test)
             char full_filename[temp_filename.size()+1];
             strcpy(full_filename, temp_filename.c_str());
             std::FILE* fp = std::fopen(full_filename, "wb+");
-            ASSERT_NE(fp, nullptr);
+            EXPECT_NE(fp, nullptr);
             write_p_record(fp);
             write_n_record(fp);
             write_m_record(fp);
@@ -508,57 +500,464 @@ TEST(TestEvents, komodo_faststateinit_test)
             write_v_record(fp);
             std::fclose(fp);
             // attempt to read the file
-            char symbol[] = "TST";
             komodo_state* state = komodo_stateptrget((char*)symbol);
-            ASSERT_NE(state, nullptr);
+            EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
             int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
             // compare results
-            ASSERT_EQ(result, 1);
+            EXPECT_EQ(result, 1);
             /* ol d way
-            ASSERT_EQ(state->Komodo_numevents, 14);
+            EXPECT_EQ(state->Komodo_numevents, 14);
             komodo_event* ev1 = state->Komodo_events[7];
-            ASSERT_EQ(ev1->height, 1);
-            ASSERT_EQ(ev1->type, 'P');
+            EXPECT_EQ(ev1->height, 1);
+            EXPECT_EQ(ev1->type, 'P');
             */
             // check that the new way is the same
-            ASSERT_EQ(state->events.size(), 14);
+            EXPECT_EQ(state->events.size(), 14);
             auto itr = state->events.begin();
             std::advance(itr, 7);
             {
-                ASSERT_EQ( (*itr)->height, 1);
-                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_PUBKEYS);
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_PUBKEYS);
                 itr++;
             }
             {
-                ASSERT_EQ( (*itr)->height, 1);
-                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_NOTARIZED);
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_NOTARIZED);
                 itr++;
             }
             {
-                ASSERT_EQ( (*itr)->height, 1);
-                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_NOTARIZED);
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_NOTARIZED);
                 itr++;
             }
             {
-                ASSERT_EQ( (*itr)->height, 1);
-                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
                 itr++;
             }
             {
-                ASSERT_EQ( (*itr)->height, 1);
-                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
                 itr++;
             }
             {
-                ASSERT_EQ( (*itr)->height, 1);
-                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_OPRETURN);
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_OPRETURN);
                 itr++;
             }
             {
-                ASSERT_EQ( (*itr)->height, 1);
-                ASSERT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_PRICEFEED);
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_PRICEFEED);
+                itr++;
+            }
+        }
+    } 
+    catch(...)
+    {
+        FAIL() << "Exception thrown";
+    }
+    boost::filesystem::remove_all(temp);
+}
+
+TEST(TestEvents, komodo_faststateinit_test_kmd)
+{
+    char *symbol = "KMD";
+    ASSETCHAINS_SYMBOL[0] = 0;
+    KOMODO_EXTERNAL_NOTARIES = 0;
+
+    boost::filesystem::path temp = boost::filesystem::unique_path();
+    boost::filesystem::create_directories(temp);
+    try
+    {
+        // NOTE: header contains a 5 byte header that is make up of
+        // an 8 bit identifier (i.e. 'P', 'N', etc.)
+        // plus a 32 bit height. Everything else is record specific
+        // pubkey record
+        {
+            // create a binary file that should be readable by komodo
+            const std::string temp_filename = temp.native() + "/kstate.tmp";
+            char full_filename[temp_filename.size()+1];
+            strcpy(full_filename, temp_filename.c_str());
+            std::FILE* fp = std::fopen(full_filename, "wb+");
+            EXPECT_NE(fp, nullptr);
+            write_p_record(fp);
+            std::fclose(fp);
+            // verify file still exists
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
+            // attempt to read the file
+            komodo_state* state = komodo_stateptrget((char*)symbol);
+            EXPECT_NE(state, nullptr);
+            char* dest = nullptr;
+            // attempt to read the file
+            int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
+            // compare results
+            EXPECT_EQ(result, 1);
+            /* old way
+            // The first and second event should be pub keys
+            EXPECT_EQ(state->Komodo_numevents, 1);
+            komodo_event* ev1 = state->Komodo_events[0];
+            EXPECT_EQ(ev1->height, 1);
+            EXPECT_EQ(ev1->type, 'P');
+            */
+            // check that the new way is the same
+            EXPECT_EQ(state->events.size(), 1);
+            std::shared_ptr<komodo::event_pubkeys> ev2 = std::dynamic_pointer_cast<komodo::event_pubkeys>(state->events.front());
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_PUBKEYS);
+            // the serialized version should match the input
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+        }
+        // notarized record
+        {
+            const std::string temp_filename = temp.native() + "/notarized.tmp";
+            char full_filename[temp_filename.size()+1];
+            strcpy(full_filename, temp_filename.c_str());
+            std::FILE* fp = std::fopen(full_filename, "wb+");
+            EXPECT_NE(fp, nullptr);
+            write_n_record(fp);
+            std::fclose(fp);
+            // verify file still exists
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
+            // attempt to read the file
+            komodo_state* state = komodo_stateptrget((char*)symbol);
+            EXPECT_NE(state, nullptr);
+            char* dest = (char*)"123456789012345";
+            // attempt to read the file
+            int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
+            // compare results
+            EXPECT_EQ(result, 1);
+            /* old way
+            EXPECT_EQ(state->Komodo_numevents, 2);
+            komodo_event* ev = state->Komodo_events[1];
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'N');
+            */
+            // check that the new way is the same
+            EXPECT_EQ(state->events.size(), 2);
+            std::shared_ptr<komodo::event_notarized> ev2 = std::dynamic_pointer_cast<komodo::event_notarized>( *(++state->events.begin()) );
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_NOTARIZED);
+            // the serialized version should match the input
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+        }
+        // notarized M record
+        {
+            const std::string temp_filename = temp.native() + "/notarized.tmp";
+            char full_filename[temp_filename.size()+1];
+            strcpy(full_filename, temp_filename.c_str());
+            std::FILE* fp = std::fopen(full_filename, "wb+");
+            EXPECT_NE(fp, nullptr);
+            write_m_record(fp);
+            std::fclose(fp);
+            // verify file still exists
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
+            // attempt to read the file
+            komodo_state* state = komodo_stateptrget((char*)symbol);
+            EXPECT_NE(state, nullptr);
+            char* dest = (char*)"123456789012345";
+            // attempt to read the file
+            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            // compare results
+            EXPECT_EQ(result, 1);
+            /* old way
+            EXPECT_EQ(state->Komodo_numevents, 3);
+            komodo_event* ev = state->Komodo_events[2];
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'N'); // code converts "M" to "N"
+            */
+            // check that the new way is the same
+            EXPECT_EQ(state->events.size(), 3);
+            auto itr = state->events.begin();
+            std::advance(itr, 2);
+            std::shared_ptr<komodo::event_notarized> ev2 = std::dynamic_pointer_cast<komodo::event_notarized>( *(itr) );
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_NOTARIZED);
+            // the serialized version should match the input
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+        }
+        // record type "U" (deprecated)
+        {
+            const std::string temp_filename = temp.native() + "/type_u.tmp";
+            char full_filename[temp_filename.size()+1];
+            strcpy(full_filename, temp_filename.c_str());
+            std::FILE* fp = std::fopen(full_filename, "wb+");
+            EXPECT_NE(fp, nullptr);
+            write_u_record(fp);
+            std::fclose(fp);
+            // verify file still exists
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
+            // attempt to read the file
+            komodo_state* state = komodo_stateptrget((char*)symbol);
+            EXPECT_NE(state, nullptr);
+            char* dest = (char*)"123456789012345";
+            // attempt to read the file
+            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            // compare results
+            EXPECT_EQ(result, 1);
+            /* old way
+            EXPECT_EQ(state->Komodo_numevents, 3); // does not get added to state
+            */
+            // check that the new way is the same
+            EXPECT_EQ(state->events.size(), 3);
+            auto itr = state->events.begin();
+            // this does not get added to state, so we need to serialize the object just
+            // to verify serialization works as expected
+            std::shared_ptr<komodo::event_u> ev2 = std::make_shared<komodo::event_u>();
+            ev2->height = 1;
+            ev2->n = 'N';
+            ev2->nid = 'I';
+            memset(ev2->mask, 1, 8);
+            memset(ev2->hash, 2, 32);
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+        }
+        // record type K (KMD height)
+        {
+            const std::string temp_filename = temp.native() + "/kmdtype.tmp";
+            char full_filename[temp_filename.size()+1];
+            strcpy(full_filename, temp_filename.c_str());
+            std::FILE* fp = std::fopen(full_filename, "wb+");
+            EXPECT_NE(fp, nullptr);
+            write_k_record(fp);
+            std::fclose(fp);
+            // verify file still exists
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
+            // attempt to read the file
+            komodo_state* state = komodo_stateptrget((char*)symbol);
+            EXPECT_NE(state, nullptr);
+            char* dest = (char*)"123456789012345";
+            // attempt to read the file
+            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            // compare results
+            EXPECT_EQ(result, 1);
+            /* old way
+            EXPECT_EQ(state->Komodo_numevents, 4);
+            komodo_event* ev = state->Komodo_events[3];
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'K');            
+            */
+            // check that the new way is the same
+            EXPECT_EQ(state->events.size(), 4);
+            auto itr = state->events.begin();
+            std::advance(itr, 3);
+            std::shared_ptr<komodo::event_kmdheight> ev2 = std::dynamic_pointer_cast<komodo::event_kmdheight>( *(itr) );
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
+            // the serialized version should match the input
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+        }
+        // record type T (KMD height with timestamp)
+        {
+            const std::string temp_filename = temp.native() + "/kmdtypet.tmp";
+            char full_filename[temp_filename.size()+1];
+            strcpy(full_filename, temp_filename.c_str());
+            std::FILE* fp = std::fopen(full_filename, "wb+");
+            EXPECT_NE(fp, nullptr);
+            write_t_record(fp);
+            std::fclose(fp);
+            // verify file still exists
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
+            // attempt to read the file
+            komodo_state* state = komodo_stateptrget((char*)symbol);
+            EXPECT_NE(state, nullptr);
+            char* dest = (char*)"123456789012345";
+            // attempt to read the file
+            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            // compare results
+            EXPECT_EQ(result, 1);
+            /* old way
+            EXPECT_EQ(state->Komodo_numevents, 5);
+            komodo_event* ev = state->Komodo_events[4];
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'K'); // changed from T to K
+            */
+            // check that the new way is the same
+            EXPECT_EQ(state->events.size(), 5);
+            auto itr = state->events.begin();
+            std::advance(itr, 4);
+            std::shared_ptr<komodo::event_kmdheight> ev2 = std::dynamic_pointer_cast<komodo::event_kmdheight>( *(itr) );
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
+            // the serialized version should match the input
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+        }
+        // record type R (opreturn)
+        {
+            const std::string temp_filename = temp.native() + "/kmdtypet.tmp";
+            char full_filename[temp_filename.size()+1];
+            strcpy(full_filename, temp_filename.c_str());
+            std::FILE* fp = std::fopen(full_filename, "wb+");
+            EXPECT_NE(fp, nullptr);
+            write_r_record(fp);
+            std::fclose(fp);
+            // verify file still exists
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
+            // attempt to read the file
+            komodo_state* state = komodo_stateptrget((char*)symbol);
+            EXPECT_NE(state, nullptr);
+            char* dest = (char*)"123456789012345";
+            // attempt to read the file
+            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            // compare results
+            EXPECT_EQ(result, 1);
+            /* old way
+            EXPECT_EQ(state->Komodo_numevents, 6);
+            komodo_event* ev = state->Komodo_events[5];
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'R');
+            */
+            // check that the new way is the same
+            EXPECT_EQ(state->events.size(), 6);
+            auto itr = state->events.begin();
+            std::advance(itr, 5);
+            std::shared_ptr<komodo::event_opreturn> ev2 = std::dynamic_pointer_cast<komodo::event_opreturn>( *(itr) );
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_OPRETURN);
+            // the serialized version should match the input
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+        }
+        // record type V
+        {
+            const std::string temp_filename = temp.native() + "/kmdtypet.tmp";
+            char full_filename[temp_filename.size()+1];
+            strcpy(full_filename, temp_filename.c_str());
+            std::FILE* fp = std::fopen(full_filename, "wb+");
+            EXPECT_NE(fp, nullptr);
+            write_v_record(fp);
+            std::fclose(fp);
+            // verify file still exists
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
+            // attempt to read the file
+            komodo_state* state = komodo_stateptrget((char*)symbol);
+            EXPECT_NE(state, nullptr);
+            char* dest = (char*)"123456789012345";
+            // attempt to read the file
+            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            // compare results
+            EXPECT_EQ(result, 1);
+            /* old way
+            EXPECT_EQ(state->Komodo_numevents, 7);
+            komodo_event* ev = state->Komodo_events[6];
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'V');
+            */
+            // check that the new way is the same
+            EXPECT_EQ(state->events.size(), 7);
+            auto itr = state->events.begin();
+            std::advance(itr, 6);
+            std::shared_ptr<komodo::event_pricefeed> ev2 = std::dynamic_pointer_cast<komodo::event_pricefeed>( *(itr) );
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_PRICEFEED);
+            // the serialized version should match the input
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+        }
+        // record type B (rewind)
+        {
+            const std::string temp_filename = temp.native() + "/kmdtypeb.tmp";
+            char full_filename[temp_filename.size()+1];
+            strcpy(full_filename, temp_filename.c_str());
+            std::FILE* fp = std::fopen(full_filename, "wb+");
+            EXPECT_NE(fp, nullptr);
+            write_b_record(fp);
+            std::fclose(fp);
+            // verify file still exists
+            EXPECT_TRUE(boost::filesystem::exists(full_filename));
+            // attempt to read the file
+            komodo_state* state = komodo_stateptrget((char*)symbol);
+            EXPECT_NE(state, nullptr);
+            char* dest = (char*)"123456789012345";
+            // attempt to read the file
+            // NOTE: B records are not read in. Unsure if this is on purpose or an oversight
+            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            // compare results
+            EXPECT_EQ(result, 1);
+            /* old way
+            EXPECT_EQ(state->Komodo_numevents, 7);
+            komodo_event* ev = state->Komodo_events[6];
+            EXPECT_EQ(ev->height, 1);
+            EXPECT_EQ(ev->type, 'B');
+            */
+            // check that the new way is the same
+            EXPECT_EQ(state->events.size(), 7);
+            /*
+            auto itr = state->events.begin();
+            std::advance(itr, 6);
+            std::shared_ptr<komodo::event_rewind> ev2 = std::dynamic_pointer_cast<komodo::event_rewind>( *(itr) );
+            EXPECT_NE(ev2, nullptr);
+            EXPECT_EQ(ev2->height, 1);
+            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_REWIND);
+            // the serialized version should match the input
+            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+            */
+        }        
+        // all together in 1 file
+        {
+            const std::string temp_filename = temp.native() + "/combined_state.tmp";
+            char full_filename[temp_filename.size()+1];
+            strcpy(full_filename, temp_filename.c_str());
+            std::FILE* fp = std::fopen(full_filename, "wb+");
+            EXPECT_NE(fp, nullptr);
+            write_p_record(fp);
+            write_n_record(fp);
+            write_m_record(fp);
+            write_u_record(fp);
+            write_k_record(fp);
+            write_t_record(fp);
+            write_r_record(fp);
+            write_v_record(fp);
+            std::fclose(fp);
+            // attempt to read the file
+            komodo_state* state = komodo_stateptrget((char*)symbol);
+            EXPECT_NE(state, nullptr);
+            char* dest = (char*)"123456789012345";
+            // attempt to read the file
+            int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
+            // compare results
+            EXPECT_EQ(result, 1);
+            /* ol d way
+            EXPECT_EQ(state->Komodo_numevents, 14);
+            komodo_event* ev1 = state->Komodo_events[7];
+            EXPECT_EQ(ev1->height, 1);
+            EXPECT_EQ(ev1->type, 'P');
+            */
+            // check that the new way is the same
+            EXPECT_EQ(state->events.size(), 14);
+            auto itr = state->events.begin();
+            std::advance(itr, 7);
+            {
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_PUBKEYS);
+                itr++;
+            }
+            {
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_NOTARIZED);
+                itr++;
+            }
+            {
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_NOTARIZED);
+                itr++;
+            }
+            {
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
+                itr++;
+            }
+            {
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
+                itr++;
+            }
+            {
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_OPRETURN);
+                itr++;
+            }
+            {
+                EXPECT_EQ( (*itr)->height, 1);
+                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_PRICEFEED);
                 itr++;
             }
         }
