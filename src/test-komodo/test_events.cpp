@@ -563,6 +563,8 @@ TEST(TestEvents, komodo_faststateinit_test)
 
 TEST(TestEvents, komodo_faststateinit_test_kmd)
 {
+    // Nothing should be added to events if this is the komodo chain
+
     char *symbol = "KMD";
     ASSETCHAINS_SYMBOL[0] = 0;
     KOMODO_EXTERNAL_NOTARIES = 0;
@@ -571,9 +573,6 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
     boost::filesystem::create_directories(temp);
     try
     {
-        // NOTE: header contains a 5 byte header that is make up of
-        // an 8 bit identifier (i.e. 'P', 'N', etc.)
-        // plus a 32 bit height. Everything else is record specific
         // pubkey record
         {
             // create a binary file that should be readable by komodo
@@ -594,20 +593,7 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
-            /* old way
-            // The first and second event should be pub keys
-            EXPECT_EQ(state->Komodo_numevents, 1);
-            komodo_event* ev1 = state->Komodo_events[0];
-            EXPECT_EQ(ev1->height, 1);
-            EXPECT_EQ(ev1->type, 'P');
-            */
-            // check that the new way is the same
-            EXPECT_EQ(state->events.size(), 1);
-            std::shared_ptr<komodo::event_pubkeys> ev2 = std::dynamic_pointer_cast<komodo::event_pubkeys>(state->events.front());
-            EXPECT_EQ(ev2->height, 1);
-            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_PUBKEYS);
-            // the serialized version should match the input
-            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_EQ(state->events.size(), 0);
         }
         // notarized record
         {
@@ -628,19 +614,7 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
-            /* old way
-            EXPECT_EQ(state->Komodo_numevents, 2);
-            komodo_event* ev = state->Komodo_events[1];
-            EXPECT_EQ(ev->height, 1);
-            EXPECT_EQ(ev->type, 'N');
-            */
-            // check that the new way is the same
-            EXPECT_EQ(state->events.size(), 2);
-            std::shared_ptr<komodo::event_notarized> ev2 = std::dynamic_pointer_cast<komodo::event_notarized>( *(++state->events.begin()) );
-            EXPECT_EQ(ev2->height, 1);
-            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_NOTARIZED);
-            // the serialized version should match the input
-            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_EQ(state->events.size(), 0);
         }
         // notarized M record
         {
@@ -661,21 +635,7 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
-            /* old way
-            EXPECT_EQ(state->Komodo_numevents, 3);
-            komodo_event* ev = state->Komodo_events[2];
-            EXPECT_EQ(ev->height, 1);
-            EXPECT_EQ(ev->type, 'N'); // code converts "M" to "N"
-            */
-            // check that the new way is the same
-            EXPECT_EQ(state->events.size(), 3);
-            auto itr = state->events.begin();
-            std::advance(itr, 2);
-            std::shared_ptr<komodo::event_notarized> ev2 = std::dynamic_pointer_cast<komodo::event_notarized>( *(itr) );
-            EXPECT_EQ(ev2->height, 1);
-            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_NOTARIZED);
-            // the serialized version should match the input
-            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_EQ(state->events.size(), 0);
         }
         // record type "U" (deprecated)
         {
@@ -696,21 +656,7 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
-            /* old way
-            EXPECT_EQ(state->Komodo_numevents, 3); // does not get added to state
-            */
-            // check that the new way is the same
-            EXPECT_EQ(state->events.size(), 3);
-            auto itr = state->events.begin();
-            // this does not get added to state, so we need to serialize the object just
-            // to verify serialization works as expected
-            std::shared_ptr<komodo::event_u> ev2 = std::make_shared<komodo::event_u>();
-            ev2->height = 1;
-            ev2->n = 'N';
-            ev2->nid = 'I';
-            memset(ev2->mask, 1, 8);
-            memset(ev2->hash, 2, 32);
-            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_EQ(state->events.size(), 0);
         }
         // record type K (KMD height)
         {
@@ -731,21 +677,7 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
-            /* old way
-            EXPECT_EQ(state->Komodo_numevents, 4);
-            komodo_event* ev = state->Komodo_events[3];
-            EXPECT_EQ(ev->height, 1);
-            EXPECT_EQ(ev->type, 'K');            
-            */
-            // check that the new way is the same
-            EXPECT_EQ(state->events.size(), 4);
-            auto itr = state->events.begin();
-            std::advance(itr, 3);
-            std::shared_ptr<komodo::event_kmdheight> ev2 = std::dynamic_pointer_cast<komodo::event_kmdheight>( *(itr) );
-            EXPECT_EQ(ev2->height, 1);
-            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
-            // the serialized version should match the input
-            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_EQ(state->events.size(), 0);
         }
         // record type T (KMD height with timestamp)
         {
@@ -766,21 +698,7 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
-            /* old way
-            EXPECT_EQ(state->Komodo_numevents, 5);
-            komodo_event* ev = state->Komodo_events[4];
-            EXPECT_EQ(ev->height, 1);
-            EXPECT_EQ(ev->type, 'K'); // changed from T to K
-            */
-            // check that the new way is the same
-            EXPECT_EQ(state->events.size(), 5);
-            auto itr = state->events.begin();
-            std::advance(itr, 4);
-            std::shared_ptr<komodo::event_kmdheight> ev2 = std::dynamic_pointer_cast<komodo::event_kmdheight>( *(itr) );
-            EXPECT_EQ(ev2->height, 1);
-            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
-            // the serialized version should match the input
-            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_EQ(state->events.size(), 0);
         }
         // record type R (opreturn)
         {
@@ -801,21 +719,7 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
-            /* old way
-            EXPECT_EQ(state->Komodo_numevents, 6);
-            komodo_event* ev = state->Komodo_events[5];
-            EXPECT_EQ(ev->height, 1);
-            EXPECT_EQ(ev->type, 'R');
-            */
-            // check that the new way is the same
-            EXPECT_EQ(state->events.size(), 6);
-            auto itr = state->events.begin();
-            std::advance(itr, 5);
-            std::shared_ptr<komodo::event_opreturn> ev2 = std::dynamic_pointer_cast<komodo::event_opreturn>( *(itr) );
-            EXPECT_EQ(ev2->height, 1);
-            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_OPRETURN);
-            // the serialized version should match the input
-            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_EQ(state->events.size(), 0);
         }
         // record type V
         {
@@ -836,21 +740,7 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
-            /* old way
-            EXPECT_EQ(state->Komodo_numevents, 7);
-            komodo_event* ev = state->Komodo_events[6];
-            EXPECT_EQ(ev->height, 1);
-            EXPECT_EQ(ev->type, 'V');
-            */
-            // check that the new way is the same
-            EXPECT_EQ(state->events.size(), 7);
-            auto itr = state->events.begin();
-            std::advance(itr, 6);
-            std::shared_ptr<komodo::event_pricefeed> ev2 = std::dynamic_pointer_cast<komodo::event_pricefeed>( *(itr) );
-            EXPECT_EQ(ev2->height, 1);
-            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_PRICEFEED);
-            // the serialized version should match the input
-            EXPECT_TRUE(compare_serialization(full_filename, ev2));
+            EXPECT_EQ(state->events.size(), 0);
         }
         // record type B (rewind)
         {
@@ -872,24 +762,7 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
-            /* old way
-            EXPECT_EQ(state->Komodo_numevents, 7);
-            komodo_event* ev = state->Komodo_events[6];
-            EXPECT_EQ(ev->height, 1);
-            EXPECT_EQ(ev->type, 'B');
-            */
-            // check that the new way is the same
-            EXPECT_EQ(state->events.size(), 7);
-            /*
-            auto itr = state->events.begin();
-            std::advance(itr, 6);
-            std::shared_ptr<komodo::event_rewind> ev2 = std::dynamic_pointer_cast<komodo::event_rewind>( *(itr) );
-            EXPECT_NE(ev2, nullptr);
-            EXPECT_EQ(ev2->height, 1);
-            EXPECT_EQ(ev2->type, komodo::komodo_event_type::EVENT_REWIND);
-            // the serialized version should match the input
-            EXPECT_TRUE(compare_serialization(full_filename, ev2));
-            */
+            EXPECT_EQ(state->events.size(), 0);
         }        
         // all together in 1 file
         {
@@ -915,51 +788,7 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
-            /* ol d way
-            EXPECT_EQ(state->Komodo_numevents, 14);
-            komodo_event* ev1 = state->Komodo_events[7];
-            EXPECT_EQ(ev1->height, 1);
-            EXPECT_EQ(ev1->type, 'P');
-            */
-            // check that the new way is the same
-            EXPECT_EQ(state->events.size(), 14);
-            auto itr = state->events.begin();
-            std::advance(itr, 7);
-            {
-                EXPECT_EQ( (*itr)->height, 1);
-                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_PUBKEYS);
-                itr++;
-            }
-            {
-                EXPECT_EQ( (*itr)->height, 1);
-                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_NOTARIZED);
-                itr++;
-            }
-            {
-                EXPECT_EQ( (*itr)->height, 1);
-                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_NOTARIZED);
-                itr++;
-            }
-            {
-                EXPECT_EQ( (*itr)->height, 1);
-                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
-                itr++;
-            }
-            {
-                EXPECT_EQ( (*itr)->height, 1);
-                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_KMDHEIGHT);
-                itr++;
-            }
-            {
-                EXPECT_EQ( (*itr)->height, 1);
-                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_OPRETURN);
-                itr++;
-            }
-            {
-                EXPECT_EQ( (*itr)->height, 1);
-                EXPECT_EQ( (*itr)->type, komodo::komodo_event_type::EVENT_PRICEFEED);
-                itr++;
-            }
+            EXPECT_EQ(state->events.size(), 0);
         }
     } 
     catch(...)
