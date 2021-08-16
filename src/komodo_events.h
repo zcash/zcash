@@ -26,8 +26,8 @@ void komodo_eventadd_opreturn(komodo_state *sp,char *symbol,int32_t height, std:
 
 void komodo_eventadd_kmdheight(komodo_state *sp,char *symbol,int32_t height,std::shared_ptr<komodo::event_kmdheight> kmd_ht);
 
-void komodo_event_undo(struct komodo_state *sp,struct komodo_event *ep);
+void komodo_event_undo(komodo_state *sp, std::shared_ptr<komodo::event> ep);
 
-void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height);
+void komodo_event_rewind(komodo_state *sp,char *symbol,int32_t height);
 
-void komodo_setkmdheight(struct komodo_state *sp,int32_t kmdheight,uint32_t timestamp);
+void komodo_setkmdheight(komodo_state *sp,int32_t kmdheight,uint32_t timestamp);

@@ -89,7 +89,7 @@ void komodo_eventadd_pricefeed( komodo_state *sp, char *symbol, int32_t height, 
  */
 void komodo_eventadd_opreturn( komodo_state *sp, char *symbol, int32_t height, std::shared_ptr<komodo::event_opreturn> opret)
 {
-    if ( sp != nullptr )
+    if ( sp != nullptr && ASSETCHAINS_SYMBOL[0] != 0)
     {
         sp->add_event(symbol, height, opret);
         komodo_opreturn(height, opret->value, opret->opret.data(), opret->opret.size(), opret->txid, opret->vout, symbol);
@@ -100,20 +100,20 @@ void komodo_eventadd_opreturn( komodo_state *sp, char *symbol, int32_t height, s
  * @brief Undo an event
  * @note seems to only work for KMD height events
  * @param sp the state object
- * @param ep the event to undo
+ * @param ev the event to undo
  */
-void komodo_event_undo(struct komodo_state *sp,struct komodo_event *ep)
+void komodo_event_undo(komodo_state *sp, std::shared_ptr<komodo::event> ev)
 {
-    switch ( ep->type )
+    switch ( ev->type )
     {
         case KOMODO_EVENT_RATIFY: 
-            printf("rewind of ratify, needs to be coded.%d\n",ep->height); 
+            printf("rewind of ratify, needs to be coded.%d\n",ev->height); 
             break;
         case KOMODO_EVENT_NOTARIZED: 
             break;
         case KOMODO_EVENT_KMDHEIGHT:
-            if ( ep->height <= sp->SAVEDHEIGHT )
-                sp->SAVEDHEIGHT = ep->height;
+            if ( ev->height <= sp->SAVEDHEIGHT )
+                sp->SAVEDHEIGHT = ev->height;
             break;
         case KOMODO_EVENT_PRICEFEED:
             // backtrack prices;
@@ -125,9 +125,8 @@ void komodo_event_undo(struct komodo_state *sp,struct komodo_event *ep)
 }
 
 
-void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height)
+void komodo_event_rewind(komodo_state *sp, char *symbol, int32_t height)
 {
-    komodo_event *ep = nullptr;
     if ( sp != nullptr )
     {
         if ( ASSETCHAINS_SYMBOL[0] == 0 && height <= KOMODO_LASTMINED && prevKOMODO_LASTMINED != 0 )
@@ -136,15 +135,13 @@ void komodo_event_rewind(struct komodo_state *sp,char *symbol,int32_t height)
             KOMODO_LASTMINED = prevKOMODO_LASTMINED;
             prevKOMODO_LASTMINED = 0;
         }
-        while ( sp->Komodo_events != 0 && sp->Komodo_numevents > 0 )
+        while ( sp->events.size() > 0)
         {
-            if ( (ep= sp->Komodo_events[sp->Komodo_numevents-1]) != nullptr )
-            {
-                if ( ep->height < height )
-                    break;
-                komodo_event_undo(sp,ep);
-                sp->Komodo_numevents--;
-            }
+            auto ev = sp->events.back();
+            if (ev-> height < height)
+                break;
+            komodo_event_undo(sp, ev);
+            sp->events.pop_back();
         }
     }
 }

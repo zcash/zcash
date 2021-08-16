@@ -274,8 +274,8 @@ struct komodo_state
     int32_t SAVEDHEIGHT,CURRENT_HEIGHT,NOTARIZED_HEIGHT,MoMdepth;
     uint32_t SAVEDTIMESTAMP;
     uint64_t deposited,issued,withdrawn,approved,redeemed,shorted;
-    struct notarized_checkpoint *NPOINTS; int32_t NUM_NPOINTS,last_NPOINTSi;
-    struct komodo_event **Komodo_events; int32_t Komodo_numevents;
+    struct notarized_checkpoint *NPOINTS; 
+    int32_t NUM_NPOINTS,last_NPOINTSi;
     std::list<std::shared_ptr<komodo::event>> events;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
     bool add_event(const std::string& symbol, const uint32_t height, std::shared_ptr<komodo::event> in);
