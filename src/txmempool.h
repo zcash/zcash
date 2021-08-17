@@ -7,6 +7,7 @@
 #define BITCOIN_TXMEMPOOL_H
 
 #include <list>
+#include <memory>
 
 #include "amount.h"
 #include "coins.h"
@@ -45,7 +46,7 @@ static const unsigned int MEMPOOL_HEIGHT = 0x7FFFFFFF;
 class CTxMemPoolEntry
 {
 private:
-    CTransaction tx;
+    std::shared_ptr<const CTransaction> tx;
     CAmount nFee;              //!< Cached to avoid expensive parent-transaction lookups
     size_t nTxSize;            //!< ... and avoid recomputing tx size
     size_t nModSize;           //!< ... and modified size for priority
@@ -68,7 +69,8 @@ public:
     CTxMemPoolEntry();
     CTxMemPoolEntry(const CTxMemPoolEntry& other);
 
-    const CTransaction& GetTx() const { return this->tx; }
+    const CTransaction& GetTx() const { return *this->tx; }
+    std::shared_ptr<const CTransaction> GetSharedTx() const { return this->tx; }
     double GetPriority(unsigned int currentHeight) const;
     const CAmount& GetFee() const { return nFee; }
     CFeeRate GetFeeRate() const { return feeRate; }
@@ -153,6 +155,21 @@ public:
 };
 
 /**
+ * Information about a mempool transaction.
+ */
+struct TxMempoolInfo
+{
+    /** The transaction itself */
+    std::shared_ptr<const CTransaction> tx;
+
+    /** Time the transaction entered the mempool. */
+    int64_t nTime;
+
+    /** Feerate of the transaction. */
+    CFeeRate feeRate;
+};
+
+/**
  * CTxMemPool stores valid-according-to-the-current-best-chain
  * transactions that may be included in the next block.
  *
@@ -223,6 +240,8 @@ private:
     std::map<uint256, std::vector<CMempoolAddressDeltaKey> > mapAddressInserted;
     std::map<CSpentIndexKey, CSpentIndexValue, CSpentIndexKeyCompare> mapSpent;
     std::map<uint256, std::vector<CSpentIndexKey>> mapSpentInserted;
+
+    std::vector<indexed_transaction_set::const_iterator> GetSortedDepthAndScore() const;
 
 public:
     std::map<COutPoint, CInPoint> mapNextTx;
@@ -308,7 +327,9 @@ public:
         return (mapTx.count(hash) != 0);
     }
 
-    bool lookup(uint256 hash, CTransaction& result) const;
+    std::shared_ptr<const CTransaction> get(const uint256& hash) const;
+    TxMempoolInfo info(const uint256& hash) const;
+    std::vector<TxMempoolInfo> infoAll() const;
 
     /** Estimate fee rate needed to get into the next nBlocks */
     CFeeRate estimateFee(int nBlocks) const;
