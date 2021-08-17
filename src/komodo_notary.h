@@ -287,7 +287,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
 }
 
 /******
- * @brief Search the notarized checkpoints for a particular height
+ * @brief Search the notarized checkpoints for a particular notarized_height
  * @note Finding a mach does include other criteria other than height
  *      such that the checkpoint includes the desired hight
  * @param sp the chain's state object
@@ -296,24 +296,32 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
  */
 std::multiset<notarized_checkpoint, notarized_checkpoint_height_compare>::iterator komodo_nearest_checkpoint(komodo_state* sp, int32_t height)
 {
-    notarized_checkpoint key;
-    key.nHeight = height;
-    for (auto itr = sp->NPOINTS.upper_bound(key); true; --itr)
+    if(sp->NPOINTS.size() > 0)
     {
-        auto &nc = (*itr);
+        notarized_checkpoint key;
+        key.nHeight = height;
+        auto itr = sp->NPOINTS.upper_bound(key);
+        // move forward until the notarized_height is more than what we're looking for
+        while ( itr != sp->NPOINTS.end() && (*itr).notarized_height <= height)
+            ++itr;
         // go backwards through the collection, looking for
         //    non-zero MoMdepth
         //    notarized_height => desired height
         //    notarized_height - (lower 16 bits of MoMdepth) < desired height
-        if ( nc.MoMdepth != 0 
-                && height > nc.notarized_height-(nc.MoMdepth&0xffff) 
-                && height <= nc.notarized_height )
+        while(true) 
         {
-            return itr;
+            auto &nc = (*itr);
+            if ( nc.MoMdepth != 0 
+                    && height > nc.notarized_height-(nc.MoMdepth&0xffff) 
+                    && height <= nc.notarized_height )
+            {
+                return itr;
+            }
+            if (itr == sp->NPOINTS.begin())
+                break;
+            --itr;
         }
-        if( itr == sp->NPOINTS.begin() )
-            break;
-    }
+    } // we have some elements in the collection
     return sp->NPOINTS.end();
 }
 
@@ -365,7 +373,7 @@ bool komodo_replace_checkpoint(const notarized_checkpoint* old_cp, const notariz
     return false;
 }
 /****
- * Search for the last (most recent?) MoM notarized height
+ * Search for the last (by height, then chronological) MoM notarized height
  * @returns the last notarized height that has a MoM
  */
 int32_t komodo_prevMoMheight()
@@ -489,26 +497,9 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
         auto itr = sp->NPOINTS.upper_bound(key);
         if (itr != sp->NPOINTS.begin())
             --itr;
-        if ( itr != sp->NPOINTS.end() )
+        if ( itr != sp->NPOINTS.end() && (*itr).nHeight <= nHeight )
         {
             auto &np = *itr;
-            auto next = ++itr;
-            if (next != sp->NPOINTS.end())
-            {
-                if ( np.nHeight >= nHeight || 
-                        (i+1 < sp->NPOINTS.size() && (*next).nHeight < nHeight) )
-                {
-                    printf("warning: flag.%d i.%d np->ht %d [1].ht %d >= nHeight.%d\n",found?1:0,i,np.nHeight,(*next).nHeight,nHeight);
-                }
-            }
-            else
-            {
-                // just as above, but i+1 would be out_of_range
-                if ( np.nHeight >= nHeight )
-                {
-                    printf("warning: flag.%d i.%d np->ht %d [1].ht out_of_range >= nHeight.%d\n",found?1:0,i,np.nHeight,nHeight);
-                }
-            }
             *notarized_hashp = np.notarized_hash;
             *notarized_desttxidp = np.notarized_desttxid;
             return np.notarized_height;
