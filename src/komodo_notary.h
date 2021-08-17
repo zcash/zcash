@@ -286,7 +286,14 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
     return(modval);
 }
 
-notarized_checkpoint *komodo_npptr_for_height(int32_t height, int *idx)
+/******
+ * @brief Search the notarized checkpoints for a particular height
+ * @note Finding a mach does include other criteria other than height
+ *      such that the checkpoint includes the desired hight
+ * @param height the key
+ * @returns the checkpoint
+ */
+notarized_checkpoint *komodo_npptr(int32_t height)
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN];
     char dest[KOMODO_ASSETCHAIN_MAXLEN]; 
@@ -296,36 +303,26 @@ notarized_checkpoint *komodo_npptr_for_height(int32_t height, int *idx)
     {
         for (auto i = sp->NPOINTS.size()-1; i >= 0; --i)
         {
+            // go backwards through the collection, looking for
+            //    non-zero MoMdepth
+            //    notarized_height => desired height
+            //    notarized_hehight - MoMdepth < desired height
             notarized_checkpoint &np = sp->NPOINTS[i];
-            if ( np.MoMdepth != 0 && height > np.notarized_height-(np.MoMdepth&0xffff) && height <= np.notarized_height )
+            if ( np.MoMdepth != 0 
+                    && height > np.notarized_height-(np.MoMdepth&0xffff) 
+                    && height <= np.notarized_height )
             {
-                *idx = i;
                 return &np;
             }
         }
     }
-    *idx = -1;
     return nullptr;
 }
 
-notarized_checkpoint *komodo_npptr(int32_t height)
-{
-    int idx;
-    return komodo_npptr_for_height(height, &idx);
-}
-
-notarized_checkpoint *komodo_npptr_at(int idx)
-{
-    char symbol[KOMODO_ASSETCHAIN_MAXLEN];
-    char dest[KOMODO_ASSETCHAIN_MAXLEN]; 
-    komodo_state *sp;
-
-    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
-        if (idx < sp->NPOINTS.size())
-            return &sp->NPOINTS[idx];
-    return nullptr;
-}
-
+/****
+ * Search for the last (most recent?) MoM notarized height
+ * @returns the last notarized height that has a MoM
+ */
 int32_t komodo_prevMoMheight()
 {
     static uint256 zero;
@@ -345,18 +342,29 @@ int32_t komodo_prevMoMheight()
     return 0;
 }
 
+/******
+ * @brief Get the last notarization information
+ * @param[out] prevMoMheightp where to store the MoM height
+ * @param[out] hashp the notarized hash
+ * @param[out] txidp the DESTTXID
+ * @returns the notarized height
+ */
 int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp)
 {
-    char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN];
+    char dest[KOMODO_ASSETCHAIN_MAXLEN]; 
+    komodo_state *sp;
+
     *prevMoMheightp = 0;
     memset(hashp,0,sizeof(*hashp));
     memset(txidp,0,sizeof(*txidp));
+
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
         CBlockIndex *pindex;
         if ( (pindex= komodo_blockindex(sp->NOTARIZED_HASH)) == 0 || pindex->GetHeight() < 0 )
         {
-            //fprintf(stderr,"found orphaned notarization at ht.%d pindex.%p\n",sp->NOTARIZED_HEIGHT,(void *)pindex);
+            // found orphaned notarization, adjust the values in the komodo_state object
             memset(&sp->NOTARIZED_HASH,0,sizeof(sp->NOTARIZED_HASH));
             memset(&sp->NOTARIZED_DESTTXID,0,sizeof(sp->NOTARIZED_DESTTXID));
             sp->NOTARIZED_HEIGHT = 0;
@@ -367,8 +375,9 @@ int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *
             *txidp = sp->NOTARIZED_DESTTXID;
             *prevMoMheightp = komodo_prevMoMheight();
         }
-        return(sp->NOTARIZED_HEIGHT);
-    } else return(0);
+        return sp->NOTARIZED_HEIGHT;
+    } 
+    return 0;
 }
 
 int32_t komodo_dpowconfs(int32_t txheight,int32_t numconfs)
@@ -412,10 +421,16 @@ int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,in
     return(0);
 }
 
+/****
+ * Get the notarization data at or below a particular height
+ * @param[in] nHeight the height desired
+ * @param[out] notarized_hashp the hash of the notarized block
+ * @param[out] notarized_desttxidp the desttxid
+ * @returns the notarized height
+ */
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
 {
     notarized_checkpoint *np = nullptr; 
-    notarized_checkpoint *next = nullptr;
     int32_t i=0;
     bool found = false;
     char symbol[KOMODO_ASSETCHAIN_MAXLEN];
@@ -487,26 +502,34 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
     return 0;
 }
 
-void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t notarized_height,uint256 notarized_hash,uint256 notarized_desttxid,uint256 MoM,int32_t MoMdepth)
+/***
+ * Add a notarized checkpoint to the komodo_state
+ * @param[in] sp the komodo_state to add to
+ * @param[in] nHeight the height
+ * @param[in] notarized_height the height of the notarization
+ * @param[in] notarized_hash the hash of the notarization
+ * @param[in] notarized_desttxid the txid of the notarization on the destination chain
+ * @param[in] MoM the MoM
+ * @param[in] MoMdepth the depth
+ */
+void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t notarized_height,
+        uint256 notarized_hash,uint256 notarized_desttxid,uint256 MoM,int32_t MoMdepth)
 {
-    struct notarized_checkpoint *np;
     if ( notarized_height >= nHeight )
     {
         fprintf(stderr,"komodo_notarized_update REJECT notarized_height %d > %d nHeight\n",notarized_height,nHeight);
         return;
     }
-    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-        fprintf(stderr,"[%s] komodo_notarized_update nHeight.%d notarized_height.%d\n",ASSETCHAINS_SYMBOL,nHeight,notarized_height);
     portable_mutex_lock(&komodo_mutex);
     sp->NPOINTS.push_back(notarized_checkpoint());
-    np = &sp->NPOINTS[sp->NPOINTS.size()-1];
-    memset(np,0,sizeof(*np));
-    np->nHeight = nHeight;
-    sp->NOTARIZED_HEIGHT = np->notarized_height = notarized_height;
-    sp->NOTARIZED_HASH = np->notarized_hash = notarized_hash;
-    sp->NOTARIZED_DESTTXID = np->notarized_desttxid = notarized_desttxid;
-    sp->MoM = np->MoM = MoM;
-    sp->MoMdepth = np->MoMdepth = MoMdepth;
+    notarized_checkpoint &np = sp->NPOINTS[sp->NPOINTS.size()-1];
+    memset(&np,0,sizeof(np));
+    np.nHeight = nHeight;
+    sp->NOTARIZED_HEIGHT = np.notarized_height = notarized_height;
+    sp->NOTARIZED_HASH = np.notarized_hash = notarized_hash;
+    sp->NOTARIZED_DESTTXID = np.notarized_desttxid = notarized_desttxid;
+    sp->MoM = np.MoM = MoM;
+    sp->MoMdepth = np.MoMdepth = MoMdepth;
     portable_mutex_unlock(&komodo_mutex);
 }
 
@@ -531,8 +554,6 @@ void komodo_init(int32_t height)
             }
             komodo_notarysinit(0,pubkeys,k);
         }
-        //for (i=0; i<sizeof(Minerids); i++)
-        //    Minerids[i] = -2;
         didinit = 1;
         komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,zero,0);
     }
