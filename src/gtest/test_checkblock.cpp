@@ -11,19 +11,22 @@
 
 class MockCValidationState : public CValidationState {
 public:
-    MOCK_METHOD5(DoS, bool(int level, bool ret,
-             unsigned char chRejectCodeIn, std::string strRejectReasonIn,
-             bool corruptionIn));
-    MOCK_METHOD3(Invalid, bool(bool ret,
-                 unsigned char _chRejectCode, std::string _strRejectReason));
+    MOCK_METHOD6(DoS, bool(int level, bool ret,
+             unsigned int chRejectCodeIn, const std::string strRejectReasonIn,
+             bool corruptionIn,
+             const std::string &strDebugMessageIn));
+    MOCK_METHOD4(Invalid, bool(bool ret,
+                 unsigned int _chRejectCode, const std::string _strRejectReason,
+                 const std::string &_strDebugMessage));
     MOCK_METHOD1(Error, bool(std::string strRejectReasonIn));
     MOCK_CONST_METHOD0(IsValid, bool());
     MOCK_CONST_METHOD0(IsInvalid, bool());
     MOCK_CONST_METHOD0(IsError, bool());
     MOCK_CONST_METHOD1(IsInvalid, bool(int &nDoSOut));
     MOCK_CONST_METHOD0(CorruptionPossible, bool());
-    MOCK_CONST_METHOD0(GetRejectCode, unsigned char());
+    MOCK_CONST_METHOD0(GetRejectCode, unsigned int());
     MOCK_CONST_METHOD0(GetRejectReason, std::string());
+    MOCK_CONST_METHOD0(GetDebugMessage, std::string());
 };
 
 TEST(CheckBlock, VersionTooLow) {
@@ -34,7 +37,7 @@ TEST(CheckBlock, VersionTooLow) {
     block.nVersion = 1;
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "version-too-low", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "version-too-low", false, "")).Times(1);
     EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, orchardAuth, false, false, true));
 }
 
@@ -77,7 +80,7 @@ TEST(CheckBlock, BlockSproutRejectsBadVersion) {
     auto verifier = ProofVerifier::Strict();
     auto orchardAuth = orchard::AuthValidator::Batch();
 
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-version-too-low", false, "")).Times(1);
     EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, orchardAuth, false, false, true));
 }
 
@@ -149,7 +152,7 @@ protected:
 
         // We now expect this to be an invalid block, for the given reason.
         MockCValidationState state;
-        EXPECT_CALL(state, DoS(level, false, REJECT_INVALID, reason, false)).Times(1);
+        EXPECT_CALL(state, DoS(level, false, REJECT_INVALID, reason, false, "")).Times(1);
         EXPECT_FALSE(ContextualCheckBlock(block, state, Params(), &indexPrev, true));
     }
 
@@ -180,14 +183,14 @@ TEST_F(ContextualCheckBlockTest, BadCoinbaseHeight) {
     CBlock prev;
     CBlockIndex indexPrev {prev};
     indexPrev.nHeight = 0;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-height", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-height", false, "")).Times(1);
     EXPECT_FALSE(ContextualCheckBlock(block, state, Params(), &indexPrev, true));
 
     // Setting to an incorrect height should fail
     mtx.vin[0].scriptSig = CScript() << 2 << OP_0;
     CTransaction tx3 {mtx};
     block.vtx[0] = tx3;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-height", false)).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-height", false, "")).Times(1);
     EXPECT_FALSE(ContextualCheckBlock(block, state, Params(), &indexPrev, true));
 
     // After correcting the scriptSig, should pass

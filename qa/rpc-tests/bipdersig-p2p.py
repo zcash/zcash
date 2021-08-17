@@ -4,12 +4,11 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import ComparisonTestFramework
-from test_framework.util import start_nodes
+from test_framework.util import hex_str_to_bytes, start_nodes
 from test_framework.mininode import CTransaction, NetworkThread
 from test_framework.blocktools import create_coinbase, create_block
 from test_framework.comptool import TestInstance, TestManager
 from test_framework.script import CScript
-from binascii import unhexlify
 from io import BytesIO
 
 
@@ -47,7 +46,7 @@ class BIP66Test(ComparisonTestFramework):
         rawtx = node.createrawtransaction(inputs, outputs)
         signresult = node.signrawtransaction(rawtx)
         tx = CTransaction()
-        f = BytesIO(unhexlify(signresult['hex']))
+        f = BytesIO(hex_str_to_bytes(signresult['hex']))
         tx.deserialize(f)
         return tx
 
