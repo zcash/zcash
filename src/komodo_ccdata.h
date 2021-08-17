@@ -202,7 +202,7 @@ void komodo_purge_ccdata(int32_t height)
 // this is just a demo of ccdata processing to create example data for the MoMoM and allMoMs calls
 int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccdata,struct komodo_ccdataMoMoM *MoMoMdata)
 {
-    uint256 hash,zero; bits256 tmp; int32_t i,nonz; struct komodo_ccdata *ptr; struct notarized_checkpoint *np;
+    uint256 hash,zero; bits256 tmp; int32_t i,nonz; struct komodo_ccdata *ptr; 
     return(0); // disable this path as libscott method is much better
     if ( rwflag == 0 )
     {
@@ -244,16 +244,20 @@ int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccd
         {
             for (i=0; i<MoMoMdata->numpairs; i++)
             {
-                if ( (np= komodo_npptr(MoMoMdata->pairs[i].notarized_height)) != 0 )
+                const notarized_checkpoint *np = komodo_npptr(MoMoMdata->pairs[i].notarized_height);
+                if ( np != nullptr )
                 {
                     memset(&zero,0,sizeof(zero));
                     if ( memcmp(&np->MoMoM,&zero,sizeof(np->MoMoM)) == 0 )
                     {
-                        np->MoMoM = MoMoMdata->MoMoM;
-                        np->MoMoMdepth = MoMoMdata->MoMoMdepth;
-                        np->MoMoMoffset = MoMoMdata->MoMoMoffset;
-                        np->kmdstarti = MoMoMdata->kmdstarti;
-                        np->kmdendi = MoMoMdata->kmdendi;
+                        // modify (by replacing) the checkpoint
+                        notarized_checkpoint new_cp;
+                        new_cp.MoMoM = MoMoMdata->MoMoM;
+                        new_cp.MoMoMdepth = MoMoMdata->MoMoMdepth;
+                        new_cp.MoMoMoffset = MoMoMdata->MoMoMoffset;
+                        new_cp.kmdstarti = MoMoMdata->kmdstarti;
+                        new_cp.kmdendi = MoMoMdata->kmdendi;
+                        komodo_replace_checkpoint(np, new_cp);
                     }
                     else if ( memcmp(&np->MoMoM,&MoMoMdata->MoMoM,sizeof(np->MoMoM)) != 0 || np->MoMoMdepth != MoMoMdata->MoMoMdepth || np->MoMoMoffset != MoMoMdata->MoMoMoffset || np->kmdstarti != MoMoMdata->kmdstarti || np->kmdendi != MoMoMdata->kmdendi )
                     {

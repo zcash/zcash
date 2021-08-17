@@ -50,6 +50,8 @@
 
 #include "bits256.h"
 
+#include <set>
+
 struct komodo_kv { UT_hash_handle hh; bits256 pubkey; uint8_t *key,*value; int32_t height; uint32_t flags; uint16_t keylen,valuesize; };
 
 struct komodo_event_notarized { uint256 blockhash,desttxid,MoM; int32_t notarizedheight,MoMdepth; char dest[16]; };
@@ -79,10 +81,19 @@ struct pax_transaction
 
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; };
+
 struct notarized_checkpoint
 {
     uint256 notarized_hash,notarized_desttxid,MoM,MoMoM;
     int32_t nHeight,notarized_height,MoMdepth,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
+};
+
+struct notarized_checkpoint_height_compare
+{
+    bool operator()(const notarized_checkpoint& a, const notarized_checkpoint& b)
+    {
+        return a.nHeight < b.nHeight;
+    }
 };
 
 struct komodo_ccdataMoM
@@ -111,12 +122,21 @@ struct komodo_ccdata
 
 struct komodo_state
 {
-    uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID,MoM;
-    int32_t SAVEDHEIGHT,CURRENT_HEIGHT,NOTARIZED_HEIGHT,MoMdepth;
+    uint256 NOTARIZED_HASH; // the latest notarized hash
+    uint256 NOTARIZED_DESTTXID; // the latest notarized dest txid
+    uint256 MoM;
+    int32_t SAVEDHEIGHT;
+    int32_t CURRENT_HEIGHT;
+    int32_t NOTARIZED_HEIGHT; // the height of the latest notarization
+    int32_t MoMdepth; // the MOM depth of the latest notarization
     uint32_t SAVEDTIMESTAMP;
-    uint64_t deposited,issued,withdrawn,approved,redeemed,shorted;
-    std::vector<notarized_checkpoint> NPOINTS; 
-    int32_t last_NPOINTSi;
+    uint64_t deposited;
+    uint64_t issued;
+    uint64_t withdrawn;
+    uint64_t approved;
+    uint64_t redeemed;
+    uint64_t shorted;
+    std::multiset<notarized_checkpoint, notarized_checkpoint_height_compare> NPOINTS; // collection of notarizations
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
 };

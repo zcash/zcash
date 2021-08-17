@@ -290,10 +290,41 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
  * @brief Search the notarized checkpoints for a particular height
  * @note Finding a mach does include other criteria other than height
  *      such that the checkpoint includes the desired hight
+ * @param sp the chain's state object
  * @param height the key
- * @returns the checkpoint
+ * @returns the checkpoint or sp->NPOINTS.end()
  */
-notarized_checkpoint *komodo_npptr(int32_t height)
+std::multiset<notarized_checkpoint, notarized_checkpoint_height_compare>::iterator komodo_nearest_checkpoint(komodo_state* sp, int32_t height)
+{
+    notarized_checkpoint key;
+    key.nHeight = height;
+    for (auto itr = sp->NPOINTS.upper_bound(key); true; --itr)
+    {
+        auto &nc = (*itr);
+        // go backwards through the collection, looking for
+        //    non-zero MoMdepth
+        //    notarized_height => desired height
+        //    notarized_height - (lower 16 bits of MoMdepth) < desired height
+        if ( nc.MoMdepth != 0 
+                && height > nc.notarized_height-(nc.MoMdepth&0xffff) 
+                && height <= nc.notarized_height )
+        {
+            return itr;
+        }
+        if( itr == sp->NPOINTS.begin() )
+            break;
+    }
+    return sp->NPOINTS.end();
+}
+
+/******
+ * @brief Search the notarized checkpoints for a particular height
+ * @note Finding a mach does include other criteria other than height
+ *      such that the checkpoint includes the desired hight
+ * @param height the key
+ * @returns the checkpoint or sp->NPOINTS.rend()
+ */
+const notarized_checkpoint *komodo_npptr(int32_t height)
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN];
     char dest[KOMODO_ASSETCHAIN_MAXLEN]; 
@@ -301,24 +332,38 @@ notarized_checkpoint *komodo_npptr(int32_t height)
 
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
-        for (auto i = sp->NPOINTS.size()-1; i >= 0; --i)
-        {
-            // go backwards through the collection, looking for
-            //    non-zero MoMdepth
-            //    notarized_height => desired height
-            //    notarized_hehight - MoMdepth < desired height
-            notarized_checkpoint &np = sp->NPOINTS[i];
-            if ( np.MoMdepth != 0 
-                    && height > np.notarized_height-(np.MoMdepth&0xffff) 
-                    && height <= np.notarized_height )
-            {
-                return &np;
-            }
-        }
+        auto itr = komodo_nearest_checkpoint(sp, height);
+        if (itr != sp->NPOINTS.end())
+            return &(*itr);
     }
     return nullptr;
 }
 
+/******
+ * @brief replace a checkpoint with a new one
+ * @param old_cp the old checkpoint
+ * @param new_cp the new one
+ * @returns true on success
+ */
+bool komodo_replace_checkpoint(const notarized_checkpoint* old_cp, const notarized_checkpoint& new_cp)
+{
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN];
+    char dest[KOMODO_ASSETCHAIN_MAXLEN]; 
+    komodo_state *sp;
+
+    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
+    {
+        auto itr = komodo_nearest_checkpoint(sp, old_cp->nHeight);
+        // verify we're replacing the correct one
+        if( itr != sp->NPOINTS.end() &&  &(*itr) == old_cp)
+        {
+            sp->NPOINTS.erase(itr);
+            sp->NPOINTS.insert(new_cp);
+            return true;
+        }
+    }
+    return false;
+}
 /****
  * Search for the last (most recent?) MoM notarized height
  * @returns the last notarized height that has a MoM
@@ -332,9 +377,9 @@ int32_t komodo_prevMoMheight()
 
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
-        for (auto i=sp->NPOINTS.size()-1; i>=0; i--)
+        for (auto i = sp->NPOINTS.rbegin(); i != sp->NPOINTS.rend(); ++i)
         {
-            auto &np = sp->NPOINTS[i];
+            auto &np = *i;
             if ( np.MoM != zero )
                 return np.notarized_height;
         }
@@ -344,7 +389,7 @@ int32_t komodo_prevMoMheight()
 
 /******
  * @brief Get the last notarization information
- * @param[out] prevMoMheightp where to store the MoM height
+ * @param[out] prevMoMheightp the MoM height
  * @param[out] hashp the notarized hash
  * @param[out] txidp the DESTTXID
  * @returns the notarized height
@@ -401,8 +446,8 @@ int32_t komodo_dpowconfs(int32_t txheight,int32_t numconfs)
 
 int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t height,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip)
 {
-    struct notarized_checkpoint *np = 0;
-    if ( (np= komodo_npptr(height)) != 0 )
+    const notarized_checkpoint *np = komodo_npptr(height);
+    if ( np != nullptr )
     {
         *notarized_htp = np->notarized_height;
         *MoMp = np->MoM;
@@ -418,7 +463,7 @@ int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,in
     memset(MoMp,0,sizeof(*MoMp));
     memset(MoMoMp,0,sizeof(*MoMoMp));
     memset(kmdtxidp,0,sizeof(*kmdtxidp));
-    return(0);
+    return 0;
 }
 
 /****
@@ -430,7 +475,6 @@ int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,in
  */
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
 {
-    notarized_checkpoint *np = nullptr; 
     int32_t i=0;
     bool found = false;
     char symbol[KOMODO_ASSETCHAIN_MAXLEN];
@@ -439,62 +483,35 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
 
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
-        if ( sp->NPOINTS.size() > 0 )
+        // get the nearest height without going over
+        notarized_checkpoint key;
+        key.nHeight = nHeight;
+        auto itr = sp->NPOINTS.upper_bound(key);
+        if (itr != sp->NPOINTS.begin())
+            --itr;
+        if ( itr != sp->NPOINTS.end() )
         {
-            found = false;
-            // if we have last_NPOINTSi, attempt to start the search near there
-            if ( sp->last_NPOINTSi < sp->NPOINTS.size() && sp->last_NPOINTSi > 0 )
+            auto &np = *itr;
+            auto next = ++itr;
+            if (next != sp->NPOINTS.end())
             {
-                // get the one before the last_NPOINTSi index
-                np = &sp->NPOINTS[sp->last_NPOINTSi-1];
-                if ( np->nHeight < nHeight )
+                if ( np.nHeight >= nHeight || 
+                        (i+1 < sp->NPOINTS.size() && (*next).nHeight < nHeight) )
                 {
-                    // it is less than the height that was passed in
-                    // so move forward in the collection
-                    for (i=sp->last_NPOINTSi; i<sp->NPOINTS.size(); i++)
-                    {
-                        if ( sp->NPOINTS[i].nHeight >= nHeight )
-                        {
-                            // we're at or above the height that was passed in
-                            found = true;
-                            break;
-                        }
-                        // we're not at the correct height yet
-                        np = &sp->NPOINTS[i];
-                        sp->last_NPOINTSi = i;
-                    }
+                    printf("warning: flag.%d i.%d np->ht %d [1].ht %d >= nHeight.%d\n",found?1:0,i,np.nHeight,(*next).nHeight,nHeight);
                 }
             }
-            if ( !found )
+            else
             {
-                // we didn't find the height, so start from the beginning of the collection and search again
-                np = nullptr;
-                for (i=0; i<sp->NPOINTS.size(); i++)
+                // just as above, but i+1 would be out_of_range
+                if ( np.nHeight >= nHeight )
                 {
-                    if ( sp->NPOINTS[i].nHeight >= nHeight )
-                    {
-                        // we're at or above the height that was passed in
-                        break;
-                    }
-                    np = &sp->NPOINTS[i];
-                    sp->last_NPOINTSi = i;
+                    printf("warning: flag.%d i.%d np->ht %d [1].ht out_of_range >= nHeight.%d\n",found?1:0,i,np.nHeight,nHeight);
                 }
             }
-        }
-        if ( np != nullptr )
-        {
-            if ( np->nHeight >= nHeight || (i+1 < sp->NPOINTS.size() && np[i+1].nHeight < nHeight) )
-            {
-                printf("warning: flag.%d i.%d np->ht %d [1].ht %d >= nHeight.%d\n",found?1:0,i,np->nHeight,np[1].nHeight,nHeight);
-            }
-            // just as above, but i+1 would be out_of_range
-            if ( np->nHeight >= nHeight || (i+1 == sp->NPOINTS.size() ) )
-            {
-                printf("warning: flag.%d i.%d np->ht %d [1].ht out_of_range >= nHeight.%d\n",found?1:0,i,np->nHeight,nHeight);
-            }
-            *notarized_hashp = np->notarized_hash;
-            *notarized_desttxidp = np->notarized_desttxid;
-            return np->notarized_height;
+            *notarized_hashp = np.notarized_hash;
+            *notarized_desttxidp = np.notarized_desttxid;
+            return np.notarized_height;
         }
     }
     memset(notarized_hashp,0,sizeof(*notarized_hashp));
@@ -521,15 +538,15 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
         return;
     }
     portable_mutex_lock(&komodo_mutex);
-    sp->NPOINTS.push_back(notarized_checkpoint());
-    notarized_checkpoint &np = sp->NPOINTS[sp->NPOINTS.size()-1];
-    memset(&np,0,sizeof(np));
-    np.nHeight = nHeight;
-    sp->NOTARIZED_HEIGHT = np.notarized_height = notarized_height;
-    sp->NOTARIZED_HASH = np.notarized_hash = notarized_hash;
-    sp->NOTARIZED_DESTTXID = np.notarized_desttxid = notarized_desttxid;
-    sp->MoM = np.MoM = MoM;
-    sp->MoMdepth = np.MoMdepth = MoMdepth;
+    notarized_checkpoint new_cp;
+    memset(&new_cp,0,sizeof(new_cp));
+    new_cp.nHeight = nHeight;
+    sp->NOTARIZED_HEIGHT = new_cp.notarized_height = notarized_height;
+    sp->NOTARIZED_HASH = new_cp.notarized_hash = notarized_hash;
+    sp->NOTARIZED_DESTTXID = new_cp.notarized_desttxid = notarized_desttxid;
+    sp->MoM = new_cp.MoM = MoM;
+    sp->MoMdepth = new_cp.MoMdepth = MoMdepth;
+    sp->NPOINTS.insert(new_cp);
     portable_mutex_unlock(&komodo_mutex);
 }
 
