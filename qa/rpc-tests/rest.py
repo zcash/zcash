@@ -12,7 +12,6 @@ from test_framework.util import assert_equal, assert_greater_than, \
     hex_str_to_bytes, start_nodes, connect_nodes_bi
 
 import struct
-import binascii
 import json
 from io import BytesIO
 from codecs import encode
