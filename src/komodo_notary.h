@@ -416,9 +416,8 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
 {
     notarized_checkpoint *np = nullptr; 
     notarized_checkpoint *next = nullptr;
-    size_t index = 0;
     int32_t i=0;
-    int32_t flag = 0; 
+    bool found = false;
     char symbol[KOMODO_ASSETCHAIN_MAXLEN];
     char dest[KOMODO_ASSETCHAIN_MAXLEN]; 
     komodo_state *sp;
@@ -427,56 +426,60 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
     {
         if ( sp->NPOINTS.size() > 0 )
         {
-            flag = 0;
+            found = false;
+            // if we have last_NPOINTSi, attempt to start the search near there
             if ( sp->last_NPOINTSi < sp->NPOINTS.size() && sp->last_NPOINTSi > 0 )
             {
+                // get the one before the last_NPOINTSi index
                 np = &sp->NPOINTS[sp->last_NPOINTSi-1];
-                index = sp->last_NPOINTSi-1;
                 if ( np->nHeight < nHeight )
                 {
+                    // it is less than the height that was passed in
+                    // so move forward in the collection
                     for (i=sp->last_NPOINTSi; i<sp->NPOINTS.size(); i++)
                     {
                         if ( sp->NPOINTS[i].nHeight >= nHeight )
                         {
-                            flag = 1;
+                            // we're at or above the height that was passed in
+                            found = true;
                             break;
                         }
+                        // we're not at the correct height yet
                         np = &sp->NPOINTS[i];
-                        index = i;
                         sp->last_NPOINTSi = i;
                     }
                 }
             }
-            if ( flag == 0 )
+            if ( !found )
             {
+                // we didn't find the height, so start from the beginning of the collection and search again
                 np = nullptr;
-                index = 0;
                 for (i=0; i<sp->NPOINTS.size(); i++)
                 {
                     if ( sp->NPOINTS[i].nHeight >= nHeight )
                     {
+                        // we're at or above the height that was passed in
                         break;
                     }
                     np = &sp->NPOINTS[i];
-                    index = i;
                     sp->last_NPOINTSi = i;
                 }
             }
         }
         if ( np != nullptr )
         {
-            if ( np->nHeight >= nHeight || (i < sp->NPOINTS.size() && index+1 < sp->NPOINTS.size() && np[index+1].nHeight < nHeight) )
+            if ( np->nHeight >= nHeight || (i+1 < sp->NPOINTS.size() && np[i+1].nHeight < nHeight) )
             {
-                printf("warning: flag.%d i.%d np->ht %d [1].ht %d >= nHeight.%d\n",flag,i,np->nHeight,np[1].nHeight,nHeight);
+                printf("warning: flag.%d i.%d np->ht %d [1].ht %d >= nHeight.%d\n",found?1:0,i,np->nHeight,np[1].nHeight,nHeight);
             }
-            // just as above, but with out_of_range protection
-            if ( np->nHeight >= nHeight || (i < sp->NPOINTS.size() && index+1 >= sp->NPOINTS.size() && np[index+1].nHeight < nHeight) )
+            // just as above, but i+1 would be out_of_range
+            if ( np->nHeight >= nHeight || (i+1 == sp->NPOINTS.size() ) )
             {
-                printf("warning: flag.%d i.%d np->ht %d [1].ht out_of_range >= nHeight.%d\n",flag,i,np->nHeight,nHeight);
+                printf("warning: flag.%d i.%d np->ht %d [1].ht out_of_range >= nHeight.%d\n",found?1:0,i,np->nHeight,nHeight);
             }
             *notarized_hashp = np->notarized_hash;
             *notarized_desttxidp = np->notarized_desttxid;
-            return(np->notarized_height);
+            return np->notarized_height;
         }
     }
     memset(notarized_hashp,0,sizeof(*notarized_hashp));
