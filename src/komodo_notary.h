@@ -373,7 +373,7 @@ bool komodo_replace_checkpoint(const notarized_checkpoint* old_cp, const notariz
     return false;
 }
 /****
- * Search for the last (by height, then chronological) MoM notarized height
+ * Search for the last (chronological) MoM notarized height
  * @returns the last notarized height that has a MoM
  */
 int32_t komodo_prevMoMheight()

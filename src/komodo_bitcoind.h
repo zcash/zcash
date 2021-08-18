@@ -1164,34 +1164,44 @@ uint32_t komodo_blocktime(uint256 hash)
     return(0);
 }
 
-int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
+/******
+ * @brief Verify that a height and hash match the most recent (based on height) notarized_checkpoint
+ * @param[out] notarized_heightp the notarized height found
+ * @param[in] nHeight the height that should be greater than the notarized height
+ * @param[in] hash the hash that should match the notarized hash
+ * @returns true on success
+ */
+bool komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
 {
-    int32_t notarized_height,MoMdepth; uint256 MoM,notarized_hash,notarized_desttxid; CBlockIndex *notary,*pindex;
+    CBlockIndex *pindex;
     if ( (pindex= chainActive.LastTip()) == 0 )
-        return(-1);
-    notarized_height = komodo_notarizeddata(pindex->GetHeight(),&notarized_hash,&notarized_desttxid);
+        return false;
+
+    // get the most recent (highest) notarized_checkpoint data
+    uint256 notarized_hash;
+    uint256 notarized_desttxid; 
+    int32_t notarized_height = komodo_notarizeddata(pindex->GetHeight(),&notarized_hash,&notarized_desttxid);
     *notarized_heightp = notarized_height;
+
     BlockMap::const_iterator it;
-    if ( notarized_height >= 0 && notarized_height <= pindex->GetHeight() && (it = mapBlockIndex.find(notarized_hash)) != mapBlockIndex.end() && (notary = it->second) != NULL )
+    CBlockIndex *notary;
+    if ( notarized_height >= 0 && notarized_height <= pindex->GetHeight() 
+            && (it = mapBlockIndex.find(notarized_hash)) != mapBlockIndex.end() && (notary = it->second) != nullptr )
     {
-        //printf("nHeight.%d -> (%d %s)\n",pindex->Tip()->GetHeight(),notarized_height,notarized_hash.ToString().c_str());
+        // verify that the block info returned from komodo_notarizeddata matches the actual block
         if ( notary->GetHeight() == notarized_height ) // if notarized_hash not in chain, reorg
         {
-            if ( nHeight < notarized_height )
-            {
-                //fprintf(stderr,"[%s] nHeight.%d < NOTARIZED_HEIGHT.%d\n",ASSETCHAINS_SYMBOL,nHeight,notarized_height);
-                return(-1);
-            }
+            if ( nHeight < notarized_height ) // the nHeight they passed us is too low
+                return false;
             else if ( nHeight == notarized_height && memcmp(&hash,&notarized_hash,sizeof(hash)) != 0 )
             {
+                // The height matches, but the hash they passed us does not match the notarized_hash we found
                 fprintf(stderr,"[%s] nHeight.%d == NOTARIZED_HEIGHT.%d, diff hash\n",ASSETCHAINS_SYMBOL,nHeight,notarized_height);
-                return(-1);
+                return false;
             }
-        } //else fprintf(stderr,"[%s] unexpected error notary_hash %s ht.%d at ht.%d\n",ASSETCHAINS_SYMBOL,notarized_hash.ToString().c_str(),notarized_height,notary->GetHeight());
+        }
     }
-    //else if ( notarized_height > 0 && notarized_height != 73880 && notarized_height >= 170000 )
-    //    fprintf(stderr,"[%s] couldnt find notarized.(%s %d) ht.%d\n",ASSETCHAINS_SYMBOL,notarized_hash.ToString().c_str(),notarized_height,pindex->GetHeight());
-    return(0);
+    return true;
 }
 
 uint32_t komodo_interest_args(uint32_t *txheighttimep,int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n)
