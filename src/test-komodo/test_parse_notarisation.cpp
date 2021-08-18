@@ -6,6 +6,13 @@
 
 #include "testutils.h"
 
+#include "komodo_structs.h"
+komodo_state *komodo_stateptr(char *symbol,char *dest);
+void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t notarized_height,
+        uint256 notarized_hash,uint256 notarized_desttxid,uint256 MoM,int32_t MoMdepth);
+const notarized_checkpoint *komodo_npptr(int32_t height);
+int32_t komodo_prevMoMheight();
+int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp);
 
 namespace TestParseNotarisation {
 
@@ -47,7 +54,169 @@ TEST(TestParseNotarisation, test__b)
     ASSERT_TRUE(res);
 }
 
+void clear_npoints(komodo_state *sp)
+{
+    if (sp->NPOINTS != nullptr)
+        free(sp->NPOINTS);
+    sp->NPOINTS = nullptr;
+    sp->NUM_NPOINTS = 0;
+    sp->last_NPOINTSi = 0;
+}
 
+TEST(TestParseNotarisation, test_notarized_update)
+{
+    // get the komodo_state to play with
+    char src[KOMODO_ASSETCHAIN_MAXLEN];
+    char dest[KOMODO_ASSETCHAIN_MAXLEN];
+    komodo_state *sp = komodo_stateptr(src, dest);
+    EXPECT_NE(sp, nullptr);
+
+    clear_npoints(sp);
+    // height lower than notarized_height
+    komodo_notarized_update(sp, 9, 10, uint256(), uint256(), uint256(), 1);
+    EXPECT_EQ(sp->NUM_NPOINTS, 0);
+    auto npptr = komodo_npptr(11);
+    EXPECT_EQ(npptr, nullptr);
+
+    // 1 inserted with height 10
+    komodo_notarized_update(sp, 10, 8, uint256(), uint256(), uint256(), 2);
+    EXPECT_EQ(sp->NUM_NPOINTS, 1);
+    notarized_checkpoint *tmp = &sp->NPOINTS[0];
+    EXPECT_EQ(tmp->nHeight, 10);
+    EXPECT_EQ(tmp->notarized_height, 8);
+    EXPECT_EQ(tmp->MoMdepth, 2);
+    clear_npoints(sp);
+}
+
+TEST(TestParseNotarisation, test_npptr)
+{
+    // get the komodo_state to play with
+    char src[KOMODO_ASSETCHAIN_MAXLEN];
+    char dest[KOMODO_ASSETCHAIN_MAXLEN];
+    komodo_state *sp = komodo_stateptr(src, dest);
+    EXPECT_NE(sp, nullptr);
+
+    // empty NPOINTS
+    clear_npoints(sp);
+    komodo_notarized_update(sp, 9, 10, uint256(), uint256(), uint256(), 1);
+    EXPECT_EQ(sp->NUM_NPOINTS, 0);
+    auto npptr = komodo_npptr(11);
+    EXPECT_EQ(npptr, nullptr);
+
+    // 1 inserted with height 10
+    komodo_notarized_update(sp, 10, 8, uint256(), uint256(), uint256(), 2);
+    EXPECT_EQ(sp->NUM_NPOINTS, 1);
+    notarized_checkpoint *tmp = &sp->NPOINTS[0];
+    EXPECT_EQ(tmp->nHeight, 10);
+    EXPECT_EQ(tmp->notarized_height, 8);
+    EXPECT_EQ(tmp->MoMdepth, 2);
+    // test komodo_npptr
+    npptr = komodo_npptr(-1); // none found with a notarized_height so low
+    EXPECT_EQ(npptr, nullptr);
+    npptr = komodo_npptr(0); // none found with a notarized_height so low
+    EXPECT_EQ(npptr, nullptr);
+    npptr = komodo_npptr(1); // none found with a notarized_height so low
+    EXPECT_EQ(npptr, nullptr);
+    npptr = komodo_npptr(6); // none found with a notarized_height so low
+    EXPECT_EQ(npptr, nullptr);
+    npptr = komodo_npptr(7); // one found
+    ASSERT_NE(npptr, nullptr);
+    EXPECT_EQ(npptr->nHeight, 10);
+    EXPECT_EQ(npptr->notarized_height, 8);
+    EXPECT_EQ(npptr->MoMdepth, 2);
+    npptr = komodo_npptr(9); // none found with a notarized_height so high
+    EXPECT_EQ(npptr, nullptr);
+
+    // add another with the same index
+    komodo_notarized_update(sp, 10, 9, uint256(), uint256(), uint256(), 2);
+    EXPECT_EQ(sp->NUM_NPOINTS, 2); 
+
+    npptr = komodo_npptr(-1); // none found with a notarized_height so low
+    EXPECT_EQ(npptr, nullptr);
+    npptr = komodo_npptr(0); // none found with a notarized_height so low
+    EXPECT_EQ(npptr, nullptr);
+    npptr = komodo_npptr(1); // none found with a notarized_height so low
+    EXPECT_EQ(npptr, nullptr);
+    npptr = komodo_npptr(6); // none found with a notarized_height so low
+    EXPECT_EQ(npptr, nullptr);
+    npptr = komodo_npptr(7); // original found
+    ASSERT_NE(npptr, nullptr);
+    EXPECT_EQ(npptr->nHeight, 10);
+    EXPECT_EQ(npptr->notarized_height, 8);
+    EXPECT_EQ(npptr->MoMdepth, 2);
+    npptr = komodo_npptr(8); // new one found
+    ASSERT_NE(npptr, nullptr);
+    EXPECT_EQ(npptr->nHeight, 10);
+    EXPECT_EQ(npptr->notarized_height, 9);
+    EXPECT_EQ(npptr->MoMdepth, 2);
+    npptr = komodo_npptr(9); // new one found
+    ASSERT_NE(npptr, nullptr);
+    EXPECT_EQ(npptr->nHeight, 10);
+    EXPECT_EQ(npptr->notarized_height, 9);
+    EXPECT_EQ(npptr->MoMdepth, 2);
+    npptr = komodo_npptr(10); // none found with a notarized_height so high
+    EXPECT_EQ(npptr, nullptr);
+    npptr = komodo_npptr(11); // none found with a notarized_height so high
+    EXPECT_EQ(npptr, nullptr);
+    clear_npoints(sp);
+}
+
+TEST(TestParseNotarisation, test_prevMoMheight)
+{
+    // get the komodo_state to play with
+    char src[KOMODO_ASSETCHAIN_MAXLEN];
+    char dest[KOMODO_ASSETCHAIN_MAXLEN];
+    komodo_state *sp = komodo_stateptr(src, dest);
+    EXPECT_NE(sp, nullptr);
+
+    // empty NPOINTS
+    clear_npoints(sp);
+    EXPECT_EQ(komodo_prevMoMheight(), 0);
+    uint256 mom;
+    mom.SetHex("A0");
+    komodo_notarized_update(sp, 10, 9, uint256(), uint256(), mom, 1);
+    EXPECT_EQ(komodo_prevMoMheight(), 9);
+    komodo_notarized_update(sp, 11, 10, uint256(), uint256(), mom, 1);
+    EXPECT_EQ(komodo_prevMoMheight(), 10);
+    komodo_notarized_update(sp, 9, 8, uint256(), uint256(), mom, 1); // we're not sorted by anything other than chronological
+    EXPECT_EQ(komodo_prevMoMheight(), 8);
+
+}
+
+TEST(TestParseNotarisation, test_notarizeddata)
+{
+    // get the komodo_state to play with
+    char src[KOMODO_ASSETCHAIN_MAXLEN];
+    char dest[KOMODO_ASSETCHAIN_MAXLEN];
+    komodo_state *sp = komodo_stateptr(src, dest);
+    EXPECT_NE(sp, nullptr);
+
+    // empty NPOINTS
+    clear_npoints(sp);
+    uint256 hash;
+    uint256 expected_hash;
+    uint256 txid;
+    uint256 expected_txid;
+    auto rslt = komodo_notarizeddata(0, &hash, &txid);
+    EXPECT_EQ(rslt, 0);
+    EXPECT_EQ(hash, expected_hash);
+    EXPECT_EQ(txid, expected_txid);
+
+    // now add a notarization
+    expected_hash.SetHex("0A");
+    expected_txid.SetHex("0B");
+    komodo_notarized_update(sp, 10, 9, expected_hash, expected_txid, uint256(), 1);
+    rslt = komodo_notarizeddata(0, &hash, &txid); // too low
+    EXPECT_EQ(rslt, 0);
+    rslt = komodo_notarizeddata(9, &hash, &txid); // too low
+    EXPECT_EQ(rslt, 0);
+    rslt = komodo_notarizeddata(10, &hash, &txid); // just right, but will return nothing (still too low)
+    EXPECT_EQ(rslt, 0);
+    rslt = komodo_notarizeddata(11, &hash, &txid); // over the height in the array, so should find the one below
+    EXPECT_EQ(rslt, 9);
+    EXPECT_EQ(hash, expected_hash);
+    EXPECT_EQ(txid, expected_txid);
+ }
 
 // for l in `g 'parse notarisation' ~/.komodo/debug.log | pyline 'l.split()[8]'`; do hoek decodeTx '{"hex":"'`src/komodo-cli getrawtransaction "$l"`'"}' | jq '.outputs[1].script.op_return' | pyline 'import base64; print base64.b64decode(l).encode("hex")'; done
 
