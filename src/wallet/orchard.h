@@ -21,8 +21,6 @@ struct OrchardNoteMetadata
     int confirmations;
 };
 
-class OrchardWallet;
-
 class OrchardWalletTx
 {
 private:
@@ -81,6 +79,8 @@ class OrchardWallet
 {
 private:
     std::unique_ptr<OrchardWalletPtr, decltype(&orchard_wallet_free)> inner;
+
+    static void PushOrchardNoteMeta(void* orchardNotesRet, RawOrchardNoteMetadata rawNoteMeta);
 
     friend class OrchardWalletNoteCommitmentTreeSerializer;
 public:
