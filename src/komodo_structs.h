@@ -175,6 +175,121 @@ struct komodo_state
     notarized_checkpoint_container NPOINTS; // collection of notarizations
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
+
+    /*****
+     * @brief add a checkpoint to the collection and update member values
+     * @param in the new values
+     */
+    void add_checkpoint(const notarized_checkpoint &in)
+    {
+        NOTARIZED_HEIGHT = in.notarized_height;
+        NOTARIZED_HASH = in.notarized_hash;
+        NOTARIZED_DESTTXID = in.notarized_desttxid;
+        MoM = in.MoM;
+        MoMdepth = in.MoMdepth;
+        NPOINTS.push_back(in);
+    }
+
+    /****
+     * Get the notarization data below a particular height
+     * @param[in] nHeight the height desired
+     * @param[out] notarized_hashp the hash of the notarized block
+     * @param[out] notarized_desttxidp the desttxid
+     * @returns the notarized height
+     */
+    int32_t notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
+    {
+        // get the nearest height without going over
+        auto &idx = NPOINTS.get<1>();
+        auto itr = idx.upper_bound(nHeight);
+        if (itr != idx.begin())
+            --itr;
+        if ( itr != idx.end() && (*itr).nHeight < nHeight )
+        {
+            *notarized_hashp = itr->notarized_hash;
+            *notarized_desttxidp = itr->notarized_desttxid;
+            return itr->notarized_height;
+        }
+        memset(notarized_hashp,0,sizeof(*notarized_hashp));
+        memset(notarized_desttxidp,0,sizeof(*notarized_desttxidp));
+        return 0;
+    }
+
+    /******
+     * @brief Get the last notarization information
+     * @param[out] prevMoMheightp the MoM height
+     * @param[out] hashp the notarized hash
+     * @param[out] txidp the DESTTXID
+     * @returns the notarized height
+     */
+    int32_t notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp)
+    {
+        CBlockIndex *pindex;
+        if ( (pindex= komodo_blockindex(NOTARIZED_HASH)) == 0 || pindex->GetHeight() < 0 )
+        {
+            // found orphaned notarization, adjust the values in the komodo_state object
+            memset(&NOTARIZED_HASH,0,sizeof(NOTARIZED_HASH));
+            memset(&NOTARIZED_DESTTXID,0,sizeof(NOTARIZED_DESTTXID));
+            NOTARIZED_HEIGHT = 0;
+        }
+        else
+        {
+            *hashp = NOTARIZED_HASH;
+            *txidp = NOTARIZED_DESTTXID;
+            *prevMoMheightp = prevMoMheight();
+        }
+        return NOTARIZED_HEIGHT;
+    }
+
+    /****
+     * Search for the last (chronological) MoM notarized height
+     * @returns the last notarized height that has a MoM
+     */
+    int32_t prevMoMheight()
+    {
+        if (NPOINTS.size() > 0)
+        {
+            auto &idx = NPOINTS.get<0>();
+            static uint256 zero;
+            for( auto r_itr = idx.rbegin(); r_itr != idx.rend(); ++r_itr)
+            {
+                if (r_itr->MoM != zero)
+                    return r_itr->notarized_height;
+            }
+        }
+        return 0;
+    }
+
+    /******
+     * @brief Search the notarized checkpoints for a particular height
+     * @note Finding a mach does include other criteria other than height
+     *      such that the checkpoint includes the desired hight
+     * @param height the key
+     * @returns the checkpoint or sp->NPOINTS.rend()
+     */
+    const notarized_checkpoint *checkpoint_at_height(int32_t height)
+    {
+        // find the nearest notarization_height
+        if(NPOINTS.size() > 0)
+        {
+            auto &idx = NPOINTS.get<2>();
+            auto itr = idx.upper_bound(height);
+            // work backwards, get the first one that meets our criteria
+            while (true)
+            {
+                if ( itr->MoMdepth != 0 
+                        && height > itr->notarized_height-(itr->MoMdepth&0xffff) 
+                        && height <= itr->notarized_height )
+                {
+                    return &(*itr);
+                }
+                if (itr == idx.begin())
+                    break;
+                --itr;
+            }
+        } // we have some elements in the collection
+        return nullptr;
+    }
 };
 
 #endif /* KOMODO_STRUCTS_H */
