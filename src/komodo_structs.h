@@ -98,22 +98,6 @@ struct notarized_checkpoint
     int32_t MoMoMoffset;
     int32_t kmdstarti;
     int32_t kmdendi;
-    bool operator==(const notarized_checkpoint& in) const
-    {
-        if (in.kmdendi == kmdendi
-                && in.kmdstarti == kmdstarti
-                && in.MoM == MoM
-                && in.MoMdepth == MoMdepth
-                && in.MoMoM == MoMoM
-                && in.MoMoMdepth == MoMoMdepth
-                && in.MoMoMoffset == MoMoMoffset
-                && in.nHeight == nHeight
-                && in.notarized_desttxid == notarized_desttxid
-                && in.notarized_hash == notarized_hash
-                && in.notarized_height == notarized_height )
-            return true;
-        return false;
-    }
 };
 
 typedef boost::multi_index::multi_index_container<
