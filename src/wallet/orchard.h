@@ -21,49 +21,72 @@ struct OrchardNoteMetadata
     int confirmations;
 };
 
-//class OrchardWalletTxData
-//{
-//private:
-//    std::unique_ptr<OrchardWalletTxDataPtr, decltype(&orchard_wallet_tx_data_free)> inner;
-//
-//public:
-//    OrchardWalletTxData() : inner(orchard_wallet_tx_data_new(), orchard_wallet_tx_data_free) {}
-//
-//    OrchardWalletTxData(OrchardWalletTxData&& wallet_data) : inner(std::move(wallet_data.inner)) {}
-//
-//    OrchardWalletTxData(const OrchardWalletTxData& wallet_data) :
-//        inner(orchard_wallet_tx_data_clone(wallet_data.inner.get()), orchard_wallet_tx_data_free) {}
-//
-//    OrchardWalletTxData& operator=(OrchardWalletTxData&& wallet)
-//    {
-//        if (this != &wallet) {
-//            inner = std::move(wallet.inner);
-//        }
-//        return *this;
-//    }
-//
-//    OrchardWalletTxData& operator=(const OrchardWalletTxData& wallet)
-//    {
-//        if (this != &wallet) {
-//            inner.reset(orchard_wallet_tx_data_clone(wallet.inner.get()));
-//        }
-//        return *this;
-//    }
-//}
+class OrchardWallet;
 
+class OrchardWalletTx
+{
+private:
+    std::unique_ptr<OrchardWalletTxPtr, decltype(&orchard_wallet_tx_free)> inner;
+
+    OrchardWalletTx(OrchardWalletTxPtr* ptr) : inner(ptr, orchard_wallet_tx_free) {}
+
+    friend class OrchardWallet;
+    friend class CWalletTx;
+public:
+    OrchardWalletTx() : inner(nullptr, orchard_wallet_tx_free) {}
+
+    OrchardWalletTx(OrchardWalletTx&& wtx) : inner(std::move(wtx.inner)) {}
+
+    OrchardWalletTx(const OrchardWalletTx& wtx) :
+        inner(orchard_wallet_tx_clone(wtx.inner.get()), orchard_wallet_tx_free) {}
+
+    OrchardWalletTx& operator=(OrchardWalletTx&& wtx)
+    {
+        if (this != &wtx) {
+            inner = std::move(wtx.inner);
+        }
+        return *this;
+    }
+
+    OrchardWalletTx& operator=(const OrchardWalletTx& wtx)
+    {
+        if (this != &wtx) {
+            inner.reset(orchard_wallet_tx_clone(wtx.inner.get()));
+        }
+        return *this;
+    }
+
+    template<typename Stream>
+    void Serialize(Stream& s) const {
+        RustStream rs(s);
+        if (!orchard_wallet_tx_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
+            throw std::ios_base::failure("Failed to serialize v5 Orchard bundle");
+        }
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream& s) {
+        RustStream rs(s);
+        const auto txdata = orchard_wallet_tx_parse(&rs, RustStream<Stream>::read_callback);
+        if (!txdata) {
+            throw std::ios_base::failure("Failed to parse v5 Orchard bundle");
+        }
+        inner.reset(txdata);
+    }
+};
+
+class OrchardWalletNoteCommitmentTreeSerializer;
 
 class OrchardWallet
 {
 private:
     std::unique_ptr<OrchardWalletPtr, decltype(&orchard_wallet_free)> inner;
 
+    friend class OrchardWalletNoteCommitmentTreeSerializer;
 public:
     OrchardWallet() : inner(orchard_wallet_new(), orchard_wallet_free) {}
 
-    OrchardWallet(OrchardWallet&& wallet_data) : inner(std::move(wallet_data.inner)) {}
-
-    OrchardWallet(const OrchardWallet& wallet_data) :
-        inner(orchard_wallet_clone(wallet_data.inner.get()), orchard_wallet_free) {}
+    OrchardWallet(OrchardWallet&& wallet) : inner(std::move(wallet.inner)) {}
 
     OrchardWallet& operator=(OrchardWallet&& wallet)
     {
@@ -73,105 +96,58 @@ public:
         return *this;
     }
 
-    OrchardWallet& operator=(const OrchardWallet& wallet)
-    {
-        if (this != &wallet) {
-            inner.reset(orchard_wallet_clone(wallet.inner.get()));
-        }
-        return *this;
-    }
+    void CheckpointNoteCommitmentTree();
 
-    void CheckpointNoteCommitmentTree() {
-        orchard_wallet_checkpoint(inner.get());
-    }
+    bool RewindToLastCheckpoint();
 
-    bool RewindToLastCheckpoint() {
-        return orchard_wallet_rewind(inner.get());
-    }
+    bool AddNotes(const CTransaction& tx);
 
-    bool AddNotes(const CTransaction& tx) {
-        return orchard_wallet_add_notes_from_bundle(
-                inner.get(),
-                tx.GetHash().begin(),
-                tx.GetOrchardBundle().inner.get());
-    }
+    bool RestoreDecryptedNoteCache(const CTransaction& tx);
 
-    bool AppendNoteCommitments(const int nHeight, const size_t blockTxIdx, const CTransaction& tx) {
-        return orchard_wallet_append_bundle_commitments(
-                inner.get(),
-                (uint32_t) nHeight,
-                blockTxIdx,
-                tx.GetHash().begin(),
-                tx.GetOrchardBundle().inner.get()
-                );
-    }
+    bool AppendNoteCommitments(const int nHeight, const size_t blockTxIdx, const CTransaction& tx);
 
-    bool IsMine(const uint256& txid) {
-        return orchard_wallet_tx_is_mine(
-                inner.get(),
-                txid.begin());
-    }
+    bool IsMine(const uint256& txid);
 
-    bool AddSpendingKey(const libzcash::OrchardSpendingKey& sk) {
-        orchard_wallet_add_spending_key(inner.get(), sk.inner.get());
-        return true;
-    }
+    bool AddSpendingKey(const libzcash::OrchardSpendingKey& sk);
 
-    bool AddFullViewingKey(const libzcash::OrchardFullViewingKey& fvk) {
-        orchard_wallet_add_full_viewing_key(inner.get(), fvk.inner.get());
-        return true;
-    }
+    bool AddFullViewingKey(const libzcash::OrchardFullViewingKey& fvk);
 
     bool AddIncomingViewingKey(const libzcash::OrchardIncomingViewingKey& ivk,
-                               const libzcash::OrchardRawAddress& addr) {
-        orchard_wallet_add_incoming_viewing_key(inner.get(), ivk.inner.get(), addr.inner.get());
-        return true;
-    }
-
-    static void PushOrchardNoteMeta(void* orchardNotesRet, RawOrchardNoteMetadata rawNoteMeta) {
-        uint256 txid;
-        std::move(std::begin(rawNoteMeta.txid), std::end(rawNoteMeta.txid), txid.begin());
-        OrchardOutPoint op(txid, rawNoteMeta.actionIdx);
-        OrchardNoteMetadata noteMeta;
-        noteMeta.op = op;
-        noteMeta.address = libzcash::OrchardRawAddress(rawNoteMeta.addr);
-        noteMeta.noteValue = rawNoteMeta.noteValue;
-        std::move(std::begin(rawNoteMeta.memo), std::end(rawNoteMeta.memo), noteMeta.memo.begin());
-        // TODO: noteMeta.confirmations is only available from the C++ wallet
-
-        reinterpret_cast<std::vector<OrchardNoteMetadata>*>(orchardNotesRet)->push_back(noteMeta);
-    }
+                               const libzcash::OrchardRawAddress& addr);
 
     void GetFilteredNotes(
         std::vector<OrchardNoteMetadata>& orchardNotesRet,
         const std::vector<libzcash::OrchardRawAddress>& addrs,
         bool ignoreSpent,
-        bool requireSpendingKey) {
+        bool requireSpendingKey);
 
-        std::vector<OrchardRawAddressPtr*> addr_ptrs;
-        std::transform(
-                addrs.begin(), addrs.end(), std::back_inserter(addr_ptrs),
-                [](const libzcash::OrchardRawAddress& addr) {
-                    return addr.inner.get();
-                });
+    std::optional<OrchardWalletTx> GetTxData(const uint256 txid);
 
-        orchard_wallet_get_filtered_notes(
-            inner.get(),
-            addr_ptrs.data(),
-            addr_ptrs.size(),
-            ignoreSpent,
-            requireSpendingKey,
-            &orchardNotesRet,
-            PushOrchardNoteMeta
-            );
+    OrchardWalletNoteCommitmentTreeSerializer GetNoteCommitmentTreeSer() const;
+};
+
+class OrchardWalletNoteCommitmentTreeSerializer
+{
+private:
+    const OrchardWallet& wallet;
+public:
+    OrchardWalletNoteCommitmentTreeSerializer(const OrchardWallet& wallet): wallet(wallet) {}
+
+    template<typename Stream>
+    void Serialize(Stream& s) const {
+        RustStream rs(s);
+        if (!orchard_wallet_note_commitment_tree_serialize(wallet.inner.get(), &rs, RustStream<Stream>::write_callback)) {
+            throw std::ios_base::failure("Failed to serialize v5 Orchard bundle");
+        }
     }
 
-
-    //OrchardWalletTxData GetTxData(const uint256 txid) {
-    //    // TODO
-    //}
-
-    // TODO: Serialization
+    template<typename Stream>
+    void Unserialize(Stream& s) {
+        RustStream rs(s);
+        if (!orchard_wallet_note_commitment_tree_parse_update(wallet.inner.get(), &rs, RustStream<Stream>::read_callback)) {
+            throw std::ios_base::failure("Failed to parse v5 Orchard bundle");
+        }
+    }
 };
 
 #endif // ZCASH_ORCHARD_WALLET_H

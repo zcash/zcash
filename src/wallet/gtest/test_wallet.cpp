@@ -34,6 +34,7 @@ public:
     MOCK_METHOD1(WriteTx, bool(const CWalletTx& wtx));
     MOCK_METHOD1(WriteWitnessCacheSize, bool(int64_t nWitnessCacheSize));
     MOCK_METHOD1(WriteBestBlock, bool(const CBlockLocator& loc));
+    MOCK_METHOD1(WriteOrchardNoteCommitmentTree, bool(const OrchardWallet& wallet));
 };
 
 template void CWallet::SetBestChainINTERNAL<MockWalletDB>(
@@ -1600,6 +1601,15 @@ TEST(WalletTests, WriteWitnessCache) {
     EXPECT_CALL(walletdb, WriteTx(wtx))
         .WillRepeatedly(Return(true));
 
+    // WriteOrcharNoteCommitmentTree fails
+    EXPECT_CALL(walletdb, WriteOrchardNoteCommitmentTree(::testing::_))
+        .WillOnce(Return(false));
+    EXPECT_CALL(walletdb, TxnAbort())
+        .Times(1);
+    wallet.SetBestChain(walletdb, loc);
+    EXPECT_CALL(walletdb, WriteOrchardNoteCommitmentTree(::testing::_))
+        .WillRepeatedly(Return(true));
+
     // WriteWitnessCacheSize fails
     EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
         .WillOnce(Return(false));
@@ -1664,7 +1674,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     t.vout.resize(1);
     t.vout[0].nValue = 90*CENT;
     t.vout[0].scriptPubKey = scriptPubKey;
-    CWalletTx wtxTransparent {nullptr, t};
+    CWalletTx wtxTransparent(nullptr, t, std::nullopt);
     wallet.AddToWallet(wtxTransparent, true, nullptr);
 
     // Generate a Sprout transaction that is ours
@@ -1681,7 +1691,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     CMutableTransaction mtx {wtxTmp};
     mtx.vout[0].scriptPubKey = scriptPubKey;
     mtx.vout[0].nValue = CENT;
-    CWalletTx wtxSproutTransparent {nullptr, mtx};
+    CWalletTx wtxSproutTransparent(nullptr, mtx, std::nullopt);
     wallet.AddToWallet(wtxSproutTransparent, true, nullptr);
 
     // Generate a fake Sapling transaction
@@ -1691,7 +1701,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     mtxSapling.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtxSapling.vShieldedOutput.resize(1);
     zcash_test_harness_random_jubjub_point(mtxSapling.vShieldedOutput[0].cv.begin());
-    CWalletTx wtxSapling {nullptr, mtxSapling};
+    CWalletTx wtxSapling(nullptr, mtxSapling, std::nullopt);
     SetSaplingNoteData(wtxSapling);
     wallet.AddToWallet(wtxSapling, true, nullptr);
 
@@ -1702,7 +1712,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     mtxSaplingTransparent.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtxSaplingTransparent.vShieldedOutput.resize(1);
     zcash_test_harness_random_jubjub_point(mtxSaplingTransparent.vShieldedOutput[0].cv.begin());
-    CWalletTx wtxSaplingTransparent {nullptr, mtxSaplingTransparent};
+    CWalletTx wtxSaplingTransparent(nullptr, mtxSaplingTransparent, std::nullopt);
     wallet.AddToWallet(wtxSaplingTransparent, true, nullptr);
 
     EXPECT_CALL(walletdb, TxnBegin())
@@ -1717,6 +1727,8 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
         .Times(1).WillOnce(Return(true));
     EXPECT_CALL(walletdb, WriteTx(wtxSaplingTransparent))
         .Times(0);
+    EXPECT_CALL(walletdb, WriteOrchardNoteCommitmentTree(::testing::_))
+        .WillOnce(Return(true));
     EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
         .WillOnce(Return(true));
     EXPECT_CALL(walletdb, WriteBestBlock(loc))
@@ -1839,7 +1851,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     auto tx = builder.Build().GetTxOrThrow();
 
     // Wallet contains extfvk1 but not extfvk2
-    CWalletTx wtx {&wallet, tx};
+    CWalletTx wtx(&wallet, tx, std::nullopt);
     ASSERT_TRUE(wallet.AddSaplingZKey(sk));
     ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
     ASSERT_FALSE(wallet.HaveSaplingSpendingKey(extfvk2));
@@ -1988,7 +2000,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     EXPECT_EQ(tx1.vShieldedOutput.size(), 1);
     EXPECT_EQ(tx1.GetValueBalanceSapling(), -40000);
 
-    CWalletTx wtx {&wallet, tx1};
+    CWalletTx wtx(&wallet, tx1, std::nullopt);
 
     // Fake-mine the transaction
     EXPECT_EQ(-1, chainActive.Height());
@@ -2042,7 +2054,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
     EXPECT_EQ(tx2.GetValueBalanceSapling(), 10000);
 
-    CWalletTx wtx2 {&wallet, tx2};
+    CWalletTx wtx2(&wallet, tx2, std::nullopt);
     auto hash2 = wtx2.GetHash();
 
     wallet.MarkAffectedTransactionsDirty(wtx);

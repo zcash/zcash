@@ -195,7 +195,6 @@ public:
     bool WriteSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
     bool EraseSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
 
-    // TODO: ORCHARD
     bool WriteOrchardZKey(const libzcash::OrchardIncomingViewingKey &ivk,
                           const libzcash::OrchardSpendingKey &key,
                           const CKeyMetadata &keyMeta);
@@ -206,6 +205,7 @@ public:
     // bool WriteCryptedOrchardZKey(const libzcash::OrchardExtendedFullViewingKey &extfvk,
     //                       const std::vector<unsigned char>& vchCryptedSecret,
     //                       const CKeyMetadata &keyMeta);
+    bool WriteOrchardNoteCommitmentTree(const OrchardWallet& wallet);
 
     static void IncrementUpdateCounter();
     static unsigned int GetUpdateCounter();

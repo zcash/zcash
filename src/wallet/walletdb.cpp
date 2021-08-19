@@ -182,17 +182,6 @@ bool CWalletDB::WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
 
     return Write(std::make_pair(std::string("sapzkey"), ivk), key, false);
 }
-//bool CWalletDB::WriteOrchardZKey(const libzcash::OrchardIncomingViewingKey &ivk,
-//                const libzcash::OrchardSpendingKey &key,
-//                const CKeyMetadata &keyMeta)
-//{
-//    nWalletDBUpdateCounter++;
-//
-//    if (!Write(std::make_pair(std::string("orczkeymeta"), ivk), keyMeta))
-//        return false;
-//
-//    return Write(std::make_pair(std::string("orczkey"), ivk), key, false);
-//}
 
 bool CWalletDB::WriteSaplingPaymentAddress(
     const libzcash::SaplingPaymentAddress &addr,
@@ -244,12 +233,14 @@ bool CWalletDB::WriteOrchardZKey(const libzcash::OrchardIncomingViewingKey &ivk,
 
     return Write(std::make_pair(std::string("orczkey"), ivk), key, false);
 }
+
 bool CWalletDB::WriteOrchardFullViewingKey(
     const libzcash::OrchardFullViewingKey &fvk)
 {
     nWalletDBUpdateCounter++;
     return Write(std::make_pair(std::string("orcfvk"), fvk), '1');
 }
+
 bool CWalletDB::EraseOrchardFullViewingKey(
     const libzcash::OrchardFullViewingKey &fvk)
 {
@@ -257,7 +248,15 @@ bool CWalletDB::EraseOrchardFullViewingKey(
     return Erase(std::make_pair(std::string("orcfvk"), fvk));
 }
 
-///
+bool CWalletDB::WriteOrchardNoteCommitmentTree(
+    const OrchardWallet& wallet)
+{
+    nWalletDBUpdateCounter++;
+    // Write out the whole tree to a single key. An alternate design to explore
+    // in the future might be to write out each bridge to a separate key & skip bridges
+    // that are already written
+    return Write(std::string("orchard_note_commitment_tree"), wallet.GetNoteCommitmentTreeSer());
+}
 
 bool CWalletDB::WriteCScript(const uint160& hash, const CScript& redeemScript)
 {
