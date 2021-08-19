@@ -85,6 +85,7 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         keyConstants.strNetworkID = "main";
+        keyConstants.slip44CoinType = 133;
         strCurrencyUnits = "ZEC";
         bip44CoinType = 133; // As registered in https://github.com/satoshilabs/slips/blob/master/slip-0044.md
         consensus.fCoinbaseMustBeShielded = true;
@@ -369,6 +370,7 @@ class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         keyConstants.strNetworkID = "test";
+        keyConstants.slip44CoinType = 1;
         strCurrencyUnits = "TAZ";
         bip44CoinType = 1;
         consensus.fCoinbaseMustBeShielded = true;
@@ -621,6 +623,7 @@ class CRegTestParams : public CChainParams {
 public:
     CRegTestParams() {
         keyConstants.strNetworkID = "regtest";
+        keyConstants.slip44CoinType = 1;
         strCurrencyUnits = "REG";
         bip44CoinType = 1;
         consensus.fCoinbaseMustBeShielded = false;

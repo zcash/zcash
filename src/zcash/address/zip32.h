@@ -5,10 +5,12 @@
 #ifndef ZCASH_ZCASH_ADDRESS_ZIP32_H
 #define ZCASH_ZCASH_ADDRESS_ZIP32_H
 
+#include "key_constants.h"
 #include "serialize.h"
 #include "support/allocators/secure.h"
 #include "uint256.h"
 #include "zcash/address/sapling.hpp"
+#include "rust/zip339.h"
 
 #include <optional>
 

@@ -37,10 +37,12 @@ public:
     std::string NetworkIDString() const { return strNetworkID; }
     const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
     const std::string& Bech32HRP(Bech32Type type) const { return bech32HRPs[type]; }
+    uint32_t Slip44CoinType() const { return slip44CoinType; }
 
     std::string strNetworkID;
     std::vector<unsigned char> base58Prefixes[KeyConstants::MAX_BASE58_TYPES];
     std::string bech32HRPs[KeyConstants::MAX_BECH32_TYPES];
+    uint32_t slip44CoinType = 1; // default to testnet
 };
 
 /**
@@ -50,7 +52,7 @@ public:
  * a regression test mode which is intended for private networks only. It has
  * minimal difficulty to ensure that blocks can be found instantly.
  */
-class CChainParams: public KeyConstants 
+class CChainParams: public KeyConstants
 {
 public:
     const Consensus::Params& GetConsensus() const { return consensus; }
@@ -80,12 +82,13 @@ public:
     /** Return the BIP70 network string (main, test or regtest) */
     std::string NetworkIDString() const { return keyConstants.NetworkIDString(); }
     const std::vector<CDNSSeedData>& DNSSeeds() const { return vSeeds; }
-    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { 
-        return keyConstants.Base58Prefix(type); 
+    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const {
+        return keyConstants.Base58Prefix(type);
     }
-    const std::string& Bech32HRP(Bech32Type type) const { 
-        return keyConstants.Bech32HRP(type); 
+    const std::string& Bech32HRP(Bech32Type type) const {
+        return keyConstants.Bech32HRP(type);
     }
+    uint32_t Slip44CoinType() const { return keyConstants.Slip44CoinType(); }
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
     const CCheckpointData& Checkpoints() const { return checkpointData; }
     /** Return the founder's reward address and script for a given block height */
