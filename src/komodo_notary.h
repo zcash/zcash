@@ -291,7 +291,7 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
  * @note Finding a mach does include other criteria other than height
  *      such that the checkpoint includes the desired hight
  * @param height the key
- * @returns the checkpoint or sp->NPOINTS.rend()
+ * @returns the checkpoint or nullptr
  */
 const notarized_checkpoint *komodo_npptr(int32_t height)
 {

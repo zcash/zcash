@@ -156,8 +156,9 @@ struct komodo_ccdata
     char symbol[65];
 };
 
-struct komodo_state
+class komodo_state
 {
+public:
     uint256 NOTARIZED_HASH; // the latest notarized hash
     uint256 NOTARIZED_DESTTXID; // the latest notarized dest txid
     uint256 MoM;
@@ -172,10 +173,12 @@ struct komodo_state
     uint64_t approved;
     uint64_t redeemed;
     uint64_t shorted;
-    notarized_checkpoint_container NPOINTS; // collection of notarizations
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
+protected:
+    notarized_checkpoint_container NPOINTS; // collection of notarizations
 
+public:
     /*****
      * @brief add a checkpoint to the collection and update member values
      * @param in the new values
@@ -189,6 +192,8 @@ struct komodo_state
         MoMdepth = in.MoMdepth;
         NPOINTS.push_back(in);
     }
+
+    uint64_t NumCheckpoints() { return NPOINTS.size(); }
 
     /****
      * Get the notarization data below a particular height

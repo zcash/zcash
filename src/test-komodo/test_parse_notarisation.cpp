@@ -14,6 +14,21 @@ const notarized_checkpoint *komodo_npptr(int32_t height);
 int32_t komodo_prevMoMheight();
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp);
 
+class komodo_state_accessor : public komodo_state
+{
+public:
+    void clear_npoints()
+    {
+        NPOINTS.clear();
+    }
+    const notarized_checkpoint *last_checkpoint()
+    {
+        auto &idx = NPOINTS.get<0>();
+        const auto &cp = idx.back();
+        return &cp;
+    }
+};
+
 namespace TestParseNotarisation {
 
 class TestParseNotarisation : public ::testing::Test, public Eval {};
@@ -56,19 +71,17 @@ TEST(TestParseNotarisation, test__b)
 
 void clear_npoints(komodo_state *sp)
 {
-    sp->NPOINTS.clear();
+    reinterpret_cast<komodo_state_accessor*>(sp)->clear_npoints();
 }
 
 size_t count_npoints(komodo_state *sp)
 {
-    return sp->NPOINTS.size();
+    return sp->NumCheckpoints();
 }
 
 const notarized_checkpoint *last_checkpoint(komodo_state *sp)
 {
-    auto &idx = sp->NPOINTS.get<0>();
-    const auto &cp = idx.back();
-    return &cp;
+    return reinterpret_cast<komodo_state_accessor*>(sp)->last_checkpoint();
 }
 
 TEST(TestParseNotarisation, test_notarized_update)
