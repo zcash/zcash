@@ -183,7 +183,7 @@ public:
      * @brief add a checkpoint to the collection and update member values
      * @param in the new values
      */
-    void add_checkpoint(const notarized_checkpoint &in)
+    void AddCheckpoint(const notarized_checkpoint &in)
     {
         NOTARIZED_HEIGHT = in.notarized_height;
         NOTARIZED_HASH = in.notarized_hash;
@@ -202,7 +202,7 @@ public:
      * @param[out] notarized_desttxidp the desttxid
      * @returns the notarized height
      */
-    int32_t notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
+    int32_t NotarizedData(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
     {
         // get the nearest height without going over
         auto &idx = NPOINTS.get<1>();
@@ -227,7 +227,7 @@ public:
      * @param[out] txidp the DESTTXID
      * @returns the notarized height
      */
-    int32_t notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp)
+    int32_t NotarizedHeight(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp)
     {
         CBlockIndex *pindex;
         if ( (pindex= komodo_blockindex(NOTARIZED_HASH)) == 0 || pindex->GetHeight() < 0 )
@@ -241,7 +241,7 @@ public:
         {
             *hashp = NOTARIZED_HASH;
             *txidp = NOTARIZED_DESTTXID;
-            *prevMoMheightp = prevMoMheight();
+            *prevMoMheightp = PrevMoMHeight();
         }
         return NOTARIZED_HEIGHT;
     }
@@ -250,7 +250,7 @@ public:
      * Search for the last (chronological) MoM notarized height
      * @returns the last notarized height that has a MoM
      */
-    int32_t prevMoMheight()
+    int32_t PrevMoMHeight()
     {
         if (NPOINTS.size() > 0)
         {
@@ -268,16 +268,16 @@ public:
     /******
      * @brief Search the notarized checkpoints for a particular height
      * @note Finding a mach does include other criteria other than height
-     *      such that the checkpoint includes the desired hight
-     * @param height the key
+     *      such that the checkpoint includes the desired height
+     * @param height the notarized_height desired
      * @returns the checkpoint or sp->NPOINTS.rend()
      */
-    const notarized_checkpoint *checkpoint_at_height(int32_t height)
+    const notarized_checkpoint *CheckpointAtHeight(int32_t height)
     {
         // find the nearest notarization_height
         if(NPOINTS.size() > 0)
         {
-            auto &idx = NPOINTS.get<2>();
+            auto &idx = NPOINTS.get<2>(); // search by notarized_height
             auto itr = idx.upper_bound(height);
             // work backwards, get the first one that meets our criteria
             while (true)
