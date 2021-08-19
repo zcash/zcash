@@ -9,6 +9,7 @@
 #include "support/allocators/secure.h"
 #include "uint256.h"
 #include "zcash/address/sapling.hpp"
+#include "rust/zip339.h"
 
 #include <optional>
 #include <string>
@@ -18,27 +19,121 @@ const uint32_t ZIP32_HARDENED_KEY_LIMIT = 0x80000000;
 const size_t ZIP32_XFVK_SIZE = 169;
 const size_t ZIP32_XSK_SIZE = 169;
 
+class CWalletDB;
+
 typedef std::vector<unsigned char, secure_allocator<unsigned char>> RawHDSeed;
 
 class HDSeed {
-private:
+protected:
     RawHDSeed seed;
 
-public:
     HDSeed() {}
+public:
+    //
     HDSeed(RawHDSeed& seedIn) : seed(seedIn) {}
 
-    static HDSeed Random(size_t len = 32);
-    bool IsNull() const { return seed.empty(); };
+    template <typename Stream>
+    static HDSeed ReadLegacy(Stream& stream) {
+        RawHDSeed rawSeed;
+        stream >> rawSeed;
+        HDSeed seed(rawSeed);
+        return seed;
+    }
+
     uint256 Fingerprint() const;
     RawHDSeed RawSeed() const { return seed; }
+};
 
-    friend bool operator==(const HDSeed& a, const HDSeed& b)
+
+class MnemonicSeed: public HDSeed {
+private:
+    Language language;
+    std::string mnemonic;
+
+    MnemonicSeed() {}
+
+    void Init() {
+        unsigned char buf[64];
+        zip339_phrase_to_seed(language, mnemonic.c_str(), &buf);
+        seed.assign(buf, std::end(buf));
+    }
+
+public:
+    MnemonicSeed(Language languageIn, std::string& mnemonicIn): language(languageIn), mnemonic(mnemonicIn) {
+        unsigned char buf[64];
+        zip339_phrase_to_seed(languageIn, mnemonicIn.c_str(), &buf);
+        seed.assign(buf, std::end(buf));
+    }
+
+    static MnemonicSeed Random(Language language = English, size_t len = 32);
+
+    static std::string LanguageName(Language language) {
+        switch (language) {
+            case English:
+                return "English";
+            case SimplifiedChinese:
+                return "Simplified Chinese";
+            case TraditionalChinese:
+                return "Traditional Chinese";
+            case Czech:
+                return "Czech";
+            case French:
+                return "French";
+            case Italian:
+                return "Italian";
+            case Japanese:
+                return "Japanese";
+            case Korean:
+                return "Korean";
+            case Portuguese:
+                return "Portuguese";
+            case Spanish:
+                return "Spanish";
+            default:
+                return "INVALID";
+        }
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        if (ser_action.ForRead()) {
+            uint32_t language0;
+
+            READWRITE(language0);
+            READWRITE(mnemonic);
+            language = (Language) language0;
+            Init();
+        } else {
+            uint32_t language0 = (uint32_t) language;
+
+            READWRITE(language0);
+            READWRITE(mnemonic);
+        }
+   }
+
+    template <typename Stream>
+    static MnemonicSeed Read(Stream& stream) {
+        MnemonicSeed seed;
+        stream >> seed;
+        return seed;
+    }
+
+    const Language GetLanguage() const {
+        return language;
+    }
+
+    const std::string GetMnemonic() const {
+        return mnemonic;
+    }
+
+    friend bool operator==(const MnemonicSeed& a, const MnemonicSeed& b)
     {
         return a.seed == b.seed;
     }
 
-    friend bool operator!=(const HDSeed& a, const HDSeed& b)
+    friend bool operator!=(const MnemonicSeed& a, const MnemonicSeed& b)
     {
         return !(a == b);
     }

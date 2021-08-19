@@ -1284,10 +1284,20 @@ public:
        Sets the seed's version based on the current wallet version (so the
        caller must ensure the current wallet version is correct before calling
        this function). */
-    void GenerateNewSeed();
+    void GenerateNewSeed(Language language = English);
 
-    bool SetHDSeed(const HDSeed& seed);
-    bool SetCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
+    bool SetMnemonicSeed(const MnemonicSeed& seed);
+    bool SetCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
+
+    /* Set the current HD seed, without saving it to disk (used by LoadWallet) */
+    bool LoadMnemonicSeed(const MnemonicSeed& seed);
+    /* Set the legacy HD seed, without saving it to disk (used by LoadWallet) */
+    bool LoadLegacyHDSeed(const HDSeed& seed);
+
+    /* Set the current encrypted HD seed, without saving it to disk (used by LoadWallet) */
+    bool LoadCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char>& seed);
+    /* Set the legacy encrypted HD seed, without saving it to disk (used by LoadWallet) */
+    bool LoadCryptedLegacyHDSeed(const uint256& seedFp, const std::vector<unsigned char>& seed);
 
     /* Returns the wallet's HD seed or throw JSONRPCError(...) */
     HDSeed GetHDSeedForRPC() const;
@@ -1298,11 +1308,6 @@ public:
 
     bool CheckNetworkInfo(std::pair<std::string, std::string> networkInfo);
     uint32_t BIP44CoinType();
-
-    /* Set the current HD seed, without saving it to disk (used by LoadWallet) */
-    bool LoadHDSeed(const HDSeed& key);
-    /* Set the current encrypted HD seed, without saving it to disk (used by LoadWallet) */
-    bool LoadCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& seed);
 
     /* Find notes filtered by payment address, min depth, ability to spend */
     void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,

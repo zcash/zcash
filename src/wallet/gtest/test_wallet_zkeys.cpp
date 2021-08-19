@@ -32,9 +32,9 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     EXPECT_ANY_THROW(wallet.GenerateNewSaplingZKey());
 
     // Load the all-zeroes seed
-    CKeyingMaterial rawSeed(32, 0);
-    HDSeed seed(rawSeed);
-    wallet.LoadHDSeed(seed);
+    std::string mnemonic("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art");
+    MnemonicSeed seed(English, mnemonic);
+    wallet.LoadMnemonicSeed(seed);
 
     // Now this call succeeds
     auto address = wallet.GenerateNewSaplingZKey();
@@ -428,7 +428,7 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
      // No default CPubKey set
     ASSERT_TRUE(fFirstRun);
 
-    ASSERT_FALSE(wallet.HaveHDSeed());
+    ASSERT_FALSE(wallet.HaveMnemonicSeed());
     wallet.GenerateNewSeed();
 
     // wallet should be empty
@@ -477,7 +477,7 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
 
     // Confirm it's not the same as the other wallet
     ASSERT_TRUE(&wallet != &wallet2);
-    ASSERT_TRUE(wallet2.HaveHDSeed());
+    ASSERT_TRUE(wallet2.HaveMnemonicSeed());
 
     // wallet should have three addresses
     wallet2.GetSaplingPaymentAddresses(addrs);

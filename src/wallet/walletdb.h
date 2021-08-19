@@ -48,7 +48,7 @@ public:
     static const int VERSION_HD_BASE = 1;
     static const int CURRENT_VERSION = VERSION_HD_BASE;
     int nVersion;
-    uint256 seedFp;
+    uint256 seedFp; //NU5: Deprecate???
     int64_t nCreateTime; // 0 means unknown
     uint32_t saplingAccountCounter;
 
@@ -170,10 +170,13 @@ public:
     static bool Recover(CDBEnv& dbenv, const std::string& filename);
 
     bool WriteNetworkInfo(const std::string& networkId);
-    bool WriteHDSeed(const HDSeed& seed);
-    bool WriteCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& vchCryptedSecret);
+    bool WriteMnemonicSeed(const MnemonicSeed& seed);
+    bool WriteCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char>& vchCryptedSecret);
+
     //! write the hdchain model (external chain child index counter)
     bool WriteHDChain(const CHDChain& chain);
+    std::optional<HDSeed> ReadLegacyHDSeed();
+    std::optional<std::pair<uint256, std::vector<unsigned char>>> ReadLegacyCryptedHDSeed();
 
     /// Write spending key to wallet database, where key is payment address and value is spending key.
     bool WriteZKey(const libzcash::SproutPaymentAddress& addr, const libzcash::SproutSpendingKey& key, const CKeyMetadata &keyMeta);

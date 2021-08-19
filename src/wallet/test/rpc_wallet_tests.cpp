@@ -790,7 +790,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
     using namespace libzcash;
     UniValue addr;
 
-    if (!pwalletMain->HaveHDSeed()) {
+    if (!pwalletMain->HaveMnemonicSeed()) {
         pwalletMain->GenerateNewSeed();
     }
 
@@ -1449,7 +1449,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    if (!pwalletMain->HaveHDSeed()) {
+    if (!pwalletMain->HaveMnemonicSeed()) {
         pwalletMain->GenerateNewSeed();
     }
 
@@ -1523,11 +1523,11 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 
     // We should be able to decrypt the outCiphertext with the ovk
     // generated for transparent addresses
-    HDSeed seed;
-    BOOST_ASSERT(pwalletMain->GetHDSeed(seed));
+    std::optional<MnemonicSeed> seed = pwalletMain->GetMnemonicSeed();
+    BOOST_ASSERT(seed.has_value());
     BOOST_CHECK(AttemptSaplingOutDecryption(
         tx.vShieldedOutput[0].outCiphertext,
-        ovkForShieldingFromTaddr(seed),
+        ovkForShieldingFromTaddr(seed.value()),
         tx.vShieldedOutput[0].cv,
         tx.vShieldedOutput[0].cmu,
         tx.vShieldedOutput[0].ephemeralKey));
@@ -1608,7 +1608,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_sapzkeys)
     UniValue retValue;
     int n = 100;
 
-    if(!pwalletMain->HaveHDSeed())
+    if(!pwalletMain->HaveMnemonicSeed())
     {
         pwalletMain->GenerateNewSeed();
     }
@@ -1657,7 +1657,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_sapzkeys)
     // Verify the key has been added
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
     arr = retValue.get_array();
-    BOOST_CHECK(arr.size() == n+1);
+    BOOST_CHECK_EQUAL(arr.size(), n+1);
 
     // We can't simulate over RPC the wallet closing and being reloaded
     // but there are tests for this in gtest.

@@ -19,12 +19,21 @@ const unsigned char ZCASH_HD_SEED_FP_PERSONAL[BLAKE2bPersonalBytes] =
 const unsigned char ZCASH_TADDR_OVK_PERSONAL[BLAKE2bPersonalBytes] =
     {'Z', 'c', 'T', 'a', 'd', 'd', 'r', 'T', 'o', 'S', 'a', 'p', 'l', 'i', 'n', 'g'};
 
-HDSeed HDSeed::Random(size_t len)
+MnemonicSeed MnemonicSeed::Random(Language language, size_t len)
 {
     assert(len >= 32);
-    RawHDSeed rawSeed(len, 0);
-    GetRandBytes(rawSeed.data(), len);
-    return HDSeed(rawSeed);
+    while (true) {
+        std::vector<unsigned char> entropy(len, 0);
+        GetRandBytes(entropy.data(), len);
+        const char* phrase = zip339_entropy_to_phrase(language, entropy.data(), len);
+        std::string mnemonic(phrase);
+        zip339_free_phrase(phrase);
+        MnemonicSeed seed(language, mnemonic);
+
+        // TODO: check for the validity of the Sapling spending key at account 0 for this seed.
+
+        return seed;
+    }
 }
 
 uint256 HDSeed::Fingerprint() const

@@ -16,35 +16,37 @@
 
 TEST(KeystoreTests, StoreAndRetrieveHDSeed) {
     CBasicKeyStore keyStore;
-    HDSeed seedOut;
 
     // When we haven't set a seed, we shouldn't get one
-    EXPECT_FALSE(keyStore.HaveHDSeed());
-    EXPECT_FALSE(keyStore.GetHDSeed(seedOut));
+    EXPECT_FALSE(keyStore.HaveMnemonicSeed());
+    auto seedOut = keyStore.GetMnemonicSeed();
+    EXPECT_FALSE(seedOut.has_value());
 
     // Generate a random seed
-    auto seed = HDSeed::Random();
+    auto seed = MnemonicSeed::Random();
 
     // We should be able to set and retrieve the seed
-    ASSERT_TRUE(keyStore.SetHDSeed(seed));
-    EXPECT_TRUE(keyStore.HaveHDSeed());
-    ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
-    EXPECT_EQ(seed, seedOut);
+    ASSERT_TRUE(keyStore.SetMnemonicSeed(seed));
+    EXPECT_TRUE(keyStore.HaveMnemonicSeed());
+    seedOut = keyStore.GetMnemonicSeed();
+    ASSERT_TRUE(seedOut.has_value());
+    EXPECT_EQ(seed, seedOut.value());
 
     // Generate another random seed
-    auto seed2 = HDSeed::Random();
+    auto seed2 = MnemonicSeed::Random();
     EXPECT_NE(seed, seed2);
 
     // We should not be able to set and retrieve a different seed
-    EXPECT_FALSE(keyStore.SetHDSeed(seed2));
-    ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
-    EXPECT_EQ(seed, seedOut);
+    EXPECT_FALSE(keyStore.SetMnemonicSeed(seed2));
+    seedOut = keyStore.GetMnemonicSeed();
+    ASSERT_TRUE(seedOut.has_value());
+    EXPECT_EQ(seed, seedOut.value());
 }
 
 TEST(KeystoreTests, SaplingKeys) {
     // ["sk, ask, nsk, ovk, ak, nk, ivk, default_d, default_pk_d, note_v, note_r, note_cm, note_pos, note_nf"],
     UniValue sapling_keys = read_json(MAKE_STRING(json_tests::sapling_key_components));
-    
+
     // Skipping over comments in sapling_key_components.json file
     for (size_t i = 2; i < 12; i++) {
         uint256 skSeed, ask, nsk, ovk, ak, nk, ivk;
@@ -55,40 +57,40 @@ TEST(KeystoreTests, SaplingKeys) {
         ak.SetHex(sapling_keys[i][4].getValStr());
         nk.SetHex(sapling_keys[i][5].getValStr());
         ivk.SetHex(sapling_keys[i][6].getValStr());
-        
+
         libzcash::diversifier_t default_d;
         std::copy_n(ParseHex(sapling_keys[i][7].getValStr()).begin(), 11, default_d.begin());
-        
+
         uint256 default_pk_d;
         default_pk_d.SetHex(sapling_keys[i][8].getValStr());
-        
+
         auto sk = libzcash::SaplingSpendingKey(skSeed);
-        
+
         // Check that expanded spending key from primitives and from sk are the same
         auto exp_sk_2 = libzcash::SaplingExpandedSpendingKey(ask, nsk, ovk);
         auto exp_sk = sk.expanded_spending_key();
         EXPECT_EQ(exp_sk, exp_sk_2);
-            
+
         // Check that full viewing key derived from sk and expanded sk are the same
         auto full_viewing_key = sk.full_viewing_key();
         EXPECT_EQ(full_viewing_key, exp_sk.full_viewing_key());
-        
+
         // Check that full viewing key from primitives and from sk are the same
         auto full_viewing_key_2 = libzcash::SaplingFullViewingKey(ak, nk, ovk);
         EXPECT_EQ(full_viewing_key, full_viewing_key_2);
-            
+
         // Check that incoming viewing key from primitives and from sk are the same
         auto in_viewing_key = full_viewing_key.in_viewing_key();
         auto in_viewing_key_2 = libzcash::SaplingIncomingViewingKey(ivk);
         EXPECT_EQ(in_viewing_key, in_viewing_key_2);
-        
+
         // Check that the default address from primitives and from sk method are the same
         auto default_addr = sk.default_address();
         auto addrOpt2 = in_viewing_key.address(default_d);
         EXPECT_TRUE(addrOpt2);
         auto default_addr_2 = addrOpt2.value();
         EXPECT_EQ(default_addr, default_addr_2);
-        
+
         auto default_addr_3 = libzcash::SaplingPaymentAddress(default_d, default_pk_d);
         EXPECT_EQ(default_addr_2, default_addr_3);
         EXPECT_EQ(default_addr, default_addr_3);
@@ -285,20 +287,22 @@ TEST(KeystoreTests, StoreAndRetrieveHDSeedInEncryptedStore) {
     TestCCryptoKeyStore keyStore;
     CKeyingMaterial vMasterKey(32, 0);
     GetRandBytes(vMasterKey.data(), 32);
-    HDSeed seedOut;
 
     // 1) Test adding a seed to an unencrypted key store, then encrypting it
-    auto seed = HDSeed::Random();
-    EXPECT_FALSE(keyStore.HaveHDSeed());
-    EXPECT_FALSE(keyStore.GetHDSeed(seedOut));
+    auto seed = MnemonicSeed::Random();
+    EXPECT_FALSE(keyStore.HaveMnemonicSeed());
+    auto seedOut = keyStore.GetMnemonicSeed();
+    EXPECT_FALSE(seedOut.has_value());
 
-    ASSERT_TRUE(keyStore.SetHDSeed(seed));
-    EXPECT_TRUE(keyStore.HaveHDSeed());
-    ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
-    EXPECT_EQ(seed, seedOut);
+    ASSERT_TRUE(keyStore.SetMnemonicSeed(seed));
+    EXPECT_TRUE(keyStore.HaveMnemonicSeed());
+    seedOut = keyStore.GetMnemonicSeed();
+    ASSERT_TRUE(seedOut.has_value());
+    EXPECT_EQ(seed, seedOut.value());
 
     ASSERT_TRUE(keyStore.EncryptKeys(vMasterKey));
-    EXPECT_FALSE(keyStore.GetHDSeed(seedOut));
+    seedOut = keyStore.GetMnemonicSeed();
+    EXPECT_FALSE(seedOut.has_value());
 
     // Unlocking with a random key should fail
     CKeyingMaterial vRandomKey(32, 0);
@@ -312,15 +316,17 @@ TEST(KeystoreTests, StoreAndRetrieveHDSeedInEncryptedStore) {
 
     // Unlocking with vMasterKey should succeed
     ASSERT_TRUE(keyStore.Unlock(vMasterKey));
-    ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
-    EXPECT_EQ(seed, seedOut);
+    seedOut = keyStore.GetMnemonicSeed();
+    ASSERT_TRUE(seedOut.has_value());
+    EXPECT_EQ(seed, seedOut.value());
 
     // 2) Test replacing the seed in an already-encrypted key store fails
-    auto seed2 = HDSeed::Random();
-    EXPECT_FALSE(keyStore.SetHDSeed(seed2));
-    EXPECT_TRUE(keyStore.HaveHDSeed());
-    ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
-    EXPECT_EQ(seed, seedOut);
+    auto seed2 = MnemonicSeed::Random();
+    EXPECT_FALSE(keyStore.SetMnemonicSeed(seed2));
+    EXPECT_TRUE(keyStore.HaveMnemonicSeed());
+    seedOut = keyStore.GetMnemonicSeed();
+    ASSERT_TRUE(seedOut.has_value());
+    EXPECT_EQ(seed, seedOut.value());
 
     // 3) Test adding a new seed to an already-encrypted key store
     TestCCryptoKeyStore keyStore2;
@@ -331,14 +337,16 @@ TEST(KeystoreTests, StoreAndRetrieveHDSeedInEncryptedStore) {
     ASSERT_TRUE(keyStore2.EncryptKeys(vMasterKey));
     ASSERT_TRUE(keyStore2.Unlock(vMasterKey));
 
-    EXPECT_FALSE(keyStore2.HaveHDSeed());
-    EXPECT_FALSE(keyStore2.GetHDSeed(seedOut));
+    EXPECT_FALSE(keyStore2.HaveMnemonicSeed());
+    seedOut = keyStore2.GetMnemonicSeed();
+    EXPECT_FALSE(seedOut.has_value());
 
-    auto seed3 = HDSeed::Random();
-    ASSERT_TRUE(keyStore2.SetHDSeed(seed3));
-    EXPECT_TRUE(keyStore2.HaveHDSeed());
-    ASSERT_TRUE(keyStore2.GetHDSeed(seedOut));
-    EXPECT_EQ(seed3, seedOut);
+    auto seed3 = MnemonicSeed::Random();
+    ASSERT_TRUE(keyStore2.SetMnemonicSeed(seed3));
+    EXPECT_TRUE(keyStore2.HaveMnemonicSeed());
+    seedOut = keyStore2.GetMnemonicSeed();
+    ASSERT_TRUE(seedOut.has_value());
+    EXPECT_EQ(seed3, seedOut.value());
 }
 
 TEST(KeystoreTests, StoreAndRetrieveSpendingKeyInEncryptedStore) {

@@ -30,33 +30,50 @@ bool CBasicKeyStore::GetPubKey(const CKeyID &address, CPubKey &vchPubKeyOut) con
     return true;
 }
 
-bool CBasicKeyStore::SetHDSeed(const HDSeed& seed)
+bool CBasicKeyStore::SetMnemonicSeed(const MnemonicSeed& seed)
 {
     LOCK(cs_KeyStore);
-    if (!hdSeed.IsNull()) {
+    if (mnemonicSeed.has_value()) {
         // Don't allow an existing seed to be changed. We can maybe relax this
         // restriction later once we have worked out the UX implications.
         return false;
     }
-    hdSeed = seed;
+    mnemonicSeed = seed;
     return true;
 }
 
-bool CBasicKeyStore::HaveHDSeed() const
+bool CBasicKeyStore::HaveMnemonicSeed() const
 {
     LOCK(cs_KeyStore);
-    return !hdSeed.IsNull();
+    return mnemonicSeed.has_value();
 }
 
-bool CBasicKeyStore::GetHDSeed(HDSeed& seedOut) const
+std::optional<MnemonicSeed> CBasicKeyStore::GetMnemonicSeed() const
 {
     LOCK(cs_KeyStore);
-    if (hdSeed.IsNull()) {
+    return mnemonicSeed;
+}
+
+bool CBasicKeyStore::SetLegacyHDSeed(const HDSeed& seed)
+{
+    if (legacySeed.has_value()) {
+        // Don't allow an existing seed to be changed.
         return false;
-    } else {
-        seedOut = hdSeed;
-        return true;
     }
+    legacySeed = seed;
+    return true;
+}
+
+bool CBasicKeyStore::HaveLegacyHDSeed() const
+{
+    LOCK(cs_KeyStore);
+    return legacySeed.has_value();
+}
+
+std::optional<HDSeed> CBasicKeyStore::GetLegacyHDSeed() const
+{
+    LOCK(cs_KeyStore);
+    return legacySeed;
 }
 
 bool CBasicKeyStore::AddKeyPubKey(const CKey& key, const CPubKey &pubkey)
@@ -151,7 +168,7 @@ bool CBasicKeyStore::AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk)
     return true;
 }
 
-//! Sapling 
+//! Sapling
 bool CBasicKeyStore::AddSaplingSpendingKey(
     const libzcash::SaplingExtendedSpendingKey &sk)
 {
@@ -187,7 +204,7 @@ bool CBasicKeyStore::AddSaplingFullViewingKey(
     return CBasicKeyStore::AddSaplingIncomingViewingKey(ivk, extfvk.DefaultAddress());
 }
 
-// This function updates the wallet's internal address->ivk map. 
+// This function updates the wallet's internal address->ivk map.
 // If we add an address that is already in the map, the map will
 // remain unchanged as each address only has one ivk.
 bool CBasicKeyStore::AddSaplingIncomingViewingKey(
@@ -265,7 +282,7 @@ bool CBasicKeyStore::GetSaplingIncomingViewingKey(const libzcash::SaplingPayment
     return false;
 }
 
-bool CBasicKeyStore::GetSaplingExtendedSpendingKey(const libzcash::SaplingPaymentAddress &addr, 
+bool CBasicKeyStore::GetSaplingExtendedSpendingKey(const libzcash::SaplingPaymentAddress &addr,
                                     libzcash::SaplingExtendedSpendingKey &extskOut) const {
     libzcash::SaplingIncomingViewingKey ivk;
     libzcash::SaplingExtendedFullViewingKey extfvk;

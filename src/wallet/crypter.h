@@ -131,7 +131,8 @@ public:
 class CCryptoKeyStore : public CBasicKeyStore
 {
 private:
-    std::pair<uint256, std::vector<unsigned char>> cryptedHDSeed;
+    std::pair<uint256, std::vector<unsigned char>> cryptedMnemonicSeed;
+    std::optional<std::pair<uint256, std::vector<unsigned char>>> cryptedLegacySeed;
     CryptedKeyMap mapCryptedKeys;
     CryptedSproutSpendingKeyMap mapCryptedSproutSpendingKeys;
     CryptedSaplingSpendingKeyMap mapCryptedSaplingSpendingKeys;
@@ -172,10 +173,15 @@ public:
 
     bool Lock();
 
-    virtual bool SetCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
-    bool SetHDSeed(const HDSeed& seed);
-    bool HaveHDSeed() const;
-    bool GetHDSeed(HDSeed& seedOut) const;
+    bool SetMnemonicSeed(const MnemonicSeed& seed);
+    virtual bool SetCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
+    bool HaveMnemonicSeed() const;
+    std::optional<MnemonicSeed> GetMnemonicSeed() const;
+
+    bool SetLegacyHDSeed(const HDSeed& seed);
+    virtual bool SetCryptedLegacyHDSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
+    bool HaveLegacyHDSeed() const;
+    std::optional<HDSeed> GetLegacyHDSeed() const;
 
     virtual bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
@@ -230,7 +236,7 @@ public:
             mi++;
         }
     }
-    //! Sapling 
+    //! Sapling
     virtual bool AddCryptedSaplingSpendingKey(
         const libzcash::SaplingExtendedFullViewingKey &extfvk,
         const std::vector<unsigned char> &vchCryptedSecret);
