@@ -213,7 +213,8 @@ bool CWallet::AddSaplingFullViewingKey(const libzcash::SaplingExtendedFullViewin
     return CWalletDB(strWalletFile).WriteSaplingExtendedFullViewingKey(extfvk);
 }
 
-// Add payment address -> incoming viewing key map entry
+// Adds a Sapling payment address -> incoming viewing key map entry
+// to the wallet's key cache.
 bool CWallet::AddSaplingIncomingViewingKey(
     const libzcash::SaplingIncomingViewingKey &ivk,
     const libzcash::SaplingPaymentAddress &addr)
@@ -237,7 +238,7 @@ bool CWallet::AddSaplingIncomingViewingKey(
 
 // TODO: CWallet::GenerateNewOrchardZKey()
 
-// Add spending key to keystore
+// Add an Orchard spending key to keystore
 bool CWallet::AddOrchardZKey(const libzcash::OrchardSpendingKey &sk)
 {
     AssertLockHeld(cs_wallet);
@@ -256,9 +257,14 @@ bool CWallet::AddOrchardZKey(const libzcash::OrchardSpendingKey &sk)
     }
 }
 
+// Adds an Orchard full viewing key to the keystore.
 bool CWallet::AddOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk)
 {
     AssertLockHeld(cs_wallet);
+    if (IsCrypted()) {
+        return false;
+    }
+
     orchardWallet.AddFullViewingKey(fvk);
 
     if (fFileBacked) {
@@ -268,17 +274,32 @@ bool CWallet::AddOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fv
     }
 }
 
-//Add payment address -> incoming viewing key map entry
+// Adds an Orchard payment address -> incoming viewing key map entry to
+// the wallet's key cache.
+//
+// TODO: does it make sense to use `OrchardRawAddress` here, or should
+// we instead use a UnifiedAddress?
 bool CWallet::AddOrchardIncomingViewingKey(
     const libzcash::OrchardIncomingViewingKey &ivk,
     const libzcash::OrchardRawAddress &addr)
 {
-    // TODO: does it make sense to use `OrchardRawAddress` here, or should
-    // we instead use a UnifiedAddress?
-    return orchardWallet.AddIncomingViewingKey(ivk, addr);
+    AssertLockHeld(cs_wallet);
+    if (IsCrypted()) {
+        return false;
+    }
+
+    if (!orchardWallet.AddIncomingViewingKey(ivk, addr)) {
+        return false;
+    }
+
+    if (fFileBacked) {
+        return CWalletDB(strWalletFile).WriteOrchardRawAddress(addr, ivk);
+    } else {
+        return true;
+    }
 }
 
-// Add spending key to keystore and persist to disk
+// Adds a Sprout spending key to the keystore and persist to disk
 bool CWallet::AddSproutZKey(const libzcash::SproutSpendingKey &key)
 {
     AssertLockHeld(cs_wallet); // mapSproutZKeyMetadata
@@ -300,6 +321,8 @@ bool CWallet::AddSproutZKey(const libzcash::SproutSpendingKey &key)
     return true;
 }
 
+// Generates a new transparent keypair, store the secret key to
+// the wallet and return the associated public key.
 CPubKey CWallet::GenerateNewKey()
 {
     AssertLockHeld(cs_wallet); // mapKeyMetadata
@@ -355,6 +378,7 @@ CPubKey CWallet::GenerateNewKey()
     return pubkey;
 }
 
+// Adds a transparent keypair to the wallet.
 bool CWallet::AddKeyPubKey(const CKey& secret, const CPubKey &pubkey)
 {
     AssertLockHeld(cs_wallet); // mapKeyMetadata
@@ -584,9 +608,7 @@ bool CWallet::LoadOrchardRawAddress(
     const libzcash::OrchardRawAddress &addr,
     const libzcash::OrchardIncomingViewingKey &ivk)
 {
-    // TODO: Does it make sense to use `OrchardRawAddress` here?
-    return false;
-    //return orchardWallet.AddIncomingViewingKey(ivk, addr);
+    return orchardWallet.AddIncomingViewingKey(ivk, addr);
 }
 
 bool CWallet::LoadZKey(const libzcash::SproutSpendingKey &key)
@@ -754,6 +776,7 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
     return false;
 }
 
+// Called when a block is added to the main chain.
 void CWallet::ChainTipAdded(const CBlockIndex *pindex,
                             const CBlock *pblock,
                             SproutMerkleTree sproutTree,
