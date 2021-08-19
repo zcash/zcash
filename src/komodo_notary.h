@@ -475,7 +475,7 @@ int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,in
 }
 
 /****
- * Get the notarization data at or below a particular height
+ * Get the notarization data below a particular height
  * @param[in] nHeight the height desired
  * @param[out] notarized_hashp the hash of the notarized block
  * @param[out] notarized_desttxidp the desttxid
@@ -497,7 +497,7 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
         auto itr = sp->NPOINTS.upper_bound(key);
         if (itr != sp->NPOINTS.begin())
             --itr;
-        if ( itr != sp->NPOINTS.end() && (*itr).nHeight <= nHeight )
+        if ( itr != sp->NPOINTS.end() && (*itr).nHeight < nHeight )
         {
             auto &np = *itr;
             *notarized_hashp = np.notarized_hash;

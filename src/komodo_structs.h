@@ -82,10 +82,22 @@ struct pax_transaction
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; };
 
-struct notarized_checkpoint
+class notarized_checkpoint
 {
-    uint256 notarized_hash,notarized_desttxid,MoM,MoMoM;
-    int32_t nHeight,notarized_height,MoMdepth,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
+public:
+    notarized_checkpoint(size_t index = 0) : index(index) {}
+    uint256 notarized_hash;
+    uint256 notarized_desttxid;
+    uint256 MoM;
+    uint256 MoMoM;
+    int32_t nHeight;
+    int32_t notarized_height;
+    int32_t MoMdepth;
+    int32_t MoMoMdepth;
+    int32_t MoMoMoffset;
+    int32_t kmdstarti;
+    int32_t kmdendi;
+    size_t index; // the chronological order of insertion
 };
 
 struct notarized_checkpoint_height_compare
@@ -122,6 +134,13 @@ struct komodo_ccdata
 
 struct komodo_state
 {
+public:
+    bool AddNPoint(notarized_checkpoint in)
+    {
+        in.index = nextNpointIndex++;
+        NPOINTS.insert(in);
+    }
+public:
     uint256 NOTARIZED_HASH; // the latest notarized hash
     uint256 NOTARIZED_DESTTXID; // the latest notarized dest txid
     uint256 MoM;
@@ -139,6 +158,8 @@ struct komodo_state
     std::multiset<notarized_checkpoint, notarized_checkpoint_height_compare> NPOINTS; // collection of notarizations
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
+private:
+    size_t nextNpointIndex = 0;
 };
 
 #endif /* KOMODO_STRUCTS_H */
