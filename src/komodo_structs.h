@@ -181,7 +181,7 @@ public:
         last = in;
     }
 
-    uint64_t NumCheckpoints() { return NPOINTS.size(); }
+    uint64_t NumCheckpoints() const { return NPOINTS.size(); }
 
     /****
      * Get the notarization data below a particular height
@@ -190,10 +190,10 @@ public:
      * @param[out] notarized_desttxidp the desttxid
      * @returns the notarized height
      */
-    int32_t NotarizedData(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
+    int32_t NotarizedData(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp) const
     {
         // get the nearest height without going over
-        auto &idx = NPOINTS.get<1>();
+        auto &idx = NPOINTS.get<1>(); // sorted by nHeight
         auto itr = idx.upper_bound(nHeight);
         if (itr != idx.begin())
             --itr;
@@ -238,7 +238,7 @@ public:
      * Search for the last (chronological) MoM notarized height
      * @returns the last notarized height that has a MoM
      */
-    int32_t PrevMoMHeight()
+    int32_t PrevMoMHeight() const
     {
         static uint256 zero;
         // shortcut
@@ -263,9 +263,9 @@ public:
      * @note Finding a mach does include other criteria other than height
      *      such that the checkpoint includes the desired height
      * @param height the notarized_height desired
-     * @returns the checkpoint or sp->NPOINTS.rend()
+     * @returns the checkpoint or nullptr
      */
-    const notarized_checkpoint *CheckpointAtHeight(int32_t height)
+    const notarized_checkpoint *CheckpointAtHeight(int32_t height) const
     {
         // find the nearest notarization_height
         if(NPOINTS.size() > 0)
