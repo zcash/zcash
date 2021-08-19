@@ -30,7 +30,7 @@ void orchard_address_free(OrchardRawAddressPtr* ptr);
 ///
 /// - If no error occurs, `payment_address_ret` will point to a Rust-allocated Orchard payment address.
 /// - If an error occurs, `payment_address_ret` will be unaltered.
-bool orchard_payment_address_parse(
+bool orchard_address_parse(
     void* stream,
     read_callback_t read_cb,
     OrchardRawAddressPtr** payment_address_ret);
@@ -38,7 +38,7 @@ bool orchard_payment_address_parse(
 /// Serializes an Orchard payment address to the given stream
 ///
 /// If `payment_address == nullptr`, this will return `false`
-bool orchard_payment_address_serialize(
+bool orchard_address_serialize(
     const OrchardRawAddressPtr* payment_address,
     void* stream,
     write_callback_t write_cb);

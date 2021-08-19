@@ -200,8 +200,9 @@ public:
                           const CKeyMetadata &keyMeta);
     bool WriteOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk);
     bool EraseOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk);
-    // bool WriteOrchardRawAddress(const libzcash::OrchardRawAddress &addr,
-    //                                 const libzcash::OrchardIncomingViewingKey &ivk);
+    bool WriteOrchardRawAddress(
+        const libzcash::OrchardRawAddress &addr,
+        const libzcash::OrchardIncomingViewingKey &ivk);
     // bool WriteCryptedOrchardZKey(const libzcash::OrchardExtendedFullViewingKey &extfvk,
     //                       const std::vector<unsigned char>& vchCryptedSecret,
     //                       const CKeyMetadata &keyMeta);

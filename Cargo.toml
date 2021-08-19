@@ -57,9 +57,10 @@ default-features = false
 features = ["ansi", "chrono", "env-filter"]
 
 [profile.release]
-lto = true
-panic = 'abort'
-codegen-units = 1
+debug = 2
+# lto = true
+# panic = 'abort'
+# codegen-units = 1
 
 [patch.crates-io]
 ed25519-zebra = { git = "https://github.com/ZcashFoundation/ed25519-zebra.git", rev = "d3512400227a362d08367088ffaa9bd4142a69c7" }

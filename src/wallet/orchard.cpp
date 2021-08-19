@@ -54,7 +54,7 @@ bool OrchardWallet::AddIncomingViewingKey(const libzcash::OrchardIncomingViewing
     return true;
 }
 
-void PushOrchardNoteMeta(void* orchardNotesRet, RawOrchardNoteMetadata rawNoteMeta) {
+void OrchardWallet::PushOrchardNoteMeta(void* orchardNotesRet, RawOrchardNoteMetadata rawNoteMeta) {
     uint256 txid;
     std::move(std::begin(rawNoteMeta.txid), std::end(rawNoteMeta.txid), txid.begin());
     OrchardOutPoint op(txid, rawNoteMeta.actionIdx);

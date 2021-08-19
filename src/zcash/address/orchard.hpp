@@ -9,19 +9,23 @@
 #include "rust/orchard/keys.h"
 
 class OrchardWallet;
+class OrchardNoteMetadata;
 
 namespace libzcash {
 
 class OrchardRawAddress
 {
 private:
-public: //FIXME
     std::unique_ptr<OrchardRawAddressPtr, decltype(&orchard_address_free)> inner;
 
     OrchardRawAddress() : inner(nullptr, orchard_address_free) {}
 
     OrchardRawAddress(OrchardRawAddressPtr* ptr) : inner(ptr, orchard_address_free) {}
 
+    friend class ::OrchardWallet;
+    friend class ::OrchardNoteMetadata;
+
+public:
     OrchardRawAddress(OrchardRawAddress&& key) : inner(std::move(key.inner)) {}
 
     OrchardRawAddress(const OrchardRawAddress& key) :
@@ -58,7 +62,7 @@ public: //FIXME
     template<typename Stream>
     void Serialize(Stream& s) const {
         RustStream rs(s);
-        if (!orchard_payment_address_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
+        if (!orchard_address_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
             throw std::ios_base::failure("Failed to serialize Orchard incoming viewing key");
         }
     }
@@ -67,7 +71,7 @@ public: //FIXME
     void Unserialize(Stream& s) {
         RustStream rs(s);
         OrchardRawAddressPtr* key;
-        if (!orchard_payment_address_parse(&rs, RustStream<Stream>::read_callback, &key)) {
+        if (!orchard_address_parse(&rs, RustStream<Stream>::read_callback, &key)) {
             throw std::ios_base::failure("Failed to parse Orchard incoming viewing key");
         }
         inner.reset(key);
@@ -80,17 +84,16 @@ class OrchardSpendingKey;
 class OrchardIncomingViewingKey
 {
 private:
-public: // FIXME
     std::unique_ptr<OrchardIncomingViewingKeyPtr, decltype(&orchard_incoming_viewing_key_free)> inner;
+
+    OrchardIncomingViewingKey() : inner(nullptr, orchard_incoming_viewing_key_free) {}
 
     OrchardIncomingViewingKey(OrchardIncomingViewingKeyPtr* key) : inner(key, orchard_incoming_viewing_key_free) {}
 
     friend class OrchardSpendingKey;
-    friend class OrchardWallet;
+    friend class ::OrchardWallet;
 
-//public:
-    OrchardIncomingViewingKey() : inner(nullptr, orchard_incoming_viewing_key_free) {}
-
+public:
     OrchardIncomingViewingKey(OrchardIncomingViewingKey&& key) : inner(std::move(key.inner)) {}
 
     OrchardIncomingViewingKey(const OrchardIncomingViewingKey& key) :
@@ -143,12 +146,13 @@ public: // FIXME
 class OrchardFullViewingKey
 {
 private:
-public: //FIXME
     std::unique_ptr<OrchardFullViewingKeyPtr, decltype(&orchard_full_viewing_key_free)> inner;
+
     OrchardFullViewingKey() : inner(nullptr, orchard_full_viewing_key_free) {}
 
-    friend class OrchardWallet;
-//public:
+    friend class ::OrchardWallet;
+
+public:
     OrchardFullViewingKey(OrchardFullViewingKey&& key) : inner(std::move(key.inner)) {}
 
     OrchardFullViewingKey(const OrchardFullViewingKey& key) :
@@ -192,12 +196,13 @@ public: //FIXME
 class OrchardSpendingKey
 {
 private:
-public: //FIXME
     std::unique_ptr<OrchardSpendingKeyPtr, decltype(&orchard_spending_key_free)> inner;
+
     OrchardSpendingKey() : inner(nullptr, orchard_spending_key_free) {}
 
-    friend class OrchardWallet;
-//public:
+    friend class ::OrchardWallet;
+
+public:
     OrchardSpendingKey(OrchardSpendingKey&& key) : inner(std::move(key.inner)) {}
 
     OrchardSpendingKey(const OrchardSpendingKey& key) :

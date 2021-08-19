@@ -111,6 +111,16 @@ bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey,
     return true;
 }
 
+bool CWalletDB::WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey)
+{
+    nWalletDBUpdateCounter++;
+    return Write(std::make_pair(std::string("mkey"), nID), kMasterKey, true);
+}
+
+//
+// Sprout key serialization
+//
+
 bool CWalletDB::WriteCryptedZKey(const libzcash::SproutPaymentAddress & addr,
                                  const libzcash::ReceivingKey &rk,
                                  const std::vector<unsigned char>& vchCryptedSecret,
@@ -130,6 +140,35 @@ bool CWalletDB::WriteCryptedZKey(const libzcash::SproutPaymentAddress & addr,
     }
     return true;
 }
+
+bool CWalletDB::WriteZKey(const libzcash::SproutPaymentAddress& addr,
+                const libzcash::SproutSpendingKey& key,
+                const CKeyMetadata &keyMeta)
+{
+    nWalletDBUpdateCounter++;
+
+    if (!Write(std::make_pair(std::string("zkeymeta"), addr), keyMeta))
+        return false;
+
+    // pair is: tuple_key("zkey", paymentaddress) --> secretkey
+    return Write(std::make_pair(std::string("zkey"), addr), key, false);
+}
+
+bool CWalletDB::WriteSproutViewingKey(const libzcash::SproutViewingKey &vk)
+{
+    nWalletDBUpdateCounter++;
+    return Write(std::make_pair(std::string("vkey"), vk), '1');
+}
+
+bool CWalletDB::EraseSproutViewingKey(const libzcash::SproutViewingKey &vk)
+{
+    nWalletDBUpdateCounter++;
+    return Erase(std::make_pair(std::string("vkey"), vk));
+}
+
+//
+// Sapling Key Serialization
+//
 
 bool CWalletDB::WriteCryptedSaplingZKey(
     const libzcash::SaplingExtendedFullViewingKey &extfvk,
@@ -153,24 +192,6 @@ bool CWalletDB::WriteCryptedSaplingZKey(
     return true;
 }
 
-bool CWalletDB::WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey)
-{
-    nWalletDBUpdateCounter++;
-    return Write(std::make_pair(std::string("mkey"), nID), kMasterKey, true);
-}
-
-bool CWalletDB::WriteZKey(const libzcash::SproutPaymentAddress& addr,
-                const libzcash::SproutSpendingKey& key,
-                const CKeyMetadata &keyMeta)
-{
-    nWalletDBUpdateCounter++;
-
-    if (!Write(std::make_pair(std::string("zkeymeta"), addr), keyMeta))
-        return false;
-
-    // pair is: tuple_key("zkey", paymentaddress) --> secretkey
-    return Write(std::make_pair(std::string("zkey"), addr), key, false);
-}
 bool CWalletDB::WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
                 const libzcash::SaplingExtendedSpendingKey &key,
                 const CKeyMetadata &keyMeta)
@@ -190,18 +211,6 @@ bool CWalletDB::WriteSaplingPaymentAddress(
     nWalletDBUpdateCounter++;
 
     return Write(std::make_pair(std::string("sapzaddr"), addr), ivk, false);
-}
-
-bool CWalletDB::WriteSproutViewingKey(const libzcash::SproutViewingKey &vk)
-{
-    nWalletDBUpdateCounter++;
-    return Write(std::make_pair(std::string("vkey"), vk), '1');
-}
-
-bool CWalletDB::EraseSproutViewingKey(const libzcash::SproutViewingKey &vk)
-{
-    nWalletDBUpdateCounter++;
-    return Erase(std::make_pair(std::string("vkey"), vk));
 }
 
 bool CWalletDB::WriteSaplingExtendedFullViewingKey(
@@ -248,6 +257,15 @@ bool CWalletDB::EraseOrchardFullViewingKey(
     return Erase(std::make_pair(std::string("orcfvk"), fvk));
 }
 
+bool CWalletDB::WriteOrchardRawAddress(
+    const libzcash::OrchardRawAddress &addr,
+    const libzcash::OrchardIncomingViewingKey &ivk)
+{
+    nWalletDBUpdateCounter++;
+
+    return Write(std::make_pair(std::string("orczaddr"), addr), ivk, false);
+}
+
 bool CWalletDB::WriteOrchardNoteCommitmentTree(
     const OrchardWallet& wallet)
 {
@@ -257,6 +275,10 @@ bool CWalletDB::WriteOrchardNoteCommitmentTree(
     // that are already written
     return Write(std::string("orchard_note_commitment_tree"), wallet.GetNoteCommitmentTreeSer());
 }
+
+//
+// Transparent
+//
 
 bool CWalletDB::WriteCScript(const uint160& hash, const CScript& redeemScript)
 {
