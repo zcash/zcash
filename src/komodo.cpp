@@ -293,7 +293,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             if ( sp != 0 )
             {
                 std::shared_ptr<komodo::event_notarized> evt = std::make_shared<komodo::event_notarized>(height);
-                memcpy(evt->dest, dest, 65);
+                memcpy(evt->dest, dest, sizeof(evt->dest)-1);
                 evt->blockhash = sp->NOTARIZED_HASH;
                 evt->desttxid = sp->NOTARIZED_DESTTXID;
                 evt->notarizedheight = sp->NOTARIZED_HEIGHT;
