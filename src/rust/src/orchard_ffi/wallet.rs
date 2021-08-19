@@ -1,10 +1,13 @@
 use incrementalmerkletree::{bridgetree::BridgeTree, Frontier, Tree};
 use libc::c_uchar;
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::io::{self, Read, Write};
 use tracing::error;
 
+use zcash_encoding::CompactSize;
 use zcash_primitives::{
     consensus::BlockHeight,
+    merkle_tree::incremental::{read_tree_v1, write_tree_v1},
     transaction::{components::Amount, TxId},
 };
 
@@ -16,6 +19,7 @@ use orchard::{
 };
 
 use super::incremental_merkle_tree_ffi::MERKLE_DEPTH;
+use crate::streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
 
 pub const MAX_CHECKPOINTS: usize = 100;
 
@@ -33,7 +37,6 @@ pub struct OutPoint {
 
 #[derive(Debug, Clone)]
 pub struct DecryptedNote {
-    ivk: IncomingViewingKey,
     note: Note,
     recipient: Address,
     memo: [u8; 512],
@@ -48,9 +51,104 @@ pub struct NoteMetadata {
     memo: [u8; 512],
 }
 
-struct WalletTx {
+#[derive(Debug, Clone)]
+pub struct WalletTx {
     txid: TxId,
-    decrypted_notes: BTreeMap<usize, DecryptedNote>,
+    decrypted_notes: BTreeMap<usize, (IncomingViewingKey, Option<DecryptedNote>)>,
+}
+
+impl WalletTx {
+    pub fn for_bundle(
+        keys: &[IncomingViewingKey],
+        txid: &TxId, 
+        bundle: &Bundle<Authorized, Amount>,
+    ) -> Option<Self> {
+        let mut wtx = WalletTx {
+            txid: *txid,
+            decrypted_notes: BTreeMap::new(),
+        };
+
+        for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_for_keys(keys) {
+            // Mark the witness tree with the fact that we want to be able to compute
+            // a witness for this note.
+            let note_data = DecryptedNote {
+                note,
+                recipient,
+                memo,
+            };
+            wtx.decrypted_notes
+                .insert(action_idx, (ivk.clone(), Some(note_data)));
+        }
+
+        if wtx.decrypted_notes.is_empty() {
+            None
+        } else {
+            Some(wtx)
+        }
+    }
+
+    /// For each note previously identified as belonging to the associated
+    /// wallet, attempt to decrypt that note and cache the decrypted data.
+    /// If decryption fails, return a Result::Err value containing the index
+    /// in the Orchard bundle at which the action failed to decrypt with the
+    /// stored viewing key.
+    pub fn restore_decrypted_note_cache(
+        &mut self,
+        bundle: &Bundle<Authorized, Amount>,
+    ) -> Result<(), usize> {
+        for (idx, (ivk, dnote)) in self.decrypted_notes.iter_mut() {
+            // TODO: does it make sense to skip repeated decryption like this?
+            if dnote.is_none() {
+                if let Some((note, recipient, memo)) = bundle.decrypt_output_with_key(*idx, ivk) {
+                    *dnote = Some(DecryptedNote {
+                        note,
+                        recipient,
+                        memo,
+                    })
+                } else {
+                    return Err(*idx);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn read<R: Read>(mut reader: R) -> io::Result<WalletTx> {
+        let txid = TxId::read(&mut reader)?;
+        let mut decrypted_notes = BTreeMap::new();
+        let decrypted_notes_size = CompactSize::read(&mut reader)?;
+        for _ in 0..decrypted_notes_size {
+            let idx: usize = CompactSize::read_t(&mut reader)?;
+            let mut ivk_bytes = [0u8; 64];
+            reader.read_exact(&mut ivk_bytes)?;
+            let ivk_opt = IncomingViewingKey::from_bytes(&ivk_bytes);
+            if ivk_opt.is_none().into() {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "unable to deserialize incoming view key".to_owned(),
+                ));
+            } else {
+                decrypted_notes.insert(idx, (ivk_opt.unwrap(), None));
+            }
+        }
+
+        Ok(WalletTx {
+            txid,
+            decrypted_notes,
+        })
+    }
+
+    pub fn write<W: Write>(&self, mut writer: W) -> io::Result<()> {
+        self.txid.write(&mut writer)?;
+        CompactSize::write(&mut writer, self.decrypted_notes.len())?;
+        for (idx, (ivk, _)) in self.decrypted_notes.iter() {
+            CompactSize::write(&mut writer, *idx)?;
+            writer.write_all(&ivk.to_bytes())?;
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -148,45 +246,32 @@ impl Wallet {
         txid: &TxId,
         bundle: &Bundle<Authorized, Amount>,
     ) -> Result<(), WalletError> {
-        let mut wallet_tx = WalletTx {
-            txid: *txid,
-            decrypted_notes: BTreeMap::new(),
-        };
-
         let keys = self
             .key_store
             .incoming_viewing_keys
             .keys()
             .cloned()
             .collect::<Vec<_>>();
-        for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_for_keys(&keys) {
-            // Mark the witness tree with the fact that we want to be able to compute
-            // a witness for this note.
-            let note_data = DecryptedNote {
-                ivk: ivk.clone(),
-                note,
-                recipient,
-                memo,
-            };
-            wallet_tx.decrypted_notes.insert(action_idx, note_data);
-            self.key_store.append_payment_address(&ivk, &recipient);
-        }
 
-        if !wallet_tx.decrypted_notes.is_empty() {
-            self.wallet_txs.insert(*txid, wallet_tx);
+        if let Some(wtx) = WalletTx::for_bundle(&keys, txid, bundle) {
+            for (ivk, dnote) in wtx.decrypted_notes.values() {
+                if let Some(dnote) = dnote {
+                    self.key_store.append_payment_address(ivk, &dnote.recipient);
+                }
+            }
+
+            self.wallet_txs.insert(*txid, wtx);
         }
 
         Ok(())
     }
 
     /// Add note commitment data to the note commitment tree, and mark the tree for
-    /// incoming viewing keys to the wallet, and return the indices of the actions
-    /// that we were able to decrypt.
+    /// notes that "belong" to the incoming viewing keys known by this wallet.
     ///
     /// * `block_height` - Height of the block containing the transaction that provided this bundle.
     /// * `txidx` - Index of the transaction within the block
     /// * `bundle` - Orchard component of the transaction.
-    /// * `to_witness` - Indices of the actions that are to be marked as ours in the note commitment tree.
     pub fn append_bundle_commitments(
         &mut self,
         block_height: BlockHeight,
@@ -248,26 +333,28 @@ impl Wallet {
                 wallet_tx
                     .decrypted_notes
                     .iter()
-                    .filter_map(move |(idx, dnote)| {
+                    .filter_map(move |(idx, (_, cached_dnote))| {
                         let outpoint = OutPoint {
                             txid: wallet_tx.txid,
                             action_idx: *idx,
                         };
 
-                        addrs
-                            .iter()
-                            .find(|a| ***a == dnote.recipient)
-                            .and_then(|addr| {
-                                if ignore_spent && self.spent_notes.contains(&outpoint) {
-                                    None
-                                } else if require_spending_key
-                                    && self.key_store.has_spending_key_for_address(addr)
-                                {
-                                    None
-                                } else {
-                                    Some((outpoint, (*dnote).clone()))
-                                }
-                            })
+                        cached_dnote.as_ref().and_then(|dnote| {
+                            addrs
+                                .iter()
+                                .find(|a| ***a == dnote.recipient)
+                                .and_then(|addr| {
+                                    if ignore_spent && self.spent_notes.contains(&outpoint) {
+                                        None
+                                    } else if require_spending_key
+                                        && self.key_store.has_spending_key_for_address(addr)
+                                    {
+                                        None
+                                    } else {
+                                        Some((outpoint, dnote.clone()))
+                                    }
+                                })
+                        })
                     })
             })
             .collect()
@@ -316,6 +403,35 @@ pub extern "C" fn orchard_wallet_add_notes_from_bundle(
             Ok(_) => true,
         },
         None => true,
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_restore_decrypted_note_cache(
+    wallet: *mut Wallet,
+    txid: *const [c_uchar; 32],
+    bundle: *const Bundle<Authorized, Amount>,
+) -> bool {
+    let wallet = unsafe { &mut *wallet };
+    let txid = TxId::from_bytes(unsafe { &*txid }.clone());
+    match wallet.wallet_txs.get_mut(&txid) {
+        Some(wtx) => match unsafe { bundle.as_ref() } {
+            Some(bundle) => match wtx.restore_decrypted_note_cache(bundle) {
+                Err(idx) => {
+                    error!("Unable to decrypt the action at index {:?}.", idx);
+                    false
+                }
+                Ok(_) => true,
+            },
+            None => {
+                error!("Cannot decrypt an empty Orchard bundle.");
+                false
+            }
+        },
+        None => {
+            error!("No cached Orchard notes detected for transaction {}", txid);
+            false
+        }
     }
 }
 
@@ -387,19 +503,6 @@ pub extern "C" fn orchard_wallet_tx_is_mine(
     wallet.is_mine(&txid)
 }
 
-#[no_mangle]
-pub extern "C" fn orchard_wallet_tx_data_new() -> *mut Vec<usize> {
-    let v = vec![];
-    Box::into_raw(Box::new(v))
-}
-
-#[no_mangle]
-pub extern "C" fn orchard_wallet_tx_data_free(tx_data: *mut Vec<usize>) {
-    if !tx_data.is_null() {
-        drop(unsafe { Box::from_raw(tx_data) });
-    }
-}
-
 pub type VecObj = std::ptr::NonNull<libc::c_void>;
 pub type PushCb = unsafe extern "C" fn(obj: Option<VecObj>, meta: NoteMetadata);
 
@@ -434,5 +537,106 @@ pub extern "C" fn orchard_wallet_get_filtered_notes(
                 },
             )
         };
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_get_txdata(
+    wallet: *const Wallet,
+    txid: *const [c_uchar; 32],
+) -> *mut WalletTx {
+    let wallet = unsafe { &*wallet };
+    let txid = TxId::from_bytes(unsafe { &*txid }.clone());
+
+    match wallet.wallet_txs.get(&txid) {
+        Some(wtx) => Box::into_raw(Box::new(wtx.clone())),
+        None => std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_note_commitment_tree_serialize(
+    wallet: *const Wallet,
+    stream: Option<StreamObj>,
+    write_cb: Option<WriteCb>,
+) -> bool {
+    let wallet = unsafe { &*wallet };
+    let writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
+
+    match write_tree_v1(writer, &wallet.witness_tree) {
+        Ok(()) => true,
+        Err(e) => {
+            error!("{}", e);
+            false
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_note_commitment_tree_parse_update(
+    wallet: *mut Wallet,
+    stream: Option<StreamObj>,
+    read_cb: Option<ReadCb>,
+) -> bool {
+    let wallet = unsafe { &mut *wallet };
+    let reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
+
+    match read_tree_v1(reader) {
+        Ok(parsed) => {
+            wallet.witness_tree = parsed;
+            true
+        }
+        Err(e) => {
+            error!("Failed to parse Orchard WalletTx: {}", e);
+            false
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_tx_clone(wtx: *const WalletTx) -> *mut WalletTx {
+    unsafe { wtx.as_ref() }
+        .map(|wtx| Box::into_raw(Box::new(wtx.clone())))
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_tx_free(wtx: *mut WalletTx) {
+    if !wtx.is_null() {
+        drop(unsafe { Box::from_raw(wtx) });
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_tx_parse(
+    stream: Option<StreamObj>,
+    read_cb: Option<ReadCb>,
+) -> *mut WalletTx {
+    let reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
+
+    match WalletTx::read(reader) {
+        Ok(parsed) => Box::into_raw(Box::new(parsed)),
+        Err(e) => {
+            error!("Failed to parse Orchard WalletTx: {}", e);
+            std::ptr::null_mut::<WalletTx>()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_tx_serialize(
+    wtx: *const WalletTx,
+    stream: Option<StreamObj>,
+    write_cb: Option<WriteCb>,
+) -> bool {
+    let wtx = unsafe { &*wtx };
+    let writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
+
+    match wtx.write(writer) {
+        Ok(()) => true,
+        Err(e) => {
+            error!("{}", e);
+            false
+        }
     }
 }

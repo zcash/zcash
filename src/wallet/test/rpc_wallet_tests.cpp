@@ -1481,7 +1481,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
     CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
     mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
-    CWalletTx wtx(pwalletMain, mtx);
+    CWalletTx wtx(pwalletMain, mtx, std::nullopt);
     pwalletMain->AddToWallet(wtx, true, NULL);
 
     // Fake-mine the transaction
@@ -2158,7 +2158,7 @@ void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
         CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, 1);
         CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
         mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
-        CWalletTx wtx(pwalletMain, mtx);
+        CWalletTx wtx(pwalletMain, mtx, std::nullopt);
         pwalletMain->AddToWallet(wtx, true, NULL);
         return wtx;
     };

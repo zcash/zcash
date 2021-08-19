@@ -1808,6 +1808,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
         wtx.BindWallet(this);
         wtxOrdered.insert(make_pair(wtx.nOrderPos, &wtx));
         UpdateNullifierNoteMapWithTx(mapWallet[hash]);
+        orchardWallet.AddNotes(wtxIn);
         AddToSpends(hash);
     }
     else
@@ -1995,7 +1996,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0 || orchardWallet.IsMine(tx.GetHash()))
         {
-            CWalletTx wtx(this, tx);
+            CWalletTx wtx(this, tx, orchardWallet.GetTxData(tx.GetHash()));
 
             if (sproutNoteData.size() > 0) {
                 wtx.SetSproutNoteData(sproutNoteData);
@@ -3054,6 +3055,7 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
                 }
             }
         }
+        // MAYBE write the global note commitment tree here?
 
         ShowProgress(_("Rescanning..."), 100); // hide progress dialog in GUI
     }
@@ -5097,6 +5099,8 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
                     walletdb.WriteTx(*copyTo);
                 }
             }
+
+            // MAYBE write the note commitment tree here also?
         }
     }
     walletInstance->SetBroadcastTransactions(GetBoolArg("-walletbroadcast", DEFAULT_WALLETBROADCAST));
@@ -5435,7 +5439,6 @@ void CWallet::GetFilteredNotes(
             orchardNoteMeta.confirmations = wtx->GetDepthInMainChain();
     }
 }
-
 
 //
 // Shielded key and address generalizations

@@ -432,6 +432,8 @@ class CWalletTx : public CMerkleTx
 private:
     const CWallet* pwallet;
 
+    std::optional<OrchardWalletTx> orchardWalletTx;
+    friend class CWallet;
 public:
     /**
      * Key/value map with information about the transaction.
@@ -460,10 +462,6 @@ public:
     mapValue_t mapValue;
     mapSproutNoteData_t mapSproutNoteData;
     mapSaplingNoteData_t mapSaplingNoteData;
-    // ORCHARD note data is not stored with the CMerkleTx directly, but is
-    // accessible via pwallet->orchardWallet. Here we just store the indices
-    // of the actions that belong to this wallet.
-    std::vector<size_t> vOrchardActionIndices;
     std::vector<std::pair<std::string, std::string> > vOrderForm;
     unsigned int fTimeReceivedIsTxTime;
     unsigned int nTimeReceived; //!< time received by this node
@@ -506,7 +504,7 @@ public:
         Init(pwalletIn);
     }
 
-    CWalletTx(const CWallet* pwalletIn, const CTransaction& txIn) : CMerkleTx(txIn)
+    CWalletTx(const CWallet* pwalletIn, const CTransaction& txIn, std::optional<OrchardWalletTx> orchardTxIn) : CMerkleTx(txIn), orchardWalletTx(orchardTxIn)
     {
         Init(pwalletIn);
     }
@@ -577,9 +575,7 @@ public:
         }
 
         if (fOverwintered && nVersion >= ZIP225_TX_VERSION) {
-            // TODO: serialize/deserialize orchard bits using a pointer
-            // to the Orchard wallet & the txid as referents
-
+            READWRITE(orchardWalletTx);
         }
 
         if (ser_action.ForRead())
@@ -632,6 +628,10 @@ public:
     std::optional<std::pair<
         libzcash::SaplingNotePlaintext,
         libzcash::SaplingPaymentAddress>> RecoverSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op, std::set<uint256>& ovks) const;
+
+    const std::optional<OrchardWalletTx>& GetOrchardWalletTx() const {
+        return orchardWalletTx;
+    }
 
     //! filter decides which addresses will count towards the debit
     CAmount GetDebit(const isminefilter& filter) const;
@@ -797,13 +797,18 @@ protected:
                 // are empty. This covers transactions that have no Sprout or Sapling data
                 // (i.e. are purely transparent), as well as shielding and unshielding
                 // transactions in which we only have transparent addresses involved.
-                if (!(wtx.mapSproutNoteData.empty() && wtx.mapSaplingNoteData.empty())) {
+                if (!(wtx.mapSproutNoteData.empty() && wtx.mapSaplingNoteData.empty() && !wtx.orchardWalletTx.has_value())) {
                     if (!walletdb.WriteTx(wtx)) {
                         LogPrintf("SetBestChain(): Failed to write CWalletTx, aborting atomic write\n");
                         walletdb.TxnAbort();
                         return;
                     }
                 }
+            }
+            if (!walletdb.WriteOrchardNoteCommitmentTree(orchardWallet)) {
+                LogPrintf("SetBestChain(): Failed to write the updated Orchard note commitment tree, aborting atomic write\n");
+                walletdb.TxnAbort();
+                return;
             }
             if (!walletdb.WriteWitnessCacheSize(nWitnessCacheSize)) {
                 LogPrintf("SetBestChain(): Failed to write nWitnessCacheSize, aborting atomic write\n");
@@ -1408,6 +1413,9 @@ public:
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true,
                           bool ignoreLocked=true);
+
+    void SetOrchardWalletTx(const OrchardWalletTx& orchardTx);
+    void GetOrchardWalletTx(const uint256& txid);
 
     /* Returns the wallets help message */
     static std::string GetWalletHelpString(bool showDebug);

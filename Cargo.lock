@@ -865,6 +865,7 @@ dependencies = [
  "tracing-core",
  "tracing-subscriber",
  "zcash_address",
+ "zcash_encoding",
  "zcash_history",
  "zcash_note_encryption",
  "zcash_primitives",
