@@ -159,13 +159,8 @@ struct komodo_ccdata
 class komodo_state
 {
 public:
-    uint256 NOTARIZED_HASH; // the latest notarized hash
-    uint256 NOTARIZED_DESTTXID; // the latest notarized dest txid
-    uint256 MoM;
     int32_t SAVEDHEIGHT;
     int32_t CURRENT_HEIGHT;
-    int32_t NOTARIZED_HEIGHT; // the height of the latest notarization
-    int32_t MoMdepth; // the MOM depth of the latest notarization
     uint32_t SAVEDTIMESTAMP;
     uint64_t deposited;
     uint64_t issued;
@@ -175,22 +170,31 @@ public:
     uint64_t shorted;
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
+
 protected:
     notarized_checkpoint_container NPOINTS; // collection of notarizations
+    notarized_checkpoint last;
 
 public:
+    const uint256 &LastNotarizedHash() const { return last.notarized_hash; }
+    void SetLastNotarizedHash(const uint256 &in) { last.notarized_hash = in; }
+    const uint256 &LastNotarizedDestTxId() const { return last.notarized_desttxid; }
+    void SetLastNotarizedDestTxId(const uint256 &in) { last.notarized_desttxid = in; }
+    const uint256 &LastNotarizedMoM() const { return last.MoM; }
+    void SetLastNotarizedMoM(const uint256 &in) { last.MoM = in; }
+    const int32_t &LastNotarizedHeight() const { return last.notarized_height; }
+    void SetLastNotarizedHeight(const int32_t in) { last.notarized_height = in; }
+    const int32_t &LastNotarizedMoMDepth() const { return last.MoMdepth; }
+    void SetLastNotarizedMoMDepth(const int32_t in) { last.MoMdepth =in; }
+
     /*****
      * @brief add a checkpoint to the collection and update member values
      * @param in the new values
      */
     void AddCheckpoint(const notarized_checkpoint &in)
     {
-        NOTARIZED_HEIGHT = in.notarized_height;
-        NOTARIZED_HASH = in.notarized_hash;
-        NOTARIZED_DESTTXID = in.notarized_desttxid;
-        MoM = in.MoM;
-        MoMdepth = in.MoMdepth;
         NPOINTS.push_back(in);
+        last = in;
     }
 
     uint64_t NumCheckpoints() { return NPOINTS.size(); }
@@ -230,20 +234,20 @@ public:
     int32_t NotarizedHeight(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp)
     {
         CBlockIndex *pindex;
-        if ( (pindex= komodo_blockindex(NOTARIZED_HASH)) == 0 || pindex->GetHeight() < 0 )
+        if ( (pindex= komodo_blockindex(last.notarized_hash)) == 0 || pindex->GetHeight() < 0 )
         {
             // found orphaned notarization, adjust the values in the komodo_state object
-            memset(&NOTARIZED_HASH,0,sizeof(NOTARIZED_HASH));
-            memset(&NOTARIZED_DESTTXID,0,sizeof(NOTARIZED_DESTTXID));
-            NOTARIZED_HEIGHT = 0;
+            last.notarized_hash.SetNull();
+            last.notarized_desttxid.SetNull();
+            last.notarized_height = 0;
         }
         else
         {
-            *hashp = NOTARIZED_HASH;
-            *txidp = NOTARIZED_DESTTXID;
+            *hashp = last.notarized_hash;
+            *txidp = last.notarized_desttxid;
             *prevMoMheightp = PrevMoMHeight();
         }
-        return NOTARIZED_HEIGHT;
+        return last.notarized_height;
     }
 
     /****
@@ -252,10 +256,15 @@ public:
      */
     int32_t PrevMoMHeight()
     {
+        static uint256 zero;
+        // shortcut
+        if (last.MoM != zero)
+        {
+            return last.notarized_height;
+        }
         if (NPOINTS.size() > 0)
         {
             auto &idx = NPOINTS.get<0>();
-            static uint256 zero;
             for( auto r_itr = idx.rbegin(); r_itr != idx.rend(); ++r_itr)
             {
                 if (r_itr->MoM != zero)

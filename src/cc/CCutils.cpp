@@ -728,7 +728,7 @@ bool komodo_txnotarizedconfirmed(uint256 txid)
         confirms=1 + pindex->GetHeight() - txheight;
     }
 
-    if ((sp= komodo_stateptr(symbol,dest)) != 0 && (notarized=sp->NOTARIZED_HEIGHT) > 0 && txheight > sp->NOTARIZED_HEIGHT)  notarized=0;            
+    if ((sp= komodo_stateptr(symbol,dest)) != 0 && (notarized=sp->LastNotarizedHeight()) > 0 && txheight > sp->LastNotarizedHeight())  notarized=0;            
 #ifdef TESTMODE           
     notarized=0;
 #endif //TESTMODE

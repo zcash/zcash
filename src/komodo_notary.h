@@ -353,10 +353,10 @@ int32_t komodo_dpowconfs(int32_t txheight,int32_t numconfs)
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
     if ( KOMODO_DPOWCONFS != 0 && txheight > 0 && numconfs > 0 && (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
-        if ( sp->NOTARIZED_HEIGHT > 0 )
+        if ( sp->LastNotarizedHeight() > 0 )
         {
             hadnotarization = 1;
-            if ( txheight < sp->NOTARIZED_HEIGHT )
+            if ( txheight < sp->LastNotarizedHeight() )
                 return(numconfs);
             else return(1);
         }
