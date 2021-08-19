@@ -49,7 +49,10 @@
 #define KOMODO_ASSETCHAIN_MAXLEN 65
 
 #include "bits256.h"
-
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/member.hpp>
 #include <set>
 
 struct komodo_kv { UT_hash_handle hh; bits256 pubkey; uint8_t *key,*value; int32_t height; uint32_t flags; uint16_t keylen,valuesize; };
@@ -82,10 +85,8 @@ struct pax_transaction
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; };
 
-class notarized_checkpoint
+struct notarized_checkpoint
 {
-public:
-    notarized_checkpoint(size_t index = 0) : index(index) {}
     uint256 notarized_hash;
     uint256 notarized_desttxid;
     uint256 MoM;
@@ -97,17 +98,40 @@ public:
     int32_t MoMoMoffset;
     int32_t kmdstarti;
     int32_t kmdendi;
-    size_t index; // the chronological order of insertion
-};
-
-struct notarized_checkpoint_height_compare
-{
-    bool operator()(const notarized_checkpoint& a, const notarized_checkpoint& b)
+    bool operator==(const notarized_checkpoint& in) const
     {
-        return a.nHeight < b.nHeight;
+        if (in.kmdendi == kmdendi
+                && in.kmdstarti == kmdstarti
+                && in.MoM == MoM
+                && in.MoMdepth == MoMdepth
+                && in.MoMoM == MoMoM
+                && in.MoMoMdepth == MoMoMdepth
+                && in.MoMoMoffset == MoMoMoffset
+                && in.nHeight == nHeight
+                && in.notarized_desttxid == notarized_desttxid
+                && in.notarized_hash == notarized_hash
+                && in.notarized_height == notarized_height )
+            return true;
+        return false;
     }
 };
 
+typedef boost::multi_index::multi_index_container<
+        notarized_checkpoint,
+        boost::multi_index::indexed_by<
+                boost::multi_index::sequenced<>, // sorted by insertion order
+                boost::multi_index::ordered_non_unique<
+                        boost::multi_index::member<
+                                notarized_checkpoint, int32_t, &notarized_checkpoint::nHeight
+                        >
+                >, // sorted by nHeight
+                boost::multi_index::ordered_non_unique<
+                        boost::multi_index::member<
+                                notarized_checkpoint, int32_t, &notarized_checkpoint::notarized_height
+                        >
+                > // sorted by notarized_height
+        > > notarized_checkpoint_container;
+                            
 struct komodo_ccdataMoM
 {
     uint256 MoM;
@@ -134,13 +158,6 @@ struct komodo_ccdata
 
 struct komodo_state
 {
-public:
-    bool AddNPoint(notarized_checkpoint in)
-    {
-        in.index = nextNpointIndex++;
-        NPOINTS.insert(in);
-    }
-public:
     uint256 NOTARIZED_HASH; // the latest notarized hash
     uint256 NOTARIZED_DESTTXID; // the latest notarized dest txid
     uint256 MoM;
@@ -155,11 +172,9 @@ public:
     uint64_t approved;
     uint64_t redeemed;
     uint64_t shorted;
-    std::multiset<notarized_checkpoint, notarized_checkpoint_height_compare> NPOINTS; // collection of notarizations
+    notarized_checkpoint_container NPOINTS; // collection of notarizations
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
-private:
-    size_t nextNpointIndex = 0;
 };
 
 #endif /* KOMODO_STRUCTS_H */

@@ -64,6 +64,13 @@ size_t count_npoints(komodo_state *sp)
     return sp->NPOINTS.size();
 }
 
+const notarized_checkpoint *last_checkpoint(komodo_state *sp)
+{
+    auto &idx = sp->NPOINTS.get<0>();
+    const auto &cp = idx.back();
+    return &cp;
+}
+
 TEST(TestParseNotarisation, test_notarized_update)
 {
     // get the komodo_state to play with
@@ -82,7 +89,7 @@ TEST(TestParseNotarisation, test_notarized_update)
     // 1 inserted with height 10
     komodo_notarized_update(sp, 10, 8, uint256(), uint256(), uint256(), 2);
     EXPECT_EQ(1, count_npoints(sp));
-    const notarized_checkpoint *tmp = &(*(--sp->NPOINTS.end()));
+    const notarized_checkpoint *tmp = last_checkpoint(sp);
     EXPECT_EQ(tmp->nHeight, 10);
     EXPECT_EQ(tmp->notarized_height, 8);
     EXPECT_EQ(tmp->MoMdepth, 2);
@@ -107,7 +114,7 @@ TEST(TestParseNotarisation, test_npptr)
     // 1 inserted with height 10
     komodo_notarized_update(sp, 10, 8, uint256(), uint256(), uint256(), 2);
     EXPECT_EQ(1, count_npoints(sp));
-    const notarized_checkpoint *tmp = &(*(--sp->NPOINTS.end()));
+    const notarized_checkpoint *tmp = last_checkpoint(sp);
     EXPECT_EQ(tmp->nHeight, 10);
     EXPECT_EQ(tmp->notarized_height, 8);
     EXPECT_EQ(tmp->MoMdepth, 2);

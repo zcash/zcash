@@ -287,45 +287,6 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
 }
 
 /******
- * @brief Search the notarized checkpoints for a particular notarized_height
- * @note Finding a mach does include other criteria other than height
- *      such that the checkpoint includes the desired hight
- * @param sp the chain's state object
- * @param height the key
- * @returns the checkpoint or sp->NPOINTS.end()
- */
-std::multiset<notarized_checkpoint, notarized_checkpoint_height_compare>::iterator komodo_nearest_checkpoint(komodo_state* sp, int32_t height)
-{
-    if(sp->NPOINTS.size() > 0)
-    {
-        notarized_checkpoint key;
-        key.nHeight = height;
-        auto itr = sp->NPOINTS.upper_bound(key);
-        // move forward until the notarized_height is more than what we're looking for
-        while ( itr != sp->NPOINTS.end() && (*itr).notarized_height <= height)
-            ++itr;
-        // go backwards through the collection, looking for
-        //    non-zero MoMdepth
-        //    notarized_height => desired height
-        //    notarized_height - (lower 16 bits of MoMdepth) < desired height
-        while(true) 
-        {
-            auto &nc = (*itr);
-            if ( nc.MoMdepth != 0 
-                    && height > nc.notarized_height-(nc.MoMdepth&0xffff) 
-                    && height <= nc.notarized_height )
-            {
-                return itr;
-            }
-            if (itr == sp->NPOINTS.begin())
-                break;
-            --itr;
-        }
-    } // we have some elements in the collection
-    return sp->NPOINTS.end();
-}
-
-/******
  * @brief Search the notarized checkpoints for a particular height
  * @note Finding a mach does include other criteria other than height
  *      such that the checkpoint includes the desired hight
@@ -340,9 +301,25 @@ const notarized_checkpoint *komodo_npptr(int32_t height)
 
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
-        auto itr = komodo_nearest_checkpoint(sp, height);
-        if (itr != sp->NPOINTS.end())
-            return &(*itr);
+        // find the nearest notarization_height
+        if(sp->NPOINTS.size() > 0)
+        {
+            auto &idx = sp->NPOINTS.get<2>();
+            auto itr = idx.upper_bound(height);
+            // work backwards, get the first one that meets our criteria
+            while (true)
+            {
+                if ( itr->MoMdepth != 0 
+                        && height > itr->notarized_height-(itr->MoMdepth&0xffff) 
+                        && height <= itr->notarized_height )
+                {
+                    return &(*itr);
+                }
+                if (itr == idx.begin())
+                    break;
+                --itr;
+            }
+        } // we have some elements in the collection
     }
     return nullptr;
 }
@@ -359,15 +336,29 @@ bool komodo_replace_checkpoint(const notarized_checkpoint* old_cp, const notariz
     char dest[KOMODO_ASSETCHAIN_MAXLEN]; 
     komodo_state *sp;
 
-    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
+    if ( (sp= komodo_stateptr(symbol,dest)) != nullptr )
     {
-        auto itr = komodo_nearest_checkpoint(sp, old_cp->nHeight);
-        // verify we're replacing the correct one
-        if( itr != sp->NPOINTS.end() &&  &(*itr) == old_cp)
+        // find the old via nHeight
+        auto &idx = sp->NPOINTS.get<1>();
+        for( auto itr = idx.lower_bound(old_cp->nHeight); itr != idx.upper_bound(old_cp->nHeight); ++itr)
         {
-            sp->NPOINTS.erase(itr);
-            sp->NPOINTS.insert(new_cp);
-            return true;
+            if ( *old_cp == *itr )
+            {
+                idx.modify(itr, [&new_cp](notarized_checkpoint &in) {
+                    in.kmdendi = new_cp.kmdendi;
+                    in.kmdstarti = new_cp.kmdstarti;
+                    in.MoM = new_cp.MoM;
+                    in.MoMdepth = new_cp.MoMdepth;
+                    in.MoMoM = new_cp.MoMoM;
+                    in.MoMoMdepth = new_cp.MoMoMdepth;
+                    in.MoMoMoffset = new_cp.MoMoMoffset;
+                    in.nHeight = new_cp.nHeight;
+                    in.notarized_desttxid = new_cp.notarized_desttxid;
+                    in.notarized_hash = new_cp.notarized_hash;
+                    in.notarized_height = new_cp.notarized_height;
+                });
+                return true;
+            }
         }
     }
     return false;
@@ -492,17 +483,15 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
         // get the nearest height without going over
-        notarized_checkpoint key;
-        key.nHeight = nHeight;
-        auto itr = sp->NPOINTS.upper_bound(key);
-        if (itr != sp->NPOINTS.begin())
+        auto &idx = sp->NPOINTS.get<1>();
+        auto itr = idx.upper_bound(nHeight);
+        if (itr != idx.begin())
             --itr;
-        if ( itr != sp->NPOINTS.end() && (*itr).nHeight < nHeight )
+        if ( itr != idx.end() && (*itr).nHeight < nHeight )
         {
-            auto &np = *itr;
-            *notarized_hashp = np.notarized_hash;
-            *notarized_desttxidp = np.notarized_desttxid;
-            return np.notarized_height;
+            *notarized_hashp = itr->notarized_hash;
+            *notarized_desttxidp = itr->notarized_desttxid;
+            return itr->notarized_height;
         }
     }
     memset(notarized_hashp,0,sizeof(*notarized_hashp));
@@ -537,7 +526,7 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
     sp->NOTARIZED_DESTTXID = new_cp.notarized_desttxid = notarized_desttxid;
     sp->MoM = new_cp.MoM = MoM;
     sp->MoMdepth = new_cp.MoMdepth = MoMdepth;
-    sp->NPOINTS.insert(new_cp);
+    sp->NPOINTS.push_back(new_cp);
     portable_mutex_unlock(&komodo_mutex);
 }
 
