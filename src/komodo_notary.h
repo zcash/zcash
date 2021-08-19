@@ -324,45 +324,6 @@ const notarized_checkpoint *komodo_npptr(int32_t height)
     return nullptr;
 }
 
-/******
- * @brief replace a checkpoint with a new one
- * @param old_cp the old checkpoint
- * @param new_cp the new one
- * @returns true on success
- */
-bool komodo_replace_checkpoint(const notarized_checkpoint* old_cp, const notarized_checkpoint& new_cp)
-{
-    char symbol[KOMODO_ASSETCHAIN_MAXLEN];
-    char dest[KOMODO_ASSETCHAIN_MAXLEN]; 
-    komodo_state *sp;
-
-    if ( (sp= komodo_stateptr(symbol,dest)) != nullptr )
-    {
-        // find the old via nHeight
-        auto &idx = sp->NPOINTS.get<1>();
-        for( auto itr = idx.lower_bound(old_cp->nHeight); itr != idx.upper_bound(old_cp->nHeight); ++itr)
-        {
-            if ( *old_cp == *itr )
-            {
-                idx.modify(itr, [&new_cp](notarized_checkpoint &in) {
-                    in.kmdendi = new_cp.kmdendi;
-                    in.kmdstarti = new_cp.kmdstarti;
-                    in.MoM = new_cp.MoM;
-                    in.MoMdepth = new_cp.MoMdepth;
-                    in.MoMoM = new_cp.MoMoM;
-                    in.MoMoMdepth = new_cp.MoMoMdepth;
-                    in.MoMoMoffset = new_cp.MoMoMoffset;
-                    in.nHeight = new_cp.nHeight;
-                    in.notarized_desttxid = new_cp.notarized_desttxid;
-                    in.notarized_hash = new_cp.notarized_hash;
-                    in.notarized_height = new_cp.notarized_height;
-                });
-                return true;
-            }
-        }
-    }
-    return false;
-}
 /****
  * Search for the last (chronological) MoM notarized height
  * @returns the last notarized height that has a MoM

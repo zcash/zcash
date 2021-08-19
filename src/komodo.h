@@ -695,7 +695,6 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                     }
                     else
                     {
-                        komodo_rwccdata(ASSETCHAINS_SYMBOL,1,&ccdata,&MoMoMdata);
                         if ( matched != 0 )
                             printf("[%s] matched.%d VALID (%s) MoM.%s [%d] CCid.%u\n",ASSETCHAINS_SYMBOL,matched,ccdata.symbol,MoM.ToString().c_str(),MoMdepth&0xffff,(MoMdepth>>16)&0xffff);
                     }
@@ -704,8 +703,6 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                     memset(&ccdata,0,sizeof(ccdata));
                     memset(&MoMoMdata,0,sizeof(MoMoMdata));
                 }
-                else if ( ASSETCHAINS_SYMBOL[0] == 0 && matched != 0 && notarized != 0 && validated != 0 )
-                    komodo_rwccdata((char *)"KMD",1,&ccdata,0);
                 
                 if ( matched != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
                 {
