@@ -8,7 +8,7 @@ extern "C" {
 #include <string.h>
 #include <stdio.h>
 
-int32_t safecopy(char *dest,char *src,long len);
+int32_t safecopy(char *dest,const char *src,long len);
 
 long _stripwhite(char *buf,int accept);
 

@@ -5,7 +5,7 @@
 #include <boost/filesystem.hpp>
 #include <komodo_structs.h>
 
-int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,char *dest);
+int32_t komodo_faststateinit(struct komodo_state *sp,const char *fname,char *symbol,char *dest);
 struct komodo_state *komodo_stateptrget(char *base);
 extern int32_t KOMODO_EXTERNAL_NOTARIES;
 
@@ -169,10 +169,8 @@ TEST(TestEvents, komodo_faststateinit_test)
         // pubkey record
         {
             // create a binary file that should be readable by komodo
-            const std::string temp_filename = temp.native() + "/kstate.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "kstate.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_p_record(fp);
             std::fclose(fp);
@@ -183,7 +181,7 @@ TEST(TestEvents, komodo_faststateinit_test)
             EXPECT_NE(state, nullptr);
             char* dest = nullptr;
             // attempt to read the file
-            int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit( state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             /* old way
@@ -203,10 +201,8 @@ TEST(TestEvents, komodo_faststateinit_test)
         }
         // notarized record
         {
-            const std::string temp_filename = temp.native() + "/notarized.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "notarized.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_n_record(fp);
             std::fclose(fp);
@@ -217,7 +213,7 @@ TEST(TestEvents, komodo_faststateinit_test)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit( state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             /* old way
@@ -236,10 +232,8 @@ TEST(TestEvents, komodo_faststateinit_test)
         }
         // notarized M record
         {
-            const std::string temp_filename = temp.native() + "/notarized.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "notarized.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_m_record(fp);
             std::fclose(fp);
@@ -250,7 +244,7 @@ TEST(TestEvents, komodo_faststateinit_test)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             /* old way
@@ -271,10 +265,8 @@ TEST(TestEvents, komodo_faststateinit_test)
         }
         // record type "U" (deprecated)
         {
-            const std::string temp_filename = temp.native() + "/type_u.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "type_u.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_u_record(fp);
             std::fclose(fp);
@@ -285,7 +277,7 @@ TEST(TestEvents, komodo_faststateinit_test)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             /* old way
@@ -306,10 +298,8 @@ TEST(TestEvents, komodo_faststateinit_test)
         }
         // record type K (KMD height)
         {
-            const std::string temp_filename = temp.native() + "/kmdtype.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "kmdtype.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_k_record(fp);
             std::fclose(fp);
@@ -320,7 +310,7 @@ TEST(TestEvents, komodo_faststateinit_test)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             /* old way
@@ -341,10 +331,8 @@ TEST(TestEvents, komodo_faststateinit_test)
         }
         // record type T (KMD height with timestamp)
         {
-            const std::string temp_filename = temp.native() + "/kmdtypet.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "kmdtypet.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_t_record(fp);
             std::fclose(fp);
@@ -355,7 +343,7 @@ TEST(TestEvents, komodo_faststateinit_test)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             /* old way
@@ -376,10 +364,8 @@ TEST(TestEvents, komodo_faststateinit_test)
         }
         // record type R (opreturn)
         {
-            const std::string temp_filename = temp.native() + "/kmdtypet.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "kmdtypet.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_r_record(fp);
             std::fclose(fp);
@@ -390,7 +376,7 @@ TEST(TestEvents, komodo_faststateinit_test)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             /* old way
@@ -411,10 +397,8 @@ TEST(TestEvents, komodo_faststateinit_test)
         }
         // record type V
         {
-            const std::string temp_filename = temp.native() + "/kmdtypet.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "kmdtypet.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_v_record(fp);
             std::fclose(fp);
@@ -425,7 +409,7 @@ TEST(TestEvents, komodo_faststateinit_test)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             /* old way
@@ -446,10 +430,8 @@ TEST(TestEvents, komodo_faststateinit_test)
         }
         // record type B (rewind)
         {
-            const std::string temp_filename = temp.native() + "/kmdtypeb.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "kmdtypeb.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_b_record(fp);
             std::fclose(fp);
@@ -461,7 +443,7 @@ TEST(TestEvents, komodo_faststateinit_test)
             char* dest = (char*)"123456789012345";
             // attempt to read the file
             // NOTE: B records are not read in. Unsure if this is on purpose or an oversight
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             /* old way
@@ -485,10 +467,8 @@ TEST(TestEvents, komodo_faststateinit_test)
         }        
         // all together in 1 file
         {
-            const std::string temp_filename = temp.native() + "/combined_state.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "combined_state.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_p_record(fp);
             write_n_record(fp);
@@ -504,10 +484,10 @@ TEST(TestEvents, komodo_faststateinit_test)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit( state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
-            /* ol d way
+            /* old way
             EXPECT_EQ(state->Komodo_numevents, 14);
             komodo_event* ev1 = state->Komodo_events[7];
             EXPECT_EQ(ev1->height, 1);
@@ -579,10 +559,8 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
         // pubkey record
         {
             // create a binary file that should be readable by komodo
-            const std::string temp_filename = temp.native() + "/kstate.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "kstate.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_p_record(fp);
             std::fclose(fp);
@@ -593,17 +571,15 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             EXPECT_NE(state, nullptr);
             char* dest = nullptr;
             // attempt to read the file
-            int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit( state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             EXPECT_EQ(state->events.size(), 0);
         }
         // notarized record
         {
-            const std::string temp_filename = temp.native() + "/notarized.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "notarized.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_n_record(fp);
             std::fclose(fp);
@@ -614,17 +590,15 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit( state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             EXPECT_EQ(state->events.size(), 0);
         }
         // notarized M record
         {
-            const std::string temp_filename = temp.native() + "/notarized.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "notarized.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_m_record(fp);
             std::fclose(fp);
@@ -635,17 +609,15 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             EXPECT_EQ(state->events.size(), 0);
         }
         // record type "U" (deprecated)
         {
-            const std::string temp_filename = temp.native() + "/type_u.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "type_u.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_u_record(fp);
             std::fclose(fp);
@@ -656,17 +628,15 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             EXPECT_EQ(state->events.size(), 0);
         }
         // record type K (KMD height)
         {
-            const std::string temp_filename = temp.native() + "/kmdtype.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "kmdtype.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_k_record(fp);
             std::fclose(fp);
@@ -677,17 +647,15 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             EXPECT_EQ(state->events.size(), 0);
         }
         // record type T (KMD height with timestamp)
         {
-            const std::string temp_filename = temp.native() + "/kmdtypet.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "kmdtypet.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_t_record(fp);
             std::fclose(fp);
@@ -698,17 +666,15 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             EXPECT_EQ(state->events.size(), 0);
         }
         // record type R (opreturn)
         {
-            const std::string temp_filename = temp.native() + "/kmdtypet.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "kmdtypet.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_r_record(fp);
             std::fclose(fp);
@@ -719,17 +685,15 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             EXPECT_EQ(state->events.size(), 0);
         }
         // record type V
         {
-            const std::string temp_filename = temp.native() + "/kmdtypet.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "kmdtypet.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_v_record(fp);
             std::fclose(fp);
@@ -740,17 +704,15 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             EXPECT_EQ(state->events.size(), 0);
         }
         // record type B (rewind)
         {
-            const std::string temp_filename = temp.native() + "/kmdtypeb.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "kmdtypeb.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_b_record(fp);
             std::fclose(fp);
@@ -762,17 +724,15 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             char* dest = (char*)"123456789012345";
             // attempt to read the file
             // NOTE: B records are not read in. Unsure if this is on purpose or an oversight
-            int32_t result = komodo_faststateinit(state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit(state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             EXPECT_EQ(state->events.size(), 0);
         }        
         // all together in 1 file
         {
-            const std::string temp_filename = temp.native() + "/combined_state.tmp";
-            char full_filename[temp_filename.size()+1];
-            strcpy(full_filename, temp_filename.c_str());
-            std::FILE* fp = std::fopen(full_filename, "wb+");
+            const std::string full_filename = (temp / "combined_state.tmp").string();
+            std::FILE* fp = std::fopen(full_filename.c_str(), "wb+");
             EXPECT_NE(fp, nullptr);
             write_p_record(fp);
             write_n_record(fp);
@@ -788,7 +748,7 @@ TEST(TestEvents, komodo_faststateinit_test_kmd)
             EXPECT_NE(state, nullptr);
             char* dest = (char*)"123456789012345";
             // attempt to read the file
-            int32_t result = komodo_faststateinit( state, full_filename, symbol, dest);
+            int32_t result = komodo_faststateinit( state, full_filename.c_str(), symbol, dest);
             // compare results
             EXPECT_EQ(result, 1);
             EXPECT_EQ(state->events.size(), 0);

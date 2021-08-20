@@ -75,13 +75,13 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
 
 void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep);
 
-uint8_t *OS_fileptr(long *allocsizep,char *fname);
+uint8_t *OS_fileptr(long *allocsizep,const char *fname);
 
 long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *filedata,long datalen,uint32_t *prevpos100p,uint32_t *indcounterp,char *symbol,char *dest);
 
 long komodo_indfile_update(FILE *indfp,uint32_t *prevpos100p,long lastfpos,long newfpos,uint8_t func,uint32_t *indcounterp);
 
-int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,char *dest);
+int32_t komodo_faststateinit(struct komodo_state *sp,const char *fname,char *symbol,char *dest);
 
 uint64_t komodo_interestsum();
 

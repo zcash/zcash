@@ -6,7 +6,7 @@
 #include <unistd.h> // sleep
 #endif
 
-int32_t safecopy(char *dest,char *src,long len)
+int32_t safecopy(char *dest,const char *src,long len)
 {
     int32_t i = -1;
     if ( src != 0 && dest != 0 && src != dest )

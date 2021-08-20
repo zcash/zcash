@@ -370,7 +370,7 @@ void calc_base64_encodestr(char *hexstr,uint8_t *buf,uint8_t *msg,int32_t len);
 void calc_base64_decodestr(char *hexstr,uint8_t *buf,uint8_t *msg,int32_t len);
 void calc_hexstr(char *hexstr,uint8_t *buf,uint8_t *msg,int32_t len);
 void calc_unhexstr(char *hexstr,uint8_t *buf,uint8_t *msg,int32_t len);
-int32_t safecopy(char *dest,char *src,long len);
+int32_t safecopy(char *dest,const char *src,long len);
 double dxblend(double *destp,double val,double decay);
 
 uint64_t calc_ipbits(char *ip_port);

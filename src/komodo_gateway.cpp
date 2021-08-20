@@ -1244,7 +1244,7 @@ void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_
     else if ( func == 'R' ) // opreturn:*/
 }
 
-void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
+void *OS_loadfile(const char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
 {
     FILE *fp;
     long  filesize,buflen = *allocsizep;
@@ -1282,7 +1282,7 @@ void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
     return(buf);
 }
 
-uint8_t *OS_fileptr(long *allocsizep,char *fname)
+uint8_t *OS_fileptr(long *allocsizep,const char *fname)
 {
     long filesize = 0; uint8_t *buf = 0; void *retptr;
     *allocsizep = 0;
@@ -1354,7 +1354,7 @@ long komodo_indfile_update(FILE *indfp,uint32_t *prevpos100p,long lastfpos,long 
     return(newfpos);
 }
 
-int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,char *dest)
+int32_t komodo_faststateinit(struct komodo_state *sp,const char *fname,char *symbol,char *dest)
 {
     FILE *indfp; char indfname[1024]; uint8_t *filedata; long validated=-1,datalen,fpos,lastfpos; uint32_t tmp,prevpos100,indcounter,starttime; int32_t func,finished = 0;
     starttime = (uint32_t)time(NULL);
