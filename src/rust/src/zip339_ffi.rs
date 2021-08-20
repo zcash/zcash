@@ -50,7 +50,7 @@ pub extern "C" fn zip339_entropy_to_phrase(
         let entropy = unsafe { slice::from_raw_parts(entropy, entropy_len) }.to_vec();
         if let Ok(mnemonic) = zip339::Mnemonic::from_entropy_in(language, entropy) {
             if let Ok(phrase) = CString::new(mnemonic.phrase()) {
-                return phrase.into_raw();
+                return phrase.into_raw() as *const c_char;
             }
         }
     }
@@ -59,10 +59,11 @@ pub extern "C" fn zip339_entropy_to_phrase(
 
 /// Frees a phrase returned by `zip339_entropy_to_phrase`.
 #[no_mangle]
-pub extern "C" fn zip339_free_phrase(phrase: *mut c_char) {
+pub extern "C" fn zip339_free_phrase(phrase: *const c_char) {
     if !phrase.is_null() {
         unsafe {
-            CString::from_raw(phrase);
+            // It is correct to cast away const here; the memory is not actually immutable.
+            CString::from_raw(phrase as *mut c_char);
         }
     }
 }

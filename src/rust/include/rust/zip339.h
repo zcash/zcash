@@ -43,7 +43,7 @@ extern "C" {
     const char * zip339_entropy_to_phrase(Language language, const uint8_t *entropy, size_t entropy_len);
 
     /// Frees a phrase returned by `zip339_entropy_to_phrase`.
-    void zip339_free_phrase(char *phrase);
+    void zip339_free_phrase(const char *phrase);
 
     /// Returns `true` if the given string is a valid mnemonic phrase in the given `Language`.
     bool zip339_validate_phrase(Language language, const char *phrase);
