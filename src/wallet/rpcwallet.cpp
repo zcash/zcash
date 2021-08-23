@@ -3673,7 +3673,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     // Contextual transaction we will build on
     // (used if no Sapling addresses are involved)
-    CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextBlockHeight);
+    CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
+        Params().GetConsensus(), nextBlockHeight, !noSproutAddrs);
     bool isShielded = !fromTaddr || zaddrRecipients.size() > 0;
     if (contextualTx.nVersion == 1 && isShielded) {
         contextualTx.nVersion = 2; // Tx format should support vJoinSplits
@@ -4442,11 +4443,12 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         }
     }
 
+    bool isSproutShielded = sproutNoteInputs.size() > 0 || isToSproutZaddr;
     // Contextual transaction we will build on
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(),
-        nextBlockHeight);
-    bool isSproutShielded = sproutNoteInputs.size() > 0 || isToSproutZaddr;
+        nextBlockHeight,
+        isSproutShielded);
     if (contextualTx.nVersion == 1 && isSproutShielded) {
         contextualTx.nVersion = 2; // Tx format should support vJoinSplit
     }

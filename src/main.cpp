@@ -7631,16 +7631,23 @@ public:
 
 
 // Set default values of new CMutableTransaction based on consensus rules at given height.
-CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight)
+CMutableTransaction CreateNewContextualCMutableTransaction(
+    const Consensus::Params& consensusParams,
+    int nHeight,
+    bool requireSprout)
 {
     CMutableTransaction mtx;
 
-    auto txVersionInfo = CurrentTxVersionInfo(consensusParams, nHeight);
+    auto txVersionInfo = CurrentTxVersionInfo(consensusParams, nHeight, requireSprout);
     mtx.fOverwintered   = txVersionInfo.fOverwintered;
     mtx.nVersionGroupId = txVersionInfo.nVersionGroupId;
     mtx.nVersion        = txVersionInfo.nVersion;
 
     if (mtx.fOverwintered) {
+        if (mtx.nVersion >= ZIP225_TX_VERSION) {
+            mtx.nConsensusBranchId = CurrentEpochBranchId(nHeight, consensusParams);
+        }
+
         bool blossomActive = consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM);
         unsigned int defaultExpiryDelta = blossomActive ? DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA : DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA;
         mtx.nExpiryHeight = nHeight + (expiryDeltaArg ? expiryDeltaArg.value() : defaultExpiryDelta);

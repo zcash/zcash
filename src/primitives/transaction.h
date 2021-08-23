@@ -77,7 +77,8 @@ struct TxVersionInfo {
  * Returns the current transaction version and version group id,
  * based upon the specified activation height and active features.
  */
-TxVersionInfo CurrentTxVersionInfo(const Consensus::Params& consensus, int nHeight);
+TxVersionInfo CurrentTxVersionInfo(
+    const Consensus::Params& consensus, int nHeight, bool requireSprout);
 
 struct TxParams {
     unsigned int expiryDelta;

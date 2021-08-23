@@ -429,12 +429,22 @@ std::string CTransaction::ToString() const
  * Returns the most recent supported transaction version and version group id,
  * as of the specified activation height and active features.
  */
-TxVersionInfo CurrentTxVersionInfo(const Consensus::Params& consensus, int nHeight) {
+TxVersionInfo CurrentTxVersionInfo(
+    const Consensus::Params& consensus,
+    int nHeight,
+    bool requireSprout)
+{
     if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_ZFUTURE)) {
         return {
             .fOverwintered =   true,
             .nVersionGroupId = ZFUTURE_VERSION_GROUP_ID,
             .nVersion =        ZFUTURE_TX_VERSION
+        };
+    } else if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5) && !requireSprout) {
+        return {
+            .fOverwintered =   true,
+            .nVersionGroupId = ZIP225_VERSION_GROUP_ID,
+            .nVersion =        ZIP225_TX_VERSION
         };
     } else if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING)) {
         return {
