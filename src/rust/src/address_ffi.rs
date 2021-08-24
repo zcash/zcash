@@ -50,7 +50,7 @@ impl FromAddress for UnifiedAddressHelper {
 }
 
 impl UnifiedAddressHelper {
-    fn to_cpp(
+    fn into_cpp(
         self,
         network: Network,
         ua_obj: Option<UnifiedAddressObj>,
@@ -145,7 +145,7 @@ pub extern "C" fn zcash_address_parse_unified(
         }
     };
 
-    ua.to_cpp(network, ua_obj, sapling_cb, p2sh_cb, p2pkh_cb, unknown_cb)
+    ua.into_cpp(network, ua_obj, sapling_cb, p2sh_cb, p2pkh_cb, unknown_cb)
 }
 
 #[no_mangle]

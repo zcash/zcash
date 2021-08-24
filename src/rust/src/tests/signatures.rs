@@ -491,7 +491,7 @@ fn redjubjub_signatures() {
 
         {
             let mut vec = Vec::new();
-            sk.randomize(alpha.clone()).write(&mut vec).unwrap();
+            sk.randomize(alpha).write(&mut vec).unwrap();
             assert_eq!(&vec, &tv.rsk);
         }
         {
