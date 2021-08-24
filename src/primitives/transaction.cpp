@@ -402,7 +402,8 @@ std::string CTransaction::ToString() const
             vShieldedSpend.size(),
             vShieldedOutput.size());
         if (nVersion >= ZIP225_MIN_TX_VERSION) {
-            str += strprintf(", valueBalanceOrchard=%u, vOrchardAction.size=%u",
+            str += strprintf(", nConsensusBranchId=%08x, valueBalanceOrchard=%u, vOrchardAction.size=%u",
+                nConsensusBranchId.value_or(0),
                 orchardBundle.GetValueBalance(),
                 orchardBundle.GetNumActions());
         }
