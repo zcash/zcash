@@ -21,9 +21,8 @@ fn test_key_agreement() {
     let addr = loop {
         let mut d = [0; 11];
         rng.fill_bytes(&mut d);
-        match vk.to_payment_address(Diversifier(d)) {
-            Some(a) => break a,
-            None => {}
+        if let Some(a) = vk.to_payment_address(Diversifier(d)) {
+            break a;
         }
     };
 

@@ -2,8 +2,6 @@ use incrementalmerkletree::{
     bridgetree::{self, BridgeTree},
     Altitude, Frontier, Hashable, Tree,
 };
-use std::convert::TryFrom;
-use std::io;
 use std::mem::size_of_val;
 use std::ptr;
 
@@ -55,14 +53,7 @@ pub extern "C" fn orchard_merkle_frontier_parse(
 ) -> *mut bridgetree::Frontier<MerkleCrhOrchardOutput, MERKLE_DEPTH> {
     let reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
 
-    match read_frontier_v1(reader).and_then(|nf| {
-        bridgetree::Frontier::try_from(nf).map_err(|e| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("Parsing resulted in an invalid Merkle frontier: {:?}", e),
-            )
-        })
-    }) {
+    match read_frontier_v1(reader) {
         Ok(parsed) => Box::into_raw(Box::new(parsed)),
         Err(e) => {
             error!("Failed to parse Orchard bundle: {}", e);
