@@ -782,7 +782,14 @@ public:
 
         if (isZip225V5) {
             // Common Transaction Fields (plus version bytes above)
-            READWRITE(*nConsensusBranchId);
+            if (ser_action.ForRead()) {
+                uint32_t consensusBranchId;
+                READWRITE(consensusBranchId);
+                *const_cast<std::optional<uint32_t>*>(&nConsensusBranchId) = consensusBranchId;
+            } else {
+                uint32_t consensusBranchId = nConsensusBranchId.value();
+                READWRITE(consensusBranchId);
+            }
             READWRITE(*const_cast<uint32_t*>(&nLockTime));
             READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
 
@@ -1002,7 +1009,14 @@ struct CMutableTransaction
 
         if (isZip225V5) {
             // Common Transaction Fields (plus version bytes above)
-            READWRITE(*nConsensusBranchId);
+            if (ser_action.ForRead()) {
+                uint32_t consensusBranchId;
+                READWRITE(consensusBranchId);
+                nConsensusBranchId = consensusBranchId;
+            } else {
+                uint32_t consensusBranchId = nConsensusBranchId.value();
+                READWRITE(consensusBranchId);
+            }
             READWRITE(nLockTime);
             READWRITE(nExpiryHeight);
 
