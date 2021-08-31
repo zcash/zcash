@@ -27,6 +27,9 @@ OrchardBundlePtr* orchard_bundle_clone(const OrchardBundlePtr* bundle);
 /// Frees an Orchard bundle returned from `orchard_parse_bundle`.
 void orchard_bundle_free(OrchardBundlePtr* bundle);
 
+/// Returns the amount of dynamically-allocated memory used by this bundle.
+size_t orchard_bundle_recursive_dynamic_usage(const OrchardBundlePtr* bundle);
+
 /// Parses an authorized Orchard bundle from the given stream.
 ///
 /// - If no error occurs, `bundle_ret` will point to a Rust-allocated Orchard bundle.
@@ -64,6 +67,29 @@ int64_t orchard_bundle_value_balance(const OrchardBundlePtr* bundle);
 /// - `bindingSigOrchard` validity is enforced by `orchard_batch_validate`.
 bool orchard_bundle_validate(const OrchardBundlePtr* bundle);
 
+/// Returns the number of actions associated with the bundle.
+size_t orchard_bundle_actions_len(const OrchardBundlePtr* bundle);
+
+/// Returns the nullifiers for the bundle by copying them into the provided
+/// vector of 32-byte arrays `nullifiers_ret`, which should be sized to the
+/// number of anchors.
+///
+/// Returns `false` if the number of nullifiers specified varies from the
+/// number of the actions in the bundle, `true` otherwise.
+bool orchard_bundle_nullifiers(
+    const OrchardBundlePtr* bundle,
+    void* nullifiers_ret,
+    size_t nullifiers_len
+    );
+
+/// Returns the anchor for the bundle by copying them into
+/// the provided value.
+///
+/// Returns `false` if the bundle was absent, `true` otherwise.
+bool orchard_bundle_anchor(
+    const OrchardBundlePtr* bundle,
+    unsigned char* anchor_ret);
+
 /// Initializes a new Orchard batch validator.
 ///
 /// Please free this with `orchard_batch_validation_free` when you are done with
@@ -85,6 +111,19 @@ void orchard_batch_add_bundle(
 ///
 /// Returns false if any item in the batch is invalid.
 bool orchard_batch_validate(const OrchardBatchValidatorPtr* batch);
+
+/// Returns whether the Orchard bundle is present and outputs
+/// are enabled.
+bool orchard_bundle_outputs_enabled(const OrchardBundlePtr* bundle);
+
+/// Returns whether the Orchard bundle is present and spends
+/// are enabled.
+bool orchard_bundle_spends_enabled(const OrchardBundlePtr* bundle);
+
+/// Returns whether all actions contained in the Orchard bundle
+/// can be decrypted with the all-zeros OVK. Returns `true`
+/// if no Orchard actions are present.
+bool orchard_bundle_coinbase_outputs_are_valid(const OrchardBundlePtr* bundle);
 
 #ifdef __cplusplus
 }

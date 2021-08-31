@@ -25,12 +25,12 @@ use bls12_381::Bls12;
 use group::{cofactor::CofactorGroup, GroupEncoding};
 use libc::{c_uchar, size_t};
 use rand_core::{OsRng, RngCore};
-use tracing::info;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::slice;
 use subtle::CtOption;
+use tracing::info;
 
 #[cfg(not(target_os = "windows"))]
 use std::ffi::OsStr;
@@ -68,9 +68,11 @@ mod metrics_ffi;
 mod streams_ffi;
 mod tracing_ffi;
 
+mod address_ffi;
 mod history_ffi;
 mod orchard_ffi;
 mod transaction_ffi;
+mod zip339_ffi;
 
 mod test_harness_ffi;
 
@@ -944,10 +946,7 @@ pub extern "C" fn librustzcash_sapling_spend_proof(
     };
 
     // Construct the proof generation key
-    let proof_generation_key = ProofGenerationKey {
-        ak: ak.clone(),
-        nsk,
-    };
+    let proof_generation_key = ProofGenerationKey { ak, nsk };
 
     // Grab the diversifier from the caller
     let diversifier = Diversifier(unsafe { *diversifier });

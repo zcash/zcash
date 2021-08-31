@@ -94,7 +94,7 @@ bool static IsCompressedOrUncompressedPubKey(const valtype &vchPubKey) {
  * Where R and S are not negative (their first byte has its highest bit not set), and not
  * excessively padded (do not start with a 0 byte, unless an otherwise negative number follows,
  * in which case a single 0 byte is necessary and even required).
- * 
+ *
  * See https://bitcointalk.org/index.php?topic=8392.msg127623#msg127623
  *
  * This function is consensus-critical since BIP66.
@@ -134,7 +134,7 @@ bool static IsValidSignatureEncoding(const std::vector<unsigned char> &sig) {
     // Verify that the length of the signature matches the sum of the length
     // of the elements.
     if ((size_t)(lenR + lenS + 7) != sig.size()) return false;
- 
+
     // Check whether the R element is an integer.
     if (sig[2] != 0x02) return false;
 
@@ -1288,7 +1288,7 @@ uint256 SignatureHash(
         ss << txTo.nExpiryHeight;
         if (sigversion == SIGVERSION_SAPLING) {
             // Sapling value balance
-            ss << txTo.valueBalance;
+            ss << txTo.GetValueBalanceSapling();
         }
         // Sighash type
         ss << nHashType;

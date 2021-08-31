@@ -111,8 +111,7 @@ class WalletTest (BitcoinTestFramework):
             self.nodes[2].sendrawtransaction(signed_tx["hex"])
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert("absurdly high fees" in errorString)
-        assert("900000000 > 10000000" in errorString)
+        assert_equal(errorString, "256: absurdly-high-fee")
 
         # create both transactions
         txns_to_send = []

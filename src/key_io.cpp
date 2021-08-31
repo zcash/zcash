@@ -10,6 +10,7 @@
 #include <script/script.h>
 #include <utilstrencodings.h>
 
+#include <rust/address.h>
 
 #include <assert.h>
 #include <string.h>
@@ -43,6 +44,67 @@ public:
     std::string operator()(const CNoDestination& no) const { return {}; }
 };
 
+static uint8_t GetTypecode(const void* ua, size_t index)
+{
+    return std::visit(
+        TypecodeForReceiver(),
+        reinterpret_cast<const libzcash::UnifiedAddress*>(ua)->GetReceiversAsParsed()[index]);
+}
+
+class DataLenForReceiver {
+public:
+    DataLenForReceiver() {}
+
+    size_t operator()(const libzcash::SaplingPaymentAddress &zaddr) const { return 43; }
+    size_t operator()(const libzcash::P2SHAddress &p2sh) const { return 20; }
+    size_t operator()(const libzcash::P2PKHAddress &p2pkh) const { return 20; }
+    size_t operator()(const libzcash::UnknownReceiver &unknown) const { return unknown.data.size(); }
+};
+
+static size_t GetReceiverLen(const void* ua, size_t index)
+{
+    return std::visit(
+        DataLenForReceiver(),
+        reinterpret_cast<const libzcash::UnifiedAddress*>(ua)->GetReceiversAsParsed()[index]);
+}
+
+class CopyDataForReceiver {
+    unsigned char* data;
+    size_t length;
+
+public:
+    CopyDataForReceiver(unsigned char* data, size_t length) : data(data), length(length) {}
+
+    void operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << zaddr;
+        assert(length == ss.size());
+        memcpy(data, ss.data(), ss.size());
+    }
+
+    void operator()(const libzcash::P2SHAddress &p2sh) const {
+        memcpy(data, p2sh.begin(), p2sh.size());
+    }
+
+    void operator()(const libzcash::P2PKHAddress &p2pkh) const {
+        memcpy(data, p2pkh.begin(), p2pkh.size());
+    }
+
+    void operator()(const libzcash::UnknownReceiver &unknown) const {
+        memcpy(data, unknown.data.data(), unknown.data.size());
+    }
+};
+
+/**
+ * `data` MUST be the correct length for the receiver at this index.
+ */
+static void GetReceiver(const void* ua, size_t index, unsigned char* data, size_t length)
+{
+    std::visit(
+        CopyDataForReceiver(data, length),
+        reinterpret_cast<const libzcash::UnifiedAddress*>(ua)->GetReceiversAsParsed()[index]);
+}
+
 class PaymentAddressEncoder
 {
 private:
@@ -71,6 +133,23 @@ public:
         data.reserve((seraddr.size() * 8 + 4) / 5);
         ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, seraddr.begin(), seraddr.end());
         return bech32::Encode(keyConstants.Bech32HRP(KeyConstants::SAPLING_PAYMENT_ADDRESS), data);
+    }
+
+    std::string operator()(const libzcash::UnifiedAddress& uaddr) const
+    {
+        // Serialize the UA to a C-string.
+        auto encoded = zcash_address_serialize_unified(
+            keyConstants.NetworkIDString().c_str(),
+            &uaddr,
+            uaddr.size(),
+            GetTypecode,
+            GetReceiverLen,
+            GetReceiver);
+        // Copy the C-string into C++.
+        std::string res(encoded);
+        // Free the C-string.
+        zcash_address_string_free(encoded);
+        return res;
     }
 
     std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
@@ -317,8 +396,74 @@ T1 DecodeAny(
     return libzcash::InvalidEncoding();
 }
 
+/**
+ * `raw` MUST be 43 bytes.
+ */
+static bool AddSaplingReceiver(void* ua, const unsigned char* raw)
+{
+    CDataStream ss(
+        reinterpret_cast<const char*>(raw),
+        reinterpret_cast<const char*>(raw + 43),
+        SER_NETWORK,
+        PROTOCOL_VERSION);
+    libzcash::SaplingPaymentAddress receiver;
+    ss >> receiver;
+    return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
+}
+
+/**
+ * `raw` MUST be 20 bytes.
+ */
+static bool AddP2SHReceiver(void* ua, const unsigned char* raw)
+{
+    CDataStream ss(
+        reinterpret_cast<const char*>(raw),
+        reinterpret_cast<const char*>(raw + 20),
+        SER_NETWORK,
+        PROTOCOL_VERSION);
+    libzcash::P2SHAddress receiver;
+    ss >> receiver;
+    return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
+}
+
+/**
+ * `raw` MUST be 20 bytes.
+ */
+static bool AddP2PKHReceiver(void* ua, const unsigned char* raw)
+{
+    CDataStream ss(
+        reinterpret_cast<const char*>(raw),
+        reinterpret_cast<const char*>(raw + 20),
+        SER_NETWORK,
+        PROTOCOL_VERSION);
+    libzcash::P2PKHAddress receiver;
+    ss >> receiver;
+    return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
+}
+
+static bool AddUnknownReceiver(void* ua, uint8_t typecode, const unsigned char* data, size_t len)
+{
+    libzcash::UnknownReceiver receiver(typecode, std::vector(data, data + len));
+    return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
+}
+
 libzcash::PaymentAddress KeyIO::DecodePaymentAddress(const std::string& str)
 {
+    // Try parsing as a Unified Address.
+    libzcash::UnifiedAddress ua;
+    if (zcash_address_parse_unified(
+        str.c_str(),
+        keyConstants.NetworkIDString().c_str(),
+        &ua,
+        AddSaplingReceiver,
+        AddP2SHReceiver,
+        AddP2PKHReceiver,
+        AddUnknownReceiver)
+    ) {
+        return ua;
+    }
+
+    // Fall back on trying Sprout or Sapling.
     return DecodeAny<libzcash::PaymentAddress,
         libzcash::SproutPaymentAddress,
         libzcash::SaplingPaymentAddress>(

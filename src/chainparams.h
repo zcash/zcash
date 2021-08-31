@@ -34,9 +34,11 @@ struct CCheckpointData {
 
 class CBaseKeyConstants : public KeyConstants {
 public:
+    std::string NetworkIDString() const { return strNetworkID; }
     const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
     const std::string& Bech32HRP(Bech32Type type) const { return bech32HRPs[type]; }
 
+    std::string strNetworkID;
     std::vector<unsigned char> base58Prefixes[KeyConstants::MAX_BASE58_TYPES];
     std::string bech32HRPs[KeyConstants::MAX_BECH32_TYPES];
 };
@@ -76,7 +78,7 @@ public:
     /** In the future use NetworkIDString() for RPC fields */
     bool TestnetToBeDeprecatedFieldRPC() const { return fTestnetToBeDeprecatedFieldRPC; }
     /** Return the BIP70 network string (main, test or regtest) */
-    std::string NetworkIDString() const { return strNetworkID; }
+    std::string NetworkIDString() const { return keyConstants.NetworkIDString(); }
     const std::vector<CDNSSeedData>& DNSSeeds() const { return vSeeds; }
     const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { 
         return keyConstants.Base58Prefix(type); 
@@ -103,7 +105,6 @@ protected:
     uint64_t nPruneAfterHeight = 0;
     std::vector<CDNSSeedData> vSeeds;
     CBaseKeyConstants keyConstants;
-    std::string strNetworkID;
     std::string strCurrencyUnits;
     uint32_t bip44CoinType;
     CBlock genesis;
