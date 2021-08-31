@@ -75,6 +75,19 @@ public:
         return sizeof(data);
     }
 
+    uint64_t GetUint64(int pos) const
+    {
+        const uint8_t* ptr = data + pos * 8;
+        return ((uint64_t)ptr[0]) | \
+               ((uint64_t)ptr[1]) << 8 | \
+               ((uint64_t)ptr[2]) << 16 | \
+               ((uint64_t)ptr[3]) << 24 | \
+               ((uint64_t)ptr[4]) << 32 | \
+               ((uint64_t)ptr[5]) << 40 | \
+               ((uint64_t)ptr[6]) << 48 | \
+               ((uint64_t)ptr[7]) << 56;
+    }
+
     template<typename Stream>
     void Serialize(Stream& s) const
     {
@@ -104,7 +117,6 @@ public:
 class uint160 : public base_blob<160> {
 public:
     uint160() {}
-    uint160(const base_blob<160>& b) : base_blob<160>(b) {}
     explicit uint160(const std::vector<unsigned char>& vch) : base_blob<160>(vch) {}
 };
 
@@ -116,7 +128,6 @@ public:
 class uint256 : public base_blob<256> {
 public:
     uint256() {}
-    uint256(const base_blob<256>& b) : base_blob<256>(b) {}
     explicit uint256(const std::vector<unsigned char>& vch) : base_blob<256>(vch) {}
 
     /** A cheap hash function that just returns 64 bits from the result, it can be
@@ -131,11 +142,6 @@ public:
         memcpy((void*)&result, (void*)data, 8);
         return result;
     }
-
-    /** A more secure, salted hash function.
-     * @note This hash is not stable between little and big endian.
-     */
-    uint64_t GetHash(const uint256& salt) const;
 };
 
 /* uint256 from const char *.

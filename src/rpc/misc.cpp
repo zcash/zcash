@@ -19,6 +19,7 @@
 #endif
 
 #include <stdint.h>
+#include <variant>
 
 #include <boost/assign/list_of.hpp>
 
@@ -81,36 +82,40 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     GetProxy(NET_IPV4, proxy);
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("version", CLIENT_VERSION));
-    obj.push_back(Pair("protocolversion", PROTOCOL_VERSION));
+    obj.pushKV("version", CLIENT_VERSION);
+    obj.pushKV("build", FormatFullVersion());
+    obj.pushKV("subversion", strSubVersion);
+    obj.pushKV("protocolversion", PROTOCOL_VERSION);
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
-        obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
-        obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
+        obj.pushKV("walletversion", pwalletMain->GetVersion());
+        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance()));
     }
 #endif
-    obj.push_back(Pair("blocks",        (int)chainActive.Height()));
-    obj.push_back(Pair("timeoffset",    0));
-    obj.push_back(Pair("connections",   (int)vNodes.size()));
-    obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string())));
-    obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
-    obj.push_back(Pair("testnet",       Params().TestnetToBeDeprecatedFieldRPC()));
+    obj.pushKV("blocks",        (int)chainActive.Height());
+    obj.pushKV("timeoffset",    0);
+    obj.pushKV("connections",   (int)vNodes.size());
+    obj.pushKV("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string()));
+    obj.pushKV("difficulty",    (double)GetDifficulty());
+    obj.pushKV("testnet",       Params().TestnetToBeDeprecatedFieldRPC());
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
-        obj.push_back(Pair("keypoololdest", pwalletMain->GetOldestKeyPoolTime()));
-        obj.push_back(Pair("keypoolsize",   (int)pwalletMain->GetKeyPoolSize()));
+        obj.pushKV("keypoololdest", pwalletMain->GetOldestKeyPoolTime());
+        obj.pushKV("keypoolsize",   (int)pwalletMain->GetKeyPoolSize());
     }
     if (pwalletMain && pwalletMain->IsCrypted())
-        obj.push_back(Pair("unlocked_until", nWalletUnlockTime));
-    obj.push_back(Pair("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK())));
+        obj.pushKV("unlocked_until", nWalletUnlockTime);
+    obj.pushKV("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK()));
 #endif
-    obj.push_back(Pair("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK())));
-    obj.push_back(Pair("errors",        GetWarnings("statusbar")));
+    obj.pushKV("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK()));
+    auto warnings = GetWarnings("statusbar");
+    obj.pushKV("errors",           warnings.first);
+    obj.pushKV("errorstimestamp",  warnings.second);
     return obj;
 }
 
 #ifdef ENABLE_WALLET
-class DescribeAddressVisitor : public boost::static_visitor<UniValue>
+class DescribeAddressVisitor
 {
 public:
     UniValue operator()(const CNoDestination &dest) const { return UniValue(UniValue::VOBJ); }
@@ -118,32 +123,33 @@ public:
     UniValue operator()(const CKeyID &keyID) const {
         UniValue obj(UniValue::VOBJ);
         CPubKey vchPubKey;
-        obj.push_back(Pair("isscript", false));
+        obj.pushKV("isscript", false);
         if (pwalletMain && pwalletMain->GetPubKey(keyID, vchPubKey)) {
-            obj.push_back(Pair("pubkey", HexStr(vchPubKey)));
-            obj.push_back(Pair("iscompressed", vchPubKey.IsCompressed()));
+            obj.pushKV("pubkey", HexStr(vchPubKey));
+            obj.pushKV("iscompressed", vchPubKey.IsCompressed());
         }
         return obj;
     }
 
     UniValue operator()(const CScriptID &scriptID) const {
+        KeyIO keyIO(Params());
         UniValue obj(UniValue::VOBJ);
         CScript subscript;
-        obj.push_back(Pair("isscript", true));
+        obj.pushKV("isscript", true);
         if (pwalletMain && pwalletMain->GetCScript(scriptID, subscript)) {
             std::vector<CTxDestination> addresses;
             txnouttype whichType;
             int nRequired;
             ExtractDestinations(subscript, whichType, addresses, nRequired);
-            obj.push_back(Pair("script", GetTxnOutputType(whichType)));
-            obj.push_back(Pair("hex", HexStr(subscript.begin(), subscript.end())));
+            obj.pushKV("script", GetTxnOutputType(whichType));
+            obj.pushKV("hex", HexStr(subscript.begin(), subscript.end()));
             UniValue a(UniValue::VARR);
             for (const CTxDestination& addr : addresses) {
-                a.push_back(EncodeDestination(addr));
+                a.push_back(keyIO.EncodeDestination(addr));
             }
-            obj.push_back(Pair("addresses", a));
+            obj.pushKV("addresses", a);
             if (whichType == TX_MULTISIG)
-                obj.push_back(Pair("sigsrequired", nRequired));
+                obj.pushKV("sigsrequired", nRequired);
         }
         return obj;
     }
@@ -180,46 +186,47 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 #endif
 
-    CTxDestination dest = DecodeDestination(params[0].get_str());
+    KeyIO keyIO(Params());
+    CTxDestination dest = keyIO.DecodeDestination(params[0].get_str());
     bool isValid = IsValidDestination(dest);
 
     UniValue ret(UniValue::VOBJ);
-    ret.push_back(Pair("isvalid", isValid));
+    ret.pushKV("isvalid", isValid);
     if (isValid)
     {
-        std::string currentAddress = EncodeDestination(dest);
-        ret.push_back(Pair("address", currentAddress));
+        std::string currentAddress = keyIO.EncodeDestination(dest);
+        ret.pushKV("address", currentAddress);
 
         CScript scriptPubKey = GetScriptForDestination(dest);
-        ret.push_back(Pair("scriptPubKey", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
+        ret.pushKV("scriptPubKey", HexStr(scriptPubKey.begin(), scriptPubKey.end()));
 
 #ifdef ENABLE_WALLET
         isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
-        ret.push_back(Pair("ismine", (mine & ISMINE_SPENDABLE) ? true : false));
-        ret.push_back(Pair("iswatchonly", (mine & ISMINE_WATCH_ONLY) ? true: false));
-        UniValue detail = boost::apply_visitor(DescribeAddressVisitor(), dest);
+        ret.pushKV("ismine", (mine & ISMINE_SPENDABLE) ? true : false);
+        ret.pushKV("iswatchonly", (mine & ISMINE_WATCH_ONLY) ? true: false);
+        UniValue detail = std::visit(DescribeAddressVisitor(), dest);
         ret.pushKVs(detail);
         if (pwalletMain && pwalletMain->mapAddressBook.count(dest))
-            ret.push_back(Pair("account", pwalletMain->mapAddressBook[dest].name));
+            ret.pushKV("account", pwalletMain->mapAddressBook[dest].name);
 #endif
     }
     return ret;
 }
 
 
-class DescribePaymentAddressVisitor : public boost::static_visitor<UniValue>
+class DescribePaymentAddressVisitor
 {
 public:
     UniValue operator()(const libzcash::InvalidEncoding &zaddr) const { return UniValue(UniValue::VOBJ); }
 
     UniValue operator()(const libzcash::SproutPaymentAddress &zaddr) const {
         UniValue obj(UniValue::VOBJ);
-        obj.push_back(Pair("type", "sprout"));
-        obj.push_back(Pair("payingkey", zaddr.a_pk.GetHex()));
-        obj.push_back(Pair("transmissionkey", zaddr.pk_enc.GetHex()));
+        obj.pushKV("type", "sprout");
+        obj.pushKV("payingkey", zaddr.a_pk.GetHex());
+        obj.pushKV("transmissionkey", zaddr.pk_enc.GetHex());
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
-            obj.push_back(Pair("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr)));
+            obj.pushKV("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr));
         }
 #endif
         return obj;
@@ -227,14 +234,21 @@ public:
 
     UniValue operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
         UniValue obj(UniValue::VOBJ);
-        obj.push_back(Pair("type", "sapling"));
-        obj.push_back(Pair("diversifier", HexStr(zaddr.d)));
-        obj.push_back(Pair("diversifiedtransmissionkey", zaddr.pk_d.GetHex()));
+        obj.pushKV("type", "sapling");
+        obj.pushKV("diversifier", HexStr(zaddr.d));
+        obj.pushKV("diversifiedtransmissionkey", zaddr.pk_d.GetHex());
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
-            obj.push_back(Pair("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr)));
+            obj.pushKV("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr));
         }
 #endif
+        return obj;
+    }
+
+    UniValue operator()(const libzcash::UnifiedAddress &uaddr) const {
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("type", "unified");
+        // TODO: More information.
         return obj;
     }
 };
@@ -271,16 +285,17 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 #endif
 
+    KeyIO keyIO(Params());
     string strAddress = params[0].get_str();
-    auto address = DecodePaymentAddress(strAddress);
+    auto address = keyIO.DecodePaymentAddress(strAddress);
     bool isValid = IsValidPaymentAddress(address);
 
     UniValue ret(UniValue::VOBJ);
-    ret.push_back(Pair("isvalid", isValid));
+    ret.pushKV("isvalid", isValid);
     if (isValid)
     {
-        ret.push_back(Pair("address", strAddress));
-        UniValue detail = boost::apply_visitor(DescribePaymentAddressVisitor(), address);
+        ret.pushKV("address", strAddress);
+        UniValue detail = std::visit(DescribePaymentAddressVisitor(), address);
         ret.pushKVs(detail);
     }
     return ret;
@@ -304,6 +319,9 @@ CScript _createmultisig_redeemScript(const UniValue& params)
                       "(got %u keys, but need at least %d to redeem)", keys.size(), nRequired));
     if (keys.size() > 16)
         throw runtime_error("Number of addresses involved in the multisignature address creation > 16\nReduce the number");
+
+    KeyIO keyIO(Params());
+
     std::vector<CPubKey> pubkeys;
     pubkeys.resize(keys.size());
     for (unsigned int i = 0; i < keys.size(); i++)
@@ -311,9 +329,9 @@ CScript _createmultisig_redeemScript(const UniValue& params)
         const std::string& ks = keys[i].get_str();
 #ifdef ENABLE_WALLET
         // Case 1: Bitcoin address and we have full public key:
-        CTxDestination dest = DecodeDestination(ks);
+        CTxDestination dest = keyIO.DecodeDestination(ks);
         if (pwalletMain && IsValidDestination(dest)) {
-            const CKeyID *keyID = boost::get<CKeyID>(&dest);
+            const CKeyID *keyID = std::get_if<CKeyID>(&dest);
             if (!keyID) {
                 throw std::runtime_error(strprintf("%s does not refer to a key", ks));
             }
@@ -385,9 +403,10 @@ UniValue createmultisig(const UniValue& params, bool fHelp)
     CScript inner = _createmultisig_redeemScript(params);
     CScriptID innerID(inner);
 
+    KeyIO keyIO(Params());
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("address", EncodeDestination(innerID)));
-    result.push_back(Pair("redeemScript", HexStr(inner.begin(), inner.end())));
+    result.pushKV("address", keyIO.EncodeDestination(innerID));
+    result.pushKV("redeemScript", HexStr(inner.begin(), inner.end()));
 
     return result;
 }
@@ -421,12 +440,13 @@ UniValue verifymessage(const UniValue& params, bool fHelp)
     string strSign     = params[1].get_str();
     string strMessage  = params[2].get_str();
 
-    CTxDestination destination = DecodeDestination(strAddress);
+    KeyIO keyIO(Params());
+    CTxDestination destination = keyIO.DecodeDestination(strAddress);
     if (!IsValidDestination(destination)) {
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
     }
 
-    const CKeyID *keyID = boost::get<CKeyID>(&destination);
+    const CKeyID *keyID = std::get_if<CKeyID>(&destination);
     if (!keyID) {
         throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to key");
     }
@@ -472,7 +492,7 @@ UniValue setmocktime(const UniValue& params, bool fHelp)
     SetMockTime(params[0].get_int64());
 
     uint64_t t = GetTime();
-    BOOST_FOREACH(CNode* pnode, vNodes) {
+    for (CNode* pnode : vNodes) {
         pnode->nLastSend = pnode->nLastRecv = t;
     }
 
@@ -506,10 +526,11 @@ UniValue getexperimentalfeatures(const UniValue& params, bool fHelp)
 static bool getAddressFromIndex(
     int type, const uint160 &hash, std::string &address)
 {
+    KeyIO keyIO(Params());
     if (type == CScript::P2SH) {
-        address = EncodeDestination(CScriptID(hash));
+        address = keyIO.EncodeDestination(CScriptID(hash));
     } else if (type == CScript::P2PKH) {
-        address = EncodeDestination(CKeyID(hash));
+        address = keyIO.EncodeDestination(CKeyID(hash));
     } else {
         return false;
     }
@@ -525,13 +546,13 @@ static bool getIndexKey(
         return false;
     }
     if (IsKeyDestination(dest)) {
-        auto x = boost::get<CKeyID>(&dest);
+        auto x = std::get_if<CKeyID>(&dest);
         memcpy(&hashBytes, x->begin(), 20);
         type = CScript::P2PKH;
         return true;
     }
     if (IsScriptDestination(dest)) {
-        auto x = boost::get<CScriptID>(&dest);
+        auto x = std::get_if<CScriptID>(&dest);
         memcpy(&hashBytes, x->begin(), 20);
         type = CScript::P2SH;
         return true;
@@ -560,8 +581,10 @@ static bool getAddressesFromParams(
     } else {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
     }
+
+    KeyIO keyIO(Params());
     for (const auto& it : param_addresses) {
-        CTxDestination address = DecodeDestination(it);
+        CTxDestination address = keyIO.DecodeDestination(it);
         uint160 hashBytes;
         int type = 0;
         if (!getIndexKey(address, hashBytes, type)) {
@@ -576,8 +599,8 @@ static bool getAddressesFromParams(
 UniValue getaddressmempool(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
-    if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddressmempool", "insightexplorer");
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddressmempool", {"insightexplorer", "lightwalletd"});
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -611,7 +634,7 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}")
         );
 
-    if (!fExperimentalInsightExplorer) {
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressmempool is disabled. "
             "Run './zcash-cli help getaddressmempool' for instructions on how to enable this feature.");
     }
@@ -637,14 +660,14 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Unknown address type");
         }
         UniValue delta(UniValue::VOBJ);
-        delta.push_back(Pair("address", address));
-        delta.push_back(Pair("txid", it.first.txhash.GetHex()));
-        delta.push_back(Pair("index", (int)it.first.index));
-        delta.push_back(Pair("satoshis", it.second.amount));
-        delta.push_back(Pair("timestamp", it.second.time));
+        delta.pushKV("address", address);
+        delta.pushKV("txid", it.first.txhash.GetHex());
+        delta.pushKV("index", (int)it.first.index);
+        delta.pushKV("satoshis", it.second.amount);
+        delta.pushKV("timestamp", it.second.time);
         if (it.second.amount < 0) {
-            delta.push_back(Pair("prevtxid", it.second.prevhash.GetHex()));
-            delta.push_back(Pair("prevout", (int)it.second.prevout));
+            delta.pushKV("prevtxid", it.second.prevhash.GetHex());
+            delta.pushKV("prevout", (int)it.second.prevout);
         }
         result.push_back(delta);
     }
@@ -655,8 +678,8 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
 UniValue getaddressutxos(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
-    if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddressutxos", "insightexplorer");
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddressutxos", {"insightexplorer", "lightwalletd"});
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -706,7 +729,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"chainInfo\": true}")
             );
 
-    if (!fExperimentalInsightExplorer) {
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressutxos is disabled. "
             "Run './zcash-cli help getaddressutxos' for instructions on how to enable this feature.");
     }
@@ -741,12 +764,12 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Unknown address type");
         }
 
-        output.push_back(Pair("address", address));
-        output.push_back(Pair("txid", it.first.txhash.GetHex()));
-        output.push_back(Pair("outputIndex", (int)it.first.index));
-        output.push_back(Pair("script", HexStr(it.second.script.begin(), it.second.script.end())));
-        output.push_back(Pair("satoshis", it.second.satoshis));
-        output.push_back(Pair("height", it.second.blockHeight));
+        output.pushKV("address", address);
+        output.pushKV("txid", it.first.txhash.GetHex());
+        output.pushKV("outputIndex", (int)it.first.index);
+        output.pushKV("script", HexStr(it.second.script.begin(), it.second.script.end()));
+        output.pushKV("satoshis", it.second.satoshis);
+        output.pushKV("height", it.second.blockHeight);
         utxos.push_back(output);
     }
 
@@ -754,11 +777,11 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
         return utxos;
 
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("utxos", utxos));
+    result.pushKV("utxos", utxos);
 
     LOCK(cs_main);  // for chainActive
-    result.push_back(Pair("hash", chainActive.Tip()->GetBlockHash().GetHex()));
-    result.push_back(Pair("height", (int)chainActive.Height()));
+    result.pushKV("hash", chainActive.Tip()->GetBlockHash().GetHex());
+    result.pushKV("height", (int)chainActive.Height());
     return result;
 }
 
@@ -812,8 +835,8 @@ static void getAddressesInHeightRange(
 UniValue getaddressdeltas(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
-    if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddressdeltas", "insightexplorer");
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddressdeltas", {"insightexplorer", "lightwalletd"});
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -873,7 +896,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000, \"chainInfo\": true}")
         );
 
-    if (!fExperimentalInsightExplorer) {
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressdeltas is disabled. "
             "Run './zcash-cli help getaddressdeltas' for instructions on how to enable this feature.");
     }
@@ -902,12 +925,12 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
         }
 
         UniValue delta(UniValue::VOBJ);
-        delta.push_back(Pair("address", address));
-        delta.push_back(Pair("blockindex", (int)it.first.txindex));
-        delta.push_back(Pair("height", it.first.blockHeight));
-        delta.push_back(Pair("index", (int)it.first.index));
-        delta.push_back(Pair("satoshis", it.second));
-        delta.push_back(Pair("txid", it.first.txhash.GetHex()));
+        delta.pushKV("address", address);
+        delta.pushKV("blockindex", (int)it.first.txindex);
+        delta.pushKV("height", it.first.blockHeight);
+        delta.pushKV("index", (int)it.first.index);
+        delta.pushKV("satoshis", it.second);
+        delta.pushKV("txid", it.first.txhash.GetHex());
         deltas.push_back(delta);
     }
 
@@ -924,15 +947,15 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
         if (start > chainActive.Height() || end > chainActive.Height()) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Start or end is outside chain range");
         }
-        startInfo.push_back(Pair("hash", chainActive[start]->GetBlockHash().GetHex()));
-        endInfo.push_back(Pair("hash", chainActive[end]->GetBlockHash().GetHex()));
+        startInfo.pushKV("hash", chainActive[start]->GetBlockHash().GetHex());
+        endInfo.pushKV("hash", chainActive[end]->GetBlockHash().GetHex());
     }
-    startInfo.push_back(Pair("height", start));
-    endInfo.push_back(Pair("height", end));
+    startInfo.pushKV("height", start);
+    endInfo.pushKV("height", end);
 
-    result.push_back(Pair("deltas", deltas));
-    result.push_back(Pair("start", startInfo));
-    result.push_back(Pair("end", endInfo));
+    result.pushKV("deltas", deltas);
+    result.pushKV("start", startInfo);
+    result.pushKV("end", endInfo);
 
     return result;
 }
@@ -941,8 +964,8 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
 UniValue getaddressbalance(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
-    if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddressbalance", "insightexplorer");
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddressbalance", {"insightexplorer", "lightwalletd"});
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -969,7 +992,7 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}")
         );
 
-    if (!fExperimentalInsightExplorer) {
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressbalance is disabled. "
             "Run './zcash-cli help getaddressbalance' for instructions on how to enable this feature.");
     }
@@ -989,8 +1012,8 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
         balance += it.second;
     }
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("balance", balance));
-    result.push_back(Pair("received", received));
+    result.pushKV("balance", balance);
+    result.pushKV("received", received);
     return result;
 }
 
@@ -998,8 +1021,8 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
 UniValue getaddresstxids(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
-    if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddresstxids", "insightexplorer");
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddresstxids", {"insightexplorer", "lightwalletd"});
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -1029,7 +1052,7 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000}")
         );
 
-    if (!fExperimentalInsightExplorer) {
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddresstxids is disabled. "
             "Run './zcash-cli help getaddresstxids' for instructions on how to enable this feature.");
     }
@@ -1064,7 +1087,7 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
     if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getspentinfo", "insightexplorer");
+        disabledMsg = experimentalDisabledHelpMsg("getspentinfo", {"insightexplorer"});
     }
     if (fHelp || params.size() != 1 || !params[0].isObject())
         throw runtime_error(
@@ -1112,10 +1135,52 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
         }
     }
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("txid", value.txid.GetHex()));
-    obj.push_back(Pair("index", (int)value.inputIndex));
-    obj.push_back(Pair("height", value.blockHeight));
+    obj.pushKV("txid", value.txid.GetHex());
+    obj.pushKV("index", (int)value.inputIndex);
+    obj.pushKV("height", value.blockHeight);
 
+    return obj;
+}
+
+static UniValue RPCLockedMemoryInfo()
+{
+    LockedPool::Stats stats = LockedPoolManager::Instance().stats();
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("used", uint64_t(stats.used));
+    obj.pushKV("free", uint64_t(stats.free));
+    obj.pushKV("total", uint64_t(stats.total));
+    obj.pushKV("locked", uint64_t(stats.locked));
+    obj.pushKV("chunks_used", uint64_t(stats.chunks_used));
+    obj.pushKV("chunks_free", uint64_t(stats.chunks_free));
+    return obj;
+}
+
+UniValue getmemoryinfo(const UniValue& params, bool fHelp)
+{
+    /* Please, avoid using the word "pool" here in the RPC interface or help,
+     * as users will undoubtedly confuse it with the other "memory pool"
+     */
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "getmemoryinfo\n"
+            "Returns an object containing information about memory usage.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"locked\": {               (json object) Information about locked memory manager\n"
+            "    \"used\": xxxxx,          (numeric) Number of bytes used\n"
+            "    \"free\": xxxxx,          (numeric) Number of bytes available in current arenas\n"
+            "    \"total\": xxxxxxx,       (numeric) Total number of bytes managed\n"
+            "    \"locked\": xxxxxx,       (numeric) Amount of bytes that succeeded locking. If this number is smaller than total, locking pages failed at some point and key data could be swapped to disk.\n"
+            "    \"chunks_used\": xxxxx,   (numeric) Number allocated chunks\n"
+            "    \"chunks_free\": xxxxx,   (numeric) Number unused chunks\n"
+            "  }\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getmemoryinfo", "")
+            + HelpExampleRpc("getmemoryinfo", "")
+        );
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("locked", RPCLockedMemoryInfo());
     return obj;
 }
 
@@ -1123,6 +1188,7 @@ static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafeMode
   //  --------------------- ------------------------  -----------------------  ----------
     { "control",            "getinfo",                &getinfo,                true  }, /* uses wallet if enabled */
+    { "control",            "getmemoryinfo",          &getmemoryinfo,          true  },
     { "util",               "validateaddress",        &validateaddress,        true  }, /* uses wallet if enabled */
     { "util",               "z_validateaddress",      &z_validateaddress,      true  }, /* uses wallet if enabled */
     { "util",               "createmultisig",         &createmultisig,         true  },

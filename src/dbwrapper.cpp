@@ -4,15 +4,16 @@
 
 #include "dbwrapper.h"
 
+#include "fs.h"
 #include "util.h"
-
-#include <boost/filesystem.hpp>
 
 #include <leveldb/cache.h>
 #include <leveldb/env.h>
 #include <leveldb/filter_policy.h>
 #include <memenv.h>
 #include <stdint.h>
+
+#include <boost/scoped_ptr.hpp>
 
 static leveldb::Options GetOptions(size_t nCacheSize)
 {
@@ -30,7 +31,7 @@ static leveldb::Options GetOptions(size_t nCacheSize)
     return options;
 }
 
-CDBWrapper::CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory, bool fWipe)
+CDBWrapper::CDBWrapper(const fs::path& path, size_t nCacheSize, bool fMemory, bool fWipe)
 {
     penv = NULL;
     readoptions.verify_checksums = true;

@@ -32,6 +32,17 @@ struct CCheckpointData {
     double fTransactionsPerDay;
 };
 
+class CBaseKeyConstants : public KeyConstants {
+public:
+    std::string NetworkIDString() const { return strNetworkID; }
+    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
+    const std::string& Bech32HRP(Bech32Type type) const { return bech32HRPs[type]; }
+
+    std::string strNetworkID;
+    std::vector<unsigned char> base58Prefixes[KeyConstants::MAX_BASE58_TYPES];
+    std::string bech32HRPs[KeyConstants::MAX_BECH32_TYPES];
+};
+
 /**
  * CChainParams defines various tweakable parameters of a given instance of the
  * Bitcoin system. There are three: the main network on which people trade goods
@@ -39,33 +50,9 @@ struct CCheckpointData {
  * a regression test mode which is intended for private networks only. It has
  * minimal difficulty to ensure that blocks can be found instantly.
  */
-class CChainParams
+class CChainParams: public KeyConstants 
 {
 public:
-    enum Base58Type {
-        PUBKEY_ADDRESS,
-        SCRIPT_ADDRESS,
-        SECRET_KEY,
-        EXT_PUBLIC_KEY,
-        EXT_SECRET_KEY,
-
-        ZCPAYMENT_ADDRRESS,
-        ZCSPENDING_KEY,
-        ZCVIEWING_KEY,
-
-        MAX_BASE58_TYPES
-    };
-
-    enum Bech32Type {
-        SAPLING_PAYMENT_ADDRESS,
-        SAPLING_FULL_VIEWING_KEY,
-        SAPLING_INCOMING_VIEWING_KEY,
-        SAPLING_EXTENDED_SPEND_KEY,
-        SAPLING_EXTENDED_FVK,
-
-        MAX_BECH32_TYPES
-    };
-
     const Consensus::Params& GetConsensus() const { return consensus; }
     const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
     const std::vector<unsigned char>& AlertKey() const { return vAlertPubKey; }
@@ -91,10 +78,14 @@ public:
     /** In the future use NetworkIDString() for RPC fields */
     bool TestnetToBeDeprecatedFieldRPC() const { return fTestnetToBeDeprecatedFieldRPC; }
     /** Return the BIP70 network string (main, test or regtest) */
-    std::string NetworkIDString() const { return strNetworkID; }
+    std::string NetworkIDString() const { return keyConstants.NetworkIDString(); }
     const std::vector<CDNSSeedData>& DNSSeeds() const { return vSeeds; }
-    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
-    const std::string& Bech32HRP(Bech32Type type) const { return bech32HRPs[type]; }
+    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { 
+        return keyConstants.Base58Prefix(type); 
+    }
+    const std::string& Bech32HRP(Bech32Type type) const { 
+        return keyConstants.Bech32HRP(type); 
+    }
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
     const CCheckpointData& Checkpoints() const { return checkpointData; }
     /** Return the founder's reward address and script for a given block height */
@@ -113,9 +104,7 @@ protected:
     int nDefaultPort = 0;
     uint64_t nPruneAfterHeight = 0;
     std::vector<CDNSSeedData> vSeeds;
-    std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
-    std::string bech32HRPs[MAX_BECH32_TYPES];
-    std::string strNetworkID;
+    CBaseKeyConstants keyConstants;
     std::string strCurrencyUnits;
     uint32_t bip44CoinType;
     CBlock genesis;
@@ -156,6 +145,15 @@ void SelectParams(const std::string& chain);
  */
 void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight);
 
-void UpdateRegtestPow(int64_t nPowMaxAdjustDown, int64_t nPowMaxAdjustUp, uint256 powLimit);
+void UpdateRegtestPow(
+    int64_t nPowMaxAdjustDown,
+    int64_t nPowMaxAdjustUp,
+    uint256 powLimit,
+    bool noRetargeting);
+
+/**
+ * Allows modifying the regtest funding stream parameters.
+ */
+void UpdateFundingStreamParameters(Consensus::FundingStreamIndex idx, Consensus::FundingStream fs);
 
 #endif // BITCOIN_CHAINPARAMS_H

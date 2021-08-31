@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import re, os, os.path
@@ -34,7 +35,10 @@ author_aliases = {
     'paveljanik': 'Pavel Janík',
     'Simon': 'Simon Liu',
     'str4d': 'Jack Grigg',
-    'zebambam': 'Benjamin Winston'
+    'zebambam': 'Benjamin Winston',
+    'therealyingtong': 'Ying Tong Lai',
+    'zancas': 'Zancas Wilcox',
+    'bambam': 'Benjamin Winston'
 }
 
 def apply_author_aliases(name):
@@ -62,7 +66,7 @@ def alias_authors_in_release_notes(line):
 ## Returns dict of {'author': #_of_commits} from a release note
 def authors_in_release_notes(filename):
     note = os.path.join(doc_dir, 'release-notes', filename)
-    with open(note, 'r') as f:
+    with open(note, mode='r', encoding="utf-8", errors="replace") as f:
         authors = {}
         line = f.readline()
         first_name, commits = parse_authors(line)
@@ -78,7 +82,7 @@ def authors_in_release_notes(filename):
 def document_authors():
     print("Writing contributors documented in release-notes directory to authors.md.")
     authors_file = os.path.join(doc_dir, 'authors.md')
-    with open(authors_file, 'w') as f:
+    with open(authors_file, mode='w', encoding="utf-8", errors="replace") as f:
         f.write('Zcash Contributors\n==================\n\n')
         total_contrib = {}
         for notes in os.listdir(os.path.join(doc_dir, 'release-notes')):
@@ -110,10 +114,10 @@ def generate_release_note(version, prev, clear):
         latest_tag = subprocess.Popen(['git describe --abbrev=0'], shell=True, stdout=subprocess.PIPE).communicate()[0].strip()
     print("Previous release tag: ", latest_tag)
     notes = subprocess.Popen(['git shortlog --no-merges {0}..HEAD'.format(latest_tag)], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE).communicate()[0]
-    lines = notes.split('\n')
+    lines = notes.decode("utf-8", "replace").split('\n')
     lines = [alias_authors_in_release_notes(line) for line in lines]
     temp_release_note = os.path.join(doc_dir, 'release-notes.md')
-    with open(temp_release_note, 'r') as f:
+    with open(temp_release_note, mode='r', encoding="utf-8", errors="replace") as f:
         notable_changes = f.readlines()
         # Assumes that all notable changes are appended to the default header
         if len(notable_changes) > 6:
@@ -121,13 +125,13 @@ def generate_release_note(version, prev, clear):
         else:
             notable_changes = []
     release_note = os.path.join(doc_dir, 'release-notes', filename)
-    with open(release_note, 'w') as f:
+    with open(release_note, mode='w', encoding="utf-8", errors="replace") as f:
         f.writelines(notable_changes)
         f.writelines(RELEASE_NOTES_CHANGELOG_HEADING)
         f.writelines('\n'.join(lines))
     if clear:
         # Clear temporary release notes file
-        with open(temp_release_note, 'w') as f:
+        with open(temp_release_note, mode='w', encoding="utf-8", errors="replace") as f:
             f.writelines(TEMP_RELEASE_NOTES_HEADER)
 
 def main(version, prev, clear):

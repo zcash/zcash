@@ -1,0 +1,31 @@
+# List of Postponed Dependency Updates
+#
+# The format is: name version expiration, e.g.
+# bdb 18.1.40 2020-09-01
+#
+
+# Ccache 4.0 requires adding CMake to the depends system.
+native_ccache 4.0 2021-09-01
+native_ccache 4.1 2021-09-01
+native_ccache 4.2 2021-09-01
+native_ccache 4.2.1 2021-09-01
+native_ccache 4.3 2021-09-01
+
+# Clang is currently pinned to LLVM 12
+
+# Rust is currently pinned to 1.54.0
+
+bdb 18.1.40 2022-02-01
+
+# Boost 1.75 starts using the statx syscall where available, which causes
+# permission errors in some environments.
+# https://github.com/zcash/zcash/issues/4945
+# native_b2 is pinned to the same version as Boost.
+boost 1.75.0 2021-09-01
+boost 1.76.0 2021-09-01
+native_b2 1.75.0 2021-09-01
+native_b2 1.76.0 2021-09-01
+
+# Google Test 1.10.0 requires adding CMake to the depends system.
+googletest 1.10.0 2021-09-01
+googletest 1.11.0 2021-09-01

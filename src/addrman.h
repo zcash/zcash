@@ -131,13 +131,13 @@ public:
  */
 
 //! total number of buckets for tried addresses
-#define ADDRMAN_TRIED_BUCKET_COUNT 256
+#define ADDRMAN_TRIED_BUCKET_COUNT_LOG2 8
 
 //! total number of buckets for new addresses
-#define ADDRMAN_NEW_BUCKET_COUNT 1024
+#define ADDRMAN_NEW_BUCKET_COUNT_LOG2 10
 
 //! maximum allowed number of entries in buckets for new and tried addresses
-#define ADDRMAN_BUCKET_SIZE 64
+#define ADDRMAN_BUCKET_SIZE_LOG2 6
 
 //! over how many buckets entries with tried addresses from a single group (/16 for IPv4) are spread
 #define ADDRMAN_TRIED_BUCKETS_PER_GROUP 8
@@ -165,6 +165,11 @@ public:
 
 //! the maximum number of nodes to return in a getaddr call
 #define ADDRMAN_GETADDR_MAX 2500
+
+//! Convenience
+#define ADDRMAN_TRIED_BUCKET_COUNT (1 << ADDRMAN_TRIED_BUCKET_COUNT_LOG2)
+#define ADDRMAN_NEW_BUCKET_COUNT (1 << ADDRMAN_NEW_BUCKET_COUNT_LOG2)
+#define ADDRMAN_BUCKET_SIZE (1 << ADDRMAN_BUCKET_SIZE_LOG2)
 
 /** 
  * Stochastical (IP) address manager 
@@ -439,6 +444,7 @@ public:
 
     void Clear()
     {
+        LOCK(cs);
         std::vector<int>().swap(vRandom);
         nKey = GetRandHash();
         for (size_t bucket = 0; bucket < ADDRMAN_NEW_BUCKET_COUNT; bucket++) {
@@ -470,6 +476,7 @@ public:
     //! Return the number of (unique) addresses in all tables.
     size_t size() const
     {
+        LOCK(cs); // TODO: Cache this in an atomic to avoid this overhead
         return vRandom.size();
     }
 
@@ -489,13 +496,11 @@ public:
     //! Add a single address.
     bool Add(const CAddress &addr, const CNetAddr& source, int64_t nTimePenalty = 0)
     {
+        LOCK(cs);
         bool fRet = false;
-        {
-            LOCK(cs);
-            Check();
-            fRet |= Add_(addr, source, nTimePenalty);
-            Check();
-        }
+        Check();
+        fRet |= Add_(addr, source, nTimePenalty);
+        Check();
         if (fRet)
             LogPrint("addrman", "Added %s from %s: %i tried, %i new\n", addr.ToStringIPPort(), source.ToString(), nTried, nNew);
         return fRet;
@@ -504,14 +509,12 @@ public:
     //! Add multiple addresses.
     bool Add(const std::vector<CAddress> &vAddr, const CNetAddr& source, int64_t nTimePenalty = 0)
     {
+        LOCK(cs);
         int nAdd = 0;
-        {
-            LOCK(cs);
-            Check();
-            for (std::vector<CAddress>::const_iterator it = vAddr.begin(); it != vAddr.end(); it++)
-                nAdd += Add_(*it, source, nTimePenalty) ? 1 : 0;
-            Check();
-        }
+        Check();
+        for (std::vector<CAddress>::const_iterator it = vAddr.begin(); it != vAddr.end(); it++)
+            nAdd += Add_(*it, source, nTimePenalty) ? 1 : 0;
+        Check();
         if (nAdd)
             LogPrint("addrman", "Added %i addresses from %s: %i tried, %i new\n", nAdd, source.ToString(), nTried, nNew);
         return nAdd > 0;
@@ -520,23 +523,19 @@ public:
     //! Mark an entry as accessible.
     void Good(const CService &addr, int64_t nTime = GetTime())
     {
-        {
-            LOCK(cs);
-            Check();
-            Good_(addr, nTime);
-            Check();
-        }
+        LOCK(cs);
+        Check();
+        Good_(addr, nTime);
+        Check();
     }
 
     //! Mark an entry as connection attempted to.
     void Attempt(const CService &addr, int64_t nTime = GetTime())
     {
-        {
-            LOCK(cs);
-            Check();
-            Attempt_(addr, nTime);
-            Check();
-        }
+        LOCK(cs);
+        Check();
+        Attempt_(addr, nTime);
+        Check();
     }
 
     /**
@@ -570,12 +569,10 @@ public:
     //! Mark an entry as currently-connected-to.
     void Connected(const CService &addr, int64_t nTime = GetTime())
     {
-        {
-            LOCK(cs);
-            Check();
-            Connected_(addr, nTime);
-            Check();
-        }
+        LOCK(cs);
+        Check();
+        Connected_(addr, nTime);
+        Check();
     }
 
 };

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014-2015 The Bitcoin Core developers
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -15,7 +15,7 @@ import random
 from decimal import Decimal, ROUND_DOWN
 
 # Construct 2 trivial P2SH's and the ScriptSigs that spend them
-# So we can create many many transactions without needing to spend
+# So we can create many transactions without needing to spend
 # time signing.
 P2SH_1 = "2MySexEGVzZpRgNQ1JdjdP5bRETznm3roQ2" # P2SH of "OP_1 OP_DROP"
 P2SH_2 = "2NBdpwq8Aoo1EEKEXPNrKvr5xQr3M9UfcZA" # P2SH of "OP_2 OP_DROP"
@@ -112,7 +112,7 @@ def check_estimates(node, fees_seen, max_invalid, print_estimates = True):
         print([str(all_estimates[e-1]) for e in [1,2,3,6,15,25]])
     delta = 1.0e-6 # account for rounding error
     last_e = max(fees_seen)
-    for e in filter(lambda x: x >= 0, all_estimates):
+    for e in [x for x in all_estimates if x >= 0]:
         # Estimates should be within the bounds of what transactions fees actually were:
         if float(e)+delta < min(fees_seen) or float(e)-delta > max(fees_seen):
             raise AssertionError("Estimated fee (%f) out of range (%f,%f)"
@@ -141,6 +141,11 @@ def check_estimates(node, fees_seen, max_invalid, print_estimates = True):
 
 
 class EstimateFeeTest(BitcoinTestFramework):
+
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 3
+        self.setup_clean_chain = False
 
     def setup_network(self):
         '''
@@ -215,7 +220,7 @@ class EstimateFeeTest(BitcoinTestFramework):
                 from_index = random.randint(1,2)
                 (txhex, fee) = small_txpuzzle_randfee(self.nodes[from_index], self.confutxo,
                                                       self.memutxo, Decimal("0.005"), min_fee, min_fee)
-                tx_kbytes = (len(txhex)/2)/1000.0
+                tx_kbytes = (len(txhex) // 2) / 1000.0
                 self.fees_per_kb.append(float(fee)/tx_kbytes)
             sync_mempools(self.nodes[0:3],.1)
             mined = mining_node.getblock(mining_node.generate(1)[0],True)["tx"]

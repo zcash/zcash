@@ -1,3 +1,7 @@
+#include <bits/stdc++.h>
+
+// actual fuzzer
+
 bool fuzz_TxDeserializeFunction (const std::vector<unsigned char> txData) {
         CTransaction tx;
         CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
@@ -9,6 +13,9 @@ bool fuzz_TxDeserializeFunction (const std::vector<unsigned char> txData) {
         }
 }
 
+#ifdef FUZZ_WITH_AFL
+
+// AFL
 
 int fuzz_TxDeserialize (int argc, char *argv[]) {
         std::ifstream t(argv[1]);
@@ -19,3 +26,18 @@ int fuzz_TxDeserialize (int argc, char *argv[]) {
 }
 
 int main (int argc, char *argv[]) { return fuzz_TxDeserialize(argc, argv); }
+
+#endif
+
+#ifdef FUZZ_WITH_LIBFUZZER
+
+// libFuzzer
+
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
+    std::vector<unsigned char> vect(Size);
+    memcpy(vect.data(), Data, Size);
+    fuzz_TxDeserializeFunction(vect);
+    return 0;  // Non-zero return values are reserved for future use.
+}
+
+#endif

@@ -8,21 +8,21 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
     get_coinbase_address,
-    initialize_chain_clean,
     start_nodes,
     wait_and_assert_operationid_status,
 )
 
 
 class ShorterBlockTimes(BitcoinTestFramework):
-    def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, [[
-            '-nuparams=2bb40e60:106', # Blossom
-        ]] * 4)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = True
 
-    def setup_chain(self):
-        print("Initializing test directory " + self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def setup_nodes(self):
+        return start_nodes(self.num_nodes, self.options.tmpdir, [[
+            '-nuparams=2bb40e60:106', # Blossom
+        ]] * self.num_nodes)
 
     def run_test(self):
         print("Mining blocks...")
@@ -63,6 +63,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, 0)
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert_equal(147, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # height + 1 + 40
+        self.sync_all() # Ensure the transaction has propagated to node 1
         self.nodes[1].generate(1)
         self.sync_all()
         assert_equal(20, Decimal(self.nodes[0].z_gettotalbalance()['private']))

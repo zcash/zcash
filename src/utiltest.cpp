@@ -9,8 +9,10 @@
 
 #include <array>
 
+#include <rust/ed25519.h>
+
 // Sprout
-CMutableTransaction GetValidSproutReceiveTransaction(ZCJoinSplit& params,
+CMutableTransaction GetValidSproutReceiveTransaction(
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
@@ -35,10 +37,8 @@ CMutableTransaction GetValidSproutReceiveTransaction(ZCJoinSplit& params,
     mtx.vin[1].prevout.n = 0;
 
     // Generate an ephemeral keypair.
-    uint256 joinSplitPubKey;
-    unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
-    crypto_sign_keypair(joinSplitPubKey.begin(), joinSplitPrivKey);
-    mtx.joinSplitPubKey = joinSplitPubKey;
+    Ed25519SigningKey joinSplitPrivKey;
+    ed25519_generate_keypair(&joinSplitPrivKey, &mtx.joinSplitPubKey);
 
     std::array<libzcash::JSInput, 2> inputs = {
         libzcash::JSInput(), // dummy input
@@ -52,8 +52,8 @@ CMutableTransaction GetValidSproutReceiveTransaction(ZCJoinSplit& params,
 
     // Prepare JoinSplits
     uint256 rt;
-    JSDescription jsdesc {params, mtx.joinSplitPubKey, rt,
-                          inputs, outputs, 2*value, 0, false};
+    auto jsdesc = JSDescriptionInfo(mtx.joinSplitPubKey, rt,
+                          inputs, outputs, 2*value, 0).BuildDeterministic(false);
     mtx.vJoinSplit.push_back(jsdesc);
 
     // Consider: The following is a bit misleading (given the name of this function)
@@ -72,30 +72,29 @@ CMutableTransaction GetValidSproutReceiveTransaction(ZCJoinSplit& params,
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
 
     // Add the signature
-    assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
-                                dataToBeSigned.begin(), 32,
-                                joinSplitPrivKey
-                               ) == 0);
+    assert(ed25519_sign(
+        &joinSplitPrivKey,
+        dataToBeSigned.begin(), 32,
+        &mtx.joinSplitSig));
 
     return mtx;
 }
 
-CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
-                                const libzcash::SproutSpendingKey& sk,
+CWalletTx GetValidSproutReceive(const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
                                 uint32_t versionGroupId, /* = SAPLING_VERSION_GROUP_ID */
                                 int32_t version /* = SAPLING_TX_VERSION */)
 {
     CMutableTransaction mtx = GetValidSproutReceiveTransaction(
-        params, sk, value, randomInputs, versionGroupId, version
+        sk, value, randomInputs, versionGroupId, version
     );
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
     return wtx;
 }
 
-CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
+CWalletTx GetInvalidCommitmentSproutReceive(
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
@@ -103,7 +102,7 @@ CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
                                 int32_t version /* = SAPLING_TX_VERSION */)
 {
     CMutableTransaction mtx = GetValidSproutReceiveTransaction(
-        params, sk, value, randomInputs, versionGroupId, version
+        sk, value, randomInputs, versionGroupId, version
     );
     mtx.vJoinSplit[0].commitments[0] = uint256();
     mtx.vJoinSplit[0].commitments[1] = uint256();
@@ -112,11 +111,13 @@ CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
     return wtx;
 }
 
-libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
-                                   const libzcash::SproutSpendingKey& sk,
+libzcash::SproutNote GetSproutNote(const libzcash::SproutSpendingKey& sk,
                                    const CTransaction& tx, size_t js, size_t n) {
     ZCNoteDecryption decryptor {sk.receiving_key()};
-    auto hSig = tx.vJoinSplit[js].h_sig(params, tx.joinSplitPubKey);
+    auto hSig = ZCJoinSplit::h_sig(
+        tx.vJoinSplit[js].randomSeed,
+        tx.vJoinSplit[js].nullifiers,
+        tx.joinSplitPubKey);
     auto note_pt = libzcash::SproutNotePlaintext::decrypt(
         decryptor,
         tx.vJoinSplit[js].ciphertexts[n],
@@ -126,8 +127,7 @@ libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
     return note_pt.note(sk.address());
 }
 
-CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
-                              const libzcash::SproutSpendingKey& sk,
+CWalletTx GetValidSproutSpend(const libzcash::SproutSpendingKey& sk,
                               const libzcash::SproutNote& note,
                               CAmount value) {
     CMutableTransaction mtx;
@@ -139,10 +139,8 @@ CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
     mtx.vout[1].nValue = 0;
 
     // Generate an ephemeral keypair.
-    uint256 joinSplitPubKey;
-    unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
-    crypto_sign_keypair(joinSplitPubKey.begin(), joinSplitPrivKey);
-    mtx.joinSplitPubKey = joinSplitPubKey;
+    Ed25519SigningKey joinSplitPrivKey;
+    ed25519_generate_keypair(&joinSplitPrivKey, &mtx.joinSplitPubKey);
 
     // Fake tree for the unused witness
     SproutMerkleTree tree;
@@ -178,8 +176,8 @@ CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
 
     // Prepare JoinSplits
     uint256 rt = tree.root();
-    JSDescription jsdesc {params, mtx.joinSplitPubKey, rt,
-                          inputs, outputs, 0, value, false};
+    auto jsdesc = JSDescriptionInfo(mtx.joinSplitPubKey, rt,
+                          inputs, outputs, 0, value).BuildDeterministic(false);
     mtx.vJoinSplit.push_back(jsdesc);
 
     // Empty output script.
@@ -189,13 +187,23 @@ CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
 
     // Add the signature
-    assert(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
-                                dataToBeSigned.begin(), 32,
-                                joinSplitPrivKey
-                               ) == 0);
+    assert(ed25519_sign(
+        &joinSplitPrivKey,
+        dataToBeSigned.begin(), 32,
+        &mtx.joinSplitSig));
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
     return wtx;
+}
+
+const CChainParams& RegtestActivateOverwinter() {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    return Params();
+}
+
+void RegtestDeactivateOverwinter() {
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
 // Sapling
@@ -211,19 +219,19 @@ void RegtestDeactivateSapling() {
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
-const Consensus::Params& RegtestActivateBlossom(bool updatePow, int blossomActivationHeight) {
+const CChainParams& RegtestActivateBlossom(bool updatePow, int blossomActivationHeight) {
     SelectParams(CBaseChainParams::REGTEST);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, blossomActivationHeight);
     if (updatePow) {
-        UpdateRegtestPow(32, 16, uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+        UpdateRegtestPow(32, 16, uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), false);
     }
-    return Params().GetConsensus();
+    return Params();
 }
 
 void RegtestDeactivateBlossom() {
-    UpdateRegtestPow(0, 0, uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"));
+    UpdateRegtestPow(0, 0, uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"), true);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
@@ -237,13 +245,13 @@ const Consensus::Params& RegtestActivateHeartwood(bool updatePow, int heartwoodA
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_HEARTWOOD, heartwoodActivationHeight);
     if (updatePow) {
-        UpdateRegtestPow(32, 16, uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+        UpdateRegtestPow(32, 16, uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), false);
     }
     return Params().GetConsensus();
 }
 
 void RegtestDeactivateHeartwood() {
-    UpdateRegtestPow(0, 0, uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"));
+    UpdateRegtestPow(0, 0, uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"), true);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_HEARTWOOD, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
@@ -251,6 +259,61 @@ void RegtestDeactivateHeartwood() {
     SelectParams(CBaseChainParams::MAIN);
 }
 
+const Consensus::Params& RegtestActivateCanopy(bool updatePow, int canopyActivationHeight) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_HEARTWOOD, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, canopyActivationHeight);
+    if (updatePow) {
+        UpdateRegtestPow(32, 16, uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), false);
+    }
+    return Params().GetConsensus();
+}
+
+const Consensus::Params& RegtestActivateCanopy() {
+    return RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+}
+
+void RegtestDeactivateCanopy() {
+    UpdateRegtestPow(0, 0, uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"), true);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_HEARTWOOD, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    SelectParams(CBaseChainParams::MAIN);
+}
+
+const Consensus::Params& RegtestActivateNU5(bool updatePow, int nu5ActivationHeight) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_HEARTWOOD, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_NU5, nu5ActivationHeight);
+    if (updatePow) {
+        UpdateRegtestPow(32, 16, uint256S("0007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"), false);
+    }
+    return Params().GetConsensus();
+}
+
+const Consensus::Params& RegtestActivateNU5() {
+    return RegtestActivateNU5(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+}
+
+void RegtestDeactivateNU5() {
+    UpdateRegtestPow(0, 0, uint256S("0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"), true);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_NU5, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_CANOPY, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_HEARTWOOD, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_BLOSSOM, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    SelectParams(CBaseChainParams::MAIN);
+}
 
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey() {
     std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
@@ -259,15 +322,16 @@ libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey() {
 }
 
 CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore) {
-    CKey tsk = DecodeSecret(T_SECRET_REGTEST);
+    KeyIO keyIO(Params());
+    CKey tsk = keyIO.DecodeSecret(T_SECRET_REGTEST);
     keyStore.AddKey(tsk);
     return tsk;
 }
 
 TestSaplingNote GetTestSaplingNote(const libzcash::SaplingPaymentAddress& pa, CAmount value) {
     // Generate dummy Sapling note
-    libzcash::SaplingNote note(pa, value);
-    uint256 cm = note.cmu().get();
+    libzcash::SaplingNote note(pa, value, libzcash::Zip212Enabled::BeforeZip212);
+    uint256 cm = note.cmu().value();
     SaplingMerkleTree tree;
     tree.append(cm);
     return { note, tree };

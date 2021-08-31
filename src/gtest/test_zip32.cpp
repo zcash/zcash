@@ -109,7 +109,7 @@ TEST(ZIP32, TestVectors) {
     auto maybe_m_1_2hv_3 = m_1_2hv.Derive(3);
     EXPECT_TRUE(maybe_m_1_2hv_3);
 
-    auto m_1_2hv_3 = maybe_m_1_2hv_3.get();
+    auto m_1_2hv_3 = maybe_m_1_2hv_3.value();
     EXPECT_EQ(m_1_2hv_3.depth, 3);
     EXPECT_EQ(m_1_2hv_3.parentFVKTag, 0x7583c148);
     EXPECT_EQ(m_1_2hv_3.childIndex, 3);

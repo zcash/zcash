@@ -1,6 +1,6 @@
 # Block and Transaction Broadcasting With ZeroMQ
 
-[ZeroMQ](http://zeromq.org/) is a lightweight wrapper around TCP
+[ZeroMQ](https://zeromq.org) is a lightweight wrapper around TCP
 connections, inter-process communication, and shared-memory, providing
 various message-oriented semantics such as publish/subscribe,
 request/reply, and push/pull.
@@ -33,13 +33,14 @@ buffering or reassembly.
 
 ## Prerequisites
 
-The ZeroMQ feature in Zcash requires ZeroMQ API version 4.x or
-newer, which you will need to install if you are not using the depends
-system. Typically, it is packaged by distributions as something like
+The ZeroMQ feature in Zcash requires the ZeroMQ API >= 4.0.0
+[libzmq](https://github.com/zeromq/libzmq/releases), which you will
+need to install if you are not using the depends system.
+Typically, it is packaged by distributions as something like
 *libzmq5-dev*. The C++ wrapper for ZeroMQ is *not* needed.
 
 In order to run the example Python client scripts in contrib/ one must
-also install *python-zmq*, though this is not necessary for daemon
+also install *python3-zmq*, though this is not necessary for daemon
 operation.
 
 ## Security WARNING
@@ -48,7 +49,7 @@ Enabling this feature even on the loopback interface only (e.g. binding
 it to localhost or 127.0.0.1) will still expose it to the wilds of the
 Internet, because of an attack vector called DNS rebinding. DNS
 rebinding allows an attacker located remotely on the Internet to trick
-applications that you're running on the same computer as Zcashd to
+applications that you're running on the same computer as zcashd to
 contact your supposedly localhost-only ZMQ port, then, depending on the
 program they may be able to attempt to attack it.
 
@@ -117,5 +118,5 @@ retrieve the chain from the last known block to the new tip.
 
 There are several possibilities that ZMQ notification can get lost
 during transmission depending on the communication type you are
-using. Zcashd appends an up-counting sequence number to each
+using. zcashd appends an up-counting sequence number to each
 notification which allows listeners to detect lost notifications.

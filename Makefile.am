@@ -4,6 +4,10 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+# Pattern rule to print variables, e.g. make print-top_srcdir
+print-%:
+	@echo $* = $($*)
+
 ACLOCAL_AMFLAGS = -I build-aux/m4
 SUBDIRS = src
 if ENABLE_MAN
@@ -15,7 +19,7 @@ GZIP_ENV="-9n"
 
 if BUILD_BITCOIN_LIBS
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libzcashconsensus.pc
+pkgconfig_DATA = libzcash_script.pc
 endif
 
 BITCOIND_BIN=$(top_builddir)/src/$(BITCOIN_DAEMON_NAME)$(EXEEXT)
@@ -33,17 +37,7 @@ COVERAGE_INFO = baseline_filtered_combined.info baseline.info \
   zcash-gtest.info zcash-gtest_filtered.info zcash-gtest_coverage.info
 
 dist-hook:
-	-$(MAKE) -C $(top_distdir)/src/leveldb clean
-	-$(MAKE) -C $(top_distdir)/src/secp256k1 distclean
 	-$(GIT) archive --format=tar HEAD -- src/clientversion.cpp | $(AMTAR) -C $(top_distdir) -xf -
-
-distcheck-hook:
-	$(MKDIR_P) $(top_distdir)/_build/src/leveldb
-	cp -rf $(top_srcdir)/src/leveldb/* $(top_distdir)/_build/src/leveldb/
-	-$(MAKE) -C $(top_distdir)/_build/src/leveldb clean
-
-distcleancheck:
-	@:
 
 $(if $(findstring src/,$(MAKECMDGOALS)),$(MAKECMDGOALS), none): FORCE
 	$(MAKE) -C src $(patsubst src/%,%,$@)
@@ -61,10 +55,10 @@ baseline.info:
 
 baseline_filtered.info: baseline.info
 	$(LCOV) -r $< "/usr/include/*" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/*.h" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/boost/*" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/gmock/*" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/gtest/*" \
                       "$(abs_builddir)/src/gtest/*" \
                       "$(abs_builddir)/src/test/*" \
                       "$(abs_builddir)/src/wallet/gtest/*" \
@@ -76,10 +70,10 @@ leveldb_baseline.info: baseline_filtered.info
 
 leveldb_baseline_filtered.info: leveldb_baseline.info
 	$(LCOV) -r $< "/usr/include/*" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/*.h" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/boost/*" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/gmock/*" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/gtest/*" \
                       "$(abs_builddir)/src/gtest/*" \
                       "$(abs_builddir)/src/test/*" \
                       "$(abs_builddir)/src/wallet/gtest/*" \
@@ -97,10 +91,10 @@ test_bitcoin.info: baseline_filtered_combined.info
 
 test_bitcoin_filtered.info: test_bitcoin.info
 	$(LCOV) -r $< "/usr/include/*" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/*.h" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/boost/*" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/gmock/*" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/gtest/*" \
                       "$(abs_builddir)/src/gtest/*" \
                       "$(abs_builddir)/src/test/*" \
                       "$(abs_builddir)/src/wallet/gtest/*" \
@@ -115,10 +109,10 @@ zcash-gtest.info: baseline_filtered_combined.info
 
 zcash-gtest_filtered.info: zcash-gtest.info
 	$(LCOV) -r $< "/usr/include/*" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/*.h" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/boost/*" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gmock/*" \
-                      "$(abs_builddir)/depends/x86_64-unknown-linux-gnu/include/gtest/*" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/*.h" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/boost/*" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/gmock/*" \
+                      "$(abs_builddir)/depends/x86_64-pc-linux-gnu/include/gtest/*" \
                       "$(abs_builddir)/src/gtest/*" \
                       "$(abs_builddir)/src/test/*" \
                       "$(abs_builddir)/src/wallet/gtest/*" \
@@ -155,7 +149,9 @@ endif
 dist_bin_SCRIPTS = zcutil/fetch-params.sh
 dist_noinst_SCRIPTS = autogen.sh zcutil/build-debian-package.sh zcutil/build.sh
 
-EXTRA_DIST = $(top_srcdir)/share/genbuild.sh qa/pull-tester/rpc-tests.sh qa/rpc-tests qa/zcash $(DIST_DOCS) $(BIN_CHECKS)
+RUST_DIST = $(top_srcdir)/.cargo $(top_srcdir)/Cargo.toml $(top_srcdir)/Cargo.lock rust-toolchain
+
+EXTRA_DIST = $(top_srcdir)/share/genbuild.sh qa/pull-tester/rpc-tests.py qa/rpc-tests qa/zcash $(DIST_DOCS) $(BIN_CHECKS) $(RUST_DIST)
 
 install-exec-hook:
 	mv $(DESTDIR)$(bindir)/fetch-params.sh $(DESTDIR)$(bindir)/zcash-fetch-params
@@ -167,3 +163,8 @@ DISTCHECK_CONFIGURE_FLAGS = --enable-man
 clean-local:
 	rm -rf test_bitcoin.coverage/ zcash-gtest.coverage/ total.coverage/
 	rm -rf afl-temp
+	rm -rf qa/pull-tester/__pycache__
+
+distclean-local:
+	rm -f zcutil/bin/db_*
+	rmdir zcutil/bin 2>/dev/null || true

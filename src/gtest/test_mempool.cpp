@@ -11,7 +11,7 @@
 #include "util.h"
 
 // Implementation is in test_checktransaction.cpp
-extern CMutableTransaction GetValidTransaction();
+extern CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH_ID);
 
 // Fake the input of transaction 5295156213414ed77f6e538e7e8ebe14492156906b9fe995b242477818789364
 // - 532639cc6bebed47c1c69ae36dd498c68a012e74ad12729adbd3dbb56f8f3f4a, 0
@@ -94,7 +94,7 @@ TEST(Mempool, PriorityStatsDoNotCrash) {
     unsigned int nHeight = 92045;
     double dPriority = view.GetPriority(tx, nHeight);
 
-    CTxMemPoolEntry entry(tx, nFees, nTime, dPriority, nHeight, true, false, SPROUT_BRANCH_ID);
+    CTxMemPoolEntry entry(tx, nFees, nTime, dPriority, nHeight, true, false, 0, SPROUT_BRANCH_ID);
 
     // Check it does not crash (ie. the death test fails)
     EXPECT_NONFATAL_FAILURE(EXPECT_DEATH(testPool.addUnchecked(tx.GetHash(), entry), ""), "");
@@ -119,7 +119,7 @@ TEST(Mempool, OverwinterNotActiveYet) {
 
     CTransaction tx1(mtx);
     LOCK(cs_main);
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+    EXPECT_FALSE(AcceptToMemoryPool(Params(), pool, state1, tx1, false, &missingInputs));
     EXPECT_EQ(state1.GetRejectReason(), "tx-overwinter-not-active");
 
     // Revert to default
@@ -144,7 +144,7 @@ TEST(Mempool, SproutV3TxFailsAsExpected) {
     CTransaction tx1(mtx);
 
     LOCK(cs_main);
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+    EXPECT_FALSE(AcceptToMemoryPool(Params(), pool, state1, tx1, false, &missingInputs));
     EXPECT_EQ(state1.GetRejectReason(), "version");
 }
 
@@ -166,13 +166,22 @@ TEST(Mempool, SproutV3TxWhenOverwinterActive) {
     CTransaction tx1(mtx);
 
     LOCK(cs_main);
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
-    EXPECT_EQ(state1.GetRejectReason(), "tx-overwinter-flag-not-set");
+
+    EXPECT_FALSE(AcceptToMemoryPool(Params(), pool, state1, tx1, false, &missingInputs));
+    EXPECT_EQ(state1.GetRejectReason(), "tx-overwintered-flag-not-set");
 
     // Revert to default
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
+
+// Subclass of CTransaction which doesn't call UpdateHash when constructing
+// from a CMutableTransaction.  This enables us to create a CTransaction
+// with bad values which normally trigger an exception during construction.
+class UNSAFE_CTransaction : public CTransaction {
+    public:
+        UNSAFE_CTransaction(const CMutableTransaction &tx) : CTransaction(tx, true) {}
+};
 
 // Sprout transaction with negative version, rejected by the mempool in CheckTransaction
 // under Sprout consensus rules, should still be rejected under Overwinter consensus rules.
@@ -197,12 +206,13 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
         mtx.nVersion = -3;
         EXPECT_EQ(mtx.nVersion, static_cast<int32_t>(0xfffffffd));
 
-        CTransaction tx1(mtx);
+        EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
+        UNSAFE_CTransaction tx1(mtx);
         EXPECT_EQ(tx1.nVersion, -3);
 
         CValidationState state1;
         LOCK(cs_main);
-        EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+        EXPECT_FALSE(AcceptToMemoryPool(Params(), pool, state1, tx1, false, &missingInputs));
         EXPECT_EQ(state1.GetRejectReason(), "bad-txns-version-too-low");
     }
 
@@ -214,12 +224,13 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
         mtx.nVersion = static_cast<int32_t>((1 << 31) | 3);
         EXPECT_EQ(mtx.nVersion, static_cast<int32_t>(0x80000003));
 
-        CTransaction tx1(mtx);
+        EXPECT_THROW((CTransaction(mtx)), std::ios_base::failure);
+        UNSAFE_CTransaction tx1(mtx);
         EXPECT_EQ(tx1.nVersion, -2147483645);
 
         CValidationState state1;
         LOCK(cs_main);
-        EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+        EXPECT_FALSE(AcceptToMemoryPool(Params(), pool, state1, tx1, false, &missingInputs));
         EXPECT_EQ(state1.GetRejectReason(), "bad-txns-version-too-low");
     }
 
@@ -252,7 +263,7 @@ TEST(Mempool, ExpiringSoonTxRejection) {
         CTransaction tx1(mtx);
 
         LOCK(cs_main);
-        EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+        EXPECT_FALSE(AcceptToMemoryPool(Params(), pool, state1, tx1, false, &missingInputs));
         EXPECT_EQ(state1.GetRejectReason(), "tx-expiring-soon");
     }
 

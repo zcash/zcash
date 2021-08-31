@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014 The Bitcoin Core developers
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -8,25 +8,30 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, start_nodes, str_to_b64str
+from test_framework.util import assert_equal, str_to_b64str
 
-from http.client import HTTPConnection
-from urllib.parse import urlparse
+import http.client
+import urllib.parse
 
 class HTTPBasicsTest (BitcoinTestFramework):
-    def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 3
+        self.setup_clean_chain = False
+
+    def setup_network(self):
+        self.nodes = self.setup_nodes()
 
     def run_test(self):
 
         #################################################
         # lowlevel check for http persistent connection #
         #################################################
-        url = urlparse(self.nodes[0].url)
+        url = urllib.parse.urlparse(self.nodes[0].url)
         authpair = url.username + ':' + url.password
         headers = {"Authorization": "Basic " + str_to_b64str(authpair)}
 
-        conn = HTTPConnection(url.hostname, url.port)
+        conn = http.client.HTTPConnection(url.hostname, url.port)
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         out1 = conn.getresponse().read()
@@ -43,7 +48,7 @@ class HTTPBasicsTest (BitcoinTestFramework):
         # same should be if we add keep-alive because this should be the std. behaviour
         headers = {"Authorization": "Basic " + str_to_b64str(authpair), "Connection": "keep-alive"}
 
-        conn = HTTPConnection(url.hostname, url.port)
+        conn = http.client.HTTPConnection(url.hostname, url.port)
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         out1 = conn.getresponse().read()
@@ -60,7 +65,7 @@ class HTTPBasicsTest (BitcoinTestFramework):
         # now do the same with "Connection: close"
         headers = {"Authorization": "Basic " + str_to_b64str(authpair), "Connection":"close"}
 
-        conn = HTTPConnection(url.hostname, url.port)
+        conn = http.client.HTTPConnection(url.hostname, url.port)
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         out1 = conn.getresponse().read()
@@ -68,27 +73,41 @@ class HTTPBasicsTest (BitcoinTestFramework):
         assert_equal(conn.sock!=None, False) # now the connection must be closed after the response
 
         # node1 (2nd node) is running with disabled keep-alive option
-        urlNode1 = urlparse(self.nodes[1].url)
+        urlNode1 = urllib.parse.urlparse(self.nodes[1].url)
         authpair = urlNode1.username + ':' + urlNode1.password
         headers = {"Authorization": "Basic " + str_to_b64str(authpair)}
 
-        conn = HTTPConnection(urlNode1.hostname, urlNode1.port)
+        conn = http.client.HTTPConnection(urlNode1.hostname, urlNode1.port)
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         out1 = conn.getresponse().read()
         assert_equal(b'"error":null' in out1, True)
 
         # node2 (third node) is running with standard keep-alive parameters which means keep-alive is on
-        urlNode2 = urlparse(self.nodes[2].url)
+        urlNode2 = urllib.parse.urlparse(self.nodes[2].url)
         authpair = urlNode2.username + ':' + urlNode2.password
         headers = {"Authorization": "Basic " + str_to_b64str(authpair)}
 
-        conn = HTTPConnection(urlNode2.hostname, urlNode2.port)
+        conn = http.client.HTTPConnection(urlNode2.hostname, urlNode2.port)
         conn.connect()
         conn.request('POST', '/', '{"method": "getbestblockhash"}', headers)
         out1 = conn.getresponse().read()
         assert_equal(b'"error":null' in out1, True)
         assert_equal(conn.sock!=None, True) # connection must be closed because bitcoind should use keep-alive by default
+
+        # Check excessive request size
+        conn = http.client.HTTPConnection(urlNode2.hostname, urlNode2.port)
+        conn.connect()
+        conn.request('GET', '/' + ('x'*1000), '', headers)
+        out1 = conn.getresponse()
+        assert_equal(out1.status, http.client.NOT_FOUND)
+
+        conn = http.client.HTTPConnection(urlNode2.hostname, urlNode2.port)
+        conn.connect()
+        conn.request('GET', '/' + ('x'*10000), '', headers)
+        out1 = conn.getresponse()
+        assert_equal(out1.status, http.client.BAD_REQUEST)
+
 
 if __name__ == '__main__':
     HTTPBasicsTest().main()

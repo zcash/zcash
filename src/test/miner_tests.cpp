@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         unsigned int k = Params().GetConsensus().nEquihashK;
 
         // Hash state
-        crypto_generichash_blake2b_state eh_state;
+        eh_HashState eh_state;
         EhInitialiseState(n, k, eh_state);
 
         // I = the block header minus nonce and solution.
@@ -208,21 +208,18 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         ss << I;
 
         // H(I||...
-        crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
+        eh_state.Update((unsigned char*)&ss[0], ss.size());
 
         while (true) {
             pblock->nNonce = ArithToUint256(try_nonce);
 
             // H(I||V||...
-            crypto_generichash_blake2b_state curr_state;
-            curr_state = eh_state;
-            crypto_generichash_blake2b_update(&curr_state,
-                                              pblock->nNonce.begin(),
-                                              pblock->nNonce.size());
+            eh_HashState curr_state(eh_state);
+            curr_state.Update(pblock->nNonce.begin(), pblock->nNonce.size());
 
             // Create solver and initialize it.
             equi eq(1);
-            eq.setstate(&curr_state);
+            eq.setstate(curr_state.state);
 
             // Intialization done, start algo driver.
             eq.digit0(0);
@@ -247,10 +244,12 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
                 solns.insert(sol_char);
             }
 
-            bool ret;
             for (auto soln : solns) {
-                EhIsValidSolution(n, k, curr_state, soln, ret);
-                if (!ret) continue;
+                if (!librustzcash_eh_isvalid(
+                    n, k,
+                    (unsigned char*)&ss[0], ss.size(),
+                    pblock->nNonce.begin(), pblock->nNonce.size(),
+                    soln.data(), soln.size())) continue;
                 pblock->nSolution = soln;
 
                 CValidationState state;
@@ -273,8 +272,8 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         }
 */
 
-        // These tests assume null hashFinalSaplingRoot (before Sapling)
-        pblock->hashFinalSaplingRoot = uint256();
+        // These tests assume null hashBlockCommitments (before Sapling)
+        pblock->hashBlockCommitments = uint256();
 
         CValidationState state;
         BOOST_CHECK(ProcessNewBlock(state, chainparams, NULL, pblock, true, NULL));
@@ -459,7 +458,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     SetMockTime(0);
     mempool.clear();
 
-    BOOST_FOREACH(CTransaction *tx, txFirst)
+    for (CTransaction *tx : txFirst)
         delete tx;
 
     fCheckpointsEnabled = true;

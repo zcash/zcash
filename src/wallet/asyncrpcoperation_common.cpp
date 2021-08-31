@@ -6,7 +6,7 @@
 
 extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
 
-UniValue SendTransaction(CTransaction& tx, boost::optional<CReserveKey&> reservekey, bool testmode) {
+UniValue SendTransaction(CTransaction& tx, std::optional<std::reference_wrapper<CReserveKey>> reservekey, bool testmode) {
     UniValue o(UniValue::VOBJ);
     // Send the transaction
     if (!testmode) {
@@ -15,17 +15,17 @@ UniValue SendTransaction(CTransaction& tx, boost::optional<CReserveKey&> reserve
             // More details in debug.log
             throw JSONRPCError(RPC_WALLET_ERROR, "SendTransaction: CommitTransaction failed");
         }
-        o.push_back(Pair("txid", tx.GetHash().ToString()));
+        o.pushKV("txid", tx.GetHash().ToString());
     } else {
         // Test mode does not send the transaction to the network.
-        o.push_back(Pair("test", 1));
-        o.push_back(Pair("txid", tx.GetHash().ToString()));
-        o.push_back(Pair("hex", EncodeHexTx(tx)));
+        o.pushKV("test", 1);
+        o.pushKV("txid", tx.GetHash().ToString());
+        o.pushKV("hex", EncodeHexTx(tx));
     }
     return o;
 }
 
-std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, boost::optional<CReserveKey&> reservekey, bool testmode) {
+std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::optional<std::reference_wrapper<CReserveKey>> reservekey, bool testmode) {
     // Sign the raw transaction
     UniValue rawtxnValue = find_value(obj, "rawtxn");
     if (rawtxnValue.isNull()) {

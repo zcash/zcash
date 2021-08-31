@@ -10,6 +10,7 @@
 #include "main.h"
 #include "pow.h"
 #include "uint256.h"
+#include "zcash/History.hpp"
 
 #include <stdint.h>
 
@@ -21,8 +22,10 @@ using namespace std;
 // previously used by DB_SAPLING_ANCHOR and DB_BEST_SAPLING_ANCHOR.
 static const char DB_SPROUT_ANCHOR = 'A';
 static const char DB_SAPLING_ANCHOR = 'Z';
+static const char DB_ORCHARD_ANCHOR = 'Y';
 static const char DB_NULLIFIER = 's';
 static const char DB_SAPLING_NULLIFIER = 'S';
+static const char DB_ORCHARD_NULLIFIER = 'O';
 static const char DB_COINS = 'c';
 static const char DB_BLOCK_FILES = 'f';
 static const char DB_TXINDEX = 't';
@@ -31,9 +34,14 @@ static const char DB_BLOCK_INDEX = 'b';
 static const char DB_BEST_BLOCK = 'B';
 static const char DB_BEST_SPROUT_ANCHOR = 'a';
 static const char DB_BEST_SAPLING_ANCHOR = 'z';
+static const char DB_BEST_ORCHARD_ANCHOR = 'y';
 static const char DB_FLAG = 'F';
 static const char DB_REINDEX_FLAG = 'R';
 static const char DB_LAST_BLOCK = 'l';
+
+static const char DB_MMR_LENGTH = 'M';
+static const char DB_MMR_NODE = 'm';
+static const char DB_MMR_ROOT = 'r';
 
 // insightexplorer
 static const char DB_ADDRESSINDEX = 'd';
@@ -45,10 +53,9 @@ static const char DB_BLOCKHASHINDEX = 'h';
 CCoinsViewDB::CCoinsViewDB(std::string dbName, size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / dbName, nCacheSize, fMemory, fWipe) {
 }
 
-CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe) 
+CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize, fMemory, fWipe)
 {
 }
-
 
 bool CCoinsViewDB::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
     if (rt == SproutMerkleTree::empty_root()) {
@@ -74,6 +81,18 @@ bool CCoinsViewDB::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree
     return read;
 }
 
+bool CCoinsViewDB::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const {
+    if (rt == OrchardMerkleTree::empty_root()) {
+        OrchardMerkleTree new_tree;
+        tree = new_tree;
+        return true;
+    }
+
+    bool read = db.Read(make_pair(DB_ORCHARD_ANCHOR, rt), tree);
+
+    return read;
+}
+
 bool CCoinsViewDB::GetNullifier(const uint256 &nf, ShieldedType type) const {
     bool spent = false;
     char dbChar;
@@ -83,6 +102,9 @@ bool CCoinsViewDB::GetNullifier(const uint256 &nf, ShieldedType type) const {
             break;
         case SAPLING:
             dbChar = DB_SAPLING_NULLIFIER;
+            break;
+        case ORCHARD:
+            dbChar = DB_ORCHARD_NULLIFIER;
             break;
         default:
             throw runtime_error("Unknown shielded type");
@@ -107,7 +129,7 @@ uint256 CCoinsViewDB::GetBestBlock() const {
 
 uint256 CCoinsViewDB::GetBestAnchor(ShieldedType type) const {
     uint256 hashBestAnchor;
-    
+
     switch (type) {
         case SPROUT:
             if (!db.Read(DB_BEST_SPROUT_ANCHOR, hashBestAnchor))
@@ -117,11 +139,69 @@ uint256 CCoinsViewDB::GetBestAnchor(ShieldedType type) const {
             if (!db.Read(DB_BEST_SAPLING_ANCHOR, hashBestAnchor))
                 return SaplingMerkleTree::empty_root();
             break;
+        case ORCHARD:
+            if (!db.Read(DB_BEST_ORCHARD_ANCHOR, hashBestAnchor))
+                return OrchardMerkleTree::empty_root();
+            break;
         default:
             throw runtime_error("Unknown shielded type");
     }
 
     return hashBestAnchor;
+}
+
+HistoryIndex CCoinsViewDB::GetHistoryLength(uint32_t epochId) const {
+    HistoryIndex historyLength;
+    if (!db.Read(make_pair(DB_MMR_LENGTH, epochId), historyLength)) {
+        // Starting new history
+        historyLength = 0;
+    }
+
+    return historyLength;
+}
+
+HistoryNode CCoinsViewDB::GetHistoryAt(uint32_t epochId, HistoryIndex index) const {
+    HistoryNode mmrNode = {};
+
+    if (index >= GetHistoryLength(epochId)) {
+        throw runtime_error("History data inconsistent - reindex?");
+    }
+
+    if (libzcash::IsV1HistoryTree(epochId)) {
+        // History nodes serialized by `zcashd` versions that were unaware of NU5, used
+        // the previous shorter maximum serialized length. Because we stored this as an
+        // array, we can't just read the current (longer) maximum serialized length, as
+        // it will result in an exception for those older nodes.
+        //
+        // Instead, we always read an array of the older length. This works as expected
+        // for V1 nodes serialized by older clients, while for V1 nodes serialized by
+        // NU5-aware clients this is guaranteed to ignore only trailing zero bytes.
+        std::array<unsigned char, NODE_V1_SERIALIZED_LENGTH> tmpMmrNode;
+        if (!db.Read(make_pair(DB_MMR_NODE, make_pair(epochId, index)), tmpMmrNode)) {
+            throw runtime_error("History data inconsistent (expected node not found) - reindex?");
+        }
+        std::copy(std::begin(tmpMmrNode), std::end(tmpMmrNode), mmrNode.bytes);
+    } else {
+        // Read mmrNode into tmp std::array
+        std::array<unsigned char, NODE_SERIALIZED_LENGTH> tmpMmrNode;
+
+        if (!db.Read(make_pair(DB_MMR_NODE, make_pair(epochId, index)), tmpMmrNode)) {
+            throw runtime_error("History data inconsistent (expected node not found) - reindex?");
+        }
+
+        std::copy(std::begin(tmpMmrNode), std::end(tmpMmrNode), mmrNode.bytes);
+    }
+
+    return mmrNode;
+}
+
+uint256 CCoinsViewDB::GetHistoryRoot(uint32_t epochId) const {
+    uint256 root;
+    if (!db.Read(make_pair(DB_MMR_ROOT, epochId), root))
+    {
+        root = uint256();
+    }
+    return root;
 }
 
 void BatchWriteNullifiers(CDBBatch& batch, CNullifiersMap& mapToUse, const char& dbChar)
@@ -134,8 +214,7 @@ void BatchWriteNullifiers(CDBBatch& batch, CNullifiersMap& mapToUse, const char&
                 batch.Write(make_pair(dbChar, it->first), true);
             // TODO: changed++? ... See comment in CCoinsViewDB::BatchWrite. If this is needed we could return an int
         }
-        CNullifiersMap::iterator itOld = it++;
-        mapToUse.erase(itOld);
+        it = mapToUse.erase(it);
     }
 }
 
@@ -153,8 +232,33 @@ void BatchWriteAnchors(CDBBatch& batch, Map& mapToUse, const char& dbChar)
             }
             // TODO: changed++?
         }
-        MapIterator itOld = it++;
-        mapToUse.erase(itOld);
+        it = mapToUse.erase(it);
+    }
+}
+
+void BatchWriteHistory(CDBBatch& batch, CHistoryCacheMap& historyCacheMap) {
+    for (auto nextHistoryCache = historyCacheMap.begin(); nextHistoryCache != historyCacheMap.end(); nextHistoryCache++) {
+        auto historyCache = nextHistoryCache->second;
+        auto epochId = nextHistoryCache->first;
+
+        // delete old entries since updateDepth
+        for (int i = historyCache.updateDepth + 1; i <= historyCache.length; i++) {
+            batch.Erase(make_pair(DB_MMR_NODE, make_pair(epochId, i)));
+        }
+
+        // replace/append new/updated entries
+        for (auto it = historyCache.appends.begin(); it != historyCache.appends.end(); it++) {
+            // Write mmrNode into tmp std::array
+            std::array<unsigned char, NODE_SERIALIZED_LENGTH> tmpMmrNode;
+            std::copy((it->second).bytes, (it->second).bytes + NODE_SERIALIZED_LENGTH, std::begin(tmpMmrNode));
+            batch.Write(make_pair(DB_MMR_NODE, make_pair(epochId, it->first)), tmpMmrNode);
+        }
+
+        // write new length
+        batch.Write(make_pair(DB_MMR_LENGTH, epochId), historyCache.length);
+
+        // write current root
+        batch.Write(make_pair(DB_MMR_ROOT, epochId), historyCache.root);
     }
 }
 
@@ -162,10 +266,14 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               const uint256 &hashBlock,
                               const uint256 &hashSproutAnchor,
                               const uint256 &hashSaplingAnchor,
+                              const uint256 &hashOrchardAnchor,
                               CAnchorsSproutMap &mapSproutAnchors,
                               CAnchorsSaplingMap &mapSaplingAnchors,
+                              CAnchorsOrchardMap &mapOrchardAnchors,
                               CNullifiersMap &mapSproutNullifiers,
-                              CNullifiersMap &mapSaplingNullifiers) {
+                              CNullifiersMap &mapSaplingNullifiers,
+                              CNullifiersMap &mapOrchardNullifiers,
+                              CHistoryCacheMap &historyCacheMap) {
     CDBBatch batch(db);
     size_t count = 0;
     size_t changed = 0;
@@ -178,15 +286,18 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
             changed++;
         }
         count++;
-        CCoinsMap::iterator itOld = it++;
-        mapCoins.erase(itOld);
+        it = mapCoins.erase(it);
     }
 
     ::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry, SproutMerkleTree>(batch, mapSproutAnchors, DB_SPROUT_ANCHOR);
     ::BatchWriteAnchors<CAnchorsSaplingMap, CAnchorsSaplingMap::iterator, CAnchorsSaplingCacheEntry, SaplingMerkleTree>(batch, mapSaplingAnchors, DB_SAPLING_ANCHOR);
+    ::BatchWriteAnchors<CAnchorsOrchardMap, CAnchorsOrchardMap::iterator, CAnchorsOrchardCacheEntry, OrchardMerkleTree>(batch, mapOrchardAnchors, DB_ORCHARD_ANCHOR);
 
     ::BatchWriteNullifiers(batch, mapSproutNullifiers, DB_NULLIFIER);
     ::BatchWriteNullifiers(batch, mapSaplingNullifiers, DB_SAPLING_NULLIFIER);
+    ::BatchWriteNullifiers(batch, mapOrchardNullifiers, DB_ORCHARD_NULLIFIER);
+
+    ::BatchWriteHistory(batch, historyCacheMap);
 
     if (!hashBlock.IsNull())
         batch.Write(DB_BEST_BLOCK, hashBlock);
@@ -194,6 +305,8 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
         batch.Write(DB_BEST_SPROUT_ANCHOR, hashSproutAnchor);
     if (!hashSaplingAnchor.IsNull())
         batch.Write(DB_BEST_SAPLING_ANCHOR, hashSaplingAnchor);
+    if (!hashOrchardAnchor.IsNull())
+        batch.Write(DB_BEST_ORCHARD_ANCHOR, hashOrchardAnchor);
 
     LogPrint("coindb", "Committing %u changed transactions (out of %u) to coin database...\n", (unsigned int)changed, (unsigned int)count);
     return db.WriteBatch(batch);
@@ -456,7 +569,9 @@ bool CBlockTreeDB::ReadFlag(const std::string &name, bool &fValue) {
     return true;
 }
 
-bool CBlockTreeDB::LoadBlockIndexGuts(std::function<CBlockIndex*(const uint256&)> insertBlockIndex)
+bool CBlockTreeDB::LoadBlockIndexGuts(
+    std::function<CBlockIndex*(const uint256&)> insertBlockIndex,
+    const CChainParams& chainParams)
 {
     boost::scoped_ptr<CDBIterator> pcursor(NewIterator());
 
@@ -479,7 +594,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts(std::function<CBlockIndex*(const uint256&)
                 pindexNew->hashSproutAnchor     = diskindex.hashSproutAnchor;
                 pindexNew->nVersion       = diskindex.nVersion;
                 pindexNew->hashMerkleRoot = diskindex.hashMerkleRoot;
-                pindexNew->hashFinalSaplingRoot   = diskindex.hashFinalSaplingRoot;
+                pindexNew->hashBlockCommitments  = diskindex.hashBlockCommitments;
                 pindexNew->nTime          = diskindex.nTime;
                 pindexNew->nBits          = diskindex.nBits;
                 pindexNew->nNonce         = diskindex.nNonce;
@@ -489,6 +604,11 @@ bool CBlockTreeDB::LoadBlockIndexGuts(std::function<CBlockIndex*(const uint256&)
                 pindexNew->nTx            = diskindex.nTx;
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
                 pindexNew->nSaplingValue  = diskindex.nSaplingValue;
+                pindexNew->nOrchardValue  = diskindex.nOrchardValue;
+                pindexNew->hashFinalSaplingRoot = diskindex.hashFinalSaplingRoot;
+                pindexNew->hashFinalOrchardRoot = diskindex.hashFinalOrchardRoot;
+                pindexNew->hashChainHistoryRoot = diskindex.hashChainHistoryRoot;
+                pindexNew->hashAuthDataRoot = diskindex.hashAuthDataRoot;
 
                 // Consistency checks
                 auto header = pindexNew->GetBlockHeader();
@@ -497,6 +617,45 @@ bool CBlockTreeDB::LoadBlockIndexGuts(std::function<CBlockIndex*(const uint256&)
                        diskindex.ToString(),  pindexNew->ToString());
                 if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
                     return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
+
+                // ZIP 221 consistency checks
+                // These checks should only be performed for block index entries marked
+                // as consensus-valid (at the time they were written).
+                //
+                if (pindexNew->IsValid(BLOCK_VALID_CONSENSUS)) {
+                    // We assume block index entries on disk that are not at least
+                    // CHAIN_HISTORY_ROOT_VERSION were created by nodes that were
+                    // not Heartwood aware. Such a node would not see Heartwood block
+                    // headers as valid, and so this must *either* be an index entry
+                    // for a block header on a non-Heartwood chain, or be marked as
+                    // consensus-invalid.
+                    //
+                    // It can also happen that the block index entry was written
+                    // by this node when it was Heartwood-aware (so its version
+                    // will be >= CHAIN_HISTORY_ROOT_VERSION), but received from
+                    // a non-upgraded peer. However that case the entry will be
+                    // marked as consensus-invalid.
+                    //
+                    if (diskindex.nClientVersion >= NU5_DATA_VERSION &&
+                        chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_NU5)) {
+                        // From NU5 onwards we don't enforce a consistency check, because
+                        // after ZIP 244, hashBlockCommitments will not match any stored
+                        // commitment.
+                    } else if (diskindex.nClientVersion >= CHAIN_HISTORY_ROOT_VERSION &&
+                        chainParams.GetConsensus().NetworkUpgradeActive(pindexNew->nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+                        if (pindexNew->hashBlockCommitments != pindexNew->hashChainHistoryRoot) {
+                            return error(
+                                "LoadBlockIndex(): block index inconsistency detected (post-Heartwood; hashBlockCommitments %s != hashChainHistoryRoot %s): %s",
+                                pindexNew->hashBlockCommitments.ToString(), pindexNew->hashChainHistoryRoot.ToString(), pindexNew->ToString());
+                        }
+                    } else {
+                        if (pindexNew->hashBlockCommitments != pindexNew->hashFinalSaplingRoot) {
+                            return error(
+                                "LoadBlockIndex(): block index inconsistency detected (pre-Heartwood; hashBlockCommitments %s != hashFinalSaplingRoot %s): %s",
+                                pindexNew->hashBlockCommitments.ToString(), pindexNew->hashFinalSaplingRoot.ToString(), pindexNew->ToString());
+                        }
+                    }
+                }
 
                 pcursor->Next();
             } else {

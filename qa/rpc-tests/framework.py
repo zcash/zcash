@@ -7,16 +7,16 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_raises,
     connect_nodes,
-    initialize_chain_clean,
     start_node,
     check_node_log,
 )
 
 class FrameworkTest (BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 2
+        self.setup_clean_chain = True
 
     def start_node_with(self, index, extra_args=[]):
         args = []

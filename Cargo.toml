@@ -20,19 +20,55 @@ path = "src/rust/src/rustzcash.rs"
 crate-type = ["staticlib"]
 
 [dependencies]
-bellman = "0.6"
+bellman = "0.10"
 blake2b_simd = "0.5"
 blake2s_simd = "0.5"
-ff = "0.6"
+bls12_381 = "0.5"
+byteorder = "1"
+group = "0.10"
+incrementalmerkletree = "0.1"
 libc = "0.2"
-pairing = "0.16"
-lazy_static = "1"
-rand_core = "0.5.1"
+jubjub = "0.7"
+nonempty = "0.7"
+orchard = "0.0"
+subtle = "2.2"
+rand_core = "0.6"
+tracing = "0.1"
+tracing-core = "0.1"
+tracing-appender = "0.1"
+zcash_address = "0.0"
 zcash_history = "0.2"
-zcash_primitives = "0.2"
-zcash_proofs = "0.2"
+zcash_note_encryption = "0.0"
+zcash_primitives = "0.5"
+zcash_proofs = "0.5"
+ed25519-zebra = "2.2.0"
+
+# Metrics
+hyper = { version = "=0.14.2", default-features = false, features = ["server", "tcp", "http1"] }
+ipnet = "2"
+metrics = "0.17"
+metrics-exporter-prometheus = "0.6"
+thiserror = "1"
+tokio = { version = "1.0", features = ["rt", "net", "time", "macros"] }
+
+[dependencies.tracing-subscriber]
+version = "0.2.12"
+default-features = false
+features = ["ansi", "chrono", "env-filter"]
 
 [profile.release]
 lto = true
 panic = 'abort'
 codegen-units = 1
+
+[patch.crates-io]
+ed25519-zebra = { git = "https://github.com/ZcashFoundation/ed25519-zebra.git", rev = "d3512400227a362d08367088ffaa9bd4142a69c7" }
+halo2 = { git = "https://github.com/zcash/halo2.git", rev = "27c4187673a9c6ade13fbdbd4f20955530c22d7f" }
+incrementalmerkletree = { git = "https://github.com/zcash/incrementalmerkletree", rev = "b7bd6246122a6e9ace8edb51553fbf5228906cbb" }
+jubjub = { git = "https://github.com/zkcrypto/jubjub.git", rev = "96ab4162b83303378eae32a326b54d88b75bffc2" }
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "d0baa18fc6105df4a7847de2b6dc50c5919b3123" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "19a97f16945c68c33aedcc89f2a4f4d398658b05" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "19a97f16945c68c33aedcc89f2a4f4d398658b05" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "19a97f16945c68c33aedcc89f2a4f4d398658b05" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "19a97f16945c68c33aedcc89f2a4f4d398658b05" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "19a97f16945c68c33aedcc89f2a4f4d398658b05" }

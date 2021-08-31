@@ -8,17 +8,14 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.util import (
     assert_equal,
     get_coinbase_address,
-    start_nodes,
     wait_and_assert_operationid_status,
+    DEFAULT_FEE
 )
 
 from decimal import Decimal
 
 # Test wallet behaviour with Sapling addresses
 class WalletSaplingTest(BitcoinTestFramework):
-
-    def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir)
 
     def run_test(self):
         # Sanity-check the test harness
@@ -136,19 +133,25 @@ class WalletSaplingTest(BitcoinTestFramework):
         sk0 = self.nodes[0].z_exportkey(saplingAddr0)
         saplingAddrInfo0 = self.nodes[2].z_importkey(sk0, "yes")
         assert_equal(saplingAddrInfo0["type"], "sapling")
+        assert_equal(saplingAddrInfo0["address"], saplingAddr0)
         assert_equal(self.nodes[2].z_getbalance(saplingAddrInfo0["address"]), Decimal('10'))
         sk1 = self.nodes[1].z_exportkey(saplingAddr1)
         saplingAddrInfo1 = self.nodes[2].z_importkey(sk1, "yes")
         assert_equal(saplingAddrInfo1["type"], "sapling")
+        assert_equal(saplingAddrInfo1["address"], saplingAddr1)
         assert_equal(self.nodes[2].z_getbalance(saplingAddrInfo1["address"]), Decimal('5'))
 
         # Verify importing a viewing key will update the nullifiers and witnesses correctly
         extfvk0 = self.nodes[0].z_exportviewingkey(saplingAddr0)
-        self.nodes[3].z_importviewingkey(extfvk0, "yes")
-        assert_equal(self.nodes[3].z_getbalance(saplingAddr0), Decimal('10'))
+        saplingAddrInfo0 = self.nodes[3].z_importviewingkey(extfvk0, "yes")
+        assert_equal(saplingAddrInfo0["type"], "sapling")
+        assert_equal(saplingAddrInfo0["address"], saplingAddr0)
+        assert_equal(self.nodes[3].z_getbalance(saplingAddrInfo0["address"]), Decimal('10'))
         extfvk1 = self.nodes[1].z_exportviewingkey(saplingAddr1)
-        self.nodes[3].z_importviewingkey(extfvk1, "yes")
-        assert_equal(self.nodes[3].z_getbalance(saplingAddr1), Decimal('5'))
+        saplingAddrInfo1 = self.nodes[3].z_importviewingkey(extfvk1, "yes")
+        assert_equal(saplingAddrInfo1["type"], "sapling")
+        assert_equal(saplingAddrInfo1["address"], saplingAddr1)
+        assert_equal(self.nodes[3].z_getbalance(saplingAddrInfo1["address"]), Decimal('5'))
 
         # Verify that z_gettotalbalance only includes watch-only addresses when requested
         assert_equal(self.nodes[3].z_gettotalbalance()['private'], '0.00')
@@ -160,8 +163,9 @@ class WalletSaplingTest(BitcoinTestFramework):
         try:
             self.nodes[1].z_sendmany(
                 taddr1,
-                [{'address': node4_sproutaddr, 'amount': 2.5}, {'address': node4_saplingaddr, 'amount': 2.4999}],
-                1, 0.0001
+                [{'address': node4_sproutaddr, 'amount': Decimal('2.5')},
+                 {'address': node4_saplingaddr, 'amount': Decimal('2.5') - DEFAULT_FEE}],
+                1, DEFAULT_FEE
             )
             raise AssertionError("Should have thrown an exception")
         except JSONRPCException as e:

@@ -32,7 +32,12 @@ export PKG_CONFIG_LIBDIR=$depends_prefix/lib/pkgconfig
 export PKG_CONFIG_PATH=$depends_prefix/share/pkgconfig
 
 CPPFLAGS="-I$depends_prefix/include/ $CPPFLAGS"
-LDFLAGS="-L$depends_prefix/lib $LDFLAGS"
+
+if test x@host_os@ = xfreebsd; then
+  LDFLAGS="-L$depends_prefix/lib $LDFLAGS -static-libstdc++ -lcxxrt"
+else
+  LDFLAGS="-L$depends_prefix/lib $LDFLAGS -static-libstdc++ -lc++abi"
+fi
 
 CC="@CC@"
 CXX="@CXX@"

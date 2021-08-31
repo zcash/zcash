@@ -2,34 +2,30 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef ZCASH_UTIL_TEST_H
-#define ZCASH_UTIL_TEST_H
+#ifndef ZCASH_UTILTEST_H
+#define ZCASH_UTILTEST_H
 
 #include "key_io.h"
 #include "wallet/wallet.h"
 #include "zcash/Address.hpp"
-#include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
 // Sprout
-CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
+CWalletTx GetValidSproutReceive(const libzcash::SproutSpendingKey& sk,
+                                CAmount value,
+                                bool randomInputs,
+                                uint32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
+                                int32_t version = SAPLING_TX_VERSION);
+CWalletTx GetInvalidCommitmentSproutReceive(
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
                                 uint32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
                                 int32_t version = SAPLING_TX_VERSION);
-CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
-                                const libzcash::SproutSpendingKey& sk,
-                                CAmount value,
-                                bool randomInputs,
-                                uint32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
-                                int32_t version = SAPLING_TX_VERSION);
-libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
-                                   const libzcash::SproutSpendingKey& sk,
+libzcash::SproutNote GetSproutNote(const libzcash::SproutSpendingKey& sk,
                                    const CTransaction& tx, size_t js, size_t n);
-CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
-                              const libzcash::SproutSpendingKey& sk,
+CWalletTx GetValidSproutSpend(const libzcash::SproutSpendingKey& sk,
                               const libzcash::SproutNote& note,
                               CAmount value);
 
@@ -41,17 +37,30 @@ struct TestSaplingNote {
     SaplingMerkleTree tree;
 };
 
+const CChainParams& RegtestActivateOverwinter();
+void RegtestDeactivateOverwinter();
+
 const Consensus::Params& RegtestActivateSapling();
 
 void RegtestDeactivateSapling();
 
-const Consensus::Params& RegtestActivateBlossom(bool updatePow, int blossomActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+const CChainParams& RegtestActivateBlossom(bool updatePow, int blossomActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
 
 void RegtestDeactivateBlossom();
 
 const Consensus::Params& RegtestActivateHeartwood(bool updatePow, int heartwoodActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
 
 void RegtestDeactivateHeartwood();
+
+const Consensus::Params& RegtestActivateCanopy(bool updatePow, int canopyActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+const Consensus::Params& RegtestActivateCanopy();
+
+void RegtestDeactivateCanopy();
+
+const Consensus::Params& RegtestActivateNU5(bool updatePow, int nu5ActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+const Consensus::Params& RegtestActivateNU5();
+
+void RegtestDeactivateNU5();
 
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey();
 
@@ -67,4 +76,4 @@ CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
                                  const libzcash::SaplingExtendedSpendingKey &sk,
                                  CAmount value);
 
-#endif // ZCASH_UTIL_TEST_H
+#endif // ZCASH_UTILTEST_H

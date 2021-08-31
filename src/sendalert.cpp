@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 The Zcash developers
+// Copyright (c) 2016-2020 The Zcash developers
 // Original code from: https://gist.github.com/laanwj/0e689cfa37b52bcbbb44
 
 /*
@@ -72,15 +72,17 @@ void ThreadSendAlert()
     CAlert alert;
     alert.nRelayUntil   = GetTime() + 15 * 60;
     alert.nExpiration   = GetTime() + 10 * 365 * 24 * 60 * 60;
-    alert.nID           = 1006;  // use https://github.com/zcash/zcash/wiki/specification#assigned-numbers to keep track of alert IDs
-    alert.nCancel       = 1005;  // cancels previous messages up to this ID number
+    alert.nID           = 1007;  // use https://github.com/zcash/zcash/wiki/specification#assigned-numbers to keep track of alert IDs
+    alert.nCancel       = 1006;  // cancels previous messages up to this ID number
 
     // These versions are protocol versions
     // 170002 : 1.0.0
     // 170006 : 1.1.2
     // 170007 : 2.0.0
+    // 170010 : 2.1.2
+    // 170011 : 3.0.0
     alert.nMinVer       = 170002;
-    alert.nMaxVer       = 170006;
+    alert.nMaxVer       = 170010;
 
     //
     // main.cpp:
@@ -90,14 +92,14 @@ void ThreadSendAlert()
     //  4000 or higher will put the RPC into safe mode
     alert.nPriority     = 4000;
     alert.strComment    = "";
-    alert.strStatusBar  = "Your client is out of date and incompatible with the Sapling network upgrade. Please update to a recent version of Zcash (2.0.1 or later).";
+    alert.strStatusBar  = "Your client is out of date and incompatible with the Heartwood network upgrade. Please update to a recent version of Zcash (3.0.0 or later).";
     alert.strRPCError   = alert.strStatusBar;
 
     // Set specific client version/versions here. If setSubVer is empty, no filtering on subver is done:
     // alert.setSubVer.insert(std::string("/MagicBean:0.7.2/"));
     const std::vector<std::string> useragents = {}; //{"MagicBean", "BeanStalk", "AppleSeed", "EleosZcash"};
 
-    BOOST_FOREACH(const std::string& useragent, useragents) {
+    for (const std::string& useragent : useragents) {
     }
 
     // Sanity check
@@ -159,7 +161,7 @@ void ThreadSendAlert()
     int nSent = 0;
     {
         LOCK(cs_vNodes);
-        BOOST_FOREACH(CNode* pnode, vNodes)
+        for (CNode* pnode : vNodes)
         {
             if (alert2.RelayTo(pnode))
             {

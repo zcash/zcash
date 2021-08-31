@@ -2,13 +2,14 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef TRANSACTION_BUILDER_H
-#define TRANSACTION_BUILDER_H
+#ifndef ZCASH_TRANSACTION_BUILDER_H
+#define ZCASH_TRANSACTION_BUILDER_H
 
 #include "coins.h"
 #include "consensus/params.h"
 #include "keystore.h"
 #include "primitives/transaction.h"
+#include "random.h"
 #include "script/script.h"
 #include "script/standard.h"
 #include "uint256.h"
@@ -18,7 +19,9 @@
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
-#include <boost/optional.hpp>
+#include <optional>
+
+#define NO_MEMO {{0xF6}}
 
 struct SpendDescriptionInfo {
     libzcash::SaplingExpandedSpendingKey expsk;
@@ -44,7 +47,38 @@ struct OutputDescriptionInfo {
         libzcash::SaplingNote note,
         std::array<unsigned char, ZC_MEMO_SIZE> memo) : ovk(ovk), note(note), memo(memo) {}
 
-    boost::optional<OutputDescription> Build(void* ctx);
+    std::optional<OutputDescription> Build(void* ctx);
+};
+
+struct JSDescriptionInfo {
+    Ed25519VerificationKey joinSplitPubKey;
+    uint256 anchor;
+    // We store references to these so they are correctly randomised for the caller.
+    std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs;
+    std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs;
+    CAmount vpub_old;
+    CAmount vpub_new;
+
+    JSDescriptionInfo(
+        Ed25519VerificationKey joinSplitPubKey,
+        uint256 anchor,
+        std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
+        std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
+        CAmount vpub_old,
+        CAmount vpub_new) : joinSplitPubKey(joinSplitPubKey), anchor(anchor), inputs(inputs), outputs(outputs), vpub_old(vpub_old), vpub_new(vpub_new) {}
+
+    JSDescription BuildDeterministic(
+        bool computeProof = true, // Set to false in some tests
+        uint256* esk = nullptr    // payment disclosure
+    );
+
+    JSDescription BuildRandomized(
+        std::array<size_t, ZC_NUM_JS_INPUTS>& inputMap,
+        std::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap,
+        bool computeProof = true, // Set to false in some tests
+        uint256* esk = nullptr,   // payment disclosure
+        std::function<int(int)> gen = GetRandInt
+    );
 };
 
 struct TransparentInputInfo {
@@ -58,8 +92,8 @@ struct TransparentInputInfo {
 
 class TransactionBuilderResult {
 private:
-    boost::optional<CTransaction> maybeTx;
-    boost::optional<std::string> maybeError;
+    std::optional<CTransaction> maybeTx;
+    std::optional<std::string> maybeError;
 public:
     TransactionBuilderResult() = delete;
     TransactionBuilderResult(const CTransaction& tx);
@@ -76,7 +110,6 @@ private:
     Consensus::Params consensusParams;
     int nHeight;
     const CKeyStore* keystore;
-    ZCJoinSplit* sproutParams;
     const CCoinsViewCache* coinsView;
     CCriticalSection* cs_coinsView;
     CMutableTransaction mtx;
@@ -88,9 +121,9 @@ private:
     std::vector<libzcash::JSOutput> jsOutputs;
     std::vector<TransparentInputInfo> tIns;
 
-    boost::optional<std::pair<uint256, libzcash::SaplingPaymentAddress>> saplingChangeAddr;
-    boost::optional<libzcash::SproutPaymentAddress> sproutChangeAddr;
-    boost::optional<CTxDestination> tChangeAddr;
+    std::optional<std::pair<uint256, libzcash::SaplingPaymentAddress>> saplingChangeAddr;
+    std::optional<libzcash::SproutPaymentAddress> sproutChangeAddr;
+    std::optional<CTxDestination> tChangeAddr;
 
 public:
     TransactionBuilder() {}
@@ -98,7 +131,6 @@ public:
         const Consensus::Params& consensusParams,
         int nHeight,
         CKeyStore* keyStore = nullptr,
-        ZCJoinSplit* sproutParams = nullptr,
         CCoinsViewCache* coinsView = nullptr,
         CCriticalSection* cs_coinsView = nullptr);
 
@@ -118,7 +150,7 @@ public:
         uint256 ovk,
         libzcash::SaplingPaymentAddress to,
         CAmount value,
-        std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}});
+        std::array<unsigned char, ZC_MEMO_SIZE> memo = NO_MEMO);
 
     // Throws if the anchor does not match the anchor used by
     // previously-added Sprout inputs.
@@ -130,12 +162,12 @@ public:
     void AddSproutOutput(
         libzcash::SproutPaymentAddress to,
         CAmount value,
-        std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}});
+        std::array<unsigned char, ZC_MEMO_SIZE> memo = NO_MEMO);
 
     // Assumes that the value correctly corresponds to the provided UTXO.
     void AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value);
 
-    void AddTransparentOutput(CTxDestination& to, CAmount value);
+    void AddTransparentOutput(const CTxDestination& to, CAmount value);
 
     void SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, uint256 ovk);
 
@@ -157,4 +189,4 @@ private:
         std::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap);
 };
 
-#endif /* TRANSACTION_BUILDER_H */
+#endif // ZCASH_TRANSACTION_BUILDER_H

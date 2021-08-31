@@ -22,6 +22,51 @@
 #include <utility>
 #include <vector>
 
+/**
+ * Wrapper around C++ stream objects, enabling them to be passed into Rust code.
+ */
+template<typename Stream>
+class RustStream {
+    Stream* stream;
+
+public:
+    RustStream(Stream& stream_) : stream(&stream_) {}
+
+    static long read_callback(void* context, unsigned char* pch, size_t nSize)
+    {
+        return reinterpret_cast<RustStream*>(context)->read(
+            reinterpret_cast<char*>(pch), nSize);
+    }
+
+    static long write_callback(void* context, const unsigned char* pch, size_t nSize)
+    {
+        return reinterpret_cast<RustStream*>(context)->write(
+            reinterpret_cast<const char*>(pch), nSize);
+    }
+
+    long read(char* pch, size_t nSize)
+    {
+        try {
+            stream->read(pch, nSize);
+            return nSize;
+        } catch (std::ios_base::failure e) {
+            // TODO: log
+            return -1;
+        }
+    }
+
+    long write(const char* pch, size_t nSize)
+    {
+        try {
+            stream->write(pch, nSize);
+            return nSize;
+        } catch (std::ios_base::failure e) {
+            // TODO: log
+            return -1;
+        }
+    }
+};
+
 template<typename Stream>
 class OverrideStream
 {
@@ -106,12 +151,10 @@ public:
         Init(nTypeIn, nVersionIn);
     }
 
-#if !defined(_MSC_VER) || _MSC_VER >= 1300
     CBaseDataStream(const char* pbegin, const char* pend, int nTypeIn, int nVersionIn) : vch(pbegin, pend)
     {
         Init(nTypeIn, nVersionIn);
     }
-#endif
 
     CBaseDataStream(const vector_type& vchIn, int nTypeIn, int nVersionIn) : vch(vchIn.begin(), vchIn.end())
     {
@@ -177,6 +220,8 @@ public:
     void clear()                                     { vch.clear(); nReadPos = 0; }
     iterator insert(iterator it, const char& x=char()) { return vch.insert(it, x); }
     void insert(iterator it, size_type n, const char& x) { vch.insert(it, n, x); }
+    value_type* data()                               { return vch.data() + nReadPos; }
+    const value_type* data() const                   { return vch.data() + nReadPos; }
 
     void insert(iterator it, std::vector<char>::const_iterator first, std::vector<char>::const_iterator last)
     {
@@ -192,7 +237,6 @@ public:
             vch.insert(it, first, last);
     }
 
-#if !defined(_MSC_VER) || _MSC_VER >= 1300
     void insert(iterator it, const char* first, const char* last)
     {
         if (last == first) return;
@@ -206,7 +250,6 @@ public:
         else
             vch.insert(it, first, last);
     }
-#endif
 
     iterator erase(iterator it)
     {
@@ -524,16 +567,17 @@ private:
 protected:
     // read data from the source to fill the buffer
     bool Fill() {
+        assert(nReadPos == nSrcPos);
         unsigned int pos = nSrcPos % vchBuf.size();
         unsigned int readNow = vchBuf.size() - pos;
-        unsigned int nAvail = vchBuf.size() - (nSrcPos - nReadPos) - nRewind;
+        unsigned int nAvail = vchBuf.size() - nRewind;
         if (nAvail < readNow)
             readNow = nAvail;
         if (readNow == 0)
             return false;
         size_t nBytes = fread((void*)&vchBuf[pos], 1, readNow, src);
         if (nBytes == 0) {
-            throw std::ios_base::failure(feof(src) ? "CBufferedFile::Fill: end of file" : "CBufferedFile::Fill: fread failed");
+            throw std::ios_base::failure(eof() ? "CBufferedFile::Fill: end of file" : "CBufferedFile::Fill: fread failed");
         }
         nSrcPos += nBytes;
         return true;
@@ -566,7 +610,7 @@ public:
 
     // check whether we're at the end of the source file
     bool eof() const {
-        return nReadPos == nSrcPos && feof(src);
+        return src == NULL || (nReadPos == nSrcPos && feof(src));
     }
 
     // read a number of bytes

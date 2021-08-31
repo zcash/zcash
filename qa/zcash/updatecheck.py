@@ -25,17 +25,20 @@
 # .mk files in depends/packages, this script will exit with
 # a nonzero status. The latter case would suggest someone added a new dependency
 # without adding a corresponding entry to get_dependency_list() below.
+#
+# To test the script itself, run it with --functionality-test as the only
+# argument. This will exercise the full functionality of the script, but will
+# only return a non-zero exit status when there's something wrong with the
+# script itself, for example if a new file was added to depends/packages/ but
+# wasn't added to this script.
 
 import requests
 import os
 import re
 import sys
+import datetime
 
 SOURCE_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..")
-# The email for this account is taylor@electriccoin.co and the token does not
-# have any privileges.
-GITHUB_API_BASIC_AUTH_USER = "taylor-ecc"
-GITHUB_API_BASIC_AUTH_PASSWORD = "df2cb6d13a29837e9dc97c7db1eff058e8fa6618"
 
 def get_dependency_list():
     dependencies = [
@@ -50,6 +53,11 @@ def get_dependency_list():
             GithubTagReleaseLister("google", "googletest", "^release-(\d+)\.(\d+)\.(\d+)$",
                 { "release-1.8.1": (1, 8, 1) }),
             DependsVersionGetter("googletest")),
+        # libc++ matches the Clang version
+        Dependency("libcxx",
+            GithubTagReleaseLister("llvm", "llvm-project", "^llvmorg-(\d+)\.(\d+).(\d+)$",
+                { "llvmorg-11.0.0": (11, 0, 0), "llvmorg-9.0.1-rc3": None}),
+            DependsVersionGetter("native_clang")),
         Dependency("libevent",
             GithubTagReleaseLister("libevent", "libevent", "^release-(\d+)\.(\d+)\.(\d+)-stable$",
                 { "release-2.0.22-stable": (2, 0, 22), "release-2.1.9-beta": None }),
@@ -58,22 +66,23 @@ def get_dependency_list():
             GithubTagReleaseLister("jedisct1", "libsodium", "^(\d+)\.(\d+)\.(\d+)$",
                 { "1.0.17": (1, 0, 17) }),
             DependsVersionGetter("libsodium")),
+        # b2 matches the Boost version
+        Dependency("native_b2",
+            GithubTagReleaseLister("boostorg", "boost", "^boost-(\d+)\.(\d+)\.(\d+)$",
+                { "boost-1.69.0": (1, 69, 0), "boost-1.69.0-beta1": None }),
+            DependsVersionGetter("boost")),
         Dependency("native_ccache",
             GithubTagReleaseLister("ccache", "ccache", "^v?(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "v3.5.1": (3, 5, 1), "v3.6": (3, 6)}),
             DependsVersionGetter("native_ccache")),
-        Dependency("openssl",
-            GithubTagReleaseLister("openssl", "openssl", "^OpenSSL_(\d+)_(\d+)_(\d+)([a-z]+)?$",
-                { "OpenSSL_1_1_1b": (1, 1, 1, 'b'), "OpenSSL_1_1_1-pre9": None }),
-            DependsVersionGetter("openssl")),
-        Dependency("proton",
-            GithubTagReleaseLister("apache", "qpid-proton", "^(\d+)\.(\d+)(?:\.(\d+))?$",
-                { "0.27.0": (0, 27, 0), "0.10": (0, 10), "0.12.0-rc": None }),
-            DependsVersionGetter("proton")),
-        Dependency("rust",
+        Dependency("native_clang",
+            GithubTagReleaseLister("llvm", "llvm-project", "^llvmorg-(\d+)\.(\d+).(\d+)$",
+                { "llvmorg-11.0.0": (11, 0, 0), "llvmorg-9.0.1-rc3": None}),
+            DependsVersionGetter("native_clang")),
+        Dependency("native_rust",
             GithubTagReleaseLister("rust-lang", "rust", "^(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "1.33.0": (1, 33, 0), "0.9": (0, 9) }),
-            DependsVersionGetter("rust")),
+            DependsVersionGetter("native_rust")),
         Dependency("zeromq",
             GithubTagReleaseLister("zeromq", "libzmq", "^v(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "v4.3.1": (4, 3, 1), "v4.2.0-rc1": None }),
@@ -82,43 +91,36 @@ def get_dependency_list():
             GithubTagReleaseLister("google", "leveldb", "^v(\d+)\.(\d+)$",
                 { "v1.13": (1, 13) }),
             LevelDbVersionGetter()),
+        Dependency("univalue",
+            GithubTagReleaseLister("bitcoin-core", "univalue", "^v(\d+)\.(\d+)\.(\d+)$",
+                { "v1.0.1": (1, 0, 1) }),
+            UnivalueVersionGetter()),
         Dependency("utfcpp",
             GithubTagReleaseLister("nemtrif", "utfcpp", "^v(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "v3.1": (3, 1), "v3.0.3": (3, 0, 3) }),
             DependsVersionGetter("utfcpp"))
     ]
 
-    # Rust crates.
-    crates = [
-        "aes", "aesni", "aes_soft", "arrayvec", "bellman",
-        "arrayref", "autocfg", "bigint", "blake2b_simd", "blake2s_simd",
-        "bit_vec", "block_cipher_trait", "byteorder",
-        "block_buffer", "block_padding", "c2_chacha", "cfg_if", "crunchy",
-        "byte_tools", "constant_time_eq", "crossbeam", "digest", "fpe",
-        "crossbeam_channel", "crossbeam_deque", "crossbeam_epoch",
-        "crossbeam_utils", "crossbeam_queue", "crypto_api", "crypto_api_chachapoly",
-        "directories", "fake_simd", "ff", "ff_derive", "getrandom", "hex", "log",
-        "futures_cpupool", "futures", "generic_array", "group",
-        "lazy_static", "libc", "nodrop", "num_bigint",
-        "memoffset", "ppv_lite86", "proc_macro2", "quote",
-        "num_cpus", "num_integer", "num_traits", "opaque_debug", "pairing",
-        "rand", "typenum",
-        "rand_chacha", "rand_core", "rand_hc", "rand_xorshift",
-        "rustc_version", "scopeguard", "semver", "semver_parser", "sha2", "syn",
-        "unicode_xid", "wasi",
-        "winapi_i686_pc_windows_gnu", "winapi", "winapi_x86_64_pc_windows_gnu",
-        "zcash_history", "zcash_primitives", "zcash_proofs"
-    ]
-
-    for crate in crates:
-        dependencies.append(
-            Dependency("crate_" + crate,
-                RustCrateReleaseLister(crate),
-                DependsVersionGetter("crate_" + crate)
-            )
-        )
-
     return dependencies
+
+class GitHubToken:
+    def __init__(self):
+        token_path = os.path.join(SOURCE_ROOT, ".updatecheck-token")
+        try:
+            with open(token_path, encoding='utf8') as f:
+                token = f.read().strip()
+                self._user = token.split(":")[0]
+                self._password = token.split(":")[1]
+        except:
+            print("Please make sure a GitHub API token is in .updatecheck-token in the root of this repository.")
+            print("The format is username:hex-token.")
+            sys.exit(1)
+
+    def user(self):
+        return self.user
+
+    def password(self):
+        return self.password
 
 class Version(list):
     def __init__(self, version_tuple):
@@ -169,6 +171,7 @@ class GithubTagReleaseLister:
         self.repo = repo
         self.regex = regex
         self.testcases = testcases
+        self.token = GitHubToken()
 
         for tag, expected in testcases.items():
             match = re.match(self.regex, tag)
@@ -194,56 +197,15 @@ class GithubTagReleaseLister:
 
     def all_tag_names(self):
         url = "https://api.github.com/repos/" + safe(self.org) + "/" + safe(self.repo) + "/git/refs/tags"
-        r = requests.get(url, auth=requests.auth.HTTPBasicAuth(GITHUB_API_BASIC_AUTH_USER, GITHUB_API_BASIC_AUTH_PASSWORD))
+        r = requests.get(url, auth=requests.auth.HTTPBasicAuth(self.token.user(), self.token.password()))
         if r.status_code != 200:
             raise RuntimeError("Request to GitHub tag API failed.")
         json = r.json()
         return list(map(lambda t: t["ref"].split("/")[-1], json))
 
-class RustCrateReleaseLister:
-    def __init__(self, crate):
-        self.crate = crate
-
-    def known_releases(self):
-        url = "https://crates.io/api/v1/crates/" + safe(self.crate) + "/versions"
-        r = requests.get(url)
-        if r.status_code != 200:
-            raise RuntimeError("Request to crates.io versions API failed.")
-        json = r.json()
-        version_numbers = list(map(lambda t: t["num"], json["versions"]))
-
-        release_versions = []
-        for num in version_numbers:
-            match = re.match("^(\d+)\.(\d+)\.(\d+)$", num)
-            if match:
-                release_versions.append(Version(match.groups()))
-
-        if len(release_versions) == 0:
-            raise RuntimeError("Failed to list release versions from crates.io.")
-
-        return release_versions
-
-class LibGmpReleaseLister:
-    def known_releases(self):
-        url = "https://gmplib.org/download/gmp/"
-        r = requests.get(url)
-        if r.status_code != 200:
-            raise RuntimeError("Request to libgmp download directory failed.")
-        page = r.text
-
-        # We use a set because the search will result in duplicates.
-        release_versions = set()
-        for match in re.findall("gmp-(\d+)\.(\d+)\.(\d+)\.tar.bz2", page):
-            release_versions.add(Version(match))
-
-        if Version((6, 1, 2)) not in release_versions:
-            raise RuntimeError("Missing expected version from libgmp download directory.")
-
-        return list(release_versions)
-
 class BerkeleyDbReleaseLister:
     def known_releases(self):
-        url = "https://www.oracle.com/technetwork/products/berkeleydb/downloads/index-082944.html"
+        url = "https://www.oracle.com/database/technologies/related/berkeleydb-downloads.html"
         r = requests.get(url)
         if r.status_code != 200:
             raise RuntimeError("Request to Berkeley DB download directory failed.")
@@ -254,7 +216,7 @@ class BerkeleyDbReleaseLister:
         for match in re.findall("Berkeley DB (\d+)\.(\d+)\.(\d+)\.tar.gz", page):
             release_versions.add(Version(match))
 
-        if Version((6, 2, 38)) not in release_versions:
+        if len(release_versions) == 0:
             raise RuntimeError("Missing expected version from Oracle web page.")
 
         return list(release_versions)
@@ -264,14 +226,16 @@ class DependsVersionGetter:
         self.name = name
 
     def current_version(self):
-        mk_file_path = os.path.join(SOURCE_ROOT, "depends", "packages", safe(self.name) + ".mk")
-        mk_file = open(mk_file_path, 'r').read()
+        mk_file_path = os.path.join(SOURCE_ROOT, "depends", "packages", safe_depends(self.name) + ".mk")
+        mk_file = open(mk_file_path, 'r', encoding='utf8').read()
 
         regexp_whitelist = [
             "package\)_version=(\d+)\.(\d+)\.(\d+)$",
             "package\)_version=(\d+)\.(\d+)$",
             "package\)_version=(\d+)_(\d+)_(\d+)$",
-            "package\)_version=(\d+)\.(\d+)\.(\d+)([a-z])$"
+            "package\)_version=(\d+)\.(\d+)\.(\d+)([a-z])$",
+            # Workaround for wasi 0.9.0 preview
+            "package\)_version=(\d+)\.(\d+)\.(\d+)\+wasi-snapshot-preview1$",
         ]
 
         current_version = None
@@ -289,7 +253,7 @@ class DependsVersionGetter:
 class LevelDbVersionGetter:
     def current_version(self):
         header_path = os.path.join(SOURCE_ROOT, "src", "leveldb", "include", "leveldb", "db.h")
-        header_contents = open(header_path, 'r').read()
+        header_contents = open(header_path, 'r', encoding='utf8').read()
 
         match = re.search("kMajorVersion\s*=\s*(\d+);\s*.*kMinorVersion\s*=\s*(\d+);\s*$", header_contents, re.MULTILINE)
         if match:
@@ -297,8 +261,52 @@ class LevelDbVersionGetter:
         else:
             raise RuntimeError("Couldn't parse LevelDB's version from db.h")
 
+class UnivalueVersionGetter:
+    def current_version(self):
+        configure_path = os.path.join(SOURCE_ROOT, "src", "univalue", "configure.ac")
+        configure_contents = open(configure_path, 'r', encoding='utf8').read()
+
+        match = re.search("AC_INIT.*univalue.*\[(\d+)\.(\d+)\.(\d+)\]", configure_contents)
+        if match:
+            return Version(match.groups())
+        else:
+            raise RuntimeError("Couldn't parse univalue's version from its configure.ac")
+
+class PostponedUpdates():
+    def __init__(self):
+        self.postponedlist = dict()
+
+        postponedlist_path = os.path.join(
+            os.path.dirname(__file__),
+            "postponed-updates.txt"
+        )
+
+        file = open(postponedlist_path, 'r', encoding='utf8')
+        for line in file.readlines():
+            stripped = re.sub('#.*$', '', line).strip()
+            if stripped != "":
+                match = re.match('^(\S+)\s+(\S+)\s+(\S+)$', stripped)
+                if match:
+                    postponed_name = match.groups()[0]
+                    postponed_version = Version(match.groups()[1].split("."))
+                    postpone_expiration = datetime.datetime.strptime(match.groups()[2], '%Y-%m-%d')
+                    if datetime.datetime.utcnow() < postpone_expiration:
+                        self.postponedlist[(postponed_name, str(postponed_version))] = True
+                else:
+                    raise RuntimeError("Could not parse line in postponed-updates.txt:" + line)
+
+
+    def is_postponed(self, name, version):
+        return (name, str(version)) in self.postponedlist
+
 def safe(string):
     if re.match('^[a-zA-Z0-9_-]*$', string):
+        return string
+    else:
+        raise RuntimeError("Potentially-dangerous string encountered.")
+
+def safe_depends(string):
+    if re.match('^[a-zA-Z0-9._-]*$', string):
         return string
     else:
         raise RuntimeError("Potentially-dangerous string encountered.")
@@ -319,8 +327,6 @@ def main():
     untracked = [
         # packages.mk is not a dependency, it just specifies the list of them all.
         "packages",
-        # just a template
-        "vendorcrate",
         # This package doesn't have conventional version numbers
         "native_cctools"
     ]
@@ -341,30 +347,61 @@ def main():
         sys.exit(status)
 
     deps = get_dependency_list()
+    postponed = PostponedUpdates()
     for dependency in deps:
         if dependency.name in unchecked_dependencies:
             unchecked_dependencies.remove(dependency.name)
-        if len(sys.argv) == 2 and sys.argv[1] == "skipcheck":
-            print("Skipping the actual dependency update checks.")
+        if dependency.is_up_to_date():
+            print_row(
+                dependency.name,
+                "up to date",
+                str(dependency.current_version()),
+                "")
         else:
-            if dependency.is_up_to_date():
-                print_row(
-                    dependency.name,
-                    "up to date",
-                    str(dependency.current_version()),
-                    "")
-            else:
-                print_row(
-                    dependency.name,
-                    "OUT OF DATE",
-                    str(dependency.current_version()),
-                    str(list(map(str, dependency.released_versions_after_current_version()))))
-                status = 1
+            # The status can either be POSTPONED or OUT OF DATE depending
+            # on whether or not all the new versions are whitelisted.
+            status_text = "POSTPONED"
+            newver_list = "["
+            for newver in dependency.released_versions_after_current_version():
+                if postponed.is_postponed(dependency.name, newver):
+                    newver_list += str(newver) + " (postponed),"
+                else:
+                    newver_list += str(newver) + ","
+                    status_text = "OUT OF DATE"
+                    status = 1
+
+            newver_list = newver_list[:-1] + "]"
+
+            print_row(
+                dependency.name,
+                status_text,
+                str(dependency.current_version()),
+                newver_list
+            )
 
     if len(unchecked_dependencies) > 0:
         unchecked_dependencies.sort()
         print("WARNING: The following dependencies are not being checked for updates by this script: " + ', '.join(unchecked_dependencies))
-        status = 2
+        sys.exit(2)
+
+    if len(sys.argv) == 2 and sys.argv[1] == "--functionality-test":
+        print("We're only testing this script's functionality. The exit status will only be nonzero if there's a problem with the script itself.")
+        sys.exit(0)
+
+    if status == 0:
+        print("All non-Rust dependencies are up-to-date or postponed.")
+    elif status == 1:
+        print("Release is BLOCKED. There are new dependency updates that have not been postponed.")
+
+    print("""
+You should also check the Rust dependencies using cargo:
+
+  cargo install cargo-outdated cargo-audit
+  cargo outdated
+  cargo audit
+""")
+    if status == 0:
+        print("After checking those, you'll be ready for release! :-)")
 
     sys.exit(status)
 

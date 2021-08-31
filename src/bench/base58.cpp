@@ -1,6 +1,6 @@
 // Copyright (c) 2016 the Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "bench.h"
 
@@ -22,7 +22,7 @@ static void Base58Encode(benchmark::State& state)
         }
     };
     while (state.KeepRunning()) {
-        EncodeBase58(buff.begin(), buff.end());
+        EncodeBase58(buff.data(), buff.data() + buff.size());
     }
 }
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014 The Bitcoin Core developers
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -31,6 +31,10 @@ def check_array_result(object_array, to_match, expected):
         raise AssertionError("No objects matched %s"%(str(to_match)))
 
 class ListTransactionsTest(BitcoinTestFramework):
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = False
 
     def run_test(self):
         # Simple send, 0 to 1:
@@ -38,71 +42,74 @@ class ListTransactionsTest(BitcoinTestFramework):
         self.sync_all()
         check_array_result(self.nodes[0].listtransactions(),
                            {"txid":txid},
-                           {"category":"send","account":"","amount":Decimal("-0.1"),"confirmations":0})
+                           {"category":"send","amount":Decimal("-0.1"),"amountZat":-10000000,"confirmations":0})
         check_array_result(self.nodes[1].listtransactions(),
                            {"txid":txid},
-                           {"category":"receive","account":"","amount":Decimal("0.1"),"confirmations":0})
+                           {"category":"receive","amount":Decimal("0.1"),"amountZat":10000000,"confirmations":0})
+
         # mine a block, confirmations should change:
         self.nodes[0].generate(1)
         self.sync_all()
         check_array_result(self.nodes[0].listtransactions(),
                            {"txid":txid},
-                           {"category":"send","account":"","amount":Decimal("-0.1"),"confirmations":1})
+                           {"category":"send","amount":Decimal("-0.1"),"amountZat":-10000000,"confirmations":1})
         check_array_result(self.nodes[1].listtransactions(),
                            {"txid":txid},
-                           {"category":"receive","account":"","amount":Decimal("0.1"),"confirmations":1})
+                           {"category":"receive","amount":Decimal("0.1"),"amountZat":10000000,"confirmations":1})
 
         # send-to-self:
         txid = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), 0.2)
         check_array_result(self.nodes[0].listtransactions(),
                            {"txid":txid, "category":"send"},
-                           {"amount":Decimal("-0.2")})
+                           {"amount":Decimal("-0.2"),"amountZat":-20000000})
         check_array_result(self.nodes[0].listtransactions(),
                            {"txid":txid, "category":"receive"},
-                           {"amount":Decimal("0.2")})
+                           {"amount":Decimal("0.2"),"amountZat":20000000})
 
         # sendmany from node1: twice to self, twice to node2:
-        send_to = { self.nodes[0].getnewaddress() : 0.11,
-                    self.nodes[1].getnewaddress() : 0.22,
-                    self.nodes[0].getaccountaddress("") : 0.33,
-                    self.nodes[1].getaccountaddress("") : 0.44 }
+        node_0_addr_0 = self.nodes[0].getnewaddress()
+        node_0_addr_1 = self.nodes[0].getnewaddress()
+        node_1_addr_0 = self.nodes[1].getnewaddress()
+        node_1_addr_1 = self.nodes[1].getnewaddress()
+        send_to = { node_0_addr_0 : 0.11,
+                    node_1_addr_0 : 0.22,
+                    node_0_addr_1 : 0.33,
+                    node_1_addr_1 : 0.44 }
         txid = self.nodes[1].sendmany("", send_to)
         self.sync_all()
         check_array_result(self.nodes[1].listtransactions(),
-                           {"category":"send","amount":Decimal("-0.11")},
+                           {"category":"send","amount":Decimal("-0.11"),"amountZat":-11000000},
                            {"txid":txid} )
         check_array_result(self.nodes[0].listtransactions(),
-                           {"category":"receive","amount":Decimal("0.11")},
+                           {"category":"receive","amount":Decimal("0.11"),"amountZat":11000000},
                            {"txid":txid} )
         check_array_result(self.nodes[1].listtransactions(),
-                           {"category":"send","amount":Decimal("-0.22")},
+                           {"category":"send","amount":Decimal("-0.22"),"amountZat":-22000000},
                            {"txid":txid} )
         check_array_result(self.nodes[1].listtransactions(),
-                           {"category":"receive","amount":Decimal("0.22")},
+                           {"category":"receive","amount":Decimal("0.22"),"amountZat":22000000},
                            {"txid":txid} )
         check_array_result(self.nodes[1].listtransactions(),
-                           {"category":"send","amount":Decimal("-0.33")},
+                           {"category":"send","amount":Decimal("-0.33"),"amountZat":-33000000},
                            {"txid":txid} )
         check_array_result(self.nodes[0].listtransactions(),
-                           {"category":"receive","amount":Decimal("0.33")},
-                           {"txid":txid, "account" : ""} )
+                           {"category":"receive","amount":Decimal("0.33"),"amountZat":33000000},
+                           {"txid":txid} )
         check_array_result(self.nodes[1].listtransactions(),
-                           {"category":"send","amount":Decimal("-0.44")},
-                           {"txid":txid, "account" : ""} )
+                           {"category":"send","amount":Decimal("-0.44"),"amountZat":-44000000},
+                           {"txid":txid} )
         check_array_result(self.nodes[1].listtransactions(),
-                           {"category":"receive","amount":Decimal("0.44")},
-                           {"txid":txid, "account" : ""} )
+                           {"category":"receive","amount":Decimal("0.44"),"amountZat":44000000},
+                           {"txid":txid} )
 
         multisig = self.nodes[1].createmultisig(1, [self.nodes[1].getnewaddress()])
         self.nodes[0].importaddress(multisig["redeemScript"], "watchonly", False, True)
         txid = self.nodes[1].sendtoaddress(multisig["address"], 0.1)
         self.nodes[1].generate(1)
         self.sync_all()
-        assert(len(self.nodes[0].listtransactions("watchonly", 100, 0, False)) == 0)
-        check_array_result(self.nodes[0].listtransactions("watchonly", 100, 0, True),
-                           {"category":"receive","amount":Decimal("0.1")},
-                           {"txid":txid, "account" : "watchonly"} )
+        check_array_result(self.nodes[0].listtransactions("*", 100, 0, True),
+                           {"category":"receive","amount":Decimal("0.1"),"amountZat":10000000},
+                           {"txid":txid, "involvesWatchonly": True} )
 
 if __name__ == '__main__':
     ListTransactionsTest().main()
-

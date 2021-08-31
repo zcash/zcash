@@ -1,6 +1,6 @@
 // Copyright (c) 2019 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "bench.h"
 #include "coins.h"
@@ -15,7 +15,7 @@
 #include "version.h"
 
 #include "librustzcash.h"
-#include "sodium.h"
+#include <rust/ed25519.h>
 
 static void ECDSA(benchmark::State& state)
 {
@@ -75,20 +75,20 @@ static void ECDSA(benchmark::State& state)
 
 static void JoinSplitSig(benchmark::State& state)
 {
-    uint256 joinSplitPubKey;
-    unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
+    Ed25519VerificationKey joinSplitPubKey;
+    Ed25519SigningKey joinSplitPrivKey;
     uint256 dataToBeSigned;
-    std::array<unsigned char, 64> joinSplitSig;
+    Ed25519Signature joinSplitSig;
 
-    crypto_sign_keypair(joinSplitPubKey.begin(), joinSplitPrivKey);
-    crypto_sign_detached(&joinSplitSig[0], nullptr, dataToBeSigned.begin(), 32, joinSplitPrivKey);
+    ed25519_generate_keypair(&joinSplitPrivKey, &joinSplitPubKey);
+    ed25519_sign(&joinSplitPrivKey, dataToBeSigned.begin(), 32, &joinSplitSig);
 
     while (state.KeepRunning()) {
         // Declared with warn_unused_result.
-        auto res = crypto_sign_verify_detached(
-            &joinSplitSig[0],
-            dataToBeSigned.begin(), 32,
-            joinSplitPubKey.begin());
+        auto res = ed25519_verify(
+            &joinSplitPubKey,
+            &joinSplitSig,
+            dataToBeSigned.begin(), 32);
     }
 }
 
@@ -102,7 +102,7 @@ static void SaplingSpend(benchmark::State& state)
     ss >> spend;
     uint256 dataToBeSigned = uint256S("0x2dbf83fe7b88a7cbd80fac0c719483906bb9a0c4fc69071e4780d5f2c76e592c");
 
-    auto ctx = librustzcash_sapling_verification_ctx_init();
+    auto ctx = librustzcash_sapling_verification_ctx_init(true);
 
     while (state.KeepRunning()) {
         librustzcash_sapling_check_spend(
@@ -128,7 +128,7 @@ static void SaplingOutput(benchmark::State& state)
         PROTOCOL_VERSION);
     ss >> output;
 
-    auto ctx = librustzcash_sapling_verification_ctx_init();
+    auto ctx = librustzcash_sapling_verification_ctx_init(true);
 
     while (state.KeepRunning()) {
         librustzcash_sapling_check_output(

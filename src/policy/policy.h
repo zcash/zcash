@@ -1,10 +1,10 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef BITCOIN_POLICY_H
-#define BITCOIN_POLICY_H
+#ifndef BITCOIN_POLICY_POLICY_H
+#define BITCOIN_POLICY_POLICY_H
 
 #include "consensus/consensus.h"
 #include "script/interpreter.h"
@@ -43,8 +43,8 @@ static const unsigned int STANDARD_SCRIPT_VERIFY_FLAGS = MANDATORY_SCRIPT_VERIFY
 static const unsigned int STANDARD_NOT_MANDATORY_VERIFY_FLAGS = STANDARD_SCRIPT_VERIFY_FLAGS & ~MANDATORY_SCRIPT_VERIFY_FLAGS;
 
 // Sanity check the magic numbers when we change them
-BOOST_STATIC_ASSERT(DEFAULT_BLOCK_MAX_SIZE <= MAX_BLOCK_SIZE);
-BOOST_STATIC_ASSERT(DEFAULT_BLOCK_PRIORITY_SIZE <= DEFAULT_BLOCK_MAX_SIZE);
+static_assert(DEFAULT_BLOCK_MAX_SIZE <= MAX_BLOCK_SIZE);
+static_assert(DEFAULT_BLOCK_PRIORITY_SIZE <= DEFAULT_BLOCK_MAX_SIZE);
 
 bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType);
     /**
@@ -59,4 +59,4 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason, const CChainParam
      */
 bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs, uint32_t consensusBranchId);
 
-#endif // BITCOIN_POLICY_H
+#endif // BITCOIN_POLICY_POLICY_H

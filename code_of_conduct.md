@@ -13,6 +13,10 @@ body size, race, ethnicity, age, religion, or nationality.
 Examples of unacceptable behavior by participants include:
 
 * The use of sexualized language or imagery
+* The use of language or imagery that originates with, or has been
+  adopted as a symbol or "dog-whistle" for, any of: right-wing extremism,
+  anti-Semitism, Islamophobia, white supremacism, eugenics, homophobia, or
+  transphobia (whether or not the use by itself falls into those categories)
 * Personal attacks
 * Trolling or insulting/derogatory comments
 * Public or private harassment

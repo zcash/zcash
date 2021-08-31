@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014 The Bitcoin Core developers
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
+from test_framework.util import connect_nodes_bi
 
 from binascii import a2b_hex, b2a_hex
 from hashlib import sha256
@@ -68,7 +69,7 @@ def genmrklroot(leaflist):
         cur = n
     return cur[0]
 
-def template_to_bytes(tmpl, txlist):
+def template_to_bytearray(tmpl, txlist):
     blkver = pack('<L', tmpl['version'])
     mrklroot = genmrklroot(list(dblsha(a) for a in txlist))
     reserved = b'\0'*32
@@ -79,10 +80,10 @@ def template_to_bytes(tmpl, txlist):
     blk += varlenEncode(len(txlist))
     for tx in txlist:
         blk += tx
-    return blk
+    return bytearray(blk)
 
 def template_to_hex(tmpl, txlist):
-    return b2x(template_to_bytes(tmpl, txlist))
+    return b2x(template_to_bytearray(tmpl, txlist))
 
 def assert_template(node, tmpl, txlist, expect):
     rsp = node.getblocktemplate({'data':template_to_hex(tmpl, txlist),'mode':'proposal'})
@@ -93,6 +94,15 @@ class GetBlockTemplateProposalTest(BitcoinTestFramework):
     '''
     Test block proposals with getblocktemplate.
     '''
+
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 2
+        self.setup_clean_chain = False
+
+    def setup_network(self):
+        self.nodes = self.setup_nodes()
+        connect_nodes_bi(self.nodes, 0, 1)
 
     def run_test(self):
         node = self.nodes[0]
@@ -135,7 +145,7 @@ class GetBlockTemplateProposalTest(BitcoinTestFramework):
 
         # Test 5: Add an invalid tx to the end (non-duplicate)
         txlist.append(bytearray(txlist[0]))
-        txlist[-1][4+1] = b'\xff'
+        txlist[-1][4+1] = 0xff
         assert_template(node, tmpl, txlist, 'bad-txns-inputs-missingorspent')
         txlist.pop()
 
@@ -159,7 +169,7 @@ class GetBlockTemplateProposalTest(BitcoinTestFramework):
         tmpl['bits'] = realbits
 
         # Test 9: Bad merkle root
-        rawtmpl = template_to_bytes(tmpl, txlist)
+        rawtmpl = template_to_bytearray(tmpl, txlist)
         rawtmpl[4+32] = (rawtmpl[4+32] + 1) % 0x100
         rsp = node.getblocktemplate({'data':b2x(rawtmpl),'mode':'proposal'})
         if rsp != 'bad-txnmrklroot':

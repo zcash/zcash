@@ -2,12 +2,12 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
+#include "fs.h"
 #include "main.h"
 #include "test/test_bitcoin.h"
 #include "test/test_random.h"
 
 #include <boost/test/unit_test.hpp>
-#include <boost/filesystem.hpp>
 
 BOOST_FIXTURE_TEST_SUITE(streams_tests, TestingSetup)
 
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(streams_buffered_file)
     // We can explicitly close the file, or the destructor will do it.
     bf.fclose();
 
-    boost::filesystem::remove("streams_test_tmp");
+    fs::remove("streams_test_tmp");
 }
 
 BOOST_AUTO_TEST_CASE(streams_buffered_file_rand)
@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE(streams_buffered_file_rand)
                 maxPos = currentPos;
         }
     }
-    boost::filesystem::remove("streams_test_tmp");
+    fs::remove("streams_test_tmp");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

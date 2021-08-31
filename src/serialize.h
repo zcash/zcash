@@ -16,6 +16,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <stdint.h>
 #include <string>
@@ -23,7 +24,8 @@
 #include <utility>
 #include <vector>
 
-#include <boost/optional.hpp>
+
+#include <rust/ed25519/types.h>
 
 #include "prevector.h"
 
@@ -536,8 +538,8 @@ template<typename Stream, typename T, typename A> inline void Unserialize(Stream
 /**
  * optional
  */
-template<typename Stream, typename T> void Serialize(Stream& os, const boost::optional<T>& item);
-template<typename Stream, typename T> void Unserialize(Stream& is, boost::optional<T>& item);
+template<typename Stream, typename T> void Serialize(Stream& os, const std::optional<T>& item);
+template<typename Stream, typename T> void Unserialize(Stream& is, std::optional<T>& item);
 
 /**
  * array
@@ -580,6 +582,24 @@ template<typename Stream, typename T> void Unserialize(Stream& os, std::shared_p
  */
 template<typename Stream, typename T> void Serialize(Stream& os, const std::unique_ptr<const T>& p);
 template<typename Stream, typename T> void Unserialize(Stream& os, std::unique_ptr<const T>& p);
+
+/**
+ * Ed25519SigningKey
+ */
+template<typename Stream> void Serialize(Stream& os, const Ed25519SigningKey& item);
+template<typename Stream> void Unserialize(Stream& is, Ed25519SigningKey& item);
+
+/**
+ * Ed25519VerificationKey
+ */
+template<typename Stream> void Serialize(Stream& os, const Ed25519VerificationKey& item);
+template<typename Stream> void Unserialize(Stream& is, Ed25519VerificationKey& item);
+
+/**
+ * Ed25519Signature
+ */
+template<typename Stream> void Serialize(Stream& os, const Ed25519Signature& item);
+template<typename Stream> void Unserialize(Stream& is, Ed25519Signature& item);
 
 
 
@@ -764,7 +784,7 @@ inline void Unserialize(Stream& is, std::vector<T, A>& v)
  * optional
  */
 template<typename Stream, typename T>
-void Serialize(Stream& os, const boost::optional<T>& item)
+void Serialize(Stream& os, const std::optional<T>& item)
 {
     // If the value is there, put 0x01 and then serialize the value.
     // If it's not, put 0x00.
@@ -779,13 +799,13 @@ void Serialize(Stream& os, const boost::optional<T>& item)
 }
 
 template<typename Stream, typename T>
-void Unserialize(Stream& is, boost::optional<T>& item)
+void Unserialize(Stream& is, std::optional<T>& item)
 {
     unsigned char discriminant = 0x00;
     Unserialize(is, discriminant);
 
     if (discriminant == 0x00) {
-        item = boost::none;
+        item = std::nullopt;
     } else if (discriminant == 0x01) {
         T object;
         Unserialize(is, object);
@@ -947,6 +967,57 @@ template<typename Stream, typename T>
 void Unserialize(Stream& is, std::shared_ptr<const T>& p)
 {
     p = std::make_shared<const T>(deserialize, is);
+}
+
+
+
+/**
+ * Ed25519SigningKey
+ */
+template<typename Stream>
+void Serialize(Stream& os, const Ed25519SigningKey& sk)
+{
+    os.write((char*)sk.bytes, ED25519_SIGNING_KEY_LEN);
+}
+
+template<typename Stream>
+void Unserialize(Stream& is, Ed25519SigningKey& sk)
+{
+    is.read((char*)sk.bytes, ED25519_SIGNING_KEY_LEN);
+}
+
+
+
+/**
+ * Ed25519VerificationKey
+ */
+template<typename Stream>
+void Serialize(Stream& os, const Ed25519VerificationKey& vk)
+{
+    os.write((char*)vk.bytes, ED25519_VERIFICATION_KEY_LEN);
+}
+
+template<typename Stream>
+void Unserialize(Stream& is, Ed25519VerificationKey& vk)
+{
+    is.read((char*)vk.bytes, ED25519_VERIFICATION_KEY_LEN);
+}
+
+
+
+/**
+ * Ed25519Signature
+ */
+template<typename Stream>
+void Serialize(Stream& os, const Ed25519Signature& sig)
+{
+    os.write((char*)sig.bytes, ED25519_SIGNATURE_LEN);
+}
+
+template<typename Stream>
+void Unserialize(Stream& is, Ed25519Signature& sig)
+{
+    is.read((char*)sig.bytes, ED25519_SIGNATURE_LEN);
 }
 
 

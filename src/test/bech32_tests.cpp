@@ -4,6 +4,7 @@
 
 #include "bech32.h"
 #include "test/test_bitcoin.h"
+#include "utilstrencodings.h"
 
 #include <boost/test/unit_test.hpp>
 
@@ -24,19 +25,43 @@ bool CaseInsensitiveEqual(const std::string &s1, const std::string &s2)
 
 BOOST_AUTO_TEST_CASE(bip173_testvectors_valid)
 {
-    static const std::string CASES[] = {
-        "A12UEL5L",
-        "a12uel5l",
-        "an83characterlonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio1tt5tgs",
-        "an84characterslonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio1569pvx",
-        "abcdef1qpzry9x8gf2tvdw0s3jn54khce6mua7lmqqqxw",
-        "11qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqc8247j",
-        "split1checkupstagehandshakeupstreamerranterredcaperred2y9e3w",
-        "?1ezyfcl",
+    static const std::tuple<std::string, std::string, std::string> CASES[] = {
+        {"A12UEL5L", "a", ""},
+        {"a12uel5l", "a", ""},
+        {
+            "an83characterlonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio1tt5tgs",
+            "an83characterlonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio",
+            "",
+        },
+        {
+            "an84characterslonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio1569pvx",
+            "an84characterslonghumanreadablepartthatcontainsthenumber1andtheexcludedcharactersbio",
+            "",
+        },
+        {"abcdef1qpzry9x8gf2tvdw0s3jn54khce6mua7lmqqqxw", "abcdef", "00443214c74254b635cf84653a56d7c675be77df"},
+        {
+            "11qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqc8247j",
+            "1",
+            "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        },
+        {
+            "split1checkupstagehandshakeupstreamerranterredcaperred2y9e3w",
+            "split",
+            "c5f38b70305f519bf66d85fb6cf03058f3dde463ecd7918f2dc743918f2d",
+        },
+        {"?1ezyfcl", "?", ""},
     };
-    for (const std::string& str : CASES) {
+    for (const auto& [str, hrp, data] : CASES) {
         auto ret = bech32::Decode(str);
         BOOST_CHECK(!ret.first.empty());
+        BOOST_CHECK_EQUAL(ret.first, hrp);
+
+        std::vector<unsigned char> decoded;
+        decoded.reserve((ret.second.size() * 5) / 8);
+        auto success = ConvertBits<5, 8, false>([&](unsigned char c) { decoded.push_back(c); }, ret.second.begin(), ret.second.end());
+        BOOST_CHECK(success);
+        BOOST_CHECK_EQUAL(HexStr(decoded.begin(), decoded.end()), data);
+
         std::string recode = bech32::Encode(ret.first, ret.second);
         BOOST_CHECK(!recode.empty());
         BOOST_CHECK(CaseInsensitiveEqual(str, recode));

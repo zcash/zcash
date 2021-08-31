@@ -1,11 +1,13 @@
+#!/usr/bin/env python3
 # blocktools.py - utilities for manipulating blocks and transactions
-#
+# Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-#
+
+from pyblake2 import blake2b
 
 from .mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
-from .script import CScript, OP_0, OP_EQUAL, OP_HASH160
+from .script import CScript, OP_0, OP_EQUAL, OP_HASH160, OP_TRUE, OP_CHECKSIG
 
 # Create a block (with regtest difficulty)
 def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoot=None):
@@ -16,16 +18,27 @@ def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoo
     else:
         block.nTime = nTime
     block.hashPrevBlock = hashprev
-    if hashFinalSaplingRoot is not None:
-        block.hashFinalSaplingRoot = hashFinalSaplingRoot
+    if hashFinalSaplingRoot is None:
+        # By default NUs up to Sapling are active from block 1, so we set this to the empty root.
+        hashFinalSaplingRoot = 0x3e49b5f954aa9d3545bc6c37744661eea48d7c34e3000d82b7f0010c30f4c2fb
+    block.hashFinalSaplingRoot = hashFinalSaplingRoot
     if nBits is None:
-        block.nBits = 0x200f0f0f # Will break after a difficulty adjustment...
+        block.nBits = 0x200f0f0f # difficulty retargeting is disabled in REGTEST chainparams
     else:
         block.nBits = nBits
     block.vtx.append(coinbase)
     block.hashMerkleRoot = block.calc_merkle_root()
     block.calc_sha256()
     return block
+
+def derive_block_commitments_hash(chain_history_root, auth_data_root):
+    digest = blake2b(
+        digest_size=32,
+        person=b'ZcashBlockCommit')
+    digest.update(chain_history_root)
+    digest.update(auth_data_root)
+    digest.update(b'\x00' * 32)
+    return digest.digest()
 
 def serialize_script_num(value):
     r = bytearray(0)
@@ -42,19 +55,21 @@ def serialize_script_num(value):
         r[-1] |= 0x80
     return r
 
-counter=1
-# Create an anyone-can-spend coinbase transaction, assuming no miner fees
-def create_coinbase(heightAdjust = 0):
-    global counter
+# Create a coinbase transaction, assuming no miner fees.
+# If pubkey is passed in, the coinbase output will be a P2PK output;
+# otherwise an anyone-can-spend output.
+def create_coinbase(height, pubkey = None):
     coinbase = CTransaction()
-    coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff), 
-                CScript([counter+heightAdjust, OP_0]), 0xffffffff))
-    counter += 1
+    coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff),
+                CScript([height, OP_0]), 0xffffffff))
     coinbaseoutput = CTxOut()
     coinbaseoutput.nValue = int(12.5*100000000)
-    halvings = int((counter+heightAdjust)/150) # regtest
+    halvings = int(height/150) # regtest
     coinbaseoutput.nValue >>= halvings
-    coinbaseoutput.scriptPubKey = b""
+    if (pubkey != None):
+        coinbaseoutput.scriptPubKey = CScript([pubkey, OP_CHECKSIG])
+    else:
+        coinbaseoutput.scriptPubKey = CScript([OP_TRUE])
     coinbase.vout = [ coinbaseoutput ]
     if halvings == 0: # regtest
         froutput = CTxOut()

@@ -1,10 +1,15 @@
-# mininode.py - Bitcoin P2P network half-a-node
-#
+#!/usr/bin/env python3
+# Copyright (c) 2010 ArtForz -- public domain half-a-node
+# Copyright (c) 2012 Jeff Garzik
+# Copyright (c) 2010-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
+
+#
+# mininode.py - Bitcoin P2P network half-a-node
 #
 # This python code was modified from ArtForz' public domain  half-a-node, as
-# found in the mini-node branch of http://github.com/jgarzik/pynode.
+# found in the mini-node branch of https://github.com/jgarzik/pynode.
 #
 # NodeConn: an object which manages p2p connectivity to a bitcoin node
 # NodeConnCB: a base class that describes the interface for receiving
@@ -25,6 +30,7 @@ import sys
 import random
 from binascii import hexlify
 from io import BytesIO
+from codecs import encode
 import hashlib
 from threading import RLock
 from threading import Thread
@@ -46,20 +52,14 @@ OVERWINTER_PROTO_VERSION = 170003
 SAPLING_PROTO_VERSION = 170006
 BLOSSOM_PROTO_VERSION = 170008
 
-MY_SUBVERSION = b"/python-mininode-tester:0.0.1/"
+MY_SUBVERSION = b"/python-mininode-tester:0.0.3/"
 
 SPROUT_VERSION_GROUP_ID = 0x00000000
 OVERWINTER_VERSION_GROUP_ID = 0x03C48270
 SAPLING_VERSION_GROUP_ID = 0x892F2085
 # No transaction format change in Blossom.
 
-SPROUT_BRANCH_ID = 0x00000000
-OVERWINTER_BRANCH_ID = 0x5BA81B19
-SAPLING_BRANCH_ID = 0x76B809BB
-BLOSSOM_BRANCH_ID = 0x2BB40E60
-
 MAX_INV_SZ = 50000
-
 
 COIN = 100000000 # 1 zec in zatoshis
 
@@ -80,10 +80,23 @@ mininode_lock = RLock()
 def sha256(s):
     return hashlib.new('sha256', s).digest()
 
-
 def hash256(s):
     return sha256(sha256(s))
 
+def nuparams(branch_id, height):
+    return '-nuparams=%x:%d' % (branch_id, height)
+
+def fundingstream(idx, start_height, end_height, addrs):
+    return '-fundingstream=%d:%d:%d:%s' % (idx, start_height, end_height, ",".join(addrs))
+
+def ser_compactsize(n):
+    if n < 253:
+        return struct.pack("B", n)
+    elif n < 0x10000:
+        return struct.pack("<BH", 253, n)
+    elif n < 0x100000000:
+        return struct.pack("<BI", 254, n)
+    return struct.pack("<BQ", 255, n)
 
 def deser_string(f):
     nit = struct.unpack("<B", f.read(1))[0]
@@ -132,6 +145,11 @@ def uint256_from_compact(c):
     nbytes = (c >> 24) & 0xFF
     v = (c & 0xFFFFFF) << (8 * (nbytes - 3))
     return v
+
+
+def block_work_from_compact(c):
+    target = uint256_from_compact(c)
+    return 2**256 // (target + 1)
 
 
 def deser_vector(f, c):
@@ -563,7 +581,7 @@ class JSDescription(object):
         return r
 
     def __repr__(self):
-        return "JSDescription(vpub_old=%i.%08i vpub_new=%i.%08i anchor=%064x onetimePubKey=%064x randomSeed=%064x proof=%r)" \
+        return "JSDescription(vpub_old=%i vpub_new=%i anchor=%064x onetimePubKey=%064x randomSeed=%064x proof=%r)" \
             % (self.vpub_old, self.vpub_new, self.anchor,
                self.onetimePubKey, self.randomSeed, self.proof)
 
@@ -610,7 +628,7 @@ class CTxIn(object):
 
     def __repr__(self):
         return "CTxIn(prevout=%s scriptSig=%s nSequence=%i)" \
-            % (self.prevout, hexlify(self.scriptSig),
+            % (repr(self.prevout), hexlify(self.scriptSig),
                self.nSequence)
 
 
@@ -745,10 +763,9 @@ class CTransaction(object):
         self.calc_sha256()
 
     def calc_sha256(self):
-        serialized = self.serialize()
         if self.sha256 is None:
-            self.sha256 = uint256_from_str(hash256(serialized))
-        self.hash = hash256(self.serialize())[::-1].hex()
+            self.sha256 = uint256_from_str(hash256(self.serialize()))
+        self.hash = encode(hash256(self.serialize())[::-1], 'hex_codec').decode('ascii')
 
     def is_valid(self):
         self.calc_sha256()
@@ -768,7 +785,7 @@ class CTransaction(object):
             r += " vJoinSplit=%r" % (self.vJoinSplit,)
             if len(self.vJoinSplit) > 0:
                 r += " joinSplitPubKey=%064x joinSplitSig=%064x" \
-                    (self.joinSplitPubKey, self.joinSplitSig)
+                    % (self.joinSplitPubKey, self.joinSplitSig)
         if len(self.shieldedSpends) > 0 or len(self.shieldedOutputs) > 0:
             r += " bindingSig=%064x" % (self.bindingSig,)
         r += ")"
@@ -840,7 +857,7 @@ class CBlockHeader(object):
             r += ser_uint256(self.nNonce)
             r += ser_char_vector(self.nSolution)
             self.sha256 = uint256_from_str(hash256(r))
-            self.hash = hash256(r)[::-1].hex()
+            self.hash = encode(hash256(r)[::-1], 'hex_codec').decode('ascii')
 
     def rehash(self):
         self.sha256 = None
@@ -1595,43 +1612,48 @@ class NodeConn(asyncore.dispatcher):
             self.sendbuf = self.sendbuf[sent:]
 
     def got_data(self):
-        while True:
-            if len(self.recvbuf) < 4:
-                return
-            if self.recvbuf[:4] != self.MAGIC_BYTES[self.network]:
-                raise ValueError("got garbage %r" % (self.recvbuf,))
-            if self.ver_recv < 209:
-                if len(self.recvbuf) < 4 + 12 + 4:
+        try:
+            while True:
+                if len(self.recvbuf) < 4:
                     return
-                command = self.recvbuf[4:4+12].split(b"\x00", 1)[0]
-                msglen = struct.unpack("<i", self.recvbuf[4+12:4+12+4])[0]
-                checksum = None
-                if len(self.recvbuf) < 4 + 12 + 4 + msglen:
-                    return
-                msg = self.recvbuf[4+12+4:4+12+4+msglen]
-                self.recvbuf = self.recvbuf[4+12+4+msglen:]
-            else:
-                if len(self.recvbuf) < 4 + 12 + 4 + 4:
-                    return
-                command = self.recvbuf[4:4+12].split(b"\x00", 1)[0]
-                msglen = struct.unpack("<i", self.recvbuf[4+12:4+12+4])[0]
-                checksum = self.recvbuf[4+12+4:4+12+4+4]
-                if len(self.recvbuf) < 4 + 12 + 4 + 4 + msglen:
-                    return
-                msg = self.recvbuf[4+12+4+4:4+12+4+4+msglen]
-                th = sha256(msg)
-                h = sha256(th)
-                if checksum != h[:4]:
-                    raise ValueError("got bad checksum %r" % (self.recvbuf,))
-                self.recvbuf = self.recvbuf[4+12+4+4+msglen:]
-            if command in self.messagemap:
-                f = BytesIO(msg)
-                t = self.messagemap[command]()
-                t.deserialize(f)
-                self.got_message(t)
-            else:
-                self.show_debug_msg("Unknown command: '" + command + "' " +
+                if self.recvbuf[:4] != self.MAGIC_BYTES[self.network]:
+                    raise ValueError("got garbage %r" % (self.recvbuf,))
+                if self.ver_recv < 209:
+                    if len(self.recvbuf) < 4 + 12 + 4:
+                        return
+                    command = self.recvbuf[4:4+12].split(b"\x00", 1)[0]
+                    msglen = struct.unpack("<i", self.recvbuf[4+12:4+12+4])[0]
+                    checksum = None
+                    if len(self.recvbuf) < 4 + 12 + 4 + msglen:
+                        return
+                    msg = self.recvbuf[4+12+4:4+12+4+msglen]
+                    self.recvbuf = self.recvbuf[4+12+4+msglen:]
+                else:
+                    if len(self.recvbuf) < 4 + 12 + 4 + 4:
+                        return
+                    command = self.recvbuf[4:4+12].split(b"\x00", 1)[0]
+                    msglen = struct.unpack("<i", self.recvbuf[4+12:4+12+4])[0]
+                    checksum = self.recvbuf[4+12+4:4+12+4+4]
+                    if len(self.recvbuf) < 4 + 12 + 4 + 4 + msglen:
+                        return
+                    msg = self.recvbuf[4+12+4+4:4+12+4+4+msglen]
+                    th = sha256(msg)
+                    h = sha256(th)
+                    if checksum != h[:4]:
+                        raise ValueError("got bad checksum %r" % (self.recvbuf,))
+                    self.recvbuf = self.recvbuf[4+12+4+4+msglen:]
+                if command in self.messagemap:
+                    f = BytesIO(msg)
+                    t = self.messagemap[command]()
+                    t.deserialize(f)
+                    self.got_message(t)
+                else:
+                    self.show_debug_msg("Unknown command: '" + command + "' " +
                                         repr(msg))
+        except Exception as e:
+            print('got_data:', repr(e))
+            # import  traceback
+            # traceback.print_tb(sys.exc_info()[2])
 
     def send_message(self, message, pushbuf=False):
         if self.state != b"connected" and not pushbuf:

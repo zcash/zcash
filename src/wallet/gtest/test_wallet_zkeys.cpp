@@ -1,11 +1,10 @@
 #include <gtest/gtest.h>
 
+#include "fs.h"
 #include "zcash/Address.hpp"
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
 #include "util.h"
-
-#include <boost/filesystem.hpp>
 
 /**
  * This test covers Sapling methods on CWallet
@@ -71,7 +70,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     // If we can't get an early diversified address, we are very unlucky
     blob88 diversifier;
     diversifier.begin()[0] = 10;
-    auto dpa = sk.ToXFVK().Address(diversifier).get().second;
+    auto dpa = sk.ToXFVK().Address(diversifier).value().second;
 
     // verify wallet only has the default address
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.DefaultAddress()));
@@ -99,7 +98,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     ASSERT_EQ(wallet.mapSaplingZKeyMetadata[ivk2].nCreateTime, now);
 
     // Load a diversified address for the third key into the wallet
-    auto dpa2 = sk2.ToXFVK().Address(diversifier).get().second;
+    auto dpa2 = sk2.ToXFVK().Address(diversifier).value().second;
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk2.DefaultAddress()));
     EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(dpa2));
     EXPECT_TRUE(wallet.LoadSaplingPaymentAddress(dpa2, ivk2));
@@ -222,8 +221,8 @@ TEST(WalletZkeysTest, WriteZkeyDirectToDb) {
 
     // Get temporary and unique path for file.
     // Note: / operator to append paths
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
     bool fFirstRun;
@@ -295,8 +294,8 @@ TEST(WalletZkeysTest, WriteViewingKeyDirectToDB) {
 
     // Get temporary and unique path for file.
     // Note: / operator to append paths
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
     bool fFirstRun;
@@ -336,15 +335,14 @@ TEST(WalletZkeysTest, WriteViewingKeyDirectToDB) {
 /**
  * This test covers methods on CWalletDB to load/save crypted z keys.
  */
-/* TODO: Uncomment during PR for #3388
 TEST(WalletZkeysTest, WriteCryptedzkeyDirectToDb) {
 
     SelectParams(CBaseChainParams::TESTNET);
 
     // Get temporary and unique path for file.
     // Note: / operator to append paths
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
     bool fFirstRun;
@@ -418,8 +416,8 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
 
     // Get temporary and unique path for file.
     // Note: / operator to append paths
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
     bool fFirstRun;
@@ -451,7 +449,7 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
     EXPECT_TRUE(wallet.GetSaplingExtendedSpendingKey(address, extsk));
     blob88 diversifier;
     diversifier.begin()[0] = 10;
-    auto dpa = extsk.ToXFVK().Address(diversifier).get().second;
+    auto dpa = extsk.ToXFVK().Address(diversifier).value().second;
 
     // Add diversified address to the wallet
     auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
@@ -469,6 +467,9 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
     // unlock wallet and then add
     wallet.Unlock(strWalletPass);
     auto address2 = wallet.GenerateNewSaplingZKey();
+
+    // flush the wallet to prevent race conditions
+    wallet.Flush();
 
     // Create a new wallet from the existing wallet path
     CWallet wallet2("wallet_crypted_sapling.dat");

@@ -6,12 +6,14 @@
 from decimal import Decimal
 from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import BitcoinTestFramework
+from test_framework.mininode import nuparams
 from test_framework.util import (
+    BLOSSOM_BRANCH_ID,
+    HEARTWOOD_BRANCH_ID,
     assert_equal,
     assert_raises,
     bitcoind_processes,
     connect_nodes,
-    initialize_chain_clean,
     start_node,
     wait_and_assert_operationid_status,
     check_node_log,
@@ -19,14 +21,15 @@ from test_framework.util import (
 
 class ShieldCoinbaseTest (BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = True
 
     def start_node_with(self, index, extra_args=[]):
         args = [
-            "-nuparams=2bb40e60:1", # Blossom
-            "-nuparams=f5b9230b:10", # Heartwood
+            nuparams(BLOSSOM_BRANCH_ID, 1),
+            nuparams(HEARTWOOD_BRANCH_ID, 10),
             "-nurejectoldversions=false",
         ]
         return start_node(index, self.options.tmpdir, args + extra_args)

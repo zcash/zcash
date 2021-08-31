@@ -12,10 +12,8 @@
 #include "ui_interface.h"
 #include "crypto/hmac_sha256.h"
 #include <stdio.h>
-#include "utilstrencodings.h"
 
 #include <boost/algorithm/string.hpp> // boost::trim
-#include <boost/foreach.hpp> //BOOST_FOREACH
 
 /** WWW-Authenticate to present with 401 Unauthorized response */
 static const char* WWW_AUTH_HEADER_DATA = "Basic realm=\"jsonrpc\"";
@@ -91,7 +89,7 @@ static bool multiUserAuthorized(std::string strUserPass)
 
     if (mapMultiArgs.count("-rpcauth") > 0) {
         //Search for multi-user login/pass "rpcauth" from config
-        BOOST_FOREACH(std::string strRPCAuth, mapMultiArgs["-rpcauth"])
+        for (std::string strRPCAuth : mapMultiArgs["-rpcauth"])
         {
             std::vector<std::string> vFields;
             boost::split(vFields, strRPCAuth, boost::is_any_of(":$"));

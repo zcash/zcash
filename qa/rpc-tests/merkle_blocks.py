@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014 The Bitcoin Core developers
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -11,14 +11,15 @@ import string
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_raises, \
-    initialize_chain_clean, start_node, connect_nodes
+    start_node, connect_nodes
 
 
 class MerkleBlockTest(BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.setup_clean_chain = True
+        self.num_nodes = 4
 
     def setup_network(self):
         self.nodes = []

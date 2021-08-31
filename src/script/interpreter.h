@@ -9,6 +9,8 @@
 #include "script_error.h"
 #include "primitives/transaction.h"
 
+#include <rust/transaction.h>
+
 #include <vector>
 #include <stdint.h>
 #include <string>
@@ -93,6 +95,8 @@ bool CheckSignatureEncoding(const std::vector<unsigned char> &vchSig, unsigned i
 struct PrecomputedTransactionData
 {
     uint256 hashPrevouts, hashSequence, hashOutputs, hashJoinSplits, hashShieldedSpends, hashShieldedOutputs;
+    /** Precomputed transaction parts. */
+    std::unique_ptr<PrecomputedTxParts, decltype(&zcash_transaction_precomputed_free)> preTx;
 
     PrecomputedTransactionData(const CTransaction& tx);
 };
@@ -102,6 +106,7 @@ enum SigVersion
     SIGVERSION_SPROUT = 0,
     SIGVERSION_OVERWINTER = 1,
     SIGVERSION_SAPLING = 2,
+    SIGVERSION_ZIP244 = 3,
 };
 
 uint256 SignatureHash(

@@ -1,8 +1,6 @@
-use ff::{PrimeField, PrimeFieldRepr};
-use pairing::bls12_381::Bls12;
+use group::{Group, GroupEncoding};
 use rand_core::{OsRng, RngCore};
-use zcash_primitives::jubjub::{edwards, JubjubBls12};
-use zcash_primitives::primitives::{Diversifier, ViewingKey};
+use zcash_primitives::sapling::{Diversifier, ViewingKey};
 
 use crate::{
     librustzcash_sapling_generate_r, librustzcash_sapling_ka_agree,
@@ -11,29 +9,26 @@ use crate::{
 
 #[test]
 fn test_key_agreement() {
-    let params = JubjubBls12::new();
     let mut rng = OsRng;
 
     // Create random viewing key
-    let vk = ViewingKey::<Bls12> {
-        ak: edwards::Point::rand(&mut rng, &params).mul_by_cofactor(&params),
-        nk: edwards::Point::rand(&mut rng, &params).mul_by_cofactor(&params),
+    let vk = ViewingKey {
+        ak: jubjub::SubgroupPoint::random(&mut rng),
+        nk: jubjub::SubgroupPoint::random(&mut rng),
     };
 
     // Create a random address with the viewing key
     let addr = loop {
         let mut d = [0; 11];
         rng.fill_bytes(&mut d);
-        match vk.to_payment_address(Diversifier(d), &params) {
-            Some(a) => break a,
-            None => {}
+        if let Some(a) = vk.to_payment_address(Diversifier(d)) {
+            break a;
         }
     };
 
     // Grab ivk from our viewing key in serialized form
     let ivk = vk.ivk();
-    let mut ivk_serialized = [0u8; 32];
-    ivk.into_repr().write_le(&mut ivk_serialized[..]).unwrap();
+    let ivk_serialized = ivk.to_repr();
 
     // Create random esk
     let mut esk = [0u8; 32];
@@ -45,10 +40,10 @@ fn test_key_agreement() {
     let mut shared_secret_sender = [0u8; 32];
 
     // Serialize pk_d for the call to librustzcash_sapling_ka_agree
-    let mut addr_pk_d = [0u8; 32];
-    addr.pk_d().write(&mut addr_pk_d[..]).unwrap();
+    let addr_pk_d = addr.pk_d().to_bytes();
 
     assert!(librustzcash_sapling_ka_agree(
+        true,
         &addr_pk_d,
         &esk,
         &mut shared_secret_sender
@@ -66,6 +61,7 @@ fn test_key_agreement() {
     // Create sharedSecret with ephemeral key
     let mut shared_secret_recipient = [0u8; 32];
     assert!(librustzcash_sapling_ka_agree(
+        true,
         &epk,
         &ivk_serialized,
         &mut shared_secret_recipient

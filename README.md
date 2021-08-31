@@ -1,4 +1,4 @@
-Zcash 2.1.1-1
+Zcash 4.4.1
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
@@ -9,7 +9,7 @@ What is Zcash?
 Based on Bitcoin's code, Zcash intends to offer a far higher standard of privacy
 through a sophisticated zero-knowledge proving scheme that preserves
 confidentiality of transaction metadata. More technical details are available
-in our [Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf).
+in our [Protocol Specification](https://zips.z.cash/protocol/protocol.pdf).
 
 This software is the Zcash client. It downloads and stores the entire history
 of Zcash transactions; depending on the speed of your computer and network
@@ -43,7 +43,7 @@ Please see our [user guide](https://zcash.readthedocs.io/en/latest/rtd_pages/rtd
 * :blue_book: See the documentation at the [ReadTheDocs](https://zcash.readthedocs.io)
   for help and more information.
 * :incoming_envelope: Ask for help on the [Zcash](https://forum.z.cash/) forum.
-* :mag: Chat with our support community on [Rocket.Chat](https://chat.zcashcommunity.com/channel/user-support)
+* :speech_balloon: Join our community on [Discord](https://discordapp.com/invite/PhJY6Pm)
 
 Participation in the Zcash project is subject to a
 [Code of Conduct](code_of_conduct.md).
@@ -56,7 +56,9 @@ Build Zcash along with most dependencies from source by running the following co
 ./zcutil/build.sh -j$(nproc)
 ```
 
-Currently, Zcash is only officially supported on Debian and Ubuntu.
+Currently, Zcash is only officially supported on Debian and Ubuntu. See the
+[Debian / Ubuntu build](https://zcash.readthedocs.io/en/latest/rtd_pages/Debian-Ubuntu-build.html)
+for detailed instructions.
 
 License
 -------

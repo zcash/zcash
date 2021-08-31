@@ -8,6 +8,7 @@
 #include "timedata.h"
 #include "random.h"
 #include "netbase.h"
+#include "utiltime.h"
 
 using ::testing::StrictMock;
 

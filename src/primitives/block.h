@@ -10,6 +10,11 @@
 #include "serialize.h"
 #include "uint256.h"
 
+// Derives the ZIP 244 block commitments hash.
+uint256 DeriveBlockCommitmentsHash(
+    uint256 hashChainHistoryRoot,
+    uint256 hashAuthDataRoot);
+
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
  * requirements.  When they solve the proof-of-work, they broadcast the block
@@ -21,12 +26,12 @@ class CBlockHeader
 {
 public:
     // header
-    static const size_t HEADER_SIZE=4+32+32+32+4+4+32; // excluding Equihash solution
-    static const int32_t CURRENT_VERSION=4;
+    enum : size_t { HEADER_SIZE=4+32+32+32+4+4+32 }; // excluding Equihash solution
+    enum : int32_t { CURRENT_VERSION=4 };
     int32_t nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
-    uint256 hashFinalSaplingRoot;
+    uint256 hashBlockCommitments;
     uint32_t nTime;
     uint32_t nBits;
     uint256 nNonce;
@@ -44,7 +49,7 @@ public:
         READWRITE(this->nVersion);
         READWRITE(hashPrevBlock);
         READWRITE(hashMerkleRoot);
-        READWRITE(hashFinalSaplingRoot);
+        READWRITE(hashBlockCommitments);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -56,7 +61,7 @@ public:
         nVersion = CBlockHeader::CURRENT_VERSION;
         hashPrevBlock.SetNull();
         hashMerkleRoot.SetNull();
-        hashFinalSaplingRoot.SetNull();
+        hashBlockCommitments.SetNull();
         nTime = 0;
         nBits = 0;
         nNonce = uint256();
@@ -118,7 +123,7 @@ public:
         block.nVersion       = nVersion;
         block.hashPrevBlock  = hashPrevBlock;
         block.hashMerkleRoot = hashMerkleRoot;
-        block.hashFinalSaplingRoot   = hashFinalSaplingRoot;
+        block.hashBlockCommitments = hashBlockCommitments;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
@@ -134,6 +139,11 @@ public:
 
     std::vector<uint256> GetMerkleBranch(int nIndex) const;
     static uint256 CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex);
+
+    // Build the authorizing data Merkle tree for this block and return its
+    // root.
+    uint256 BuildAuthDataMerkleTree() const;
+
     std::string ToString() const;
 };
 
@@ -158,7 +168,7 @@ public:
         READWRITE(this->nVersion);
         READWRITE(hashPrevBlock);
         READWRITE(hashMerkleRoot);
-        READWRITE(hashFinalSaplingRoot);
+        READWRITE(hashBlockCommitments);
         READWRITE(nTime);
         READWRITE(nBits);
     }

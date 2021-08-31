@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # BlockStore: a helper class that keeps a map of blocks and implements
 #             helper functions for responding to getheaders and getdata,
 #             and for constructing a getheaders message
@@ -6,13 +7,14 @@
 from .mininode import CBlock, CBlockHeader, CBlockLocator, CTransaction, msg_block, msg_headers, msg_tx
 
 import sys
-import io
-import dbm.dumb as dbm
+from io import BytesIO
+import dbm.ndbm
 
 class BlockStore():
     def __init__(self, datadir):
-        self.blockDB = dbm.open(datadir + "/blocks", 'c')
+        self.blockDB = dbm.ndbm.open(datadir + "/blocks", 'c')
         self.currentBlock = 0
+        self.headers_map = dict()
 
     def close(self):
         self.blockDB.close()
@@ -23,11 +25,17 @@ class BlockStore():
             serialized_block = self.blockDB[repr(blockhash)]
         except KeyError:
             return None
-        f = io.BytesIO(serialized_block)
+        f = BytesIO(serialized_block)
         ret = CBlock()
         ret.deserialize(f)
         ret.calc_sha256()
         return ret
+
+    def get_header(self, blockhash):
+        try:
+            return self.headers_map[blockhash]
+        except KeyError:
+            return None
 
     # Note: this pulls full blocks out of the database just to retrieve
     # the headers -- perhaps we could keep a separate data structure
@@ -35,18 +43,18 @@ class BlockStore():
     def headers_for(self, locator, hash_stop, current_tip=None):
         if current_tip is None:
             current_tip = self.currentBlock
-        current_block = self.get(current_tip)
-        if current_block is None:
+        current_block_header = self.get_header(current_tip)
+        if current_block_header is None:
             return None
 
         response = msg_headers()
-        headersList = [ CBlockHeader(current_block) ]
+        headersList = [ current_block_header ]
         maxheaders = 2000
         while (headersList[0].sha256 not in locator.vHave):
             prevBlockHash = headersList[0].hashPrevBlock
-            prevBlock = self.get(prevBlockHash)
-            if prevBlock is not None:
-                headersList.insert(0, CBlockHeader(prevBlock))
+            prevBlockHeader = self.get_header(prevBlockHash)
+            if prevBlockHeader is not None:
+                headersList.insert(0, prevBlockHeader)
             else:
                 break
         headersList = headersList[:maxheaders] # truncate if we have too many
@@ -64,6 +72,10 @@ class BlockStore():
         except TypeError as e:
             print("Unexpected error: ", sys.exc_info()[0], e.args)
         self.currentBlock = block.sha256
+        self.headers_map[block.sha256] = CBlockHeader(block)
+
+    def add_header(self, header):
+        self.headers_map[header.sha256] = header
 
     def get_blocks(self, inv):
         responses = []
@@ -96,7 +108,7 @@ class BlockStore():
 
 class TxStore(object):
     def __init__(self, datadir):
-        self.txDB = dbm.open(datadir + "/transactions", 'c')
+        self.txDB = dbm.ndbm.open(datadir + "/transactions", 'c')
 
     def close(self):
         self.txDB.close()
@@ -107,7 +119,7 @@ class TxStore(object):
             serialized_tx = self.txDB[repr(txhash)]
         except KeyError:
             return None
-        f = io.BytesIO(serialized_tx)
+        f = BytesIO(serialized_tx)
         ret = CTransaction()
         ret.deserialize(f)
         ret.calc_sha256()

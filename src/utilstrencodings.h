@@ -19,14 +19,12 @@
 #define UEND(a)             ((unsigned char*)&((&(a))[1]))
 #define ARRAYLEN(array)     (sizeof(array)/sizeof((array)[0]))
 
-/** This is needed because the foreach macro can't get over the comma in pair<t1, t2> */
-#define PAIRTYPE(t1, t2)    std::pair<t1, t2>
-
 /** Used by SanitizeString() */
 enum SafeChars
 {
     SAFE_CHARS_DEFAULT, //!< The full set of allowed chars
-    SAFE_CHARS_UA_COMMENT //!< BIP-0014 subset
+    SAFE_CHARS_UA_COMMENT, //!< BIP-0014 subset
+    SAFE_CHARS_SUBVERSION //!< Peer subversion string subset
 };
 
 std::string SanitizeFilename(const std::string& str);
@@ -127,7 +125,7 @@ bool TimingResistantEqual(const T& a, const T& b)
 }
 
 /** Parse number as fixed point according to JSON number syntax.
- * See http://json.org/number.gif
+ * See https://web.archive.org/web/20190804092921/https://www.json.org/number.gif
  * @returns true on success, false on error.
  * @note The result must be in the range (-10^18,10^18), otherwise an overflow error will trigger.
  */

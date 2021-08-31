@@ -27,6 +27,8 @@ static bool fCreateBlank;
 static std::map<std::string,UniValue> registers;
 static const int CONTINUE_EXECUTION=-1;
 
+const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
+
 //
 // This function returns either one of EXIT_ codes when it's expected to stop the process or
 // CONTINUE_EXECUTION when it's expected to continue further.
@@ -240,9 +242,11 @@ static void MutateTxAddOutAddr(CMutableTransaction& tx, const std::string& strIn
     if (!ParseMoney(strValue, value))
         throw std::runtime_error("invalid TX output value");
 
+    KeyIO keyIO(Params());
+
     // extract and validate ADDRESS
     std::string strAddr = strInput.substr(pos + 1, std::string::npos);
-    CTxDestination destination = DecodeDestination(strAddr);
+    CTxDestination destination = keyIO.DecodeDestination(strAddr);
     if (!IsValidDestination(destination)) {
         throw std::runtime_error("invalid TX output address");
     }
@@ -399,10 +403,12 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& strInput)
     UniValue keysObj = registers["privatekeys"];
     fGivenKeys = true;
 
+    KeyIO keyIO(Params());
+
     for (size_t kidx = 0; kidx < keysObj.size(); kidx++) {
         if (!keysObj[kidx].isStr())
             throw std::runtime_error("privatekey not a std::string");
-        CKey key = DecodeSecret(keysObj[kidx].getValStr());
+        CKey key = keyIO.DecodeSecret(keysObj[kidx].getValStr());
         if (!key.IsValid()) {
             throw std::runtime_error("privatekey not valid");
         }
@@ -485,7 +491,7 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& strInput)
             ProduceSignature(MutableTransactionSignatureCreator(&keystore, &mergedTx, i, amount, nHashType), prevPubKey, sigdata, consensusBranchId);
 
         // ... and merge in other signatures:
-        BOOST_FOREACH(const CTransaction& txv, txVariants)
+        for (const CTransaction& txv : txVariants)
             sigdata = CombineSignatures(prevPubKey, MutableTransactionSignatureChecker(&mergedTx, i, amount), sigdata, DataFromTransaction(txv, i), consensusBranchId);
         UpdateTransaction(mergedTx, i, sigdata);
 
@@ -655,10 +661,6 @@ static int CommandLineRawTx(int argc, char* argv[])
         }
 
         OutputTx(tx);
-    }
-
-    catch (const boost::thread_interrupted&) {
-        throw;
     }
     catch (const std::exception& e) {
         strPrint = std::string("error: ") + e.what();

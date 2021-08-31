@@ -21,6 +21,22 @@ REPOROOT = os.path.dirname(
 def repofile(filename):
     return os.path.join(REPOROOT, filename)
 
+def get_arch_dir():
+    depends_dir = os.path.join(REPOROOT, 'depends')
+
+    arch_dir = os.path.join(depends_dir, 'x86_64-pc-linux-gnu')
+    if os.path.isdir(arch_dir):
+        return arch_dir
+
+    # Not Linux, try MacOS
+    arch_dirs = glob(os.path.join(depends_dir, 'x86_64-apple-darwin*'))
+    if arch_dirs:
+        # Just try the first one; there will only be one in CI
+        return arch_dirs[0]
+
+    print("!!! cannot find architecture dir under depends/ !!!")
+    return None
+
 
 #
 # Custom test runners
@@ -32,7 +48,7 @@ RE_FORTIFY_USED = re.compile('Binary compiled with FORTIFY_SOURCE support.*Yes')
 
 def test_rpath_runpath(filename):
     output = subprocess.check_output(
-        [repofile('qa/zcash/checksec.sh'), '--file', repofile(filename)]
+        [repofile('qa/zcash/checksec.sh'), '--file=' + repofile(filename)]
     )
     if RE_RPATH_RUNPATH.search(output.decode('utf-8')):
         print('PASS: %s has no RPATH or RUNPATH.' % filename)
@@ -44,7 +60,7 @@ def test_rpath_runpath(filename):
 
 def test_fortify_source(filename):
     proc = subprocess.Popen(
-        [repofile('qa/zcash/checksec.sh'), '--fortify-file', repofile(filename)],
+        [repofile('qa/zcash/checksec.sh'), '--fortify-file=' + repofile(filename)],
         stdout=subprocess.PIPE,
     )
     line1 = proc.stdout.readline()
@@ -78,23 +94,20 @@ def check_security_hardening():
 
     # NOTE: checksec.sh does not reliably determine whether FORTIFY_SOURCE
     # is enabled for the entire binary. See issue #915.
-    ret &= test_fortify_source('src/zcashd')
-    ret &= test_fortify_source('src/zcash-cli')
-    ret &= test_fortify_source('src/zcash-gtest')
-    ret &= test_fortify_source('src/zcash-tx')
-    ret &= test_fortify_source('src/test/test_bitcoin')
+    # FORTIFY_SOURCE does mostly nothing for Clang before 10, which we don't
+    # pin yet, so we disable these tests.
+    # ret &= test_fortify_source('src/zcashd')
+    # ret &= test_fortify_source('src/zcash-cli')
+    # ret &= test_fortify_source('src/zcash-gtest')
+    # ret &= test_fortify_source('src/zcash-tx')
+    # ret &= test_fortify_source('src/test/test_bitcoin')
 
     return ret
 
 def ensure_no_dot_so_in_depends():
-    depends_dir = os.path.join(REPOROOT, 'depends')
-    arch_dir = os.path.join(depends_dir, 'x86_64-unknown-linux-gnu')
-    if not os.path.isdir(arch_dir):
-        # Not Linux, try MacOS
-        arch_dirs = glob(os.path.join(depends_dir, 'x86_64-apple-darwin*'))
-        if arch_dirs:
-            # Just try the first one; there will only be one in CI
-            arch_dir = arch_dirs[0]
+    arch_dir = get_arch_dir()
+    if arch_dir is None:
+        return False
 
     exit_code = 0
 
@@ -120,36 +133,35 @@ def ensure_no_dot_so_in_depends():
     return exit_code == 0
 
 def util_test():
+    python = []
+    if os.path.isfile('/usr/local/bin/python3'):
+        python = ['/usr/local/bin/python3']
+
     return subprocess.call(
-        [repofile('src/test/bitcoin-util-test.py')],
+        python + [repofile('src/test/bitcoin-util-test.py')],
         cwd=repofile('src'),
         env={'PYTHONPATH': repofile('src/test'), 'srcdir': repofile('src')}
     ) == 0
 
 def rust_test():
-    target_dir = os.path.join(REPOROOT, 'target', 'x86_64-unknown-linux-gnu')
-    if not os.path.isdir(target_dir):
-        target_dir = os.path.join(REPOROOT, 'target', 'x86_64-apple-darwin')
+    arch_dir = get_arch_dir()
+    if arch_dir is None:
+        return False
 
-    if os.path.isdir(target_dir):
-        # cargo build --tests will produce a binary named something
-        # like rustzcash-b38184f84aaf9146 (see also https://github.com/rust-lang/cargo/issues/1924)
-        # so let's find it and run it.
-        test_files = glob(os.path.join(target_dir, 'release', 'rustzcash*'))
-        for candidate in test_files:
-            if candidate[-2::] != ".d":
-                # Only one test target to run
-                return subprocess.call([candidate]) == 0
-
-    # Didn't manage to run anything
-    return False
+    rust_env = os.environ.copy()
+    rust_env['RUSTC'] = os.path.join(arch_dir, 'native', 'bin', 'rustc')
+    return subprocess.call([
+        os.path.join(arch_dir, 'native', 'bin', 'cargo'),
+        'test',
+        '--manifest-path',
+        os.path.join(REPOROOT, 'Cargo.toml'),
+    ], env=rust_env) == 0
 
 #
 # Tests
 #
 
 STAGES = [
-    'check-depends',
     'rust-test',
     'btest',
     'gtest',
@@ -162,7 +174,6 @@ STAGES = [
 ]
 
 STAGE_COMMANDS = {
-    'check-depends': ['qa/zcash/test-depends-sources-mirror.py'],
     'rust-test': rust_test,
     'btest': [repofile('src/test/test_bitcoin'), '-p'],
     'gtest': [repofile('src/zcash-gtest')],
@@ -171,7 +182,7 @@ STAGE_COMMANDS = {
     'util-test': util_test,
     'secp256k1': ['make', '-C', repofile('src/secp256k1'), 'check'],
     'univalue': ['make', '-C', repofile('src/univalue'), 'check'],
-    'rpc': [repofile('qa/pull-tester/rpc-tests.sh')],
+    'rpc': [repofile('qa/pull-tester/rpc-tests.py')],
 }
 
 
@@ -217,11 +228,14 @@ def main():
             sys.exit(1)
 
     # Run the stages
-    passed = True
+    all_passed = True
     for s in args.stage:
-        passed &= run_stage(s)
+        passed = run_stage(s)
+        if not passed:
+            print("!!! Stage %s failed !!!" % (s,))
+        all_passed &= passed
 
-    if not passed:
+    if not all_passed:
         print("!!! One or more test stages failed !!!")
         sys.exit(1)
 

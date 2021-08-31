@@ -15,6 +15,9 @@
 #include <utility>
 #include <vector>
 
+#include <boost/function.hpp>
+#include "zcash/History.hpp"
+
 class CBlockIndex;
 
 // START insightexplorer
@@ -80,19 +83,27 @@ public:
 
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const;
     bool GetNullifier(const uint256 &nf, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
     uint256 GetBestAnchor(ShieldedType type) const;
+    HistoryIndex GetHistoryLength(uint32_t epochId) const;
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const;
+    uint256 GetHistoryRoot(uint32_t epochId) const;
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
+                    const uint256 &hashOrchardAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CAnchorsSaplingMap &mapSaplingAnchors,
+                    CAnchorsOrchardMap &mapOrchardAnchors,
                     CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap &mapSaplingNullifiers);
+                    CNullifiersMap &mapSaplingNullifiers,
+                    CNullifiersMap &mapOrchardNullifiers,
+                    CHistoryCacheMap &historyCacheMap);
     bool GetStats(CCoinsStats &stats) const;
 };
 
@@ -132,7 +143,9 @@ public:
 
     bool WriteFlag(const std::string &name, bool fValue);
     bool ReadFlag(const std::string &name, bool &fValue);
-    bool LoadBlockIndexGuts(std::function<CBlockIndex*(const uint256&)> insertBlockIndex);
+    bool LoadBlockIndexGuts(
+        std::function<CBlockIndex*(const uint256&)> insertBlockIndex,
+        const CChainParams& chainParams);
 };
 
 #endif // BITCOIN_TXDB_H

@@ -1,14 +1,14 @@
 #include <gtest/gtest.h>
 
+#include "gtest/utils.h"
 #include "primitives/transaction.h"
+#include "transaction_builder.h"
 #include "zcash/Note.hpp"
 #include "zcash/Address.hpp"
 
 #include <array>
 
-extern ZCJoinSplit* params;
-extern int GenZero(int n);
-extern int GenMax(int n);
+#include <rust/ed25519/types.h>
 
 TEST(Transaction, JSDescriptionRandomized) {
     // construct a merkle tree
@@ -31,7 +31,7 @@ TEST(Transaction, JSDescriptionRandomized) {
     auto witness = merkleTree.witness();
 
     // create JSDescription
-    uint256 joinSplitPubKey;
+    Ed25519VerificationKey joinSplitPubKey;
     std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
         libzcash::JSInput(witness, note, k),
         libzcash::JSInput() // dummy input of zero value
@@ -44,11 +44,13 @@ TEST(Transaction, JSDescriptionRandomized) {
     std::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
 
     {
-        auto jsdesc = JSDescription::Randomized(
-            *params, joinSplitPubKey, rt,
+        auto jsdesc = JSDescriptionInfo(
+            joinSplitPubKey, rt,
             inputs, outputs,
+            0, 0
+        ).BuildRandomized(
             inputMap, outputMap,
-            0, 0, false);
+            false);
 
         std::set<size_t> inputSet(inputMap.begin(), inputMap.end());
         std::set<size_t> expectedInputSet {0, 1};
@@ -60,11 +62,13 @@ TEST(Transaction, JSDescriptionRandomized) {
     }
 
     {
-        auto jsdesc = JSDescription::Randomized(
-            *params, joinSplitPubKey, rt,
+        auto jsdesc = JSDescriptionInfo(
+            joinSplitPubKey, rt,
             inputs, outputs,
+            0, 0
+        ).BuildRandomized(
             inputMap, outputMap,
-            0, 0, false, nullptr, GenZero);
+            false, nullptr, GenZero);
 
         std::array<size_t, ZC_NUM_JS_INPUTS> expectedInputMap {1, 0};
         std::array<size_t, ZC_NUM_JS_OUTPUTS> expectedOutputMap {1, 0};
@@ -73,11 +77,13 @@ TEST(Transaction, JSDescriptionRandomized) {
     }
 
     {
-        auto jsdesc = JSDescription::Randomized(
-            *params, joinSplitPubKey, rt,
+        auto jsdesc = JSDescriptionInfo(
+            joinSplitPubKey, rt,
             inputs, outputs,
+            0, 0
+        ).BuildRandomized(
             inputMap, outputMap,
-            0, 0, false, nullptr, GenMax);
+            false, nullptr, GenMax);
 
         std::array<size_t, ZC_NUM_JS_INPUTS> expectedInputMap {0, 1};
         std::array<size_t, ZC_NUM_JS_OUTPUTS> expectedOutputMap {0, 1};

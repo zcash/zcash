@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014 The Bitcoin Core developers
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
-    initialize_chain_clean, start_nodes, connect_nodes_bi, stop_nodes, \
+    start_nodes, connect_nodes_bi, stop_nodes, \
     wait_bitcoinds
 
 from decimal import Decimal
@@ -14,12 +14,13 @@ from decimal import Decimal
 # Create one-input, one-output, no-fee transaction:
 class RawTransactionsTest(BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.setup_clean_chain = True
+        self.num_nodes = 4
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(4, self.options.tmpdir,
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir,
                            extra_args=[['-experimentalfeatures', '-developerencryptwallet']] * 4)
 
         connect_nodes_bi(self.nodes,0,1)
@@ -32,7 +33,15 @@ class RawTransactionsTest(BitcoinTestFramework):
 
     def run_test(self):
         print("Mining blocks...")
-        feeTolerance = Decimal("0.00000002") #if the fee's positive delta is higher than this value tests will fail, neg. delta always fail the tests
+
+        min_relay_tx_fee = self.nodes[0].getnetworkinfo()['relayfee']
+        # if the fee's positive delta is higher than this value tests will fail,
+        # neg. delta always fail the tests.
+        # The size of the signature of every input may be at most 2 bytes larger
+        # than a minimum sized signature.
+
+        #            = 2 bytes * minRelayTxFeePerByte
+        feeTolerance = max(2 * min_relay_tx_fee/1000, Decimal("0.00000001"))
 
         self.nodes[2].generate(1)
         self.sync_all()
@@ -41,7 +50,7 @@ class RawTransactionsTest(BitcoinTestFramework):
 
         watchonly_address = self.nodes[0].getnewaddress()
         watchonly_pubkey = self.nodes[0].validateaddress(watchonly_address)["pubkey"]
-        watchonly_amount = 200
+        watchonly_amount = Decimal(200)
         self.nodes[3].importpubkey(watchonly_pubkey, "", True)
         watchonly_txid = self.nodes[0].sendtoaddress(watchonly_address, watchonly_amount)
         self.nodes[0].sendtoaddress(self.nodes[3].getnewaddress(), watchonly_amount / 10)
@@ -141,7 +150,6 @@ class RawTransactionsTest(BitcoinTestFramework):
         assert_equal(fee + totalOut, utx['amount']) #compare vin total and totalout+fee
 
 
-
         #####################################################################
         # test a fundrawtransaction with which will not get a change output #
         #####################################################################
@@ -169,7 +177,6 @@ class RawTransactionsTest(BitcoinTestFramework):
 
         assert_equal(rawtxfund['changepos'], -1)
         assert_equal(fee + totalOut, utx['amount']) #compare vin total and totalout+fee
-
 
 
         #########################################################################
@@ -202,7 +209,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         matchingOuts = 0
         for i, out in enumerate(dec_tx['vout']):
             totalOut += out['value']
-            if out['scriptPubKey']['addresses'][0] in outputs :
+            if out['scriptPubKey']['addresses'][0] in outputs:
                 matchingOuts+=1
             else:
                 assert_equal(i, rawtxfund['changepos'])
@@ -442,7 +449,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         stop_nodes(self.nodes)
         wait_bitcoinds()
 
-        self.nodes = start_nodes(4, self.options.tmpdir)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
 
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
@@ -475,7 +482,6 @@ class RawTransactionsTest(BitcoinTestFramework):
 
         # make sure funds are received at node1
         assert_equal(oldBalance+Decimal('11.10000000'), self.nodes[0].getbalance())
-
 
 
         ###############################################

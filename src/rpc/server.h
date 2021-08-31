@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef BITCOIN_RPCSERVER_H
-#define BITCOIN_RPCSERVER_H
+#ifndef BITCOIN_RPC_SERVER_H
+#define BITCOIN_RPC_SERVER_H
 
 #include "amount.h"
 #include "rpc/protocol.h"
@@ -147,6 +147,12 @@ public:
      */
     UniValue execute(const std::string &method, const UniValue &params) const;
 
+    /**
+    * Returns a list of registered commands
+    * @returns List of registered commands.
+    */
+    std::vector<std::string> listCommands() const;
+
 
     /**
      * Appends a CRPCCommand to the dispatch table.
@@ -183,6 +189,9 @@ void InterruptRPC();
 void StopRPC();
 std::string JSONRPCExecBatch(const UniValue& vReq);
 
-extern std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::string& enableArg);
+extern std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::vector<std::string>& enableArgs);
 
-#endif // BITCOIN_RPCSERVER_H
+extern int interpretHeightArg(int nHeight, int currentHeight);
+extern int parseHeightArg(const std::string& strHeight, int currentHeight);
+
+#endif // BITCOIN_RPC_SERVER_H

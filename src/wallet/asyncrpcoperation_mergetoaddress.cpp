@@ -15,11 +15,12 @@
 #include "miner.h"
 #include "net.h"
 #include "netbase.h"
+#include "proof_verifier.h"
 #include "rpc/protocol.h"
 #include "rpc/server.h"
 #include "script/interpreter.h"
-#include "sodium.h"
 #include "timedata.h"
+#include "transaction_builder.h"
 #include "util.h"
 #include "utilmoneystr.h"
 #include "utiltime.h"
@@ -32,6 +33,9 @@
 #include <iostream>
 #include <string>
 #include <thread>
+#include <variant>
+
+#include <rust/ed25519.h>
 
 using namespace libzcash;
 
@@ -54,7 +58,7 @@ int mta_find_output(UniValue obj, int n)
 }
 
 AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
-    boost::optional<TransactionBuilder> builder,
+    std::optional<TransactionBuilder> builder,
     CMutableTransaction contextualTx,
     std::vector<MergeToAddressInputUTXO> utxoInputs,
     std::vector<MergeToAddressInputSproutNote> sproutNoteInputs,
@@ -88,15 +92,16 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
     isUsingBuilder_ = false;
     if (builder) {
         isUsingBuilder_ = true;
-        builder_ = builder.get();
+        builder_ = builder.value();
     }
 
-    toTaddr_ = DecodeDestination(std::get<0>(recipient));
+    KeyIO keyIO(Params());
+    toTaddr_ = keyIO.DecodeDestination(std::get<0>(recipient));
     isToTaddr_ = IsValidDestination(toTaddr_);
     isToZaddr_ = false;
 
     if (!isToTaddr_) {
-        auto address = DecodePaymentAddress(std::get<0>(recipient));
+        auto address = keyIO.DecodePaymentAddress(std::get<0>(recipient));
         if (IsValidPaymentAddress(address)) {
             isToZaddr_ = true;
             toPaymentAddress_ = address;
@@ -252,8 +257,13 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         tx_ = CTransaction(rawTx);
     }
 
-    LogPrint(isPureTaddrOnlyTx ? "zrpc" : "zrpcunsafe", "%s: spending %s to send %s with fee %s\n",
+    if (isPureTaddrOnlyTx) {
+        LogPrint("zrpc", "%s: spending %s to send %s with fee %s\n",
              getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(minersFee));
+    } else {
+        LogPrint("zrpcunsafe", "%s: spending %s to send %s with fee %s\n",
+             getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(minersFee));
+    }
     LogPrint("zrpc", "%s: transparent input: %s\n", getId(), FormatMoney(t_inputs_total));
     LogPrint("zrpcunsafe", "%s: private input: %s\n", getId(), FormatMoney(z_inputs_total));
     if (isToTaddr_) {
@@ -273,7 +283,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
      * SCENARIO #0
      *
      * Sprout not involved, so we just use the TransactionBuilder and we're done.
-     * 
+     *
      * This is based on code from AsyncRPCOperation_sendmany::main_impl() and should be refactored.
      */
     if (isUsingBuilder_) {
@@ -287,7 +297,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             builder_.AddTransparentInput(outPoint, scriptPubKey, amount);
         }
 
-        boost::optional<uint256> ovk;
+        std::optional<uint256> ovk;
         // Select Sapling notes
         std::vector<SaplingOutPoint> saplingOPs;
         std::vector<SaplingNote> saplingNotes;
@@ -304,7 +314,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 
         // Fetch Sapling anchor and witnesses
         uint256 anchor;
-        std::vector<boost::optional<SaplingWitness>> witnesses;
+        std::vector<std::optional<SaplingWitness>> witnesses;
         {
             LOCK2(cs_main, pwalletMain->cs_wallet);
             pwalletMain->GetSaplingNoteWitnesses(saplingOPs, witnesses, anchor);
@@ -315,7 +325,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             if (!witnesses[i]) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "Missing witness for Sapling note");
             }
-            builder_.AddSaplingSpend(expsks[i], saplingNotes[i], anchor, witnesses[i].get());
+            builder_.AddSaplingSpend(expsks[i], saplingNotes[i], anchor, witnesses[i].value());
         }
 
         if (isToTaddr_) {
@@ -324,7 +334,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             std::string zaddr = std::get<0>(recipient_);
             std::string memo = std::get<1>(recipient_);
             std::array<unsigned char, ZC_MEMO_SIZE> hexMemo = get_memo_from_hex_string(memo);
-            auto saplingPaymentAddress = boost::get<libzcash::SaplingPaymentAddress>(&toPaymentAddress_);
+            auto saplingPaymentAddress = std::get_if<libzcash::SaplingPaymentAddress>(&toPaymentAddress_);
             if (saplingPaymentAddress == nullptr) {
                 // This should never happen as we have already determined that the payment is to sapling
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Could not get Sapling payment address.");
@@ -340,13 +350,13 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             if (!ovk) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "Sending to a Sapling address requires an ovk.");
             }
-            builder_.AddSaplingOutput(ovk.get(), *saplingPaymentAddress, sendAmount, hexMemo);
+            builder_.AddSaplingOutput(ovk.value(), *saplingPaymentAddress, sendAmount, hexMemo);
         }
 
         // Build the transaction
         tx_ = builder_.Build().GetTxOrThrow();
 
-        UniValue sendResult = SendTransaction(tx_, boost::none, testmode);
+        UniValue sendResult = SendTransaction(tx_, std::nullopt, testmode);
         set_result(sendResult);
 
         return true;
@@ -365,8 +375,8 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
      */
     if (isPureTaddrOnlyTx) {
         UniValue obj(UniValue::VOBJ);
-        obj.push_back(Pair("rawtxn", EncodeHexTx(tx_)));
-        auto txAndResult = SignSendRawTransaction(obj, boost::none, testmode);
+        obj.pushKV("rawtxn", EncodeHexTx(tx_));
+        auto txAndResult = SignSendRawTransaction(obj, std::nullopt, testmode);
         tx_ = txAndResult.first;
         set_result(txAndResult.second);
         return true;
@@ -378,7 +388,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 
     // Prepare raw transaction to handle JoinSplits
     CMutableTransaction mtx(tx_);
-    crypto_sign_keypair(joinSplitPubKey_.begin(), joinSplitPrivKey_);
+    ed25519_generate_keypair(&joinSplitPrivKey_, &joinSplitPubKey_);
     mtx.joinSplitPubKey = joinSplitPubKey_;
     tx_ = CTransaction(mtx);
     std::string hexMemo = std::get<1>(recipient_);
@@ -397,14 +407,14 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         info.vpub_old = sendAmount;
         info.vpub_new = 0;
 
-        JSOutput jso = JSOutput(boost::get<libzcash::SproutPaymentAddress>(toPaymentAddress_), sendAmount);
+        JSOutput jso = JSOutput(std::get<libzcash::SproutPaymentAddress>(toPaymentAddress_), sendAmount);
         if (hexMemo.size() > 0) {
             jso.memo = get_memo_from_hex_string(hexMemo);
         }
         info.vjsout.push_back(jso);
 
         UniValue obj = perform_joinsplit(info);
-        auto txAndResult = SignSendRawTransaction(obj, boost::none, testmode);
+        auto txAndResult = SignSendRawTransaction(obj, std::nullopt, testmode);
         tx_ = txAndResult.first;
         set_result(txAndResult.second);
         return true;
@@ -429,7 +439,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             JSOutPoint jso = std::get<0>(t);
             std::vector<JSOutPoint> vOutPoints = {jso};
             uint256 inputAnchor;
-            std::vector<boost::optional<SproutWitness>> vInputWitnesses;
+            std::vector<std::optional<SproutWitness>> vInputWitnesses;
             pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
             jsopWitnessAnchorMap[jso.ToString()] = MergeToAddressWitnessAnchorData{vInputWitnesses[0], inputAnchor};
         }
@@ -472,7 +482,9 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
     }
 
     // Keep track of treestate within this transaction
-    boost::unordered_map<uint256, SproutMerkleTree, CCoinsKeyHasher> intermediates;
+    // The SaltedTxidHasher is fine to use here; it salts the map keys automatically
+    // with randomness generated on construction.
+    boost::unordered_map<uint256, SproutMerkleTree, SaltedTxidHasher> intermediates;
     std::vector<uint256> previousCommitments;
 
     while (!vpubNewProcessed) {
@@ -493,7 +505,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 
         CAmount jsInputValue = 0;
         uint256 jsAnchor;
-        std::vector<boost::optional<SproutWitness>> witnesses;
+        std::vector<std::optional<SproutWitness>> witnesses;
 
         JSDescription prevJoinSplit;
 
@@ -524,7 +536,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             }
 
             assert(changeOutputIndex != -1);
-            boost::optional<SproutWitness> changeWitness;
+            std::optional<SproutWitness> changeWitness;
             int n = 0;
             for (const uint256& commitment : prevJoinSplit.commitments) {
                 tree.append(commitment);
@@ -532,7 +544,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
                 if (!changeWitness && changeOutputIndex == n++) {
                     changeWitness = tree.witness();
                 } else if (changeWitness) {
-                    changeWitness.get().append(commitment);
+                    changeWitness.value().append(commitment);
                 }
             }
             if (changeWitness) {
@@ -543,7 +555,10 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 
             // Decrypt the change note's ciphertext to retrieve some data we need
             ZCNoteDecryption decryptor(changeKey.receiving_key());
-            auto hSig = prevJoinSplit.h_sig(*pzcashParams, tx_.joinSplitPubKey);
+            auto hSig = ZCJoinSplit::h_sig(
+                prevJoinSplit.randomSeed,
+                prevJoinSplit.nullifiers,
+                tx_.joinSplitPubKey);
             try {
                 SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
                     decryptor,
@@ -574,7 +589,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         std::vector<SproutNote> vInputNotes;
         std::vector<SproutSpendingKey> vInputZKeys;
         std::vector<JSOutPoint> vOutPoints;
-        std::vector<boost::optional<SproutWitness>> vInputWitnesses;
+        std::vector<std::optional<SproutWitness>> vInputWitnesses;
         uint256 inputAnchor;
         int numInputsNeeded = (jsChange > 0) ? 1 : 0;
         while (numInputsNeeded++ < ZC_NUM_JS_INPUTS && zInputsDeque.size() > 0) {
@@ -631,7 +646,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
                 if (!optionalWitness) {
                     throw JSONRPCError(RPC_WALLET_ERROR, "Witness for note commitment is null");
                 }
-                SproutWitness w = *optionalWitness; // could use .get();
+                SproutWitness w = *optionalWitness; // could use .value();
                 if (jsChange > 0) {
                     for (const uint256& commitment : previousCommitments) {
                         w.append(commitment);
@@ -681,7 +696,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             // If this is the final output, set the target and memo
             if (isToZaddr_ && vpubNewProcessed) {
                 outputType = "target";
-                jso.addr = boost::get<libzcash::SproutPaymentAddress>(toPaymentAddress_);
+                jso.addr = std::get<libzcash::SproutPaymentAddress>(toPaymentAddress_);
                 if (!hexMemo.empty()) {
                     jso.memo = get_memo_from_hex_string(hexMemo);
                 }
@@ -705,7 +720,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
     assert(zInputsDeque.size() == 0);
     assert(vpubNewProcessed);
 
-    auto txAndResult = SignSendRawTransaction(obj, boost::none, testmode);
+    auto txAndResult = SignSendRawTransaction(obj, std::nullopt, testmode);
     tx_ = txAndResult.first;
     set_result(txAndResult.second);
     return true;
@@ -714,7 +729,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 
 UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(MergeToAddressJSInfo& info)
 {
-    std::vector<boost::optional<SproutWitness>> witnesses;
+    std::vector<std::optional<SproutWitness>> witnesses;
     uint256 anchor;
     {
         LOCK(cs_main);
@@ -726,7 +741,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(MergeToAddressJSInf
 
 UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(MergeToAddressJSInfo& info, std::vector<JSOutPoint>& outPoints)
 {
-    std::vector<boost::optional<SproutWitness>> witnesses;
+    std::vector<std::optional<SproutWitness>> witnesses;
     uint256 anchor;
     {
         LOCK(cs_main);
@@ -737,7 +752,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(MergeToAddressJSInf
 
 UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
     MergeToAddressJSInfo& info,
-    std::vector<boost::optional<SproutWitness>> witnesses,
+    std::vector<std::optional<SproutWitness>> witnesses,
     uint256 anchor)
 {
     if (anchor.IsNull()) {
@@ -790,21 +805,21 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
     uint256 esk; // payment disclosure - secret
 
     assert(mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION));
-    JSDescription jsdesc = JSDescription::Randomized(
-        *pzcashParams,
+    JSDescription jsdesc = JSDescriptionInfo(
         joinSplitPubKey_,
         anchor,
         inputs,
         outputs,
+        info.vpub_old,
+        info.vpub_new
+    ).BuildRandomized(
         inputMap,
         outputMap,
-        info.vpub_old,
-        info.vpub_new,
         !this->testmode,
         &esk); // parameter expects pointer to esk, so pass in address
     {
-        auto verifier = libzcash::ProofVerifier::Strict();
-        if (!(jsdesc.Verify(*pzcashParams, verifier, joinSplitPubKey_))) {
+        auto verifier = ProofVerifier::Strict();
+        if (!(verifier.VerifySprout(jsdesc, joinSplitPubKey_))) {
             throw std::runtime_error("error verifying joinsplit");
         }
     }
@@ -817,17 +832,21 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId_);
 
     // Add the signature
-    if (!(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
-                               dataToBeSigned.begin(), 32,
-                               joinSplitPrivKey_) == 0)) {
-        throw std::runtime_error("crypto_sign_detached failed");
+    if (!ed25519_sign(
+        &joinSplitPrivKey_,
+        dataToBeSigned.begin(), 32,
+        &mtx.joinSplitSig))
+    {
+        throw std::runtime_error("ed25519_sign failed");
     }
 
     // Sanity check
-    if (!(crypto_sign_verify_detached(&mtx.joinSplitSig[0],
-                                      dataToBeSigned.begin(), 32,
-                                      mtx.joinSplitPubKey.begin()) == 0)) {
-        throw std::runtime_error("crypto_sign_verify_detached failed");
+    if (!ed25519_verify(
+        &mtx.joinSplitPubKey,
+        &mtx.joinSplitSig,
+        dataToBeSigned.begin(), 32))
+    {
+        throw std::runtime_error("ed25519_verify failed");
     }
 
     CTransaction rawTx(mtx);
@@ -843,7 +862,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
         ss2 << ((unsigned char)0x00);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[0];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey_);
+        ss2 << ZCJoinSplit::h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey_);
 
         encryptedNote1 = HexStr(ss2.begin(), ss2.end());
     }
@@ -852,7 +871,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
         ss2 << ((unsigned char)0x01);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[1];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey_);
+        ss2 << ZCJoinSplit::h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey_);
 
         encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }
@@ -866,12 +885,9 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
         arrOutputMap.push_back(static_cast<uint64_t>(outputMap[i]));
     }
 
+    KeyIO keyIO(Params());
 
     // !!! Payment disclosure START
-    unsigned char buffer[32] = {0};
-    memcpy(&buffer[0], &joinSplitPrivKey_[0], 32); // private key in first half of 64 byte buffer
-    std::vector<unsigned char> vch(&buffer[0], &buffer[0] + 32);
-    uint256 joinSplitPrivKey = uint256(vch);
     size_t js_index = tx_.vJoinSplit.size() - 1;
     uint256 placeholder;
     for (int i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
@@ -880,19 +896,19 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
         PaymentDisclosureKey pdKey = {placeholder, js_index, mapped_index};
         JSOutput output = outputs[mapped_index];
         libzcash::SproutPaymentAddress zaddr = output.addr; // randomized output
-        PaymentDisclosureInfo pdInfo = {PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL, esk, joinSplitPrivKey, zaddr};
+        PaymentDisclosureInfo pdInfo = {PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL, esk, joinSplitPrivKey_, zaddr};
         paymentDisclosureData_.push_back(PaymentDisclosureKeyInfo(pdKey, pdInfo));
 
-        LogPrint("paymentdisclosure", "%s: Payment Disclosure: js=%d, n=%d, zaddr=%s\n", getId(), js_index, int(mapped_index), EncodePaymentAddress(zaddr));
+        LogPrint("paymentdisclosure", "%s: Payment Disclosure: js=%d, n=%d, zaddr=%s\n", getId(), js_index, int(mapped_index), keyIO.EncodePaymentAddress(zaddr));
     }
     // !!! Payment disclosure END
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("encryptednote1", encryptedNote1));
-    obj.push_back(Pair("encryptednote2", encryptedNote2));
-    obj.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
-    obj.push_back(Pair("inputmap", arrInputMap));
-    obj.push_back(Pair("outputmap", arrOutputMap));
+    obj.pushKV("encryptednote1", encryptedNote1);
+    obj.pushKV("encryptednote2", encryptedNote2);
+    obj.pushKV("rawtxn", HexStr(ss.begin(), ss.end()));
+    obj.pushKV("inputmap", arrInputMap);
+    obj.pushKV("outputmap", arrOutputMap);
     return obj;
 }
 
@@ -931,8 +947,8 @@ UniValue AsyncRPCOperation_mergetoaddress::getStatus() const
     }
 
     UniValue obj = v.get_obj();
-    obj.push_back(Pair("method", "z_mergetoaddress"));
-    obj.push_back(Pair("params", contextinfo_));
+    obj.pushKV("method", "z_mergetoaddress");
+    obj.pushKV("params", contextinfo_);
     return obj;
 }
 

@@ -9,9 +9,9 @@ from test_framework.util import (
     assert_greater_than,
     connect_nodes_bi,
     get_coinbase_address,
-    initialize_chain_clean,
     start_nodes,
     wait_and_assert_operationid_status,
+    DEFAULT_FEE
 )
 from test_framework.authproxy import JSONRPCException
 
@@ -19,16 +19,17 @@ from decimal import Decimal
 
 class WalletOverwinterTxTest (BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = True
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[[
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
             "-nuparams=2bb40e60:200",
             "-debug=zrpcunsafe",
             "-txindex",
-        ]] * 4 )
+        ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -69,8 +70,8 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         myopid = self.nodes[2].z_sendmany(taddr2, recipients, 0)
         txid_zsendmany = wait_and_assert_operationid_status(self.nodes[2], myopid)
 
-        # Node 0 shields to Node 2, a coinbase utxo of value 10.0 less fee 0.00010000
-        zsendamount = Decimal('10.0') - Decimal('0.0001')
+        # Node 0 shields to Node 2, a coinbase utxo of value 10.0 less default fee
+        zsendamount = Decimal('10.0') - DEFAULT_FEE
         recipients = []
         recipients.append({"address":zaddr2, "amount": zsendamount})
         myopid = self.nodes[0].z_sendmany(taddr0, recipients)
@@ -84,7 +85,7 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
 
         # Verify balance
         assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('0.5'))
-        assert_equal(self.nodes[2].getbalance(), Decimal('0.4999'))
+        assert_equal(self.nodes[2].getbalance(), Decimal('0.5') - DEFAULT_FEE)
         assert_equal(self.nodes[2].z_getbalance(zaddr2), zsendamount)
 
         # Verify transaction version is 4 (intended for Sapling+)
@@ -140,8 +141,8 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         myopid = self.nodes[3].z_sendmany(taddr3, recipients, 0)
         txid_zsendmany = wait_and_assert_operationid_status(self.nodes[3], myopid)
 
-        # Node 0 shields to Node 3, a coinbase utxo of value 10.0 less fee 0.00010000
-        zsendamount = Decimal('10.0') - Decimal('0.0001')
+        # Node 0 shields to Node 3, a coinbase utxo of value 10.0 less default fee
+        zsendamount = Decimal('10.0') - DEFAULT_FEE
         recipients = []
         recipients.append({"address":zaddr3, "amount": zsendamount})
         myopid = self.nodes[0].z_sendmany(taddr0, recipients)
@@ -162,7 +163,7 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
 
         # Verify balance
         assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('1.0'))
-        assert_equal(self.nodes[3].getbalance(), Decimal('0.4999'))
+        assert_equal(self.nodes[3].getbalance(), Decimal('0.5') - DEFAULT_FEE)
         assert_equal(self.nodes[3].z_getbalance(zaddr3), zsendamount)
 
         # Verify transaction version is 4 (intended for Sapling+)

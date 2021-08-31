@@ -7,7 +7,7 @@
 
 #include "consensus/params.h"
 
-#include <boost/optional.hpp>
+#include <optional>
 
 enum UpgradeState {
     UPGRADE_DISABLED,
@@ -54,6 +54,12 @@ int CurrentEpoch(int nHeight, const Consensus::Params& params);
 uint32_t CurrentEpochBranchId(int nHeight, const Consensus::Params& params);
 
 /**
+ * Returns the branch ID that preceded currentBranchId, or 0 if no upgrade
+ * matches currentBranchId.
+ */
+uint32_t PrevEpochBranchId(uint32_t currentBranchId, const Consensus::Params& params);
+
+/**
  * Returns true if a given branch id is a valid nBranchId for one of the network
  * upgrades contained in NetworkUpgradeInfo.
  */
@@ -77,15 +83,15 @@ bool IsActivationHeightForAnyUpgrade(
 
 /**
  * Returns the index of the next upgrade after the given block height, or
- * boost::none if there are no more known upgrades.
+ * std::nullopt if there are no more known upgrades.
  */
-boost::optional<int> NextEpoch(int nHeight, const Consensus::Params& params);
+std::optional<int> NextEpoch(int nHeight, const Consensus::Params& params);
 
 /**
  * Returns the activation height for the next upgrade after the given block height,
- * or boost::none if there are no more known upgrades.
+ * or std::nullopt if there are no more known upgrades.
  */
-boost::optional<int> NextActivationHeight(
+std::optional<int> NextActivationHeight(
     int nHeight,
     const Consensus::Params& params);
 

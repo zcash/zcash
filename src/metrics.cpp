@@ -14,11 +14,15 @@
 #include "utilmoneystr.h"
 #include "utilstrencodings.h"
 
+#include <boost/range/irange.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/synchronized_value.hpp>
+
+#include <optional>
 #include <string>
 #ifdef WIN32
 #include <io.h>
+#include <wincon.h>
 #else
 #include <sys/ioctl.h>
 #endif
@@ -205,12 +209,12 @@ void ConnectMetricsScreen()
     uiInterface.InitMessage.connect(metrics_InitMessage);
 }
 
-std::string DisplayDuration(int64_t time, DurationFormat format)
+std::string DisplayDuration(int64_t duration, DurationFormat format)
 {
-    int days =  time / (24 * 60 * 60);
-    int hours = (time - (days * 24 * 60 * 60)) / (60 * 60);
-    int minutes = (time - (((days * 24) + hours) * 60 * 60)) / 60;
-    int seconds = time - (((((days * 24) + hours) * 60) + minutes) * 60);
+    int64_t days =  duration / (24 * 60 * 60);
+    int64_t hours = (duration - (days * 24 * 60 * 60)) / (60 * 60);
+    int64_t minutes = (duration - (((days * 24) + hours) * 60 * 60)) / 60;
+    int64_t seconds = duration - (((((days * 24) + hours) * 60) + minutes) * 60);
 
     std::string strDuration;
     if (format == DurationFormat::REDUCED) {
@@ -241,70 +245,144 @@ std::string DisplaySize(size_t value)
 {
     double coef = 1.0;
     if (value < 1024.0 * coef)
-       return strprintf(_("%d Bytes"), value);
+        return strprintf(_("%d Bytes"), value);
     coef *= 1024.0;
     if (value < 1024.0 * coef)
-       return strprintf(_("%.2f KiB"), value / coef);
+        return strprintf(_("%.2f KiB"), value / coef);
     coef *= 1024.0;
     if (value < 1024.0 * coef)
-       return strprintf(_("%.2f MiB"), value / coef);
+        return strprintf(_("%.2f MiB"), value / coef);
     coef *= 1024.0;
     if (value < 1024.0 * coef)
-       return strprintf(_("%.2f GiB"), value / coef);
+        return strprintf(_("%.2f GiB"), value / coef);
     coef *= 1024.0;
     return strprintf(_("%.2f TiB"), value / coef);
 }
 
-boost::optional<int64_t> SecondsLeftToNextEpoch(const Consensus::Params& params, int currentHeight)
+std::string DisplayHashRate(double value)
+{
+    double coef = 1.0;
+    if (value < 1000.0 * coef)
+        return strprintf(_("%.3f Sol/s"), value);
+    coef *= 1000.0;
+    if (value < 1000.0 * coef)
+        return strprintf(_("%.3f kSol/s"), value / coef);
+    coef *= 1000.0;
+    if (value < 1000.0 * coef)
+        return strprintf(_("%.3f MSol/s"), value / coef);
+    coef *= 1000.0;
+    if (value < 1000.0 * coef)
+        return strprintf(_("%.3f GSol/s"), value / coef);
+    coef *= 1000.0;
+    return strprintf(_("%.3f TSol/s"), value / coef);
+}
+
+std::optional<int64_t> SecondsLeftToNextEpoch(const Consensus::Params& params, int currentHeight)
 {
     auto nextHeight = NextActivationHeight(currentHeight, params);
     if (nextHeight) {
-        return (nextHeight.get() - currentHeight) * params.PoWTargetSpacing(nextHeight.get() - 1);
+        return (nextHeight.value() - currentHeight) * params.PoWTargetSpacing(nextHeight.value() - 1);
     } else {
-        return boost::none;
+        return std::nullopt;
     }
 }
 
-int printStats(bool mining)
-{
-    // Number of lines that are always displayed
-    int lines = 5;
-
+struct MetricsStats {
     int height;
     int64_t currentHeadersHeight;
     int64_t currentHeadersTime;
     size_t connections;
     int64_t netsolps;
-    const Consensus::Params& params = Params().GetConsensus();
+};
+
+MetricsStats loadStats()
+{
+    int height;
+    int64_t currentHeadersHeight;
+    int64_t currentHeadersTime;
+    size_t connections;
+    int64_t netsolps;
+
     {
-        LOCK2(cs_main, cs_vNodes);
+        LOCK(cs_main);
         height = chainActive.Height();
         currentHeadersHeight = pindexBestHeader ? pindexBestHeader->nHeight: -1;
         currentHeadersTime = pindexBestHeader ? pindexBestHeader->nTime : 0;
-        connections = vNodes.size();
         netsolps = GetNetworkHashPS(120, -1);
     }
-    auto localsolps = GetLocalSolPS();
-
-    if (IsInitialBlockDownload(Params())) {
-       if (fReindex) {
-           int downloadPercent = nSizeReindexed * 100 / nFullSizeToReindex;
-           std::cout << "      " << _("Reindexing blocks") << " | " << DisplaySize(nSizeReindexed) << " / " << DisplaySize(nFullSizeToReindex) << " (" << downloadPercent << "%, " << height << " " << _("blocks") << ")" << std::endl;
-       } else {
-           int netheight = currentHeadersHeight == -1 || currentHeadersTime == 0 ?
-               0 : EstimateNetHeight(params, currentHeadersHeight, currentHeadersTime);
-           int downloadPercent = height * 100 / netheight;
-           std::cout << "     " << _("Downloading blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
-       }
-    } else {
-        std::cout << "           " << _("Block height") << " | " << height << std::endl;
+    {
+        LOCK(cs_vNodes);
+        connections = vNodes.size();
     }
 
-    auto secondsLeft = SecondsLeftToNextEpoch(params, height);
+    return MetricsStats {
+        height,
+        currentHeadersHeight,
+        currentHeadersTime,
+        connections,
+        netsolps
+    };
+}
+
+int printStats(MetricsStats stats, bool isScreen, bool mining)
+{
+    // Number of lines that are always displayed
+    int lines = 5;
+
+    const Consensus::Params& params = Params().GetConsensus();
+    auto localsolps = GetLocalSolPS();
+
+    if (IsInitialBlockDownload(Params().GetConsensus())) {
+        if (fReindex) {
+            int downloadPercent = nSizeReindexed * 100 / nFullSizeToReindex;
+            std::cout << "      " << _("Reindexing blocks") << " | "
+                << DisplaySize(nSizeReindexed) << " / " << DisplaySize(nFullSizeToReindex)
+                << " (" << downloadPercent << "%, " << stats.height << " " << _("blocks") << ")" << std::endl;
+        } else {
+            int nHeaders = stats.currentHeadersHeight;
+            if (nHeaders < 0)
+                nHeaders = 0;
+            int netheight = stats.currentHeadersHeight == -1 || stats.currentHeadersTime == 0 ?
+                0 : EstimateNetHeight(params, stats.currentHeadersHeight, stats.currentHeadersTime);
+            if (netheight < nHeaders)
+                netheight = nHeaders;
+            if (netheight <= 0)
+                netheight = 1;
+            int downloadPercent = stats.height * 100 / netheight;
+            std::cout << "     " << _("Downloading blocks") << " | "
+                << stats.height << " (" << nHeaders << " " << _("headers") << ") / ~" << netheight
+                << " (" << downloadPercent << "%)" << std::endl;
+
+            if (isScreen) {
+                // Draw 50-character progress bar, which will fit into a 79-character line.
+                int blockChars = downloadPercent / 2;
+                int headerChars = (nHeaders * 50) / netheight;
+                // Start with background colour reversed for "full" bar.
+                std::cout << "                        | [[7m";
+                for (auto i : boost::irange(0, 50)) {
+                    if (i == headerChars) {
+                        // Switch to normal background colour for "empty" bar.
+                        std::cout << "[0m";
+                    } else if (i == blockChars) {
+                        // Switch to distinct colour for "headers" bar.
+                        std::cout << "[0;43m";
+                    }
+                    std::cout << " ";
+                }
+                // Ensure that colour is reset after the progress bar is printed.
+                std::cout << "[0m]" << std::endl;
+                lines++;
+            }
+        }
+    } else {
+        std::cout << "           " << _("Block height") << " | " << stats.height << std::endl;
+    }
+
+    auto secondsLeft = SecondsLeftToNextEpoch(params, stats.height);
     std::string strUpgradeTime;
     if (secondsLeft) {
-        auto nextHeight = NextActivationHeight(height, params).value();
-        auto nextBranch = NextEpoch(height, params).value();
+        auto nextHeight = NextActivationHeight(stats.height, params).value();
+        auto nextBranch = NextEpoch(stats.height, params).value();
         strUpgradeTime = strprintf(_("%s at block height %d, in around %s"),
                                    NetworkUpgradeInfo[nextBranch].strName, nextHeight, DisplayDuration(secondsLeft.value(), DurationFormat::REDUCED));
     }
@@ -312,10 +390,10 @@ int printStats(bool mining)
         strUpgradeTime = "Unknown";
     }
     std::cout << "           " << _("Next upgrade") << " | " << strUpgradeTime << std::endl;
-    std::cout << "            " << _("Connections") << " | " << connections << std::endl;
-    std::cout << "  " << _("Network solution rate") << " | " << netsolps << " Sol/s" << std::endl;
+    std::cout << "            " << _("Connections") << " | " << stats.connections << std::endl;
+    std::cout << "  " << _("Network solution rate") << " | " << DisplayHashRate(stats.netsolps) << std::endl;
     if (mining && miningTimer.running()) {
-        std::cout << "    " << _("Local solution rate") << " | " << strprintf("%.4f Sol/s", localsolps) << std::endl;
+        std::cout << "    " << _("Local solution rate") << " | " << DisplayHashRate(localsolps) << std::endl;
         lines++;
     }
     std::cout << std::endl;
@@ -342,14 +420,14 @@ int printMiningStatus(bool mining)
             }
             if (fvNodesEmpty) {
                 std::cout << _("Mining is paused while waiting for connections.") << std::endl;
-            } else if (IsInitialBlockDownload(Params())) {
+            } else if (IsInitialBlockDownload(Params().GetConsensus())) {
                 std::cout << _("Mining is paused while downloading blocks.") << std::endl;
             } else {
                 std::cout << _("Mining is paused (a JoinSplit may be in progress).") << std::endl;
             }
         }
         lines++;
-    } else {
+    } else if (Params().NetworkIDString() != "main") {
         std::cout << _("You are currently not mining.") << std::endl;
         std::cout << _("To enable mining, add 'gen=1' to your zcash.conf and restart.") << std::endl;
         lines += 2;
@@ -394,7 +472,7 @@ int printMetrics(size_t cols, bool mining)
         {
             LOCK2(cs_main, cs_metrics);
             boost::strict_lock_ptr<std::list<uint256>> u = trackedBlocks.synchronize();
-            auto consensusParams = Params().GetConsensus();
+            const Consensus::Params& consensusParams = Params().GetConsensus();
             auto tipHeight = chainActive.Height();
 
             // Update orphans and calculate subsidies
@@ -489,8 +567,6 @@ int printInitMessage()
 }
 
 #ifdef WIN32
-#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
-
 bool enableVTMode()
 {
     // Set output mode to handle virtual terminal sequences
@@ -564,6 +640,12 @@ void ThreadShowMetricsScreen()
 #endif
         }
 
+        // Lock and fetch stats before erasing the screen, in case we block.
+        std::optional<MetricsStats> metricsStats;
+        if (loaded) {
+            metricsStats = loadStats();
+        }
+
         if (isScreen) {
             // Erase below current position
             std::cout << "\e[J";
@@ -577,7 +659,7 @@ void ThreadShowMetricsScreen()
 #endif
 
         if (loaded) {
-            lines += printStats(mining);
+            lines += printStats(metricsStats.value(), isScreen, mining);
             lines += printMiningStatus(mining);
         }
         lines += printMetrics(cols, mining);

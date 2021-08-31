@@ -1,6 +1,6 @@
 // Copyright (c) 2016 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include <iostream>
 
@@ -39,4 +39,13 @@ static void RollingBloom(benchmark::State& state)
     }
 }
 
+static void RollingBloomReset(benchmark::State& state)
+{
+    CRollingBloomFilter filter(120000, 0.000001);
+    while (state.KeepRunning()) {
+        filter.reset();
+    }
+}
+
 BENCHMARK(RollingBloom);
+BENCHMARK(RollingBloomReset); // To-backport: 20000

@@ -6,13 +6,15 @@
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_greater_than, start_nodes,\
-    initialize_chain_clean, connect_nodes_bi, wait_and_assert_operationid_status
+    initialize_chain_clean, connect_nodes_bi, wait_and_assert_operationid_status, \
+    DEFAULT_FEE
 from functools import reduce
 import logging
+import sys
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO, stream=sys.stdout)
 
-fee = Decimal('0.0001') # constant (but can be changed within reason)
+fee = DEFAULT_FEE # constant (but can be changed within reason)
 
 class ZkeyImportExportTest (BitcoinTestFramework):
 
@@ -54,11 +56,9 @@ class ZkeyImportExportTest (BitcoinTestFramework):
             try:
                 assert_equal(amts, [tx["amount"] for tx in txs])
                 for tx in txs:
-                    # make sure JoinSplit keys exist and have valid values
-                    assert_equal("jsindex" in tx, True)
-                    assert_equal("jsoutindex" in tx, True)
-                    assert_greater_than(tx["jsindex"], -1)
-                    assert_greater_than(tx["jsoutindex"], -1)
+                    # make sure Sapling outputs exist and have valid values
+                    assert_equal("outindex" in tx, True)
+                    assert_greater_than(tx["outindex"], -1)
             except AssertionError:
                 logging.error(
                     'Expected amounts: %r; txs: %r',
@@ -75,7 +75,7 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         miner.generate(100)
         self.sync_all()
         # Shield Alice's coinbase funds to her zaddr
-        alice_zaddr = alice.z_getnewaddress('sprout')
+        alice_zaddr = alice.z_getnewaddress()
         res = alice.z_shieldcoinbase("*", alice_zaddr)
         wait_and_assert_operationid_status(alice, res['opid'])
         self.sync_all()
@@ -83,7 +83,7 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         self.sync_all()
 
         # Now get a pristine z-address for receiving transfers:
-        bob_zaddr = bob.z_getnewaddress('sprout')
+        bob_zaddr = bob.z_getnewaddress()
         verify_utxos(bob, [], bob_zaddr)
         # TODO: Verify that charlie doesn't have funds in addr
         # verify_utxos(charlie, [])
@@ -117,8 +117,8 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         # z_importkey should have rescanned for new key, so this should pass:
         verify_utxos(charlie, amounts[:4], ipk_zaddr["address"])
 
-        # address is sprout
-        assert_equal(ipk_zaddr["type"], "sprout")
+        # address is Sapling
+        assert_equal(ipk_zaddr["type"], "sapling")
 
         # Verify idempotent behavior:
         ipk_zaddr2 = charlie.z_importkey(bob_privkey)

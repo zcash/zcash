@@ -3,41 +3,76 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#ifndef BITCOIN_EQUIHASH_H
-#define BITCOIN_EQUIHASH_H
+#ifndef ZCASH_CRYPTO_EQUIHASH_H
+#define ZCASH_CRYPTO_EQUIHASH_H
+
+#include <memory>
+#include <vector>
+
+inline constexpr size_t equihash_solution_size(unsigned int N, unsigned int K) {
+    return (1 << K)*(N/(K+1)+1)/8;
+}
+
+typedef uint32_t eh_index;
+typedef uint8_t eh_trunc;
+
+std::vector<unsigned char> GetMinimalFromIndices(std::vector<eh_index> indices,
+                                                 size_t cBitLen);
+void CompressArray(const unsigned char* in, size_t in_len,
+                   unsigned char* out, size_t out_len,
+                   size_t bit_len, size_t byte_pad=0);
+void ExpandArray(const unsigned char* in, size_t in_len,
+                 unsigned char* out, size_t out_len,
+                 size_t bit_len, size_t byte_pad=0);
+void EhIndexToArray(const eh_index i, unsigned char* array);
+
+
+#ifdef ENABLE_MINING
 
 #include "crypto/sha256.h"
 #include "utilstrencodings.h"
 
-#include "sodium.h"
-
 #include <cstring>
 #include <exception>
+#include <stdexcept>
 #include <functional>
-#include <memory>
 #include <set>
-#include <vector>
 
-#include <boost/static_assert.hpp>
+#include <rust/blake2b.h>
 
-typedef crypto_generichash_blake2b_state eh_HashState;
-typedef uint32_t eh_index;
-typedef uint8_t eh_trunc;
+struct eh_HashState {
+    std::unique_ptr<BLAKE2bState, decltype(&blake2b_free)> inner;
 
-void ExpandArray(const unsigned char* in, size_t in_len,
-                 unsigned char* out, size_t out_len,
-                 size_t bit_len, size_t byte_pad=0);
-void CompressArray(const unsigned char* in, size_t in_len,
-                   unsigned char* out, size_t out_len,
-                   size_t bit_len, size_t byte_pad=0);
+    eh_HashState() : inner(nullptr, blake2b_free) {}
+
+    eh_HashState(size_t length, unsigned char personalization[BLAKE2bPersonalBytes]) : inner(blake2b_init(length, personalization), blake2b_free) {}
+
+    eh_HashState(eh_HashState&& baseState) : inner(std::move(baseState.inner)) {}
+    eh_HashState(const eh_HashState& baseState) : inner(blake2b_clone(baseState.inner.get()), blake2b_free) {}
+    eh_HashState& operator=(eh_HashState&& baseState)
+    {
+        if (this != &baseState) {
+            inner = std::move(baseState.inner);
+        }
+        return *this;
+    }
+    eh_HashState& operator=(const eh_HashState& baseState)
+    {
+        if (this != &baseState) {
+            inner.reset(blake2b_clone(baseState.inner.get()));
+        }
+        return *this;
+    }
+
+    void Update(const unsigned char *input, size_t inputLen);
+    void Finalize(unsigned char *hash, size_t hLen);
+};
 
 eh_index ArrayToEhIndex(const unsigned char* array);
 eh_trunc TruncateIndex(const eh_index i, const unsigned int ilen);
 
 std::vector<eh_index> GetIndicesFromMinimal(std::vector<unsigned char> minimal,
                                             size_t cBitLen);
-std::vector<unsigned char> GetMinimalFromIndices(std::vector<eh_index> indices,
-                                                 size_t cBitLen);
 
 template<size_t WIDTH>
 class StepRow
@@ -94,7 +129,7 @@ public:
 
     FullStepRow(const FullStepRow<WIDTH>& a) : StepRow<WIDTH> {a} { }
     template<size_t W>
-    FullStepRow(const FullStepRow<W>& a, const FullStepRow<W>& b, size_t len, size_t lenIndices, int trim);
+    FullStepRow(const FullStepRow<W>& a, const FullStepRow<W>& b, size_t len, size_t lenIndices, int lenTrim);
     FullStepRow& operator=(const FullStepRow<WIDTH>& a);
 
     inline bool IndicesBefore(const FullStepRow<WIDTH>& a, size_t len, size_t lenIndices) const { return memcmp(hash+len, a.hash+len, lenIndices) < 0; }
@@ -124,7 +159,7 @@ public:
 
     TruncatedStepRow(const TruncatedStepRow<WIDTH>& a) : StepRow<WIDTH> {a} { }
     template<size_t W>
-    TruncatedStepRow(const TruncatedStepRow<W>& a, const TruncatedStepRow<W>& b, size_t len, size_t lenIndices, int trim);
+    TruncatedStepRow(const TruncatedStepRow<W>& a, const TruncatedStepRow<W>& b, size_t len, size_t lenIndices, int lenTrim);
     TruncatedStepRow& operator=(const TruncatedStepRow<WIDTH>& a);
 
     inline bool IndicesBefore(const TruncatedStepRow<WIDTH>& a, size_t len, size_t lenIndices) const { return memcmp(hash+len, a.hash+len, lenIndices) < 0; }
@@ -155,17 +190,13 @@ class EhSolverCancelledException : public std::exception
 
 inline constexpr const size_t max(const size_t A, const size_t B) { return A > B ? A : B; }
 
-inline constexpr size_t equihash_solution_size(unsigned int N, unsigned int K) {
-    return (1 << K)*(N/(K+1)+1)/8;
-}
-
 template<unsigned int N, unsigned int K>
 class Equihash
 {
 private:
-    BOOST_STATIC_ASSERT(K < N);
-    BOOST_STATIC_ASSERT(N % 8 == 0);
-    BOOST_STATIC_ASSERT((N/(K+1)) + 1 < 8*sizeof(eh_index));
+    static_assert(K < N);
+    static_assert(N % 8 == 0);
+    static_assert((N/(K+1)) + 1 < 8*sizeof(eh_index));
 
 public:
     enum : size_t { IndicesPerHashOutput=512/N };
@@ -181,16 +212,13 @@ public:
 
     Equihash() { }
 
-    int InitialiseState(eh_HashState& base_state);
-#ifdef ENABLE_MINING
+    void InitialiseState(eh_HashState& base_state);
     bool BasicSolve(const eh_HashState& base_state,
                     const std::function<bool(std::vector<unsigned char>)> validBlock,
                     const std::function<bool(EhSolverCancelCheck)> cancelled);
     bool OptimisedSolve(const eh_HashState& base_state,
                         const std::function<bool(std::vector<unsigned char>)> validBlock,
                         const std::function<bool(EhSolverCancelCheck)> cancelled);
-#endif
-    bool IsValidSolution(const eh_HashState& base_state, std::vector<unsigned char> soln);
 };
 
 #include "equihash.tcc"
@@ -213,7 +241,6 @@ static Equihash<48,5> Eh48_5;
         throw std::invalid_argument("Unsupported Equihash parameters"); \
     }
 
-#ifdef ENABLE_MINING
 inline bool EhBasicSolve(unsigned int n, unsigned int k, const eh_HashState& base_state,
                     const std::function<bool(std::vector<unsigned char>)> validBlock,
                     const std::function<bool(EhSolverCancelCheck)> cancelled)
@@ -263,18 +290,4 @@ inline bool EhOptimisedSolveUncancellable(unsigned int n, unsigned int k, const 
 }
 #endif // ENABLE_MINING
 
-#define EhIsValidSolution(n, k, base_state, soln, ret)   \
-    if (n == 96 && k == 3) {                             \
-        ret = Eh96_3.IsValidSolution(base_state, soln);  \
-    } else if (n == 200 && k == 9) {                     \
-        ret = Eh200_9.IsValidSolution(base_state, soln); \
-    } else if (n == 96 && k == 5) {                      \
-        ret = Eh96_5.IsValidSolution(base_state, soln);  \
-    } else if (n == 48 && k == 5) {                      \
-        ret = Eh48_5.IsValidSolution(base_state, soln);  \
-    } else {                                             \
-        ret = false;                                     \
-        throw std::invalid_argument("Unsupported Equihash parameters"); \
-    }
-
-#endif // BITCOIN_EQUIHASH_H
+#endif // ZCASH_CRYPTO_EQUIHASH_H

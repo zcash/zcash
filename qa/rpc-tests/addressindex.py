@@ -3,7 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
-# Test addressindex generation and fetching for insightexplorer
+# Test addressindex generation and fetching for insightexplorer or lightwalletd
 # 
 # RPCs tested here:
 #
@@ -18,11 +18,10 @@ from test_framework.test_framework import BitcoinTestFramework
 
 from test_framework.util import (
     assert_equal,
-    initialize_chain_clean,
     start_nodes,
     stop_nodes,
     connect_nodes,
-    wait_bitcoinds,
+    wait_bitcoinds
 )
 
 from test_framework.script import (
@@ -44,16 +43,21 @@ from binascii import hexlify, unhexlify
 
 class AddressIndexTest(BitcoinTestFramework):
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 3)
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 4
+        self.setup_clean_chain = True
 
     def setup_network(self):
         # -insightexplorer causes addressindex to be enabled (fAddressIndex = true)
-        args = ('-debug', '-txindex', '-experimentalfeatures', '-insightexplorer')
-        self.nodes = start_nodes(3, self.options.tmpdir, [args] * 3)
+        args_insight = ('-debug', '-txindex', '-experimentalfeatures', '-insightexplorer')
+        # -lightwallet also causes addressindex to be enabled
+        args_lightwallet = ('-debug', '-txindex', '-experimentalfeatures', '-lightwalletd')
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [args_insight] * 3 + [args_lightwallet])
+
         connect_nodes(self.nodes[0], 1)
         connect_nodes(self.nodes[0], 2)
+        connect_nodes(self.nodes[0], 3) # node3 is only for testing lightwalletd
 
         self.is_network_split = False
         self.sync_all()
@@ -120,6 +124,9 @@ class AddressIndexTest(BitcoinTestFramework):
 
         assert_equal(len(self.nodes[1].getaddresstxids(addr_p2pkh)), 105)
         assert_equal(len(self.nodes[1].getaddresstxids(addr_p2sh)), 105)
+        # test getaddresstxids for lightwalletd
+        assert_equal(len(self.nodes[3].getaddresstxids(addr_p2pkh)), 105)
+        assert_equal(len(self.nodes[3].getaddresstxids(addr_p2sh)), 105)
 
         # only the oldest 5 transactions are in the unspent list,
         # dup addresses are ignored
@@ -181,6 +188,9 @@ class AddressIndexTest(BitcoinTestFramework):
         # check that duplicate addresses are processed correctly
         mempool = self.nodes[0].getaddressmempool({'addresses': [addr2, addr1, addr2]})
         assert_equal(len(mempool), 3)
+        # test getaddressmempool for lightwalletd node
+        mempool = self.nodes[3].getaddressmempool({'addresses': [addr2, addr1, addr2]})
+        assert_equal(len(mempool), 3)
 
         # addr2 (first arg)
         assert_equal(mempool[0]['address'], addr2)
@@ -198,7 +208,13 @@ class AddressIndexTest(BitcoinTestFramework):
         assert_equal(mempool[2]['txid'], txid)
 
         # a single address can be specified as a string (not json object)
-        assert_equal([mempool[1]], self.nodes[0].getaddressmempool(addr1))
+        addr1_mempool = self.nodes[0].getaddressmempool(addr1)
+        assert_equal(len(addr1_mempool), 1)
+        # Don't check the timestamp; it's local to the node, and can mismatch
+        # due to propagation delay.
+        del addr1_mempool[0]['timestamp']
+        for key in addr1_mempool[0].keys():
+            assert_equal(mempool[1][key], addr1_mempool[0][key])
 
         tx = self.nodes[0].getrawtransaction(txid, 1)
         assert_equal(tx['vin'][0]['address'], addr1)
@@ -221,7 +237,7 @@ class AddressIndexTest(BitcoinTestFramework):
 
         # Test DisconnectBlock() by invalidating the most recent mined block
         tip = self.nodes[1].getchaintips()[0]
-        for i in range(3):
+        for i in range(self.num_nodes):
             node = self.nodes[i]
             # the value 4 UTXO is no longer in our balance
             check_balance(i, addr1, (expected - 4) * COIN, expected * COIN)
@@ -253,8 +269,12 @@ class AddressIndexTest(BitcoinTestFramework):
         tx = self.nodes[0].getrawtransaction(txid, 1)
         change_vout = list(filter(lambda v: v['valueZat'] != 3 * COIN, tx['vout']))
         change = change_vout[0]['scriptPubKey']['addresses'][0]
-        bal = self.nodes[2].getaddressbalance(change)
-        assert(bal['received'] > 0)
+
+        # test getaddressbalance
+        for node in (2, 3):
+            bal = self.nodes[node].getaddressbalance(change)
+            assert(bal['received'] > 0)
+
         # the inequality is due to randomness in the tx fee
         assert(bal['received'] < (4 - 3) * COIN)
         assert_equal(bal['received'], bal['balance'])
@@ -283,13 +303,15 @@ class AddressIndexTest(BitcoinTestFramework):
         # set(txids_all) removes its (expected) duplicates
         assert_equal(set(multitxids), set(txids_all))
 
-        deltas = self.nodes[1].getaddressdeltas({'addresses': [addr1]})
-        assert_equal(len(deltas), len(expected_deltas))
-        for i in range(len(deltas)):
-            assert_equal(deltas[i]['address'],  addr1)
-            assert_equal(deltas[i]['height'],   expected_deltas[i]['height'])
-            assert_equal(deltas[i]['satoshis'], expected_deltas[i]['satoshis'])
-            assert_equal(deltas[i]['txid'],     expected_deltas[i]['txid'])
+        # test getaddressdeltas
+        for node in (1, 3):
+            deltas = self.nodes[node].getaddressdeltas({'addresses': [addr1]})
+            assert_equal(len(deltas), len(expected_deltas))
+            for i in range(len(deltas)):
+                assert_equal(deltas[i]['address'],  addr1)
+                assert_equal(deltas[i]['height'],   expected_deltas[i]['height'])
+                assert_equal(deltas[i]['satoshis'], expected_deltas[i]['satoshis'])
+                assert_equal(deltas[i]['txid'],     expected_deltas[i]['txid'])
 
         # 106-111 is the full range (also the default)
         deltas_limited = getaddressdeltas(1, [addr1], 106, 111)
@@ -316,7 +338,7 @@ class AddressIndexTest(BitcoinTestFramework):
         assert_equal(deltas_info['end']['hash'], block_hash)
 
         # Test getaddressutxos by comparing results with deltas
-        utxos = self.nodes[1].getaddressutxos(addr1)
+        utxos = self.nodes[3].getaddressutxos(addr1)
 
         # The value 4 note was spent, so won't show up in the utxo list,
         # so for comparison, remove the 4 (and -4 for output) from the

@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
+# Copyright (c) 2015-2016 The Bitcoin Core developers
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
+
+#
 # script.py
 #
 # This file is modified from python-bitcoinlib.
-#
-# Distributed under the MIT software license, see the accompanying
-# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 
 """Scripts
@@ -19,9 +22,13 @@ if sys.version > '3':
     bchr = lambda x: bytes([x])
     bord = lambda x: x
 
+from pyblake2 import blake2b
+
+from binascii import hexlify
 import struct
 
-from test_framework import bignum
+from test_framework.bignum import bn2vch
+from test_framework.mininode import (CTransaction, CTxOut, hash256, ser_string, ser_uint256)
 
 MAX_SCRIPT_SIZE = 10000
 MAX_SCRIPT_ELEMENT_SIZE = 520
@@ -340,7 +347,6 @@ VALID_OPCODES = {
     OP_SHA256,
     OP_HASH160,
     OP_HASH256,
-    OP_CODESEPARATOR,
     OP_CHECKSIG,
     OP_CHECKSIGVERIFY,
     OP_CHECKMULTISIG,
@@ -623,7 +629,7 @@ class CScriptNum(object):
         neg = obj.value < 0
         absvalue = -obj.value if neg else obj.value
         while (absvalue):
-            r.append(chr(absvalue & 0xff))
+            r.append(absvalue & 0xff)
             absvalue >>= 8
         if r[-1] & 0x80:
             r.append(0x80 if neg else 0)
@@ -658,7 +664,7 @@ class CScript(bytes):
             elif other == -1:
                 other = bytes([OP_1NEGATE])
             else:
-                other = CScriptOp.encode_op_pushdata(bignum.bn2vch(other))
+                other = CScriptOp.encode_op_pushdata(bn2vch(other))
         elif isinstance(other, (bytes, bytearray)):
             other = bytes(CScriptOp.encode_op_pushdata(other))
         return other
@@ -771,7 +777,7 @@ class CScript(bytes):
         # need to change
         def _repr(o):
             if isinstance(o, bytes):
-                return "x('%s')" % o.hex().decode('ascii')
+                return b"x('%s')" % hexlify(o).decode('ascii')
             else:
                 return repr(o)
 
@@ -814,3 +820,159 @@ class CScript(bytes):
                     n += 20
             lastOpcode = opcode
         return n
+
+
+SIGHASH_ALL = 1
+SIGHASH_NONE = 2
+SIGHASH_SINGLE = 3
+SIGHASH_ANYONECANPAY = 0x80
+
+def getHashPrevouts(tx):
+    digest = blake2b(digest_size=32, person=b'ZcashPrevoutHash')
+    for x in tx.vin:
+        digest.update(x.prevout.serialize())
+    return digest.digest()
+
+def getHashSequence(tx):
+    digest = blake2b(digest_size=32, person=b'ZcashSequencHash')
+    for x in tx.vin:
+        digest.update(struct.pack('<I', x.nSequence))
+    return digest.digest()
+
+def getHashOutputs(tx):
+    digest = blake2b(digest_size=32, person=b'ZcashOutputsHash')
+    for x in tx.vout:
+        digest.update(x.serialize())
+    return digest.digest()
+
+def getHashJoinSplits(tx):
+    digest = blake2b(digest_size=32, person=b'ZcashJSplitsHash')
+    for jsdesc in tx.vJoinSplit:
+        digest.update(jsdesc.serialize())
+    digest.update(tx.joinSplitPubKey)
+    return digest.digest()
+
+def getHashShieldedSpends(tx):
+    digest = blake2b(digest_size=32, person=b'ZcashSSpendsHash')
+    for desc in tx.shieldedSpends:
+        # We don't pass in serialized form of desc as spendAuthSig is not part of the hash
+        digest.update(ser_uint256(desc.cv))
+        digest.update(ser_uint256(desc.anchor))
+        digest.update(ser_uint256(desc.nullifier))
+        digest.update(ser_uint256(desc.rk))
+        digest.update(desc.proof)
+    return digest.digest()
+
+def getHashShieldedOutputs(tx):
+    digest = blake2b(digest_size=32, person=b'ZcashSOutputHash')
+    for desc in tx.shieldedOutputs:
+        digest.update(desc.serialize())
+    return digest.digest()
+
+
+def SignatureHash(script, txTo, inIdx, hashtype, amount, consensusBranchId):
+    """Consensus-correct SignatureHash"""
+    if inIdx >= len(txTo.vin):
+        raise ValueError("inIdx %d out of range (%d)" % (inIdx, len(txTo.vin)))
+
+    if consensusBranchId != 0:
+        # ZIP 243
+        hashPrevouts = b'\x00'*32
+        hashSequence = b'\x00'*32
+        hashOutputs = b'\x00'*32
+        hashJoinSplits = b'\x00'*32
+        hashShieldedSpends = b'\x00'*32
+        hashShieldedOutputs = b'\x00'*32
+
+        if not (hashtype & SIGHASH_ANYONECANPAY):
+            hashPrevouts = getHashPrevouts(txTo)
+
+        if (not (hashtype & SIGHASH_ANYONECANPAY)) and \
+            (hashtype & 0x1f) != SIGHASH_SINGLE and \
+            (hashtype & 0x1f) != SIGHASH_NONE:
+            hashSequence = getHashSequence(txTo)
+
+        if (hashtype & 0x1f) != SIGHASH_SINGLE and \
+            (hashtype & 0x1f) != SIGHASH_NONE:
+            hashOutputs = getHashOutputs(txTo)
+        elif (hashtype & 0x1f) == SIGHASH_SINGLE and \
+            0 <= inIdx and inIdx < len(txTo.vout):
+            digest = blake2b(digest_size=32, person=b'ZcashOutputsHash')
+            digest.update(txTo.vout[inIdx].serialize())
+            hashOutputs = digest.digest()
+
+        if len(txTo.vJoinSplit) > 0:
+            hashJoinSplits = getHashJoinSplits(txTo)
+
+        if len(txTo.shieldedSpends) > 0:
+            hashShieldedSpends = getHashShieldedSpends(txTo)
+
+        if len(txTo.shieldedOutputs) > 0:
+            hashShieldedOutputs = getHashShieldedOutputs(txTo)
+
+        digest = blake2b(
+            digest_size=32,
+            person=b'ZcashSigHash' + struct.pack('<I', consensusBranchId),
+        )
+
+        digest.update(struct.pack('<I', (int(txTo.fOverwintered)<<31) | txTo.nVersion))
+        digest.update(struct.pack('<I', txTo.nVersionGroupId))
+        digest.update(hashPrevouts)
+        digest.update(hashSequence)
+        digest.update(hashOutputs)
+        digest.update(hashJoinSplits)
+        digest.update(hashShieldedSpends)
+        digest.update(hashShieldedOutputs)
+        digest.update(struct.pack('<I', txTo.nLockTime))
+        digest.update(struct.pack('<I', txTo.nExpiryHeight))
+        digest.update(struct.pack('<Q', txTo.valueBalance))
+        digest.update(struct.pack('<I', hashtype))
+
+        if inIdx is not None:
+            digest.update(txTo.vin[inIdx].prevout.serialize())
+            digest.update(ser_string(script))
+            digest.update(struct.pack('<Q', amount))
+            digest.update(struct.pack('<I', txTo.vin[inIdx].nSequence))
+
+        return (digest.digest(), None)
+    else:
+        # Pre-Overwinter
+        txtmp = CTransaction(txTo)
+
+        for txin in txtmp.vin:
+            txin.scriptSig = b''
+        txtmp.vin[inIdx].scriptSig = script
+
+        if (hashtype & 0x1f) == SIGHASH_NONE:
+            txtmp.vout = []
+
+            for i in range(len(txtmp.vin)):
+                if i != inIdx:
+                    txtmp.vin[i].nSequence = 0
+
+        elif (hashtype & 0x1f) == SIGHASH_SINGLE:
+            outIdx = inIdx
+            if outIdx >= len(txtmp.vout):
+                raise ValueError("outIdx %d out of range (%d)" % (outIdx, len(txtmp.vout)))
+
+            tmp = txtmp.vout[outIdx]
+            txtmp.vout = []
+            for i in range(outIdx):
+                txtmp.vout.append(CTxOut())
+            txtmp.vout.append(tmp)
+
+            for i in range(len(txtmp.vin)):
+                if i != inIdx:
+                    txtmp.vin[i].nSequence = 0
+
+        if hashtype & SIGHASH_ANYONECANPAY:
+            tmp = txtmp.vin[inIdx]
+            txtmp.vin = []
+            txtmp.vin.append(tmp)
+
+        s = txtmp.serialize()
+        s += struct.pack(b"<I", hashtype)
+
+        hash = hash256(s)
+
+        return (hash, None)

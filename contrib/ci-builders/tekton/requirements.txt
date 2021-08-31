@@ -1,0 +1,8 @@
+wheel
+pyblake2
+pyflakes
+pyutil
+pyzmq
+requests
+simplejson
+twisted[tls]

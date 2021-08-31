@@ -11,7 +11,6 @@
 
 #include "wallet/test/wallet_test_fixture.h"
 
-#include <boost/foreach.hpp>
 #include <boost/test/unit_test.hpp>
 
 // how many times to run all the tests to have a chance to catch errors that only show up with particular random shuffles
@@ -54,7 +53,7 @@ static void add_coin(const CAmount& nValue, int nAge = 6*24, bool fIsFromMe = fa
 
 static void empty_wallet(void)
 {
-    BOOST_FOREACH(COutput output, vCoins)
+    for (COutput output : vCoins)
         delete output.tx;
     vCoins.clear();
 }
@@ -214,7 +213,7 @@ BOOST_AUTO_TEST_CASE(coin_selection_tests)
         BOOST_CHECK( wallet.SelectCoinsMinConf(1 * MIN_CHANGE, 1, 1, vCoins, setCoinsRet, nValueRet));
         BOOST_CHECK_EQUAL(nValueRet, 1 * MIN_CHANGE); // we should get the exact amount
 
-        // run the 'mtgox' test (see http://blockexplorer.com/tx/29a3efd3ef04f9153d47a990bd7b048a4b2d213daaa5fb8ed670fb85f13bdbcf)
+        // run the 'mtgox' test (see https://blockchair.com/bitcoin/transaction/29a3efd3ef04f9153d47a990bd7b048a4b2d213daaa5fb8ed670fb85f13bdbcf)
         // they tried to consolidate 10 50k coins into one 500k coin, and ended up with 50k in change
         empty_wallet();
         for (int i = 0; i < 20; i++)

@@ -2,8 +2,8 @@
 // Copyright (c) 2009-2015 The Bitcoin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
-#ifndef BITCOIN_POLICYESTIMATOR_H
-#define BITCOIN_POLICYESTIMATOR_H
+#ifndef BITCOIN_POLICY_FEES_H
+#define BITCOIN_POLICY_FEES_H
 
 #include "amount.h"
 #include "uint256.h"
@@ -11,6 +11,8 @@
 #include <map>
 #include <string>
 #include <vector>
+
+static const CAmount DEFAULT_FEE = 1000;
 
 class CAutoFile;
 class CFeeRate;
@@ -280,4 +282,4 @@ private:
     CFeeRate feeLikely, feeUnlikely;
     double priLikely, priUnlikely;
 };
-#endif /*BITCOIN_POLICYESTIMATOR_H */
+#endif // BITCOIN_POLICY_FEES_H

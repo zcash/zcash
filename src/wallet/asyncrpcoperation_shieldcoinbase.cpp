@@ -15,8 +15,10 @@
 #include "main.h"
 #include "net.h"
 #include "netbase.h"
+#include "proof_verifier.h"
 #include "rpc/protocol.h"
 #include "rpc/server.h"
+#include "transaction_builder.h"
 #include "timedata.h"
 #include "util.h"
 #include "utilmoneystr.h"
@@ -25,15 +27,18 @@
 #include "script/interpreter.h"
 #include "utiltime.h"
 #include "zcash/IncrementalMerkleTree.hpp"
-#include "sodium.h"
 #include "miner.h"
 #include "wallet/paymentdisclosuredb.h"
 
 #include <array>
 #include <iostream>
 #include <chrono>
+#include <optional>
 #include <thread>
 #include <string>
+#include <variant>
+
+#include <rust/ed25519.h>
 
 using namespace libzcash;
 
@@ -74,7 +79,8 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
     }
 
     //  Check the destination address is valid for this network i.e. not testnet being used on mainnet
-    auto address = DecodePaymentAddress(toAddress);
+    KeyIO keyIO(Params());
+    auto address = keyIO.DecodePaymentAddress(toAddress);
     if (IsValidPaymentAddress(address)) {
         tozaddr_ = address;
     } else {
@@ -193,7 +199,7 @@ bool AsyncRPCOperation_shieldcoinbase::main_impl() {
     LogPrint("zrpc", "%s: spending %s to shield %s with fee %s\n",
             getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(minersFee));
 
-    return boost::apply_visitor(ShieldToAddress(this, sendAmount), tozaddr_);
+    return std::visit(ShieldToAddress(this, sendAmount), tozaddr_);
 }
 
 bool ShieldToAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const {
@@ -207,7 +213,7 @@ bool ShieldToAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) co
 
     // Prepare raw transaction to handle JoinSplits
     CMutableTransaction mtx(m_op->tx_);
-    crypto_sign_keypair(m_op->joinSplitPubKey_.begin(), m_op->joinSplitPrivKey_);
+    ed25519_generate_keypair(&m_op->joinSplitPrivKey_, &m_op->joinSplitPubKey_);
     mtx.joinSplitPubKey = m_op->joinSplitPubKey_;
     m_op->tx_ = CTransaction(mtx);
 
@@ -219,7 +225,7 @@ bool ShieldToAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) co
     info.vjsout.push_back(jso);
     UniValue obj = m_op->perform_joinsplit(info);
 
-    auto txAndResult = SignSendRawTransaction(obj, boost::none, m_op->testmode);
+    auto txAndResult = SignSendRawTransaction(obj, std::nullopt, m_op->testmode);
     m_op->tx_ = txAndResult.first;
     m_op->set_result(txAndResult.second);
     return true;
@@ -247,10 +253,15 @@ bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) c
     // Build the transaction
     m_op->tx_ = m_op->builder_.Build().GetTxOrThrow();
 
-    UniValue sendResult = SendTransaction(m_op->tx_, boost::none, m_op->testmode);
+    UniValue sendResult = SendTransaction(m_op->tx_, std::nullopt, m_op->testmode);
     m_op->set_result(sendResult);
 
     return true;
+}
+
+bool ShieldToAddress::operator()(const libzcash::UnifiedAddress &uaddr) const {
+    // TODO
+    return false;
 }
 
 bool ShieldToAddress::operator()(const libzcash::InvalidEncoding& no) const {
@@ -306,21 +317,21 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
     uint256 esk; // payment disclosure - secret
 
     assert(mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION));
-    JSDescription jsdesc = JSDescription::Randomized(
-            *pzcashParams,
+    JSDescription jsdesc = JSDescriptionInfo(
             joinSplitPubKey_,
             anchor,
             inputs,
             outputs,
+            info.vpub_old,
+            info.vpub_new
+    ).BuildRandomized(
             inputMap,
             outputMap,
-            info.vpub_old,
-            info.vpub_new,
             !this->testmode,
             &esk); // parameter expects pointer to esk, so pass in address
     {
-        auto verifier = libzcash::ProofVerifier::Strict();
-        if (!(jsdesc.Verify(*pzcashParams, verifier, joinSplitPubKey_))) {
+        auto verifier = ProofVerifier::Strict();
+        if (!(verifier.VerifySprout(jsdesc, joinSplitPubKey_))) {
             throw std::runtime_error("error verifying joinsplit");
         }
     }
@@ -333,21 +344,21 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
 
     // Add the signature
-    if (!(crypto_sign_detached(&mtx.joinSplitSig[0], NULL,
-            dataToBeSigned.begin(), 32,
-            joinSplitPrivKey_
-            ) == 0))
+    if (!ed25519_sign(
+        &joinSplitPrivKey_,
+        dataToBeSigned.begin(), 32,
+        &mtx.joinSplitSig))
     {
-        throw std::runtime_error("crypto_sign_detached failed");
+        throw std::runtime_error("ed25519_sign failed");
     }
 
     // Sanity check
-    if (!(crypto_sign_verify_detached(&mtx.joinSplitSig[0],
-            dataToBeSigned.begin(), 32,
-            mtx.joinSplitPubKey.begin()
-            ) == 0))
+    if (!ed25519_verify(
+        &mtx.joinSplitPubKey,
+        &mtx.joinSplitSig,
+        dataToBeSigned.begin(), 32))
     {
-        throw std::runtime_error("crypto_sign_verify_detached failed");
+        throw std::runtime_error("ed25519_verify failed");
     }
 
     CTransaction rawTx(mtx);
@@ -363,7 +374,7 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
         ss2 << ((unsigned char) 0x00);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[0];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey_);
+        ss2 << ZCJoinSplit::h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey_);
 
         encryptedNote1 = HexStr(ss2.begin(), ss2.end());
     }
@@ -372,7 +383,7 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
         ss2 << ((unsigned char) 0x01);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[1];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey_);
+        ss2 << ZCJoinSplit::h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey_);
 
         encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }
@@ -386,11 +397,9 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
         arrOutputMap.push_back(static_cast<uint64_t>(outputMap[i]));
     }
 
+    KeyIO keyIO(Params());
+
     // !!! Payment disclosure START
-    unsigned char buffer[32] = {0};
-    memcpy(&buffer[0], &joinSplitPrivKey_[0], 32); // private key in first half of 64 byte buffer
-    std::vector<unsigned char> vch(&buffer[0], &buffer[0] + 32);
-    uint256 joinSplitPrivKey = uint256(vch);
     size_t js_index = tx_.vJoinSplit.size() - 1;
     uint256 placeholder;
     for (int i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
@@ -399,19 +408,19 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
         PaymentDisclosureKey pdKey = {placeholder, js_index, mapped_index};
         JSOutput output = outputs[mapped_index];
         libzcash::SproutPaymentAddress zaddr = output.addr;  // randomized output
-        PaymentDisclosureInfo pdInfo = {PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL, esk, joinSplitPrivKey, zaddr};
+        PaymentDisclosureInfo pdInfo = {PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL, esk, joinSplitPrivKey_, zaddr};
         paymentDisclosureData_.push_back(PaymentDisclosureKeyInfo(pdKey, pdInfo));
 
-        LogPrint("paymentdisclosure", "%s: Payment Disclosure: js=%d, n=%d, zaddr=%s\n", getId(), js_index, int(mapped_index), EncodePaymentAddress(zaddr));
+        LogPrint("paymentdisclosure", "%s: Payment Disclosure: js=%d, n=%d, zaddr=%s\n", getId(), js_index, int(mapped_index), keyIO.EncodePaymentAddress(zaddr));
     }
     // !!! Payment disclosure END
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("encryptednote1", encryptedNote1));
-    obj.push_back(Pair("encryptednote2", encryptedNote2));
-    obj.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
-    obj.push_back(Pair("inputmap", arrInputMap));
-    obj.push_back(Pair("outputmap", arrOutputMap));
+    obj.pushKV("encryptednote1", encryptedNote1);
+    obj.pushKV("encryptednote2", encryptedNote2);
+    obj.pushKV("rawtxn", HexStr(ss.begin(), ss.end()));
+    obj.pushKV("inputmap", arrInputMap);
+    obj.pushKV("outputmap", arrOutputMap);
     return obj;
 }
 
@@ -425,8 +434,8 @@ UniValue AsyncRPCOperation_shieldcoinbase::getStatus() const {
     }
 
     UniValue obj = v.get_obj();
-    obj.push_back(Pair("method", "z_shieldcoinbase"));
-    obj.push_back(Pair("params", contextinfo_ ));
+    obj.pushKV("method", "z_shieldcoinbase");
+    obj.pushKV("params", contextinfo_ );
     return obj;
 }
 

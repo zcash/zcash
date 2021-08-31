@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_true, initialize_chain_clean, start_node
+from test_framework.util import assert_equal, assert_true, initialize_chain_clean, start_node, DEFAULT_FEE
 from test_framework.authproxy import JSONRPCException
+
+from decimal import Decimal
+
 
 class SignOfflineTest (BitcoinTestFramework):
     # Setup Methods
@@ -35,7 +38,7 @@ class SignOfflineTest (BitcoinTestFramework):
         create_inputs = [{'txid': txid, 'vout': 0}]
         sign_inputs = [{'txid': txid, 'vout': 0, 'scriptPubKey': scriptpubkey, 'amount': 10}]
 
-        create_hex = self.nodes[0].createrawtransaction(create_inputs, {taddr: 9.9999})
+        create_hex = self.nodes[0].createrawtransaction(create_inputs, {taddr: Decimal('10.0') - DEFAULT_FEE})
 
         # An offline regtest node does not rely on the approx release height of the software
         # to determine the consensus rules to be used for signing.

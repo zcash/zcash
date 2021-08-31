@@ -1,15 +1,17 @@
 // Copyright (c) 2019 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or https://www.opensource.org/licenses/mit-license.php 
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
+
+#include "mempool_limit.h"
 
 #include "core_memusage.h"
-#include "mempool_limit.h"
+#include "logging.h"
 #include "random.h"
 #include "serialize.h"
 #include "timedata.h"
+#include "utiltime.h"
 #include "version.h"
 
-const CAmount DEFAULT_FEE = 10000;
 const TxWeight ZERO_WEIGHT = TxWeight(0, 0);
 
 void RecentlyEvictedList::pruneList()
@@ -118,11 +120,11 @@ void WeightedTxTree::remove(const uint256& txId)
     childWeights.pop_back();
 }
 
-boost::optional<uint256> WeightedTxTree::maybeDropRandom()
+std::optional<uint256> WeightedTxTree::maybeDropRandom()
 {
     TxWeight totalTxWeight = getTotalWeight();
     if (totalTxWeight.cost <= capacity) {
-        return boost::none;
+        return std::nullopt;
     }
     LogPrint("mempool", "Mempool cost limit exceeded (cost=%d, limit=%d)\n", totalTxWeight.cost, capacity);
     int randomWeight = GetRand(totalTxWeight.evictionWeight);

@@ -95,7 +95,7 @@ TEST(Metrics, GetLocalSolPS) {
 }
 
 TEST(Metrics, EstimateNetHeight) {
-    auto params = RegtestActivateBlossom(false, 200);
+    auto params = RegtestActivateBlossom(false, 200).GetConsensus();
     int64_t blockTimes[400];
     for (int i = 0; i < 400; i++) {
         blockTimes[i] = i ? blockTimes[i - 1] + params.PoWTargetSpacing(i) : 0;
@@ -126,11 +126,53 @@ TEST(Metrics, NextUpgrade) {
     EXPECT_EQ(DisplayDuration(SecondsLeftToNextEpoch(params, 99).value(), DurationFormat::REDUCED), "2 minutes");
     EXPECT_EQ(DisplayDuration(SecondsLeftToNextEpoch(params, 99).value(), DurationFormat::FULL), "2 minutes, 30 seconds");
 
-    auto paramsBlossom = RegtestActivateBlossom(true);
+    auto paramsBlossom = RegtestActivateBlossom(true).GetConsensus();
     EXPECT_EQ(SecondsLeftToNextEpoch(paramsBlossom, 1).value(), 7425);
     EXPECT_EQ(DisplayDuration(SecondsLeftToNextEpoch(paramsBlossom, 1).value(), DurationFormat::REDUCED), "2 hours");
     EXPECT_EQ(DisplayDuration(SecondsLeftToNextEpoch(paramsBlossom, 1).value(), DurationFormat::FULL), "2 hours, 3 minutes, 45 seconds");
     RegtestDeactivateBlossom();
 
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_TESTDUMMY, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
+TEST(Metrics, DisplayFunctions) {
+    EXPECT_EQ(DisplayDuration(0,               DurationFormat::REDUCED), "0 seconds");
+    EXPECT_EQ(DisplayDuration(59,              DurationFormat::REDUCED), "59 seconds");
+    EXPECT_EQ(DisplayDuration(60,              DurationFormat::REDUCED), "1 minutes");
+    EXPECT_EQ(DisplayDuration(61,              DurationFormat::REDUCED), "1 minutes");
+    EXPECT_EQ(DisplayDuration(3599,            DurationFormat::REDUCED), "59 minutes");
+    EXPECT_EQ(DisplayDuration(3600,            DurationFormat::REDUCED), "1 hours");
+    EXPECT_EQ(DisplayDuration(86399,           DurationFormat::REDUCED), "23 hours");
+    EXPECT_EQ(DisplayDuration(86400,           DurationFormat::REDUCED), "1 days");
+    EXPECT_EQ(DisplayDuration(8640000,         DurationFormat::REDUCED), "100 days");
+    EXPECT_EQ(DisplayDuration(185542587100800, DurationFormat::REDUCED), "2147483647 days");
+    EXPECT_EQ(DisplayDuration(185542587187199, DurationFormat::REDUCED), "2147483647 days");
+
+    EXPECT_EQ(DisplayDuration(0,               DurationFormat::FULL), "0 seconds");
+    EXPECT_EQ(DisplayDuration(59,              DurationFormat::FULL), "59 seconds");
+    EXPECT_EQ(DisplayDuration(60,              DurationFormat::FULL), "1 minutes, 0 seconds");
+    EXPECT_EQ(DisplayDuration(61,              DurationFormat::FULL), "1 minutes, 1 seconds");
+    EXPECT_EQ(DisplayDuration(3599,            DurationFormat::FULL), "59 minutes, 59 seconds");
+    EXPECT_EQ(DisplayDuration(3600,            DurationFormat::FULL), "1 hours, 0 minutes, 0 seconds");
+    EXPECT_EQ(DisplayDuration(86399,           DurationFormat::FULL), "23 hours, 59 minutes, 59 seconds");
+    EXPECT_EQ(DisplayDuration(86400,           DurationFormat::FULL), "1 days, 0 hours, 0 minutes, 0 seconds");
+    EXPECT_EQ(DisplayDuration(8640000,         DurationFormat::FULL), "100 days, 0 hours, 0 minutes, 0 seconds");
+    EXPECT_EQ(DisplayDuration(185542587100800, DurationFormat::FULL), "2147483647 days, 0 hours, 0 minutes, 0 seconds");
+    EXPECT_EQ(DisplayDuration(185542587187199, DurationFormat::FULL), "2147483647 days, 23 hours, 59 minutes, 59 seconds");
+
+    EXPECT_EQ(DisplaySize(0),             "0 Bytes");
+    EXPECT_EQ(DisplaySize(123),           "123 Bytes");
+    EXPECT_EQ(DisplaySize(123456),        "120.56 KiB");
+    EXPECT_EQ(DisplaySize(123456789),     "117.74 MiB");
+    EXPECT_EQ(DisplaySize(123456789012),  "114.98 GiB");
+    EXPECT_EQ(DisplaySize(1234567890123), "1.12 TiB");
+    EXPECT_EQ(DisplaySize(INT64_MAX),     "8388608.00 TiB");
+
+    EXPECT_EQ(DisplayHashRate(0.0),             "0.000 Sol/s");
+    EXPECT_EQ(DisplayHashRate(0.1234),          "0.123 Sol/s");
+    EXPECT_EQ(DisplayHashRate(123.45),          "123.450 Sol/s");
+    EXPECT_EQ(DisplayHashRate(1234.5),          "1.234 kSol/s");
+    EXPECT_EQ(DisplayHashRate(1234567.8),       "1.235 MSol/s");
+    EXPECT_EQ(DisplayHashRate(1234567890.1),    "1.235 GSol/s");
+    EXPECT_EQ(DisplayHashRate(1234567890123.4), "1.235 TSol/s");
 }

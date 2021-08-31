@@ -14,6 +14,9 @@
 #include "script/script.h"
 #include "uint256.h"
 
+#include <librustzcash.h>
+#include <rust/transaction.h>
+
 using namespace std;
 
 typedef vector<unsigned char> valtype;
@@ -91,7 +94,7 @@ bool static IsCompressedOrUncompressedPubKey(const valtype &vchPubKey) {
  * Where R and S are not negative (their first byte has its highest bit not set), and not
  * excessively padded (do not start with a 0 byte, unless an otherwise negative number follows,
  * in which case a single 0 byte is necessary and even required).
- * 
+ *
  * See https://bitcointalk.org/index.php?topic=8392.msg127623#msg127623
  *
  * This function is consensus-critical since BIP66.
@@ -131,7 +134,7 @@ bool static IsValidSignatureEncoding(const std::vector<unsigned char> &sig) {
     // Verify that the length of the signature matches the sum of the length
     // of the elements.
     if ((size_t)(lenR + lenS + 7) != sig.size()) return false;
- 
+
     // Check whether the R element is an integer.
     if (sig[2] != 0x02) return false;
 
@@ -1057,17 +1060,17 @@ public:
     }
 };
 
-const unsigned char ZCASH_PREVOUTS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+const unsigned char ZCASH_PREVOUTS_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
     {'Z','c','a','s','h','P','r','e','v','o','u','t','H','a','s','h'};
-const unsigned char ZCASH_SEQUENCE_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+const unsigned char ZCASH_SEQUENCE_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
     {'Z','c','a','s','h','S','e','q','u','e','n','c','H','a','s','h'};
-const unsigned char ZCASH_OUTPUTS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+const unsigned char ZCASH_OUTPUTS_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
     {'Z','c','a','s','h','O','u','t','p','u','t','s','H','a','s','h'};
-const unsigned char ZCASH_JOINSPLITS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+const unsigned char ZCASH_JOINSPLITS_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
     {'Z','c','a','s','h','J','S','p','l','i','t','s','H','a','s','h'};
-const unsigned char ZCASH_SHIELDED_SPENDS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+const unsigned char ZCASH_SHIELDED_SPENDS_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
     {'Z','c','a','s','h','S','S','p','e','n','d','s','H','a','s','h'};
-const unsigned char ZCASH_SHIELDED_OUTPUTS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+const unsigned char ZCASH_SHIELDED_OUTPUTS_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
     {'Z','c','a','s','h','S','O','u','t','p','u','t','H','a','s','h'};
 
 uint256 GetPrevoutHash(const CTransaction& txTo) {
@@ -1125,20 +1128,41 @@ uint256 GetShieldedOutputsHash(const CTransaction& txTo) {
 
 } // anon namespace
 
-PrecomputedTransactionData::PrecomputedTransactionData(const CTransaction& txTo)
+PrecomputedTransactionData::PrecomputedTransactionData(const CTransaction& txTo) :
+    preTx(nullptr, zcash_transaction_precomputed_free)
 {
-    hashPrevouts = GetPrevoutHash(txTo);
-    hashSequence = GetSequenceHash(txTo);
-    hashOutputs = GetOutputsHash(txTo);
-    hashJoinSplits = GetJoinSplitsHash(txTo);
-    hashShieldedSpends = GetShieldedSpendsHash(txTo);
-    hashShieldedOutputs = GetShieldedOutputsHash(txTo);
+    bool isOverwinterV3 =
+        txTo.fOverwintered &&
+        txTo.nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
+        txTo.nVersion == OVERWINTER_TX_VERSION;
+    bool isSaplingV4 =
+        txTo.fOverwintered &&
+        txTo.nVersionGroupId == SAPLING_VERSION_GROUP_ID &&
+        txTo.nVersion == SAPLING_TX_VERSION;
+
+    if (!txTo.fOverwintered || isOverwinterV3 || isSaplingV4) {
+        hashPrevouts = GetPrevoutHash(txTo);
+        hashSequence = GetSequenceHash(txTo);
+        hashOutputs = GetOutputsHash(txTo);
+        hashJoinSplits = GetJoinSplitsHash(txTo);
+        hashShieldedSpends = GetShieldedSpendsHash(txTo);
+        hashShieldedOutputs = GetShieldedOutputsHash(txTo);
+    } else {
+        // TODO: If we already have this serialized, use it.
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << txTo;
+        preTx.reset(zcash_transaction_precomputed_init(
+            reinterpret_cast<const unsigned char*>(ss.data()),
+            ss.size()));
+    }
 }
 
 SigVersion SignatureHashVersion(const CTransaction& txTo)
 {
     if (txTo.fOverwintered) {
-        if (txTo.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
+        if (txTo.nVersionGroupId == ZIP225_VERSION_GROUP_ID) {
+            return SIGVERSION_ZIP244;
+        } else if (txTo.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
             return SIGVERSION_SAPLING;
         } else {
             return SIGVERSION_OVERWINTER;
@@ -1164,7 +1188,42 @@ uint256 SignatureHash(
 
     auto sigversion = SignatureHashVersion(txTo);
 
-    if (sigversion == SIGVERSION_OVERWINTER || sigversion == SIGVERSION_SAPLING) {
+    if (sigversion == SIGVERSION_ZIP244) {
+        // The consensusBranchId parameter is ignored; we use the value stored
+        // in the transaction itself.
+        if (nIn == NOT_AN_INPUT) {
+            // The signature digest is just the txid! No need to cross the FFI.
+            return txTo.GetHash();
+        } else {
+            CDataStream sScriptCode(SER_NETWORK, PROTOCOL_VERSION);
+            sScriptCode << *(CScriptBase*)(&scriptCode);
+
+            if (cache) {
+                uint256 hash;
+                zcash_transaction_transparent_signature_digest(
+                    cache->preTx.get(),
+                    nHashType,
+                    nIn,
+                    reinterpret_cast<const unsigned char*>(sScriptCode.data()),
+                    sScriptCode.size(),
+                    amount,
+                    hash.begin());
+                return hash;
+            } else {
+                PrecomputedTransactionData local(txTo);
+                uint256 hash;
+                zcash_transaction_transparent_signature_digest(
+                    local.preTx.get(),
+                    nHashType,
+                    nIn,
+                    reinterpret_cast<const unsigned char*>(sScriptCode.data()),
+                    sScriptCode.size(),
+                    amount,
+                    hash.begin());
+                return hash;
+            }
+        }
+    } else if (sigversion == SIGVERSION_OVERWINTER || sigversion == SIGVERSION_SAPLING) {
         uint256 hashPrevouts;
         uint256 hashSequence;
         uint256 hashOutputs;
@@ -1229,7 +1288,7 @@ uint256 SignatureHash(
         ss << txTo.nExpiryHeight;
         if (sigversion == SIGVERSION_SAPLING) {
             // Sapling value balance
-            ss << txTo.valueBalance;
+            ss << txTo.GetValueBalanceSapling();
         }
         // Sighash type
         ss << nHashType;

@@ -42,7 +42,9 @@ JSON_TEST_FILES = \
   test/data/merkle_witness_serialization_sapling.json \
   test/data/merkle_path_sapling.json \
   test/data/merkle_commitments_sapling.json \
-  test/data/sapling_key_components.json
+  test/data/sapling_key_components.json \
+  test/data/unified_addrs.json \
+  test/data/zip0244.json
 
 RAW_TEST_FILES = test/data/alertTests.raw
 
@@ -50,7 +52,7 @@ GENERATED_TEST_FILES = $(JSON_TEST_FILES:.json=.json.h) $(RAW_TEST_FILES:.raw=.r
 
 BITCOIN_TESTS =\
   test/arith_uint256_tests.cpp \
-  test/bignum.h \
+  test/scriptnum10.h \
   test/addrman_tests.cpp \
   test/alert_tests.cpp \
   test/allocator_tests.cpp \
@@ -62,6 +64,7 @@ BITCOIN_TESTS =\
   test/bloom_tests.cpp \
   test/checkblock_tests.cpp \
   test/Checkpoints_tests.cpp \
+  test/checkqueue_tests.cpp \
   test/coins_tests.cpp \
   test/compress_tests.cpp \
   test/convertbits_tests.cpp \
@@ -71,18 +74,20 @@ BITCOIN_TESTS =\
   test/getarg_tests.cpp \
   test/hash_tests.cpp \
   test/key_tests.cpp \
+  test/limitedmap_tests.cpp \
   test/dbwrapper_tests.cpp \
   test/main_tests.cpp \
   test/mempool_tests.cpp \
   test/miner_tests.cpp \
-  test/mruset_tests.cpp \
   test/multisig_tests.cpp \
+  test/net_tests.cpp \
   test/netbase_tests.cpp \
   test/pmt_tests.cpp \
   test/policyestimator_tests.cpp \
   test/pow_tests.cpp \
   test/prevector_tests.cpp \
   test/raii_event_tests.cpp \
+  test/random_tests.cpp \
   test/reverselock_tests.cpp \
   test/rpc_tests.cpp \
   test/sanity_tests.cpp \
@@ -99,6 +104,9 @@ BITCOIN_TESTS =\
   test/streams_tests.cpp \
   test/test_bitcoin.cpp \
   test/test_bitcoin.h \
+  test/test_random.h \
+  test/test_util.cpp \
+  test/test_util.h \
   test/torcontrol_tests.cpp \
   test/transaction_tests.cpp \
   test/txvalidationcache_tests.cpp \
@@ -111,8 +119,8 @@ if ENABLE_WALLET
 BITCOIN_TESTS += \
   wallet/test/wallet_test_fixture.cpp \
   wallet/test/wallet_test_fixture.h \
-  wallet/test/accounting_tests.cpp \
   wallet/test/wallet_tests.cpp \
+  wallet/test/crypto_tests.cpp \
   wallet/test/rpc_wallet_tests.cpp
 endif
 
@@ -123,18 +131,14 @@ if ENABLE_WALLET
 test_test_bitcoin_LDADD += $(LIBBITCOIN_WALLET)
 endif
 test_test_bitcoin_LDADD += $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CRYPTO) $(LIBUNIVALUE) \
-  $(LIBLEVELDB) $(LIBMEMENV) $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1) $(EVENT_LIBS) $(EVENT_PTHREADS_LIBS)
+  $(LIBLEVELDB) $(LIBLEVELDB_SSE42) $(LIBMEMENV) $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1) $(EVENT_LIBS) $(EVENT_PTHREADS_LIBS)
 test_test_bitcoin_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
-test_test_bitcoin_LDADD += $(LIBZCASH_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(LIBZCASH) $(LIBRUSTZCASH) $(LIBZCASH_LIBS)
+test_test_bitcoin_LDADD += $(LIBZCASH_SCRIPT) $(BDB_LIBS) $(LIBZCASH) $(LIBRUSTZCASH) $(LIBZCASH_LIBS)
 test_test_bitcoin_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 
 if ENABLE_ZMQ
 test_test_bitcoin_LDADD += $(ZMQ_LIBS)
-endif
-
-if ENABLE_PROTON
-test_test_bitcoin_LDADD += $(PROTON_LIBS)
 endif
 
 nodist_test_test_bitcoin_SOURCES = $(GENERATED_TEST_FILES)

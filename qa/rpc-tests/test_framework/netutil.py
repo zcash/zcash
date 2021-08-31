@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014 The Bitcoin Core developers
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 # Linux network utilities
+
 import sys
 import socket
 import struct
@@ -11,7 +12,7 @@ import array
 import os
 from binascii import unhexlify, hexlify
 
-# Roughly based on http://voorloopnul.com/blog/a-python-netstat-in-less-than-100-lines-of-code/ by Ricardo Pascal
+# Roughly based on https://web.archive.org/web/20190424172231/http://voorloopnul.com:80/blog/a-python-netstat-in-less-than-100-lines-of-code/ by Ricardo Pascal
 STATE_ESTABLISHED = '01'
 STATE_SYN_SENT  = '02'
 STATE_SYN_RECV = '03'
@@ -56,7 +57,7 @@ def netstat(typ='tcp'):
     To get pid of all network process running on system, you must run this script
     as superuser
     '''
-    with open('/proc/net/'+typ,'r') as f:
+    with open('/proc/net/'+typ,'r',encoding='utf8') as f:
         content = f.readlines()
         content.pop(0)
     result = []
@@ -82,7 +83,7 @@ def get_bind_addrs(pid):
             bind_addrs.append(conn[1])
     return bind_addrs
 
-# from: http://code.activestate.com/recipes/439093/
+# from: https://code.activestate.com/recipes/439093/
 def all_interfaces():
     '''
     Return all interfaces that are up

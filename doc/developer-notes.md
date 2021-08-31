@@ -244,3 +244,126 @@ ACK -  A loose ACK can be confusing. It's best to avoid them unless it's a docum
 NACK - Disagree with the code changes/concept. Should be accompanied by an explanation.
 
 See the [Development Guidelines](https://zcash.readthedocs.io/en/latest/rtd_pages/development_guidelines.html) documentation for preferred workflows, information on continuous integration and release versioning.
+
+Strings and formatting
+------------------------
+
+- Avoid using locale dependent functions if possible. You can use the provided
+  [`lint-locale-dependence.sh`](../test/lint/lint-locale-dependence.sh)
+  to check for accidental use of locale-dependent functions.
+
+  - *Rationale*: Unnecessary locale dependence can cause bugs that are very tricky to isolate and fix.
+
+  - These functions are known to be locale-dependent:
+    `alphasort`, `asctime`, `asprintf`, `atof`, `atoi`, `atol`, `atoll`, `atoq`,
+    `btowc`, `ctime`, `dprintf`, `fgetwc`, `fgetws`, `fprintf`, `fputwc`,
+    `fputws`, `fscanf`, `fwprintf`, `getdate`, `getwc`, `getwchar`, `isalnum`,
+    `isalpha`, `isblank`, `iscntrl`, `isdigit`, `isgraph`, `islower`, `isprint`,
+    `ispunct`, `isspace`, `isupper`, `iswalnum`, `iswalpha`, `iswblank`,
+    `iswcntrl`, `iswctype`, `iswdigit`, `iswgraph`, `iswlower`, `iswprint`,
+    `iswpunct`, `iswspace`, `iswupper`, `iswxdigit`, `isxdigit`, `mblen`,
+    `mbrlen`, `mbrtowc`, `mbsinit`, `mbsnrtowcs`, `mbsrtowcs`, `mbstowcs`,
+    `mbtowc`, `mktime`, `putwc`, `putwchar`, `scanf`, `snprintf`, `sprintf`,
+    `sscanf`, `stoi`, `stol`, `stoll`, `strcasecmp`, `strcasestr`, `strcoll`,
+    `strfmon`, `strftime`, `strncasecmp`, `strptime`, `strtod`, `strtof`,
+    `strtoimax`, `strtol`, `strtold`, `strtoll`, `strtoq`, `strtoul`,
+    `strtoull`, `strtoumax`, `strtouq`, `strxfrm`, `swprintf`, `tolower`,
+    `toupper`, `towctrans`, `towlower`, `towupper`, `ungetwc`, `vasprintf`,
+    `vdprintf`, `versionsort`, `vfprintf`, `vfscanf`, `vfwprintf`, `vprintf`,
+    `vscanf`, `vsnprintf`, `vsprintf`, `vsscanf`, `vswprintf`, `vwprintf`,
+    `wcrtomb`, `wcscasecmp`, `wcscoll`, `wcsftime`, `wcsncasecmp`, `wcsnrtombs`,
+    `wcsrtombs`, `wcstod`, `wcstof`, `wcstoimax`, `wcstol`, `wcstold`,
+    `wcstoll`, `wcstombs`, `wcstoul`, `wcstoull`, `wcstoumax`, `wcswidth`,
+    `wcsxfrm`, `wctob`, `wctomb`, `wctrans`, `wctype`, `wcwidth`, `wprintf`
+
+Scripts
+--------------------------
+
+### Shebang
+
+- Use `#!/usr/bin/env bash` instead of obsolete `#!/bin/bash`.
+
+  - [*Rationale*](https://github.com/dylanaraps/pure-bash-bible#shebang):
+
+    `#!/bin/bash` assumes it is always installed to /bin/ which can cause issues;
+
+    `#!/usr/bin/env bash` searches the user's PATH to find the bash binary.
+
+  OK:
+
+```bash
+#!/usr/bin/env bash
+```
+
+  Wrong:
+
+```bash
+#!/bin/bash
+```
+
+Source code organization
+--------------------------
+
+- Use include guards to avoid the problem of double inclusion. The header file
+  `foo/bar.h` should use the include guard identifier `ZCASH_FOO_BAR_H`, e.g.
+
+```c++
+#ifndef ZCASH_FOO_BAR_H
+#define ZCASH_FOO_BAR_H
+...
+#endif // ZCASH_FOO_BAR_H
+```
+
+Subtrees
+----------
+
+Several parts of the repository are subtrees of software maintained elsewhere.
+
+Some of these are maintained by active developers of Zcash or Bitcoin Core, in which case changes should probably go
+directly upstream without being PRed directly against the project. They will be merged back in the next
+subtree merge.
+
+Others are external projects without a tight relationship with our project. Changes to these should also
+be sent upstream, but bugfixes may also be prudent to PR against Zcash and/or Bitcoin Core so that they can be integrated
+quickly. Cosmetic changes should be purely taken upstream.
+
+There is a tool in `test/lint/git-subtree-check.sh` ([instructions](../test/lint#git-subtree-checksh)) to check a subtree directory for consistency with
+its upstream repository.
+
+Current subtrees include:
+
+- src/leveldb
+  - Upstream at https://github.com/google/leveldb ; Maintained by Google, but
+    open important PRs to Core to avoid delay.
+  - **Note**: Follow the instructions in [Upgrading LevelDB](#upgrading-leveldb) when
+    merging upstream changes to the LevelDB subtree.
+
+- src/secp256k1
+  - Upstream at https://github.com/bitcoin-core/secp256k1/ ; actively maintained by Core contributors.
+
+- src/crypto/ctaes
+  - Upstream at https://github.com/bitcoin-core/ctaes ; actively maintained by Core contributors.
+
+- src/univalue
+  - Upstream at https://github.com/bitcoin-core/univalue ; actively maintained by Core contributors, deviates from upstream https://github.com/jgarzik/univalue
+
+Scripted diffs
+--------------
+
+For reformatting and refactoring commits where the changes can be easily automated using a bash script, we use
+scripted-diff commits. The bash script is included in the commit message and our Travis CI job checks that
+the result of the script is identical to the commit. This aids reviewers since they can verify that the script
+does exactly what it's supposed to do. It is also helpful for rebasing (since the same script can just be re-run
+on the new master commit).
+
+To create a scripted-diff:
+
+- start the commit message with `scripted-diff:` (and then a description of the diff on the same line)
+- in the commit message include the bash script between lines containing just the following text:
+
+    - `-BEGIN VERIFY SCRIPT-`
+    - `-END VERIFY SCRIPT-`
+
+The scripted-diff is verified by the tool `test/lint/commit-script-check.sh`
+
+Commit `ccd074a5` is an example of a scripted-diff.

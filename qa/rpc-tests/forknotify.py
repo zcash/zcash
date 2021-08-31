@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014 The Bitcoin Core developers
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -14,12 +14,17 @@ import os
 
 class ForkNotifyTest(BitcoinTestFramework):
 
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 2
+        self.setup_clean_chain = False
+
     alert_filename = None  # Set by setup_network
 
     def setup_network(self):
         self.nodes = []
         self.alert_filename = os.path.join(self.options.tmpdir, "alert.txt")
-        with open(self.alert_filename, 'w'):
+        with open(self.alert_filename, 'w', encoding='utf8'):
             pass  # Just open then close to create zero-length file
         self.nodes.append(start_node(0, self.options.tmpdir,
                             ["-blockversion=2", "-alertnotify=echo %s >> \"" + self.alert_filename + "\""]))
@@ -41,7 +46,7 @@ class ForkNotifyTest(BitcoinTestFramework):
         self.nodes[1].generate(1)
         self.sync_all()
 
-        with open(self.alert_filename, 'r') as f:
+        with open(self.alert_filename, 'r', encoding='utf8') as f:
             alert_text = f.read()
 
         if len(alert_text) == 0:
@@ -53,7 +58,7 @@ class ForkNotifyTest(BitcoinTestFramework):
         self.nodes[1].generate(1)
         self.sync_all()
 
-        with open(self.alert_filename, 'r') as f:
+        with open(self.alert_filename, 'r', encoding='utf8') as f:
             alert_text2 = f.read()
 
         if alert_text != alert_text2:

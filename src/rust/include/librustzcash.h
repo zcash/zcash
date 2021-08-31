@@ -1,13 +1,18 @@
-#ifndef LIBRUSTZCASH_INCLUDE_H_
-#define LIBRUSTZCASH_INCLUDE_H_
+#ifndef ZCASH_RUST_INCLUDE_LIBRUSTZCASH_H
+#define ZCASH_RUST_INCLUDE_LIBRUSTZCASH_H
 
+#include "rust/types.h"
+
+#include <stddef.h>
 #include <stdint.h>
 
+#ifndef __cplusplus
+  #include <assert.h>
+  #include <stdalign.h>
+#endif
+
+#ifdef __cplusplus
 extern "C" {
-#ifdef WIN32
-    typedef uint16_t codeunit;
-#else
-    typedef uint8_t codeunit;
 #endif
 
     void librustzcash_to_scalar(const unsigned char *input, unsigned char *result);
@@ -27,13 +32,10 @@ extern "C" {
     void librustzcash_init_zksnark_params(
         const codeunit* spend_path,
         size_t spend_path_len,
-        const char* spend_hash,
         const codeunit* output_path,
         size_t output_path_len,
-        const char* output_hash,
         const codeunit* sprout_path,
-        size_t sprout_path_len,
-        const char* sprout_hash
+        size_t sprout_path_len
     );
 
     /// Validates the provided Equihash solution against
@@ -135,7 +137,9 @@ extern "C" {
 
     /// Creates a Sapling verification context. Please free this
     /// when you're done.
-    void * librustzcash_sapling_verification_ctx_init();
+    void * librustzcash_sapling_verification_ctx_init(
+        bool zip216Enabled
+    );
 
     /// Check the validity of a Sapling Spend description,
     /// accumulating the value commitment into the context.
@@ -183,7 +187,7 @@ extern "C" {
         const unsigned char *diversifier,
         const unsigned char *pk_d,
         const uint64_t value,
-        const unsigned char *r,
+        const unsigned char *rcm,
         const unsigned char *ak,
         const unsigned char *nk,
         const uint64_t position,
@@ -196,11 +200,12 @@ extern "C" {
     /// The `pk_d` and `r` parameters must be of length 32.
     /// The result is also of length 32 and placed in `result`.
     /// Returns false if the diversifier or pk_d is not valid
-    bool librustzcash_sapling_compute_cm(
+    bool librustzcash_sapling_compute_cmu(
+        bool zip216_enabled,
         const unsigned char *diversifier,
         const unsigned char *pk_d,
         const uint64_t value,
-        const unsigned char *r,
+        const unsigned char *rcm,
         unsigned char *result
     );
 
@@ -210,6 +215,7 @@ extern "C" {
     /// the result is written to the 32-byte
     /// `result` buffer.
     bool librustzcash_sapling_ka_agree(
+        bool zip216_enabled,
         const unsigned char *p,
         const unsigned char *sk,
         unsigned char *result
@@ -308,32 +314,16 @@ extern "C" {
         unsigned char *addr_ret
     );
 
-    uint32_t librustzcash_mmr_append(
-        uint32_t cbranch,
-        uint32_t t_len,
-        const uint32_t *ni_ptr,
-        const unsigned char *n_ptr,
-        size_t p_len,
-        const unsigned char *nn_ptr,
-        unsigned char *rt_ret,
-        unsigned char *buf_ret
+    /// Fills the provided buffer with random bytes. This is intended to
+    /// be a cryptographically secure RNG; it uses Rust's `OsRng`, which
+    /// is implemented in terms of the `getrandom` crate. The first call
+    /// to this function may block until sufficient randomness is available.
+    void librustzcash_getrandom(
+        unsigned char *buf,
+        size_t buf_len
     );
-
-    uint32_t librustzcash_mmr_delete(
-        uint32_t cbranch,
-        uint32_t t_len,
-        const uint32_t *ni_ptr,
-        const unsigned char *n_ptr,
-        size_t p_len,
-        size_t e_len,
-        unsigned char *rt_ret
-    );
-
-    uint32_t librustzcash_mmr_hash_node(
-        uint32_t cbranch,
-        const unsigned char *n_ptr,
-        unsigned char *h_ret
-    );
+#ifdef __cplusplus
 }
+#endif
 
-#endif // LIBRUSTZCASH_INCLUDE_H_
+#endif // ZCASH_RUST_INCLUDE_LIBRUSTZCASH_H

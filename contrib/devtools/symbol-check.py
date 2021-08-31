@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # Copyright (c) 2014 Wladimir J. van der Laan
-# Copyright (c) 2016-2019 The Zcash developers
+# Copyright (c) 2016-2020 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 '''
 A script to check that the (Linux) executables produced by gitian only contain
-allowed gcc, glibc and libstdc++ version symbols.  This makes sure they are
-still compatible with the minimum supported Linux distribution versions.
+allowed gcc and glibc version symbols.  This makes sure they are still compatible
+with the minimum supported Linux distribution versions.
 
 Example usage:
 
@@ -18,55 +18,83 @@ import re
 import sys
 import os
 
-# Debian 6.0.9 (Squeeze) has:
+# Ubuntu 16.04 LTS (Xenial Xerus; End of Standard Support April 2021, EOL April 2022) has:
 #
-# - g++ version 4.4.5 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=g%2B%2B)
-# - libc version 2.11.3 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=libc6)
-# - libstdc++ version 4.4.5 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=libstdc%2B%2B6)
+# - g++ version 4.5.3 (https://packages.ubuntu.com/search?suite=all&searchon=names&keywords=g%2B%2B)
+# - libc6 version 2.23 (https://packages.ubuntu.com/search?suite=all&searchon=names&keywords=libc6)
 #
-# Ubuntu 10.04.4 (Lucid Lynx) has:
+# Debian 9 (Stretch; EOL 2020-07-06, LTS EOL in 2022) has:
 #
-# - g++ version 4.4.3 (http://packages.ubuntu.com/search?keywords=g%2B%2B&searchon=names&suite=lucid&section=all)
-# - libc version 2.11.1 (http://packages.ubuntu.com/search?keywords=libc6&searchon=names&suite=lucid&section=all)
-# - libstdc++ version 4.4.3 (http://packages.ubuntu.com/search?suite=lucid&section=all&arch=any&keywords=libstdc%2B%2B&searchon=names)
+# - g++ version 6.3.0 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=g%2B%2B)
+# - libc6 version 2.24 (https://packages.debian.org/search?suite=default&section=all&arch=any&searchon=names&keywords=libc6)
 #
-# Taking the minimum of these as our target.
+# RedHat Enterprise Linux 8 (EOL: long and complicated) is based on Fedora 28 (EOL 2019-05-28) and uses the same base packages:
 #
-# According to GNU ABI document (http://gcc.gnu.org/onlinedocs/libstdc++/manual/abi.html) this corresponds to:
-#   GCC 4.4.0: GCC_4.4.0
-#   GCC 4.4.2: GLIBCXX_3.4.13, CXXABI_1.3.3
-#   (glibc)    GLIBC_2_11
+# - g++ version 8.0.1 (https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/28/Everything/x86_64/os/Packages/g/ search for gcc-)
+# - libc6 version 2.27 (https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/28/Everything/x86_64/os/Packages/g/ search for glibc)
 #
+# CentOS 8 (Full update EOL May 2024, Maintenance EOL 2029-05-31) has:
+#
+# - g++ version 8.3.1 (https://centos.pkgs.org/8/centos-baseos-x86_64/ search for libgcc)
+# - libc6 version 2.28 (https://centos.pkgs.org/8/centos-baseos-x86_64/ search for glibc)
+#
+# Fedora 31 (EOL ~November 2020) has:
+#
+# - g++ version 9.2.1 (https://dl.fedoraproject.org/pub/fedora/linux/releases/31/Everything/x86_64/os/Packages/g/ search for gcc-)
+# - libc6 version 2.30 (https://dl.fedoraproject.org/pub/fedora/linux/releases/31/Everything/x86_64/os/Packages/g/ search for glibc)
+#
+# Arch is a rolling release, and as of October 2020 has packages for:
+#
+# - g++ version 8.4.0 / 9.3.0 / 10.2.0 (https://www.archlinux.org/packages/?q=gcc)
+# - libc6 version 2.32 (https://www.archlinux.org/packages/?q=glibc)
+#
+# We take the minimum of these as our target. In practice, if we build on Xenial without
+# upgrading GCC or libc, then we should get a binary that works for all these systems, and
+# later ones.
+#
+# According to the GNU ABI document (https://gcc.gnu.org/onlinedocs/libstdc++/manual/abi.html) this corresponds to:
+#   GCC 4.5.3: GCC_4.5.0, GLIBCXX_3.4.14, CXXABI_1.3.4
+#   libc6:     GLIBC_2_23
+
+# We statically link libc++ and libc++abi in our builds. Set this to allow dynamic linking to libstdc++.
+ALLOW_DYNAMIC_LIBSTDCXX = False
+
 MAX_VERSIONS = {
-'GCC':     (4,4,0),
-'CXXABI':  (1,3,3),
-'GLIBCXX': (3,4,13),
-'GLIBC':   (2,11)
+    'GCC':   (4,5,0),
+    'GLIBC': (2,23),
 }
+if ALLOW_DYNAMIC_LIBSTDCXX:
+    MAX_VERSIONS.update({
+        'GLIBCXX': (3,4,14),
+        'CXXABI':  (1,3,4),
+    })
+
 # See here for a description of _IO_stdin_used:
 # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=634261#109
 
 # Ignore symbols that are exported as part of every executable
 IGNORE_EXPORTS = {
-'_edata', '_end', '_init', '__bss_start', '_fini', '_IO_stdin_used'
+    '_edata', '_end', '_init', '__bss_start', '_fini', '_IO_stdin_used'
 }
 READELF_CMD = os.getenv('READELF', '/usr/bin/readelf')
 CPPFILT_CMD = os.getenv('CPPFILT', '/usr/bin/c++filt')
+
 # Allowed NEEDED libraries
 ALLOWED_LIBRARIES = {
-# zcashd
-'libgcc_s.so.1', # GCC base support
-'libc.so.6', # C library
-'libstdc++.so.6', # C++ standard library
-'libpthread.so.0', # threading
-'libanl.so.1', # DNS resolve
-'libm.so.6', # math library
-'librt.so.1', # real-time (clock)
-'libgomp.so.1', # OpenMP support library
-'ld-linux-x86-64.so.2', # 64-bit dynamic linker
-'ld-linux.so.2', # 32-bit dynamic linker
-'libdl.so.2' # programming interface to dynamic linker
+    # zcashd
+    'libgcc_s.so.1',        # GCC support library (also used by clang)
+    'libc.so.6',            # C library
+    'libpthread.so.0',      # threading
+    'libanl.so.1',          # DNS resolver
+    'libm.so.6',            # math library
+    'librt.so.1',           # real-time (POSIX compatibility)
+    'ld-linux-x86-64.so.2', # 64-bit dynamic linker
+    'ld-linux.so.2',        # 32-bit dynamic linker
+    'libdl.so.2'            # programming interface to dynamic linker
 }
+if ALLOW_DYNAMIC_LIBSTDCXX:
+    ALLOWED_LIBRARIES.add('libstdc++.so.6')  # C++ standard library
+
 
 class CPPFilt(object):
     '''
@@ -138,6 +166,7 @@ if __name__ == '__main__':
     cppfilt = CPPFilt()
     retval = 0
     for filename in sys.argv[1:]:
+        print("Checking %s..." % (filename,))
         # Check imported symbols
         for sym,version in read_symbols(filename, True):
             if version and not check_version(MAX_VERSIONS, version):
@@ -154,7 +183,12 @@ if __name__ == '__main__':
             if library_name not in ALLOWED_LIBRARIES:
                 print('%s: NEEDED library %s is not allowed' % (filename, library_name))
                 retval = 1
+        print()
+
+    if retval == 0:
+        print("Everything OK")
+    else:
+        print("Note: this script is intended to ensure that Gitian builds meet our compatibility policy.")
+        print("The above warnings do not necessarily mean the program(s) will not work on your system.")
 
     exit(retval)
-
-

@@ -1,14 +1,11 @@
 #include "JoinSplit.hpp"
 #include "prf.h"
-#include "sodium.h"
 
 #include "zcash/util.h"
 
 #include <memory>
 
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
-#include <boost/optional.hpp>
 #include <fstream>
 #include "tinyformat.h"
 #include "sync.h"
@@ -18,23 +15,18 @@
 #include "streams.h"
 #include "version.h"
 
+#include <rust/blake2b.h>
+
 namespace libzcash {
 
-static CCriticalSection cs_ParamsIO;
-
-template<size_t NumInputs, size_t NumOutputs>
-class JoinSplitCircuit : public JoinSplit<NumInputs, NumOutputs> {
-public:
-    JoinSplitCircuit() {}
-    ~JoinSplitCircuit() {}
-
-    SproutProof prove(
+    template<size_t NumInputs, size_t NumOutputs>
+    SproutProof JoinSplit<NumInputs, NumOutputs>::prove(
         const std::array<JSInput, NumInputs>& inputs,
         const std::array<JSOutput, NumOutputs>& outputs,
         std::array<SproutNote, NumOutputs>& out_notes,
         std::array<ZCNoteEncryption::Ciphertext, NumOutputs>& out_ciphertexts,
         uint256& out_ephemeralKey,
-        const uint256& joinSplitPubKey,
+        const Ed25519VerificationKey& joinSplitPubKey,
         uint256& out_randomSeed,
         std::array<uint256, NumInputs>& out_macs,
         std::array<uint256, NumInputs>& out_nullifiers,
@@ -97,7 +89,8 @@ public:
         out_randomSeed = random_uint256();
 
         // Compute h_sig
-        uint256 h_sig = this->h_sig(out_randomSeed, out_nullifiers, joinSplitPubKey);
+        uint256 h_sig = JoinSplit<NumInputs, NumOutputs>::h_sig(
+            out_randomSeed, out_nullifiers, joinSplitPubKey);
 
         // Sample phi
         uint252 phi = random_uint252();
@@ -206,21 +199,14 @@ public:
 
         return proof;
     }
-};
-
-template<size_t NumInputs, size_t NumOutputs>
-JoinSplit<NumInputs, NumOutputs>* JoinSplit<NumInputs, NumOutputs>::Prepared()
-{
-    return new JoinSplitCircuit<NumInputs, NumOutputs>();
-}
 
 template<size_t NumInputs, size_t NumOutputs>
 uint256 JoinSplit<NumInputs, NumOutputs>::h_sig(
     const uint256& randomSeed,
     const std::array<uint256, NumInputs>& nullifiers,
-    const uint256& joinSplitPubKey
+    const Ed25519VerificationKey& joinSplitPubKey
 ) {
-    const unsigned char personalization[crypto_generichash_blake2b_PERSONALBYTES]
+    const unsigned char personalization[BLAKE2bPersonalBytes]
         = {'Z','c','a','s','h','C','o','m','p','u','t','e','h','S','i','g'};
 
     std::vector<unsigned char> block(randomSeed.begin(), randomSeed.end());
@@ -229,19 +215,14 @@ uint256 JoinSplit<NumInputs, NumOutputs>::h_sig(
         block.insert(block.end(), nullifiers[i].begin(), nullifiers[i].end());
     }
 
-    block.insert(block.end(), joinSplitPubKey.begin(), joinSplitPubKey.end());
+    block.insert(block.end(), joinSplitPubKey.bytes, joinSplitPubKey.bytes + ED25519_VERIFICATION_KEY_LEN);
 
     uint256 output;
 
-    if (crypto_generichash_blake2b_salt_personal(output.begin(), 32,
-                                                 &block[0], block.size(),
-                                                 NULL, 0, // No key.
-                                                 NULL,    // No salt.
-                                                 personalization
-                                                ) != 0)
-    {
-        throw std::logic_error("hash function failure");
-    }
+    auto state = blake2b_init(32, personalization);
+    blake2b_update(state, &block[0], block.size());
+    blake2b_finalize(state, output.begin(), 32);
+    blake2b_free(state);
 
     return output;
 }

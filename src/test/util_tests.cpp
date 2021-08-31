@@ -312,7 +312,7 @@ BOOST_AUTO_TEST_CASE(test_ParseInt32)
     BOOST_CHECK(ParseInt32("1234", &n) && n == 1234);
     BOOST_CHECK(ParseInt32("01234", &n) && n == 1234); // no octal
     BOOST_CHECK(ParseInt32("2147483647", &n) && n == 2147483647);
-    BOOST_CHECK(ParseInt32("-2147483648", &n) && n == -2147483648);
+    BOOST_CHECK(ParseInt32("-2147483648", &n) && n == (-2147483647 - 1)); // (-2147483647 - 1) equals INT_MIN
     BOOST_CHECK(ParseInt32("-1234", &n) && n == -1234);
     // Invalid values
     BOOST_CHECK(!ParseInt32("", &n));
@@ -420,6 +420,11 @@ BOOST_AUTO_TEST_CASE(test_FormatSubVersion)
     BOOST_CHECK_EQUAL(FormatSubVersion("Test", 99950, comments),  std::string("/Test:0.9.99(comment1)/"));
     BOOST_CHECK_EQUAL(FormatSubVersion("Test", 99900, comments2), std::string("/Test:0.9.99-beta1(comment1; Comment2; .,_?@; )/"));
     BOOST_CHECK_EQUAL(FormatSubVersion("Test", 99950, comments2), std::string("/Test:0.9.99(comment1; Comment2; .,_?@; )/"));
+
+    // bug https://github.com/zcash/zcash/issues/4375
+    BOOST_CHECK_EQUAL(SanitizeString(std::string("MagicBean:2.1.1-1")), "MagicBean:2.1.11");
+    // fixed by adding new rule https://github.com/zcash/zcash/pull/4444
+    BOOST_CHECK_EQUAL(SanitizeString(std::string("MagicBean:2.1.1-1"), SAFE_CHARS_SUBVERSION), "MagicBean:2.1.1-1");
 }
 
 BOOST_AUTO_TEST_CASE(test_ParseFixedPoint)

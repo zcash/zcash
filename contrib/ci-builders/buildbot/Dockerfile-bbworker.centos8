@@ -1,0 +1,35 @@
+FROM electriccoinco/zcashd-build-centos8
+
+# Buildbot user
+ARG BUILDBOT_USER=zcbbworker
+ARG BUILDBOT_UID=2001
+RUN useradd --home-dir /home/$BUILDBOT_USER \
+            --shell /bin/bash \
+            --create-home \
+            --uid $BUILDBOT_UID\
+            $BUILDBOT_USER
+
+USER $BUILDBOT_USER
+WORKDIR /home/$BUILDBOT_USER
+
+ADD bbworker-requirements.txt requirements.txt
+RUN python3 -m venv venv \
+    && . venv/bin/activate \
+    && python -m pip install wheel \
+    && python -m pip install -r requirements.txt
+
+# Buildbot worker
+ARG BUILDBOT_WORKER_NAME=centos8-docker
+ARG BUILDBOT_WORKER_PASS=thisgetssetwhenpodisstarted
+ARG BUILDBOT_MASTER_HOST=dev-ci.z.cash
+ARG BUILDBOT_MASTER_PORT=9899
+
+WORKDIR /home/$BUILDBOT_USER
+RUN venv/bin/buildbot-worker create-worker $BUILDBOT_WORKER_NAME \
+      $BUILDBOT_MASTER_HOST:$BUILDBOT_MASTER_PORT \
+      $BUILDBOT_WORKER_NAME $BUILDBOT_WORKER_PASS \
+    && echo "OS: Centos 8" > $BUILDBOT_WORKER_NAME/info/host
+ADD bbworker-buildbot.tac $BUILDBOT_WORKER_NAME/buildbot.tac
+
+WORKDIR /home/$BUILDBOT_USER/$BUILDBOT_WORKER_NAME
+CMD ["/usr/bin/dumb-init", "../venv/bin/twistd", "--pidfile=", "-ny", "buildbot.tac"]

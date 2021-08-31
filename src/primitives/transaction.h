@@ -7,21 +7,27 @@
 #define BITCOIN_PRIMITIVES_TRANSACTION_H
 
 #include "amount.h"
-#include "random.h"
 #include "script/script.h"
 #include "serialize.h"
 #include "streams.h"
 #include "uint256.h"
 #include "consensus/consensus.h"
+#include "consensus/params.h"
+#include "consensus/upgrades.h"
 
 #include <array>
-
-#include <boost/variant.hpp>
+#include <variant>
 
 #include "zcash/NoteEncryption.hpp"
 #include "zcash/Zcash.h"
-#include "zcash/JoinSplit.hpp"
 #include "zcash/Proof.hpp"
+
+#include <rust/ed25519/types.h>
+#include <primitives/orchard.h>
+
+// Overwinter transaction version group id
+static constexpr uint32_t OVERWINTER_VERSION_GROUP_ID = 0x03C48270;
+static_assert(OVERWINTER_VERSION_GROUP_ID != 0, "version group id must be non-zero as specified in ZIP 202");
 
 // Overwinter transaction version
 static const int32_t OVERWINTER_TX_VERSION = 3;
@@ -30,12 +36,52 @@ static_assert(OVERWINTER_TX_VERSION >= OVERWINTER_MIN_TX_VERSION,
 static_assert(OVERWINTER_TX_VERSION <= OVERWINTER_MAX_TX_VERSION,
     "Overwinter tx version must not be higher than maximum");
 
+// Sapling transaction version group id
+static constexpr uint32_t SAPLING_VERSION_GROUP_ID = 0x892F2085;
+static_assert(SAPLING_VERSION_GROUP_ID != 0, "version group id must be non-zero as specified in ZIP 202");
+
 // Sapling transaction version
 static const int32_t SAPLING_TX_VERSION = 4;
 static_assert(SAPLING_TX_VERSION >= SAPLING_MIN_TX_VERSION,
     "Sapling tx version must not be lower than minimum");
 static_assert(SAPLING_TX_VERSION <= SAPLING_MAX_TX_VERSION,
     "Sapling tx version must not be higher than maximum");
+
+// ZIP225 transaction version group id
+// (defined in section 7.1 of the protocol spec)
+static constexpr uint32_t ZIP225_VERSION_GROUP_ID = 0x26A7270A;
+static_assert(ZIP225_VERSION_GROUP_ID != 0, "version group id must be non-zero as specified in ZIP 202");
+
+// ZIP225 transaction version
+static const int32_t ZIP225_TX_VERSION = 5;
+static_assert(ZIP225_TX_VERSION >= ZIP225_MIN_TX_VERSION,
+    "ZIP225 tx version must not be lower than minimum");
+static_assert(ZIP225_TX_VERSION <= ZIP225_MAX_TX_VERSION,
+    "ZIP225 tx version must not be higher than maximum");
+
+// Future transaction version group id
+static constexpr uint32_t ZFUTURE_VERSION_GROUP_ID = 0xFFFFFFFF;
+static_assert(ZFUTURE_VERSION_GROUP_ID != 0, "version group id must be non-zero as specified in ZIP 202");
+
+// Future transaction version. This value must only be used
+// in integration-testing contexts.
+static const int32_t ZFUTURE_TX_VERSION = 0x0000FFFF;
+
+struct TxVersionInfo {
+    bool fOverwintered;
+    uint32_t nVersionGroupId;
+    int32_t nVersion;
+};
+
+/**
+ * Returns the current transaction version and version group id,
+ * based upon the specified activation height and active features.
+ */
+TxVersionInfo CurrentTxVersionInfo(const Consensus::Params& consensus, int nHeight);
+
+struct TxParams {
+    unsigned int expiryDelta;
+};
 
 // These constants are defined in the protocol § 7.1:
 // https://zips.z.cash/protocol/protocol.pdf#txnencoding
@@ -46,21 +92,52 @@ static inline size_t JOINSPLIT_SIZE(int transactionVersion) {
 }
 
 /**
+ * The storage format for Sapling Spend descriptions in v5 transactions.
+ */
+class SpendDescriptionV5
+{
+public:
+    uint256 cv;                    //!< A value commitment to the value of the input note.
+    uint256 nullifier;             //!< The nullifier of the input note.
+    uint256 rk;                    //!< The randomized public key for spendAuthSig.
+
+    SpendDescriptionV5() { }
+
+    SpendDescriptionV5(uint256 cv, uint256 nullifier, uint256 rk)
+        : cv(cv), nullifier(nullifier), rk(rk) { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(cv);
+        READWRITE(nullifier);
+        READWRITE(rk);
+    }
+};
+
+/**
  * A shielded input to a transaction. It contains data that describes a Spend transfer.
  */
-class SpendDescription
+class SpendDescription : public SpendDescriptionV5
 {
 public:
     typedef std::array<unsigned char, 64> spend_auth_sig_t;
 
-    uint256 cv;                    //!< A value commitment to the value of the input note.
     uint256 anchor;                //!< A Merkle root of the Sapling note commitment tree at some block height in the past.
-    uint256 nullifier;             //!< The nullifier of the input note.
-    uint256 rk;                    //!< The randomized public key for spendAuthSig.
     libzcash::GrothProof zkproof;  //!< A zero-knowledge proof using the spend circuit.
     spend_auth_sig_t spendAuthSig; //!< A signature authorizing this spend.
 
     SpendDescription() { }
+
+    SpendDescription(
+        uint256 cv,
+        uint256 anchor,
+        uint256 nullifier,
+        uint256 rk,
+        libzcash::GrothProof zkproof,
+        spend_auth_sig_t spendAuthSig)
+        : SpendDescriptionV5(cv, nullifier, rk), anchor(anchor), zkproof(zkproof), spendAuthSig(spendAuthSig) { }
 
     ADD_SERIALIZE_METHODS;
 
@@ -93,9 +170,9 @@ public:
 };
 
 /**
- * A shielded output to a transaction. It contains data that describes an Output transfer.
+ * The storage format for Sapling Output descriptions in v5 transactions.
  */
-class OutputDescription
+class OutputDescriptionV5
 {
 public:
     uint256 cv;                     //!< A value commitment to the value of the output note.
@@ -103,9 +180,16 @@ public:
     uint256 ephemeralKey;           //!< A Jubjub public key.
     libzcash::SaplingEncCiphertext encCiphertext; //!< A ciphertext component for the encrypted output note.
     libzcash::SaplingOutCiphertext outCiphertext; //!< A ciphertext component for the encrypted output note.
-    libzcash::GrothProof zkproof;   //!< A zero-knowledge proof using the output circuit.
 
-    OutputDescription() { }
+    OutputDescriptionV5() { }
+
+    OutputDescriptionV5(
+        uint256 cv,
+        uint256 cmu,
+        uint256 ephemeralKey,
+        libzcash::SaplingEncCiphertext encCiphertext,
+        libzcash::SaplingOutCiphertext outCiphertext)
+        : cv(cv), cmu(cmu), ephemeralKey(ephemeralKey), encCiphertext(encCiphertext), outCiphertext(outCiphertext) { }
 
     ADD_SERIALIZE_METHODS;
 
@@ -116,6 +200,33 @@ public:
         READWRITE(ephemeralKey);
         READWRITE(encCiphertext);
         READWRITE(outCiphertext);
+    }
+};
+
+/**
+ * A shielded output to a transaction. It contains data that describes an Output transfer.
+ */
+class OutputDescription : public OutputDescriptionV5
+{
+public:
+    libzcash::GrothProof zkproof;   //!< A zero-knowledge proof using the output circuit.
+
+    OutputDescription() { }
+
+    OutputDescription(
+        uint256 cv,
+        uint256 cmu,
+        uint256 ephemeralKey,
+        libzcash::SaplingEncCiphertext encCiphertext,
+        libzcash::SaplingOutCiphertext outCiphertext,
+        libzcash::GrothProof zkproof)
+        : OutputDescriptionV5(cv, cmu, ephemeralKey, encCiphertext, outCiphertext), zkproof(zkproof) { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        OutputDescriptionV5::SerializationOp(s, ser_action);
         READWRITE(zkproof);
     }
 
@@ -137,8 +248,86 @@ public:
     }
 };
 
+/**
+ * The Sapling component of a v5 transaction.
+ */
+class SaplingBundle
+{
+private:
+    typedef std::array<unsigned char, 64> binding_sig_t;
+
+    std::vector<SpendDescriptionV5> vSpendsSapling;
+    std::vector<OutputDescriptionV5> vOutputsSapling;
+    uint256 anchorSapling;
+    std::vector<libzcash::GrothProof> vSpendProofsSapling;
+    std::vector<SpendDescription::spend_auth_sig_t> vSpendAuthSigSapling;
+    std::vector<libzcash::GrothProof> vOutputProofsSapling;
+
+public:
+    CAmount valueBalanceSapling;
+    binding_sig_t bindingSigSapling = {{0}};
+
+    SaplingBundle() : valueBalanceSapling(0) {}
+
+    SaplingBundle(
+        const std::vector<SpendDescription>& vShieldedSpend,
+        const std::vector<OutputDescription>& vShieldedOutput,
+        const CAmount& valueBalance,
+        const binding_sig_t& bindingSig);
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(vSpendsSapling);
+        READWRITE(vOutputsSapling);
+
+        bool hasSapling = !(vSpendsSapling.empty() && vOutputsSapling.empty());
+
+        if (hasSapling) {
+            READWRITE(valueBalanceSapling);
+        }
+        if (!vSpendsSapling.empty()) {
+            READWRITE(anchorSapling);
+        }
+        if (ser_action.ForRead()) {
+            for (auto &spend : vSpendsSapling) {
+                libzcash::GrothProof zkproof;
+                READWRITE(zkproof);
+                vSpendProofsSapling.push_back(zkproof);
+            }
+            for (auto &spend : vSpendsSapling) {
+                SpendDescription::spend_auth_sig_t spendAuthSig;
+                READWRITE(spendAuthSig);
+                vSpendAuthSigSapling.push_back(spendAuthSig);
+            }
+            for (auto &output : vOutputsSapling) {
+                libzcash::GrothProof zkproof;
+                READWRITE(zkproof);
+                vOutputProofsSapling.push_back(zkproof);
+            }
+        } else {
+            for (auto &zkproof : vSpendProofsSapling) {
+                READWRITE(zkproof);
+            }
+            for (auto &spendAuthSig : vSpendAuthSigSapling) {
+                READWRITE(spendAuthSig);
+            }
+            for (auto &zkproof : vOutputProofsSapling) {
+                READWRITE(zkproof);
+            }
+        }
+        if (hasSapling) {
+            READWRITE(bindingSigSapling);
+        }
+    }
+
+    std::vector<SpendDescription> GetV4ShieldedSpend();
+    std::vector<OutputDescription> GetV4ShieldedOutput();
+};
+
 template <typename Stream>
-class SproutProofSerializer : public boost::static_visitor<>
+class SproutProofSerializer
 {
     Stream& s;
     bool useGroth;
@@ -167,7 +356,7 @@ template<typename Stream, typename T>
 inline void SerReadWriteSproutProof(Stream& s, const T& proof, bool useGroth, CSerActionSerialize ser_action)
 {
     auto ps = SproutProofSerializer<Stream>(s, useGroth);
-    boost::apply_visitor(ps, proof);
+    std::visit(ps, proof);
 }
 
 template<typename Stream, typename T>
@@ -233,43 +422,6 @@ public:
     libzcash::SproutProof proof;
 
     JSDescription(): vpub_old(0), vpub_new(0) { }
-
-    JSDescription(
-            ZCJoinSplit& params,
-            const uint256& joinSplitPubKey,
-            const uint256& rt,
-            const std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
-            const std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
-            CAmount vpub_old,
-            CAmount vpub_new,
-            bool computeProof = true, // Set to false in some tests
-            uint256 *esk = nullptr // payment disclosure
-    );
-
-    static JSDescription Randomized(
-            ZCJoinSplit& params,
-            const uint256& joinSplitPubKey,
-            const uint256& rt,
-            std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
-            std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
-            std::array<size_t, ZC_NUM_JS_INPUTS>& inputMap,
-            std::array<size_t, ZC_NUM_JS_OUTPUTS>& outputMap,
-            CAmount vpub_old,
-            CAmount vpub_new,
-            bool computeProof = true, // Set to false in some tests
-            uint256 *esk = nullptr, // payment disclosure
-            std::function<int(int)> gen = GetRandInt
-    );
-
-    // Verifies that the JoinSplit proof is correct.
-    bool Verify(
-        ZCJoinSplit& params,
-        libzcash::ProofVerifier& verifier,
-        const uint256& joinSplitPubKey
-    ) const;
-
-    // Returns the calculated h_sig
-    uint256 h_sig(ZCJoinSplit& params, const uint256& joinSplitPubKey) const;
 
     ADD_SERIALIZE_METHODS;
 
@@ -366,7 +518,7 @@ class SaplingOutPoint : public BaseOutPoint
 {
 public:
     SaplingOutPoint() : BaseOutPoint() {};
-    SaplingOutPoint(uint256 hashIn, uint32_t nIn) : BaseOutPoint(hashIn, nIn) {}; 
+    SaplingOutPoint(uint256 hashIn, uint32_t nIn) : BaseOutPoint(hashIn, nIn) {};
     std::string ToString() const;
 };
 
@@ -379,6 +531,8 @@ class CTxIn
 public:
     COutPoint prevout;
     CScript scriptSig;
+    // The only use of nSequence (via IsFinal) is in TransactionSignatureChecker::CheckLockTime
+    // It disables the nLockTime feature when set to maxint.
     uint32_t nSequence;
 
     CTxIn()
@@ -413,6 +567,10 @@ public:
     friend bool operator!=(const CTxIn& a, const CTxIn& b)
     {
         return !(a == b);
+    }
+
+    const COutPoint& GetOutPoint() const {
+        return prevout;
     }
 
     std::string ToString() const;
@@ -491,14 +649,6 @@ public:
     std::string ToString() const;
 };
 
-// Overwinter version group id
-static constexpr uint32_t OVERWINTER_VERSION_GROUP_ID = 0x03C48270;
-static_assert(OVERWINTER_VERSION_GROUP_ID != 0, "version group id must be non-zero as specified in ZIP 202");
-
-// Sapling version group id
-static constexpr uint32_t SAPLING_VERSION_GROUP_ID = 0x892F2085;
-static_assert(SAPLING_VERSION_GROUP_ID != 0, "version group id must be non-zero as specified in ZIP 202");
-
 struct CMutableTransaction;
 
 /** The basic transaction that is broadcasted on the network and contained in
@@ -507,8 +657,16 @@ struct CMutableTransaction;
 class CTransaction
 {
 private:
+    /// The consensus branch ID that this transaction commits to.
+    /// Serialized from v5 onwards.
+    std::optional<uint32_t> nConsensusBranchId;
+    CAmount valueBalanceSapling;
+    OrchardBundle orchardBundle;
+
     /** Memory only. */
     const uint256 hash;
+    /** Memory only. */
+    const uint256 authDigest;
     void UpdateHash() const;
 
 protected:
@@ -558,12 +716,11 @@ public:
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
     const uint32_t nExpiryHeight;
-    const CAmount valueBalance;
     const std::vector<SpendDescription> vShieldedSpend;
     const std::vector<OutputDescription> vShieldedOutput;
     const std::vector<JSDescription> vJoinSplit;
-    const uint256 joinSplitPubKey;
-    const joinsplit_sig_t joinSplitSig = {{0}};
+    const Ed25519VerificationKey joinSplitPubKey;
+    const Ed25519Signature joinSplitSig;
     const binding_sig_t bindingSig = {{0}};
 
     /** Construct a CTransaction that qualifies as IsNull() */
@@ -597,35 +754,87 @@ public:
             fOverwintered &&
             nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
             nVersion == OVERWINTER_TX_VERSION;
+
         bool isSaplingV4 =
             fOverwintered &&
             nVersionGroupId == SAPLING_VERSION_GROUP_ID &&
             nVersion == SAPLING_TX_VERSION;
-        if (fOverwintered && !(isOverwinterV3 || isSaplingV4)) {
+
+        bool isZip225V5 =
+            fOverwintered &&
+            nVersionGroupId == ZIP225_VERSION_GROUP_ID &&
+            nVersion == ZIP225_TX_VERSION;
+
+        // It is not possible to make the transaction's serialized form vary on
+        // a per-enabled-feature basis. The approach here is that all
+        // serialization rules for not-yet-released features must be
+        // non-conflicting and transaction version/group must be set to
+        // ZFUTURE_TX_(VERSION/GROUP_ID)
+        bool isFuture =
+            fOverwintered &&
+            nVersionGroupId == ZFUTURE_VERSION_GROUP_ID &&
+            nVersion == ZFUTURE_TX_VERSION;
+
+        if (fOverwintered && !(isOverwinterV3 || isSaplingV4 || isZip225V5 || isFuture)) {
             throw std::ios_base::failure("Unknown transaction format");
         }
 
-        READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
-        READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
-        READWRITE(*const_cast<uint32_t*>(&nLockTime));
-        if (isOverwinterV3 || isSaplingV4) {
+        if (isZip225V5) {
+            // Common Transaction Fields (plus version bytes above)
+            READWRITE(*nConsensusBranchId);
+            READWRITE(*const_cast<uint32_t*>(&nLockTime));
             READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
-        }
-        if (isSaplingV4) {
-            READWRITE(*const_cast<CAmount*>(&valueBalance));
-            READWRITE(*const_cast<std::vector<SpendDescription>*>(&vShieldedSpend));
-            READWRITE(*const_cast<std::vector<OutputDescription>*>(&vShieldedOutput));
-        }
-        if (nVersion >= 2) {
-            auto os = WithVersion(&s, static_cast<int>(header));
-            ::SerReadWrite(os, *const_cast<std::vector<JSDescription>*>(&vJoinSplit), ser_action);
-            if (vJoinSplit.size() > 0) {
-                READWRITE(*const_cast<uint256*>(&joinSplitPubKey));
-                READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
+
+            // Transparent Transaction Fields
+            READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
+            READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
+
+            // Sapling Transaction Fields
+            if (ser_action.ForRead()) {
+                SaplingBundle saplingBundle;
+                READWRITE(saplingBundle);
+                *const_cast<std::vector<SpendDescription>*>(&vShieldedSpend) =
+                    saplingBundle.GetV4ShieldedSpend();
+                *const_cast<std::vector<OutputDescription>*>(&vShieldedOutput) =
+                    saplingBundle.GetV4ShieldedOutput();
+                valueBalanceSapling = saplingBundle.valueBalanceSapling;
+                *const_cast<binding_sig_t*>(&bindingSig) = saplingBundle.bindingSigSapling;
+            } else {
+                SaplingBundle saplingBundle(
+                    vShieldedSpend,
+                    vShieldedOutput,
+                    valueBalanceSapling,
+                    bindingSig);
+                READWRITE(saplingBundle);
             }
-        }
-        if (isSaplingV4 && !(vShieldedSpend.empty() && vShieldedOutput.empty())) {
-            READWRITE(*const_cast<binding_sig_t*>(&bindingSig));
+
+            // Orchard Transaction Fields
+            READWRITE(orchardBundle);
+        } else {
+            // Legacy transaction formats
+            READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
+            READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
+            READWRITE(*const_cast<uint32_t*>(&nLockTime));
+            if (isOverwinterV3 || isSaplingV4 || isFuture) {
+                READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
+            }
+            if (isSaplingV4 || isFuture) {
+                READWRITE(valueBalanceSapling);
+                READWRITE(*const_cast<std::vector<SpendDescription>*>(&vShieldedSpend));
+                READWRITE(*const_cast<std::vector<OutputDescription>*>(&vShieldedOutput));
+            }
+            if (nVersion >= 2) {
+                // These fields do not depend on fOverwintered
+                auto os = WithVersion(&s, static_cast<int>(header));
+                ::SerReadWrite(os, *const_cast<std::vector<JSDescription>*>(&vJoinSplit), ser_action);
+                if (vJoinSplit.size() > 0) {
+                    READWRITE(*const_cast<Ed25519VerificationKey*>(&joinSplitPubKey));
+                    READWRITE(*const_cast<Ed25519Signature*>(&joinSplitSig));
+                }
+            }
+            if ((isSaplingV4 || isFuture) && !(vShieldedSpend.empty() && vShieldedOutput.empty())) {
+                READWRITE(*const_cast<binding_sig_t*>(&bindingSig));
+            }
         }
         if (ser_action.ForRead())
             UpdateHash();
@@ -642,6 +851,15 @@ public:
         return hash;
     }
 
+    /**
+     * Returns the authorizing data commitment for this transaction.
+     *
+     * For v1-v4 transactions, this returns the null hash (i.e. all-zeroes).
+     */
+    const uint256& GetAuthDigest() const {
+        return authDigest;
+    }
+
     uint32_t GetHeader() const {
         // When serializing v1 and v2, the 4 byte header is nVersion
         uint32_t header = this->nVersion;
@@ -652,6 +870,24 @@ public:
         return header;
     }
 
+    std::optional<uint32_t> GetConsensusBranchId() const {
+        return nConsensusBranchId;
+    }
+
+    /**
+     * Returns the Sapling value balance for the transaction.
+     */
+    const CAmount& GetValueBalanceSapling() const {
+        return valueBalanceSapling;
+    }
+
+    /**
+     * Returns the Orchard bundle for the transaction.
+     */
+    const OrchardBundle& GetOrchardBundle() const {
+        return orchardBundle;
+    }
+
     /*
      * Context for the two methods below:
      * As at most one of vpub_new and vpub_old is non-zero in every JoinSplit,
@@ -659,16 +895,16 @@ public:
      * it is (e.g. if vpub_new is non-zero the joinSplit is "giving value" to
      * the outputs in the transaction). Similarly, we can think of the Sapling
      * shielded part of the transaction as an input or output according to
-     * whether valueBalance - the sum of shielded input values minus the sum of
+     * whether valueBalanceSapling - the sum of shielded input values minus the sum of
      * shielded output values - is positive or negative.
      */
 
-    // Return sum of txouts, (negative valueBalance or zero) and JoinSplit vpub_old.
+    // Return sum of txouts, (negative valueBalanceSapling or zero) and JoinSplit vpub_old.
     CAmount GetValueOut() const;
     // GetValueIn() is a method on CCoinsViewCache, because
     // inputs must be known to compute value in.
 
-    // Return sum of (positive valueBalance or zero) and JoinSplit vpub_new
+    // Return sum of (positive valueBalanceSapling or zero) and JoinSplit vpub_new
     CAmount GetShieldedValueIn() const;
 
     // Compute priority, given priority of inputs and (optionally) tx size
@@ -701,16 +937,20 @@ struct CMutableTransaction
     bool fOverwintered;
     int32_t nVersion;
     uint32_t nVersionGroupId;
+    /// The consensus branch ID that this transaction commits to.
+    /// Serialized from v5 onwards.
+    std::optional<uint32_t> nConsensusBranchId;
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
     uint32_t nExpiryHeight;
-    CAmount valueBalance;
+    CAmount valueBalanceSapling;
     std::vector<SpendDescription> vShieldedSpend;
     std::vector<OutputDescription> vShieldedOutput;
+    OrchardBundle orchardBundle;
     std::vector<JSDescription> vJoinSplit;
-    uint256 joinSplitPubKey;
-    CTransaction::joinsplit_sig_t joinSplitSig = {{0}};
+    Ed25519VerificationKey joinSplitPubKey;
+    Ed25519Signature joinSplitSig;
     CTransaction::binding_sig_t bindingSig = {{0}};
 
     CMutableTransaction();
@@ -747,31 +987,71 @@ struct CMutableTransaction
             fOverwintered &&
             nVersionGroupId == SAPLING_VERSION_GROUP_ID &&
             nVersion == SAPLING_TX_VERSION;
-        if (fOverwintered && !(isOverwinterV3 || isSaplingV4)) {
+        bool isZip225V5 =
+            fOverwintered &&
+            nVersionGroupId == ZIP225_VERSION_GROUP_ID &&
+            nVersion == ZIP225_TX_VERSION;
+        bool isFuture =
+            fOverwintered &&
+            nVersionGroupId == ZFUTURE_VERSION_GROUP_ID &&
+            nVersion == ZFUTURE_TX_VERSION;
+        if (fOverwintered && !(isOverwinterV3 || isSaplingV4 || isZip225V5 || isFuture)) {
             throw std::ios_base::failure("Unknown transaction format");
         }
 
-        READWRITE(vin);
-        READWRITE(vout);
-        READWRITE(nLockTime);
-        if (isOverwinterV3 || isSaplingV4) {
+        if (isZip225V5) {
+            // Common Transaction Fields (plus version bytes above)
+            READWRITE(*nConsensusBranchId);
+            READWRITE(nLockTime);
             READWRITE(nExpiryHeight);
-        }
-        if (isSaplingV4) {
-            READWRITE(valueBalance);
-            READWRITE(vShieldedSpend);
-            READWRITE(vShieldedOutput);
-        }
-        if (nVersion >= 2) {
-            auto os = WithVersion(&s, static_cast<int>(header));
-            ::SerReadWrite(os, vJoinSplit, ser_action);
-            if (vJoinSplit.size() > 0) {
-                READWRITE(joinSplitPubKey);
-                READWRITE(joinSplitSig);
+
+            // Transparent Transaction Fields
+            READWRITE(vin);
+            READWRITE(vout);
+
+            // Sapling Transaction Fields
+            if (ser_action.ForRead()) {
+                SaplingBundle saplingBundle;
+                READWRITE(saplingBundle);
+                vShieldedSpend = saplingBundle.GetV4ShieldedSpend();
+                vShieldedOutput = saplingBundle.GetV4ShieldedOutput();
+                valueBalanceSapling = saplingBundle.valueBalanceSapling;
+                bindingSig = saplingBundle.bindingSigSapling;
+            } else {
+                SaplingBundle saplingBundle(
+                    vShieldedSpend,
+                    vShieldedOutput,
+                    valueBalanceSapling,
+                    bindingSig);
+                READWRITE(saplingBundle);
             }
-        }
-        if (isSaplingV4 && !(vShieldedSpend.empty() && vShieldedOutput.empty())) {
-            READWRITE(bindingSig);
+
+            // Orchard Transaction Fields
+            READWRITE(orchardBundle);
+        } else {
+            // Legacy transaction formats
+            READWRITE(vin);
+            READWRITE(vout);
+            READWRITE(nLockTime);
+            if (isOverwinterV3 || isSaplingV4 || isFuture) {
+                READWRITE(nExpiryHeight);
+            }
+            if (isSaplingV4 || isFuture) {
+                READWRITE(valueBalanceSapling);
+                READWRITE(vShieldedSpend);
+                READWRITE(vShieldedOutput);
+            }
+            if (nVersion >= 2) {
+                auto os = WithVersion(&s, static_cast<int>(header));
+                ::SerReadWrite(os, vJoinSplit, ser_action);
+                if (vJoinSplit.size() > 0) {
+                    READWRITE(joinSplitPubKey);
+                    READWRITE(joinSplitSig);
+                }
+            }
+            if ((isSaplingV4 || isFuture) && !(vShieldedSpend.empty() && vShieldedOutput.empty())) {
+                READWRITE(bindingSig);
+            }
         }
     }
 
@@ -784,6 +1064,14 @@ struct CMutableTransaction
      * fly, as opposed to GetHash() in CTransaction, which uses a cached result.
      */
     uint256 GetHash() const;
+
+    /** Compute the authentication digest of this CMutableTransaction. This is
+     * computed on the fly, as opposed to GetAuthDigest() in CTransaction, which
+     * uses a cached result.
+     *
+     * For v1-v4 transactions, this returns the null hash (i.e. all-zeroes).
+     */
+    uint256 GetAuthDigest() const;
 };
 
 #endif // BITCOIN_PRIMITIVES_TRANSACTION_H

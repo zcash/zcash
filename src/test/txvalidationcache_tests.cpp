@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "consensus/validation.h"
 #include "key.h"
@@ -23,13 +23,13 @@ ToMemPool(CMutableTransaction& tx)
     LOCK(cs_main);
 
     CValidationState state;
-    return AcceptToMemoryPool(mempool, state, tx, false, NULL, false);
+    return AcceptToMemoryPool(Params(), mempool, state, tx, false, NULL, false);
 }
 
 #ifdef ENABLE_MINING
 BOOST_FIXTURE_TEST_CASE(tx_mempool_block_doublespend, TestChain100Setup)
 {
-    // Make sure skipping validation of transctions that were
+    // Make sure skipping validation of transactions that were
     // validated going into the memory pool does not allow
     // double-spends in blocks to pass validation when they should not.
 

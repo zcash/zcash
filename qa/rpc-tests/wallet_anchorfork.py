@@ -6,7 +6,8 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, stop_nodes, connect_nodes_bi, \
-    wait_and_assert_operationid_status, wait_bitcoinds, get_coinbase_address
+    wait_and_assert_operationid_status, wait_bitcoinds, get_coinbase_address, \
+    sync_blocks, sync_mempools, DEFAULT_FEE
 from decimal import Decimal
 
 class WalletAnchorForkTest (BitcoinTestFramework):
@@ -45,9 +46,9 @@ class WalletAnchorForkTest (BitcoinTestFramework):
 
         # Node 0 creates a joinsplit transaction
         mytaddr0 = get_coinbase_address(self.nodes[0])
-        myzaddr0 = self.nodes[0].z_getnewaddress('sprout')
+        myzaddr0 = self.nodes[0].z_getnewaddress()
         recipients = []
-        recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - Decimal('0.0001')})
+        recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - DEFAULT_FEE})
         myopid = self.nodes[0].z_sendmany(mytaddr0, recipients)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
@@ -71,18 +72,24 @@ class WalletAnchorForkTest (BitcoinTestFramework):
 
         # Partition A, node 0 creates a joinsplit transaction
         recipients = []
-        recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - Decimal('0.0001')})
+        recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - DEFAULT_FEE})
         myopid = self.nodes[0].z_sendmany(mytaddr0, recipients)
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         rawhex = self.nodes[0].getrawtransaction(txid)
 
         # Partition A, node 0 mines a block with the transaction
         self.nodes[0].generate(1)
+        # Same as self.sync_all() but only for node 0
+        sync_blocks(self.nodes[:1])
+        sync_mempools(self.nodes[:1])
 
         # Partition B, node 1 mines the same joinsplit transaction
         txid2 = self.nodes[1].sendrawtransaction(rawhex)
         assert_equal(txid, txid2)
         self.nodes[1].generate(1)
+        # Same as self.sync_all() but only for nodes 1 and 2
+        sync_blocks(self.nodes[1:])
+        sync_mempools(self.nodes[1:])
 
         # Check that Partition B is one block ahead and that they have different tips
         assert_equal(self.nodes[0].getblockcount() + 1, self.nodes[1].getblockcount())

@@ -1,15 +1,19 @@
-#!/bin/bash
+#!/bin/sh
 
+export LC_ALL=C
 set -eu
 
-if [[ "$OSTYPE" == "darwin"* ]]; then
+uname_S=$(uname -s 2>/dev/null || echo not)
+
+if [ "$uname_S" = "Darwin" ]; then
     PARAMS_DIR="$HOME/Library/Application Support/ZcashParams"
 else
     PARAMS_DIR="$HOME/.zcash-params"
 fi
 
-SPROUT_PKEY_NAME='sprout-proving.key'
-SPROUT_VKEY_NAME='sprout-verifying.key'
+# Commented out because these are unused; see below.
+#SPROUT_PKEY_NAME='sprout-proving.key'
+#SPROUT_VKEY_NAME='sprout-verifying.key'
 SAPLING_SPEND_NAME='sapling-spend.params'
 SAPLING_OUTPUT_NAME='sapling-output.params'
 SAPLING_SPROUT_GROTH16_NAME='sprout-groth16.params'
@@ -17,7 +21,7 @@ DOWNLOAD_URL="https://download.z.cash/downloads"
 IPFS_HASH="/ipfs/QmXRHVGLQBiKwvNq7c2vPxAKz1zRVmMYbmt7G5TQss7tY7"
 
 SHA256CMD="$(command -v sha256sum || echo shasum)"
-SHA256ARGS="$(command -v sha256sum >/dev/null || echo '-a 256')"
+SHA256ARGS="$(command -v sha256sum >/dev/null || echo \"-a 256\")"
 
 WGETCMD="$(command -v wget || echo '')"
 IPFSCMD="$(command -v ipfs || echo '')"
@@ -28,64 +32,57 @@ ZC_DISABLE_WGET="${ZC_DISABLE_WGET:-}"
 ZC_DISABLE_IPFS="${ZC_DISABLE_IPFS:-}"
 ZC_DISABLE_CURL="${ZC_DISABLE_CURL:-}"
 
-function fetch_wget {
+LOCKFILE=/tmp/fetch_params.lock
+
+fetch_wget() {
     if [ -z "$WGETCMD" ] || ! [ -z "$ZC_DISABLE_WGET" ]; then
         return 1
     fi
 
-    local filename="$1"
-    local dlname="$2"
-
     cat <<EOF
 
-Retrieving (wget): $DOWNLOAD_URL/$filename
+Retrieving (wget): $DOWNLOAD_URL/$1
 EOF
 
     wget \
         --progress=dot:giga \
-        --output-document="$dlname" \
+        --output-document="$2" \
         --continue \
         --retry-connrefused --waitretry=3 --timeout=30 \
-        "$DOWNLOAD_URL/$filename"
+        "$DOWNLOAD_URL/$1"
 }
 
-function fetch_ipfs {
+fetch_ipfs() {
     if [ -z "$IPFSCMD" ] || ! [ -z "$ZC_DISABLE_IPFS" ]; then
         return 1
     fi
 
-    local filename="$1"
-    local dlname="$2"
-
     cat <<EOF
 
-Retrieving (ipfs): $IPFS_HASH/$filename
+Retrieving (ipfs): $IPFS_HASH/$1
 EOF
 
-    ipfs get --output "$dlname" "$IPFS_HASH/$filename"
+    ipfs get --output "$2" "$IPFS_HASH/$1"
 }
 
-function fetch_curl {
+fetch_curl() {
     if [ -z "$CURLCMD" ] || ! [ -z "$ZC_DISABLE_CURL" ]; then
         return 1
     fi
 
-    local filename="$1"
-    local dlname="$2"
-
     cat <<EOF
 
-Retrieving (curl): $DOWNLOAD_URL/$filename
+Retrieving (curl): $DOWNLOAD_URL/$1
 EOF
 
     curl \
-        --output "$dlname" \
+        --output "$2" \
         -# -L -C - \
-        "$DOWNLOAD_URL/$filename"
+        "$DOWNLOAD_URL/$1"
 
 }
 
-function fetch_failure {
+fetch_failure() {
     cat >&2 <<EOF
 
 Failed to fetch the Zcash zkSNARK parameters!
@@ -99,11 +96,13 @@ EOF
     exit 1
 }
 
-function fetch_params {
-    local filename="$1"
-    local output="$2"
-    local dlname="${output}.dl"
-    local expectedhash="$3"
+fetch_params() {
+    # We only set these variables inside this function,
+    # and unset them at the end of the function.
+    filename="$1"
+    output="$2"
+    dlname="${output}.dl"
+    expectedhash="$3"
 
     if ! [ -f "$output" ]
     then
@@ -141,33 +140,37 @@ EOF
             exit 1
         fi
     fi
+
+    unset -v filename
+    unset -v output
+    unset -v dlname
+    unset -v expectedhash
 }
 
 # Use flock to prevent parallel execution.
-function lock() {
-    local lockfile=/tmp/fetch_params.lock
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        if shlock -f ${lockfile} -p $$; then
+lock() {
+    if [ "$uname_S" = "Darwin" ]; then
+        if shlock -f ${LOCKFILE} -p $$; then
             return 0
         else
             return 1
         fi
     else
         # create lock file
-        eval "exec 200>$lockfile"
+        eval "exec 9>$LOCKFILE"
         # acquire the lock
-        flock -n 200 \
+        flock -n 9 \
             && return 0 \
             || return 1
     fi
 }
 
-function exit_locked_error {
+exit_locked_error() {
     echo "Only one instance of fetch-params.sh can be run at a time." >&2
     exit 1
 }
 
-function main() {
+main() {
 
     lock fetch-params.sh \
     || exit_locked_error
@@ -230,5 +233,5 @@ then
 fi
 
 main
-rm -f /tmp/fetch_params.lock
+rm -f $LOCKFILE
 exit 0

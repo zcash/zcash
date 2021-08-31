@@ -6,6 +6,8 @@
 #ifndef BITCOIN_VALIDATIONINTERFACE_H
 #define BITCOIN_VALIDATIONINTERFACE_H
 
+#include <optional>
+
 #include <boost/signals2/signal.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -33,10 +35,9 @@ void UnregisterAllValidationInterfaces();
 class CValidationInterface {
 protected:
     virtual void UpdatedBlockTip(const CBlockIndex *pindex) {}
-    virtual void SyncTransaction(const CTransaction &tx, const CBlock *pblock) {}
+    virtual void SyncTransaction(const CTransaction &tx, const CBlock *pblock, const int nHeight) {}
     virtual void EraseFromWallet(const uint256 &hash) {}
-    virtual void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, boost::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added) {}
-    virtual void SetBestChain(const CBlockLocator &locator) {}
+    virtual void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, std::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added) {}
     virtual void UpdatedTransaction(const uint256 &hash) {}
     virtual void Inventory(const uint256 &hash) {}
     virtual void ResendWalletTransactions(int64_t nBestBlockTime) {}
@@ -52,15 +53,13 @@ struct CMainSignals {
     /** Notifies listeners of updated block chain tip */
     boost::signals2::signal<void (const CBlockIndex *)> UpdatedBlockTip;
     /** Notifies listeners of updated transaction data (transaction, and optionally the block it is found in. */
-    boost::signals2::signal<void (const CTransaction &, const CBlock *)> SyncTransaction;
+    boost::signals2::signal<void (const CTransaction &, const CBlock *, const int nHeight)> SyncTransaction;
     /** Notifies listeners of an erased transaction (currently disabled, requires transaction replacement). */
     boost::signals2::signal<void (const uint256 &)> EraseTransaction;
     /** Notifies listeners of an updated transaction without new data (for now: a coinbase potentially becoming visible). */
     boost::signals2::signal<void (const uint256 &)> UpdatedTransaction;
     /** Notifies listeners of a change to the tip of the active block chain. */
-    boost::signals2::signal<void (const CBlockIndex *, const CBlock *, boost::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>>)> ChainTip;
-    /** Notifies listeners of a new active block chain. */
-    boost::signals2::signal<void (const CBlockLocator &)> SetBestChain;
+    boost::signals2::signal<void (const CBlockIndex *, const CBlock *, std::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>>)> ChainTip;
     /** Notifies listeners about an inventory item being seen on the network. */
     boost::signals2::signal<void (const uint256 &)> Inventory;
     /** Tells listeners to broadcast their data. */

@@ -1,9 +1,7 @@
-use ff::{PrimeField, PrimeFieldRepr};
-use pairing::bls12_381::Bls12;
-use zcash_primitives::jubjub::{FixedGenerators, JubjubEngine};
-use zcash_primitives::redjubjub::{PrivateKey, PublicKey, Signature};
-
-use super::JUBJUB;
+use zcash_primitives::{
+    constants::SPENDING_KEY_GENERATOR,
+    sapling::redjubjub::{PrivateKey, PublicKey, Signature},
+};
 
 #[test]
 fn redjubjub_signatures() {
@@ -16,7 +14,7 @@ fn redjubjub_signatures() {
         m: [u8; 32],
         sig: [u8; 64],
         rsig: [u8; 64],
-    };
+    }
 
     // From https://github.com/zcash-hackworks/zcash-test-vectors/blob/master/sapling_signatures.py
     let test_vectors = vec![
@@ -483,32 +481,30 @@ fn redjubjub_signatures() {
     ];
 
     for tv in test_vectors {
-        let sk = PrivateKey::<Bls12>::read(&tv.sk[..]).unwrap();
-        let vk = PublicKey::<Bls12>::read(&tv.vk[..], &JUBJUB).unwrap();
-        let rvk = PublicKey::<Bls12>::read(&tv.rvk[..], &JUBJUB).unwrap();
+        let sk = PrivateKey::read(&tv.sk[..]).unwrap();
+        let vk = PublicKey::read(&tv.vk[..]).unwrap();
+        let rvk = PublicKey::read(&tv.rvk[..]).unwrap();
         let sig = Signature::read(&tv.sig[..]).unwrap();
         let rsig = Signature::read(&tv.rsig[..]).unwrap();
 
-        let mut alpha_repr = <<Bls12 as JubjubEngine>::Fs as PrimeField>::Repr::default();
-        alpha_repr.read_le(&tv.alpha[..]).unwrap();
-        let alpha = <Bls12 as JubjubEngine>::Fs::from_repr(alpha_repr).unwrap();
+        let alpha = jubjub::Scalar::from_bytes(&tv.alpha).unwrap();
 
         {
             let mut vec = Vec::new();
-            sk.randomize(alpha.clone()).write(&mut vec).unwrap();
+            sk.randomize(alpha).write(&mut vec).unwrap();
             assert_eq!(&vec, &tv.rsk);
         }
         {
             let mut vec = Vec::new();
-            vk.randomize(alpha, FixedGenerators::SpendingKeyGenerator, &JUBJUB)
+            vk.randomize(alpha, SPENDING_KEY_GENERATOR)
                 .write(&mut vec)
                 .unwrap();
             assert_eq!(&vec, &tv.rvk);
         }
 
-        assert!(vk.verify(&tv.m, &sig, FixedGenerators::SpendingKeyGenerator, &JUBJUB));
-        assert!(rvk.verify(&tv.m, &rsig, FixedGenerators::SpendingKeyGenerator, &JUBJUB));
-        assert!(!vk.verify(&tv.m, &rsig, FixedGenerators::SpendingKeyGenerator, &JUBJUB));
-        assert!(!rvk.verify(&tv.m, &sig, FixedGenerators::SpendingKeyGenerator, &JUBJUB));
+        assert!(vk.verify(&tv.m, &sig, SPENDING_KEY_GENERATOR));
+        assert!(rvk.verify(&tv.m, &rsig, SPENDING_KEY_GENERATOR));
+        assert!(!vk.verify(&tv.m, &rsig, SPENDING_KEY_GENERATOR));
+        assert!(!rvk.verify(&tv.m, &sig, SPENDING_KEY_GENERATOR));
     }
 }

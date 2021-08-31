@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-#
+# Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
-#
 
 from test_framework.test_framework import ComparisonTestFramework
 from test_framework.util import assert_equal
-from test_framework.comptool import TestManager, TestInstance
+from test_framework.comptool import TestManager, TestInstance, RejectResult
 from test_framework.mininode import NetworkThread
 from test_framework.blocktools import create_block, create_coinbase, create_transaction
 
@@ -28,6 +27,7 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
     ''' Can either run this test as 1 node with expected answers, or two and compare them.
         Change the "outcome" variable from each TestInstance object to only do the comparison. '''
     def __init__(self):
+        super().__init__()
         self.num_nodes = 1
 
     def run_test(self):
@@ -40,18 +40,20 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
 
     def get_tests(self):
         if self.tip is None:
-            self.tip = int ("0x" + self.nodes[0].getbestblockhash() + "L", 0)
+            self.tip = int("0x" + self.nodes[0].getbestblockhash(), 0)
         self.block_time = int(time.time())+1
 
         '''
         Create a new block with an anyone-can-spend coinbase
         '''
-        block = create_block(self.tip, create_coinbase(), self.block_time)
+        height = 1
+        block = create_block(self.tip, create_coinbase(height), self.block_time)
         self.block_time += 1
         block.solve()
         # Save the coinbase for later
         self.block1 = block
         self.tip = block.sha256
+        height += 1
         yield TestInstance([[block, True]])
 
         '''
@@ -59,11 +61,12 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
         '''
         test = TestInstance(sync_every_block=False)
         for i in range(100):
-            block = create_block(self.tip, create_coinbase(), self.block_time)
+            block = create_block(self.tip, create_coinbase(height), self.block_time)
             block.solve()
             self.tip = block.sha256
             self.block_time += 1
             test.blocks_and_transactions.append([block, True])
+            height += 1
         yield test
 
         '''
@@ -73,12 +76,12 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
         coinbase, spend of that spend).  Duplicate the 3rd transaction to 
         leave merkle root and blockheader unchanged but invalidate the block.
         '''
-        block2 = create_block(self.tip, create_coinbase(), self.block_time)
+        block2 = create_block(self.tip, create_coinbase(height), self.block_time)
         self.block_time += 1
 
-        # chr(81) is OP_TRUE
-        tx1 = create_transaction(self.block1.vtx[0], 0, chr(81), 40*100000000)
-        tx2 = create_transaction(tx1, 0, chr(81), 40*100000000)
+        # b'0x51' is OP_TRUE
+        tx1 = create_transaction(self.block1.vtx[0], 0, b'\x51', 10*100000000)
+        tx2 = create_transaction(tx1, 0, b'\x51', 10*100000000)
 
         block2.vtx.extend([tx1, tx2])
         block2.hashMerkleRoot = block2.calc_merkle_root()
@@ -94,12 +97,13 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
         assert(block2_orig.vtx != block2.vtx)
 
         self.tip = block2.sha256
-        yield TestInstance([[block2, False], [block2_orig, True]])
+        yield TestInstance([[block2, RejectResult(16, b'bad-txns-duplicate')], [block2_orig, True]])
+        height += 1
 
         '''
         Make sure that a totally screwed up block is not valid.
         '''
-        block3 = create_block(self.tip, create_coinbase(), self.block_time)
+        block3 = create_block(self.tip, create_coinbase(height), self.block_time)
         self.block_time += 1
         block3.vtx[0].vout[0].nValue = 100*100000000 # Too high!
         block3.vtx[0].sha256=None
@@ -108,7 +112,7 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
         block3.rehash()
         block3.solve()
 
-        yield TestInstance([[block3, False]])
+        yield TestInstance([[block3, RejectResult(16, b'bad-cb-amount')]])
 
 
 if __name__ == '__main__':

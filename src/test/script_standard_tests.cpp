@@ -1,6 +1,6 @@
 // Copyright (c) 2017 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or http://www.opensource.org/licenses/mit-license.php .
 
 #include "key.h"
 #include "keystore.h"
@@ -9,6 +9,8 @@
 #include "script/script_error.h"
 #include "script/standard.h"
 #include "test/test_bitcoin.h"
+
+#include <variant>
 
 #include <boost/test/unit_test.hpp>
 
@@ -175,23 +177,23 @@ BOOST_AUTO_TEST_CASE(script_standard_ExtractDestination)
     s.clear();
     s << ToByteVector(pubkey) << OP_CHECKSIG;
     BOOST_CHECK(ExtractDestination(s, address));
-    BOOST_CHECK(boost::get<CKeyID>(&address) &&
-                *boost::get<CKeyID>(&address) == pubkey.GetID());
+    BOOST_CHECK(std::get_if<CKeyID>(&address) &&
+                std::get<CKeyID>(address) == pubkey.GetID());
 
     // TX_PUBKEYHASH
     s.clear();
     s << OP_DUP << OP_HASH160 << ToByteVector(pubkey.GetID()) << OP_EQUALVERIFY << OP_CHECKSIG;
     BOOST_CHECK(ExtractDestination(s, address));
-    BOOST_CHECK(boost::get<CKeyID>(&address) &&
-                *boost::get<CKeyID>(&address) == pubkey.GetID());
+    BOOST_CHECK(std::get_if<CKeyID>(&address) &&
+                std::get<CKeyID>(address) == pubkey.GetID());
 
     // TX_SCRIPTHASH
     CScript redeemScript(s); // initialize with leftover P2PKH script
     s.clear();
     s << OP_HASH160 << ToByteVector(CScriptID(redeemScript)) << OP_EQUAL;
     BOOST_CHECK(ExtractDestination(s, address));
-    BOOST_CHECK(boost::get<CScriptID>(&address) &&
-                *boost::get<CScriptID>(&address) == CScriptID(redeemScript));
+    BOOST_CHECK(std::get_if<CScriptID>(&address) &&
+                std::get<CScriptID>(address) == CScriptID(redeemScript));
 
     // TX_MULTISIG
     s.clear();
@@ -235,8 +237,8 @@ BOOST_AUTO_TEST_CASE(script_standard_ExtractDestinations)
     BOOST_CHECK_EQUAL(whichType, TX_PUBKEY);
     BOOST_CHECK_EQUAL(addresses.size(), 1);
     BOOST_CHECK_EQUAL(nRequired, 1);
-    BOOST_CHECK(boost::get<CKeyID>(&addresses[0]) &&
-                *boost::get<CKeyID>(&addresses[0]) == pubkeys[0].GetID());
+    BOOST_CHECK(std::get_if<CKeyID>(&addresses[0]) &&
+                std::get<CKeyID>(addresses[0]) == pubkeys[0].GetID());
 
     // TX_PUBKEYHASH
     s.clear();
@@ -245,8 +247,8 @@ BOOST_AUTO_TEST_CASE(script_standard_ExtractDestinations)
     BOOST_CHECK_EQUAL(whichType, TX_PUBKEYHASH);
     BOOST_CHECK_EQUAL(addresses.size(), 1);
     BOOST_CHECK_EQUAL(nRequired, 1);
-    BOOST_CHECK(boost::get<CKeyID>(&addresses[0]) &&
-                *boost::get<CKeyID>(&addresses[0]) == pubkeys[0].GetID());
+    BOOST_CHECK(std::get_if<CKeyID>(&addresses[0]) &&
+                std::get<CKeyID>(addresses[0]) == pubkeys[0].GetID());
 
     // TX_SCRIPTHASH
     CScript redeemScript(s); // initialize with leftover P2PKH script
@@ -256,8 +258,8 @@ BOOST_AUTO_TEST_CASE(script_standard_ExtractDestinations)
     BOOST_CHECK_EQUAL(whichType, TX_SCRIPTHASH);
     BOOST_CHECK_EQUAL(addresses.size(), 1);
     BOOST_CHECK_EQUAL(nRequired, 1);
-    BOOST_CHECK(boost::get<CScriptID>(&addresses[0]) &&
-                *boost::get<CScriptID>(&addresses[0]) == CScriptID(redeemScript));
+    BOOST_CHECK(std::get_if<CScriptID>(&addresses[0]) &&
+                std::get<CScriptID>(addresses[0]) == CScriptID(redeemScript));
 
     // TX_MULTISIG
     s.clear();
@@ -269,10 +271,10 @@ BOOST_AUTO_TEST_CASE(script_standard_ExtractDestinations)
     BOOST_CHECK_EQUAL(whichType, TX_MULTISIG);
     BOOST_CHECK_EQUAL(addresses.size(), 2);
     BOOST_CHECK_EQUAL(nRequired, 2);
-    BOOST_CHECK(boost::get<CKeyID>(&addresses[0]) &&
-                *boost::get<CKeyID>(&addresses[0]) == pubkeys[0].GetID());
-    BOOST_CHECK(boost::get<CKeyID>(&addresses[1]) &&
-                *boost::get<CKeyID>(&addresses[1]) == pubkeys[1].GetID());
+    BOOST_CHECK(std::get_if<CKeyID>(&addresses[0]) &&
+                std::get<CKeyID>(addresses[0]) == pubkeys[0].GetID());
+    BOOST_CHECK(std::get_if<CKeyID>(&addresses[1]) &&
+                std::get<CKeyID>(addresses[1]) == pubkeys[1].GetID());
 
     // TX_NULL_DATA
     s.clear();

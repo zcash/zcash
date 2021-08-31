@@ -108,9 +108,9 @@ def hash_xi(digest, xi):
 def count_zeroes(h):
     # Convert to binary string
     if type(h) == bytearray:
-        h = ''.join('{0:08b}'.format(x, 'b') for x in h)
+        h = ''.join('{0:08b}'.format(x) for x in h)
     else:
-        h = ''.join('{0:08b}'.format(ord(x), 'b') for x in h)
+        h = ''.join('{0:08b}'.format(ord(x)) for x in h)
     # Count leading zeroes
     return (h+'1').index('1')
 
@@ -283,9 +283,9 @@ def zcash_person(n, k):
 
 def print_hash(h):
     if type(h) == bytearray:
-        return ''.join('{0:02x}'.format(x, 'x') for x in h)
+        return ''.join('{0:02x}'.format(x) for x in h)
     else:
-        return ''.join('{0:02x}'.format(ord(x), 'x') for x in h)
+        return ''.join('{0:02x}'.format(ord(x)) for x in h)
 
 def validate_params(n, k):
     if (k >= n):

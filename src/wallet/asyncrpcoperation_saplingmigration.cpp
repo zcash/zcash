@@ -1,5 +1,4 @@
 #include "assert.h"
-#include "boost/variant/static_visitor.hpp"
 #include "asyncrpcoperation_saplingmigration.h"
 #include "init.h"
 #include "key_io.h"
@@ -12,7 +11,9 @@
 #include "utilmoneystr.h"
 #include "wallet.h"
 
-const CAmount FEE = 10000;
+#include <optional>
+#include <variant>
+
 const int MIGRATION_EXPIRY_DELTA = 450;
 
 AsyncRPCOperation_saplingmigration::AsyncRPCOperation_saplingmigration(int targetHeight) : targetHeight_(targetHeight) {}
@@ -69,9 +70,9 @@ void AsyncRPCOperation_saplingmigration::main() {
 
 bool AsyncRPCOperation_saplingmigration::main_impl() {
     LogPrint("zrpcunsafe", "%s: Beginning AsyncRPCOperation_saplingmigration.\n", getId());
-    auto consensusParams = Params().GetConsensus();
+    const Consensus::Params& consensusParams = Params().GetConsensus();
     auto nextActivationHeight = NextActivationHeight(targetHeight_, consensusParams);
-    if (nextActivationHeight && targetHeight_ + MIGRATION_EXPIRY_DELTA >= nextActivationHeight.get()) {
+    if (nextActivationHeight && targetHeight_ + MIGRATION_EXPIRY_DELTA >= nextActivationHeight.value()) {
         LogPrint("zrpcunsafe", "%s: Migration txs would be created before a NU activation but may expire after. Skipping this round.\n", getId());
         setMigrationResult(0, 0, std::vector<std::string>());
         return true;
@@ -110,9 +111,9 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     CCoinsViewCache coinsView(pcoinsTip);
     do {
         CAmount amountToSend = chooseAmount(availableFunds);
-        auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain, pzcashParams, &coinsView, &cs_main);
+        auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain, &coinsView, &cs_main);
         builder.SetExpiryHeight(targetHeight_ + MIGRATION_EXPIRY_DELTA);
-        LogPrint("zrpcunsafe", "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), FormatMoney(amountToSend - FEE));
+        LogPrint("zrpcunsafe", "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), FormatMoney(amountToSend - DEFAULT_FEE));
         std::vector<SproutNoteEntry> fromNotes;
         CAmount fromNoteAmount = 0;
         while (fromNoteAmount < amountToSend) {
@@ -138,14 +139,14 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
             // for each Sprout JoinSplit description
             // TODO: the above functionality (in comment) is not implemented in zcashd
             uint256 inputAnchor;
-            std::vector<boost::optional<SproutWitness>> vInputWitnesses;
+            std::vector<std::optional<SproutWitness>> vInputWitnesses;
             pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
-            builder.AddSproutInput(sproutSk, sproutEntry.note, vInputWitnesses[0].get());
+            builder.AddSproutInput(sproutSk, sproutEntry.note, vInputWitnesses[0].value());
         }
-        // The amount chosen *includes* the 0.0001 ZEC fee for this transaction, i.e.
-        // the value of the Sapling output will be 0.0001 ZEC less.
-        builder.SetFee(FEE);
-        builder.AddSaplingOutput(ovkForShieldingFromTaddr(seed), migrationDestAddress, amountToSend - FEE);
+        // The amount chosen *includes* the default fee for this transaction, i.e.
+        // the value of the Sapling output will be 0.00001 ZEC less.
+        builder.SetFee(DEFAULT_FEE);
+        builder.AddSaplingOutput(ovkForShieldingFromTaddr(seed), migrationDestAddress, amountToSend - DEFAULT_FEE);
         CTransaction tx = builder.Build().GetTxOrThrow();
         if (isCancelled()) {
             LogPrint("zrpcunsafe", "%s: Canceled. Stopping.\n", getId());
@@ -154,7 +155,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         pwalletMain->AddPendingSaplingMigrationTx(tx);
         LogPrint("zrpcunsafe", "%s: Added pending migration transaction with txid=%s\n", getId(), tx.GetHash().ToString());
         ++numTxCreated;
-        amountMigrated += amountToSend - FEE;
+        amountMigrated += amountToSend - DEFAULT_FEE;
         migrationTxIds.push_back(tx.GetHash().ToString());
     } while (numTxCreated < 5 && availableFunds > CENT);
 
@@ -165,13 +166,13 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
 
 void AsyncRPCOperation_saplingmigration::setMigrationResult(int numTxCreated, const CAmount& amountMigrated, const std::vector<std::string>& migrationTxIds) {
     UniValue res(UniValue::VOBJ);
-    res.push_back(Pair("num_tx_created", numTxCreated));
-    res.push_back(Pair("amount_migrated", FormatMoney(amountMigrated)));
+    res.pushKV("num_tx_created", numTxCreated);
+    res.pushKV("amount_migrated", FormatMoney(amountMigrated));
     UniValue txIds(UniValue::VARR);
     for (const std::string& txId : migrationTxIds) {
         txIds.push_back(txId);
     }
-    res.push_back(Pair("migration_txids", txIds));
+    res.pushKV("migration_txids", txIds);
     set_result(res);
 }
 
@@ -192,10 +193,11 @@ CAmount AsyncRPCOperation_saplingmigration::chooseAmount(const CAmount& availabl
 
 // Unless otherwise specified, the migration destination address is the address for Sapling account 0
 libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigrationDestAddress(const HDSeed& seed) {
+    KeyIO keyIO(Params());
     if (mapArgs.count("-migrationdestaddress")) {
         std::string migrationDestAddress = mapArgs["-migrationdestaddress"];
-        auto address = DecodePaymentAddress(migrationDestAddress);
-        auto saplingAddress = boost::get<libzcash::SaplingPaymentAddress>(&address);
+        auto address = keyIO.DecodePaymentAddress(migrationDestAddress);
+        auto saplingAddress = std::get_if<libzcash::SaplingPaymentAddress>(&address);
         assert(saplingAddress != nullptr); // This is checked in init.cpp
         return *saplingAddress;
     }
@@ -229,7 +231,7 @@ void AsyncRPCOperation_saplingmigration::cancel() {
 UniValue AsyncRPCOperation_saplingmigration::getStatus() const {
     UniValue v = AsyncRPCOperation::getStatus();
     UniValue obj = v.get_obj();
-    obj.push_back(Pair("method", "saplingmigration"));
-    obj.push_back(Pair("target_height", targetHeight_));
+    obj.pushKV("method", "saplingmigration");
+    obj.pushKV("target_height", targetHeight_);
     return obj;
 }

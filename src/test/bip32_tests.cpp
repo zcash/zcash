@@ -84,18 +84,19 @@ void RunTest(const TestVector &test) {
     CExtPubKey pubkey;
     key.SetMaster(&seed[0], seed.size());
     pubkey = key.Neuter();
-    BOOST_FOREACH(const TestDerivation &derive, test.vDerive) {
+    KeyIO keyIO(Params());
+    for (const TestDerivation &derive : test.vDerive) {
         unsigned char data[74];
         key.Encode(data);
         pubkey.Encode(data);
 
         // Test private key
-        BOOST_CHECK(EncodeExtKey(key) == derive.prv);
-        BOOST_CHECK(DecodeExtKey(derive.prv) == key); //ensure a base58 decoded key also matches
+        BOOST_CHECK(keyIO.EncodeExtKey(key) == derive.prv);
+        BOOST_CHECK(keyIO.DecodeExtKey(derive.prv) == key); //ensure a base58 decoded key also matches
 
         // Test public key
-        BOOST_CHECK(EncodeExtPubKey(pubkey) == derive.pub);
-        BOOST_CHECK(DecodeExtPubKey(derive.pub) == pubkey); //ensure a base58 decoded pubkey also matches
+        BOOST_CHECK(keyIO.EncodeExtPubKey(pubkey) == derive.pub);
+        BOOST_CHECK(keyIO.DecodeExtPubKey(derive.pub) == pubkey); //ensure a base58 decoded pubkey also matches
 
         // Derive new keys
         CExtKey keyNew;

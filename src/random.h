@@ -6,18 +6,49 @@
 #ifndef BITCOIN_RANDOM_H
 #define BITCOIN_RANDOM_H
 
+#include "crypto/chacha20.h"
+#include "crypto/common.h"
 #include "uint256.h"
 
 #include <functional>
+#include <limits>
 #include <stdint.h>
 
 /**
- * Functions to gather random data via the libsodium CSPRNG
+ * Functions to gather random data via the rand_core OsRng
  */
 void GetRandBytes(unsigned char* buf, size_t num);
 uint64_t GetRand(uint64_t nMax);
 int GetRandInt(int nMax);
 uint256 GetRandHash();
+
+/**
+ * Implementation of a C++ Uniform Random Number Generator, backed by GetRandBytes.
+ */
+class ZcashRandomEngine
+{
+public:
+    typedef uint64_t result_type;
+
+    explicit ZcashRandomEngine() {}
+
+    static constexpr result_type min() {
+        return std::numeric_limits<result_type>::min();
+    }
+    static constexpr result_type max() {
+        return std::numeric_limits<result_type>::max();
+    }
+
+    result_type operator()() {
+        result_type nRand = 0;
+        GetRandBytes((unsigned char*)&nRand, sizeof(nRand));
+        return nRand;
+    }
+
+    double entropy() const noexcept {
+        return 0;
+    }
+};
 
 /**
  * Identity function for MappedShuffle, so that elements retain their original order.
@@ -55,21 +86,79 @@ void MappedShuffle(RandomAccessIterator first,
  * This class is not thread-safe.
  */
 class FastRandomContext {
+private:
+    bool requires_seed;
+    ChaCha20 rng;
+
+    unsigned char bytebuf[64];
+    int bytebuf_size;
+
+    uint64_t bitbuf;
+    int bitbuf_size;
+
+    void RandomSeed();
+
+    void FillByteBuffer()
+    {
+        if (requires_seed) {
+            RandomSeed();
+        }
+        rng.Output(bytebuf, sizeof(bytebuf));
+        bytebuf_size = sizeof(bytebuf);
+    }
+
+    void FillBitBuffer()
+    {
+        bitbuf = rand64();
+        bitbuf_size = 64;
+    }
+
 public:
-    explicit FastRandomContext(bool fDeterministic=false);
+    explicit FastRandomContext(bool fDeterministic = false);
 
-    uint32_t rand32() {
-        Rz = 36969 * (Rz & 65535) + (Rz >> 16);
-        Rw = 18000 * (Rw & 65535) + (Rw >> 16);
-        return (Rw << 16) + Rz;
+    /** Initialize with explicit seed (only for testing) */
+    explicit FastRandomContext(const uint256& seed);
+
+    /** Generate a random 64-bit integer. */
+    uint64_t rand64()
+    {
+        if (bytebuf_size < 8) FillByteBuffer();
+        uint64_t ret = ReadLE64(bytebuf + 64 - bytebuf_size);
+        bytebuf_size -= 8;
+        return ret;
     }
 
-    bool randbool() {
-        return rand32() & 1;
+    /** Generate a random (bits)-bit integer. */
+    uint64_t randbits(int bits) {
+        if (bits == 0) {
+            return 0;
+        } else if (bits > 32) {
+            return rand64() >> (64 - bits);
+        } else {
+            if (bitbuf_size < bits) FillBitBuffer();
+            uint64_t ret = bitbuf & (~(uint64_t)0 >> (64 - bits));
+            bitbuf >>= bits;
+            bitbuf_size -= bits;
+            return ret;
+        }
     }
 
-    uint32_t Rz;
-    uint32_t Rw;
+    /** Generate a random integer in the range [0..range). */
+    uint64_t randrange(uint64_t range)
+    {
+        --range;
+        int bits = CountBits(range);
+        while (true) {
+            uint64_t ret = randbits(bits);
+            if (ret <= range) return ret;
+        }
+    }
+
+    /** Generate a random 32-bit integer. */
+    uint32_t rand32() { return randbits(32); }
+
+    /** Generate a random boolean. */
+    bool randbool() { return randbits(1); }
 };
 
 #endif // BITCOIN_RANDOM_H
