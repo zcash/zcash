@@ -1,3 +1,6 @@
+#ifndef ZCASH_TEST_DATA_MERKLE_ROOTS_ORCHARD_H
+#define ZCASH_TEST_DATA_MERKLE_ROOTS_ORCHARD_H
+
 struct OrchardMerkleTestVec {
     std::vector<unsigned char> bundle;
     std::vector<std::vector<unsigned char>> commitments;
@@ -5589,3 +5592,4 @@ static const std::vector<OrchardMerkleTestVec> merkle_roots_orchard =
     }
 }};
 
+#endif // ZCASH_TEST_DATA_MERKLE_ROOTS_ORCHARD_H
