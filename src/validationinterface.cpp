@@ -190,7 +190,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             }
             // Update cached incremental witnesses
             // This will take the cs_main lock in order to obtain the CBlockLocator
-            // used by `SetBestChain`, but as that write only occurrs once every
+            // used by `SetBestChain`, but as that write only occurs once every
             // WRITE_WITNESS_INTERVAL * 1000000 microseconds this should not be
             // exploitable as a timing channel.
             GetMainSignals().ChainTip(pindexLastTip, &block, std::nullopt);
@@ -225,7 +225,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             }
             // Update cached incremental witnesses
             // This will take the cs_main lock in order to obtain the CBlockLocator
-            // used by `SetBestChain`, but as that write only occurrs once every
+            // used by `SetBestChain`, but as that write only occurs once every
             // WRITE_WITNESS_INTERVAL * 1000000 microseconds this should not be
             // exploitable as a timing channel.
             GetMainSignals().ChainTip(blockData.pindex, &block, blockData.oldTrees);
