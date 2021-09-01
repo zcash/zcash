@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <iostream>
+#include <vector>
+
 #include <rust/address.h>
 
 const uint8_t ZCASH_UA_TYPECODE_P2PKH = 0x00;
@@ -69,7 +71,7 @@ static bool AddP2PKHReceiver(void* ua, const unsigned char* raw)
 
 static bool AddUnknownReceiver(void* ua, uint32_t typecode, const unsigned char* data, size_t len)
 {
-    libzcash::UnknownReceiver receiver(typecode, std::vector(data, data + len));
+    libzcash::UnknownReceiver receiver(typecode, std::vector<uint8_t>(data, data + len));
     return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
 }
 
