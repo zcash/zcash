@@ -176,7 +176,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
             self.nodes[1].generate(6)
             self.sync_all()
 
-        net_version = self.nodes[0].getnetworkinfo()["version"]
+        net_version = self.nodes[0].getnetworkinfo()["protocolversion"]
 
         print('Testing Sapling -> Blossom activation boundary')
         # Current height = 195
