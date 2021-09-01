@@ -1,0 +1,14 @@
+version: 2
+updates:
+- package-ecosystem: github-actions
+  directory: "/"
+  schedule:
+    interval: daily
+    timezone: Etc/UTC
+  open-pull-requests-limit: 10
+  reviewers:
+  - str4d
+  assignees:
+  - str4d
+  labels:
+  - "A-CI"
