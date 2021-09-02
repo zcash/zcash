@@ -8,9 +8,14 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
+    assert_raises_message,
     start_nodes, get_coinbase_address,
     wait_and_assert_operationid_status,
-    nuparams, BLOSSOM_BRANCH_ID, HEARTWOOD_BRANCH_ID, CANOPY_BRANCH_ID
+    nuparams,
+    BLOSSOM_BRANCH_ID,
+    HEARTWOOD_BRANCH_ID,
+    CANOPY_BRANCH_ID,
+    NU5_BRANCH_ID,
 )
 
 import logging
@@ -19,6 +24,7 @@ HAS_CANOPY = ['-nurejectoldversions=false',
     nuparams(BLOSSOM_BRANCH_ID, 205),
     nuparams(HEARTWOOD_BRANCH_ID, 210),
     nuparams(CANOPY_BRANCH_ID, 220),
+    nuparams(NU5_BRANCH_ID, 225),
 ]
 
 class RemoveSproutShieldingTest (BitcoinTestFramework):
@@ -73,32 +79,29 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         self.sync_all()
 
         # Shield coinbase to Sprout on node 0. Should fail
-        errorString = ''
-        try:
-            sprout_addr = self.nodes[0].z_getnewaddress('sprout')
-            self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), sprout_addr, 0)
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert("Sprout shielding is not supported after Canopy" in errorString)
+        sprout_addr = self.nodes[0].z_getnewaddress('sprout')
+        assert_raises_message(
+            JSONRPCException,
+            "Sprout shielding is not supported after Canopy",
+            self.nodes[0].z_shieldcoinbase,
+            get_coinbase_address(self.nodes[0]), sprout_addr, 0)
         print("taddr -> Sprout z_shieldcoinbase tx rejected at Canopy activation on node 0")
 
         # Create taddr -> Sprout z_sendmany transaction on node 0. Should fail
-        errorString = ''
-        try:
-            sprout_addr = self.nodes[1].z_getnewaddress('sprout')
-            self.nodes[0].z_sendmany(taddr_0, [{"address": sprout_addr, "amount": 1}])
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert("Sprout shielding is not supported after Canopy" in errorString)
+        sprout_addr = self.nodes[1].z_getnewaddress('sprout')
+        assert_raises_message(
+            JSONRPCException,
+            "Sprout shielding is not supported after Canopy",
+            self.nodes[0].z_sendmany,
+            taddr_0, [{"address": sprout_addr, "amount": 1}])
         print("taddr -> Sprout z_sendmany tx rejected at Canopy activation on node 0")
 
         # Create z_mergetoaddress [taddr, Sprout] -> Sprout transaction on node 0. Should fail
-        errorString = ''
-        try:
-            self.nodes[0].z_mergetoaddress(["ANY_TADDR", "ANY_SPROUT"], self.nodes[1].z_getnewaddress('sprout'))
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert("Sprout shielding is not supported after Canopy" in errorString)
+        assert_raises_message(
+            JSONRPCException,
+            "Sprout shielding is not supported after Canopy",
+            self.nodes[0].z_mergetoaddress,
+            ["ANY_TADDR", "ANY_SPROUT"], self.nodes[1].z_getnewaddress('sprout'))
         print("[taddr, Sprout] -> Sprout z_mergetoaddress tx rejected at Canopy activation on node 0")
 
         # Create z_mergetoaddress Sprout -> Sprout transaction on node 0. Should pass
@@ -114,6 +117,18 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         myopid = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), sapling_addr, 0)['opid']
         wait_and_assert_operationid_status(self.nodes[0], myopid)
         print("taddr -> Sapling z_shieldcoinbase tx accepted after Canopy on node 0")
+
+        # Mine to one block before NU5 activation.
+        self.nodes[0].generate(4)
+        self.sync_all()
+
+        # Create z_mergetoaddress Sprout -> Sprout transaction on node 1. Should pass
+        merge_tx_2 = self.nodes[1].z_mergetoaddress(["ANY_SPROUT"], self.nodes[2].z_getnewaddress('sprout'))
+        wait_and_assert_operationid_status(self.nodes[1], merge_tx_2['opid'])
+        print("Sprout -> Sprout z_mergetoaddress tx accepted at NU5 activation on node 1")
+
+        self.nodes[1].generate(1)
+        self.sync_all()
 
 if __name__ == '__main__':
     RemoveSproutShieldingTest().main()

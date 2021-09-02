@@ -567,7 +567,10 @@ uint64_t CalculateCurrentUsage();
  * Return a CMutableTransaction with contextual default values based on set of consensus rules at nHeight. The expiryDelta will
  * either be based on the command-line argument '-txexpirydelta' or derived from consensusParams.
  */
-CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight);
+CMutableTransaction CreateNewContextualCMutableTransaction(
+    const Consensus::Params& consensusParams,
+    int nHeight,
+    bool requireSprout = false);
 
 std::pair<std::map<CBlockIndex*, std::list<CTransaction>>, uint64_t> DrainRecentlyConflicted();
 void SetChainNotifiedSequence(const CChainParams& chainparams, uint64_t recentlyConflictedSequence);

@@ -107,6 +107,7 @@ public:
 class TransactionBuilder
 {
 private:
+    std::optional<bool> usingSprout;
     Consensus::Params consensusParams;
     int nHeight;
     const CKeyStore* keystore;
@@ -178,6 +179,8 @@ public:
     TransactionBuilderResult Build();
 
 private:
+    void CheckOrSetUsingSprout();
+
     void CreateJSDescriptions();
 
     void CreateJSDescription(

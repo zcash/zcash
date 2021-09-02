@@ -1102,11 +1102,24 @@ bool ContextualCheckTransaction(
                     REJECT_INVALID, "bad-tx-zip225-version-too-high");
             }
 
-            // tx.nConsensusBranchId must match the current consensus branch id
-            if (!(tx.GetConsensusBranchId() && *tx.GetConsensusBranchId() == consensusBranchId)) {
+            if (!tx.GetConsensusBranchId().has_value()) {
+                // NOTE: This is an internal zcashd consistency
+                // check; it does not correspond to a consensus rule in the
+                // protocol specification, but is instead an artifact of the
+                // internal zcashd transaction representation.
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckTransaction(): transaction's consensus branch id does not match the current consensus branch"),
+                    error("ContextualCheckTransaction(): transaction does not have consensus branch id field set"),
+                    REJECT_INVALID, "bad-tx-consensus-branch-id-missing");
+            }
+
+            // tx.nConsensusBranchId must match the current consensus branch id
+            if (tx.GetConsensusBranchId().value() != consensusBranchId) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error(
+                        "ContextualCheckTransaction(): transaction's consensus branch id (%08x) does not match the current consensus branch (%08x)",
+                        tx.GetConsensusBranchId().value(), consensusBranchId),
                     REJECT_INVALID, "bad-tx-consensus-branch-id-mismatch");
             }
 
@@ -7631,16 +7644,23 @@ public:
 
 
 // Set default values of new CMutableTransaction based on consensus rules at given height.
-CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight)
+CMutableTransaction CreateNewContextualCMutableTransaction(
+    const Consensus::Params& consensusParams,
+    int nHeight,
+    bool requireSprout)
 {
     CMutableTransaction mtx;
 
-    auto txVersionInfo = CurrentTxVersionInfo(consensusParams, nHeight);
+    auto txVersionInfo = CurrentTxVersionInfo(consensusParams, nHeight, requireSprout);
     mtx.fOverwintered   = txVersionInfo.fOverwintered;
     mtx.nVersionGroupId = txVersionInfo.nVersionGroupId;
     mtx.nVersion        = txVersionInfo.nVersion;
 
     if (mtx.fOverwintered) {
+        if (mtx.nVersion >= ZIP225_TX_VERSION) {
+            mtx.nConsensusBranchId = CurrentEpochBranchId(nHeight, consensusParams);
+        }
+
         bool blossomActive = consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM);
         unsigned int defaultExpiryDelta = blossomActive ? DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA : DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA;
         mtx.nExpiryHeight = nHeight + (expiryDeltaArg ? expiryDeltaArg.value() : defaultExpiryDelta);

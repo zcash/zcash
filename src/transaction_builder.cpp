@@ -153,6 +153,7 @@ TransactionBuilder::TransactionBuilder(
     CKeyStore* keystore,
     CCoinsViewCache* coinsView,
     CCriticalSection* cs_coinsView) :
+    usingSprout(std::nullopt),
     consensusParams(consensusParams),
     nHeight(nHeight),
     keystore(keystore),
@@ -229,6 +230,8 @@ void TransactionBuilder::AddSproutInput(
     libzcash::SproutNote note,
     SproutWitness witness)
 {
+    CheckOrSetUsingSprout();
+
     // Consistency check: all anchors must equal the first one
     if (!jsInputs.empty()) {
         if (jsInputs[0].witness.root() != witness.root()) {
@@ -244,6 +247,8 @@ void TransactionBuilder::AddSproutOutput(
     CAmount value,
     std::array<unsigned char, ZC_MEMO_SIZE> memo)
 {
+    CheckOrSetUsingSprout();
+
     libzcash::JSOutput jsOutput(to, value);
     jsOutput.memo = memo;
     jsOutputs.push_back(jsOutput);
@@ -502,6 +507,22 @@ TransactionBuilderResult TransactionBuilder::Build()
     }
 
     return TransactionBuilderResult(CTransaction(mtx));
+}
+
+void TransactionBuilder::CheckOrSetUsingSprout()
+{
+    if (usingSprout.has_value()) {
+        if (!usingSprout.value()) {
+            throw JSONRPCError(RPC_WALLET_ERROR, "Can't use Sprout with a v5 transaction.");
+        }
+    } else {
+        usingSprout = true;
+
+        // Switch if necessary to a Sprout-supporting transaction format.
+        auto txVersionInfo = CurrentTxVersionInfo(consensusParams, nHeight, usingSprout.value());
+        mtx.nVersionGroupId = txVersionInfo.nVersionGroupId;
+        mtx.nVersion        = txVersionInfo.nVersion;
+    }
 }
 
 void TransactionBuilder::CreateJSDescriptions()
