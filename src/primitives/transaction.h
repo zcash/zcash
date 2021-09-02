@@ -650,6 +650,40 @@ public:
     std::string ToString() const;
 };
 
+struct WTxId
+{
+    const uint256 hash;
+    const uint256 authDigest;
+
+    WTxId() :
+        authDigest(uint256S("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")) {}
+
+    WTxId(const uint256& hashIn, const uint256& authDigestIn) :
+        hash(hashIn), authDigest(authDigestIn) {}
+
+    const std::vector<unsigned char> ToBytes() const {
+        std::vector<unsigned char> vData(hash.begin(), hash.end());
+        vData.insert(vData.end(), authDigest.begin(), authDigest.end());
+        return vData;
+    }
+
+    friend bool operator<(const WTxId& a, const WTxId& b)
+    {
+        return (a.hash < b.hash ||
+            (a.hash == b.hash && a.authDigest < b.authDigest));
+    }
+
+    friend bool operator==(const WTxId& a, const WTxId& b)
+    {
+        return a.hash == b.hash && a.authDigest == b.authDigest;
+    }
+
+    friend bool operator!=(const WTxId& a, const WTxId& b)
+    {
+        return a.hash != b.hash || a.authDigest != b.authDigest;
+    }
+};
+
 struct CMutableTransaction;
 
 /** The basic transaction that is broadcasted on the network and contained in
@@ -665,9 +699,7 @@ private:
     OrchardBundle orchardBundle;
 
     /** Memory only. */
-    const uint256 hash;
-    /** Memory only. */
-    const uint256 authDigest;
+    const WTxId wtxid;
     void UpdateHash() const;
 
 protected:
@@ -856,7 +888,7 @@ public:
     }
 
     const uint256& GetHash() const {
-        return hash;
+        return wtxid.hash;
     }
 
     /**
@@ -865,7 +897,11 @@ public:
      * For v1-v4 transactions, this returns the null hash (i.e. all-zeroes).
      */
     const uint256& GetAuthDigest() const {
-        return authDigest;
+        return wtxid.authDigest;
+    }
+
+    const WTxId& GetWTxId() const {
+        return wtxid;
     }
 
     uint32_t GetHeader() const {
@@ -928,12 +964,12 @@ public:
 
     friend bool operator==(const CTransaction& a, const CTransaction& b)
     {
-        return a.hash == b.hash;
+        return a.wtxid.hash == b.wtxid.hash;
     }
 
     friend bool operator!=(const CTransaction& a, const CTransaction& b)
     {
-        return a.hash != b.hash;
+        return a.wtxid.hash != b.wtxid.hash;
     }
 
     std::string ToString() const;
