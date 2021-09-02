@@ -1,13 +1,14 @@
 use incrementalmerkletree::{bridgetree::BridgeTree, Frontier, Tree};
 use libc::c_uchar;
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::convert::TryFrom;
 use std::io::{self, Read, Write};
 use tracing::error;
 
+use zcash_encoding::CompactSize;
 use zcash_primitives::{
     consensus::BlockHeight,
     merkle_tree::incremental::{read_tree_v1, write_tree_v1},
-    serialize::CompactSize,
     transaction::{components::Amount, TxId},
 };
 
@@ -108,7 +109,14 @@ impl WalletTx {
         let mut decrypted_notes = BTreeMap::new();
         let decrypted_notes_size = CompactSize::read(&mut reader)?;
         for _ in 0..decrypted_notes_size {
-            let idx = CompactSize::read(&mut reader)?;
+            let idx = CompactSize::read(&mut reader).and_then(|v| {
+                <usize>::try_from(v).map_err(|_| {
+                    io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "Output index outside of valid range".to_owned(),
+                    )
+                })
+            })?;
             let mut ivk_bytes = [0u8; 64];
             reader.read_exact(&mut ivk_bytes)?;
             let ivk_opt = IncomingViewingKey::from_bytes(&ivk_bytes);

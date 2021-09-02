@@ -4,9 +4,9 @@ use libc::size_t;
 use orchard::{
     bundle::Authorized,
     keys::OutgoingViewingKey,
-    primitives::redpallas::{self, Binding, SpendAuth},
-    Bundle, 
     note_encryption::OrchardDomain,
+    primitives::redpallas::{self, Binding, SpendAuth},
+    Bundle,
 };
 use rand_core::OsRng;
 use tracing::{debug, error};

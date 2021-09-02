@@ -13,11 +13,11 @@ pub type AddReceiverCb =
     unsafe extern "C" fn(ua: Option<UnifiedAddressObj>, raw: *const u8) -> bool;
 pub type UnknownReceiverCb = unsafe extern "C" fn(
     ua: Option<UnifiedAddressObj>,
-    typecode: u8,
+    typecode: u64,
     data: *const u8,
     len: usize,
 ) -> bool;
-pub type GetTypecodeCb = unsafe extern "C" fn(ua: Option<UnifiedAddressObj>, index: usize) -> u8;
+pub type GetTypecodeCb = unsafe extern "C" fn(ua: Option<UnifiedAddressObj>, index: usize) -> u64;
 pub type GetReceiverLenCb =
     unsafe extern "C" fn(ua: Option<UnifiedAddressObj>, index: usize) -> usize;
 pub type GetReceiverDataCb =
