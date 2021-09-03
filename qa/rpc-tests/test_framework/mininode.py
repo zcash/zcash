@@ -334,25 +334,36 @@ class CInv(object):
     typemap = {
         0: b"Error",
         1: b"TX",
-        2: b"Block"}
+        2: b"Block",
+        5: b"WTX",
+    }
 
-    def __init__(self, t=0, h=0):
+    def __init__(self, t=0, h=0, h_aux=0):
         self.type = t
         self.hash = h
+        self.hash_aux = h_aux
+        if self.type == 1:
+            self.hash_aux = ((1 << 256) - 1)
 
     def deserialize(self, f):
         self.type = struct.unpack("<i", f.read(4))[0]
         self.hash = deser_uint256(f)
+        if self.type == 5:
+            self.hash_aux = deser_uint256(f)
+        elif self.type == 1:
+            self.hash_aux = ((1 << 256) - 1)
 
     def serialize(self):
         r = b""
         r += struct.pack("<i", self.type)
         r += ser_uint256(self.hash)
+        if self.type == 5:
+            r += ser_uint256(self.hash_aux)
         return r
 
     def __repr__(self):
-        return "CInv(type=%s hash=%064x)" \
-            % (self.typemap[self.type], self.hash)
+        return "CInv(type=%s hash=%064x hash_aux=%064x)" \
+            % (self.typemap[self.type], self.hash, self.hash_aux)
 
 
 class CBlockLocator(object):
