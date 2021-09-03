@@ -1029,6 +1029,8 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
             "getaddresstxids {\"addresses\": [\"taddr\", ...], (\"start\": n), (\"end\": n)}\n"
             "\nReturns the txids for given transparent addresses within the given (inclusive)\n"
             "\nblock height range, default is the full blockchain.\n"
+            "\nStarting v4.5.0, returned txids are in the order they appear in blocks, which \n"
+            "\nensures that they are topologically sorted (i.e. parent txids will appear before child txids).\n"
             + disabledMsg +
             "\nArguments:\n"
             "{\n"
@@ -1065,20 +1067,22 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
     std::vector<std::pair<CAddressIndexKey, CAmount>> addressIndex;
     getAddressesInHeightRange(params, start, end, addresses, addressIndex);
 
-    // This is an ordered set, sorted by height, so result also sorted by height.
-    std::set<std::pair<int, std::string>> txids;
+    // This is an ordered set, sorted by (height,txindex) so result also sorted by height.
+    std::set<std::tuple<int, int, std::string>> txids;
 
     for (const auto& it : addressIndex) {
         const int height = it.first.blockHeight;
+        const int txindex = it.first.txindex;
         const std::string txid = it.first.txhash.GetHex();
         // Duplicate entries (two addresses in same tx) are suppressed
-        txids.insert(std::make_pair(height, txid));
+        txids.insert(std::make_tuple(height, txindex, txid));
     }
     UniValue result(UniValue::VARR);
     for (const auto& it : txids) {
         // only push the txid, not the height
-        result.push_back(it.second);
+        result.push_back(std::get<2>(it));
     }
+
     return result;
 }
 
