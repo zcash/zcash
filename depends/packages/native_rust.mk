@@ -8,6 +8,9 @@ $(package)_sha256_hash_darwin=5eb27a4f5f7a4699bc70cf1848e340ddd74e151488bfcb2685
 $(package)_file_name_freebsd=rust-$($(package)_version)-x86_64-unknown-freebsd.tar.gz
 $(package)_sha256_hash_freebsd=026a40470b9fddfbb4abff3546e620eceaa2812ffc13e180bbb9360c01501a16
 
+$(package)_file_name_aarch64_linux=rust-$($(package)_version)-aarch64-unknown-linux-gnu.tar.gz
+$(package)_sha256_hash_aarch64_linux=fd31c78fffad52c03cac5a7c1ee5db3f34b2a77d7bc862707c0f71e209180a84
+
 # Mapping from GCC canonical hosts to Rust targets
 # If a mapping is not present, we assume they are identical, unless $host_os is
 # "darwin", in which case we assume x86_64-apple-darwin.
