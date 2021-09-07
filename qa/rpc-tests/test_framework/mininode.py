@@ -44,6 +44,7 @@ from .equihash import (
     hash_nonce,
     zcash_person,
 )
+from .util import bytes_to_hex_str
 
 
 BIP0031_VERSION = 60000
@@ -386,6 +387,38 @@ class CBlockLocator(object):
             % (self.nVersion, repr(self.vHave))
 
 
+class Groth16Proof(object):
+    def __init__(self):
+        self.data = None
+
+    def deserialize(self, f):
+        self.data = f.read(192)
+
+    def serialize(self):
+        r = b""
+        r += self.data
+        return r
+
+    def __repr__(self):
+        return "Groth16Proof(%s)" % bytes_to_hex_str(self.data)
+
+
+class RedJubjubSignature(object):
+    def __init__(self):
+        self.data = None
+
+    def deserialize(self, f):
+        self.data = f.read(64)
+
+    def serialize(self):
+        r = b""
+        r += self.data
+        return r
+
+    def __repr__(self):
+        return "RedJubjubSignature(%s)" % bytes_to_hex_str(self.data)
+
+
 class SpendDescription(object):
     def __init__(self):
         self.cv = None
@@ -400,8 +433,10 @@ class SpendDescription(object):
         self.anchor = deser_uint256(f)
         self.nullifier = deser_uint256(f)
         self.rk = deser_uint256(f)
-        self.zkproof = f.read(192)
-        self.spendAuthSig = f.read(64)
+        self.zkproof = Groth16Proof()
+        self.zkproof.deserialize()
+        self.spendAuthSig = RedJubjubSignature()
+        self.spendAuthSig.deserialize(f)
 
     def serialize(self):
         r = b""
@@ -409,13 +444,13 @@ class SpendDescription(object):
         r += ser_uint256(self.anchor)
         r += ser_uint256(self.nullifier)
         r += ser_uint256(self.rk)
-        r += self.zkproof
-        r += self.spendAuthSig
+        r += self.zkproof.serialize()
+        r += self.spendAuthSig.serialize()
         return r
 
     def __repr__(self):
-        return "SpendDescription(cv=%064x, anchor=%064x, nullifier=%064x, rk=%064x, zkproof=%064x, spendAuthSig=%064x)" \
-            % (self.cv, self.anchor, self.nullifier, self.rk, self.zkproof, self.spendauthsig)
+        return "SpendDescription(cv=%064x, anchor=%064x, nullifier=%064x, rk=%064x, zkproof=%r, spendAuthSig=%r)" \
+            % (self.cv, self.anchor, self.nullifier, self.rk, self.zkproof, self.spendAuthSig)
 
 
 class OutputDescription(object):
@@ -433,7 +468,8 @@ class OutputDescription(object):
         self.ephemeralKey = deser_uint256(f)
         self.encCiphertext = f.read(580)
         self.outCiphertext = f.read(80)
-        self.zkproof = f.read(192)
+        self.zkproof = Groth16Proof()
+        self.zkproof.deserialize()
 
     def serialize(self):
         r = b""
@@ -442,12 +478,19 @@ class OutputDescription(object):
         r += ser_uint256(self.ephemeralKey)
         r += self.encCiphertext
         r += self.outCiphertext
-        r += self.zkproof
+        r += self.zkproof.serialize()
         return r
 
     def __repr__(self):
-        return "OutputDescription(cv=%064x, cmu=%064x, ephemeralKey=%064x, encCiphertext=%064x, outCiphertext=%064x, zkproof=%064x)" \
-            % (self.cv, self.cmu, self.ephemeralKey, self.encCiphertext, self.outCiphertext, self.zkproof)
+        return "OutputDescription(cv=%064x, cmu=%064x, ephemeralKey=%064x, encCiphertext=%s, outCiphertext=%s, zkproof=%r)" \
+            % (
+                self.cv,
+                self.cmu,
+                self.ephemeralKey,
+                bytes_to_hex_str(self.encCiphertext),
+                bytes_to_hex_str(self.outCiphertext),
+                self.zkproof,
+            )
 
 
 G1_PREFIX_MASK = 0x02
@@ -547,7 +590,7 @@ class JSDescription(object):
         self.proof = None
         self.ciphertexts = [None] * ZC_NUM_JS_OUTPUTS
 
-    def deserialize(self, f):
+    def deserialize(self, f, use_groth16=True):
         self.vpub_old = struct.unpack("<q", f.read(8))[0]
         self.vpub_new = struct.unpack("<q", f.read(8))[0]
         self.anchor = deser_uint256(f)
@@ -567,7 +610,10 @@ class JSDescription(object):
         for i in range(ZC_NUM_JS_INPUTS):
             self.macs.append(deser_uint256(f))
 
-        self.proof = ZCProof()
+        if use_groth16:
+            self.proof = Groth16Proof()
+        else:
+            self.proof = ZCProof()
         self.proof.deserialize(f)
 
         self.ciphertexts = []
@@ -589,7 +635,7 @@ class JSDescription(object):
             r += ser_uint256(self.macs[i])
         r += self.proof.serialize()
         for i in range(ZC_NUM_JS_OUTPUTS):
-            r += ser_uint256(self.ciphertexts[i])
+            r += self.ciphertexts[i]
         return r
 
     def __repr__(self):
@@ -734,7 +780,8 @@ class CTransaction(object):
                 self.joinSplitSig = f.read(64)
 
         if isSaplingV4 and not (len(self.shieldedSpends) == 0 and len(self.shieldedOutputs) == 0):
-            self.bindingSig = f.read(64)
+            self.bindingSig = RedJubjubSignature()
+            self.bindingSig.deserialize(f)
 
         self.sha256 = None
         self.hash = None
@@ -767,7 +814,7 @@ class CTransaction(object):
                 r += ser_uint256(self.joinSplitPubKey)
                 r += self.joinSplitSig
         if isSaplingV4 and not (len(self.shieldedSpends) == 0 and len(self.shieldedOutputs) == 0):
-            r += self.bindingSig
+            r += self.bindingSig.serialize()
         return r
 
     def rehash(self):
@@ -796,10 +843,10 @@ class CTransaction(object):
         if self.nVersion >= 2:
             r += " vJoinSplit=%r" % (self.vJoinSplit,)
             if len(self.vJoinSplit) > 0:
-                r += " joinSplitPubKey=%064x joinSplitSig=%064x" \
-                    % (self.joinSplitPubKey, self.joinSplitSig)
+                r += " joinSplitPubKey=%064x joinSplitSig=%s" \
+                    % (self.joinSplitPubKey, bytes_to_hex_str(self.joinSplitSig))
         if len(self.shieldedSpends) > 0 or len(self.shieldedOutputs) > 0:
-            r += " bindingSig=%064x" % (self.bindingSig,)
+            r += " bindingSig=%r" % self.bindingSig
         r += ")"
         return r
 
