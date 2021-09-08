@@ -240,6 +240,11 @@ namespace {
      * million to make it highly unlikely for users to have issues with this
      * filter.
      *
+     * We only need to add wtxids to this filter. For pre-v5 transactions, the
+     * txid commits to the entire transaction, and the wtxid is the txid with a
+     * globally-fixed (all-ones) suffix. For v5+ transactions, the wtxid commits
+     * to the entire transaction.
+     *
      * Memory used: 1.3 MB
      */
     boost::scoped_ptr<CRollingBloomFilter> recentRejects;
@@ -630,6 +635,8 @@ CBlockTreeDB *pblocktree = NULL;
 
 bool AddOrphanTx(const CTransaction& tx, NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
+    // See doc/book/src/design/p2p-data-propagation.md for why mapOrphanTransactions uses
+    // txid to index transactions instead of wtxid.
     uint256 hash = tx.GetHash();
     if (mapOrphanTransactions.count(hash))
         return false;
@@ -6034,7 +6041,11 @@ bool static AlreadyHave(const CInv& inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
                 recentRejects->reset();
             }
 
-            return recentRejects->contains(inv.hash) ||
+            // We only need to use wtxid with recentRejects. Orphan map entries
+            // are re-validated once their parents have arrived, and all other
+            // locations are only possible if the transaction has already been
+            // validated (we don't care about alternative authorizing data).
+            return recentRejects->contains(inv.GetWideHash()) ||
                    mempool.exists(inv.hash) ||
                    mapOrphanTransactions.count(inv.hash) ||
                    pcoinsTip->HaveCoins(inv.hash);
@@ -6552,7 +6563,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             }
             else
             {
-                pfrom->AddKnownTx(inv.hash);
+                pfrom->AddKnownTx(WTxId(inv.hash, inv.hashAux));
                 if (fBlocksOnly)
                     LogPrint("net", "transaction (%s) inv sent in violation of protocol peer=%d\n", inv.hash.ToString(), pfrom->id);
                 else if (!fAlreadyHave && !IsInitialBlockDownload(chainparams.GetConsensus()))
@@ -6696,22 +6707,28 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         CTransaction tx;
         vRecv >> tx;
 
-        CInv inv(MSG_TX, tx.GetHash());
-        pfrom->AddKnownTx(inv.hash);
+        const uint256& txid = tx.GetHash();
+        const WTxId& wtxid = tx.GetWTxId();
 
         LOCK(cs_main);
+
+        pfrom->AddKnownTx(wtxid);
 
         bool fMissingInputs = false;
         CValidationState state;
 
-        pfrom->setAskFor.erase(inv.hash);
-        mapAlreadyAskedFor.erase(inv.hash);
+        pfrom->setAskFor.erase(wtxid);
+        mapAlreadyAskedFor.erase(wtxid);
 
-        if (!AlreadyHave(inv) && AcceptToMemoryPool(chainparams, mempool, state, tx, true, &fMissingInputs))
+        // We do the AlreadyHave() check using a MSG_WTX inv unconditionally,
+        // because for pre-v5 transactions wtxid.authDigest is set to the same
+        // placeholder as is used for the CInv.hashAux field for MSG_TX.
+        if (!AlreadyHave(CInv(MSG_WTX, txid, wtxid.authDigest)) &&
+            AcceptToMemoryPool(chainparams, mempool, state, tx, true, &fMissingInputs))
         {
             mempool.check(pcoinsTip);
             RelayTransaction(tx);
-            vWorkQueue.push_back(inv.hash);
+            vWorkQueue.push_back(txid);
 
             LogPrint("mempool", "AcceptToMemoryPool: peer=%d %s: accepted %s (poolsz %u txn, %u kB)\n",
                 pfrom->id, pfrom->cleanSubVer,
@@ -6762,8 +6779,12 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                         // Probably non-standard or insufficient fee/priority
                         LogPrint("mempool", "   removed orphan tx %s\n", orphanHash.ToString());
                         vEraseQueue.push_back(orphanHash);
+                        // Add the wtxid of this transaction to our reject filter.
+                        // Unlike upstream Bitcoin Core, we can unconditionally add
+                        // these, as they are always bound to the entirety of the
+                        // transaction regardless of version.
                         assert(recentRejects);
-                        recentRejects->insert(orphanHash);
+                        recentRejects->insert(orphanTx.GetWTxId().ToBytes());
                     }
                     mempool.check(pcoinsTip);
                 }
@@ -6786,8 +6807,12 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             if (nEvicted > 0)
                 LogPrint("mempool", "mapOrphan overflow, removed %u tx\n", nEvicted);
         } else {
+            // Add the wtxid of this transaction to our reject filter.
+            // Unlike upstream Bitcoin Core, we can unconditionally add
+            // these, as they are always bound to the entirety of the
+            // transaction regardless of version.
             assert(recentRejects);
-            recentRejects->insert(tx.GetHash());
+            recentRejects->insert(tx.GetWTxId().ToBytes());
 
             if (pfrom->fWhitelisted && GetBoolArg("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY)) {
                 // Always relay transactions received from whitelisted peers, even
@@ -6816,7 +6841,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 FormatStateMessage(state));
             if (state.GetRejectCode() < REJECT_INTERNAL) // Never send AcceptToMemoryPool's internal codes over P2P
                 pfrom->PushMessage("reject", strCommand, (unsigned char)state.GetRejectCode(),
-                                   state.GetRejectReason().substr(0, MAX_REJECT_MESSAGE_LENGTH), inv.hash);
+                                   state.GetRejectReason().substr(0, MAX_REJECT_MESSAGE_LENGTH), txid);
             if (nDoS > 0)
                 Misbehaving(pfrom->GetId(), nDoS);
         }
@@ -7646,7 +7671,7 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                 }
             } else {
                 //If we're not going to ask, don't expect a response.
-                pto->setAskFor.erase(inv.hash);
+                pto->setAskFor.erase(WTxId(inv.hash, inv.hashAux));
             }
             pto->mapAskFor.erase(pto->mapAskFor.begin());
         }
