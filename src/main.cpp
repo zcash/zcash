@@ -6006,11 +6006,22 @@ void static CheckBlockIndex(const Consensus::Params& consensusParams)
 //
 
 
+CInv static InvForTransaction(const std::shared_ptr<const CTransaction> tx)
+{
+    if (tx->nVersion >= 5) {
+        auto& wtxid = tx->GetWTxId();
+        return CInv(MSG_WTX, wtxid.hash, wtxid.authDigest);
+    } else {
+        return CInv(MSG_TX, tx->GetHash());
+    }
+}
+
 bool static AlreadyHave(const CInv& inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
     switch (inv.type)
     {
     case MSG_TX:
+    case MSG_WTX:
         {
             assert(recentRejects);
             if (chainActive.Tip()->GetBlockHash() != hashRecentRejectsChainTip)
@@ -6541,7 +6552,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             }
             else
             {
-                pfrom->AddInventoryKnown(inv);
+                pfrom->AddKnownTx(inv.hash);
                 if (fBlocksOnly)
                     LogPrint("net", "transaction (%s) inv sent in violation of protocol peer=%d\n", inv.hash.ToString(), pfrom->id);
                 else if (!fAlreadyHave && !IsInitialBlockDownload(chainparams.GetConsensus()))
@@ -6686,7 +6697,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
         vRecv >> tx;
 
         CInv inv(MSG_TX, tx.GetHash());
-        pfrom->AddInventoryKnown(inv);
+        pfrom->AddKnownTx(inv.hash);
 
         LOCK(cs_main);
 
@@ -7484,7 +7495,7 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
 
                 for (const auto& txinfo : vtxinfo) {
                     const uint256& hash = txinfo.tx->GetHash();
-                    CInv inv(MSG_TX, hash);
+                    CInv inv = InvForTransaction(txinfo.tx);
                     pto->setInventoryTxToSend.erase(hash);
                     if (IsExpiringSoonTx(*txinfo.tx, currentHeight + 1)) continue;
                     if (pto->pfilter) {
@@ -7533,10 +7544,11 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                     if (!txinfo.tx) {
                         continue;
                     }
+                    CInv inv = InvForTransaction(txinfo.tx);
                     if (IsExpiringSoonTx(*txinfo.tx, currentHeight + 1)) continue;
                     if (pto->pfilter && !pto->pfilter->IsRelevantAndUpdate(*txinfo.tx)) continue;
                     // Send
-                    vInv.push_back(CInv(MSG_TX, hash));
+                    vInv.push_back(inv);
                     nRelayedTransactions++;
                     {
                         // Expire old relay messages

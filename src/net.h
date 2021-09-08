@@ -466,11 +466,11 @@ public:
     }
 
 
-    void AddInventoryKnown(const CInv& inv)
+    void AddKnownTx(const uint256& hash)
     {
         {
             LOCK(cs_inventory);
-            filterInventoryKnown.insert(inv.hash);
+            filterInventoryKnown.insert(hash);
         }
     }
 
