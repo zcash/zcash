@@ -15,6 +15,10 @@ $(package)_download_file_freebsd=clang+llvm-$($(package)_version)-amd64-unknown-
 $(package)_file_name_freebsd=clang-llvm-$($(package)_version)-amd64-unknown-freebsd11.tar.xz
 $(package)_sha256_hash_freebsd=94dfe48d9e483283edbee968056d487a850b30de25258fa48f049cca3ede5db4
 
+$(package)_download_file_aarch64_linux=clang+llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
+$(package)_file_name_aarch64_linux=clang-llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
+$(package)_sha256_hash_aarch64_linux=3d4ad804b7c85007686548cbc917ab067bf17eaedeab43d9eb83d3a683d8e9d4
+
 # Ensure we have clang native to the builder, not the target host
 ifneq ($(canonical_host),$(build))
 $(package)_exact_download_path=$($(package)_download_path_$(build_os))
