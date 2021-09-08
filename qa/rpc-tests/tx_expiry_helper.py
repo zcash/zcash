@@ -23,6 +23,7 @@ class TestNode(NodeConnCB):
         self.connection = None
         self.ping_counter = 1
         self.last_pong = msg_pong()
+        self.conn_closed = False
 
     def add_connection(self, conn):
         self.connection = conn
@@ -43,7 +44,7 @@ class TestNode(NodeConnCB):
         self.connection.send_message(message)
 
     def on_close(self, conn):
-        pass
+        self.conn_closed = True
 
     def on_reject(self, conn, message):
         conn.rejectMessage = message

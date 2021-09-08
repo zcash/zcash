@@ -6142,21 +6142,47 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
                     }
                 }
             }
-            else if (inv.type == MSG_TX)
+            else if (inv.type == MSG_TX || inv.type == MSG_WTX)
             {
                 // Send stream from relay memory
                 bool push = false;
                 auto mi = mapRelay.find(inv.hash);
                 if (mi != mapRelay.end() && !IsExpiringSoonTx(*mi->second, currentHeight + 1)) {
-                    pfrom->PushMessage("tx", *mi->second);
-                    push = true;
+                    // ZIP 239: MSG_TX should be used if and only if the tx is v4 or earlier.
+                    if ((mi->second->nVersion <= 4) != (inv.type == MSG_TX)) {
+                        Misbehaving(pfrom->GetId(), 100);
+                        LogPrint("net", "Wrong INV message type used for v%d tx", mi->second->nVersion);
+                        // Break so that this inv mesage will be erased from the queue
+                        // (otherwise the peer would repeatedly hit this case until its
+                        // Misbehaving level rises above -banscore, no matter what the
+                        // user set it to).
+                        break;
+                    }
+                    // Ensure we only reply with a transaction if it is exactly what the
+                    // peer requested from us. Otherwise we add it to vNotFound below.
+                    if (inv.hashAux == mi->second->GetAuthDigest()) {
+                        pfrom->PushMessage("tx", *mi->second);
+                        push = true;
+                    }
                 } else if (pfrom->timeLastMempoolReq) {
                     auto txinfo = mempool.info(inv.hash);
                     // To protect privacy, do not answer getdata using the mempool when
                     // that TX couldn't have been INVed in reply to a MEMPOOL request.
                     if (txinfo.tx && txinfo.nTime <= pfrom->timeLastMempoolReq && !IsExpiringSoonTx(*txinfo.tx, currentHeight + 1)) {
-                        pfrom->PushMessage("tx", *txinfo.tx);
-                        push = true;
+                        // ZIP 239: MSG_TX should be used if and only if the tx is v4 or earlier.
+                        if ((txinfo.tx->nVersion <= 4) != (inv.type == MSG_TX)) {
+                            Misbehaving(pfrom->GetId(), 100);
+                            LogPrint("net", "Wrong INV message type used for v%d tx", txinfo.tx->nVersion);
+                            // Break so that this inv mesage will be erased from the queue.
+                            break;
+                        }
+                        // Ensure we only reply with a transaction if it is exactly what
+                        // the peer requested from us. Otherwise we add it to vNotFound
+                        // below.
+                        if (inv.hashAux == txinfo.tx->GetAuthDigest()) {
+                            pfrom->PushMessage("tx", *txinfo.tx);
+                            push = true;
+                        }
                     }
                 }
                 if (!push) {
