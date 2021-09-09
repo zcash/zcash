@@ -583,7 +583,7 @@ libbitcoin_common_a_SOURCES = \
 
 # util: shared between all executables.
 # This library *must* be included to make sure that the glibc
-# backward-compatibility objects and their sanity checks are linked.
+# sanity checks are linked.
 libbitcoin_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_util_a_SOURCES = \
@@ -605,10 +605,6 @@ libbitcoin_util_a_SOURCES = \
   util/time.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
-
-if GLIBC_BACK_COMPAT
-libbitcoin_util_a_SOURCES += compat/glibc_compat.cpp
-endif
 
 # cli: zcash-cli
 libbitcoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
@@ -739,10 +735,6 @@ libzcash_script_la_SOURCES = \
   $(libcxxbridge_a_SOURCES) \
   support/cleanse.cpp \
   uint256.cpp
-
-if GLIBC_BACK_COMPAT
-  libzcash_script_la_SOURCES += compat/glibc_compat.cpp
-endif
 
 libzcash_script_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
 libzcash_script_la_LIBADD = $(LIBRUSTZCASH) $(LIBSECP256K1)
