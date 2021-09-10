@@ -363,6 +363,12 @@ class CInv(object):
             r += ser_uint256(self.hash_aux)
         return r
 
+    def __eq__(self, other):
+        return (
+            (type(self) == type(other)) and
+            (self.type, self.hash, self.hash_aux) == (other.type, other.hash, other.hash_aux)
+        )
+
     def __repr__(self):
         return "CInv(type=%s hash=%064x hash_aux=%064x)" \
             % (self.typemap[self.type], self.hash, self.hash_aux)

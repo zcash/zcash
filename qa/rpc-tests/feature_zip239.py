@@ -70,10 +70,7 @@ class Zip239Test(BitcoinTestFramework):
             actual_invs = sorted(msg.inv, key=lambda inv: (inv.type, inv.hash, inv.hash_aux))
 
             for (expected, actual) in zip(expected_invs, actual_invs):
-                fail_msg = "%r != %r" % (actual, expected)
-                assert_equal(actual.type, expected.type, fail_msg)
-                assert_equal(actual.hash, expected.hash, fail_msg)
-                assert_equal(actual.hash_aux, expected.hash_aux, fail_msg)
+                assert_equal(expected, actual)
 
     def send_data_message(self, testnode, txid, authDigest=None):
         # Send p2p message "getdata" to verify tx gets sent in "tx" message
@@ -105,12 +102,7 @@ class Zip239Test(BitcoinTestFramework):
             assert_true(testnode.last_tx is None, "'%r' is not None" % testnode.last_tx)
             assert_false(testnode.last_notfound is None, "notfound not received")
             assert_equal(len(testnode.last_notfound.inv), 1)
-            actual = testnode.last_notfound.inv[0]
-            expected = self.cinv_for(txid, authDigest)
-            fail_msg = "%r != %r" % (actual, expected)
-            assert_equal(actual.type, expected.type, fail_msg)
-            assert_equal(actual.hash, expected.hash, fail_msg)
-            assert_equal(actual.hash_aux, expected.hash_aux, fail_msg)
+            assert_equal(testnode.last_notfound.inv[0], self.cinv_for(txid, authDigest))
 
     def verify_disconnected(self, testnode, timeout=30):
         sleep_time = 0.05
