@@ -448,11 +448,9 @@ def transaction_chain(zcash):
         sapling_balance += ((starting_balance / Decimal('10')) * Decimal('2')) - DEFAULT_FEE
         taddr_balance -= (starting_balance / Decimal('10')) * Decimal('4')
 
-        taddr_balance = Decimal('0')
-
         # multiple Sapling -> taddr
         check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2, sapling_zaddr_3], taddr_2, sapling_balance - DEFAULT_FEE)
-        taddr_balance = sapling_balance - (2 * DEFAULT_FEE)
+        taddr_balance += sapling_balance - (2 * DEFAULT_FEE)
         sapling_balance = Decimal('0')
 
         # taddr -> multiple Sapling
@@ -462,18 +460,18 @@ def transaction_chain(zcash):
                 (sapling_zaddr_2, taddr_2_balance - (starting_balance / Decimal('10')) - DEFAULT_FEE)])[0]
 
         sapling_balance = taddr_2_balance - DEFAULT_FEE
-        taddr_balance = Decimal('0')
+        taddr_balance -= taddr_2_balance
 
         # multiple Sapling -> taddr
         check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2], taddr_2, sapling_balance - DEFAULT_FEE)
-        taddr_balance = sapling_balance - (Decimal('2') * DEFAULT_FEE)
+        taddr_balance += sapling_balance - (Decimal('2') * DEFAULT_FEE)
         sapling_balance = Decimal('0')
 
         # z_mergetoaddress taddr -> Sapling
         taddr_2_balance = Decimal(zcash.z_getbalance(taddr_2)).quantize(Decimal('1.00000000'))
         check_z_mergetoaddress(results, '4cc', zcash,  [taddr_2], sapling_zaddr_1, taddr_2_balance - DEFAULT_FEE)
         sapling_balance = taddr_2_balance - DEFAULT_FEE
-        taddr_balance = Decimal('0')
+        taddr_balance -= taddr_2_balance
     except Exception as e:
         print('Error: %s' % e)
         traceback.print_exc()
