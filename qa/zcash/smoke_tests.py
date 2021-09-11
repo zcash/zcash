@@ -2,6 +2,12 @@
 #
 # Execute the standard smoke tests for Zcash releases.
 #
+# Usage:
+#
+# ZCASHD=./src/zcashd ZCASHCLI=./src/zcash-cli ./qa/zcash/smoke_tests.py --wallet=wallet.smoketest.dat "$HOME/.zcash"
+# 
+# ZCASHD=./src/zcashd ZCASHCLI=./src/zcash-cli ./qa/zcash/smoke_tests.py --wallet=wallet.smoketest.dat "$HOME/.zcash" --automate --use-faucet
+#
 
 import argparse
 import datetime
