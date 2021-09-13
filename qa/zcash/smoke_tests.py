@@ -433,13 +433,13 @@ def transaction_chain(zcash):
                 (sapling_zaddr_1, starting_balance / Decimal('10'))])[0]
         
         sapling_balance -= (starting_balance / Decimal('10')) + DEFAULT_FEE
-        taddr_balance += (starting_balance / Decimal('10')) * Decimal('2')
+        taddr_balance += starting_balance / Decimal('10')
 
         # taddr and Sapling -> Sapling
         check_z_mergetoaddress(results, '4ee', zcash, [taddr_3, sapling_zaddr_1], sapling_zaddr_2, sapling_balance + (starting_balance / Decimal('10')) - DEFAULT_FEE)
     
         sapling_balance += (starting_balance / Decimal('10')) - DEFAULT_FEE
-        taddr_balance -= (starting_balance / Decimal('10')) * Decimal('2')
+        taddr_balance -= starting_balance / Decimal('10')
 
         # Sapling -> multiple taddr
         check_z_sendmany(results, '4v', zcash, sapling_zaddr_2, [
@@ -447,16 +447,16 @@ def transaction_chain(zcash):
                 (taddr_5, (starting_balance / Decimal('10')))])[0]
             
         sapling_balance -= ((starting_balance / Decimal('10')) * Decimal('2')) + DEFAULT_FEE
-        taddr_balance += (starting_balance / Decimal('10')) * Decimal('4')
+        taddr_balance += (starting_balance / Decimal('10')) * Decimal('2')
 
         # multiple taddr -> Sapling
         check_z_mergetoaddress(results, '4bb',zcash, [taddr_4, taddr_5], sapling_zaddr_2, sapling_balance + ((starting_balance / Decimal('10')) * Decimal('2')) - DEFAULT_FEE)
         sapling_balance += ((starting_balance / Decimal('10')) * Decimal('2')) - DEFAULT_FEE
-        taddr_balance -= (starting_balance / Decimal('10')) * Decimal('4')
+        taddr_balance -= (starting_balance / Decimal('10')) * Decimal('2')
 
         # multiple Sapling -> taddr
         check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2, sapling_zaddr_3], taddr_2, sapling_balance - DEFAULT_FEE)
-        taddr_balance += sapling_balance - (2 * DEFAULT_FEE)
+        taddr_balance += sapling_balance - DEFAULT_FEE
         sapling_balance = Decimal('0')
 
         # taddr -> multiple Sapling
@@ -470,7 +470,7 @@ def transaction_chain(zcash):
 
         # multiple Sapling -> taddr
         check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2], taddr_2, sapling_balance - DEFAULT_FEE)
-        taddr_balance += sapling_balance - (Decimal('2') * DEFAULT_FEE)
+        taddr_balance += sapling_balance -  DEFAULT_FEE
         sapling_balance = Decimal('0')
 
         # z_mergetoaddress taddr -> Sapling
