@@ -54,9 +54,3 @@ native_clang 15.0.6 2022-12-10
 
 # We're never updating to this version
 bdb 18.1.40 2024-02-01
-
-# Google Test 1.10.0 requires adding CMake to the depends system.
-googletest 1.10.0 2022-12-10
-googletest 1.11.0 2022-12-10
-googletest 1.12.0 2022-12-10
-googletest 1.12.1 2022-12-10

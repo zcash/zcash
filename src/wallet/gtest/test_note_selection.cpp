@@ -444,7 +444,7 @@ const std::vector<OutputPool> VEC_TO({OutputPool::Transparent, OutputPool::Orcha
 const std::vector<OutputPool> VEC_SO({OutputPool::Sapling, OutputPool::Orchard});
 const std::vector<OutputPool> VEC_TSO({OutputPool::Transparent, OutputPool::Sapling, OutputPool::Orchard});
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     ExhaustiveCases,
     SpendableInputsTest,
     ::testing::Values(
