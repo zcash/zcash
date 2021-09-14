@@ -585,7 +585,7 @@ class SpendDescription(object):
         self.nullifier = deser_uint256(f)
         self.rk = deser_uint256(f)
         self.zkproof = Groth16Proof()
-        self.zkproof.deserialize()
+        self.zkproof.deserialize(f)
         self.spendAuthSig = RedJubjubSignature()
         self.spendAuthSig.deserialize(f)
 
