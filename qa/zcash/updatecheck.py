@@ -87,6 +87,10 @@ def get_dependency_list():
             GithubTagReleaseLister("rust-lang", "rust", "^(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "1.33.0": (1, 33, 0), "0.9": (0, 9) }),
             DependsVersionGetter("native_rust")),
+        Dependency("native_zstd",
+            GithubTagReleaseLister("facebook", "zstd", "^v?(\d+)\.(\d+)(?:\.(\d+))?$",
+                { "v1.5.0": (1, 5, 0), "zstd-0.4.2": None}),
+            DependsVersionGetter("native_zstd")),
         # rustcxx matches the cxxbridge version
         Dependency("rustcxx",
             GithubTagReleaseLister("dtolnay", "cxx", "^(\d+)\.(\d+)\.(\d+)$",
