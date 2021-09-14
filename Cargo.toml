@@ -3,10 +3,15 @@ name = "librustzcash"
 description = "Rust FFI used by the zcashd binary. Not an official API."
 version = "0.2.0"
 authors = [
-    "Sean Bowe <ewillbefull@gmail.com>",
-    "Jack Grigg <jack@z.cash>",
-    "Jay Graber <jay@z.cash>",
-    "Simon Liu <simon@z.cash>"
+    "Sean Bowe <sean@electriccoin.co>",
+    "Jay Graber",
+    "Jack Grigg <jack@electriccoin.co>",
+    "Daira Hopwood <daira@electriccoin.co>",
+    "Ying Tong Lai <yingtong@electriccoin.co>",
+    "Simon Liu",
+    "Kris Nuttycombe <kris@electriccoin.co>",
+    "Larry Ruane <larry@electriccoin.co>",
+    "Steven Smith <steven@electriccoin.co>"
 ]
 homepage = "https://github.com/zcash/zcash"
 repository = "https://github.com/zcash/zcash"
