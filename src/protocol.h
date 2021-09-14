@@ -150,7 +150,7 @@ public:
             READWRITE(hashAux);
         } else if (type == MSG_TX && ser_action.ForRead()) {
             // Ensure that this value is set consistently in memory for MSG_TX.
-            hashAux = uint256S("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+            hashAux = LEGACY_TX_AUTH_DIGEST;
         }
     }
 

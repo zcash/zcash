@@ -656,7 +656,7 @@ struct WTxId
     const uint256 authDigest;
 
     WTxId() :
-        authDigest(uint256S("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")) {}
+        authDigest(LEGACY_TX_AUTH_DIGEST) {}
 
     WTxId(const uint256& hashIn, const uint256& authDigestIn) :
         hash(hashIn), authDigest(authDigestIn) {}

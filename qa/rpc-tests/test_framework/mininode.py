@@ -66,6 +66,9 @@ MAX_INV_SZ = 50000
 
 COIN = 100000000 # 1 zec in zatoshis
 
+# The placeholder value used for the auth digest of pre-v5 transactions.
+LEGACY_TX_AUTH_DIGEST = (1 << 256) - 1
+
 # Keep our own socket map for asyncore, so that we can track disconnects
 # ourselves (to workaround an issue with closing an asyncore socket when
 # using select)
@@ -345,7 +348,7 @@ class CInv(object):
         self.hash = h
         self.hash_aux = h_aux
         if self.type == 1:
-            self.hash_aux = ((1 << 256) - 1)
+            self.hash_aux = LEGACY_TX_AUTH_DIGEST
 
     def deserialize(self, f):
         self.type = struct.unpack("<i", f.read(4))[0]
@@ -353,7 +356,7 @@ class CInv(object):
         if self.type == 5:
             self.hash_aux = deser_uint256(f)
         elif self.type == 1:
-            self.hash_aux = ((1 << 256) - 1)
+            self.hash_aux = LEGACY_TX_AUTH_DIGEST
 
     def serialize(self):
         r = b""

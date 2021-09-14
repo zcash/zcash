@@ -96,7 +96,7 @@ CInv::CInv(int typeIn, const uint256& hashIn)
     type = typeIn;
     hash = hashIn;
     if (typeIn == MSG_TX) {
-        hashAux = uint256S("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        hashAux = LEGACY_TX_AUTH_DIGEST;
     } else {
         hashAux.SetNull();
     }
