@@ -84,23 +84,22 @@ std::optional<SaplingExtendedFullViewingKey> SaplingExtendedFullViewingKey::Deri
     }
 }
 
-std::optional<std::pair<diversifier_index_t, libzcash::SaplingPaymentAddress>>
+std::optional<libzcash::SaplingPaymentAddress>
     SaplingExtendedFullViewingKey::Address(diversifier_index_t j) const
 {
     CDataStream ss_xfvk(SER_NETWORK, PROTOCOL_VERSION);
     ss_xfvk << *this;
     CSerializeData xfvk_bytes(ss_xfvk.begin(), ss_xfvk.end());
 
-    diversifier_index_t j_ret;
     CSerializeData addr_bytes(libzcash::SerializedSaplingPaymentAddressSize);
     if (librustzcash_zip32_xfvk_address(
         reinterpret_cast<unsigned char*>(xfvk_bytes.data()),
-        j.begin(), j_ret.begin(),
+        j.begin(),
         reinterpret_cast<unsigned char*>(addr_bytes.data()))) {
         CDataStream ss_addr(addr_bytes, SER_NETWORK, PROTOCOL_VERSION);
         libzcash::SaplingPaymentAddress addr;
         ss_addr >> addr;
-        return std::make_pair(j_ret, addr);
+        return addr;
     } else {
         return std::nullopt;
     }
@@ -108,13 +107,25 @@ std::optional<std::pair<diversifier_index_t, libzcash::SaplingPaymentAddress>>
 
 libzcash::SaplingPaymentAddress SaplingExtendedFullViewingKey::DefaultAddress() const
 {
-    diversifier_index_t j0;
-    auto addr = Address(j0);
-    // If we can't obtain a default address, we are *very* unlucky...
-    if (!addr) {
+    CDataStream ss_xfvk(SER_NETWORK, PROTOCOL_VERSION);
+    ss_xfvk << *this;
+    CSerializeData xfvk_bytes(ss_xfvk.begin(), ss_xfvk.end());
+
+    diversifier_index_t j_default;
+    diversifier_index_t j_ret;
+    CSerializeData addr_bytes(libzcash::SerializedSaplingPaymentAddressSize);
+    if (librustzcash_zip32_find_xfvk_address(
+        reinterpret_cast<unsigned char*>(xfvk_bytes.data()),
+        j_default.begin(), j_ret.begin(),
+        reinterpret_cast<unsigned char*>(addr_bytes.data()))) {
+        CDataStream ss_addr(addr_bytes, SER_NETWORK, PROTOCOL_VERSION);
+        libzcash::SaplingPaymentAddress addr;
+        ss_addr >> addr;
+        return addr;
+    } else {
+        // If we can't obtain a default address, we are *very* unlucky...
         throw std::runtime_error("SaplingExtendedFullViewingKey::DefaultAddress(): No valid diversifiers out of 2^88!");
     }
-    return addr.value().second;
 }
 
 SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Master(const HDSeed& seed)

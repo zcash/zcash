@@ -1459,7 +1459,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     // add keys manually
     auto taddr = pwalletMain->GenerateNewKey().GetID();
     std::string taddr1 = keyIO.EncodeDestination(taddr);
-    auto pa = pwalletMain->GenerateNewSaplingZKey();
+    auto pa = pwalletMain->GenerateNewLegacySaplingZKey().value();
     std::string zaddr1 = keyIO.EncodePaymentAddress(pa);
 
     const Consensus::Params& consensusParams = Params().GetConsensus();

@@ -8,6 +8,7 @@
 
 #include <assert.h>
 #include <cstring>
+#include <optional>
 #include <stdexcept>
 #include <stdint.h>
 #include <string>
@@ -108,6 +109,20 @@ public:
     blob88() {}
     blob88(const base_blob<88>& b) : base_blob<88>(b) {}
     explicit blob88(const std::vector<unsigned char>& vch) : base_blob<88>(vch) {}
+
+    std::optional<blob88> increment() const {
+        blob88 result = *this;
+
+        for (int i = 0; i < 11; i++) {
+            result.data[i] += 1;
+            if (result.data[i] != 0) {
+                // no overflow
+                return result;
+            }
+        }
+
+        return std::nullopt;
+    }
 };
 
 /** 160-bit opaque blob.

@@ -310,6 +310,13 @@ extern "C" {
     bool librustzcash_zip32_xfvk_address(
         const unsigned char *xfvk,
         const unsigned char *j,
+        unsigned char *addr_ret
+    );
+
+    /// Derive a PaymentAddress from an ExtendedFullViewingKey.
+    bool librustzcash_zip32_find_xfvk_address(
+        const unsigned char *xfvk,
+        const unsigned char *j,
         unsigned char *j_ret,
         unsigned char *addr_ret
     );

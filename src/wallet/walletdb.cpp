@@ -751,9 +751,13 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "hdchain")
         {
-            CHDChain chain;
-            ssValue >> chain;
-            pwallet->SetHDChain(chain, true);
+            auto chain = CHDChain::Read(ssValue);
+            pwallet->SetLegacyHDChain(chain, true);
+        }
+        else if (strType == "mnemonichdchain")
+        {
+            auto chain = CHDChain::Read(ssValue);
+            pwallet->SetMnemonicHDChain(chain, true);
         }
         else if (strType == "networkinfo")
         {
@@ -1204,11 +1208,18 @@ bool CWalletDB::WriteCryptedMnemonicSeed(const uint256& seedFp, const std::vecto
     return Write(std::make_pair(std::string("chdmnemonicseed"), seedFp), vchCryptedSecret);
 }
 
-
-bool CWalletDB::WriteHDChain(const CHDChain& chain)
+// This can be removed once generation of Sapling addresses using the legacy
+// seed has been disabled.
+bool CWalletDB::WriteLegacyHDChain(const CHDChain& chain)
 {
     nWalletDBUpdateCounter++;
     return Write(std::string("hdchain"), chain);
+}
+
+bool CWalletDB::WriteMnemonicHDChain(const CHDChain& chain)
+{
+    nWalletDBUpdateCounter++;
+    return Write(std::string("mnemonichdchain"), chain);
 }
 
 void CWalletDB::IncrementUpdateCounter()

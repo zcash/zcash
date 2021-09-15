@@ -168,11 +168,10 @@ struct SaplingExtendedFullViewingKey {
 
     std::optional<SaplingExtendedFullViewingKey> Derive(uint32_t i) const;
 
-    // Returns the first index starting from j that generates a valid
-    // payment address, along with the corresponding address. Returns
-    // an error if the diversifier space is exhausted.
-    std::optional<std::pair<diversifier_index_t, libzcash::SaplingPaymentAddress>>
-        Address(diversifier_index_t j) const;
+    // Attempt to construct a valid payment address with diversifier index
+    // `j`; returns std::nullopt if `j` does not result in a valid diversifier
+    // given this xfvk.
+    std::optional<libzcash::SaplingPaymentAddress> Address(diversifier_index_t j) const;
 
     libzcash::SaplingPaymentAddress DefaultAddress() const;
 

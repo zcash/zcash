@@ -41,18 +41,29 @@ enum DBErrors
     DB_WRONG_NETWORK,
 };
 
-/* simple hd chain data model */
+/* hd chain metadata */
 class CHDChain
 {
+private:
+    int nVersion;
+    uint256 seedFp;
+    int64_t nCreateTime; // 0 means unknown
+    uint32_t accountCounter;
+
+    CHDChain() { SetNull(); }
+
+    void SetNull()
+    {
+        nVersion = CHDChain::CURRENT_VERSION;
+        seedFp.SetNull();
+        nCreateTime = 0;
+        accountCounter = 0;
+    }
 public:
     static const int VERSION_HD_BASE = 1;
     static const int CURRENT_VERSION = VERSION_HD_BASE;
-    int nVersion;
-    uint256 seedFp; //NU5: Deprecate???
-    int64_t nCreateTime; // 0 means unknown
-    uint32_t saplingAccountCounter;
 
-    CHDChain() { SetNull(); }
+    CHDChain(uint256 seedFpIn, int64_t nCreateTimeIn): nVersion(CHDChain::CURRENT_VERSION), seedFp(seedFpIn), nCreateTime(nCreateTimeIn), accountCounter(0) {}
 
     ADD_SERIALIZE_METHODS;
 
@@ -62,15 +73,26 @@ public:
         READWRITE(nVersion);
         READWRITE(seedFp);
         READWRITE(nCreateTime);
-        READWRITE(saplingAccountCounter);
+        READWRITE(accountCounter);
     }
 
-    void SetNull()
-    {
-        nVersion = CHDChain::CURRENT_VERSION;
-        seedFp.SetNull();
-        nCreateTime = 0;
-        saplingAccountCounter = 0;
+    template <typename Stream>
+    static CHDChain Read(Stream& stream) {
+        CHDChain chain;
+        stream >> chain;
+        return chain;
+    }
+
+    const uint256 GetSeedFingerprint() const {
+        return seedFp;
+    }
+
+    uint32_t GetAccountCounter() const {
+        return accountCounter;
+    }
+
+    uint32_t IncrementAccountCounter() {
+        return ++accountCounter;
     }
 };
 
@@ -172,11 +194,12 @@ public:
     bool WriteNetworkInfo(const std::string& networkId);
     bool WriteMnemonicSeed(const MnemonicSeed& seed);
     bool WriteCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char>& vchCryptedSecret);
+    bool WriteMnemonicHDChain(const CHDChain& chain);
 
-    //! write the hdchain model (external chain child index counter)
-    bool WriteHDChain(const CHDChain& chain);
-    std::optional<HDSeed> ReadLegacyHDSeed();
-    std::optional<std::pair<uint256, std::vector<unsigned char>>> ReadLegacyCryptedHDSeed();
+    //! Write the legacy hdchain metadata to the database
+    //!
+    //! TODO: remove when generation of new legacy-seed-based keys has been disabled.
+    bool WriteLegacyHDChain(const CHDChain& chain);
 
     /// Write spending key to wallet database, where key is payment address and value is spending key.
     bool WriteZKey(const libzcash::SproutPaymentAddress& addr, const libzcash::SproutSpendingKey& key, const CKeyMetadata &keyMeta);

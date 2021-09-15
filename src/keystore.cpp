@@ -201,6 +201,7 @@ bool CBasicKeyStore::AddSaplingFullViewingKey(
     auto ivk = extfvk.fvk.in_viewing_key();
     mapSaplingFullViewingKeys[ivk] = extfvk;
 
+    // TODO: check whether DefaultAddress is the right thing to use here.
     return CBasicKeyStore::AddSaplingIncomingViewingKey(ivk, extfvk.DefaultAddress());
 }
 

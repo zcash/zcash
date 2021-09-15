@@ -201,27 +201,15 @@ libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigration
         assert(saplingAddress != nullptr); // This is checked in init.cpp
         return *saplingAddress;
     }
-    // Derive the address for Sapling account 0
-    auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
-    uint32_t bip44CoinType = Params().BIP44CoinType();
 
-    // We use a fixed keypath scheme of m/32'/coin_type'/account'
-    // Derive m/32'
-    auto m_32h = m.Derive(32 | ZIP32_HARDENED_KEY_LIMIT);
-    // Derive m/32'/coin_type'
-    auto m_32h_cth = m_32h.Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
-
-    // Derive m/32'/coin_type'/0'
-    libzcash::SaplingExtendedSpendingKey xsk = m_32h_cth.Derive(0 | ZIP32_HARDENED_KEY_LIMIT);
-
-    libzcash::SaplingPaymentAddress toAddress = xsk.DefaultAddress();
-
-    if (!HaveSpendingKeyForPaymentAddress(pwalletMain)(toAddress)) {
-        // Sapling account 0 must be the first address returned by GenerateNewSaplingZKey
-        assert(pwalletMain->GenerateNewSaplingZKey() == toAddress);
+    // TODO: use UVK-based derivation here instead.
+    auto xsk = pwalletMain->GenerateNewSaplingZKey(seed, 0);
+    if (xsk.has_value()) {
+        return xsk.value().DefaultAddress();
+    } else {
+        // the wallet already has a key at account 0; what is the
+        // correct behavior here?
     }
-
-    return toAddress;
 }
 
 void AsyncRPCOperation_saplingmigration::cancel() {

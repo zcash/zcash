@@ -2032,9 +2032,12 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
     if (pwalletMain->IsCrypted())
         obj.pushKV("unlocked_until", nWalletUnlockTime);
     obj.pushKV("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK()));
-    uint256 seedFp = pwalletMain->GetHDChain().seedFp;
-    if (!seedFp.IsNull())
-         obj.pushKV("seedfp", seedFp.GetHex());
+    auto mnemonicChain = pwalletMain->GetMnemonicHDChain();
+    if (mnemonicChain.has_value())
+         obj.pushKV("seedfp", mnemonicChain.value().GetSeedFingerprint().GetHex());
+    auto legacyChain = pwalletMain->GetLegacyHDChain();
+    if (legacyChain.has_value())
+         obj.pushKV("legacy_seedfp", legacyChain.value().GetSeedFingerprint().GetHex());
     return obj;
 }
 
@@ -2936,7 +2939,12 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
     if (addrType == ADDR_TYPE_SPROUT) {
         return keyIO.EncodePaymentAddress(pwalletMain->GenerateNewSproutZKey());
     } else if (addrType == ADDR_TYPE_SAPLING) {
-        return keyIO.EncodePaymentAddress(pwalletMain->GenerateNewSaplingZKey());
+        auto saplingAddress = pwalletMain->GenerateNewLegacySaplingZKey();
+        if (saplingAddress.has_value()) {
+            return keyIO.EncodePaymentAddress(saplingAddress.value());
+        } else {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "No legacy HD seed available; please use z_getunifiedaddress instead.");
+        }
     } else {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address type");
     }

@@ -804,8 +804,12 @@ protected:
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);
     void MarkAffectedTransactionsDirty(const CTransaction& tx);
 
-    /* the hd chain data model (chain counters) */
-    CHDChain hdChain;
+    /* the hd chain metadata for keys derived from the mnemonic seed */
+    std::optional<CHDChain> mnemonicHDChain;
+    /* the hd chain metadata for keys derived from the legacy seed */
+    std::optional<CHDChain> legacyHDChain;
+
+    /* the network ID string for the network for which this wallet was created */
     std::string networkIdString;
 
 public:
@@ -1052,8 +1056,20 @@ public:
     /**
       * Sapling ZKeys
       */
-    //! Generates new Sapling key
-    libzcash::SaplingPaymentAddress GenerateNewSaplingZKey();
+
+    //! Generates new Sapling key given the specified HD seed and account id
+    //! and persists it to the wallet.
+    //
+    //! Returns the newly generated extended spending key, or `std::nullopt`
+    //! if a key corresponding to the specified account id already exists in
+    //! the wallet.
+    std::optional<libzcash::SaplingExtendedSpendingKey> GenerateNewSaplingZKey(
+            const HDSeed& seed,
+            uint32_t accountId);
+    //! Generates new Sapling key using the legacy HD seed (if one is available)
+    //! and legacy account counter, stores the newly generated spending key to
+    //! the wallet, and returns the default address for the newly generated key.
+    std::optional<libzcash::SaplingPaymentAddress> GenerateNewLegacySaplingZKey();
     //! Adds Sapling spending key to the store, and saves it to disk
     bool AddSaplingZKey(const libzcash::SaplingExtendedSpendingKey &key);
     //! Add Sapling full viewing key to the wallet.
@@ -1302,9 +1318,13 @@ public:
     /* Returns the wallet's HD seed or throw JSONRPCError(...) */
     HDSeed GetHDSeedForRPC() const;
 
-    /* Set the HD chain model (chain child index counters) */
-    void SetHDChain(const CHDChain& chain, bool memonly);
-    const CHDChain& GetHDChain() const { return hdChain; }
+    /* Set the metadata for the mnemonic HD seed (chain child index counters) */
+    void SetMnemonicHDChain(const CHDChain& chain, bool memonly);
+    const std::optional<CHDChain> GetMnemonicHDChain() const { return mnemonicHDChain; }
+
+    /* Set the metadata for the legacy HD seed (chain child index counters) */
+    void SetLegacyHDChain(const CHDChain& chain, bool memonly);
+    const std::optional<CHDChain> GetLegacyHDChain() const { return legacyHDChain; }
 
     bool CheckNetworkInfo(std::pair<std::string, std::string> networkInfo);
     uint32_t BIP44CoinType();
