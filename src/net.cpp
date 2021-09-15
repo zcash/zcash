@@ -73,7 +73,7 @@ std::string strSubVersion;
 
 vector<CNode*> vNodes;
 CCriticalSection cs_vNodes;
-limitedmap<uint256, int64_t> mapAlreadyAskedFor(MAX_INV_SZ);
+limitedmap<WTxId, int64_t> mapAlreadyAskedFor(MAX_INV_SZ);
 
 static deque<string> vOneShots;
 static CCriticalSection cs_vOneShots;
@@ -2034,7 +2034,7 @@ void RelayTransaction(const CTransaction& tx)
     LOCK(cs_vNodes);
     for (CNode* pnode : vNodes)
     {
-        pnode->PushTxInventory(tx.GetHash());
+        pnode->PushTxInventory(tx.GetWTxId());
     }
 }
 
@@ -2279,14 +2279,15 @@ void CNode::AskFor(const CInv& inv)
 {
     if (mapAskFor.size() > MAPASKFOR_MAX_SZ || setAskFor.size() > SETASKFOR_MAX_SZ)
         return;
+    WTxId wtxid(inv.hash, inv.hashAux);
     // a peer may not have multiple non-responded queue positions for a single inv item
-    if (!setAskFor.insert(inv.hash).second)
+    if (!setAskFor.insert(wtxid).second)
         return;
 
     // We're using mapAskFor as a priority queue,
     // the key is the earliest time the request can be sent
     int64_t nRequestTime;
-    limitedmap<uint256, int64_t>::const_iterator it = mapAlreadyAskedFor.find(inv.hash);
+    limitedmap<WTxId, int64_t>::const_iterator it = mapAlreadyAskedFor.find(wtxid);
     if (it != mapAlreadyAskedFor.end())
         nRequestTime = it->second;
     else
@@ -2305,7 +2306,7 @@ void CNode::AskFor(const CInv& inv)
     if (it != mapAlreadyAskedFor.end())
         mapAlreadyAskedFor.update(it, nRequestTime);
     else
-        mapAlreadyAskedFor.insert(std::make_pair(inv.hash, nRequestTime));
+        mapAlreadyAskedFor.insert(std::make_pair(wtxid, nRequestTime));
     mapAskFor.insert(std::make_pair(nRequestTime, inv));
 }
 

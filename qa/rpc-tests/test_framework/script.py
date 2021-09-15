@@ -827,20 +827,20 @@ SIGHASH_NONE = 2
 SIGHASH_SINGLE = 3
 SIGHASH_ANYONECANPAY = 0x80
 
-def getHashPrevouts(tx):
-    digest = blake2b(digest_size=32, person=b'ZcashPrevoutHash')
+def getHashPrevouts(tx, person=b'ZcashPrevoutHash'):
+    digest = blake2b(digest_size=32, person=person)
     for x in tx.vin:
         digest.update(x.prevout.serialize())
     return digest.digest()
 
-def getHashSequence(tx):
-    digest = blake2b(digest_size=32, person=b'ZcashSequencHash')
+def getHashSequence(tx, person=b'ZcashSequencHash'):
+    digest = blake2b(digest_size=32, person=person)
     for x in tx.vin:
         digest.update(struct.pack('<I', x.nSequence))
     return digest.digest()
 
-def getHashOutputs(tx):
-    digest = blake2b(digest_size=32, person=b'ZcashOutputsHash')
+def getHashOutputs(tx, person=b'ZcashOutputsHash'):
+    digest = blake2b(digest_size=32, person=person)
     for x in tx.vout:
         digest.update(x.serialize())
     return digest.digest()

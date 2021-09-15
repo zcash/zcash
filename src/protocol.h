@@ -121,12 +121,12 @@ public:
  * to mention it in the respective ZIP, as well as checking for collisions with
  * BIPs we might want to backport.
  */
-enum GetDataMsg
-{
+enum GetDataMsg : uint32_t {
     UNDEFINED = 0,
     MSG_TX = 1,
     MSG_BLOCK = 2,
-    // The following can only occur in getdata. Invs always use TX or BLOCK.
+    MSG_WTX = 5,             //!< Defined in ZIP 239
+    // The following can only occur in getdata. Invs always use TX/WTX or BLOCK.
     MSG_FILTERED_BLOCK = 3,  //!< Defined in BIP37
 };
 
@@ -136,25 +136,42 @@ class CInv
 public:
     CInv();
     CInv(int typeIn, const uint256& hashIn);
+    CInv(int typeIn, const uint256& hashIn, const uint256& hashAuxIn);
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action)
     {
+        int nVersion = s.GetVersion();
         READWRITE(type);
         READWRITE(hash);
+        if (type == MSG_WTX && nVersion >= CINV_WTX_VERSION) {
+            READWRITE(hashAux);
+        } else if (type == MSG_TX && ser_action.ForRead()) {
+            // Ensure that this value is set consistently in memory for MSG_TX.
+            hashAux = LEGACY_TX_AUTH_DIGEST;
+        }
     }
 
     friend bool operator<(const CInv& a, const CInv& b);
 
     std::string GetCommand() const;
+    std::vector<unsigned char> GetWideHash() const;
     std::string ToString() const;
 
     // TODO: make private (improves encapsulation)
 public:
     int type;
+    // The main hash. This is:
+    // - MSG_BLOCK: the block hash.
+    // - MSG_TX and MSG_WTX: the txid.
     uint256 hash;
+    // The auxiliary hash. This is:
+    // - MSG_BLOCK: null (all-zeroes) and not parsed or serialized.
+    // - MSG_TX: legacy auth digest (all-ones) and not parsed or serialized.
+    // - MSG_WTX: the auth digest.
+    uint256 hashAux;
 };
 
 #endif // BITCOIN_PROTOCOL_H

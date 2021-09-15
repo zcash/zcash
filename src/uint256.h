@@ -165,4 +165,9 @@ inline uint256 uint256S(const std::string& str)
     return rv;
 }
 
+// Defined here so we have access to it in both primitives/transaction.h and protocol.h.
+/* The placeholder value used for the auth digest of pre-v5 transactions. */
+static const uint256 LEGACY_TX_AUTH_DIGEST =
+    uint256S("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+
 #endif // BITCOIN_UINT256_H

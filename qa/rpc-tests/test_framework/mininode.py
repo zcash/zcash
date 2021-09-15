@@ -44,6 +44,7 @@ from .equihash import (
     hash_nonce,
     zcash_person,
 )
+from .util import bytes_to_hex_str
 
 
 BIP0031_VERSION = 60000
@@ -58,11 +59,15 @@ MY_SUBVERSION = b"/python-mininode-tester:0.0.3/"
 SPROUT_VERSION_GROUP_ID = 0x00000000
 OVERWINTER_VERSION_GROUP_ID = 0x03C48270
 SAPLING_VERSION_GROUP_ID = 0x892F2085
+ZIP225_VERSION_GROUP_ID = 0x26A7270A
 # No transaction format change in Blossom.
 
 MAX_INV_SZ = 50000
 
 COIN = 100000000 # 1 zec in zatoshis
+
+# The placeholder value used for the auth digest of pre-v5 transactions.
+LEGACY_TX_AUTH_DIGEST = (1 << 256) - 1
 
 # Keep our own socket map for asyncore, so that we can track disconnects
 # ourselves (to workaround an issue with closing an asyncore socket when
@@ -334,25 +339,42 @@ class CInv(object):
     typemap = {
         0: b"Error",
         1: b"TX",
-        2: b"Block"}
+        2: b"Block",
+        5: b"WTX",
+    }
 
-    def __init__(self, t=0, h=0):
+    def __init__(self, t=0, h=0, h_aux=0):
         self.type = t
         self.hash = h
+        self.hash_aux = h_aux
+        if self.type == 1:
+            self.hash_aux = LEGACY_TX_AUTH_DIGEST
 
     def deserialize(self, f):
         self.type = struct.unpack("<i", f.read(4))[0]
         self.hash = deser_uint256(f)
+        if self.type == 5:
+            self.hash_aux = deser_uint256(f)
+        elif self.type == 1:
+            self.hash_aux = LEGACY_TX_AUTH_DIGEST
 
     def serialize(self):
         r = b""
         r += struct.pack("<i", self.type)
         r += ser_uint256(self.hash)
+        if self.type == 5:
+            r += ser_uint256(self.hash_aux)
         return r
 
+    def __eq__(self, other):
+        return (
+            (type(self) == type(other)) and
+            (self.type, self.hash, self.hash_aux) == (other.type, other.hash, other.hash_aux)
+        )
+
     def __repr__(self):
-        return "CInv(type=%s hash=%064x)" \
-            % (self.typemap[self.type], self.hash)
+        return "CInv(type=%s hash=%064x hash_aux=%064x)" \
+            % (self.typemap[self.type], self.hash, self.hash_aux)
 
 
 class CBlockLocator(object):
@@ -375,6 +397,182 @@ class CBlockLocator(object):
             % (self.nVersion, repr(self.vHave))
 
 
+class RedPallasSignature(object):
+    def __init__(self):
+        self.data = None
+
+    def deserialize(self, f):
+        self.data = f.read(64)
+
+    def serialize(self):
+        r = b""
+        r += self.data
+        return r
+
+    def __repr__(self):
+        return "RedPallasSignature(%s)" % bytes_to_hex_str(self.data)
+
+
+class OrchardAction(object):
+    def __init__(self):
+        self.cv = None
+        self.nullifier = None
+        self.rk = None
+        self.cmx = None
+        self.ephemeralKey = None
+        self.encCiphertext = None
+        self.outCiphertext = None
+
+    def deserialize(self, f):
+        self.cv = deser_uint256(f)
+        self.nullifier = deser_uint256(f)
+        self.rk = deser_uint256(f)
+        self.cmx = deser_uint256(f)
+        self.ephemeralKey = deser_uint256(f)
+        self.encCiphertext = f.read(580)
+        self.outCiphertext = f.read(80)
+
+    def serialize(self):
+        r = b""
+        r += ser_uint256(self.cv)
+        r += ser_uint256(self.nullifier)
+        r += ser_uint256(self.rk)
+        r += ser_uint256(self.cmx)
+        r += ser_uint256(self.ephemeralKey)
+        r += self.encCiphertext
+        r += self.outCiphertext
+        return r
+
+    def __repr__(self):
+        return "OrchardAction(cv=%064x, nullifier=%064x, rk=%064x, cmu=%064x, ephemeralKey=%064x, encCiphertext=%064x, outCiphertext=%064x)" \
+            % (
+                self.cv,
+                self.nullifier,
+                self.rk,
+                self.cmx,
+                self.ephemeralKey,
+                self.encCiphertext,
+                self.outCiphertext,
+            )
+
+
+ORCHARD_FLAGS_ENABLE_SPENDS = 0b00000001
+ORCHARD_FLAGS_ENABLE_OUTPUTS = 0b00000010
+
+class OrchardBundle(object):
+    def __init__(self):
+        self.actions = []
+        self.enableSpends = False
+        self.enableOutputs = False
+        self.valueBalance = 0
+        self.anchor = None
+        self.proofs = []
+        self.spendAuthSigs = []
+        self.bindingSig = None
+
+    def deserialize(self, f):
+        self.actions = deser_vector(f, OrchardAction)
+        if len(self.actions) > 0:
+            flags = f.read(1)
+            self.enableSpends = (flags & ORCHARD_FLAGS_ENABLE_SPENDS) != 0
+            self.enableOutputs = (flags & ORCHARD_FLAGS_ENABLE_OUTPUTS) != 0
+            self.valueBalance = struct.unpack("<q", f.read(8))[0]
+            self.anchor = deser_uint256(f)
+            self.proofs = deser_char_vector(f)
+            for i in range(len(self.actions)):
+                self.actions[i].spendAuthSig = RedPallasSignature()
+                self.actions[i].spendAuthSig.deserialize(f)
+            self.bindingSig = RedPallasSignature()
+            self.bindingSig.deserialize(f)
+
+    def serialize(self):
+        r = b""
+        r += ser_vector(self.actions)
+        if len(self.actions) > 0:
+            flags = 0 ^ (
+                ORCHARD_FLAGS_ENABLE_SPENDS if self.enableSpends else 0
+            ) ^ (
+                ORCHARD_FLAGS_ENABLE_OUTPUTS if self.enableOutputs else 0
+            )
+            r += struct.pack("B", flags)
+            r += struct.pack("<q", self.valueBalance)
+            r += ser_uint256(self.anchor)
+            r += ser_vector(self.proofs)
+            for i in range(len(self.actions)):
+                r += self.actions[i].spendAuthSig.serialize()
+            r += self.bindingSig.serialize()
+        return r
+
+    def __repr__(self):
+        return "OrchardBundle(actions=%r, enableSpends=%s, enableOutputs=%s, valueBalance=%i, proofs=%r, spendAuthSigs=%r, bindingSig=%r)" \
+            % (
+                self.actions,
+                self.enableSpends,
+                self.enableOutputs,
+                self.valueBalance,
+                self.proofs,
+                self.spendAuthSigs,
+                self.bindingSig,
+            )
+
+
+class Groth16Proof(object):
+    def __init__(self):
+        self.data = None
+
+    def deserialize(self, f):
+        self.data = f.read(192)
+
+    def serialize(self):
+        r = b""
+        r += self.data
+        return r
+
+    def __repr__(self):
+        return "Groth16Proof(%s)" % bytes_to_hex_str(self.data)
+
+
+class RedJubjubSignature(object):
+    def __init__(self):
+        self.data = None
+
+    def deserialize(self, f):
+        self.data = f.read(64)
+
+    def serialize(self):
+        r = b""
+        r += self.data
+        return r
+
+    def __repr__(self):
+        return "RedJubjubSignature(%s)" % bytes_to_hex_str(self.data)
+
+
+class SpendDescriptionV5(object):
+    def __init__(self):
+        self.cv = None
+        self.nullifier = None
+        self.rk = None
+        self.zkproof = None
+        self.spendAuthSig = None
+
+    def deserialize(self, f):
+        self.cv = deser_uint256(f)
+        self.nullifier = deser_uint256(f)
+        self.rk = deser_uint256(f)
+
+    def serialize(self):
+        r = b""
+        r += ser_uint256(self.cv)
+        r += ser_uint256(self.nullifier)
+        r += ser_uint256(self.rk)
+        return r
+
+    def __repr__(self):
+        return "SpendDescriptionV5(cv=%064x, nullifier=%064x, rk=%064x, zkproof=%r, spendAuthSig=%r)" \
+            % (self.cv, self.nullifier, self.rk, self.zkproof, self.spendAuthSig)
+
+
 class SpendDescription(object):
     def __init__(self):
         self.cv = None
@@ -389,8 +587,10 @@ class SpendDescription(object):
         self.anchor = deser_uint256(f)
         self.nullifier = deser_uint256(f)
         self.rk = deser_uint256(f)
-        self.zkproof = f.read(192)
-        self.spendAuthSig = f.read(64)
+        self.zkproof = Groth16Proof()
+        self.zkproof.deserialize(f)
+        self.spendAuthSig = RedJubjubSignature()
+        self.spendAuthSig.deserialize(f)
 
     def serialize(self):
         r = b""
@@ -398,13 +598,50 @@ class SpendDescription(object):
         r += ser_uint256(self.anchor)
         r += ser_uint256(self.nullifier)
         r += ser_uint256(self.rk)
-        r += self.zkproof
-        r += self.spendAuthSig
+        r += self.zkproof.serialize()
+        r += self.spendAuthSig.serialize()
         return r
 
     def __repr__(self):
-        return "SpendDescription(cv=%064x, anchor=%064x, nullifier=%064x, rk=%064x, zkproof=%064x, spendAuthSig=%064x)" \
-            % (self.cv, self.anchor, self.nullifier, self.rk, self.zkproof, self.spendauthsig)
+        return "SpendDescription(cv=%064x, anchor=%064x, nullifier=%064x, rk=%064x, zkproof=%r, spendAuthSig=%r)" \
+            % (self.cv, self.anchor, self.nullifier, self.rk, self.zkproof, self.spendAuthSig)
+
+
+class OutputDescriptionV5(object):
+    def __init__(self):
+        self.cv = None
+        self.cmu = None
+        self.ephemeralKey = None
+        self.encCiphertext = None
+        self.outCiphertext = None
+        self.zkproof = None
+
+    def deserialize(self, f):
+        self.cv = deser_uint256(f)
+        self.cmu = deser_uint256(f)
+        self.ephemeralKey = deser_uint256(f)
+        self.encCiphertext = f.read(580)
+        self.outCiphertext = f.read(80)
+
+    def serialize(self):
+        r = b""
+        r += ser_uint256(self.cv)
+        r += ser_uint256(self.cmu)
+        r += ser_uint256(self.ephemeralKey)
+        r += self.encCiphertext
+        r += self.outCiphertext
+        return r
+
+    def __repr__(self):
+        return "OutputDescription(cv=%064x, cmu=%064x, ephemeralKey=%064x, encCiphertext=%s, outCiphertext=%s, zkproof=%r)" \
+            % (
+                self.cv,
+                self.cmu,
+                self.ephemeralKey,
+                bytes_to_hex_str(self.encCiphertext),
+                bytes_to_hex_str(self.outCiphertext),
+                self.zkproof,
+            )
 
 
 class OutputDescription(object):
@@ -422,7 +659,8 @@ class OutputDescription(object):
         self.ephemeralKey = deser_uint256(f)
         self.encCiphertext = f.read(580)
         self.outCiphertext = f.read(80)
-        self.zkproof = f.read(192)
+        self.zkproof = Groth16Proof()
+        self.zkproof.deserialize()
 
     def serialize(self):
         r = b""
@@ -431,12 +669,77 @@ class OutputDescription(object):
         r += ser_uint256(self.ephemeralKey)
         r += self.encCiphertext
         r += self.outCiphertext
-        r += self.zkproof
+        r += self.zkproof.serialize()
         return r
 
     def __repr__(self):
-        return "OutputDescription(cv=%064x, cmu=%064x, ephemeralKey=%064x, encCiphertext=%064x, outCiphertext=%064x, zkproof=%064x)" \
-            % (self.cv, self.cmu, self.ephemeralKey, self.encCiphertext, self.outCiphertext, self.zkproof)
+        return "OutputDescription(cv=%064x, cmu=%064x, ephemeralKey=%064x, encCiphertext=%s, outCiphertext=%s, zkproof=%r)" \
+            % (
+                self.cv,
+                self.cmu,
+                self.ephemeralKey,
+                bytes_to_hex_str(self.encCiphertext),
+                bytes_to_hex_str(self.outCiphertext),
+                self.zkproof,
+            )
+
+
+class SaplingBundle(object):
+    def __init__(self):
+        self.spends = []
+        self.outputs = []
+        self.valueBalance = 0
+        self.anchor = None
+        self.bindingSig = None
+
+    def deserialize(self, f):
+        self.spends = deser_vector(f, SpendDescriptionV5)
+        self.outputs = deser_vector(f, OutputDescriptionV5)
+        has_sapling = (len(self.spends) + len(self.outputs)) > 0
+        if has_sapling:
+            self.valueBalance = struct.unpack("<q", f.read(8))[0]
+        if len(self.spends) > 0:
+            self.anchor = deser_uint256(f)
+        for i in range(len(self.spends)):
+            self.spends[i].zkproof = Groth16Proof()
+            self.spends[i].zkproof.deserialize(f)
+        for i in range(len(self.spends)):
+            self.spends[i].spendAuthSig = RedJubjubSignature()
+            self.spends[i].spendAuthSig.deserialize(f)
+        for i in range(len(self.outputs)):
+            self.outputs[i].zkproof = Groth16Proof()
+            self.outputs[i].zkproof.deserialize(f)
+        if has_sapling:
+            self.bindingSig = RedJubjubSignature()
+            self.bindingSig.deserialize(f)
+
+    def serialize(self):
+        r = b""
+        r += ser_vector(self.spends)
+        r += ser_vector(self.outputs)
+        has_sapling = (len(self.spends) + len(self.outputs)) > 0
+        if has_sapling:
+            r += struct.pack("<q", self.valueBalance)
+        if len(self.spends) > 0:
+            r += ser_uint256(self.anchor)
+        for spend in self.spends:
+            r += spend.zkproof.serialize()
+        for spend in self.spends:
+            r += spend.spendAuthSig.serialize()
+        for output in self.outputs:
+            r += output.zkproof.serialize()
+        if has_sapling:
+            r += self.bindingSig.serialize()
+        return r
+
+    def __repr__(self):
+        return "SaplingBundle(spends=%r, outputs=%r, valueBalance=%i, bindingSig=%064x)" \
+            % (
+                self.spends,
+                self.outputs,
+                self.valueBalance,
+                self.bindingSig,
+            )
 
 
 G1_PREFIX_MASK = 0x02
@@ -536,7 +839,7 @@ class JSDescription(object):
         self.proof = None
         self.ciphertexts = [None] * ZC_NUM_JS_OUTPUTS
 
-    def deserialize(self, f):
+    def deserialize(self, f, use_groth16=True):
         self.vpub_old = struct.unpack("<q", f.read(8))[0]
         self.vpub_new = struct.unpack("<q", f.read(8))[0]
         self.anchor = deser_uint256(f)
@@ -556,7 +859,10 @@ class JSDescription(object):
         for i in range(ZC_NUM_JS_INPUTS):
             self.macs.append(deser_uint256(f))
 
-        self.proof = ZCProof()
+        if use_groth16:
+            self.proof = Groth16Proof()
+        else:
+            self.proof = ZCProof()
         self.proof.deserialize(f)
 
         self.ciphertexts = []
@@ -578,7 +884,7 @@ class JSDescription(object):
             r += ser_uint256(self.macs[i])
         r += self.proof.serialize()
         for i in range(ZC_NUM_JS_OUTPUTS):
-            r += ser_uint256(self.ciphertexts[i])
+            r += self.ciphertexts[i]
         return r
 
     def __repr__(self):
@@ -704,6 +1010,29 @@ class CTransaction(object):
         isSaplingV4 = (self.fOverwintered and
                        self.nVersionGroupId == SAPLING_VERSION_GROUP_ID and
                        self.nVersion == 4)
+        isNu5V5 = (self.fOverwintered and
+                       self.nVersionGroupId == ZIP225_VERSION_GROUP_ID and
+                       self.nVersion == 5)
+
+        if isNu5V5:
+            # Common transaction fields
+            self.nConsensusBranchId = struct.unpack("<I", f.read(4))[0]
+            self.nLockTime = struct.unpack("<I", f.read(4))[0]
+            self.nExpiryHeight = struct.unpack("<I", f.read(4))[0]
+
+            # Transparent transaction fields
+            self.vin = deser_vector(f, CTxIn)
+            self.vout = deser_vector(f, CTxOut)
+
+            # Sapling transaction fields
+            self.saplingBundle = SaplingBundle()
+            self.saplingBundle.deserialize(f)
+
+            # Orchard transaction fields
+            self.orchardBundle = OrchardBundle()
+            self.orchardBundle.deserialize(f)
+
+            return
 
         self.vin = deser_vector(f, CTxIn)
         self.vout = deser_vector(f, CTxOut)
@@ -723,7 +1052,8 @@ class CTransaction(object):
                 self.joinSplitSig = f.read(64)
 
         if isSaplingV4 and not (len(self.shieldedSpends) == 0 and len(self.shieldedOutputs) == 0):
-            self.bindingSig = f.read(64)
+            self.bindingSig = RedJubjubSignature()
+            self.bindingSig.deserialize(f)
 
         self.sha256 = None
         self.hash = None
@@ -736,6 +1066,30 @@ class CTransaction(object):
         isSaplingV4 = (self.fOverwintered and
                        self.nVersionGroupId == SAPLING_VERSION_GROUP_ID and
                        self.nVersion == 4)
+        isNu5V5 = (self.fOverwintered and
+                       self.nVersionGroupId == ZIP225_VERSION_GROUP_ID and
+                       self.nVersion == 5)
+
+        if isNu5V5:
+            r = b""
+
+            # Common transaction fields
+            r += struct.pack("<I", header)
+            r += struct.pack("<I", self.nConsensusBranchId)
+            r += struct.pack("<I", self.nLockTime)
+            r += struct.pack("<I", self.nExpiryHeight)
+
+            # Transparent transaction fields
+            r += ser_vector(self.vin)
+            r += ser_vector(self.vout)
+
+            # Sapling transaction fields
+            r += self.saplingBundle.serialize()
+
+            # Orchard transaction fields
+            r += self.orchardBundle.serialize()
+
+            return r
 
         r = b""
         r += struct.pack("<I", header)
@@ -756,7 +1110,7 @@ class CTransaction(object):
                 r += ser_uint256(self.joinSplitPubKey)
                 r += self.joinSplitSig
         if isSaplingV4 and not (len(self.shieldedSpends) == 0 and len(self.shieldedOutputs) == 0):
-            r += self.bindingSig
+            r += self.bindingSig.serialize()
         return r
 
     def rehash(self):
@@ -764,9 +1118,14 @@ class CTransaction(object):
         self.calc_sha256()
 
     def calc_sha256(self):
+        if self.nVersion >= 5:
+            from . import zip244
+            txid = zip244.txid_digest(self)
+        else:
+            txid = hash256(self.serialize())
         if self.sha256 is None:
-            self.sha256 = uint256_from_str(hash256(self.serialize()))
-        self.hash = encode(hash256(self.serialize())[::-1], 'hex_codec').decode('ascii')
+            self.sha256 = uint256_from_str(txid)
+        self.hash = encode(txid[::-1], 'hex_codec').decode('ascii')
 
     def is_valid(self):
         self.calc_sha256()
@@ -785,10 +1144,10 @@ class CTransaction(object):
         if self.nVersion >= 2:
             r += " vJoinSplit=%r" % (self.vJoinSplit,)
             if len(self.vJoinSplit) > 0:
-                r += " joinSplitPubKey=%064x joinSplitSig=%064x" \
-                    % (self.joinSplitPubKey, self.joinSplitSig)
+                r += " joinSplitPubKey=%064x joinSplitSig=%s" \
+                    % (self.joinSplitPubKey, bytes_to_hex_str(self.joinSplitSig))
         if len(self.shieldedSpends) > 0 or len(self.shieldedOutputs) > 0:
-            r += " bindingSig=%064x" % (self.bindingSig,)
+            r += " bindingSig=%r" % self.bindingSig
         r += ")"
         return r
 
