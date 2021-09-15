@@ -1,11 +1,13 @@
 use std::{mem, ptr};
 
 use libc::size_t;
+use memuse::DynamicUsage;
 use orchard::{
     bundle::Authorized,
     keys::OutgoingViewingKey,
+    note_encryption::OrchardDomain,
     primitives::redpallas::{self, Binding, SpendAuth},
-    Bundle, OrchardDomain,
+    Bundle,
 };
 use rand_core::OsRng;
 use tracing::{debug, error};
