@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>&quot;Coins&quot; view - The zcashd Book</title>
+        <title>P2P data propagation - The zcashd Book</title>
                 
 
         <!-- Custom HTML head -->
@@ -82,7 +82,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">zcashd</a></li><li class="chapter-item expanded "><a href="../user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../user/metrics.html"><strong aria-hidden="true">1.1.</strong> Metrics</a></li></ol></li><li class="chapter-item expanded "><a href="../dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../dev/rust.html"><strong aria-hidden="true">2.1.</strong> Rust in zcashd</a></li></ol></li><li class="chapter-item expanded "><a href="../design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain state</a></li><li class="chapter-item expanded "><a href="../design/coins-view.html" class="active"><strong aria-hidden="true">3.2.</strong> &quot;Coins&quot; view</a></li><li class="chapter-item expanded "><a href="../design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P data propagation</a></li></ol></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">zcashd</a></li><li class="chapter-item expanded "><a href="../user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../user/metrics.html"><strong aria-hidden="true">1.1.</strong> Metrics</a></li></ol></li><li class="chapter-item expanded "><a href="../dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../dev/rust.html"><strong aria-hidden="true">2.1.</strong> Rust in zcashd</a></li></ol></li><li class="chapter-item expanded "><a href="../design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain state</a></li><li class="chapter-item expanded "><a href="../design/coins-view.html"><strong aria-hidden="true">3.2.</strong> &quot;Coins&quot; view</a></li><li class="chapter-item expanded "><a href="../design/p2p-data-propagation.html" class="active"><strong aria-hidden="true">3.3.</strong> P2P data propagation</a></li></ol></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -143,27 +143,51 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="coins-view"><a class="header" href="#coins-view">&quot;Coins&quot; view</a></h1>
-<p>TBD</p>
-<h2 id="notes"><a class="header" href="#notes">Notes</a></h2>
+                        <h1 id="p2p-data-propagation"><a class="header" href="#p2p-data-propagation">P2P data propagation</a></h1>
+<p>This page contains notes about how block and transaction data is tracked and propagated by
+<code>zcashd</code>. Most of this behaviour is inherited from Bitcoin Core, but some differences have
+developed.</p>
+<p>Some of this content is duplicated from in-code comments, but assembling this summary in
+one place is generally useful for understanding the overall dynamic :)</p>
+<h2 id="recentrejects"><a class="header" href="#recentrejects"><code>recentRejects</code></a></h2>
+<p>When a transaction is rejected by <code>AcceptToMemoryPool</code>, the transaction is added to the
+<code>recentRejects</code> Bloom filter, so that we don't process it again. The Bloom filter resets
+whenever the chain tip changes, as previously invalid transactions might become valid.</p>
+<p>To prevent DoS attacks against wallets submitting transactions, <code>recentRejects</code> needs to
+store a commitment to the entire transaction. This ensures that if a transaction is
+malleated by a network peer to invalidate its authorizing data, the node will ignore
+future advertisements of that specific transaction, but still request alternative versions
+of the same txid (which might have valid authorizing data).</p>
 <ul>
-<li>This is the main context in which <code>CTxOut::IsNull()</code> is used. The other is a
-single spot in the mempool code. Once we've backported the
-<a href="https://github.com/bitcoin/bitcoin/pull/10195">per-txout CoinsDB</a> we can
-hopefully eliminate this method.</li>
+<li>For pre-v5 transactions, the txid commits to the entire transaction, and the wtxid is
+the txid with a globally-fixed (all-ones) suffix.</li>
+<li>For v5+ transactions, the wtxid commits to the entire transaction.</li>
 </ul>
+<h2 id="maporphantransactions"><a class="header" href="#maporphantransactions"><code>mapOrphanTransactions</code></a></h2>
+<p>Upstream uses this map to store transactions that are rejected by <code>AcceptToMemoryPool</code>
+because the node doesn't have their transparent inputs. <code>zcashd</code> inherits this behaviour
+but limits it to purely-transparent transactions (that is, if a transaction contains any
+shielded components, the node rejects it as invalid and adds it to <code>recentRejects</code>).</p>
+<p><code>mapOrphanTransactions</code> indexes transactions by txid. This means that if an orphan
+transaction is received (spending transparent UTXOs the node does not know about), and it
+also happens to be invalid for other reasons (subsequent <code>AcceptToMemoryPool</code> rules that
+haven't yet been checked), then the node will not request any v5+ transactions with the
+same txid but different authorizing data. This does not create a DoS problem for wallets,
+because an adversary that manipulated an orphan transaction to be invalid under the above
+constraints would also need to prevent the orphan's parent from entering the mempool, and
+eventually a parent is reached that is not an orphan. Once the orphan's direct parent is
+accepted, the orphan is re-evaluated, and if it had been manipulated to be invalid, its
+wtxid is added to <code>recentRejects</code> while its txid is removed from <code>mapOrphanTransactions</code>,
+enabling the wallet to rebroadcast the unmodified transaction.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                                                    <a rel="prev" href="../design/chain-state.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                                    <a rel="prev" href="../design/coins-view.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
-                                                    <a rel="next" href="../design/p2p-data-propagation.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
                         
                         <div style="clear: both"></div>
                     </nav>
@@ -171,13 +195,10 @@ hopefully eliminate this method.</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                                    <a rel="prev" href="../design/chain-state.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                    <a rel="prev" href="../design/coins-view.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
-                                    <a rel="next" href="../design/p2p-data-propagation.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
                             </nav>
 
         </div>
