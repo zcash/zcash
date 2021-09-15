@@ -4,6 +4,7 @@ $(package)_download_path=https://github.com/facebook/zstd/releases/download/v$($
 $(package)_file_name=zstd-$($(package)_version).tar.gz
 $(package)_sha256_hash=7c42d56fac126929a6a85dbc73ff1db2411d04f104fae9bdea51305663a83fd0
 $(package)_build_subdir=build/cmake
+$(package)_dependencies=native_cmake
 
 define $(package)_set_vars
 $(package)_config_opts += -DCMAKE_BUILD_TYPE=Release
