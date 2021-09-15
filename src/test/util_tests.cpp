@@ -492,4 +492,107 @@ BOOST_AUTO_TEST_CASE(test_ParseFixedPoint)
     BOOST_CHECK(!ParseFixedPoint("1.", 8, &amount));
 }
 
+BOOST_AUTO_TEST_CASE(test_ParseArbitraryInt)
+{
+    // Negation not allowed.
+    BOOST_CHECK(!ParseArbitraryInt("-1"));
+
+    // no legal digits
+    BOOST_CHECK(!ParseArbitraryInt(""));
+    BOOST_CHECK(!ParseArbitraryInt(" "));
+
+    // Hex not allowed (only decimal).
+    BOOST_CHECK(!ParseArbitraryInt("ab"));
+    BOOST_CHECK(!ParseArbitraryInt("0xab"));
+
+    // Decimal point not allowed.
+    BOOST_CHECK(!ParseArbitraryInt("1."));
+
+    std::optional<std::vector<unsigned char>> v;
+
+    // simple success case
+    v = ParseArbitraryInt("1");
+    BOOST_CHECK(v.has_value());
+    BOOST_CHECK_EQUAL(v->size(), 1);
+    BOOST_CHECK_EQUAL((*v)[0], 1);
+
+    // Leading and trailing whitespace (spaces and tabs) is allowed.
+    v = ParseArbitraryInt(" 1");
+    BOOST_CHECK(v.has_value());
+    BOOST_CHECK_EQUAL(v->size(), 1);
+    BOOST_CHECK_EQUAL((*v)[0], 1);
+    v = ParseArbitraryInt(" 1");
+    BOOST_CHECK(v.has_value());
+    BOOST_CHECK_EQUAL(v->size(), 1);
+    BOOST_CHECK_EQUAL((*v)[0], 1);
+    v = ParseArbitraryInt(" \t1 ");
+    BOOST_CHECK(v.has_value());
+    BOOST_CHECK_EQUAL(v->size(), 1);
+    BOOST_CHECK_EQUAL((*v)[0], 1);
+
+    // Leading zeros have no effect, does not mean octal
+    v = ParseArbitraryInt("010\t");
+    BOOST_CHECK(v.has_value());
+    BOOST_CHECK_EQUAL(v->size(), 1);
+    BOOST_CHECK_EQUAL((*v)[0], 10);
+
+    v = ParseArbitraryInt("                 255\t");
+    BOOST_CHECK(v.has_value());
+    BOOST_CHECK_EQUAL(v->size(), 1);
+    BOOST_CHECK_EQUAL((*v)[0], 255);
+
+    v = ParseArbitraryInt("\t 256");
+    BOOST_CHECK(v.has_value());
+    BOOST_CHECK_EQUAL(v->size(), 2);
+    BOOST_CHECK_EQUAL((*v)[0], 0);
+    BOOST_CHECK_EQUAL((*v)[1], 1);
+
+    v = ParseArbitraryInt("257 \t");
+    BOOST_CHECK(v.has_value());
+    BOOST_CHECK_EQUAL(v->size(), 2);
+    BOOST_CHECK_EQUAL((*v)[0], 1);
+    BOOST_CHECK_EQUAL((*v)[1], 1);
+
+    v = ParseArbitraryInt("65535");
+    BOOST_CHECK(v.has_value());
+    BOOST_CHECK_EQUAL(v->size(), 2);
+    BOOST_CHECK_EQUAL((*v)[0], 255);
+    BOOST_CHECK_EQUAL((*v)[1], 255);
+
+    v = ParseArbitraryInt("65536");
+    BOOST_CHECK(v.has_value());
+    BOOST_CHECK_EQUAL(v->size(), 3);
+    BOOST_CHECK_EQUAL((*v)[0], 0);
+    BOOST_CHECK_EQUAL((*v)[1], 0);
+    BOOST_CHECK_EQUAL((*v)[2], 1);
+
+    // This decimal string came from:
+    // $ echo 16i 102030405060708090A0B0C0D0E0F0F1F2F3F4F5F6F7 p | dc
+    v = ParseArbitraryInt("6033354224708459019450009057293028077350189222196983");
+    BOOST_CHECK(v.has_value());
+    BOOST_CHECK_EQUAL(v->size(), 22);
+    BOOST_CHECK_EQUAL((*v)[0], 0xf7);
+    BOOST_CHECK_EQUAL((*v)[1], 0xf6);
+    BOOST_CHECK_EQUAL((*v)[2], 0xf5);
+    BOOST_CHECK_EQUAL((*v)[3], 0xf4);
+    BOOST_CHECK_EQUAL((*v)[4], 0xf3);
+    BOOST_CHECK_EQUAL((*v)[5], 0xf2);
+    BOOST_CHECK_EQUAL((*v)[6], 0xf1);
+    BOOST_CHECK_EQUAL((*v)[7], 0xf0);
+    BOOST_CHECK_EQUAL((*v)[8], 0xe0);
+    BOOST_CHECK_EQUAL((*v)[9], 0xd0);
+    BOOST_CHECK_EQUAL((*v)[10], 0xc0);
+    BOOST_CHECK_EQUAL((*v)[11], 0xb0);
+    BOOST_CHECK_EQUAL((*v)[12], 0xa0);
+    BOOST_CHECK_EQUAL((*v)[13], 0x90);
+    BOOST_CHECK_EQUAL((*v)[14], 0x80);
+    BOOST_CHECK_EQUAL((*v)[15], 0x70);
+    BOOST_CHECK_EQUAL((*v)[16], 0x60);
+    BOOST_CHECK_EQUAL((*v)[17], 0x50);
+    BOOST_CHECK_EQUAL((*v)[18], 0x40);
+    BOOST_CHECK_EQUAL((*v)[19], 0x30);
+    BOOST_CHECK_EQUAL((*v)[20], 0x20);
+    BOOST_CHECK_EQUAL((*v)[21], 0x10);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

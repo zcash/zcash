@@ -12,6 +12,9 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <optional>
+
+constexpr char WHITESPACE[] = " \t";
 
 #define BEGIN(a)            ((char*)&(a))
 #define END(a)              ((char*)&((&(a))[1]))
@@ -163,5 +166,7 @@ bool ConvertBits(const O& outfn, I it, I end) {
     }
     return true;
 }
+
+std::optional<std::vector<uint8_t>> ParseArbitraryInt(const std::string& s);
 
 #endif // BITCOIN_UTILSTRENCODINGS_H

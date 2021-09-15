@@ -506,3 +506,25 @@ bool ParseFixedPoint(const std::string &val, int decimals, int64_t *amount_out)
     return true;
 }
 
+/// Parse the decimal string into a little-endian byte vector.
+std::optional<std::vector<uint8_t>> ParseArbitraryInt(const std::string& num_string)
+{
+    std::vector<unsigned char> result;
+    const size_t start = num_string.find_first_not_of(WHITESPACE);
+    if (start == std::string::npos) return std::nullopt;
+    const size_t end = num_string.find_last_not_of(WHITESPACE);
+    assert(end != std::string::npos);
+    for (char c : num_string.substr(start, end-start+1)) {
+        if (c < '0' || c > '9') {
+            return std::nullopt;
+        }
+        uint16_t v = c - '0';
+        for (auto& r : result) {
+            v += r * 10;
+            r = v & 0xFF;   // store low byte of the value
+            v >>= 8;        // carry to the next result position
+        }
+        if (v > 0) result.push_back(v);
+    }
+    return result;
+}
