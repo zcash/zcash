@@ -145,8 +145,35 @@ public:
     {
         int nVersion = s.GetVersion();
         READWRITE(type);
+
+        // The implicit P2P network protocol inherited from Bitcoin Core has
+        // zcashd nodes sort-of ignoring unknown CInv message types in inv
+        // messages: they are added to the known transaction inventory, but
+        // AlreadyHave returns true, so we do nothing with them. Meanwhile for
+        // getdata messages, ProcessGetData ignores unknown message types
+        // entirely.
+        //
+        // As of v4.5.0, we change the implementation behaviour to reject
+        // undefined message types instead of ignoring them.
+        switch (type) {
+        case MSG_TX:
+        case MSG_BLOCK:
+        case MSG_FILTERED_BLOCK:
+            break;
+        case MSG_WTX:
+            if (nVersion < CINV_WTX_VERSION) {
+                throw std::ios_base::failure(
+                    "Negotiated protocol version does not support CInv message type MSG_WTX");
+            }
+            break;
+        default:
+            // This includes UNDEFINED, which should never be serialized.
+            throw std::ios_base::failure("Unknown CInv message type");
+        }
+
         READWRITE(hash);
-        if (type == MSG_WTX && nVersion >= CINV_WTX_VERSION) {
+        if (type == MSG_WTX) {
+            // We've already checked above that nVersion >= CINV_WTX_VERSION.
             READWRITE(hashAux);
         } else if (type == MSG_TX && ser_action.ForRead()) {
             // Ensure that this value is set consistently in memory for MSG_TX.

@@ -11,6 +11,7 @@ from test_framework.mininode import (
     mininode_lock,
     msg_getdata,
     msg_mempool,
+    msg_reject,
     uint256_from_str,
 )
 from test_framework.test_framework import BitcoinTestFramework
@@ -26,23 +27,37 @@ from test_framework.util import (
     hex_str_to_bytes,
     nuparams,
     p2p_port,
-    start_nodes,
+    start_node,
     wait_and_assert_operationid_status,
 )
 from tx_expiry_helper import TestNode
 
+import tempfile
 import time
 
 # Test ZIP 239 behaviour before and after NU5.
 class Zip239Test(BitcoinTestFramework):
     def setup_nodes(self):
-        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+        extra_args=[
             # Enable Canopy at height 205 to allow shielding Sprout funds first.
             nuparams(BLOSSOM_BRANCH_ID, 205),
             nuparams(HEARTWOOD_BRANCH_ID, 205),
             nuparams(CANOPY_BRANCH_ID, 205),
             nuparams(NU5_BRANCH_ID, 210),
-        ]] * self.num_nodes)
+        ]
+
+        # We log the stderr of node 0, which the test nodes connect to. This
+        # enables us to check that we see the expected error logged, and also
+        # ensures that the test itself passes (as otherwise the stderr output
+        # would be interpreted as an error from the test itself).
+        self.log_stderr = tempfile.SpooledTemporaryFile(max_size=2**16)
+
+        nodes = []
+        nodes.append(start_node(0, self.options.tmpdir, extra_args, stderr=self.log_stderr))
+        nodes.append(start_node(1, self.options.tmpdir, extra_args))
+        nodes.append(start_node(2, self.options.tmpdir, extra_args))
+        nodes.append(start_node(3, self.options.tmpdir, extra_args))
+        return nodes
 
     def cinv_for(self, txid, authDigest=None):
         if authDigest is not None:
@@ -104,6 +119,32 @@ class Zip239Test(BitcoinTestFramework):
             assert_equal(len(testnode.last_notfound.inv), 1)
             assert_equal(testnode.last_notfound.inv[0], self.cinv_for(txid, authDigest))
 
+    def verify_invalid_cinv(self, testnode, conn, msg_type, expected_msg):
+        # Send p2p message "getdata" containing an invalid CInv message
+        getdatamsg = msg_getdata()
+        getdatamsg.inv = [CInv(msg_type, 1)]
+        with mininode_lock:
+            testnode.last_tx = None
+            testnode.last_notfound = None
+            testnode.send_message(getdatamsg)
+
+        # Sync up with node after p2p messages delivered
+        testnode.sync_with_ping()
+
+        # Verify that we get a reject message
+        expected = msg_reject()
+        expected.message = b"getdata"
+        expected.code = msg_reject.REJECT_MALFORMED
+        expected.reason = b"error parsing message"
+        assert_equal(conn.rejectMessage, expected)
+
+        # Verify that we see the expected error on stderr
+        self.log_stderr.seek(0)
+        stderr = self.log_stderr.read().decode('utf-8')
+        self.log_stderr.truncate(0)
+        if expected_msg not in stderr:
+            raise AssertionError("Expected error \"" + expected_msg + "\" not found in:\n" + stderr)
+
     def verify_disconnected(self, testnode, timeout=30):
         sleep_time = 0.05
         while timeout > 0:
@@ -135,6 +176,18 @@ class Zip239Test(BitcoinTestFramework):
 
         net_version = self.nodes[0].getnetworkinfo()["protocolversion"]
         if net_version < NU5_PROTO_VERSION:
+            # Sending a getdata message containing a MSG_WTX CInv message type
+            # results in a reject message.
+            self.verify_invalid_cinv(
+                test_nodes[0], connections[0], 5,
+                "Negotiated protocol version does not support CInv message type MSG_WTX",
+            )
+
+            # Sending a getdata message containing an invalid CInv message type
+            # results in a reject message.
+            self.verify_invalid_cinv(
+                test_nodes[1], connections[1], 0xffff, "Unknown CInv message type")
+
             print("Node's block index is not NU5-aware, skipping remaining tests")
             return
 
@@ -207,7 +260,13 @@ class Zip239Test(BitcoinTestFramework):
         self.send_data_message(test_nodes[3], v5_txid)
         self.verify_disconnected(test_nodes[3])
 
+        # Sending a getdata message containing an invalid CInv message type
+        # results in a reject message.
+        self.verify_invalid_cinv(
+            test_nodes[0], connections[0], 0xffff, "Unknown CInv message type")
+
         [c.disconnect_node() for c in connections]
+        self.log_stderr.close()
 
 if __name__ == '__main__':
     Zip239Test().main()
