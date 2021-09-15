@@ -115,6 +115,24 @@ class Zip239Test(BitcoinTestFramework):
         fail("Should have received pong")
 
     def run_test(self):
+        # Set up test nodes.
+        # - test_nodes[0] will only request v4 transactions
+        # - test_nodes[1] will only request v5 transactions
+        # - test_nodes[2] will test invalid v4 request using MSG_WTXID
+        # - test_nodes[3] will test invalid v5 request using MSG_TX
+        test_nodes = []
+        connections = []
+
+        for i in range(4):
+            test_nodes.append(TestNode())
+            connections.append(NodeConn(
+                '127.0.0.1', p2p_port(0), self.nodes[0], test_nodes[i],
+                protocol_version=NU5_PROTO_VERSION))
+            test_nodes[i].add_connection(connections[i])
+
+        NetworkThread().start() # Start up network handling in another thread
+        [x.wait_for_verack() for x in test_nodes]
+
         net_version = self.nodes[0].getnetworkinfo()["protocolversion"]
         if net_version < NU5_PROTO_VERSION:
             print("Node's block index is not NU5-aware, skipping remaining tests")
@@ -151,24 +169,6 @@ class Zip239Test(BitcoinTestFramework):
 
         # Wait for the mempools to sync.
         self.sync_all()
-
-        # Set up test nodes.
-        # - test_nodes[0] will only request v4 transactions
-        # - test_nodes[1] will only request v5 transactions
-        # - test_nodes[2] will test invalid v4 request using MSG_WTXID
-        # - test_nodes[3] will test invalid v5 request using MSG_TX
-        test_nodes = []
-        connections = []
-
-        for i in range(4):
-            test_nodes.append(TestNode())
-            connections.append(NodeConn(
-                '127.0.0.1', p2p_port(0), self.nodes[0], test_nodes[i],
-                protocol_version=NU5_PROTO_VERSION))
-            test_nodes[i].add_connection(connections[i])
-
-        NetworkThread().start() # Start up network handling in another thread
-        [x.wait_for_verack() for x in test_nodes]
 
         #
         # inv
