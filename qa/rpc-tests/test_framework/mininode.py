@@ -374,7 +374,7 @@ class CInv(object):
 
     def __repr__(self):
         return "CInv(type=%s hash=%064x hash_aux=%064x)" \
-            % (self.typemap[self.type], self.hash, self.hash_aux)
+            % (self.typemap.get(self.type, self.type), self.hash, self.hash_aux)
 
 
 class CBlockLocator(object):
@@ -1753,6 +1753,14 @@ class msg_reject(object):
                 (self.message == b"block" or self.message == b"tx")):
             r += ser_uint256(self.data)
         return r
+
+    def __eq__(self, other):
+        return (
+            (type(self) == type(other)) and (
+                (self.message, self.code, self.reason, self.data) ==
+                (other.message, other.code, other.reason, other.data)
+            )
+        )
 
     def __repr__(self):
         return "msg_reject: %s %d %s [%064x]" \

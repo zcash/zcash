@@ -7522,6 +7522,10 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                     const uint256& hash = txinfo.tx->GetHash();
                     CInv inv = InvForTransaction(txinfo.tx);
                     pto->setInventoryTxToSend.erase(hash);
+                    // ZIP 239: We won't have v5 transactions in our mempool until after
+                    // NU5 activates, at which point we will only be connected to peers
+                    // that understand MSG_WTX.
+                    if (inv.type == MSG_WTX) assert(pto->nVersion >= CINV_WTX_VERSION);
                     if (IsExpiringSoonTx(*txinfo.tx, currentHeight + 1)) continue;
                     if (pto->pfilter) {
                         if (!pto->pfilter->IsRelevantAndUpdate(*txinfo.tx)) continue;
@@ -7570,6 +7574,10 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                         continue;
                     }
                     CInv inv = InvForTransaction(txinfo.tx);
+                    // ZIP 239: We won't have v5 transactions in our mempool until after
+                    // NU5 activates, at which point we will only be connected to peers
+                    // that understand MSG_WTX.
+                    if (inv.type == MSG_WTX) assert(pto->nVersion >= CINV_WTX_VERSION);
                     if (IsExpiringSoonTx(*txinfo.tx, currentHeight + 1)) continue;
                     if (pto->pfilter && !pto->pfilter->IsRelevantAndUpdate(*txinfo.tx)) continue;
                     // Send
