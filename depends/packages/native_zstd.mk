@@ -8,6 +8,7 @@ $(package)_dependencies=native_cmake
 
 define $(package)_set_vars
 $(package)_config_opts += -DCMAKE_BUILD_TYPE=Release
+$(package)_config_opts += -DCMAKE_INSTALL_LIBDIR=lib
 $(package)_config_opts += -DZSTD_BUILD_CONTRIB=OFF
 $(package)_config_opts += -DZSTD_BUILD_PROGRAMS=ON
 $(package)_config_opts += -DZSTD_BUILD_SHARED=OFF
