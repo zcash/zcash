@@ -69,25 +69,25 @@ bool IsValidSpendingKey(const libzcash::SpendingKey& zkey) {
     return !std::holds_alternative<libzcash::InvalidEncoding>(zkey);
 }
 
-uint8_t TypecodeForReceiver::operator()(
+uint32_t TypecodeForReceiver::operator()(
     const libzcash::SaplingPaymentAddress &zaddr) const
 {
     return ZCASH_UA_TYPECODE_SAPLING;
 }
 
-uint8_t TypecodeForReceiver::operator()(
+uint32_t TypecodeForReceiver::operator()(
     const libzcash::P2SHAddress &p2sh) const
 {
     return ZCASH_UA_TYPECODE_P2SH;
 }
 
-uint8_t TypecodeForReceiver::operator()(
+uint32_t TypecodeForReceiver::operator()(
     const libzcash::P2PKHAddress &p2sh) const
 {
     return ZCASH_UA_TYPECODE_P2PKH;
 }
 
-uint8_t TypecodeForReceiver::operator()(
+uint32_t TypecodeForReceiver::operator()(
     const libzcash::UnknownReceiver &unknown) const
 {
     return unknown.typecode;

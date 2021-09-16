@@ -32,10 +32,10 @@ public:
 
 class UnknownReceiver {
 public:
-    uint8_t typecode;
+    uint32_t typecode;
     std::vector<uint8_t> data;
 
-    UnknownReceiver(uint8_t typecode, std::vector<uint8_t> data) :
+    UnknownReceiver(uint32_t typecode, std::vector<uint8_t> data) :
         typecode(typecode), data(data) {}
 
     friend inline bool operator==(const UnknownReceiver& a, const UnknownReceiver& b) {
@@ -176,10 +176,10 @@ class TypecodeForReceiver {
 public:
     TypecodeForReceiver() {}
 
-    uint8_t operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    uint8_t operator()(const libzcash::P2SHAddress &p2sh) const;
-    uint8_t operator()(const libzcash::P2PKHAddress &p2pkh) const;
-    uint8_t operator()(const libzcash::UnknownReceiver &p2pkh) const;
+    uint32_t operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    uint32_t operator()(const libzcash::P2SHAddress &p2sh) const;
+    uint32_t operator()(const libzcash::P2PKHAddress &p2pkh) const;
+    uint32_t operator()(const libzcash::UnknownReceiver &p2pkh) const;
 };
 
 /**
