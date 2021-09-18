@@ -83,11 +83,18 @@ $(LIBUNIVALUE): $(wildcard univalue/lib/*)
 $(LIBCRYPTOCONDITIONS): $(wildcard cryptoconditions/src/*) $(wildcard cryptoconditions/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F) OPTFLAGS="-O2 -march=x86-64 -g "
 
-%.o: %.c
-	$(CC) -c -o $@ $<
+#%.o: %.c
+#	$(CC) -c -o $@ $<
 
-$(LIBCJSON): cJSON.o komodo_cJSON.o komodo_cutils.o
-	$(AR) cr $(LIBCJSON) $^
+#$(LIBCJSON): cJSON.o komodo_cJSON.o komodo_cutils.o
+#	$(AR) cr $(LIBCJSON) $^
+
+# libcjson build
+LIBCJSON=libcjson.a
+libcjson_a_SOURCES = cJSON.c \
+  komodo_cJSON.c komodo_cutils.cpp
+libcjson_a_CPPFLAGS=-fPIC
+EXTRA_LIBRARIES += $(LIBCJSON)
 
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
