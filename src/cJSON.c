@@ -58,8 +58,8 @@
 #include "cJSON.h"
 
 /* define our own boolean type */
-//#define true ((cJSON_bool)1)
-//#define false ((cJSON_bool)0)
+#define true ((cJSON_bool)1)
+#define false ((cJSON_bool)0)
 
 typedef struct {
     const unsigned char *json;

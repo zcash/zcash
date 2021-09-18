@@ -16,6 +16,8 @@
 #ifndef CC_INCLUDE_H
 #define CC_INCLUDE_H
 
+#include "hex.h" // for decode_hex and is_hexstr
+
 /*! \file CCinclude.h
 \brief A Documented file.
 
