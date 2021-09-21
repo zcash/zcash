@@ -125,7 +125,6 @@ SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
         throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): HD seed not found");
 
     auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
-    uint32_t bip44CoinType = Params().BIP44CoinType();
 
     // We use a fixed keypath scheme of m/32'/coin_type'/account'
     // Derive m/32'
@@ -2251,6 +2250,7 @@ bool CWallet::SetHDSeed(const HDSeed& seed)
 
     {
         LOCK(cs_wallet);
+        CWalletDB(strWalletFile).WriteBIP44CoinType(bip44CoinType);
         if (!IsCrypted()) {
             return CWalletDB(strWalletFile).WriteHDSeed(seed);
         }
@@ -2294,6 +2294,19 @@ void CWallet::SetHDChain(const CHDChain& chain, bool memonly)
 
     hdChain = chain;
 }
+
+void CWallet::CheckBIP44CoinType(uint32_t coinType)
+{
+    LOCK(cs_wallet);
+    if (bip44CoinType != coinType)
+        throw std::runtime_error(
+                strprintf("%s: this wallet is for a different BIP 44 coin type (%i) than the node is configured for (%i)",
+                          std::string(__func__),
+                          coinType,
+                          bip44CoinType)
+        );
+}
+
 
 bool CWallet::LoadHDSeed(const HDSeed& seed)
 {
@@ -3347,7 +3360,7 @@ static void ApproximateBestSubset(vector<pair<CAmount, pair<const CWalletTx*,uns
 }
 
 bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, vector<COutput> vCoins,
-                                 set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet) const
+                                 set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet)
 {
     setCoinsRet.clear();
     nValueRet = 0;
@@ -4712,7 +4725,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
     return strUsage;
 }
 
-bool CWallet::InitLoadWallet(bool clearWitnessCaches)
+bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches)
 {
     std::string walletFile = GetArg("-wallet", DEFAULT_WALLET_DAT);
 
@@ -4722,7 +4735,7 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
     if (GetBoolArg("-zapwallettxes", false)) {
         uiInterface.InitMessage(_("Zapping all transactions from wallet..."));
 
-        CWallet *tempWallet = new CWallet(walletFile);
+        CWallet *tempWallet = new CWallet(params, walletFile);
         DBErrors nZapWalletRet = tempWallet->ZapWalletTx(vWtx);
         if (nZapWalletRet != DB_LOAD_OK) {
             return UIError(strprintf(_("Error loading %s: Wallet corrupted"), walletFile));
@@ -4736,7 +4749,7 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
 
     int64_t nStart = GetTimeMillis();
     bool fFirstRun = true;
-    CWallet *walletInstance = new CWallet(walletFile);
+    CWallet *walletInstance = new CWallet(params, walletFile);
     DBErrors nLoadWalletRet = walletInstance->LoadWallet(fFirstRun);
     if (nLoadWalletRet != DB_LOAD_OK)
     {
@@ -4869,7 +4882,7 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
     return true;
 }
 
-bool CWallet::ParameterInteraction()
+bool CWallet::ParameterInteraction(const CChainParams& params)
 {
     if (mapArgs.count("-mintxfee"))
     {
@@ -4919,7 +4932,7 @@ bool CWallet::ParameterInteraction()
     bSpendZeroConfChange = GetBoolArg("-spendzeroconfchange", DEFAULT_SPEND_ZEROCONF_CHANGE);
     fSendFreeTransactions = GetBoolArg("-sendfreetransactions", DEFAULT_SEND_FREE_TRANSACTIONS);
 
-    KeyIO keyIO(Params());
+    KeyIO keyIO(params);
     // Check Sapling migration address if set and is a valid Sapling address
     if (mapArgs.count("-migrationdestaddress")) {
         std::string migrationDestAddress = mapArgs["-migrationdestaddress"];

@@ -724,6 +724,12 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssValue >> chain;
             pwallet->SetHDChain(chain, true);
         }
+        else if (strType == "bip44cointype")
+        {
+            uint32_t bip44CoinType;
+            ssValue >> bip44CoinType;
+            pwallet->CheckBIP44CoinType(bip44CoinType);
+        }
     } catch (...)
     {
         return false;
@@ -1087,7 +1093,7 @@ bool CWalletDB::Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKe
         LogPrintf("Cannot create database file %s\n", filename);
         return false;
     }
-    CWallet dummyWallet;
+    CWallet dummyWallet(Params());
     CWalletScanState wss;
 
     DbTxn* ptxn = dbenv.TxnBegin();
@@ -1142,6 +1148,11 @@ bool CWalletDB::EraseDestData(const std::string &address, const std::string &key
     return Erase(std::make_pair(std::string("destdata"), std::make_pair(address, key)));
 }
 
+bool CWalletDB::WriteBIP44CoinType(uint32_t bip44CoinType)
+{
+    nWalletDBUpdateCounter++;
+    return Write(std::string("bip44cointype"), bip44CoinType);
+}
 
 bool CWalletDB::WriteHDSeed(const HDSeed& seed)
 {
