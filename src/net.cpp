@@ -167,7 +167,7 @@ CAddress GetLocalAddress(const CNetAddr *paddrPeer)
     CService addr;
     if (GetLocal(addr, paddrPeer))
     {
-        ret = CAddress(addr);
+        ret = CAddress(addr, NODE_NONE);
     }
     ret.nServices = nLocalServices;
     ret.nTime = GetTime();
