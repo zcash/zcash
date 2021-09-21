@@ -64,7 +64,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     wallet.GetSaplingPaymentAddresses(addrs);
     EXPECT_EQ(2, addrs.size());
     EXPECT_EQ(1, addrs.count(address));
-    EXPECT_EQ(1, addrs.count(sk.DefaultAddress()));
+    EXPECT_EQ(1, addrs.count(sk.ToXFVK().DefaultAddress()));
 
     // Generate a diversified address different to the default
     // If we can't get an early diversified address, we are very unlucky
@@ -73,7 +73,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     auto dpa = sk.ToXFVK().Address(diversifier).value();
 
     // verify wallet only has the default address
-    EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.DefaultAddress()));
+    EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.ToXFVK().DefaultAddress()));
     EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(dpa));
 
     // manually add a diversified address
@@ -81,7 +81,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     EXPECT_TRUE(wallet.AddSaplingIncomingViewingKey(ivk, dpa));
 
     // verify wallet did add it
-    EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.DefaultAddress()));
+    EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.ToXFVK().DefaultAddress()));
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(dpa));
 
     // Load a third key into the wallet
@@ -99,7 +99,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
 
     // Load a diversified address for the third key into the wallet
     auto dpa2 = sk2.ToXFVK().Address(diversifier).value();
-    EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk2.DefaultAddress()));
+    EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk2.ToXFVK().DefaultAddress()));
     EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(dpa2));
     EXPECT_TRUE(wallet.LoadSaplingPaymentAddress(dpa2, ivk2));
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(dpa2));
@@ -501,8 +501,8 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
     wallet2.Unlock(strWalletPass);
 
     EXPECT_TRUE(wallet2.GetSaplingExtendedSpendingKey(address, keyOut));
-    ASSERT_EQ(address, keyOut.DefaultAddress());
+    ASSERT_EQ(address, keyOut.ToXFVK().DefaultAddress());
 
     EXPECT_TRUE(wallet2.GetSaplingExtendedSpendingKey(address2, keyOut));
-    ASSERT_EQ(address2, keyOut.DefaultAddress());
+    ASSERT_EQ(address2, keyOut.ToXFVK().DefaultAddress());
 }

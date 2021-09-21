@@ -15,6 +15,12 @@
 #include <stdexcept>
 #include <vector>
 
+/**
+ * The account identifier used for HD derivation of the transparent
+ * p2pkh public key from which all child transparent addresses are
+ * derived in accordance with ZIP-316.
+ */
+const uint32_t ZCASH_LEGACY_TRANSPARENT_ACCOUNT = 0x7FFFFFFE;
 
 /**
  * secure_allocator is defined in allocators.h
@@ -61,6 +67,8 @@ public:
         // Important: vch must be 32 bytes in length to not break serialization
         keydata.resize(32);
     }
+
+    static std::optional<CKey> FromEntropy(std::vector<unsigned char, secure_allocator<unsigned char>> keydata);
 
     friend bool operator==(const CKey& a, const CKey& b)
     {
@@ -160,11 +168,12 @@ struct CExtKey {
             a.key == b.key;
     }
 
+    static CExtKey Master(const unsigned char* seed, unsigned int nSeedLen);
+
     void Encode(unsigned char code[BIP32_EXTKEY_SIZE]) const;
     void Decode(const unsigned char code[BIP32_EXTKEY_SIZE]);
-    bool Derive(CExtKey& out, unsigned int nChild) const;
+    std::optional<CExtKey> Derive(unsigned int nChild) const;
     CExtPubKey Neuter() const;
-    void SetMaster(const unsigned char* seed, unsigned int nSeedLen);
     template <typename Stream>
     void Serialize(Stream& s) const
     {

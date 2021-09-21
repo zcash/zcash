@@ -6,8 +6,10 @@
 #define ZCASH_ZCASH_ADDRESS_ZIP32_H
 
 #include "serialize.h"
+#include "key.h"
 #include "support/allocators/secure.h"
 #include "uint256.h"
+#include "utiltime.h"
 #include "zcash/address/sapling.hpp"
 #include "rust/zip339.h"
 
@@ -65,7 +67,12 @@ public:
         seed.assign(buf, std::end(buf));
     }
 
-    static MnemonicSeed Random(Language language = English, size_t len = 32);
+    /**
+     * Randomly generate a new mnemonic seed. A SLIP-44 coin type is required to make it possible
+     * to check that the generated seed can produce valid transparent and unified addresses at account
+     * numbers 0x7FFFFFFE and 0x0 respectively.
+     */
+    static MnemonicSeed Random(uint32_t bip44CoinType, Language language = English, size_t entropyLen = 32);
 
     static std::string LanguageName(Language language) {
         switch (language) {
@@ -142,6 +149,51 @@ public:
 // This is not part of ZIP 32, but is here because it's linked to the HD seed.
 uint256 ovkForShieldingFromTaddr(HDSeed& seed);
 
+// Key derivation metadata
+class CKeyMetadata
+{
+public:
+    static const int VERSION_BASIC=1;
+    static const int VERSION_WITH_HDDATA=10;
+    static const int CURRENT_VERSION=VERSION_WITH_HDDATA;
+    int nVersion;
+    int64_t nCreateTime; // 0 means unknown
+    std::string hdKeypath; //optional HD/zip32 keypath
+    uint256 seedFp;
+
+    CKeyMetadata()
+    {
+        SetNull();
+    }
+    CKeyMetadata(int64_t nCreateTime_)
+    {
+        SetNull();
+        nCreateTime = nCreateTime_;
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(this->nVersion);
+        READWRITE(nCreateTime);
+        if (this->nVersion >= VERSION_WITH_HDDATA)
+        {
+            READWRITE(hdKeypath);
+            READWRITE(seedFp);
+        }
+    }
+
+    void SetNull()
+    {
+        nVersion = CKeyMetadata::CURRENT_VERSION;
+        nCreateTime = 0;
+        hdKeypath.clear();
+        seedFp.SetNull();
+    }
+};
+
+
 namespace libzcash {
 
 typedef blob88 diversifier_index_t;
@@ -212,12 +264,11 @@ struct SaplingExtendedSpendingKey {
     }
 
     static SaplingExtendedSpendingKey Master(const HDSeed& seed);
+    static std::pair<SaplingExtendedSpendingKey, CKeyMetadata> ForAccount(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId);
 
     SaplingExtendedSpendingKey Derive(uint32_t i) const;
 
     SaplingExtendedFullViewingKey ToXFVK() const;
-
-    libzcash::SaplingPaymentAddress DefaultAddress() const;
 
     friend bool operator==(const SaplingExtendedSpendingKey& a, const SaplingExtendedSpendingKey& b)
     {
@@ -230,7 +281,24 @@ struct SaplingExtendedSpendingKey {
     }
 };
 
+class UnifiedSpendingKey {
+private:
+    uint32_t accountId;
+    std::optional<CExtKey> p2pkhKey;
+    std::optional<SaplingExtendedSpendingKey> saplingKey;
+
+    UnifiedSpendingKey() {}
+public:
+    static std::optional<std::pair<UnifiedSpendingKey, CKeyMetadata>> Derive(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId);
+
+    const std::optional<SaplingExtendedSpendingKey>& GetSaplingExtendedSpendingKey() {
+        return saplingKey;
+    }
+};
+
 std::optional<unsigned long> ParseZip32KeypathAccount(const std::string& keyPath);
+
+std::optional<CExtKey> DeriveZip32TransparentSpendingKey(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId);
 
 }
 

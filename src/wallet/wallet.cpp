@@ -118,9 +118,9 @@ libzcash::SproutPaymentAddress CWallet::GenerateNewSproutZKey()
 // is not present. When using legacy HD seeds, the account index is determined
 // by trial of legacyHDChain.GetAccountCounter(); for unified addresses this must use
 // valued derived from legacyHDChain.unifiedAccountCounter
-std::optional<SaplingPaymentAddress> CWallet::GenerateNewLegacySaplingZKey()
-{
-    // Try to get the seed
+std::optional<SaplingPaymentAddress> CWallet::GenerateNewLegacySaplingZKey() {
+    AssertLockHeld(cs_wallet);
+
     auto seedOpt = GetLegacyHDSeed();
     if (seedOpt.has_value()) {
         auto seed = seedOpt.value();
@@ -128,64 +128,37 @@ std::optional<SaplingPaymentAddress> CWallet::GenerateNewLegacySaplingZKey()
             legacyHDChain = CHDChain(seed.Fingerprint(), GetTime());
         }
         CHDChain& hdChain = legacyHDChain.value();
+
+        // loop until we find an unused account id
         while (true) {
-            auto xsk = GenerateNewSaplingZKey(seed, hdChain.GetAccountCounter());
-            if (!xsk.has_value()) {
-                hdChain.IncrementAccountCounter();
+            auto xsk = libzcash::SaplingExtendedSpendingKey::ForAccount(
+                    seed,
+                    BIP44CoinType(),
+                    hdChain.GetAccountCounter());
+            // advance the account counter so that the next time we need to generate
+            // a key we're pointing at a free index.
+            hdChain.IncrementAccountCounter();
+            if (HaveSaplingSpendingKey(xsk.first.ToXFVK())) {
+                // try the next account ID
                 continue;
             } else {
-                // Update the chain model in the database
+                // Update the persisted chain information
                 if (fFileBacked && !CWalletDB(strWalletFile).WriteLegacyHDChain(hdChain)) {
                     throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): Writing HD chain model failed");
                 }
 
-                return xsk.value().ToXFVK().DefaultAddress();
+                auto ivk = xsk.first.expsk.full_viewing_key().in_viewing_key();
+                mapSaplingZKeyMetadata[ivk] = xsk.second;
+
+                if (!AddSaplingZKey(xsk.first)) {
+                    throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): AddSaplingZKey failed");
+                }
+
+                return xsk.first.ToXFVK().DefaultAddress();
             }
         }
     } else {
         return std::nullopt;
-    }
-}
-
-// Generate a new Sapling spending key and return its public payment address
-//
-// NU5: This must take both the account number and the HD seed to be used.
-// Generation of unified accounts must allow the user to specify a set of protocol
-// types that they wish to include in their unified addresses.
-std::optional<libzcash::SaplingExtendedSpendingKey> CWallet::GenerateNewSaplingZKey(
-        const HDSeed& seed,
-        uint32_t accountId) {
-    AssertLockHeld(cs_wallet);
-
-    auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
-    uint32_t bip44CoinType = BIP44CoinType();
-
-    // We use a fixed keypath scheme of m/32'/coin_type'/account'
-    // Derive m/32'
-    auto m_32h = m.Derive(32 | ZIP32_HARDENED_KEY_LIMIT);
-    // Derive m/32'/coin_type'
-    auto m_32h_cth = m_32h.Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
-
-    // Derive account key at next index, skip keys already known to the wallet
-    libzcash::SaplingExtendedSpendingKey xsk = m_32h_cth.Derive(accountId | ZIP32_HARDENED_KEY_LIMIT);
-    if (HaveSaplingSpendingKey(xsk.ToXFVK())) {
-        return std::nullopt;
-    } else {
-        // Create new metadata
-        int64_t nCreationTime = GetTime();
-        CKeyMetadata metadata(nCreationTime);
-
-        metadata.hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
-        metadata.seedFp = seed.Fingerprint();
-
-        auto ivk = xsk.expsk.full_viewing_key().in_viewing_key();
-        mapSaplingZKeyMetadata[ivk] = metadata;
-
-        if (!AddSaplingZKey(xsk)) {
-            throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): AddSaplingZKey failed");
-        }
-
-        return xsk;
     }
 }
 
@@ -392,6 +365,37 @@ bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullVi
         }
     }
     return false;
+}
+
+UnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
+    AssertLockHeld(cs_wallet);
+
+    auto seed = GetMnemonicSeed();
+    if (!seed.has_value()) {
+        throw std::runtime_error(std::string(__func__) + ": Wallet has no mnemonic HD seed. Please upgrade this wallet.");
+    }
+
+    auto hdChain = GetMnemonicHDChain().value();
+    while (true) {
+        auto usk = UnifiedSpendingKey::Derive(seed.value(), BIP44CoinType(), hdChain.GetAccountCounter());
+        hdChain.IncrementAccountCounter();
+
+        if (usk.has_value()) {
+            // Update the persisted chain information
+            if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
+                throw std::runtime_error("CWallet::GenerateNewUnifiedSpendingKey(): Writing HD chain model failed");
+            }
+
+            // TODO: Save the unified full viewing key to the wallet metadata
+
+            return usk.value().first;
+        }
+    }
+}
+
+std::optional<libzcash::UnifiedSpendingKey> CWallet::GetUnifiedSpendingKeyForAccount(uint32_t accountId) {
+    //TODO
+    return std::nullopt;
 }
 
 void CWallet::LoadKeyMetadata(const CPubKey &pubkey, const CKeyMetadata &meta)
@@ -2252,7 +2256,7 @@ void CWallet::GenerateNewSeed(Language language)
 {
     LOCK(cs_wallet);
 
-    auto seed = MnemonicSeed::Random(language, HD_WALLET_SEED_LENGTH);
+    auto seed = MnemonicSeed::Random(BIP44CoinType(), language, HD_WALLET_SEED_LENGTH);
 
     int64_t nCreationTime = GetTime();
 
@@ -5468,7 +5472,7 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
     KeyIO keyIO(Params());
     {
         if (log){
-            LogPrint("zrpc", "Importing zaddr %s...\n", keyIO.EncodePaymentAddress(sk.DefaultAddress()));
+            LogPrint("zrpc", "Importing zaddr %s...\n", keyIO.EncodePaymentAddress(sk.ToXFVK().DefaultAddress()));
         }
         // Don't throw error in case a key is already there
         if (m_wallet->HaveSaplingSpendingKey(extfvk)) {

@@ -48,7 +48,7 @@ TEST(Keys, EncodeAndDecodeSapling)
             EXPECT_EQ(extfvk, extfvk2);
         }
         {
-            auto addr = sk.DefaultAddress();
+            auto addr = sk.ToXFVK().DefaultAddress();
 
             std::string addr_string = keyIO.EncodePaymentAddress(addr);
             EXPECT_EQ(

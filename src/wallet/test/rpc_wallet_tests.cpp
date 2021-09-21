@@ -665,7 +665,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 
         // create a random Sapling key locally; split between IVKs and spending keys.
         auto testSaplingSpendingKey = m.Derive(i);
-        auto testSaplingPaymentAddress = testSaplingSpendingKey.DefaultAddress();
+        auto testSaplingPaymentAddress = testSaplingSpendingKey.ToXFVK().DefaultAddress();
         if (i % 2 == 0) {
             std::string testSaplingAddr = keyIO.EncodePaymentAddress(testSaplingPaymentAddress);
             std::string testSaplingKey = keyIO.EncodeSpendingKey(testSaplingSpendingKey);

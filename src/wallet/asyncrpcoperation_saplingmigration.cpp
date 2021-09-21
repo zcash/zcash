@@ -203,12 +203,15 @@ libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigration
     }
 
     // TODO: use UVK-based derivation here instead.
-    auto xsk = pwalletMain->GenerateNewSaplingZKey(seed, 0);
+    auto usk = pwalletMain->GetUnifiedSpendingKeyForAccount(0);
+    assert(usk.has_value()); // mnemonic seeds are currently always generated to have valid USKs at account 0
+    auto xsk = usk.value().GetSaplingExtendedSpendingKey();
     if (xsk.has_value()) {
-        return xsk.value().DefaultAddress();
+        return xsk.value().ToXFVK().DefaultAddress();
     } else {
-        // the wallet already has a key at account 0; what is the
-        // correct behavior here?
+        // This error will only occur if Sapling address generation has been disbled for USKs from this
+        // wallet.
+        throw std::runtime_error(std::string(__func__) + ": No Sapling address generated for account 0.");
     }
 }
 

@@ -829,6 +829,7 @@ public:
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
     std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapSproutZKeyMetadata;
     std::map<libzcash::SaplingIncomingViewingKey, CKeyMetadata> mapSaplingZKeyMetadata;
+    //std::map<libzcash::UnifiedIncomingViewingKey, CKeyMetadata> mapUnifiedKeyMetadata;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
     MasterKeyMap mapMasterKeys;
@@ -1099,6 +1100,12 @@ public:
     //! Adds an encrypted spending key to the store, without saving it to disk (used by LoadWallet)
     bool LoadCryptedSaplingZKey(const libzcash::SaplingExtendedFullViewingKey &extfvk,
                                 const std::vector<unsigned char> &vchCryptedSecret);
+
+    /**
+     * Unified keys & addresses
+     */
+    libzcash::UnifiedSpendingKey GenerateNewUnifiedSpendingKey();
+    std::optional<libzcash::UnifiedSpendingKey> GetUnifiedSpendingKeyForAccount(uint32_t accountId);
 
     /**
      * Increment the next transaction order id

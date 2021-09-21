@@ -80,10 +80,8 @@ TestVector test2 =
 
 void RunTest(const TestVector &test) {
     std::vector<unsigned char> seed = ParseHex(test.strHexMaster);
-    CExtKey key;
-    CExtPubKey pubkey;
-    key.SetMaster(&seed[0], seed.size());
-    pubkey = key.Neuter();
+    CExtKey key = CExtKey::Master(&seed[0], seed.size());
+    CExtPubKey pubkey = key.Neuter();
     KeyIO keyIO(Params());
     for (const TestDerivation &derive : test.vDerive) {
         unsigned char data[74];
@@ -99,16 +97,16 @@ void RunTest(const TestVector &test) {
         BOOST_CHECK(keyIO.DecodeExtPubKey(derive.pub) == pubkey); //ensure a base58 decoded pubkey also matches
 
         // Derive new keys
-        CExtKey keyNew;
-        BOOST_CHECK(key.Derive(keyNew, derive.nChild));
-        CExtPubKey pubkeyNew = keyNew.Neuter();
+        auto keyNew = key.Derive(derive.nChild);
+        BOOST_CHECK(keyNew.has_value());
+        CExtPubKey pubkeyNew = keyNew.value().Neuter();
         if (!(derive.nChild & 0x80000000)) {
             // Compare with public derivation
             CExtPubKey pubkeyNew2;
             BOOST_CHECK(pubkey.Derive(pubkeyNew2, derive.nChild));
             BOOST_CHECK(pubkeyNew == pubkeyNew2);
         }
-        key = keyNew;
+        key = keyNew.value();
         pubkey = pubkeyNew;
 
         CDataStream ssPub(SER_DISK, CLIENT_VERSION);
@@ -116,7 +114,7 @@ void RunTest(const TestVector &test) {
         BOOST_CHECK(ssPub.size() == 75);
 
         CDataStream ssPriv(SER_DISK, CLIENT_VERSION);
-        ssPriv << keyNew;
+        ssPriv << keyNew.value();
         BOOST_CHECK(ssPriv.size() == 75);
 
         CExtPubKey pubCheck;

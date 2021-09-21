@@ -14,6 +14,8 @@
 
 #define MAKE_STRING(x) std::string((x), (x)+sizeof(x))
 
+const uint32_t BIP44_TESTNET_TYPE = 1;
+
 TEST(KeystoreTests, StoreAndRetrieveHDSeed) {
     CBasicKeyStore keyStore;
 
@@ -23,7 +25,7 @@ TEST(KeystoreTests, StoreAndRetrieveHDSeed) {
     EXPECT_FALSE(seedOut.has_value());
 
     // Generate a random seed
-    auto seed = MnemonicSeed::Random();
+    auto seed = MnemonicSeed::Random(BIP44_TESTNET_TYPE);
 
     // We should be able to set and retrieve the seed
     ASSERT_TRUE(keyStore.SetMnemonicSeed(seed));
@@ -33,7 +35,7 @@ TEST(KeystoreTests, StoreAndRetrieveHDSeed) {
     EXPECT_EQ(seed, seedOut.value());
 
     // Generate another random seed
-    auto seed2 = MnemonicSeed::Random();
+    auto seed2 = MnemonicSeed::Random(BIP44_TESTNET_TYPE);
     EXPECT_NE(seed, seed2);
 
     // We should not be able to set and retrieve a different seed
@@ -203,7 +205,7 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingSpendingKey) {
     auto sk = GetTestMasterSaplingSpendingKey();
     auto extfvk = sk.ToXFVK();
     auto ivk = extfvk.fvk.in_viewing_key();
-    auto addr = sk.DefaultAddress();
+    auto addr = sk.ToXFVK().DefaultAddress();
 
     // Sanity-check: we can't get a key we haven't added
     EXPECT_FALSE(keyStore.HaveSaplingSpendingKey(extfvk));
@@ -237,7 +239,7 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingFullViewingKey) {
     auto sk = GetTestMasterSaplingSpendingKey();
     auto extfvk = sk.ToXFVK();
     auto ivk = extfvk.fvk.in_viewing_key();
-    auto addr = sk.DefaultAddress();
+    auto addr = sk.ToXFVK().DefaultAddress();
 
     // Sanity-check: we can't get a full viewing key we haven't added
     EXPECT_FALSE(keyStore.HaveSaplingFullViewingKey(ivk));
@@ -289,7 +291,7 @@ TEST(KeystoreTests, StoreAndRetrieveHDSeedInEncryptedStore) {
     GetRandBytes(vMasterKey.data(), 32);
 
     // 1) Test adding a seed to an unencrypted key store, then encrypting it
-    auto seed = MnemonicSeed::Random();
+    auto seed = MnemonicSeed::Random(BIP44_TESTNET_TYPE);
     EXPECT_FALSE(keyStore.HaveMnemonicSeed());
     auto seedOut = keyStore.GetMnemonicSeed();
     EXPECT_FALSE(seedOut.has_value());
@@ -321,7 +323,7 @@ TEST(KeystoreTests, StoreAndRetrieveHDSeedInEncryptedStore) {
     EXPECT_EQ(seed, seedOut.value());
 
     // 2) Test replacing the seed in an already-encrypted key store fails
-    auto seed2 = MnemonicSeed::Random();
+    auto seed2 = MnemonicSeed::Random(BIP44_TESTNET_TYPE);
     EXPECT_FALSE(keyStore.SetMnemonicSeed(seed2));
     EXPECT_TRUE(keyStore.HaveMnemonicSeed());
     seedOut = keyStore.GetMnemonicSeed();
@@ -341,7 +343,7 @@ TEST(KeystoreTests, StoreAndRetrieveHDSeedInEncryptedStore) {
     seedOut = keyStore2.GetMnemonicSeed();
     EXPECT_FALSE(seedOut.has_value());
 
-    auto seed3 = MnemonicSeed::Random();
+    auto seed3 = MnemonicSeed::Random(BIP44_TESTNET_TYPE);
     ASSERT_TRUE(keyStore2.SetMnemonicSeed(seed3));
     EXPECT_TRUE(keyStore2.HaveMnemonicSeed());
     seedOut = keyStore2.GetMnemonicSeed();
