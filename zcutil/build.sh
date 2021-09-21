@@ -59,8 +59,6 @@ EOF
     exit 0
 fi
 
-set -x
-
 # If --enable-lcov is the first argument, enable lcov coverage support:
 LCOV_ARG=''
 HARDENING_ARG='--enable-hardening'
@@ -92,24 +90,16 @@ then
     shift
 fi
 
-eval "$MAKE" --version
-as --version
-ld -v
+if [[ -z "${VERBOSE-}" ]]; then
+   VERBOSITY="--enable-silent-rules"
+else
+   VERBOSITY="--disable-silent-rules"
+fi
 
 HOST="$HOST" BUILD="$BUILD" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
+
 ./autogen.sh
 
 CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" "$CONFIGURE_FLAGS" CXXFLAGS='-g'
 
-#BUILD CCLIB
-
-WD=$PWD
-
-cd src/cc
-echo $PWD
-./makecustom
-
-
-cd $WD
-
-"$MAKE" "$@" V=1
+"$MAKE" "$@"

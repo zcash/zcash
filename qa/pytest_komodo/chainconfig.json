@@ -2,10 +2,10 @@
   "TONYCI": {
     "rpc_user": "test",
     "rpcpassword": "test",
-    "rpcallowip": "0.0.0.0/0",
+    "rpcallowip": "127.0.0.1",
     "rpcport": 7000,
     "port": 6000,
-    "rpcbind": "0.0.0.0",
+    "rpcbind": "127.0.0.1",
     "ac_name": "TONYCI",
     "ac_reward": "100000000000",
     "ac_supply": "10000000000",
