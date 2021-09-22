@@ -48,7 +48,6 @@ You may send reports to [our Conduct email](mailto:developer@komodoplatform.com)
 If you wish to contact specific maintainers directly, the following have made
 themselves available for conduct issues:
 
-- Benny Fairbank (benny at komodoplatform.com)
 - Support Team (support at komodoplatform.com)
 - ca333 (ca333 at komodoplatform.com)
 
@@ -58,4 +57,3 @@ version 1.3.0, available at
 
 [homepage]: https://www.contributor-covenant.org
 [version]: https://www.contributor-covenant.org/version/1/3/0/
-

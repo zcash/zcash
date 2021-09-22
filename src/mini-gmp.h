@@ -62,6 +62,12 @@ see https://www.gnu.org/licenses/.  */
 extern "C" {
 #endif
 
+#include "bits256.h"
+
+char *bitcoin_base58encode(char *coinaddr,uint8_t *data,int32_t datalen);
+
+int32_t bitcoin_base58decode(uint8_t *data,char *coinaddr);
+
 void mp_set_memory_functions (void *(*) (size_t),
 			      void *(*) (void *, size_t, size_t),
 			      void (*) (void *, size_t));

@@ -23,7 +23,7 @@
 #include "serialize.h"
 #include "uint256.h"
 #include "arith_uint256.h"
-
+#include "hash.h" // CVerusHashWriter
 
 /** For POS blocks, the nNonce of a block header holds the entropy source for the POS contest
  * in the latest VerusHash protocol

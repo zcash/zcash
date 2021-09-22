@@ -182,8 +182,17 @@ public:
         assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
         vFixedSeeds.clear();
         vSeeds.clear();
-        vSeeds.push_back(CDNSSeedData("komodoseeds.com", "kmd.komodoseeds.com")); // Static contolled seeds list (Kolo)
-        vSeeds.push_back(CDNSSeedData("komodoseeds.com", "dynamic.komodoseeds.com")); // Active seeds crawler (Kolo)
+
+        vSeeds.push_back(CDNSSeedData("komodoseeds.org", "kmd.komodoseeds.org")); // decker
+        vSeeds.push_back(CDNSSeedData("kmd.sh", "seeds1.kmd.sh")); // decker
+        vSeeds.push_back(CDNSSeedData("cipig.net", "kmdseed.cipig.net")); // cipig
+        vSeeds.push_back(CDNSSeedData("lordofthechains.com", "kmdseeds.lordofthechains.com")); // gcharang
+
+        /*
+        vSeeds.push_back(CDNSSeedData("komodoseeds.com", "kmd.komodoseeds.com"));
+        vSeeds.push_back(CDNSSeedData("komodoseeds.com", "dynamic.komodoseeds.com"));
+        */
+
         // TODO: we need more seed crawlers from other community members
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,60);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,85);
@@ -571,7 +580,7 @@ void *chainparams_commandline()
             pCurrentParams->SetNValue(ASSETCHAINS_NK[0]);
             pCurrentParams->SetKValue(ASSETCHAINS_NK[1]);
         }
-        if ( KOMODO_TESTNODE != 0 )
+        if ( IS_KOMODO_TESTNODE )
             pCurrentParams->SetMiningRequiresPeers(false);
         if ( ASSETCHAINS_RPCPORT == 0 )
             ASSETCHAINS_RPCPORT = ASSETCHAINS_P2PPORT + 1;

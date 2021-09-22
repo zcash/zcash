@@ -57,7 +57,6 @@
 
 static bool fDaemon;
 #include "komodo_defs.h"
-#define KOMODO_ASSETCHAIN_MAXLEN 65
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern int32_t ASSETCHAINS_BLOCKTIME;
 extern uint64_t ASSETCHAINS_CBOPRET;
@@ -108,7 +107,8 @@ void WaitForShutdown(boost::thread_group* threadGroup)
 //
 // Start
 //
-extern int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY;
+extern bool IS_KOMODO_NOTARY;
+extern int32_t USE_EXTERNAL_PUBKEY;
 extern uint32_t ASSETCHAIN_INIT;
 extern std::string NOTARY_PUBKEY;
 int32_t komodo_is_issuer();
