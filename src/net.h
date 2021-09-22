@@ -156,7 +156,6 @@ CAddress GetLocalAddress(const CNetAddr *paddrPeer = NULL);
 extern bool fDiscover;
 extern bool fListen;
 extern ServiceFlags nLocalServices;
-extern bool fRelayTxes;
 extern uint64_t nLocalHostNonce;
 extern CAddrMan addrman;
 
@@ -255,7 +254,6 @@ class CNode
 public:
     // socket
     ServiceFlags nServices;
-    ServiceFlags nServicesExpected;
     SOCKET hSocket;
     CDataStream ssSend;
     std::string strSendCommand; // Current command being assembled in ssSend
