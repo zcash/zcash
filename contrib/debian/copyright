@@ -122,7 +122,6 @@ License: Boost-Software-License-1.0
 
 Files: depends/*/vendored-sources/halo2/*
  depends/*/vendored-sources/orchard/*
- depends/*/vendored-sources/pasta_curves/*
 Copyright: 2020 The Electric Coin Company
 License: Bootstrap-Open-Source-Licence-1.0
 
