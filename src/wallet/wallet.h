@@ -806,7 +806,7 @@ protected:
 
     /* the hd chain data model (chain counters) */
     CHDChain hdChain;
-    uint32_t bip44CoinType;
+    std::string networkIdString;
 
 public:
     /*
@@ -864,7 +864,7 @@ public:
         nTimeFirstKey = 0;
         fBroadcastTransactions = false;
         nWitnessCacheSize = 0;
-        bip44CoinType = params.BIP44CoinType();
+        networkIdString = params.NetworkIDString();
     }
 
     /**
@@ -1298,7 +1298,8 @@ public:
     void SetHDChain(const CHDChain& chain, bool memonly);
     const CHDChain& GetHDChain() const { return hdChain; }
 
-    void CheckBIP44CoinType(uint32_t coinType);
+    void CheckNetworkInfo(std::pair<std::string, std::string> networkInfo);
+    uint32_t BIP44CoinType();
 
     /* Set the current HD seed, without saving it to disk (used by LoadWallet) */
     bool LoadHDSeed(const HDSeed& key);

@@ -724,11 +724,11 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssValue >> chain;
             pwallet->SetHDChain(chain, true);
         }
-        else if (strType == "bip44cointype")
+        else if (strType == "networkinfo")
         {
-            uint32_t bip44CoinType;
-            ssValue >> bip44CoinType;
-            pwallet->CheckBIP44CoinType(bip44CoinType);
+            std::pair<std::string, std::string> networkInfo;
+            ssValue >> networkInfo;
+            pwallet->CheckNetworkInfo(networkInfo);
         }
     } catch (...)
     {
@@ -1148,10 +1148,11 @@ bool CWalletDB::EraseDestData(const std::string &address, const std::string &key
     return Erase(std::make_pair(std::string("destdata"), std::make_pair(address, key)));
 }
 
-bool CWalletDB::WriteBIP44CoinType(uint32_t bip44CoinType)
+bool CWalletDB::WriteNetworkInfo(const std::string& networkId)
 {
     nWalletDBUpdateCounter++;
-    return Write(std::string("bip44cointype"), bip44CoinType);
+    std::pair<std::string, std::string> networkInfo(PACKAGE_NAME, networkId);
+    return Write(std::string("networkinfo"), networkInfo);
 }
 
 bool CWalletDB::WriteHDSeed(const HDSeed& seed)

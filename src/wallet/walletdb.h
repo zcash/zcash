@@ -168,7 +168,7 @@ public:
     static bool Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKeys);
     static bool Recover(CDBEnv& dbenv, const std::string& filename);
 
-    bool WriteBIP44CoinType(uint32_t bip44CoinType);
+    bool WriteNetworkInfo(const std::string& networkId);
     bool WriteHDSeed(const HDSeed& seed);
     bool WriteCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& vchCryptedSecret);
     //! write the hdchain model (external chain child index counter)

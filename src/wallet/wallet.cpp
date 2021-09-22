@@ -130,14 +130,14 @@ SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
     // Derive m/32'
     auto m_32h = m.Derive(32 | ZIP32_HARDENED_KEY_LIMIT);
     // Derive m/32'/coin_type'
-    auto m_32h_cth = m_32h.Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
+    auto m_32h_cth = m_32h.Derive(BIP44CoinType() | ZIP32_HARDENED_KEY_LIMIT);
 
     // Derive account key at next index, skip keys already known to the wallet
     libzcash::SaplingExtendedSpendingKey xsk;
     do
     {
         xsk = m_32h_cth.Derive(hdChain.saplingAccountCounter | ZIP32_HARDENED_KEY_LIMIT);
-        metadata.hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(hdChain.saplingAccountCounter) + "'";
+        metadata.hdKeypath = "m/32'/" + std::to_string(BIP44CoinType()) + "'/" + std::to_string(hdChain.saplingAccountCounter) + "'";
         metadata.seedFp = hdChain.seedFp;
         // Increment childkey index
         hdChain.saplingAccountCounter++;
@@ -2250,7 +2250,7 @@ bool CWallet::SetHDSeed(const HDSeed& seed)
 
     {
         LOCK(cs_wallet);
-        CWalletDB(strWalletFile).WriteBIP44CoinType(bip44CoinType);
+        CWalletDB(strWalletFile).WriteNetworkInfo(networkIdString);
         if (!IsCrypted()) {
             return CWalletDB(strWalletFile).WriteHDSeed(seed);
         }
@@ -2295,16 +2295,21 @@ void CWallet::SetHDChain(const CHDChain& chain, bool memonly)
     hdChain = chain;
 }
 
-void CWallet::CheckBIP44CoinType(uint32_t coinType)
+void CWallet::CheckNetworkInfo(std::pair<std::string, std::string> readNetworkInfo)
 {
     LOCK(cs_wallet);
-    if (bip44CoinType != coinType)
+    std::pair<string, string> networkInfo(PACKAGE_NAME, networkIdString);
+    if (readNetworkInfo != networkInfo)
         throw std::runtime_error(
-                strprintf("%s: this wallet is for a different BIP 44 coin type (%i) than the node is configured for (%i)",
+                strprintf("%s: this wallet is for a different network (%s, %s) than the node is configured for (%s, %s)",
                           std::string(__func__),
-                          coinType,
-                          bip44CoinType)
+                          readNetworkInfo.first, readNetworkInfo.second,
+                          networkInfo.first, networkInfo.second)
         );
+}
+
+uint32_t CWallet::BIP44CoinType() {
+    return Params(networkIdString).BIP44CoinType();
 }
 
 
