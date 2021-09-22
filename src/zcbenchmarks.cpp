@@ -448,6 +448,7 @@ class FakeCoinsViewDB : public CCoinsView {
     uint256 hash;
     SproutMerkleTree sproutTree;
     SaplingMerkleTree saplingTree;
+    OrchardMerkleTree orchardTree;
 
 public:
     FakeCoinsViewDB(std::string dbName, uint256& hash) : db(GetDataDir() / dbName, 100, false, false), hash(hash) {}
@@ -463,6 +464,14 @@ public:
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
         if (rt == saplingTree.root()) {
             tree = saplingTree;
+            return true;
+        }
+        return false;
+    }
+
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const {
+        if (rt == orchardTree.root()) {
+            tree = orchardTree;
             return true;
         }
         return false;
@@ -490,6 +499,8 @@ public:
                 return sproutTree.root();
             case SAPLING:
                 return saplingTree.root();
+            case ORCHARD:
+                return orchardTree.root();
             default:
                 throw new std::runtime_error("Unknown shielded type");
         }
@@ -499,10 +510,14 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
+                    const uint256 &hashOrchardAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CAnchorsSaplingMap &mapSaplingAnchors,
+                    CAnchorsOrchardMap &mapOrchardAnchors,
                     CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap &mapSaplingNullifiers) {
+                    CNullifiersMap &mapSaplingNullifiers,
+                    CNullifiersMap &mapOrchardNullifiers,
+                    CHistoryCacheMap &historyCacheMap) {
         return false;
     }
 
