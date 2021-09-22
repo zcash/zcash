@@ -200,6 +200,48 @@ impl BatchValidator {
     fn new() -> Self {
         BatchValidator { signatures: vec![] }
     }
+
+    fn add_bundle(&mut self, bundle: &Bundle<Authorized, Amount>, txid: TxId) {
+        for action in bundle.actions().iter() {
+            self.signatures.push(BundleSignature {
+                signature: action
+                    .rk()
+                    .create_batch_item(action.authorization().clone(), txid.as_ref()),
+            });
+        }
+
+        self.signatures.push(BundleSignature {
+            signature: bundle.binding_validating_key().create_batch_item(
+                bundle.authorization().binding_signature().clone(),
+                txid.as_ref(),
+            ),
+        });
+    }
+
+    fn validate(&self) -> bool {
+        if self.signatures.is_empty() {
+            // An empty batch is always valid, but is not free to run; skip it.
+            return true;
+        }
+
+        let mut validator = redpallas::batch::Verifier::new();
+        for sig in self.signatures.iter() {
+            validator.queue(sig.signature.clone());
+        }
+
+        match validator.verify(OsRng) {
+            Ok(()) => true,
+            Err(e) => {
+                error!("RedPallas batch validation failed: {}", e);
+                // TODO: Try sub-batches to figure out which signatures are invalid. We can
+                // postpone this for now:
+                // - For per-transaction batching (when adding to the mempool), we don't care
+                //   which signature within the transaction failed.
+                // - For per-block batching, we currently don't care which transaction failed.
+                false
+            }
+        }
+    }
 }
 
 /// Creates a RedPallas batch validation context.
@@ -234,22 +276,7 @@ pub extern "C" fn orchard_batch_add_bundle(
     let txid = unsafe { txid.as_ref() }.cloned().map(TxId::from_bytes);
 
     match (batch, bundle, txid) {
-        (Some(batch), Some(bundle), Some(txid)) => {
-            for action in bundle.actions().iter() {
-                batch.signatures.push(BundleSignature {
-                    signature: action
-                        .rk()
-                        .create_batch_item(action.authorization().clone(), txid.as_ref()),
-                });
-            }
-
-            batch.signatures.push(BundleSignature {
-                signature: bundle.binding_validating_key().create_batch_item(
-                    bundle.authorization().binding_signature().clone(),
-                    txid.as_ref(),
-                ),
-            });
-        }
+        (Some(batch), Some(bundle), Some(txid)) => batch.add_bundle(bundle, txid),
         (_, _, None) => error!("orchard_batch_add_bundle() called without txid!"),
         (Some(_), None, Some(txid)) => debug!("Tx {} has no Orchard component", txid),
         (None, Some(_), _) => debug!("Orchard BatchValidator not provided, assuming disabled."),
@@ -264,23 +291,7 @@ pub extern "C" fn orchard_batch_add_bundle(
 #[no_mangle]
 pub extern "C" fn orchard_batch_validate(batch: *const BatchValidator) -> bool {
     if let Some(batch) = unsafe { batch.as_ref() } {
-        let mut validator = redpallas::batch::Verifier::new();
-        for sig in batch.signatures.iter() {
-            validator.queue(sig.signature.clone());
-        }
-
-        match validator.verify(OsRng) {
-            Ok(()) => true,
-            Err(e) => {
-                error!("RedPallas batch validation failed: {}", e);
-                // TODO: Try sub-batches to figure out which signatures are invalid. We can
-                // postpone this for now:
-                // - For per-transaction batching (when adding to the mempool), we don't care
-                //   which signature within the transaction failed.
-                // - For per-block batching, we currently don't care which transaction failed.
-                false
-            }
-        }
+        batch.validate()
     } else {
         // The orchard::BatchValidator C++ class uses null to represent a disabled batch
         // validator.

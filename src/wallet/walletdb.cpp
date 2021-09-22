@@ -298,8 +298,9 @@ public:
     bool fAnyUnordered;
     int nFileVersion;
     vector<uint256> vWalletUpgrade;
+    orchard::AuthValidator orchardAuth;
 
-    CWalletScanState() {
+    CWalletScanState(): orchardAuth(orchard::AuthValidator::Batch()) {
         nKeys = nCKeys = nKeyMeta = nZKeys = nCZKeys = nZKeyMeta = nSapZAddrs = 0;
         fIsEncrypted = false;
         fAnyUnordered = false;
@@ -338,11 +339,9 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssValue >> wtx;
             CValidationState state;
             auto verifier = ProofVerifier::Strict();
-            auto orchardAuth = orchard::AuthValidator::Batch();
             if (!(
-                CheckTransaction(wtx, state, verifier, orchardAuth) &&
+                CheckTransaction(wtx, state, verifier, wss.orchardAuth) &&
                 (wtx.GetHash() == hash) &&
-                orchardAuth.Validate() &&
                 state.IsValid())
             ) {
                 return false;
@@ -802,6 +801,12 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                 LogPrintf("%s\n", strErr);
         }
         pcursor->close();
+
+        // Run the Orchard batch validator; if it fails, treat it like a bad transaction record.
+        if (!wss.orchardAuth.Validate()) {
+            fNoncriticalErrors = true;
+            SoftSetBoolArg("-rescan", true);
+        }
     }
     catch (const boost::thread_interrupted&) {
         throw;
