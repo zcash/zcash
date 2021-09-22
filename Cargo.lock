@@ -87,9 +87,9 @@ checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 
 [[package]]
 name = "base64ct"
-version = "1.1.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40a96587c05c810ddbb79e2674d519cff1379517e7b91d166dff7a7cc0e9af6e"
+checksum = "8a32fd6af2b5827bce66c29053ba0e7c42b9dcab01835835058558c10851a46b"
 
 [[package]]
 name = "bech32"
@@ -130,9 +130,9 @@ dependencies = [
 
 [[package]]
 name = "bip0039"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac4d1925000f9183da41ed95477ea815512b5bb7e06e6c6964986ca077e2b75c"
+checksum = "d0830ae4cc96b0617cc912970c2b17e89456fecbf55e8eed53a956f37ab50c41"
 dependencies = [
  "hmac",
  "pbkdf2",
@@ -487,9 +487,9 @@ dependencies = [
 
 [[package]]
 name = "directories"
-version = "3.0.2"
+version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e69600ff1703123957937708eb27f7a564e48885c537782722ed0ba3189ce1d7"
+checksum = "f51c5d4ddabd36886dd3e1438cb358cdcb0d7c499cb99cb4ac2e38e18b5cb210"
 dependencies = [
  "dirs-sys",
 ]
@@ -534,10 +534,18 @@ checksum = "c34f04666d835ff5d62e058c3995147c06f42fe86ff053337632bca83e42702d"
 [[package]]
 name = "equihash"
 version = "0.1.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=ba3f13bbedd95908419f104f67b9fcd3b3e13111#ba3f13bbedd95908419f104f67b9fcd3b3e13111"
+source = "git+https://github.com/zcash/librustzcash.git?rev=bfd083b339e0a21e9663d8c269f79fcc57eb742d#bfd083b339e0a21e9663d8c269f79fcc57eb742d"
 dependencies = [
  "blake2b_simd",
  "byteorder",
+]
+
+[[package]]
+name = "f4jumble"
+version = "0.0.0"
+source = "git+https://github.com/zcash/librustzcash.git?rev=bfd083b339e0a21e9663d8c269f79fcc57eb742d#bfd083b339e0a21e9663d8c269f79fcc57eb742d"
+dependencies = [
+ "blake2b_simd",
 ]
 
 [[package]]
@@ -658,7 +666,7 @@ dependencies = [
 [[package]]
 name = "halo2"
 version = "0.0.1"
-source = "git+https://github.com/zcash/halo2.git?rev=26047eaf323929935fd1e6aa3ae100b1113706e0#26047eaf323929935fd1e6aa3ae100b1113706e0"
+source = "git+https://github.com/zcash/halo2.git?rev=a7cd600eb60b1528159b92af5e426adcc615de1a#a7cd600eb60b1528159b92af5e426adcc615de1a"
 dependencies = [
  "blake2b_simd",
  "ff",
@@ -1115,7 +1123,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orchard"
 version = "0.0.0"
-source = "git+https://github.com/zcash/orchard.git?rev=f8280c98a3d0e41b8ff5b7f615802bd197f781e1#f8280c98a3d0e41b8ff5b7f615802bd197f781e1"
+source = "git+https://github.com/zcash/orchard.git?rev=8779ce8f1a638ebbc9b229d4eff3a29ef4de7ac0#8779ce8f1a638ebbc9b229d4eff3a29ef4de7ac0"
 dependencies = [
  "aes",
  "arrayvec 0.7.1",
@@ -1183,9 +1191,9 @@ dependencies = [
 
 [[package]]
 name = "password-hash"
-version = "0.2.3"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77e0b28ace46c5a396546bcf443bf422b57049617433d8854227352a4a9b24e7"
+checksum = "1d791538a6dcc1e7cb7fe6f6b58aca40e7f79403c45b2bc274008b5e647af1d8"
 dependencies = [
  "base64ct",
  "rand_core 0.6.3",
@@ -1209,9 +1217,9 @@ dependencies = [
 
 [[package]]
 name = "pbkdf2"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d95f5254224e617595d2cc3cc73ff0a5eaf2637519e25f03388154e9378b6ffa"
+checksum = "f05894bce6a1ba4be299d0c5f29563e08af2bc18bb7d48313113bed71e904739"
 dependencies = [
  "crypto-mac",
  "password-hash",
@@ -1887,18 +1895,19 @@ dependencies = [
 [[package]]
 name = "zcash_address"
 version = "0.0.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=ba3f13bbedd95908419f104f67b9fcd3b3e13111#ba3f13bbedd95908419f104f67b9fcd3b3e13111"
+source = "git+https://github.com/zcash/librustzcash.git?rev=bfd083b339e0a21e9663d8c269f79fcc57eb742d#bfd083b339e0a21e9663d8c269f79fcc57eb742d"
 dependencies = [
  "bech32",
  "blake2b_simd",
  "bs58",
+ "f4jumble",
  "zcash_encoding",
 ]
 
 [[package]]
 name = "zcash_encoding"
 version = "0.0.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=ba3f13bbedd95908419f104f67b9fcd3b3e13111#ba3f13bbedd95908419f104f67b9fcd3b3e13111"
+source = "git+https://github.com/zcash/librustzcash.git?rev=bfd083b339e0a21e9663d8c269f79fcc57eb742d#bfd083b339e0a21e9663d8c269f79fcc57eb742d"
 dependencies = [
  "byteorder",
  "nonempty",
@@ -1907,7 +1916,7 @@ dependencies = [
 [[package]]
 name = "zcash_history"
 version = "0.2.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=ba3f13bbedd95908419f104f67b9fcd3b3e13111#ba3f13bbedd95908419f104f67b9fcd3b3e13111"
+source = "git+https://github.com/zcash/librustzcash.git?rev=bfd083b339e0a21e9663d8c269f79fcc57eb742d#bfd083b339e0a21e9663d8c269f79fcc57eb742d"
 dependencies = [
  "bigint",
  "blake2b_simd",
@@ -1917,7 +1926,7 @@ dependencies = [
 [[package]]
 name = "zcash_note_encryption"
 version = "0.0.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=ba3f13bbedd95908419f104f67b9fcd3b3e13111#ba3f13bbedd95908419f104f67b9fcd3b3e13111"
+source = "git+https://github.com/zcash/librustzcash.git?rev=bfd083b339e0a21e9663d8c269f79fcc57eb742d#bfd083b339e0a21e9663d8c269f79fcc57eb742d"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -1932,7 +1941,7 @@ dependencies = [
 [[package]]
 name = "zcash_primitives"
 version = "0.5.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=ba3f13bbedd95908419f104f67b9fcd3b3e13111#ba3f13bbedd95908419f104f67b9fcd3b3e13111"
+source = "git+https://github.com/zcash/librustzcash.git?rev=bfd083b339e0a21e9663d8c269f79fcc57eb742d#bfd083b339e0a21e9663d8c269f79fcc57eb742d"
 dependencies = [
  "aes",
  "bip0039",
@@ -1966,7 +1975,7 @@ dependencies = [
 [[package]]
 name = "zcash_proofs"
 version = "0.5.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=ba3f13bbedd95908419f104f67b9fcd3b3e13111#ba3f13bbedd95908419f104f67b9fcd3b3e13111"
+source = "git+https://github.com/zcash/librustzcash.git?rev=bfd083b339e0a21e9663d8c269f79fcc57eb742d#bfd083b339e0a21e9663d8c269f79fcc57eb742d"
 dependencies = [
  "bellman",
  "blake2b_simd",

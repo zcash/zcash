@@ -13,7 +13,7 @@ replace-with = "vendored-sources"
 
 [source."https://github.com/zcash/halo2.git"]
 git = "https://github.com/zcash/halo2.git"
-rev = "26047eaf323929935fd1e6aa3ae100b1113706e0"
+rev = "a7cd600eb60b1528159b92af5e426adcc615de1a"
 replace-with = "vendored-sources"
 
 [source."https://github.com/zcash/incrementalmerkletree"]
@@ -23,12 +23,12 @@ replace-with = "vendored-sources"
 
 [source."https://github.com/zcash/librustzcash.git"]
 git = "https://github.com/zcash/librustzcash.git"
-rev = "ba3f13bbedd95908419f104f67b9fcd3b3e13111"
+rev = "bfd083b339e0a21e9663d8c269f79fcc57eb742d"
 replace-with = "vendored-sources"
 
 [source."https://github.com/zcash/orchard.git"]
 git = "https://github.com/zcash/orchard.git"
-rev = "f8280c98a3d0e41b8ff5b7f615802bd197f781e1"
+rev = "8779ce8f1a638ebbc9b229d4eff3a29ef4de7ac0"
 replace-with = "vendored-sources"
 
 [source.vendored-sources]

@@ -122,8 +122,8 @@ License: Boost-Software-License-1.0
 
 Files: depends/*/vendored-sources/halo2/*
  depends/*/vendored-sources/orchard/*
-Copyright: 2020 The Electric Coin Company
-License: Bootstrap-Open-Source-Licence-1.0
+Copyright: 2020-2021 The Electric Coin Company
+License: BOSL-1.0-or-later-with-Zcash-exception
 
 Files: src/crypto/ctaes/*
 Copyright: Copyright (c) 2016 Pieter Wuille
@@ -1156,6 +1156,41 @@ License: Expat-with-advertising-clause
  their institutions shall not be used in advertising or otherwise to
  promote the sale, use or other dealings in this Software without
  prior written authorization from the authors.
+
+License: BOSL-1.0-or-later-with-Zcash-exception
+ This package ("Original Work") is licensed under the terms of the Bootstrap Open
+ Source License, version 1.0, or at your option, any later version ("BOSL"). See
+ the file ./LICENSE-BOSL for the terms of the Bootstrap Open Source Licence,
+ version 1.0.
+ .
+ Only if this Original Work is included as part of the distribution of one of the
+ following projects ("the Project"):
+ .
+ - The Zcash projects published by the Electric Coin Company,
+ - The Zebra project published by the Zcash Foundation,
+ .
+ then License is granted to use this package under the BOSL as modified by the
+ following clarification and special exception. This exception applies only to
+ the Original Work when linked or combined with the Project and not to the
+ Original Work when linked, combined, or included in or with any other software
+ or project or on a standalone basis.
+ .
+     Under the terms of the BOSL, linking or combining this Original Work with
+     the Project creates a Derivative Work based upon the Original Work and the
+     terms of the BOSL thus apply to both the Original Work and that Derivative
+     Work. As a special exception to the BOSL, and to allow this Original Work to
+     be linked and combined with the Project without having to apply the BOSL to
+     the other portions of the Project, you are granted permission to link or
+     combine this Original Work with the Project and to copy and distribute the
+     resulting work ("Resulting Work") under the open source license applicable
+     to the Project ("Project License"), provided that any portions of this
+     Original Work included in the Resulting Work remain subject to the BOSL. For
+     clarity, you may continue to treat all other portions of the Project under
+     the Project License, provided that you comply with the BOSL with respect to
+     the Original Work. If you modify this Original Work, your version of the
+     Original Work must remain under the BOSL. You may also extend this exception
+     to your version, but you are not obligated to do so. If you do not wish to
+     do so, delete this exception statement from your version.
 
 License: Bootstrap-Open-Source-Licence-1.0
  =======================================================
