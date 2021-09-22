@@ -54,18 +54,12 @@ namespace {
     };
 }
 
-const static std::string NET_MESSAGE_COMMAND_OTHER = "*other*";
-
-/** Services this node implementation cares about */
-static const ServiceFlags nRelevantServices = NODE_NETWORK;
-
 //
 // Global state variables
 //
 bool fDiscover = true;
 bool fListen = true;
 ServiceFlags nLocalServices = NODE_NETWORK;
-bool fRelayTxes = true;
 CCriticalSection cs_mapLocalHost;
 map<CNetAddr, LocalServiceInfo> mapLocalHost;
 static bool vfLimited[NET_MAX] = {};
@@ -405,9 +399,6 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
             vNodes.push_back(pnode);
         }
 
-        pnode->nServicesExpected = ServiceFlags(addrConnect.nServices & nRelevantServices);
-        pnode->nTimeConnected = GetTime();
-
         return pnode;
     } else if (!proxyConnectionFailed) {
         // If connecting to the node failed, and failure is not caused by a problem connecting to
@@ -467,8 +458,8 @@ void CNode::PushVersion()
         LogPrint("net", "send version message: version %d, blocks=%d, us=%s, them=%s, peer=%d\n", PROTOCOL_VERSION, nBestHeight, addrMe.ToString(), addrYou.ToString(), id);
     else
         LogPrint("net", "send version message: version %d, blocks=%d, us=%s, peer=%d\n", PROTOCOL_VERSION, nBestHeight, addrMe.ToString(), id);
-    PushMessage(NetMsgType::VERSION, PROTOCOL_VERSION, (uint64_t)nLocalServices, nTime, addrYou, addrMe,
-                nLocalHostNonce, strSubVersion, nBestHeight, ::fRelayTxes);
+    PushMessage("version", PROTOCOL_VERSION, (uint64_t)nLocalServices, nTime, addrYou, addrMe,
+                nLocalHostNonce, strSubVersion, nBestHeight, !GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY));
 }
 
 
@@ -1416,10 +1407,9 @@ void ThreadDNSAddressSeed()
         if (HaveNameProxy()) {
             AddOneShot(seed.host);
         } else {
-            std::vector<CNetAddr> vIPs;
-            std::vector<CAddress> vAdd;
-            ServiceFlags requiredServiceBits = nRelevantServices;
-            if (LookupHost(seed.getHost(requiredServiceBits).c_str(), vIPs, 0, true))
+            vector<CNetAddr> vIPs;
+            vector<CAddress> vAdd;
+            if (LookupHost(seed.host.c_str(), vIPs, 0, true))
             {
                 for (const CNetAddr& ip : vIPs)
                 {
@@ -1502,7 +1492,7 @@ void ThreadOpenConnections()
             for (const std::string& strAddr : mapMultiArgs["-connect"])
             {
                 CAddress addr(CService(), NODE_NONE);
-                OpenNetworkConnection(addr, false, NULL, strAddr.c_str());
+                OpenNetworkConnection(addr, NULL, strAddr.c_str());
                 for (int i = 0; i < 10 && i < nLoop; i++)
                 {
                     MilliSleep(500);
@@ -1656,7 +1646,7 @@ void ThreadOpenAddedConnections()
             CSemaphoreGrant grant(*semOutbound);
             /* We want -addnode to work even for nodes that don't provide all
              * wanted services, so pass in nServices=NODE_NONE to CAddress. */
-            OpenNetworkConnection(CAddress(vserv[i % vserv.size()], NODE_NONE), false, &grant);
+            OpenNetworkConnection(CAddress(vserv[i % vserv.size()], NODE_NONE), &grant);
             MilliSleep(500);
         }
         MilliSleep(120000); // Retry every 2 minutes
@@ -2217,7 +2207,6 @@ CNode::CNode(SOCKET hSocketIn, const CAddress& addrIn, const std::string& addrNa
     filterInventoryKnown(50000, 0.000001)
 {
     nServices = NODE_NONE;
-    nServicesExpected = NODE_NONE;
     hSocket = hSocketIn;
     nRecvVersion = INIT_PROTO_VERSION;
     nLastSend = 0;
