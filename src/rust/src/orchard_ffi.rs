@@ -219,6 +219,11 @@ impl BatchValidator {
     }
 
     fn validate(&self) -> bool {
+        if self.signatures.is_empty() {
+            // An empty batch is always valid, but is not free to run; skip it.
+            return true;
+        }
+
         let mut validator = redpallas::batch::Verifier::new();
         for sig in self.signatures.iter() {
             validator.queue(sig.signature.clone());
