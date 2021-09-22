@@ -4,6 +4,7 @@ enable_cache: true
 distro: "debian"
 suites:
 - "stretch"
+- "buster"
 architectures:
 - "amd64"
 packages:
