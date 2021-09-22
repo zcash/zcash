@@ -53,18 +53,6 @@
       "ac_supply": "999999"
     }
   ,
-    "COQUICASH": {
-      "ac_supply": "72000000",
-      "ac_reward": "7200000000",
-      "ac_staked": "50",
-      "ac_halving": "420000",
-      "ac_cc": "2",
-      "ac_ccenable": "227,235,236,241",
-      "addnode": [
-        "78.47.108.168"
-      ]
-    }
-   ,
     
     "WLC": {
       "ac_supply": "210000000"
@@ -81,20 +69,12 @@
     }
   ,
   
-    "AXO": {
-      "ac_supply": "200000000",
-      "ac_ccactivate": "130000"
-    }
-  ,
+
   
     "ETOMIC": {
       "ac_supply": "100000000"
     }
-  ,
   
-    "BTCH": {
-      "ac_supply": "20998641"
-    }
   ,
   
     "NINJA": {

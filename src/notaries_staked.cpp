@@ -3,6 +3,7 @@
 #include "crosschain.h"
 #include "cc/CCinclude.h"
 #include "komodo_defs.h"
+#include "hex.h"
 #include <cstring>
 
 extern pthread_mutex_t staked_mutex;
@@ -81,7 +82,7 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
         if ( didinit[era-1] == 0 )
         {
             for (i=0; i<num_notaries_STAKED[era-1]; i++) {
-                decode_hex(staked_pubkeys[era-1][i],33,(char *)notaries_STAKED[era-1][i][1]);
+                decode_hex(staked_pubkeys[era-1][i],33,notaries_STAKED[era-1][i][1]);
             }
             didinit[era-1] = 1;
             printf("%s is a STAKED chain in era %i \n",ChainName,era);
@@ -115,7 +116,7 @@ void UpdateNotaryAddrs(uint8_t pubkeys[64][33],int8_t numNotaries) {
             if ( memcmp(NOTARY_PUBKEY33,pubkeys[i],33) == 0 )
             {
                 NOTARY_ADDRESS.assign(NOTARYADDRS[i]);
-                IS_STAKED_NOTARY = i;
+                STAKED_NOTARY_ID = i;
             }
         }
         pthread_mutex_unlock(&staked_mutex);

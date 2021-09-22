@@ -19,6 +19,7 @@
 #include "main.h"
 #include "notarisationdb.h"
 #include "merkleblock.h"
+#include "hex.h"
 
 #include "cc/CCinclude.h"
 

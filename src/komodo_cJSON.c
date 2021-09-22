@@ -21,13 +21,11 @@
  THE SOFTWARE.
  */
 
-/* cJSON */
-/* JSON parser in C. */
 #include <math.h>
 
-#include "cJSON.h"
 #include "komodo_cJSON.h"
-#include "cJSON.c"
+#include "cJSON.h"
+#include "hex.h"
 
 #ifndef DBL_EPSILON
 #define DBL_EPSILON 2.2204460492503131E-16
@@ -158,7 +156,7 @@ int64_t conv_cJSON_float(cJSON *json,char *field)
 
 int32_t extract_cJSON_str(char *dest,int32_t max,cJSON *json,char *field)
 {
-    int32_t safecopy(char *dest,char *src,long len);
+    int32_t safecopy(char *dest,const char *src,long len);
     char *str;
     cJSON *obj;
     int32_t len;

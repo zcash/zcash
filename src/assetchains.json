@@ -1,20 +1,11 @@
 [
   {
-    "ac_name": "AXO",
-    "ac_supply": "200000000",
-    "ac_ccactivate": "130000"
-  },
-  {
     "ac_name": "BET",
     "ac_supply": "999999"
   },
   {
     "ac_name": "BOTS",
     "ac_supply": "999999"
-  },
-  {
-    "ac_name": "BTCH",
-    "ac_supply": "20998641"
   },
   {
     "ac_name": "CCL",
@@ -24,16 +15,6 @@
     "addressindex": "1",
     "spentindex": "1",
     "addnode": ["142.93.136.89", "195.201.22.89"]
-  },
-  {
-    "ac_name": "COQUICASH",
-    "ac_supply": "72000000",
-    "ac_reward": "7200000000",
-    "ac_staked": "50",
-    "ac_halving": "420000",
-    "ac_cc": "2",
-    "ac_ccenable": "227,235,236,241",
-    "addnode": ["78.47.108.168"]
   },
   {
     "ac_name": "CRYPTO",
@@ -93,12 +74,6 @@
   {
     "ac_name": "NINJA",
     "ac_supply": "100000000"
-  },
-  {
-    "ac_name": "OOT",
-    "ac_supply": "216000000",
-    "ac_sapling": "5000000",
-    "addnode": ["88.99.212.81"]
   },
   {
     "ac_name": "PANGEA",
