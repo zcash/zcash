@@ -69,11 +69,11 @@ codegen-units = 1
 
 [patch.crates-io]
 ed25519-zebra = { git = "https://github.com/ZcashFoundation/ed25519-zebra.git", rev = "d3512400227a362d08367088ffaa9bd4142a69c7" }
-halo2 = { git = "https://github.com/zcash/halo2.git", rev = "26047eaf323929935fd1e6aa3ae100b1113706e0" }
+halo2 = { git = "https://github.com/zcash/halo2.git", rev = "a7cd600eb60b1528159b92af5e426adcc615de1a" }
 incrementalmerkletree = { git = "https://github.com/zcash/incrementalmerkletree", rev = "b7bd6246122a6e9ace8edb51553fbf5228906cbb" }
-orchard = { git = "https://github.com/zcash/orchard.git", rev = "f8280c98a3d0e41b8ff5b7f615802bd197f781e1" }
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "ba3f13bbedd95908419f104f67b9fcd3b3e13111" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "ba3f13bbedd95908419f104f67b9fcd3b3e13111" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "ba3f13bbedd95908419f104f67b9fcd3b3e13111" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "ba3f13bbedd95908419f104f67b9fcd3b3e13111" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "ba3f13bbedd95908419f104f67b9fcd3b3e13111" }
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "8779ce8f1a638ebbc9b229d4eff3a29ef4de7ac0" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "bfd083b339e0a21e9663d8c269f79fcc57eb742d" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "bfd083b339e0a21e9663d8c269f79fcc57eb742d" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "bfd083b339e0a21e9663d8c269f79fcc57eb742d" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "bfd083b339e0a21e9663d8c269f79fcc57eb742d" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "bfd083b339e0a21e9663d8c269f79fcc57eb742d" }
