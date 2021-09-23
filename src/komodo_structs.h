@@ -121,7 +121,7 @@ struct event_notarized : public event
         memset(this->dest, 0, sizeof(this->dest));
     }
     event_notarized(int32_t ht, const char* _dest) : event(EVENT_NOTARIZED, ht), notarizedheight(0), MoMdepth(0) {
-        memcpy(this->dest, _dest, sizeof(this->dest)-1);
+        memcpy(this->dest, _dest, sizeof(this->dest)-1); this->dest[sizeof(this->dest)-1] = 0;
     }
     event_notarized(uint8_t* data, long &pos, long data_len, int32_t height, const char* _dest, bool includeMoM = false);
     event_notarized(FILE* fp, int32_t ht, const char* _dest, bool includeMoM = false);
