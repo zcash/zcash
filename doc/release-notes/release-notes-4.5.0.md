@@ -1,3 +1,64 @@
+Notable changes
+===============
+
+Network Upgrade 5
+-----------------
+
+The code preparations for the Network Upgrade 5 consensus rules are finished and
+included in this release. The following ZIPs are being deployed:
+
+- [ZIP 216: Require Canonical Jubjub Point Encodings](https://zips.z.cash/zip-0216)
+- [ZIP 224: Orchard Shielded Protocol](https://zips.z.cash/zip-0224)
+- [ZIP 225: Version 5 Transaction Format](https://zips.z.cash/zip-0225)
+- [ZIP 239: Relay of Version 5 Transactions](https://zips.z.cash/zip-0239)
+- [ZIP 244: Transaction Identifier Non-Malleability](https://zips.z.cash/zip-0244)
+
+NU5 will activate on testnet at height **1,590,000**, and can also be activated
+at a specific height in regtest mode by setting the config option
+`-nuparams=f919a198:HEIGHT`.
+
+The testnet activation of NU5, and `zcashd` v4.5.0 itself, is aimed at enabling
+existing Zcash users to test their software and make the necessary changes to be
+compatible with the new consensus rules. In particular:
+
+- Wallets should start adding support for v5 transactions.
+- Miners and mining pools should ensure that their software is compatible with
+  the semantic change to the block header specified in
+  [ZIP 244](https://zips.z.cash/zip-0244#block-header-changes)
+
+A subsequent v4.5.1 release in the coming weeks will add support for generating
+and using Unified Addresses ([ZIP 316](https://zips.z.cash/zip-0316)), which
+will enable `zcashd` wallets to interact with the Orchard shielded pool.
+
+As with previous network upgrades, it is possible that backwards-incompatible
+changes might be made to the consensus rules in this testing phase, prior to
+setting the mainnet activation height. In the event that this happens, testnet
+will be rolled back in v5.0.0 and a second testnet activation will occur.
+
+See [ZIP 252](https://zips.z.cash/zip-0252) for additional information about the
+deployment process for NU5.
+
+Rejecting unknown `CInv` message types
+--------------------------------------
+
+Previously, if `zcashd` received an `inv` or `getdata` message containing
+unknown `CInv` message types, it would ignore them and process the remainder of
+the message. Starting with v4.5.0, `zcashd` will instead drop the entire `inv`
+or `getdata` message and reply with a `reject` message. This will enable node
+operators to discover whether their nodes are sending unexpected `CInv` types;
+in particular, node operators should ensure their software does not produce the
+`MSG_WTX` CInv message type intended for the Bitcoin network, which is
+incompatible with the `MSG_WTX` CInv message type defined in ZIP 239 (which will
+be used from NU5 activation for advertising v5 transactions).
+
+Deprecated or removed RPCs
+--------------------------
+
+- The 'account' API inherited from Bitcoin Core has been disabled since the
+  launch of Zcash. Following its deprecation in Bitcoin Core v0.17 and removal
+  in Bitcoin Core v0.18, we have now removed the API from `zcashd`.
+
+
 Changelog
 =========
 
