@@ -296,7 +296,6 @@ int32_t unstringbits(char *buf,uint64_t bits);
 uint64_t stringbits(char *str);
 int32_t is_decimalstr(char *str);
 void tolowercase(char *str);
-char *clonestr(char *str);
 void reverse_hexstr(char *str);
 int32_t init_hexbytes_noT(char *hexbytes,uint8_t *message,long len);
 uint16_t parse_ipaddr(char *ipaddr,char *ip_port);
@@ -371,7 +370,7 @@ void calc_base64_encodestr(char *hexstr,uint8_t *buf,uint8_t *msg,int32_t len);
 void calc_base64_decodestr(char *hexstr,uint8_t *buf,uint8_t *msg,int32_t len);
 void calc_hexstr(char *hexstr,uint8_t *buf,uint8_t *msg,int32_t len);
 void calc_unhexstr(char *hexstr,uint8_t *buf,uint8_t *msg,int32_t len);
-int32_t safecopy(char *dest,char *src,long len);
+int32_t safecopy(char *dest,const char *src,long len);
 double dxblend(double *destp,double val,double decay);
 
 uint64_t calc_ipbits(char *ip_port);

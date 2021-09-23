@@ -53,7 +53,6 @@
         EVAL(EVAL_ORACLES, 0xec) \
         EVAL(EVAL_PRICES, 0xed) \
         EVAL(EVAL_PEGS, 0xee) \
-        EVAL(EVAL_MARMARA, 0xef) \
         EVAL(EVAL_PAYMENTS, 0xf0) \
         EVAL(EVAL_GATEWAYS, 0xf1) \
 		EVAL(EVAL_TOKENS, 0xf2) \

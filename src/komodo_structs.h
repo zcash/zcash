@@ -12,6 +12,10 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
+#pragma once
+#include <memory>
+#include <list>
+#include <cstdint>
 
 #include "komodo_defs.h"
 
@@ -55,6 +59,7 @@
 #include <boost/multi_index/member.hpp>
 #include <set>
 
+// structs prior to refactor
 struct komodo_kv { UT_hash_handle hh; bits256 pubkey; uint8_t *key,*value; int32_t height; uint32_t flags; uint16_t keylen,valuesize; };
 
 struct komodo_event_notarized { uint256 blockhash,desttxid,MoM; int32_t notarizedheight,MoMdepth; char dest[16]; };
@@ -71,6 +76,164 @@ struct komodo_event
     char symbol[KOMODO_ASSETCHAIN_MAXLEN];
     uint8_t space[];
 };
+
+namespace komodo {
+
+enum komodo_event_type
+{
+    EVENT_PUBKEYS,
+    EVENT_NOTARIZED,
+    EVENT_U,
+    EVENT_KMDHEIGHT,
+    EVENT_OPRETURN,
+    EVENT_PRICEFEED,
+    EVENT_REWIND
+};
+
+/***
+ * Thrown by event constructors when it finds a problem with the input data
+ */
+class parse_error : public std::logic_error
+{
+public:
+    parse_error(const std::string& in) : std::logic_error(in) {}
+};
+
+/***
+ * base class for events
+ */
+class event
+{
+public:
+    event(komodo_event_type t, int32_t height) : type(t), height(height) {}
+    virtual ~event() = default;
+    komodo_event_type type;
+    int32_t height;
+};
+std::ostream& operator<<(std::ostream& os, const event& in);
+
+struct event_rewind : public event
+{
+    event_rewind() : event(komodo_event_type::EVENT_REWIND, 0) {}
+    event_rewind(int32_t ht) : event(EVENT_REWIND, ht) {}
+    event_rewind(uint8_t* data, long &pos, long data_len, int32_t height);
+};
+std::ostream& operator<<(std::ostream& os, const event_rewind& in);
+
+struct event_notarized : public event
+{
+    event_notarized() : event(komodo_event_type::EVENT_NOTARIZED, 0), notarizedheight(0), MoMdepth(0) {
+        memset(this->dest, 0, sizeof(this->dest));
+    }
+    event_notarized(int32_t ht, const char* _dest) : event(EVENT_NOTARIZED, ht), notarizedheight(0), MoMdepth(0) {
+        strncpy(this->dest, _dest, sizeof(this->dest)-1); this->dest[sizeof(this->dest)-1] = 0;
+    }
+    event_notarized(uint8_t* data, long &pos, long data_len, int32_t height, const char* _dest, bool includeMoM = false);
+    event_notarized(FILE* fp, int32_t ht, const char* _dest, bool includeMoM = false);
+    uint256 blockhash;
+    uint256 desttxid;
+    uint256 MoM; 
+    int32_t notarizedheight;
+    int32_t MoMdepth; 
+    char dest[16];
+};
+std::ostream& operator<<(std::ostream& os, const event_notarized& in);
+
+struct event_pubkeys : public event
+{
+    /***
+     * Default ctor
+     */
+    event_pubkeys() : event(EVENT_PUBKEYS, 0), num(0)
+    {
+        memset(pubkeys, 0, 64 * 33);
+    }
+    event_pubkeys(int32_t ht) : event(EVENT_PUBKEYS, ht), num(0) 
+    {
+        memset(pubkeys, 0, 64 * 33);
+    }
+    /***
+     * ctor from data stream
+     * @param data the data stream
+     * @param pos the starting position (will advance)
+     * @param data_len full length of data
+     */
+    event_pubkeys(uint8_t* data, long &pos, long data_len, int32_t height);
+    event_pubkeys(FILE* fp, int32_t height);
+    uint8_t num = 0; 
+    uint8_t pubkeys[64][33]; 
+};
+std::ostream& operator<<(std::ostream& os, const event_pubkeys& in);
+
+struct event_u : public event
+{
+    event_u() : event(EVENT_U, 0) 
+    {
+        memset(mask, 0, 8);
+        memset(hash, 0, 32);
+    }
+    event_u(int32_t ht) : event(EVENT_U, ht)
+    {
+        memset(mask, 0, 8);
+        memset(hash, 0, 32);
+    }
+    event_u(uint8_t *data, long &pos, long data_len, int32_t height);
+    event_u(FILE* fp, int32_t height);
+    uint8_t n = 0;
+    uint8_t nid = 0;
+    uint8_t mask[8];
+    uint8_t hash[32];
+};
+std::ostream& operator<<(std::ostream& os, const event_u& in);
+
+struct event_kmdheight : public event
+{
+    event_kmdheight() : event(EVENT_KMDHEIGHT, 0) {}
+    event_kmdheight(int32_t ht) : event(EVENT_KMDHEIGHT, ht) {}
+    event_kmdheight(uint8_t *data, long &pos, long data_len, int32_t height, bool includeTimestamp = false);
+    event_kmdheight(FILE* fp, int32_t height, bool includeTimestamp = false);
+    int32_t kheight = 0;
+    uint32_t timestamp = 0;
+};
+std::ostream& operator<<(std::ostream& os, const event_kmdheight& in);
+
+struct event_opreturn : public event 
+{ 
+    event_opreturn() : event(EVENT_OPRETURN, 0) 
+    {
+        txid.SetNull();
+    }
+    event_opreturn(int32_t ht) : event(EVENT_OPRETURN, ht)
+    {
+        txid.SetNull();
+    }
+    event_opreturn(uint8_t *data, long &pos, long data_len, int32_t height);
+    event_opreturn(FILE* fp, int32_t height);
+    uint256 txid; 
+    uint16_t vout = 0;
+    uint64_t value = 0; 
+    std::vector<uint8_t> opret;
+};
+std::ostream& operator<<(std::ostream& os, const event_opreturn& in);
+
+struct event_pricefeed : public event
+{
+    event_pricefeed() : event(EVENT_PRICEFEED, 0), num(0) 
+    {
+        memset(prices, 0, 35);
+    }
+    event_pricefeed(int32_t ht) : event(EVENT_PRICEFEED, ht)
+    {
+        memset(prices, 0, 35);
+    }
+    event_pricefeed(uint8_t *data, long &pos, long data_len, int32_t height);
+    event_pricefeed(FILE* fp, int32_t height); 
+    uint8_t num = 0; 
+    uint32_t prices[35]; 
+};
+std::ostream& operator<<(std::ostream& os, const event_pricefeed& in);
+
+} // namespace komodo
 
 struct pax_transaction
 {
@@ -152,9 +315,9 @@ public:
     uint64_t approved;
     uint64_t redeemed;
     uint64_t shorted;
-    struct komodo_event **Komodo_events; int32_t Komodo_numevents;
+    std::list<std::shared_ptr<komodo::event>> events;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
-
+    bool add_event(const std::string& symbol, const uint32_t height, std::shared_ptr<komodo::event> in);
 protected:
     notarized_checkpoint_container NPOINTS; // collection of notarizations
     notarized_checkpoint last;
@@ -175,11 +338,7 @@ public:
      * @brief add a checkpoint to the collection and update member values
      * @param in the new values
      */
-    void AddCheckpoint(const notarized_checkpoint &in)
-    {
-        NPOINTS.push_back(in);
-        last = in;
-    }
+    void AddCheckpoint(const notarized_checkpoint &in);
 
     uint64_t NumCheckpoints() const { return NPOINTS.size(); }
 
@@ -190,23 +349,7 @@ public:
      * @param[out] notarized_desttxidp the desttxid
      * @returns the notarized height
      */
-    int32_t NotarizedData(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp) const
-    {
-        // get the nearest height without going over
-        auto &idx = NPOINTS.get<1>(); // sorted by nHeight
-        auto itr = idx.upper_bound(nHeight);
-        if (itr != idx.begin())
-            --itr;
-        if ( itr != idx.end() && (*itr).nHeight < nHeight )
-        {
-            *notarized_hashp = itr->notarized_hash;
-            *notarized_desttxidp = itr->notarized_desttxid;
-            return itr->notarized_height;
-        }
-        memset(notarized_hashp,0,sizeof(*notarized_hashp));
-        memset(notarized_desttxidp,0,sizeof(*notarized_desttxidp));
-        return 0;
-    }
+    int32_t NotarizedData(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp) const;
 
     /******
      * @brief Get the last notarization information
@@ -215,48 +358,13 @@ public:
      * @param[out] txidp the DESTTXID
      * @returns the notarized height
      */
-    int32_t NotarizedHeight(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp)
-    {
-        CBlockIndex *pindex;
-        if ( (pindex= komodo_blockindex(last.notarized_hash)) == 0 || pindex->GetHeight() < 0 )
-        {
-            // found orphaned notarization, adjust the values in the komodo_state object
-            last.notarized_hash.SetNull();
-            last.notarized_desttxid.SetNull();
-            last.notarized_height = 0;
-        }
-        else
-        {
-            *hashp = last.notarized_hash;
-            *txidp = last.notarized_desttxid;
-            *prevMoMheightp = PrevMoMHeight();
-        }
-        return last.notarized_height;
-    }
+    int32_t NotarizedHeight(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp);
 
     /****
      * Search for the last (chronological) MoM notarized height
      * @returns the last notarized height that has a MoM
      */
-    int32_t PrevMoMHeight() const
-    {
-        static uint256 zero;
-        // shortcut
-        if (last.MoM != zero)
-        {
-            return last.notarized_height;
-        }
-        if (NPOINTS.size() > 0)
-        {
-            auto &idx = NPOINTS.get<0>();
-            for( auto r_itr = idx.rbegin(); r_itr != idx.rend(); ++r_itr)
-            {
-                if (r_itr->MoM != zero)
-                    return r_itr->notarized_height;
-            }
-        }
-        return 0;
-    }
+    int32_t PrevMoMHeight() const;
 
     /******
      * @brief Search the notarized checkpoints for a particular height
@@ -265,29 +373,7 @@ public:
      * @param height the notarized_height desired
      * @returns the checkpoint or nullptr
      */
-    const notarized_checkpoint *CheckpointAtHeight(int32_t height) const
-    {
-        // find the nearest notarization_height
-        if(NPOINTS.size() > 0)
-        {
-            auto &idx = NPOINTS.get<2>(); // search by notarized_height
-            auto itr = idx.upper_bound(height);
-            // work backwards, get the first one that meets our criteria
-            while (true)
-            {
-                if ( itr->MoMdepth != 0 
-                        && height > itr->notarized_height-(itr->MoMdepth&0xffff) 
-                        && height <= itr->notarized_height )
-                {
-                    return &(*itr);
-                }
-                if (itr == idx.begin())
-                    break;
-                --itr;
-            }
-        } // we have some elements in the collection
-        return nullptr;
-    }
+    const notarized_checkpoint *CheckpointAtHeight(int32_t height) const;
 };
 
 #endif /* KOMODO_STRUCTS_H */

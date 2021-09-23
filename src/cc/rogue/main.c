@@ -119,7 +119,7 @@ char *parse_conf_line(char *line,char *field)
     return(clonestr(line));
 }
 
-int32_t safecopy(char *dest,char *src,long len)
+int32_t safecopy(char *dest,const char *src,long len)
 {
     int32_t i = -1;
     if ( src != 0 && dest != 0 && src != dest )
@@ -144,9 +144,9 @@ int32_t safecopy(char *dest,char *src,long len)
 #define true 1
 #define false 0
 #ifdef STANDALONE
-#include "../komodo/src/komodo_cJSON.c"
+#include "../komodo/src/komodo_cJSON.h"
 #else
-#include "../../komodo_cJSON.c"
+#include "../../komodo_cJSON.h"
 #endif
 
 int32_t rogue_replay(uint64_t seed,int32_t sleeptime);
@@ -191,7 +191,7 @@ void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
     return(buf);
 }
 
-uint8_t *OS_fileptr(long *allocsizep,char *fname)
+uint8_t *OS_fileptr(long *allocsizep,const char *fname)
 {
     long filesize = 0; uint8_t *buf = 0; void *retptr;
     *allocsizep = 0;
