@@ -65,7 +65,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
             }
             else if ( func == 'N' || func == 'M' )
             {
-                std::shared_ptr<komodo::event_notarized> evt = std::make_shared<komodo::event_notarized>(fp, ht, func == 'M');
+                std::shared_ptr<komodo::event_notarized> evt = std::make_shared<komodo::event_notarized>(fp, ht, dest, func == 'M');
                 komodo_eventadd_notarized(sp, symbol, ht, evt);
             }
             else if ( func == 'U' ) // deprecated
@@ -134,7 +134,7 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
             else if ( func == 'N' || func == 'M' )
             {
                 std::shared_ptr<komodo::event_notarized> ntz = 
-                        std::make_shared<komodo::event_notarized>(filedata, fpos, datalen, ht, func == 'M');
+                        std::make_shared<komodo::event_notarized>(filedata, fpos, datalen, ht, dest, func == 'M');
                 komodo_eventadd_notarized(sp, symbol, ht, ntz);
             }
             else if ( func == 'U' ) // deprecated
@@ -292,8 +292,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         {
             if ( sp != 0 )
             {
-                std::shared_ptr<komodo::event_notarized> evt = std::make_shared<komodo::event_notarized>(height);
-                memcpy(evt->dest, dest, sizeof(evt->dest)-1);
+                std::shared_ptr<komodo::event_notarized> evt = std::make_shared<komodo::event_notarized>(height, dest);
                 evt->blockhash = sp->NOTARIZED_HASH;
                 evt->desttxid = sp->NOTARIZED_DESTTXID;
                 evt->notarizedheight = sp->NOTARIZED_HEIGHT;
