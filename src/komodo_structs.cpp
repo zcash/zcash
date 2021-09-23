@@ -174,7 +174,7 @@ std::ostream& operator<<(std::ostream& os, const event_rewind& in)
 event_notarized::event_notarized(uint8_t *data, long &pos, long data_len, int32_t height, const char* _dest, bool includeMoM)
         : event(EVENT_NOTARIZED, height), MoMdepth(0)
 {
-    memcpy(this->dest, _dest, sizeof(this->dest)-1);
+    strncpy(this->dest, _dest, sizeof(this->dest)-1);
     this->dest[sizeof(this->dest)-1] = 0;
     MoM.SetNull();
     mem_read(this->notarizedheight, data, pos, data_len);
@@ -190,7 +190,7 @@ event_notarized::event_notarized(uint8_t *data, long &pos, long data_len, int32_
 event_notarized::event_notarized(FILE* fp, int32_t height, const char* _dest, bool includeMoM)
         : event(EVENT_NOTARIZED, height), MoMdepth(0)
 {
-    memcpy(this->dest, _dest, sizeof(this->dest)-1);
+    strncpy(this->dest, _dest, sizeof(this->dest)-1);
     this->dest[sizeof(this->dest)-1] = 0;
     MoM.SetNull();
     if ( fread(&notarizedheight,1,sizeof(notarizedheight),fp) != sizeof(notarizedheight) )
