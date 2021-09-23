@@ -521,14 +521,14 @@ BOOST_AUTO_TEST_CASE(test_ParseArbitraryInt)
     BOOST_CHECK(v.has_value());
     BOOST_CHECK_EQUAL(v->size(), 1);
     BOOST_CHECK_EQUAL((*v)[0], 1);
-    v = ParseArbitraryInt(" 1");
+    v = ParseArbitraryInt("2 ");
     BOOST_CHECK(v.has_value());
     BOOST_CHECK_EQUAL(v->size(), 1);
-    BOOST_CHECK_EQUAL((*v)[0], 1);
-    v = ParseArbitraryInt(" \t1 ");
+    BOOST_CHECK_EQUAL((*v)[0], 2);
+    v = ParseArbitraryInt(" \t3 ");
     BOOST_CHECK(v.has_value());
     BOOST_CHECK_EQUAL(v->size(), 1);
-    BOOST_CHECK_EQUAL((*v)[0], 1);
+    BOOST_CHECK_EQUAL((*v)[0], 3);
 
     // Leading zeros have no effect, does not mean octal
     v = ParseArbitraryInt("010\t");
