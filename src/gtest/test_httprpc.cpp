@@ -3,6 +3,7 @@
 
 #include "httprpc.cpp"
 #include "httpserver.h"
+#include "netbase.h"
 
 using ::testing::Return;
 
