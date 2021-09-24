@@ -108,6 +108,16 @@ class blob88 : public base_blob<88> {
 public:
     blob88() {}
     blob88(const base_blob<88>& b) : base_blob<88>(b) {}
+    blob88(uint64_t i): base_blob<88>() {
+        data[0] = (uint8_t) i;
+        data[1] = (uint8_t) (i >> 8);
+        data[2] = (uint8_t) (i >> 16);
+        data[3] = (uint8_t) (i >> 24);
+        data[4] = (uint8_t) (i >> 32);
+        data[5] = (uint8_t) (i >> 40);
+        data[6] = (uint8_t) (i >> 48);
+        data[7] = (uint8_t) (i >> 56);
+    }
     explicit blob88(const std::vector<unsigned char>& vch) : base_blob<88>(vch) {}
 
     std::optional<blob88> increment() const {
@@ -122,6 +132,17 @@ public:
         }
 
         return std::nullopt;
+    }
+
+    // treat as little-endian for numeric comparison
+    bool less_than_le(const blob88& other) const {
+        for (int i = 10; i >= 0; i--) {
+            if (data[i] < other.data[i]) {
+                return true;
+            }
+        }
+
+        return false;
     }
 };
 

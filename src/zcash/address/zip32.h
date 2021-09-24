@@ -281,19 +281,67 @@ struct SaplingExtendedSpendingKey {
     }
 };
 
+class UnifiedSpendingKey;
+class UnifiedFullViewingKey;
+
+class ZcashdUnifiedAddress {
+private:
+    diversifier_index_t diversifier_index;
+    std::optional<CPubKey> transparentKey; //TODO: should this just be the public key hash?
+    std::optional<SaplingPaymentAddress> saplingAddress;
+
+    friend class UnifiedFullViewingKey;
+
+    ZcashdUnifiedAddress() {}
+public:
+    const std::optional<CPubKey>& GetTransparentKey() const {
+        return transparentKey;
+    }
+
+    const std::optional<SaplingPaymentAddress>& GetSaplingPaymentAddress() const {
+        return saplingAddress;
+    }
+};
+
+class UnifiedFullViewingKey {
+private:
+    std::optional<CExtPubKey> transparentKey;
+    std::optional<SaplingExtendedFullViewingKey> saplingKey;
+
+    UnifiedFullViewingKey() {}
+
+    friend class UnifiedSpendingKey;
+public:
+    const std::optional<CExtPubKey>& GetTransparentKey() const {
+        return transparentKey;
+    }
+
+    const std::optional<SaplingExtendedFullViewingKey>& GetSaplingExtendedFullViewingKey() const {
+        return saplingKey;
+    }
+
+    std::optional<ZcashdUnifiedAddress> Address(diversifier_index_t j) const;
+};
+
 class UnifiedSpendingKey {
 private:
     uint32_t accountId;
-    std::optional<CExtKey> p2pkhKey;
+    std::optional<CExtKey> transparentKey;
     std::optional<SaplingExtendedSpendingKey> saplingKey;
 
     UnifiedSpendingKey() {}
 public:
     static std::optional<std::pair<UnifiedSpendingKey, CKeyMetadata>> Derive(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId);
 
-    const std::optional<SaplingExtendedSpendingKey>& GetSaplingExtendedSpendingKey() {
+    const std::optional<CExtKey>& GetTransparentKey() const {
+        return transparentKey;
+    }
+
+    const std::optional<SaplingExtendedSpendingKey>& GetSaplingExtendedSpendingKey() const {
         return saplingKey;
     }
+
+    UnifiedFullViewingKey ToFullViewingKey() const;
 };
 
 std::optional<unsigned long> ParseZip32KeypathAccount(const std::string& keyPath);

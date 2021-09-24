@@ -19,6 +19,8 @@ const unsigned char ZCASH_HD_SEED_FP_PERSONAL[BLAKE2bPersonalBytes] =
 const unsigned char ZCASH_TADDR_OVK_PERSONAL[BLAKE2bPersonalBytes] =
     {'Z', 'c', 'T', 'a', 'd', 'd', 'r', 'T', 'o', 'S', 'a', 'p', 'l', 'i', 'n', 'g'};
 
+const libzcash::diversifier_index_t MAX_TRANSPARENT_CHILD_IDX(0x40000000);
+
 MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, size_t entropyLen)
 {
     assert(entropyLen >= 32);
@@ -216,15 +218,61 @@ std::optional<CExtKey> DeriveZip32TransparentSpendingKey(const HDSeed& seed, uin
 
 std::optional<std::pair<UnifiedSpendingKey, CKeyMetadata>> UnifiedSpendingKey::Derive(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
     UnifiedSpendingKey usk;
+    usk.accountId = accountId;
 
     auto transparentKey = DeriveZip32TransparentSpendingKey(seed, bip44CoinType, accountId);
     if (!transparentKey.has_value()) return std::nullopt;
-    usk.p2pkhKey = transparentKey.value();
+    usk.transparentKey = transparentKey.value();
 
     auto saplingKey = SaplingExtendedSpendingKey::ForAccount(seed, bip44CoinType, accountId);
     usk.saplingKey = saplingKey.first;
 
     return std::make_pair(usk, saplingKey.second);
+}
+
+UnifiedFullViewingKey UnifiedSpendingKey::ToFullViewingKey() const {
+    UnifiedFullViewingKey ufvk;
+
+    if (transparentKey.has_value()) {
+        ufvk.transparentKey = transparentKey.value().Neuter();
+    }
+
+    if (saplingKey.has_value()) {
+        ufvk.saplingKey = saplingKey.value().ToXFVK();
+    }
+
+    return ufvk;
+}
+
+std::optional<ZcashdUnifiedAddress> UnifiedFullViewingKey::Address(diversifier_index_t j) const {
+    ZcashdUnifiedAddress ua;
+
+    if (transparentKey.has_value()) {
+        if (MAX_TRANSPARENT_CHILD_IDX.less_than_le(j)) return std::nullopt;
+        CExtPubKey changeKey;
+        if (!transparentKey.value().Derive(changeKey, 0)) {
+            return std::nullopt;
+        }
+
+        CExtPubKey childKey;
+        unsigned int childIndex = (unsigned int) j.GetUint64(0);
+        if (changeKey.Derive(childKey, childIndex)) {
+            ua.transparentKey = childKey.pubkey;
+        } else {
+            return std::nullopt;
+        }
+    }
+
+    if (saplingKey.has_value()) {
+        auto saplingAddress = saplingKey.value().Address(j);
+        if (saplingAddress.has_value()) {
+            ua.saplingAddress = saplingAddress.value();
+        } else {
+            return std::nullopt;
+        }
+    }
+
+    return ua;
 }
 
 std::optional<unsigned long> ParseZip32KeypathAccount(const std::string& keyPath) {
