@@ -564,4 +564,12 @@ BOOST_AUTO_TEST_CASE( getmaxcoverage ) // some more tests just to get 100% cover
     CHECKBITWISEOPERATOR(R1,~R2,&)
 }
 
+BOOST_AUTO_TEST_CASE( blob88_increment )
+{
+    blob88 bzero(0);
+    blob88 bone(1);
+    BOOST_CHECK(bzero.increment());
+    BOOST_CHECK(bzero == bone);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

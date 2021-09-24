@@ -192,6 +192,7 @@ CAmount AsyncRPCOperation_saplingmigration::chooseAmount(const CAmount& availabl
 }
 
 // Unless otherwise specified, the migration destination address is the address for Sapling account 0
+// at the smallest diversifier index which produces a valid diversified address.
 libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigrationDestAddress(const HDSeed& seed) {
     KeyIO keyIO(Params());
     if (mapArgs.count("-migrationdestaddress")) {
@@ -202,12 +203,12 @@ libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigration
         return *saplingAddress;
     }
 
-    // TODO: use UVK-based derivation here instead.
     auto usk = pwalletMain->GetUnifiedSpendingKeyForAccount(0);
     assert(usk.has_value()); // mnemonic seeds are currently always generated to have valid USKs at account 0
-    auto xsk = usk.value().GetSaplingExtendedSpendingKey();
-    if (xsk.has_value()) {
-        return xsk.value().ToXFVK().DefaultAddress();
+    auto ua = usk.value().ToFullViewingKey().FindAddress(libzcash::diversifier_index_t(0));
+    auto addr = ua.first.GetSaplingPaymentAddress();
+    if (addr.has_value()) {
+        return addr.value();
     } else {
         // This error will only occur if Sapling address generation has been disbled for USKs from this
         // wallet.

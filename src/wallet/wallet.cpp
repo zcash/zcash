@@ -394,8 +394,15 @@ UnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
 }
 
 std::optional<libzcash::UnifiedSpendingKey> CWallet::GetUnifiedSpendingKeyForAccount(uint32_t accountId) {
-    //TODO
-    return std::nullopt;
+    auto seed = GetMnemonicSeed();
+    assert(seed.has_value());
+    // TODO: is there any reason to cache and not re-derive this every time?
+    auto usk = UnifiedSpendingKey::Derive(seed.value(), BIP44CoinType(), accountId);
+    if (usk.has_value()) {
+        return usk.value().first;
+    } else {
+        return std::nullopt;
+    }
 }
 
 void CWallet::LoadKeyMetadata(const CPubKey &pubkey, const CKeyMetadata &meta)

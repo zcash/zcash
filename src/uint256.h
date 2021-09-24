@@ -120,18 +120,15 @@ public:
     }
     explicit blob88(const std::vector<unsigned char>& vch) : base_blob<88>(vch) {}
 
-    std::optional<blob88> increment() const {
-        blob88 result = *this;
-
+    bool increment() {
         for (int i = 0; i < 11; i++) {
-            result.data[i] += 1;
-            if (result.data[i] != 0) {
-                // no overflow
-                return result;
+            this->data[i] += 1;
+            if (this->data[i] != 0) {
+                return true; // no overflow
             }
         }
 
-        return std::nullopt;
+        return false; //overflow
     }
 
     // treat as little-endian for numeric comparison
