@@ -11,11 +11,6 @@ git = "https://github.com/str4d/redjubjub.git"
 rev = "416a6a8ebf8bd42c114c938883016c04f338de72"
 replace-with = "vendored-sources"
 
-[source."https://github.com/zcash/halo2.git"]
-git = "https://github.com/zcash/halo2.git"
-rev = "a7cd600eb60b1528159b92af5e426adcc615de1a"
-replace-with = "vendored-sources"
-
 [source."https://github.com/zcash/incrementalmerkletree"]
 git = "https://github.com/zcash/incrementalmerkletree"
 rev = "b7bd6246122a6e9ace8edb51553fbf5228906cbb"
@@ -23,12 +18,12 @@ replace-with = "vendored-sources"
 
 [source."https://github.com/zcash/librustzcash.git"]
 git = "https://github.com/zcash/librustzcash.git"
-rev = "bfd083b339e0a21e9663d8c269f79fcc57eb742d"
+rev = "53d0a51d33a421cb76d3e3124d1e4c1c9036068e"
 replace-with = "vendored-sources"
 
 [source."https://github.com/zcash/orchard.git"]
 git = "https://github.com/zcash/orchard.git"
-rev = "8779ce8f1a638ebbc9b229d4eff3a29ef4de7ac0"
+rev = "2c8241f25b943aa05203eacf9905db117c69bd29"
 replace-with = "vendored-sources"
 
 [source.vendored-sources]
