@@ -11,6 +11,8 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, connect_nodes_bi, p2p_port, \
     start_node, stop_node
 
+from test_framework.authproxy import JSONRPCException
+
 import time
 import urllib.parse
 
@@ -36,13 +38,19 @@ class NodeHandlingTest (BitcoinTestFramework):
         assert_equal(len(self.nodes[2].listbanned()), 1)
         try:
             self.nodes[2].setban("127.0.0.1", "add") #throws exception because 127.0.0.1 is within range 127.0.0.0/24
-        except:
-            pass
+        except JSONRPCException as jrpce:
+            assert_equal(jrpce.__str__(), "Error: IP/Subnet already banned")
+        else:
+            print("Failure to raise expected exception!")
+            sys.exit(1)
         assert_equal(len(self.nodes[2].listbanned()), 1) #still only one banned ip because 127.0.0.1 is within the range of 127.0.0.0/24
         try:
             self.nodes[2].setban("127.0.0.1", "remove")
-        except:
-            pass
+        except JSONRPCException as jrpce:
+            assert_equal(jrpce.__str__(), "Error: Unban failed")
+        else:
+            print("Failure to raise expected exception!")
+            sys.exit(1)
         assert_equal(len(self.nodes[2].listbanned()), 1)
         self.nodes[2].setban("127.0.0.0/24", "remove")
         assert_equal(len(self.nodes[2].listbanned()), 0)
