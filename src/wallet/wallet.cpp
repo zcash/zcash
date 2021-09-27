@@ -3016,6 +3016,26 @@ CAmount CWalletTx::GetChange() const
     return nChangeCached;
 }
 
+bool CWalletTx::IsFromMe(const isminefilter& filter) const
+{
+    if (GetDebit(filter) > 0) {
+        return true;
+    }
+    for (const JSDescription& jsdesc : vJoinSplit) {
+        for (const uint256& nullifier : jsdesc.nullifiers) {
+            if (pwallet->IsSproutNullifierFromMe(nullifier)) {
+                return true;
+            }
+        }
+    }
+    for (const SpendDescription &spend : vShieldedSpend) {
+        if (pwallet->IsSaplingNullifierFromMe(spend.nullifier)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool CWalletTx::IsTrusted() const
 {
     // Quick answer in most cases
