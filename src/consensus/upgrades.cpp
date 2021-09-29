@@ -45,7 +45,7 @@ const struct NUInfo NetworkUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
         .strInfo = "See https://z.cash/upgrade/canopy/ for details.",
     },
     {
-        .nBranchId = 0xf919a198,
+        .nBranchId = 0x37519621,
         .strName = "NU5",
         .strInfo = "See https://z.cash/upgrade/nu5/ for details.",
     },
