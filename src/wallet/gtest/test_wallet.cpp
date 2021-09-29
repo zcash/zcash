@@ -126,6 +126,31 @@ TEST(WalletTests, SetupDatadirLocationRunAsFirstTest) {
     mapArgs["-datadir"] = pathTemp.string();
 }
 
+TEST(WalletTests, WalletNetworkSerialization) {
+    SelectParams(CBaseChainParams::TESTNET);
+
+    // Get temporary and unique path for file.
+    // Note: / operator to append paths
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
+    mapArgs["-datadir"] = pathTemp.string();
+
+    // create a new testnet wallet and generate a seed
+    CWallet wallet(Params(), "wallet.dat");
+    wallet.InitLoadWallet(Params(), true);
+    wallet.GenerateNewSeed();
+    wallet.Flush();
+
+    // now, switch to mainnet and attempt to restore the wallet
+    // using the same wallet.dat
+    SelectParams(CBaseChainParams::MAIN);
+    CWallet restored(Params(), "wallet.dat");
+
+    // load should fail due to being associated with the wrong network
+    bool fFirstRunRet;
+    EXPECT_NE(restored.LoadWallet(fFirstRunRet), DB_LOAD_OK);
+}
+
 TEST(WalletTests, SproutNoteDataSerialisation) {
     auto sk = libzcash::SproutSpendingKey::random();
     auto wtx = GetValidSproutReceive(sk, 10, true);
