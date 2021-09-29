@@ -29,15 +29,18 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     ASSERT_EQ(0, addrs.size());
 
     // No HD seed in the wallet
-    EXPECT_ANY_THROW(wallet.GenerateNewLegacySaplingZKey());
+    auto legacyKey = wallet.GenerateNewLegacySaplingZKey();
+    ASSERT_FALSE(legacyKey.has_value());
 
     // Load the all-zeroes seed
     std::string mnemonic("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art");
     MnemonicSeed seed(English, mnemonic);
-    wallet.LoadMnemonicSeed(seed);
+    wallet.LoadLegacyHDSeed(seed);
 
     // Now this call succeeds
-    auto address = wallet.GenerateNewLegacySaplingZKey().value();
+    legacyKey = wallet.GenerateNewLegacySaplingZKey();
+    ASSERT_TRUE(legacyKey.has_value());
+    auto address = legacyKey.value();
 
     // wallet should have one key
     wallet.GetSaplingPaymentAddresses(addrs);
@@ -68,9 +71,8 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
 
     // Generate a diversified address different to the default
     // If we can't get an early diversified address, we are very unlucky
-    blob88 diversifier;
-    diversifier.begin()[0] = 10;
-    auto dpa = sk.ToXFVK().Address(diversifier).value();
+    blob88 diversifier(2);
+    auto dpa = sk.ToXFVK().FindAddress(diversifier).first;
 
     // verify wallet only has the default address
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.ToXFVK().DefaultAddress()));
@@ -98,7 +100,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     ASSERT_EQ(wallet.mapSaplingZKeyMetadata[ivk2].nCreateTime, now);
 
     // Load a diversified address for the third key into the wallet
-    auto dpa2 = sk2.ToXFVK().Address(diversifier).value();
+    auto dpa2 = sk2.ToXFVK().FindAddress(diversifier).first;
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk2.ToXFVK().DefaultAddress()));
     EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(dpa2));
     EXPECT_TRUE(wallet.LoadSaplingPaymentAddress(dpa2, ivk2));
@@ -411,7 +413,7 @@ TEST(WalletZkeysTest, WriteCryptedzkeyDirectToDb) {
 /**
  * This test covers methods on CWalletDB to load/save crypted sapling z keys.
  */
-TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
+TEST(WalletZkeysTest, WriteCryptedSaplingZkeyDirectToDb) {
     SelectParams(CBaseChainParams::TESTNET);
 
     // Get temporary and unique path for file.
@@ -428,8 +430,12 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
      // No default CPubKey set
     ASSERT_TRUE(fFirstRun);
 
-    ASSERT_FALSE(wallet.HaveMnemonicSeed());
-    wallet.GenerateNewSeed();
+    ASSERT_FALSE(wallet.HaveLegacyHDSeed());
+
+    // Load the all-zeroes seed as the legacy seed
+    std::string mnemonic("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art");
+    MnemonicSeed seed(English, mnemonic);
+    wallet.LoadLegacyHDSeed(seed);
 
     // wallet should be empty
     std::set<libzcash::SaplingPaymentAddress> addrs;
@@ -447,9 +453,8 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
     // If we can't get an early diversified address, we are very unlucky
     libzcash::SaplingExtendedSpendingKey extsk;
     EXPECT_TRUE(wallet.GetSaplingExtendedSpendingKey(address, extsk));
-    blob88 diversifier;
-    diversifier.begin()[0] = 10;
-    auto dpa = extsk.ToXFVK().Address(diversifier).value();
+    blob88 diversifier(2);
+    auto dpa = extsk.ToXFVK().FindAddress(diversifier).first;
 
     // Add diversified address to the wallet
     auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
@@ -462,11 +467,13 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
     ASSERT_TRUE(wallet.EncryptWallet(strWalletPass));
 
     // adding a new key will fail as the wallet is locked
-    EXPECT_ANY_THROW(wallet.GenerateNewLegacySaplingZKey());
+    EXPECT_FALSE(wallet.GenerateNewLegacySaplingZKey().has_value());
 
     // unlock wallet and then add
     wallet.Unlock(strWalletPass);
-    auto address2 = wallet.GenerateNewLegacySaplingZKey().value();
+    auto address2Opt = wallet.GenerateNewLegacySaplingZKey();
+    EXPECT_TRUE(address2Opt.has_value());
+    auto address2 = address2Opt.value();
 
     // flush the wallet to prevent race conditions
     wallet.Flush();
