@@ -273,6 +273,8 @@ bool SendMessages(const Consensus::Params& params, CNode* pto);
 void ThreadScriptCheck();
 /** Check whether we are doing an initial block download (synchronizing from disk or network) */
 bool IsInitialBlockDownload(const Consensus::Params& params);
+/** testing-only, set or reset initial block down (IBD) state, return previous */
+bool TestSetIBD(bool);
 /** Format a string that describes several potential problems detected by the core */
 std::pair<std::string, int64_t> GetWarnings(const std::string& strFor);
 /** Retrieve a transaction (from memory pool, or from disk, if possible) */
