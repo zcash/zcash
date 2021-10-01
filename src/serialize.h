@@ -468,7 +468,7 @@ template<typename Formatter, typename T>
 static inline Wrapper<Formatter, T&> Using(T&& t) { return Wrapper<Formatter, T&>(t); }
 
 #define FLATDATA(obj) CFlatData((char*)&(obj), (char*)&(obj) + sizeof(obj))
-#define VARINT(obj, ...) WrapVarInt<__VA_ARGS__>(REF(obj))
+#define VARINT(obj, ...) Using<VarIntFormatter<__VA_ARGS__>>(obj)
 #define COMPACTSIZE(obj) CCompactSize(REF(obj))
 #define LIMITED_STRING(obj,n) LimitedString< n >(REF(obj))
 
@@ -512,22 +512,18 @@ public:
     }
 };
 
-template<VarIntMode Mode, typename I>
-class CVarInt
+/** Serialization wrapper class for integers in VarInt format. */
+template<VarIntMode Mode=VarIntMode::DEFAULT>
+struct VarIntFormatter
 {
-protected:
-    I &n;
-public:
-    CVarInt(I& nIn) : n(nIn) { }
-
-    template<typename Stream>
-    void Serialize(Stream &s) const {
-        WriteVarInt<Stream,Mode,I>(s, n);
+    template<typename Stream, typename I> void Ser(Stream &s, I v)
+    {
+        WriteVarInt<Stream,Mode,typename std::remove_cv<I>::type>(s, v);
     }
 
-    template<typename Stream>
-    void Unserialize(Stream& s) {
-        n = ReadVarInt<Stream,Mode,I>(s);
+    template<typename Stream, typename I> void Unser(Stream& s, I& v)
+    {
+        v = ReadVarInt<Stream,Mode,typename std::remove_cv<I>::type>(s);
     }
 };
 
@@ -578,8 +574,6 @@ public:
     }
 };
 
-template<VarIntMode Mode=VarIntMode::DEFAULT, typename I>
-CVarInt<Mode, I> WrapVarInt(I& n) { return CVarInt<Mode, I>{n}; }
 
 /**
  * Forward declarations
