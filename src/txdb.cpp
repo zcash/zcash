@@ -363,7 +363,7 @@ bool CCoinsViewDB::GetStats(CCoinsStats &stats) const {
                     }
                 }
                 stats.nSerializedSize += 32 + pcursor->GetValueSize();
-                ss << VARINT(0);
+                ss << VARINT(0u);
             } else {
                 return error("CCoinsViewDB::GetStats() : unable to read value");
             }
