@@ -51,7 +51,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
             testnode.send_message(msg_mempool())
 
         # Sync up with node after p2p messages delivered
-        testnode.sync_with_ping()
+        testnode.sync_with_ping(waiting_for=lambda x: x.last_inv)
 
         with mininode_lock:
             msg = testnode.last_inv

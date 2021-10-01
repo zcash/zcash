@@ -30,6 +30,8 @@
 
 #include <boost/thread.hpp>
 
+#include <math.h>
+
 #include <rust/metrics.h>
 
 // Dump addresses to peers.dat and banlist.dat every 15 minutes (900s)
@@ -71,10 +73,7 @@ std::string strSubVersion;
 
 vector<CNode*> vNodes;
 CCriticalSection cs_vNodes;
-map<CInv, CDataStream> mapRelay;
-deque<pair<int64_t, CInv> > vRelayExpiration;
-CCriticalSection cs_mapRelay;
-limitedmap<CInv, int64_t> mapAlreadyAskedFor(MAX_INV_SZ);
+limitedmap<WTxId, int64_t> mapAlreadyAskedFor(MAX_INV_SZ);
 
 static deque<string> vOneShots;
 static CCriticalSection cs_vOneShots;
@@ -1692,11 +1691,6 @@ void ThreadMessageHandler()
             }
         }
 
-        // Poll the connected nodes for messages
-        CNode* pnodeTrickle = NULL;
-        if (!vNodesCopy.empty())
-            pnodeTrickle = vNodesCopy[GetRand(vNodesCopy.size())];
-
         bool fSleep = true;
 
         for (CNode* pnode : vNodesCopy)
@@ -1729,7 +1723,7 @@ void ThreadMessageHandler()
             {
                 TRY_LOCK(pnode->cs_vSend, lockSend);
                 if (lockSend)
-                    g_signals.SendMessages(chainparams.GetConsensus(), pnode, pnode == pnodeTrickle || pnode->fWhitelisted);
+                    g_signals.SendMessages(chainparams.GetConsensus(), pnode);
             }
             boost::this_thread::interruption_point();
         }
@@ -2037,41 +2031,10 @@ instance_of_cnetcleanup;
 
 void RelayTransaction(const CTransaction& tx)
 {
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss.reserve(10000);
-    ss << tx;
-    RelayTransaction(tx, ss);
-}
-
-void RelayTransaction(const CTransaction& tx, const CDataStream& ss)
-{
-    CInv inv(MSG_TX, tx.GetHash());
-    {
-        LOCK(cs_mapRelay);
-        // Expire old relay messages
-        while (!vRelayExpiration.empty() && vRelayExpiration.front().first < GetTime())
-        {
-            mapRelay.erase(vRelayExpiration.front().second);
-            vRelayExpiration.pop_front();
-        }
-
-        // Save original serialized message so newer versions are preserved
-        mapRelay.insert(std::make_pair(inv, ss));
-        vRelayExpiration.push_back(std::make_pair(GetTime() + 15 * 60, inv));
-    }
     LOCK(cs_vNodes);
     for (CNode* pnode : vNodes)
     {
-        if(!pnode->fRelayTxes)
-            continue;
-        LOCK(pnode->cs_filter);
-        auto spanGuard = pnode->span.Enter();
-        if (pnode->pfilter)
-        {
-            if (pnode->pfilter->IsRelevantAndUpdate(tx))
-                pnode->PushInventory(inv);
-        } else
-            pnode->PushInventory(inv);
+        pnode->PushTxInventory(tx.GetWTxId());
     }
 }
 
@@ -2257,10 +2220,15 @@ CNode::CNode(SOCKET hSocketIn, const CAddress& addrIn, const std::string& addrNa
     hashContinue = uint256();
     nStartingHeight = -1;
     filterInventoryKnown.reset();
+    fSendMempool = false;
     fGetAddr = false;
+    nNextLocalAddrSend = 0;
+    nNextAddrSend = 0;
+    nNextInvSend = 0;
     fRelayTxes = false;
     fSentAddr = false;
     pfilter = new CBloomFilter();
+    timeLastMempoolReq = 0;
     nPingNonceSent = 0;
     nPingUsecStart = 0;
     nPingUsecTime = 0;
@@ -2311,14 +2279,15 @@ void CNode::AskFor(const CInv& inv)
 {
     if (mapAskFor.size() > MAPASKFOR_MAX_SZ || setAskFor.size() > SETASKFOR_MAX_SZ)
         return;
+    WTxId wtxid(inv.hash, inv.hashAux);
     // a peer may not have multiple non-responded queue positions for a single inv item
-    if (!setAskFor.insert(inv.hash).second)
+    if (!setAskFor.insert(wtxid).second)
         return;
 
     // We're using mapAskFor as a priority queue,
     // the key is the earliest time the request can be sent
     int64_t nRequestTime;
-    limitedmap<CInv, int64_t>::const_iterator it = mapAlreadyAskedFor.find(inv);
+    limitedmap<WTxId, int64_t>::const_iterator it = mapAlreadyAskedFor.find(wtxid);
     if (it != mapAlreadyAskedFor.end())
         nRequestTime = it->second;
     else
@@ -2337,7 +2306,7 @@ void CNode::AskFor(const CInv& inv)
     if (it != mapAlreadyAskedFor.end())
         mapAlreadyAskedFor.update(it, nRequestTime);
     else
-        mapAlreadyAskedFor.insert(std::make_pair(inv, nRequestTime));
+        mapAlreadyAskedFor.insert(std::make_pair(wtxid, nRequestTime));
     mapAskFor.insert(std::make_pair(nRequestTime, inv));
 }
 
@@ -2387,10 +2356,8 @@ void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
 
     // Set the checksum
     uint256 hash = Hash(ssSend.begin() + CMessageHeader::HEADER_SIZE, ssSend.end());
-    unsigned int nChecksum = 0;
-    memcpy(&nChecksum, &hash, sizeof(nChecksum));
-    assert(ssSend.size () >= CMessageHeader::CHECKSUM_OFFSET + sizeof(nChecksum));
-    memcpy((char*)&ssSend[CMessageHeader::CHECKSUM_OFFSET], &nChecksum, sizeof(nChecksum));
+    assert(ssSend.size () >= CMessageHeader::CHECKSUM_OFFSET + CMessageHeader::CHECKSUM_SIZE);
+    memcpy((char*)&ssSend[CMessageHeader::CHECKSUM_OFFSET], hash.begin(), CMessageHeader::CHECKSUM_SIZE);
 
     LogPrint("net", "(%d bytes) peer=%d\n", nSize, id);
 
@@ -2417,4 +2384,8 @@ void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
     std::vector<unsigned char> vchNetGroup(ad.GetGroup());
 
     return CSipHasher(k0, k1).Write(&vchNetGroup[0], vchNetGroup.size()).Finalize();
+}
+
+int64_t PoissonNextSend(int64_t nNow, int average_interval_seconds) {
+    return nNow + (int64_t)(log1p(GetRand(1ULL << 48) * -0.0000000000000035527136788 /* -1/2^48 */) * average_interval_seconds * -1000000.0 + 0.5);
 }

@@ -24,6 +24,7 @@ zcash_gtest_SOURCES += \
 	wallet/gtest/test_wallet_zkeys.cpp
 endif
 zcash_gtest_SOURCES += \
+	test/data/merkle_roots_orchard.h \
 	gtest/test_tautology.cpp \
 	gtest/test_allocator.cpp \
 	gtest/test_checkblock.cpp \

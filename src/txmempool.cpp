@@ -31,15 +31,17 @@ CTxMemPoolEntry::CTxMemPoolEntry():
 CTxMemPoolEntry::CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
                                  int64_t _nTime, double _dPriority,
                                  unsigned int _nHeight, bool poolHasNoInputsOf,
-                                 bool _spendsCoinbase, uint32_t _nBranchId):
-    tx(_tx), nFee(_nFee), nTime(_nTime), dPriority(_dPriority), nHeight(_nHeight),
+                                 bool _spendsCoinbase, unsigned int _sigOps, uint32_t _nBranchId):
+    tx(std::make_shared<CTransaction>(_tx)), nFee(_nFee), nTime(_nTime), dPriority(_dPriority), nHeight(_nHeight),
     hadNoDependencies(poolHasNoInputsOf),
-    spendsCoinbase(_spendsCoinbase), nBranchId(_nBranchId)
+    spendsCoinbase(_spendsCoinbase), sigOpCount(_sigOps), nBranchId(_nBranchId)
 {
-    nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
-    nModSize = tx.CalculateModifiedSize(nTxSize);
-    nUsageSize = RecursiveDynamicUsage(tx);
+    nTxSize = ::GetSerializeSize(_tx, SER_NETWORK, PROTOCOL_VERSION);
+    nModSize = _tx.CalculateModifiedSize(nTxSize);
+    nUsageSize = RecursiveDynamicUsage(*tx) + memusage::DynamicUsage(tx);
     feeRate = CFeeRate(nFee, nTxSize);
+
+    feeDelta = 0;
 }
 
 CTxMemPoolEntry::CTxMemPoolEntry(const CTxMemPoolEntry& other)
@@ -50,21 +52,29 @@ CTxMemPoolEntry::CTxMemPoolEntry(const CTxMemPoolEntry& other)
 double
 CTxMemPoolEntry::GetPriority(unsigned int currentHeight) const
 {
-    CAmount nValueIn = tx.GetValueOut()+nFee;
+    CAmount nValueIn = tx->GetValueOut()+nFee;
     double deltaPriority = ((double)(currentHeight-nHeight)*nValueIn)/nModSize;
     double dResult = dPriority + deltaPriority;
     return dResult;
 }
 
-CTxMemPool::CTxMemPool(const CFeeRate& _minRelayFee) :
+void CTxMemPoolEntry::UpdateFeeDelta(int64_t newFeeDelta)
+{
+    feeDelta = newFeeDelta;
+}
+
+CTxMemPool::CTxMemPool(const CFeeRate& _minReasonableRelayFee) :
     nTransactionsUpdated(0)
 {
+    _clear(); // unlocked clear
+
     // Sanity checks off by default for performance, because otherwise
     // accepting transactions becomes O(N^2) where N is the number
     // of transactions in the pool
     nCheckFrequency = 0;
 
-    minerPolicyEstimator = new CBlockPolicyEstimator(_minRelayFee);
+    minerPolicyEstimator = new CBlockPolicyEstimator(_minReasonableRelayFee);
+    minReasonableRelayFee = _minReasonableRelayFee;
 }
 
 CTxMemPool::~CTxMemPool()
@@ -107,8 +117,12 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     // all the appropriate checks.
     LOCK(cs);
     weightedTxTree->add(WeightedTxInfo::from(entry.GetTx(), entry.GetFee()));
-    mapTx.insert(entry);
-    const CTransaction& tx = mapTx.find(hash)->GetTx();
+    indexed_transaction_set::iterator newit = mapTx.insert(entry).first;
+
+    // Update cachedInnerUsage to include contained transaction's usage.
+    cachedInnerUsage += entry.DynamicMemoryUsage();
+
+    const CTransaction& tx = newit->GetTx();
     mapRecentlyAddedTx[tx.GetHash()] = &tx;
     nRecentlyAddedSequence += 1;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
@@ -121,9 +135,21 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
         mapSaplingNullifiers[spendDescription.nullifier] = &tx;
     }
+    for (const uint256 &orchardNullifier : tx.GetOrchardBundle().GetNullifiers()) {
+        mapOrchardNullifiers[orchardNullifier] = &tx;
+    }
+
+    // Update transaction's score for any feeDelta created by PrioritiseTransaction
+    std::map<uint256, std::pair<double, CAmount> >::const_iterator pos = mapDeltas.find(hash);
+    if (pos != mapDeltas.end()) {
+        const std::pair<double, CAmount> &deltas = pos->second;
+        if (deltas.second) {
+            mapTx.modify(newit, update_fee_delta(deltas.second));
+        }
+    }
+
     nTransactionsUpdated++;
     totalTxSize += entry.GetTxSize();
-    cachedInnerUsage += entry.DynamicMemoryUsage();
     minerPolicyEstimator->processTransaction(entry, fCurrentEstimate);
 
     return true;
@@ -281,6 +307,9 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
             for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
                 mapSaplingNullifiers.erase(spendDescription.nullifier);
             }
+            for (const uint256 &orchardNullifier : tx.GetOrchardBundle().GetNullifiers()) {
+                mapOrchardNullifiers.erase(orchardNullifier);
+            }
             removed.push_back(tx);
             totalTxSize -= mapTx.find(hash)->GetTxSize();
             cachedInnerUsage -= mapTx.find(hash)->DynamicMemoryUsage();
@@ -406,6 +435,15 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
             }
         }
     }
+    for (const uint256 &orchardNullifier : tx.GetOrchardBundle().GetNullifiers()) {
+        std::map<uint256, const CTransaction*>::iterator it = mapOrchardNullifiers.find(orchardNullifier);
+        if (it != mapOrchardNullifiers.end()) {
+            const CTransaction &txConflict = *it->second;
+            if (txConflict != tx) {
+                remove(txConflict, removed, true);
+            }
+        }
+    }
 }
 
 std::vector<uint256> CTxMemPool::removeExpired(unsigned int nBlockHeight)
@@ -479,14 +517,19 @@ void CTxMemPool::removeWithoutBranchId(uint32_t nMemPoolBranchId)
     }
 }
 
-void CTxMemPool::clear()
+void CTxMemPool::_clear()
 {
-    LOCK(cs);
     mapTx.clear();
     mapNextTx.clear();
     totalTxSize = 0;
     cachedInnerUsage = 0;
     ++nTransactionsUpdated;
+}
+
+void CTxMemPool::clear()
+{
+    LOCK(cs);
+    _clear();
 }
 
 void CTxMemPool::check(const CCoinsViewCache *pcoins) const
@@ -616,6 +659,9 @@ void CTxMemPool::checkNullifiers(ShieldedType type) const
         case SAPLING:
             mapToUse = &mapSaplingNullifiers;
             break;
+        case ORCHARD:
+            mapToUse = &mapOrchardNullifiers;
+            break;
         default:
             throw runtime_error("Unknown nullifier type");
     }
@@ -628,23 +674,93 @@ void CTxMemPool::checkNullifiers(ShieldedType type) const
     }
 }
 
-void CTxMemPool::queryHashes(std::vector<uint256>& vtxid)
+bool CTxMemPool::CompareDepthAndScore(const uint256& hasha, const uint256& hashb)
 {
-    vtxid.clear();
-
     LOCK(cs);
-    vtxid.reserve(mapTx.size());
-    for (indexed_transaction_set::iterator mi = mapTx.begin(); mi != mapTx.end(); ++mi)
-        vtxid.push_back(mi->GetTx().GetHash());
+    indexed_transaction_set::const_iterator i = mapTx.find(hasha);
+    if (i == mapTx.end()) return false;
+    indexed_transaction_set::const_iterator j = mapTx.find(hashb);
+    if (j == mapTx.end()) return true;
+    // We don't actually compare by depth here because we haven't backported
+    // https://github.com/bitcoin/bitcoin/pull/6654
+    //
+    // But the method name is left as-is because renaming it is not worth the
+    // merge conflicts.
+    return CompareTxMemPoolEntryByScore()(*i, *j);
 }
 
-bool CTxMemPool::lookup(uint256 hash, CTransaction& result) const
+namespace {
+class DepthAndScoreComparator
+{
+public:
+    bool operator()(const CTxMemPool::indexed_transaction_set::const_iterator& a, const CTxMemPool::indexed_transaction_set::const_iterator& b)
+    {
+        // Same logic applies here as to CTxMemPool::CompareDepthAndScore().
+        // As of https://github.com/bitcoin/bitcoin/pull/8126 this comparator
+        // duplicates that function (as it doesn't need to hold a dependency
+        // on the mempool).
+        return CompareTxMemPoolEntryByScore()(*a, *b);
+    }
+};
+}
+
+std::vector<CTxMemPool::indexed_transaction_set::const_iterator> CTxMemPool::GetSortedDepthAndScore() const
+{
+    std::vector<indexed_transaction_set::const_iterator> iters;
+    AssertLockHeld(cs);
+
+    iters.reserve(mapTx.size());
+
+    for (indexed_transaction_set::iterator mi = mapTx.begin(); mi != mapTx.end(); ++mi) {
+        iters.push_back(mi);
+    }
+    std::sort(iters.begin(), iters.end(), DepthAndScoreComparator());
+    return iters;
+}
+
+void CTxMemPool::queryHashes(std::vector<uint256>& vtxid)
+{
+    LOCK(cs);
+    auto iters = GetSortedDepthAndScore();
+
+    vtxid.clear();
+    vtxid.reserve(mapTx.size());
+
+    for (auto it : iters) {
+        vtxid.push_back(it->GetTx().GetHash());
+    }
+}
+
+std::vector<TxMempoolInfo> CTxMemPool::infoAll() const
+{
+    LOCK(cs);
+    auto iters = GetSortedDepthAndScore();
+
+    std::vector<TxMempoolInfo> ret;
+    ret.reserve(mapTx.size());
+    for (auto it : iters) {
+        ret.push_back(TxMempoolInfo{it->GetSharedTx(), it->GetTime(), CFeeRate(it->GetFee(), it->GetTxSize())});
+    }
+
+    return ret;
+}
+
+std::shared_ptr<const CTransaction> CTxMemPool::get(const uint256& hash) const
 {
     LOCK(cs);
     indexed_transaction_set::const_iterator i = mapTx.find(hash);
-    if (i == mapTx.end()) return false;
-    result = i->GetTx();
-    return true;
+    if (i == mapTx.end())
+        return nullptr;
+    return i->GetSharedTx();
+}
+
+TxMempoolInfo CTxMemPool::info(const uint256& hash) const
+{
+    LOCK(cs);
+    indexed_transaction_set::const_iterator i = mapTx.find(hash);
+    if (i == mapTx.end())
+        return TxMempoolInfo();
+    return TxMempoolInfo{i->GetSharedTx(), i->GetTime(), CFeeRate(i->GetFee(), i->GetTxSize())};
 }
 
 CFeeRate CTxMemPool::estimateFee(int nBlocks) const
@@ -700,14 +816,18 @@ void CTxMemPool::PrioritiseTransaction(const uint256 hash, const std::string str
         std::pair<double, CAmount> &deltas = mapDeltas[hash];
         deltas.first += dPriorityDelta;
         deltas.second += nFeeDelta;
+        txiter it = mapTx.find(hash);
+        if (it != mapTx.end()) {
+            mapTx.modify(it, update_fee_delta(deltas.second));
+        }
     }
     LogPrintf("PrioritiseTransaction: %s priority += %f, fee += %d\n", strHash, dPriorityDelta, FormatMoney(nFeeDelta));
 }
 
-void CTxMemPool::ApplyDeltas(const uint256 hash, double &dPriorityDelta, CAmount &nFeeDelta)
+void CTxMemPool::ApplyDeltas(const uint256 hash, double &dPriorityDelta, CAmount &nFeeDelta) const
 {
     LOCK(cs);
-    std::map<uint256, std::pair<double, CAmount> >::iterator pos = mapDeltas.find(hash);
+    std::map<uint256, std::pair<double, CAmount> >::const_iterator pos = mapDeltas.find(hash);
     if (pos == mapDeltas.end())
         return;
     const std::pair<double, CAmount> &deltas = pos->second;
@@ -736,6 +856,8 @@ bool CTxMemPool::nullifierExists(const uint256& nullifier, ShieldedType type) co
             return mapSproutNullifiers.count(nullifier);
         case SAPLING:
             return mapSaplingNullifiers.count(nullifier);
+        case ORCHARD:
+            return mapOrchardNullifiers.count(nullifier);
         default:
             throw runtime_error("Unknown nullifier type");
     }
@@ -780,9 +902,9 @@ bool CCoinsViewMemPool::GetCoins(const uint256 &txid, CCoins &coins) const {
     // If an entry in the mempool exists, always return that one, as it's guaranteed to never
     // conflict with the underlying cache, and it cannot have pruned entries (as it contains full)
     // transactions. First checking the underlying cache risks returning a pruned entry instead.
-    CTransaction tx;
-    if (mempool.lookup(txid, tx)) {
-        coins = CCoins(tx, MEMPOOL_HEIGHT);
+    shared_ptr<const CTransaction> ptx = mempool.get(txid);
+    if (ptx) {
+        coins = CCoins(*ptx, MEMPOOL_HEIGHT);
         return true;
     }
     return (base->GetCoins(txid, coins) && !coins.IsPruned());
@@ -797,9 +919,9 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
 
     size_t total = 0;
 
-    // Estimate the overhead of mapTx to be 6 pointers + an allocation, as no exact formula for
+    // Estimate the overhead of mapTx to be 9 pointers + an allocation, as no exact formula for
     // boost::multi_index_contained is implemented.
-    total += memusage::MallocUsage(sizeof(CTxMemPoolEntry) + 6 * sizeof(void*)) * mapTx.size();
+    total += memusage::MallocUsage(sizeof(CTxMemPoolEntry) + 9 * sizeof(void*)) * mapTx.size();
 
     // Two metadata maps inherited from Bitcoin Core
     total += memusage::DynamicUsage(mapNextTx) + memusage::DynamicUsage(mapDeltas);
@@ -811,7 +933,9 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
     total += memusage::DynamicUsage(mapRecentlyAddedTx);
 
     // Nullifier set tracking
-    total += memusage::DynamicUsage(mapSproutNullifiers) + memusage::DynamicUsage(mapSaplingNullifiers);
+    total += memusage::DynamicUsage(mapSproutNullifiers) +
+             memusage::DynamicUsage(mapSaplingNullifiers) +
+             memusage::DynamicUsage(mapOrchardNullifiers);
 
     // DoS mitigation
     total += memusage::DynamicUsage(recentlyEvicted) + memusage::DynamicUsage(weightedTxTree);

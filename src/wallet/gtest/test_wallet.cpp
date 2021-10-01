@@ -31,7 +31,7 @@ public:
     MOCK_METHOD0(TxnCommit, bool());
     MOCK_METHOD0(TxnAbort, bool());
 
-    MOCK_METHOD2(WriteTx, bool(uint256 hash, const CWalletTx& wtx));
+    MOCK_METHOD1(WriteTx, bool(const CWalletTx& wtx));
     MOCK_METHOD1(WriteWitnessCacheSize, bool(int64_t nWitnessCacheSize));
     MOCK_METHOD1(WriteBestBlock, bool(const CBlockLocator& loc));
 };
@@ -1106,7 +1106,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         EXPECT_EQ(tx2.vJoinSplit.size(), 0);
         EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
         EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
-        EXPECT_EQ(tx2.valueBalance, 10000);
+        EXPECT_EQ(tx2.GetValueBalanceSapling(), 10000);
 
         CWalletTx wtx2 {&wallet, tx2};
 
@@ -1572,19 +1572,19 @@ TEST(WalletTests, WriteWitnessCache) {
         .WillRepeatedly(Return(true));
 
     // WriteTx fails
-    EXPECT_CALL(walletdb, WriteTx(wtx.GetHash(), wtx))
+    EXPECT_CALL(walletdb, WriteTx(wtx))
         .WillOnce(Return(false));
     EXPECT_CALL(walletdb, TxnAbort())
         .Times(1);
     wallet.SetBestChain(walletdb, loc);
 
     // WriteTx throws
-    EXPECT_CALL(walletdb, WriteTx(wtx.GetHash(), wtx))
+    EXPECT_CALL(walletdb, WriteTx(wtx))
         .WillOnce(ThrowLogicError());
     EXPECT_CALL(walletdb, TxnAbort())
         .Times(1);
     wallet.SetBestChain(walletdb, loc);
-    EXPECT_CALL(walletdb, WriteTx(wtx.GetHash(), wtx))
+    EXPECT_CALL(walletdb, WriteTx(wtx))
         .WillRepeatedly(Return(true));
 
     // WriteWitnessCacheSize fails
@@ -1694,15 +1694,15 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
 
     EXPECT_CALL(walletdb, TxnBegin())
         .WillOnce(Return(true));
-    EXPECT_CALL(walletdb, WriteTx(wtxTransparent.GetHash(), wtxTransparent))
+    EXPECT_CALL(walletdb, WriteTx(wtxTransparent))
         .Times(0);
-    EXPECT_CALL(walletdb, WriteTx(wtxSprout.GetHash(), wtxSprout))
+    EXPECT_CALL(walletdb, WriteTx(wtxSprout))
         .Times(1).WillOnce(Return(true));
-    EXPECT_CALL(walletdb, WriteTx(wtxSproutTransparent.GetHash(), wtxSproutTransparent))
+    EXPECT_CALL(walletdb, WriteTx(wtxSproutTransparent))
         .Times(0);
-    EXPECT_CALL(walletdb, WriteTx(wtxSapling.GetHash(), wtxSapling))
+    EXPECT_CALL(walletdb, WriteTx(wtxSapling))
         .Times(1).WillOnce(Return(true));
-    EXPECT_CALL(walletdb, WriteTx(wtxSaplingTransparent.GetHash(), wtxSaplingTransparent))
+    EXPECT_CALL(walletdb, WriteTx(wtxSaplingTransparent))
         .Times(0);
     EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
         .WillOnce(Return(true));
@@ -1973,7 +1973,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     EXPECT_EQ(tx1.vJoinSplit.size(), 0);
     EXPECT_EQ(tx1.vShieldedSpend.size(), 0);
     EXPECT_EQ(tx1.vShieldedOutput.size(), 1);
-    EXPECT_EQ(tx1.valueBalance, -40000);
+    EXPECT_EQ(tx1.GetValueBalanceSapling(), -40000);
 
     CWalletTx wtx {&wallet, tx1};
 
@@ -2027,7 +2027,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     EXPECT_EQ(tx2.vJoinSplit.size(), 0);
     EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
-    EXPECT_EQ(tx2.valueBalance, 10000);
+    EXPECT_EQ(tx2.GetValueBalanceSapling(), 10000);
 
     CWalletTx wtx2 {&wallet, tx2};
     auto hash2 = wtx2.GetHash();

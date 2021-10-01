@@ -301,6 +301,19 @@ struct CAnchorsSaplingCacheEntry
     CAnchorsSaplingCacheEntry() : entered(false), flags(0) {}
 };
 
+struct CAnchorsOrchardCacheEntry
+{
+    bool entered; // This will be false if the anchor is removed from the cache
+    OrchardMerkleTree tree; // The tree itself
+    unsigned char flags;
+
+    enum Flags {
+        DIRTY = (1 << 0), // This cache entry is potentially different from the version in the parent view.
+    };
+
+    CAnchorsOrchardCacheEntry() : entered(false), flags(0) {}
+};
+
 struct CNullifiersCacheEntry
 {
     bool entered; // If the nullifier is spent or not
@@ -313,15 +326,20 @@ struct CNullifiersCacheEntry
     CNullifiersCacheEntry() : entered(false), flags(0) {}
 };
 
+/// These identify the value pool, and as such, Canopy (for example)
+/// isn't here, since value created during the Canopy network upgrade
+/// is part of the Sapling pool.
 enum ShieldedType
 {
     SPROUT,
     SAPLING,
+    ORCHARD,
 };
 
 typedef boost::unordered_map<uint256, CCoinsCacheEntry, SaltedTxidHasher> CCoinsMap;
 typedef boost::unordered_map<uint256, CAnchorsSproutCacheEntry, SaltedTxidHasher> CAnchorsSproutMap;
 typedef boost::unordered_map<uint256, CAnchorsSaplingCacheEntry, SaltedTxidHasher> CAnchorsSaplingMap;
+typedef boost::unordered_map<uint256, CAnchorsOrchardCacheEntry, SaltedTxidHasher> CAnchorsOrchardMap;
 typedef boost::unordered_map<uint256, CNullifiersCacheEntry, SaltedTxidHasher> CNullifiersMap;
 typedef boost::unordered_map<uint32_t, HistoryCache> CHistoryCacheMap;
 
@@ -348,6 +366,9 @@ public:
 
     //! Retrieve the tree (Sapling) at a particular anchored root in the chain
     virtual bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
+
+    //! Retrieve the tree (Orchard) at a particular anchored root in the chain
+    virtual bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const;
 
     //! Determine whether a nullifier is spent or not
     virtual bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
@@ -380,10 +401,13 @@ public:
                             const uint256 &hashBlock,
                             const uint256 &hashSproutAnchor,
                             const uint256 &hashSaplingAnchor,
+                            const uint256 &hashOrchardAnchor,
                             CAnchorsSproutMap &mapSproutAnchors,
                             CAnchorsSaplingMap &mapSaplingAnchors,
+                            CAnchorsOrchardMap &mapOrchardAnchors,
                             CNullifiersMap &mapSproutNullifiers,
                             CNullifiersMap &mapSaplingNullifiers,
+                            CNullifiersMap &mapOrchardNullifiers,
                             CHistoryCacheMap &historyCacheMap);
 
     //! Calculate statistics about the unspent transaction output set
@@ -404,6 +428,7 @@ public:
     CCoinsViewBacked(CCoinsView *viewIn);
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const;
     bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
@@ -417,10 +442,13 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
+                    const uint256 &hashOrchardAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CAnchorsSaplingMap &mapSaplingAnchors,
+                    CAnchorsOrchardMap &mapOrchardAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
+                    CNullifiersMap &mapOrchardNullifiers,
                     CHistoryCacheMap &historyCacheMap);
     bool GetStats(CCoinsStats &stats) const;
 };
@@ -454,6 +482,8 @@ enum class UnsatisfiedShieldedReq {
     SproutUnknownAnchor,
     SaplingDuplicateNullifier,
     SaplingUnknownAnchor,
+    OrchardDuplicateNullifier,
+    OrchardUnknownAnchor,
 };
 
 /** CCoinsView that adds a memory cache for transactions to another CCoinsView */
@@ -472,10 +502,13 @@ protected:
     mutable CCoinsMap cacheCoins;
     mutable uint256 hashSproutAnchor;
     mutable uint256 hashSaplingAnchor;
+    mutable uint256 hashOrchardAnchor;
     mutable CAnchorsSproutMap cacheSproutAnchors;
     mutable CAnchorsSaplingMap cacheSaplingAnchors;
+    mutable CAnchorsOrchardMap cacheOrchardAnchors;
     mutable CNullifiersMap cacheSproutNullifiers;
     mutable CNullifiersMap cacheSaplingNullifiers;
+    mutable CNullifiersMap cacheOrchardNullifiers;
     mutable CHistoryCacheMap historyCacheMap;
 
     /* Cached dynamic memory usage for the inner CCoins objects. */
@@ -488,6 +521,7 @@ public:
     // Standard CCoinsView methods
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const;
     bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
@@ -501,14 +535,17 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
+                    const uint256 &hashOrchardAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CAnchorsSaplingMap &mapSaplingAnchors,
+                    CAnchorsOrchardMap &mapOrchardAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
+                    CNullifiersMap &mapOrchardNullifiers,
                     CHistoryCacheMap &historyCacheMap);
 
-    // Adds the tree to mapSproutAnchors (or mapSaplingAnchors based on the type of tree)
-    // and sets the current commitment root to this root.
+    // Adds the tree to mapSproutAnchors, mapSaplingAnchors, or mapOrchardAnchors
+    // based on the type of tree and sets the current commitment root to this root.
     template<typename Tree> void PushAnchor(const Tree &tree);
 
     // Removes the current commitment root from mapAnchors and sets
@@ -589,7 +626,8 @@ private:
     CCoinsMap::const_iterator FetchCoins(const uint256 &txid) const;
 
     /**
-     * By making the copy constructor private, we prevent accidentally using it when one intends to create a cache on top of a base cache.
+     * By making the copy constructor private, we prevent accidentally using it
+     * when one intends to create a cache on top of a base cache.
      */
     CCoinsViewCache(const CCoinsViewCache &);
 

@@ -88,6 +88,7 @@ pub extern "system" fn librustzcash_mmr_append(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn librustzcash_mmr_append_inner<V: Version>(
     // Consensus branch id
     cbranch: u32,

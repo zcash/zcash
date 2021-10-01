@@ -259,6 +259,11 @@ bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) c
     return true;
 }
 
+bool ShieldToAddress::operator()(const libzcash::UnifiedAddress &uaddr) const {
+    // TODO
+    return false;
+}
+
 bool ShieldToAddress::operator()(const libzcash::InvalidEncoding& no) const {
     return false;
 }

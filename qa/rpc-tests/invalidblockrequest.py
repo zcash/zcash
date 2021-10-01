@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import ComparisonTestFramework
 from test_framework.util import assert_equal
-from test_framework.comptool import TestManager, TestInstance
+from test_framework.comptool import TestManager, TestInstance, RejectResult
 from test_framework.mininode import NetworkThread
 from test_framework.blocktools import create_block, create_coinbase, create_transaction
 
@@ -79,9 +79,9 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
         block2 = create_block(self.tip, create_coinbase(height), self.block_time)
         self.block_time += 1
 
-        # chr(81) is OP_TRUE
-        tx1 = create_transaction(self.block1.vtx[0], 0, chr(81), 40*100000000)
-        tx2 = create_transaction(tx1, 0, chr(81), 40*100000000)
+        # b'0x51' is OP_TRUE
+        tx1 = create_transaction(self.block1.vtx[0], 0, b'\x51', 10*100000000)
+        tx2 = create_transaction(tx1, 0, b'\x51', 10*100000000)
 
         block2.vtx.extend([tx1, tx2])
         block2.hashMerkleRoot = block2.calc_merkle_root()
@@ -97,7 +97,7 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
         assert(block2_orig.vtx != block2.vtx)
 
         self.tip = block2.sha256
-        yield TestInstance([[block2, False], [block2_orig, True]])
+        yield TestInstance([[block2, RejectResult(16, b'bad-txns-duplicate')], [block2_orig, True]])
         height += 1
 
         '''
@@ -112,7 +112,7 @@ class InvalidBlockRequestTest(ComparisonTestFramework):
         block3.rehash()
         block3.solve()
 
-        yield TestInstance([[block3, False]])
+        yield TestInstance([[block3, RejectResult(16, b'bad-cb-amount')]])
 
 
 if __name__ == '__main__':

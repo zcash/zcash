@@ -43,6 +43,7 @@ JSON_TEST_FILES = \
   test/data/merkle_path_sapling.json \
   test/data/merkle_commitments_sapling.json \
   test/data/sapling_key_components.json \
+  test/data/unified_addrs.json \
   test/data/zip0244.json
 
 RAW_TEST_FILES = test/data/alertTests.raw
@@ -118,7 +119,6 @@ if ENABLE_WALLET
 BITCOIN_TESTS += \
   wallet/test/wallet_test_fixture.cpp \
   wallet/test/wallet_test_fixture.h \
-  wallet/test/accounting_tests.cpp \
   wallet/test/wallet_tests.cpp \
   wallet/test/crypto_tests.cpp \
   wallet/test/rpc_wallet_tests.cpp

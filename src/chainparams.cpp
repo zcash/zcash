@@ -84,7 +84,7 @@ const arith_uint256 maxUint = UintToArith256(uint256S("fffffffffffffffffffffffff
 class CMainParams : public CChainParams {
 public:
     CMainParams() {
-        strNetworkID = "main";
+        keyConstants.strNetworkID = "main";
         strCurrencyUnits = "ZEC";
         bip44CoinType = 133; // As registered in https://github.com/satoshilabs/slips/blob/master/slip-0044.md
         consensus.fCoinbaseMustBeShielded = true;
@@ -133,7 +133,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight = 1046400;
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].hashActivationBlock =
             uint256S("00000000002038016f976744c369dce7419fca30e7171dfac703af5e5f7ad1d4");
-        consensus.vUpgrades[Consensus::UPGRADE_NU5].nProtocolVersion = 170015;
+        consensus.vUpgrades[Consensus::UPGRADE_NU5].nProtocolVersion = 170017;
         consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
@@ -368,7 +368,7 @@ static CMainParams mainParams;
 class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
-        strNetworkID = "test";
+        keyConstants.strNetworkID = "test";
         strCurrencyUnits = "TAZ";
         bip44CoinType = 1;
         consensus.fCoinbaseMustBeShielded = true;
@@ -417,9 +417,8 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight = 1028500;
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].hashActivationBlock =
             uint256S("01a4d7c6aada30c87762c1bf33fff5df7266b1fd7616bfdb5227fa59bd79e7a2");
-        consensus.vUpgrades[Consensus::UPGRADE_NU5].nProtocolVersion = 170014;
-        consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight =
-            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_NU5].nProtocolVersion = 170015;
+        consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight = 1599200;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -620,7 +619,7 @@ static CTestNetParams testNetParams;
 class CRegTestParams : public CChainParams {
 public:
     CRegTestParams() {
-        strNetworkID = "regtest";
+        keyConstants.strNetworkID = "regtest";
         strCurrencyUnits = "REG";
         bip44CoinType = 1;
         consensus.fCoinbaseMustBeShielded = false;
@@ -664,7 +663,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nProtocolVersion = 170012;
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
-        consensus.vUpgrades[Consensus::UPGRADE_NU5].nProtocolVersion = 170014;
+        consensus.vUpgrades[Consensus::UPGRADE_NU5].nProtocolVersion = 170015;
         consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;

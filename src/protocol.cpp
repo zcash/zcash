@@ -12,20 +12,12 @@
 # include <arpa/inet.h>
 #endif
 
-static const char* ppszTypeName[] =
-{
-    "ERROR",
-    "tx",
-    "block",
-    "filtered block"
-};
-
 CMessageHeader::CMessageHeader(const MessageStartChars& pchMessageStartIn)
 {
     memcpy(pchMessageStart, pchMessageStartIn, MESSAGE_START_SIZE);
     memset(pchCommand, 0, sizeof(pchCommand));
     nMessageSize = -1;
-    nChecksum = 0;
+    memset(pchChecksum, 0, CHECKSUM_SIZE);
 }
 
 CMessageHeader::CMessageHeader(const MessageStartChars& pchMessageStartIn, const char* pszCommand, unsigned int nMessageSizeIn)
@@ -34,7 +26,7 @@ CMessageHeader::CMessageHeader(const MessageStartChars& pchMessageStartIn, const
     memset(pchCommand, 0, sizeof(pchCommand));
     strncpy(pchCommand, pszCommand, COMMAND_SIZE);
     nMessageSize = nMessageSizeIn;
-    nChecksum = 0;
+    memset(pchChecksum, 0, CHECKSUM_SIZE);
 }
 
 std::string CMessageHeader::GetCommand() const
@@ -95,48 +87,70 @@ CInv::CInv()
 {
     type = 0;
     hash.SetNull();
+    hashAux.SetNull();
 }
 
 CInv::CInv(int typeIn, const uint256& hashIn)
 {
+    assert(typeIn != MSG_WTX);
     type = typeIn;
     hash = hashIn;
+    if (typeIn == MSG_TX) {
+        hashAux = LEGACY_TX_AUTH_DIGEST;
+    } else {
+        hashAux.SetNull();
+    }
 }
 
-CInv::CInv(const std::string& strType, const uint256& hashIn)
+CInv::CInv(int typeIn, const uint256& hashIn, const uint256& hashAuxIn)
 {
-    unsigned int i;
-    for (i = 1; i < ARRAYLEN(ppszTypeName); i++)
-    {
-        if (strType == ppszTypeName[i])
-        {
-            type = i;
-            break;
-        }
-    }
-    if (i == ARRAYLEN(ppszTypeName))
-        throw std::out_of_range(strprintf("CInv::CInv(string, uint256): unknown type '%s'", strType));
+    type = typeIn;
     hash = hashIn;
+    hashAux = hashAuxIn;
 }
 
 bool operator<(const CInv& a, const CInv& b)
 {
-    return (a.type < b.type || (a.type == b.type && a.hash < b.hash));
+    return (a.type < b.type ||
+        (a.type == b.type && a.hash < b.hash) ||
+        (a.type == b.type && a.hash == b.hash && a.hashAux < b.hashAux));
 }
 
-bool CInv::IsKnownType() const
+std::string CInv::GetCommand() const
 {
-    return (type >= 1 && type < (int)ARRAYLEN(ppszTypeName));
-}
-
-const char* CInv::GetCommand() const
-{
-    if (!IsKnownType())
+    std::string cmd;
+    switch (type)
+    {
+    case MSG_TX:             return cmd.append("tx");
+    case MSG_BLOCK:          return cmd.append("block");
+    // WTX is not a message type, just an inv type
+    case MSG_WTX:            return cmd.append("wtx");
+    case MSG_FILTERED_BLOCK: return cmd.append("merkleblock");
+    default:
         throw std::out_of_range(strprintf("CInv::GetCommand(): type=%d unknown type", type));
-    return ppszTypeName[type];
+    }
+}
+
+std::vector<unsigned char> CInv::GetWideHash() const
+{
+    assert(type != MSG_BLOCK);
+    if (type == MSG_TX) {
+        for (auto byte : hashAux) {
+            assert(byte == 0xff);
+        }
+    };
+    std::vector<unsigned char> vData(hash.begin(), hash.end());
+    vData.insert(vData.end(), hashAux.begin(), hashAux.end());
+    return vData;
 }
 
 std::string CInv::ToString() const
 {
-    return strprintf("%s %s", GetCommand(), hash.ToString());
+    switch (type)
+    {
+    case MSG_WTX:
+        return strprintf("%s(%s, %s)", GetCommand(), hash.ToString(), hashAux.ToString());
+    default:
+        return strprintf("%s %s", GetCommand(), hash.ToString());
+    }
 }

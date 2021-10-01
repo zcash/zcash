@@ -4,8 +4,14 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
+from test_framework.mininode import NU5_PROTO_VERSION
 from test_framework.util import (
+    BLOSSOM_BRANCH_ID,
+    CANOPY_BRANCH_ID,
+    HEARTWOOD_BRANCH_ID,
+    NU5_BRANCH_ID,
     assert_equal, assert_true,
+    nuparams,
     start_node, connect_nodes, wait_and_assert_operationid_status,
     get_coinbase_address
 )
@@ -24,7 +30,10 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
     def setup_network(self):
         args = ["-checkmempool", "-debug=mempool", "-blockmaxsize=4000",
-            "-nuparams=2bb40e60:200", # Blossom
+            nuparams(BLOSSOM_BRANCH_ID, 200),
+            nuparams(HEARTWOOD_BRANCH_ID, 210),
+            nuparams(CANOPY_BRANCH_ID, 220),
+            nuparams(NU5_BRANCH_ID, 230),
         ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))
@@ -172,10 +181,28 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
             self.nodes[1].generate(6)
             self.sync_all()
 
+        net_version = self.nodes[0].getnetworkinfo()["protocolversion"]
+
         print('Testing Sapling -> Blossom activation boundary')
         # Current height = 195
         nu_activation_checks()
         # Current height = 205
+
+        print('Testing Blossom -> Heartwood activation boundary')
+        nu_activation_checks()
+        # Current height = 215
+
+        print('Testing Heartwood -> Canopy activation boundary')
+        nu_activation_checks()
+        # Current height = 225
+
+        if net_version < NU5_PROTO_VERSION:
+            print("Node's block index is not NU5-aware, skipping remaining tests")
+            return
+
+        print('Testing Canopy -> NU5 activation boundary')
+        nu_activation_checks()
+        # Current height = 235
 
 if __name__ == '__main__':
     MempoolUpgradeActivationTest().main()

@@ -23,6 +23,7 @@ class TestNode(NodeConnCB):
         self.connection = None
         self.ping_counter = 1
         self.last_pong = msg_pong()
+        self.conn_closed = False
 
     def add_connection(self, conn):
         self.connection = conn
@@ -43,7 +44,7 @@ class TestNode(NodeConnCB):
         self.connection.send_message(message)
 
     def on_close(self, conn):
-        pass
+        self.conn_closed = True
 
     def on_reject(self, conn, message):
         conn.rejectMessage = message
@@ -66,12 +67,13 @@ class TestNode(NodeConnCB):
 
     # The following function is mostly copied from p2p-acceptblock.py
     # Sync up with the node after delivery of a message
-    def sync_with_ping(self, timeout=30):
+    def sync_with_ping(self, timeout=30, waiting_for=None):
         self.connection.send_message(msg_ping(nonce=self.ping_counter))
         sleep_time = 0.05
         while timeout > 0:
             with mininode_lock:
-                if self.last_pong.nonce == self.ping_counter:
+                ready = True if waiting_for is None else waiting_for(self) is not None
+                if ready and self.last_pong.nonce == self.ping_counter:
                     self.ping_counter += 1
                     return
             time.sleep(sleep_time)

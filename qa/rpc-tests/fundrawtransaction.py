@@ -150,7 +150,6 @@ class RawTransactionsTest(BitcoinTestFramework):
         assert_equal(fee + totalOut, utx['amount']) #compare vin total and totalout+fee
 
 
-
         #####################################################################
         # test a fundrawtransaction with which will not get a change output #
         #####################################################################
@@ -178,7 +177,6 @@ class RawTransactionsTest(BitcoinTestFramework):
 
         assert_equal(rawtxfund['changepos'], -1)
         assert_equal(fee + totalOut, utx['amount']) #compare vin total and totalout+fee
-
 
 
         #########################################################################
@@ -484,7 +482,6 @@ class RawTransactionsTest(BitcoinTestFramework):
 
         # make sure funds are received at node1
         assert_equal(oldBalance+Decimal('11.10000000'), self.nodes[0].getbalance())
-
 
 
         ###############################################

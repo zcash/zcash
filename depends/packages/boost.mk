@@ -1,10 +1,9 @@
 package=boost
-$(package)_version=1_74_0
-$(package)_download_path=https://dl.bintray.com/boostorg/release/$(subst _,.,$($(package)_version))/source/
+$(package)_version=1_77_0
+$(package)_download_path=https://boostorg.jfrog.io/artifactory/main/release/$(subst _,.,$($(package)_version))/source/
 $(package)_file_name=boost_$($(package)_version).tar.bz2
-$(package)_sha256_hash=83bfc1507731a0906e387fc28b7ef5417d591429e51e788417fe9ff025e116b1
+$(package)_sha256_hash=fc9f85fc030e233142908241af7a846e60630aa7388de9a5fafb1f3a26840854
 $(package)_dependencies=native_b2
-$(package)_patches=iostreams-106.patch signals2-noise.patch deprecated-two-arg-allocate.diff
 
 ifneq ($(host_os),darwin)
 $(package)_dependencies+=libcxx
@@ -42,9 +41,6 @@ endif
 endef
 
 define $(package)_preprocess_cmds
-  patch -p2 < $($(package)_patch_dir)/iostreams-106.patch && \
-  patch -p2 < $($(package)_patch_dir)/signals2-noise.patch && \
-  patch -p2 < $($(package)_patch_dir)/deprecated-two-arg-allocate.diff && \
   echo "using $($(package)_toolset_$(host_os)) : : $($(package)_cxx) : <cflags>\"$($(package)_cflags)\" <cxxflags>\"$($(package)_cxxflags)\" <compileflags>\"$($(package)_cppflags)\" <linkflags>\"$($(package)_ldflags)\" <archiver>\"$($(package)_ar)\" <striper>\"$(host_STRIP)\"  <ranlib>\"$(host_RANLIB)\" <rc>\"$(host_WINDRES)\" : ;" > user-config.jam
 endef
 

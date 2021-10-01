@@ -77,7 +77,8 @@ struct TxVersionInfo {
  * Returns the current transaction version and version group id,
  * based upon the specified activation height and active features.
  */
-TxVersionInfo CurrentTxVersionInfo(const Consensus::Params& consensus, int nHeight);
+TxVersionInfo CurrentTxVersionInfo(
+    const Consensus::Params& consensus, int nHeight, bool requireSprout);
 
 struct TxParams {
     unsigned int expiryDelta;
@@ -649,6 +650,40 @@ public:
     std::string ToString() const;
 };
 
+struct WTxId
+{
+    const uint256 hash;
+    const uint256 authDigest;
+
+    WTxId() :
+        authDigest(LEGACY_TX_AUTH_DIGEST) {}
+
+    WTxId(const uint256& hashIn, const uint256& authDigestIn) :
+        hash(hashIn), authDigest(authDigestIn) {}
+
+    const std::vector<unsigned char> ToBytes() const {
+        std::vector<unsigned char> vData(hash.begin(), hash.end());
+        vData.insert(vData.end(), authDigest.begin(), authDigest.end());
+        return vData;
+    }
+
+    friend bool operator<(const WTxId& a, const WTxId& b)
+    {
+        return (a.hash < b.hash ||
+            (a.hash == b.hash && a.authDigest < b.authDigest));
+    }
+
+    friend bool operator==(const WTxId& a, const WTxId& b)
+    {
+        return a.hash == b.hash && a.authDigest == b.authDigest;
+    }
+
+    friend bool operator!=(const WTxId& a, const WTxId& b)
+    {
+        return a.hash != b.hash || a.authDigest != b.authDigest;
+    }
+};
+
 struct CMutableTransaction;
 
 /** The basic transaction that is broadcasted on the network and contained in
@@ -659,13 +694,12 @@ class CTransaction
 private:
     /// The consensus branch ID that this transaction commits to.
     /// Serialized from v5 onwards.
-    uint32_t nConsensusBranchId;
+    std::optional<uint32_t> nConsensusBranchId;
+    CAmount valueBalanceSapling;
     OrchardBundle orchardBundle;
 
     /** Memory only. */
-    const uint256 hash;
-    /** Memory only. */
-    const uint256 authDigest;
+    const WTxId wtxid;
     void UpdateHash() const;
 
 protected:
@@ -715,7 +749,6 @@ public:
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
     const uint32_t nExpiryHeight;
-    const CAmount valueBalance;
     const std::vector<SpendDescription> vShieldedSpend;
     const std::vector<OutputDescription> vShieldedOutput;
     const std::vector<JSDescription> vJoinSplit;
@@ -781,7 +814,14 @@ public:
 
         if (isZip225V5) {
             // Common Transaction Fields (plus version bytes above)
-            READWRITE(nConsensusBranchId);
+            if (ser_action.ForRead()) {
+                uint32_t consensusBranchId;
+                READWRITE(consensusBranchId);
+                *const_cast<std::optional<uint32_t>*>(&nConsensusBranchId) = consensusBranchId;
+            } else {
+                uint32_t consensusBranchId = nConsensusBranchId.value();
+                READWRITE(consensusBranchId);
+            }
             READWRITE(*const_cast<uint32_t*>(&nLockTime));
             READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
 
@@ -797,13 +837,13 @@ public:
                     saplingBundle.GetV4ShieldedSpend();
                 *const_cast<std::vector<OutputDescription>*>(&vShieldedOutput) =
                     saplingBundle.GetV4ShieldedOutput();
-                *const_cast<CAmount*>(&valueBalance) = saplingBundle.valueBalanceSapling;
+                valueBalanceSapling = saplingBundle.valueBalanceSapling;
                 *const_cast<binding_sig_t*>(&bindingSig) = saplingBundle.bindingSigSapling;
             } else {
                 SaplingBundle saplingBundle(
                     vShieldedSpend,
                     vShieldedOutput,
-                    valueBalance,
+                    valueBalanceSapling,
                     bindingSig);
                 READWRITE(saplingBundle);
             }
@@ -819,7 +859,7 @@ public:
                 READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
             }
             if (isSaplingV4 || isFuture) {
-                READWRITE(*const_cast<CAmount*>(&valueBalance));
+                READWRITE(valueBalanceSapling);
                 READWRITE(*const_cast<std::vector<SpendDescription>*>(&vShieldedSpend));
                 READWRITE(*const_cast<std::vector<OutputDescription>*>(&vShieldedOutput));
             }
@@ -848,7 +888,7 @@ public:
     }
 
     const uint256& GetHash() const {
-        return hash;
+        return wtxid.hash;
     }
 
     /**
@@ -857,7 +897,11 @@ public:
      * For v1-v4 transactions, this returns the null hash (i.e. all-zeroes).
      */
     const uint256& GetAuthDigest() const {
-        return authDigest;
+        return wtxid.authDigest;
+    }
+
+    const WTxId& GetWTxId() const {
+        return wtxid;
     }
 
     uint32_t GetHeader() const {
@@ -870,10 +914,20 @@ public:
         return header;
     }
 
-    uint32_t GetConsensusBranchId() const {
+    std::optional<uint32_t> GetConsensusBranchId() const {
         return nConsensusBranchId;
     }
 
+    /**
+     * Returns the Sapling value balance for the transaction.
+     */
+    const CAmount& GetValueBalanceSapling() const {
+        return valueBalanceSapling;
+    }
+
+    /**
+     * Returns the Orchard bundle for the transaction.
+     */
     const OrchardBundle& GetOrchardBundle() const {
         return orchardBundle;
     }
@@ -885,16 +939,16 @@ public:
      * it is (e.g. if vpub_new is non-zero the joinSplit is "giving value" to
      * the outputs in the transaction). Similarly, we can think of the Sapling
      * shielded part of the transaction as an input or output according to
-     * whether valueBalance - the sum of shielded input values minus the sum of
+     * whether valueBalanceSapling - the sum of shielded input values minus the sum of
      * shielded output values - is positive or negative.
      */
 
-    // Return sum of txouts, (negative valueBalance or zero) and JoinSplit vpub_old.
+    // Return sum of txouts, (negative valueBalanceSapling or zero) and JoinSplit vpub_old.
     CAmount GetValueOut() const;
     // GetValueIn() is a method on CCoinsViewCache, because
     // inputs must be known to compute value in.
 
-    // Return sum of (positive valueBalance or zero) and JoinSplit vpub_new
+    // Return sum of (positive valueBalanceSapling or zero) and JoinSplit vpub_new
     CAmount GetShieldedValueIn() const;
 
     // Compute priority, given priority of inputs and (optionally) tx size
@@ -910,12 +964,12 @@ public:
 
     friend bool operator==(const CTransaction& a, const CTransaction& b)
     {
-        return a.hash == b.hash;
+        return a.wtxid.hash == b.wtxid.hash;
     }
 
     friend bool operator!=(const CTransaction& a, const CTransaction& b)
     {
-        return a.hash != b.hash;
+        return a.wtxid.hash != b.wtxid.hash;
     }
 
     std::string ToString() const;
@@ -929,12 +983,12 @@ struct CMutableTransaction
     uint32_t nVersionGroupId;
     /// The consensus branch ID that this transaction commits to.
     /// Serialized from v5 onwards.
-    uint32_t nConsensusBranchId;
+    std::optional<uint32_t> nConsensusBranchId;
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
     uint32_t nExpiryHeight;
-    CAmount valueBalance;
+    CAmount valueBalanceSapling;
     std::vector<SpendDescription> vShieldedSpend;
     std::vector<OutputDescription> vShieldedOutput;
     OrchardBundle orchardBundle;
@@ -991,7 +1045,14 @@ struct CMutableTransaction
 
         if (isZip225V5) {
             // Common Transaction Fields (plus version bytes above)
-            READWRITE(nConsensusBranchId);
+            if (ser_action.ForRead()) {
+                uint32_t consensusBranchId;
+                READWRITE(consensusBranchId);
+                nConsensusBranchId = consensusBranchId;
+            } else {
+                uint32_t consensusBranchId = nConsensusBranchId.value();
+                READWRITE(consensusBranchId);
+            }
             READWRITE(nLockTime);
             READWRITE(nExpiryHeight);
 
@@ -1005,13 +1066,13 @@ struct CMutableTransaction
                 READWRITE(saplingBundle);
                 vShieldedSpend = saplingBundle.GetV4ShieldedSpend();
                 vShieldedOutput = saplingBundle.GetV4ShieldedOutput();
-                valueBalance = saplingBundle.valueBalanceSapling;
+                valueBalanceSapling = saplingBundle.valueBalanceSapling;
                 bindingSig = saplingBundle.bindingSigSapling;
             } else {
                 SaplingBundle saplingBundle(
                     vShieldedSpend,
                     vShieldedOutput,
-                    valueBalance,
+                    valueBalanceSapling,
                     bindingSig);
                 READWRITE(saplingBundle);
             }
@@ -1027,7 +1088,7 @@ struct CMutableTransaction
                 READWRITE(nExpiryHeight);
             }
             if (isSaplingV4 || isFuture) {
-                READWRITE(valueBalance);
+                READWRITE(valueBalanceSapling);
                 READWRITE(vShieldedSpend);
                 READWRITE(vShieldedOutput);
             }

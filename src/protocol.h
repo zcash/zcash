@@ -18,8 +18,6 @@
 #include <stdint.h>
 #include <string>
 
-#define MESSAGE_START_SIZE 4
-
 /** Message header.
  * (4) message start.
  * (12) command.
@@ -29,6 +27,16 @@
 class CMessageHeader
 {
 public:
+    enum {
+        MESSAGE_START_SIZE = 4,
+        COMMAND_SIZE = 12,
+        MESSAGE_SIZE_SIZE = 4,
+        CHECKSUM_SIZE = 4,
+
+        MESSAGE_SIZE_OFFSET = MESSAGE_START_SIZE + COMMAND_SIZE,
+        CHECKSUM_OFFSET = MESSAGE_SIZE_OFFSET + MESSAGE_SIZE_SIZE,
+        HEADER_SIZE = MESSAGE_START_SIZE + COMMAND_SIZE + MESSAGE_SIZE_SIZE + CHECKSUM_SIZE
+    };
     typedef unsigned char MessageStartChars[MESSAGE_START_SIZE];
 
     CMessageHeader(const MessageStartChars& pchMessageStartIn);
@@ -45,24 +53,13 @@ public:
         READWRITE(FLATDATA(pchMessageStart));
         READWRITE(FLATDATA(pchCommand));
         READWRITE(nMessageSize);
-        READWRITE(nChecksum);
+        READWRITE(FLATDATA(pchChecksum));
     }
 
-    // TODO: make private (improves encapsulation)
-public:
-    enum {
-        COMMAND_SIZE = 12,
-        MESSAGE_SIZE_SIZE = sizeof(int),
-        CHECKSUM_SIZE = sizeof(int),
-
-        MESSAGE_SIZE_OFFSET = MESSAGE_START_SIZE + COMMAND_SIZE,
-        CHECKSUM_OFFSET = MESSAGE_SIZE_OFFSET + MESSAGE_SIZE_SIZE,
-        HEADER_SIZE = MESSAGE_START_SIZE + COMMAND_SIZE + MESSAGE_SIZE_SIZE + CHECKSUM_SIZE
-    };
     char pchMessageStart[MESSAGE_START_SIZE];
     char pchCommand[COMMAND_SIZE];
-    unsigned int nMessageSize;
-    unsigned int nChecksum;
+    uint32_t nMessageSize;
+    uint8_t pchChecksum[CHECKSUM_SIZE];
 };
 
 /** nServices flags */
@@ -119,41 +116,89 @@ public:
     unsigned int nTime;
 };
 
+/** getdata / inv message types.
+ * These numbers are defined by the protocol. When adding a new value, be sure
+ * to mention it in the respective ZIP, as well as checking for collisions with
+ * BIPs we might want to backport.
+ */
+enum GetDataMsg : uint32_t {
+    UNDEFINED = 0,
+    MSG_TX = 1,
+    MSG_BLOCK = 2,
+    MSG_WTX = 5,             //!< Defined in ZIP 239
+    // The following can only occur in getdata. Invs always use TX/WTX or BLOCK.
+    MSG_FILTERED_BLOCK = 3,  //!< Defined in BIP37
+};
+
 /** inv message data */
 class CInv
 {
 public:
     CInv();
     CInv(int typeIn, const uint256& hashIn);
-    CInv(const std::string& strType, const uint256& hashIn);
+    CInv(int typeIn, const uint256& hashIn, const uint256& hashAuxIn);
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action)
     {
+        int nVersion = s.GetVersion();
         READWRITE(type);
+
+        // The implicit P2P network protocol inherited from Bitcoin Core has
+        // zcashd nodes sort-of ignoring unknown CInv message types in inv
+        // messages: they are added to the known transaction inventory, but
+        // AlreadyHave returns true, so we do nothing with them. Meanwhile for
+        // getdata messages, ProcessGetData ignores unknown message types
+        // entirely.
+        //
+        // As of v4.5.0, we change the implementation behaviour to reject
+        // undefined message types instead of ignoring them.
+        switch (type) {
+        case MSG_TX:
+        case MSG_BLOCK:
+        case MSG_FILTERED_BLOCK:
+            break;
+        case MSG_WTX:
+            if (nVersion < CINV_WTX_VERSION) {
+                throw std::ios_base::failure(
+                    "Negotiated protocol version does not support CInv message type MSG_WTX");
+            }
+            break;
+        default:
+            // This includes UNDEFINED, which should never be serialized.
+            throw std::ios_base::failure("Unknown CInv message type");
+        }
+
         READWRITE(hash);
+        if (type == MSG_WTX) {
+            // We've already checked above that nVersion >= CINV_WTX_VERSION.
+            READWRITE(hashAux);
+        } else if (type == MSG_TX && ser_action.ForRead()) {
+            // Ensure that this value is set consistently in memory for MSG_TX.
+            hashAux = LEGACY_TX_AUTH_DIGEST;
+        }
     }
 
     friend bool operator<(const CInv& a, const CInv& b);
 
-    bool IsKnownType() const;
-    const char* GetCommand() const;
+    std::string GetCommand() const;
+    std::vector<unsigned char> GetWideHash() const;
     std::string ToString() const;
 
     // TODO: make private (improves encapsulation)
 public:
     int type;
+    // The main hash. This is:
+    // - MSG_BLOCK: the block hash.
+    // - MSG_TX and MSG_WTX: the txid.
     uint256 hash;
-};
-
-enum {
-    MSG_TX = 1,
-    MSG_BLOCK,
-    // Nodes may always request a MSG_FILTERED_BLOCK in a getdata, however,
-    // MSG_FILTERED_BLOCK should not appear in any invs except as a part of getdata.
-    MSG_FILTERED_BLOCK,
+    // The auxiliary hash. This is:
+    // - MSG_BLOCK: null (all-zeroes) and not parsed or serialized.
+    // - MSG_TX: legacy auth digest (all-ones) and not parsed or serialized.
+    // - MSG_WTX: the auth digest.
+    uint256 hashAux;
 };
 
 #endif // BITCOIN_PROTOCOL_H

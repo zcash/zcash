@@ -29,7 +29,47 @@ public:
     friend bool operator<(const InvalidMinerAddress &a, const InvalidMinerAddress &b) { return true; }
 };
 
-typedef std::variant<InvalidMinerAddress, libzcash::SaplingPaymentAddress, boost::shared_ptr<CReserveScript>> MinerAddress;
+typedef std::variant<
+    InvalidMinerAddress,
+    libzcash::SaplingPaymentAddress,
+    boost::shared_ptr<CReserveScript>> MinerAddress;
+
+class ExtractMinerAddress
+{
+public:
+    ExtractMinerAddress() {}
+
+    MinerAddress operator()(const libzcash::InvalidEncoding &invalid) const {
+        return InvalidMinerAddress();
+    }
+    MinerAddress operator()(const libzcash::SproutPaymentAddress &addr) const {
+        return InvalidMinerAddress();
+    }
+    MinerAddress operator()(const libzcash::SaplingPaymentAddress &addr) const {
+        return addr;
+    }
+    MinerAddress operator()(const libzcash::UnifiedAddress &addr) const {
+        auto recipient = RecipientForPaymentAddress()(addr);
+        if (recipient) {
+            // This looks like a recursive call, but we are actually calling
+            // ExtractMinerAddress with a different type:
+            // - libzcash::PaymentAddress has a libzcash::UnifiedAddress
+            //   alternative, which invokes this method.
+            // - RecipientForPaymentAddress() returns libzcash::RawAddress,
+            //   which does not have a libzcash::UnifiedAddress alternative.
+            //
+            // This works because std::visit does not require the visitor to
+            // solely match the std::variant, only that it can handle all of
+            // the variant's alternatives.
+            return std::visit(ExtractMinerAddress(), *recipient);
+        } else {
+            // Either the UA only contains unknown shielded receivers (unlikely that we
+            // wouldn't know about them), or it only contains transparent receivers
+            // (which are invalid).
+            return InvalidMinerAddress();
+        }
+    }
+};
 
 class KeepMinerAddress
 {
