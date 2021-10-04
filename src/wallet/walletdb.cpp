@@ -724,6 +724,12 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssValue >> chain;
             pwallet->SetHDChain(chain, true);
         }
+        else if (strType == "networkinfo")
+        {
+            std::pair<std::string, std::string> networkInfo;
+            ssValue >> networkInfo;
+            pwallet->CheckNetworkInfo(networkInfo);
+        }
     } catch (...)
     {
         return false;
@@ -1087,7 +1093,7 @@ bool CWalletDB::Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKe
         LogPrintf("Cannot create database file %s\n", filename);
         return false;
     }
-    CWallet dummyWallet;
+    CWallet dummyWallet(Params());
     CWalletScanState wss;
 
     DbTxn* ptxn = dbenv.TxnBegin();
@@ -1142,6 +1148,12 @@ bool CWalletDB::EraseDestData(const std::string &address, const std::string &key
     return Erase(std::make_pair(std::string("destdata"), std::make_pair(address, key)));
 }
 
+bool CWalletDB::WriteNetworkInfo(const std::string& networkId)
+{
+    nWalletDBUpdateCounter++;
+    std::pair<std::string, std::string> networkInfo(PACKAGE_NAME, networkId);
+    return Write(std::string("networkinfo"), networkInfo);
+}
 
 bool CWalletDB::WriteHDSeed(const HDSeed& seed)
 {

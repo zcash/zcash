@@ -806,6 +806,7 @@ protected:
 
     /* the hd chain data model (chain counters) */
     CHDChain hdChain;
+    std::string networkIdString;
 
 public:
     /*
@@ -829,14 +830,14 @@ public:
     MasterKeyMap mapMasterKeys;
     unsigned int nMasterKeyMaxID;
 
-    CWallet()
+    CWallet(const CChainParams& params)
     {
-        SetNull();
+        SetNull(params);
     }
 
-    CWallet(const std::string& strWalletFileIn)
+    CWallet(const CChainParams& params, const std::string& strWalletFileIn)
     {
-        SetNull();
+        SetNull(params);
 
         strWalletFile = strWalletFileIn;
         fFileBacked = true;
@@ -848,7 +849,7 @@ public:
         pwalletdbEncryption = NULL;
     }
 
-    void SetNull()
+    void SetNull(const CChainParams& params)
     {
         nWalletVersion = FEATURE_BASE;
         nWalletMaxVersion = FEATURE_BASE;
@@ -863,6 +864,7 @@ public:
         nTimeFirstKey = 0;
         fBroadcastTransactions = false;
         nWitnessCacheSize = 0;
+        networkIdString = params.NetworkIDString();
     }
 
     /**
@@ -958,7 +960,7 @@ public:
      * completion the coin set and corresponding actual target value is
      * assembled
      */
-    bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet) const;
+    static bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet);
 
     bool IsSpent(const uint256& hash, unsigned int n) const;
     bool IsSproutSpent(const uint256& nullifier) const;
@@ -1296,6 +1298,9 @@ public:
     void SetHDChain(const CHDChain& chain, bool memonly);
     const CHDChain& GetHDChain() const { return hdChain; }
 
+    void CheckNetworkInfo(std::pair<std::string, std::string> networkInfo);
+    uint32_t BIP44CoinType();
+
     /* Set the current HD seed, without saving it to disk (used by LoadWallet) */
     bool LoadHDSeed(const HDSeed& key);
     /* Set the current encrypted HD seed, without saving it to disk (used by LoadWallet) */
@@ -1324,10 +1329,10 @@ public:
     static std::string GetWalletHelpString(bool showDebug);
 
     /* Initializes the wallet, returns a new CWallet instance or a null pointer in case of an error */
-    static bool InitLoadWallet(bool clearWitnessCaches);
+    static bool InitLoadWallet(const CChainParams& params, bool clearWitnessCaches);
 
     /* Wallets parameter interaction */
-    static bool ParameterInteraction();
+    static bool ParameterInteraction(const CChainParams& params);
 };
 
 /** A key allocated from the key pool. */
