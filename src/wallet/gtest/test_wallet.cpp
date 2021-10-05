@@ -138,8 +138,14 @@ TEST(WalletTests, WalletNetworkSerialization) {
     // create a new testnet wallet and generate a seed
     CWallet wallet(Params(), "wallet.dat");
     wallet.InitLoadWallet(Params(), true);
-    wallet.GenerateNewSeed();
     wallet.Flush();
+
+    // Stay on TESTNET, make sure wallet can be successfully loaded.
+    {
+        CWallet restored(Params(), "wallet.dat");
+        bool fFirstRunRet;
+        EXPECT_EQ(restored.LoadWallet(fFirstRunRet), DB_LOAD_OK);
+    }
 
     // now, switch to mainnet and attempt to restore the wallet
     // using the same wallet.dat
@@ -148,7 +154,7 @@ TEST(WalletTests, WalletNetworkSerialization) {
 
     // load should fail due to being associated with the wrong network
     bool fFirstRunRet;
-    EXPECT_NE(restored.LoadWallet(fFirstRunRet), DB_LOAD_OK);
+    EXPECT_EQ(restored.LoadWallet(fFirstRunRet), DB_WRONG_NETWORK);
 }
 
 TEST(WalletTests, SproutNoteDataSerialisation) {

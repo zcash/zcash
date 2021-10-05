@@ -728,7 +728,10 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         {
             std::pair<std::string, std::string> networkInfo;
             ssValue >> networkInfo;
-            pwallet->CheckNetworkInfo(networkInfo);
+            if (!pwallet->CheckNetworkInfo(networkInfo)) {
+                strErr = "Error in wallet database: unexpected network";
+                return false;
+            }
         }
     } catch (...)
     {
@@ -790,17 +793,19 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
             string strType, strErr;
             if (!ReadKeyValue(pwallet, ssKey, ssValue, wss, strType, strErr))
             {
-                // losing keys is considered a catastrophic error, anything else
-                // we assume the user can live with:
-                if (IsKeyType(strType))
+                if (strType == "networkinfo") {
+                    // example: running mainnet, but this wallet.dat is from testnet
+                    result = DB_WRONG_NETWORK;
+                } else if (result != DB_WRONG_NETWORK && IsKeyType(strType)) {
+                    // losing keys is considered a catastrophic error
                     result = DB_CORRUPT;
-                else
-                {
+                } else {
                     // Leave other errors alone, if we try to fix them we might make things worse.
                     fNoncriticalErrors = true; // ... but do warn the user there is something wrong.
-                    if (strType == "tx")
+                    if (strType == "tx") {
                         // Rescan if there is a bad transaction record:
                         SoftSetBoolArg("-rescan", true);
+                    }
                 }
             }
             if (!strErr.empty())
