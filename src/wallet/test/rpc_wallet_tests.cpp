@@ -219,6 +219,20 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK(CallRPC("verifymessage " + keyIO.EncodeDestination(demoAddress) + " " + retValue.get_str() + " mymessage").get_bool() == true);
 
     /*********************************
+     * 		listaddresses
+     *********************************/
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
+    UniValue arr = retValue.get_array();
+    BOOST_CHECK_EQUAL(2, arr.size());
+    bool notFound = true;
+    for (auto a : arr.getValues()) {
+        auto t_obj = find_value(a.get_obj(), "transparent");
+        auto addr = find_value(t_obj, "address").get_str();
+        notFound &= keyIO.DecodeDestination(addr) != demoAddress;
+    }
+    BOOST_CHECK(!notFound);
+
+    /*********************************
      * 	     fundrawtransaction
      *********************************/
     BOOST_CHECK_THROW(CallRPC("fundrawtransaction 28z"), runtime_error);
@@ -662,6 +676,11 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
         myaddrs.insert(element.get_str());
     }
 
+    // Verify that the keys imported are also available from listaddresses
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
+    arr = retValue.get_array();
+    BOOST_CHECK(arr.size() == (2 * n1));
+
     // Make new addresses for the set
     for (int i=0; i<n2; i++) {
         myaddrs.insert(keyIO.EncodePaymentAddress(pwalletMain->GenerateNewSproutZKey()));
@@ -684,6 +703,11 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     for (UniValue element : arr.getValues()) {
         listaddrs.insert(element.get_str());
     }
+
+    // Verify that the keys imported are also available from listaddresses
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
+    arr = retValue.get_array();
+    BOOST_CHECK(arr.size() == numAddrs);
 
     // Verify the two sets of addresses are the same
     BOOST_CHECK(listaddrs.size() == numAddrs);
