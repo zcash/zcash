@@ -96,7 +96,7 @@ Files: depends/sources/clang-llvm-*.tar.xz
 Copyright: The libc++ Authors
 License: Apache-2 with LLVM exception
 Comment: This entry is specifically for the libc++ library. The libc++ Authors
- are listed in https://github.com/llvm/llvm-project/blob/main/libcxx/CREDITS.TXT.
+ are listed in https://github.com/llvm/llvm-project/blob/main/libcxx/CREDITS.TXT .
 
 Files: depends/sources/db-*.tar.gz
 Copyright: 1990, 2016 Oracle and/or its affiliates;
