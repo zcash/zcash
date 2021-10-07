@@ -71,18 +71,18 @@ Files: build-aux/m4/ax_check_compile_flag.m4
  build-aux/m4/ax_check_preproc_flag.m4
 Copyright: 2008, Guido U. Draheim <guidod@gmx.de>
  2011, Maarten Bosmans <mkbosmans@gmail.com>
-License: GPLv3-or-later-with-Autoconf-exception
+License: GPL-3+ with Autoconf exception
 
 Files: build-aux/m4/ax_pthread.m4
 Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
  2011, Daniel Richard G. <skunk@iSKUNK.ORG>
-License: GPLv3-or-later-with-Autoconf-exception
+License: GPL-3+ with Autoconf exception
 
 Files: qa/zcash/checksec.sh
 Copyright: 2014-2015, Brian Davis
  2013, Robin David
  2009-2011, Tobias Klein
-License: BSD-3clause-Tobias-Klein
+License: BSD-3-clause-Tobias-Klein
 
 Files: depends/sources/libsodium-*.tar.gz
 Copyright: 2013-2016 Frank Denis
@@ -92,12 +92,30 @@ Files: depends/sources/boost_*.tar.gz
 Copyright: 2008 Beman Dawes
 License: Boost-Software-License-1.0
 
+Files: depends/sources/clang-llvm-*.tar.xz
+Copyright: The libc++ Authors
+License: Apache-2 with LLVM exception
+Comment: This entry is specifically for the libc++ library. The libc++ Authors
+ are listed in https://github.com/llvm/llvm-project/blob/main/libcxx/CREDITS.TXT .
+
 Files: depends/sources/db-*.tar.gz
 Copyright: 1990, 2016 Oracle and/or its affiliates;
  1990, 1993, 1994, 1995 The Regents of the University of California;
  1995, 1996 The President and Fellows of Harvard University;
  2000-2005 INRIA, France Telecom
 License: BDB
+
+Files: depends/sources/libevent-*.tar.gz
+Copyright: 2000-2007 Niels Provos <provos@citi.umich.edu>
+ 2007-2012 Niels Provos and Nick Mathewson
+ 2000 Dug Song <dugsong@monkey.org>
+ 1993 The Regents of the University of California.
+ 1998 Todd C. Miller <Todd.Miller@courtesan.com>
+ 2003 Michael A. Davis <mike@datanerds.net>
+ 2007 Sun Microsystems
+ 2002 Christopher Clark
+ 2006 Maxim Yegorushkin <maxim.yegorushkin@gmail.com>
+License: BSD-3-clause
 
 Files: depends/sources/zeromq-*.tar.gz
 Copyright:
@@ -110,11 +128,11 @@ Copyright:
  2013 Ericsson AB
  2014 AppDynamics Inc.
  2015-2016 Brocade Communications Systems Inc.
-License: LGPL-with-ZeroMQ-exception
+License: LGPL-3+ with ZeroMQ exception
 
 Files: depends/sources/google*.tar.gz
 Copyright: 2008 Google Inc.
-License: BSD-3clause-Google
+License: BSD-3-clause-Google
 
 Files: depends/sources/utfcpp-*.tar.gz
 Copyright: 2006 Nemanja Trifunovic
@@ -123,7 +141,7 @@ License: Boost-Software-License-1.0
 Files: depends/*/vendored-sources/halo2/*
  depends/*/vendored-sources/orchard/*
 Copyright: 2020-2021 The Electric Coin Company
-License: BOSL-1.0-or-later-with-Zcash-exception
+License: BOSL-1+ with Zcash exception
 
 Files: src/crypto/ctaes/*
 Copyright: Copyright (c) 2016 Pieter Wuille
@@ -157,8 +175,32 @@ License: GNU-All-permissive-License
 
 Files src/leveldb/*
 Copyright: 2011, The LevelDB Authors
-License: BSD-3clause-Google
+License: BSD-3-clause-Google
 Comment: The LevelDB Authors are listed in src/leveldb/AUTHORS.
+
+License: Apache-2 with LLVM exception
+ ==============================================================================
+ The LLVM Project is under the Apache License v2.0 with LLVM Exceptions:
+ ==============================================================================
+ .
+ On Debian systems, the full text of the Apache License v2.0 can be found in the
+ file `/usr/share/common-licenses/Apache-2.0`.
+ .
+ ---- LLVM Exceptions to the Apache 2.0 License ----
+ .
+ As an exception, if, as a result of your compiling your source code, portions
+ of this Software are embedded into an Object form of such source code, you
+ may redistribute such embedded portions in such Object form without complying
+ with the conditions of Sections 4(a), 4(b) and 4(d) of the License.
+ .
+ In addition, if you combine or link compiled forms of this Software with
+ software that is licensed under the GPLv2 ("Combined Software") and if a
+ court of competent jurisdiction determines that the patent provision (Section
+ 3), the indemnity provision (Section 9) or other Section of the License
+ conflicts with the conditions of the GPLv2, you may retroactively and
+ prospectively choose to deem waived or otherwise exclude such Section(s) of
+ the License, but only in their entirety and only with respect to the Combined
+ Software.
 
 License: Boost-Software-License-1.0
  Permission is hereby granted, free of charge, to any person or organization
@@ -942,7 +984,7 @@ License: BDB
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-License: BSD-3clause
+License: BSD-3-clause
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
  .
@@ -986,7 +1028,7 @@ License: Expat
  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-License: BSD-3clause-Google
+License: BSD-3-clause-Google
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are
  met:
@@ -1013,7 +1055,7 @@ License: BSD-3clause-Google
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-License: BSD-3clause-Tobias-Klein
+License: BSD-3-clause-Tobias-Klein
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
  .
@@ -1067,7 +1109,7 @@ Comment:
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-License: LGPL-with-ZeroMQ-exception
+License: LGPL-3+ with ZeroMQ exception
  GNU LESSER GENERAL PUBLIC LICENSE
  Version 3, 29 June 2007
  .
@@ -1102,7 +1144,7 @@ License: GNU-All-permissive-License
  and this notice are preserved. This file is offered as-is, without any
  warranty.
 
-License: GPLv3-or-later-with-Autoconf-exception
+License: GPL-3+ with Autoconf exception
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU General Public License as published by the
  Free Software Foundation, either version 3 of the License, or (at your
@@ -1115,6 +1157,9 @@ License: GPLv3-or-later-with-Autoconf-exception
  .
  You should have received a copy of the GNU General Public License along
  with this program. If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the full text of the GNU General Public License
+ version 3 can be found in the file `/usr/share/common-licenses/GPL-3'.
  .
  As a special exception, the respective Autoconf Macro's copyright owner
  gives unlimited permission to copy, distribute and modify the configure
@@ -1157,7 +1202,7 @@ License: Expat-with-advertising-clause
  promote the sale, use or other dealings in this Software without
  prior written authorization from the authors.
 
-License: BOSL-1.0-or-later-with-Zcash-exception
+License: BOSL-1+ with Zcash exception
  This package ("Original Work") is licensed under the terms of the Bootstrap Open
  Source License, version 1.0, or at your option, any later version ("BOSL"). See
  the file ./LICENSE-BOSL for the terms of the Bootstrap Open Source Licence,
@@ -1192,7 +1237,7 @@ License: BOSL-1.0-or-later-with-Zcash-exception
      to your version, but you are not obligated to do so. If you do not wish to
      do so, delete this exception statement from your version.
 
-License: Bootstrap-Open-Source-Licence-1.0
+License: BOSL-1
  =======================================================
  Bootstrap Open Source Licence ("BOSL") v. 1.0
  =======================================================
