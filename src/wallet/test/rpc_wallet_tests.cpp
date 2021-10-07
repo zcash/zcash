@@ -223,14 +223,22 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      *********************************/
     BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
     UniValue arr = retValue.get_array();
-    BOOST_CHECK_EQUAL(2, arr.size());
-    bool notFound = true;
-    for (auto a : arr.getValues()) {
-        auto t_obj = find_value(a.get_obj(), "transparent");
-        auto addr = find_value(t_obj, "address").get_str();
-        notFound &= keyIO.DecodeDestination(addr) != demoAddress;
+    {
+        BOOST_CHECK_EQUAL(1, arr.size());
+        bool notFound = true;
+        for (auto a : arr.getValues()) {
+            auto source = find_value(a.get_obj(), "source");
+            if (source.get_str() == "legacy_random") {
+                auto t_obj = find_value(a.get_obj(), "transparent");
+                auto addrs = find_value(t_obj, "addresses").get_array();
+                BOOST_CHECK_EQUAL(2, addrs.size());
+                for (auto addr : addrs.getValues()) {
+                    notFound &= keyIO.DecodeDestination(addr.get_str()) != demoAddress;
+                }
+            }
+        }
+        BOOST_CHECK(!notFound);
     }
-    BOOST_CHECK(!notFound);
 
     /*********************************
      * 	     fundrawtransaction
@@ -670,16 +678,34 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     UniValue arr = retValue.get_array();
     BOOST_CHECK(arr.size() == (2 * n1));
 
+    // Verify that the keys imported are also available from listaddresses
+    {
+        BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
+        auto listarr = retValue.get_array();
+        bool sproutCountMatch = false;
+        bool saplingCountMatch = false;
+        for (auto a : listarr.getValues()) {
+            auto source = find_value(a.get_obj(), "source");
+            if (source.get_str() == "legacy_random") {
+                auto sprout_obj = find_value(a.get_obj(), "sprout").get_obj();
+                auto sprout_addrs = find_value(sprout_obj, "addresses").get_array();
+                sproutCountMatch = (sprout_addrs.size() == n1);
+            }
+            if (source.get_str() == "imported") {
+                auto sapling_obj = find_value(a.get_obj(), "sapling").get_array()[0];
+                auto sapling_addrs = find_value(sapling_obj, "addresses").get_array();
+                saplingCountMatch = (sapling_addrs.size() == n1);
+            }
+        }
+        BOOST_CHECK(sproutCountMatch);
+        BOOST_CHECK(saplingCountMatch);
+    }
+
     // Put addresses into a set
     std::unordered_set<std::string> myaddrs;
     for (UniValue element : arr.getValues()) {
         myaddrs.insert(element.get_str());
     }
-
-    // Verify that the keys imported are also available from listaddresses
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
-    arr = retValue.get_array();
-    BOOST_CHECK(arr.size() == (2 * n1));
 
     // Make new addresses for the set
     for (int i=0; i<n2; i++) {
@@ -704,10 +730,21 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
         listaddrs.insert(element.get_str());
     }
 
-    // Verify that the keys imported are also available from listaddresses
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
-    arr = retValue.get_array();
-    BOOST_CHECK(arr.size() == numAddrs);
+    // Verify that the newly added sprout keys imported are also available from listaddresses
+    {
+        BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
+        auto listarr = retValue.get_array();
+        bool sproutCountMatch = false;
+        for (auto a : listarr.getValues()) {
+            auto source = find_value(a.get_obj(), "source");
+            if (source.get_str() == "legacy_random") {
+                auto sprout_obj = find_value(a.get_obj(), "sprout").get_obj();
+                auto sprout_addrs = find_value(sprout_obj, "addresses").get_array();
+                sproutCountMatch = (sprout_addrs.size() == n1 + n2);
+            }
+        }
+        BOOST_CHECK(sproutCountMatch);
+    }
 
     // Verify the two sets of addresses are the same
     BOOST_CHECK(listaddrs.size() == numAddrs);
