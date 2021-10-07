@@ -5230,11 +5230,13 @@ PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::Sapl
             if (m_wallet->mapSaplingZKeyMetadata.count(ivk) > 0 &&
                     m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath != "") {
                 return LegacyHDSeed;
-            } else {
+            } else if (HaveSpendingKeyForPaymentAddress(m_wallet)(zaddr)) {
                 return Imported;
+            } else {
+                return ImportedWatchOnly;
             }
         } else {
-            return Imported;
+            return ImportedWatchOnly;
         }
     } else {
         return AddressNotFound;

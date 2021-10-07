@@ -614,9 +614,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     BOOST_CHECK_EQUAL(testKey, keyIO.EncodeSpendingKey(k));
 }
 
-
 /*
- * This test covers RPC commands z_listaddresses, z_importkey, z_exportkey, listaddresses
+ * This test covers RPC commands z_listaddresses, z_importkey, z_exportkey,
+ * listaddresses, z_importviewingkey, z_exportviewingkey
  */
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 {
@@ -643,9 +643,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     BOOST_CHECK_THROW(CallRPC(prefix + "100badchars"), runtime_error);
 
     // wallet should currently be empty
-    std::set<libzcash::SproutPaymentAddress> addrs;
-    pwalletMain->GetSproutPaymentAddresses(addrs);
-    BOOST_CHECK(addrs.size()==0);
+    std::set<libzcash::SproutPaymentAddress> sproutAddrs;
+    pwalletMain->GetSproutPaymentAddresses(sproutAddrs);
+    BOOST_CHECK(sproutAddrs.size()==0);
     std::set<libzcash::SaplingPaymentAddress> saplingAddrs;
     pwalletMain->GetSaplingPaymentAddresses(saplingAddrs);
     BOOST_CHECK(saplingAddrs.empty());
@@ -663,27 +663,36 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
         BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportkey ") + testAddr));
         BOOST_CHECK_EQUAL(retValue.get_str(), testKey);
 
-        // create a random Sapling key locally
+        // create a random Sapling key locally; split between IVKs and spending keys.
         auto testSaplingSpendingKey = m.Derive(i);
         auto testSaplingPaymentAddress = testSaplingSpendingKey.DefaultAddress();
-        std::string testSaplingAddr = keyIO.EncodePaymentAddress(testSaplingPaymentAddress);
-        std::string testSaplingKey = keyIO.EncodeSpendingKey(testSaplingSpendingKey);
-        BOOST_CHECK_NO_THROW(CallRPC(string("z_importkey ") + testSaplingKey));
-        BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportkey ") + testSaplingAddr));
-        BOOST_CHECK_EQUAL(retValue.get_str(), testSaplingKey);
+        if (i % 2 == 0) {
+            std::string testSaplingAddr = keyIO.EncodePaymentAddress(testSaplingPaymentAddress);
+            std::string testSaplingKey = keyIO.EncodeSpendingKey(testSaplingSpendingKey);
+            BOOST_CHECK_NO_THROW(CallRPC(string("z_importkey ") + testSaplingKey));
+            BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportkey ") + testSaplingAddr));
+            BOOST_CHECK_EQUAL(retValue.get_str(), testSaplingKey);
+        } else {
+            std::string testSaplingAddr = keyIO.EncodePaymentAddress(testSaplingPaymentAddress);
+            std::string testSaplingKey = keyIO.EncodeViewingKey(testSaplingSpendingKey.ToXFVK());
+            BOOST_CHECK_NO_THROW(CallRPC(string("z_importviewingkey ") + testSaplingKey));
+            BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportviewingkey ") + testSaplingAddr));
+            BOOST_CHECK_EQUAL(retValue.get_str(), testSaplingKey);
+        }
     }
 
     // Verify we can list the keys imported
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
     UniValue arr = retValue.get_array();
-    BOOST_CHECK(arr.size() == (2 * n1));
+    BOOST_CHECK(arr.size() == n1 + (n1 / 2));
 
     // Verify that the keys imported are also available from listaddresses
     {
         BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
         auto listarr = retValue.get_array();
         bool sproutCountMatch = false;
-        bool saplingCountMatch = false;
+        bool saplingSpendingKeyMatch = false;
+        bool saplingIVKMatch = false;
         for (auto a : listarr.getValues()) {
             auto source = find_value(a.get_obj(), "source");
             if (source.get_str() == "legacy_random") {
@@ -694,11 +703,17 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
             if (source.get_str() == "imported") {
                 auto sapling_obj = find_value(a.get_obj(), "sapling").get_array()[0];
                 auto sapling_addrs = find_value(sapling_obj, "addresses").get_array();
-                saplingCountMatch = (sapling_addrs.size() == n1);
+                saplingSpendingKeyMatch = (sapling_addrs.size() == n1 / 2);
+            }
+            if (source.get_str() == "imported_watchonly") {
+                auto sapling_obj = find_value(a.get_obj(), "sapling").get_array()[0];
+                auto sapling_addrs = find_value(sapling_obj, "addresses").get_array();
+                saplingIVKMatch = (sapling_addrs.size() == n1 / 2);
             }
         }
         BOOST_CHECK(sproutCountMatch);
-        BOOST_CHECK(saplingCountMatch);
+        BOOST_CHECK(saplingSpendingKeyMatch);
+        BOOST_CHECK(saplingIVKMatch);
     }
 
     // Put addresses into a set
@@ -712,12 +727,14 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
         myaddrs.insert(keyIO.EncodePaymentAddress(pwalletMain->GenerateNewSproutZKey()));
     }
 
-    // Verify number of addresses stored in wallet is n1+n2
+    // Verify number of addresses stored in wallet is correct
     int numAddrs = myaddrs.size();
-    BOOST_CHECK(numAddrs == (2 * n1) + n2);
-    pwalletMain->GetSproutPaymentAddresses(addrs);
+    // sprout_addrs + sapling addrs with spend authority + new sprout addrs
+    BOOST_CHECK(numAddrs == (n1 + (n1 / 2) + n2));
+    pwalletMain->GetSproutPaymentAddresses(sproutAddrs);
     pwalletMain->GetSaplingPaymentAddresses(saplingAddrs);
-    BOOST_CHECK(addrs.size() + saplingAddrs.size() == numAddrs);
+    // here we also include the watchonly sapling addresses
+    BOOST_CHECK(sproutAddrs.size() + saplingAddrs.size() == numAddrs + (n1 / 2));
 
     // Ask wallet to list addresses
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));

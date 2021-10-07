@@ -500,7 +500,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
         {
             UniValue watchonly_sprout_addrs(UniValue::VARR);
             for (const SproutPaymentAddress& addr : sproutAddresses) {
-                if (!HaveSpendingKeyForPaymentAddress(pwalletMain)(addr)) {
+                if (GetSourceForPaymentAddress(pwalletMain)(addr) == ImportedWatchOnly) {
                     watchonly_sprout_addrs.push_back(keyIO.EncodePaymentAddress(addr));
                 }
             }

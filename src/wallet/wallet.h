@@ -1416,6 +1416,7 @@ enum PaymentAddressSource {
     LegacyHDSeed,
     MnemonicHDSeed,
     Imported,
+    ImportedWatchOnly,
     AddressNotFound,
 };
 
