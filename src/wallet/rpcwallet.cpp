@@ -541,24 +541,46 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
     {
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("source", "legacy_hdseed");
+        bool hasData = false;
 
-        // TODO: split up by zip32 account id
-        UniValue legacy_sapling_addrs(UniValue::VARR);
+        std::map<SaplingIncomingViewingKey, std::vector<SaplingPaymentAddress>> ivkAddrs;
         for (const SaplingPaymentAddress& addr : saplingAddresses) {
             if (GetSourceForPaymentAddress(pwalletMain)(addr) == LegacyHDSeed) {
-                legacy_sapling_addrs.push_back(keyIO.EncodePaymentAddress(addr));
+                SaplingIncomingViewingKey ivkRet;
+                if (pwalletMain->GetSaplingIncomingViewingKey(addr, ivkRet)) {
+                    ivkAddrs[ivkRet].push_back(addr);
+                }
             }
         }
 
-        if (!legacy_sapling_addrs.empty()) {
-            UniValue legacy_sapling_obj(UniValue::VOBJ);
-            legacy_sapling_obj.pushKV("addresses", legacy_sapling_addrs);
-
+        {
             UniValue legacy_sapling(UniValue::VARR);
-            legacy_sapling.push_back(legacy_sapling_obj);
+            for (const auto& [ivk, addrs] : ivkAddrs) {
+                UniValue legacy_sapling_addrs(UniValue::VARR);
+                for (const SaplingPaymentAddress& addr : addrs) {
+                    legacy_sapling_addrs.push_back(keyIO.EncodePaymentAddress(addr));
+                }
 
-            entry.pushKV("sapling", legacy_sapling);
+                // this is known to be nonempty from the GetSourceForPaymentAddress check.
+                std::string hdKeypath = pwalletMain->mapSaplingZKeyMetadata[ivk].hdKeypath;
+                std::optional<unsigned long> accountId = libzcash::ParseZip32KeypathAccount(hdKeypath);
 
+                UniValue legacy_sapling_obj(UniValue::VOBJ);
+                if (accountId.has_value()) {
+                    legacy_sapling_obj.pushKV("zip32_account_id", (uint64_t) accountId.value());
+                }
+                legacy_sapling_obj.pushKV("addresses", legacy_sapling_addrs);
+
+                legacy_sapling.push_back(legacy_sapling_obj);
+            }
+
+            if (!legacy_sapling.empty()) {
+                entry.pushKV("sapling", legacy_sapling);
+                hasData = true;
+            }
+        }
+
+        if (hasData) {
             ret.push_back(entry);
         }
     }
