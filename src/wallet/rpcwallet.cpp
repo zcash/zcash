@@ -318,13 +318,13 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
             "generated from the legacy HD seed, imported watchonly transparent \n"
             "addresses, shielded addresses tracked using imported viewing keys, \n"
             "and addresses derived from the wallet's mnemonic seed for releases \n"
-            "version 5.0.0 and above. \n"
+            "version 4.5.2 and above. \n"
             "\nREMINDER: It is recommended that you back up your wallet.dat file \n"
             "regularly!\n"
             "\nResult:\n"
             "[\n"
             "  {\n"
-            "    \"source\": \"imported|imported_watchonly|keypool|legacy_seed|mnemnoic_seed\"\n"
+            "    \"source\": \"imported|imported_watchonly|keypool|legacy_seed|mnemonic_seed\"\n"
             "    \"transparent\": {\n"
             "      \"addresses\": [\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\", ...],\n"
             "      \"change_addresses\": [\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\", ...]\n"
@@ -332,7 +332,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
             "    \"sprout\": {\n"
             "      \"addresses\": [\"ztbx5DLDxa5ZLFTchHhoPNkKs57QzSyib6UqXpEdy76T1aUdFxJt1w9318Z8DJ73XzbnWHKEZP9Yjg712N5kMmP4QzS9iC9\", ...]\n"
             "    },\n"
-            "    \"sapling\": [\n"
+            "    \"sapling\": [ -- each element in this list represents a set of diversified addresses derived from a single IVK. \n"
             "      {\n"
             "        \"zip32_account_id\": 0, -- optional field, not present for imported/watchonly sources,\n"
             "        \"addresses\": [\n"
@@ -345,6 +345,8 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
             "  },\n"
             "  ...\n"
             "]\n"
+            "In the case that a source does not have addresses for a pool, the key\n"
+            "associated with that pool will be absent.\n"
             "\nExamples:\n"
             + HelpExampleCli("listaddresses", "")
             + HelpExampleRpc("listaddresses", "")
@@ -422,7 +424,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
             hasData = true;
         }
 
-        if (hasData) {
+        if (!t_generated_dests.empty() || !t_change_dests.empty()) {
             entry.pushKV("transparent", random_t);
         }
 
