@@ -144,14 +144,14 @@ std::optional<SaplingPaymentAddress> CWallet::GenerateNewLegacySaplingZKey() {
             } else {
                 // Update the persisted chain information
                 if (fFileBacked && !CWalletDB(strWalletFile).WriteLegacyHDChain(hdChain)) {
-                    throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): Writing HD chain model failed");
+                    throw std::runtime_error("CWallet::GenerateNewLegacySaplingZKey(): Writing HD chain model failed");
                 }
 
                 auto ivk = xsk.first.expsk.full_viewing_key().in_viewing_key();
                 mapSaplingZKeyMetadata[ivk] = xsk.second;
 
                 if (!AddSaplingZKey(xsk.first)) {
-                    throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): AddSaplingZKey failed");
+                    throw std::runtime_error("CWallet::GenerateNewLegacySaplingZKey(): AddSaplingZKey failed");
                 }
 
                 return xsk.first.ToXFVK().DefaultAddress();

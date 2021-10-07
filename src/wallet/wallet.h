@@ -1058,15 +1058,6 @@ public:
       * Sapling ZKeys
       */
 
-    //! Generates new Sapling key given the specified HD seed and account id
-    //! and persists it to the wallet.
-    //
-    //! Returns the newly generated extended spending key, or `std::nullopt`
-    //! if a key corresponding to the specified account id already exists in
-    //! the wallet.
-    std::optional<libzcash::SaplingExtendedSpendingKey> GenerateNewSaplingZKey(
-            const HDSeed& seed,
-            uint32_t accountId);
     //! Generates new Sapling key using the legacy HD seed (if one is available)
     //! and legacy account counter, stores the newly generated spending key to
     //! the wallet, and returns the default address for the newly generated key.
