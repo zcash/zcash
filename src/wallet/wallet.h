@@ -1411,6 +1411,28 @@ public:
     std::optional<libzcash::SpendingKey> operator()(const libzcash::InvalidEncoding& no) const;
 };
 
+enum PaymentAddressSource {
+    Random,
+    LegacyHDSeed,
+    MnemonicHDSeed,
+    Imported,
+    ImportedWatchOnly,
+    AddressNotFound,
+};
+
+class GetSourceForPaymentAddress
+{
+private:
+    CWallet *m_wallet;
+public:
+    GetSourceForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
+
+    PaymentAddressSource operator()(const libzcash::SproutPaymentAddress &zaddr) const;
+    PaymentAddressSource operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    PaymentAddressSource operator()(const libzcash::UnifiedAddress &uaddr) const;
+    PaymentAddressSource operator()(const libzcash::InvalidEncoding& no) const;
+};
+
 enum KeyAddResult {
     SpendingKeyExists,
     KeyAlreadyExists,

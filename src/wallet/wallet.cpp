@@ -5211,6 +5211,52 @@ bool PaymentAddressBelongsToWallet::operator()(const libzcash::InvalidEncoding& 
     return false;
 }
 
+///
+
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const
+{
+    return Random;
+}
+
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
+{
+    libzcash::SaplingIncomingViewingKey ivk;
+
+    // If we have a SaplingExtendedSpendingKey in the wallet, then we will
+    // also have the corresponding SaplingExtendedFullViewingKey.
+    if (m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk)) {
+        if (m_wallet->HaveSaplingFullViewingKey(ivk)) {
+            // If we have the HD keypath, it's related to the legacy seed
+            if (m_wallet->mapSaplingZKeyMetadata.count(ivk) > 0 &&
+                    m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath != "") {
+                return LegacyHDSeed;
+            } else if (HaveSpendingKeyForPaymentAddress(m_wallet)(zaddr)) {
+                return Imported;
+            } else {
+                return ImportedWatchOnly;
+            }
+        } else {
+            return ImportedWatchOnly;
+        }
+    } else {
+        return AddressNotFound;
+    }
+}
+
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::UnifiedAddress &uaddr) const
+{
+    // TODO
+    return AddressNotFound;
+}
+
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::InvalidEncoding& no) const
+{
+    return AddressNotFound;
+}
+
+
+///
+
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::SproutPaymentAddress &zaddr) const
 {
@@ -5385,7 +5431,7 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
                 // 154051200 seconds from epoch is Friday, 26 October 2018 00:00:00 GMT - definitely before Sapling activates
                 m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = std::max((int64_t) 154051200, nTime);
             }
-            if (hdKeypath) {
+            if (hdKeypath.has_value()) {
                 m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath = hdKeypath.value();
             }
             if (seedFpStr) {

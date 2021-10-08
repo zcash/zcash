@@ -158,4 +158,14 @@ libzcash::SaplingPaymentAddress SaplingExtendedSpendingKey::DefaultAddress() con
     return ToXFVK().DefaultAddress();
 }
 
+std::optional<unsigned long> ParseZip32KeypathAccount(const std::string& keyPath) {
+    std::regex pattern("m/32'/[0-9]+'/([0-9]+)'");
+    std::smatch matches;
+    if (std::regex_match(keyPath, matches, pattern)) {
+        return stoul(matches[1]);
+    } else {
+        return std::nullopt;
+    }
+}
+
 }
