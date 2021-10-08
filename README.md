@@ -34,6 +34,7 @@ is an automatic deprecation shutdown feature which will halt the node some
 time after this 16-week period. The automatic feature is based on block
 height.
 
+
 ## Getting Started
 
 Please see our [user guide](https://zcash.readthedocs.io/en/latest/rtd_pages/rtd_docs/user_guide.html) for joining the main Zcash network.
@@ -64,3 +65,4 @@ License
 -------
 
 For license information see the file [COPYING](COPYING).
+DNM
