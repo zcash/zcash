@@ -1,6 +1,18 @@
 Notable changes
 ===============
 
+Added v5 transactions to standard rules
+---------------------------------------
+
+In v4.5.0 we added the v5 transaction format to the NU5 consensus rules for
+testnet. However, it was omitted from the standard rules, which meant that
+`zcashd` testnet nodes would not accept v5 transactions into their mempools,
+causing them to not be propagated or mined. This release updates the `zcashd`
+standard rules to accept v5 transactions alongside v4 transactions.
+
+New `listaddresses` RPC method
+------------------------------
+
 The `listaddresses` endpoint has been added to the RPC API. This method
 allows the caller to obtain addresses managed by the wallet, grouped
 by the source of the address, including both those addresses generated
