@@ -780,13 +780,13 @@ clean-local:
 	-$(MAKE) -C univalue clean
 	rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
 	-rm -f config.h
+	-$(RM) *.a
+	-$(RM) crypto/*.a
+	-$(RM) cryptoconditions/.libs/*.a
 
 clean-all: clean-local
 	-$(MAKE) -C snark clean-all
 	-$(MAKE) -C univalue clean-all
-	-$(RM) *.a
-	-$(RM) crypto/*.a
-	-$(RM) cryptoconditions/.libs/*.a
 
 .rc.o:
 	@test -f $(WINDRES)
