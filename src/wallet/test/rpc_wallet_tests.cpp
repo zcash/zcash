@@ -701,14 +701,20 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
                 sproutCountMatch = (sprout_addrs.size() == n1);
             }
             if (source.get_str() == "imported") {
-                auto sapling_obj = find_value(a.get_obj(), "sapling").get_array()[0];
-                auto sapling_addrs = find_value(sapling_obj, "addresses").get_array();
-                saplingSpendingKeyMatch = (sapling_addrs.size() == n1 / 2);
+                int addr_count = 0;
+                for (auto sapling_obj : find_value(a.get_obj(), "sapling").get_array().getValues()) {
+                    auto sapling_addrs = find_value(sapling_obj, "addresses").get_array();
+                    addr_count += sapling_addrs.size();
+                }
+                saplingSpendingKeyMatch = (addr_count == n1 / 2);
             }
             if (source.get_str() == "imported_watchonly") {
-                auto sapling_obj = find_value(a.get_obj(), "sapling").get_array()[0];
-                auto sapling_addrs = find_value(sapling_obj, "addresses").get_array();
-                saplingIVKMatch = (sapling_addrs.size() == n1 / 2);
+                int addr_count = 0;
+                for (auto sapling_obj : find_value(a.get_obj(), "sapling").get_array().getValues()) {
+                    auto sapling_addrs = find_value(sapling_obj, "addresses").get_array();
+                    addr_count += sapling_addrs.size();
+                }
+                saplingIVKMatch = (addr_count == n1 / 2);
             }
         }
         BOOST_CHECK(sproutCountMatch);
