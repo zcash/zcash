@@ -27,6 +27,15 @@ class WalletAddressesTest(BitcoinTestFramework):
                 assert_equal(res['type'], addr_type)
                 assert(addr in all_addresses)
 
+            listed_addresses = self.nodes[0].listaddresses()
+            legacy_random_src = next(src for src in listed_addresses if src['source'] == 'legacy_random')
+            legacy_hdseed_src = next(src for src in listed_addresses if src['source'] == 'legacy_hdseed')
+            for addr_type, addr in types_and_addresses:
+                if addr_type == 'sprout':
+                    assert(addr in legacy_random_src['sprout']['addresses'])
+                if addr_type == 'sapling':
+                    assert(addr in [x for obj in legacy_hdseed_src['sapling'] for x in obj['addresses']])
+
         # Sanity-check the test harness
         assert_equal(self.nodes[0].getblockcount(), 200)
 
