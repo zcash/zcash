@@ -327,14 +327,14 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
             "    \"source\": \"imported|imported_watchonly|keypool|legacy_seed|mnemonic_seed\"\n"
             "    \"transparent\": {\n"
             "      \"addresses\": [\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\", ...],\n"
-            "      \"change_addresses\": [\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\", ...]\n"
+            "      \"changeAddresses\": [\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\", ...]\n"
             "    },\n"
             "    \"sprout\": {\n"
             "      \"addresses\": [\"ztbx5DLDxa5ZLFTchHhoPNkKs57QzSyib6UqXpEdy76T1aUdFxJt1w9318Z8DJ73XzbnWHKEZP9Yjg712N5kMmP4QzS9iC9\", ...]\n"
             "    },\n"
             "    \"sapling\": [ -- each element in this list represents a set of diversified addresses derived from a single IVK. \n"
             "      {\n"
-            "        \"zip32_account_id\": 0, -- optional field, not present for imported/watchonly sources,\n"
+            "        \"zip32AccountId\": 0, -- optional field, not present for imported/watchonly sources,\n"
             "        \"addresses\": [\n"
             "          \"ztbx5DLDxa5ZLFTchHhoPNkKs57QzSyib6UqXpEdy76T1aUdFxJt1w9318Z8DJ73XzbnWHKEZP9Yjg712N5kMmP4QzS9iC9\",\n"
             "          ...\n"
@@ -420,7 +420,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
             for (const CTxDestination& dest : t_change_dests) {
                 random_t_change_addrs.push_back(keyIO.EncodeDestination(dest));
             }
-            random_t.pushKV("change_addresses", random_t_change_addrs);
+            random_t.pushKV("changeAddresses", random_t_change_addrs);
             hasData = true;
         }
 
@@ -482,7 +482,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
                     std::optional<unsigned long> accountId = libzcash::ParseZip32KeypathAccount(hdKeypath);
 
                     if (accountId.has_value()) {
-                        sapling_obj.pushKV("zip32_account_id", (uint64_t) accountId.value());
+                        sapling_obj.pushKV("zip32AccountId", (uint64_t) accountId.value());
                     }
                 }
 
