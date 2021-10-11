@@ -422,6 +422,7 @@ std::vector<unsigned char> CNetAddr::GetGroup() const
     {
         // for the rest of the IPv6 network, use /32 groups
         nBits = 32;
+    }
 
     // push our ip onto vchRet byte by byte...
     while (nBits >= 8)
