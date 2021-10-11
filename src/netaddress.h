@@ -156,7 +156,7 @@ class CNetAddr
         bool GetInAddr(struct in_addr* pipv4Addr) const;
         uint32_t GetNetClass() const;
         std::vector<unsigned char> GetGroup() const;
-        std::vector<unsigned char> GetAddrBytes() const { return {std::begin(ip), std::end(ip)}; }
+        std::vector<unsigned char> GetAddrBytes() const;
         int GetReachabilityFrom(const CNetAddr *paddrPartner = NULL) const;
 
         //! For IPv4, mapped IPv4, SIIT translated IPv4, Teredo, 6to4 tunneled addresses, return the relevant IPv4 address as a uint32.
