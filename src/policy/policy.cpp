@@ -59,8 +59,15 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason, const CChainParam
 {
     bool overwinterActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight,  Consensus::UPGRADE_OVERWINTER);
     bool saplingActive = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_SAPLING);
+    bool nu5Active = chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5);
 
-    if (saplingActive) {
+    if (nu5Active) {
+        // NU5 standard rules apply
+        if (tx.nVersion > CTransaction::NU5_MAX_CURRENT_VERSION || tx.nVersion < CTransaction::NU5_MIN_CURRENT_VERSION) {
+            reason = "nu5-version";
+            return false;
+        }
+    } else if (saplingActive) {
         // Sapling standard rules apply
         if (tx.nVersion > CTransaction::SAPLING_MAX_CURRENT_VERSION || tx.nVersion < CTransaction::SAPLING_MIN_CURRENT_VERSION) {
             reason = "sapling-version";
