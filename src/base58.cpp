@@ -107,7 +107,7 @@ bool DecodeBase58(const std::string& str, std::vector<unsigned char>& vchRet)
     if (!ValidAsCString(str)) {
         return false;
     }
-    return DecodeBase58(str.c_str(), vchRet, max_ret_len);
+    return DecodeBase58(str.c_str(), vchRet);
 }
 
 std::string EncodeBase58Check(const std::vector<unsigned char>& vchIn)
@@ -141,5 +141,5 @@ bool DecodeBase58Check(const std::string& str, std::vector<unsigned char>& vchRe
     if (!ValidAsCString(str)) {
         return false;
     }
-    return DecodeBase58Check(str.c_str(), vchRet, max_ret);
+    return DecodeBase58Check(str.c_str(), vchRet);
 }
