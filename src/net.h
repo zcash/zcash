@@ -138,7 +138,7 @@ enum
 };
 
 bool IsPeerAddrLocalGood(CNode *pnode);
-void AdvertizeLocal(CNode *pnode);
+void AdvertiseLocal(CNode *pnode);
 void SetLimited(enum Network net, bool fLimited = true);
 bool IsLimited(enum Network net);
 bool IsLimited(const CNetAddr& addr);
@@ -288,7 +288,7 @@ public:
     bool fClient;
     bool fInbound;
     bool fNetworkNode;
-    bool fSuccessfullyConnected;
+    std::atomic_bool fSuccessfullyConnected;
     std::atomic_bool fDisconnect;
     // We use fRelayTxes for two purposes -
     // a) it allows us to not relay tx invs before receiving the peer's version message

@@ -7402,7 +7402,7 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
         // Address refresh broadcast
         int64_t nNow = GetTimeMicros();
         if (!IsInitialBlockDownload(params) && pto->nNextLocalAddrSend < nNow) {
-            AdvertizeLocal(pto);
+            AdvertiseLocal(pto);
             pto->nNextLocalAddrSend = PoissonNextSend(nNow, AVG_LOCAL_ADDRESS_BROADCAST_INTERVAL);
         }
 
