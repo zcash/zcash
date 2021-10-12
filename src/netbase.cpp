@@ -663,28 +663,13 @@ bool IsProxy(const CNetAddr &addr) {
     return false;
 }
 
-/**
- * Connect to a specified destination service through a SOCKS5 proxy by first
- * connecting to the SOCKS5 proxy.
- *
- * @param proxy The SOCKS5 proxy.
- * @param strDest The destination service to which to connect.
- * @param port The destination port.
- * @param hSocket The socket on which to connect to the SOCKS5 proxy.
- * @param nTimeout Wait this many milliseconds for the connection to the SOCKS5
- *                 proxy to be established.
- * @param outProxyConnectionFailed[out] Whether or not the connection to the
- *                                      SOCKS5 proxy failed.
- *
- * @returns Whether or not the operation succeeded.
- */
-bool ConnectThroughProxy(const proxyType &proxy, const std::string& strDest, int port, const SOCKET& hSocket, int nTimeout, bool& outProxyConnectionFailed)
+static bool ConnectThroughProxy(const proxyType &proxy, const std::string& strDest, int port, SOCKET& hSocketRet, int nTimeout, bool *outProxyConnectionFailed)
 {
     SOCKET hSocket = INVALID_SOCKET;
     // first connect to proxy server
     if (!ConnectSocketDirectly(proxy.proxy, hSocket, nTimeout)) {
         if (outProxyConnectionFailed)
-            outProxyConnectionFailed = true;
+            *outProxyConnectionFailed = true;
         return false;
     }
     // do socks negotiation
