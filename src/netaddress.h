@@ -148,7 +148,6 @@ class CNetAddr
         bool IsRoutable() const;
         bool IsInternal() const;
         bool IsValid() const;
-        bool IsMulticast() const;
         enum Network GetNetwork() const;
         std::string ToString() const;
         std::string ToStringIP() const;
