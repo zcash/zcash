@@ -549,11 +549,11 @@ UniValue setban(const UniValue& params, bool fHelp)
 
     if (!isSubnet) {
         CNetAddr resolved;
-        LookupHost(request.params[0].get_str(), resolved, false);
+        LookupHost(params[0].get_str(), resolved, false);
         netAddr = resolved;
     }
     else
-        LookupSubNet(request.params[0].get_str(), subNet);
+        LookupSubNet(params[0].get_str(), subNet);
 
     if (! (isSubnet ? subNet.IsValid() : netAddr.IsValid()) )
         throw JSONRPCError(RPC_CLIENT_NODE_ALREADY_ADDED, "Error: Invalid IP/Subnet");
