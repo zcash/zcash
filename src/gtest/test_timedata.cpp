@@ -22,7 +22,7 @@ CNetAddr GetUniqueAddr() {
     uint8_t buf[16] = { 0xFD }; // RFC 4193 address in FC00::/7 with L = 1 (locally assigned)
     GetRandBytes(&buf[1], 15);
     CNetAddr ip;
-    ip.SetRaw(NET_IPV6, buf);
+    ip.SetLegacyIPv6(buf);
     assert(ip.IsRFC4193());
     return ip;
 }
