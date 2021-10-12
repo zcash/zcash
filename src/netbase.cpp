@@ -105,18 +105,18 @@ bool static LookupIntern(const char *pszName, std::vector<CNetAddr>& vIP, unsign
 #ifdef HAVE_GETADDRINFO_A
     struct in_addr ipv4_addr;
 #ifdef HAVE_INET_PTON
-    if (inet_pton(AF_INET, pszName, &ipv4_addr) > 0) {
+    if (inet_pton(AF_INET, name.c_str(), &ipv4_addr) > 0) {
         vIP.push_back(CNetAddr(ipv4_addr));
         return true;
     }
 
     struct in6_addr ipv6_addr;
-    if (inet_pton(AF_INET6, pszName, &ipv6_addr) > 0) {
+    if (inet_pton(AF_INET6, name.c_str(), &ipv6_addr) > 0) {
         vIP.push_back(CNetAddr(ipv6_addr));
         return true;
     }
 #else
-    ipv4_addr.s_addr = inet_addr(pszName);
+    ipv4_addr.s_addr = inet_addr(name);
     if (ipv4_addr.s_addr != INADDR_NONE) {
         vIP.push_back(CNetAddr(ipv4_addr));
         return true;
@@ -135,7 +135,7 @@ bool static LookupIntern(const char *pszName, std::vector<CNetAddr>& vIP, unsign
 #ifdef HAVE_GETADDRINFO_A
     struct gaicb gcb, *query = &gcb;
     memset(query, 0, sizeof(struct gaicb));
-    gcb.ar_name = pszName;
+    gcb.ar_name = name.c_str();
     gcb.ar_request = &aiHint;
     int nErr = getaddrinfo_a(GAI_NOWAIT, &query, 1, NULL);
     if (nErr)
@@ -155,7 +155,7 @@ bool static LookupIntern(const char *pszName, std::vector<CNetAddr>& vIP, unsign
             aiRes = query->ar_result;
     } while (nErr == EAI_INPROGRESS);
 #else
-    int nErr = getaddrinfo(pszName, NULL, &aiHint, &aiRes);
+    int nErr = getaddrinfo(name, NULL, &aiHint, &aiRes);
 #endif
     if (nErr)
         return false;
