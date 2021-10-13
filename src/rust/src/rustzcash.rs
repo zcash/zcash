@@ -1111,7 +1111,7 @@ pub extern "C" fn librustzcash_zip32_find_xfvk_address(
     let j = zip32::DiversifierIndex(unsafe { *j });
 
     match xfvk.find_address(j) {
-        Ok((j, addr)) => {
+        Some((j, addr)) => {
             let j_ret = unsafe { &mut *j_ret };
             let addr_ret = unsafe { &mut *addr_ret };
 
@@ -1120,7 +1120,7 @@ pub extern "C" fn librustzcash_zip32_find_xfvk_address(
 
             true
         }
-        Err(_) => false,
+        None => false,
     }
 }
 

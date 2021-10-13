@@ -71,8 +71,8 @@ codegen-units = 1
 ed25519-zebra = { git = "https://github.com/ZcashFoundation/ed25519-zebra.git", rev = "d3512400227a362d08367088ffaa9bd4142a69c7" }
 incrementalmerkletree = { git = "https://github.com/zcash/incrementalmerkletree", rev = "b7bd6246122a6e9ace8edb51553fbf5228906cbb" }
 orchard = { git = "https://github.com/zcash/orchard.git", rev = "2c8241f25b943aa05203eacf9905db117c69bd29" }
-zcash_address = { git = "https://github.com/nuttycom/librustzcash.git", rev = "3910168cf1cfbca9342411881967bfa1579a1826" }
-zcash_history = { git = "https://github.com/nuttycom/librustzcash.git", rev = "3910168cf1cfbca9342411881967bfa1579a1826" }
-zcash_note_encryption = { git = "https://github.com/nuttycom/librustzcash.git", rev = "3910168cf1cfbca9342411881967bfa1579a1826" }
-zcash_primitives = { git = "https://github.com/nuttycom/librustzcash.git", rev = "3910168cf1cfbca9342411881967bfa1579a1826" }
-zcash_proofs = { git = "https://github.com/nuttycom/librustzcash.git", rev = "3910168cf1cfbca9342411881967bfa1579a1826" }
+zcash_address = { git = "https://github.com/nuttycom/librustzcash.git", rev = "86d4affe739170ab5ed9e69f5123938d12973fde" }
+zcash_history = { git = "https://github.com/nuttycom/librustzcash.git", rev = "86d4affe739170ab5ed9e69f5123938d12973fde" }
+zcash_note_encryption = { git = "https://github.com/nuttycom/librustzcash.git", rev = "86d4affe739170ab5ed9e69f5123938d12973fde" }
+zcash_primitives = { git = "https://github.com/nuttycom/librustzcash.git", rev = "86d4affe739170ab5ed9e69f5123938d12973fde" }
+zcash_proofs = { git = "https://github.com/nuttycom/librustzcash.git", rev = "86d4affe739170ab5ed9e69f5123938d12973fde" }
