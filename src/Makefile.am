@@ -500,6 +500,7 @@ libbitcoin_common_a_SOURCES = \
   komodo_events.cpp \
   komodo_gateway.cpp \
   komodo_globals.cpp \
+  komodo_hardfork.cpp \
   komodo_interest.cpp \
   komodo_jumblr.cpp \
   komodo_kv.cpp \
