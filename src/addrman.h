@@ -301,7 +301,7 @@ public:
     {
         LOCK(cs);
 
-        // Always serialize in the latest version (currently Format::V3_BIP155).
+        // Always serialize in the latest version (currently Format::V1_BIP155).
 
         OverrideStream<Stream> s(&s_, s_.GetType(), s_.GetVersion() | ADDRV2_FORMAT);
 
@@ -360,7 +360,7 @@ public:
         Format format;
         s_ >> Using<CustomUintFormatter<1>>(format);
 
-        static constexpr Format maximum_supported_format = Format::V3_BIP155;
+        static constexpr Format maximum_supported_format = Format::V1_BIP155;
         if (format > maximum_supported_format) {
             throw std::ios_base::failure(strprintf(
                 "Unsupported format of addrman database: %u. Maximum supported is %u. "
@@ -370,7 +370,7 @@ public:
         }
 
         int stream_version = s_.GetVersion();
-        if (format >= Format::V3_BIP155) {
+        if (format >= Format::V1_BIP155) {
             // Add ADDRV2_FORMAT to the version so that the CNetAddr and CAddress
             // unserialize methods know that an address in addrv2 format is coming.
             stream_version |= ADDRV2_FORMAT;
@@ -449,7 +449,7 @@ public:
                 if (nIndex >= 0 && nIndex < nNew) {
                     CAddrInfo &info = mapInfo[nIndex];
                     int nUBucketPos = info.GetBucketPosition(nKey, true, bucket);
-                    if (nVersion == 1 && nUBuckets == ADDRMAN_NEW_BUCKET_COUNT && vvNew[bucket][nUBucketPos] == -1 && info.nRefCount < ADDRMAN_NEW_BUCKETS_PER_ADDRESS) {
+                    if (format == Format::V0_HISTORICAL && nUBuckets == ADDRMAN_NEW_BUCKET_COUNT && vvNew[bucket][nUBucketPos] == -1 && info.nRefCount < ADDRMAN_NEW_BUCKETS_PER_ADDRESS) {
                         info.nRefCount++;
                         vvNew[bucket][nUBucketPos] = nIndex;
                     }

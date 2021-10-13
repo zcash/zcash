@@ -89,6 +89,7 @@ class CAddress : public CService
 {
 public:
     CAddress() : CService{} {};
+    void Init();
     CAddress(CService ipIn, ServiceFlags nServicesIn) : CService{ipIn}, nServices{nServicesIn} {};
     CAddress(CService ipIn, ServiceFlags nServicesIn, uint32_t nTimeIn) : CService{ipIn}, nTime{nTimeIn}, nServices{nServicesIn} {};
 
