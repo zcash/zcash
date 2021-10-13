@@ -7,6 +7,7 @@
 #include "protocol.h"
 #include "serialize.h"
 #include "streams.h"
+#include "version.h"
 
 #include <string>
 
@@ -371,11 +372,6 @@ static const std::vector<CAddress> fixture_addresses({
         CService(CNetAddr(in6addr_loopback), 0x00f1 /* port */),
         NODE_NETWORK,
         0x83766279U /* Tue Nov 22 11:22:33 UTC 2039 */
-    ),
-    CAddress(
-        CService(CNetAddr(in6addr_loopback), 0xf1f2 /* port */),
-        static_cast<ServiceFlags>(NODE_WITNESS | NODE_COMPACT_FILTERS | NODE_NETWORK_LIMITED),
-        0xffffffffU /* Sun Feb  7 06:28:15 UTC 2106 */
     )
 });
 
@@ -392,12 +388,7 @@ static constexpr const char* stream_addrv1_hex =
     "79627683"                         // time, Tue Nov 22 11:22:33 UTC 2039
     "0100000000000000"                 // service flags, NODE_NETWORK
     "00000000000000000000000000000001" // address, fixed 16 bytes (IPv6)
-    "00f1"                             // port
-
-    "ffffffff"                         // time, Sun Feb  7 06:28:15 UTC 2106
-    "4804000000000000"                 // service flags, NODE_WITNESS | NODE_COMPACT_FILTERS | NODE_NETWORK_LIMITED
-    "00000000000000000000000000000001" // address, fixed 16 bytes (IPv6)
-    "f1f2";                            // port
+    "00f1";                            // port
 
 // fixture_addresses should equal to this when serialized in V2 format.
 // When this is unserialized from V2 format it should equal to fixture_addresses.
@@ -416,14 +407,7 @@ static constexpr const char* stream_addrv2_hex =
     "02"                               // network id, IPv6
     "10"                               // address length, COMPACTSIZE(16)
     "00000000000000000000000000000001" // address
-    "00f1"                             // port
-
-    "ffffffff"                         // time, Sun Feb  7 06:28:15 UTC 2106
-    "fd4804"                           // service flags, COMPACTSIZE(NODE_WITNESS | NODE_COMPACT_FILTERS | NODE_NETWORK_LIMITED)
-    "02"                               // network id, IPv6
-    "10"                               // address length, COMPACTSIZE(16)
-    "00000000000000000000000000000001" // address
-    "f1f2";                            // port
+    "00f1";                            // port
 
 BOOST_AUTO_TEST_CASE(caddress_serialize_v1)
 {
