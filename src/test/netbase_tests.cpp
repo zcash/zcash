@@ -378,7 +378,7 @@ static const std::vector<CAddress> fixture_addresses({
 // fixture_addresses should equal to this when serialized in V1 format.
 // When this is unserialized from V1 format it should equal to fixture_addresses.
 static constexpr const char* stream_addrv1_hex =
-    "03" // number of entries
+    "02" // number of entries
 
     "61bc6649"                         // time, Fri Jan  9 02:54:25 UTC 2009
     "0000000000000000"                 // service flags, NODE_NONE
@@ -393,7 +393,7 @@ static constexpr const char* stream_addrv1_hex =
 // fixture_addresses should equal to this when serialized in V2 format.
 // When this is unserialized from V2 format it should equal to fixture_addresses.
 static constexpr const char* stream_addrv2_hex =
-    "03" // number of entries
+    "02" // number of entries
 
     "61bc6649"                         // time, Fri Jan  9 02:54:25 UTC 2009
     "00"                               // service flags, COMPACTSIZE(NODE_NONE)
