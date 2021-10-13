@@ -148,17 +148,14 @@ static std::optional<MnemonicSeed> DecryptMnemonicSeed(
 
     // Use seed's fingerprint as IV
     // TODO: Handle IV properly when we make encryption a supported feature
-    if(DecryptSecret(vMasterKey, vchCryptedSecret, seedFp, vchSecret)) {
+    if (DecryptSecret(vMasterKey, vchCryptedSecret, seedFp, vchSecret)) {
         CSecureDataStream ss(vchSecret, SER_NETWORK, PROTOCOL_VERSION);
         auto seed = MnemonicSeed::Read(ss);
         if (seed.Fingerprint() == seedFp) {
             return seed;
-        } else {
-            return std::nullopt;
         }
-    } else {
-        return std::nullopt;
     }
+    return std::nullopt;
 }
 
 static std::optional<HDSeed> DecryptLegacyHDSeed(
@@ -170,16 +167,13 @@ static std::optional<HDSeed> DecryptLegacyHDSeed(
 
     // Use seed's fingerprint as IV
     // TODO: Handle IV properly when we make encryption a supported feature
-    if(DecryptSecret(vMasterKey, vchCryptedSecret, seedFp, vchSecret)) {
+    if (DecryptSecret(vMasterKey, vchCryptedSecret, seedFp, vchSecret)) {
         auto seed = HDSeed(vchSecret);
         if (seed.Fingerprint() == seedFp) {
             return seed;
-        } else {
-            return std::nullopt;
         }
-    } else {
-        return std::nullopt;
     }
+    return std::nullopt;
 }
 
 static bool DecryptKey(const CKeyingMaterial& vMasterKey, const std::vector<unsigned char>& vchCryptedSecret, const CPubKey& vchPubKey, CKey& key)
@@ -265,8 +259,7 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
         if (!cryptedMnemonicSeed.first.IsNull()) {
             // Check that we can successfully decrypt the mnemonic seed, if present
             auto seed = DecryptMnemonicSeed(vMasterKeyIn, cryptedMnemonicSeed.second, cryptedMnemonicSeed.first);
-            if (!seed.has_value())
-            {
+            if (!seed.has_value()) {
                 keyFail = true;
             } else {
                 keyPass = true;
@@ -277,8 +270,7 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
             auto seed = DecryptLegacyHDSeed(vMasterKeyIn,
                                             cryptedLegacySeed.value().second,
                                             cryptedLegacySeed.value().first);
-            if (!seed.has_value())
-            {
+            if (!seed.has_value()) {
                 keyFail = true;
             } else {
                 keyPass = true;

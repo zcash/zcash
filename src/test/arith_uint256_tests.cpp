@@ -566,10 +566,10 @@ BOOST_AUTO_TEST_CASE( getmaxcoverage ) // some more tests just to get 100% cover
 
 BOOST_AUTO_TEST_CASE( blob88_increment )
 {
-    blob88 bzero(0);
-    blob88 bone(1);
-    BOOST_CHECK(bzero.increment());
-    BOOST_CHECK(bzero == bone);
+    blob88 b_zero(0);
+    blob88 b_one(1);
+    BOOST_CHECK(b_zero.increment());
+    BOOST_CHECK(b_zero == b_one);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
