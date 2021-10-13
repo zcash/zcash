@@ -78,6 +78,7 @@ BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
     fCheckBlockIndex = true;
     SelectParams(chainName);
     noui_connect();
+    TestSetIBD(false);
 }
 
 BasicTestingSetup::~BasicTestingSetup()

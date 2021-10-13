@@ -2239,16 +2239,23 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     }
 }
 
+static std::atomic<bool> IBDLatchToFalse{false};
+// testing-only, allow initial block down state to be set or reset
+bool TestSetIBD(bool ibd) {
+    bool ret = !IBDLatchToFalse;
+    IBDLatchToFalse.store(!ibd, std::memory_order_relaxed);
+    return ret;
+}
+
 bool IsInitialBlockDownload(const Consensus::Params& params)
 {
     // Once this function has returned false, it must remain false.
-    static std::atomic<bool> latchToFalse{false};
     // Optimization: pre-test latch before taking the lock.
-    if (latchToFalse.load(std::memory_order_relaxed))
+    if (IBDLatchToFalse.load(std::memory_order_relaxed))
         return false;
 
     LOCK(cs_main);
-    if (latchToFalse.load(std::memory_order_relaxed))
+    if (IBDLatchToFalse.load(std::memory_order_relaxed))
         return false;
     if (fImporting || fReindex)
         return true;
@@ -2310,7 +2317,7 @@ bool IsInitialBlockDownload(const Consensus::Params& params)
     if (chainActive.Tip()->GetBlockTime() < (GetTime() - nMaxTipAge))
         return true;
     LogPrintf("Leaving InitialBlockDownload (latching to false)\n");
-    latchToFalse.store(true, std::memory_order_relaxed);
+    IBDLatchToFalse.store(true, std::memory_order_relaxed);
     return false;
 }
 
