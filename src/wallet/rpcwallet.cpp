@@ -2034,10 +2034,13 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
     obj.pushKV("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK()));
     auto mnemonicChain = pwalletMain->GetMnemonicHDChain();
     if (mnemonicChain.has_value())
-         obj.pushKV("seedfp", mnemonicChain.value().GetSeedFingerprint().GetHex());
-    auto legacyChain = pwalletMain->GetLegacyHDChain();
-    if (legacyChain.has_value())
-         obj.pushKV("legacy_seedfp", legacyChain.value().GetSeedFingerprint().GetHex());
+         obj.pushKV("mnemonic_seedfp", mnemonicChain.value().GetSeedFingerprint().GetHex());
+    // TODO: do we really need to return the legacy seed fingerprint if we're
+    // no longer using it to generate any new keys? What do people actually use
+    // the fingerprint for?
+    auto legacySeed = pwalletMain->GetLegacyHDSeed();
+    if (legacySeed.has_value())
+        obj.pushKV("legacy_seedfp", legacySeed.value().Fingerprint().GetHex());
     return obj;
 }
 

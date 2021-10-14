@@ -16,13 +16,6 @@
 #include <vector>
 
 /**
- * The account identifier used for HD derivation of the transparent
- * p2pkh public key from which all child transparent addresses are
- * derived in accordance with ZIP-316.
- */
-const uint32_t ZCASH_LEGACY_TRANSPARENT_ACCOUNT = 0x7FFFFFFE;
-
-/**
  * secure_allocator is defined in allocators.h
  * CPrivKey is a serialized private key, with all parameters included
  * (PRIVATE_KEY_SIZE bytes)

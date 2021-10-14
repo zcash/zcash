@@ -121,7 +121,7 @@ libzcash::SproutPaymentAddress CWallet::GenerateNewSproutZKey()
 std::optional<SaplingPaymentAddress> CWallet::GenerateNewLegacySaplingZKey() {
     AssertLockHeld(cs_wallet);
 
-    auto seedOpt = GetLegacyHDSeed();
+    auto seedOpt = GetMnemonicSeed();
     if (seedOpt.has_value()) {
         auto seed = seedOpt.value();
         if (!legacyHDChain.has_value()) {
@@ -129,21 +129,21 @@ std::optional<SaplingPaymentAddress> CWallet::GenerateNewLegacySaplingZKey() {
         }
         CHDChain& hdChain = legacyHDChain.value();
 
-        // loop until we find an unused account id
+        // loop until we find an unused address index
         while (true) {
-            auto xsk = libzcash::SaplingExtendedSpendingKey::ForAccount(
+            auto xsk = libzcash::SaplingExtendedSpendingKey::Legacy(
                     seed,
                     BIP44CoinType(),
-                    hdChain.GetAccountCounter());
-            // advance the account counter so that the next time we need to generate
+                    hdChain.GetLegacySaplingKeyCounter());
+            // advance the address index counter so that the next time we need to generate
             // a key we're pointing at a free index.
-            hdChain.IncrementAccountCounter();
+            hdChain.IncrementLegacySaplingKeyCounter();
             if (HaveSaplingSpendingKey(xsk.first.ToXFVK())) {
-                // try the next account ID
+                // try the next index
                 continue;
             } else {
                 // Update the persisted chain information
-                if (fFileBacked && !CWalletDB(strWalletFile).WriteLegacyHDChain(hdChain)) {
+                if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
                     throw std::runtime_error("CWallet::GenerateNewLegacySaplingZKey(): Writing HD chain model failed");
                 }
 
@@ -252,12 +252,12 @@ std::optional<CPubKey> CWallet::GenerateNewKey()
     CHDChain& hdChain = mnemonicHDChain.value();
     if (seedOpt.has_value()) {
         // All mnemonic seeds are checked at construction to ensure that we can obtain
-        // a valid spending key for the account ZCASH_LEGACY_TRANSPARENT_ACCOUNT;
+        // a valid spending key for the account ZCASH_LEGACY_ACCOUNT;
         // therefore, the `value()` call here is safe.
         BIP32AccountChains accountChains = BIP32AccountChains::ForAccount(
                 seedOpt.value(),
                 BIP44CoinType(),
-                ZCASH_LEGACY_TRANSPARENT_ACCOUNT).value();
+                ZCASH_LEGACY_ACCOUNT).value();
 
         while (true) {
             auto extKey = accountChains.DeriveExternal(hdChain.GetLegacyTKeyCounter());
@@ -272,7 +272,7 @@ std::optional<CPubKey> CWallet::GenerateNewKey()
                 // Create new metadata
                 const CKeyMetadata& keyMeta = extKey.value().second;
                 mapKeyMetadata[pubkey.GetID()] = keyMeta;
-                if (!nTimeFirstKey || keyMeta.nCreateTime < nTimeFirstKey)
+                if (nTimeFirstKey == 0 || keyMeta.nCreateTime < nTimeFirstKey)
                     nTimeFirstKey = keyMeta.nCreateTime;
 
                 if (!AddKeyPubKey(secret, pubkey))
@@ -2354,16 +2354,6 @@ void CWallet::SetMnemonicHDChain(const CHDChain& chain, bool memonly)
         throw std::runtime_error(std::string(__func__) + ": writing chain failed");
 
     mnemonicHDChain = chain;
-}
-
-// TODO: make private
-void CWallet::SetLegacyHDChain(const CHDChain& chain, bool memonly)
-{
-    LOCK(cs_wallet);
-    if (!memonly && fFileBacked && !CWalletDB(strWalletFile).WriteLegacyHDChain(chain))
-        throw std::runtime_error(std::string(__func__) + ": writing chain failed");
-
-    legacyHDChain = chain;
 }
 
 bool CWallet::CheckNetworkInfo(std::pair<std::string, std::string> readNetworkInfo)
@@ -4864,6 +4854,7 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
         walletInstance->SetMaxVersion(nMaxVersion);
     }
 
+    // TODO: should this go in `LoadWallet` instead?
     if (!walletInstance->HaveMnemonicSeed())
     {
         // We can't set the new HD seed until the wallet is decrypted.

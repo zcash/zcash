@@ -50,6 +50,7 @@ private:
     int64_t nCreateTime; // 0 means unknown
     uint32_t accountCounter;
     uint32_t legacyTKeyCounter;
+    uint32_t legacySaplingKeyCounter;
 
     CHDChain() { SetNull(); }
 
@@ -60,12 +61,13 @@ private:
         nCreateTime = 0;
         accountCounter = 0;
         legacyTKeyCounter = 0;
+        legacySaplingKeyCounter = 0;
     }
 public:
     static const int VERSION_HD_BASE = 1;
     static const int CURRENT_VERSION = VERSION_HD_BASE;
 
-    CHDChain(uint256 seedFpIn, int64_t nCreateTimeIn): nVersion(CHDChain::CURRENT_VERSION), seedFp(seedFpIn), nCreateTime(nCreateTimeIn), accountCounter(0), legacyTKeyCounter(0) {}
+    CHDChain(uint256 seedFpIn, int64_t nCreateTimeIn): nVersion(CHDChain::CURRENT_VERSION), seedFp(seedFpIn), nCreateTime(nCreateTimeIn), accountCounter(0), legacyTKeyCounter(0), legacySaplingKeyCounter(0) {}
 
     ADD_SERIALIZE_METHODS;
 
@@ -77,6 +79,7 @@ public:
         READWRITE(nCreateTime);
         READWRITE(accountCounter);
         READWRITE(legacyTKeyCounter);
+        READWRITE(legacySaplingKeyCounter);
     }
 
     template <typename Stream>
@@ -104,6 +107,14 @@ public:
 
     void IncrementLegacyTKeyCounter() {
         legacyTKeyCounter += 1;
+    }
+
+    uint32_t GetLegacySaplingKeyCounter() const {
+        return legacySaplingKeyCounter;
+    }
+
+    void IncrementLegacySaplingKeyCounter() {
+        legacySaplingKeyCounter += 1;
     }
 };
 
@@ -163,11 +174,6 @@ public:
     bool WriteMnemonicSeed(const MnemonicSeed& seed);
     bool WriteCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char>& vchCryptedSecret);
     bool WriteMnemonicHDChain(const CHDChain& chain);
-
-    //! Write the legacy hdchain metadata to the database
-    //!
-    //! TODO: remove when generation of new legacy-seed-based keys has been disabled.
-    bool WriteLegacyHDChain(const CHDChain& chain);
 
     /// Write spending key to wallet database, where key is payment address and value is spending key.
     bool WriteZKey(const libzcash::SproutPaymentAddress& addr, const libzcash::SproutSpendingKey& key, const CKeyMetadata &keyMeta);

@@ -614,7 +614,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
     if (hdSeed.has_value()) {
         auto mSeed = hdSeed.value();
         file << strprintf(
-                "# Recovery Phrase=\"%s\" \n# language=%s \n# fingerprint=%s\n",
+                "# Emergency Recovery Phrase=\"%s\" \n# language=%s \n# fingerprint=%s\n",
                 mSeed.GetMnemonic(),
                 MnemonicSeed::LanguageName(mSeed.GetLanguage()),
                 mSeed.Fingerprint().GetHex()

@@ -35,10 +35,10 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     // Load the all-zeroes seed
     std::string mnemonic("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art");
     MnemonicSeed seed(English, mnemonic);
-    // The legacy seed used to be automatically derived from randomness; since 
-    // non-mnemonic random generation has been removed we just use the 
+    // The legacy seed used to be automatically derived from randomness; since
+    // non-mnemonic random generation has been removed we just use the
     // all-zeros mnemonic for these tests.
-    wallet.LoadLegacyHDSeed(seed);
+    wallet.LoadMnemonicSeed(seed);
 
     // Now this call succeeds
     legacyKey = wallet.GenerateNewLegacySaplingZKey();
@@ -438,7 +438,7 @@ TEST(WalletZkeysTest, WriteCryptedSaplingZkeyDirectToDb) {
     // Load the all-zeroes seed as the legacy seed
     std::string mnemonic("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art");
     MnemonicSeed seed(English, mnemonic);
-    wallet.LoadLegacyHDSeed(seed);
+    wallet.LoadMnemonicSeed(seed);
 
     // wallet should be empty
     std::set<libzcash::SaplingPaymentAddress> addrs;

@@ -1320,10 +1320,6 @@ public:
     void SetMnemonicHDChain(const CHDChain& chain, bool memonly);
     const std::optional<CHDChain>& GetMnemonicHDChain() const { return mnemonicHDChain; }
 
-    /* Set the metadata for the legacy HD seed (chain child index counters) */
-    void SetLegacyHDChain(const CHDChain& chain, bool memonly);
-    const std::optional<CHDChain> GetLegacyHDChain() const { return legacyHDChain; }
-
     bool CheckNetworkInfo(std::pair<std::string, std::string> networkInfo);
     uint32_t BIP44CoinType();
 

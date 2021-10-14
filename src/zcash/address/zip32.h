@@ -21,6 +21,14 @@ const uint32_t ZIP32_HARDENED_KEY_LIMIT = 0x80000000;
 const size_t ZIP32_XFVK_SIZE = 169;
 const size_t ZIP32_XSK_SIZE = 169;
 
+/**
+ * The account identifier used for HD derivation of
+ * transparent and Sapling addresses via the legacy
+ * `getnewaddress` and `z_getnewaddress` code paths,
+ */
+const uint32_t ZCASH_LEGACY_ACCOUNT = 0x7FFFFFFE;
+
+
 class CWalletDB;
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char>> RawHDSeed;
@@ -275,6 +283,8 @@ struct SaplingExtendedSpendingKey {
 
     static SaplingExtendedSpendingKey Master(const HDSeed& seed);
     static std::pair<SaplingExtendedSpendingKey, CKeyMetadata> ForAccount(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId);
+    static std::pair<SaplingExtendedSpendingKey, CKeyMetadata> Legacy(const HDSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex);
+
 
     SaplingExtendedSpendingKey Derive(uint32_t i) const;
 

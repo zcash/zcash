@@ -33,9 +33,13 @@ MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, siz
         MnemonicSeed seed(language, mnemonic);
 
         // Verify that the seed data is valid entropy for unified spending keys at
-        // account 0 and at both the public & private chain levels for account 0x7FFFFFFE
+        // account 0 and at both the public & private chain levels for account 0x7FFFFFFE.
+        // It is not necessary to check for a valid diversified Sapling address at
+        // account 0x7FFFFFFE because derivation via the legacy path can simply search
+        // for a valid diversifier; unlike in the unified spending key case, diversifier
+        // indices don't need to line up with anything.
         if (libzcash::UnifiedSpendingKey::ForAccount(seed, bip44CoinType, 0).has_value() &&
-            libzcash::BIP32AccountChains::ForAccount(seed, bip44CoinType, ZCASH_LEGACY_TRANSPARENT_ACCOUNT).has_value())  {
+            libzcash::BIP32AccountChains::ForAccount(seed, bip44CoinType, ZCASH_LEGACY_ACCOUNT).has_value())  {
             return seed;
         }
     }
@@ -266,6 +270,34 @@ std::pair<SaplingExtendedSpendingKey, CKeyMetadata> SaplingExtendedSpendingKey::
     keyMeta.seedFp = seed.Fingerprint();
 
     return std::make_pair(xsk, keyMeta);
+}
+
+std::pair<SaplingExtendedSpendingKey, CKeyMetadata> SaplingExtendedSpendingKey::Legacy(const HDSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex) {
+    auto m = Master(seed);
+
+    // We use a fixed keypath scheme of m/32'/coin_type'/account'/addressIndex'
+
+    // Derive m/32'
+    auto m_32h = m.Derive(32 | ZIP32_HARDENED_KEY_LIMIT);
+    // Derive m/32'/coin_type'
+    auto m_32h_cth = m_32h.Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
+
+    // Derive account key at the legacy account index
+    auto m_32h_cth_l = m_32h_cth.Derive(ZCASH_LEGACY_ACCOUNT | ZIP32_HARDENED_KEY_LIMIT);
+
+    // Derive key at the specified address index (non-hardened)
+    auto xsk = m_32h_cth_l.Derive(addressIndex);
+
+    // Create new metadata
+    int64_t nCreationTime = GetTime();
+    CKeyMetadata metadata(nCreationTime);
+    metadata.hdKeypath = "m/32'/"
+        + std::to_string(bip44CoinType) + "'/"
+        + std::to_string(ZCASH_LEGACY_ACCOUNT) + "'/"
+        + std::to_string(addressIndex);
+    metadata.seedFp = seed.Fingerprint();
+
+    return std::make_pair(xsk, metadata);
 }
 
 SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const

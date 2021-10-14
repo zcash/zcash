@@ -11,8 +11,10 @@ WalletTestingSetup::WalletTestingSetup(): TestingSetup()
     bool fFirstRun;
     pwalletMain = new CWallet(Params(), "wallet_test.dat");
     pwalletMain->LoadWallet(fFirstRun);
-    RegisterValidationInterface(pwalletMain);
+    if (!pwalletMain->HaveMnemonicSeed())
+        pwalletMain->GenerateNewSeed();
 
+    RegisterValidationInterface(pwalletMain);
     RegisterWalletRPCCommands(tableRPC);
 }
 
