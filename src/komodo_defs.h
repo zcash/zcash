@@ -19,6 +19,9 @@
 #include "chain.h"
 #include "komodo_nk.h"
 
+#define NUM_KMD_SEASONS 6
+#define NUM_KMD_NOTARIES 64
+
 #define KOMODO_EARLYTXID_HEIGHT 100
 //#define ADAPTIVEPOW_CHANGETO_DEFAULTON 1572480000
 #define ASSETCHAINS_MINHEIGHT 128
