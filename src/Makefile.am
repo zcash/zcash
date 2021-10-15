@@ -1,5 +1,5 @@
 DIST_SUBDIRS = secp256k1 univalue cryptoconditions
-
+SUBDIRS = cryptoconditions
 AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS) $(SAN_LDFLAGS) $(HARDENED_LDFLAGS)
 AM_CXXFLAGS = $(SAN_CXXFLAGS) $(HARDENED_CXXFLAGS) $(ERROR_CXXFLAGS)
 AM_CPPFLAGS = $(HARDENED_CPPFLAGS)
@@ -77,15 +77,6 @@ libsnark-tests: $(wildcard snark/src/*)
 
 $(LIBUNIVALUE): $(wildcard univalue/lib/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F) OPTFLAGS="-O2 -march=x86-64 -g "
-
-$(LIBCRYPTOCONDITIONS): $(wildcard cryptoconditions/src/*) $(wildcard cryptoconditions/include/*)
-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F) OPTFLAGS="-O2 -march=x86-64 -g "
-
-#%.o: %.c
-#	$(CC) -c -o $@ $<
-
-#$(LIBCJSON): cJSON.o komodo_cJSON.o komodo_cutils.o
-#	$(AR) cr $(LIBCJSON) $^
 
 # libcjson build
 LIBCJSON=libcjson.a
