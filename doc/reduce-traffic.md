@@ -46,8 +46,8 @@ Be reminded of the effects of this setting.
 
 - Fee estimation will no longer work.
 - It sets the flag "-walletbroadcast" to be "0", only if it is currently unset.
-  Doing so disables the automatic broadcasting of transactions from wallet. Not
-  relaying other's transactions could hurt your privacy if used while a wallet
+  Doing so disables the automatic broadcasting of transactions from the wallet. Not
+  relaying other's transactions could hurt your privacy if used while the wallet
   is loaded or if you use the node to broadcast transactions.
 - If a peer is whitelisted and "-whitelistforcerelay" is set to "1" (which will
   also set "whitelistrelay" to "1"), we will still receive and relay their transactions.
