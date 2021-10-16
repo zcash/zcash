@@ -2295,17 +2295,11 @@ void CWallet::SetHDChain(const CHDChain& chain, bool memonly)
     hdChain = chain;
 }
 
-void CWallet::CheckNetworkInfo(std::pair<std::string, std::string> readNetworkInfo)
+bool CWallet::CheckNetworkInfo(std::pair<std::string, std::string> readNetworkInfo)
 {
     LOCK(cs_wallet);
     std::pair<string, string> networkInfo(PACKAGE_NAME, networkIdString);
-    if (readNetworkInfo != networkInfo)
-        throw std::runtime_error(
-                strprintf("%s: this wallet is for a different network (%s, %s) than the node is configured for (%s, %s)",
-                          std::string(__func__),
-                          readNetworkInfo.first, readNetworkInfo.second,
-                          networkInfo.first, networkInfo.second)
-        );
+    return readNetworkInfo == networkInfo;
 }
 
 uint32_t CWallet::BIP44CoinType() {
@@ -4760,6 +4754,10 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
         else if (nLoadWalletRet == DB_NEED_REWRITE)
         {
             return UIError(strprintf(_("Wallet needed to be rewritten: restart %s to complete"), _(PACKAGE_NAME)));
+        }
+        else if (nLoadWalletRet == DB_WRONG_NETWORK)
+        {
+            return UIError(strprintf(_("Wallet %s is not for %s %s network"), walletFile, _(PACKAGE_NAME), params.NetworkIDString()));
         }
         else
             return UIError(strprintf(_("Error loading %s"), walletFile));

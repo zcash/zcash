@@ -1296,7 +1296,7 @@ public:
     void SetHDChain(const CHDChain& chain, bool memonly);
     const CHDChain& GetHDChain() const { return hdChain; }
 
-    void CheckNetworkInfo(std::pair<std::string, std::string> networkInfo);
+    bool CheckNetworkInfo(std::pair<std::string, std::string> networkInfo);
     uint32_t BIP44CoinType();
 
     /* Set the current HD seed, without saving it to disk (used by LoadWallet) */
