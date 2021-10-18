@@ -305,6 +305,11 @@ public:
     bool fWhitelisted; // This peer can bypass DoS banning.
     bool fOneShot;
     bool fClient;
+    /**
+     * Whether the peer has signaled support for receiving ADDRv2 (BIP155)
+     * messages, implying a preference to receive ADDRv2 instead of ADDR ones.
+     */
+    std::atomic_bool m_wants_addrv2{false};
     bool fInbound;
     bool fNetworkNode;
     std::atomic_bool fSuccessfullyConnected;
