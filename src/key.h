@@ -68,7 +68,17 @@ public:
         keydata.resize(32);
     }
 
-    static std::optional<CKey> FromEntropy(std::vector<unsigned char, secure_allocator<unsigned char>> keydata);
+    /**
+     * Construct a random key. This is used only for internal sanity checks;
+     * all keys that actually control live funds should be derived from the
+     * wallet's mnemonic seed.
+     */
+    static CKey TestOnlyRandomKey(bool fCompressedIn);
+
+    static std::optional<CKey> FromEntropy(std::vector<unsigned char, secure_allocator<unsigned char>> keydata, bool fComporessedIn);
+
+    /** Check that required EC support is available at runtime. */
+    static bool ECC_InitSanityCheck();
 
     friend bool operator==(const CKey& a, const CKey& b)
     {
@@ -105,9 +115,6 @@ public:
 
     //! Initialize from a CPrivKey (serialized OpenSSL-format private key data).
     bool SetPrivKey(const CPrivKey& vchPrivKey, bool fCompressed);
-
-    //! Generate a new private key using a cryptographic PRNG.
-    void MakeNewKey(bool fCompressed);
 
     /**
      * Convert the private key to a CPrivKey (serialized OpenSSL-format private key data).
@@ -199,7 +206,5 @@ void ECC_Start(void);
 /** Deinitialize the elliptic curve support. No-op if ECC_Start wasn't called first. */
 void ECC_Stop(void);
 
-/** Check that required EC support is available at runtime. */
-bool ECC_InitSanityCheck(void);
 
 #endif // BITCOIN_KEY_H

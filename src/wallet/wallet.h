@@ -993,7 +993,7 @@ public:
      * keystore implementation
      * Generate a new key
      */
-    CPubKey GenerateNewKey();
+    std::optional<CPubKey> GenerateNewKey();
     //! Adds a key to the store, and saves it to disk.
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
     //! Adds a key to the store, without saving it to disk (used by LoadWallet)
@@ -1161,7 +1161,7 @@ public:
     void ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool);
     void KeepKey(int64_t nIndex);
     void ReturnKey(int64_t nIndex);
-    bool GetKeyFromPool(CPubKey &key);
+    std::optional<CPubKey> GetKeyFromPool();
     int64_t GetOldestKeyPoolTime();
     void GetAllReserveKeys(std::set<CKeyID>& setAddress) const;
 
@@ -1318,7 +1318,7 @@ public:
 
     /* Set the metadata for the mnemonic HD seed (chain child index counters) */
     void SetMnemonicHDChain(const CHDChain& chain, bool memonly);
-    const std::optional<CHDChain> GetMnemonicHDChain() const { return mnemonicHDChain; }
+    const std::optional<CHDChain>& GetMnemonicHDChain() const { return mnemonicHDChain; }
 
     /* Set the metadata for the legacy HD seed (chain child index counters) */
     void SetLegacyHDChain(const CHDChain& chain, bool memonly);

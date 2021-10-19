@@ -351,7 +351,10 @@ private:
 
     UnifiedSpendingKey() {}
 public:
-    static std::optional<std::pair<UnifiedSpendingKey, CKeyMetadata>> Derive(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId);
+    static std::optional<std::pair<UnifiedSpendingKey, CKeyMetadata>> ForAccount(
+            const HDSeed& seed,
+            uint32_t bip44CoinType,
+            uint32_t accountId);
 
     const std::optional<CExtKey>& GetTransparentKey() const {
         return transparentKey;
@@ -366,7 +369,30 @@ public:
 
 std::optional<unsigned long> ParseZip32KeypathAccount(const std::string& keyPath);
 
-std::optional<CExtKey> DeriveZip32TransparentSpendingKey(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId);
+std::optional<std::pair<CExtKey, CKeyMetadata>> DeriveZip32TransparentMasterKey(
+        const HDSeed& seed,
+        uint32_t bip44CoinType,
+        uint32_t accountId);
+
+class BIP32AccountChains {
+private:
+    uint256 seedFp;
+    uint32_t accountId;
+    uint32_t bip44CoinType;
+    CExtKey external;
+    CExtKey internal;
+
+    BIP32AccountChains(uint256 seedFpIn, uint32_t bip44CoinTypeIn, uint32_t accountIdIn, CExtKey externalIn, CExtKey internalIn):
+        seedFp(seedFpIn), accountId(accountIdIn), bip44CoinType(bip44CoinTypeIn), external(externalIn), internal(internalIn) {}
+public:
+    static std::optional<BIP32AccountChains> ForAccount(
+            const HDSeed& seed,
+            uint32_t bip44CoinType,
+            uint32_t accountId);
+
+    std::optional<std::pair<CExtKey, CKeyMetadata>> DeriveExternal(uint32_t addrIndex);
+    std::optional<std::pair<CExtKey, CKeyMetadata>> DeriveInternal(uint32_t addrIndex);
+};
 
 }
 

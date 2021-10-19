@@ -167,10 +167,10 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
         pwalletMain->TopUpKeyPool();
 
     // Generate a new key that is added to wallet
-    CPubKey newKey;
-    if (!pwalletMain->GetKeyFromPool(newKey))
+    std::optional<CPubKey> newKey = pwalletMain->GetKeyFromPool();
+    if (!newKey.has_value())
         throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
-    CKeyID keyID = newKey.GetID();
+    CKeyID keyID = newKey.value().GetID();
 
     std::string dummy_account;
     pwalletMain->SetAddressBook(keyID, dummy_account, "receive");

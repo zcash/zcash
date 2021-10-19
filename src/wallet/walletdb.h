@@ -49,6 +49,7 @@ private:
     uint256 seedFp;
     int64_t nCreateTime; // 0 means unknown
     uint32_t accountCounter;
+    uint32_t legacyTKeyCounter;
 
     CHDChain() { SetNull(); }
 
@@ -58,12 +59,13 @@ private:
         seedFp.SetNull();
         nCreateTime = 0;
         accountCounter = 0;
+        legacyTKeyCounter = 0;
     }
 public:
     static const int VERSION_HD_BASE = 1;
     static const int CURRENT_VERSION = VERSION_HD_BASE;
 
-    CHDChain(uint256 seedFpIn, int64_t nCreateTimeIn): nVersion(CHDChain::CURRENT_VERSION), seedFp(seedFpIn), nCreateTime(nCreateTimeIn), accountCounter(0) {}
+    CHDChain(uint256 seedFpIn, int64_t nCreateTimeIn): nVersion(CHDChain::CURRENT_VERSION), seedFp(seedFpIn), nCreateTime(nCreateTimeIn), accountCounter(0), legacyTKeyCounter(0) {}
 
     ADD_SERIALIZE_METHODS;
 
@@ -74,6 +76,7 @@ public:
         READWRITE(seedFp);
         READWRITE(nCreateTime);
         READWRITE(accountCounter);
+        READWRITE(legacyTKeyCounter);
     }
 
     template <typename Stream>
@@ -91,8 +94,16 @@ public:
         return accountCounter;
     }
 
-    uint32_t IncrementAccountCounter() {
-        return ++accountCounter;
+    void IncrementAccountCounter() {
+        accountCounter += 1;
+    }
+
+    uint32_t GetLegacyTKeyCounter() {
+        return legacyTKeyCounter;
+    }
+
+    void IncrementLegacyTKeyCounter() {
+        legacyTKeyCounter += 1;
     }
 };
 

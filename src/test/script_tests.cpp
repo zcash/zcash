@@ -701,10 +701,9 @@ BOOST_DATA_TEST_CASE(script_CHECKMULTISIG12, boost::unit_test::data::xrange(stat
     uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
 
     ScriptError err;
-    CKey key1, key2, key3;
-    key1.MakeNewKey(true);
-    key2.MakeNewKey(false);
-    key3.MakeNewKey(true);
+    CKey key1 = CKey::TestOnlyRandomKey(true);
+    CKey key2 = CKey::TestOnlyRandomKey(false);
+    CKey key3 = CKey::TestOnlyRandomKey(true);
 
     CScript scriptPubKey12;
     scriptPubKey12 << OP_1 << ToByteVector(key1.GetPubKey()) << ToByteVector(key2.GetPubKey()) << OP_2 << OP_CHECKMULTISIG;
@@ -734,11 +733,10 @@ BOOST_DATA_TEST_CASE(script_CHECKMULTISIG23, boost::unit_test::data::xrange(stat
     uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
 
     ScriptError err;
-    CKey key1, key2, key3, key4;
-    key1.MakeNewKey(true);
-    key2.MakeNewKey(false);
-    key3.MakeNewKey(true);
-    key4.MakeNewKey(false);
+    CKey key1 = CKey::TestOnlyRandomKey(true);
+    CKey key2 = CKey::TestOnlyRandomKey(false);
+    CKey key3 = CKey::TestOnlyRandomKey(true);
+    CKey key4 = CKey::TestOnlyRandomKey(false);
 
     CScript scriptPubKey23;
     scriptPubKey23 << OP_2 << ToByteVector(key1.GetPubKey()) << ToByteVector(key2.GetPubKey()) << ToByteVector(key3.GetPubKey()) << OP_3 << OP_CHECKMULTISIG;
@@ -812,8 +810,7 @@ BOOST_DATA_TEST_CASE(script_combineSigs, boost::unit_test::data::xrange(static_c
     vector<CPubKey> pubkeys;
     for (int i = 0; i < 3; i++)
     {
-        CKey key;
-        key.MakeNewKey(i%2 == 1);
+        CKey key = CKey::TestOnlyRandomKey(i%2 == 1);
         keys.push_back(key);
         pubkeys.push_back(key.GetPubKey());
         keystore.AddKey(key);

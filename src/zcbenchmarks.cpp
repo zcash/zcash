@@ -212,8 +212,7 @@ double benchmark_verify_equihash()
 double benchmark_large_tx(size_t nInputs)
 {
     // Create priv/pub key
-    CKey priv;
-    priv.MakeNewKey(false);
+    CKey priv = CKey::TestOnlyRandomKey(true);
     auto pub = priv.GetPubKey();
     CBasicKeyStore tempKeystore;
     tempKeystore.AddKey(priv);

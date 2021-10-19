@@ -24,7 +24,7 @@ const libzcash::diversifier_index_t MAX_TRANSPARENT_CHILD_IDX(0x40000000);
 MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, size_t entropyLen)
 {
     assert(entropyLen >= 32);
-    while (true) {
+    while (true) { // loop until we find usable entropy
         std::vector<unsigned char> entropy(entropyLen, 0);
         GetRandBytes(entropy.data(), entropyLen);
         const char* phrase = zip339_entropy_to_phrase(language, entropy.data(), entropyLen);
@@ -33,9 +33,9 @@ MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, siz
         MnemonicSeed seed(language, mnemonic);
 
         // Verify that the seed data is valid entropy for unified spending keys at
-        // account 0 and account 0x7FFFFFFE
-        if (libzcash::UnifiedSpendingKey::Derive(seed, bip44CoinType, 0).has_value() &&
-            libzcash::DeriveZip32TransparentSpendingKey(seed, bip44CoinType, ZCASH_LEGACY_TRANSPARENT_ACCOUNT).has_value())  {
+        // account 0 and at both the public & private chain levels for account 0x7FFFFFFE
+        if (libzcash::UnifiedSpendingKey::ForAccount(seed, bip44CoinType, 0).has_value() &&
+            libzcash::BIP32AccountChains::ForAccount(seed, bip44CoinType, ZCASH_LEGACY_TRANSPARENT_ACCOUNT).has_value())  {
             return seed;
         }
     }
@@ -67,6 +67,87 @@ uint256 ovkForShieldingFromTaddr(HDSeed& seed) {
 }
 
 namespace libzcash {
+
+//
+// Transparent
+//
+
+std::optional<std::pair<CExtKey, CKeyMetadata>> DeriveZip32TransparentAccountKey(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
+    auto rawSeed = seed.RawSeed();
+    auto m = CExtKey::Master(rawSeed.data(), rawSeed.size());
+
+    // We use a fixed keypath scheme of m/32'/coin_type'/account'
+    // Derive m/32'
+    auto m_32h = m.Derive(32 | ZIP32_HARDENED_KEY_LIMIT);
+    if (!m_32h.has_value()) return std::nullopt;
+
+    // Derive m/32'/coin_type'
+    auto m_32h_cth = m_32h.value().Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
+    if (!m_32h_cth.has_value()) return std::nullopt;
+
+    // Derive m/32'/coin_type'/account_id'
+    auto result = m_32h_cth.value().Derive(accountId | ZIP32_HARDENED_KEY_LIMIT);
+    if (!result.has_value()) return std::nullopt;
+
+    int64_t nCreationTime = GetTime();
+    auto keyMeta = CKeyMetadata(nCreationTime);
+    keyMeta.hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
+    keyMeta.seedFp = seed.Fingerprint();
+
+    return std::make_pair(result.value(), keyMeta);
+}
+
+std::optional<BIP32AccountChains> BIP32AccountChains::ForAccount(
+        const HDSeed& seed,
+        uint32_t bip44CoinType,
+        uint32_t accountId) {
+    auto accountKeyOpt = DeriveZip32TransparentAccountKey(seed, bip44CoinType, accountId);
+    if (!accountKeyOpt.has_value()) return std::nullopt;
+
+    auto accountKey = accountKeyOpt.value();
+    auto external = accountKey.first.Derive(0);
+    auto internal = accountKey.first.Derive(1);
+
+    if (!(external.has_value() && internal.has_value())) return std::nullopt;
+
+    return BIP32AccountChains(seed.Fingerprint(), bip44CoinType, accountId, external.value(), internal.value());
+}
+
+std::optional<std::pair<CExtKey, CKeyMetadata>> BIP32AccountChains::DeriveExternal(uint32_t addrIndex) {
+    auto childKey = external.Derive(addrIndex);
+    if (!childKey.has_value()) return std::nullopt;
+
+    int64_t nCreationTime = GetTime();
+    auto keyMeta = CKeyMetadata(nCreationTime);
+    keyMeta.hdKeypath = "m/32'/"
+        + std::to_string(bip44CoinType) + "'/"
+        + std::to_string(accountId) + "'/"
+        + "0/"
+        + std::to_string(addrIndex);
+    keyMeta.seedFp = seedFp;
+
+    return std::make_pair(childKey.value(), keyMeta);
+}
+
+std::optional<std::pair<CExtKey, CKeyMetadata>> BIP32AccountChains::DeriveInternal(uint32_t addrIndex) {
+    auto childKey = internal.Derive(addrIndex);
+    if (!childKey.has_value()) return std::nullopt;
+
+    int64_t nCreationTime = GetTime();
+    auto keyMeta = CKeyMetadata(nCreationTime);
+    keyMeta.hdKeypath = "m/32'/"
+        + std::to_string(bip44CoinType) + "'/"
+        + std::to_string(accountId) + "'/"
+        + "1/"
+        + std::to_string(addrIndex);
+    keyMeta.seedFp = seedFp;
+
+    return std::make_pair(childKey.value(), keyMeta);
+}
+
+//
+// Sapling
+//
 
 std::optional<SaplingExtendedFullViewingKey> SaplingExtendedFullViewingKey::Derive(uint32_t i) const
 {
@@ -180,11 +261,11 @@ std::pair<SaplingExtendedSpendingKey, CKeyMetadata> SaplingExtendedSpendingKey::
 
     // Create new metadata
     int64_t nCreationTime = GetTime();
-    CKeyMetadata metadata(nCreationTime);
-    metadata.hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
-    metadata.seedFp = seed.Fingerprint();
+    CKeyMetadata keyMeta(nCreationTime);
+    keyMeta.hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
+    keyMeta.seedFp = seed.Fingerprint();
 
-    return std::make_pair(xsk, metadata);
+    return std::make_pair(xsk, keyMeta);
 }
 
 SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
@@ -199,30 +280,17 @@ SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
     return ret;
 }
 
-std::optional<CExtKey> DeriveZip32TransparentSpendingKey(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
-    auto rawSeed = seed.RawSeed();
-    auto m = CExtKey::Master(rawSeed.data(), rawSeed.size());
+//
+// Unified
+//
 
-    // We use a fixed keypath scheme of m/32'/coin_type'/account'
-    // Derive m/32'
-    auto m_32h = m.Derive(32 | ZIP32_HARDENED_KEY_LIMIT);
-    if (!m_32h.has_value()) return std::nullopt;
-
-    // Derive m/32'/coin_type'
-    auto m_32h_cth = m_32h.value().Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
-    if (!m_32h_cth.has_value()) return std::nullopt;
-
-    // Derive m/32'/coin_type'/account_id'
-    return m_32h_cth.value().Derive(accountId | ZIP32_HARDENED_KEY_LIMIT);
-}
-
-std::optional<std::pair<UnifiedSpendingKey, CKeyMetadata>> UnifiedSpendingKey::Derive(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
+std::optional<std::pair<UnifiedSpendingKey, CKeyMetadata>> UnifiedSpendingKey::ForAccount(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
     UnifiedSpendingKey usk;
     usk.accountId = accountId;
 
-    auto transparentKey = DeriveZip32TransparentSpendingKey(seed, bip44CoinType, accountId);
+    auto transparentKey = DeriveZip32TransparentAccountKey(seed, bip44CoinType, accountId);
     if (!transparentKey.has_value()) return std::nullopt;
-    usk.transparentKey = transparentKey.value();
+    usk.transparentKey = transparentKey.value().first;
 
     auto saplingKey = SaplingExtendedSpendingKey::ForAccount(seed, bip44CoinType, accountId);
     usk.saplingKey = saplingKey.first;
@@ -248,7 +316,9 @@ std::optional<ZcashdUnifiedAddress> UnifiedFullViewingKey::Address(diversifier_i
     ZcashdUnifiedAddress ua;
 
     if (transparentKey.has_value()) {
+        // ensure that the diversifier index is small enough for a t-addr
         if (MAX_TRANSPARENT_CHILD_IDX.less_than_le(j)) return std::nullopt;
+
         CExtPubKey changeKey;
         if (!transparentKey.value().Derive(changeKey, 0)) {
             return std::nullopt;

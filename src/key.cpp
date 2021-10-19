@@ -156,12 +156,14 @@ bool CKey::Check(const unsigned char *vch) {
     return secp256k1_ec_seckey_verify(secp256k1_context_sign, vch);
 }
 
-void CKey::MakeNewKey(bool fCompressedIn) {
+CKey CKey::TestOnlyRandomKey(bool fCompressedIn) {
+    CKey key;
     do {
-        GetRandBytes(keydata.data(), keydata.size());
-    } while (!Check(keydata.data()));
-    fValid = true;
-    fCompressed = fCompressedIn;
+        GetRandBytes(key.keydata.data(), key.keydata.size());
+    } while (!Check(key.keydata.data()));
+    key.fValid = true;
+    key.fCompressed = fCompressedIn;
+    return key;
 }
 
 bool CKey::SetPrivKey(const CPrivKey &privkey, bool fCompressedIn) {
@@ -330,9 +332,8 @@ void CExtKey::Decode(const unsigned char code[BIP32_EXTKEY_SIZE]) {
     key.Set(code+42, code+BIP32_EXTKEY_SIZE, true);
 }
 
-bool ECC_InitSanityCheck() {
-    CKey key;
-    key.MakeNewKey(true);
+bool CKey::ECC_InitSanityCheck() {
+    CKey key = CKey::TestOnlyRandomKey(true);
     CPubKey pubkey = key.GetPubKey();
     return key.VerifyPubKey(pubkey);
 }

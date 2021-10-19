@@ -245,30 +245,50 @@ bool CWallet::AddSproutZKey(const libzcash::SproutSpendingKey &key)
     return true;
 }
 
-CPubKey CWallet::GenerateNewKey()
+std::optional<CPubKey> CWallet::GenerateNewKey()
 {
     AssertLockHeld(cs_wallet); // mapKeyMetadata
-    bool fCompressed = CanSupportFeature(FEATURE_COMPRPUBKEY); // default to compressed public keys if we want 0.6.0 wallets
+    auto seedOpt = GetMnemonicSeed();
+    CHDChain& hdChain = mnemonicHDChain.value();
+    if (seedOpt.has_value()) {
+        // All mnemonic seeds are checked at construction to ensure that we can obtain
+        // a valid spending key for the account ZCASH_LEGACY_TRANSPARENT_ACCOUNT;
+        // therefore, the `value()` call here is safe.
+        BIP32AccountChains accountChains = BIP32AccountChains::ForAccount(
+                seedOpt.value(),
+                BIP44CoinType(),
+                ZCASH_LEGACY_TRANSPARENT_ACCOUNT).value();
 
-    CKey secret;
-    secret.MakeNewKey(fCompressed);
+        while (true) {
+            auto extKey = accountChains.DeriveExternal(hdChain.GetLegacyTKeyCounter());
+            hdChain.IncrementLegacyTKeyCounter();
 
-    // Compressed public keys were introduced in version 0.6.0
-    if (fCompressed)
-        SetMinVersion(FEATURE_COMPRPUBKEY);
+            // if we did not successfully generate a key, try again.
+            if (extKey.has_value()) {
+                CKey secret = extKey.value().first.key;
+                CPubKey pubkey = secret.GetPubKey();
+                assert(secret.VerifyPubKey(pubkey));
 
-    CPubKey pubkey = secret.GetPubKey();
-    assert(secret.VerifyPubKey(pubkey));
+                // Create new metadata
+                const CKeyMetadata& keyMeta = extKey.value().second;
+                mapKeyMetadata[pubkey.GetID()] = keyMeta;
+                if (!nTimeFirstKey || keyMeta.nCreateTime < nTimeFirstKey)
+                    nTimeFirstKey = keyMeta.nCreateTime;
 
-    // Create new metadata
-    int64_t nCreationTime = GetTime();
-    mapKeyMetadata[pubkey.GetID()] = CKeyMetadata(nCreationTime);
-    if (!nTimeFirstKey || nCreationTime < nTimeFirstKey)
-        nTimeFirstKey = nCreationTime;
+                if (!AddKeyPubKey(secret, pubkey))
+                    throw std::runtime_error("CWallet::GenerateNewKey(): AddKey failed");
 
-    if (!AddKeyPubKey(secret, pubkey))
-        throw std::runtime_error("CWallet::GenerateNewKey(): AddKey failed");
-    return pubkey;
+                // Update the persisted chain information
+                if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
+                    throw std::runtime_error("CWallet::GenerateNewKey(): Writing HD chain model failed");
+                }
+
+                return pubkey;
+            }
+        }
+    } else {
+        return std::nullopt;
+    }
 }
 
 bool CWallet::AddKeyPubKey(const CKey& secret, const CPubKey &pubkey)
@@ -375,9 +395,9 @@ UnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
         throw std::runtime_error(std::string(__func__) + ": Wallet has no mnemonic HD seed. Please upgrade this wallet.");
     }
 
-    auto hdChain = GetMnemonicHDChain().value();
+    CHDChain& hdChain = mnemonicHDChain.value();
     while (true) {
-        auto usk = UnifiedSpendingKey::Derive(seed.value(), BIP44CoinType(), hdChain.GetAccountCounter());
+        auto usk = UnifiedSpendingKey::ForAccount(seed.value(), BIP44CoinType(), hdChain.GetAccountCounter());
         hdChain.IncrementAccountCounter();
 
         if (usk.has_value()) {
@@ -397,7 +417,7 @@ std::optional<libzcash::UnifiedSpendingKey> CWallet::GetUnifiedSpendingKeyForAcc
     auto seed = GetMnemonicSeed();
     assert(seed.has_value());
     // TODO: is there any reason to cache and not re-derive this every time?
-    auto usk = UnifiedSpendingKey::Derive(seed.value(), BIP44CoinType(), accountId);
+    auto usk = UnifiedSpendingKey::ForAccount(seed.value(), BIP44CoinType(), accountId);
     if (usk.has_value()) {
         return usk.value().first;
     } else {
@@ -4185,7 +4205,10 @@ bool CWallet::NewKeyPool()
         for (int i = 0; i < nKeys; i++)
         {
             int64_t nIndex = i+1;
-            walletdb.WritePool(nIndex, CKeyPool(GenerateNewKey()));
+            auto key = GenerateNewKey();
+            if (!key.has_value())
+                return false; // should have been caught by the `IsLocked` call.
+            walletdb.WritePool(nIndex, CKeyPool(key.value()));
             setKeyPool.insert(nIndex);
         }
         LogPrintf("CWallet::NewKeyPool wrote %d new keys\n", nKeys);
@@ -4215,7 +4238,8 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
             int64_t nEnd = 1;
             if (!setKeyPool.empty())
                 nEnd = *(--setKeyPool.end()) + 1;
-            if (!walletdb.WritePool(nEnd, CKeyPool(GenerateNewKey())))
+            auto newKey = GenerateNewKey();
+            if (!newKey.has_value() || !walletdb.WritePool(nEnd, CKeyPool(newKey.value())))
                 throw runtime_error("TopUpKeyPool(): writing generated key failed");
             setKeyPool.insert(nEnd);
             LogPrintf("keypool added key %d, size=%u\n", nEnd, setKeyPool.size());
@@ -4272,7 +4296,7 @@ void CWallet::ReturnKey(int64_t nIndex)
     LogPrintf("keypool return %d\n", nIndex);
 }
 
-bool CWallet::GetKeyFromPool(CPubKey& result)
+std::optional<CPubKey> CWallet::GetKeyFromPool()
 {
     int64_t nIndex = 0;
     CKeyPool keypool;
@@ -4281,14 +4305,12 @@ bool CWallet::GetKeyFromPool(CPubKey& result)
         ReserveKeyFromKeyPool(nIndex, keypool);
         if (nIndex == -1)
         {
-            if (IsLocked()) return false;
-            result = GenerateNewKey();
-            return true;
+            if (IsLocked()) return std::nullopt;
+            return GenerateNewKey();
         }
         KeepKey(nIndex);
-        result = keypool.vchPubKey;
+        return keypool.vchPubKey;
     }
-    return true;
 }
 
 int64_t CWallet::GetOldestKeyPoolTime()
@@ -4858,9 +4880,9 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
     if (fFirstRun)
     {
         // Create new keyUser and set as default key
-        CPubKey newDefaultKey;
-        if (walletInstance->GetKeyFromPool(newDefaultKey)) {
-            walletInstance->SetDefaultKey(newDefaultKey);
+        std::optional<CPubKey> newDefaultKey = walletInstance->GetKeyFromPool();
+        if (newDefaultKey.has_value()) {
+            walletInstance->SetDefaultKey(newDefaultKey.value());
             if (!walletInstance->SetAddressBook(walletInstance->vchDefaultKey.GetID(), "", "receive"))
                 return UIError(_("Cannot write default address") += "\n");
         }
