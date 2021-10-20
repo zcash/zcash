@@ -2941,11 +2941,7 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
         return keyIO.EncodePaymentAddress(pwalletMain->GenerateNewSproutZKey());
     } else if (addrType == ADDR_TYPE_SAPLING) {
         auto saplingAddress = pwalletMain->GenerateNewLegacySaplingZKey();
-        if (saplingAddress.has_value()) {
-            return keyIO.EncodePaymentAddress(saplingAddress.value());
-        } else {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "No legacy HD seed available; please use z_getunifiedaddress instead.");
-        }
+        return keyIO.EncodePaymentAddress(saplingAddress);
     } else {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address type");
     }

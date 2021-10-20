@@ -1058,10 +1058,14 @@ public:
       * Sapling ZKeys
       */
 
-    //! Generates new Sapling key using the legacy HD seed (if one is available)
-    //! and legacy account counter, stores the newly generated spending key to
-    //! the wallet, and returns the default address for the newly generated key.
-    std::optional<libzcash::SaplingPaymentAddress> GenerateNewLegacySaplingZKey();
+    //! Generates new Sapling key, stores the newly generated spending
+    //! key to the wallet, and returns the default address for the newly generated key.
+    libzcash::SaplingPaymentAddress GenerateNewLegacySaplingZKey();
+    //! Generates Sapling key at the specified address index, and stores the newly generated
+    //! spending key to the wallet if it has not alreay been persisted.
+    //! Returns the newly created key, its metadata, and a flag distinguishing
+    //! whether or not the key was already known by the wallet.
+    std::pair<libzcash::SaplingExtendedSpendingKey, bool> GenerateLegacySaplingZKey(uint32_t addrIndex);
     //! Adds Sapling spending key to the store, and saves it to disk
     bool AddSaplingZKey(const libzcash::SaplingExtendedSpendingKey &key);
     //! Add Sapling full viewing key to the wallet.
@@ -1096,7 +1100,7 @@ public:
      * Unified keys & addresses
      */
     libzcash::UnifiedSpendingKey GenerateNewUnifiedSpendingKey();
-    std::optional<libzcash::UnifiedSpendingKey> GetUnifiedSpendingKeyForAccount(uint32_t accountId);
+    std::optional<libzcash::UnifiedSpendingKey> GenerateUnifiedSpendingKeyForAccount(uint32_t accountId);
 
     /**
      * Increment the next transaction order id

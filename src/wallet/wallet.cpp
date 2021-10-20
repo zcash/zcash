@@ -118,48 +118,59 @@ libzcash::SproutPaymentAddress CWallet::GenerateNewSproutZKey()
 // is not present. When using legacy HD seeds, the account index is determined
 // by trial of legacyHDChain.GetAccountCounter(); for unified addresses this must use
 // valued derived from legacyHDChain.unifiedAccountCounter
-std::optional<SaplingPaymentAddress> CWallet::GenerateNewLegacySaplingZKey() {
+SaplingPaymentAddress CWallet::GenerateNewLegacySaplingZKey() {
     AssertLockHeld(cs_wallet);
 
-    auto seedOpt = GetMnemonicSeed();
-    if (seedOpt.has_value()) {
-        auto seed = seedOpt.value();
-        if (!mnemonicHDChain.has_value()) {
-            mnemonicHDChain = CHDChain(seed.Fingerprint(), GetTime());
-        }
-        CHDChain& hdChain = mnemonicHDChain.value();
-
-        // loop until we find an unused address index
-        while (true) {
-            auto xsk = libzcash::SaplingExtendedSpendingKey::Legacy(
-                    seed,
-                    BIP44CoinType(),
-                    hdChain.GetLegacySaplingKeyCounter());
-            // advance the address index counter so that the next time we need to generate
-            // a key we're pointing at a free index.
-            hdChain.IncrementLegacySaplingKeyCounter();
-            if (HaveSaplingSpendingKey(xsk.first.ToXFVK())) {
-                // try the next index
-                continue;
-            } else {
-                // Update the persisted chain information
-                if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
-                    throw std::runtime_error("CWallet::GenerateNewLegacySaplingZKey(): Writing HD chain model failed");
-                }
-
-                auto ivk = xsk.first.expsk.full_viewing_key().in_viewing_key();
-                mapSaplingZKeyMetadata[ivk] = xsk.second;
-
-                if (!AddSaplingZKey(xsk.first)) {
-                    throw std::runtime_error("CWallet::GenerateNewLegacySaplingZKey(): AddSaplingZKey failed");
-                }
-
-                return xsk.first.ToXFVK().DefaultAddress();
-            }
-        }
-    } else {
-        return std::nullopt;
+    if (!mnemonicHDChain.has_value()) {
+        mnemonicHDChain = CHDChain(GetMnemonicSeed().value().Fingerprint(), GetTime());
     }
+    CHDChain& hdChain = mnemonicHDChain.value();
+
+    // loop until we find an unused address index
+    while (true) {
+        auto generatedKey = GenerateLegacySaplingZKey(hdChain.GetLegacySaplingKeyCounter());
+        auto xfvk = generatedKey.first.ToXFVK();
+
+        // advance the address index counter so that the next time we need to generate
+        // a key we're pointing at a free index.
+        hdChain.IncrementLegacySaplingKeyCounter();
+        if (!generatedKey.second) {
+            // the key already existed, so try the next one
+            continue;
+        } else {
+            // Update the persisted chain information
+            if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
+                throw std::runtime_error(
+                        "CWallet::GenerateLegacySaplingZKey(): Writing HD chain model failed");
+            }
+
+            return xfvk.DefaultAddress();
+        }
+    }
+}
+
+std::pair<SaplingExtendedSpendingKey, bool> CWallet::GenerateLegacySaplingZKey(uint32_t addrIndex) {
+    auto seedOpt = GetMnemonicSeed();
+    if (!seedOpt.has_value()) {
+        throw std::runtime_error(
+                "CWallet::GenerateLegacySaplingZKey(): Wallet does not have a mnemonic seed.");
+    }
+
+    auto seed = seedOpt.value();
+
+    auto xsk = libzcash::SaplingExtendedSpendingKey::Legacy(seed, BIP44CoinType(), addrIndex);
+    if (!HaveSaplingSpendingKey(xsk.first.ToXFVK())) {
+        auto ivk = xsk.first.expsk.full_viewing_key().in_viewing_key();
+        mapSaplingZKeyMetadata[ivk] = xsk.second;
+
+        if (!AddSaplingZKey(xsk.first)) {
+            throw std::runtime_error("CWallet::GenerateLegacySaplingZKey(): AddSaplingZKey failed.");
+        }
+        return std::make_pair(xsk.first, true) ;
+    } else {
+        return std::make_pair(xsk.first, false);
+    }
+
 }
 
 // Add spending key to keystore
@@ -238,9 +249,7 @@ bool CWallet::AddSproutZKey(const libzcash::SproutSpendingKey &key)
         return true;
 
     if (!IsCrypted()) {
-        return CWalletDB(strWalletFile).WriteZKey(addr,
-                                                  key,
-                                                  mapSproutZKeyMetadata[addr]);
+        return CWalletDB(strWalletFile).WriteZKey(addr, key, mapSproutZKeyMetadata[addr]);
     }
     return true;
 }
@@ -394,35 +403,33 @@ bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullVi
 UnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
     AssertLockHeld(cs_wallet);
 
-    auto seed = GetMnemonicSeed();
-    if (!seed.has_value()) {
-        throw std::runtime_error(std::string(__func__) + ": Wallet has no mnemonic HD seed. Please upgrade this wallet.");
-    }
-
     CHDChain& hdChain = mnemonicHDChain.value();
     while (true) {
-        auto usk = UnifiedSpendingKey::ForAccount(seed.value(), BIP44CoinType(), hdChain.GetAccountCounter());
+        auto usk = GenerateUnifiedSpendingKeyForAccount(hdChain.GetAccountCounter());
         hdChain.IncrementAccountCounter();
 
         if (usk.has_value()) {
             // Update the persisted chain information
             if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
-                throw std::runtime_error("CWallet::GenerateNewUnifiedSpendingKey(): Writing HD chain model failed");
+                throw std::runtime_error(
+                        "CWallet::GenerateNewUnifiedSpendingKey(): Writing HD chain model failed");
             }
 
-            // TODO: Save the unified full viewing key to the wallet metadata
-
-            return usk.value().first;
+            return usk.value();
         }
     }
 }
 
-std::optional<libzcash::UnifiedSpendingKey> CWallet::GetUnifiedSpendingKeyForAccount(uint32_t accountId) {
+std::optional<libzcash::UnifiedSpendingKey> CWallet::GenerateUnifiedSpendingKeyForAccount(uint32_t accountId) {
     auto seed = GetMnemonicSeed();
-    assert(seed.has_value());
-    // TODO: is there any reason to cache and not re-derive this every time?
+    if (!seed.has_value()) {
+        throw std::runtime_error(std::string(__func__) + ": Wallet has no mnemonic HD seed. Please upgrade this wallet.");
+    }
+
     auto usk = UnifiedSpendingKey::ForAccount(seed.value(), BIP44CoinType(), accountId);
     if (usk.has_value()) {
+        // TODO: Save the unified full viewing key & metadata to the wallet
+
         return usk.value().first;
     } else {
         return std::nullopt;

@@ -29,8 +29,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     ASSERT_EQ(0, addrs.size());
 
     // No HD seed in the wallet
-    auto legacyKey = wallet.GenerateNewLegacySaplingZKey();
-    ASSERT_FALSE(legacyKey.has_value());
+    EXPECT_ANY_THROW(wallet.GenerateNewLegacySaplingZKey());
 
     // Load the all-zeroes seed
     std::string mnemonic("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art");
@@ -41,9 +40,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     wallet.LoadMnemonicSeed(seed);
 
     // Now this call succeeds
-    legacyKey = wallet.GenerateNewLegacySaplingZKey();
-    ASSERT_TRUE(legacyKey.has_value());
-    auto address = legacyKey.value();
+    auto address = wallet.GenerateNewLegacySaplingZKey();
 
     // wallet should have one key
     wallet.GetSaplingPaymentAddresses(addrs);
@@ -433,12 +430,13 @@ TEST(WalletZkeysTest, WriteCryptedSaplingZkeyDirectToDb) {
      // No default CPubKey set
     ASSERT_TRUE(fFirstRun);
 
-    ASSERT_FALSE(wallet.HaveLegacyHDSeed());
+    ASSERT_FALSE(wallet.HaveMnemonicSeed());
 
     // Load the all-zeroes seed as the legacy seed
     std::string mnemonic("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art");
     MnemonicSeed seed(English, mnemonic);
     wallet.LoadMnemonicSeed(seed);
+    ASSERT_TRUE(wallet.HaveMnemonicSeed());
 
     // wallet should be empty
     std::set<libzcash::SaplingPaymentAddress> addrs;
@@ -446,7 +444,7 @@ TEST(WalletZkeysTest, WriteCryptedSaplingZkeyDirectToDb) {
     ASSERT_EQ(0, addrs.size());
 
     // Add random key to the wallet
-    auto address = wallet.GenerateNewLegacySaplingZKey().value();
+    auto address = wallet.GenerateNewLegacySaplingZKey();
 
     // wallet should have one key
     wallet.GetSaplingPaymentAddresses(addrs);
@@ -470,13 +468,11 @@ TEST(WalletZkeysTest, WriteCryptedSaplingZkeyDirectToDb) {
     ASSERT_TRUE(wallet.EncryptWallet(strWalletPass));
 
     // adding a new key will fail as the wallet is locked
-    EXPECT_FALSE(wallet.GenerateNewLegacySaplingZKey().has_value());
+    EXPECT_ANY_THROW(wallet.GenerateNewLegacySaplingZKey());
 
     // unlock wallet and then add
     wallet.Unlock(strWalletPass);
-    auto address2Opt = wallet.GenerateNewLegacySaplingZKey();
-    EXPECT_TRUE(address2Opt.has_value());
-    auto address2 = address2Opt.value();
+    auto address2 = wallet.GenerateNewLegacySaplingZKey();
 
     // flush the wallet to prevent race conditions
     wallet.Flush();

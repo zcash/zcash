@@ -76,7 +76,7 @@ static UniValue ValueFromString(const std::string &str)
 }
 
 static SaplingPaymentAddress DefaultSaplingAddress(CWallet* pwallet) {
-    auto usk = pwallet->GetUnifiedSpendingKeyForAccount(0);
+    auto usk = pwallet->GenerateUnifiedSpendingKeyForAccount(0);
 
     return usk.value()
         .ToFullViewingKey()
