@@ -135,3 +135,21 @@ TEST(ZIP32, TestVectors) {
         m_1_2hv_3.DefaultAddress().d,
         testing::ElementsAreArray({ 0x03, 0x0f, 0xfb, 0x26, 0x3a, 0x93, 0x9e, 0x23, 0x0e, 0x96, 0xdd }));
 }
+
+TEST(ZIP32, ParseZip32KeypathAccount) {
+    std::string sAccount = "m/32'/1234'/5'";
+    EXPECT_TRUE(libzcash::ParseZip32KeypathAccount(sAccount).has_value());
+    EXPECT_EQ(libzcash::ParseZip32KeypathAccount(sAccount).value(), 5);
+
+    sAccount = "m/32'/1234'/50'";
+    EXPECT_TRUE(libzcash::ParseZip32KeypathAccount(sAccount).has_value());
+    EXPECT_EQ(libzcash::ParseZip32KeypathAccount(sAccount).value(), 50);
+
+    sAccount = "m/32'/1234'/5'/0";
+    EXPECT_TRUE(libzcash::ParseZip32KeypathAccount(sAccount).has_value());
+    EXPECT_EQ(libzcash::ParseZip32KeypathAccount(sAccount).value(), 5);
+
+    sAccount = "m/32'/133'/2147483646'/1";
+    EXPECT_TRUE(libzcash::ParseZip32KeypathAccount(sAccount).has_value());
+    EXPECT_EQ(libzcash::ParseZip32KeypathAccount(sAccount).value(), 2147483646);
+}

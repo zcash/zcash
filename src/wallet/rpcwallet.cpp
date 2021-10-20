@@ -334,7 +334,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
             "    },\n"
             "    \"sapling\": [ -- each element in this list represents a set of diversified addresses derived from a single IVK. \n"
             "      {\n"
-            "        \"zip32AccountId\": 0, -- optional field, not present for imported/watchonly sources,\n"
+            "        \"zip32KeyPath\": \"m/32'/133'/0'\", -- optional field, not present for imported/watchonly sources,\n"
             "        \"addresses\": [\n"
             "          \"ztbx5DLDxa5ZLFTchHhoPNkKs57QzSyib6UqXpEdy76T1aUdFxJt1w9318Z8DJ73XzbnWHKEZP9Yjg712N5kMmP4QzS9iC9\",\n"
             "          ...\n"
@@ -477,12 +477,10 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
 
                 UniValue sapling_obj(UniValue::VOBJ);
 
-                if (source == LegacyHDSeed) {
-                    std::string hdKeypath = pwalletMain->mapSaplingZKeyMetadata[ivk].hdKeypath;
-                    std::optional<unsigned long> accountId = libzcash::ParseZip32KeypathAccount(hdKeypath);
-
-                    if (accountId.has_value()) {
-                        sapling_obj.pushKV("zip32AccountId", (uint64_t) accountId.value());
+                if (source == LegacyHDSeed || source == MnemonicHDSeed) {
+                    std::string hdKeyPath = pwalletMain->mapSaplingZKeyMetadata[ivk].hdKeypath;
+                    if (hdKeyPath != "") {
+                        sapling_obj.pushKV("zip32KeyPath", hdKeyPath);
                     }
                 }
 

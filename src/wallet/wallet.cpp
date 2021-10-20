@@ -124,10 +124,10 @@ std::optional<SaplingPaymentAddress> CWallet::GenerateNewLegacySaplingZKey() {
     auto seedOpt = GetMnemonicSeed();
     if (seedOpt.has_value()) {
         auto seed = seedOpt.value();
-        if (!legacyHDChain.has_value()) {
-            legacyHDChain = CHDChain(seed.Fingerprint(), GetTime());
+        if (!mnemonicHDChain.has_value()) {
+            mnemonicHDChain = CHDChain(seed.Fingerprint(), GetTime());
         }
-        CHDChain& hdChain = legacyHDChain.value();
+        CHDChain& hdChain = mnemonicHDChain.value();
 
         // loop until we find an unused address index
         while (true) {
@@ -249,8 +249,12 @@ std::optional<CPubKey> CWallet::GenerateNewKey()
 {
     AssertLockHeld(cs_wallet); // mapKeyMetadata
     auto seedOpt = GetMnemonicSeed();
-    CHDChain& hdChain = mnemonicHDChain.value();
     if (seedOpt.has_value()) {
+        if (!mnemonicHDChain.has_value()) {
+            mnemonicHDChain = CHDChain(seedOpt.value().Fingerprint(), GetTime());
+        }
+        CHDChain& hdChain = mnemonicHDChain.value();
+
         // All mnemonic seeds are checked at construction to ensure that we can obtain
         // a valid spending key for the account ZCASH_LEGACY_ACCOUNT;
         // therefore, the `value()` call here is safe.

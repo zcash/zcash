@@ -831,34 +831,34 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
         auto listarr = list.get_array();
         bool sproutCountMatch = false;
         bool saplingExtfvksMatch = false;
-        bool saplingAccount0 = false;
-        bool saplingAccount1 = false;
+        bool saplingSpendAuth0 = false;
+        bool saplingSpendAuth1 = false;
         bool saplingCountMismatch = true;
         for (auto a : listarr.getValues()) {
             auto source = find_value(a.get_obj(), "source");
             if (source.get_str() == "legacy_random") {
-                auto sprout_obj = find_value(a.get_obj(), "sprout").get_obj();
-                auto sprout_addrs = find_value(sprout_obj, "addresses").get_array();
-                sproutCountMatch = (sprout_addrs.size() == 1);
+                auto sproutObj = find_value(a.get_obj(), "sprout").get_obj();
+                auto sproutAddrs = find_value(sproutObj, "addresses").get_array();
+                sproutCountMatch = (sproutAddrs.size() == 1);
             }
             if (source.get_str() == "legacy_hdseed") {
                 auto sapling_addr_sets = find_value(a.get_obj(), "sapling").get_array();
                 saplingExtfvksMatch = (sapling_addr_sets.size() == 2);
 
-                for (auto sapling_obj : sapling_addr_sets.getValues()) {
-                    auto sapling_account = find_value(sapling_obj, "zip32AccountId").get_int();
-                    saplingAccount0 |= (sapling_account == 0);
-                    saplingAccount1 |= (sapling_account == 1);
-                    auto sapling_addrs = find_value(sapling_obj, "addresses").get_array();
-                    saplingCountMismatch &= (sapling_addrs.size() != 1);
+                for (auto saplingObj : sapling_addr_sets.getValues()) {
+                    auto keypath = find_value(saplingObj, "zip32KeyPath").get_str();
+                    saplingSpendAuth0 |= (keypath == "m/32'/133'/2147483646'/0");
+                    saplingSpendAuth1 |= (keypath == "m/32'/133'/2147483646'/1");
+                    auto saplingAddrs = find_value(saplingObj, "addresses").get_array();
+                    saplingCountMismatch &= (saplingAddrs.size() != 1);
                 }
             }
         }
         BOOST_CHECK(sproutCountMatch);
         BOOST_CHECK(saplingExtfvksMatch);
         BOOST_CHECK(!saplingCountMismatch);
-        BOOST_CHECK(saplingAccount0);
-        BOOST_CHECK(saplingAccount1);
+        BOOST_CHECK(saplingSpendAuth0);
+        BOOST_CHECK(saplingSpendAuth1);
     }
 }
 
