@@ -505,14 +505,13 @@ BOOST_AUTO_TEST_CASE(countbits_tests)
     }
 }
 
-/*
 BOOST_AUTO_TEST_CASE(sha256d64)
 {
     for (int i = 0; i <= 32; ++i) {
         unsigned char in[64 * 32];
         unsigned char out1[32 * 32], out2[32 * 32];
         for (int j = 0; j < 64 * i; ++j) {
-            in[j] = InsecureRandBits(8);
+            in[j] = insecure_randbits(8);
         }
         for (int j = 0; j < i; ++j) {
             CHash256().Write({in + 64 * j, 64}).Finalize({out1 + 32 * j, 32});
@@ -522,6 +521,7 @@ BOOST_AUTO_TEST_CASE(sha256d64)
     }
 }
 
+/*
 static void TestSHA3_256(const std::string& input, const std::string& output)
 {
     const auto in_bytes = ParseHex(input);
