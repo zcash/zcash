@@ -155,7 +155,6 @@ std::pair<SaplingExtendedSpendingKey, bool> CWallet::GenerateLegacySaplingZKey(u
         throw std::runtime_error(
                 "CWallet::GenerateLegacySaplingZKey(): Wallet does not have a mnemonic seed.");
     }
-
     auto seed = seedOpt.value();
 
     auto xsk = libzcash::SaplingExtendedSpendingKey::Legacy(seed, BIP44CoinType(), addrIndex);
@@ -254,53 +253,56 @@ bool CWallet::AddSproutZKey(const libzcash::SproutSpendingKey &key)
     return true;
 }
 
-std::optional<CPubKey> CWallet::GenerateNewKey()
+CPubKey CWallet::GenerateNewKey()
 {
     AssertLockHeld(cs_wallet); // mapKeyMetadata
+
     auto seedOpt = GetMnemonicSeed();
-    if (seedOpt.has_value()) {
-        if (!mnemonicHDChain.has_value()) {
-            mnemonicHDChain = CHDChain(seedOpt.value().Fingerprint(), GetTime());
-        }
-        CHDChain& hdChain = mnemonicHDChain.value();
+    if (!seedOpt.has_value()) {
+        throw std::runtime_error(
+                "CWallet::GenerateNewKey(): Wallet does not have a mnemonic seed.");
+    }
+    auto seed = seedOpt.value();
 
-        // All mnemonic seeds are checked at construction to ensure that we can obtain
-        // a valid spending key for the account ZCASH_LEGACY_ACCOUNT;
-        // therefore, the `value()` call here is safe.
-        BIP32AccountChains accountChains = BIP32AccountChains::ForAccount(
-                seedOpt.value(),
-                BIP44CoinType(),
-                ZCASH_LEGACY_ACCOUNT).value();
+    if (!mnemonicHDChain.has_value()) {
+        mnemonicHDChain = CHDChain(seedOpt.value().Fingerprint(), GetTime());
+    }
+    CHDChain& hdChain = mnemonicHDChain.value();
 
-        while (true) {
-            auto extKey = accountChains.DeriveExternal(hdChain.GetLegacyTKeyCounter());
-            hdChain.IncrementLegacyTKeyCounter();
+    // All mnemonic seeds are checked at construction to ensure that we can obtain
+    // a valid spending key for the account ZCASH_LEGACY_ACCOUNT;
+    // therefore, the `value()` call here is safe.
+    BIP32AccountChains accountChains = BIP32AccountChains::ForAccount(
+            seedOpt.value(),
+            BIP44CoinType(),
+            ZCASH_LEGACY_ACCOUNT).value();
 
-            // if we did not successfully generate a key, try again.
-            if (extKey.has_value()) {
-                CKey secret = extKey.value().first.key;
-                CPubKey pubkey = secret.GetPubKey();
-                assert(secret.VerifyPubKey(pubkey));
+    while (true) {
+        auto extKey = accountChains.DeriveExternal(hdChain.GetLegacyTKeyCounter());
+        hdChain.IncrementLegacyTKeyCounter();
 
-                // Create new metadata
-                const CKeyMetadata& keyMeta = extKey.value().second;
-                mapKeyMetadata[pubkey.GetID()] = keyMeta;
-                if (nTimeFirstKey == 0 || keyMeta.nCreateTime < nTimeFirstKey)
-                    nTimeFirstKey = keyMeta.nCreateTime;
+        // if we did not successfully generate a key, try again.
+        if (extKey.has_value()) {
+            CKey secret = extKey.value().first.key;
+            CPubKey pubkey = secret.GetPubKey();
+            assert(secret.VerifyPubKey(pubkey));
 
-                if (!AddKeyPubKey(secret, pubkey))
-                    throw std::runtime_error("CWallet::GenerateNewKey(): AddKey failed");
+            // Create new metadata
+            const CKeyMetadata& keyMeta = extKey.value().second;
+            mapKeyMetadata[pubkey.GetID()] = keyMeta;
+            if (nTimeFirstKey == 0 || keyMeta.nCreateTime < nTimeFirstKey)
+                nTimeFirstKey = keyMeta.nCreateTime;
 
-                // Update the persisted chain information
-                if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
-                    throw std::runtime_error("CWallet::GenerateNewKey(): Writing HD chain model failed");
-                }
+            if (!AddKeyPubKey(secret, pubkey))
+                throw std::runtime_error("CWallet::GenerateNewKey(): AddKey failed");
 
-                return pubkey;
+            // Update the persisted chain information
+            if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
+                throw std::runtime_error("CWallet::GenerateNewKey(): Writing HD chain model failed");
             }
+
+            return pubkey;
         }
-    } else {
-        return std::nullopt;
     }
 }
 
@@ -4207,9 +4209,7 @@ bool CWallet::NewKeyPool()
         {
             int64_t nIndex = i+1;
             auto key = GenerateNewKey();
-            if (!key.has_value())
-                return false; // should have been caught by the `IsLocked` call.
-            walletdb.WritePool(nIndex, CKeyPool(key.value()));
+            walletdb.WritePool(nIndex, CKeyPool(key));
             setKeyPool.insert(nIndex);
         }
         LogPrintf("CWallet::NewKeyPool wrote %d new keys\n", nKeys);
@@ -4240,7 +4240,7 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
             if (!setKeyPool.empty())
                 nEnd = *(--setKeyPool.end()) + 1;
             auto newKey = GenerateNewKey();
-            if (!newKey.has_value() || !walletdb.WritePool(nEnd, CKeyPool(newKey.value())))
+            if (!walletdb.WritePool(nEnd, CKeyPool(newKey)))
                 throw runtime_error("TopUpKeyPool(): writing generated key failed");
             setKeyPool.insert(nEnd);
             LogPrintf("keypool added key %d, size=%u\n", nEnd, setKeyPool.size());

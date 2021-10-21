@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    CPubKey demoPubkey = pwalletMain->GenerateNewKey().value();
+    CPubKey demoPubkey = pwalletMain->GenerateNewKey();
     CTxDestination demoAddress(CTxDestination(demoPubkey.GetID()));
     UniValue retValue;
     string strPurpose = "receive";
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
         pwalletMain->SetAddressBook(demoPubkey.GetID(), "", strPurpose);
     });
 
-    CPubKey setaccountDemoPubkey = pwalletMain->GenerateNewKey().value();
+    CPubKey setaccountDemoPubkey = pwalletMain->GenerateNewKey();
     CTxDestination setaccountDemoAddress(CTxDestination(setaccountDemoPubkey.GetID()));
 
     /*********************************
@@ -1469,7 +1469,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 
     KeyIO keyIO(Params());
     // add keys manually
-    auto taddr = pwalletMain->GenerateNewKey().value().GetID();
+    auto taddr = pwalletMain->GenerateNewKey().GetID();
     std::string taddr1 = keyIO.EncodeDestination(taddr);
     auto pa = DefaultSaplingAddress(pwalletMain);
     std::string zaddr1 = keyIO.EncodePaymentAddress(pa);
@@ -2173,7 +2173,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
 void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
 
     auto AddTrx = [&consensusParams]() {
-        auto taddr = pwalletMain->GenerateNewKey().value().GetID();
+        auto taddr = pwalletMain->GenerateNewKey().GetID();
         CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, 1);
         CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
         mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
