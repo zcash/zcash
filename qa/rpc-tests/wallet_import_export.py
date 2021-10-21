@@ -59,10 +59,9 @@ class WalletImportExportTest (BitcoinTestFramework):
 def parse_wallet_file(dump_path):
     file_lines = open(dump_path, "r", encoding="utf8").readlines()
     # We expect information about the HDSeed and fingerpring in the header
-    assert_true("HDSeed" in file_lines[4], "Expected HDSeed")
-    assert_true("fingerprint" in file_lines[4], "Expected fingerprint")
-    seed_comment_line = file_lines[4][2:].split()  # ["HDSeed=...", "fingerprint=..."]
-    assert_true(seed_comment_line[0].split("=")[1] != seed_comment_line[1].split("=")[1], "The seed should not equal the fingerprint")
+    assert_true("Emergency Recovery Phrase" in file_lines[4], "Expected Emergency Recovery Phrase")
+    assert_true("language" in file_lines[5], "Expected mnemonic seed language")
+    assert_true("fingerprint" in file_lines[6], "Expected mnemonic seed fingerprint")
     (t_keys, i) = parse_wallet_file_lines(file_lines, 0)
     (sprout_keys, i) = parse_wallet_file_lines(file_lines, i)
     (sapling_keys, i) = parse_wallet_file_lines(file_lines, i)
