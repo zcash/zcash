@@ -847,8 +847,8 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
 
                 for (auto saplingObj : sapling_addr_sets.getValues()) {
                     auto keypath = find_value(saplingObj, "zip32KeyPath").get_str();
-                    saplingSpendAuth0 |= (keypath == "m/32'/133'/2147483646'/0");
-                    saplingSpendAuth1 |= (keypath == "m/32'/133'/2147483646'/1");
+                    saplingSpendAuth0 |= (keypath == "m/32'/133'/2147483647'/0");
+                    saplingSpendAuth1 |= (keypath == "m/32'/133'/2147483647'/1");
                     auto saplingAddrs = find_value(saplingObj, "addresses").get_array();
                     saplingCountMismatch &= (saplingAddrs.size() != 1);
                 }

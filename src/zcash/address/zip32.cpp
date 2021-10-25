@@ -33,9 +33,9 @@ MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, siz
         MnemonicSeed seed(language, mnemonic);
 
         // Verify that the seed data is valid entropy for unified spending keys at
-        // account 0 and at both the public & private chain levels for account 0x7FFFFFFE.
+        // account 0 and at both the public & private chain levels for account 0x7FFFFFFF.
         // It is not necessary to check for a valid diversified Sapling address at
-        // account 0x7FFFFFFE because derivation via the legacy path can simply search
+        // account 0x7FFFFFFF because derivation via the legacy path can simply search
         // for a valid diversifier; unlike in the unified spending key case, diversifier
         // indices don't need to line up with anything.
         if (libzcash::UnifiedSpendingKey::ForAccount(seed, bip44CoinType, 0).has_value() &&

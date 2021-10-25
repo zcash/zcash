@@ -26,7 +26,7 @@ const size_t ZIP32_XSK_SIZE = 169;
  * transparent and Sapling addresses via the legacy
  * `getnewaddress` and `z_getnewaddress` code paths,
  */
-const uint32_t ZCASH_LEGACY_ACCOUNT = 0x7FFFFFFE;
+const uint32_t ZCASH_LEGACY_ACCOUNT = 0x7FFFFFFF;
 
 
 class CWalletDB;
@@ -78,7 +78,7 @@ public:
     /**
      * Randomly generate a new mnemonic seed. A SLIP-44 coin type is required to make it possible
      * to check that the generated seed can produce valid transparent and unified addresses at account
-     * numbers 0x7FFFFFFE and 0x0 respectively.
+     * numbers 0x7FFFFFFF and 0x0 respectively.
      */
     static MnemonicSeed Random(uint32_t bip44CoinType, Language language = English, size_t entropyLen = 32);
 
