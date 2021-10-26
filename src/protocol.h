@@ -89,17 +89,17 @@ class CAddress : public CService
 {
 public:
     CAddress() : CService{} {};
-    void Init();
     CAddress(CService ipIn, ServiceFlags nServicesIn) : CService{ipIn}, nServices{nServicesIn} {};
     CAddress(CService ipIn, ServiceFlags nServicesIn, uint32_t nTimeIn) : CService{ipIn}, nTime{nTimeIn}, nServices{nServicesIn} {};
 
+    void Init();
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action)
     {
         if (ser_action.ForRead())
-            CAddress();
+            Init();
         int nVersion = s.GetVersion();
         if (s.GetType() & SER_DISK)
             READWRITE(nVersion);
