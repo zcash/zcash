@@ -64,19 +64,6 @@ bool CMessageHeader::IsValid(const MessageStartChars& pchMessageStartIn) const
     return true;
 }
 
-
-
-CAddress::CAddress() : CService()
-{
-    Init();
-}
-
-CAddress::CAddress(CService ipIn, ServiceFlags nServicesIn) : CService(ipIn)
-{
-    Init();
-    nServices = nServicesIn;
-}
-
 void CAddress::Init()
 {
     nServices = NODE_NETWORK;

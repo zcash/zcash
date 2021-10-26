@@ -2,7 +2,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-<<<<<<< HEAD
 #include "netbase.h"
 #include "test/test_bitcoin.h"
 #include "protocol.h"
