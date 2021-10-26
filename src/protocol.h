@@ -106,9 +106,12 @@ public:
         if ((s.GetType() & SER_DISK) ||
             (nVersion >= CADDR_TIME_VERSION && !(s.GetType() & SER_GETHASH)))
             READWRITE(nTime);
-        uint64_t nServicesInt = nServices;
-        READWRITE(nServicesInt);
-        nServices = static_cast<ServiceFlags>(nServicesInt);
+        if (nVersion & ADDRV2_FORMAT) {
+            uint64_t services_tmp = nServices;
+            READWRITE(Using<CompactSizeFormatter<false>>(services_tmp));
+        } else {
+            READWRITE(Using<CustomUintFormatter<8>>(nServices));
+        }
         READWRITEAS(CService, *this);
     }
 
