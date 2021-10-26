@@ -725,8 +725,9 @@ WalletUAGenerationResult CWallet::GenerateUnifiedAddress(
         assert(mapUfvkAddressMetadata[ufvkid].SetReceivers(address.second, receiverTypes));
         if (hasTransparent) {
             // We must construct and add the transparent spending key associated
-            // with the external transparent child address to the transparent
-            // keystore.
+            // with the external and internal transparent child addresses to the
+            // transparent keystore. This call to `value` will succeed because
+            // this key must have been previously generated.
             auto usk = GenerateUnifiedSpendingKeyForAccount(accountId).value();
             auto accountKey = usk.GetTransparentKey();
             // this .value is known to be safe from the earlier check
@@ -6425,6 +6426,9 @@ std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
 {
     return std::nullopt;
 }
+
+// GetViewingKeyForPaymentAddress visitor
+
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::SproutPaymentAddress &zaddr) const
 {

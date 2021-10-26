@@ -252,6 +252,10 @@ bool CBasicKeyStore::GetSproutViewingKey(
     return false;
 }
 
+//
+// Sapling Keys
+//
+
 bool CBasicKeyStore::GetSaplingFullViewingKey(
     const libzcash::SaplingIncomingViewingKey &ivk,
     libzcash::SaplingExtendedFullViewingKey &extfvkOut) const
