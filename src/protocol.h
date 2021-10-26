@@ -98,7 +98,7 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action)
     {
         if (ser_action.ForRead())
-            Init();
+            CAddress();
         int nVersion = s.GetVersion();
         if (s.GetType() & SER_DISK)
             READWRITE(nVersion);
