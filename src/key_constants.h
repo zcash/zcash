@@ -5,7 +5,7 @@
 #ifndef ZCASH_KEY_CONSTANTS_H
 #define ZCASH_KEY_CONSTANTS_H
 
-class KeyConstants 
+class KeyConstants
 {
 public:
     enum Base58Type {

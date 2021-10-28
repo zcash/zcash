@@ -110,14 +110,13 @@ libzcash::SproutPaymentAddress CWallet::GenerateNewSproutZKey()
     return addr;
 }
 
-// Generate a new Sapling spending key (generate a new account) based upon
-// the legacy HD seed associated with this wallet and return its
-// public payment address.
+// Generate a new Sapling spending key as a child of the legacy Sapling account
+// return its public payment address.
 //
-// The z_getnewaddress API must use the legacy HD seed, and fail if that seed
-// is not present. When using legacy HD seeds, the account index is determined
-// by trial of legacyHDChain.GetAccountCounter(); for unified addresses this must use
-// valued derived from legacyHDChain.unifiedAccountCounter
+// The z_getnewaddress API must use the mnemonic HD seed, and fail if that seed
+// is not present. The account index is determined by trial of values of
+// mnemonicHDChain.GetLegacySaplingKeyCounter() until one is found that produces
+// a valid Sapling key.
 SaplingPaymentAddress CWallet::GenerateNewLegacySaplingZKey() {
     AssertLockHeld(cs_wallet);
 
@@ -2349,6 +2348,31 @@ bool CWallet::SetCryptedMnemonicSeed(const uint256& seedFp, const std::vector<un
             return CWalletDB(strWalletFile).WriteCryptedMnemonicSeed(seedFp, vchCryptedSecret);
     }
     return false;
+}
+
+bool CWallet::VerifyMnemonicSeed(std::string mnemonic) {
+    LOCK(cs_wallet);
+
+    auto seed = GetMnemonicSeed();
+    if (seed.has_value() && seed.value().GetMnemonic() == mnemonic) {
+        if (!mnemonicHDChain.has_value()) {
+            mnemonicHDChain = CHDChain(seed.value().Fingerprint(), GetTime());
+        }
+        CHDChain& hdChain = mnemonicHDChain.value();
+        hdChain.SetMnemonicSeedBackupConfirmed();
+        // Update the persisted chain information
+        if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
+            throw std::runtime_error(
+                    "CWallet::VerifyMnemonicSeed(): Writing HD chain model failed");
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool CWallet::MnemonicVerified() {
+    return mnemonicHDChain.has_value() && mnemonicHDChain.value().IsMnemonicSeedBackupConfirmed();
 }
 
 HDSeed CWallet::GetHDSeedForRPC() const {
@@ -4783,6 +4807,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
     strUsage += HelpMessageOpt("-walletnotify=<cmd>", _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)"));
     strUsage += HelpMessageOpt("-zapwallettxes=<mode>", _("Delete all wallet transactions and only recover those parts of the blockchain through -rescan on startup") +
                                " " + _("(1 = keep tx meta data e.g. account owner and payment request information, 2 = drop tx meta data)"));
+    strUsage += HelpMessageOpt("-walletrequirebackup=false", _("Allow generation of new spending keys & addresses from the mnemonic seed, even if the backup of that seed has not yet been confirmed with `walletconfirmbackup`."));
 
     if (showDebug)
     {

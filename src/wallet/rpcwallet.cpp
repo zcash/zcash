@@ -37,6 +37,8 @@
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/erase.hpp>
 #include <utf8.h>
 
 #include <univalue.h>
@@ -53,6 +55,7 @@ using namespace libzcash;
 
 const std::string ADDR_TYPE_SPROUT = "sprout";
 const std::string ADDR_TYPE_SAPLING = "sapling";
+const bool DEFAULT_WALLET_REQUIRE_BACKUP = true;
 
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 
@@ -79,6 +82,16 @@ bool EnsureWalletIsAvailable(bool avoidException)
             return false;
     }
     return true;
+}
+
+void EnsureWalletIsBackedUp(const CChainParams& params)
+{
+    if (GetBoolArg("-walletrequirebackup", params.RequireWalletBackup()) && !pwalletMain->MnemonicVerified())
+        throw JSONRPCError(
+                RPC_WALLET_BACKUP_REQUIRED,
+                "Error: Please acknowledge that you have backed up the wallet's emergency recovery phrase "
+                "with walletconfirmbackup first."
+                );
 }
 
 void EnsureWalletIsUnlocked()
@@ -163,6 +176,9 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    const CChainParams& chainparams = Params();
+    EnsureWalletIsBackedUp(chainparams);
+
     if (!pwalletMain->IsLocked())
         pwalletMain->TopUpKeyPool();
 
@@ -175,7 +191,7 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
     std::string dummy_account;
     pwalletMain->SetAddressBook(keyID, dummy_account, "receive");
 
-    KeyIO keyIO(Params());
+    KeyIO keyIO(chainparams);
     return keyIO.EncodeDestination(keyID);
 }
 
@@ -198,6 +214,9 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    const CChainParams& chainparams = Params();
+    EnsureWalletIsBackedUp(chainparams);
+
     if (!pwalletMain->IsLocked())
         pwalletMain->TopUpKeyPool();
 
@@ -210,7 +229,7 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
 
     CKeyID keyID = vchPubKey.GetID();
 
-    KeyIO keyIO(Params());
+    KeyIO keyIO(chainparams);
     return keyIO.EncodeDestination(keyID);
 }
 
@@ -1586,6 +1605,8 @@ UniValue keypoolrefill(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    EnsureWalletIsBackedUp(Params());
+
     // 0 is interpreted by TopUpKeyPool() as the default keypool size given by -keypool
     unsigned int kpSize = 0;
     if (params.size() > 0) {
@@ -1714,6 +1735,47 @@ UniValue walletpassphrasechange(const UniValue& params, bool fHelp)
 
     if (!pwalletMain->ChangeWalletPassphrase(strOldWalletPass, strNewWalletPass))
         throw JSONRPCError(RPC_WALLET_PASSPHRASE_INCORRECT, "Error: The wallet passphrase entered was incorrect.");
+
+    return NullUniValue;
+}
+
+UniValue walletconfirmbackup(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "walletconfirmbackup \"emergency recovery phrase\"\n"
+            "\nNotify the wallet that the user has backed up the emergency recovery phrase,\n"
+            "which can be obtained by making a call to z_exportwallet. The zcashd embedded wallet\n"
+            "requires confirmation that the emergency recovery phrase has been backed up before it\n"
+            "will permit new spending keys or addresses to be generated.\n"
+            "\nArguments:\n"
+            "1. \"emergency recovery phrase\" (string, required) The full recovery phrase returned as part\n"
+            "   of the data returned by z_exportwallet. An error will be returned if the value provided\n"
+            "   does not match the wallet's existing emergency recovery phrase.\n"
+            "\nExamples:\n"
+            + HelpExampleCli("walletconfirmbackup", "\"abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art\"")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    EnsureWalletIsUnlocked();
+
+    auto strMnemonicPhrase = params[0].get_str();
+    boost::erase_all(strMnemonicPhrase, "\"");
+    boost::trim(strMnemonicPhrase);
+    if (strMnemonicPhrase.length() > 0) {
+        if (!pwalletMain->VerifyMnemonicSeed(strMnemonicPhrase))
+            throw JSONRPCError(
+                    RPC_WALLET_PASSPHRASE_INCORRECT,
+                    "Error: The emergency recovery phrase entered was incorrect.");
+    } else {
+        throw runtime_error(
+            "walletconfirmbackup \"emergency recovery phrase\"\n"
+            "Notify the wallet that the user has backed up the emergency recovery phrase");
+    }
 
     return NullUniValue;
 }
@@ -2929,14 +2991,17 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    const CChainParams& chainparams = Params();
+
     EnsureWalletIsUnlocked();
+    EnsureWalletIsBackedUp(chainparams);
 
     auto addrType = defaultType;
     if (params.size() > 0) {
         addrType = params[0].get_str();
     }
 
-    KeyIO keyIO(Params());
+    KeyIO keyIO(chainparams);
     if (addrType == ADDR_TYPE_SPROUT) {
         return keyIO.EncodePaymentAddress(pwalletMain->GenerateNewSproutZKey());
     } else if (addrType == ADDR_TYPE_SAPLING) {
@@ -4910,6 +4975,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "walletlock",               &walletlock,               true  },
     { "wallet",             "walletpassphrasechange",   &walletpassphrasechange,   true  },
     { "wallet",             "walletpassphrase",         &walletpassphrase,         true  },
+    { "wallet",             "walletconfirmbackup",      &walletconfirmbackup,      true  },
     { "wallet",             "zcbenchmark",              &zc_benchmark,             true  },
     { "wallet",             "zcrawkeygen",              &zc_raw_keygen,            true  },
     { "wallet",             "zcrawjoinsplit",           &zc_raw_joinsplit,         true  },

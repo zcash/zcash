@@ -198,6 +198,11 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_NO_THROW(CallRPC("listaddressgroupings"));
 
     /*********************************
+     * 		walletconfirmbackup
+     *********************************/
+    BOOST_CHECK_THROW(CallRPC(string("walletconfirmbackup \"badmnemonic\"")), runtime_error);
+
+    /*********************************
      * 		getrawchangeaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getrawchangeaddress"));
@@ -797,12 +802,6 @@ void CheckHaveAddr(const libzcash::PaymentAddress& addr) {
 
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
     using namespace libzcash;
-
-    if (!pwalletMain->HaveLegacyHDSeed()) {
-        // fake a legacy seed by creating a separate mnemonic seed
-        auto seed = MnemonicSeed::Random(1);
-        pwalletMain->LoadLegacyHDSeed(seed);
-    }
 
     UniValue addr;
 
@@ -1562,12 +1561,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    if (!pwalletMain->HaveLegacyHDSeed()) {
-        // fake a legacy seed by creating a separate mnemonic seed
-        auto seed = MnemonicSeed::Random(1);
-        pwalletMain->LoadLegacyHDSeed(seed);
-    }
-
     UniValue retValue;
     int n = 100;
 
@@ -1624,12 +1617,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
 BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_sapzkeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    if (!pwalletMain->HaveLegacyHDSeed()) {
-        // fake a legacy seed by creating a separate mnemonic seed
-        auto seed = MnemonicSeed::Random(1);
-        pwalletMain->LoadLegacyHDSeed(seed);
-    }
 
     UniValue retValue;
     int n = 100;
@@ -1693,12 +1680,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_sapzkeys)
 BOOST_AUTO_TEST_CASE(rpc_z_listunspent_parameters)
 {
     SelectParams(CBaseChainParams::TESTNET);
-
-    if (!pwalletMain->HaveLegacyHDSeed()) {
-        // fake a legacy seed by creating a separate mnemonic seed
-        auto seed = MnemonicSeed::Random(1);
-        pwalletMain->LoadLegacyHDSeed(seed);
-    }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 

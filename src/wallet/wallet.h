@@ -806,8 +806,6 @@ protected:
 
     /* the hd chain metadata for keys derived from the mnemonic seed */
     std::optional<CHDChain> mnemonicHDChain;
-    /* the hd chain metadata for keys derived from the legacy seed */
-    std::optional<CHDChain> legacyHDChain;
 
     /* the network ID string for the network for which this wallet was created */
     std::string networkIdString;
@@ -1306,6 +1304,10 @@ public:
 
     bool SetMnemonicSeed(const MnemonicSeed& seed);
     bool SetCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
+    /* Checks the wallet's seed against the specified mnemonic, and marks the
+     * wallet's seed as having been backed up if the phrases match. */
+    bool VerifyMnemonicSeed(std::string mnemonic);
+    bool MnemonicVerified();
 
     /* Set the current HD seed, without saving it to disk (used by LoadWallet) */
     bool LoadMnemonicSeed(const MnemonicSeed& seed);

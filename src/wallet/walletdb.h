@@ -51,6 +51,7 @@ private:
     uint32_t accountCounter;
     uint32_t legacyTKeyCounter;
     uint32_t legacySaplingKeyCounter;
+    bool mnemonicSeedBackupConfirmed;
 
     CHDChain() { SetNull(); }
 
@@ -62,12 +63,13 @@ private:
         accountCounter = 0;
         legacyTKeyCounter = 0;
         legacySaplingKeyCounter = 0;
+        mnemonicSeedBackupConfirmed = false;
     }
 public:
     static const int VERSION_HD_BASE = 1;
     static const int CURRENT_VERSION = VERSION_HD_BASE;
 
-    CHDChain(uint256 seedFpIn, int64_t nCreateTimeIn): nVersion(CHDChain::CURRENT_VERSION), seedFp(seedFpIn), nCreateTime(nCreateTimeIn), accountCounter(0), legacyTKeyCounter(0), legacySaplingKeyCounter(0) {}
+    CHDChain(uint256 seedFpIn, int64_t nCreateTimeIn): nVersion(CHDChain::CURRENT_VERSION), seedFp(seedFpIn), nCreateTime(nCreateTimeIn), accountCounter(0), legacyTKeyCounter(0), legacySaplingKeyCounter(0), mnemonicSeedBackupConfirmed(false) {}
 
     ADD_SERIALIZE_METHODS;
 
@@ -80,6 +82,7 @@ public:
         READWRITE(accountCounter);
         READWRITE(legacyTKeyCounter);
         READWRITE(legacySaplingKeyCounter);
+        READWRITE(mnemonicSeedBackupConfirmed);
     }
 
     template <typename Stream>
@@ -115,6 +118,14 @@ public:
 
     void IncrementLegacySaplingKeyCounter() {
         legacySaplingKeyCounter += 1;
+    }
+
+    void SetMnemonicSeedBackupConfirmed() {
+        mnemonicSeedBackupConfirmed = true;
+    }
+
+    bool IsMnemonicSeedBackupConfirmed() {
+        return mnemonicSeedBackupConfirmed;
     }
 };
 
