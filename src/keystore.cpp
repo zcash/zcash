@@ -56,18 +56,13 @@ std::optional<MnemonicSeed> CBasicKeyStore::GetMnemonicSeed() const
 
 bool CBasicKeyStore::SetLegacyHDSeed(const HDSeed& seed)
 {
+    LOCK(cs_KeyStore);
     if (legacySeed.has_value()) {
         // Don't allow an existing seed to be changed.
         return false;
     }
     legacySeed = seed;
     return true;
-}
-
-bool CBasicKeyStore::HaveLegacyHDSeed() const
-{
-    LOCK(cs_KeyStore);
-    return legacySeed.has_value();
 }
 
 std::optional<HDSeed> CBasicKeyStore::GetLegacyHDSeed() const
@@ -201,7 +196,6 @@ bool CBasicKeyStore::AddSaplingFullViewingKey(
     auto ivk = extfvk.fvk.in_viewing_key();
     mapSaplingFullViewingKeys[ivk] = extfvk;
 
-    // TODO: check whether DefaultAddress is the right thing to use here.
     return CBasicKeyStore::AddSaplingIncomingViewingKey(ivk, extfvk.DefaultAddress());
 }
 

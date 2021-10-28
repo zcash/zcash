@@ -153,3 +153,12 @@ TEST(ZIP32, ParseZip32KeypathAccount) {
     EXPECT_TRUE(libzcash::ParseZip32KeypathAccount(sAccount).has_value());
     EXPECT_EQ(libzcash::ParseZip32KeypathAccount(sAccount).value(), 2147483646);
 }
+
+TEST(ZIP32, diversifier_index_t_increment)
+{
+    libzcash::diversifier_index_t d_zero(0);
+    libzcash::diversifier_index_t d_one(1);
+    EXPECT_TRUE(d_zero.increment());
+    EXPECT_EQ(d_zero, d_one);
+}
+

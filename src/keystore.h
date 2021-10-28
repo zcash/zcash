@@ -144,7 +144,6 @@ public:
     std::optional<MnemonicSeed> GetMnemonicSeed() const;
 
     bool SetLegacyHDSeed(const HDSeed& seed);
-    bool HaveLegacyHDSeed() const;
     std::optional<HDSeed> GetLegacyHDSeed() const;
 
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);

@@ -180,7 +180,6 @@ public:
 
     bool SetLegacyHDSeed(const HDSeed& seed);
     virtual bool SetCryptedLegacyHDSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
-    bool HaveLegacyHDSeed() const;
     std::optional<HDSeed> GetLegacyHDSeed() const;
 
     virtual bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);

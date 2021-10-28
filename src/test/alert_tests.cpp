@@ -117,13 +117,12 @@ bool SignAlert(CAlert &alert)
     // sign alert
     std::vector<unsigned char> vchTmp(ParseHex(pszPrivKey));
     CPrivKey vchPrivKey(vchTmp.begin(), vchTmp.end());
-    CKey key;
-    if (!key.SetPrivKey(vchPrivKey, false))
-    {
+    std::optional<CKey> key = CKey::FromPrivKey(SetPrivKey(vchPrivKey, false);
+    if (!key.has_value()) {
         printf("key.SetPrivKey failed\n");
         return false;
     }
-    if (!key.Sign(Hash(alert.vchMsg.begin(), alert.vchMsg.end()), alert.vchSig))
+    if (!key.value().Sign(Hash(alert.vchMsg.begin(), alert.vchMsg.end()), alert.vchSig))
     {
         printf("SignAlert() : key.Sign failed\n");
         return false;

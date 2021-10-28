@@ -166,12 +166,13 @@ CKey CKey::TestOnlyRandomKey(bool fCompressedIn) {
     return key;
 }
 
-bool CKey::SetPrivKey(const CPrivKey &privkey, bool fCompressedIn) {
-    if (!ec_privkey_import_der(secp256k1_context_sign, (unsigned char*)begin(), &privkey[0], privkey.size()))
-        return false;
-    fCompressed = fCompressedIn;
-    fValid = true;
-    return true;
+std::optional<CKey> CKey::FromPrivKey(const CPrivKey &privkey, bool fCompressedIn) {
+    CKey key;
+    if (!ec_privkey_import_der(secp256k1_context_sign, (unsigned char*)key.begin(), &privkey[0], privkey.size()))
+        return std::nullopt;
+    key.fCompressed = fCompressedIn;
+    key.fValid = true;
+    return key;
 }
 
 CPrivKey CKey::GetPrivKey() const {

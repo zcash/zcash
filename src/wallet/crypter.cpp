@@ -447,16 +447,6 @@ bool CCryptoKeyStore::SetCryptedLegacyHDSeed(
     }
 }
 
-bool CCryptoKeyStore::HaveLegacyHDSeed() const
-{
-    LOCK(cs_KeyStore);
-    if (fUseCrypto) {
-        return cryptedLegacySeed.has_value();
-    } else {
-        return CBasicKeyStore::HaveLegacyHDSeed();
-    }
-}
-
 std::optional<HDSeed> CCryptoKeyStore::GetLegacyHDSeed() const {
     LOCK(cs_KeyStore);
     if (fUseCrypto) {

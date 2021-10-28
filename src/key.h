@@ -68,7 +68,8 @@ public:
      */
     static CKey TestOnlyRandomKey(bool fCompressedIn);
 
-    static std::optional<CKey> FromEntropy(std::vector<unsigned char, secure_allocator<unsigned char>> keydata, bool fComporessedIn);
+    //! Initialize from a CPrivKey (serialized OpenSSL-format private key data).
+    static std::optional<CKey> FromPrivKey(const CPrivKey& vchPrivKey, bool fCompressed);
 
     /** Check that required EC support is available at runtime. */
     static bool ECC_InitSanityCheck();
@@ -105,9 +106,6 @@ public:
 
     //! Check whether the public key corresponding to this private key is (to be) compressed.
     bool IsCompressed() const { return fCompressed; }
-
-    //! Initialize from a CPrivKey (serialized OpenSSL-format private key data).
-    bool SetPrivKey(const CPrivKey& vchPrivKey, bool fCompressed);
 
     /**
      * Convert the private key to a CPrivKey (serialized OpenSSL-format private key data).
