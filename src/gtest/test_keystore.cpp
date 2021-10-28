@@ -16,7 +16,7 @@
 
 const uint32_t SLIP44_TESTNET_TYPE = 1;
 
-TEST(KeystoreTests, StoreAndRetrieveHDSeed) {
+TEST(KeystoreTests, StoreAndRetrieveMnemonicSeed) {
     CBasicKeyStore keyStore;
 
     // When we haven't set a seed, we shouldn't get one
@@ -41,6 +41,33 @@ TEST(KeystoreTests, StoreAndRetrieveHDSeed) {
     // We should not be able to set and retrieve a different seed
     EXPECT_FALSE(keyStore.SetMnemonicSeed(seed2));
     seedOut = keyStore.GetMnemonicSeed();
+    ASSERT_TRUE(seedOut.has_value());
+    EXPECT_EQ(seed, seedOut.value());
+}
+
+TEST(KeystoreTests, StoreAndRetrieveLegacyHDSeed) {
+    CBasicKeyStore keyStore;
+
+    // When we haven't set a seed, we shouldn't get one
+    std::optional<HDSeed> seedOut = keyStore.GetLegacyHDSeed();
+    EXPECT_FALSE(seedOut.has_value());
+
+    // Generate a random seed
+    HDSeed seed = MnemonicSeed::Random(SLIP44_TESTNET_TYPE);
+
+    // We should be able to set and retrieve the seed
+    ASSERT_TRUE(keyStore.SetLegacyHDSeed(seed));
+    seedOut = keyStore.GetLegacyHDSeed();
+    ASSERT_TRUE(seedOut.has_value());
+    EXPECT_EQ(seed, seedOut.value());
+
+    // Generate another random seed
+    HDSeed seed2 = MnemonicSeed::Random(SLIP44_TESTNET_TYPE);
+    EXPECT_NE(seed, seed2);
+
+    // We should not be able to set and retrieve a different seed
+    EXPECT_FALSE(keyStore.SetLegacyHDSeed(seed2));
+    seedOut = keyStore.GetLegacyHDSeed();
     ASSERT_TRUE(seedOut.has_value());
     EXPECT_EQ(seed, seedOut.value());
 }

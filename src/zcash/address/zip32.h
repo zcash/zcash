@@ -48,6 +48,16 @@ public:
 
     uint256 Fingerprint() const;
     RawHDSeed RawSeed() const { return seed; }
+
+    friend bool operator==(const HDSeed& a, const HDSeed& b)
+    {
+        return a.seed == b.seed;
+    }
+
+    friend bool operator!=(const HDSeed& a, const HDSeed& b)
+    {
+        return !(a == b);
+    }
 };
 
 
