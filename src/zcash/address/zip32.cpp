@@ -285,8 +285,8 @@ std::pair<SaplingExtendedSpendingKey, CKeyMetadata> SaplingExtendedSpendingKey::
     // Derive account key at the legacy account index
     auto m_32h_cth_l = m_32h_cth.Derive(ZCASH_LEGACY_ACCOUNT | ZIP32_HARDENED_KEY_LIMIT);
 
-    // Derive key at the specified address index (non-hardened)
-    auto xsk = m_32h_cth_l.Derive(addressIndex);
+    // Derive key at the specified address index
+    auto xsk = m_32h_cth_l.Derive(addressIndex | ZIP32_HARDENED_KEY_LIMIT);
 
     // Create new metadata
     int64_t nCreationTime = GetTime();
@@ -294,7 +294,7 @@ std::pair<SaplingExtendedSpendingKey, CKeyMetadata> SaplingExtendedSpendingKey::
     metadata.hdKeypath = "m/32'/"
         + std::to_string(bip44CoinType) + "'/"
         + std::to_string(ZCASH_LEGACY_ACCOUNT) + "'/"
-        + std::to_string(addressIndex);
+        + std::to_string(addressIndex) + "'";
     metadata.seedFp = seed.Fingerprint();
 
     return std::make_pair(xsk, metadata);
