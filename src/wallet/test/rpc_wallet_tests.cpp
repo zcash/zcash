@@ -1145,28 +1145,28 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     // duplicate address
     BOOST_CHECK_THROW(CallRPC("z_sendmany "
             "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
-            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0},"
-            " {\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":12.0} ]"
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\",\"amount\":50.0},"
+            "{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\",\"amount\":12.0}]"
             ), runtime_error);
 
     // invalid fee amount, cannot be negative
     BOOST_CHECK_THROW(CallRPC("z_sendmany "
             "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
-            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0}] "
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\",\"amount\":50.0}] "
             "1 -0.00001"
             ), runtime_error);
 
     // invalid fee amount, bigger than MAX_MONEY
     BOOST_CHECK_THROW(CallRPC("z_sendmany "
             "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
-            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0}] "
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\",\"amount\":50.0}] "
             "1 21000001"
             ), runtime_error);
 
     // fee amount is bigger than sum of outputs
     BOOST_CHECK_THROW(CallRPC("z_sendmany "
             "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
-            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0}] "
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\",\"amount\":50.0}] "
             "1 50.00000001"
             ), runtime_error);
 
@@ -1178,7 +1178,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     KeyIO keyIO(Params());
     std::string zaddr1 = keyIO.EncodePaymentAddress(pa);
     BOOST_CHECK_THROW(CallRPC(string("z_sendmany tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ ")
-            + "[{\"address\":\"" + zaddr1 + "\", \"amount\":123.456}]"), runtime_error);
+            + "[{\"address\":\"" + zaddr1 + "\",\"amount\":123.456}]"), runtime_error);
 
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");
