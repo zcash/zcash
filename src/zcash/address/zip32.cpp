@@ -76,7 +76,7 @@ namespace libzcash {
 // Transparent
 //
 
-std::optional<std::pair<CExtKey, CKeyMetadata>> DeriveZip32TransparentAccountKey(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
+std::optional<std::pair<CExtKey, HDKeyPath>> DeriveZip32TransparentAccountKey(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
     auto rawSeed = seed.RawSeed();
     auto m = CExtKey::Master(rawSeed.data(), rawSeed.size());
 
@@ -93,12 +93,9 @@ std::optional<std::pair<CExtKey, CKeyMetadata>> DeriveZip32TransparentAccountKey
     auto result = m_32h_cth.value().Derive(accountId | ZIP32_HARDENED_KEY_LIMIT);
     if (!result.has_value()) return std::nullopt;
 
-    int64_t nCreationTime = GetTime();
-    auto keyMeta = CKeyMetadata(nCreationTime);
-    keyMeta.hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
-    keyMeta.seedFp = seed.Fingerprint();
+    auto hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
 
-    return std::make_pair(result.value(), keyMeta);
+    return std::make_pair(result.value(), hdKeypath);
 }
 
 std::optional<BIP32AccountChains> BIP32AccountChains::ForAccount(
@@ -117,36 +114,30 @@ std::optional<BIP32AccountChains> BIP32AccountChains::ForAccount(
     return BIP32AccountChains(seed.Fingerprint(), bip44CoinType, accountId, external.value(), internal.value());
 }
 
-std::optional<std::pair<CExtKey, CKeyMetadata>> BIP32AccountChains::DeriveExternal(uint32_t addrIndex) {
+std::optional<std::pair<CExtKey, HDKeyPath>> BIP32AccountChains::DeriveExternal(uint32_t addrIndex) {
     auto childKey = external.Derive(addrIndex);
     if (!childKey.has_value()) return std::nullopt;
 
-    int64_t nCreationTime = GetTime();
-    auto keyMeta = CKeyMetadata(nCreationTime);
-    keyMeta.hdKeypath = "m/32'/"
+    auto hdKeypath = "m/32'/"
         + std::to_string(bip44CoinType) + "'/"
         + std::to_string(accountId) + "'/"
         + "0/"
         + std::to_string(addrIndex);
-    keyMeta.seedFp = seedFp;
 
-    return std::make_pair(childKey.value(), keyMeta);
+    return std::make_pair(childKey.value(), hdKeypath);
 }
 
-std::optional<std::pair<CExtKey, CKeyMetadata>> BIP32AccountChains::DeriveInternal(uint32_t addrIndex) {
+std::optional<std::pair<CExtKey, HDKeyPath>> BIP32AccountChains::DeriveInternal(uint32_t addrIndex) {
     auto childKey = internal.Derive(addrIndex);
     if (!childKey.has_value()) return std::nullopt;
 
-    int64_t nCreationTime = GetTime();
-    auto keyMeta = CKeyMetadata(nCreationTime);
-    keyMeta.hdKeypath = "m/32'/"
+    auto hdKeypath = "m/32'/"
         + std::to_string(bip44CoinType) + "'/"
         + std::to_string(accountId) + "'/"
         + "1/"
         + std::to_string(addrIndex);
-    keyMeta.seedFp = seedFp;
 
-    return std::make_pair(childKey.value(), keyMeta);
+    return std::make_pair(childKey.value(), hdKeypath);
 }
 
 //
@@ -251,7 +242,7 @@ SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Derive(uint32_t i) const
     return xsk_i;
 }
 
-std::pair<SaplingExtendedSpendingKey, CKeyMetadata> SaplingExtendedSpendingKey::ForAccount(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
+std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::ForAccount(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
     auto m = Master(seed);
 
     // We use a fixed keypath scheme of m/32'/coin_type'/account'
@@ -264,15 +255,12 @@ std::pair<SaplingExtendedSpendingKey, CKeyMetadata> SaplingExtendedSpendingKey::
     auto xsk = m_32h_cth.Derive(accountId | ZIP32_HARDENED_KEY_LIMIT);
 
     // Create new metadata
-    int64_t nCreationTime = GetTime();
-    CKeyMetadata keyMeta(nCreationTime);
-    keyMeta.hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
-    keyMeta.seedFp = seed.Fingerprint();
+    auto hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
 
-    return std::make_pair(xsk, keyMeta);
+    return std::make_pair(xsk, hdKeypath);
 }
 
-std::pair<SaplingExtendedSpendingKey, CKeyMetadata> SaplingExtendedSpendingKey::Legacy(const HDSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex) {
+std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::Legacy(const HDSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex) {
     auto m = Master(seed);
 
     // We use a fixed keypath scheme of m/32'/coin_type'/account'/addressIndex'
@@ -289,15 +277,12 @@ std::pair<SaplingExtendedSpendingKey, CKeyMetadata> SaplingExtendedSpendingKey::
     auto xsk = m_32h_cth_l.Derive(addressIndex | ZIP32_HARDENED_KEY_LIMIT);
 
     // Create new metadata
-    int64_t nCreationTime = GetTime();
-    CKeyMetadata metadata(nCreationTime);
-    metadata.hdKeypath = "m/32'/"
+    auto hdKeypath = "m/32'/"
         + std::to_string(bip44CoinType) + "'/"
         + std::to_string(ZCASH_LEGACY_ACCOUNT) + "'/"
         + std::to_string(addressIndex) + "'";
-    metadata.seedFp = seed.Fingerprint();
 
-    return std::make_pair(xsk, metadata);
+    return std::make_pair(xsk, hdKeypath);
 }
 
 SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
@@ -316,7 +301,7 @@ SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
 // Unified
 //
 
-std::optional<std::pair<UnifiedSpendingKey, CKeyMetadata>> UnifiedSpendingKey::ForAccount(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
+std::optional<std::pair<UnifiedSpendingKey, HDKeyPath>> UnifiedSpendingKey::ForAccount(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
     UnifiedSpendingKey usk;
     usk.accountId = accountId;
 

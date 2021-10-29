@@ -159,7 +159,10 @@ std::pair<SaplingExtendedSpendingKey, bool> CWallet::GenerateLegacySaplingZKey(u
     auto xsk = libzcash::SaplingExtendedSpendingKey::Legacy(seed, BIP44CoinType(), addrIndex);
     if (!HaveSaplingSpendingKey(xsk.first.ToXFVK())) {
         auto ivk = xsk.first.expsk.full_viewing_key().in_viewing_key();
-        mapSaplingZKeyMetadata[ivk] = xsk.second;
+        CKeyMetadata keyMeta(GetTime());
+        keyMeta.hdKeypath = xsk.second;
+        keyMeta.seedFp = seed.Fingerprint();
+        mapSaplingZKeyMetadata[ivk] = keyMeta;
 
         if (!AddSaplingZKey(xsk.first)) {
             throw std::runtime_error("CWallet::GenerateLegacySaplingZKey(): AddSaplingZKey failed.");
@@ -264,7 +267,7 @@ CPubKey CWallet::GenerateNewKey()
     auto seed = seedOpt.value();
 
     if (!mnemonicHDChain.has_value()) {
-        mnemonicHDChain = CHDChain(seedOpt.value().Fingerprint(), GetTime());
+        mnemonicHDChain = CHDChain(seed.Fingerprint(), GetTime());
     }
     CHDChain& hdChain = mnemonicHDChain.value();
 
@@ -272,7 +275,7 @@ CPubKey CWallet::GenerateNewKey()
     // a valid spending key for the account ZCASH_LEGACY_ACCOUNT;
     // therefore, the `value()` call here is safe.
     BIP32AccountChains accountChains = BIP32AccountChains::ForAccount(
-            seedOpt.value(),
+            seed,
             BIP44CoinType(),
             ZCASH_LEGACY_ACCOUNT).value();
 
@@ -287,7 +290,9 @@ CPubKey CWallet::GenerateNewKey()
             assert(secret.VerifyPubKey(pubkey));
 
             // Create new metadata
-            const CKeyMetadata& keyMeta = extKey.value().second;
+            CKeyMetadata keyMeta(GetTime());
+            keyMeta.hdKeypath = extKey.value().second;
+            keyMeta.seedFp = seed.Fingerprint();
             mapKeyMetadata[pubkey.GetID()] = keyMeta;
             if (nTimeFirstKey == 0 || keyMeta.nCreateTime < nTimeFirstKey)
                 nTimeFirstKey = keyMeta.nCreateTime;
