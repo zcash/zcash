@@ -614,7 +614,10 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
     if (hdSeed.has_value()) {
         auto mSeed = hdSeed.value();
         file << strprintf(
-                "# Emergency Recovery Phrase=\"%s\" \n# language=%s \n# fingerprint=%s\n",
+                "# Emergency Recovery Information\n"
+                "# - recovery_phrase=\"%s\"\n"
+                "# - language=%s\n"
+                "# - fingerprint=%s\n",
                 mSeed.GetMnemonic(),
                 MnemonicSeed::LanguageName(mSeed.GetLanguage()),
                 mSeed.Fingerprint().GetHex()
@@ -624,7 +627,10 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
     std::optional<HDSeed> legacySeed = pwalletMain->GetLegacyHDSeed();
     if (legacySeed.has_value()) {
         auto rawSeed = legacySeed.value().RawSeed();
-        file << strprintf("# Legacy HDSeed=%s fingerprint=%s\n",
+        file << strprintf(
+                "# Legacy HD Seed\n"
+                "# - seed=%s\n"
+                "# - fingerprint=%s\n",
                 HexStr(rawSeed.begin(), rawSeed.end()),
                 legacySeed.value().Fingerprint().GetHex()
                 );
