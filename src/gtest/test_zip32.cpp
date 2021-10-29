@@ -159,3 +159,14 @@ TEST(ZIP32, diversifier_index_t_increment)
     EXPECT_EQ(d_zero, d_one);
 }
 
+TEST(ZIP32, diversifier_index_t_lt)
+{
+    EXPECT_TRUE(libzcash::diversifier_index_t(0) < libzcash::diversifier_index_t(1));
+    EXPECT_FALSE(libzcash::diversifier_index_t(1) < libzcash::diversifier_index_t(0));
+    EXPECT_FALSE(libzcash::diversifier_index_t(0) < libzcash::diversifier_index_t(0));
+    EXPECT_TRUE(libzcash::diversifier_index_t(0xfffffffe) < libzcash::diversifier_index_t(0xffffffff));
+    EXPECT_FALSE(libzcash::diversifier_index_t(0xffffffff) < libzcash::diversifier_index_t(0xfffffffe));
+    EXPECT_TRUE(libzcash::diversifier_index_t(0x01) < libzcash::diversifier_index_t(0xffffffff));
+    EXPECT_FALSE(libzcash::diversifier_index_t(0xffffffff) < libzcash::diversifier_index_t(0x01));
+}
+

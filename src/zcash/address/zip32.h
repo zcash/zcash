@@ -195,11 +195,12 @@ public:
         return false; //overflow
     }
 
-    // treat as little-endian for numeric comparison
-    bool less_than_le(const diversifier_index_t& other) const {
+    friend bool operator<(const diversifier_index_t& a, const diversifier_index_t& b) {
         for (int i = 10; i >= 0; i--) {
-            if (data[i] < other.data[i]) {
-                return true;
+            if (a.data[i] == b.data[i]) {
+                continue;
+            } else {
+                return a.data[i] < b.data[i];
             }
         }
 

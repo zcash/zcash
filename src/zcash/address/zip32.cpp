@@ -334,7 +334,7 @@ std::optional<ZcashdUnifiedAddress> UnifiedFullViewingKey::Address(diversifier_i
 
     if (transparentKey.has_value()) {
         // ensure that the diversifier index is small enough for a t-addr
-        if (MAX_TRANSPARENT_CHILD_IDX.less_than_le(j)) return std::nullopt;
+        if (MAX_TRANSPARENT_CHILD_IDX < j) return std::nullopt;
 
         CExtPubKey changeKey;
         if (!transparentKey.value().Derive(changeKey, 0)) {
