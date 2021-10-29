@@ -124,6 +124,9 @@ typedef std::map<libzcash::SaplingPaymentAddress, libzcash::SaplingIncomingViewi
 class CBasicKeyStore : public CKeyStore
 {
 protected:
+    // All wallets will have a mnemonic seed, but this field must be declared
+    // as optional to avoid the need to construct or hold an invalid seed before the
+    // wallet's contents have been loaded from the database.
     std::optional<MnemonicSeed> mnemonicSeed;
     std::optional<HDSeed> legacySeed;
     KeyMap mapKeys;

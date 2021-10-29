@@ -83,7 +83,7 @@ public:
     /**
      * Randomly generate a new mnemonic seed. A SLIP-44 coin type is required to make it possible
      * to check that the generated seed can produce valid transparent and unified addresses at account
-     * numbers 0x7FFFFFFF and 0x0 respectively.
+     * numbers 0x7FFFFFFF and 0x00 respectively.
      */
     static MnemonicSeed Random(uint32_t bip44CoinType, Language language = English, size_t entropyLen = 32);
 
@@ -173,14 +173,14 @@ public:
     diversifier_index_t() {}
     diversifier_index_t(const base_blob<88>& b) : base_blob<88>(b) {}
     diversifier_index_t(uint64_t i): base_blob<88>() {
-        data[0] = (uint8_t) i;
-        data[1] = (uint8_t) (i >> 8);
-        data[2] = (uint8_t) (i >> 16);
-        data[3] = (uint8_t) (i >> 24);
-        data[4] = (uint8_t) (i >> 32);
-        data[5] = (uint8_t) (i >> 40);
-        data[6] = (uint8_t) (i >> 48);
-        data[7] = (uint8_t) (i >> 56);
+        data[0] = i & 0xFF;
+        data[1] = (i >> 8) & 0xFF;
+        data[2] = (i >> 16) & 0xFF;
+        data[3] = (i >> 24) & 0xFF;
+        data[4] = (i >> 32) & 0xFF;
+        data[5] = (i >> 40) & 0xFF;
+        data[6] = (i >> 48) & 0xFF;
+        data[7] = (i >> 56) & 0xFF;
     }
     explicit diversifier_index_t(const std::vector<unsigned char>& vch) : base_blob<88>(vch) {}
 
@@ -229,7 +229,7 @@ struct SaplingExtendedFullViewingKey {
 
     std::optional<SaplingExtendedFullViewingKey> Derive(uint32_t i) const;
 
-    // Attempt to construct a valid payment address with diversifier index
+    // Attempts to construct a valid payment address with diversifier index
     // `j`; returns std::nullopt if `j` does not result in a valid diversifier
     // given this xfvk.
     std::optional<libzcash::SaplingPaymentAddress> Address(diversifier_index_t j) const;
