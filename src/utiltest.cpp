@@ -316,7 +316,7 @@ void RegtestDeactivateNU5() {
 }
 
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey() {
-    std::string mnemonic("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art");
+    SecureString mnemonic("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art");
     MnemonicSeed seed(English, mnemonic);
     return libzcash::SaplingExtendedSpendingKey::Master(seed);
 }

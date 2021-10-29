@@ -1763,7 +1763,7 @@ UniValue walletconfirmbackup(const UniValue& params, bool fHelp)
 
     EnsureWalletIsUnlocked();
 
-    auto strMnemonicPhrase = params[0].get_str();
+    SecureString strMnemonicPhrase(params[0].get_str());
     boost::erase_all(strMnemonicPhrase, "\"");
     boost::trim(strMnemonicPhrase);
     if (strMnemonicPhrase.length() > 0) {

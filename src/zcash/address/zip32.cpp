@@ -28,7 +28,7 @@ MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, siz
         std::vector<unsigned char> entropy(entropyLen, 0);
         GetRandBytes(entropy.data(), entropyLen);
         const char* phrase = zip339_entropy_to_phrase(language, entropy.data(), entropyLen);
-        std::string mnemonic(phrase);
+        SecureString mnemonic(phrase);
         zip339_free_phrase(phrase);
         MnemonicSeed seed(language, mnemonic);
 

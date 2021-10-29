@@ -1305,7 +1305,7 @@ public:
     bool SetCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
     /* Checks the wallet's seed against the specified mnemonic, and marks the
      * wallet's seed as having been backed up if the phrases match. */
-    bool VerifyMnemonicSeed(std::string mnemonic);
+    bool VerifyMnemonicSeed(const SecureString& mnemonic);
     bool MnemonicVerified();
 
     /* Set the current HD seed, without saving it to disk (used by LoadWallet) */

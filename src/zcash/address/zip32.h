@@ -66,21 +66,18 @@ public:
 class MnemonicSeed: public HDSeed {
 private:
     Language language;
-    std::string mnemonic;
+    SecureString mnemonic;
 
     MnemonicSeed() {}
 
-    void Init() {
-        unsigned char buf[64];
-        zip339_phrase_to_seed(language, mnemonic.c_str(), &buf);
-        seed.assign(buf, std::end(buf));
+    void SetSeedFromMnemonic() {
+        seed.resize(64);
+        zip339_phrase_to_seed(language, mnemonic.c_str(), (uint8_t (*)[64])seed.data());
     }
 
 public:
-    MnemonicSeed(Language languageIn, std::string& mnemonicIn): language(languageIn), mnemonic(mnemonicIn) {
-        unsigned char buf[64];
-        zip339_phrase_to_seed(languageIn, mnemonicIn.c_str(), &buf);
-        seed.assign(buf, std::end(buf));
+    MnemonicSeed(Language languageIn, SecureString mnemonicIn): language(languageIn), mnemonic(mnemonicIn) {
+        SetSeedFromMnemonic();
     }
 
     /**
@@ -127,7 +124,7 @@ public:
             READWRITE(language0);
             READWRITE(mnemonic);
             language = (Language) language0;
-            Init();
+            SetSeedFromMnemonic();
         } else {
             uint32_t language0 = (uint32_t) language;
 
@@ -147,7 +144,7 @@ public:
         return language;
     }
 
-    const std::string GetMnemonic() const {
+    const SecureString& GetMnemonic() const {
         return mnemonic;
     }
 

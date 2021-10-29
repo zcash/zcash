@@ -2355,7 +2355,7 @@ bool CWallet::SetCryptedMnemonicSeed(const uint256& seedFp, const std::vector<un
     return false;
 }
 
-bool CWallet::VerifyMnemonicSeed(std::string mnemonic) {
+bool CWallet::VerifyMnemonicSeed(const SecureString& mnemonic) {
     LOCK(cs_wallet);
 
     auto seed = GetMnemonicSeed();

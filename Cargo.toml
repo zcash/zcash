@@ -48,6 +48,7 @@ zcash_note_encryption = "0.0"
 zcash_primitives = "0.5"
 zcash_proofs = "0.5"
 ed25519-zebra = "2.2.0"
+zeroize = "1.4.2"
 
 # Metrics
 hyper = { version = "=0.14.2", default-features = false, features = ["server", "tcp", "http1"] }
