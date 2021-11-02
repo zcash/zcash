@@ -306,8 +306,8 @@ struct SaplingExtendedSpendingKey {
     }
 };
 
-class UnifiedSpendingKey;
-class UnifiedFullViewingKey;
+class ZcashdUnifiedSpendingKey;
+class ZcashdUnifiedFullViewingKey;
 
 class ZcashdUnifiedAddress {
 private:
@@ -315,7 +315,7 @@ private:
     std::optional<CPubKey> transparentKey; //TODO: should this just be the public key hash?
     std::optional<SaplingPaymentAddress> saplingAddress;
 
-    friend class UnifiedFullViewingKey;
+    friend class ZcashdUnifiedFullViewingKey;
 
     ZcashdUnifiedAddress() {}
 public:
@@ -328,14 +328,14 @@ public:
     }
 };
 
-class UnifiedFullViewingKey {
+class ZcashdUnifiedFullViewingKey {
 private:
     std::optional<CExtPubKey> transparentKey;
     std::optional<SaplingExtendedFullViewingKey> saplingKey;
 
-    UnifiedFullViewingKey() {}
+    ZcashdUnifiedFullViewingKey() {}
 
-    friend class UnifiedSpendingKey;
+    friend class ZcashdUnifiedSpendingKey;
 public:
     const std::optional<CExtPubKey>& GetTransparentKey() const {
         return transparentKey;
@@ -358,15 +358,15 @@ public:
     }
 };
 
-class UnifiedSpendingKey {
+class ZcashdUnifiedSpendingKey {
 private:
     uint32_t accountId;
     std::optional<CExtKey> transparentKey;
     std::optional<SaplingExtendedSpendingKey> saplingKey;
 
-    UnifiedSpendingKey() {}
+    ZcashdUnifiedSpendingKey() {}
 public:
-    static std::optional<std::pair<UnifiedSpendingKey, HDKeyPath>> ForAccount(
+    static std::optional<std::pair<ZcashdUnifiedSpendingKey, HDKeyPath>> ForAccount(
             const HDSeed& seed,
             uint32_t bip44CoinType,
             uint32_t accountId);
@@ -379,7 +379,7 @@ public:
         return saplingKey;
     }
 
-    UnifiedFullViewingKey ToFullViewingKey() const;
+    ZcashdUnifiedFullViewingKey ToFullViewingKey() const;
 };
 
 std::optional<unsigned long> ParseZip32KeypathAccount(const std::string& keyPath);

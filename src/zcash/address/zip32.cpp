@@ -38,7 +38,7 @@ MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, siz
         // account 0x7FFFFFFF because derivation via the legacy path can simply search
         // for a valid diversifier; unlike in the unified spending key case, diversifier
         // indices don't need to line up with anything.
-        if (libzcash::UnifiedSpendingKey::ForAccount(seed, bip44CoinType, 0).has_value() &&
+        if (libzcash::ZcashdUnifiedSpendingKey::ForAccount(seed, bip44CoinType, 0).has_value() &&
             libzcash::Bip44AccountChains::ForAccount(seed, bip44CoinType, ZCASH_LEGACY_ACCOUNT).has_value())  {
             return seed;
         }
@@ -301,8 +301,8 @@ SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
 // Unified
 //
 
-std::optional<std::pair<UnifiedSpendingKey, HDKeyPath>> UnifiedSpendingKey::ForAccount(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
-    UnifiedSpendingKey usk;
+std::optional<std::pair<ZcashdUnifiedSpendingKey, HDKeyPath>> ZcashdUnifiedSpendingKey::ForAccount(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
+    ZcashdUnifiedSpendingKey usk;
     usk.accountId = accountId;
 
     auto transparentKey = DeriveBip44TransparentAccountKey(seed, bip44CoinType, accountId);
@@ -315,8 +315,8 @@ std::optional<std::pair<UnifiedSpendingKey, HDKeyPath>> UnifiedSpendingKey::ForA
     return std::make_pair(usk, saplingKey.second);
 }
 
-UnifiedFullViewingKey UnifiedSpendingKey::ToFullViewingKey() const {
-    UnifiedFullViewingKey ufvk;
+ZcashdUnifiedFullViewingKey ZcashdUnifiedSpendingKey::ToFullViewingKey() const {
+    ZcashdUnifiedFullViewingKey ufvk;
 
     if (transparentKey.has_value()) {
         ufvk.transparentKey = transparentKey.value().Neuter();
@@ -329,7 +329,7 @@ UnifiedFullViewingKey UnifiedSpendingKey::ToFullViewingKey() const {
     return ufvk;
 }
 
-std::optional<ZcashdUnifiedAddress> UnifiedFullViewingKey::Address(diversifier_index_t j) const {
+std::optional<ZcashdUnifiedAddress> ZcashdUnifiedFullViewingKey::Address(diversifier_index_t j) const {
     ZcashdUnifiedAddress ua;
 
     if (transparentKey.has_value()) {

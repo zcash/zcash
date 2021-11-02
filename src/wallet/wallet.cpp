@@ -406,7 +406,7 @@ bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullVi
     return false;
 }
 
-UnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
+ZcashdUnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
     AssertLockHeld(cs_wallet);
 
     CHDChain& hdChain = mnemonicHDChain.value();
@@ -426,13 +426,13 @@ UnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
     }
 }
 
-std::optional<libzcash::UnifiedSpendingKey> CWallet::GenerateUnifiedSpendingKeyForAccount(uint32_t accountId) {
+std::optional<libzcash::ZcashdUnifiedSpendingKey> CWallet::GenerateUnifiedSpendingKeyForAccount(uint32_t accountId) {
     auto seed = GetMnemonicSeed();
     if (!seed.has_value()) {
         throw std::runtime_error(std::string(__func__) + ": Wallet has no mnemonic HD seed. Please upgrade this wallet.");
     }
 
-    auto usk = UnifiedSpendingKey::ForAccount(seed.value(), BIP44CoinType(), accountId);
+    auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed.value(), BIP44CoinType(), accountId);
     if (usk.has_value()) {
         // TODO: Save the unified full viewing key & metadata to the wallet
 
