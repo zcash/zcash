@@ -384,12 +384,7 @@ public:
 
 std::optional<unsigned long> ParseZip32KeypathAccount(const std::string& keyPath);
 
-std::optional<std::pair<CExtKey, HDKeyPath>> DeriveZip32TransparentMasterKey(
-        const HDSeed& seed,
-        uint32_t bip44CoinType,
-        uint32_t accountId);
-
-class BIP32AccountChains {
+class Bip44AccountChains {
 private:
     uint256 seedFp;
     uint32_t accountId;
@@ -397,10 +392,10 @@ private:
     CExtKey external;
     CExtKey internal;
 
-    BIP32AccountChains(uint256 seedFpIn, uint32_t bip44CoinTypeIn, uint32_t accountIdIn, CExtKey externalIn, CExtKey internalIn):
+    Bip44AccountChains(uint256 seedFpIn, uint32_t bip44CoinTypeIn, uint32_t accountIdIn, CExtKey externalIn, CExtKey internalIn):
         seedFp(seedFpIn), accountId(accountIdIn), bip44CoinType(bip44CoinTypeIn), external(externalIn), internal(internalIn) {}
 public:
-    static std::optional<BIP32AccountChains> ForAccount(
+    static std::optional<Bip44AccountChains> ForAccount(
             const HDSeed& seed,
             uint32_t bip44CoinType,
             uint32_t accountId);

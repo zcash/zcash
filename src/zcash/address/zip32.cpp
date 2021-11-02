@@ -39,7 +39,7 @@ MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, siz
         // for a valid diversifier; unlike in the unified spending key case, diversifier
         // indices don't need to line up with anything.
         if (libzcash::UnifiedSpendingKey::ForAccount(seed, bip44CoinType, 0).has_value() &&
-            libzcash::BIP32AccountChains::ForAccount(seed, bip44CoinType, ZCASH_LEGACY_ACCOUNT).has_value())  {
+            libzcash::Bip44AccountChains::ForAccount(seed, bip44CoinType, ZCASH_LEGACY_ACCOUNT).has_value())  {
             return seed;
         }
     }
@@ -76,33 +76,33 @@ namespace libzcash {
 // Transparent
 //
 
-std::optional<std::pair<CExtKey, HDKeyPath>> DeriveZip32TransparentAccountKey(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
+std::optional<std::pair<CExtKey, HDKeyPath>> DeriveBip44TransparentAccountKey(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
     auto rawSeed = seed.RawSeed();
     auto m = CExtKey::Master(rawSeed.data(), rawSeed.size());
 
-    // We use a fixed keypath scheme of m/32'/coin_type'/account'
-    // Derive m/32'
-    auto m_32h = m.Derive(32 | ZIP32_HARDENED_KEY_LIMIT);
+    // We use a fixed keypath scheme of m/44'/coin_type'/account'
+    // Derive m/44'
+    auto m_32h = m.Derive(44 | ZIP32_HARDENED_KEY_LIMIT);
     if (!m_32h.has_value()) return std::nullopt;
 
-    // Derive m/32'/coin_type'
+    // Derive m/44'/coin_type'
     auto m_32h_cth = m_32h.value().Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
     if (!m_32h_cth.has_value()) return std::nullopt;
 
-    // Derive m/32'/coin_type'/account_id'
+    // Derive m/44'/coin_type'/account_id'
     auto result = m_32h_cth.value().Derive(accountId | ZIP32_HARDENED_KEY_LIMIT);
     if (!result.has_value()) return std::nullopt;
 
-    auto hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
+    auto hdKeypath = "m/44'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
 
     return std::make_pair(result.value(), hdKeypath);
 }
 
-std::optional<BIP32AccountChains> BIP32AccountChains::ForAccount(
+std::optional<Bip44AccountChains> Bip44AccountChains::ForAccount(
         const HDSeed& seed,
         uint32_t bip44CoinType,
         uint32_t accountId) {
-    auto accountKeyOpt = DeriveZip32TransparentAccountKey(seed, bip44CoinType, accountId);
+    auto accountKeyOpt = DeriveBip44TransparentAccountKey(seed, bip44CoinType, accountId);
     if (!accountKeyOpt.has_value()) return std::nullopt;
 
     auto accountKey = accountKeyOpt.value();
@@ -111,14 +111,14 @@ std::optional<BIP32AccountChains> BIP32AccountChains::ForAccount(
 
     if (!(external.has_value() && internal.has_value())) return std::nullopt;
 
-    return BIP32AccountChains(seed.Fingerprint(), bip44CoinType, accountId, external.value(), internal.value());
+    return Bip44AccountChains(seed.Fingerprint(), bip44CoinType, accountId, external.value(), internal.value());
 }
 
-std::optional<std::pair<CExtKey, HDKeyPath>> BIP32AccountChains::DeriveExternal(uint32_t addrIndex) {
+std::optional<std::pair<CExtKey, HDKeyPath>> Bip44AccountChains::DeriveExternal(uint32_t addrIndex) {
     auto childKey = external.Derive(addrIndex);
     if (!childKey.has_value()) return std::nullopt;
 
-    auto hdKeypath = "m/32'/"
+    auto hdKeypath = "m/44'/"
         + std::to_string(bip44CoinType) + "'/"
         + std::to_string(accountId) + "'/"
         + "0/"
@@ -127,11 +127,11 @@ std::optional<std::pair<CExtKey, HDKeyPath>> BIP32AccountChains::DeriveExternal(
     return std::make_pair(childKey.value(), hdKeypath);
 }
 
-std::optional<std::pair<CExtKey, HDKeyPath>> BIP32AccountChains::DeriveInternal(uint32_t addrIndex) {
+std::optional<std::pair<CExtKey, HDKeyPath>> Bip44AccountChains::DeriveInternal(uint32_t addrIndex) {
     auto childKey = internal.Derive(addrIndex);
     if (!childKey.has_value()) return std::nullopt;
 
-    auto hdKeypath = "m/32'/"
+    auto hdKeypath = "m/44'/"
         + std::to_string(bip44CoinType) + "'/"
         + std::to_string(accountId) + "'/"
         + "1/"
@@ -305,7 +305,7 @@ std::optional<std::pair<UnifiedSpendingKey, HDKeyPath>> UnifiedSpendingKey::ForA
     UnifiedSpendingKey usk;
     usk.accountId = accountId;
 
-    auto transparentKey = DeriveZip32TransparentAccountKey(seed, bip44CoinType, accountId);
+    auto transparentKey = DeriveBip44TransparentAccountKey(seed, bip44CoinType, accountId);
     if (!transparentKey.has_value()) return std::nullopt;
     usk.transparentKey = transparentKey.value().first;
 

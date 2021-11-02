@@ -274,7 +274,7 @@ CPubKey CWallet::GenerateNewKey()
     // All mnemonic seeds are checked at construction to ensure that we can obtain
     // a valid spending key for the account ZCASH_LEGACY_ACCOUNT;
     // therefore, the `value()` call here is safe.
-    BIP32AccountChains accountChains = BIP32AccountChains::ForAccount(
+    Bip44AccountChains accountChains = Bip44AccountChains::ForAccount(
             seed,
             BIP44CoinType(),
             ZCASH_LEGACY_ACCOUNT).value();
