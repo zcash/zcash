@@ -511,10 +511,10 @@ CVarInt<I> WrapVarInt(I& n) { return CVarInt<I>(n); }
  *  string
  */
 template<typename Stream, typename C, typename T, typename A>
-void Serialize(Stream& os, const std::basic_string<C>& str);
+void Serialize(Stream& os, const std::basic_string<C, T, A>& str);
 
 template<typename Stream, typename C, typename T, typename A>
-void Unserialize(Stream& is, std::basic_string<C>& str);
+void Unserialize(Stream& is, std::basic_string<C, T, A>& str);
 
 /**
  * prevector
