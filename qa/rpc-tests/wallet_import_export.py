@@ -32,7 +32,7 @@ class WalletImportExportTest (BitcoinTestFramework):
             errorString = e.error['message']
         assert_equal("Error: Please acknowledge that you have backed up" in errorString, True)
         dump_path0 = self.nodes[0].z_exportwallet('walletdumpmnem')
-        (mnemonic, t_keys0, sprout_keys0, sapling_keys0) = parse_wallet_file(dump_path0)
+        (mnemonic, _, _, _) = parse_wallet_file(dump_path0)
         self.nodes[0].walletconfirmbackup(mnemonic)
 
         # Now that we've confirmed backup, we can generate addresses
@@ -81,7 +81,7 @@ def parse_wallet_file(dump_path):
     assert_true("recovery_phrase" in file_lines[5], "Expected emergency recovery phrase")
     assert_true("language" in file_lines[6], "Expected mnemonic seed language")
     assert_true("fingerprint" in file_lines[7], "Expected mnemonic seed fingerprint")
-    mnemonic = file_lines[5].split("=")[1].strip()
+    mnemonic = file_lines[5].split("=")[1].replace("\"", "").strip()
     (t_keys, i) = parse_wallet_file_lines(file_lines, 0)
     (sprout_keys, i) = parse_wallet_file_lines(file_lines, i)
     (sapling_keys, i) = parse_wallet_file_lines(file_lines, i)

@@ -38,7 +38,6 @@
 
 #include <boost/assign/list_of.hpp>
 #include <boost/algorithm/string/trim.hpp>
-#include <boost/algorithm/string/erase.hpp>
 #include <utf8.h>
 
 #include <univalue.h>
@@ -1764,20 +1763,14 @@ UniValue walletconfirmbackup(const UniValue& params, bool fHelp)
     EnsureWalletIsUnlocked();
 
     SecureString strMnemonicPhrase(params[0].get_str());
-    boost::erase_all(strMnemonicPhrase, "\"");
     boost::trim(strMnemonicPhrase);
-    if (strMnemonicPhrase.length() > 0) {
-        if (!pwalletMain->VerifyMnemonicSeed(strMnemonicPhrase))
-            throw JSONRPCError(
-                    RPC_WALLET_PASSPHRASE_INCORRECT,
-                    "Error: The emergency recovery phrase entered was incorrect.");
+    if (pwalletMain->VerifyMnemonicSeed(strMnemonicPhrase)) {
+        return NullUniValue;
     } else {
-        throw runtime_error(
-            "walletconfirmbackup \"emergency recovery phrase\"\n"
-            "Notify the wallet that the user has backed up the emergency recovery phrase");
+        throw JSONRPCError(
+                RPC_WALLET_PASSPHRASE_INCORRECT,
+                "Error: The emergency recovery phrase entered was incorrect.");
     }
-
-    return NullUniValue;
 }
 
 
