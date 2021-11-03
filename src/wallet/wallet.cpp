@@ -2306,7 +2306,7 @@ void CWallet::GenerateNewSeed(Language language)
 {
     LOCK(cs_wallet);
 
-    auto seed = MnemonicSeed::Random(BIP44CoinType(), language, HD_WALLET_SEED_LENGTH);
+    auto seed = MnemonicSeed::Random(BIP44CoinType(), language, WALLET_MNEMONIC_ENTROPY_LENGTH);
 
     int64_t nCreationTime = GetTime();
 

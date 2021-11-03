@@ -71,8 +71,8 @@ static const bool DEFAULT_WALLETBROADCAST = true;
 //  unless there is some exceptional network disruption.
 static const unsigned int WITNESS_CACHE_SIZE = MAX_REORG_LENGTH + 1;
 
-//! Size of HD seed in bytes
-static const size_t HD_WALLET_SEED_LENGTH = 32;
+//! Amount of entropy used in generation of the mnemonic seed, in bytes.
+static const size_t WALLET_MNEMONIC_ENTROPY_LENGTH = 32;
 
 extern const char * DEFAULT_WALLET_DAT;
 
