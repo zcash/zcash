@@ -25,7 +25,7 @@ MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, siz
 {
     assert(entropyLen >= 32);
     while (true) { // loop until we find usable entropy
-        std::vector<unsigned char> entropy(entropyLen, 0);
+        RawHDSeed entropy(entropyLen, 0);
         GetRandBytes(entropy.data(), entropyLen);
         const char* phrase = zip339_entropy_to_phrase(language, entropy.data(), entropyLen);
         SecureString mnemonic(phrase);
@@ -99,7 +99,7 @@ std::optional<std::pair<CExtKey, HDKeyPath>> DeriveBip44TransparentAccountKey(co
 }
 
 std::optional<Bip44AccountChains> Bip44AccountChains::ForAccount(
-        const HDSeed& seed,
+        const MnemonicSeed& seed,
         uint32_t bip44CoinType,
         uint32_t accountId) {
     auto accountKeyOpt = DeriveBip44TransparentAccountKey(seed, bip44CoinType, accountId);
@@ -263,7 +263,10 @@ std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::For
 std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::Legacy(const HDSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex) {
     auto m = Master(seed);
 
-    // We use a fixed keypath scheme of m/32'/coin_type'/account'/addressIndex'
+    // We use a fixed keypath scheme of m/32'/coin_type'/0x7FFFFFFF'/addressIndex'
+    // This is not a "standard" path, but instead is a predictable location for
+    // legacy zcashd-derived keys that is minimally different from the UA account
+    // path, while unlikely to collide with normal UA account usage.
 
     // Derive m/32'
     auto m_32h = m.Derive(32 | ZIP32_HARDENED_KEY_LIMIT);
@@ -301,7 +304,7 @@ SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
 // Unified
 //
 
-std::optional<std::pair<ZcashdUnifiedSpendingKey, HDKeyPath>> ZcashdUnifiedSpendingKey::ForAccount(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
+std::optional<std::pair<ZcashdUnifiedSpendingKey, HDKeyPath>> ZcashdUnifiedSpendingKey::ForAccount(const MnemonicSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
     ZcashdUnifiedSpendingKey usk;
     usk.accountId = accountId;
 

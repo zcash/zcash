@@ -1060,7 +1060,7 @@ public:
     libzcash::SaplingPaymentAddress GenerateNewLegacySaplingZKey();
     //! Generates Sapling key at the specified address index, and stores the newly generated
     //! spending key to the wallet if it has not alreay been persisted.
-    //! Returns the newly created key, its metadata, and a flag distinguishing
+    //! Returns the newly created key, and a flag distinguishing
     //! whether or not the key was already known by the wallet.
     std::pair<libzcash::SaplingExtendedSpendingKey, bool> GenerateLegacySaplingZKey(uint32_t addrIndex);
     //! Adds Sapling spending key to the store, and saves it to disk
@@ -1308,12 +1308,12 @@ public:
     bool VerifyMnemonicSeed(const SecureString& mnemonic);
     bool MnemonicVerified();
 
-    /* Set the current HD seed, without saving it to disk (used by LoadWallet) */
+    /* Set the current mnemonic phrase, without saving it to disk (used by LoadWallet) */
     bool LoadMnemonicSeed(const MnemonicSeed& seed);
     /* Set the legacy HD seed, without saving it to disk (used by LoadWallet) */
     bool LoadLegacyHDSeed(const HDSeed& seed);
 
-    /* Set the current encrypted HD seed, without saving it to disk (used by LoadWallet) */
+    /* Set the current encrypted mnemonic phrase, without saving it to disk (used by LoadWallet) */
     bool LoadCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char>& seed);
     /* Set the legacy encrypted HD seed, without saving it to disk (used by LoadWallet) */
     bool LoadCryptedLegacyHDSeed(const uint256& seedFp, const std::vector<unsigned char>& seed);

@@ -191,9 +191,8 @@ CAmount AsyncRPCOperation_saplingmigration::chooseAmount(const CAmount& availabl
     return amount;
 }
 
-// Unless otherwise specified, the migration destination address is the address
-// the legacy Sapling account (0x7FFFFFFF) at the smallest diversifier index
-// that produces a valid diversified address.
+// Unless otherwise specified, the migration destination address is the
+// default address for the key at m/32'/coin_type'/0x7FFFFFFF'/0'
 libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigrationDestAddress(const HDSeed& seed) {
     KeyIO keyIO(Params());
     if (mapArgs.count("-migrationdestaddress")) {

@@ -110,8 +110,8 @@ libzcash::SproutPaymentAddress CWallet::GenerateNewSproutZKey()
     return addr;
 }
 
-// Generate a new Sapling spending key as a child of the legacy Sapling account
-// return its public payment address.
+// Generates a new Sapling spending key as a child of the legacy Sapling account,
+// and returns its public payment address.
 //
 // The z_getnewaddress API must use the mnemonic HD seed, and fail if that seed
 // is not present. The account index is determined by trial of values of
@@ -435,7 +435,7 @@ ZcashdUnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
 std::optional<libzcash::ZcashdUnifiedSpendingKey> CWallet::GenerateUnifiedSpendingKeyForAccount(uint32_t accountId) {
     auto seed = GetMnemonicSeed();
     if (!seed.has_value()) {
-        throw std::runtime_error(std::string(__func__) + ": Wallet has no mnemonic HD seed. Please upgrade this wallet.");
+        throw std::runtime_error(std::string(__func__) + ": Wallet has no mnemonic HD seed.");
     }
 
     auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed.value(), BIP44CoinType(), accountId);
@@ -4240,8 +4240,7 @@ bool CWallet::NewKeyPool()
         for (int i = 0; i < nKeys; i++)
         {
             int64_t nIndex = i+1;
-            auto key = GenerateNewKey();
-            walletdb.WritePool(nIndex, CKeyPool(key));
+            walletdb.WritePool(nIndex, CKeyPool(GenerateNewKey()));
             setKeyPool.insert(nIndex);
         }
         LogPrintf("CWallet::NewKeyPool wrote %d new keys\n", nKeys);
@@ -4271,8 +4270,7 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
             int64_t nEnd = 1;
             if (!setKeyPool.empty())
                 nEnd = *(--setKeyPool.end()) + 1;
-            auto newKey = GenerateNewKey();
-            if (!walletdb.WritePool(nEnd, CKeyPool(newKey)))
+            if (!walletdb.WritePool(nEnd, CKeyPool(GenerateNewKey())))
                 throw runtime_error("TopUpKeyPool(): writing generated key failed");
             setKeyPool.insert(nEnd);
             LogPrintf("keypool added key %d, size=%u\n", nEnd, setKeyPool.size());
@@ -4898,7 +4896,6 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
         walletInstance->SetMaxVersion(nMaxVersion);
     }
 
-    // TODO: should this go in `LoadWallet` instead?
     if (!walletInstance->HaveMnemonicSeed())
     {
         // We can't set the new HD seed until the wallet is decrypted.

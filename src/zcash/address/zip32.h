@@ -367,7 +367,7 @@ private:
     ZcashdUnifiedSpendingKey() {}
 public:
     static std::optional<std::pair<ZcashdUnifiedSpendingKey, HDKeyPath>> ForAccount(
-            const HDSeed& seed,
+            const MnemonicSeed& mnemonic,
             uint32_t bip44CoinType,
             uint32_t accountId);
 
@@ -396,7 +396,7 @@ private:
         seedFp(seedFpIn), accountId(accountIdIn), bip44CoinType(bip44CoinTypeIn), external(externalIn), internal(internalIn) {}
 public:
     static std::optional<Bip44AccountChains> ForAccount(
-            const HDSeed& seed,
+            const MnemonicSeed& mnemonic,
             uint32_t bip44CoinType,
             uint32_t accountId);
 

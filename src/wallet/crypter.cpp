@@ -372,7 +372,8 @@ bool CCryptoKeyStore::SetCryptedMnemonicSeed(
 {
     LOCK(cs_KeyStore);
     if (!fUseCrypto || !cryptedMnemonicSeed.first.IsNull()) {
-        // Require encryption & don't allow an existing seed to be changed.
+        // Either wallet encryption is disabled, or the wallet already has an
+        // existing mnemonic. In either case, don't allow a new mnemonic.
         return false;
     } else {
         cryptedMnemonicSeed = std::make_pair(seedFp, vchCryptedSecret);
@@ -439,7 +440,8 @@ bool CCryptoKeyStore::SetCryptedLegacyHDSeed(
 {
     LOCK(cs_KeyStore);
     if (!fUseCrypto || cryptedLegacySeed.has_value()) {
-        // Require encryption & don't allow an existing seed to be changed.
+        // Either wallet encryption is disabled, or the wallet already has an
+        // existing legacy seed. In either case, don't allow a new seed.
         return false;
     } else {
         cryptedLegacySeed = std::make_pair(seedFp, vchCryptedSecret);

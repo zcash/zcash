@@ -614,7 +614,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
     if (hdSeed.has_value()) {
         auto mSeed = hdSeed.value();
         file << strprintf(
-                "# Emergency Recovery Information\n"
+                "# Emergency Recovery Information:\n"
                 "# - recovery_phrase=\"%s\"\n"
                 "# - language=%s\n"
                 "# - fingerprint=%s\n",
@@ -628,7 +628,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
     if (legacySeed.has_value()) {
         auto rawSeed = legacySeed.value().RawSeed();
         file << strprintf(
-                "# Legacy HD Seed\n"
+                "# Legacy HD Seed:\n"
                 "# - seed=%s\n"
                 "# - fingerprint=%s\n",
                 HexStr(rawSeed.begin(), rawSeed.end()),

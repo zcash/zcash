@@ -54,7 +54,6 @@ using namespace libzcash;
 
 const std::string ADDR_TYPE_SPROUT = "sprout";
 const std::string ADDR_TYPE_SAPLING = "sapling";
-const bool DEFAULT_WALLET_REQUIRE_BACKUP = true;
 
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 
@@ -89,7 +88,7 @@ void EnsureWalletIsBackedUp(const CChainParams& params)
         throw JSONRPCError(
                 RPC_WALLET_BACKUP_REQUIRED,
                 "Error: Please acknowledge that you have backed up the wallet's emergency recovery phrase "
-                "with walletconfirmbackup first."
+                "by using the walletconfirmbackup RPC method first."
                 );
 }
 

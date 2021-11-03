@@ -53,6 +53,7 @@ TEST(KeystoreTests, StoreAndRetrieveLegacyHDSeed) {
     EXPECT_FALSE(seedOut.has_value());
 
     // Generate a random seed
+    // (We use MnemonicSeed purely to generate a seed, and then drop the mnemonic part.)
     HDSeed seed = MnemonicSeed::Random(SLIP44_TESTNET_TYPE);
 
     // We should be able to set and retrieve the seed
