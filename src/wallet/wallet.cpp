@@ -121,7 +121,8 @@ SaplingPaymentAddress CWallet::GenerateNewLegacySaplingZKey() {
     AssertLockHeld(cs_wallet);
 
     if (!mnemonicHDChain.has_value()) {
-        mnemonicHDChain = CHDChain(GetMnemonicSeed().value().Fingerprint(), GetTime());
+        throw std::runtime_error(
+                "CWallet::GenerateNewLegacySaplingZKey(): Wallet is missing mnemonic seed metadata.");
     }
     CHDChain& hdChain = mnemonicHDChain.value();
 
@@ -140,7 +141,7 @@ SaplingPaymentAddress CWallet::GenerateNewLegacySaplingZKey() {
             // Update the persisted chain information
             if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
                 throw std::runtime_error(
-                        "CWallet::GenerateLegacySaplingZKey(): Writing HD chain model failed");
+                        "CWallet::GenerateNewLegacySaplingZKey(): Writing HD chain model failed");
             }
 
             return xfvk.DefaultAddress();
@@ -267,7 +268,8 @@ CPubKey CWallet::GenerateNewKey()
     auto seed = seedOpt.value();
 
     if (!mnemonicHDChain.has_value()) {
-        mnemonicHDChain = CHDChain(seed.Fingerprint(), GetTime());
+        throw std::runtime_error(
+                "CWallet::GenerateNewKey(): Wallet is missing mnemonic seed metadata.");
     }
     CHDChain& hdChain = mnemonicHDChain.value();
 
@@ -409,6 +411,10 @@ bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullVi
 ZcashdUnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
     AssertLockHeld(cs_wallet);
 
+    if (!mnemonicHDChain.has_value()) {
+        throw std::runtime_error(
+                "CWallet::GenerateNewUnifiedSpendingKey(): Wallet is missing mnemonic seed metadata.");
+    }
     CHDChain& hdChain = mnemonicHDChain.value();
     while (true) {
         auto usk = GenerateUnifiedSpendingKeyForAccount(hdChain.GetAccountCounter());
@@ -2359,10 +2365,7 @@ bool CWallet::VerifyMnemonicSeed(const SecureString& mnemonic) {
     LOCK(cs_wallet);
 
     auto seed = GetMnemonicSeed();
-    if (seed.has_value() && seed.value().GetMnemonic() == mnemonic) {
-        if (!mnemonicHDChain.has_value()) {
-            mnemonicHDChain = CHDChain(seed.value().Fingerprint(), GetTime());
-        }
+    if (seed.has_value() && mnemonicHDChain.has_value() && seed.value().GetMnemonic() == mnemonic) {
         CHDChain& hdChain = mnemonicHDChain.value();
         hdChain.SetMnemonicSeedBackupConfirmed();
         // Update the persisted chain information

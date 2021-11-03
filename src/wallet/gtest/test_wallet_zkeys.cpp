@@ -31,13 +31,9 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     // No HD seed in the wallet
     EXPECT_ANY_THROW(wallet.GenerateNewLegacySaplingZKey());
 
-    // Load the all-zeroes seed
-    SecureString mnemonic("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art");
-    MnemonicSeed seed(English, mnemonic);
-    // The legacy seed used to be automatically derived from randomness; since
-    // non-mnemonic random generation has been removed we just use the
-    // all-zeros mnemonic for these tests.
-    wallet.LoadMnemonicSeed(seed);
+    // Add a random seed to the wallet.
+    wallet.GenerateNewSeed();
+    auto seed = wallet.GetMnemonicSeed().value();
 
     // Now this call succeeds
     auto address = wallet.GenerateNewLegacySaplingZKey();
@@ -432,10 +428,8 @@ TEST(WalletZkeysTest, WriteCryptedSaplingZkeyDirectToDb) {
 
     ASSERT_FALSE(wallet.HaveMnemonicSeed());
 
-    // Load the all-zeroes seed as the legacy seed
-    SecureString mnemonic("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art");
-    MnemonicSeed seed(English, mnemonic);
-    wallet.LoadMnemonicSeed(seed);
+    // Add a mnemonic seed to the wallet.
+    wallet.GenerateNewSeed();
     ASSERT_TRUE(wallet.HaveMnemonicSeed());
 
     // wallet should be empty
