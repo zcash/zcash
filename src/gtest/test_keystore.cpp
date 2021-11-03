@@ -312,7 +312,7 @@ public:
     bool Unlock(const CKeyingMaterial& vMasterKeyIn) { return CCryptoKeyStore::Unlock(vMasterKeyIn); }
 };
 
-TEST(KeystoreTests, StoreAndRetrieveHDSeedInEncryptedStore) {
+TEST(KeystoreTests, StoreAndRetrieveMnemonicSeedInEncryptedStore) {
     TestCCryptoKeyStore keyStore;
     CKeyingMaterial vMasterKey(32, 0);
     GetRandBytes(vMasterKey.data(), 32);
@@ -374,6 +374,67 @@ TEST(KeystoreTests, StoreAndRetrieveHDSeedInEncryptedStore) {
     ASSERT_TRUE(keyStore2.SetMnemonicSeed(seed3));
     EXPECT_TRUE(keyStore2.HaveMnemonicSeed());
     seedOut = keyStore2.GetMnemonicSeed();
+    ASSERT_TRUE(seedOut.has_value());
+    EXPECT_EQ(seed3, seedOut.value());
+}
+
+TEST(KeystoreTests, StoreAndRetrieveLegacyHDSeedInEncryptedStore) {
+    TestCCryptoKeyStore keyStore;
+    CKeyingMaterial vMasterKey(32, 0);
+    GetRandBytes(vMasterKey.data(), 32);
+
+    // 1) Test adding a seed to an unencrypted key store, then encrypting it
+    // We use a mnemonic seed, then disregard the mnemonic itself.
+    auto seed = MnemonicSeed::Random(SLIP44_TESTNET_TYPE);
+    auto seedOut = keyStore.GetLegacyHDSeed();
+    EXPECT_FALSE(seedOut.has_value());
+
+    ASSERT_TRUE(keyStore.SetLegacyHDSeed(seed));
+    seedOut = keyStore.GetLegacyHDSeed();
+    ASSERT_TRUE(seedOut.has_value());
+
+    ASSERT_TRUE(keyStore.EncryptKeys(vMasterKey));
+    seedOut = keyStore.GetLegacyHDSeed();
+    EXPECT_FALSE(seedOut.has_value());
+
+    // Unlocking with a random key should fail
+    CKeyingMaterial vRandomKey(32, 0);
+    GetRandBytes(vRandomKey.data(), 32);
+    EXPECT_FALSE(keyStore.Unlock(vRandomKey));
+
+    // Unlocking with a slightly-modified vMasterKey should fail
+    CKeyingMaterial vModifiedKey(vMasterKey);
+    vModifiedKey[0] += 1;
+    EXPECT_FALSE(keyStore.Unlock(vModifiedKey));
+
+    // Unlocking with vMasterKey should succeed
+    ASSERT_TRUE(keyStore.Unlock(vMasterKey));
+    seedOut = keyStore.GetLegacyHDSeed();
+    ASSERT_TRUE(seedOut.has_value());
+    EXPECT_EQ(seed, seedOut.value());
+
+    // 2) Test replacing the seed in an already-encrypted key store fails
+    auto seed2 = MnemonicSeed::Random(SLIP44_TESTNET_TYPE);
+    EXPECT_FALSE(keyStore.SetLegacyHDSeed(seed2));
+    seedOut = keyStore.GetLegacyHDSeed();
+    ASSERT_TRUE(seedOut.has_value());
+    EXPECT_EQ(seed, seedOut.value());
+
+    // 3) Test adding a new seed to an already-encrypted key store
+    TestCCryptoKeyStore keyStore2;
+
+    // Add a Sprout address so the wallet has something to test when decrypting
+    ASSERT_TRUE(keyStore2.AddSproutSpendingKey(libzcash::SproutSpendingKey::random()));
+
+    ASSERT_TRUE(keyStore2.EncryptKeys(vMasterKey));
+    ASSERT_TRUE(keyStore2.Unlock(vMasterKey));
+
+    seedOut = keyStore2.GetLegacyHDSeed();
+    EXPECT_FALSE(seedOut.has_value());
+
+    auto seed3 = MnemonicSeed::Random(SLIP44_TESTNET_TYPE);
+    ASSERT_TRUE(keyStore2.SetLegacyHDSeed(seed3));
+    seedOut = keyStore2.GetLegacyHDSeed();
     ASSERT_TRUE(seedOut.has_value());
     EXPECT_EQ(seed3, seedOut.value());
 }
