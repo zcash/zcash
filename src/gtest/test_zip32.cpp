@@ -134,21 +134,23 @@ TEST(ZIP32, TestVectors) {
 }
 
 TEST(ZIP32, ParseZip32KeypathAccount) {
+    auto expect_account = [](std::string sAccount, long expected) {
+        auto result = libzcash::ParseZip32KeypathAccount(sAccount);
+        EXPECT_TRUE(result.has_value());
+        EXPECT_EQ(result.value(), expected);
+    };
+
     std::string sAccount = "m/32'/1234'/5'";
-    EXPECT_TRUE(libzcash::ParseZip32KeypathAccount(sAccount).has_value());
-    EXPECT_EQ(libzcash::ParseZip32KeypathAccount(sAccount).value(), 5);
+    expect_account(sAccount, 5);
 
     sAccount = "m/32'/1234'/50'";
-    EXPECT_TRUE(libzcash::ParseZip32KeypathAccount(sAccount).has_value());
-    EXPECT_EQ(libzcash::ParseZip32KeypathAccount(sAccount).value(), 50);
+    expect_account(sAccount, 50);
 
     sAccount = "m/32'/1234'/5'/0";
-    EXPECT_TRUE(libzcash::ParseZip32KeypathAccount(sAccount).has_value());
-    EXPECT_EQ(libzcash::ParseZip32KeypathAccount(sAccount).value(), 5);
+    expect_account(sAccount, 5);
 
     sAccount = "m/32'/133'/2147483646'/1";
-    EXPECT_TRUE(libzcash::ParseZip32KeypathAccount(sAccount).has_value());
-    EXPECT_EQ(libzcash::ParseZip32KeypathAccount(sAccount).value(), 2147483646);
+    expect_account(sAccount, 2147483646);
 }
 
 TEST(ZIP32, diversifier_index_t_increment)
