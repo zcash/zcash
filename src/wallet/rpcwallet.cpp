@@ -2062,7 +2062,10 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
             "  \"keypoolsize\": xxxx,        (numeric) how many new keys are pre-generated\n"
             "  \"unlocked_until\": ttt,      (numeric) the timestamp in seconds since epoch (midnight Jan 1 1970 GMT) that the wallet is unlocked for transfers, or 0 if the wallet is locked\n"
             "  \"paytxfee\": x.xxxx,         (numeric) the transaction fee configuration, set in " + CURRENCY_UNIT + "/kB\n"
-            "  \"seedfp\": \"uint256\",        (string) the BLAKE2b-256 hash of the HD seed\n"
+            "  \"mnemonic_seedfp\": \"uint256\", (string) the BLAKE2b-256 hash of the HD seed derived from the wallet's emergency recovery phrase\n"
+            "  \"legacy_seedfp\": \"uint256\",   (string, optional) if this wallet was created prior to release 4.5.2, this will contain the BLAKE2b-256\n"
+            "                                    hash of the legacy HD seed that was used to derive Sapling addresses prior to the 4.5.2 upgrade to mnemonic\n"
+            "                                    emergency recovery phrases. This field was previously named \"seedfp\".\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getwalletinfo", "")
