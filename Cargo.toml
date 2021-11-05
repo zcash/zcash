@@ -18,6 +18,7 @@ repository = "https://github.com/zcash/zcash"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 edition = "2018"
+rust-version = "1.56"
 
 [lib]
 name = "rustzcash"

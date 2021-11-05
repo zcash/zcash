@@ -18,7 +18,7 @@ native_ccache 4.4.2 2022-02-01
 native_clang 13.0.0 2022-02-01
 libcxx 13.0.0 2022-02-01
 
-# Rust is currently pinned to 1.55.0
+# Rust is currently pinned to 1.56.1
 
 bdb 18.1.40 2022-02-01
 
