@@ -281,35 +281,34 @@ CPubKey CWallet::GenerateNewKey()
             BIP44CoinType(),
             ZCASH_LEGACY_ACCOUNT).value();
 
-    while (true) {
-        auto extKey = accountChains.DeriveExternal(hdChain.GetLegacyTKeyCounter());
+    std::optional<std::pair<CExtKey, HDKeyPath>> extKey = std::nullopt;
+    do {
+        extKey = accountChains.DeriveExternal(hdChain.GetLegacyTKeyCounter());
         hdChain.IncrementLegacyTKeyCounter();
-
         // if we did not successfully generate a key, try again.
-        if (extKey.has_value()) {
-            CKey secret = extKey.value().first.key;
-            CPubKey pubkey = secret.GetPubKey();
-            assert(secret.VerifyPubKey(pubkey));
+    } while (!extKey.has_value());
 
-            // Create new metadata
-            CKeyMetadata keyMeta(GetTime());
-            keyMeta.hdKeypath = extKey.value().second;
-            keyMeta.seedFp = seed.Fingerprint();
-            mapKeyMetadata[pubkey.GetID()] = keyMeta;
-            if (nTimeFirstKey == 0 || keyMeta.nCreateTime < nTimeFirstKey)
-                nTimeFirstKey = keyMeta.nCreateTime;
+    CKey secret = extKey.value().first.key;
+    CPubKey pubkey = secret.GetPubKey();
+    assert(secret.VerifyPubKey(pubkey));
 
-            if (!AddKeyPubKey(secret, pubkey))
-                throw std::runtime_error("CWallet::GenerateNewKey(): AddKey failed");
+    // Create new metadata
+    CKeyMetadata keyMeta(GetTime());
+    keyMeta.hdKeypath = extKey.value().second;
+    keyMeta.seedFp = seed.Fingerprint();
+    mapKeyMetadata[pubkey.GetID()] = keyMeta;
+    if (nTimeFirstKey == 0 || keyMeta.nCreateTime < nTimeFirstKey)
+        nTimeFirstKey = keyMeta.nCreateTime;
 
-            // Update the persisted chain information
-            if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
-                throw std::runtime_error("CWallet::GenerateNewKey(): Writing HD chain model failed");
-            }
+    if (!AddKeyPubKey(secret, pubkey))
+        throw std::runtime_error("CWallet::GenerateNewKey(): AddKey failed");
 
-            return pubkey;
-        }
+    // Update the persisted chain information
+    if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
+        throw std::runtime_error("CWallet::GenerateNewKey(): Writing HD chain model failed");
     }
+
+    return pubkey;
 }
 
 bool CWallet::AddKeyPubKey(const CKey& secret, const CPubKey &pubkey)
