@@ -1296,9 +1296,11 @@ public:
     bool IsHDFullyEnabled() const;
 
     /* Generates a new HD seed (will reset the chain child index counters)
-       Sets the seed's version based on the current wallet version (so the
-       caller must ensure the current wallet version is correct before calling
-       this function). */
+     * by randomly generating a mnemonic phrase that can be used for wallet
+     * recovery, and deriving the HD seed from that phrase in accordance with
+     * BIP 39 / ZIP 339. Sets the seed's version based on the current wallet
+     * version (the caller must ensure the current wallet version is correct
+     * before calling this function). */
     void GenerateNewSeed(Language language = English);
 
     bool SetMnemonicSeed(const MnemonicSeed& seed);
