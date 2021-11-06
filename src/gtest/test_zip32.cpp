@@ -133,9 +133,9 @@ TEST(ZIP32, TestVectors) {
         testing::ElementsAreArray({ 0x03, 0x0f, 0xfb, 0x26, 0x3a, 0x93, 0x9e, 0x23, 0x0e, 0x96, 0xdd }));
 }
 
-TEST(ZIP32, ParseZip32KeypathAccount) {
+TEST(ZIP32, ParseHDKeypathAccount) {
     auto expect_account = [](std::string sAccount, long expected) {
-        auto result = libzcash::ParseZip32KeypathAccount(sAccount);
+        auto result = libzcash::ParseHDKeypathAccount(32, sAccount);
         EXPECT_TRUE(result.has_value());
         EXPECT_EQ(result.value(), expected);
     };

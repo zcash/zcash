@@ -382,7 +382,7 @@ public:
     ZcashdUnifiedFullViewingKey ToFullViewingKey() const;
 };
 
-std::optional<unsigned long> ParseZip32KeypathAccount(const std::string& keyPath);
+std::optional<unsigned long> ParseHDKeypathAccount(uint32_t accountId, const std::string& keyPath);
 
 class Bip44AccountChains {
 private:

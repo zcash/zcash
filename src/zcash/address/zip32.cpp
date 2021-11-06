@@ -365,8 +365,8 @@ std::optional<ZcashdUnifiedAddress> ZcashdUnifiedFullViewingKey::Address(diversi
     return ua;
 }
 
-std::optional<unsigned long> ParseZip32KeypathAccount(const std::string& keyPath) {
-    std::regex pattern("m/32'/[0-9]+'/([0-9]+)'.*");
+std::optional<unsigned long> ParseHDKeypathAccount(uint32_t accountId, const std::string& keyPath) {
+    std::regex pattern("m/" + std::to_string(accountId)  + "'/[0-9]+'/([0-9]+)'.*");
     std::smatch matches;
     if (std::regex_match(keyPath, matches, pattern)) {
         return stoul(matches[1]);
