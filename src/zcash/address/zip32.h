@@ -287,8 +287,8 @@ struct SaplingExtendedSpendingKey {
     }
 
     static SaplingExtendedSpendingKey Master(const HDSeed& seed);
-    static std::pair<SaplingExtendedSpendingKey, HDKeyPath> ForAccount(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId);
-    static std::pair<SaplingExtendedSpendingKey, HDKeyPath> Legacy(const HDSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex);
+    static std::pair<SaplingExtendedSpendingKey, HDKeyPath> ForAccount(const MnemonicSeed& seed, uint32_t bip44CoinType, uint32_t accountId);
+    static std::pair<SaplingExtendedSpendingKey, HDKeyPath> Legacy(const MnemonicSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex);
 
 
     SaplingExtendedSpendingKey Derive(uint32_t i) const;

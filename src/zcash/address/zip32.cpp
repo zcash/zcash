@@ -76,7 +76,7 @@ namespace libzcash {
 // Transparent
 //
 
-std::optional<std::pair<CExtKey, HDKeyPath>> DeriveBip44TransparentAccountKey(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
+std::optional<std::pair<CExtKey, HDKeyPath>> DeriveBip44TransparentAccountKey(const MnemonicSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
     auto rawSeed = seed.RawSeed();
     auto m = CExtKey::Master(rawSeed.data(), rawSeed.size());
 
@@ -242,7 +242,7 @@ SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Derive(uint32_t i) const
     return xsk_i;
 }
 
-std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::ForAccount(const HDSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
+std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::ForAccount(const MnemonicSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
     auto m = Master(seed);
 
     // We use a fixed keypath scheme of m/32'/coin_type'/account'
@@ -260,7 +260,7 @@ std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::For
     return std::make_pair(xsk, hdKeypath);
 }
 
-std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::Legacy(const HDSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex) {
+std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::Legacy(const MnemonicSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex) {
     auto m = Master(seed);
 
     // We use a fixed keypath scheme of m/32'/coin_type'/0x7FFFFFFF'/addressIndex'
