@@ -195,6 +195,8 @@ public:
         return false; //overflow
     }
 
+    std::optional<unsigned int> ToTransparentChildIndex() const;
+
     friend bool operator<(const diversifier_index_t& a, const diversifier_index_t& b) {
         for (int i = 10; i >= 0; i--) {
             if (a.data[i] == b.data[i]) {

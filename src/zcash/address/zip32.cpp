@@ -72,6 +72,15 @@ uint256 ovkForShieldingFromTaddr(HDSeed& seed) {
 
 namespace libzcash {
 
+std::optional<unsigned int> diversifier_index_t::ToTransparentChildIndex() const {
+    // ensure that the diversifier index is small enough for a t-addr
+    if (MAX_TRANSPARENT_CHILD_IDX < *this) {
+        return std::nullopt;
+    } else {
+        return (unsigned int) GetUint64(0);
+    }
+}
+
 //
 // Transparent
 //
@@ -336,8 +345,8 @@ std::optional<ZcashdUnifiedAddress> ZcashdUnifiedFullViewingKey::Address(diversi
     ZcashdUnifiedAddress ua;
 
     if (transparentKey.has_value()) {
-        // ensure that the diversifier index is small enough for a t-addr
-        if (MAX_TRANSPARENT_CHILD_IDX < j) return std::nullopt;
+        auto childIndex = j.ToTransparentChildIndex();
+        if (!childIndex.has_value()) return std::nullopt;
 
         CExtPubKey changeKey;
         if (!transparentKey.value().Derive(changeKey, 0)) {
@@ -345,8 +354,7 @@ std::optional<ZcashdUnifiedAddress> ZcashdUnifiedFullViewingKey::Address(diversi
         }
 
         CExtPubKey childKey;
-        unsigned int childIndex = (unsigned int) j.GetUint64(0);
-        if (changeKey.Derive(childKey, childIndex)) {
+        if (changeKey.Derive(childKey, childIndex.value())) {
             ua.transparentKey = childKey.pubkey;
         } else {
             return std::nullopt;
