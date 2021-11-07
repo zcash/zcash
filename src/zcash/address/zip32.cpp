@@ -355,7 +355,7 @@ std::optional<ZcashdUnifiedAddress> ZcashdUnifiedFullViewingKey::Address(diversi
 
         CExtPubKey childKey;
         if (changeKey.Derive(childKey, childIndex.value())) {
-            ua.transparentKey = childKey.pubkey;
+            ua.transparentAddress = childKey.pubkey.GetID();
         } else {
             return std::nullopt;
         }

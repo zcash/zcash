@@ -314,15 +314,15 @@ class ZcashdUnifiedFullViewingKey;
 class ZcashdUnifiedAddress {
 private:
     diversifier_index_t diversifier_index;
-    std::optional<CPubKey> transparentKey; //TODO: should this just be the public key hash?
+    std::optional<CKeyID> transparentAddress;
     std::optional<SaplingPaymentAddress> saplingAddress;
 
     friend class ZcashdUnifiedFullViewingKey;
 
     ZcashdUnifiedAddress() {}
 public:
-    const std::optional<CPubKey>& GetTransparentKey() const {
-        return transparentKey;
+    const std::optional<CKeyID>& GetTransparentAddress() const {
+        return transparentAddress;
     }
 
     const std::optional<SaplingPaymentAddress>& GetSaplingPaymentAddress() const {
