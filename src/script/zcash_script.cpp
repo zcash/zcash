@@ -5,7 +5,6 @@
 
 #include "zcash_script.h"
 
-#include "consensus/consensus.h"
 #include "consensus/upgrades.h"
 #include "primitives/transaction.h"
 #include "pubkey.h"
