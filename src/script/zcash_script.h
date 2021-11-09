@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-#define ZCASH_SCRIPT_API_VER 1
+#define ZCASH_SCRIPT_API_VER 2
 
 typedef enum zcash_script_error_t
 {
@@ -120,6 +120,7 @@ EXPORT_SYMBOL unsigned int zcash_script_legacy_sigop_count(
     unsigned int txToLen,
     zcash_script_error* err);
 
+/// Returns the current version of the zcash_script library.
 EXPORT_SYMBOL unsigned int zcash_script_version();
 
 #ifdef __cplusplus
