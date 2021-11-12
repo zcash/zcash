@@ -27,7 +27,7 @@ class NodeHandlingTest (BitcoinTestFramework):
         ###########################
         assert_equal(len(self.nodes[2].getpeerinfo()), 4) #we should have 4 nodes at this point
         self.nodes[2].setban("127.0.0.1", "add")
-        time.sleep(3) #wait till the nodes are disconected
+        time.sleep(3) #wait till the nodes are disconnected
         assert_equal(len(self.nodes[2].getpeerinfo()), 0) #all nodes must be disconnected at this point
         assert_equal(len(self.nodes[2].listbanned()), 1)
         self.nodes[2].clearbanned()

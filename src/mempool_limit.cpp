@@ -102,7 +102,7 @@ void WeightedTxTree::remove(const uint256& txId)
     size_t removeIndex = txIdToIndexMap[txId];
 
     // We reduce the size at the start of this method to avoid saying size - 1
-    // when refering to the last element of the array below
+    // when referring to the last element of the array below
     size -= 1;
 
     TxWeight lastChildWeight = txIdAndWeights[size].txWeight;

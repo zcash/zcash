@@ -44,7 +44,7 @@ class UpgradeGoldenTest(BitcoinTestFramework):
         logging.info("Initializing the network in "+self.options.tmpdir)
 
         # Node 0 will always be running with the most recent network upgrade version.
-        # The remaining nodes start with the nework upgrade versions in order that they
+        # The remaining nodes start with the network upgrade versions in order that they
         # are specified in the upgrades list.
         upgrade_args = [self.upgrades[-1].extra_args] + [u.extra_args for u in self.upgrades]
         self.nodes = start_nodes(len(self.upgrades) + 1, self.options.tmpdir, extra_args=upgrade_args)

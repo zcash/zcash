@@ -51,14 +51,14 @@ class WalletImportExportTest (BitcoinTestFramework):
         assert_true(sapling_address0 in sapling_keys1)
         assert_true(sapling_address2 in sapling_keys1)
 
-        # make sure we have perserved the metadata
+        # make sure we have preserved the metadata
         for sapling_key0 in sapling_keys0.splitlines():
             assert_true(sapling_key0 in sapling_keys1)
 
 # Helper functions
 def parse_wallet_file(dump_path):
     file_lines = open(dump_path, "r", encoding="utf8").readlines()
-    # We expect information about the HDSeed and fingerpring in the header
+    # We expect information about the HDSeed and fingerprint in the header
     assert_true("HDSeed" in file_lines[4], "Expected HDSeed")
     assert_true("fingerprint" in file_lines[4], "Expected fingerprint")
     seed_comment_line = file_lines[4][2:].split()  # ["HDSeed=...", "fingerprint=..."]
