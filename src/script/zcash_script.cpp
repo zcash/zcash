@@ -186,7 +186,6 @@ unsigned int zcash_script_legacy_sigop_count_precomputed(
     zcash_script_error* err)
 {
     const PrecomputedTransaction* preTx = static_cast<const PrecomputedTransaction*>(pre_preTx);
-    const CTransaction& tx = preTx->tx;
 
     // The current implementation of this method never errors.
     set_error(err, zcash_script_ERR_OK);
