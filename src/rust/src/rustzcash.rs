@@ -70,6 +70,7 @@ mod tracing_ffi;
 
 mod address_ffi;
 mod history_ffi;
+mod incremental_sinsemilla_tree_ffi;
 mod orchard_ffi;
 mod transaction_ffi;
 mod zip339_ffi;
