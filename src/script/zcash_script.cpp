@@ -70,7 +70,8 @@ struct ECCryptoClosure
 
 ECCryptoClosure instance_of_eccryptoclosure;
 
-/// Copy of GetLegacySigOpCount from main.cpp commit c4b2ef7c4
+// Copy of GetLegacySigOpCount from main.cpp commit c4b2ef7c4.
+// Replace with the copy from src/consensus/tx_verify.{cpp,h} after backporting that refactor.
 unsigned int GetLegacySigOpCount(const CTransaction& tx)
 {
     unsigned int nSigOps = 0;
