@@ -103,7 +103,7 @@ EXPORT_SYMBOL int zcash_script_verify(
 /// transparent inputs and outputs of the precomputed transaction
 /// pointed to by preTx.
 ///
-/// Returns UINT_MAX on error.
+/// Returns UINT_MAX on error, so that invalid transactions don't pass the Zcash consensus rules.
 /// If not NULL, err will contain an error/success code for the operation.
 EXPORT_SYMBOL unsigned int zcash_script_legacy_sigop_count_precomputed(
     const void* preTx,
