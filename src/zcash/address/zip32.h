@@ -17,7 +17,8 @@
 #include <string>
 #include <regex>
 
-const uint32_t ZIP32_HARDENED_KEY_LIMIT = 0x80000000;
+// The minimum value for BIP-32 or ZIP-32 hardened key path element
+const uint32_t HARDENED_KEY_LIMIT = 0x80000000;
 const size_t ZIP32_XFVK_SIZE = 169;
 const size_t ZIP32_XSK_SIZE = 169;
 
@@ -26,7 +27,7 @@ const size_t ZIP32_XSK_SIZE = 169;
  * transparent and Sapling addresses via the legacy
  * `getnewaddress` and `z_getnewaddress` code paths,
  */
-const uint32_t ZCASH_LEGACY_ACCOUNT = 0x7FFFFFFF;
+const uint32_t ZCASH_LEGACY_ACCOUNT = HARDENED_KEY_LIMIT - 1;
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char>> RawHDSeed;
 

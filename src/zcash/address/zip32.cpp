@@ -91,15 +91,15 @@ std::optional<std::pair<CExtKey, HDKeyPath>> DeriveBip44TransparentAccountKey(co
 
     // We use a fixed keypath scheme of m/44'/coin_type'/account'
     // Derive m/44'
-    auto m_32h = m.Derive(44 | ZIP32_HARDENED_KEY_LIMIT);
-    if (!m_32h.has_value()) return std::nullopt;
+    auto m_44h = m.Derive(44 | HARDENED_KEY_LIMIT);
+    if (!m_44h.has_value()) return std::nullopt;
 
     // Derive m/44'/coin_type'
-    auto m_32h_cth = m_32h.value().Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
-    if (!m_32h_cth.has_value()) return std::nullopt;
+    auto m_44h_cth = m_44h.value().Derive(bip44CoinType | HARDENED_KEY_LIMIT);
+    if (!m_44h_cth.has_value()) return std::nullopt;
 
     // Derive m/44'/coin_type'/account_id'
-    auto result = m_32h_cth.value().Derive(accountId | ZIP32_HARDENED_KEY_LIMIT);
+    auto result = m_44h_cth.value().Derive(accountId | HARDENED_KEY_LIMIT);
     if (!result.has_value()) return std::nullopt;
 
     auto hdKeypath = "m/44'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
@@ -256,12 +256,12 @@ std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::For
 
     // We use a fixed keypath scheme of m/32'/coin_type'/account'
     // Derive m/32'
-    auto m_32h = m.Derive(32 | ZIP32_HARDENED_KEY_LIMIT);
+    auto m_32h = m.Derive(32 | HARDENED_KEY_LIMIT);
     // Derive m/32'/coin_type'
-    auto m_32h_cth = m_32h.Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
+    auto m_32h_cth = m_32h.Derive(bip44CoinType | HARDENED_KEY_LIMIT);
 
     // Derive account key at next index, skip keys already known to the wallet
-    auto xsk = m_32h_cth.Derive(accountId | ZIP32_HARDENED_KEY_LIMIT);
+    auto xsk = m_32h_cth.Derive(accountId | HARDENED_KEY_LIMIT);
 
     // Create new metadata
     auto hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
@@ -278,15 +278,15 @@ std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::Leg
     // path, while unlikely to collide with normal UA account usage.
 
     // Derive m/32'
-    auto m_32h = m.Derive(32 | ZIP32_HARDENED_KEY_LIMIT);
+    auto m_32h = m.Derive(32 | HARDENED_KEY_LIMIT);
     // Derive m/32'/coin_type'
-    auto m_32h_cth = m_32h.Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
+    auto m_32h_cth = m_32h.Derive(bip44CoinType | HARDENED_KEY_LIMIT);
 
     // Derive account key at the legacy account index
-    auto m_32h_cth_l = m_32h_cth.Derive(ZCASH_LEGACY_ACCOUNT | ZIP32_HARDENED_KEY_LIMIT);
+    auto m_32h_cth_l = m_32h_cth.Derive(ZCASH_LEGACY_ACCOUNT | HARDENED_KEY_LIMIT);
 
     // Derive key at the specified address index
-    auto xsk = m_32h_cth_l.Derive(addressIndex | ZIP32_HARDENED_KEY_LIMIT);
+    auto xsk = m_32h_cth_l.Derive(addressIndex | HARDENED_KEY_LIMIT);
 
     // Create new metadata
     auto hdKeypath = "m/32'/"

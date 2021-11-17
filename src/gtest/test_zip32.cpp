@@ -58,10 +58,10 @@ TEST(ZIP32, TestVectors) {
         m_1.ToXFVK().DefaultAddress().d,
         testing::ElementsAreArray({ 0x8b, 0x41, 0x38, 0x32, 0x0d, 0xfa, 0xfd, 0x7b, 0x39, 0x97, 0x81 }));
 
-    auto m_1_2h = m_1.Derive(2 | ZIP32_HARDENED_KEY_LIMIT);
+    auto m_1_2h = m_1.Derive(2 | HARDENED_KEY_LIMIT);
     EXPECT_EQ(m_1_2h.depth, 2);
     EXPECT_EQ(m_1_2h.parentFVKTag, 0x079e99db);
-    EXPECT_EQ(m_1_2h.childIndex, 2 | ZIP32_HARDENED_KEY_LIMIT);
+    EXPECT_EQ(m_1_2h.childIndex, 2 | HARDENED_KEY_LIMIT);
     EXPECT_EQ(
         m_1_2h.chaincode,
         uint256S("35d4a883737742ca41a4baa92323bdb3c93dcb3b462a26b039971bedf415ce97"));
@@ -84,7 +84,7 @@ TEST(ZIP32, TestVectors) {
     auto m_1_2hv = m_1_2h.ToXFVK();
     EXPECT_EQ(m_1_2hv.depth, 2);
     EXPECT_EQ(m_1_2hv.parentFVKTag, 0x079e99db);
-    EXPECT_EQ(m_1_2hv.childIndex, 2 | ZIP32_HARDENED_KEY_LIMIT);
+    EXPECT_EQ(m_1_2hv.childIndex, 2 | HARDENED_KEY_LIMIT);
     EXPECT_EQ(
         m_1_2hv.chaincode,
         uint256S("35d4a883737742ca41a4baa92323bdb3c93dcb3b462a26b039971bedf415ce97"));
@@ -103,7 +103,7 @@ TEST(ZIP32, TestVectors) {
     EXPECT_EQ(m_1_2hv.DefaultAddress(), m_1_2h.ToXFVK().DefaultAddress());
 
     // Hardened derivation from an xfvk fails
-    EXPECT_FALSE(m_1_2hv.Derive(3 | ZIP32_HARDENED_KEY_LIMIT));
+    EXPECT_FALSE(m_1_2hv.Derive(3 | HARDENED_KEY_LIMIT));
 
     // Non-hardened derivation succeeds
     auto maybe_m_1_2hv_3 = m_1_2hv.Derive(3);
