@@ -44,7 +44,7 @@ public:
     std::string operator()(const CNoDestination& no) const { return {}; }
 };
 
-static uint8_t GetTypecode(const void* ua, size_t index)
+static uint32_t GetTypecode(const void* ua, size_t index)
 {
     return std::visit(
         TypecodeForReceiver(),
@@ -441,7 +441,7 @@ static bool AddP2PKHReceiver(void* ua, const unsigned char* raw)
     return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
 }
 
-static bool AddUnknownReceiver(void* ua, uint8_t typecode, const unsigned char* data, size_t len)
+static bool AddUnknownReceiver(void* ua, uint32_t typecode, const unsigned char* data, size_t len)
 {
     libzcash::UnknownReceiver receiver(typecode, std::vector(data, data + len));
     return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);

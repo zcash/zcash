@@ -271,7 +271,7 @@ double benchmark_large_tx(size_t nInputs)
 // wallet. We call assert(...) to ensure that this is true.
 double benchmark_try_decrypt_sprout_notes(size_t nKeys)
 {
-    CWallet wallet;
+    CWallet wallet(Params());
     for (int i = 0; i < nKeys; i++) {
         auto sk = libzcash::SproutSpendingKey::random();
         wallet.AddSproutSpendingKey(sk);
@@ -295,7 +295,7 @@ double benchmark_try_decrypt_sapling_notes(size_t nKeys)
 
     auto masterKey = GetTestMasterSaplingSpendingKey();
 
-    CWallet wallet;
+    CWallet wallet(Params());
 
     for (int i = 0; i < nKeys; i++) {
         auto sk = masterKey.Derive(i);
@@ -332,7 +332,7 @@ double benchmark_increment_sprout_note_witnesses(size_t nTxs)
 {
     const Consensus::Params& consensusParams = Params().GetConsensus();
 
-    CWallet wallet;
+    CWallet wallet(Params());
     SproutMerkleTree sproutTree;
     SaplingMerkleTree saplingTree;
 
@@ -394,7 +394,7 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
 {
     const Consensus::Params& consensusParams = Params().GetConsensus();
 
-    CWallet wallet;
+    CWallet wallet(Params());
     SproutMerkleTree sproutTree;
     SaplingMerkleTree saplingTree;
 
@@ -448,6 +448,7 @@ class FakeCoinsViewDB : public CCoinsView {
     uint256 hash;
     SproutMerkleTree sproutTree;
     SaplingMerkleTree saplingTree;
+    OrchardMerkleTree orchardTree;
 
 public:
     FakeCoinsViewDB(std::string dbName, uint256& hash) : db(GetDataDir() / dbName, 100, false, false), hash(hash) {}
@@ -463,6 +464,14 @@ public:
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
         if (rt == saplingTree.root()) {
             tree = saplingTree;
+            return true;
+        }
+        return false;
+    }
+
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const {
+        if (rt == orchardTree.root()) {
+            tree = orchardTree;
             return true;
         }
         return false;
@@ -490,6 +499,8 @@ public:
                 return sproutTree.root();
             case SAPLING:
                 return saplingTree.root();
+            case ORCHARD:
+                return orchardTree.root();
             default:
                 throw new std::runtime_error("Unknown shielded type");
         }
@@ -499,10 +510,14 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
+                    const uint256 &hashOrchardAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CAnchorsSaplingMap &mapSaplingAnchors,
+                    CAnchorsOrchardMap &mapOrchardAnchors,
                     CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap &mapSaplingNullifiers) {
+                    CNullifiersMap &mapSaplingNullifiers,
+                    CNullifiersMap &mapOrchardNullifiers,
+                    CHistoryCacheMap &historyCacheMap) {
         return false;
     }
 
@@ -572,7 +587,7 @@ double benchmark_loadwallet()
     struct timeval tv_start;
     bool fFirstRunRet=true;
     timer_start(tv_start);
-    pwalletMain = new CWallet("wallet.dat");
+    pwalletMain = new CWallet(Params(), "wallet.dat");
     DBErrors nLoadWalletRet = pwalletMain->LoadWallet(fFirstRunRet);
     auto res = timer_stop(tv_start);
     post_wallet_load();

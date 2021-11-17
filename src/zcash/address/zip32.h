@@ -11,6 +11,8 @@
 #include "zcash/address/sapling.hpp"
 
 #include <optional>
+#include <string>
+#include <regex>
 
 const uint32_t ZIP32_HARDENED_KEY_LIMIT = 0x80000000;
 const size_t ZIP32_XFVK_SIZE = 169;
@@ -133,6 +135,8 @@ struct SaplingExtendedSpendingKey {
             a.dk == b.dk;
     }
 };
+
+std::optional<unsigned long> ParseZip32KeypathAccount(const std::string& keyPath);
 
 }
 

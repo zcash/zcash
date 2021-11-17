@@ -610,10 +610,7 @@ public:
     void GetAmounts(std::list<COutputEntry>& listReceived,
                     std::list<COutputEntry>& listSent, CAmount& nFee, const isminefilter& filter) const;
 
-    bool IsFromMe(const isminefilter& filter) const
-    {
-        return (GetDebit(filter) > 0);
-    }
+    bool IsFromMe(const isminefilter& filter) const;
 
     bool IsTrusted() const;
 
@@ -809,6 +806,7 @@ protected:
 
     /* the hd chain data model (chain counters) */
     CHDChain hdChain;
+    std::string networkIdString;
 
 public:
     /*
@@ -832,14 +830,14 @@ public:
     MasterKeyMap mapMasterKeys;
     unsigned int nMasterKeyMaxID;
 
-    CWallet()
+    CWallet(const CChainParams& params)
     {
-        SetNull();
+        SetNull(params);
     }
 
-    CWallet(const std::string& strWalletFileIn)
+    CWallet(const CChainParams& params, const std::string& strWalletFileIn)
     {
-        SetNull();
+        SetNull(params);
 
         strWalletFile = strWalletFileIn;
         fFileBacked = true;
@@ -851,7 +849,7 @@ public:
         pwalletdbEncryption = NULL;
     }
 
-    void SetNull()
+    void SetNull(const CChainParams& params)
     {
         nWalletVersion = FEATURE_BASE;
         nWalletMaxVersion = FEATURE_BASE;
@@ -866,6 +864,7 @@ public:
         nTimeFirstKey = 0;
         fBroadcastTransactions = false;
         nWitnessCacheSize = 0;
+        networkIdString = params.NetworkIDString();
     }
 
     /**
@@ -961,7 +960,7 @@ public:
      * completion the coin set and corresponding actual target value is
      * assembled
      */
-    bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet) const;
+    static bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet);
 
     bool IsSpent(const uint256& hash, unsigned int n) const;
     bool IsSproutSpent(const uint256& nullifier) const;
@@ -1006,8 +1005,6 @@ public:
     bool AddCScript(const CScript& redeemScript);
     bool LoadCScript(const CScript& redeemScript);
 
-    //! Adds a destination data tuple to the store, and saves it to disk
-    bool AddDestData(const CTxDestination &dest, const std::string &key, const std::string &value);
     //! Erases a destination data tuple in the store and on disk
     bool EraseDestData(const CTxDestination &dest, const std::string &key);
     //! Adds a destination data tuple to the store, without saving it to disk
@@ -1299,6 +1296,9 @@ public:
     void SetHDChain(const CHDChain& chain, bool memonly);
     const CHDChain& GetHDChain() const { return hdChain; }
 
+    bool CheckNetworkInfo(std::pair<std::string, std::string> networkInfo);
+    uint32_t BIP44CoinType();
+
     /* Set the current HD seed, without saving it to disk (used by LoadWallet) */
     bool LoadHDSeed(const HDSeed& key);
     /* Set the current encrypted HD seed, without saving it to disk (used by LoadWallet) */
@@ -1327,10 +1327,10 @@ public:
     static std::string GetWalletHelpString(bool showDebug);
 
     /* Initializes the wallet, returns a new CWallet instance or a null pointer in case of an error */
-    static bool InitLoadWallet(bool clearWitnessCaches);
+    static bool InitLoadWallet(const CChainParams& params, bool clearWitnessCaches);
 
     /* Wallets parameter interaction */
-    static bool ParameterInteraction();
+    static bool ParameterInteraction(const CChainParams& params);
 };
 
 /** A key allocated from the key pool. */
@@ -1412,6 +1412,28 @@ public:
     std::optional<libzcash::SpendingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     std::optional<libzcash::SpendingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
     std::optional<libzcash::SpendingKey> operator()(const libzcash::InvalidEncoding& no) const;
+};
+
+enum PaymentAddressSource {
+    Random,
+    LegacyHDSeed,
+    MnemonicHDSeed,
+    Imported,
+    ImportedWatchOnly,
+    AddressNotFound,
+};
+
+class GetSourceForPaymentAddress
+{
+private:
+    CWallet *m_wallet;
+public:
+    GetSourceForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
+
+    PaymentAddressSource operator()(const libzcash::SproutPaymentAddress &zaddr) const;
+    PaymentAddressSource operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    PaymentAddressSource operator()(const libzcash::UnifiedAddress &uaddr) const;
+    PaymentAddressSource operator()(const libzcash::InvalidEncoding& no) const;
 };
 
 enum KeyAddResult {

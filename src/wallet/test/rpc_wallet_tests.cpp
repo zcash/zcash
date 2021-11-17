@@ -219,6 +219,28 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK(CallRPC("verifymessage " + keyIO.EncodeDestination(demoAddress) + " " + retValue.get_str() + " mymessage").get_bool() == true);
 
     /*********************************
+     * 		listaddresses
+     *********************************/
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
+    UniValue arr = retValue.get_array();
+    {
+        BOOST_CHECK_EQUAL(1, arr.size());
+        bool notFound = true;
+        for (auto a : arr.getValues()) {
+            auto source = find_value(a.get_obj(), "source");
+            if (source.get_str() == "legacy_random") {
+                auto t_obj = find_value(a.get_obj(), "transparent");
+                auto addrs = find_value(t_obj, "addresses").get_array();
+                BOOST_CHECK_EQUAL(2, addrs.size());
+                for (auto addr : addrs.getValues()) {
+                    notFound &= keyIO.DecodeDestination(addr.get_str()) != demoAddress;
+                }
+            }
+        }
+        BOOST_CHECK(!notFound);
+    }
+
+    /*********************************
      * 	     fundrawtransaction
      *********************************/
     BOOST_CHECK_THROW(CallRPC("fundrawtransaction 28z"), runtime_error);
@@ -592,9 +614,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     BOOST_CHECK_EQUAL(testKey, keyIO.EncodeSpendingKey(k));
 }
 
-
 /*
- * This test covers RPC commands z_listaddresses, z_importkey, z_exportkey
+ * This test covers RPC commands z_listaddresses, z_importkey, z_exportkey,
+ * listaddresses, z_importviewingkey, z_exportviewingkey
  */
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 {
@@ -621,9 +643,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     BOOST_CHECK_THROW(CallRPC(prefix + "100badchars"), runtime_error);
 
     // wallet should currently be empty
-    std::set<libzcash::SproutPaymentAddress> addrs;
-    pwalletMain->GetSproutPaymentAddresses(addrs);
-    BOOST_CHECK(addrs.size()==0);
+    std::set<libzcash::SproutPaymentAddress> sproutAddrs;
+    pwalletMain->GetSproutPaymentAddresses(sproutAddrs);
+    BOOST_CHECK(sproutAddrs.size()==0);
     std::set<libzcash::SaplingPaymentAddress> saplingAddrs;
     pwalletMain->GetSaplingPaymentAddresses(saplingAddrs);
     BOOST_CHECK(saplingAddrs.empty());
@@ -641,20 +663,64 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
         BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportkey ") + testAddr));
         BOOST_CHECK_EQUAL(retValue.get_str(), testKey);
 
-        // create a random Sapling key locally
+        // create a random Sapling key locally; split between IVKs and spending keys.
         auto testSaplingSpendingKey = m.Derive(i);
         auto testSaplingPaymentAddress = testSaplingSpendingKey.DefaultAddress();
-        std::string testSaplingAddr = keyIO.EncodePaymentAddress(testSaplingPaymentAddress);
-        std::string testSaplingKey = keyIO.EncodeSpendingKey(testSaplingSpendingKey);
-        BOOST_CHECK_NO_THROW(CallRPC(string("z_importkey ") + testSaplingKey));
-        BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportkey ") + testSaplingAddr));
-        BOOST_CHECK_EQUAL(retValue.get_str(), testSaplingKey);
+        if (i % 2 == 0) {
+            std::string testSaplingAddr = keyIO.EncodePaymentAddress(testSaplingPaymentAddress);
+            std::string testSaplingKey = keyIO.EncodeSpendingKey(testSaplingSpendingKey);
+            BOOST_CHECK_NO_THROW(CallRPC(string("z_importkey ") + testSaplingKey));
+            BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportkey ") + testSaplingAddr));
+            BOOST_CHECK_EQUAL(retValue.get_str(), testSaplingKey);
+        } else {
+            std::string testSaplingAddr = keyIO.EncodePaymentAddress(testSaplingPaymentAddress);
+            std::string testSaplingKey = keyIO.EncodeViewingKey(testSaplingSpendingKey.ToXFVK());
+            BOOST_CHECK_NO_THROW(CallRPC(string("z_importviewingkey ") + testSaplingKey));
+            BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportviewingkey ") + testSaplingAddr));
+            BOOST_CHECK_EQUAL(retValue.get_str(), testSaplingKey);
+        }
     }
 
     // Verify we can list the keys imported
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
     UniValue arr = retValue.get_array();
-    BOOST_CHECK(arr.size() == (2 * n1));
+    BOOST_CHECK(arr.size() == n1 + (n1 / 2));
+
+    // Verify that the keys imported are also available from listaddresses
+    {
+        BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
+        auto listarr = retValue.get_array();
+        bool sproutCountMatch = false;
+        bool saplingSpendingKeyMatch = false;
+        bool saplingIVKMatch = false;
+        for (auto a : listarr.getValues()) {
+            auto source = find_value(a.get_obj(), "source");
+            if (source.get_str() == "legacy_random") {
+                auto sprout_obj = find_value(a.get_obj(), "sprout").get_obj();
+                auto sprout_addrs = find_value(sprout_obj, "addresses").get_array();
+                sproutCountMatch = (sprout_addrs.size() == n1);
+            }
+            if (source.get_str() == "imported") {
+                int addr_count = 0;
+                for (auto sapling_obj : find_value(a.get_obj(), "sapling").get_array().getValues()) {
+                    auto sapling_addrs = find_value(sapling_obj, "addresses").get_array();
+                    addr_count += sapling_addrs.size();
+                }
+                saplingSpendingKeyMatch = (addr_count == n1 / 2);
+            }
+            if (source.get_str() == "imported_watchonly") {
+                int addr_count = 0;
+                for (auto sapling_obj : find_value(a.get_obj(), "sapling").get_array().getValues()) {
+                    auto sapling_addrs = find_value(sapling_obj, "addresses").get_array();
+                    addr_count += sapling_addrs.size();
+                }
+                saplingIVKMatch = (addr_count == n1 / 2);
+            }
+        }
+        BOOST_CHECK(sproutCountMatch);
+        BOOST_CHECK(saplingSpendingKeyMatch);
+        BOOST_CHECK(saplingIVKMatch);
+    }
 
     // Put addresses into a set
     std::unordered_set<std::string> myaddrs;
@@ -667,12 +733,14 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
         myaddrs.insert(keyIO.EncodePaymentAddress(pwalletMain->GenerateNewSproutZKey()));
     }
 
-    // Verify number of addresses stored in wallet is n1+n2
+    // Verify number of addresses stored in wallet is correct
     int numAddrs = myaddrs.size();
-    BOOST_CHECK(numAddrs == (2 * n1) + n2);
-    pwalletMain->GetSproutPaymentAddresses(addrs);
+    // sprout_addrs + sapling addrs with spend authority + new sprout addrs
+    BOOST_CHECK(numAddrs == (n1 + (n1 / 2) + n2));
+    pwalletMain->GetSproutPaymentAddresses(sproutAddrs);
     pwalletMain->GetSaplingPaymentAddresses(saplingAddrs);
-    BOOST_CHECK(addrs.size() + saplingAddrs.size() == numAddrs);
+    // here we also include the watchonly sapling addresses
+    BOOST_CHECK(sproutAddrs.size() + saplingAddrs.size() == numAddrs + (n1 / 2));
 
     // Ask wallet to list addresses
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
@@ -685,10 +753,25 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
         listaddrs.insert(element.get_str());
     }
 
+    // Verify that the newly added sprout keys imported are also available from listaddresses
+    {
+        BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
+        auto listarr = retValue.get_array();
+        bool sproutCountMatch = false;
+        for (auto a : listarr.getValues()) {
+            auto source = find_value(a.get_obj(), "source");
+            if (source.get_str() == "legacy_random") {
+                auto sprout_obj = find_value(a.get_obj(), "sprout").get_obj();
+                auto sprout_addrs = find_value(sprout_obj, "addresses").get_array();
+                sproutCountMatch = (sprout_addrs.size() == n1 + n2);
+            }
+        }
+        BOOST_CHECK(sproutCountMatch);
+    }
+
     // Verify the two sets of addresses are the same
     BOOST_CHECK(listaddrs.size() == numAddrs);
     BOOST_CHECK(myaddrs == listaddrs);
-
 }
 
 // Check if address is of given type and spendable from our wallet.
@@ -729,6 +812,42 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
 
     // Too many arguments will throw with the help
     BOOST_CHECK_THROW(CallRPC("z_getnewaddress many args"), runtime_error);
+
+    {
+        UniValue list;
+        BOOST_CHECK_NO_THROW(list = CallRPC("listaddresses"));
+        auto listarr = list.get_array();
+        bool sproutCountMatch = false;
+        bool saplingExtfvksMatch = false;
+        bool saplingAccount0 = false;
+        bool saplingAccount1 = false;
+        bool saplingCountMismatch = true;
+        for (auto a : listarr.getValues()) {
+            auto source = find_value(a.get_obj(), "source");
+            if (source.get_str() == "legacy_random") {
+                auto sprout_obj = find_value(a.get_obj(), "sprout").get_obj();
+                auto sprout_addrs = find_value(sprout_obj, "addresses").get_array();
+                sproutCountMatch = (sprout_addrs.size() == 1);
+            }
+            if (source.get_str() == "legacy_hdseed") {
+                auto sapling_addr_sets = find_value(a.get_obj(), "sapling").get_array();
+                saplingExtfvksMatch = (sapling_addr_sets.size() == 2);
+
+                for (auto sapling_obj : sapling_addr_sets.getValues()) {
+                    auto sapling_account = find_value(sapling_obj, "zip32AccountId").get_int();
+                    saplingAccount0 |= (sapling_account == 0);
+                    saplingAccount1 |= (sapling_account == 1);
+                    auto sapling_addrs = find_value(sapling_obj, "addresses").get_array();
+                    saplingCountMismatch &= (sapling_addrs.size() != 1);
+                }
+            }
+        }
+        BOOST_CHECK(sproutCountMatch);
+        BOOST_CHECK(saplingExtfvksMatch);
+        BOOST_CHECK(!saplingCountMismatch);
+        BOOST_CHECK(saplingAccount0);
+        BOOST_CHECK(saplingAccount1);
+    }
 }
 
 /**

@@ -12,10 +12,10 @@ extern "C" {
 typedef bool (*raw_to_receiver_t)(void* ua, const unsigned char* raw);
 typedef bool (*unknown_receiver_t)(
     void* ua,
-    uint8_t typecode,
+    uint32_t typecode,
     const unsigned char* data,
     size_t len);
-typedef uint8_t (*get_typecode_t)(const void* ua, size_t index);
+typedef uint32_t (*get_typecode_t)(const void* ua, size_t index);
 typedef size_t (*get_receiver_len_t)(const void* ua, size_t index);
 typedef void (*get_receiver_t)(const void* ua, size_t index, unsigned char* data, size_t length);
 

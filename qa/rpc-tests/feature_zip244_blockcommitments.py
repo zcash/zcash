@@ -7,9 +7,14 @@
 from test_framework.blocktools import derive_block_commitments_hash
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
+    BLOSSOM_BRANCH_ID,
+    CANOPY_BRANCH_ID,
+    HEARTWOOD_BRANCH_ID,
+    NU5_BRANCH_ID,
     assert_equal,
     bytes_to_hex_str,
     hex_str_to_bytes,
+    nuparams,
     start_nodes,
 )
 
@@ -24,12 +29,10 @@ class AuthDataRootTest(BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-nuparams=5ba81b19:1', # Overwinter
-            '-nuparams=76b809bb:1', # Sapling
-            '-nuparams=2bb40e60:201', # Blossom
-            '-nuparams=f5b9230b:201', # Heartwood
-            '-nuparams=e9ff75a6:201', # Canopy
-            '-nuparams=f919a198:205', # NU5
+            nuparams(BLOSSOM_BRANCH_ID, 201),
+            nuparams(HEARTWOOD_BRANCH_ID, 201),
+            nuparams(CANOPY_BRANCH_ID, 201),
+            nuparams(NU5_BRANCH_ID, 205),
             '-nurejectoldversions=false',
         ]] * self.num_nodes)
 

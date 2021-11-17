@@ -11,9 +11,13 @@ $(package)_download_file_darwin=clang+llvm-$($(package)_major_version).0.0-x86_6
 $(package)_file_name_darwin=clang-llvm-$($(package)_major_version).0.0-x86_64-apple-darwin.tar.xz
 $(package)_sha256_hash_darwin=7bc2259bf75c003f644882460fc8e844ddb23b27236fe43a2787870a4cd8ab50
 $(package)_download_path_freebsd=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
-$(package)_download_file_freebsd=clang+llvm-$($(package)_version)-amd64-unknown-freebsd11.tar.xz
-$(package)_file_name_freebsd=clang-llvm-$($(package)_version)-amd64-unknown-freebsd11.tar.xz
-$(package)_sha256_hash_freebsd=94dfe48d9e483283edbee968056d487a850b30de25258fa48f049cca3ede5db4
+$(package)_download_file_freebsd=clang+llvm-$($(package)_version)-amd64-unknown-freebsd12.tar.xz
+$(package)_file_name_freebsd=clang-llvm-$($(package)_version)-amd64-unknown-freebsd12.tar.xz
+$(package)_sha256_hash_freebsd=38857da36489880b0504ae7142b74abe41cf18711a6bb25ca96792d8190e8b0e
+
+$(package)_download_file_aarch64_linux=clang+llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
+$(package)_file_name_aarch64_linux=clang-llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
+$(package)_sha256_hash_aarch64_linux=3d4ad804b7c85007686548cbc917ab067bf17eaedeab43d9eb83d3a683d8e9d4
 
 # Ensure we have clang native to the builder, not the target host
 ifneq ($(canonical_host),$(build))

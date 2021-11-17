@@ -37,7 +37,8 @@ enum DBErrors
     DB_NONCRITICAL_ERROR,
     DB_TOO_NEW,
     DB_LOAD_FAIL,
-    DB_NEED_REWRITE
+    DB_NEED_REWRITE,
+    DB_WRONG_NETWORK,
 };
 
 /* simple hd chain data model */
@@ -168,6 +169,7 @@ public:
     static bool Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKeys);
     static bool Recover(CDBEnv& dbenv, const std::string& filename);
 
+    bool WriteNetworkInfo(const std::string& networkId);
     bool WriteHDSeed(const HDSeed& seed);
     bool WriteCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& vchCryptedSecret);
     //! write the hdchain model (external chain child index counter)

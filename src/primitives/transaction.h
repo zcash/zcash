@@ -650,6 +650,40 @@ public:
     std::string ToString() const;
 };
 
+struct WTxId
+{
+    const uint256 hash;
+    const uint256 authDigest;
+
+    WTxId() :
+        authDigest(LEGACY_TX_AUTH_DIGEST) {}
+
+    WTxId(const uint256& hashIn, const uint256& authDigestIn) :
+        hash(hashIn), authDigest(authDigestIn) {}
+
+    const std::vector<unsigned char> ToBytes() const {
+        std::vector<unsigned char> vData(hash.begin(), hash.end());
+        vData.insert(vData.end(), authDigest.begin(), authDigest.end());
+        return vData;
+    }
+
+    friend bool operator<(const WTxId& a, const WTxId& b)
+    {
+        return (a.hash < b.hash ||
+            (a.hash == b.hash && a.authDigest < b.authDigest));
+    }
+
+    friend bool operator==(const WTxId& a, const WTxId& b)
+    {
+        return a.hash == b.hash && a.authDigest == b.authDigest;
+    }
+
+    friend bool operator!=(const WTxId& a, const WTxId& b)
+    {
+        return a.hash != b.hash || a.authDigest != b.authDigest;
+    }
+};
+
 struct CMutableTransaction;
 
 /** The basic transaction that is broadcasted on the network and contained in
@@ -665,9 +699,7 @@ private:
     OrchardBundle orchardBundle;
 
     /** Memory only. */
-    const uint256 hash;
-    /** Memory only. */
-    const uint256 authDigest;
+    const WTxId wtxid;
     void UpdateHash() const;
 
 protected:
@@ -687,6 +719,8 @@ public:
     static const int32_t OVERWINTER_MAX_CURRENT_VERSION = 3;
     static const int32_t SAPLING_MIN_CURRENT_VERSION = 4;
     static const int32_t SAPLING_MAX_CURRENT_VERSION = 4;
+    static const int32_t NU5_MIN_CURRENT_VERSION = 4;
+    static const int32_t NU5_MAX_CURRENT_VERSION = 5;
 
     static_assert(SPROUT_MIN_CURRENT_VERSION >= SPROUT_MIN_TX_VERSION,
                   "standard rule for tx version should be consistent with network rule");
@@ -703,6 +737,13 @@ public:
 
     static_assert( (SAPLING_MAX_CURRENT_VERSION <= SAPLING_MAX_TX_VERSION &&
                     SAPLING_MAX_CURRENT_VERSION >= SAPLING_MIN_CURRENT_VERSION),
+                  "standard rule for tx version should be consistent with network rule");
+
+    static_assert(NU5_MIN_CURRENT_VERSION >= SAPLING_MIN_TX_VERSION,
+                  "standard rule for tx version should be consistent with network rule");
+
+    static_assert( (NU5_MAX_CURRENT_VERSION <= ZIP225_MAX_TX_VERSION &&
+                    NU5_MAX_CURRENT_VERSION >= NU5_MIN_CURRENT_VERSION),
                   "standard rule for tx version should be consistent with network rule");
 
     // The local variables are made const to prevent unintended modification
@@ -856,7 +897,7 @@ public:
     }
 
     const uint256& GetHash() const {
-        return hash;
+        return wtxid.hash;
     }
 
     /**
@@ -865,7 +906,11 @@ public:
      * For v1-v4 transactions, this returns the null hash (i.e. all-zeroes).
      */
     const uint256& GetAuthDigest() const {
-        return authDigest;
+        return wtxid.authDigest;
+    }
+
+    const WTxId& GetWTxId() const {
+        return wtxid;
     }
 
     uint32_t GetHeader() const {
@@ -928,12 +973,12 @@ public:
 
     friend bool operator==(const CTransaction& a, const CTransaction& b)
     {
-        return a.hash == b.hash;
+        return a.wtxid.hash == b.wtxid.hash;
     }
 
     friend bool operator!=(const CTransaction& a, const CTransaction& b)
     {
-        return a.hash != b.hash;
+        return a.wtxid.hash != b.wtxid.hash;
     }
 
     std::string ToString() const;

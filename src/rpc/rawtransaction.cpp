@@ -154,6 +154,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 {
     const uint256 txid = tx.GetHash();
     entry.pushKV("txid", txid.GetHex());
+    entry.pushKV("authdigest", tx.GetAuthDigest().GetHex());
     entry.pushKV("size", (int)::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION));
     entry.pushKV("overwintered", tx.fOverwintered);
     entry.pushKV("version", tx.nVersion);
@@ -297,6 +298,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "  \"in_active_chain\": b,   (bool) Whether specified block is in the active chain or not (only present with explicit \"blockhash\" argument)\n"
             "  \"hex\" : \"data\",       (string) The serialized, hex-encoded data for 'txid'\n"
             "  \"txid\" : \"id\",        (string) The transaction id (same as provided)\n"
+            "  \"authdigest\" : \"id\",  (string) The transaction's auth digest. For pre-v5 transactions this will be ffff..ffff\n"
             "  \"size\" : n,             (numeric) The transaction size\n"
             "  \"version\" : n,          (numeric) The version\n"
             "  \"locktime\" : ttt,       (numeric) The lock time\n"
@@ -674,6 +676,7 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"txid\" : \"id\",        (string) The transaction id\n"
+            "  \"authdigest\" : \"id\",  (string) The transaction's auth digest. For pre-v5 txs this is ffff..ffff\n"
             "  \"size\" : n,             (numeric) The transaction size\n"
             "  \"overwintered\" : bool   (boolean) The Overwintered flag\n"
             "  \"version\" : n,          (numeric) The version\n"

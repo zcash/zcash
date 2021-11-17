@@ -6,7 +6,12 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.mininode import NU5_PROTO_VERSION
 from test_framework.util import (
+    BLOSSOM_BRANCH_ID,
+    CANOPY_BRANCH_ID,
+    HEARTWOOD_BRANCH_ID,
+    NU5_BRANCH_ID,
     assert_equal, assert_true,
+    nuparams,
     start_node, connect_nodes, wait_and_assert_operationid_status,
     get_coinbase_address
 )
@@ -25,10 +30,10 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
 
     def setup_network(self):
         args = ["-checkmempool", "-debug=mempool", "-blockmaxsize=4000",
-            "-nuparams=2bb40e60:200", # Blossom
-            "-nuparams=f5b9230b:210", # Heartwood
-            "-nuparams=e9ff75a6:220", # Canopy
-            "-nuparams=f919a198:230", # NU5
+            nuparams(BLOSSOM_BRANCH_ID, 200),
+            nuparams(HEARTWOOD_BRANCH_ID, 210),
+            nuparams(CANOPY_BRANCH_ID, 220),
+            nuparams(NU5_BRANCH_ID, 230),
         ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))
