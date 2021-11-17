@@ -1,7 +1,7 @@
 name: Lints
 
 # We only run these lints on trial-merges of PRs to reduce noise.
-on: pull_request
+on: [pull_request, workflow_call]
 
 jobs:
   commit-script-check:
