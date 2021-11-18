@@ -89,8 +89,8 @@ jobs:
           command: fmt
           args: -- --check
           
-  pyflakes:
-    name: runner / pyflakes
+  pyflakes_nofilter:
+    name: runner / pyflakes_nofilter
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -99,4 +99,16 @@ jobs:
       with:
         github_token: ${{ secrets.github_token }}
         reporter: github-check # Change reporter.
-        level: 'warning'
+        level: 'error'
+        filter_mode: 'nofilter'
+  pyflakes_added:
+    name: runner / pyflakes_added
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: pyflakes
+      uses: reviewdog/action-pyflakes@master
+      with:
+        github_token: ${{ secrets.github_token }}
+        reporter: github-check # Change reporter.
+        level: 'error'
