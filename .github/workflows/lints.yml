@@ -98,4 +98,4 @@ jobs:
       uses: reviewdog/action-pyflakes@master
       with:
         github_token: ${{ secrets.github_token }}
-        reporter: github-pr-check # Change reporter.
+        reporter: github-check # Change reporter.
