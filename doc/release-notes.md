@@ -18,7 +18,7 @@ upgrading to the 4.5.2 Zcashd release.
 
 Following the upgrade to 4.5.2, Zcashd will require that the user confirm that
 they have backed up their new emergency recovery phrase, which may be obtained
-from the output of  the `z_exportwallet` RPC call. This confirmation be can be
+from the output of the `z_exportwallet` RPC call. This confirmation can be
 performed manually using the `zcashd-wallet-tool` utility that is supplied with
 this release.  The wallet will not allow the generation of new addresses until
 this confirmation has been performed. It is recommended that after this
@@ -34,12 +34,12 @@ UPGRADE.
 New RPC Methods
 ---------------
 
-- 'walletconfirmbackup' This newly created API is checks a provided emergency
+- 'walletconfirmbackup' This newly created API checks a provided emergency
   recovery phrase against the wallet's emergency recovery phrase; if the phrases
   match then it updates the wallet state to allow the generation of new addresses.
   This backup confirmation workflow can be disabled by starting zcashd with 
   `-requirewalletbackup=false` but this is not recommended unless you know what
-  you're doing (and have otherwise backed up the wallet's recovery phrase anyway.)
+  you're doing (and have otherwise backed up the wallet's recovery phrase anyway).
   For security reasons, this RPC method is not intended for use via zcash-cli 
   but is provided to enable `zcashd-wallet-tool` and other third-party wallet 
   interfaces to satisfy the backup confirmation requirement. Use of the 
