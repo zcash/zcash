@@ -134,23 +134,23 @@ TEST(ZIP32, TestVectors) {
 }
 
 TEST(ZIP32, ParseHDKeypathAccount) {
-    auto expect_account = [](std::string sAccount, long expected) {
-        auto result = libzcash::ParseHDKeypathAccount(32, sAccount);
+    auto expect_account = [](std::string sAccount, uint32_t coinType, long expected) {
+        auto result = libzcash::ParseHDKeypathAccount(32, coinType, sAccount);
         EXPECT_TRUE(result.has_value());
         EXPECT_EQ(result.value(), expected);
     };
 
     std::string sAccount = "m/32'/1234'/5'";
-    expect_account(sAccount, 5);
+    expect_account(sAccount, 1234, 5);
 
     sAccount = "m/32'/1234'/50'";
-    expect_account(sAccount, 50);
+    expect_account(sAccount, 1234, 50);
 
     sAccount = "m/32'/1234'/5'/0";
-    expect_account(sAccount, 5);
+    expect_account(sAccount, 1234, 5);
 
     sAccount = "m/32'/133'/2147483646'/1";
-    expect_account(sAccount, 2147483646);
+    expect_account(sAccount, 133, 2147483646);
 }
 
 TEST(ZIP32, diversifier_index_t_increment)
