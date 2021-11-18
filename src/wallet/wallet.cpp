@@ -125,20 +125,19 @@ SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
         throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): HD seed not found");
 
     auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
-    uint32_t bip44CoinType = Params().BIP44CoinType();
 
     // We use a fixed keypath scheme of m/32'/coin_type'/account'
     // Derive m/32'
     auto m_32h = m.Derive(32 | ZIP32_HARDENED_KEY_LIMIT);
     // Derive m/32'/coin_type'
-    auto m_32h_cth = m_32h.Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
+    auto m_32h_cth = m_32h.Derive(BIP44CoinType() | ZIP32_HARDENED_KEY_LIMIT);
 
     // Derive account key at next index, skip keys already known to the wallet
     libzcash::SaplingExtendedSpendingKey xsk;
     do
     {
         xsk = m_32h_cth.Derive(hdChain.saplingAccountCounter | ZIP32_HARDENED_KEY_LIMIT);
-        metadata.hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(hdChain.saplingAccountCounter) + "'";
+        metadata.hdKeypath = "m/32'/" + std::to_string(BIP44CoinType()) + "'/" + std::to_string(hdChain.saplingAccountCounter) + "'";
         metadata.seedFp = hdChain.seedFp;
         // Increment childkey index
         hdChain.saplingAccountCounter++;
@@ -2251,6 +2250,7 @@ bool CWallet::SetHDSeed(const HDSeed& seed)
 
     {
         LOCK(cs_wallet);
+        CWalletDB(strWalletFile).WriteNetworkInfo(networkIdString);
         if (!IsCrypted()) {
             return CWalletDB(strWalletFile).WriteHDSeed(seed);
         }
@@ -2294,6 +2294,18 @@ void CWallet::SetHDChain(const CHDChain& chain, bool memonly)
 
     hdChain = chain;
 }
+
+bool CWallet::CheckNetworkInfo(std::pair<std::string, std::string> readNetworkInfo)
+{
+    LOCK(cs_wallet);
+    std::pair<string, string> networkInfo(PACKAGE_NAME, networkIdString);
+    return readNetworkInfo == networkInfo;
+}
+
+uint32_t CWallet::BIP44CoinType() {
+    return Params(networkIdString).BIP44CoinType();
+}
+
 
 bool CWallet::LoadHDSeed(const HDSeed& seed)
 {
@@ -3347,7 +3359,7 @@ static void ApproximateBestSubset(vector<pair<CAmount, pair<const CWalletTx*,uns
 }
 
 bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, vector<COutput> vCoins,
-                                 set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet) const
+                                 set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet)
 {
     setCoinsRet.clear();
     nValueRet = 0;
@@ -4632,18 +4644,6 @@ void CWallet::GetKeyBirthTimes(std::map<CKeyID, int64_t> &mapKeyBirth) const {
     }
 }
 
-bool CWallet::AddDestData(const CTxDestination &dest, const std::string &key, const std::string &value)
-{
-    if (std::get_if<CNoDestination>(&dest))
-        return false;
-
-    mapAddressBook[dest].destdata.insert(std::make_pair(key, value));
-    if (!fFileBacked)
-        return true;
-    KeyIO keyIO(Params());
-    return CWalletDB(strWalletFile).WriteDestData(keyIO.EncodeDestination(dest), key, value);
-}
-
 bool CWallet::EraseDestData(const CTxDestination &dest, const std::string &key)
 {
     if (!mapAddressBook[dest].destdata.erase(key))
@@ -4712,7 +4712,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
     return strUsage;
 }
 
-bool CWallet::InitLoadWallet(bool clearWitnessCaches)
+bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches)
 {
     std::string walletFile = GetArg("-wallet", DEFAULT_WALLET_DAT);
 
@@ -4722,7 +4722,7 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
     if (GetBoolArg("-zapwallettxes", false)) {
         uiInterface.InitMessage(_("Zapping all transactions from wallet..."));
 
-        CWallet *tempWallet = new CWallet(walletFile);
+        CWallet *tempWallet = new CWallet(params, walletFile);
         DBErrors nZapWalletRet = tempWallet->ZapWalletTx(vWtx);
         if (nZapWalletRet != DB_LOAD_OK) {
             return UIError(strprintf(_("Error loading %s: Wallet corrupted"), walletFile));
@@ -4736,7 +4736,7 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
 
     int64_t nStart = GetTimeMillis();
     bool fFirstRun = true;
-    CWallet *walletInstance = new CWallet(walletFile);
+    CWallet *walletInstance = new CWallet(params, walletFile);
     DBErrors nLoadWalletRet = walletInstance->LoadWallet(fFirstRun);
     if (nLoadWalletRet != DB_LOAD_OK)
     {
@@ -4754,6 +4754,10 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
         else if (nLoadWalletRet == DB_NEED_REWRITE)
         {
             return UIError(strprintf(_("Wallet needed to be rewritten: restart %s to complete"), _(PACKAGE_NAME)));
+        }
+        else if (nLoadWalletRet == DB_WRONG_NETWORK)
+        {
+            return UIError(strprintf(_("Wallet %s is not for %s %s network"), walletFile, _(PACKAGE_NAME), params.NetworkIDString()));
         }
         else
             return UIError(strprintf(_("Error loading %s"), walletFile));
@@ -4869,7 +4873,7 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
     return true;
 }
 
-bool CWallet::ParameterInteraction()
+bool CWallet::ParameterInteraction(const CChainParams& params)
 {
     if (mapArgs.count("-mintxfee"))
     {
@@ -4919,7 +4923,7 @@ bool CWallet::ParameterInteraction()
     bSpendZeroConfChange = GetBoolArg("-spendzeroconfchange", DEFAULT_SPEND_ZEROCONF_CHANGE);
     fSendFreeTransactions = GetBoolArg("-sendfreetransactions", DEFAULT_SEND_FREE_TRANSACTIONS);
 
-    KeyIO keyIO(Params());
+    KeyIO keyIO(params);
     // Check Sapling migration address if set and is a valid Sapling address
     if (mapArgs.count("-migrationdestaddress")) {
         std::string migrationDestAddress = mapArgs["-migrationdestaddress"];
@@ -5211,6 +5215,52 @@ bool PaymentAddressBelongsToWallet::operator()(const libzcash::InvalidEncoding& 
     return false;
 }
 
+///
+
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const
+{
+    return Random;
+}
+
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
+{
+    libzcash::SaplingIncomingViewingKey ivk;
+
+    // If we have a SaplingExtendedSpendingKey in the wallet, then we will
+    // also have the corresponding SaplingExtendedFullViewingKey.
+    if (m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk)) {
+        if (m_wallet->HaveSaplingFullViewingKey(ivk)) {
+            // If we have the HD keypath, it's related to the legacy seed
+            if (m_wallet->mapSaplingZKeyMetadata.count(ivk) > 0 &&
+                    m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath != "") {
+                return LegacyHDSeed;
+            } else if (HaveSpendingKeyForPaymentAddress(m_wallet)(zaddr)) {
+                return Imported;
+            } else {
+                return ImportedWatchOnly;
+            }
+        } else {
+            return ImportedWatchOnly;
+        }
+    } else {
+        return AddressNotFound;
+    }
+}
+
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::UnifiedAddress &uaddr) const
+{
+    // TODO
+    return AddressNotFound;
+}
+
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::InvalidEncoding& no) const
+{
+    return AddressNotFound;
+}
+
+
+///
+
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::SproutPaymentAddress &zaddr) const
 {
@@ -5385,7 +5435,7 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
                 // 154051200 seconds from epoch is Friday, 26 October 2018 00:00:00 GMT - definitely before Sapling activates
                 m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = std::max((int64_t) 154051200, nTime);
             }
-            if (hdKeypath) {
+            if (hdKeypath.has_value()) {
                 m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath = hdKeypath.value();
             }
             if (seedFpStr) {

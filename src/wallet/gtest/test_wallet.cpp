@@ -41,7 +41,7 @@ template void CWallet::SetBestChainINTERNAL<MockWalletDB>(
 
 class TestWallet : public CWallet {
 public:
-    TestWallet() : CWallet() { }
+    TestWallet(const CChainParams& params) : CWallet(params) { }
 
     bool EncryptKeys(CKeyingMaterial& vMasterKeyIn) {
         return CCryptoKeyStore::EncryptKeys(vMasterKeyIn);
@@ -126,6 +126,37 @@ TEST(WalletTests, SetupDatadirLocationRunAsFirstTest) {
     mapArgs["-datadir"] = pathTemp.string();
 }
 
+TEST(WalletTests, WalletNetworkSerialization) {
+    SelectParams(CBaseChainParams::TESTNET);
+
+    // Get temporary and unique path for file.
+    // Note: / operator to append paths
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
+    mapArgs["-datadir"] = pathTemp.string();
+
+    // create a new testnet wallet and generate a seed
+    CWallet wallet(Params(), "wallet.dat");
+    wallet.InitLoadWallet(Params(), true);
+    wallet.Flush();
+
+    // Stay on TESTNET, make sure wallet can be successfully loaded.
+    {
+        CWallet restored(Params(), "wallet.dat");
+        bool fFirstRunRet;
+        EXPECT_EQ(restored.LoadWallet(fFirstRunRet), DB_LOAD_OK);
+    }
+
+    // now, switch to mainnet and attempt to restore the wallet
+    // using the same wallet.dat
+    SelectParams(CBaseChainParams::MAIN);
+    CWallet restored(Params(), "wallet.dat");
+
+    // load should fail due to being associated with the wrong network
+    bool fFirstRunRet;
+    EXPECT_EQ(restored.LoadWallet(fFirstRunRet), DB_WRONG_NETWORK);
+}
+
 TEST(WalletTests, SproutNoteDataSerialisation) {
     auto sk = libzcash::SproutSpendingKey::random();
     auto wtx = GetValidSproutReceive(sk, 10, true);
@@ -154,7 +185,7 @@ TEST(WalletTests, SproutNoteDataSerialisation) {
 TEST(WalletTests, FindUnspentSproutNotes) {
     auto consensusParams = RegtestActivateSapling();
 
-    CWallet wallet;
+    CWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
@@ -355,7 +386,7 @@ TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
     for (int ver = 0; ver < zip_212_enabled.size(); ver++) {
         auto consensusParams = (*activations[ver])();
 
-        TestWallet wallet;
+        TestWallet wallet(Params());
         LOCK(wallet.cs_wallet);
 
         auto sk = GetTestMasterSaplingSpendingKey();
@@ -437,7 +468,7 @@ TEST(WalletTests, SetInvalidSaplingNoteDataInCWalletTx) {
 }
 
 TEST(WalletTests, CheckSproutNoteCommitmentAgainstNotePlaintext) {
-    CWallet wallet;
+    CWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -461,7 +492,7 @@ TEST(WalletTests, CheckSproutNoteCommitmentAgainstNotePlaintext) {
 }
 
 TEST(WalletTests, GetSproutNoteNullifier) {
-    CWallet wallet;
+    CWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -497,7 +528,7 @@ TEST(WalletTests, GetSproutNoteNullifier) {
 TEST(WalletTests, FindMySaplingNotes) {
     auto consensusParams = RegtestActivateSapling();
 
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
     // Generate dummy Sapling address
@@ -531,7 +562,7 @@ TEST(WalletTests, FindMySaplingNotes) {
 }
 
 TEST(WalletTests, FindMySproutNotes) {
-    CWallet wallet;
+    CWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -557,7 +588,7 @@ TEST(WalletTests, FindMySproutNotes) {
 }
 
 TEST(WalletTests, FindMySproutNotesInEncryptedWallet) {
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
     uint256 r {GetRandHash()};
     CKeyingMaterial vMasterKey (r.begin(), r.end());
@@ -588,7 +619,7 @@ TEST(WalletTests, FindMySproutNotesInEncryptedWallet) {
 }
 
 TEST(WalletTests, GetConflictedSproutNotes) {
-    CWallet wallet;
+    CWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -630,7 +661,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
     for (int ver = 0; ver < zip_212_enabled.size(); ver++) {
         auto consensusParams = (*activations[ver])();
 
-        TestWallet wallet;
+        TestWallet wallet(Params());
         LOCK2(cs_main, wallet.cs_wallet);
 
         // Generate Sapling address
@@ -748,7 +779,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
 }
 
 TEST(WalletTests, SproutNullifierIsSpent) {
-    CWallet wallet;
+    CWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -791,7 +822,7 @@ TEST(WalletTests, SproutNullifierIsSpent) {
 TEST(WalletTests, SaplingNullifierIsSpent) {
     auto consensusParams = RegtestActivateSapling();
 
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
 
     // Generate dummy Sapling address
@@ -847,7 +878,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
 }
 
 TEST(WalletTests, NavigateFromSproutNullifierToNote) {
-    CWallet wallet;
+    CWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -876,7 +907,7 @@ TEST(WalletTests, NavigateFromSproutNullifierToNote) {
 TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     auto consensusParams = RegtestActivateSapling();
 
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
 
     // Generate dummy Sapling address
@@ -967,7 +998,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
 }
 
 TEST(WalletTests, SpentSproutNoteIsFromMe) {
-    CWallet wallet;
+    CWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -1006,7 +1037,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     for (int ver = 0; ver < zip_212_enabled.size(); ver++) {
         auto consensusParams = (*activations[ver])();
 
-        TestWallet wallet;
+        TestWallet wallet(Params());
         LOCK2(cs_main, wallet.cs_wallet);
 
         // Generate Sapling address
@@ -1147,7 +1178,8 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
 }
 
 TEST(WalletTests, CachedWitnessesEmptyChain) {
-    TestWallet wallet;
+    SelectParams(CBaseChainParams::REGTEST);
+    TestWallet wallet(Params());
 
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
@@ -1206,7 +1238,7 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
 }
 
 TEST(WalletTests, CachedWitnessesChainTip) {
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
     std::pair<uint256, uint256> anchors1;
     CBlock block1;
@@ -1309,7 +1341,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
 }
 
 TEST(WalletTests, CachedWitnessesDecrementFirst) {
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
     SproutMerkleTree sproutTree;
     SaplingMerkleTree saplingTree;
@@ -1390,7 +1422,7 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
 }
 
 TEST(WalletTests, CachedWitnessesCleanIndex) {
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
     std::vector<CBlock> blocks;
     std::vector<CBlockIndex> indices;
@@ -1478,7 +1510,7 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
 }
 
 TEST(WalletTests, ClearNoteWitnessCache) {
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -1545,7 +1577,7 @@ TEST(WalletTests, ClearNoteWitnessCache) {
 }
 
 TEST(WalletTests, WriteWitnessCache) {
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
     MockWalletDB walletdb;
     CBlockLocator loc;
@@ -1633,7 +1665,7 @@ TEST(WalletTests, WriteWitnessCache) {
 TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     SelectParams(CBaseChainParams::REGTEST);
 
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
     MockWalletDB walletdb;
     CBlockLocator loc;
@@ -1714,7 +1746,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
 }
 
 TEST(WalletTests, UpdateSproutNullifierNoteMap) {
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
     uint256 r {GetRandHash()};
     CKeyingMaterial vMasterKey (r.begin(), r.end());
@@ -1750,7 +1782,7 @@ TEST(WalletTests, UpdateSproutNullifierNoteMap) {
 }
 
 TEST(WalletTests, UpdatedSproutNoteData) {
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -1800,7 +1832,7 @@ TEST(WalletTests, UpdatedSproutNoteData) {
 TEST(WalletTests, UpdatedSaplingNoteData) {
     auto consensusParams = RegtestActivateSapling();
 
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
 
     auto m = GetTestMasterSaplingSpendingKey();
@@ -1909,7 +1941,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
 }
 
 TEST(WalletTests, MarkAffectedSproutTransactionsDirty) {
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -1943,7 +1975,7 @@ TEST(WalletTests, MarkAffectedSproutTransactionsDirty) {
 TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     auto consensusParams = RegtestActivateSapling();
 
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
 
     // Generate Sapling address
@@ -2052,7 +2084,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
 }
 
 TEST(WalletTests, SproutNoteLocking) {
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -2086,7 +2118,7 @@ TEST(WalletTests, SproutNoteLocking) {
 }
 
 TEST(WalletTests, SaplingNoteLocking) {
-    TestWallet wallet;
+    TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
     SaplingOutPoint sop1 {uint256(), 1};
     SaplingOutPoint sop2 {uint256(), 2};

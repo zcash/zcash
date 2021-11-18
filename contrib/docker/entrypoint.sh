@@ -40,6 +40,8 @@ if [[ -n "${ZCASHD_RPCPORT}" ]];then ZCASHD_CMD+=" -rpcport=${ZCASHD_RPCPORT}";f
 if [[ -n "${ZCASHD_ALLOWIP}" ]];then ZCASHD_CMD+=" -rpcallowip=${ZCASHD_ALLOWIP}";fi
 if [[ -n "${ZCASHD_TXINDEX}" ]];then ZCASHD_CMD+=" -txindex";fi
 if [[ -n "${ZCASHD_INSIGHTEXPLORER}" ]];then ZCASHD_CMD+=" -insightexplorer";fi
+if [[ -n "${ZCASHD_PROMETHEUSPORT}" ]];then ZCASHD_CMD+=" -prometheusport=${ZCASHD_PROMETHEUSPORT}";fi
+if [[ -n "${ZCASHD_METRICSIP}" ]];then ZCASHD_CMD+=" -metricsallowip=${ZCASHD_METRICSIP}";fi
 if [[ -n "${ZCASHD_ZMQPORT}" && -n "${ZCASHD_ZMQBIND}" ]];then
   ZCASHD_CMD+=" -zmqpubhashblock=tcp://${ZCASHD_ZMQBIND}:${ZCASHD_ZMQPORT}"
   ZCASHD_CMD+=" -zmqpubhashtx=tcp://${ZCASHD_ZMQBIND}:${ZCASHD_ZMQPORT}"

@@ -5,21 +5,21 @@
 #
 
 # Ccache 4.0 requires adding CMake to the depends system.
-native_ccache 4.0 2021-10-01
-native_ccache 4.1 2021-10-01
-native_ccache 4.2 2021-10-01
-native_ccache 4.2.1 2021-10-01
-native_ccache 4.3 2021-10-01
-native_ccache 4.4 2021-10-01
-native_ccache 4.4.1 2021-10-01
-native_ccache 4.4.2 2021-10-01
+native_ccache 4.0 2022-02-01
+native_ccache 4.1 2022-02-01
+native_ccache 4.2 2022-02-01
+native_ccache 4.2.1 2022-02-01
+native_ccache 4.3 2022-02-01
+native_ccache 4.4 2022-02-01
+native_ccache 4.4.1 2022-02-01
+native_ccache 4.4.2 2022-02-01
 
-# Clang is currently pinned to LLVM 12
+# Clang is currently pinned to LLVM 13
 
-# Rust is currently pinned to 1.55.0
+# Rust is currently pinned to 1.56.1
 
 bdb 18.1.40 2022-02-01
 
 # Google Test 1.10.0 requires adding CMake to the depends system.
-googletest 1.10.0 2021-10-01
-googletest 1.11.0 2021-10-01
+googletest 1.10.0 2022-02-01
+googletest 1.11.0 2022-02-01
