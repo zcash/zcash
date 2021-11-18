@@ -117,13 +117,12 @@ void ThreadSendAlert()
     CDataStream sMsg(SER_NETWORK, CLIENT_VERSION);
     sMsg << *(CUnsignedAlert*)&alert;
     alert.vchMsg = std::vector<unsigned char>(sMsg.begin(), sMsg.end());
-    CKey key;
-    if (!key.SetPrivKey(vchPrivKey, false))
-    {
+    std::optional<CKey> key = CKey::FromPrivKey(vchPrivKey, false);
+    if (!key.has_value()) {
         printf("ThreadSendAlert() : key.SetPrivKey failed\n");
         return;
     }
-    if (!key.Sign(Hash(alert.vchMsg.begin(), alert.vchMsg.end()), alert.vchSig))
+    if (!key.value().Sign(Hash(alert.vchMsg.begin(), alert.vchMsg.end()), alert.vchSig))
     {
         printf("ThreadSendAlert() : key.Sign failed\n");
         return;

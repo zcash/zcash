@@ -865,15 +865,26 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase, TxValues& txVa
     return t_inputs_.size() > 0;
 }
 
+/**
+ * Compute a dust threshold based upon a standard p2pkh txout.
+ */
+CAmount DefaultDustThreshold(const CFeeRate& minRelayTxFee) {
+    // Use the all-zeros seed, we're only constructing a key in order
+    // to get a txout from which we can obtain the dust threshold.
+    // Master key generation results in a compressed key.
+    RawHDSeed seed(64, 0x00);
+    CKey secret = CExtKey::Master(seed.data(), 64).key;
+    CScript scriptPubKey = GetScriptForDestination(secret.GetPubKey().GetID());
+    CTxOut txout(CAmount(1), scriptPubKey);
+    return txout.GetDustThreshold(minRelayTxFee);
+}
+
 bool AsyncRPCOperation_sendmany::load_inputs(TxValues& txValues) {
     // If from address is a taddr, select UTXOs to spend
     CAmount selectedUTXOAmount = 0;
+
     // Get dust threshold
-    CKey secret;
-    secret.MakeNewKey(true);
-    CScript scriptPubKey = GetScriptForDestination(secret.GetPubKey().GetID());
-    CTxOut out(CAmount(1), scriptPubKey);
-    CAmount dustThreshold = out.GetDustThreshold(minRelayTxFee);
+    CAmount dustThreshold = DefaultDustThreshold(minRelayTxFee);
     CAmount dustChange = -1;
 
     std::vector<COutput> selectedTInputs;

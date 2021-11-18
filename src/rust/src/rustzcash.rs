@@ -1081,6 +1081,28 @@ pub extern "C" fn librustzcash_zip32_xfvk_derive(
 pub extern "C" fn librustzcash_zip32_xfvk_address(
     xfvk: *const [c_uchar; 169],
     j: *const [c_uchar; 11],
+    addr_ret: *mut [c_uchar; 43],
+) -> bool {
+    let xfvk = zip32::ExtendedFullViewingKey::read(&unsafe { *xfvk }[..])
+        .expect("valid ExtendedFullViewingKey");
+    let j = zip32::DiversifierIndex(unsafe { *j });
+
+    match xfvk.address(j) {
+        Some(addr) => {
+            let addr_ret = unsafe { &mut *addr_ret };
+            addr_ret.copy_from_slice(&addr.to_bytes());
+
+            true
+        }
+        None => false,
+    }
+}
+
+/// Derive a PaymentAddress from an ExtendedFullViewingKey.
+#[no_mangle]
+pub extern "C" fn librustzcash_zip32_find_xfvk_address(
+    xfvk: *const [c_uchar; 169],
+    j: *const [c_uchar; 11],
     j_ret: *mut [c_uchar; 11],
     addr_ret: *mut [c_uchar; 43],
 ) -> bool {
@@ -1088,18 +1110,18 @@ pub extern "C" fn librustzcash_zip32_xfvk_address(
         .expect("valid ExtendedFullViewingKey");
     let j = zip32::DiversifierIndex(unsafe { *j });
 
-    let addr = match xfvk.address(j) {
-        Ok(addr) => addr,
-        Err(_) => return false,
-    };
+    match xfvk.find_address(j) {
+        Some((j, addr)) => {
+            let j_ret = unsafe { &mut *j_ret };
+            let addr_ret = unsafe { &mut *addr_ret };
 
-    let j_ret = unsafe { &mut *j_ret };
-    let addr_ret = unsafe { &mut *addr_ret };
+            j_ret.copy_from_slice(&j.0);
+            addr_ret.copy_from_slice(&addr.to_bytes());
 
-    j_ret.copy_from_slice(&(addr.0).0);
-    addr_ret.copy_from_slice(&addr.1.to_bytes());
-
-    true
+            true
+        }
+        None => false,
+    }
 }
 
 #[no_mangle]

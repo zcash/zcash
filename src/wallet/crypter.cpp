@@ -130,21 +130,50 @@ static bool DecryptSecret(const CKeyingMaterial& vMasterKey, const std::vector<u
     return cKeyCrypter.Decrypt(vchCiphertext, *((CKeyingMaterial*)&vchPlaintext));
 }
 
-static bool DecryptHDSeed(
+static CKeyingMaterial EncryptMnemonicSeed(const MnemonicSeed& seed)
+{
+    CSecureDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << seed;
+    CKeyingMaterial vchSecret(ss.begin(), ss.end());
+
+    return vchSecret;
+}
+
+static std::optional<MnemonicSeed> DecryptMnemonicSeed(
     const CKeyingMaterial& vMasterKey,
     const std::vector<unsigned char>& vchCryptedSecret,
-    const uint256& seedFp,
-    HDSeed& seed)
+    const uint256& seedFp)
 {
     CKeyingMaterial vchSecret;
 
     // Use seed's fingerprint as IV
     // TODO: Handle IV properly when we make encryption a supported feature
-    if(!DecryptSecret(vMasterKey, vchCryptedSecret, seedFp, vchSecret))
-        return false;
+    if (DecryptSecret(vMasterKey, vchCryptedSecret, seedFp, vchSecret)) {
+        CSecureDataStream ss(vchSecret, SER_NETWORK, PROTOCOL_VERSION);
+        auto seed = MnemonicSeed::Read(ss);
+        if (seed.Fingerprint() == seedFp) {
+            return seed;
+        }
+    }
+    return std::nullopt;
+}
 
-    seed = HDSeed(vchSecret);
-    return seed.Fingerprint() == seedFp;
+static std::optional<HDSeed> DecryptLegacyHDSeed(
+    const CKeyingMaterial& vMasterKey,
+    const std::vector<unsigned char>& vchCryptedSecret,
+    const uint256& seedFp)
+{
+    CKeyingMaterial vchSecret;
+
+    // Use seed's fingerprint as IV
+    // TODO: Handle IV properly when we make encryption a supported feature
+    if (DecryptSecret(vMasterKey, vchCryptedSecret, seedFp, vchSecret)) {
+        auto seed = HDSeed(vchSecret);
+        if (seed.Fingerprint() == seedFp) {
+            return seed;
+        }
+    }
+    return std::nullopt;
 }
 
 static bool DecryptKey(const CKeyingMaterial& vMasterKey, const std::vector<unsigned char>& vchCryptedSecret, const CPubKey& vchPubKey, CKey& key)
@@ -227,10 +256,21 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
 
         bool keyPass = false;
         bool keyFail = false;
-        if (!cryptedHDSeed.first.IsNull()) {
-            HDSeed seed;
-            if (!DecryptHDSeed(vMasterKeyIn, cryptedHDSeed.second, cryptedHDSeed.first, seed))
-            {
+        if (!cryptedMnemonicSeed.first.IsNull()) {
+            // Check that we can successfully decrypt the mnemonic seed, if present
+            auto seed = DecryptMnemonicSeed(vMasterKeyIn, cryptedMnemonicSeed.second, cryptedMnemonicSeed.first);
+            if (!seed.has_value()) {
+                keyFail = true;
+            } else {
+                keyPass = true;
+            }
+        }
+        if (cryptedLegacySeed.has_value()) {
+            // Check that we can successfully decrypt the legacy seed, if present
+            auto seed = DecryptLegacyHDSeed(vMasterKeyIn,
+                                            cryptedLegacySeed.value().second,
+                                            cryptedLegacySeed.value().first);
+            if (!seed.has_value()) {
                 keyFail = true;
             } else {
                 keyPass = true;
@@ -295,70 +335,137 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
     return true;
 }
 
-bool CCryptoKeyStore::SetHDSeed(const HDSeed& seed)
+//
+// Mnemonic HD seeds
+//
+
+bool CCryptoKeyStore::SetMnemonicSeed(const MnemonicSeed& seed)
 {
     {
         LOCK(cs_KeyStore);
         if (!fUseCrypto) {
-            return CBasicKeyStore::SetHDSeed(seed);
+            return CBasicKeyStore::SetMnemonicSeed(seed);
         }
 
         if (IsLocked())
             return false;
 
-        std::vector<unsigned char> vchCryptedSecret;
         // Use seed's fingerprint as IV
         // TODO: Handle this properly when we make encryption a supported feature
         auto seedFp = seed.Fingerprint();
-        if (!EncryptSecret(vMasterKey, seed.RawSeed(), seedFp, vchCryptedSecret))
+        CKeyingMaterial vchSecret = EncryptMnemonicSeed(seed);
+
+        std::vector<unsigned char> vchCryptedSecret;
+        if (!EncryptSecret(vMasterKey, vchSecret, seedFp, vchCryptedSecret))
             return false;
 
         // This will call into CWallet to store the crypted seed to disk
-        if (!SetCryptedHDSeed(seedFp, vchCryptedSecret))
+        if (!SetCryptedMnemonicSeed(seedFp, vchCryptedSecret))
             return false;
     }
     return true;
 }
 
-bool CCryptoKeyStore::SetCryptedHDSeed(
+bool CCryptoKeyStore::SetCryptedMnemonicSeed(
     const uint256& seedFp,
     const std::vector<unsigned char>& vchCryptedSecret)
 {
     LOCK(cs_KeyStore);
-    if (!fUseCrypto) {
+    if (!fUseCrypto || !cryptedMnemonicSeed.first.IsNull()) {
+        // Either wallet encryption is disabled, or the wallet already has an
+        // existing mnemonic. In either case, don't allow a new mnemonic.
         return false;
+    } else {
+        cryptedMnemonicSeed = std::make_pair(seedFp, vchCryptedSecret);
+        return true;
     }
+}
 
-    if (!cryptedHDSeed.first.IsNull()) {
-        // Don't allow an existing seed to be changed. We can maybe relax this
-        // restriction later once we have worked out the UX implications.
-        return false;
+bool CCryptoKeyStore::HaveMnemonicSeed() const
+{
+    LOCK(cs_KeyStore);
+    if (fUseCrypto) {
+        return !cryptedMnemonicSeed.second.empty();
+    } else {
+        return CBasicKeyStore::HaveMnemonicSeed();
     }
+}
 
-    cryptedHDSeed = std::make_pair(seedFp, vchCryptedSecret);
+std::optional<MnemonicSeed> CCryptoKeyStore::GetMnemonicSeed() const
+{
+    LOCK(cs_KeyStore);
+    if (fUseCrypto) {
+        if (cryptedMnemonicSeed.second.empty()) {
+            return std::nullopt;
+        } else {
+            return DecryptMnemonicSeed(vMasterKey, cryptedMnemonicSeed.second, cryptedMnemonicSeed.first);
+        }
+    } else {
+        return CBasicKeyStore::GetMnemonicSeed();
+    }
+}
+
+//
+// Legacy HD seeds
+//
+
+bool CCryptoKeyStore::SetLegacyHDSeed(const HDSeed& seed)
+{
+    {
+        LOCK(cs_KeyStore);
+        if (!fUseCrypto) {
+            return CBasicKeyStore::SetLegacyHDSeed(seed);
+        }
+
+        if (IsLocked())
+            return false;
+
+        // Use seed's fingerprint as IV
+        // TODO: Handle this properly when we make encryption a supported feature
+        auto seedFp = seed.Fingerprint();
+        std::vector<unsigned char> vchCryptedSecret;
+        if (!EncryptSecret(vMasterKey, seed.RawSeed(), seedFp, vchCryptedSecret))
+            return false;
+
+        // This will call into CWallet to store the crypted seed to disk
+        if (!SetCryptedLegacyHDSeed(seedFp, vchCryptedSecret))
+            return false;
+    }
     return true;
 }
 
-bool CCryptoKeyStore::HaveHDSeed() const
+bool CCryptoKeyStore::SetCryptedLegacyHDSeed(
+    const uint256& seedFp,
+    const std::vector<unsigned char>& vchCryptedSecret)
 {
     LOCK(cs_KeyStore);
-    if (!fUseCrypto)
-        return CBasicKeyStore::HaveHDSeed();
-
-    return !cryptedHDSeed.second.empty();
-}
-
-bool CCryptoKeyStore::GetHDSeed(HDSeed& seedOut) const
-{
-    LOCK(cs_KeyStore);
-    if (!fUseCrypto)
-        return CBasicKeyStore::GetHDSeed(seedOut);
-
-    if (cryptedHDSeed.second.empty())
+    if (!fUseCrypto || cryptedLegacySeed.has_value()) {
+        // Either wallet encryption is disabled, or the wallet already has an
+        // existing legacy seed. In either case, don't allow a new seed.
         return false;
-
-    return DecryptHDSeed(vMasterKey, cryptedHDSeed.second, cryptedHDSeed.first, seedOut);
+    } else {
+        cryptedLegacySeed = std::make_pair(seedFp, vchCryptedSecret);
+        return true;
+    }
 }
+
+std::optional<HDSeed> CCryptoKeyStore::GetLegacyHDSeed() const {
+    LOCK(cs_KeyStore);
+    if (fUseCrypto) {
+        if (cryptedLegacySeed.has_value()) {
+            const auto cryptedPair = cryptedLegacySeed.value();
+            return DecryptLegacyHDSeed(vMasterKey, cryptedPair.second, cryptedPair.first);
+        } else {
+            return std::nullopt;
+        }
+    } else {
+        return CBasicKeyStore::GetLegacyHDSeed();
+    }
+}
+
+//
+// Transparent public keys
+//
 
 bool CCryptoKeyStore::AddKeyPubKey(const CKey& key, const CPubKey &pubkey)
 {
@@ -419,6 +526,10 @@ bool CCryptoKeyStore::GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) co
     // Check for watch-only pubkeys
     return CBasicKeyStore::GetPubKey(address, vchPubKeyOut);
 }
+
+//
+// Sprout & Sapling keys
+//
 
 bool CCryptoKeyStore::AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk)
 {
@@ -536,21 +647,38 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
             return false;
 
         fUseCrypto = true;
-        if (!hdSeed.IsNull()) {
+        if (mnemonicSeed.has_value()) {
             {
                 std::vector<unsigned char> vchCryptedSecret;
                 // Use seed's fingerprint as IV
                 // TODO: Handle this properly when we make encryption a supported feature
-                auto seedFp = hdSeed.Fingerprint();
-                if (!EncryptSecret(vMasterKeyIn, hdSeed.RawSeed(), seedFp, vchCryptedSecret)) {
+                auto seedFp = mnemonicSeed.value().Fingerprint();
+                auto seedData = EncryptMnemonicSeed(mnemonicSeed.value());
+                if (!EncryptSecret(vMasterKeyIn, seedData, seedFp, vchCryptedSecret)) {
                     return false;
                 }
                 // This will call into CWallet to store the crypted seed to disk
-                if (!SetCryptedHDSeed(seedFp, vchCryptedSecret)) {
+                if (!SetCryptedMnemonicSeed(seedFp, vchCryptedSecret)) {
                     return false;
                 }
             }
-            hdSeed = HDSeed();
+            mnemonicSeed = std::nullopt;
+        }
+        if (legacySeed.has_value()) {
+            {
+                std::vector<unsigned char> vchCryptedSecret;
+                // Use seed's fingerprint as IV
+                // TODO: Handle this properly when we make encryption a supported feature
+                auto seedFp = legacySeed.value().Fingerprint();
+                if (!EncryptSecret(vMasterKeyIn, legacySeed.value().RawSeed(), seedFp, vchCryptedSecret)) {
+                    return false;
+                }
+                // This will call into CWallet to store the crypted seed to disk
+                if (!SetCryptedLegacyHDSeed(seedFp, vchCryptedSecret)) {
+                    return false;
+                }
+            }
+            legacySeed = std::nullopt;
         }
         for (KeyMap::value_type& mKey : mapKeys)
         {

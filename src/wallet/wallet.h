@@ -71,8 +71,8 @@ static const bool DEFAULT_WALLETBROADCAST = true;
 //  unless there is some exceptional network disruption.
 static const unsigned int WITNESS_CACHE_SIZE = MAX_REORG_LENGTH + 1;
 
-//! Size of HD seed in bytes
-static const size_t HD_WALLET_SEED_LENGTH = 32;
+//! Amount of entropy used in generation of the mnemonic seed, in bytes.
+static const size_t WALLET_MNEMONIC_ENTROPY_LENGTH = 32;
 
 extern const char * DEFAULT_WALLET_DAT;
 
@@ -804,8 +804,10 @@ protected:
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);
     void MarkAffectedTransactionsDirty(const CTransaction& tx);
 
-    /* the hd chain data model (chain counters) */
-    CHDChain hdChain;
+    /* the hd chain metadata for keys derived from the mnemonic seed */
+    std::optional<CHDChain> mnemonicHDChain;
+
+    /* the network ID string for the network for which this wallet was created */
     std::string networkIdString;
 
 public:
@@ -1052,8 +1054,15 @@ public:
     /**
       * Sapling ZKeys
       */
-    //! Generates new Sapling key
-    libzcash::SaplingPaymentAddress GenerateNewSaplingZKey();
+
+    //! Generates new Sapling key, stores the newly generated spending
+    //! key to the wallet, and returns the default address for the newly generated key.
+    libzcash::SaplingPaymentAddress GenerateNewLegacySaplingZKey();
+    //! Generates Sapling key at the specified address index, and stores the newly generated
+    //! spending key to the wallet if it has not alreay been persisted.
+    //! Returns the newly created key, and a flag distinguishing
+    //! whether or not the key was already known by the wallet.
+    std::pair<libzcash::SaplingExtendedSpendingKey, bool> GenerateLegacySaplingZKey(uint32_t addrIndex);
     //! Adds Sapling spending key to the store, and saves it to disk
     bool AddSaplingZKey(const libzcash::SaplingExtendedSpendingKey &key);
     //! Add Sapling full viewing key to the wallet.
@@ -1083,6 +1092,12 @@ public:
     //! Adds an encrypted spending key to the store, without saving it to disk (used by LoadWallet)
     bool LoadCryptedSaplingZKey(const libzcash::SaplingExtendedFullViewingKey &extfvk,
                                 const std::vector<unsigned char> &vchCryptedSecret);
+
+    /**
+     * Unified keys & addresses
+     */
+    libzcash::ZcashdUnifiedSpendingKey GenerateNewUnifiedSpendingKey();
+    std::optional<libzcash::ZcashdUnifiedSpendingKey> GenerateUnifiedSpendingKeyForAccount(uint32_t accountId);
 
     /**
      * Increment the next transaction order id
@@ -1147,7 +1162,7 @@ public:
     void ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool);
     void KeepKey(int64_t nIndex);
     void ReturnKey(int64_t nIndex);
-    bool GetKeyFromPool(CPubKey &key);
+    std::optional<CPubKey> GetKeyFromPool();
     int64_t GetOldestKeyPoolTime();
     void GetAllReserveKeys(std::set<CKeyID>& setAddress) const;
 
@@ -1281,28 +1296,39 @@ public:
     bool IsHDFullyEnabled() const;
 
     /* Generates a new HD seed (will reset the chain child index counters)
-       Sets the seed's version based on the current wallet version (so the
-       caller must ensure the current wallet version is correct before calling
-       this function). */
-    void GenerateNewSeed();
+     * by randomly generating a mnemonic phrase that can be used for wallet
+     * recovery, and deriving the HD seed from that phrase in accordance with
+     * BIP 39 / ZIP 339. Sets the seed's version based on the current wallet
+     * version (the caller must ensure the current wallet version is correct
+     * before calling this function). */
+    void GenerateNewSeed(Language language = English);
 
-    bool SetHDSeed(const HDSeed& seed);
-    bool SetCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
+    bool SetMnemonicSeed(const MnemonicSeed& seed);
+    bool SetCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
+    /* Checks the wallet's seed against the specified mnemonic, and marks the
+     * wallet's seed as having been backed up if the phrases match. */
+    bool VerifyMnemonicSeed(const SecureString& mnemonic);
+    bool MnemonicVerified();
+
+    /* Set the current mnemonic phrase, without saving it to disk (used by LoadWallet) */
+    bool LoadMnemonicSeed(const MnemonicSeed& seed);
+    /* Set the legacy HD seed, without saving it to disk (used by LoadWallet) */
+    bool LoadLegacyHDSeed(const HDSeed& seed);
+
+    /* Set the current encrypted mnemonic phrase, without saving it to disk (used by LoadWallet) */
+    bool LoadCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char>& seed);
+    /* Set the legacy encrypted HD seed, without saving it to disk (used by LoadWallet) */
+    bool LoadCryptedLegacyHDSeed(const uint256& seedFp, const std::vector<unsigned char>& seed);
 
     /* Returns the wallet's HD seed or throw JSONRPCError(...) */
     HDSeed GetHDSeedForRPC() const;
 
-    /* Set the HD chain model (chain child index counters) */
-    void SetHDChain(const CHDChain& chain, bool memonly);
-    const CHDChain& GetHDChain() const { return hdChain; }
+    /* Set the metadata for the mnemonic HD seed (chain child index counters) */
+    void SetMnemonicHDChain(const CHDChain& chain, bool memonly);
+    const std::optional<CHDChain>& GetMnemonicHDChain() const { return mnemonicHDChain; }
 
     bool CheckNetworkInfo(std::pair<std::string, std::string> networkInfo);
     uint32_t BIP44CoinType();
-
-    /* Set the current HD seed, without saving it to disk (used by LoadWallet) */
-    bool LoadHDSeed(const HDSeed& key);
-    /* Set the current encrypted HD seed, without saving it to disk (used by LoadWallet) */
-    bool LoadCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& seed);
 
     /* Find notes filtered by payment address, min depth, ability to spend */
     void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,

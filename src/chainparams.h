@@ -50,7 +50,7 @@ public:
  * a regression test mode which is intended for private networks only. It has
  * minimal difficulty to ensure that blocks can be found instantly.
  */
-class CChainParams: public KeyConstants 
+class CChainParams: public KeyConstants
 {
 public:
     const Consensus::Params& GetConsensus() const { return consensus; }
@@ -62,6 +62,7 @@ public:
     CAmount SproutValuePoolCheckpointBalance() const { return nSproutValuePoolCheckpointBalance; }
     uint256 SproutValuePoolCheckpointBlockHash() const { return hashSproutValuePoolCheckpointBlock; }
     bool ZIP209Enabled() const { return fZIP209Enabled; }
+    bool RequireWalletBackup() const { return fRequireWalletBackup; }
 
     const CBlock& GenesisBlock() const { return genesis; }
     /** Make miner wait to have peers to avoid wasting work */
@@ -80,11 +81,11 @@ public:
     /** Return the BIP70 network string (main, test or regtest) */
     std::string NetworkIDString() const { return keyConstants.NetworkIDString(); }
     const std::vector<CDNSSeedData>& DNSSeeds() const { return vSeeds; }
-    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { 
-        return keyConstants.Base58Prefix(type); 
+    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const {
+        return keyConstants.Base58Prefix(type);
     }
-    const std::string& Bech32HRP(Bech32Type type) const { 
-        return keyConstants.Bech32HRP(type); 
+    const std::string& Bech32HRP(Bech32Type type) const {
+        return keyConstants.Bech32HRP(type);
     }
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
     const CCheckpointData& Checkpoints() const { return checkpointData; }
@@ -121,6 +122,7 @@ protected:
     CAmount nSproutValuePoolCheckpointBalance = 0;
     uint256 hashSproutValuePoolCheckpointBlock;
     bool fZIP209Enabled = false;
+    bool fRequireWalletBackup = true;
 };
 
 /**

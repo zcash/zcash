@@ -25,8 +25,7 @@ static void ECDSA(benchmark::State& state)
     mtx.nVersion = SAPLING_TX_VERSION;
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
 
-    CKey key;
-    key.MakeNewKey(false);
+    CKey key = CKey::TestOnlyRandomKey(false);
     CBasicKeyStore keystore;
     keystore.AddKeyPubKey(key, key.GetPubKey());
     CKeyID hash = key.GetPubKey().GetID();

@@ -8,7 +8,7 @@
 
 /**
  * This test covers Sapling methods on CWallet
- * GenerateNewSaplingZKey()
+ * GenerateNewLegacySaplingZKey()
  * AddSaplingZKey()
  * AddSaplingIncomingViewingKey()
  * LoadSaplingZKey()
@@ -29,15 +29,14 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     ASSERT_EQ(0, addrs.size());
 
     // No HD seed in the wallet
-    EXPECT_ANY_THROW(wallet.GenerateNewSaplingZKey());
+    EXPECT_ANY_THROW(wallet.GenerateNewLegacySaplingZKey());
 
-    // Load the all-zeroes seed
-    CKeyingMaterial rawSeed(32, 0);
-    HDSeed seed(rawSeed);
-    wallet.LoadHDSeed(seed);
+    // Add a random seed to the wallet.
+    wallet.GenerateNewSeed();
+    auto seed = wallet.GetMnemonicSeed().value();
 
     // Now this call succeeds
-    auto address = wallet.GenerateNewSaplingZKey();
+    auto address = wallet.GenerateNewLegacySaplingZKey();
 
     // wallet should have one key
     wallet.GetSaplingPaymentAddresses(addrs);
@@ -64,16 +63,16 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     wallet.GetSaplingPaymentAddresses(addrs);
     EXPECT_EQ(2, addrs.size());
     EXPECT_EQ(1, addrs.count(address));
-    EXPECT_EQ(1, addrs.count(sk.DefaultAddress()));
+    EXPECT_EQ(1, addrs.count(sk.ToXFVK().DefaultAddress()));
 
-    // Generate a diversified address different to the default
-    // If we can't get an early diversified address, we are very unlucky
-    blob88 diversifier;
-    diversifier.begin()[0] = 10;
-    auto dpa = sk.ToXFVK().Address(diversifier).value().second;
+    // Find a diversified address that does not use the same diversifier as the default address.
+    // By starting our search at `10` we ensure there's no more than a 2^-10 chance that we
+    // collide with the default diversifier.
+    libzcash::diversifier_index_t j(10);
+    auto dpa = sk.ToXFVK().FindAddress(j).first;
 
     // verify wallet only has the default address
-    EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.DefaultAddress()));
+    EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.ToXFVK().DefaultAddress()));
     EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(dpa));
 
     // manually add a diversified address
@@ -81,7 +80,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     EXPECT_TRUE(wallet.AddSaplingIncomingViewingKey(ivk, dpa));
 
     // verify wallet did add it
-    EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.DefaultAddress()));
+    EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.ToXFVK().DefaultAddress()));
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(dpa));
 
     // Load a third key into the wallet
@@ -98,8 +97,8 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     ASSERT_EQ(wallet.mapSaplingZKeyMetadata[ivk2].nCreateTime, now);
 
     // Load a diversified address for the third key into the wallet
-    auto dpa2 = sk2.ToXFVK().Address(diversifier).value().second;
-    EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk2.DefaultAddress()));
+    auto dpa2 = sk2.ToXFVK().FindAddress(j).first;
+    EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk2.ToXFVK().DefaultAddress()));
     EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(dpa2));
     EXPECT_TRUE(wallet.LoadSaplingPaymentAddress(dpa2, ivk2));
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(dpa2));
@@ -411,7 +410,7 @@ TEST(WalletZkeysTest, WriteCryptedzkeyDirectToDb) {
 /**
  * This test covers methods on CWalletDB to load/save crypted sapling z keys.
  */
-TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
+TEST(WalletZkeysTest, WriteCryptedSaplingZkeyDirectToDb) {
     SelectParams(CBaseChainParams::TESTNET);
 
     // Get temporary and unique path for file.
@@ -428,8 +427,11 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
      // No default CPubKey set
     ASSERT_TRUE(fFirstRun);
 
-    ASSERT_FALSE(wallet.HaveHDSeed());
+    ASSERT_FALSE(wallet.HaveMnemonicSeed());
+
+    // Add a mnemonic seed to the wallet.
     wallet.GenerateNewSeed();
+    ASSERT_TRUE(wallet.HaveMnemonicSeed());
 
     // wallet should be empty
     std::set<libzcash::SaplingPaymentAddress> addrs;
@@ -437,7 +439,7 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
     ASSERT_EQ(0, addrs.size());
 
     // Add random key to the wallet
-    auto address = wallet.GenerateNewSaplingZKey();
+    auto address = wallet.GenerateNewLegacySaplingZKey();
 
     // wallet should have one key
     wallet.GetSaplingPaymentAddresses(addrs);
@@ -447,9 +449,8 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
     // If we can't get an early diversified address, we are very unlucky
     libzcash::SaplingExtendedSpendingKey extsk;
     EXPECT_TRUE(wallet.GetSaplingExtendedSpendingKey(address, extsk));
-    blob88 diversifier;
-    diversifier.begin()[0] = 10;
-    auto dpa = extsk.ToXFVK().Address(diversifier).value().second;
+    libzcash::diversifier_index_t j(10);
+    auto dpa = extsk.ToXFVK().FindAddress(j).first;
 
     // Add diversified address to the wallet
     auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
@@ -462,11 +463,11 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
     ASSERT_TRUE(wallet.EncryptWallet(strWalletPass));
 
     // adding a new key will fail as the wallet is locked
-    EXPECT_ANY_THROW(wallet.GenerateNewSaplingZKey());
+    EXPECT_ANY_THROW(wallet.GenerateNewLegacySaplingZKey());
 
     // unlock wallet and then add
     wallet.Unlock(strWalletPass);
-    auto address2 = wallet.GenerateNewSaplingZKey();
+    auto address2 = wallet.GenerateNewLegacySaplingZKey();
 
     // flush the wallet to prevent race conditions
     wallet.Flush();
@@ -477,7 +478,7 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
 
     // Confirm it's not the same as the other wallet
     ASSERT_TRUE(&wallet != &wallet2);
-    ASSERT_TRUE(wallet2.HaveHDSeed());
+    ASSERT_TRUE(wallet2.HaveMnemonicSeed());
 
     // wallet should have three addresses
     wallet2.GetSaplingPaymentAddresses(addrs);
@@ -501,8 +502,8 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
     wallet2.Unlock(strWalletPass);
 
     EXPECT_TRUE(wallet2.GetSaplingExtendedSpendingKey(address, keyOut));
-    ASSERT_EQ(address, keyOut.DefaultAddress());
+    ASSERT_EQ(address, keyOut.ToXFVK().DefaultAddress());
 
     EXPECT_TRUE(wallet2.GetSaplingExtendedSpendingKey(address2, keyOut));
-    ASSERT_EQ(address2, keyOut.DefaultAddress());
+    ASSERT_EQ(address2, keyOut.ToXFVK().DefaultAddress());
 }

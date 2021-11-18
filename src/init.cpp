@@ -684,7 +684,7 @@ void ThreadImport(std::vector<fs::path> vImportFiles, const CChainParams& chainp
  */
 bool InitSanityCheck(void)
 {
-    if(!ECC_InitSanityCheck()) {
+    if(!CKey::ECC_InitSanityCheck()) {
         InitError("Elliptic curve cryptography sanity check failure. Aborting.");
         return false;
     }

@@ -316,8 +316,8 @@ void RegtestDeactivateNU5() {
 }
 
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey() {
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
-    HDSeed seed(rawSeed);
+    SecureString mnemonic("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art");
+    MnemonicSeed seed(English, mnemonic);
     return libzcash::SaplingExtendedSpendingKey::Master(seed);
 }
 
@@ -346,7 +346,7 @@ CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
     // To zaddr
     auto fvk = sk.expsk.full_viewing_key();
-    auto pa = sk.DefaultAddress();
+    auto pa = sk.ToXFVK().DefaultAddress();
 
     auto builder = TransactionBuilder(consensusParams, 1, &keyStore);
     builder.SetFee(0);

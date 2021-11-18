@@ -67,7 +67,7 @@ std::string DecodeDumpString(const std::string &str) {
     for (unsigned int pos = 0; pos < str.length(); pos++) {
         unsigned char c = str[pos];
         if (c == '%' && pos+2 < str.length()) {
-            c = (((str[pos+1]>>6)*9+((str[pos+1]-'0')&15)) << 4) | 
+            c = (((str[pos+1]>>6)*9+((str[pos+1]-'0')&15)) << 4) |
                 ((str[pos+2]>>6)*9+((str[pos+2]-'0')&15));
             pos += 2;
         }
@@ -80,7 +80,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
             "importprivkey \"zcashprivkey\" ( \"label\" rescan )\n"
@@ -189,7 +189,7 @@ UniValue importaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() < 1 || params.size() > 4)
         throw runtime_error(
             "importaddress \"address\" ( \"label\" rescan p2sh )\n"
@@ -338,7 +338,7 @@ UniValue importwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "importwallet \"filename\"\n"
@@ -476,7 +476,7 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "dumpprivkey \"t-addr\"\n"
@@ -520,7 +520,7 @@ UniValue z_exportwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "z_exportwallet \"filename\"\n"
@@ -609,13 +609,33 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
     file << strprintf("# * Created on %s\n", EncodeDumpTime(GetTime()));
     file << strprintf("# * Best block at time of backup was %i (%s),\n", chainActive.Height(), chainActive.Tip()->GetBlockHash().ToString());
     file << strprintf("#   mined on %s\n", EncodeDumpTime(chainActive.Tip()->GetBlockTime()));
-    {
-        HDSeed hdSeed;
-        pwalletMain->GetHDSeed(hdSeed);
-        auto rawSeed = hdSeed.RawSeed();
-        file << strprintf("# HDSeed=%s fingerprint=%s", HexStr(rawSeed.begin(), rawSeed.end()), hdSeed.Fingerprint().GetHex());
-        file << "\n";
+
+    std::optional<MnemonicSeed> hdSeed = pwalletMain->GetMnemonicSeed();
+    if (hdSeed.has_value()) {
+        auto mSeed = hdSeed.value();
+        file << strprintf(
+                "# Emergency Recovery Information:\n"
+                "# - recovery_phrase=\"%s\"\n"
+                "# - language=%s\n"
+                "# - fingerprint=%s\n",
+                mSeed.GetMnemonic(),
+                MnemonicSeed::LanguageName(mSeed.GetLanguage()),
+                mSeed.Fingerprint().GetHex()
+                );
     }
+
+    std::optional<HDSeed> legacySeed = pwalletMain->GetLegacyHDSeed();
+    if (legacySeed.has_value()) {
+        auto rawSeed = legacySeed.value().RawSeed();
+        file << strprintf(
+                "# Legacy HD Seed:\n"
+                "# - seed=%s\n"
+                "# - fingerprint=%s\n",
+                HexStr(rawSeed.begin(), rawSeed.end()),
+                legacySeed.value().Fingerprint().GetHex()
+                );
+    }
+
     file << "\n";
     for (std::vector<std::pair<int64_t, CKeyID> >::const_iterator it = vKeyBirth.begin(); it != vKeyBirth.end(); it++) {
         const CKeyID &keyid = it->second;
@@ -769,10 +789,10 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     if (addResult == KeyNotAdded) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
     }
-    
+
     // whenever a key is imported, we need to scan the whole chain
     pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
-    
+
     // We want to scan for transactions and notes
     if (fRescan) {
         pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
