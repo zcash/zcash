@@ -76,7 +76,7 @@ mkdir {./zcash-params-dir,./zcash-data-dir}
 sudo chown -R 2001.2001 {./zcash-params-dir,./zcash-data-dir}
 docker run -d --name my_zcashd \
   -v $(pwd)/zcash-data-dir:/srv/zcashd/.zcash \
-  -v $(pwd)/zcash-params-dir/srv/zcashd/.zcash-params \
+  -v $(pwd)/zcash-params-dir:/srv/zcashd/.zcash-params \
   electriccoinco/zcashd
 ```  
 
