@@ -875,7 +875,7 @@ public:
 
 
 /*
- * Test Aysnc RPC queue and operations.
+ * Test Async RPC queue and operations.
  */
 BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations)
 {

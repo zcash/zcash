@@ -29,7 +29,7 @@ def satoshi_round(amount):
 def small_txpuzzle_randfee(from_node, conflist, unconflist, amount, min_fee, fee_increment):
     '''
     Create and send a transaction with a random fee.
-    The transaction pays to a trival P2SH script, and assumes that its inputs
+    The transaction pays to a trivial P2SH script, and assumes that its inputs
     are of the same form.
     The function takes a list of confirmed outputs and unconfirmed outputs
     and attempts to use the confirmed list first for its inputs.

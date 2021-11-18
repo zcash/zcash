@@ -21,7 +21,7 @@ void memory_cleanse(void *ptr, size_t len)
 
     /* In order to prevent the compiler from optimizing out the memset, this uses an
      * unremovable (see https://gcc.gnu.org/onlinedocs/gcc/Extended-Asm.html#Volatile )
-     * asm block that the compiler must assume could access arbitary memory, including
+     * asm block that the compiler must assume could access arbitrary memory, including
      * the zero bytes written by std::memset.
      *
      * Quoting Adam Langley <agl@google.com> in commit ad1907fe73334d6c696c8539646c21b11178f20f

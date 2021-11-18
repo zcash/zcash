@@ -159,7 +159,7 @@ class FullBlockTest(ComparisonTestFramework):
         yield test
 
 
-        # Start by bulding a couple of blocks on top (which output is spent is in parentheses):
+        # Start by building a couple of blocks on top (which output is spent is in parentheses):
         #     genesis -> b1 (0) -> b2 (1)
         out0 = get_spendable_output()
         block(1, spend=out0)

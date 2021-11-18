@@ -43,7 +43,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         self.nodes[0].generate(200)
         self.sync_all()
 
-        # Verfify genesis block contains null field for what is now called the final sapling root field.
+        # Verify genesis block contains null field for what is now called the final sapling root field.
         blk = self.nodes[0].getblock("0")
         assert_equal(blk["finalsaplingroot"], NULL_FIELD)
         treestate = self.nodes[0].z_gettreestate("0")

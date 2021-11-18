@@ -6181,7 +6181,7 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
                     if ((mi->second->nVersion <= 4) != (inv.type == MSG_TX)) {
                         Misbehaving(pfrom->GetId(), 100);
                         LogPrint("net", "Wrong INV message type used for v%d tx", mi->second->nVersion);
-                        // Break so that this inv mesage will be erased from the queue
+                        // Break so that this inv message will be erased from the queue
                         // (otherwise the peer would repeatedly hit this case until its
                         // Misbehaving level rises above -banscore, no matter what the
                         // user set it to).
@@ -6202,7 +6202,7 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
                         if ((txinfo.tx->nVersion <= 4) != (inv.type == MSG_TX)) {
                             Misbehaving(pfrom->GetId(), 100);
                             LogPrint("net", "Wrong INV message type used for v%d tx", txinfo.tx->nVersion);
-                            // Break so that this inv mesage will be erased from the queue.
+                            // Break so that this inv message will be erased from the queue.
                             break;
                         }
                         // Ensure we only reply with a transaction if it is exactly what
@@ -7201,7 +7201,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 LogPrint("net", "Reject %s\n", SanitizeString(ss.str()));
             } catch (const std::ios_base::failure&) {
                 // Avoid feedback loops by preventing reject messages from triggering a new reject message.
-                LogPrint("net", "Unparseable reject message received\n");
+                LogPrint("net", "Unparsable reject message received\n");
             }
         }
     }

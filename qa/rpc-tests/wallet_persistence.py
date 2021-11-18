@@ -36,7 +36,7 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Verify Sapling address is persisted in wallet
         sapling_addr = self.nodes[0].z_getnewaddress('sapling')
 
-        # Make sure the node has the addresss
+        # Make sure the node has the address
         addresses = self.nodes[0].z_listaddresses()
         assert_true(sapling_addr in addresses, "Should contain address before restart")
 

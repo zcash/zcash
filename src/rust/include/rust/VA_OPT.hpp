@@ -56,7 +56,7 @@
   -------------
   Clang -std=c++2a enables it. GCC has it enabled without -std=c++2a
   but warns "__VA_OPT__ is not available until C++2a" if another -std
-  flag is supplied along with -pedantic (dont know how to supress it).
+  flag is supplied along with -pedantic (dont know how to suppress it).
   MSVC TBD
 
   Credits
