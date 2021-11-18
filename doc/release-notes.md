@@ -7,7 +7,7 @@ Notable changes
 Mnemonic Recovery Phrases
 -------------------------
 
-The zcashd wallet has been modified to support ZIP 339 (derived from BIP 39)
+The zcashd wallet has been modified to support ZIP 339 (to be compatible with BIP 39)
 which describes how to derive the wallet's HD seed from a mnemonic phrase.
 The mnemonic phrase will be generated on load of the wallet, or the first time
 the wallet is unlocked, and is available via the `z_exportwallet` RPC call. All

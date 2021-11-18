@@ -1754,7 +1754,7 @@ UniValue walletconfirmbackup(const UniValue& params, bool fHelp)
             "   of the data returned by z_exportwallet. An error will be returned if the value provided\n"
             "   does not match the wallet's existing emergency recovery phrase.\n"
             "\nExamples:\n"
-            + HelpExampleCli("walletconfirmbackup", "\"abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art\"")
+            + HelpExampleRpc("walletconfirmbackup", "\"abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);

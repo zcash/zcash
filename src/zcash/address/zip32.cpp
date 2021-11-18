@@ -260,7 +260,7 @@ std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::For
     // Derive m/32'/coin_type'
     auto m_32h_cth = m_32h.Derive(bip44CoinType | HARDENED_KEY_LIMIT);
 
-    // Derive account key at next index, skip keys already known to the wallet
+    // Derive account key at the given account index
     auto xsk = m_32h_cth.Derive(accountId | HARDENED_KEY_LIMIT);
 
     // Create new metadata
@@ -348,13 +348,13 @@ std::optional<ZcashdUnifiedAddress> ZcashdUnifiedFullViewingKey::Address(diversi
         auto childIndex = j.ToTransparentChildIndex();
         if (!childIndex.has_value()) return std::nullopt;
 
-        CExtPubKey changeKey;
-        if (!transparentKey.value().Derive(changeKey, 0)) {
+        CExtPubKey externalKey;
+        if (!transparentKey.value().Derive(externalKey, 0)) {
             return std::nullopt;
         }
 
         CExtPubKey childKey;
-        if (changeKey.Derive(childKey, childIndex.value())) {
+        if (externalKey.Derive(childKey, childIndex.value())) {
             ua.transparentAddress = childKey.pubkey.GetID();
         } else {
             return std::nullopt;
