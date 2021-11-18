@@ -4812,7 +4812,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
     strUsage += HelpMessageOpt("-walletnotify=<cmd>", _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)"));
     strUsage += HelpMessageOpt("-zapwallettxes=<mode>", _("Delete all wallet transactions and only recover those parts of the blockchain through -rescan on startup") +
                                " " + _("(1 = keep tx meta data e.g. account owner and payment request information, 2 = drop tx meta data)"));
-    strUsage += HelpMessageOpt("-walletrequirebackup=false", _("Allow generation of new spending keys & addresses from the mnemonic seed, even if the backup of that seed has not yet been confirmed with `walletconfirmbackup`."));
+    strUsage += HelpMessageOpt("-walletrequirebackup=<bool>", _("By default, the wallet will not allow generation of new spending keys & addresses from the mnemonic seed until the backup of that seed has been confirmed with the `zcashd-wallet-tool` utility. A user may start zcashd with `-walletrequirebackup=false` to allow generation of spending keys even if the backup has not yet been confirmed."));
 
     if (showDebug)
     {
