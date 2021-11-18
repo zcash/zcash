@@ -88,7 +88,7 @@ void EnsureWalletIsBackedUp(const CChainParams& params)
         throw JSONRPCError(
                 RPC_WALLET_BACKUP_REQUIRED,
                 "Error: Please acknowledge that you have backed up the wallet's emergency recovery phrase "
-                "by using the walletconfirmbackup RPC method first."
+                "by using zcashd-wallet-tool first."
                 );
 }
 
