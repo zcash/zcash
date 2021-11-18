@@ -1,7 +1,7 @@
 name: Lints
 
 # We only run these lints on trial-merges of PRs to reduce noise.
-on: pull_request
+on: [pull_request, workflow_dispatch]
 
 jobs:
   commit-script-check:
@@ -88,3 +88,28 @@ jobs:
         with:
           command: fmt
           args: -- --check
+          
+  pyflakes_nofilter:
+    name: runner / pyflakes_nofilter
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: pyflakes
+      uses: reviewdog/action-pyflakes@master
+      with:
+        github_token: ${{ secrets.github_token }}
+        reporter: github-check # Change reporter.
+        level: 'errxor'
+        filter_mode: 'nofilter'
+
+  pyflakes_added:
+    name: runner / pyflakes_added
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: pyflakes
+      uses: reviewdog/action-pyflakes@master
+      with:
+        github_token: ${{ secrets.github_token }}
+        reporter: github-check # Change reporter.
+        level: 'erxror'
