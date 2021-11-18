@@ -99,8 +99,9 @@ jobs:
       with:
         github_token: ${{ secrets.github_token }}
         reporter: github-check # Change reporter.
-        level: 'error'
+        level: 'errxor'
         filter_mode: 'nofilter'
+
   pyflakes_added:
     name: runner / pyflakes_added
     runs-on: ubuntu-latest
@@ -111,4 +112,4 @@ jobs:
       with:
         github_token: ${{ secrets.github_token }}
         reporter: github-check # Change reporter.
-        level: 'error'
+        level: 'erxror'
