@@ -138,7 +138,7 @@
 <p><code>zcashd</code> is primarily a C++ codebase, but most new code is being written in Rust
 where possible.</p>
 <h2 id="adding-new-dependencies-in-online-rust-mode"><a class="header" href="#adding-new-dependencies-in-online-rust-mode">Adding new dependencies in online-Rust mode</a></h2>
-<p>The <code>zcashd</code> build system pins all dependencies, and in order to faciliate
+<p>The <code>zcashd</code> build system pins all dependencies, and in order to facilitate
 deterministic builds, <code>cargo</code> is configured to run in offline mode with vendored
 crates. This means that if, for example, you add the <code>foobar</code> crate to
 <code>Cargo.toml</code>, you will likely see an error similar to this:</p>
