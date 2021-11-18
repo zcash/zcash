@@ -34,10 +34,6 @@ jobs:
         if: always()
         continue-on-error: true # Temporary until we get this passing
 
-      - name: Python UTF-8 encoding
-        run: ./test/lint/lint-python-utf8-encoding.sh
-        if: always()
-
       - name: Shebang
         run: ./test/lint/lint-shebang.sh
         if: always()
@@ -55,6 +51,22 @@ jobs:
 
       - name: Whitespace
         run: ./test/lint/lint-whitespace.sh
+        if: always()
+
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo python3 -m pip install pyflakes
+
+      - name: Pyflakes
+        run: pyflakes qa src zcutil
+        if: always()
+
+      - name: UTF-8 encoding
+        run: ./test/lint/lint-python-utf8-encoding.sh
         if: always()
 
   rust-clippy:
