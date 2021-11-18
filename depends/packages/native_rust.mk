@@ -1,14 +1,14 @@
 package=native_rust
-$(package)_version=1.55.0
+$(package)_version=1.56.1
 $(package)_download_path=https://static.rust-lang.org/dist
 $(package)_file_name_linux=rust-$($(package)_version)-x86_64-unknown-linux-gnu.tar.gz
-$(package)_sha256_hash_linux=2080253a2ec36ac8ed6e060d30802d888533124b8d16545cfd4af898b365eaac
+$(package)_sha256_hash_linux=a6be5d045183a0b12dddf0d81633e2a64e63e4c2dfa44eb7593970c1ef93a98f
 $(package)_file_name_darwin=rust-$($(package)_version)-x86_64-apple-darwin.tar.gz
-$(package)_sha256_hash_darwin=2e345ac7724c192c9487a2c6bd4f6c52c884d791981510288830d27d9a0bf2f3
+$(package)_sha256_hash_darwin=8d65ef02a123c23be00101fb204d28b60498b9145dd2ee8edabf0afde6e01e55
 $(package)_file_name_freebsd=rust-$($(package)_version)-x86_64-unknown-freebsd.tar.gz
-$(package)_sha256_hash_freebsd=7ddb8ec4d431f64dd6428df93d46f726516970b0ca83c71c3efbfe34a42d3113
+$(package)_sha256_hash_freebsd=94e2c8b44af125ca8ba1a1ded7e7b9c5acb27e52acec4ab483d5ed9a8528c5a9
 $(package)_file_name_aarch64_linux=rust-$($(package)_version)-aarch64-unknown-linux-gnu.tar.gz
-$(package)_sha256_hash_aarch64_linux=eebdb2e659ed14884a49f0457d44e5e8c9f89fca3414533752c6dbb96232c156
+$(package)_sha256_hash_aarch64_linux=69792887357c8dd78c5424f0b4a624578296796d99edf6c30ebe2acc2b939aa3
 
 # Mapping from GCC canonical hosts to Rust targets
 # If a mapping is not present, we assume they are identical, unless $host_os is
@@ -17,9 +17,9 @@ $(package)_rust_target_x86_64-pc-linux-gnu=x86_64-unknown-linux-gnu
 $(package)_rust_target_x86_64-w64-mingw32=x86_64-pc-windows-gnu
 
 # Mapping from Rust targets to SHA-256 hashes
-$(package)_rust_std_sha256_hash_aarch64-unknown-linux-gnu=e30063a259e32cd0e31baadcee82112ef840e0f654d5128dd79fc715ede92058
-$(package)_rust_std_sha256_hash_x86_64-apple-darwin=8888fb0a1cbc645f86e1551d27cc127697361fecab9cd414691e434976412733
-$(package)_rust_std_sha256_hash_x86_64-pc-windows-gnu=8dfab5489b485417d76a7d266fc795608ba61f9c423f8a71616e01f33e146487
+$(package)_rust_std_sha256_hash_aarch64-unknown-linux-gnu=d577c25879cf160ec1a04d5101971dd684f9b4f87b3cb463a7521b676dc3df89
+$(package)_rust_std_sha256_hash_x86_64-apple-darwin=a1cedfaea1508bf3bfc8a77d82d15c693b41e70e56fad930d24f21f0bce5052a
+$(package)_rust_std_sha256_hash_x86_64-pc-windows-gnu=8c5d425d2882a93827850672a70bfc2e643cae425aaffa9dafa6808fcd4bc798
 
 define rust_target
 $(if $($(1)_rust_target_$(2)),$($(1)_rust_target_$(2)),$(if $(findstring darwin,$(3)),x86_64-apple-darwin,$(if $(findstring freebsd,$(3)),x86_64-unknown-freebsd,$(2))))
