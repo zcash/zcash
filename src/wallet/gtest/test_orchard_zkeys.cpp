@@ -4,6 +4,7 @@
 
 #include <gtest/gtest.h>
 
+#include "zcash/address/mnemonic.h"
 #include "zcash/address/orchard.hpp"
 
 TEST(OrchardZkeysTest, IVKSerializationRoundtrip) {

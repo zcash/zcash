@@ -1,4 +1,4 @@
-// Copyright (c) 2018 The Zcash developers
+// Copyright (c) 2018-2021 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -21,13 +21,6 @@
 const uint32_t HARDENED_KEY_LIMIT = 0x80000000;
 const size_t ZIP32_XFVK_SIZE = 169;
 const size_t ZIP32_XSK_SIZE = 169;
-
-/**
- * The account identifier used for HD derivation of
- * transparent and Sapling addresses via the legacy
- * `getnewaddress` and `z_getnewaddress` code paths,
- */
-const uint32_t ZCASH_LEGACY_ACCOUNT = HARDENED_KEY_LIMIT - 1;
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char>> RawHDSeed;
 
@@ -64,108 +57,19 @@ public:
 };
 
 
-class MnemonicSeed: public HDSeed {
-private:
-    Language language;
-    SecureString mnemonic;
-
-    MnemonicSeed() {}
-
-    void SetSeedFromMnemonic() {
-        seed.resize(64);
-        zip339_phrase_to_seed(language, mnemonic.c_str(), (uint8_t (*)[64])seed.data());
-    }
-
-public:
-    MnemonicSeed(Language languageIn, SecureString mnemonicIn): language(languageIn), mnemonic(mnemonicIn) {
-        SetSeedFromMnemonic();
-    }
-
-    /**
-     * Randomly generate a new mnemonic seed. A SLIP-44 coin type is required to make it possible
-     * to check that the generated seed can produce valid transparent and unified addresses at account
-     * numbers 0x7FFFFFFF and 0x00 respectively.
-     */
-    static MnemonicSeed Random(uint32_t bip44CoinType, Language language = English, size_t entropyLen = 32);
-
-    static std::string LanguageName(Language language) {
-        switch (language) {
-            case English:
-                return "English";
-            case SimplifiedChinese:
-                return "Simplified Chinese";
-            case TraditionalChinese:
-                return "Traditional Chinese";
-            case Czech:
-                return "Czech";
-            case French:
-                return "French";
-            case Italian:
-                return "Italian";
-            case Japanese:
-                return "Japanese";
-            case Korean:
-                return "Korean";
-            case Portuguese:
-                return "Portuguese";
-            case Spanish:
-                return "Spanish";
-            default:
-                return "INVALID";
-        }
-    }
-
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
-        if (ser_action.ForRead()) {
-            uint32_t language0;
-
-            READWRITE(language0);
-            READWRITE(mnemonic);
-            language = (Language) language0;
-            SetSeedFromMnemonic();
-        } else {
-            uint32_t language0 = (uint32_t) language;
-
-            READWRITE(language0);
-            READWRITE(mnemonic);
-        }
-   }
-
-    template <typename Stream>
-    static MnemonicSeed Read(Stream& stream) {
-        MnemonicSeed seed;
-        stream >> seed;
-        return seed;
-    }
-
-    const Language GetLanguage() const {
-        return language;
-    }
-
-    const SecureString& GetMnemonic() const {
-        return mnemonic;
-    }
-
-    friend bool operator==(const MnemonicSeed& a, const MnemonicSeed& b)
-    {
-        return a.seed == b.seed;
-    }
-
-    friend bool operator!=(const MnemonicSeed& a, const MnemonicSeed& b)
-    {
-        return !(a == b);
-    }
-};
-
 // This is not part of ZIP 32, but is here because it's linked to the HD seed.
 uint256 ovkForShieldingFromTaddr(HDSeed& seed);
 
 namespace libzcash {
 
 typedef uint32_t AccountId;
+
+/**
+ * The account identifier used for HD derivation of
+ * transparent and Sapling addresses via the legacy
+ * `getnewaddress` and `z_getnewaddress` code paths,
+ */
+const AccountId ZCASH_LEGACY_ACCOUNT = HARDENED_KEY_LIMIT - 1;
 
 /**
  * 88-bit diversifier index. This would ideally derive from base_uint
@@ -292,8 +196,8 @@ struct SaplingExtendedSpendingKey {
     }
 
     static SaplingExtendedSpendingKey Master(const HDSeed& seed);
-    static std::pair<SaplingExtendedSpendingKey, HDKeyPath> ForAccount(const MnemonicSeed& seed, uint32_t bip44CoinType, libzcash::AccountId accountId);
-    static std::pair<SaplingExtendedSpendingKey, HDKeyPath> Legacy(const MnemonicSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex);
+    static std::pair<SaplingExtendedSpendingKey, HDKeyPath> ForAccount(const HDSeed& seed, uint32_t bip44CoinType, libzcash::AccountId accountId);
+    static std::pair<SaplingExtendedSpendingKey, HDKeyPath> Legacy(const HDSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex);
 
 
     SaplingExtendedSpendingKey Derive(uint32_t i) const;
@@ -311,104 +215,8 @@ struct SaplingExtendedSpendingKey {
     }
 };
 
-class ZcashdUnifiedSpendingKey;
-class ZcashdUnifiedFullViewingKey;
-
-class ZcashdUnifiedAddress {
-private:
-    diversifier_index_t diversifier_index;
-    std::optional<CKeyID> transparentAddress;
-    std::optional<SaplingPaymentAddress> saplingAddress;
-
-    friend class ZcashdUnifiedFullViewingKey;
-
-    ZcashdUnifiedAddress() {}
-public:
-    const std::optional<CKeyID>& GetTransparentAddress() const {
-        return transparentAddress;
-    }
-
-    const std::optional<SaplingPaymentAddress>& GetSaplingPaymentAddress() const {
-        return saplingAddress;
-    }
-};
-
-class ZcashdUnifiedFullViewingKey {
-private:
-    std::optional<CExtPubKey> transparentKey;
-    std::optional<SaplingExtendedFullViewingKey> saplingKey;
-
-    ZcashdUnifiedFullViewingKey() {}
-
-    friend class ZcashdUnifiedSpendingKey;
-public:
-    const std::optional<CExtPubKey>& GetTransparentKey() const {
-        return transparentKey;
-    }
-
-    const std::optional<SaplingExtendedFullViewingKey>& GetSaplingExtendedFullViewingKey() const {
-        return saplingKey;
-    }
-
-    std::optional<ZcashdUnifiedAddress> Address(diversifier_index_t j) const;
-
-    std::pair<ZcashdUnifiedAddress, diversifier_index_t> FindAddress(diversifier_index_t j) const {
-        auto addr = Address(j);
-        while (!addr.has_value()) {
-            if (!j.increment())
-                throw std::runtime_error(std::string(__func__) + ": diversifier index overflow.");;
-            addr = Address(j);
-        }
-        return std::make_pair(addr.value(), j);
-    }
-};
-
-class ZcashdUnifiedSpendingKey {
-private:
-    libzcash::AccountId accountId;
-    std::optional<CExtKey> transparentKey;
-    std::optional<SaplingExtendedSpendingKey> saplingKey;
-
-    ZcashdUnifiedSpendingKey() {}
-public:
-    static std::optional<std::pair<ZcashdUnifiedSpendingKey, HDKeyPath>> ForAccount(
-            const MnemonicSeed& mnemonic,
-            uint32_t bip44CoinType,
-            libzcash::AccountId accountId);
-
-    const std::optional<CExtKey>& GetTransparentKey() const {
-        return transparentKey;
-    }
-
-    const std::optional<SaplingExtendedSpendingKey>& GetSaplingExtendedSpendingKey() const {
-        return saplingKey;
-    }
-
-    ZcashdUnifiedFullViewingKey ToFullViewingKey() const;
-};
-
 std::optional<unsigned long> ParseHDKeypathAccount(uint32_t purpose, uint32_t coinType, const std::string& keyPath);
 
-class Bip44AccountChains {
-private:
-    uint256 seedFp;
-    libzcash::AccountId accountId;
-    uint32_t bip44CoinType;
-    CExtKey external;
-    CExtKey internal;
-
-    Bip44AccountChains(uint256 seedFpIn, uint32_t bip44CoinTypeIn, libzcash::AccountId accountIdIn, CExtKey externalIn, CExtKey internalIn):
-        seedFp(seedFpIn), accountId(accountIdIn), bip44CoinType(bip44CoinTypeIn), external(externalIn), internal(internalIn) {}
-public:
-    static std::optional<Bip44AccountChains> ForAccount(
-            const MnemonicSeed& mnemonic,
-            uint32_t bip44CoinType,
-            libzcash::AccountId accountId);
-
-    std::optional<std::pair<CExtKey, HDKeyPath>> DeriveExternal(uint32_t addrIndex);
-    std::optional<std::pair<CExtKey, HDKeyPath>> DeriveInternal(uint32_t addrIndex);
-};
-
-}
+} //namespace libzcash
 
 #endif // ZCASH_ZCASH_ADDRESS_ZIP32_H

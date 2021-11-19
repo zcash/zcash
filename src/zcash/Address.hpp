@@ -5,6 +5,7 @@
 #include "zcash/address/orchard.hpp"
 #include "zcash/address/sapling.hpp"
 #include "zcash/address/sprout.hpp"
+#include "zcash/address/unified.h"
 #include "zcash/address/zip32.h"
 
 #include <variant>
