@@ -46,6 +46,7 @@ EXPECTED_BOOST_INCLUDES=(
     boost/algorithm/string/predicate.hpp
     boost/algorithm/string/replace.hpp
     boost/algorithm/string/split.hpp
+    boost/algorithm/string/trim.hpp
     boost/assert.hpp
     boost/assign/list_of.hpp
     boost/assign/std/vector.hpp

@@ -126,8 +126,7 @@ BOOST_DATA_TEST_CASE(DoS_mapOrphans, boost::unit_test::data::xrange(static_cast<
 {
     uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
 
-    CKey key;
-    key.MakeNewKey(true);
+    CKey key = CKey::TestOnlyRandomKey(true);
     CBasicKeyStore keystore;
     keystore.AddKey(key);
 

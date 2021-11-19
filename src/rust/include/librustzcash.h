@@ -306,8 +306,39 @@ extern "C" {
         unsigned char *xfvk_i
     );
 
-    /// Derive a PaymentAddress from an ExtendedFullViewingKey.
+    /**
+     * Derive a PaymentAddress from an ExtendedFullViewingKey. Returns 'false'
+     * if no valid address can be derived for the specified diversifier index.
+     *
+     * Arguments:
+     * - xfvk: [c_uchar; 169] the serialized form of a Sapling extended full viewing key
+     * - j: [c_uchar; 11] the 88-bit diversifier address at which to start searching,
+     *   encoded in little-endian order
+     * - addr_ret: [c_uchar; 43] array to which the returned address will be written,
+     *   if the specified diversifier index `j` produces a valid address.
+     */
     bool librustzcash_zip32_xfvk_address(
+        const unsigned char *xfvk,
+        const unsigned char *j,
+        unsigned char *addr_ret
+    );
+
+    /**
+     * Derive a PaymentAddress from an ExtendedFullViewingKey by searching the
+     * space of valid diversifiers starting at diversifier index `j`. This will
+     * always return a valid address along with the diversifier index that produced
+     * the address unless no addresses can be derived at any diversifier index >= `j`,
+     * in which case this function will return `false`.
+     *
+     * Arguments:
+     * - xfvk: [c_uchar; 169] the serialized form of a Sapling extended full viewing key
+     * - j: [c_uchar; 11] the 88-bit diversifier address at which to start searching,
+     *   encoded in little-endian order
+     * - j_ret: [c_uchar; 11] array that will store the diversifier index at which the
+     *   returned address was found
+     * - addr_ret: [c_uchar; 43] array to which the returned address will be written
+     */
+    bool librustzcash_zip32_find_xfvk_address(
         const unsigned char *xfvk,
         const unsigned char *j,
         unsigned char *j_ret,

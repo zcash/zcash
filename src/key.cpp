@@ -156,20 +156,23 @@ bool CKey::Check(const unsigned char *vch) {
     return secp256k1_ec_seckey_verify(secp256k1_context_sign, vch);
 }
 
-void CKey::MakeNewKey(bool fCompressedIn) {
+CKey CKey::TestOnlyRandomKey(bool fCompressedIn) {
+    CKey key;
     do {
-        GetRandBytes(keydata.data(), keydata.size());
-    } while (!Check(keydata.data()));
-    fValid = true;
-    fCompressed = fCompressedIn;
+        GetRandBytes(key.keydata.data(), key.keydata.size());
+    } while (!Check(key.keydata.data()));
+    key.fValid = true;
+    key.fCompressed = fCompressedIn;
+    return key;
 }
 
-bool CKey::SetPrivKey(const CPrivKey &privkey, bool fCompressedIn) {
-    if (!ec_privkey_import_der(secp256k1_context_sign, (unsigned char*)begin(), &privkey[0], privkey.size()))
-        return false;
-    fCompressed = fCompressedIn;
-    fValid = true;
-    return true;
+std::optional<CKey> CKey::FromPrivKey(const CPrivKey &privkey, bool fCompressedIn) {
+    CKey key;
+    if (!ec_privkey_import_der(secp256k1_context_sign, (unsigned char*)key.begin(), &privkey[0], privkey.size()))
+        return std::nullopt;
+    key.fCompressed = fCompressedIn;
+    key.fValid = true;
+    return key;
 }
 
 CPrivKey CKey::GetPrivKey() const {
@@ -274,23 +277,31 @@ bool CKey::Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const
     return ret;
 }
 
-bool CExtKey::Derive(CExtKey &out, unsigned int _nChild) const {
+std::optional<CExtKey> CExtKey::Derive(unsigned int _nChild) const {
+    CExtKey out;
     out.nDepth = nDepth + 1;
     CKeyID id = key.GetPubKey().GetID();
     memcpy(&out.vchFingerprint[0], &id, 4);
     out.nChild = _nChild;
-    return key.Derive(out.key, out.chaincode, _nChild, chaincode);
+    if (key.Derive(out.key, out.chaincode, _nChild, chaincode)) {
+        return out;
+    } else {
+        return std::nullopt;
+    }
 }
 
-void CExtKey::SetMaster(const unsigned char *seed, unsigned int nSeedLen) {
+CExtKey CExtKey::Master(const unsigned char *seed, unsigned int nSeedLen) {
+    CExtKey xk;
     static const unsigned char hashkey[] = {'B','i','t','c','o','i','n',' ','s','e','e','d'};
     std::vector<unsigned char, secure_allocator<unsigned char>> vout(64);
     CHMAC_SHA512(hashkey, sizeof(hashkey)).Write(seed, nSeedLen).Finalize(vout.data());
-    key.Set(vout.data(), vout.data() + 32, true);
-    memcpy(chaincode.begin(), vout.data() + 32, 32);
-    nDepth = 0;
-    nChild = 0;
-    memset(vchFingerprint, 0, sizeof(vchFingerprint));
+    xk.key.Set(vout.data(), vout.data() + 32, true);
+    memcpy(xk.chaincode.begin(), vout.data() + 32, 32);
+    xk.nDepth = 0;
+    xk.nChild = 0;
+    memset(xk.vchFingerprint, 0, sizeof(xk.vchFingerprint));
+
+    return xk;
 }
 
 CExtPubKey CExtKey::Neuter() const {
@@ -322,9 +333,8 @@ void CExtKey::Decode(const unsigned char code[BIP32_EXTKEY_SIZE]) {
     key.Set(code+42, code+BIP32_EXTKEY_SIZE, true);
 }
 
-bool ECC_InitSanityCheck() {
-    CKey key;
-    key.MakeNewKey(true);
+bool CKey::ECC_InitSanityCheck() {
+    CKey key = CKey::TestOnlyRandomKey(true);
     CPubKey pubkey = key.GetPubKey();
     return key.VerifyPubKey(pubkey);
 }

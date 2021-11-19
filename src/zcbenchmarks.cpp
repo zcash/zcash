@@ -212,8 +212,7 @@ double benchmark_verify_equihash()
 double benchmark_large_tx(size_t nInputs)
 {
     // Create priv/pub key
-    CKey priv;
-    priv.MakeNewKey(false);
+    CKey priv = CKey::TestOnlyRandomKey(true);
     auto pub = priv.GetPubKey();
     CBasicKeyStore tempKeystore;
     tempKeystore.AddKey(priv);
@@ -375,7 +374,7 @@ CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
                                       CBasicKeyStore& keyStore,
                                       const libzcash::SaplingExtendedSpendingKey &sk) {
     auto wtx = GetValidSaplingReceive(consensusParams, keyStore, sk, 10);
-    auto testNote = GetTestSaplingNote(sk.DefaultAddress(), 10);
+    auto testNote = GetTestSaplingNote(sk.ToXFVK().DefaultAddress(), 10);
     auto fvk = sk.expsk.full_viewing_key();
     auto nullifier = testNote.note.nullifier(fvk, testNote.tree.witness().position()).value();
 

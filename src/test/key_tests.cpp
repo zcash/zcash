@@ -247,7 +247,7 @@ BOOST_AUTO_TEST_CASE(zs_address_test)
             BOOST_CHECK(sk == sk2);
         }
         {
-            auto addr = sk.DefaultAddress();
+            auto addr = sk.ToXFVK().DefaultAddress();
 
             std::string addr_string = keyIO.EncodePaymentAddress(addr);
             BOOST_CHECK(addr_string.compare(0, 15, Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS)) == 0);

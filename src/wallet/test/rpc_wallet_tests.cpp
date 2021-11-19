@@ -75,6 +75,15 @@ static UniValue ValueFromString(const std::string &str)
     return value;
 }
 
+static SaplingPaymentAddress DefaultSaplingAddress(CWallet* pwallet) {
+    auto usk = pwallet->GenerateUnifiedSpendingKeyForAccount(0);
+
+    return usk.value()
+        .ToFullViewingKey()
+        .GetSaplingExtendedFullViewingKey().value()
+        .FindAddress(libzcash::diversifier_index_t(0)).first;
+}
+
 BOOST_FIXTURE_TEST_SUITE(rpc_wallet_tests, WalletTestingSetup)
 
 BOOST_AUTO_TEST_CASE(rpc_addmultisig)
@@ -187,6 +196,11 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      *          listaddressgroupings
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listaddressgroupings"));
+
+    /*********************************
+     * 		walletconfirmbackup
+     *********************************/
+    BOOST_CHECK_THROW(CallRPC(string("walletconfirmbackup \"badmnemonic\"")), runtime_error);
 
     /*********************************
      * 		getrawchangeaddress
@@ -665,7 +679,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 
         // create a random Sapling key locally; split between IVKs and spending keys.
         auto testSaplingSpendingKey = m.Derive(i);
-        auto testSaplingPaymentAddress = testSaplingSpendingKey.DefaultAddress();
+        auto testSaplingPaymentAddress = testSaplingSpendingKey.ToXFVK().DefaultAddress();
         if (i % 2 == 0) {
             std::string testSaplingAddr = keyIO.EncodePaymentAddress(testSaplingPaymentAddress);
             std::string testSaplingKey = keyIO.EncodeSpendingKey(testSaplingSpendingKey);
@@ -788,11 +802,8 @@ void CheckHaveAddr(const libzcash::PaymentAddress& addr) {
 
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
     using namespace libzcash;
-    UniValue addr;
 
-    if (!pwalletMain->HaveHDSeed()) {
-        pwalletMain->GenerateNewSeed();
-    }
+    UniValue addr;
 
     KeyIO keyIO(Params());
     // No parameter defaults to sapling address
@@ -819,34 +830,34 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
         auto listarr = list.get_array();
         bool sproutCountMatch = false;
         bool saplingExtfvksMatch = false;
-        bool saplingAccount0 = false;
-        bool saplingAccount1 = false;
+        bool saplingSpendAuth0 = false;
+        bool saplingSpendAuth1 = false;
         bool saplingCountMismatch = true;
         for (auto a : listarr.getValues()) {
             auto source = find_value(a.get_obj(), "source");
             if (source.get_str() == "legacy_random") {
-                auto sprout_obj = find_value(a.get_obj(), "sprout").get_obj();
-                auto sprout_addrs = find_value(sprout_obj, "addresses").get_array();
-                sproutCountMatch = (sprout_addrs.size() == 1);
+                auto sproutObj = find_value(a.get_obj(), "sprout").get_obj();
+                auto sproutAddrs = find_value(sproutObj, "addresses").get_array();
+                sproutCountMatch = (sproutAddrs.size() == 1);
             }
             if (source.get_str() == "legacy_hdseed") {
                 auto sapling_addr_sets = find_value(a.get_obj(), "sapling").get_array();
                 saplingExtfvksMatch = (sapling_addr_sets.size() == 2);
 
-                for (auto sapling_obj : sapling_addr_sets.getValues()) {
-                    auto sapling_account = find_value(sapling_obj, "zip32AccountId").get_int();
-                    saplingAccount0 |= (sapling_account == 0);
-                    saplingAccount1 |= (sapling_account == 1);
-                    auto sapling_addrs = find_value(sapling_obj, "addresses").get_array();
-                    saplingCountMismatch &= (sapling_addrs.size() != 1);
+                for (auto saplingObj : sapling_addr_sets.getValues()) {
+                    auto keypath = find_value(saplingObj, "zip32KeyPath").get_str();
+                    saplingSpendAuth0 |= (keypath == "m/32'/133'/2147483647'/0'");
+                    saplingSpendAuth1 |= (keypath == "m/32'/133'/2147483647'/1'");
+                    auto saplingAddrs = find_value(saplingObj, "addresses").get_array();
+                    saplingCountMismatch &= (saplingAddrs.size() != 1);
                 }
             }
         }
         BOOST_CHECK(sproutCountMatch);
         BOOST_CHECK(saplingExtfvksMatch);
         BOOST_CHECK(!saplingCountMismatch);
-        BOOST_CHECK(saplingAccount0);
-        BOOST_CHECK(saplingAccount1);
+        BOOST_CHECK(saplingSpendAuth0);
+        BOOST_CHECK(saplingSpendAuth1);
     }
 }
 
@@ -1134,28 +1145,28 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     // duplicate address
     BOOST_CHECK_THROW(CallRPC("z_sendmany "
             "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
-            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0},"
-            " {\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":12.0} ]"
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\",\"amount\":50.0},"
+            "{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\",\"amount\":12.0}]"
             ), runtime_error);
 
     // invalid fee amount, cannot be negative
     BOOST_CHECK_THROW(CallRPC("z_sendmany "
             "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
-            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0}] "
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\",\"amount\":50.0}] "
             "1 -0.00001"
             ), runtime_error);
 
     // invalid fee amount, bigger than MAX_MONEY
     BOOST_CHECK_THROW(CallRPC("z_sendmany "
             "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
-            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0}] "
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\",\"amount\":50.0}] "
             "1 21000001"
             ), runtime_error);
 
     // fee amount is bigger than sum of outputs
     BOOST_CHECK_THROW(CallRPC("z_sendmany "
             "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
-            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0}] "
+            "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\",\"amount\":50.0}] "
             "1 50.00000001"
             ), runtime_error);
 
@@ -1167,7 +1178,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     KeyIO keyIO(Params());
     std::string zaddr1 = keyIO.EncodePaymentAddress(pa);
     BOOST_CHECK_THROW(CallRPC(string("z_sendmany tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ ")
-            + "[{\"address\":\"" + zaddr1 + "\", \"amount\":123.456}]"), runtime_error);
+            + "[{\"address\":\"" + zaddr1 + "\",\"amount\":123.456}]"), runtime_error);
 
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");
@@ -1449,7 +1460,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    if (!pwalletMain->HaveHDSeed()) {
+    if (!pwalletMain->HaveMnemonicSeed()) {
         pwalletMain->GenerateNewSeed();
     }
 
@@ -1459,7 +1470,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     // add keys manually
     auto taddr = pwalletMain->GenerateNewKey().GetID();
     std::string taddr1 = keyIO.EncodeDestination(taddr);
-    auto pa = pwalletMain->GenerateNewSaplingZKey();
+    auto pa = DefaultSaplingAddress(pwalletMain);
     std::string zaddr1 = keyIO.EncodePaymentAddress(pa);
 
     const Consensus::Params& consensusParams = Params().GetConsensus();
@@ -1523,11 +1534,11 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 
     // We should be able to decrypt the outCiphertext with the ovk
     // generated for transparent addresses
-    HDSeed seed;
-    BOOST_ASSERT(pwalletMain->GetHDSeed(seed));
+    std::optional<MnemonicSeed> seed = pwalletMain->GetMnemonicSeed();
+    BOOST_ASSERT(seed.has_value());
     BOOST_CHECK(AttemptSaplingOutDecryption(
         tx.vShieldedOutput[0].outCiphertext,
-        ovkForShieldingFromTaddr(seed),
+        ovkForShieldingFromTaddr(seed.value()),
         tx.vShieldedOutput[0].cv,
         tx.vShieldedOutput[0].cmu,
         tx.vShieldedOutput[0].ephemeralKey));
@@ -1549,6 +1560,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
+
     UniValue retValue;
     int n = 100;
 
@@ -1605,10 +1617,11 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
 BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_sapzkeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
+
     UniValue retValue;
     int n = 100;
 
-    if(!pwalletMain->HaveHDSeed())
+    if(!pwalletMain->HaveMnemonicSeed())
     {
         pwalletMain->GenerateNewSeed();
     }
@@ -1657,7 +1670,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_sapzkeys)
     // Verify the key has been added
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
     arr = retValue.get_array();
-    BOOST_CHECK(arr.size() == n+1);
+    BOOST_CHECK_EQUAL(arr.size(), n+1);
 
     // We can't simulate over RPC the wallet closing and being reloaded
     // but there are tests for this in gtest.

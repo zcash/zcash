@@ -37,6 +37,7 @@
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
+#include <boost/algorithm/string/trim.hpp>
 #include <utf8.h>
 
 #include <univalue.h>
@@ -79,6 +80,16 @@ bool EnsureWalletIsAvailable(bool avoidException)
             return false;
     }
     return true;
+}
+
+void EnsureWalletIsBackedUp(const CChainParams& params)
+{
+    if (GetBoolArg("-walletrequirebackup", params.RequireWalletBackup()) && !pwalletMain->MnemonicVerified())
+        throw JSONRPCError(
+                RPC_WALLET_BACKUP_REQUIRED,
+                "Error: Please acknowledge that you have backed up the wallet's emergency recovery phrase "
+                "by using zcashd-wallet-tool first."
+                );
 }
 
 void EnsureWalletIsUnlocked()
@@ -163,19 +174,22 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    const CChainParams& chainparams = Params();
+    EnsureWalletIsBackedUp(chainparams);
+
     if (!pwalletMain->IsLocked())
         pwalletMain->TopUpKeyPool();
 
     // Generate a new key that is added to wallet
-    CPubKey newKey;
-    if (!pwalletMain->GetKeyFromPool(newKey))
+    std::optional<CPubKey> newKey = pwalletMain->GetKeyFromPool();
+    if (!newKey.has_value())
         throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
-    CKeyID keyID = newKey.GetID();
+    CKeyID keyID = newKey.value().GetID();
 
     std::string dummy_account;
     pwalletMain->SetAddressBook(keyID, dummy_account, "receive");
 
-    KeyIO keyIO(Params());
+    KeyIO keyIO(chainparams);
     return keyIO.EncodeDestination(keyID);
 }
 
@@ -198,6 +212,9 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    const CChainParams& chainparams = Params();
+    EnsureWalletIsBackedUp(chainparams);
+
     if (!pwalletMain->IsLocked())
         pwalletMain->TopUpKeyPool();
 
@@ -210,7 +227,7 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
 
     CKeyID keyID = vchPubKey.GetID();
 
-    KeyIO keyIO(Params());
+    KeyIO keyIO(chainparams);
     return keyIO.EncodeDestination(keyID);
 }
 
@@ -334,7 +351,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
             "    },\n"
             "    \"sapling\": [ -- each element in this list represents a set of diversified addresses derived from a single IVK. \n"
             "      {\n"
-            "        \"zip32AccountId\": 0, -- optional field, not present for imported/watchonly sources,\n"
+            "        \"zip32KeyPath\": \"m/32'/133'/0'\", -- optional field, not present for imported/watchonly sources,\n"
             "        \"addresses\": [\n"
             "          \"ztbx5DLDxa5ZLFTchHhoPNkKs57QzSyib6UqXpEdy76T1aUdFxJt1w9318Z8DJ73XzbnWHKEZP9Yjg712N5kMmP4QzS9iC9\",\n"
             "          ...\n"
@@ -477,12 +494,10 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
 
                 UniValue sapling_obj(UniValue::VOBJ);
 
-                if (source == LegacyHDSeed) {
-                    std::string hdKeypath = pwalletMain->mapSaplingZKeyMetadata[ivk].hdKeypath;
-                    std::optional<unsigned long> accountId = libzcash::ParseZip32KeypathAccount(hdKeypath);
-
-                    if (accountId.has_value()) {
-                        sapling_obj.pushKV("zip32AccountId", (uint64_t) accountId.value());
+                if (source == LegacyHDSeed || source == MnemonicHDSeed) {
+                    std::string hdKeyPath = pwalletMain->mapSaplingZKeyMetadata[ivk].hdKeypath;
+                    if (hdKeyPath != "") {
+                        sapling_obj.pushKV("zip32KeyPath", hdKeyPath);
                     }
                 }
 
@@ -1588,6 +1603,8 @@ UniValue keypoolrefill(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    EnsureWalletIsBackedUp(Params());
+
     // 0 is interpreted by TopUpKeyPool() as the default keypool size given by -keypool
     unsigned int kpSize = 0;
     if (params.size() > 0) {
@@ -1718,6 +1735,41 @@ UniValue walletpassphrasechange(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_WALLET_PASSPHRASE_INCORRECT, "Error: The wallet passphrase entered was incorrect.");
 
     return NullUniValue;
+}
+
+UniValue walletconfirmbackup(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "walletconfirmbackup \"emergency recovery phrase\"\n"
+            "\nNotify the wallet that the user has backed up the emergency recovery phrase,\n"
+            "which can be obtained by making a call to z_exportwallet. The zcashd embedded wallet\n"
+            "requires confirmation that the emergency recovery phrase has been backed up before it\n"
+            "will permit new spending keys or addresses to be generated.\n"
+            "\nArguments:\n"
+            "1. \"emergency recovery phrase\" (string, required) The full recovery phrase returned as part\n"
+            "   of the data returned by z_exportwallet. An error will be returned if the value provided\n"
+            "   does not match the wallet's existing emergency recovery phrase.\n"
+            "\nExamples:\n"
+            + HelpExampleRpc("walletconfirmbackup", "\"abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art\"")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    EnsureWalletIsUnlocked();
+
+    SecureString strMnemonicPhrase(params[0].get_str());
+    boost::trim(strMnemonicPhrase);
+    if (pwalletMain->VerifyMnemonicSeed(strMnemonicPhrase)) {
+        return NullUniValue;
+    } else {
+        throw JSONRPCError(
+                RPC_WALLET_PASSPHRASE_INCORRECT,
+                "Error: The emergency recovery phrase entered was incorrect.");
+    }
 }
 
 
@@ -2010,7 +2062,10 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
             "  \"keypoolsize\": xxxx,        (numeric) how many new keys are pre-generated\n"
             "  \"unlocked_until\": ttt,      (numeric) the timestamp in seconds since epoch (midnight Jan 1 1970 GMT) that the wallet is unlocked for transfers, or 0 if the wallet is locked\n"
             "  \"paytxfee\": x.xxxx,         (numeric) the transaction fee configuration, set in " + CURRENCY_UNIT + "/kB\n"
-            "  \"seedfp\": \"uint256\",        (string) the BLAKE2b-256 hash of the HD seed\n"
+            "  \"mnemonic_seedfp\": \"uint256\", (string) the BLAKE2b-256 hash of the HD seed derived from the wallet's emergency recovery phrase\n"
+            "  \"legacy_seedfp\": \"uint256\",   (string, optional) if this wallet was created prior to release 4.5.2, this will contain the BLAKE2b-256\n"
+            "                                    hash of the legacy HD seed that was used to derive Sapling addresses prior to the 4.5.2 upgrade to mnemonic\n"
+            "                                    emergency recovery phrases. This field was previously named \"seedfp\".\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getwalletinfo", "")
@@ -2032,9 +2087,15 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
     if (pwalletMain->IsCrypted())
         obj.pushKV("unlocked_until", nWalletUnlockTime);
     obj.pushKV("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK()));
-    uint256 seedFp = pwalletMain->GetHDChain().seedFp;
-    if (!seedFp.IsNull())
-         obj.pushKV("seedfp", seedFp.GetHex());
+    auto mnemonicChain = pwalletMain->GetMnemonicHDChain();
+    if (mnemonicChain.has_value())
+         obj.pushKV("mnemonic_seedfp", mnemonicChain.value().GetSeedFingerprint().GetHex());
+    // TODO: do we really need to return the legacy seed fingerprint if we're
+    // no longer using it to generate any new keys? What do people actually use
+    // the fingerprint for?
+    auto legacySeed = pwalletMain->GetLegacyHDSeed();
+    if (legacySeed.has_value())
+        obj.pushKV("legacy_seedfp", legacySeed.value().Fingerprint().GetHex());
     return obj;
 }
 
@@ -2925,18 +2986,22 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    const CChainParams& chainparams = Params();
+
     EnsureWalletIsUnlocked();
+    EnsureWalletIsBackedUp(chainparams);
 
     auto addrType = defaultType;
     if (params.size() > 0) {
         addrType = params[0].get_str();
     }
 
-    KeyIO keyIO(Params());
+    KeyIO keyIO(chainparams);
     if (addrType == ADDR_TYPE_SPROUT) {
         return keyIO.EncodePaymentAddress(pwalletMain->GenerateNewSproutZKey());
     } else if (addrType == ADDR_TYPE_SAPLING) {
-        return keyIO.EncodePaymentAddress(pwalletMain->GenerateNewSaplingZKey());
+        auto saplingAddress = pwalletMain->GenerateNewLegacySaplingZKey();
+        return keyIO.EncodePaymentAddress(saplingAddress);
     } else {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address type");
     }
@@ -4905,6 +4970,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "walletlock",               &walletlock,               true  },
     { "wallet",             "walletpassphrasechange",   &walletpassphrasechange,   true  },
     { "wallet",             "walletpassphrase",         &walletpassphrase,         true  },
+    { "wallet",             "walletconfirmbackup",      &walletconfirmbackup,      true  },
     { "wallet",             "zcbenchmark",              &zc_benchmark,             true  },
     { "wallet",             "zcrawkeygen",              &zc_raw_keygen,            true  },
     { "wallet",             "zcrawjoinsplit",           &zc_raw_joinsplit,         true  },

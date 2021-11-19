@@ -67,7 +67,7 @@ BOOST_DATA_TEST_CASE(sign, boost::unit_test::data::xrange(static_cast<int>(Conse
     CKey key[4];
     for (int i = 0; i < 4; i++)
     {
-        key[i].MakeNewKey(true);
+        key[i] = CKey::TestOnlyRandomKey(true);
         keystore.AddKey(key[i]);
     }
 
@@ -170,7 +170,7 @@ BOOST_DATA_TEST_CASE(set, boost::unit_test::data::xrange(static_cast<int>(Consen
     std::vector<CPubKey> keys;
     for (int i = 0; i < 4; i++)
     {
-        key[i].MakeNewKey(true);
+        key[i] = CKey::TestOnlyRandomKey(true);
         keystore.AddKey(key[i]);
         keys.push_back(key[i].GetPubKey());
     }
@@ -282,7 +282,7 @@ BOOST_DATA_TEST_CASE(AreInputsStandard, boost::unit_test::data::xrange(static_ca
     vector<CPubKey> keys;
     for (int i = 0; i < 6; i++)
     {
-        key[i].MakeNewKey(true);
+        key[i] = CKey::TestOnlyRandomKey(true);
         keystore.AddKey(key[i]);
     }
     for (int i = 0; i < 3; i++)
