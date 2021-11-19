@@ -7,30 +7,12 @@
 
 #include "zip32.h"
 #include "bip44.h"
+#include "zcash/Address.hpp"
 
 namespace libzcash {
 
 class ZcashdUnifiedSpendingKey;
 class ZcashdUnifiedFullViewingKey;
-
-class ZcashdUnifiedAddress {
-private:
-    diversifier_index_t diversifier_index;
-    std::optional<CKeyID> transparentAddress;
-    std::optional<SaplingPaymentAddress> saplingAddress;
-
-    friend class ZcashdUnifiedFullViewingKey;
-
-    ZcashdUnifiedAddress() {}
-public:
-    const std::optional<CKeyID>& GetTransparentAddress() const {
-        return transparentAddress;
-    }
-
-    const std::optional<SaplingPaymentAddress>& GetSaplingPaymentAddress() const {
-        return saplingAddress;
-    }
-};
 
 class ZcashdUnifiedFullViewingKey {
 private:
@@ -49,9 +31,9 @@ public:
         return saplingKey;
     }
 
-    std::optional<ZcashdUnifiedAddress> Address(diversifier_index_t j) const;
+    std::optional<UnifiedAddress> Address(diversifier_index_t j) const;
 
-    std::pair<ZcashdUnifiedAddress, diversifier_index_t> FindAddress(diversifier_index_t j) const {
+    std::pair<UnifiedAddress, diversifier_index_t> FindAddress(diversifier_index_t j) const {
         auto addr = Address(j);
         while (!addr.has_value()) {
             if (!j.increment())

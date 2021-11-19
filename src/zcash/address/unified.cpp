@@ -39,8 +39,17 @@ ZcashdUnifiedFullViewingKey ZcashdUnifiedSpendingKey::ToFullViewingKey() const {
     return ufvk;
 }
 
-std::optional<ZcashdUnifiedAddress> ZcashdUnifiedFullViewingKey::Address(diversifier_index_t j) const {
-    ZcashdUnifiedAddress ua;
+std::optional<UnifiedAddress> ZcashdUnifiedFullViewingKey::Address(diversifier_index_t j) const {
+    UnifiedAddress ua;
+
+    if (saplingKey.has_value()) {
+        auto saplingAddress = saplingKey.value().Address(j);
+        if (saplingAddress.has_value()) {
+            ua.AddReceiver(saplingAddress.value());
+        } else {
+            return std::nullopt;
+        }
+    }
 
     if (transparentKey.has_value()) {
         auto childIndex = j.ToTransparentChildIndex();
@@ -53,16 +62,7 @@ std::optional<ZcashdUnifiedAddress> ZcashdUnifiedFullViewingKey::Address(diversi
 
         CExtPubKey childKey;
         if (externalKey.Derive(childKey, childIndex.value())) {
-            ua.transparentAddress = childKey.pubkey.GetID();
-        } else {
-            return std::nullopt;
-        }
-    }
-
-    if (saplingKey.has_value()) {
-        auto saplingAddress = saplingKey.value().Address(j);
-        if (saplingAddress.has_value()) {
-            ua.saplingAddress = saplingAddress.value();
+            ua.AddReceiver(childKey.pubkey.GetID());
         } else {
             return std::nullopt;
         }
