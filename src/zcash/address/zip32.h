@@ -165,6 +165,8 @@ uint256 ovkForShieldingFromTaddr(HDSeed& seed);
 
 namespace libzcash {
 
+typedef uint32_t AccountId;
+
 /**
  * 88-bit diversifier index. This would ideally derive from base_uint
  * but those values must have bit widths that are multiples of 32.
@@ -290,7 +292,7 @@ struct SaplingExtendedSpendingKey {
     }
 
     static SaplingExtendedSpendingKey Master(const HDSeed& seed);
-    static std::pair<SaplingExtendedSpendingKey, HDKeyPath> ForAccount(const MnemonicSeed& seed, uint32_t bip44CoinType, uint32_t accountId);
+    static std::pair<SaplingExtendedSpendingKey, HDKeyPath> ForAccount(const MnemonicSeed& seed, uint32_t bip44CoinType, libzcash::AccountId accountId);
     static std::pair<SaplingExtendedSpendingKey, HDKeyPath> Legacy(const MnemonicSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex);
 
 
@@ -363,7 +365,7 @@ public:
 
 class ZcashdUnifiedSpendingKey {
 private:
-    uint32_t accountId;
+    libzcash::AccountId accountId;
     std::optional<CExtKey> transparentKey;
     std::optional<SaplingExtendedSpendingKey> saplingKey;
 
@@ -372,7 +374,7 @@ public:
     static std::optional<std::pair<ZcashdUnifiedSpendingKey, HDKeyPath>> ForAccount(
             const MnemonicSeed& mnemonic,
             uint32_t bip44CoinType,
-            uint32_t accountId);
+            libzcash::AccountId accountId);
 
     const std::optional<CExtKey>& GetTransparentKey() const {
         return transparentKey;
@@ -390,18 +392,18 @@ std::optional<unsigned long> ParseHDKeypathAccount(uint32_t purpose, uint32_t co
 class Bip44AccountChains {
 private:
     uint256 seedFp;
-    uint32_t accountId;
+    libzcash::AccountId accountId;
     uint32_t bip44CoinType;
     CExtKey external;
     CExtKey internal;
 
-    Bip44AccountChains(uint256 seedFpIn, uint32_t bip44CoinTypeIn, uint32_t accountIdIn, CExtKey externalIn, CExtKey internalIn):
+    Bip44AccountChains(uint256 seedFpIn, uint32_t bip44CoinTypeIn, libzcash::AccountId accountIdIn, CExtKey externalIn, CExtKey internalIn):
         seedFp(seedFpIn), accountId(accountIdIn), bip44CoinType(bip44CoinTypeIn), external(externalIn), internal(internalIn) {}
 public:
     static std::optional<Bip44AccountChains> ForAccount(
             const MnemonicSeed& mnemonic,
             uint32_t bip44CoinType,
-            uint32_t accountId);
+            libzcash::AccountId accountId);
 
     std::optional<std::pair<CExtKey, HDKeyPath>> DeriveExternal(uint32_t addrIndex);
     std::optional<std::pair<CExtKey, HDKeyPath>> DeriveInternal(uint32_t addrIndex);

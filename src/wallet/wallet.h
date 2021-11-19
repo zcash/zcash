@@ -1097,7 +1097,7 @@ public:
      * Unified keys & addresses
      */
     libzcash::ZcashdUnifiedSpendingKey GenerateNewUnifiedSpendingKey();
-    std::optional<libzcash::ZcashdUnifiedSpendingKey> GenerateUnifiedSpendingKeyForAccount(uint32_t accountId);
+    std::optional<libzcash::ZcashdUnifiedSpendingKey> GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId);
 
     /**
      * Increment the next transaction order id

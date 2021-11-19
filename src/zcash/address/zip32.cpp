@@ -85,7 +85,7 @@ std::optional<unsigned int> diversifier_index_t::ToTransparentChildIndex() const
 // Transparent
 //
 
-std::optional<std::pair<CExtKey, HDKeyPath>> DeriveBip44TransparentAccountKey(const MnemonicSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
+std::optional<std::pair<CExtKey, HDKeyPath>> DeriveBip44TransparentAccountKey(const MnemonicSeed& seed, uint32_t bip44CoinType, libzcash::AccountId accountId) {
     auto rawSeed = seed.RawSeed();
     auto m = CExtKey::Master(rawSeed.data(), rawSeed.size());
 
@@ -110,7 +110,7 @@ std::optional<std::pair<CExtKey, HDKeyPath>> DeriveBip44TransparentAccountKey(co
 std::optional<Bip44AccountChains> Bip44AccountChains::ForAccount(
         const MnemonicSeed& seed,
         uint32_t bip44CoinType,
-        uint32_t accountId) {
+        libzcash::AccountId accountId) {
     auto accountKeyOpt = DeriveBip44TransparentAccountKey(seed, bip44CoinType, accountId);
     if (!accountKeyOpt.has_value()) return std::nullopt;
 
@@ -251,7 +251,7 @@ SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Derive(uint32_t i) const
     return xsk_i;
 }
 
-std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::ForAccount(const MnemonicSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
+std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::ForAccount(const MnemonicSeed& seed, uint32_t bip44CoinType, libzcash::AccountId accountId) {
     auto m = Master(seed);
 
     // We use a fixed keypath scheme of m/32'/coin_type'/account'
@@ -313,7 +313,7 @@ SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
 // Unified
 //
 
-std::optional<std::pair<ZcashdUnifiedSpendingKey, HDKeyPath>> ZcashdUnifiedSpendingKey::ForAccount(const MnemonicSeed& seed, uint32_t bip44CoinType, uint32_t accountId) {
+std::optional<std::pair<ZcashdUnifiedSpendingKey, HDKeyPath>> ZcashdUnifiedSpendingKey::ForAccount(const MnemonicSeed& seed, uint32_t bip44CoinType, libzcash::AccountId accountId) {
     ZcashdUnifiedSpendingKey usk;
     usk.accountId = accountId;
 
