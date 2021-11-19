@@ -2,6 +2,8 @@
 #define ZC_ADDRESS_H_
 
 #include "uint256.h"
+#include "pubkey.h"
+#include "script/script.h"
 #include "zcash/address/sapling.hpp"
 #include "zcash/address/sprout.hpp"
 #include "zcash/address/zip32.h"
@@ -9,17 +11,6 @@
 #include <variant>
 
 namespace libzcash {
-// We use new classes here instead of CKeyID and CScriptID to prevent a cyclic dependency.
-class P2PKHAddress: public uint160 {
-public:
-    P2PKHAddress() {}
-    explicit P2PKHAddress(const std::vector<unsigned char>& vch) : uint160(vch) {}
-};
-class P2SHAddress: public uint160 {
-public:
-    P2SHAddress() {}
-    explicit P2SHAddress(const std::vector<unsigned char>& vch) : uint160(vch) {}
-};
 
 /** Protocol addresses that can receive funds in a transaction. */
 typedef std::variant<SproutPaymentAddress, SaplingPaymentAddress> RawAddress;
@@ -53,8 +44,8 @@ public:
  */
 typedef std::variant<
     SaplingPaymentAddress,
-    P2SHAddress,
-    P2PKHAddress,
+    CScriptID,
+    CKeyID,
     UnknownReceiver> Receiver;
 
 struct ReceiverIterator {
@@ -165,8 +156,8 @@ public:
     TypecodeForReceiver() {}
 
     uint32_t operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    uint32_t operator()(const libzcash::P2SHAddress &p2sh) const;
-    uint32_t operator()(const libzcash::P2PKHAddress &p2pkh) const;
+    uint32_t operator()(const CScriptID &p2sh) const;
+    uint32_t operator()(const CKeyID &p2pkh) const;
     uint32_t operator()(const libzcash::UnknownReceiver &p2pkh) const;
 };
 
@@ -178,8 +169,8 @@ public:
     ReceiverToRawAddress() {}
 
     std::optional<libzcash::RawAddress> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    std::optional<libzcash::RawAddress> operator()(const libzcash::P2SHAddress &p2sh) const;
-    std::optional<libzcash::RawAddress> operator()(const libzcash::P2PKHAddress &p2pkh) const;
+    std::optional<libzcash::RawAddress> operator()(const CScriptID &p2sh) const;
+    std::optional<libzcash::RawAddress> operator()(const CKeyID &p2pkh) const;
     std::optional<libzcash::RawAddress> operator()(const libzcash::UnknownReceiver &p2pkh) const;
 };
 

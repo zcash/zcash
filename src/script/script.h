@@ -625,6 +625,16 @@ public:
     }
 };
 
+/** A reference to a CScript: the Hash160 of its serialization */
+class CScriptID : public uint160
+{
+public:
+    CScriptID() : uint160() {}
+    explicit CScriptID(const CScript& in);
+    CScriptID(const uint160& in) : uint160(in) {}
+    explicit CScriptID(const std::vector<unsigned char>& vch) : uint160(vch) {}
+};
+
 class CReserveScript
 {
 public:
