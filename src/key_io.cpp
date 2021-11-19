@@ -56,8 +56,8 @@ public:
     DataLenForReceiver() {}
 
     size_t operator()(const libzcash::SaplingPaymentAddress &zaddr) const { return 43; }
-    size_t operator()(const libzcash::P2SHAddress &p2sh) const { return 20; }
-    size_t operator()(const libzcash::P2PKHAddress &p2pkh) const { return 20; }
+    size_t operator()(const CScriptID &p2sh) const { return 20; }
+    size_t operator()(const CKeyID &p2pkh) const { return 20; }
     size_t operator()(const libzcash::UnknownReceiver &unknown) const { return unknown.data.size(); }
 };
 
@@ -82,11 +82,11 @@ public:
         memcpy(data, ss.data(), ss.size());
     }
 
-    void operator()(const libzcash::P2SHAddress &p2sh) const {
+    void operator()(const CScriptID &p2sh) const {
         memcpy(data, p2sh.begin(), p2sh.size());
     }
 
-    void operator()(const libzcash::P2PKHAddress &p2pkh) const {
+    void operator()(const CKeyID &p2pkh) const {
         memcpy(data, p2pkh.begin(), p2pkh.size());
     }
 
@@ -421,7 +421,7 @@ static bool AddP2SHReceiver(void* ua, const unsigned char* raw)
         reinterpret_cast<const char*>(raw + 20),
         SER_NETWORK,
         PROTOCOL_VERSION);
-    libzcash::P2SHAddress receiver;
+    CScriptID receiver;
     ss >> receiver;
     return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
 }
@@ -436,7 +436,7 @@ static bool AddP2PKHReceiver(void* ua, const unsigned char* raw)
         reinterpret_cast<const char*>(raw + 20),
         SER_NETWORK,
         PROTOCOL_VERSION);
-    libzcash::P2PKHAddress receiver;
+    CKeyID receiver;
     ss >> receiver;
     return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
 }

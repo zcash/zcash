@@ -24,6 +24,7 @@
 #include "wallet/walletdb.h"
 #include "wallet/rpcwallet.h"
 #include "zcash/address/bip44.h"
+#include "zcash/address/unified.h"
 #include "zcash/address/mnemonic.h"
 #include "zcash/Address.hpp"
 #include "zcash/Note.hpp"
