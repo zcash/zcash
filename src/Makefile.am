@@ -393,6 +393,7 @@ libbitcoin_common_a_SOURCES = \
   netbase.cpp \
   primitives/block.cpp \
   primitives/transaction.cpp \
+  primitives/tx_version_info.cpp \
   proof_verifier.cpp \
   protocol.cpp \
   pubkey.cpp \
@@ -558,6 +559,7 @@ libzcash_script_la_SOURCES = \
   crypto/sha512.cpp \
   hash.cpp \
   primitives/transaction.cpp \
+  primitives/tx_version_info.cpp \
   pubkey.cpp \
   script/zcash_script.cpp \
   script/interpreter.cpp \

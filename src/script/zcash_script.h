@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-#define ZCASH_SCRIPT_API_VER 1
+#define ZCASH_SCRIPT_API_VER 2
 
 typedef enum zcash_script_error_t
 {
@@ -99,6 +99,28 @@ EXPORT_SYMBOL int zcash_script_verify(
     uint32_t consensusBranchId,
     zcash_script_error* err);
 
+/// Returns the number of transparent signature operations in the
+/// transparent inputs and outputs of the precomputed transaction
+/// pointed to by preTx.
+///
+/// Returns UINT_MAX on error, so that invalid transactions don't pass the Zcash consensus rules.
+/// If not NULL, err will contain an error/success code for the operation.
+EXPORT_SYMBOL unsigned int zcash_script_legacy_sigop_count_precomputed(
+    const void* preTx,
+    zcash_script_error* err);
+
+/// Returns the number of transparent signature operations in the
+/// transparent inputs and outputs of the serialized transaction
+/// pointed to by txTo.
+///
+/// Returns UINT_MAX on error.
+/// If not NULL, err will contain an error/success code for the operation.
+EXPORT_SYMBOL unsigned int zcash_script_legacy_sigop_count(
+    const unsigned char *txTo,
+    unsigned int txToLen,
+    zcash_script_error* err);
+
+/// Returns the current version of the zcash_script library.
 EXPORT_SYMBOL unsigned int zcash_script_version();
 
 #ifdef __cplusplus

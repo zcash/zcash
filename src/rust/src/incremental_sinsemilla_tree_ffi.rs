@@ -6,13 +6,13 @@ use std::mem::size_of_val;
 use std::ptr;
 
 use orchard::{bundle::Authorized, tree::MerkleHashOrchard};
-
+use tracing::error;
 use zcash_primitives::{
     merkle_tree::incremental::{read_frontier_v1, read_tree, write_frontier_v1, write_tree},
     transaction::components::Amount,
 };
 
-use crate::orchard_ffi::{error, CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
+use crate::streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
 
 pub const MERKLE_DEPTH: u8 = 32;
 pub const MAX_CHECKPOINTS: usize = 100;
