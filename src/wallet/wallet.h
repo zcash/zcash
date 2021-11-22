@@ -803,6 +803,9 @@ private:
     void SyncMetaData(std::pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator>);
     void ChainTipAdded(const CBlockIndex *pindex, const CBlock *pblock, SproutMerkleTree sproutTree, SaplingMerkleTree saplingTree);
 
+    /* Add an extended secret key to the wallet. Internal use only. */
+    CPubKey AddKey(const uint256& seedFingerprint, const std::pair<CExtKey, HDKeyPath>& extSecret);
+
 protected:
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);
     void MarkAffectedTransactionsDirty(const CTransaction& tx);
@@ -830,6 +833,7 @@ public:
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
     std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapSproutZKeyMetadata;
     std::map<libzcash::SaplingIncomingViewingKey, CKeyMetadata> mapSaplingZKeyMetadata;
+    std::map<std::pair<libzcash::SeedFingerprint, libzcash::AccountId>, libzcash::ZcashdUnifiedKeyMetadata> mapUnifiedKeyMetadata;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
     MasterKeyMap mapMasterKeys;
@@ -1096,11 +1100,27 @@ public:
     bool LoadCryptedSaplingZKey(const libzcash::SaplingExtendedFullViewingKey &extfvk,
                                 const std::vector<unsigned char> &vchCryptedSecret);
 
-    /**
-     * Unified keys & addresses
-     */
-    libzcash::ZcashdUnifiedSpendingKey GenerateNewUnifiedSpendingKey();
-    std::optional<libzcash::ZcashdUnifiedSpendingKey> GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId);
+    //
+    // Unified keys & addresses
+    //
+
+    //! Generate the unified spending key from the wallet's mnemonic seed
+    //! for the next unused account identifier.
+    std::pair<libzcash::ZcashdUnifiedSpendingKey, libzcash::ZcashdUnifiedKeyMetadata>
+        GenerateNewUnifiedSpendingKey();
+
+    //! Generate the next available unified spending key from the wallet's
+    //! mnemonic seed.
+    std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, libzcash::ZcashdUnifiedKeyMetadata>>
+        GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId);
+
+    //! Add the specified unified spending key to the wallet with the provided key
+    //! metadata.
+    bool AddUnifiedSpendingKey(
+            const libzcash::ZcashdUnifiedSpendingKey& sk,
+            const libzcash::ZcashdUnifiedKeyMetadata& metadata);
+
+    void LoadUnifiedKeyMetadata(const libzcash::ZcashdUnifiedKeyMetadata &meta);
 
     /**
      * Increment the next transaction order id

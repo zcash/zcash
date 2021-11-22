@@ -172,7 +172,6 @@ std::pair<SaplingExtendedSpendingKey, bool> CWallet::GenerateLegacySaplingZKey(u
     } else {
         return std::make_pair(xsk.first, false);
     }
-
 }
 
 // Add spending key to keystore
@@ -288,25 +287,32 @@ CPubKey CWallet::GenerateNewKey()
         // if we did not successfully generate a key, try again.
     } while (!extKey.has_value());
 
-    CKey secret = extKey.value().first.key;
+    auto pubkey = AddKey(seed.Fingerprint(), extKey.value());
+
+    // Update the persisted chain information
+    if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
+        throw std::runtime_error("CWallet::GenerateNewKey(): Writing HD chain model failed");
+    }
+
+    return pubkey;
+}
+
+CPubKey CWallet::AddKey(const uint256& seedFingerprint, const std::pair<CExtKey, HDKeyPath>& extSecret)
+{
+    CKey secret = extSecret.first.key;
     CPubKey pubkey = secret.GetPubKey();
     assert(secret.VerifyPubKey(pubkey));
 
     // Create new metadata
     CKeyMetadata keyMeta(GetTime());
-    keyMeta.hdKeypath = extKey.value().second;
-    keyMeta.seedFp = seed.Fingerprint();
+    keyMeta.hdKeypath = extSecret.second;
+    keyMeta.seedFp = seedFingerprint;
     mapKeyMetadata[pubkey.GetID()] = keyMeta;
     if (nTimeFirstKey == 0 || keyMeta.nCreateTime < nTimeFirstKey)
         nTimeFirstKey = keyMeta.nCreateTime;
 
     if (!AddKeyPubKey(secret, pubkey))
         throw std::runtime_error("CWallet::GenerateNewKey(): AddKey failed");
-
-    // Update the persisted chain information
-    if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
-        throw std::runtime_error("CWallet::GenerateNewKey(): Writing HD chain model failed");
-    }
 
     return pubkey;
 }
@@ -407,7 +413,7 @@ bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullVi
     return false;
 }
 
-ZcashdUnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
+std::pair<ZcashdUnifiedSpendingKey, ZcashdUnifiedKeyMetadata> CWallet::GenerateNewUnifiedSpendingKey() {
     AssertLockHeld(cs_wallet);
 
     if (!mnemonicHDChain.has_value()) {
@@ -431,7 +437,8 @@ ZcashdUnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
     }
 }
 
-std::optional<libzcash::ZcashdUnifiedSpendingKey> CWallet::GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId) {
+std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, libzcash::ZcashdUnifiedKeyMetadata>>
+        CWallet::GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId) {
     auto seed = GetMnemonicSeed();
     if (!seed.has_value()) {
         throw std::runtime_error(std::string(__func__) + ": Wallet has no mnemonic HD seed.");
@@ -439,12 +446,58 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey> CWallet::GenerateUnifiedSpendi
 
     auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed.value(), BIP44CoinType(), accountId);
     if (usk.has_value()) {
-        // TODO: Save the unified full viewing key & metadata to the wallet
+        if (!AddUnifiedSpendingKey(usk.value().first, usk.value().second)) {
+            throw std::runtime_error("CWallet::GenerateUnifiedSpendingKeyForAccount(): AddUnifiedSpendingKey failed.");
+        }
 
-        return usk.value().first;
+        return usk.value();
     } else {
         return std::nullopt;
     }
+}
+
+// Add spending key to keystore
+bool CWallet::AddUnifiedSpendingKey(
+        const libzcash::ZcashdUnifiedSpendingKey& sk,
+        const libzcash::ZcashdUnifiedKeyMetadata& metadata) {
+    AssertLockHeld(cs_wallet); // mapSaplingZKeyMetadata
+
+    auto ufvk = sk.ToFullViewingKey();
+    auto metaKey = std::make_pair(metadata.GetSeedFingerprint(), metadata.GetAccountId());
+    mapUnifiedKeyMetadata.insert({metaKey, metadata});
+
+    // Add Transparent component to the wallet
+    if (sk.GetTransparentKey().has_value()) {
+        AddKey(metadata.GetSeedFingerprint(),
+               std::make_pair(sk.GetTransparentKey().value(), metadata.TransparentKeyPath().value()));
+    }
+
+    // Add Sapling component to the wallet
+    auto addSpendingKey = AddSpendingKeyToWallet(
+            this, Params().GetConsensus(), GetTime(),
+            metadata.SaplingKeyPath(), metadata.GetSeedFingerprint().GetHex(), true);
+    if (sk.GetSaplingExtendedSpendingKey().has_value() &&
+        addSpendingKey(sk.GetSaplingExtendedSpendingKey().value()) == KeyNotAdded) {
+        // If adding the Sapling key to the wallet failed, abort the process.
+        return false;
+    }
+
+    if (!fFileBacked) {
+        return true;
+    }
+
+    if (!IsCrypted()) {
+        //return CWalletDB(strWalletFile).WriteUnifiedFullViewingKey(ufvk, metadata);
+    }
+
+    return true;
+}
+
+void CWallet::LoadUnifiedKeyMetadata(const libzcash::ZcashdUnifiedKeyMetadata &meta)
+{
+    AssertLockHeld(cs_wallet); // mapUnifiedKeyMetadata
+    auto key = std::make_pair(meta.GetSeedFingerprint(), meta.GetAccountId());
+    mapUnifiedKeyMetadata.insert({key, meta});
 }
 
 void CWallet::LoadKeyMetadata(const CPubKey &pubkey, const CKeyMetadata &meta)
@@ -5542,7 +5595,7 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
         if (m_wallet->HaveSaplingSpendingKey(extfvk)) {
             return KeyAlreadyExists;
         } else {
-            if (!m_wallet-> AddSaplingZKey(sk)) {
+            if (!m_wallet->AddSaplingZKey(sk)) {
                 return KeyNotAdded;
             }
 
@@ -5556,7 +5609,7 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
             if (hdKeypath.has_value()) {
                 m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath = hdKeypath.value();
             }
-            if (seedFpStr) {
+            if (seedFpStr.has_value()) {
                 uint256 seedFp;
                 seedFp.SetHex(seedFpStr.value());
                 m_wallet->mapSaplingZKeyMetadata[ivk].seedFp = seedFp;

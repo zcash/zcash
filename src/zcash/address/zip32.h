@@ -62,6 +62,7 @@ uint256 ovkForShieldingFromTaddr(HDSeed& seed);
 
 namespace libzcash {
 
+typedef uint256 SeedFingerprint;
 typedef uint32_t AccountId;
 
 /**
