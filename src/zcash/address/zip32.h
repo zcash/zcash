@@ -240,7 +240,15 @@ struct SaplingExtendedSpendingKey {
     }
 };
 
-std::optional<unsigned long> ParseHDKeypathAccount(uint32_t purpose, uint32_t coinType, const std::string& keyPath);
+HDKeyPath Zip32AccountKeyPath(
+        uint32_t bip44CoinType,
+        libzcash::AccountId accountId,
+        std::optional<uint32_t> legacyAddressIndex = std::nullopt);
+
+std::optional<unsigned long> ParseHDKeypathAccount(
+        uint32_t purpose,
+        uint32_t coinType,
+        const std::string& keyPath);
 
 } //namespace libzcash
 

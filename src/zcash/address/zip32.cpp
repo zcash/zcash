@@ -173,10 +173,7 @@ std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::For
     // Derive account key at the given account index
     auto xsk = m_32h_cth.Derive(accountId | HARDENED_KEY_LIMIT);
 
-    // Create new metadata
-    auto hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
-
-    return std::make_pair(xsk, hdKeypath);
+    return std::make_pair(xsk, libzcash::Zip32AccountKeyPath(bip44CoinType, accountId));
 }
 
 std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::Legacy(const HDSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex) {
@@ -198,13 +195,7 @@ std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::Leg
     // Derive key at the specified address index
     auto xsk = m_32h_cth_l.Derive(addressIndex | HARDENED_KEY_LIMIT);
 
-    // Create new metadata
-    auto hdKeypath = "m/32'/"
-        + std::to_string(bip44CoinType) + "'/"
-        + std::to_string(ZCASH_LEGACY_ACCOUNT) + "'/"
-        + std::to_string(addressIndex) + "'";
-
-    return std::make_pair(xsk, hdKeypath);
+    return std::make_pair(xsk, libzcash::Zip32AccountKeyPath(bip44CoinType, ZCASH_LEGACY_ACCOUNT, addressIndex));
 }
 
 SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
@@ -217,6 +208,17 @@ SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
     ret.fvk = expsk.full_viewing_key();
     ret.dk = dk;
     return ret;
+}
+
+HDKeyPath Zip32AccountKeyPath(
+        uint32_t bip44CoinType,
+        libzcash::AccountId accountId,
+        std::optional<uint32_t> legacyAddressIndex) {
+    HDKeyPath addrSuffix = "";
+    if (legacyAddressIndex.has_value()) {
+        addrSuffix = "/" + std::to_string(legacyAddressIndex.value()) + "'";
+    }
+    return "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'" + addrSuffix;
 }
 
 std::optional<unsigned long> ParseHDKeypathAccount(uint32_t purpose, uint32_t coinType, const std::string& keyPath) {
