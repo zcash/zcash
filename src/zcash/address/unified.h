@@ -13,12 +13,41 @@ const unsigned char ZCASH_UFVK_ID_PERSONAL[BLAKE2bPersonalBytes] =
 
 namespace libzcash {
 
+enum class ReceiverType: uint32_t {
+    P2PKH = 0x00,
+    P2SH = 0x01,
+    Sapling = 0x02,
+    Orchard = 0x03
+};
+
 class ZcashdUnifiedSpendingKey;
 class ZcashdUnifiedFullViewingKey;
+
 
 // prototypes for the classes handling ZIP-316 encoding (in Address.hpp)
 class UnifiedAddress;
 class UnifiedFullViewingKey;
+
+class ZcashdUnifiedKeyMetadata {
+private:
+    uint256 seedFp;
+    uint32_t bip44CoinType;
+    libzcash::AccountId accountId;
+    std::vector<ReceiverType> receiverTypes;
+public:
+    ZcashdUnifiedKeyMetadata(
+            uint256 seedFp, uint32_t bip44CoinType, libzcash::AccountId accountId, std::vector<ReceiverType> receiverTypes):
+            seedFp(seedFp), bip44CoinType(bip44CoinType), accountId(accountId), receiverTypes(receiverTypes) {}
+
+    const uint256& GetSeedFingerprint() const {
+        return seedFp;
+    }
+    const std::vector<ReceiverType>& GetReceiverTypes() const {
+        return receiverTypes;
+    }
+    std::optional<HDKeyPath> TransparentKeyPath() const;
+    std::optional<HDKeyPath> SaplingKeyPath() const;
+};
 
 /**
  * An internal-only type for unified full viewing keys that represents only the
@@ -63,7 +92,7 @@ private:
 
     ZcashdUnifiedSpendingKey() {}
 public:
-    static std::optional<std::pair<ZcashdUnifiedSpendingKey, HDKeyPath>> ForAccount(
+    static std::optional<std::pair<ZcashdUnifiedSpendingKey, ZcashdUnifiedKeyMetadata>> ForAccount(
             const HDSeed& seed,
             uint32_t bip44CoinType,
             libzcash::AccountId accountId);
