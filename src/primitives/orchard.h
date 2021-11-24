@@ -10,7 +10,7 @@
 #include <amount.h>
 #include <rust/orchard.h>
 
-class OrchardMerkleTree;
+class OrchardMerkleFrontier;
 
 /**
  * The Orchard component of a transaction.
@@ -22,7 +22,7 @@ private:
     /// Memory is allocated by Rust.
     std::unique_ptr<OrchardBundlePtr, decltype(&orchard_bundle_free)> inner;
 
-    friend class OrchardMerkleTree;
+    friend class OrchardMerkleFrontier;
 public:
     OrchardBundle() : inner(nullptr, orchard_bundle_free) {}
 

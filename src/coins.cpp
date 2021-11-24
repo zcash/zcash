@@ -46,7 +46,7 @@ bool CCoins::Spend(uint32_t nPos)
 }
 bool CCoinsView::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return false; }
 bool CCoinsView::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return false; }
-bool CCoinsView::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const { return false; }
+bool CCoinsView::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const { return false; }
 bool CCoinsView::GetNullifier(const uint256 &nullifier, ShieldedType type) const { return false; }
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
@@ -75,7 +75,7 @@ CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
 
 bool CCoinsViewBacked::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return base->GetSproutAnchorAt(rt, tree); }
 bool CCoinsViewBacked::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return base->GetSaplingAnchorAt(rt, tree); }
-bool CCoinsViewBacked::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const { return base->GetOrchardAnchorAt(rt, tree); }
+bool CCoinsViewBacked::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const { return base->GetOrchardAnchorAt(rt, tree); }
 bool CCoinsViewBacked::GetNullifier(const uint256 &nullifier, ShieldedType type) const { return base->GetNullifier(nullifier, type); }
 bool CCoinsViewBacked::GetCoins(const uint256 &txid, CCoins &coins) const { return base->GetCoins(txid, coins); }
 bool CCoinsViewBacked::HaveCoins(const uint256 &txid) const { return base->HaveCoins(txid); }
@@ -191,7 +191,7 @@ bool CCoinsViewCache::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &t
     return true;
 }
 
-bool CCoinsViewCache::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleTree &tree) const {
+bool CCoinsViewCache::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
     CAnchorsOrchardMap::const_iterator it = cacheOrchardAnchors.find(rt);
     if (it != cacheOrchardAnchors.end()) {
         if (it->second.entered) {
@@ -321,9 +321,9 @@ template<> void CCoinsViewCache::PushAnchor(const SaplingMerkleTree &tree)
     );
 }
 
-template<> void CCoinsViewCache::PushAnchor(const OrchardMerkleTree &tree)
+template<> void CCoinsViewCache::PushAnchor(const OrchardMerkleFrontier &tree)
 {
-    AbstractPushAnchor<OrchardMerkleTree, CAnchorsOrchardMap, CAnchorsOrchardMap::iterator, CAnchorsOrchardCacheEntry>(
+    AbstractPushAnchor<OrchardMerkleFrontier, CAnchorsOrchardMap, CAnchorsOrchardMap::iterator, CAnchorsOrchardCacheEntry>(
         tree,
         ORCHARD,
         cacheOrchardAnchors,
@@ -352,7 +352,7 @@ void CCoinsViewCache::BringBestAnchorIntoCache(
 template<>
 void CCoinsViewCache::BringBestAnchorIntoCache(
     const uint256 &currentRoot,
-    OrchardMerkleTree &tree
+    OrchardMerkleFrontier &tree
 )
 {
     assert(GetOrchardAnchorAt(currentRoot, tree));
@@ -1069,7 +1069,7 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
 
     std::optional<uint256> root = tx.GetOrchardBundle().GetAnchor();
     if (root) {
-        OrchardMerkleTree tree;
+        OrchardMerkleFrontier tree;
         if (!GetOrchardAnchorAt(root.value(), tree)) {
             auto txid = tx.GetHash().ToString();
             auto anchor = root.value().ToString();

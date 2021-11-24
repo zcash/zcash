@@ -69,6 +69,22 @@ struct ECCryptoClosure
 };
 
 ECCryptoClosure instance_of_eccryptoclosure;
+
+// Copy of GetLegacySigOpCount from main.cpp commit c4b2ef7c4.
+// Replace with the copy from src/consensus/tx_verify.{cpp,h} after backporting that refactor.
+unsigned int GetLegacySigOpCount(const CTransaction& tx)
+{
+    unsigned int nSigOps = 0;
+    for (const CTxIn& txin : tx.vin)
+    {
+        nSigOps += txin.scriptSig.GetSigOpCount(false);
+    }
+    for (const CTxOut& txout : tx.vout)
+    {
+        nSigOps += txout.scriptPubKey.GetSigOpCount(false);
+    }
+    return nSigOps;
+}
 }
 
 struct PrecomputedTransaction {
@@ -92,7 +108,7 @@ void* zcash_script_new_precomputed_tx(
             return nullptr;
         }
 
-        // Regardless of the verification result, the tx did not error.
+        // Deserializing the tx did not error.
         set_error(err, zcash_script_ERR_OK);
         auto preTx = new PrecomputedTransaction(tx);
         return preTx;
@@ -163,6 +179,42 @@ int zcash_script_verify(
             NULL);
     } catch (const std::exception&) {
         return set_error(err, zcash_script_ERR_TX_DESERIALIZE); // Error deserializing
+    }
+}
+
+unsigned int zcash_script_legacy_sigop_count_precomputed(
+    const void* pre_preTx,
+    zcash_script_error* err)
+{
+    const PrecomputedTransaction* preTx = static_cast<const PrecomputedTransaction*>(pre_preTx);
+
+    // The current implementation of this method never errors.
+    set_error(err, zcash_script_ERR_OK);
+
+    return GetLegacySigOpCount(preTx->tx);
+}
+
+unsigned int zcash_script_legacy_sigop_count(
+    const unsigned char *txTo,
+    unsigned int txToLen,
+    zcash_script_error* err)
+{
+    try {
+        TxInputStream stream(SER_NETWORK, PROTOCOL_VERSION, txTo, txToLen);
+        CTransaction tx;
+        stream >> tx;
+        if (GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) != txToLen) {
+            set_error(err, zcash_script_ERR_TX_SIZE_MISMATCH);
+            return UINT_MAX;
+        }
+
+        // Deserializing the tx did not error.
+        set_error(err, zcash_script_ERR_OK);
+
+        return GetLegacySigOpCount(tx);
+    } catch (const std::exception&) {
+        set_error(err, zcash_script_ERR_TX_DESERIALIZE); // Error deserializing
+        return UINT_MAX;
     }
 }
 

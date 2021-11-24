@@ -39,7 +39,7 @@
 # Name    : checksec.sh
 # Version : 1.7.0
 # Author  : Brian Davis
-# Date    : Feburary 2014
+# Date    : February 2014
 # Download: https://github.com/slimm609/checksec.sh
 #
 # --- Modified Version ---
@@ -298,9 +298,9 @@ echo_message() {
 # check selinux status
 getsestatus() {
   local status
-  ${debug} && echo -e "\n***fuction getsestatus"
+  ${debug} && echo -e "\n***function getsestatus"
   if (command_exists getenforce); then
-    ${debug} && echo "***fuction getsestatus->getenforce"
+    ${debug} && echo "***function getsestatus->getenforce"
     sestatus=$(getenforce)
     if [[ "${sestatus}" == "Disabled" ]]; then
       status=0
@@ -310,7 +310,7 @@ getsestatus() {
       status=2
     fi
   elif (command_exists sestatus); then
-    ${debug} && echo "***fuction getsestatus->sestatus"
+    ${debug} && echo "***function getsestatus->sestatus"
     sestatus=$(sestatus | grep "SELinux status" | awk '{ print $3}')
     if [[ "${sestatus}" == "disabled" ]]; then
       status=0
@@ -328,7 +328,7 @@ return ${status}
 
 # check if directory exists
 dir_exists () {
-  ${debug} && echo "fuction dir_exists"
+  ${debug} && echo "function dir_exists"
   if [[ -d "${1}" ]] ; then
     return 0
   else
@@ -842,7 +842,7 @@ kernelcheck() {
   fi
 
   echo_message "  Kernel heap randomization:              " "" "" ""
-  # NOTE: y means it turns off kernel heap randomization for backwards compatability (libc5)
+  # NOTE: y means it turns off kernel heap randomization for backwards compatibility (libc5)
   if ${kconfig} | grep -qi 'CONFIG_COMPAT_BRK=y'; then
     echo_message "\033[31mDisabled\033[m\n" "Disabled," " kernel_heap_randomization='no'" ', "kernel_heap_randomization":"no"'
   else
@@ -1123,7 +1123,7 @@ kernelcheck() {
   sestatus=$?
   if [[ ${sestatus} == 0 ]]; then
       echo_message "\033[31mDisabled\033[m\n" "Disabled,," "    <selinux enabled='no'" '"selinux":{ "enabled":"no"'
-      echo_message "\n  SELinux infomation available here: \n" "" "" ""
+      echo_message "\n  SELinux information available here: \n" "" "" ""
       echo_message "    https://selinuxproject.org/\n" "" "" ""
   elif [[ ${sestatus} == 1 ]]; then
       echo_message "\033[33mPermissive\033[m\n" "Permissive," "    <selinux enabled='yes' mode='permissive'" '"selinux":{ "enabled":"yes", "mode":"permissive"'
@@ -1132,7 +1132,7 @@ kernelcheck() {
   fi
   else
     echo_message "\033[31mNo SELinux\033[m\n" "Disabled,," "    <selinux enabled='no'" '"selinux":{ "enabled":"no"'
-    echo_message "\n  SELinux infomation available here: \n" "" "" ""
+    echo_message "\n  SELinux information available here: \n" "" "" ""
     echo_message "    https://selinuxproject.org/\n" "" "" ""
   fi
 

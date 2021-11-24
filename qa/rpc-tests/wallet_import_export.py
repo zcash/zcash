@@ -70,7 +70,7 @@ class WalletImportExportTest (BitcoinTestFramework):
         assert_true(sapling_address0 in sapling_keys1)
         assert_true(sapling_address2 in sapling_keys1)
 
-        # make sure we have perserved the metadata
+        # make sure we have preserved the metadata
         for sapling_key0 in sapling_keys0.splitlines():
             assert_true(sapling_key0 in sapling_keys1)
 

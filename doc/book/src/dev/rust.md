@@ -5,7 +5,7 @@ where possible.
 
 ## Adding new dependencies in online-Rust mode
 
-The `zcashd` build system pins all dependencies, and in order to faciliate
+The `zcashd` build system pins all dependencies, and in order to facilitate
 deterministic builds, `cargo` is configured to run in offline mode with vendored
 crates. This means that if, for example, you add the `foobar` crate to
 `Cargo.toml`, you will likely see an error similar to this:
