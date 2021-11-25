@@ -78,12 +78,10 @@ pub extern "C" fn orchard_incoming_viewing_key_to_address(
     key: *const IncomingViewingKey,
     diversifier_index: *const [u8; 11],
 ) -> *mut Address {
-    let key = unsafe {
-        key.as_ref()
-            .expect("Orchard incoming viewing key pointer may not be null.")
-    };
+    let key =
+        unsafe { key.as_ref() }.expect("Orchard incoming viewing key pointer may not be null.");
 
-    let diversifier_index = unsafe { DiversifierIndex::from(*diversifier_index) };
+    let diversifier_index = DiversifierIndex::from(unsafe { *diversifier_index });
     Box::into_raw(Box::new(key.address_at(diversifier_index)))
 }
 
@@ -93,10 +91,8 @@ pub extern "C" fn orchard_incoming_viewing_key_serialize(
     stream: Option<StreamObj>,
     write_cb: Option<WriteCb>,
 ) -> bool {
-    let key = unsafe {
-        key.as_ref()
-            .expect("Orchard incoming viewing key pointer may not be null.")
-    };
+    let key =
+        unsafe { key.as_ref() }.expect("Orchard incoming viewing key pointer may not be null.");
 
     let mut writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
     match writer.write_all(&key.to_bytes()) {
@@ -173,10 +169,7 @@ pub extern "C" fn orchard_full_viewing_key_serialize(
     stream: Option<StreamObj>,
     write_cb: Option<WriteCb>,
 ) -> bool {
-    let key = unsafe {
-        key.as_ref()
-            .expect("Orchard full viewing key pointer may not be null.")
-    };
+    let key = unsafe { key.as_ref() }.expect("Orchard full viewing key pointer may not be null.");
 
     let mut writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
     match key.write(&mut writer) {
@@ -272,10 +265,7 @@ pub extern "C" fn orchard_spending_key_serialize(
     stream: Option<StreamObj>,
     write_cb: Option<WriteCb>,
 ) -> bool {
-    let key = unsafe {
-        key.as_ref()
-            .expect("Orchard spending key pointer may not be null.")
-    };
+    let key = unsafe { key.as_ref() }.expect("Orchard spending key pointer may not be null.");
 
     let mut writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
     match writer.write_all(key.to_bytes()) {
