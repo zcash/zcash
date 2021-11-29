@@ -70,9 +70,7 @@ OrchardIncomingViewingKeyPtr* orchard_incoming_viewing_key_parse(
     read_callback_t read_cb);
 
 /**
- * Serializes an Orchard incoming viewing key to the given stream
- *
- * If `incoming_viewing_key == nullptr`, this serializes `nActionsOrchard = 0`.
+ * Serializes an Orchard incoming viewing key to the given stream.
  */
 bool orchard_incoming_viewing_key_serialize(
     const OrchardIncomingViewingKeyPtr* incoming_viewing_key,
@@ -124,9 +122,7 @@ OrchardFullViewingKeyPtr* orchard_full_viewing_key_parse(
     read_callback_t read_cb);
 
 /**
- * Serializes an Orchard full viewing key to the given stream
- *
- * If `full_viewing_key == nullptr`, this serializes `nActionsOrchard = 0`.
+ * Serializes an Orchard full viewing key to the given stream.
  */
 bool orchard_full_viewing_key_serialize(
     const OrchardFullViewingKeyPtr* full_viewing_key,
@@ -187,9 +183,7 @@ OrchardSpendingKeyPtr* orchard_spending_key_parse(
     read_callback_t read_cb);
 
 /**
- * Serializes an Orchard spending key to the given stream
- *
- * If `spending_key == nullptr`, this will return `false`
+ * Serializes an Orchard spending key to the given stream.
  */
 bool orchard_spending_key_serialize(
     const OrchardSpendingKeyPtr* spending_key,
