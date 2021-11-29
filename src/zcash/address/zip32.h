@@ -141,6 +141,26 @@ public:
     }
 
     libzcash::SaplingPaymentAddress DefaultAddress() const;
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(fvk);
+        READWRITE(dk);
+    }
+
+    template <typename Stream>
+    static SaplingDiversifiableFullViewingKey Read(Stream& stream) {
+        SaplingDiversifiableFullViewingKey key;
+        stream >> key;
+        return key;
+    }
+
+    friend inline bool operator==(const SaplingDiversifiableFullViewingKey& a, const SaplingDiversifiableFullViewingKey& b) {
+        return (a.fvk == b.fvk && a.dk == b.dk);
+    }
+
 };
 
 class SaplingExtendedFullViewingKey: public SaplingDiversifiableFullViewingKey {

@@ -7,23 +7,28 @@
 
 #include "zip32.h"
 #include "bip44.h"
-#include "zcash/Address.hpp"
 
 namespace libzcash {
 
 class ZcashdUnifiedSpendingKey;
 class ZcashdUnifiedFullViewingKey;
 
+// prototypes for the classes handling ZIP-316 encoding (in Address.hpp)
+class UnifiedAddress;
+class UnifiedFullViewingKey;
+
 class ZcashdUnifiedFullViewingKey {
 private:
-    std::optional<CExtPubKey> transparentKey;
+    std::optional<CChainablePubKey> transparentKey;
     std::optional<SaplingDiversifiableFullViewingKey> saplingKey;
 
     ZcashdUnifiedFullViewingKey() {}
 
     friend class ZcashdUnifiedSpendingKey;
 public:
-    const std::optional<CExtPubKey>& GetTransparentKey() const {
+    static ZcashdUnifiedFullViewingKey FromUnifiedFullViewingKey(const UnifiedFullViewingKey& ufvk);
+
+    const std::optional<CChainablePubKey>& GetTransparentKey() const {
         return transparentKey;
     }
 
@@ -33,15 +38,7 @@ public:
 
     std::optional<UnifiedAddress> Address(diversifier_index_t j) const;
 
-    std::pair<UnifiedAddress, diversifier_index_t> FindAddress(diversifier_index_t j) const {
-        auto addr = Address(j);
-        while (!addr.has_value()) {
-            if (!j.increment())
-                throw std::runtime_error(std::string(__func__) + ": diversifier index overflow.");;
-            addr = Address(j);
-        }
-        return std::make_pair(addr.value(), j);
-    }
+    std::pair<UnifiedAddress, diversifier_index_t> FindAddress(diversifier_index_t j) const;
 };
 
 class ZcashdUnifiedSpendingKey {

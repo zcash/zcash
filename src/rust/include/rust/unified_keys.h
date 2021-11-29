@@ -63,7 +63,7 @@ char* unified_full_viewing_key_serialize(
  */
 bool unified_full_viewing_key_read_transparent(
     const UnifiedFullViewingKeyPtr* full_viewing_key,
-    unsigned char *tkeyout);
+    unsigned char* tkeyout);
 
 /**
  * Reads the Sapling component of a unified viewing key.
@@ -75,7 +75,7 @@ bool unified_full_viewing_key_read_transparent(
  */
 bool unified_full_viewing_key_read_sapling(
     const UnifiedFullViewingKeyPtr* full_viewing_key,
-    unsigned char *skeyout);
+    unsigned char* skeyout);
 
 /**
  * Sets the Sapling component of a unified viewing key.
@@ -91,8 +91,8 @@ bool unified_full_viewing_key_read_sapling(
  * or the null pointer otherwise.
  */
 UnifiedFullViewingKeyPtr* unified_full_viewing_key_from_components(
-    const unsigned char *t_key,
-    const unsigned char *sapling_key);
+    const unsigned char* t_key,
+    const unsigned char* sapling_key);
 
 #ifdef __cplusplus
 }

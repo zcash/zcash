@@ -212,7 +212,7 @@ pub extern "C" fn zcash_address_serialize_unified(
         }
     };
 
-    let ua = match unified::Address::try_from_items(receivers) {
+    let ua = match unified::Address::try_from_items_preserving_order(receivers) {
         Ok(ua) => ua,
         Err(e) => {
             tracing::error!("{}", e);

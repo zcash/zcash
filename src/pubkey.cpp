@@ -134,6 +134,14 @@ bool CExtPubKey::Derive(CExtPubKey &out, unsigned int _nChild) const {
     return (!secp256k1_ecdsa_signature_normalize(secp256k1_context_verify, NULL, &sig));
 }
 
+/* static */ std::optional<CChainablePubKey> CChainablePubKey::FromParts(ChainCode chaincode, CPubKey pubkey) {
+    if (pubkey.IsCompressed()) {
+        return CChainablePubKey(chaincode, pubkey);
+    } else {
+        return std::nullopt;
+    }
+}
+
 /* static */ int ECCVerifyHandle::refcount = 0;
 
 ECCVerifyHandle::ECCVerifyHandle()
