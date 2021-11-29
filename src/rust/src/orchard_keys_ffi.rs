@@ -285,10 +285,3 @@ pub extern "C" fn orchard_spending_key_to_full_viewing_key(
         .map(|key| Box::into_raw(Box::new(FullViewingKey::from(key))))
         .unwrap_or(std::ptr::null_mut())
 }
-
-#[no_mangle]
-pub extern "C" fn orchard_spending_key_eq(k0: *const SpendingKey, k1: *const SpendingKey) -> bool {
-    let k0 = unsafe { k0.as_ref() };
-    let k1 = unsafe { k1.as_ref() };
-    k0 == k1
-}

@@ -223,11 +223,6 @@ public:
         return *this;
     }
 
-    friend bool operator==(const OrchardSpendingKey& a, const OrchardSpendingKey& b)
-    {
-        return orchard_spending_key_eq(a.inner.get(), b.inner.get());
-    }
-
     template<typename Stream>
     void Serialize(Stream& s) const {
         RustStream rs(s);

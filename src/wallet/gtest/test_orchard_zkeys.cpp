@@ -35,12 +35,16 @@ TEST(OrchardZkeysTest, FVKSerializationRoundtrip) {
 
 TEST(OrchardZkeysTest, SKSerializationRoundtrip) {
     auto seed = MnemonicSeed::Random(1); //testnet coin type
-    auto sk = libzcash::OrchardSpendingKey::ForAccount(seed, 1, 0);
 
+    auto sk = libzcash::OrchardSpendingKey::ForAccount(seed, 1, 0);
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << sk;
+    std::string skStr = ss.str();
 
     auto sk0 = libzcash::OrchardSpendingKey::Read(ss);
+    CDataStream ss0(SER_NETWORK, PROTOCOL_VERSION);
+    ss0 << sk0;
+    std::string sk0Str = ss0.str();
 
-    ASSERT_EQ(sk, sk0);
+    ASSERT_EQ(skStr, sk0Str);
 }

@@ -196,13 +196,6 @@ bool orchard_spending_key_serialize(
 OrchardFullViewingKeyPtr* orchard_spending_key_to_full_viewing_key(
     const OrchardSpendingKeyPtr* key);
 
-/**
- * Implements equality testing between spending keys.
- */
-bool orchard_spending_key_eq(
-    const OrchardSpendingKeyPtr* k0,
-    const OrchardSpendingKeyPtr* k1);
-
 #ifdef __cplusplus
 }
 #endif
