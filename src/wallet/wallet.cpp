@@ -431,7 +431,7 @@ ZcashdUnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
     }
 }
 
-std::optional<libzcash::ZcashdUnifiedSpendingKey> CWallet::GenerateUnifiedSpendingKeyForAccount(uint32_t accountId) {
+std::optional<libzcash::ZcashdUnifiedSpendingKey> CWallet::GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId) {
     auto seed = GetMnemonicSeed();
     if (!seed.has_value()) {
         throw std::runtime_error(std::string(__func__) + ": Wallet has no mnemonic HD seed.");

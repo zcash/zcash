@@ -72,6 +72,7 @@ mod address_ffi;
 mod history_ffi;
 mod incremental_merkle_tree_ffi;
 mod orchard_ffi;
+mod orchard_keys_ffi;
 mod transaction_ffi;
 mod zip339_ffi;
 

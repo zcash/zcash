@@ -109,6 +109,7 @@ LIBZCASH_H = \
   zcash/Address.hpp \
   zcash/address/sapling.hpp \
   zcash/address/sprout.hpp \
+  zcash/address/orchard.h \
   zcash/address/zip32.h \
   zcash/History.hpp \
   zcash/JoinSplit.hpp \
@@ -537,6 +538,7 @@ libzcash_a_SOURCES = \
   zcash/Address.cpp \
   zcash/address/sapling.cpp \
   zcash/address/sprout.cpp \
+  zcash/address/orchard.cpp \
   zcash/address/zip32.cpp \
   zcash/History.cpp \
   zcash/JoinSplit.cpp \

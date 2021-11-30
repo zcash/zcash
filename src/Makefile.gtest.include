@@ -21,7 +21,8 @@ zcash_gtest_SOURCES = \
 # depend on global state (see #1539)
 if ENABLE_WALLET
 zcash_gtest_SOURCES += \
-	wallet/gtest/test_wallet_zkeys.cpp
+	wallet/gtest/test_wallet_zkeys.cpp \
+	wallet/gtest/test_orchard_zkeys.cpp
 endif
 zcash_gtest_SOURCES += \
 	test/data/merkle_roots_orchard.h \
