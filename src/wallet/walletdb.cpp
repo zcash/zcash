@@ -217,6 +217,22 @@ bool CWalletDB::EraseSaplingExtendedFullViewingKey(
     return Erase(std::make_pair(std::string("sapextfvk"), extfvk));
 }
 
+//
+// Unified address & key storage
+//
+
+bool CWalletDB::WriteUnifiedFullViewingKey(
+    const libzcash::UFVKId& ufvkId,
+    const libzcash::UnifiedFullViewingKey& ufvk)
+{
+    nWalletDBUpdateCounter++;
+    return Write(std::make_pair(std::string("unifiedfvk"), ufvkId), ufvk.Encode(Params()));
+}
+
+//
+//
+//
+
 bool CWalletDB::WriteCScript(const uint160& hash, const CScript& redeemScript)
 {
     nWalletDBUpdateCounter++;

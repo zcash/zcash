@@ -702,8 +702,13 @@ private:
     int nSetChainUpdates;
     bool fBroadcastTransactions;
 
+    /**
+     * A map from protocol-specifiec transaction output identifier to
+     * a txid.
+     */
     template <class T>
     using TxSpendMap = std::multimap<T, uint256>;
+
     /**
      * Used to keep track of spent outpoints, and
      * detect and report conflicts (double-spends or
@@ -711,6 +716,7 @@ private:
      */
     typedef TxSpendMap<COutPoint> TxSpends;
     TxSpends mapTxSpends;
+
     /**
      * Used to keep track of spent Notes, and
      * detect and report conflicts (double-spends).
@@ -804,7 +810,10 @@ private:
     void ChainTipAdded(const CBlockIndex *pindex, const CBlock *pblock, SproutMerkleTree sproutTree, SaplingMerkleTree saplingTree);
 
     /* Add an extended secret key to the wallet. Internal use only. */
-    CPubKey AddKey(const uint256& seedFingerprint, const std::pair<CExtKey, HDKeyPath>& extSecret);
+    CPubKey AddTransparentSecretKey(
+            const uint256& seedFingerprint,
+            const std::pair<CExtKey, HDKeyPath>& extSecret,
+            const std::optional<libzcash::UFVKId>& ufvkId = std::nullopt);
 
 protected:
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);
@@ -831,8 +840,10 @@ public:
 
     std::set<int64_t> setKeyPool;
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
+
     std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapSproutZKeyMetadata;
     std::map<libzcash::SaplingIncomingViewingKey, CKeyMetadata> mapSaplingZKeyMetadata;
+
     std::map<std::pair<libzcash::SeedFingerprint, libzcash::AccountId>, libzcash::ZcashdUnifiedKeyMetadata> mapUnifiedKeyMetadata;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
@@ -999,7 +1010,10 @@ public:
      */
     CPubKey GenerateNewKey();
     //! Adds a key to the store, and saves it to disk.
-    bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
+    bool AddKeyPubKey(
+            const CKey& key,
+            const CPubKey &pubkey,
+            const std::optional<libzcash::UFVKId>& ufvkId = std::nullopt);
     //! Adds a key to the store, without saving it to disk (used by LoadWallet)
     bool LoadKey(const CKey& key, const CPubKey &pubkey) { return CCryptoKeyStore::AddKeyPubKey(key, pubkey); }
     //! Load metadata (used by LoadWallet)
@@ -1078,7 +1092,9 @@ public:
     //! full viewing key to disk. Inside CCryptoKeyStore and CBasicKeyStore,
     //! CBasicKeyStore::AddSaplingFullViewingKey is called directly when adding a
     //! full viewing key to the keystore, to avoid this override.
-    bool AddSaplingFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
+    bool AddSaplingFullViewingKey(
+            const libzcash::SaplingExtendedFullViewingKey &extfvk,
+            const std::optional<libzcash::UFVKId>& ufvkId = std::nullopt);
     bool AddSaplingIncomingViewingKey(
         const libzcash::SaplingIncomingViewingKey &ivk,
         const libzcash::SaplingPaymentAddress &addr);
@@ -1115,10 +1131,15 @@ public:
         GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId);
 
     //! Add the specified unified spending key to the wallet with the provided key
-    //! metadata.
+    //! metadata. -- TODO, this should probably not be part of the public API?
     bool AddUnifiedSpendingKey(
             const libzcash::ZcashdUnifiedSpendingKey& sk,
             const libzcash::ZcashdUnifiedKeyMetadata& metadata);
+
+    bool AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
+    bool LoadUnifiedFullViewingKey(
+        const libzcash::UFVKId& keyId,
+        const libzcash::UnifiedFullViewingKey &key);
 
     void LoadUnifiedKeyMetadata(const libzcash::ZcashdUnifiedKeyMetadata &meta);
 
