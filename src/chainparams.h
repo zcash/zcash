@@ -32,17 +32,6 @@ struct CCheckpointData {
     double fTransactionsPerDay;
 };
 
-class CBaseKeyConstants : public KeyConstants {
-public:
-    std::string NetworkIDString() const { return strNetworkID; }
-    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
-    const std::string& Bech32HRP(Bech32Type type) const { return bech32HRPs[type]; }
-
-    std::string strNetworkID;
-    std::vector<unsigned char> base58Prefixes[KeyConstants::MAX_BASE58_TYPES];
-    std::string bech32HRPs[KeyConstants::MAX_BECH32_TYPES];
-};
-
 /**
  * CChainParams defines various tweakable parameters of a given instance of the
  * Bitcoin system. There are three: the main network on which people trade goods
@@ -73,14 +62,19 @@ public:
     bool RequireStandard() const { return fRequireStandard; }
     int64_t PruneAfterHeight() const { return nPruneAfterHeight; }
     std::string CurrencyUnits() const { return strCurrencyUnits; }
-    uint32_t BIP44CoinType() const { return bip44CoinType; }
     /** Make miner stop after a block is found. In RPC, don't return until nGenProcLimit blocks are generated */
     bool MineBlocksOnDemand() const { return fMineBlocksOnDemand; }
     /** In the future use NetworkIDString() for RPC fields */
     bool TestnetToBeDeprecatedFieldRPC() const { return fTestnetToBeDeprecatedFieldRPC; }
-    /** Return the BIP70 network string (main, test or regtest) */
-    std::string NetworkIDString() const { return keyConstants.NetworkIDString(); }
     const std::vector<CDNSSeedData>& DNSSeeds() const { return vSeeds; }
+    /** Return the BIP70 network string (main, test or regtest) */
+    std::string NetworkIDString() const {
+        return keyConstants.NetworkIDString();
+    }
+    /** Return the BIP44 coin type for addresses created by the zcashd embedded wallet. */
+    uint32_t BIP44CoinType() const {
+        return keyConstants.BIP44CoinType();
+    }
     const std::vector<unsigned char>& Base58Prefix(Base58Type type) const {
         return keyConstants.Base58Prefix(type);
     }
@@ -107,7 +101,6 @@ protected:
     std::vector<CDNSSeedData> vSeeds;
     CBaseKeyConstants keyConstants;
     std::string strCurrencyUnits;
-    uint32_t bip44CoinType;
     CBlock genesis;
     std::vector<SeedSpec6> vFixedSeeds;
     bool fMiningRequiresPeers = false;

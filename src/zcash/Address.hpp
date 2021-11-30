@@ -3,6 +3,7 @@
 
 #include "key_constants.h"
 #include "pubkey.h"
+#include "key_constants.h"
 #include "script/script.h"
 #include "uint256.h"
 #include "zcash/address/orchard.hpp"
@@ -132,6 +133,12 @@ public:
 
 class UnifiedFullViewingKeyBuilder;
 
+class UFVKId: public uint256 {
+public:
+    UFVKId() : uint256() {}
+    UFVKId(const uint256& in) : uint256(in) {}
+};
+
 /**
  * Wrapper for a zcash_address::unified::Ufvk.
  */
@@ -147,9 +154,10 @@ private:
 
     friend class UnifiedFullViewingKeyBuilder;
 public:
-    static std::optional<UnifiedFullViewingKey> Decode(
-            const std::string& str,
-            const KeyConstants& keyConstants);
+    UnifiedFullViewingKey(UnifiedFullViewingKey&& key) : inner(std::move(key.inner)) {}
+
+    UnifiedFullViewingKey(const UnifiedFullViewingKey& key) :
+        inner(unified_full_viewing_key_clone(key.inner.get()), unified_full_viewing_key_free) {}
 
     /**
      * This method should only be used for serialization of unified full
@@ -161,16 +169,17 @@ public:
      */
     static UnifiedFullViewingKey FromZcashdUFVK(const ZcashdUnifiedFullViewingKey&);
 
+    static std::optional<UnifiedFullViewingKey> Decode(
+            const std::string& str,
+            const KeyConstants& keyConstants);
+
     std::string Encode(const KeyConstants& keyConstants) const;
 
     std::optional<SaplingDiversifiableFullViewingKey> GetSaplingKey() const;
 
     std::optional<CChainablePubKey> GetTransparentKey() const;
 
-    UnifiedFullViewingKey(UnifiedFullViewingKey&& key) : inner(std::move(key.inner)) {}
-
-    UnifiedFullViewingKey(const UnifiedFullViewingKey& key) :
-        inner(unified_full_viewing_key_clone(key.inner.get()), unified_full_viewing_key_free) {}
+    UFVKId GetKeyID(const KeyConstants& keyConstants) const;
 
     UnifiedFullViewingKey& operator=(UnifiedFullViewingKey&& key)
     {

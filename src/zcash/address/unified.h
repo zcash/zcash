@@ -8,6 +8,9 @@
 #include "zip32.h"
 #include "bip44.h"
 
+const unsigned char ZCASH_UFVK_ID_PERSONAL[BLAKE2bPersonalBytes] =
+    {'Z', 'c', 'a', 's', 'h', '_', 'U', 'F', 'V', 'K', '_', 'I', 'd', '_', 'F', 'P'};
+
 namespace libzcash {
 
 class ZcashdUnifiedSpendingKey;
@@ -55,7 +58,6 @@ public:
  */
 class ZcashdUnifiedSpendingKey {
 private:
-    libzcash::AccountId accountId;
     std::optional<CExtKey> transparentKey;
     std::optional<SaplingExtendedSpendingKey> saplingKey;
 

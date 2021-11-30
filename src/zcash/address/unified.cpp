@@ -12,9 +12,11 @@ using namespace libzcash;
 // Unified Keys
 //
 
-std::optional<std::pair<ZcashdUnifiedSpendingKey, HDKeyPath>> ZcashdUnifiedSpendingKey::ForAccount(const HDSeed& seed, uint32_t bip44CoinType, AccountId accountId) {
+std::optional<std::pair<ZcashdUnifiedSpendingKey, HDKeyPath>> ZcashdUnifiedSpendingKey::ForAccount(
+        const HDSeed& seed,
+        const uint32_t bip44CoinType,
+        AccountId accountId) {
     ZcashdUnifiedSpendingKey usk;
-    usk.accountId = accountId;
 
     auto transparentKey = DeriveBip44TransparentAccountKey(seed, bip44CoinType, accountId);
     if (!transparentKey.has_value()) return std::nullopt;
@@ -105,4 +107,3 @@ std::pair<UnifiedAddress, diversifier_index_t> ZcashdUnifiedFullViewingKey::Find
     }
     return std::make_pair(addr.value(), j);
 }
-

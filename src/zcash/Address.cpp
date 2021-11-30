@@ -12,6 +12,10 @@ const uint8_t ZCASH_UA_TYPECODE_SAPLING = 0x02;
 
 namespace libzcash {
 
+//
+// Unified Addresses
+//
+
 std::vector<const Receiver*> UnifiedAddress::GetSorted() const {
     std::vector<const libzcash::Receiver*> sorted;
     for (const auto& receiver : receivers) {
@@ -189,6 +193,10 @@ std::set<libzcash::RawAddress> GetRawAddresses::operator()(
     return ret;
 }
 
+//
+// Unified full viewing keys
+//
+
 std::optional<libzcash::UnifiedFullViewingKey> libzcash::UnifiedFullViewingKey::Decode(
         const std::string& str,
         const KeyConstants& keyConstants) {
@@ -279,4 +287,12 @@ libzcash::UnifiedFullViewingKey libzcash::UnifiedFullViewingKey::FromZcashdUFVK(
         throw std::invalid_argument("Cannot convert from invalid viewing key.");
     }
     return result.value();
+}
+
+libzcash::UFVKId libzcash::UnifiedFullViewingKey::GetKeyID(const KeyConstants& keyConstants) const {
+    // The ID of a ufvk is the blake2b hash of the serialized form of the
+    // ufvk with the receivers sorted in order of descending receiver type.
+    CBLAKE2bWriter h(SER_GETHASH, 0, ZCASH_UFVK_ID_PERSONAL);
+    h << Encode(keyConstants);
+    return libzcash::UFVKId(h.GetHash());
 }
