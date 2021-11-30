@@ -12,6 +12,7 @@
 #include "script/standard.h"
 #include "sync.h"
 #include "zcash/address/mnemonic.h"
+#include "zcash/address/unified.h"
 #include "zcash/Address.hpp"
 #include "zcash/NoteEncryption.hpp"
 
@@ -100,6 +101,12 @@ public:
     virtual bool GetSproutViewingKey(
         const libzcash::SproutPaymentAddress &address,
         libzcash::SproutViewingKey& vkOut) const =0;
+
+    //! Unified addresses and keys
+    virtual bool AddUnifiedFullViewingKey(
+            const libzcash::UFVKId& keyId,
+            const libzcash::ZcashdUnifiedFullViewingKey &ufvk
+            ) = 0;
 };
 
 typedef std::map<CKeyID, CKey> KeyMap;
@@ -142,6 +149,10 @@ protected:
     SaplingFullViewingKeyMap mapSaplingFullViewingKeys;
     SaplingIncomingViewingKeyMap mapSaplingIncomingViewingKeys;
 
+    // Unified key support
+    std::map<CKeyID, libzcash::UFVKId> mapTKeyUnified;
+    std::map<libzcash::SaplingIncomingViewingKey, libzcash::UFVKId> mapSaplingKeyUnified;
+    std::map<libzcash::UFVKId, libzcash::ZcashdUnifiedFullViewingKey> mapUnifiedFullViewingKeys;
 public:
     bool SetMnemonicSeed(const MnemonicSeed& seed);
     bool HaveMnemonicSeed() const;
@@ -314,6 +325,10 @@ public:
     virtual bool GetSproutViewingKey(
         const libzcash::SproutPaymentAddress &address,
         libzcash::SproutViewingKey& vkOut) const;
+
+    virtual bool AddUnifiedFullViewingKey(
+            const libzcash::UFVKId& keyId,
+            const libzcash::ZcashdUnifiedFullViewingKey &ufvk);
 };
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;

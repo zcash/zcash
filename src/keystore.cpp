@@ -287,3 +287,31 @@ bool CBasicKeyStore::GetSaplingExtendedSpendingKey(const libzcash::SaplingPaymen
             GetSaplingFullViewingKey(ivk, extfvk) &&
             GetSaplingSpendingKey(extfvk, extskOut);
 }
+
+//
+// Unified Keys
+//
+
+bool CBasicKeyStore::AddUnifiedFullViewingKey(
+        const libzcash::UFVKId& keyId,
+        const libzcash::ZcashdUnifiedFullViewingKey &ufvk)
+{
+    LOCK(cs_KeyStore);
+
+    auto tKey = ufvk.GetTransparentKey();
+    if (tKey.has_value()) {
+        // FIXME: this is probably not the right thing; we need to actually track
+        // addresses, not the id at the FVK level?
+        mapTKeyUnified.insert(std::make_pair(tKey.value().GetPubKey().GetID(), keyId));
+    }
+
+    auto saplingKey = ufvk.GetSaplingKey();
+    if (saplingKey.has_value()) {
+        auto ivk = saplingKey.value().fvk.in_viewing_key();
+        mapSaplingKeyUnified.insert(std::make_pair(ivk, keyId));
+    }
+
+    mapUnifiedFullViewingKeys.insert({keyId, ufvk});
+
+    return true;
+}

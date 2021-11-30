@@ -249,6 +249,12 @@ public:
     bool WriteSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
     bool EraseSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
 
+    /// Unified key support.
+
+    bool WriteUnifiedFullViewingKey(
+            const libzcash::UFVKId& ufvkId,
+            const libzcash::UnifiedFullViewingKey& ufvk);
+
     static void IncrementUpdateCounter();
     static unsigned int GetUpdateCounter();
 private:
