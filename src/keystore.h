@@ -11,6 +11,7 @@
 #include "script/script.h"
 #include "script/standard.h"
 #include "sync.h"
+#include "zcash/address/mnemonic.h"
 #include "zcash/Address.hpp"
 #include "zcash/NoteEncryption.hpp"
 

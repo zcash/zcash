@@ -24,8 +24,8 @@ bool UnifiedAddress::AddReceiver(Receiver receiver) {
         auto t = std::visit(TypecodeForReceiver(), r);
         if (
             (t == typecode) ||
-            (std::holds_alternative<P2PKHAddress>(r) && std::holds_alternative<P2SHAddress>(receiver)) ||
-            (std::holds_alternative<P2SHAddress>(r) && std::holds_alternative<P2PKHAddress>(receiver))
+            (std::holds_alternative<CKeyID>(r) && std::holds_alternative<CScriptID>(receiver)) ||
+            (std::holds_alternative<CScriptID>(r) && std::holds_alternative<CKeyID>(receiver))
         ) {
             return false;
         }
@@ -76,13 +76,13 @@ uint32_t TypecodeForReceiver::operator()(
 }
 
 uint32_t TypecodeForReceiver::operator()(
-    const libzcash::P2SHAddress &p2sh) const
+    const CScriptID &p2sh) const
 {
     return ZCASH_UA_TYPECODE_P2SH;
 }
 
 uint32_t TypecodeForReceiver::operator()(
-    const libzcash::P2PKHAddress &p2sh) const
+    const CKeyID &p2sh) const
 {
     return ZCASH_UA_TYPECODE_P2PKH;
 }
@@ -100,13 +100,13 @@ std::optional<libzcash::RawAddress> ReceiverToRawAddress::operator()(
 }
 
 std::optional<libzcash::RawAddress> ReceiverToRawAddress::operator()(
-    const libzcash::P2SHAddress &p2sh) const
+    const CScriptID &p2sh) const
 {
     return std::nullopt;
 }
 
 std::optional<libzcash::RawAddress> ReceiverToRawAddress::operator()(
-    const libzcash::P2PKHAddress &p2sh) const
+    const CKeyID &p2sh) const
 {
     return std::nullopt;
 }

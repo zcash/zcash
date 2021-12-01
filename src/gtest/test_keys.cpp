@@ -78,11 +78,11 @@ namespace libzcash {
             return tfm::format("Sapling(%s)", HexStr(ss.begin(), ss.end()));
         }
 
-        std::string operator()(const P2SHAddress &p2sh) const {
+        std::string operator()(const CScriptID &p2sh) const {
             return tfm::format("P2SH(%s)", p2sh.GetHex());
         }
 
-        std::string operator()(const P2PKHAddress &p2pkh) const {
+        std::string operator()(const CKeyID &p2pkh) const {
             return tfm::format("P2PKH(%s)", p2pkh.GetHex());
         }
 
@@ -140,11 +140,11 @@ TEST(Keys, EncodeAndDecodeUnified)
                 ua.AddReceiver(r);
             }
             if (!test[1].isNull()) {
-                libzcash::P2SHAddress r(ParseHex(test[1].get_str()));
+                CScriptID r(ParseHex(test[1].get_str()));
                 ua.AddReceiver(r);
             }
             if (!test[0].isNull()) {
-                libzcash::P2PKHAddress r(ParseHex(test[0].get_str()));
+                CKeyID r(ParseHex(test[0].get_str()));
                 ua.AddReceiver(r);
             }
 
