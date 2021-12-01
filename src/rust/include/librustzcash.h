@@ -317,8 +317,9 @@ extern "C" {
      * - addr_ret: [c_uchar; 43] array to which the returned address will be written,
      *   if the specified diversifier index `j` produces a valid address.
      */
-    bool librustzcash_zip32_xfvk_address(
-        const unsigned char *xfvk,
+    bool librustzcash_zip32_sapling_address(
+        const unsigned char *fvk,
+        const unsigned char *dk,
         const unsigned char *j,
         unsigned char *addr_ret
     );
@@ -338,8 +339,9 @@ extern "C" {
      *   returned address was found
      * - addr_ret: [c_uchar; 43] array to which the returned address will be written
      */
-    bool librustzcash_zip32_find_xfvk_address(
-        const unsigned char *xfvk,
+    bool librustzcash_zip32_find_sapling_address(
+        const unsigned char *fvk,
+        const unsigned char *dk,
         const unsigned char *j,
         unsigned char *j_ret,
         unsigned char *addr_ret

@@ -80,7 +80,7 @@ static SaplingPaymentAddress DefaultSaplingAddress(CWallet* pwallet) {
 
     return usk.value()
         .ToFullViewingKey()
-        .GetSaplingExtendedFullViewingKey().value()
+        .GetSaplingKey().value()
         .FindAddress(libzcash::diversifier_index_t(0)).first;
 }
 

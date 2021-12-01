@@ -17,7 +17,7 @@ class ZcashdUnifiedFullViewingKey;
 class ZcashdUnifiedFullViewingKey {
 private:
     std::optional<CExtPubKey> transparentKey;
-    std::optional<SaplingExtendedFullViewingKey> saplingKey;
+    std::optional<SaplingDiversifiableFullViewingKey> saplingKey;
 
     ZcashdUnifiedFullViewingKey() {}
 
@@ -27,7 +27,7 @@ public:
         return transparentKey;
     }
 
-    const std::optional<SaplingExtendedFullViewingKey>& GetSaplingExtendedFullViewingKey() const {
+    const std::optional<SaplingDiversifiableFullViewingKey>& GetSaplingKey() const {
         return saplingKey;
     }
 

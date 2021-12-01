@@ -83,15 +83,16 @@ std::optional<SaplingExtendedFullViewingKey> SaplingExtendedFullViewingKey::Deri
 }
 
 std::optional<libzcash::SaplingPaymentAddress>
-    SaplingExtendedFullViewingKey::Address(diversifier_index_t j) const
+    SaplingDiversifiableFullViewingKey::Address(diversifier_index_t j) const
 {
-    CDataStream ss_xfvk(SER_NETWORK, PROTOCOL_VERSION);
-    ss_xfvk << *this;
-    CSerializeData xfvk_bytes(ss_xfvk.begin(), ss_xfvk.end());
+    CDataStream ss_fvk(SER_NETWORK, PROTOCOL_VERSION);
+    ss_fvk << fvk;
+    CSerializeData fvk_bytes(ss_fvk.begin(), ss_fvk.end());
 
     CSerializeData addr_bytes(libzcash::SerializedSaplingPaymentAddressSize);
-    if (librustzcash_zip32_xfvk_address(
-        reinterpret_cast<unsigned char*>(xfvk_bytes.data()),
+    if (librustzcash_zip32_sapling_address(
+        reinterpret_cast<unsigned char*>(fvk_bytes.data()),
+        dk.begin(),
         j.begin(),
         reinterpret_cast<unsigned char*>(addr_bytes.data()))) {
         CDataStream ss_addr(addr_bytes, SER_NETWORK, PROTOCOL_VERSION);
@@ -103,17 +104,18 @@ std::optional<libzcash::SaplingPaymentAddress>
     }
 }
 
-libzcash::SaplingPaymentAddress SaplingExtendedFullViewingKey::DefaultAddress() const
+libzcash::SaplingPaymentAddress SaplingDiversifiableFullViewingKey::DefaultAddress() const
 {
-    CDataStream ss_xfvk(SER_NETWORK, PROTOCOL_VERSION);
-    ss_xfvk << *this;
-    CSerializeData xfvk_bytes(ss_xfvk.begin(), ss_xfvk.end());
+    CDataStream ss_fvk(SER_NETWORK, PROTOCOL_VERSION);
+    ss_fvk << fvk;
+    CSerializeData fvk_bytes(ss_fvk.begin(), ss_fvk.end());
 
     diversifier_index_t j_default;
     diversifier_index_t j_ret;
     CSerializeData addr_bytes_ret(libzcash::SerializedSaplingPaymentAddressSize);
-    if (librustzcash_zip32_find_xfvk_address(
-        reinterpret_cast<unsigned char*>(xfvk_bytes.data()),
+    if (librustzcash_zip32_find_sapling_address(
+        reinterpret_cast<unsigned char*>(fvk_bytes.data()),
+        dk.begin(),
         j_default.begin(), j_ret.begin(),
         reinterpret_cast<unsigned char*>(addr_bytes_ret.data()))) {
         CDataStream ss_addr(addr_bytes_ret, SER_NETWORK, PROTOCOL_VERSION);
@@ -122,7 +124,7 @@ libzcash::SaplingPaymentAddress SaplingExtendedFullViewingKey::DefaultAddress() 
         return addr;
     } else {
         // If we can't obtain a default address, we are *very* unlucky...
-        throw std::runtime_error("SaplingExtendedFullViewingKey::DefaultAddress(): No valid diversifiers out of 2^88!");
+        throw std::runtime_error("SaplingDiversifiableFullViewingKey::DefaultAddress(): No valid diversifiers out of 2^88!");
     }
 }
 
