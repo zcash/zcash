@@ -26,7 +26,7 @@ pub type GetReceiverLenCb =
 pub type GetReceiverDataCb =
     unsafe extern "C" fn(ua: Option<UnifiedAddressObj>, index: usize, data: *mut u8, length: usize);
 
-fn network_from_cstr(network: *const c_char) -> Option<Network> {
+pub(crate) fn network_from_cstr(network: *const c_char) -> Option<Network> {
     match unsafe { CStr::from_ptr(network) }.to_str().unwrap() {
         "main" => Some(Network::Main),
         "test" => Some(Network::Test),

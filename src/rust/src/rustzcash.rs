@@ -75,6 +75,7 @@ mod incremental_merkle_tree_ffi;
 mod orchard_ffi;
 mod orchard_keys_ffi;
 mod transaction_ffi;
+mod unified_keys_ffi;
 mod zip339_ffi;
 
 mod test_harness_ffi;
