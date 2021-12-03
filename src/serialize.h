@@ -22,6 +22,7 @@
 #include <string>
 #include <string.h>
 #include <utility>
+#include <variant>
 #include <vector>
 
 
@@ -65,7 +66,7 @@ inline T* NCONST_PTR(const T* val)
     return const_cast<T*>(val);
 }
 
-/** 
+/**
  * Get begin pointer of vector (non-const version).
  * @note These functions avoid the undefined case of indexing into an empty
  * vector, as well as that of indexing after the end of the vector.
@@ -197,11 +198,11 @@ enum
 #define READWRITE(obj)      (::SerReadWrite(s, (obj), ser_action))
 #define READWRITEMANY(...)      (::SerReadWriteMany(s, ser_action, __VA_ARGS__))
 
-/** 
+/**
  * Implement two methods, "Serialize" and "Unserialize", for serializable objects. These are
  * actually wrappers over the "SerializationOp" template method, which implements the body of each
  * classes' serialization code. Adding "ADD_SERIALIZE_METHODS" in the body of the class causes these
- * wrapper methods to be added as members. 
+ * wrapper methods to be added as members.
  */
 #define ADD_SERIALIZE_METHODS                                         \
     template<typename Stream>                                         \
@@ -318,22 +319,91 @@ uint64_t ReadCompactSize(Stream& is)
     return nSizeRet;
 }
 
+class CompactSizeFlags {
+private:
+    uint64_t flags;
+public:
+    CompactSizeFlags(uint64_t flagsIn) {
+        if (flagsIn >= 0x100000000ULL && flagsIn <= (uint64_t)MAX_SIZE) {
+            throw std::ios_base::failure("Illegal CompactSizeFlags; not serializable in CompactSize unused bits.");
+        } else {
+            flags = flagsIn;
+        }
+    }
+
+    uint64_t GetFlags() {
+        return flags;
+    }
+};
+
+template<typename Stream>
+std::variant<uint64_t, CompactSizeFlags> ReadCompactSizeOrFlags(Stream& is)
+{
+    uint8_t chSize = ser_readdata8(is);
+    uint64_t nSizeRet = 0;
+    if (chSize < 253)
+    {
+        nSizeRet = chSize;
+    }
+    else if (chSize == 253)
+    {
+        nSizeRet = ser_readdata16(is);
+        if (nSizeRet < 253)
+            return CompactSizeFlags(nSizeRet);
+    }
+    else if (chSize == 254)
+    {
+        nSizeRet = ser_readdata32(is);
+        if (nSizeRet < 0x10000u)
+            return CompactSizeFlags(nSizeRet);
+    }
+    else
+    {
+        nSizeRet = ser_readdata64(is);
+        if (nSizeRet < 0x100000000ULL)
+            return CompactSizeFlags(nSizeRet);
+    }
+    if (nSizeRet > (uint64_t)MAX_SIZE)
+        return CompactSizeFlags(nSizeRet);
+    return nSizeRet;
+}
+
+template<typename Stream>
+void WriteCompactSizeFlags(Stream& os, CompactSizeFlags csf)
+{
+    if (csf.GetFlags() < 253)
+    {
+        ser_writedata8(os, 253);
+        ser_writedata16(os, csf.GetFlags());
+    }
+    else if (csf.GetFlags() < 0x10000u)
+    {
+        ser_writedata8(os, 254);
+        ser_writedata32(os, csf.GetFlags());
+    }
+    else
+    {
+        ser_writedata8(os, 255);
+        ser_writedata64(os, csf.GetFlags());
+    }
+}
+
 /**
  * Variable-length integers: bytes are a MSB base-128 encoding of the number.
  * The high bit in each byte signifies whether another digit follows. To make
  * sure the encoding is one-to-one, one is subtracted from all but the last digit.
  * Thus, the byte sequence a[] with length len, where all but the last byte
  * has bit 128 set, encodes the number:
- * 
+ *
  *  (a[len-1] & 0x7F) + sum(i=1..len-1, 128^i*((a[len-i-1] & 0x7F)+1))
- * 
+ *
  * Properties:
  * * Very small (0-127: 1 byte, 128-16511: 2 bytes, 16512-2113663: 3 bytes)
  * * Every integer has exactly one encoding
  * * Encoding does not depend on size of original integer type
  * * No redundancy: every (infinite) byte sequence corresponds to a list
  *   of encoded integers.
- * 
+ *
  * 0:         [0x00]  256:        [0x81 0x00]
  * 1:         [0x01]  16383:      [0xFE 0x7F]
  * 127:       [0x7F]  16384:      [0xFF 0x00]
@@ -394,7 +464,7 @@ I ReadVarInt(Stream& is)
 #define COMPACTSIZE(obj) REF(CCompactSize(REF(obj)))
 #define LIMITED_STRING(obj,n) REF(LimitedString< n >(REF(obj)))
 
-/** 
+/**
  * Wrapper for serializing arrays and POD.
  */
 class CFlatData
@@ -754,11 +824,10 @@ void Unserialize_impl(Stream& is, std::vector<T, A>& v, const unsigned char&)
     }
 }
 
-template<typename Stream, typename T, typename A, typename V>
-void Unserialize_impl(Stream& is, std::vector<T, A>& v, const V&)
+template<typename Stream, typename T, typename A>
+void UnserializeSized_impl(Stream& is, unsigned int nSize, std::vector<T, A>& v)
 {
     v.clear();
-    unsigned int nSize = ReadCompactSize(is);
     unsigned int i = 0;
     unsigned int nMid = 0;
     while (nMid < nSize)
@@ -772,13 +841,24 @@ void Unserialize_impl(Stream& is, std::vector<T, A>& v, const V&)
     }
 }
 
+template<typename Stream, typename T, typename A, typename V>
+void Unserialize_impl(Stream& is, std::vector<T, A>& v, const V&)
+{
+    unsigned int nSize = ReadCompactSize(is);
+    UnserializeSized_impl(is, nSize, v);
+}
+
 template<typename Stream, typename T, typename A>
 inline void Unserialize(Stream& is, std::vector<T, A>& v)
 {
     Unserialize_impl(is, v, T());
 }
 
-
+template<typename Stream, typename T, typename A>
+inline void UnserializeSized(Stream& is, unsigned int nSize, std::vector<T, A>& v)
+{
+    UnserializeSized_impl(is, nSize, v);
+}
 
 /**
  * optional

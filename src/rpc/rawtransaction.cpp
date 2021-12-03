@@ -916,7 +916,6 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
 
         for (const CTxIn& txin : mergedTx.vin) {
             const uint256& prevHash = txin.prevout.hash;
-            CCoins coins;
             view.AccessCoins(prevHash); // this is certainly allowed to fail
         }
 

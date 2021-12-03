@@ -275,6 +275,12 @@ void TransactionBuilder::AddTransparentOutput(const CTxDestination& to, CAmount 
     mtx.vout.push_back(out);
 }
 
+void TransactionBuilder::AddTzeOutput(CAmount value, CTzeData precondition)
+{
+    CTzeOut out(value, precondition);
+    mtx.vtzeout.push_back(out);
+}
+
 void TransactionBuilder::SetFee(CAmount fee)
 {
     this->fee = fee;
@@ -322,8 +328,14 @@ TransactionBuilderResult TransactionBuilder::Build()
     for (auto tIn : tIns) {
         change += tIn.value;
     }
+    for (auto tzeIn : tzeIns) {
+        change += tzeIn.value;
+    }
     for (auto tOut : mtx.vout) {
         change -= tOut.nValue;
+    }
+    for (auto tzeOut : mtx.vtzeout) {
+        change -= tzeOut.nValue;
     }
     if (change < 0) {
         return TransactionBuilderResult("Change cannot be negative");

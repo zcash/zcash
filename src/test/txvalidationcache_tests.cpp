@@ -11,6 +11,7 @@
 #include "random.h"
 #include "script/standard.h"
 #include "test/test_bitcoin.h"
+#include "test/test_tze.cpp"
 #include "utiltime.h"
 
 #include <boost/test/unit_test.hpp>
@@ -18,11 +19,10 @@
 BOOST_AUTO_TEST_SUITE(tx_validationcache_tests)
 
 static bool
-ToMemPool(CMutableTransaction& tx)
+ToMemPool(CMutableTransaction& tx, CValidationState& state)
 {
     LOCK(cs_main);
 
-    CValidationState state;
     return AcceptToMemoryPool(Params(), mempool, state, tx, false, NULL, false);
 }
 
@@ -62,13 +62,15 @@ BOOST_FIXTURE_TEST_CASE(tx_mempool_block_doublespend, TestChain100Setup)
     BOOST_CHECK(chainActive.Tip()->GetBlockHash() != block.GetHash());
 
     // Test 2: ... and should be rejected if spend1 is in the memory pool
-    BOOST_CHECK(ToMemPool(spends[0]));
+    CValidationState s0;
+    BOOST_TEST(ToMemPool(spends[0], s0), s0.GetRejectReason());
     block = CreateAndProcessBlock(spends, scriptPubKey);
     BOOST_CHECK(chainActive.Tip()->GetBlockHash() != block.GetHash());
     mempool.clear();
 
     // Test 3: ... and should be rejected if spend2 is in the memory pool
-    BOOST_CHECK(ToMemPool(spends[1]));
+    CValidationState s1;
+    BOOST_TEST(ToMemPool(spends[1], s1), s1.GetRejectReason());
     block = CreateAndProcessBlock(spends, scriptPubKey);
     BOOST_CHECK(chainActive.Tip()->GetBlockHash() != block.GetHash());
     mempool.clear();
@@ -76,7 +78,8 @@ BOOST_FIXTURE_TEST_CASE(tx_mempool_block_doublespend, TestChain100Setup)
     // Final sanity test: first spend in mempool, second in block, that's OK:
     std::vector<CMutableTransaction> oneSpend;
     oneSpend.push_back(spends[0]);
-    BOOST_CHECK(ToMemPool(spends[1]));
+    CValidationState s1a;
+    BOOST_TEST(ToMemPool(spends[1], s1a), s1a.GetRejectReason());
     block = CreateAndProcessBlock(oneSpend, scriptPubKey);
     BOOST_CHECK(chainActive.Tip()->GetBlockHash() == block.GetHash());
     // spends[1] should have been removed from the mempool when the

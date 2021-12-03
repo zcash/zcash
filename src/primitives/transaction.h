@@ -523,6 +523,15 @@ public:
     std::string ToString() const;
 };
 
+/** An outpoint - a combination of a transaction hash and an index n into its vtzeout */
+class CTzeOutPoint : public BaseOutPoint
+{
+public:
+    CTzeOutPoint() : BaseOutPoint() {};
+    CTzeOutPoint(uint256 hashIn, uint32_t nIn) : BaseOutPoint(hashIn, nIn) {};
+    std::string ToString() const;
+};
+
 /** An input of a transaction.  It contains the location of the previous
  * transaction's output that it claims and a signature that matches the
  * output's public key.
@@ -684,6 +693,125 @@ struct WTxId
     }
 };
 
+typedef uint32_t TzeType;
+typedef uint32_t TzeMode;
+typedef std::vector<uint8_t> TzePayload;
+
+class CTzeData
+{
+public:
+    TzeType extensionId;
+    TzeMode mode;
+    TzePayload payload;
+
+    CTzeData() {
+    }
+
+    CTzeData(const CTzeData& d): extensionId(d.extensionId), mode(d.mode), payload(d.payload) {}
+
+    CTzeData(TzeType extensionId, TzeMode mode, TzePayload payload): extensionId(extensionId), mode(mode), payload(payload) {
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(COMPACTSIZE((uint64_t) extensionId));
+        READWRITE(COMPACTSIZE((uint64_t) mode));
+        READWRITE(payload);
+    }
+
+    friend bool operator==(const CTzeData& a, const CTzeData& b)
+    {
+        return (a.extensionId == b.extensionId &&
+                a.mode == b.mode &&
+                a.payload == b.payload);
+    }
+
+    friend bool operator!=(const CTzeData& a, const CTzeData& b) {
+        return !(a == b);
+    }
+
+    bool corresponds(const CTzeData& other) const {
+        return (extensionId == other.extensionId &&
+                mode == other.mode &&
+                payload != other.payload);
+    }
+
+};
+
+class CTzeOut
+{
+public:
+    CAmount nValue;
+    CTzeData predicate;
+
+    CTzeOut() {}
+    CTzeOut(const CTzeOut& out): nValue(out.nValue), predicate(out.predicate) {}
+
+    CTzeOut(const CAmount& nValueIn, CTzeData predicateIn): nValue(nValueIn), predicate(predicateIn) {
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(nValue);
+        READWRITE(predicate);
+    }
+
+    uint256 GetHash() const;
+
+    friend bool operator==(const CTzeOut& a, const CTzeOut& b)
+    {
+        return a.nValue == b.nValue && a.predicate == b.predicate;
+    }
+
+    friend bool operator!=(const CTzeOut& a, const CTzeOut& b)
+    {
+        return !(a == b);
+    }
+
+    std::string ToString() const;
+};
+
+class CTzeIn
+{
+public:
+    CTzeOutPoint prevout;
+    CTzeData witness;
+
+    CTzeIn() {
+    }
+
+    CTzeIn(const CTzeIn& in): prevout(in.prevout), witness(in.witness) {
+    }
+
+    CTzeIn(CTzeOutPoint prevoutIn, CTzeData witnessIn): prevout(prevoutIn), witness(witnessIn) {
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(prevout);
+        READWRITE(witness);
+    }
+
+    friend bool operator==(const CTzeIn& a, const CTzeIn& b)
+    {
+        return (a.prevout == b.prevout &&
+                a.witness == b.witness);
+    }
+
+    friend bool operator!=(const CTzeIn& a, const CTzeIn& b)
+    {
+        return !(a == b);
+    }
+
+    std::string ToString() const;
+};
+
 struct CMutableTransaction;
 
 /** The basic transaction that is broadcasted on the network and contained in
@@ -756,6 +884,8 @@ public:
     const uint32_t nVersionGroupId;
     const std::vector<CTxIn> vin;
     const std::vector<CTxOut> vout;
+    const std::vector<CTzeIn> vtzein;
+    const std::vector<CTzeOut> vtzeout;
     const uint32_t nLockTime;
     const uint32_t nExpiryHeight;
     const std::vector<SpendDescription> vShieldedSpend;
@@ -859,6 +989,12 @@ public:
 
             // Orchard Transaction Fields
             READWRITE(orchardBundle);
+
+            // TZE transaction components
+            if (isFuture) {
+                READWRITE(*const_cast<std::vector<CTzeIn>*>(&vtzein));
+                READWRITE(*const_cast<std::vector<CTzeOut>*>(&vtzeout));
+            }
         } else {
             // Legacy transaction formats
             READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
@@ -995,6 +1131,8 @@ struct CMutableTransaction
     std::optional<uint32_t> nConsensusBranchId;
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
+    std::vector<CTzeIn> vtzein;
+    std::vector<CTzeOut> vtzeout;
     uint32_t nLockTime;
     uint32_t nExpiryHeight;
     CAmount valueBalanceSapling;
@@ -1088,6 +1226,12 @@ struct CMutableTransaction
 
             // Orchard Transaction Fields
             READWRITE(orchardBundle);
+
+            // TZE Transaction components
+            if (isFuture) {
+                READWRITE(vtzein);
+                READWRITE(vtzeout);
+            }
         } else {
             // Legacy transaction formats
             READWRITE(vin);

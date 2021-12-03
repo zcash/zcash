@@ -148,4 +148,219 @@ public:
         const CChainParams& chainParams);
 };
 
+/*
+ * TXDB serialization for ccoins (without tzeout)
+ *
+ * Serialized format:
+ * - VARINT(nVersion)
+ * - VARINT(nCode)
+ * - unspentness bitvector, for vout[2] and further; least significant byte first
+ * - the non-spent CTxOuts (via CTxOutCompressor)
+ * - VARINT(nTzeCode)
+ * - unspentness bitvector, for vtzeout[2] and further; least significant byte first
+ * - the non-spent CTzeOuts (via CTzeOutCompressor)
+ * - VARINT(nHeight)
+ *
+ * The nCode value consists of:
+ * - bit 1: IsCoinBase()
+ * - bit 2: vout[0] is not spent
+ * - bit 4: vout[1] is not spent
+ * - The higher bits encode N, the number of non-zero bytes in the following bitvector.
+ *   - In case both bit 2 and bit 4 are unset, they encode N-1, as there must be at
+ *     least one non-spent output).
+ *
+ * Example: 0104835800816115944e077fe7c803cfa57f29b36bf87c1d358bb85e
+ *          <><><--------------------------------------------><---->
+ *          |  \                  |                             /
+ *    version   code             vout[1]                  height
+ *
+ *    - version = 1
+ *    - code = 4 (vout[1] is not spent, and 0 non-zero bytes of bitvector follow)
+ *    - unspentness bitvector: as 0 non-zero bytes follow, it has length 0
+ *    - vout[1]: 835800816115944e077fe7c803cfa57f29b36bf87c1d35
+ *               * 8358: compact amount representation for 60000000000 (600 BTC)
+ *               * 00: special txout type pay-to-pubkey-hash
+ *               * 816115944e077fe7c803cfa57f29b36bf87c1d35: address uint160
+ *    - height = 203998
+ *
+ *
+ * Example: 0109044086ef97d5790061b01caab50f1b8e9c50a5057eb43c2d9563a4eebbd123008c988f1a4a4de2161e0f50aac7f17e7f9555caa486af3b
+ *          <><><--><--------------------------------------------------><----------------------------------------------><---->
+ *         /  \   \                     |                                                           |                     /
+ *  version  code  unspentness       vout[4]                                                     vout[16]           height
+ *
+ *  - version = 1
+ *  - code = 9 (coinbase, neither vout[0] or vout[1] are unspent,
+ *                2 (1, +1 because both bit 2 and bit 4 are unset) non-zero bitvector bytes follow)
+ *  - unspentness bitvector: bits 2 (0x04) and 14 (0x4000) are set, so vout[2+2] and vout[14+2] are unspent
+ *  - vout[4]: 86ef97d5790061b01caab50f1b8e9c50a5057eb43c2d9563a4ee
+ *             * 86ef97d579: compact amount representation for 234925952 (2.35 BTC)
+ *             * 00: special txout type pay-to-pubkey-hash
+ *             * 61b01caab50f1b8e9c50a5057eb43c2d9563a4ee: address uint160
+ *  - vout[16]: bbd123008c988f1a4a4de2161e0f50aac7f17e7f9555caa4
+ *              * bbd123: compact amount representation for 110397 (0.001 BTC)
+ *              * 00: special txout type pay-to-pubkey-hash
+ *              * 8c988f1a4a4de2161e0f50aac7f17e7f9555caa4: address uint160
+ *  - height = 120891
+ */
+class CCoinsSer
+{
+private:
+    /**
+     * Calculate number of bytes for the bitmask, and its number of non-zero bytes
+     * each bit in the bitmask represents the availability of one output, but the
+     * availabilities of the first two outputs are encoded separately.
+     */
+    template<typename Elem, typename Pred>
+    static void CalcMaskSize(const std::vector<Elem>& v, const Pred isSpent, unsigned int &nBytes, unsigned int &nNonzeroBytes) {
+        unsigned int nLastUsedByte = 0;
+        for (unsigned int b = 0; 2+b*8 < v.size(); b++) {
+            // for each vout/vtzeout entry beyond the
+            bool fZero = true;
+            for (unsigned int i = 0; i < 8 && 2+b*8+i < v.size(); i++) {
+                if (!isSpent(v[2+b*8+i])) {
+                    fZero = false;
+                    continue;
+                }
+            }
+            if (!fZero) {
+                nLastUsedByte = b + 1;
+                nNonzeroBytes++;
+            }
+        }
+
+        nBytes += nLastUsedByte;
+    }
+
+    template<typename Elem, typename Pred>
+    static unsigned int SerCode(const std::vector<Elem>& v, const Pred isSpent, bool fCoinBase, unsigned int nMaskCode) {
+        bool fFirst = v.size() > 0 && !isSpent(v[0]);
+        bool fSecond = v.size() > 1 && !isSpent(v[1]);
+        assert(fFirst || fSecond || nMaskCode);
+
+        return 8*(nMaskCode - (fFirst || fSecond ? 0 : 1)) +
+               (fCoinBase ? 1 : 0) +
+               (fFirst ? 2 : 0) +
+               (fSecond ? 4 : 0);
+    }
+
+    template<typename Stream, typename Elem, typename Pred>
+    static void WriteMask(Stream& s, const std::vector<Elem>& v, const Pred isSpent, const int nMaskSize) {
+        for (unsigned int b = 0; b<nMaskSize; b++) {
+            // Serialize a series of bytes, each of which indicates the
+            // spent-ness of 8 elements of the vout/vtzeout vector. The
+            // first two elements of the vector are treated specially and ignored.
+            unsigned char chAvail = 0;
+            for (unsigned int i = 0; i < 8 && 2+b*8+i < v.size(); i++)
+                if (!isSpent(v[2+b*8+i]))
+                    chAvail |= (1 << i);
+            ::Serialize(s, chAvail);
+        }
+    }
+
+    template<typename Stream>
+    static std::vector<bool> ReadMask(Stream& s, const unsigned int nCode) {
+        std::vector<bool> vAvail(2, false);
+        vAvail[0] = (nCode & 2) != 0;
+        vAvail[1] = (nCode & 4) != 0;
+        unsigned int nMaskCode = (nCode / 8) + ((nCode & 6) != 0 ? 0 : 1);
+
+        // spentness bitmask
+        while (nMaskCode > 0) {
+            unsigned char chAvail = 0;
+            ::Unserialize(s, chAvail);
+            for (unsigned int p = 0; p < 8; p++) {
+                bool f = (chAvail & (1 << p)) != 0;
+                vAvail.push_back(f);
+            }
+            if (chAvail != 0)
+                nMaskCode--;
+        }
+
+        return vAvail;
+    }
+
+public:
+    CCoins& coins;
+
+    CCoinsSer(CCoins& coinsIn): coins(coinsIn) { }
+
+    template<typename Stream>
+    void Serialize(Stream &s) const {
+        auto txoutSpent = [](const CTxOut& elem) { return elem.IsNull(); };
+
+        unsigned int nMaskSize = 0, nMaskCode = 0;
+        CalcMaskSize(coins.vout, txoutSpent, nMaskSize, nMaskCode);
+        unsigned int nCode = SerCode(coins.vout, txoutSpent, coins.fCoinBase, nMaskSize);
+
+        // version
+        ::Serialize(s, VARINT(coins.nVersion));
+        // header code
+        ::Serialize(s, VARINT(nCode));
+        // spentness bitmask
+        WriteMask(s, coins.vout, txoutSpent, nMaskSize);
+        // txouts themself
+        for (unsigned int i = 0; i < coins.vout.size(); i++) {
+            // only unspent txos are written out
+            if (!coins.vout[i].IsNull())
+                ::Serialize(s, CTxOutCompressor(REF(coins.vout[i])));
+        }
+        // tzeout
+        if (coins.nVersion >= ZFUTURE_TX_VERSION) {
+            auto tzeoutSpent = [](const CCoins::TzeOutCoin& elem) { return elem.second == SPENT; };
+
+            unsigned int nTzeMaskSize = 0, nTzeMaskCode = 0;
+            CalcMaskSize(coins.vtzeout, tzeoutSpent, nTzeMaskSize, nTzeMaskCode);
+            unsigned int nTzeCode = SerCode(coins.vtzeout, tzeoutSpent, coins.fCoinBase, nTzeMaskSize);
+
+            // write header code, mask, then the actual unspent coins
+            ::Serialize(s, VARINT(nTzeCode));
+            WriteMask(s, coins.vtzeout, tzeoutSpent, nTzeMaskSize);
+            for (unsigned int i = 0; i < coins.vtzeout.size(); i++) {
+                if (coins.vtzeout[i].second == UNSPENT)
+                    ::Serialize(s, CTzeOutCompressor(REF(coins.vtzeout[i].first)));
+            }
+        }
+        // coinbase height
+        ::Serialize(s, VARINT(coins.nHeight));
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream &s) {
+        // version
+        ::Unserialize(s, VARINT(coins.nVersion));
+
+        // header code
+        unsigned int nCode = 0;
+        ::Unserialize(s, VARINT(nCode));
+        coins.fCoinBase = nCode & 1;
+
+        auto vAvail = ReadMask(s, nCode);
+        // txouts themself
+        coins.vout.assign(vAvail.size(), CTxOut());
+        for (unsigned int i = 0; i < vAvail.size(); i++) {
+            if (vAvail[i])
+                ::Unserialize(s, REF(CTxOutCompressor(coins.vout[i])));
+        }
+        // tzeout
+        if (coins.nVersion >= ZFUTURE_TX_VERSION) {
+            unsigned int nTzeCode = 0;
+            ::Unserialize(s, VARINT(nTzeCode));
+
+            auto vTzeAvail = ReadMask(s, nTzeCode);
+
+            coins.vtzeout.assign(vAvail.size(), std::make_pair(CTzeOut(), SPENT));
+            for (unsigned int i = 0; i < vAvail.size(); i++) {
+                if (vAvail[i]) {
+                    ::Unserialize(s, REF(CTzeOutCompressor(coins.vtzeout[i].first)));
+                    coins.vtzeout[i].second = UNSPENT;
+                }
+            }
+        }
+        // coinbase height
+        ::Unserialize(s, VARINT(coins.nHeight));
+        coins.Cleanup();
+    }
+};
+
 #endif // BITCOIN_TXDB_H

@@ -482,7 +482,8 @@ public:
     }
 
     bool GetCoins(const uint256 &txid, CCoins &coins) const {
-        return db.Read(std::make_pair(DB_COINS, txid), coins);
+        CCoinsSer cs(coins);
+        return db.Read(std::make_pair(DB_COINS, txid), cs);
     }
 
     bool HaveCoins(const uint256 &txid) const {

@@ -1306,23 +1306,23 @@ uint256 SignatureHash(
         }
 
         return ss.GetHash();
-    }
-
-    // Check for invalid use of SIGHASH_SINGLE
-    if ((nHashType & 0x1f) == SIGHASH_SINGLE) {
-        if (nIn >= txTo.vout.size()) {
-            //  nOut out of range
-            throw logic_error("no matching output for SIGHASH_SINGLE");
+    } else {
+        // Check for invalid use of SIGHASH_SINGLE
+        if ((nHashType & 0x1f) == SIGHASH_SINGLE) {
+            if (nIn >= txTo.vout.size()) {
+                //  nOut out of range
+                throw logic_error("no matching output for SIGHASH_SINGLE");
+            }
         }
+
+        // Wrapper to serialize only the necessary parts of the transaction being signed
+        CTransactionSignatureSerializer txTmp(txTo, scriptCode, nIn, nHashType);
+
+        // Serialize and hash
+        CHashWriter ss(SER_GETHASH, 0);
+        ss << txTmp << nHashType;
+        return ss.GetHash();
     }
-
-    // Wrapper to serialize only the necessary parts of the transaction being signed
-    CTransactionSignatureSerializer txTmp(txTo, scriptCode, nIn, nHashType);
-
-    // Serialize and hash
-    CHashWriter ss(SER_GETHASH, 0);
-    ss << txTmp << nHashType;
-    return ss.GetHash();
 }
 
 bool TransactionSignatureChecker::VerifySignature(

@@ -89,6 +89,9 @@ public:
     }
 };
 
+uint64_t CompressAmount(uint64_t nAmount);
+uint64_t DecompressAmount(uint64_t nAmount);
+
 /** wrapper for CTxOut that provides a more compact serialization */
 class CTxOutCompressor
 {
@@ -96,9 +99,6 @@ private:
     CTxOut &txout;
 
 public:
-    static uint64_t CompressAmount(uint64_t nAmount);
-    static uint64_t DecompressAmount(uint64_t nAmount);
-
     CTxOutCompressor(CTxOut &txoutIn) : txout(txoutIn) { }
 
     ADD_SERIALIZE_METHODS;
@@ -115,6 +115,30 @@ public:
         }
         CScriptCompressor cscript(REF(txout.scriptPubKey));
         READWRITE(cscript);
+    }
+};
+
+/** wrapper for CTzeOut that provides a more compact serialization */
+class CTzeOutCompressor
+{
+public:
+    CTzeOut& tzeout;
+
+    CTzeOutCompressor(CTzeOut& tzeoutIn) : tzeout(tzeoutIn) { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        if (!ser_action.ForRead()) {
+            uint64_t nVal = CompressAmount(tzeout.nValue);
+            READWRITE(VARINT(nVal));
+        } else {
+            uint64_t nVal = 0;
+            READWRITE(VARINT(nVal));
+            tzeout.nValue = DecompressAmount(nVal);
+        }
+        READWRITE(tzeout.predicate);
     }
 };
 
