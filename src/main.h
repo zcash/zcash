@@ -143,6 +143,9 @@ static const bool DEFAULT_NU_REJECT_OLD_VERSIONS = true;
     ((CBlockHeader::HEADER_SIZE + equihash_solution_size(N, K))*MAX_HEADERS_RESULTS < \
      MAX_PROTOCOL_MESSAGE_LENGTH-1000)
 
+/** Maximum number of headers to announce when relaying blocks with headers message.*/
+static const unsigned int MAX_BLOCKS_TO_ANNOUNCE = 8;
+
 static const bool DEFAULT_PEERBLOOMFILTERS = true;
 static const bool DEFAULT_ENFORCENODEBLOOM = false;
 

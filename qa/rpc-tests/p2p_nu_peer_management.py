@@ -70,11 +70,11 @@ class NUPeerManagementTest(BitcoinTestFramework):
         nodes = []
         for x in range(10):
             nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
-                test, "regtest", SPROUT_PROTO_VERSION))
+                test, "regtest", 1, SPROUT_PROTO_VERSION))
             nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
-                test, "regtest", OVERWINTER_PROTO_VERSION))
+                test, "regtest", 1, OVERWINTER_PROTO_VERSION))
             nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
-                test, "regtest", SAPLING_PROTO_VERSION))
+                test, "regtest", 1, SAPLING_PROTO_VERSION))
 
         # Start up network handling in another thread
         NetworkThread().start()
