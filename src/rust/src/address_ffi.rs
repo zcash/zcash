@@ -5,7 +5,10 @@ use std::{
 };
 
 use libc::{c_char, c_void};
-use zcash_address::{unified, FromAddress, Network, ToAddress, ZcashAddress};
+use zcash_address::{
+    unified::{self, Container, Encoding},
+    FromAddress, Network, ToAddress, ZcashAddress,
+};
 use zcash_primitives::sapling;
 
 pub type UnifiedAddressObj = NonNull<c_void>;
@@ -69,7 +72,7 @@ impl UnifiedAddressHelper {
         }
 
         self.ua
-            .receivers()
+            .items()
             .into_iter()
             .map(|receiver| match receiver {
                 unified::Receiver::Orchard(data) => {
@@ -209,7 +212,7 @@ pub extern "C" fn zcash_address_serialize_unified(
         }
     };
 
-    let ua: unified::Address = match receivers.try_into() {
+    let ua = match unified::Address::try_from_items(receivers) {
         Ok(ua) => ua,
         Err(e) => {
             tracing::error!("{}", e);
