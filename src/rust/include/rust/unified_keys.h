@@ -47,6 +47,9 @@ UnifiedFullViewingKeyPtr* unified_full_viewing_key_parse(
 
 /**
  * Serializes a unified full viewing key and returns its string representation.
+ *
+ * The returned string's memory must be freed by the caller using
+ * `zcash_address_string_free`.
  */
 char* unified_full_viewing_key_serialize(
     const char* network,
@@ -57,9 +60,9 @@ char* unified_full_viewing_key_serialize(
  *
  * `tkeyout` must be of length 65.
  *
- * Returns `true` if the UFVK contained a transparent component,
- * `false` otherwise. The bytes of the transparent key will be
- * copied to tkeyout
+ * Returns `true` if the UFVK contained a transparent component, `false`
+ * otherwise. If this returns `true`, the transparent key will be copied to
+ * `tkeyout` as the byte representation of the `(ChainCode, CPubKey)` pair
  */
 bool unified_full_viewing_key_read_transparent(
     const UnifiedFullViewingKeyPtr* full_viewing_key,
@@ -71,24 +74,29 @@ bool unified_full_viewing_key_read_transparent(
  * `skeyout` must be of length 128.
  *
  * Returns `true` if the UFVK contained a Sapling component,
- * false otherwise.
+ * `false` otherwise. The bytes of the `(ak, nk, ovk, dk)` fields
+ * of the viewing key, in the encoding given by `EncodeExtFVKParts`
+ * defined in ZIP 32, will be copied to `skeyout` if `true` is returned.
  */
 bool unified_full_viewing_key_read_sapling(
     const UnifiedFullViewingKeyPtr* full_viewing_key,
     unsigned char* skeyout);
 
 /**
- * Sets the Sapling component of a unified viewing key.
+ * Constructs a unified full viewing key from the binary encodings
+ * of its constituent parts
  *
  * `t_key` must be of length 65 and must be the concatenated
  * bytes of the serialized `(ChainCode, CPubKey)` pair.
  *
  * `sapling_key` must be of length 128 and must be the concatenated
  * bytes of the serialized `(SaplingFullViewingKey, DiversifierKey)`
- * pair.
+ * pair in the encoding given by `EncodeExtFVKParts` defined in
+ * ZIP 32.
  *
- * Returns the newly allocated UFVK  if the operation succeeds,
- * or the null pointer otherwise.
+ * Returns a pointer to newly allocated UFVK  if the operation succeeds,
+ * or the null pointer otherwise. The pointer returned by this function
+ * must be freed by the caller with `unified_full_viewing_key_free`.
  */
 UnifiedFullViewingKeyPtr* unified_full_viewing_key_from_components(
     const unsigned char* t_key,

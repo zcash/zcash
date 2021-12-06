@@ -311,7 +311,8 @@ extern "C" {
      * if no valid address can be derived for the specified diversifier index.
      *
      * Arguments:
-     * - xfvk: [c_uchar; 169] the serialized form of a Sapling extended full viewing key
+     * - xfvk: [c_uchar; 96] the serialized form of a Sapling full viewing key
+     * - dk: [c_uchar; 32] the byte representation of a Sapling diversifier key
      * - j: [c_uchar; 11] the 88-bit diversifier address at which to start searching,
      *   encoded in little-endian order
      * - addr_ret: [c_uchar; 43] array to which the returned address will be written,
@@ -332,7 +333,8 @@ extern "C" {
      * in which case this function will return `false`.
      *
      * Arguments:
-     * - xfvk: [c_uchar; 169] the serialized form of a Sapling extended full viewing key
+     * - xfvk: [c_uchar; 96] the serialized form of a Sapling full viewing key
+     * - dk: [c_uchar; 32] the byte representation of a Sapling diversifier key
      * - j: [c_uchar; 11] the 88-bit diversifier address at which to start searching,
      *   encoded in little-endian order
      * - j_ret: [c_uchar; 11] array that will store the diversifier index at which the
