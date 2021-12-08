@@ -12,7 +12,7 @@ from test_framework.mininode import ( \
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import ( \
-        assert_equal, initialize_chain_clean, \
+        ZCASHD_BINARY, assert_equal, initialize_chain_clean, \
         start_node, stop_node, \
         p2p_port, \
         )
@@ -112,10 +112,10 @@ class MaxUploadTest(BitcoinTestFramework):
             self.txouts = self.txouts + "fd0402"
             # add script_pubkey
             self.txouts = self.txouts + script_pubkey
- 
+
     def add_options(self, parser):
         parser.add_option("--testbinary", dest="testbinary",
-                          default=os.getenv("BITCOIND", "zcashd"),
+                          default=os.getenv("ZCASHD", ZCASHD_BINARY),
                           help="zcashd binary to test")
 
     def setup_chain(self):
@@ -142,7 +142,7 @@ class MaxUploadTest(BitcoinTestFramework):
             remchange = t["amount"] - Decimal("0.001000")
             outputs[address]=remchange
             # Create a basic transaction that will send change back to ourself after account for a fee
-            # and then insert the 128 generated transaction outs in the middle. rawtx[100] is where the 
+            # and then insert the 128 generated transaction outs in the middle. rawtx[100] is where the
             # number of txouts is stored and is the only thing we overwrite from the original transaction
             rawtx = node.createrawtransaction(inputs, outputs)
             newtx = rawtx[0:100]
@@ -222,7 +222,7 @@ class MaxUploadTest(BitcoinTestFramework):
             assert_equal(test_nodes[0].block_receive_map[big_old_block], i+1)
 
         assert_equal(len(self.nodes[0].getpeerinfo()), 3)
-        # At most a couple more tries should succeed (depending on how long 
+        # At most a couple more tries should succeed (depending on how long
         # the test has been running so far).
         for i in range(3):
             test_nodes[0].send_message(getdata_request)

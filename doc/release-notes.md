@@ -22,3 +22,10 @@ Dependencies
 ------------
 
 - The `boost` and `native_b2` dependencies have been updated to version 1.79.0
+
+Tests
+-----
+
+- The environment variable that allows users of the rpc (Python) tests to
+  override the default path to the `zcashd` executable has been changed
+  from `BITCOIND` to `ZCASHD`.

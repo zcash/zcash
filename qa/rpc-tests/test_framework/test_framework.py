@@ -15,6 +15,7 @@ import traceback
 
 from .authproxy import JSONRPCException
 from .util import (
+    ZCASHD_BINARY,
     initialize_chain,
     start_nodes,
     connect_nodes_bi,
@@ -194,11 +195,11 @@ class ComparisonTestFramework(BitcoinTestFramework):
 
     def add_options(self, parser):
         parser.add_option("--testbinary", dest="testbinary",
-                          default=os.getenv("BITCOIND", "bitcoind"),
-                          help="bitcoind binary to test")
+                          default=os.getenv("ZCASHD", ZCASHD_BINARY),
+                          help="zcashd binary to test")
         parser.add_option("--refbinary", dest="refbinary",
-                          default=os.getenv("BITCOIND", "bitcoind"),
-                          help="bitcoind binary to use for reference nodes (if any)")
+                          default=os.getenv("ZCASHD", ZCASHD_BINARY),
+                          help="zcashd binary to use for reference nodes (if any)")
 
     def setup_network(self):
         self.nodes = start_nodes(
