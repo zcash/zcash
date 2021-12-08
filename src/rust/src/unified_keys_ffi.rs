@@ -33,8 +33,7 @@ pub extern "C" fn unified_full_viewing_key_parse(
     };
 
     match unsafe { CStr::from_ptr(encoded) }.to_str() {
-        Ok(encoded) => {
-            match Ufvk::decode(encoded) {
+        Ok(encoded) => match Ufvk::decode(encoded) {
             Ok((parsed_network, fvk)) => {
                 if parsed_network == network {
                     Box::into_raw(Box::new(fvk))
@@ -50,7 +49,7 @@ pub extern "C" fn unified_full_viewing_key_parse(
                 error!("Failure decoding unified full viewing key: {}", e);
                 std::ptr::null_mut()
             }
-        }},
+        },
         Err(e) => {
             error!("Failure reading bytes of unified full viewing key: {}", e);
             std::ptr::null_mut()
@@ -125,6 +124,10 @@ pub extern "C" fn unified_full_viewing_key_from_components(
     match Ufvk::try_from_items(items) {
         Ok(ufvk) => Box::into_raw(Box::new(ufvk)),
         Err(e) => {
+            println!(
+                "An error occurred constructing the unified full viewing key: {:?}",
+                e
+            );
             error!(
                 "An error occurred constructing the unified full viewing key: {:?}",
                 e
