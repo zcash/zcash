@@ -1130,16 +1130,8 @@ public:
     std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, libzcash::ZcashdUnifiedKeyMetadata>>
         GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId);
 
-    //! Add the specified unified spending key to the wallet with the provided key
-    //! metadata. -- TODO, this should probably not be part of the public API?
-    bool AddUnifiedSpendingKey(
-            const libzcash::ZcashdUnifiedSpendingKey& sk,
-            const libzcash::ZcashdUnifiedKeyMetadata& metadata);
-
     bool AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
-    bool LoadUnifiedFullViewingKey(
-        const libzcash::UFVKId& keyId,
-        const libzcash::UnifiedFullViewingKey &key);
+    bool LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &key);
 
     void LoadUnifiedKeyMetadata(const libzcash::ZcashdUnifiedKeyMetadata &meta);
 
