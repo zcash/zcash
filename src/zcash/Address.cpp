@@ -43,6 +43,37 @@ bool UnifiedAddress::AddReceiver(Receiver receiver) {
     return true;
 }
 
+std::optional<CKeyID> UnifiedAddress::GetP2PKHReceiver() const {
+    for (const auto& r : receivers) {
+        if (std::holds_alternative<CKeyID>(r)) {
+            return std::get<CKeyID>(r);
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<CScriptID> UnifiedAddress::GetP2SHReceiver() const {
+    for (const auto& r : receivers) {
+        if (std::holds_alternative<CScriptID>(r)) {
+            return std::get<CScriptID>(r);
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<SaplingPaymentAddress> UnifiedAddress::GetSaplingReceiver() const {
+    for (const auto& r : receivers) {
+        if (std::holds_alternative<SaplingPaymentAddress>(r)) {
+            return std::get<SaplingPaymentAddress>(r);
+        }
+    }
+
+    return std::nullopt;
+}
+
+
 std::pair<std::string, PaymentAddress> AddressInfoFromSpendingKey::operator()(const SproutSpendingKey &sk) const {
     return std::make_pair("sprout", sk.address());
 }

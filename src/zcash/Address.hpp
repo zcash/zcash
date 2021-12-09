@@ -123,6 +123,12 @@ public:
         return receivers.size();
     }
 
+    std::optional<CKeyID> GetP2PKHReceiver() const;
+
+    std::optional<CScriptID> GetP2SHReceiver() const;
+
+    std::optional<SaplingPaymentAddress> GetSaplingReceiver() const;
+
     friend inline bool operator==(const UnifiedAddress& a, const UnifiedAddress& b) {
         return a.receivers == b.receivers;
     }

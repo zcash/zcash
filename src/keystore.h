@@ -107,6 +107,11 @@ public:
             const libzcash::UFVKId& keyId,
             const libzcash::ZcashdUnifiedFullViewingKey &ufvk
             ) = 0;
+
+    virtual bool AddUnifiedAddress(
+            const libzcash::UFVKId& keyId,
+            const libzcash::UnifiedAddress &ua
+            ) = 0;
 };
 
 typedef std::map<CKeyID, CKey> KeyMap;
@@ -127,6 +132,12 @@ typedef std::map<
     libzcash::SaplingExtendedFullViewingKey> SaplingFullViewingKeyMap;
 // Only maps from default addresses to ivk, may need to be reworked when adding diversified addresses.
 typedef std::map<libzcash::SaplingPaymentAddress, libzcash::SaplingIncomingViewingKey> SaplingIncomingViewingKeyMap;
+
+struct UnifiedAddressMetadata {
+    libzcash::UFVKId keyId;
+    libzcash::diversifier_index_t j;
+    std::vector<libzcash::ReceiverType> receiverTypes;
+};
 
 /** Basic key store, that keeps keys in an address->secret map */
 class CBasicKeyStore : public CKeyStore
@@ -150,7 +161,8 @@ protected:
     SaplingIncomingViewingKeyMap mapSaplingIncomingViewingKeys;
 
     // Unified key support
-    std::map<CKeyID, libzcash::UFVKId> mapTKeyUnified;
+    std::map<CKeyID, libzcash::UFVKId> mapP2PKHUnified;
+    std::map<CScriptID, libzcash::UFVKId> mapP2SHUnified;
     std::map<libzcash::SaplingIncomingViewingKey, libzcash::UFVKId> mapSaplingKeyUnified;
     std::map<libzcash::UFVKId, libzcash::ZcashdUnifiedFullViewingKey> mapUnifiedFullViewingKeys;
 public:
@@ -329,6 +341,14 @@ public:
     virtual bool AddUnifiedFullViewingKey(
             const libzcash::UFVKId& keyId,
             const libzcash::ZcashdUnifiedFullViewingKey &ufvk);
+
+    /**
+     * Add the transparent component of the unified address, if any,
+     * to the keystore to make it possible to identify the
+     */
+    virtual bool AddUnifiedAddress(
+            const libzcash::UFVKId& keyId,
+            const libzcash::UnifiedAddress &ua);
 };
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;
