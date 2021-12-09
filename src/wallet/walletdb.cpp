@@ -221,11 +221,17 @@ bool CWalletDB::EraseSaplingExtendedFullViewingKey(
 // Unified address & key storage
 //
 
-bool CWalletDB::WriteUnifiedFullViewingKey(
-    const libzcash::UFVKId& ufvkId,
-    const libzcash::UnifiedFullViewingKey& ufvk)
+bool CWalletDB::WriteUnifiedSpendingKeyMetadata(const ZcashdUnifiedSpendingKeyMetadata& keymeta)
 {
     nWalletDBUpdateCounter++;
+    auto ufvkId = keymeta.GetKeyID();
+    return Write(std::make_pair(std::string("unifiedskmeta"), ufvkId), keymeta);
+}
+
+bool CWalletDB::WriteUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey& ufvk)
+{
+    nWalletDBUpdateCounter++;
+    auto ufvkId = ufvk.GetKeyID(Params());
     return Write(std::make_pair(std::string("unifiedfvk"), ufvkId), ufvk.Encode(Params()));
 }
 
@@ -672,6 +678,11 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 strErr = "Error reading wallet database: failed to decode unified full viewing key.";
                 return false;
             }
+        }
+        else if (strType == "unifiedskmeta")
+        {
+            auto keymeta = ZcashdUnifiedSpendingKeyMetadata::Read(ssValue);
+            pwallet->LoadUnifiedKeyMetadata(keymeta);
         }
         else if (strType == "pool")
         {

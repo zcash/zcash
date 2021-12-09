@@ -8,9 +8,6 @@
 #include "zip32.h"
 #include "bip44.h"
 
-const unsigned char ZCASH_UFVK_ID_PERSONAL[BLAKE2bPersonalBytes] =
-    {'Z', 'c', 'a', 's', 'h', '_', 'U', 'F', 'V', 'K', '_', 'I', 'd', '_', 'F', 'P'};
-
 namespace libzcash {
 
 enum class ReceiverType: uint32_t {
@@ -20,91 +17,11 @@ enum class ReceiverType: uint32_t {
     Orchard = 0x03
 };
 
-class ZcashdUnifiedKeyMetadata;
-
-// Serialization wrapper for reading and writing ReceiverType
-// in CompactSize format.
-class ReceiverTypeSer {
-private:
-    ReceiverType t;
-
-    friend class ZcashdUnifiedKeyMetadata;
-public:
-    ReceiverTypeSer() {} // for serialization only
-    ReceiverTypeSer(ReceiverType t): t(t) {}
-
-    template<typename Stream>
-    void Serialize(Stream &s) const {
-        WriteCompactSize<Stream>(s, (uint64_t) t);
-    }
-
-    template<typename Stream>
-    void Unserialize(Stream& s) {
-        t = (ReceiverType) ReadCompactSize<Stream>(s);
-    }
-};
-
 class ZcashdUnifiedSpendingKey;
-class ZcashdUnifiedFullViewingKey;
-
 
 // prototypes for the classes handling ZIP-316 encoding (in Address.hpp)
 class UnifiedAddress;
 class UnifiedFullViewingKey;
-
-class ZcashdUnifiedKeyMetadata {
-private:
-    SeedFingerprint seedFp;
-    uint32_t bip44CoinType;
-    libzcash::AccountId accountId;
-    std::vector<libzcash::ReceiverType> receiverTypes;
-
-    ZcashdUnifiedKeyMetadata() {}
-public:
-    ZcashdUnifiedKeyMetadata(
-            SeedFingerprint seedFp, uint32_t bip44CoinType, libzcash::AccountId accountId, std::vector<ReceiverType> receiverTypes):
-            seedFp(seedFp), bip44CoinType(bip44CoinType), accountId(accountId), receiverTypes(receiverTypes) {}
-
-    const SeedFingerprint& GetSeedFingerprint() const {
-        return seedFp;
-    }
-    libzcash::AccountId GetAccountId() const {
-        return accountId;
-    }
-    const std::vector<ReceiverType>& GetReceiverTypes() const {
-        return receiverTypes;
-    }
-    std::optional<HDKeyPath> TransparentKeyPath() const;
-    std::optional<HDKeyPath> SaplingKeyPath() const;
-
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(seedFp);
-        READWRITE(bip44CoinType);
-        READWRITE(accountId);
-        if (ser_action.ForRead()) {
-            std::vector<ReceiverTypeSer> serReceiverTypes;
-            READWRITE(serReceiverTypes);
-            receiverTypes.clear();
-            for (ReceiverTypeSer r : serReceiverTypes)
-                receiverTypes.push_back(r.t);
-        } else {
-            std::vector<ReceiverTypeSer> serReceiverTypes;
-            for (ReceiverType r : receiverTypes)
-                serReceiverTypes.push_back(ReceiverTypeSer(r));
-            READWRITE(serReceiverTypes);
-        }
-    }
-
-    template <typename Stream>
-    static ZcashdUnifiedKeyMetadata Read(Stream& stream) {
-        ZcashdUnifiedKeyMetadata meta;
-        stream >> meta;
-        return meta;
-    }
-};
 
 /**
  * An internal-only type for unified full viewing keys that represents only the
@@ -149,7 +66,7 @@ private:
 
     ZcashdUnifiedSpendingKey() {}
 public:
-    static std::optional<std::pair<ZcashdUnifiedSpendingKey, ZcashdUnifiedKeyMetadata>> ForAccount(
+    static std::optional<ZcashdUnifiedSpendingKey> ForAccount(
             const HDSeed& seed,
             uint32_t bip44CoinType,
             libzcash::AccountId accountId);

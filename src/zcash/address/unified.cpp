@@ -12,23 +12,7 @@ using namespace libzcash;
 // Unified Keys
 //
 
-std::optional<HDKeyPath> ZcashdUnifiedKeyMetadata::TransparentKeyPath() const {
-    if(std::find(receiverTypes.begin(), receiverTypes.end(), ReceiverType::P2PKH) != receiverTypes.end()) {
-        return libzcash::Bip44TransparentAccountKeyPath(bip44CoinType, accountId);
-    } else {
-        return std::nullopt;
-    }
-}
-
-std::optional<HDKeyPath> ZcashdUnifiedKeyMetadata::SaplingKeyPath() const {
-    if(std::find(receiverTypes.begin(), receiverTypes.end(), ReceiverType::Sapling) != receiverTypes.end()) {
-        return libzcash::Bip44TransparentAccountKeyPath(bip44CoinType, accountId);
-    } else {
-        return std::nullopt;
-    }
-}
-
-std::optional<std::pair<ZcashdUnifiedSpendingKey, ZcashdUnifiedKeyMetadata>> ZcashdUnifiedSpendingKey::ForAccount(
+std::optional<ZcashdUnifiedSpendingKey> ZcashdUnifiedSpendingKey::ForAccount(
         const HDSeed& seed,
         uint32_t bip44CoinType,
         AccountId accountId) {
@@ -41,12 +25,7 @@ std::optional<std::pair<ZcashdUnifiedSpendingKey, ZcashdUnifiedKeyMetadata>> Zca
     auto saplingKey = SaplingExtendedSpendingKey::ForAccount(seed, bip44CoinType, accountId);
     usk.saplingKey = saplingKey.first;
 
-    ZcashdUnifiedKeyMetadata keyMetadata(
-            seed.Fingerprint(),
-            bip44CoinType, accountId,
-            { ReceiverType::P2PKH, ReceiverType::Sapling });
-
-    return std::make_pair(usk, keyMetadata);
+    return usk;
 }
 
 ZcashdUnifiedFullViewingKey ZcashdUnifiedSpendingKey::ToFullViewingKey() const {
