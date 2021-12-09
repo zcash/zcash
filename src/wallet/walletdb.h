@@ -172,6 +172,134 @@ public:
     }
 };
 
+class ZcashdUnifiedSpendingKeyMetadata {
+private:
+    libzcash::SeedFingerprint seedFp;
+    uint32_t bip44CoinType;
+    libzcash::AccountId accountId;
+    libzcash::UFVKId ufvkId;
+
+    ZcashdUnifiedSpendingKeyMetadata() {}
+public:
+    ZcashdUnifiedSpendingKeyMetadata(
+            libzcash::SeedFingerprint seedFp,
+            uint32_t bip44CoinType,
+            libzcash::AccountId accountId,
+            libzcash::UFVKId ufvkId):
+            seedFp(seedFp), bip44CoinType(bip44CoinType), accountId(accountId), ufvkId(ufvkId) {}
+
+    /** Returns the fingerprint of the HD seed used to generate this key. */
+    const libzcash::SeedFingerprint& GetSeedFingerprint() const {
+        return seedFp;
+    }
+    /** Returns the ZIP 32 account id for which this key was generated. */
+    uint32_t GetBip44CoinType() const {
+        return bip44CoinType;
+    }
+    /** Returns the ZIP 32 account id for which this key was generated. */
+    libzcash::AccountId GetAccountId() const {
+        return accountId;
+    }
+    /** Returns the fingerprint of the ufvk this key was generated. */
+    const libzcash::UFVKId& GetKeyID() const {
+        return ufvkId;
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(seedFp);
+        READWRITE(bip44CoinType);
+        READWRITE(accountId);
+        READWRITE(ufvkId);
+    }
+
+    template <typename Stream>
+    static ZcashdUnifiedSpendingKeyMetadata Read(Stream& stream) {
+        ZcashdUnifiedSpendingKeyMetadata meta;
+        stream >> meta;
+        return meta;
+    }
+};
+
+class ZcashdUnifiedAddressMetadata;
+
+// Serialization wrapper for reading and writing ReceiverType
+// in CompactSize format.
+class ReceiverTypeSer {
+private:
+    libzcash::ReceiverType t;
+
+    friend class ZcashdUnifiedAddressMetadata;
+public:
+    ReceiverTypeSer() {} // for serialization only
+    ReceiverTypeSer(libzcash::ReceiverType t): t(t) {}
+
+    template<typename Stream>
+    void Serialize(Stream &s) const {
+        WriteCompactSize<Stream>(s, (uint64_t) t);
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream& s) {
+        t = (libzcash::ReceiverType) ReadCompactSize<Stream>(s);
+    }
+};
+
+class ZcashdUnifiedAddressMetadata {
+private:
+    libzcash::UFVKId ufvkId;
+    libzcash::diversifier_index_t diversifierIndex;
+    std::vector<libzcash::ReceiverType> receiverTypes;
+
+    ZcashdUnifiedAddressMetadata() {}
+public:
+    ZcashdUnifiedAddressMetadata(
+            libzcash::UFVKId ufvkId,
+            libzcash::diversifier_index_t diversifierIndex,
+            std::vector<libzcash::ReceiverType> receiverTypes):
+            ufvkId(ufvkId), diversifierIndex(diversifierIndex), receiverTypes(receiverTypes) {}
+
+    libzcash::UFVKId GetKeyID() const {
+        return ufvkId;
+    }
+    libzcash::diversifier_index_t GetDiversifierIndex() const {
+        return diversifierIndex;
+    }
+    const std::vector<libzcash::ReceiverType>& GetReceiverTypes() const {
+        return receiverTypes;
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(ufvkId);
+        READWRITE(diversifierIndex);
+        if (ser_action.ForRead()) {
+            std::vector<ReceiverTypeSer> serReceiverTypes;
+            READWRITE(serReceiverTypes);
+            receiverTypes.clear();
+            for (ReceiverTypeSer r : serReceiverTypes)
+                receiverTypes.push_back(r.t);
+        } else {
+            std::vector<ReceiverTypeSer> serReceiverTypes;
+            for (libzcash::ReceiverType r : receiverTypes)
+                serReceiverTypes.push_back(ReceiverTypeSer(r));
+            READWRITE(serReceiverTypes);
+        }
+    }
+
+    template <typename Stream>
+    static ZcashdUnifiedAddressMetadata Read(Stream& stream) {
+        ZcashdUnifiedAddressMetadata meta;
+        stream >> meta;
+        return meta;
+    }
+};
+
+
 /** Access to the wallet database */
 class CWalletDB : public CDB
 {
@@ -251,9 +379,8 @@ public:
 
     /// Unified key support.
 
-    bool WriteUnifiedFullViewingKey(
-            const libzcash::UFVKId& ufvkId,
-            const libzcash::UnifiedFullViewingKey& ufvk);
+    bool WriteUnifiedSpendingKeyMetadata(const ZcashdUnifiedSpendingKeyMetadata& keymeta);
+    bool WriteUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey& ufvk);
 
     static void IncrementUpdateCounter();
     static unsigned int GetUpdateCounter();

@@ -15,6 +15,9 @@
 #include <variant>
 #include <rust/unified_keys.h>
 
+const unsigned char ZCASH_UFVK_ID_PERSONAL[BLAKE2bPersonalBytes] =
+    {'Z', 'c', 'a', 's', 'h', '_', 'U', 'F', 'V', 'K', '_', 'I', 'd', '_', 'F', 'P'};
+
 namespace libzcash {
 
 /** Protocol addresses that can receive funds in a transaction. */
