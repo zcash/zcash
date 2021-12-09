@@ -649,6 +649,30 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         {
             ssValue >> pwallet->vchDefaultKey;
         }
+        else if (strType == "unifiedfvk")
+        {
+            libzcash::UFVKId fp;
+            ssKey >> fp;
+
+            std::string ufvkenc;
+            ssValue >> ufvkenc;
+
+            auto ufvkopt = libzcash::UnifiedFullViewingKey::Decode(ufvkenc, Params());
+            if (ufvkopt.has_value()) {
+                auto ufvk = ufvkopt.value();
+                if (fp != ufvk.GetKeyID(Params())) {
+                    strErr = "Error reading wallet database: key fingerprint did not match decoded key";
+                    return false;
+                }
+                if (!pwallet->LoadUnifiedFullViewingKey(ufvk)) {
+                    strErr = "Error reading wallet database: LoadUnifiedFullViewingKey failed.";
+                    return false;
+                }
+            } else {
+                strErr = "Error reading wallet database: failed to decode unified full viewing key.";
+                return false;
+            }
+        }
         else if (strType == "pool")
         {
             int64_t nIndex;
