@@ -298,13 +298,6 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
 {
     LOCK(cs_KeyStore);
 
-    auto tKey = ufvk.GetTransparentKey();
-    if (tKey.has_value()) {
-        // FIXME: this is probably not the right thing; we need to actually track
-        // addresses, not the id at the FVK level?
-        mapTKeyUnified.insert(std::make_pair(tKey.value().GetPubKey().GetID(), keyId));
-    }
-
     auto saplingKey = ufvk.GetSaplingKey();
     if (saplingKey.has_value()) {
         auto ivk = saplingKey.value().fvk.in_viewing_key();
@@ -315,3 +308,26 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
 
     return true;
 }
+
+bool CBasicKeyStore::AddUnifiedAddress(
+        const libzcash::UFVKId& keyId,
+        const libzcash::UnifiedAddress& ua)
+{
+    LOCK(cs_KeyStore);
+
+    // It's only necessary to add p2pkh and p2sh components of
+    // the UA; all other lookups of the associated UFVK will be
+    // made via the protocol-specific viewing key that is used
+    // to trial-decrypt a transaction.
+
+    auto p2pkhReceiver = ua.GetP2PKHReceiver();
+    if (p2pkhReceiver.has_value()) {
+        mapP2PKHUnified.insert(std::make_pair(p2pkhReceiver.value(), keyId));
+    }
+
+    auto p2shReceiver = ua.GetP2SHReceiver();
+    if (p2shReceiver.has_value()) {
+        mapP2SHUnified.insert(std::make_pair(p2shReceiver.value(), keyId));
+    }
+}
+
