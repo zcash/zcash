@@ -251,14 +251,14 @@ class ZcashdUnifiedAddressMetadata {
 private:
     libzcash::UFVKId ufvkId;
     libzcash::diversifier_index_t diversifierIndex;
-    std::vector<libzcash::ReceiverType> receiverTypes;
+    std::set<libzcash::ReceiverType> receiverTypes;
 
     ZcashdUnifiedAddressMetadata() {}
 public:
     ZcashdUnifiedAddressMetadata(
             libzcash::UFVKId ufvkId,
             libzcash::diversifier_index_t diversifierIndex,
-            std::vector<libzcash::ReceiverType> receiverTypes):
+            std::set<libzcash::ReceiverType> receiverTypes):
             ufvkId(ufvkId), diversifierIndex(diversifierIndex), receiverTypes(receiverTypes) {}
 
     libzcash::UFVKId GetKeyID() const {
@@ -267,7 +267,7 @@ public:
     libzcash::diversifier_index_t GetDiversifierIndex() const {
         return diversifierIndex;
     }
-    const std::vector<libzcash::ReceiverType>& GetReceiverTypes() const {
+    const std::set<libzcash::ReceiverType>& GetReceiverTypes() const {
         return receiverTypes;
     }
 
@@ -282,7 +282,7 @@ public:
             READWRITE(serReceiverTypes);
             receiverTypes.clear();
             for (ReceiverTypeSer r : serReceiverTypes)
-                receiverTypes.push_back(r.t);
+                receiverTypes.insert(r.t);
         } else {
             std::vector<ReceiverTypeSer> serReceiverTypes;
             for (libzcash::ReceiverType r : receiverTypes)
@@ -381,6 +381,7 @@ public:
 
     bool WriteUnifiedSpendingKeyMetadata(const ZcashdUnifiedSpendingKeyMetadata& keymeta);
     bool WriteUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey& ufvk);
+    bool WriteUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata& addrmeta);
 
     static void IncrementUpdateCounter();
     static unsigned int GetUpdateCounter();
