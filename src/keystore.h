@@ -108,10 +108,13 @@ public:
             const libzcash::ZcashdUnifiedFullViewingKey &ufvk
             ) = 0;
 
-    virtual bool AddUnifiedAddress(
+    virtual void AddUnifiedAddress(
             const libzcash::UFVKId& keyId,
             const libzcash::UnifiedAddress &ua
             ) = 0;
+
+    virtual std::optional<libzcash::ZcashdUnifiedFullViewingKey> GetUnifiedFullViewingKey(
+            const libzcash::UFVKId& keyId) = 0;
 };
 
 typedef std::map<CKeyID, CKey> KeyMap;
@@ -346,9 +349,12 @@ public:
      * Add the transparent component of the unified address, if any,
      * to the keystore to make it possible to identify the
      */
-    virtual bool AddUnifiedAddress(
+    virtual void AddUnifiedAddress(
             const libzcash::UFVKId& keyId,
             const libzcash::UnifiedAddress &ua);
+
+    virtual std::optional<libzcash::ZcashdUnifiedFullViewingKey> GetUnifiedFullViewingKey(
+            const libzcash::UFVKId& keyId);
 };
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;

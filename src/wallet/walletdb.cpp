@@ -235,6 +235,13 @@ bool CWalletDB::WriteUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey
     return Write(std::make_pair(std::string("unifiedfvk"), ufvkId), ufvk.Encode(Params()));
 }
 
+bool CWalletDB::WriteUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata& addrmeta)
+{
+    nWalletDBUpdateCounter++;
+    auto ufvkId = addrmeta.GetKeyID();
+    return Write(std::make_pair(std::string("unifiedaddrmeta"), ufvkId), addrmeta);
+}
+
 //
 //
 //
@@ -683,6 +690,11 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         {
             auto keymeta = ZcashdUnifiedSpendingKeyMetadata::Read(ssValue);
             pwallet->LoadUnifiedKeyMetadata(keymeta);
+        }
+        else if (strType == "unifiedaddrmeta")
+        {
+            auto keymeta = ZcashdUnifiedAddressMetadata::Read(ssValue);
+            pwallet->LoadUnifiedAddressMetadata(keymeta);
         }
         else if (strType == "pool")
         {

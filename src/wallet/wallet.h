@@ -402,6 +402,17 @@ public:
     bool AcceptToMemoryPool(bool fLimitFree=true, bool fRejectAbsurdFee=true);
 };
 
+enum class AddressGenerationError {
+    NoSuchAccount,
+    InvalidReceiverTypes,
+    ExistingAddressMismatch,
+    NoSaplingAddressForDiversifier
+};
+
+typedef std::variant<
+    std::pair<libzcash::UnifiedAddress, ZcashdUnifiedAddressMetadata>,
+    AddressGenerationError> UAGenerationResult;
+
 /**
  * A transaction with a bunch of additional info that only the owner cares about.
  * It includes any unrecorded transactions needed to link it back to the block chain.
@@ -843,7 +854,8 @@ public:
 
     std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapSproutZKeyMetadata;
     std::map<libzcash::SaplingIncomingViewingKey, CKeyMetadata> mapSaplingZKeyMetadata;
-    std::map<libzcash::UFVKId, ZcashdUnifiedSpendingKeyMetadata> mapUnifiedKeyMetadata;
+    std::map<std::pair<libzcash::SeedFingerprint, libzcash::AccountId>, ZcashdUnifiedSpendingKeyMetadata> mapUnifiedKeyMetadata;
+    std::map<libzcash::UFVKId, std::map<libzcash::diversifier_index_t, std::set<libzcash::ReceiverType>>> mapUnifiedAddressMetadata;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
     MasterKeyMap mapMasterKeys;
@@ -1129,10 +1141,22 @@ public:
     std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedSpendingKeyMetadata>>
         GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId);
 
-    bool AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
-    bool LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &key);
+    //! Retrieves the UFVK derived from the wallet's mnemonic seed for the specified account.
+    std::optional<std::pair<libzcash::UFVKId, libzcash::ZcashdUnifiedFullViewingKey>>
+        GetUnifiedFullViewingKeyByAccount(libzcash::AccountId account);
 
-    void LoadUnifiedKeyMetadata(const ZcashdUnifiedSpendingKeyMetadata &meta);
+    //! Generate a new unified address for the specified account, diversifier, and
+    //! set of receiver types.
+    UAGenerationResult GenerateUnifiedAddress(
+        const libzcash::AccountId& accountId,
+        const libzcash::diversifier_index_t& j,
+        const std::set<libzcash::ReceiverType>& receivers);
+
+    bool AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
+    bool LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
+
+    void LoadUnifiedKeyMetadata(const ZcashdUnifiedSpendingKeyMetadata &skmeta);
+    bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
 
     /**
      * Increment the next transaction order id

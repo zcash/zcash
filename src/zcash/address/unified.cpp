@@ -12,6 +12,14 @@ using namespace libzcash;
 // Unified Keys
 //
 
+bool libzcash::HasShielded(const std::set<ReceiverType>& receiverTypes) {
+    auto has_shielded = [](ReceiverType r) {
+        // TODO: update this as support for new protocols is added.
+        return r == ReceiverType::Sapling;
+    };
+    return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_shielded) != receiverTypes.end();
+}
+
 std::optional<ZcashdUnifiedSpendingKey> ZcashdUnifiedSpendingKey::ForAccount(
         const HDSeed& seed,
         uint32_t bip44CoinType,
@@ -63,10 +71,17 @@ ZcashdUnifiedFullViewingKey ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingK
     return result;
 }
 
-std::optional<UnifiedAddress> ZcashdUnifiedFullViewingKey::Address(diversifier_index_t j) const {
-    UnifiedAddress ua;
+std::optional<UnifiedAddress> ZcashdUnifiedFullViewingKey::Address(
+        const diversifier_index_t& j,
+        const std::set<ReceiverType>& receiverTypes) const
+{
+    if (!HasShielded(receiverTypes)) {
+        throw std::runtime_error("Unified addresses must include a shielded receiver.");
+    }
 
-    if (saplingKey.has_value()) {
+    UnifiedAddress ua;
+    if (saplingKey.has_value() &&
+            std::find(receiverTypes.begin(), receiverTypes.end(), ReceiverType::Sapling) != receiverTypes.end()) {
         auto saplingAddress = saplingKey.value().Address(j);
         if (saplingAddress.has_value()) {
             ua.AddReceiver(saplingAddress.value());
@@ -75,7 +90,8 @@ std::optional<UnifiedAddress> ZcashdUnifiedFullViewingKey::Address(diversifier_i
         }
     }
 
-    if (transparentKey.has_value()) {
+    if (transparentKey.has_value() &&
+            std::find(receiverTypes.begin(), receiverTypes.end(), ReceiverType::P2PKH) != receiverTypes.end()) {
         const auto& tkey = transparentKey.value();
         auto childIndex = j.ToTransparentChildIndex();
         if (!childIndex.has_value()) return std::nullopt;
@@ -98,12 +114,20 @@ std::optional<UnifiedAddress> ZcashdUnifiedFullViewingKey::Address(diversifier_i
     return ua;
 }
 
-std::pair<UnifiedAddress, diversifier_index_t> ZcashdUnifiedFullViewingKey::FindAddress(diversifier_index_t j) const {
-    auto addr = Address(j);
+std::pair<UnifiedAddress, diversifier_index_t> ZcashdUnifiedFullViewingKey::FindAddress(
+        const diversifier_index_t& j,
+        const std::set<ReceiverType>& receiverTypes) const {
+    diversifier_index_t j0(j);
+    auto addr = Address(j0, receiverTypes);
     while (!addr.has_value()) {
-        if (!j.increment())
+        if (!j0.increment())
             throw std::runtime_error(std::string(__func__) + ": diversifier index overflow.");;
-        addr = Address(j);
+        addr = Address(j0, receiverTypes);
     }
-    return std::make_pair(addr.value(), j);
+    return std::make_pair(addr.value(), j0);
+}
+
+std::pair<UnifiedAddress, diversifier_index_t> ZcashdUnifiedFullViewingKey::FindAddress(
+        const diversifier_index_t& j) const {
+    return FindAddress(j, {ReceiverType::P2PKH, ReceiverType::Sapling, ReceiverType::Orchard});
 }

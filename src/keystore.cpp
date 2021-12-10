@@ -309,7 +309,7 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
     return true;
 }
 
-bool CBasicKeyStore::AddUnifiedAddress(
+void CBasicKeyStore::AddUnifiedAddress(
         const libzcash::UFVKId& keyId,
         const libzcash::UnifiedAddress& ua)
 {
@@ -331,3 +331,13 @@ bool CBasicKeyStore::AddUnifiedAddress(
     }
 }
 
+std::optional<libzcash::ZcashdUnifiedFullViewingKey> CBasicKeyStore::GetUnifiedFullViewingKey(
+        const libzcash::UFVKId& keyId)
+{
+    auto mi = mapUnifiedFullViewingKeys.find(keyId);
+    if (mi != mapUnifiedFullViewingKeys.end()) {
+        return mi->second;
+    } else {
+        return std::nullopt;
+    }
+}
