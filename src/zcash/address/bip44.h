@@ -29,8 +29,8 @@ public:
             uint32_t bip44CoinType,
             libzcash::AccountId accountId);
 
-    std::optional<std::pair<CExtKey, HDKeyPath>> DeriveExternal(uint32_t addrIndex);
-    std::optional<std::pair<CExtKey, HDKeyPath>> DeriveInternal(uint32_t addrIndex);
+    std::optional<std::pair<CKey, HDKeyPath>> DeriveExternal(uint32_t addrIndex);
+    std::optional<std::pair<CKey, HDKeyPath>> DeriveInternal(uint32_t addrIndex);
 };
 
 } //namespace libzcash
