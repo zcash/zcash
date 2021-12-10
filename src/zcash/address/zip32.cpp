@@ -48,12 +48,12 @@ uint256 ovkForShieldingFromTaddr(HDSeed& seed) {
 
 namespace libzcash {
 
-std::optional<unsigned int> diversifier_index_t::ToTransparentChildIndex() const {
+std::optional<uint32_t> diversifier_index_t::ToTransparentChildIndex() const {
     // ensure that the diversifier index is small enough for a t-addr
     if (MAX_TRANSPARENT_CHILD_IDX < *this) {
         return std::nullopt;
     } else {
-        return (unsigned int) GetUint64(0);
+        return (uint32_t) GetUint64(0);
     }
 }
 

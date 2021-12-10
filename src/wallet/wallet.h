@@ -406,7 +406,9 @@ enum class AddressGenerationError {
     NoSuchAccount,
     InvalidReceiverTypes,
     ExistingAddressMismatch,
-    NoSaplingAddressForDiversifier
+    NoSaplingAddressForDiversifier,
+    WalletEncrypted,
+    InvalidTransparentChildIndex
 };
 
 typedef std::variant<

@@ -561,6 +561,22 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
         return AddressGenerationError::InvalidReceiverTypes;
     }
 
+    // The wallet must be unlocked in order to generate new transparent UA
+    // receivers, because we need to be able to add the secret key for the
+    // external child address at the diversifier index to the wallet's
+    // transparent backend in order to be able to detect transactions as
+    // ours rather than considering them as watch-only.
+    bool hasTransparent = receiverTypes.find(ReceiverType::P2PKH) != receiverTypes.end();
+    if (hasTransparent) {
+        if (!j.ToTransparentChildIndex().has_value()) {
+            return AddressGenerationError::InvalidTransparentChildIndex;
+        }
+
+        if (IsCrypted() || !GetMnemonicSeed().has_value()) {
+            return AddressGenerationError::WalletEncrypted;
+        }
+    }
+
     auto identifiedKey = GetUnifiedFullViewingKeyByAccount(accountId);
     if (identifiedKey.has_value()) {
         auto ufvkid = identifiedKey.value().first;
@@ -591,8 +607,14 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
         // Persist the newly created address to the keystore
         AddUnifiedAddress(ufvkid, found.first);
 
-        // If we have the associated spending key, add this to the keystore as one
-        // of our own addresses with AddTransparentSecretKey,
+        if (hasTransparent) {
+            // Regenerate the secret key for the transparent address and add it to
+            // the wallet.
+            auto seed = GetMnemonicSeed().value();
+            auto b44 = libzcash::Bip44AccountChains::ForAccount(seed, BIP44CoinType(), accountId).value();
+            auto key = b44.DeriveExternal(j.ToTransparentChildIndex().value()).value();
+            AddTransparentSecretKey(seed.Fingerprint(), key, ufvkid);
+        }
 
         // Save the metadata for the generated address so that we can re-derive
         // it in the future.

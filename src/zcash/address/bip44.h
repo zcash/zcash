@@ -29,8 +29,19 @@ public:
             uint32_t bip44CoinType,
             libzcash::AccountId accountId);
 
+    /**
+     * Generate the key corresponding to the specified index at the "external child"
+     * level of the BIP44 path for the account.
+     */
     std::optional<std::pair<CKey, HDKeyPath>> DeriveExternal(uint32_t addrIndex);
-    std::optional<std::pair<CKey, HDKeyPath>> DeriveInternal(uint32_t addrIndex);
+
+    /**
+     * Generate the key corresponding to the specified index at the "internal child"
+     * level of the BIP44 path for the account. This should probably only usually be
+     * used at address index 0, but ordinarily it won't need to be used at all since
+     * all change should be shielded by default.
+     */
+    std::optional<std::pair<CKey, HDKeyPath>> DeriveInternal(uint32_t addrIndex = 0);
 };
 
 } //namespace libzcash
