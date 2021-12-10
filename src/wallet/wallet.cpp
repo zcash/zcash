@@ -282,7 +282,7 @@ CPubKey CWallet::GenerateNewKey()
             BIP44CoinType(),
             ZCASH_LEGACY_ACCOUNT).value();
 
-    std::optional<std::pair<CExtKey, HDKeyPath>> extKey = std::nullopt;
+    std::optional<std::pair<CKey, HDKeyPath>> extKey = std::nullopt;
     do {
         extKey = accountChains.DeriveExternal(hdChain.GetLegacyTKeyCounter());
         hdChain.IncrementLegacyTKeyCounter();
@@ -301,10 +301,10 @@ CPubKey CWallet::GenerateNewKey()
 
 CPubKey CWallet::AddTransparentSecretKey(
         const uint256& seedFingerprint,
-        const std::pair<CExtKey, HDKeyPath>& extSecret,
+        const std::pair<CKey, HDKeyPath>& extSecret,
         const std::optional<libzcash::UFVKId>& ufvkId)
 {
-    CKey secret = extSecret.first.key;
+    CKey secret = extSecret.first;
     CPubKey pubkey = secret.GetPubKey();
     assert(secret.VerifyPubKey(pubkey));
 
@@ -476,8 +476,10 @@ std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedSpendin
         // Add Transparent component to the wallet
         if (sk.GetTransparentKey().has_value()) {
             auto keypath = libzcash::Bip44TransparentAccountKeyPath(BIP44CoinType(), accountId);
-            AddTransparentSecretKey(skmeta.GetSeedFingerprint(),
-                   std::make_pair(sk.GetTransparentKey().value(), keypath));
+            AddTransparentSecretKey(
+                    skmeta.GetSeedFingerprint(),
+                    std::make_pair(sk.GetTransparentKey().value().key, keypath)
+                    );
         }
 
         // Add Sapling component to the wallet
@@ -588,6 +590,9 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
 
         // Persist the newly created address to the keystore
         AddUnifiedAddress(ufvkid, found.first);
+
+        // If we have the associated spending key, add this to the keystore as one
+        // of our own addresses with AddTransparentSecretKey,
 
         // Save the metadata for the generated address so that we can re-derive
         // it in the future.

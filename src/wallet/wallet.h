@@ -823,7 +823,7 @@ private:
     /* Add an extended secret key to the wallet. Internal use only. */
     CPubKey AddTransparentSecretKey(
             const uint256& seedFingerprint,
-            const std::pair<CExtKey, HDKeyPath>& extSecret,
+            const std::pair<CKey, HDKeyPath>& extSecret,
             const std::optional<libzcash::UFVKId>& ufvkId = std::nullopt);
 
 protected:
