@@ -182,59 +182,42 @@ TEST(Keys, EncodeAndDecodeUnifiedFullViewingKeys)
         }
         if (test.size() == 1) continue; // comment
 
-        //try {
-            libzcash::UnifiedFullViewingKeyBuilder builder;
-            // ["p2pkh_key_bytes, sapling_key_bytes, orchard_key_bytes, unknown_key_bytes, unified_key"]
-            // These were added to the UA in preference order by the Python test vectors.
-            if (!test[0].isNull()) {
-                auto data = ParseHex(test[0].get_str());
-                ASSERT_EQ(data.size(), 65);
-                CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
-                auto decoded = CChainablePubKey::Read(ss);
-                ASSERT_TRUE(builder.AddTransparentKey(decoded));
-            }
-            if (!test[1].isNull()) {
-                auto data = ParseHex(test[1].get_str());
-                ASSERT_EQ(data.size(), 128);
-                CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
-                auto key = libzcash::SaplingDiversifiableFullViewingKey::Read(ss);
-                ASSERT_TRUE(builder.AddSaplingKey(key));
-            }
+        libzcash::UnifiedFullViewingKeyBuilder builder;
+        // ["p2pkh_key_bytes, sapling_key_bytes, orchard_key_bytes, unknown_key_bytes, unified_key"]
+        // These were added to the UA in preference order by the Python test vectors.
+        if (!test[0].isNull()) {
+            auto data = ParseHex(test[0].get_str());
+            ASSERT_EQ(data.size(), 65);
+            CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
+            auto decoded = CChainablePubKey::Read(ss);
+            ASSERT_TRUE(builder.AddTransparentKey(decoded));
+        }
+        if (!test[1].isNull()) {
+            auto data = ParseHex(test[1].get_str());
+            ASSERT_EQ(data.size(), 128);
+            CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
+            auto key = libzcash::SaplingDiversifiableFullViewingKey::Read(ss);
+            ASSERT_TRUE(builder.AddSaplingKey(key));
+        }
 
-            // Orchard keys and unknown items are not yet supported; instead,
-            // we just test that we're able to parse the unified key string
-            // and that the constituent items match the elements; if no Sapling
-            // key is present then UFVK construction would fail because it might
-            // presume the UFVK to be transparent-only.
-            if (test[1].isNull())
-                continue;
+        // Orchard keys and unknown items are not yet supported; instead,
+        // we just test that we're able to parse the unified key string
+        // and that the constituent items match the elements; if no Sapling
+        // key is present then UFVK construction would fail because it might
+        // presume the UFVK to be transparent-only.
+        if (test[1].isNull())
+            continue;
 
-            // if (!test[2].isNull()) {
-            //     auto data = ParseHex(test[3].get_str());
-            //     libzcash::UnknownReceiver r(0x03, data);
-            //     ASSERT_TRUE(builder.AddUnknownItem(r));
-            // }
-            // if (!test[4].isNull()) {
-            //     auto data = ParseHex(test[4].get_str());
-            //     libzcash::UnknownReceiver r(test[3].get_int(), data);
-            //     ASSERT_TRUE(builder.AddUnknownItem(r));
-            // }
+        auto built = builder.build();
+        ASSERT_TRUE(built.has_value());
 
-            auto built = builder.build();
-            ASSERT_TRUE(built.has_value());
+        auto keystrBytes = ParseHex(test[5].get_str());
+        std::string keystr(keystrBytes.begin(), keystrBytes.end());
 
-            auto keystrBytes = ParseHex(test[5].get_str());
-            std::string keystr(keystrBytes.begin(), keystrBytes.end());
+        auto decoded = libzcash::UnifiedFullViewingKey::Decode(keystr, Params());
+        ASSERT_TRUE(decoded.has_value());
 
-            auto decoded = libzcash::UnifiedFullViewingKey::Decode(keystr, Params());
-            ASSERT_TRUE(decoded.has_value());
-
-            EXPECT_EQ(decoded.value().GetTransparentKey(), built.value().GetTransparentKey());
-            EXPECT_EQ(decoded.value().GetSaplingKey(), built.value().GetSaplingKey());
-        //} catch (const std::exception& ex) {
-        //    FAIL() << "Bad test, couldn't deserialize data: " << strTest << ": " << ex.what();
-        //} catch (...) {
-        //    FAIL() << "Bad test, couldn't deserialize data: " << strTest;
-        //}
+        EXPECT_EQ(decoded.value().GetTransparentKey(), built.value().GetTransparentKey());
+        EXPECT_EQ(decoded.value().GetSaplingKey(), built.value().GetSaplingKey());
     }
 }

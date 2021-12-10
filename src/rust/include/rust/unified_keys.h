@@ -62,7 +62,8 @@ char* unified_full_viewing_key_serialize(
  *
  * Returns `true` if the UFVK contained a transparent component, `false`
  * otherwise. If this returns `true`, the transparent key will be copied to
- * `tkeyout` as the byte representation of the `(ChainCode, CPubKey)` pair
+ * `tkeyout` as the byte representation of the `(ChainCode, CPubKey)` pair.
+ * If it returns `false` then `tkeyout` will be unchanged.
  */
 bool unified_full_viewing_key_read_transparent(
     const UnifiedFullViewingKeyPtr* full_viewing_key,
@@ -77,6 +78,7 @@ bool unified_full_viewing_key_read_transparent(
  * `false` otherwise. The bytes of the `(ak, nk, ovk, dk)` fields
  * of the viewing key, in the encoding given by `EncodeExtFVKParts`
  * defined in ZIP 32, will be copied to `skeyout` if `true` is returned.
+ * If `false` is returned then `skeyout` will be unchanged.
  */
 bool unified_full_viewing_key_read_sapling(
     const UnifiedFullViewingKeyPtr* full_viewing_key,
@@ -94,7 +96,7 @@ bool unified_full_viewing_key_read_sapling(
  * pair in the encoding given by `EncodeExtFVKParts` defined in
  * ZIP 32.
  *
- * Returns a pointer to newly allocated UFVK  if the operation succeeds,
+ * Returns a pointer to newly allocated UFVK if the operation succeeds,
  * or the null pointer otherwise. The pointer returned by this function
  * must be freed by the caller with `unified_full_viewing_key_free`.
  */

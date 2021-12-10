@@ -39,8 +39,9 @@ pub extern "C" fn unified_full_viewing_key_parse(
                     Box::into_raw(Box::new(fvk))
                 } else {
                     error!(
-                        "Key was encoded for a different network than what was requested: {:?}",
-                        parsed_network
+                        "Key was encoded for a different network ({:?}) than what was requested ({:?})",
+                        parsed_network,
+                        network,
                     );
                     std::ptr::null_mut()
                 }
