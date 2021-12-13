@@ -311,7 +311,7 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
 
 void CBasicKeyStore::AddUnifiedAddress(
         const libzcash::UFVKId& keyId,
-        const libzcash::UnifiedAddress& ua)
+        const std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>& ua)
 {
     LOCK(cs_KeyStore);
 
@@ -319,20 +319,21 @@ void CBasicKeyStore::AddUnifiedAddress(
     // the UA; all other lookups of the associated UFVK will be
     // made via the protocol-specific viewing key that is used
     // to trial-decrypt a transaction.
+    auto addrEntry = std::make_pair(keyId, ua.second);
 
-    auto p2pkhReceiver = ua.GetP2PKHReceiver();
+    auto p2pkhReceiver = ua.first.GetP2PKHReceiver();
     if (p2pkhReceiver.has_value()) {
-        mapP2PKHUnified.insert(std::make_pair(p2pkhReceiver.value(), keyId));
+        mapP2PKHUnified.insert(std::make_pair(p2pkhReceiver.value(), addrEntry));
     }
 
-    auto p2shReceiver = ua.GetP2SHReceiver();
+    auto p2shReceiver = ua.first.GetP2SHReceiver();
     if (p2shReceiver.has_value()) {
-        mapP2SHUnified.insert(std::make_pair(p2shReceiver.value(), keyId));
+        mapP2SHUnified.insert(std::make_pair(p2shReceiver.value(), addrEntry));
     }
 }
 
 std::optional<libzcash::ZcashdUnifiedFullViewingKey> CBasicKeyStore::GetUnifiedFullViewingKey(
-        const libzcash::UFVKId& keyId)
+        const libzcash::UFVKId& keyId) const
 {
     auto mi = mapUnifiedFullViewingKeys.find(keyId);
     if (mi != mapUnifiedFullViewingKeys.end()) {
@@ -340,4 +341,44 @@ std::optional<libzcash::ZcashdUnifiedFullViewingKey> CBasicKeyStore::GetUnifiedF
     } else {
         return std::nullopt;
     }
+}
+
+std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+CBasicKeyStore::GetUFVKMetadataForReceiver(const libzcash::Receiver& receiver) const
+{
+    return std::visit(FindUFVKId(*this), receiver);
+}
+
+std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
+    if (keystore.mapSaplingIncomingViewingKeys.count(saplingAddr) > 0) {
+        const auto& saplingIvk = keystore.mapSaplingIncomingViewingKeys.at(saplingAddr);
+        if (keystore.mapSaplingKeyUnified.count(saplingIvk) > 0) {
+            return std::make_pair(keystore.mapSaplingKeyUnified.at(saplingIvk), std::nullopt);
+        } else {
+            return std::nullopt;
+        }
+    } else {
+        return std::nullopt;
+    }
+}
+std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+FindUFVKId::operator()(const CScriptID& scriptId) const {
+    if (keystore.mapP2SHUnified.count(scriptId) > 0) {
+        return keystore.mapP2SHUnified.at(scriptId);
+    } else {
+        return std::nullopt;
+    }
+}
+std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+FindUFVKId::operator()(const CKeyID& keyId) const {
+    if (keystore.mapP2PKHUnified.count(keyId) > 0) {
+        return keystore.mapP2PKHUnified.at(keyId);
+    } else {
+        return std::nullopt;
+    }
+}
+std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+FindUFVKId::operator()(const libzcash::UnknownReceiver& receiver) const {
+    return std::nullopt;
 }

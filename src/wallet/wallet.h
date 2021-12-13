@@ -1154,6 +1154,8 @@ public:
         const libzcash::diversifier_index_t& j,
         const std::set<libzcash::ReceiverType>& receivers);
 
+    std::optional<libzcash::UnifiedAddress> GetUnifiedForReceiver(const libzcash::Receiver& receiver);
+
     bool AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
     bool LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
 
@@ -1568,6 +1570,19 @@ public:
     KeyAddResult operator()(const libzcash::SproutSpendingKey &sk) const;
     KeyAddResult operator()(const libzcash::SaplingExtendedSpendingKey &sk) const;
     KeyAddResult operator()(const libzcash::InvalidEncoding& no) const;
+};
+
+class LookupUnifiedAddress {
+private:
+    const CWallet& wallet;
+
+public:
+    LookupUnifiedAddress(const CWallet& wallet): wallet(wallet) {}
+
+    std::optional<libzcash::UnifiedAddress> operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const;
+    std::optional<libzcash::UnifiedAddress> operator()(const CScriptID& scriptId) const;
+    std::optional<libzcash::UnifiedAddress> operator()(const CKeyID& keyId) const;
+    std::optional<libzcash::UnifiedAddress> operator()(const libzcash::UnknownReceiver& receiver) const;
 };
 
 
