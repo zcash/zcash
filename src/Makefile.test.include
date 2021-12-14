@@ -44,6 +44,7 @@ JSON_TEST_FILES = \
   test/data/merkle_commitments_sapling.json \
   test/data/sapling_key_components.json \
   test/data/unified_addrs.json \
+  test/data/unified_full_viewing_keys.json \
   test/data/zip0244.json
 
 RAW_TEST_FILES = test/data/alertTests.raw

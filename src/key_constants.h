@@ -5,6 +5,8 @@
 #ifndef ZCASH_KEY_CONSTANTS_H
 #define ZCASH_KEY_CONSTANTS_H
 
+#include <string>
+
 class KeyConstants
 {
 public:

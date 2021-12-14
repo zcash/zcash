@@ -5506,6 +5506,10 @@ KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::SaplingExtendedFu
     }
 }
 
+KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::UnifiedFullViewingKey& no) const {
+    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Unified full viewing key import is not yet supported.");
+}
+
 KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::InvalidEncoding& no) const {
     throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
 }

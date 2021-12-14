@@ -7,43 +7,52 @@
 
 #include "zip32.h"
 #include "bip44.h"
-#include "zcash/Address.hpp"
 
 namespace libzcash {
 
 class ZcashdUnifiedSpendingKey;
 class ZcashdUnifiedFullViewingKey;
 
+// prototypes for the classes handling ZIP-316 encoding (in Address.hpp)
+class UnifiedAddress;
+class UnifiedFullViewingKey;
+
+/**
+ * An internal-only type for unified full viewing keys that represents only the
+ * set of receiver types that are supported by zcashd. This type does not
+ * support round-trip serialization to and from the UnifiedFullViewingKey type,
+ * which should be used in most cases.
+ */
 class ZcashdUnifiedFullViewingKey {
 private:
-    std::optional<CExtPubKey> transparentKey;
-    std::optional<SaplingExtendedFullViewingKey> saplingKey;
+    std::optional<CChainablePubKey> transparentKey;
+    std::optional<SaplingDiversifiableFullViewingKey> saplingKey;
 
     ZcashdUnifiedFullViewingKey() {}
 
     friend class ZcashdUnifiedSpendingKey;
 public:
-    const std::optional<CExtPubKey>& GetTransparentKey() const {
+    /**
+     * This constructor is lossy, and does not support round-trip transformations.
+     */
+    static ZcashdUnifiedFullViewingKey FromUnifiedFullViewingKey(const UnifiedFullViewingKey& ufvk);
+
+    const std::optional<CChainablePubKey>& GetTransparentKey() const {
         return transparentKey;
     }
 
-    const std::optional<SaplingExtendedFullViewingKey>& GetSaplingExtendedFullViewingKey() const {
+    const std::optional<SaplingDiversifiableFullViewingKey>& GetSaplingKey() const {
         return saplingKey;
     }
 
     std::optional<UnifiedAddress> Address(diversifier_index_t j) const;
 
-    std::pair<UnifiedAddress, diversifier_index_t> FindAddress(diversifier_index_t j) const {
-        auto addr = Address(j);
-        while (!addr.has_value()) {
-            if (!j.increment())
-                throw std::runtime_error(std::string(__func__) + ": diversifier index overflow.");;
-            addr = Address(j);
-        }
-        return std::make_pair(addr.value(), j);
-    }
+    std::pair<UnifiedAddress, diversifier_index_t> FindAddress(diversifier_index_t j) const;
 };
 
+/**
+ * The type of unified spending keys supported by zcashd.
+ */
 class ZcashdUnifiedSpendingKey {
 private:
     libzcash::AccountId accountId;

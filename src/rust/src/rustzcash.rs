@@ -46,14 +46,15 @@ use zcash_primitives::{
     block::equihash,
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
     merkle_tree::MerklePath,
-    sapling::{merkle_hash, spend_sig},
     sapling::{
+        keys::FullViewingKey,
         note_encryption::sapling_ka_agree,
         redjubjub::{self, Signature},
         Diversifier, Note, PaymentAddress, ProofGenerationKey, Rseed, ViewingKey,
     },
+    sapling::{merkle_hash, spend_sig},
     transaction::components::Amount,
-    zip32,
+    zip32::{self, sapling_address, sapling_find_address},
 };
 use zcash_proofs::{
     circuit::sapling::TREE_DEPTH as SAPLING_TREE_DEPTH,
@@ -74,6 +75,7 @@ mod incremental_merkle_tree_ffi;
 mod orchard_ffi;
 mod orchard_keys_ffi;
 mod transaction_ffi;
+mod unified_keys_ffi;
 mod zip339_ffi;
 
 mod test_harness_ffi;
@@ -1080,16 +1082,17 @@ pub extern "C" fn librustzcash_zip32_xfvk_derive(
 
 /// Derive a PaymentAddress from an ExtendedFullViewingKey.
 #[no_mangle]
-pub extern "C" fn librustzcash_zip32_xfvk_address(
-    xfvk: *const [c_uchar; 169],
+pub extern "C" fn librustzcash_zip32_sapling_address(
+    fvk: *const [c_uchar; 96],
+    dk: *const [c_uchar; 32],
     j: *const [c_uchar; 11],
     addr_ret: *mut [c_uchar; 43],
 ) -> bool {
-    let xfvk = zip32::ExtendedFullViewingKey::read(&unsafe { *xfvk }[..])
-        .expect("valid ExtendedFullViewingKey");
+    let fvk = FullViewingKey::read(&unsafe { *fvk }[..]).expect("valid Sapling FullViewingKey");
+    let dk = zip32::DiversifierKey(unsafe { *dk });
     let j = zip32::DiversifierIndex(unsafe { *j });
 
-    match xfvk.address(j) {
+    match sapling_address(&fvk, &dk, j) {
         Some(addr) => {
             let addr_ret = unsafe { &mut *addr_ret };
             addr_ret.copy_from_slice(&addr.to_bytes());
@@ -1102,17 +1105,18 @@ pub extern "C" fn librustzcash_zip32_xfvk_address(
 
 /// Derive a PaymentAddress from an ExtendedFullViewingKey.
 #[no_mangle]
-pub extern "C" fn librustzcash_zip32_find_xfvk_address(
-    xfvk: *const [c_uchar; 169],
+pub extern "C" fn librustzcash_zip32_find_sapling_address(
+    fvk: *const [c_uchar; 96],
+    dk: *const [c_uchar; 32],
     j: *const [c_uchar; 11],
     j_ret: *mut [c_uchar; 11],
     addr_ret: *mut [c_uchar; 43],
 ) -> bool {
-    let xfvk = zip32::ExtendedFullViewingKey::read(&unsafe { *xfvk }[..])
-        .expect("valid ExtendedFullViewingKey");
+    let fvk = FullViewingKey::read(&unsafe { *fvk }[..]).expect("valid Sapling FullViewingKey");
+    let dk = zip32::DiversifierKey(unsafe { *dk });
     let j = zip32::DiversifierIndex(unsafe { *j });
 
-    match xfvk.find_address(j) {
+    match sapling_find_address(&fvk, &dk, j) {
         Some((j, addr)) => {
             let j_ret = unsafe { &mut *j_ret };
             let addr_ret = unsafe { &mut *addr_ret };

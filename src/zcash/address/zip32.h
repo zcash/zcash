@@ -117,27 +117,10 @@ public:
     }
 };
 
-struct SaplingExtendedFullViewingKey {
-    uint8_t depth;
-    uint32_t parentFVKTag;
-    uint32_t childIndex;
-    uint256 chaincode;
+class SaplingDiversifiableFullViewingKey {
+public:
     libzcash::SaplingFullViewingKey fvk;
     uint256 dk;
-
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(depth);
-        READWRITE(parentFVKTag);
-        READWRITE(childIndex);
-        READWRITE(chaincode);
-        READWRITE(fvk);
-        READWRITE(dk);
-    }
-
-    std::optional<SaplingExtendedFullViewingKey> Derive(uint32_t i) const;
 
     // Attempts to construct a valid payment address with diversifier index
     // `j`; returns std::nullopt if `j` does not result in a valid diversifier
@@ -158,6 +141,48 @@ struct SaplingExtendedFullViewingKey {
     }
 
     libzcash::SaplingPaymentAddress DefaultAddress() const;
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(fvk);
+        READWRITE(dk);
+    }
+
+    template <typename Stream>
+    static SaplingDiversifiableFullViewingKey Read(Stream& stream) {
+        SaplingDiversifiableFullViewingKey key;
+        stream >> key;
+        return key;
+    }
+
+    friend inline bool operator==(const SaplingDiversifiableFullViewingKey& a, const SaplingDiversifiableFullViewingKey& b) {
+        return (a.fvk == b.fvk && a.dk == b.dk);
+    }
+
+};
+
+class SaplingExtendedFullViewingKey: public SaplingDiversifiableFullViewingKey {
+public:
+    uint8_t depth;
+    uint32_t parentFVKTag;
+    uint32_t childIndex;
+    uint256 chaincode;
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(depth);
+        READWRITE(parentFVKTag);
+        READWRITE(childIndex);
+        READWRITE(chaincode);
+        READWRITE(fvk);
+        READWRITE(dk);
+    }
+
+    std::optional<SaplingExtendedFullViewingKey> Derive(uint32_t i) const;
 
     friend inline bool operator==(const SaplingExtendedFullViewingKey& a, const SaplingExtendedFullViewingKey& b) {
         return (

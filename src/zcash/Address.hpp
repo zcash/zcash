@@ -1,15 +1,18 @@
 #ifndef ZC_ADDRESS_H_
 #define ZC_ADDRESS_H_
 
-#include "uint256.h"
+#include "key_constants.h"
 #include "pubkey.h"
 #include "script/script.h"
+#include "uint256.h"
 #include "zcash/address/orchard.hpp"
 #include "zcash/address/sapling.hpp"
 #include "zcash/address/sprout.hpp"
+#include "zcash/address/unified.h"
 #include "zcash/address/zip32.h"
 
 #include <variant>
+#include <rust/unified_keys.h>
 
 namespace libzcash {
 
@@ -127,14 +130,95 @@ public:
     }
 };
 
+class UnifiedFullViewingKeyBuilder;
+
+/**
+ * Wrapper for a zcash_address::unified::Ufvk.
+ */
+class UnifiedFullViewingKey {
+private:
+    std::unique_ptr<UnifiedFullViewingKeyPtr, decltype(&unified_full_viewing_key_free)> inner;
+
+    UnifiedFullViewingKey() :
+        inner(nullptr, unified_full_viewing_key_free) {}
+
+    UnifiedFullViewingKey(UnifiedFullViewingKeyPtr* ptr) :
+        inner(ptr, unified_full_viewing_key_free) {}
+
+    friend class UnifiedFullViewingKeyBuilder;
+public:
+    static std::optional<UnifiedFullViewingKey> Decode(
+            const std::string& str,
+            const KeyConstants& keyConstants);
+
+    /**
+     * This method should only be used for serialization of unified full
+     * viewing keys that have been generated internally from unified spending
+     * keys by Zcashd.  It is not suitable for use in any case where the
+     * ZcashdUnifiedFullViewingKey value may have been produced by a
+     * potentially-lossy conversion from a UnifiedFullViewingKey value that
+     * originated outside of zcashd.
+     */
+    static UnifiedFullViewingKey FromZcashdUFVK(const ZcashdUnifiedFullViewingKey&);
+
+    std::string Encode(const KeyConstants& keyConstants) const;
+
+    std::optional<SaplingDiversifiableFullViewingKey> GetSaplingKey() const;
+
+    std::optional<CChainablePubKey> GetTransparentKey() const;
+
+    UnifiedFullViewingKey(UnifiedFullViewingKey&& key) : inner(std::move(key.inner)) {}
+
+    UnifiedFullViewingKey(const UnifiedFullViewingKey& key) :
+        inner(unified_full_viewing_key_clone(key.inner.get()), unified_full_viewing_key_free) {}
+
+    UnifiedFullViewingKey& operator=(UnifiedFullViewingKey&& key)
+    {
+        if (this != &key) {
+            inner = std::move(key.inner);
+        }
+        return *this;
+    }
+
+    UnifiedFullViewingKey& operator=(const UnifiedFullViewingKey& key)
+    {
+        if (this != &key) {
+            inner.reset(unified_full_viewing_key_clone(key.inner.get()));
+        }
+        return *this;
+    }
+};
+
+class UnifiedFullViewingKeyBuilder {
+private:
+    std::optional<std::vector<uint8_t>> t_bytes;
+    std::optional<std::vector<uint8_t>> sapling_bytes;
+public:
+    UnifiedFullViewingKeyBuilder(): t_bytes(std::nullopt), sapling_bytes(std::nullopt) {}
+
+    bool AddTransparentKey(const CChainablePubKey&);
+    bool AddSaplingKey(const SaplingDiversifiableFullViewingKey&);
+
+    std::optional<UnifiedFullViewingKey> build() const;
+};
+
 /** Addresses that can appear in a string encoding. */
 typedef std::variant<
     InvalidEncoding,
     SproutPaymentAddress,
     SaplingPaymentAddress,
     UnifiedAddress> PaymentAddress;
-typedef std::variant<InvalidEncoding, SproutViewingKey, SaplingExtendedFullViewingKey> ViewingKey;
-typedef std::variant<InvalidEncoding, SproutSpendingKey, SaplingExtendedSpendingKey> SpendingKey;
+/** Viewing keys that can have a string encoding. */
+typedef std::variant<
+    InvalidEncoding,
+    SproutViewingKey,
+    SaplingExtendedFullViewingKey,
+    UnifiedFullViewingKey> ViewingKey;
+/** Spending keys that can have a string encoding. */
+typedef std::variant<
+    InvalidEncoding,
+    SproutSpendingKey,
+    SaplingExtendedSpendingKey> SpendingKey;
 
 class AddressInfoFromSpendingKey {
 public:
@@ -147,10 +231,11 @@ class AddressInfoFromViewingKey {
 public:
     std::pair<std::string, PaymentAddress> operator()(const SproutViewingKey&) const;
     std::pair<std::string, PaymentAddress> operator()(const struct SaplingExtendedFullViewingKey&) const;
+    std::pair<std::string, PaymentAddress> operator()(const UnifiedFullViewingKey&) const;
     std::pair<std::string, PaymentAddress> operator()(const InvalidEncoding&) const;
 };
 
-}
+} //namespace libzcash
 
 /** Check whether a PaymentAddress is not an InvalidEncoding. */
 bool IsValidPaymentAddress(const libzcash::PaymentAddress& zaddr);
