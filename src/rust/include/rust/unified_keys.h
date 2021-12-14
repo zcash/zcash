@@ -56,7 +56,7 @@ char* unified_full_viewing_key_serialize(
     const UnifiedFullViewingKeyPtr* full_viewing_key);
 
 /**
- * Reads the transparent component of a unified viewing key.
+ * Reads the transparent component of a unified full viewing key.
  *
  * `tkeyout` must be of length 65.
  *
@@ -70,7 +70,7 @@ bool unified_full_viewing_key_read_transparent(
     unsigned char* tkeyout);
 
 /**
- * Reads the Sapling component of a unified viewing key.
+ * Reads the Sapling component of a unified full viewing key.
  *
  * `skeyout` must be of length 128.
  *
@@ -86,15 +86,14 @@ bool unified_full_viewing_key_read_sapling(
 
 /**
  * Constructs a unified full viewing key from the binary encodings
- * of its constituent parts
+ * of its constituent parts.
  *
- * `t_key` must be of length 65 and must be the concatenated
+ * If `t_key` is not `null`, it must be of length 65 and must be the concatenated
  * bytes of the serialized `(ChainCode, CPubKey)` pair.
  *
- * `sapling_key` must be of length 128 and must be the concatenated
- * bytes of the serialized `(SaplingFullViewingKey, DiversifierKey)`
- * pair in the encoding given by `EncodeExtFVKParts` defined in
- * ZIP 32.
+ * If `sapling_key` is not `null`, it must be of length 128 and must be the concatenated
+ * bytes of the `(ak, nk, ovk, dk)` fields in the encoding given by
+ * `EncodeExtFVKParts` defined in ZIP 32.
  *
  * Returns a pointer to newly allocated UFVK if the operation succeeds,
  * or the null pointer otherwise. The pointer returned by this function

@@ -183,7 +183,7 @@ TEST(Keys, EncodeAndDecodeUnifiedFullViewingKeys)
         if (test.size() == 1) continue; // comment
 
         libzcash::UnifiedFullViewingKeyBuilder builder;
-        // ["p2pkh_key_bytes, sapling_key_bytes, orchard_key_bytes, unknown_key_bytes, unified_key"]
+        // ["t_key_bytes, sapling_fvk_bytes, orchard_fvk_bytes, unknown_fvk_typecode, unknown_fvk_bytes, unified_fvk"]
         // These were added to the UA in preference order by the Python test vectors.
         if (!test[0].isNull()) {
             auto data = ParseHex(test[0].get_str());
