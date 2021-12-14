@@ -135,6 +135,9 @@ public:
     friend inline bool operator==(const UnifiedAddress& a, const UnifiedAddress& b) {
         return a.receivers == b.receivers;
     }
+    friend inline bool operator!=(const UnifiedAddress& a, const UnifiedAddress& b) {
+        return a.receivers != b.receivers;
+    }
     friend inline bool operator<(const UnifiedAddress& a, const UnifiedAddress& b) {
         return a.receivers < b.receivers;
     }

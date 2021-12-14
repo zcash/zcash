@@ -297,6 +297,13 @@ public:
         stream >> meta;
         return meta;
     }
+
+    friend inline bool operator==(const ZcashdUnifiedAddressMetadata& a, const ZcashdUnifiedAddressMetadata& b) {
+        return
+            a.ufvkId == b.ufvkId &&
+            a.diversifierIndex == b.diversifierIndex &&
+            a.receiverTypes == b.receiverTypes;
+    }
 };
 
 

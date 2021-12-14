@@ -5845,7 +5845,6 @@ std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const C
         } else {
             return std::nullopt;
         }
-
     } else {
         return std::nullopt;
     }
