@@ -84,6 +84,11 @@ public:
             const std::set<ReceiverType>& receiverTypes) const;
 
     std::pair<UnifiedAddress, diversifier_index_t> FindAddress(const diversifier_index_t& j) const;
+
+    friend bool operator==(const ZcashdUnifiedFullViewingKey& a, const ZcashdUnifiedFullViewingKey& b)
+    {
+        return a.transparentKey == b.transparentKey && a.saplingKey == b.saplingKey;
+    }
 };
 
 /**
