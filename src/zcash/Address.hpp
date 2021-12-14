@@ -151,6 +151,14 @@ public:
             const std::string& str,
             const KeyConstants& keyConstants);
 
+    /**
+     * This method should only be used for serialization of unified full
+     * viewing keys that have been generated internally from unified spending
+     * keys by Zcashd.  It is not suitable for use in any case where the
+     * ZcashdUnifiedFullViewingKey value may have been produced by a
+     * potentially-lossy conversion from a UnifiedFullViewingKey value that
+     * originated outside of zcashd.
+     */
     static UnifiedFullViewingKey FromZcashdUFVK(const ZcashdUnifiedFullViewingKey&);
 
     std::string Encode(const KeyConstants& keyConstants) const;
@@ -158,6 +166,8 @@ public:
     std::optional<SaplingDiversifiableFullViewingKey> GetSaplingKey() const;
 
     std::optional<CChainablePubKey> GetTransparentKey() const;
+
+    UnifiedFullViewingKey(UnifiedFullViewingKey&& key) : inner(std::move(key.inner)) {}
 
     UnifiedFullViewingKey(const UnifiedFullViewingKey& key) :
         inner(unified_full_viewing_key_clone(key.inner.get()), unified_full_viewing_key_free) {}

@@ -227,13 +227,13 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(chaincode);
         if (ser_action.ForRead()) {
-            std::array<uint8_t, 33> pubkeyBytes;
+            std::array<uint8_t, CPubKey::COMPRESSED_PUBLIC_KEY_SIZE> pubkeyBytes;
             READWRITE(pubkeyBytes);
             pubkey = CPubKey(pubkeyBytes.begin(), pubkeyBytes.end());
             assert(pubkey.IsCompressed());
         } else {
-            assert(pubkey.size() == 33);
-            std::array<uint8_t, 33> pubkeyBytes;
+            assert(pubkey.size() == CPubKey::COMPRESSED_PUBLIC_KEY_SIZE);
+            std::array<uint8_t, CPubKey::COMPRESSED_PUBLIC_KEY_SIZE> pubkeyBytes;
             std::copy(pubkey.begin(), pubkey.end(), pubkeyBytes.begin());
             READWRITE(pubkeyBytes);
         }

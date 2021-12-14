@@ -17,6 +17,12 @@ class ZcashdUnifiedFullViewingKey;
 class UnifiedAddress;
 class UnifiedFullViewingKey;
 
+/**
+ * An internal-only type for unified full viewing keys that represents only the
+ * set of receiver types that are supported by zcashd. This type does not
+ * support round-trip serialization to and from the UnifiedFullViewingKey type,
+ * which should be used in most cases.
+ */
 class ZcashdUnifiedFullViewingKey {
 private:
     std::optional<CChainablePubKey> transparentKey;
@@ -26,6 +32,9 @@ private:
 
     friend class ZcashdUnifiedSpendingKey;
 public:
+    /**
+     * This constructor is lossy, and does not support round-trip transformations.
+     */
     static ZcashdUnifiedFullViewingKey FromUnifiedFullViewingKey(const UnifiedFullViewingKey& ufvk);
 
     const std::optional<CChainablePubKey>& GetTransparentKey() const {
@@ -41,6 +50,9 @@ public:
     std::pair<UnifiedAddress, diversifier_index_t> FindAddress(diversifier_index_t j) const;
 };
 
+/**
+ * The type of unified spending keys supported by zcashd.
+ */
 class ZcashdUnifiedSpendingKey {
 private:
     libzcash::AccountId accountId;
