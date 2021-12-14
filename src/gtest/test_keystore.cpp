@@ -14,6 +14,8 @@
 
 #define MAKE_STRING(x) std::string((x), (x)+sizeof(x))
 
+using namespace libzcash;
+
 const uint32_t SLIP44_TESTNET_TYPE = 1;
 
 TEST(KeystoreTests, StoreAndRetrieveMnemonicSeed) {
@@ -514,4 +516,33 @@ TEST(KeystoreTests, StoreAndRetrieveSpendingKeyInEncryptedStore) {
     ASSERT_EQ(1, addrs.count(addr));
     ASSERT_EQ(1, addrs.count(addr2));
 }
+
+TEST(KeystoreTests, StoreAndRetrieveUFVK) {
+    SelectParams(CBaseChainParams::TESTNET);
+    CBasicKeyStore keyStore;
+
+    auto seed = MnemonicSeed::Random(SLIP44_TESTNET_TYPE);
+    auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed, SLIP44_TESTNET_TYPE, 0);
+    EXPECT_TRUE(usk.has_value());
+
+    auto zufvk = usk.value().ToFullViewingKey();
+    auto ufvk = UnifiedFullViewingKey::FromZcashdUFVK(zufvk);
+    auto ufvkid = ufvk.GetKeyID(Params());
+
+    EXPECT_TRUE(keyStore.AddUnifiedFullViewingKey(ufvkid, zufvk));
+    EXPECT_EQ(keyStore.GetUnifiedFullViewingKey(ufvkid).value(), zufvk);
+
+    auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Sapling});
+    EXPECT_TRUE(addrPair.first.GetSaplingReceiver().has_value());
+    auto saplingReceiver = addrPair.first.GetSaplingReceiver().value();
+
+    auto saplingIvk = zufvk.GetSaplingKey().value().fvk.in_viewing_key();
+    keyStore.AddSaplingIncomingViewingKey(saplingIvk, saplingReceiver);
+
+    auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
+    EXPECT_TRUE(ufvkmeta.has_value());
+    EXPECT_EQ(ufvkmeta.value().first, ufvkid);
+    EXPECT_FALSE(ufvkmeta.value().second.has_value());
+}
+
 #endif

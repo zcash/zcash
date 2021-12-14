@@ -298,12 +298,20 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
 {
     LOCK(cs_KeyStore);
 
+    // Add the Sapling component of the UFVK to the wallet.
     auto saplingKey = ufvk.GetSaplingKey();
     if (saplingKey.has_value()) {
         auto ivk = saplingKey.value().fvk.in_viewing_key();
         mapSaplingKeyUnified.insert(std::make_pair(ivk, keyId));
     }
 
+    // We can't reasonably add the transparent component here, because
+    // of the way that transparent addresses are generated from the
+    // P2PHK part of the unified address. Instead, whenever a new
+    // unified address is generated, the keys associated with the
+    // transparent part of the address must be added to the keystore.
+
+    // Add the UFVK by key identifier.
     mapUnifiedFullViewingKeys.insert({keyId, ufvk});
 
     return true;

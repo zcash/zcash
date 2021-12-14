@@ -80,8 +80,7 @@ std::optional<UnifiedAddress> ZcashdUnifiedFullViewingKey::Address(
     }
 
     UnifiedAddress ua;
-    if (saplingKey.has_value() &&
-            std::find(receiverTypes.begin(), receiverTypes.end(), ReceiverType::Sapling) != receiverTypes.end()) {
+    if (saplingKey.has_value() && receiverTypes.count(ReceiverType::Sapling) > 0) {
         auto saplingAddress = saplingKey.value().Address(j);
         if (saplingAddress.has_value()) {
             ua.AddReceiver(saplingAddress.value());
@@ -90,8 +89,7 @@ std::optional<UnifiedAddress> ZcashdUnifiedFullViewingKey::Address(
         }
     }
 
-    if (transparentKey.has_value() &&
-            std::find(receiverTypes.begin(), receiverTypes.end(), ReceiverType::P2PKH) != receiverTypes.end()) {
+    if (transparentKey.has_value() && receiverTypes.count(ReceiverType::P2PKH) > 0) {
         const auto& tkey = transparentKey.value();
         auto childIndex = j.ToTransparentChildIndex();
         if (!childIndex.has_value()) return std::nullopt;
