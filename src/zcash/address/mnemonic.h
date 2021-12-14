@@ -12,16 +12,22 @@ private:
     Language language;
     SecureString mnemonic;
 
-    MnemonicSeed() {}
-
-    void SetSeedFromMnemonic() {
+    bool SetSeedFromMnemonic() {
         seed.resize(64);
-        zip339_phrase_to_seed(language, mnemonic.c_str(), (uint8_t (*)[64])seed.data());
+        return zip339_phrase_to_seed(language, mnemonic.c_str(), (uint8_t (*)[64])seed.data());
     }
 
+    MnemonicSeed() {}
 public:
-    MnemonicSeed(Language languageIn, SecureString mnemonicIn): language(languageIn), mnemonic(mnemonicIn) {
-        SetSeedFromMnemonic();
+    static std::optional<MnemonicSeed> ForPhrase(Language languageIn, SecureString mnemonicIn) {
+        MnemonicSeed seed;
+        seed.language = languageIn;
+        seed.mnemonic = mnemonicIn;
+        if (seed.SetSeedFromMnemonic()) {
+            return seed;
+        } else {
+            return std::nullopt;
+        }
     }
 
     /**
@@ -68,7 +74,9 @@ public:
             READWRITE(language0);
             READWRITE(mnemonic);
             language = (Language) language0;
-            SetSeedFromMnemonic();
+            if (!SetSeedFromMnemonic()) {
+                throw std::ios_base::failure("Could not interpret the mnemonic phrase as a valid UTF-8 string.");
+            }
         } else {
             uint32_t language0 = (uint32_t) language;
 
