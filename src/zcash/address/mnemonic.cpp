@@ -20,7 +20,11 @@ MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, siz
         const char* phrase = zip339_entropy_to_phrase(language, entropy.data(), entropyLen);
         SecureString mnemonic(phrase);
         zip339_free_phrase(phrase);
-        MnemonicSeed seed(language, mnemonic);
+
+        // The phrase returned from zip339_entropy_to_phrase should always be a
+        // valid UTF-8 string; this `.value()` unwrap will correctly throw a
+        // `std::bad_optional_access` exception if that invariant does not hold.
+        auto seed = MnemonicSeed::ForPhrase(language, mnemonic).value();
 
         // Verify that the seed data is valid entropy for unified spending keys at
         // account 0 and at both the public & private chain levels for account 0x7FFFFFFF.

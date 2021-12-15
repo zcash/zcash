@@ -45,6 +45,23 @@ TEST(KeystoreTests, StoreAndRetrieveMnemonicSeed) {
     EXPECT_EQ(seed, seedOut.value());
 }
 
+TEST(KeystoreTests, DecodeInvalidMnemonic) {
+    SecureString mnemonic("\xff");
+    EXPECT_FALSE(MnemonicSeed::ForPhrase(Language::English, mnemonic).has_value());
+}
+
+TEST(KeystoreTests, DeserializeMnemonic) {
+    CDataStream ss0(SER_NETWORK, CLIENT_VERSION);
+    ss0 << (uint32_t)English;
+    ss0 << SecureString("abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art");
+    EXPECT_NO_THROW(MnemonicSeed::Read(ss0));
+
+    CDataStream ss(SER_NETWORK, CLIENT_VERSION);
+    ss << (uint32_t)English;
+    ss << SecureString("\xff");
+    EXPECT_THROW(MnemonicSeed::Read(ss), std::ios_base::failure);
+}
+
 TEST(KeystoreTests, StoreAndRetrieveLegacyHDSeed) {
     CBasicKeyStore keyStore;
 
