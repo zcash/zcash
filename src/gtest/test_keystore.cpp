@@ -545,4 +545,26 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     EXPECT_FALSE(ufvkmeta.value().second.has_value());
 }
 
+TEST(KeystoreTests, AddUnifiedAddress) {
+    SelectParams(CBaseChainParams::TESTNET);
+    CBasicKeyStore keyStore;
+
+    auto seed = MnemonicSeed::Random(SLIP44_TESTNET_TYPE);
+    auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed, SLIP44_TESTNET_TYPE, 0);
+    EXPECT_TRUE(usk.has_value());
+
+    auto zufvk = usk.value().ToFullViewingKey();
+    auto ufvk = UnifiedFullViewingKey::FromZcashdUFVK(zufvk);
+    auto ufvkid = ufvk.GetKeyID(Params());
+    auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling});
+    EXPECT_TRUE(addrPair.first.GetP2PKHReceiver().has_value());
+
+    keyStore.AddUnifiedAddress(ufvkid, addrPair);
+
+    auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(addrPair.first.GetP2PKHReceiver().value());
+    EXPECT_TRUE(ufvkmeta.has_value());
+    EXPECT_EQ(ufvkmeta.value().first, ufvkid);
+}
+
+
 #endif
