@@ -117,9 +117,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 }
 
 bool IsShieldedMinerAddress(const MinerAddress& minerAddr) {
-    return !(
-        std::holds_alternative<InvalidMinerAddress>(minerAddr) ||
-        std::holds_alternative<boost::shared_ptr<CReserveScript>>(minerAddr));
+    return !std::holds_alternative<boost::shared_ptr<CReserveScript>>(minerAddr);
 }
 
 class AddFundingStreamValueToTx
@@ -240,8 +238,6 @@ public:
             throw new std::runtime_error("An error occurred computing the binding signature.");
         }
     }
-
-    void operator()(const InvalidMinerAddress &invalid) const {}
 
     // Create shielded output
     void operator()(const libzcash::SaplingPaymentAddress &pa) const {
@@ -697,9 +693,12 @@ void GetMinerAddress(MinerAddress &minerAddress)
         minerAddress = mAddr;
     } else {
         // Try a payment address
-        auto zaddr = std::visit(ExtractMinerAddress(), keyIO.DecodePaymentAddress(mAddrArg));
-        if (std::visit(IsValidMinerAddress(), zaddr)) {
-            minerAddress = zaddr;
+        auto zaddr0 = keyIO.DecodePaymentAddress(mAddrArg);
+        if (zaddr0.has_value()) {
+            auto zaddr = std::visit(ExtractMinerAddress(), zaddr0.value());
+            if (zaddr.has_value()) {
+                minerAddress = zaddr.value();
+            }
         }
     }
 }

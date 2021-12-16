@@ -23,14 +23,7 @@ static const int DEFAULT_GENERATE_THREADS = 1;
 
 static const bool DEFAULT_PRINTPRIORITY = false;
 
-class InvalidMinerAddress {
-public:
-    friend bool operator==(const InvalidMinerAddress &a, const InvalidMinerAddress &b) { return true; }
-    friend bool operator<(const InvalidMinerAddress &a, const InvalidMinerAddress &b) { return true; }
-};
-
 typedef std::variant<
-    InvalidMinerAddress,
     libzcash::SaplingPaymentAddress,
     boost::shared_ptr<CReserveScript>> MinerAddress;
 
@@ -39,16 +32,13 @@ class ExtractMinerAddress
 public:
     ExtractMinerAddress() {}
 
-    MinerAddress operator()(const libzcash::InvalidEncoding &invalid) const {
-        return InvalidMinerAddress();
+    std::optional<MinerAddress> operator()(const libzcash::SproutPaymentAddress &addr) const {
+        return std::nullopt;
     }
-    MinerAddress operator()(const libzcash::SproutPaymentAddress &addr) const {
-        return InvalidMinerAddress();
-    }
-    MinerAddress operator()(const libzcash::SaplingPaymentAddress &addr) const {
+    std::optional<MinerAddress> operator()(const libzcash::SaplingPaymentAddress &addr) const {
         return addr;
     }
-    MinerAddress operator()(const libzcash::UnifiedAddress &addr) const {
+    std::optional<MinerAddress> operator()(const libzcash::UnifiedAddress &addr) const {
         auto recipient = RecipientForPaymentAddress()(addr);
         if (recipient) {
             // This looks like a recursive call, but we are actually calling
@@ -66,7 +56,7 @@ public:
             // Either the UA only contains unknown shielded receivers (unlikely that we
             // wouldn't know about them), or it only contains transparent receivers
             // (which are invalid).
-            return InvalidMinerAddress();
+            return std::nullopt;
         }
     }
 };
@@ -76,7 +66,6 @@ class KeepMinerAddress
 public:
     KeepMinerAddress() {}
 
-    void operator()(const InvalidMinerAddress &invalid) const {}
     void operator()(const libzcash::SaplingPaymentAddress &pa) const {}
     void operator()(const boost::shared_ptr<CReserveScript> &coinbaseScript) const {
         coinbaseScript->KeepScript();
@@ -90,9 +79,6 @@ class IsValidMinerAddress
 public:
     IsValidMinerAddress() {}
 
-    bool operator()(const InvalidMinerAddress &invalid) const {
-        return false;
-    }
     bool operator()(const libzcash::SaplingPaymentAddress &pa) const {
         return true;
     }

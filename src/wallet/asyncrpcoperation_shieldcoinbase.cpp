@@ -81,8 +81,8 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
     //  Check the destination address is valid for this network i.e. not testnet being used on mainnet
     KeyIO keyIO(Params());
     auto address = keyIO.DecodePaymentAddress(toAddress);
-    if (IsValidPaymentAddress(address)) {
-        tozaddr_ = address;
+    if (address.has_value()) {
+        tozaddr_ = address.value();
     } else {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid to address");
     }
@@ -263,11 +263,6 @@ bool ShieldToAddress::operator()(const libzcash::UnifiedAddress &uaddr) const {
     // TODO
     return false;
 }
-
-bool ShieldToAddress::operator()(const libzcash::InvalidEncoding& no) const {
-    return false;
-}
-
 
 UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInfo & info) {
     uint32_t consensusBranchId;

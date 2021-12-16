@@ -98,15 +98,15 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
 
     if (!isfromtaddr_) {
         auto address = keyIO.DecodePaymentAddress(fromAddress);
-        if (IsValidPaymentAddress(address)) {
+        if (address.has_value()) {
             // We don't need to lock on the wallet as spending key related methods are thread-safe
-            if (!std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), address)) {
+            if (!std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), address.value())) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, no spending key found for zaddr");
             }
 
             isfromzaddr_ = true;
-            frompaymentaddress_ = address;
-            spendingkey_ = std::visit(GetSpendingKeyForPaymentAddress(pwalletMain), address).value();
+            frompaymentaddress_ = address.value();
+            spendingkey_ = std::visit(GetSpendingKeyForPaymentAddress(pwalletMain), address.value()).value();
         } else {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address");
         }
@@ -375,8 +375,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             auto hexMemo = r.memo;
 
             auto addr = keyIO.DecodePaymentAddress(address);
-            assert(std::get_if<libzcash::SaplingPaymentAddress>(&addr) != nullptr);
-            auto to = std::get<libzcash::SaplingPaymentAddress>(addr);
+            assert(addr.has_value() && std::get_if<libzcash::SaplingPaymentAddress>(&addr.value()) != nullptr);
+            auto to = std::get<libzcash::SaplingPaymentAddress>(addr.value());
 
             auto memo = get_memo_from_hex_string(hexMemo);
 
@@ -533,12 +533,14 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 std::string hexMemo = smr.memo;
                 zOutputsDeque.pop_front();
 
-                PaymentAddress pa = keyIO.DecodePaymentAddress(address);
-                JSOutput jso = JSOutput(std::get<libzcash::SproutPaymentAddress>(pa), value);
-                if (hexMemo.size() > 0) {
-                    jso.memo = get_memo_from_hex_string(hexMemo);
+                std::optional<PaymentAddress> pa = keyIO.DecodePaymentAddress(address);
+                if (pa.has_value()) {
+                    JSOutput jso = JSOutput(std::get<libzcash::SproutPaymentAddress>(pa.value()), value);
+                    if (hexMemo.size() > 0) {
+                        jso.memo = get_memo_from_hex_string(hexMemo);
+                    }
+                    info.vjsout.push_back(jso);
                 }
-                info.vjsout.push_back(jso);
 
                 // Funds are removed from the value pool and enter the private pool
                 info.vpub_old += value;
@@ -800,13 +802,15 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             assert(value==0);
             info.vjsout.push_back(JSOutput());  // dummy output while we accumulate funds into a change note for vpub_new
         } else {
-            PaymentAddress pa = keyIO.DecodePaymentAddress(address);
-            // If we are here, we know we have no Sapling outputs.
-            JSOutput jso = JSOutput(std::get<libzcash::SproutPaymentAddress>(pa), value);
-            if (hexMemo.size() > 0) {
-                jso.memo = get_memo_from_hex_string(hexMemo);
+            std::optional<PaymentAddress> pa = keyIO.DecodePaymentAddress(address);
+            if (pa.has_value()) {
+                // If we are here, we know we have no Sapling outputs.
+                JSOutput jso = JSOutput(std::get<libzcash::SproutPaymentAddress>(pa.value()), value);
+                if (hexMemo.size() > 0) {
+                    jso.memo = get_memo_from_hex_string(hexMemo);
+                }
+                info.vjsout.push_back(jso);
             }
-            info.vjsout.push_back(jso);
         }
 
         // create output for any change
@@ -938,7 +942,9 @@ bool AsyncRPCOperation_sendmany::load_inputs(TxValues& txValues) {
 bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
-    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, fromaddress_, mindepth_);
+    // TODO: move this to the caller
+    auto zaddr = KeyIO(Params()).DecodePaymentAddress(fromaddress_);
+    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddr, mindepth_);
 
     // If using the TransactionBuilder, we only want Sapling notes.
     // If not using it, we only want Sprout notes.

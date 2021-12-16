@@ -5264,8 +5264,8 @@ bool CWallet::ParameterInteraction(const CChainParams& params)
     // Check Sapling migration address if set and is a valid Sapling address
     if (mapArgs.count("-migrationdestaddress")) {
         std::string migrationDestAddress = mapArgs["-migrationdestaddress"];
-        libzcash::PaymentAddress address = keyIO.DecodePaymentAddress(migrationDestAddress);
-        if (std::get_if<libzcash::SaplingPaymentAddress>(&address) == nullptr) {
+        std::optional<libzcash::PaymentAddress> address = keyIO.DecodePaymentAddress(migrationDestAddress);
+        if (!address.has_value() || std::get_if<libzcash::SaplingPaymentAddress>(&address.value()) == nullptr) {
             return UIError(_("-migrationdestaddress must be a valid Sapling address."));
         }
     }
@@ -5369,17 +5369,15 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
 void CWallet::GetFilteredNotes(
     std::vector<SproutNoteEntry>& sproutEntries,
     std::vector<SaplingNoteEntry>& saplingEntries,
-    std::string address,
+    std::optional<libzcash::PaymentAddress> address,
     int minDepth,
     bool ignoreSpent,
     bool requireSpendingKey)
 {
     std::set<libzcash::RawAddress> filterAddresses;
 
-    KeyIO keyIO(Params());
-    if (address.length() > 0) {
-        auto addr = keyIO.DecodePaymentAddress(address);
-        for (const auto ra : std::visit(GetRawAddresses(), addr)) {
+    if (address.has_value()) {
+        for (const auto ra : std::visit(GetRawAddresses(), address.value())) {
             filterAddresses.insert(ra);
         }
     }
@@ -5551,11 +5549,6 @@ bool PaymentAddressBelongsToWallet::operator()(const libzcash::UnifiedAddress &u
     return false;
 }
 
-bool PaymentAddressBelongsToWallet::operator()(const libzcash::InvalidEncoding& no) const
-{
-    return false;
-}
-
 ///
 
 PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const
@@ -5593,12 +5586,6 @@ PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::Unif
     // TODO
     return AddressNotFound;
 }
-
-PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::InvalidEncoding& no) const
-{
-    return AddressNotFound;
-}
-
 
 ///
 
@@ -5638,13 +5625,6 @@ std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     return libzcash::ViewingKey();
 }
 
-std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
-    const libzcash::InvalidEncoding& no) const
-{
-    // Defaults to InvalidEncoding
-    return libzcash::ViewingKey();
-}
-
 bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const
 {
     return m_wallet->HaveSproutSpendingKey(zaddr);
@@ -5663,11 +5643,6 @@ bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SaplingPayment
 bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::UnifiedAddress &uaddr) const
 {
     // TODO
-    return false;
-}
-
-bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::InvalidEncoding& no) const
-{
     return false;
 }
 
@@ -5700,13 +5675,6 @@ std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()
     return libzcash::SpendingKey();
 }
 
-std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
-    const libzcash::InvalidEncoding& no) const
-{
-    // Defaults to InvalidEncoding
-    return libzcash::SpendingKey();
-}
-
 KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::SproutViewingKey &vkey) const {
     auto addr = vkey.address();
 
@@ -5735,10 +5703,6 @@ KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::SaplingExtendedFu
 
 KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::UnifiedFullViewingKey& no) const {
     throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Unified full viewing key import is not yet supported.");
-}
-
-KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::InvalidEncoding& no) const {
-    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
 }
 
 KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKey &sk) const {
@@ -5791,10 +5755,6 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
             return KeyAdded;
         }
     }
-}
-
-KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::InvalidEncoding& no) const {
-    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
 }
 
 std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
