@@ -5374,12 +5374,13 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
     // Flags used to permit skipping checks for efficiency
     auto verifier = ProofVerifier::Disabled(); // No need to verify JoinSplits twice
     bool fCheckTransactions = true;
-    // We may as well check Orchard authorizations if we are checking
-    // transactions, since we can batch-validate them.
-    auto orchardAuth = orchard::AuthValidator::Batch();
 
     for (CBlockIndex* pindex = chainActive.Tip(); pindex && pindex->pprev; pindex = pindex->pprev)
     {
+        // We may as well check Orchard authorizations if we are checking
+        // transactions, since we can batch-validate them.
+        auto orchardAuth = orchard::AuthValidator::Batch();
+
         boost::this_thread::interruption_point();
         uiInterface.ShowProgress(_("Verifying blocks..."), std::max(1, std::min(99, (int)(((double)(chainActive.Height() - pindex->nHeight)) / (double)nCheckDepth * (nCheckLevel >= 4 ? 50 : 100)))));
         if (pindex->nHeight < chainActive.Height()-nCheckDepth)
@@ -5419,6 +5420,10 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
             } else {
                 nGoodTransactions += block.vtx.size();
             }
+        }
+
+        if (!orchardAuth.Validate()) {
+            return error("VerifyDB(): Orchard batch validation failed for block at height %d", pindex->nHeight);
         }
 
         if (ShutdownRequested())
