@@ -13,6 +13,8 @@ native_ccache 4.3 2022-02-01
 native_ccache 4.4 2022-02-01
 native_ccache 4.4.1 2022-02-01
 native_ccache 4.4.2 2022-02-01
+native_ccache 4.5 2022-02-01
+native_ccache 4.5.1 2022-02-01
 
 # Clang is currently pinned to LLVM 13
 
