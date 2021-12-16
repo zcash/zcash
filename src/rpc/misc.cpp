@@ -217,8 +217,6 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 class DescribePaymentAddressVisitor
 {
 public:
-    UniValue operator()(const libzcash::InvalidEncoding &zaddr) const { return UniValue(UniValue::VOBJ); }
-
     UniValue operator()(const libzcash::SproutPaymentAddress &zaddr) const {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("type", "sprout");
@@ -288,14 +286,14 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
     KeyIO keyIO(Params());
     string strAddress = params[0].get_str();
     auto address = keyIO.DecodePaymentAddress(strAddress);
-    bool isValid = IsValidPaymentAddress(address);
+    bool isValid = address.has_value();
 
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("isvalid", isValid);
     if (isValid)
     {
         ret.pushKV("address", strAddress);
-        UniValue detail = std::visit(DescribePaymentAddressVisitor(), address);
+        UniValue detail = std::visit(DescribePaymentAddressVisitor(), address.value());
         ret.pushKVs(detail);
     }
     return ret;

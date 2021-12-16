@@ -85,7 +85,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         // We set minDepth to 11 to avoid unconfirmed notes and in anticipation of specifying
         // an anchor at height N-10 for each Sprout JoinSplit description
         // Consider, should notes be sorted?
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, "", 11);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, std::nullopt, 11);
     }
     CAmount availableFunds = 0;
     for (const SproutNoteEntry& sproutEntry : sproutEntries) {
@@ -197,8 +197,9 @@ libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigration
     if (mapArgs.count("-migrationdestaddress")) {
         std::string migrationDestAddress = mapArgs["-migrationdestaddress"];
         auto address = keyIO.DecodePaymentAddress(migrationDestAddress);
-        auto saplingAddress = std::get_if<libzcash::SaplingPaymentAddress>(&address);
-        assert(saplingAddress != nullptr); // This is checked in init.cpp
+        assert(address.has_value()); // This is checked in init.cpp
+        auto saplingAddress = std::get_if<libzcash::SaplingPaymentAddress>(&address.value());
+        assert(saplingAddress != nullptr); // This is also checked in init.cpp
         return *saplingAddress;
     }
     // Derive the address for Sapling account 0

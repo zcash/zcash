@@ -24,12 +24,6 @@ public:
 /** Protocol addresses that can receive funds in a transaction. */
 typedef std::variant<SproutPaymentAddress, SaplingPaymentAddress> RawAddress;
 
-class InvalidEncoding {
-public:
-    friend bool operator==(const InvalidEncoding &a, const InvalidEncoding &b) { return true; }
-    friend bool operator<(const InvalidEncoding &a, const InvalidEncoding &b) { return true; }
-};
-
 class UnknownReceiver {
 public:
     uint32_t typecode;
@@ -137,37 +131,31 @@ public:
 
 /** Addresses that can appear in a string encoding. */
 typedef std::variant<
-    InvalidEncoding,
     SproutPaymentAddress,
     SaplingPaymentAddress,
     UnifiedAddress> PaymentAddress;
-typedef std::variant<InvalidEncoding, SproutViewingKey, SaplingExtendedFullViewingKey> ViewingKey;
-typedef std::variant<InvalidEncoding, SproutSpendingKey, SaplingExtendedSpendingKey> SpendingKey;
+/** Viewing keys that can have a string encoding. */
+typedef std::variant<
+    SproutViewingKey,
+    SaplingExtendedFullViewingKey> ViewingKey;
+/** Spending keys that can have a string encoding. */
+typedef std::variant<
+    SproutSpendingKey,
+    SaplingExtendedSpendingKey> SpendingKey;
 
 class AddressInfoFromSpendingKey {
 public:
     std::pair<std::string, PaymentAddress> operator()(const SproutSpendingKey&) const;
     std::pair<std::string, PaymentAddress> operator()(const struct SaplingExtendedSpendingKey&) const;
-    std::pair<std::string, PaymentAddress> operator()(const InvalidEncoding&) const;
 };
 
 class AddressInfoFromViewingKey {
 public:
     std::pair<std::string, PaymentAddress> operator()(const SproutViewingKey&) const;
     std::pair<std::string, PaymentAddress> operator()(const struct SaplingExtendedFullViewingKey&) const;
-    std::pair<std::string, PaymentAddress> operator()(const InvalidEncoding&) const;
 };
 
 }
-
-/** Check whether a PaymentAddress is not an InvalidEncoding. */
-bool IsValidPaymentAddress(const libzcash::PaymentAddress& zaddr);
-
-/** Check whether a ViewingKey is not an InvalidEncoding. */
-bool IsValidViewingKey(const libzcash::ViewingKey& vk);
-
-/** Check whether a SpendingKey is not an InvalidEncoding. */
-bool IsValidSpendingKey(const libzcash::SpendingKey& zkey);
 
 /**
  * Gets the typecode for the given UA receiver.
@@ -202,7 +190,6 @@ class RecipientForPaymentAddress {
 public:
     RecipientForPaymentAddress() {}
 
-    std::optional<libzcash::RawAddress> operator()(const libzcash::InvalidEncoding& no) const;
     std::optional<libzcash::RawAddress> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     std::optional<libzcash::RawAddress> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     std::optional<libzcash::RawAddress> operator()(const libzcash::UnifiedAddress &uaddr) const;
@@ -215,7 +202,6 @@ class GetRawAddresses {
 public:
     GetRawAddresses() {}
 
-    std::set<libzcash::RawAddress> operator()(const libzcash::InvalidEncoding& no) const;
     std::set<libzcash::RawAddress> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     std::set<libzcash::RawAddress> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     std::set<libzcash::RawAddress> operator()(const libzcash::UnifiedAddress &uaddr) const;

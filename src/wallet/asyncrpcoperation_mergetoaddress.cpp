@@ -102,9 +102,9 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
 
     if (!isToTaddr_) {
         auto address = keyIO.DecodePaymentAddress(std::get<0>(recipient));
-        if (IsValidPaymentAddress(address)) {
+        if (address.has_value()) {
             isToZaddr_ = true;
-            toPaymentAddress_ = address;
+            toPaymentAddress_ = address.value();
         } else {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid recipient address");
         }

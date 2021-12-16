@@ -169,10 +169,11 @@ namespace Consensus {
                 addresses.push_back(GetScriptForDestination(taddr));
             } else {
                 auto zaddr = keyIO.DecodePaymentAddress(addr);
-                // If the string is not a valid transparent or Sapling address, we will
-                // throw here.
+                if (!(zaddr.has_value() && std::holds_alternative<libzcash::SaplingPaymentAddress>(zaddr.value()))) {
+                    throw std::runtime_error("Funding stream address was not a valid transparent or Sapling address.");
+                }
 
-                addresses.push_back(std::get<libzcash::SaplingPaymentAddress>(zaddr));
+                addresses.push_back(std::get<libzcash::SaplingPaymentAddress>(zaddr.value()));
             }
         }
 

@@ -400,9 +400,9 @@ UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
             // Only include hdKeypath and seedFpStr if we have both
             std::optional<std::string> hdKeypath = (vstr.size() > 3) ? std::optional<std::string>(vstr[2]) : std::nullopt;
             std::optional<std::string> seedFpStr = (vstr.size() > 3) ? std::optional<std::string>(vstr[3]) : std::nullopt;
-            if (IsValidSpendingKey(spendingkey)) {
+            if (spendingkey.has_value()) {
                 auto addResult = std::visit(
-                    AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, hdKeypath, seedFpStr, true), spendingkey);
+                    AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, hdKeypath, seedFpStr, true), spendingkey.value());
                 if (addResult == KeyAlreadyExists){
                     LogPrint("zrpc", "Skipping import of zaddr (key already present)\n");
                 } else if (addResult == KeyNotAdded) {
@@ -751,17 +751,17 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     KeyIO keyIO(Params());
     string strSecret = params[0].get_str();
     auto spendingkey = keyIO.DecodeSpendingKey(strSecret);
-    if (!IsValidSpendingKey(spendingkey)) {
+    if (!spendingkey.has_value()) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
     }
 
-    auto addrInfo = std::visit(libzcash::AddressInfoFromSpendingKey{}, spendingkey);
+    auto addrInfo = std::visit(libzcash::AddressInfoFromSpendingKey{}, spendingkey.value());
     UniValue result(UniValue::VOBJ);
     result.pushKV("type", addrInfo.first);
     result.pushKV("address", keyIO.EncodePaymentAddress(addrInfo.second));
 
     // Sapling support
-    auto addResult = std::visit(AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus()), spendingkey);
+    auto addResult = std::visit(AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus()), spendingkey.value());
     if (addResult == KeyAlreadyExists && fIgnoreExistingKey) {
         return result;
     }
@@ -846,17 +846,17 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     KeyIO keyIO(Params());
     string strVKey = params[0].get_str();
     auto viewingkey = keyIO.DecodeViewingKey(strVKey);
-    if (!IsValidViewingKey(viewingkey)) {
+    if (!viewingkey.has_value()) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
     }
 
-    auto addrInfo = std::visit(libzcash::AddressInfoFromViewingKey{}, viewingkey);
+    auto addrInfo = std::visit(libzcash::AddressInfoFromViewingKey{}, viewingkey.value());
     UniValue result(UniValue::VOBJ);
     const string strAddress = keyIO.EncodePaymentAddress(addrInfo.second);
     result.pushKV("type", addrInfo.first);
     result.pushKV("address", strAddress);
 
-    auto addResult = std::visit(AddViewingKeyToWallet(pwalletMain), viewingkey);
+    auto addResult = std::visit(AddViewingKeyToWallet(pwalletMain), viewingkey.value());
     if (addResult == SpendingKeyExists) {
         throw JSONRPCError(
             RPC_WALLET_ERROR,
@@ -905,12 +905,12 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
 
     KeyIO keyIO(Params());
     auto address = keyIO.DecodePaymentAddress(strAddress);
-    if (!IsValidPaymentAddress(address)) {
+    if (!address.has_value()) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
     }
 
     // Sapling support
-    auto sk = std::visit(GetSpendingKeyForPaymentAddress(pwalletMain), address);
+    auto sk = std::visit(GetSpendingKeyForPaymentAddress(pwalletMain), address.value());
     if (!sk) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
     }
@@ -944,11 +944,11 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
 
     KeyIO keyIO(Params());
     auto address = keyIO.DecodePaymentAddress(strAddress);
-    if (!IsValidPaymentAddress(address)) {
+    if (!address.has_value()) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
     }
 
-    auto vk = std::visit(GetViewingKeyForPaymentAddress(pwalletMain), address);
+    auto vk = std::visit(GetViewingKeyForPaymentAddress(pwalletMain), address.value());
     if (vk) {
         return keyIO.EncodeViewingKey(vk.value());
     } else {

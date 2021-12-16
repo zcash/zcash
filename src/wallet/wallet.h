@@ -1304,10 +1304,10 @@ public:
     /* Set the current encrypted HD seed, without saving it to disk (used by LoadWallet) */
     bool LoadCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& seed);
 
-    /* Find notes filtered by payment address, min depth, ability to spend */
+    /* Find notes filtered by (optional) payment address, min depth, ability to spend */
     void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
-                          std::string address,
+                          std::optional<libzcash::PaymentAddress> address,
                           int minDepth=1,
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true);
@@ -1372,7 +1372,6 @@ public:
     bool operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     bool operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     bool operator()(const libzcash::UnifiedAddress &uaddr) const;
-    bool operator()(const libzcash::InvalidEncoding& no) const;
 };
 
 class GetViewingKeyForPaymentAddress
@@ -1385,7 +1384,6 @@ public:
     std::optional<libzcash::ViewingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     std::optional<libzcash::ViewingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     std::optional<libzcash::ViewingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
-    std::optional<libzcash::ViewingKey> operator()(const libzcash::InvalidEncoding& no) const;
 };
 
 class HaveSpendingKeyForPaymentAddress
@@ -1398,7 +1396,6 @@ public:
     bool operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     bool operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     bool operator()(const libzcash::UnifiedAddress &uaddr) const;
-    bool operator()(const libzcash::InvalidEncoding& no) const;
 };
 
 class GetSpendingKeyForPaymentAddress
@@ -1411,7 +1408,6 @@ public:
     std::optional<libzcash::SpendingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     std::optional<libzcash::SpendingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     std::optional<libzcash::SpendingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
-    std::optional<libzcash::SpendingKey> operator()(const libzcash::InvalidEncoding& no) const;
 };
 
 enum PaymentAddressSource {
@@ -1433,7 +1429,6 @@ public:
     PaymentAddressSource operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     PaymentAddressSource operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     PaymentAddressSource operator()(const libzcash::UnifiedAddress &uaddr) const;
-    PaymentAddressSource operator()(const libzcash::InvalidEncoding& no) const;
 };
 
 enum KeyAddResult {
@@ -1452,7 +1447,6 @@ public:
 
     KeyAddResult operator()(const libzcash::SproutViewingKey &sk) const;
     KeyAddResult operator()(const libzcash::SaplingExtendedFullViewingKey &sk) const;
-    KeyAddResult operator()(const libzcash::InvalidEncoding& no) const;
 };
 
 class AddSpendingKeyToWallet
@@ -1479,7 +1473,6 @@ public:
 
     KeyAddResult operator()(const libzcash::SproutSpendingKey &sk) const;
     KeyAddResult operator()(const libzcash::SaplingExtendedSpendingKey &sk) const;
-    KeyAddResult operator()(const libzcash::InvalidEncoding& no) const;
 };
 
 

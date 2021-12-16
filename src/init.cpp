@@ -1102,7 +1102,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (!IsValidDestination(addr)) {
             // Try a payment address
             auto zaddr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
-            if (!std::visit(IsValidMinerAddress(), std::visit(ExtractMinerAddress(), zaddr)))
+            if (!zaddr.has_value() || std::visit(ExtractMinerAddress(), zaddr.value()).has_value())
             {
                 return InitError(strprintf(
                     _("Invalid address for -mineraddress=<addr>: '%s' (must be a Sapling or transparent address)"),
@@ -1684,8 +1684,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 minerAddressInLocalWallet = pwalletMain->HaveKey(keyID);
             } else {
                 auto zaddr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
+                if (!zaddr.has_value()) {
+                    return InitError(_("-mineraddress is not a valid zcash address."));
+                }
                 minerAddressInLocalWallet = std::visit(
-                    HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr);
+                    HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr.value());
             }
         }
         if (GetBoolArg("-minetolocalwallet", true) && !minerAddressInLocalWallet) {

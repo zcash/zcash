@@ -151,8 +151,6 @@ public:
         zcash_address_string_free(encoded);
         return res;
     }
-
-    std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
 };
 
 class ViewingKeyEncoder
@@ -189,8 +187,6 @@ public:
         memory_cleanse(data.data(), data.size());
         return ret;
     }
-
-    std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
 };
 
 class SpendingKeyEncoder
@@ -227,8 +223,6 @@ public:
         memory_cleanse(data.data(), data.size());
         return ret;
     }
-
-    std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
 };
 
 // Sizes of SaplingPaymentAddress, SaplingExtendedFullViewingKey, and
@@ -356,7 +350,7 @@ std::string KeyIO::EncodePaymentAddress(const libzcash::PaymentAddress& zaddr)
 }
 
 template<typename T1, typename T2, typename T3>
-T1 DecodeAny(
+std::optional<T1> DecodeAny(
     const KeyConstants& keyConstants,
     const std::string& str,
     std::pair<KeyConstants::Base58Type, size_t> sprout,
@@ -393,7 +387,7 @@ T1 DecodeAny(
     }
 
     memory_cleanse(data.data(), data.size());
-    return libzcash::InvalidEncoding();
+    return std::nullopt;
 }
 
 /**
@@ -447,7 +441,7 @@ static bool AddUnknownReceiver(void* ua, uint32_t typecode, const unsigned char*
     return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
 }
 
-libzcash::PaymentAddress KeyIO::DecodePaymentAddress(const std::string& str)
+std::optional<libzcash::PaymentAddress> KeyIO::DecodePaymentAddress(const std::string& str)
 {
     // Try parsing as a Unified Address.
     libzcash::UnifiedAddress ua;
@@ -475,7 +469,7 @@ libzcash::PaymentAddress KeyIO::DecodePaymentAddress(const std::string& str)
 }
 
 bool KeyIO::IsValidPaymentAddressString(const std::string& str) {
-    return IsValidPaymentAddress(DecodePaymentAddress(str));
+    return DecodePaymentAddress(str).has_value();
 }
 
 std::string KeyIO::EncodeViewingKey(const libzcash::ViewingKey& vk)
@@ -483,7 +477,7 @@ std::string KeyIO::EncodeViewingKey(const libzcash::ViewingKey& vk)
     return std::visit(ViewingKeyEncoder(keyConstants), vk);
 }
 
-libzcash::ViewingKey KeyIO::DecodeViewingKey(const std::string& str)
+std::optional<libzcash::ViewingKey> KeyIO::DecodeViewingKey(const std::string& str)
 {
     return DecodeAny<libzcash::ViewingKey,
         libzcash::SproutViewingKey,
@@ -500,7 +494,7 @@ std::string KeyIO::EncodeSpendingKey(const libzcash::SpendingKey& zkey)
     return std::visit(SpendingKeyEncoder(keyConstants), zkey);
 }
 
-libzcash::SpendingKey KeyIO::DecodeSpendingKey(const std::string& str)
+std::optional<libzcash::SpendingKey> KeyIO::DecodeSpendingKey(const std::string& str)
 {
 
     return DecodeAny<libzcash::SpendingKey,
