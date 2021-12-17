@@ -103,6 +103,7 @@ BASE_SCRIPTS= [
     'disablewallet.py',
     'keypool.py',
     'getblocktemplate.py',
+    'getmininginfo.py',
     'bip65-cltv-p2p.py',
     'bipdersig-p2p.py',
     'invalidblockrequest.py',

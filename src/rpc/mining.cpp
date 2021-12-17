@@ -322,8 +322,8 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"blocks\": nnn,             (numeric) The current block\n"
-            "  \"currentblocksize\": nnn,   (numeric) The last block size\n"
-            "  \"currentblocktx\": nnn,     (numeric) The last block transaction\n"
+            "  \"currentblocksize\": nnn,   (numeric, optional) The block size of the last assembled block (only present if a block was ever assembled)\n"
+            "  \"currentblocktx\": nnn,     (numeric, optional) The number of block non-coinbase transactions of the last assembled block (only present if a block was ever assembled)\n"
             "  \"difficulty\": xxx.xxxxx    (numeric) The current difficulty\n"
             "  \"errors\": \"...\"          (string) Current errors\n"
             "  \"generate\": true|false     (boolean) If the generation is on or off (see getgenerate or setgenerate calls)\n"
@@ -344,8 +344,8 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
 
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("blocks",           (int)chainActive.Height());
-    obj.pushKV("currentblocksize", (uint64_t)nLastBlockSize);
-    obj.pushKV("currentblocktx",   (uint64_t)nLastBlockTx);
+    if (last_block_size.has_value()) obj.pushKV("currentblocksize", last_block_size.value());
+    if (last_block_num_txs.has_value()) obj.pushKV("currentblocktx", last_block_num_txs.value());
     obj.pushKV("difficulty",       (double)GetNetworkDifficulty());
     auto warnings = GetWarnings("statusbar");
     obj.pushKV("errors",           warnings.first);
