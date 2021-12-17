@@ -432,7 +432,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
         if (!sproutAddresses.empty()) {
             UniValue random_sprout_addrs(UniValue::VARR);
             for (const SproutPaymentAddress& addr : sproutAddresses) {
-                if (HaveSpendingKeyForPaymentAddress(pwalletMain)(addr)) {
+                if (pwalletMain->HaveSproutSpendingKey(addr)) {
                     random_sprout_addrs.push_back(keyIO.EncodePaymentAddress(addr));
                 }
             }
@@ -2270,13 +2270,25 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             if (!zaddr.has_value()) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, address is not a valid zaddr: ") + address);
             }
-            auto hasSpendingKey = std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr.value());
-            if (!fIncludeWatchonly && !hasSpendingKey) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, spending key for address does not belong to wallet: ") + address);
-            }
+
             // We want to return unspent notes corresponding to any receiver within a
             // Unified Address.
             for (const auto ra : std::visit(GetRawAddresses(), zaddr.value())) {
+                bool hasSpendingKey = std::visit(match {
+                    [&](const SaplingPaymentAddress& addr) {
+                        return pwalletMain->HaveSaplingSpendingKeyForAddress(addr);
+                    },
+                    [&](const SproutPaymentAddress& addr) {
+                        return pwalletMain->HaveSproutSpendingKey(addr);
+                    }
+                }, ra);
+
+                // If we don't include watchonly addresses, we must reject any address
+                // for which we do not have the spending key.
+                if (!fIncludeWatchonly && !hasSpendingKey) {
+                    throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, spending key for address does not belong to wallet: ") + address);
+                }
+
                 zaddrs.insert(ra);
             }
 
@@ -2313,7 +2325,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             obj.pushKV("jsindex", (int)entry.jsop.js );
             obj.pushKV("jsoutindex", (int)entry.jsop.n);
             obj.pushKV("confirmations", entry.confirmations);
-            bool hasSproutSpendingKey = HaveSpendingKeyForPaymentAddress(pwalletMain)(entry.address);
+            bool hasSproutSpendingKey = pwalletMain->HaveSproutSpendingKey(entry.address);
             obj.pushKV("spendable", hasSproutSpendingKey);
             obj.pushKV("address", keyIO.EncodePaymentAddress(entry.address));
             obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
@@ -2330,7 +2342,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             obj.pushKV("txid", entry.op.hash.ToString());
             obj.pushKV("outindex", (int)entry.op.n);
             obj.pushKV("confirmations", entry.confirmations);
-            bool hasSaplingSpendingKey = HaveSpendingKeyForPaymentAddress(pwalletMain)(entry.address);
+            bool hasSaplingSpendingKey = pwalletMain->HaveSaplingSpendingKeyForAddress(entry.address);
             obj.pushKV("spendable", hasSaplingSpendingKey);
             // TODO: If we found this entry via a UA, show that instead.
             obj.pushKV("address", keyIO.EncodePaymentAddress(entry.address));
@@ -2980,7 +2992,7 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
         std::set<libzcash::SproutPaymentAddress> addresses;
         pwalletMain->GetSproutPaymentAddresses(addresses);
         for (auto addr : addresses) {
-            if (fIncludeWatchonly || HaveSpendingKeyForPaymentAddress(pwalletMain)(addr)) {
+            if (fIncludeWatchonly || pwalletMain->HaveSproutSpendingKey(addr)) {
                 ret.push_back(keyIO.EncodePaymentAddress(addr));
             }
         }
@@ -2989,7 +3001,7 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
         std::set<libzcash::SaplingPaymentAddress> addresses;
         pwalletMain->GetSaplingPaymentAddresses(addresses);
         for (auto addr : addresses) {
-            if (fIncludeWatchonly || HaveSpendingKeyForPaymentAddress(pwalletMain)(addr)) {
+            if (fIncludeWatchonly || pwalletMain->HaveSaplingSpendingKeyForAddress(addr)) {
                 ret.push_back(keyIO.EncodePaymentAddress(addr));
             }
         }
@@ -3141,14 +3153,10 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     std::vector<SaplingNoteEntry> saplingEntries;
     pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, decoded, nMinDepth, false, false);
 
-    std::set<std::pair<libzcash::RawAddress, uint256>> nullifierSet;
-    auto hasSpendingKey = std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), decoded.value());
-    if (hasSpendingKey) {
-        nullifierSet = pwalletMain->GetNullifiersForAddresses(std::visit(GetRawAddresses(), decoded.value()));
-    }
-
     std::visit(match {
-        [&](libzcash::SproutPaymentAddress addr) {
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            bool hasSpendingKey = pwalletMain->HaveSproutSpendingKey(addr);
+            auto nullifierSet = pwalletMain->GetNullifiersForAddresses({addr});
             for (SproutNoteEntry & entry : sproutEntries) {
                 UniValue obj(UniValue::VOBJ);
                 obj.pushKV("txid", entry.jsop.hash.ToString());
@@ -3171,7 +3179,9 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                 result.push_back(obj);
             }
         },
-        [&](libzcash::SaplingPaymentAddress addr) {
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            bool hasSpendingKey = pwalletMain->HaveSaplingSpendingKeyForAddress(addr);
+            auto nullifierSet = pwalletMain->GetNullifiersForAddresses({addr});
             for (SaplingNoteEntry & entry : saplingEntries) {
                 UniValue obj(UniValue::VOBJ);
                 obj.pushKV("txid", entry.op.hash.ToString());
@@ -3187,12 +3197,12 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                 obj.pushKV("blocktime", BlockData.time);
 
                 if (hasSpendingKey) {
-                  obj.pushKV("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op));
+                    obj.pushKV("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op));
                 }
                 result.push_back(obj);
             }
         },
-        [&](libzcash::UnifiedAddress) {
+        [&](const libzcash::UnifiedAddress& addr) {
             // TODO UNIFIED
         }
     }, decoded.value());
@@ -3721,6 +3731,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     auto fromaddress = params[0].get_str();
     bool fromTaddr = false;
     bool fromSapling = false;
+    bool fromSprout = false;
     KeyIO keyIO(Params());
     if (fromaddress == "ANY_TADDR") {
         fromTaddr = true;
@@ -3728,27 +3739,24 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         CTxDestination taddr = keyIO.DecodeDestination(fromaddress);
         fromTaddr = IsValidDestination(taddr);
         if (!fromTaddr) {
-            auto decoded = keyIO.DecodePaymentAddress(fromaddress);
-            if (!decoded.has_value()) {
+            auto addr = keyIO.DecodePaymentAddress(fromaddress);
+            if (!addr.has_value()) {
                 // invalid
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
             }
 
-            // Check that we have the spending key
-            libzcash::PaymentAddress addr(decoded.value());
-            if (!std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), addr)) {
+            // This is a sanity check; the actual checks will come later when the spend is attempted.
+            if (!std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), addr.value())) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key not found.");
             }
 
             // Remember whether this is a Sprout or Sapling address
-            fromSapling = std::holds_alternative<libzcash::SaplingPaymentAddress>(addr);
+            fromSapling = std::holds_alternative<libzcash::SaplingPaymentAddress>(addr.value());
+            fromSprout = std::holds_alternative<libzcash::SproutPaymentAddress>(addr.value());
         }
     }
-    // This logic will need to be updated if we add a new shielded pool
-    bool fromSprout = !(fromTaddr || fromSapling);
 
     UniValue outputs = params[1].get_array();
-
     if (outputs.size()==0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amounts array is empty.");
 
@@ -3781,13 +3789,12 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         bool isZaddr = false;
         CTxDestination taddr = keyIO.DecodeDestination(address);
         if (!IsValidDestination(taddr)) {
-            auto decoded = keyIO.DecodePaymentAddress(address);
-            if (decoded.has_value()) {
-                libzcash::PaymentAddress addr(decoded.value());
+            auto addr = keyIO.DecodePaymentAddress(address);
+            if (addr.has_value()) {
                 isZaddr = true;
 
-                bool toSapling = std::holds_alternative<libzcash::SaplingPaymentAddress>(addr);
-                bool toSprout = std::holds_alternative<libzcash::SproutPaymentAddress>(addr);
+                bool toSapling = std::holds_alternative<libzcash::SaplingPaymentAddress>(addr.value());
+                bool toSprout = std::holds_alternative<libzcash::SproutPaymentAddress>(addr.value());
                 noSproutAddrs = !toSprout && noSproutAddrs && toSapling;
 
                 containsSproutOutput |= toSprout;
@@ -3885,19 +3892,20 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     for (int i = 0; i < zaddrRecipients.size(); i++) {
         auto address = zaddrRecipients[i].address;
         auto decoded = keyIO.DecodePaymentAddress(address);
+
         if (decoded.has_value()) {
             std::visit(match {
-                [&](libzcash::SaplingPaymentAddress addr) {
+                [&](const libzcash::SaplingPaymentAddress& addr) {
                     mtx.vShieldedOutput.push_back(OutputDescription());
                 },
-                [&](libzcash::SproutPaymentAddress addr) {
+                [&](const libzcash::SproutPaymentAddress& addr) {
                     JSDescription jsdesc;
                     if (mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION)) {
                         jsdesc.proof = GrothProof();
                     }
                     mtx.vJoinSplit.push_back(jsdesc);
                 },
-                [&](libzcash::UnifiedAddress) {
+                [&](const libzcash::UnifiedAddress& ua) {
                     // TODO UNIFIED
                 }
             }, decoded.value());

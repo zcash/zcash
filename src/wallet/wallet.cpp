@@ -25,6 +25,7 @@
 #include "script/sign.h"
 #include "timedata.h"
 #include "utilmoneystr.h"
+#include "util/match.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "crypter.h"
@@ -5166,7 +5167,7 @@ void CWallet::GetFilteredNotes(
             }
 
             // skip notes which cannot be spent
-            if (requireSpendingKey && !HaveSpendingKeyForPaymentAddress(this)(pa)) {
+            if (requireSpendingKey && !HaveSaplingSpendingKeyForAddress(pa)) {
                 continue;
             }
 
@@ -5227,7 +5228,7 @@ PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::Sapl
             if (m_wallet->mapSaplingZKeyMetadata.count(ivk) > 0 &&
                     m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath != "") {
                 return LegacyHDSeed;
-            } else if (HaveSpendingKeyForPaymentAddress(m_wallet)(zaddr)) {
+            } else if (m_wallet->HaveSaplingSpendingKeyForAddress(zaddr)) {
                 return Imported;
             } else {
                 return ImportedWatchOnly;

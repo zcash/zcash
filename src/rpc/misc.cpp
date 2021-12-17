@@ -224,7 +224,7 @@ public:
         obj.pushKV("transmissionkey", zaddr.pk_enc.GetHex());
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
-            obj.pushKV("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr));
+            obj.pushKV("ismine", pwalletMain->HaveSproutSpendingKey(zaddr));
         }
 #endif
         return obj;
@@ -237,7 +237,7 @@ public:
         obj.pushKV("diversifiedtransmissionkey", zaddr.pk_d.GetHex());
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
-            obj.pushKV("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr));
+            obj.pushKV("ismine", pwalletMain->HaveSaplingSpendingKeyForAddress(zaddr));
         }
 #endif
         return obj;

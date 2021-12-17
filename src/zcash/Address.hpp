@@ -125,7 +125,7 @@ typedef std::variant<
     SproutPaymentAddress,
     SaplingPaymentAddress,
     UnifiedAddress> PaymentAddress;
-/** Viewing keys that can have a string encoding. */
+/** Viewing keys that can be decoded from a string representation. */
 typedef std::variant<
     SproutViewingKey,
     SaplingExtendedFullViewingKey> ViewingKey;
