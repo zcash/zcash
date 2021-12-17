@@ -4,9 +4,15 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, connect_nodes_bi, \
-    start_nodes
-
+from test_framework.util import (
+    assert_equal,
+    BLOSSOM_BRANCH_ID,
+    CANOPY_BRANCH_ID,
+    HEARTWOOD_BRANCH_ID,
+    NU5_BRANCH_ID,
+    nuparams,
+    start_nodes,
+)
 
 class GetBlockTemplateTest(BitcoinTestFramework):
     '''
@@ -15,12 +21,16 @@ class GetBlockTemplateTest(BitcoinTestFramework):
 
     def __init__(self):
         super().__init__()
-        self.num_nodes = 2
+        self.num_nodes = 1
         self.setup_clean_chain = True
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
-        connect_nodes_bi(self.nodes,0,1)
+        args = [nuparams(BLOSSOM_BRANCH_ID, 1),
+            nuparams(HEARTWOOD_BRANCH_ID, 1),
+            nuparams(CANOPY_BRANCH_ID, 1),
+            nuparams(NU5_BRANCH_ID, 1),
+        ]
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [args] * self.num_nodes)
         self.is_network_split=False
         self.sync_all()
 
@@ -51,15 +61,15 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         # Test 5: General checks
         tmpl = node.getblocktemplate()
         assert_equal(16, len(tmpl['noncerange']))
+        # should be proposing height 2, since current tip is height 1
+        assert_equal(2, tmpl['height'])
 
         # Test 6: coinbasetxn checks
-        assert('foundersreward' in tmpl['coinbasetxn'])
         assert(tmpl['coinbasetxn']['required'])
 
-        # Test 7: hashFinalSaplingRoot checks
-        assert('finalsaplingroothash' in tmpl)
-        finalsaplingroothash = '3e49b5f954aa9d3545bc6c37744661eea48d7c34e3000d82b7f0010c30f4c2fb'
-        assert_equal(finalsaplingroothash, tmpl['finalsaplingroothash'])
+        # Test 7: blockcommitmentshash checks
+        assert('blockcommitmentshash' in tmpl)
+        assert('00' * 32 != tmpl['finalsaplingroothash'])
 
 if __name__ == '__main__':
     GetBlockTemplateTest().main()

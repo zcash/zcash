@@ -428,6 +428,11 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             "amounts, use 'getblocksubsidy HEIGHT' passing in the height returned\n"
             "by this API.\n"
 
+            "\nThe roots returned in 'defaultroots' are only valid if the block template is\n"
+            "used unmodified. If any part of the block template marked as 'mutable' in the\n"
+            "output is mutated, these roots may need to be recomputed. For more information\n"
+            "on the derivation process, see ZIP 244.\n"
+
             "\nArguments:\n"
             "1. \"jsonrequestobject\"       (string, optional) A json object in the following spec\n"
             "     {\n"
@@ -753,15 +758,29 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         aMutable.push_back("prevblock");
     }
 
+    auto hashAuthDataRoot = pblock->BuildAuthDataMerkleTree();
+    std::string hashBlockCommitments_hex = DeriveBlockCommitmentsHash(
+            pblocktemplate->hashChainHistoryRoot,
+            hashAuthDataRoot).GetHex();
     UniValue result(UniValue::VOBJ);
     result.pushKV("capabilities", aCaps);
     result.pushKV("version", pblock->nVersion);
     result.pushKV("previousblockhash", pblock->hashPrevBlock.GetHex());
-    result.pushKV("blockcommitmentshash", pblock->hashBlockCommitments.GetHex());
-    // Deprecated; remove in a future release.
-    result.pushKV("lightclientroothash", pblock->hashBlockCommitments.GetHex());
-    // Deprecated; remove in a future release.
-    result.pushKV("finalsaplingroothash", pblock->hashBlockCommitments.GetHex());
+    // The following 3 are deprecated; remove in a future release.
+    result.pushKV("blockcommitmentshash", hashBlockCommitments_hex);
+    result.pushKV("lightclientroothash", hashBlockCommitments_hex);
+    result.pushKV("finalsaplingroothash", hashBlockCommitments_hex);
+    {
+        // These are items in the result object that are valid only if the
+        // block template returned by this RPC is used unmodified. Otherwise,
+        // these values must be recomputed.
+        UniValue defaults(UniValue::VOBJ);
+        defaults.pushKV("merkleroot", pblock->BuildMerkleTree().GetHex());
+        defaults.pushKV("authdataroot", hashAuthDataRoot.GetHex());
+        defaults.pushKV("chainhistoryroot", pblocktemplate->hashChainHistoryRoot.GetHex());
+        defaults.pushKV("blockcommitmentshash", hashBlockCommitments_hex);
+        result.pushKV("defaultroots", defaults);
+    }
     result.pushKV("transactions", transactions);
     if (coinbasetxn) {
         assert(txCoinbase.isObject());
