@@ -48,7 +48,7 @@ zcash_history = "0.2"
 zcash_note_encryption = "0.0"
 zcash_primitives = "0.5"
 zcash_proofs = "0.5"
-ed25519-zebra = "2.2.0"
+ed25519-zebra = "3"
 
 # Metrics
 hyper = { version = "=0.14.2", default-features = false, features = ["server", "tcp", "http1"] }
@@ -69,7 +69,6 @@ panic = 'abort'
 codegen-units = 1
 
 [patch.crates-io]
-ed25519-zebra = { git = "https://github.com/ZcashFoundation/ed25519-zebra.git", rev = "d3512400227a362d08367088ffaa9bd4142a69c7" }
 incrementalmerkletree = { git = "https://github.com/zcash/incrementalmerkletree", rev = "b7bd6246122a6e9ace8edb51553fbf5228906cbb" }
 orchard = { git = "https://github.com/zcash/orchard.git", rev = "2c8241f25b943aa05203eacf9905db117c69bd29" }
 zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "53d0a51d33a421cb76d3e3124d1e4c1c9036068e" }
