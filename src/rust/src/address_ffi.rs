@@ -139,8 +139,8 @@ pub extern "C" fn zcash_address_parse_unified(
 
     let ua: UnifiedAddressHelper = match addr.convert() {
         Ok(ua) => ua,
-        Err(e) => {
-            tracing::error!("{}", e);
+        Err(_) => {
+            // `KeyIO::DecodePaymentAddress` handles the rest of the address kinds.
             return false;
         }
     };
