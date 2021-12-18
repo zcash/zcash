@@ -5,7 +5,10 @@ use std::{
 };
 
 use libc::{c_char, c_void};
-use zcash_address::{unified, FromAddress, Network, ToAddress, ZcashAddress};
+use zcash_address::{
+    unified::{self, Container, Encoding},
+    FromAddress, Network, ToAddress, ZcashAddress,
+};
 use zcash_primitives::sapling;
 
 pub type UnifiedAddressObj = NonNull<c_void>;
@@ -69,8 +72,8 @@ impl UnifiedAddressHelper {
         }
 
         self.ua
-            .receivers()
-            .into_iter()
+            .items_as_parsed()
+            .iter()
             .map(|receiver| match receiver {
                 unified::Receiver::Orchard(data) => {
                     // ZIP 316: Senders MUST reject Unified Addresses in which any
@@ -92,7 +95,7 @@ impl UnifiedAddressHelper {
                     // ZIP 316: Senders MUST reject Unified Addresses in which any
                     // constituent address does not meet the validation requirements of
                     // its Receiver Encoding.
-                    if sapling::PaymentAddress::from_bytes(&data).is_none() {
+                    if sapling::PaymentAddress::from_bytes(data).is_none() {
                         tracing::error!("Unified Address contains invalid Sapling receiver");
                         false
                     } else {
@@ -106,7 +109,7 @@ impl UnifiedAddressHelper {
                     (p2pkh_cb.unwrap())(ua_obj, data.as_ptr())
                 },
                 unified::Receiver::Unknown { typecode, data } => unsafe {
-                    (unknown_cb.unwrap())(ua_obj, typecode, data.as_ptr(), data.len())
+                    (unknown_cb.unwrap())(ua_obj, *typecode, data.as_ptr(), data.len())
                 },
             })
             .all(|b| b)
@@ -209,7 +212,7 @@ pub extern "C" fn zcash_address_serialize_unified(
         }
     };
 
-    let ua: unified::Address = match receivers.try_into() {
+    let ua = match unified::Address::try_from_items_preserving_order(receivers) {
         Ok(ua) => ua,
         Err(e) => {
             tracing::error!("{}", e);
