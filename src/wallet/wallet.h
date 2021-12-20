@@ -1404,19 +1404,32 @@ public:
     bool operator()(const libzcash::UnifiedAddress &uaddr) const;
 };
 
-class GetSpendingKeyForPaymentAddress
+class GetSproutKeyForPaymentAddress
 {
 private:
     CWallet *m_wallet;
 public:
-    GetSpendingKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
+    GetSproutKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
 
-    std::optional<libzcash::SpendingKey> operator()(const CKeyID &zaddr) const;
-    std::optional<libzcash::SpendingKey> operator()(const CScriptID &zaddr) const;
-    std::optional<libzcash::SpendingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
-    std::optional<libzcash::SpendingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    // FIXME: this doesn't make sense
-    std::optional<libzcash::SpendingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
+    std::optional<libzcash::SproutSpendingKey> operator()(const CKeyID &zaddr) const;
+    std::optional<libzcash::SproutSpendingKey> operator()(const CScriptID &zaddr) const;
+    std::optional<libzcash::SproutSpendingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
+    std::optional<libzcash::SproutSpendingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    std::optional<libzcash::SproutSpendingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
+};
+
+class GetSaplingKeyForPaymentAddress
+{
+private:
+    CWallet *m_wallet;
+public:
+    GetSaplingKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
+
+    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const CKeyID &zaddr) const;
+    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const CScriptID &zaddr) const;
+    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
+    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
 };
 
 enum PaymentAddressSource {

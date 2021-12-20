@@ -3,6 +3,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "chain.h"
+#include "core_io.h"
 #include "key_io.h"
 #include "rpc/server.h"
 #include "init.h"
@@ -11,6 +12,7 @@
 #include "script/standard.h"
 #include "sync.h"
 #include "util.h"
+#include "util/match.h"
 #include "utiltime.h"
 #include "wallet.h"
 
@@ -67,7 +69,7 @@ std::string DecodeDumpString(const std::string &str) {
     for (unsigned int pos = 0; pos < str.length(); pos++) {
         unsigned char c = str[pos];
         if (c == '%' && pos+2 < str.length()) {
-            c = (((str[pos+1]>>6)*9+((str[pos+1]-'0')&15)) << 4) | 
+            c = (((str[pos+1]>>6)*9+((str[pos+1]-'0')&15)) << 4) |
                 ((str[pos+2]>>6)*9+((str[pos+2]-'0')&15));
             pos += 2;
         }
@@ -80,7 +82,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
             "importprivkey \"zcashprivkey\" ( \"label\" rescan )\n"
@@ -189,7 +191,7 @@ UniValue importaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() < 1 || params.size() > 4)
         throw runtime_error(
             "importaddress \"address\" ( \"label\" rescan p2sh )\n"
@@ -338,7 +340,7 @@ UniValue importwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "importwallet \"filename\"\n"
@@ -476,7 +478,7 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "dumpprivkey \"t-addr\"\n"
@@ -520,7 +522,7 @@ UniValue z_exportwallet(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    
+
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "z_exportwallet \"filename\"\n"
@@ -769,10 +771,10 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     if (addResult == KeyNotAdded) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
     }
-    
+
     // whenever a key is imported, we need to scan the whole chain
     pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
-    
+
     // We want to scan for transactions and notes
     if (fRescan) {
         pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
@@ -909,12 +911,48 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
     }
 
-    // Sapling support
-    auto sk = std::visit(GetSpendingKeyForPaymentAddress(pwalletMain), address.value());
-    if (!sk) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
-    }
-    return keyIO.EncodeSpendingKey(sk.value());
+    std::string result = std::visit(match {
+        [&](const CKeyID& addr) {
+            CKey key;
+            if (pwalletMain->GetKey(addr, key)) {
+                return keyIO.EncodeSecret(key);
+            } else {
+                throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold the private key for this address.");
+            }
+        },
+        [&](const CScriptID& addr) {
+            CScript redeemScript;
+            if (pwalletMain->GetCScript(addr, redeemScript)) {
+                return FormatScript(redeemScript);
+            } else {
+                throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold the private key for this address.");
+            }
+        },
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            libzcash::SproutSpendingKey key;
+            if (pwalletMain->GetSproutSpendingKey(addr, key)) {
+                return keyIO.EncodeSpendingKey(key);
+            } else {
+                throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold the private zkey for this zaddr");
+            }
+        },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            libzcash::SaplingExtendedSpendingKey extsk;
+            if (pwalletMain->GetSaplingExtendedSpendingKey(addr, extsk)) {
+                return keyIO.EncodeSpendingKey(extsk);
+            } else {
+                throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold the private zkey for this zaddr");
+            }
+        },
+        [&](const libzcash::UnifiedAddress& ua) {
+            throw JSONRPCError(
+                    RPC_WALLET_ERROR,
+                    "No serialized form is defined for unified spending keys. "
+                    "Use the emergency recovery phrase for this wallet for backup purposes instead.");
+            return std::string(); //unreachable, here to make the compiler happy
+        }
+    }, address.value());
+    return result;
 }
 
 UniValue z_exportviewingkey(const UniValue& params, bool fHelp)

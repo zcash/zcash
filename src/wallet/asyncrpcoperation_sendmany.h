@@ -104,7 +104,6 @@ private:
     bool isfromzaddr_;
     CTxDestination fromtaddr_;
     PaymentAddress frompaymentaddress_;
-    SpendingKey spendingkey_;
 
     Ed25519VerificationKey joinSplitPubKey_;
     Ed25519SigningKey joinSplitPrivKey_;

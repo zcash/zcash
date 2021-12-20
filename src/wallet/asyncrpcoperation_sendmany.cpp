@@ -106,7 +106,6 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
 
             isfromzaddr_ = true;
             frompaymentaddress_ = address.value();
-            spendingkey_ = std::visit(GetSpendingKeyForPaymentAddress(pwalletMain), address.value()).value();
         } else {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address");
         }
@@ -306,9 +305,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         // Get various necessary keys
         SaplingExpandedSpendingKey expsk;
         uint256 ovk;
-        if (isfromzaddr_) {
-            auto sk = std::get<libzcash::SaplingExtendedSpendingKey>(spendingkey_);
-            expsk = sk.expsk;
+        auto saplingKey = std::visit(GetSaplingKeyForPaymentAddress(pwalletMain), frompaymentaddress_);
+        if (saplingKey.has_value()) {
+            expsk = saplingKey.value().expsk;
             ovk = expsk.full_viewing_key().ovk;
         } else {
             // Sending from a t-address, which we don't have an ovk for. Instead,
@@ -523,6 +522,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         UniValue obj(UniValue::VOBJ);
         while (zOutputsDeque.size() > 0) {
             AsyncJoinSplitInfo info;
+            // FIXME: make sure this .value() call is safe
             info.vpub_old = 0;
             info.vpub_new = 0;
             int n = 0;
@@ -641,7 +641,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             intermediates.insert(std::make_pair(tree.root(), tree));    // chained js are interstitial (found in between block boundaries)
 
             // Decrypt the change note's ciphertext to retrieve some data we need
-            ZCNoteDecryption decryptor(std::get<libzcash::SproutSpendingKey>(spendingkey_).receiving_key());
+            // FIXME: make sure this .value() call is safe
+            auto sk = std::visit(GetSproutKeyForPaymentAddress(pwalletMain), frompaymentaddress_).value();
+            ZCNoteDecryption decryptor(sk.receiving_key());
             auto hSig = ZCJoinSplit::h_sig(
                 prevJoinSplit.randomSeed,
                 prevJoinSplit.nullifiers,
@@ -1023,7 +1025,8 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
         if (!witnesses[i]) {
             throw runtime_error("joinsplit input could not be found in tree");
         }
-        info.vjsin.push_back(JSInput(*witnesses[i], info.notes[i], std::get<libzcash::SproutSpendingKey>(spendingkey_)));
+        auto sk = std::visit(GetSproutKeyForPaymentAddress(pwalletMain), frompaymentaddress_).value();
+        info.vjsin.push_back(JSInput(*witnesses[i], info.notes[i], sk));
     }
 
     // Make sure there are two inputs and two outputs
