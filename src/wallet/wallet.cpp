@@ -450,7 +450,7 @@ std::pair<ZcashdUnifiedSpendingKey, ZcashdUnifiedSpendingKeyMetadata> CWallet::G
 
 std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedSpendingKeyMetadata>>
         CWallet::GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId) {
-    AssertLockHeld(cs_wallet); // mapUnifiedKeyMetadata
+    AssertLockHeld(cs_wallet); // mapUnifiedSpendingKeyMeta
 
     auto seed = GetMnemonicSeed();
     if (!seed.has_value()) {
@@ -474,7 +474,7 @@ std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedSpendin
         // the fingerprint of the associated full viewing key.
 
         auto metaKey = std::make_pair(skmeta.GetSeedFingerprint(), skmeta.GetAccountId());
-        mapUnifiedKeyMetadata.insert({metaKey, skmeta});
+        mapUnifiedSpendingKeyMeta.insert({metaKey, skmeta});
 
         // Add Transparent component to the wallet
         if (sk.GetTransparentKey().has_value()) {
@@ -541,8 +541,8 @@ std::optional<std::pair<UFVKId, ZcashdUnifiedFullViewingKey>> CWallet::GetUnifie
     }
 
     auto seedfp = mnemonicHDChain.value().GetSeedFingerprint();
-    auto i = mapUnifiedKeyMetadata.find(std::make_pair(seedfp, accountId));
-    if (i != mapUnifiedKeyMetadata.end()) {
+    auto i = mapUnifiedSpendingKeyMeta.find(std::make_pair(seedfp, accountId));
+    if (i != mapUnifiedSpendingKeyMeta.end()) {
         auto keyId = i->second.GetKeyID();
         auto key = CCryptoKeyStore::GetUnifiedFullViewingKey(keyId);
         if (key.has_value()) {
@@ -590,10 +590,10 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
         // being requested is the same as the set of receiver types that was
         // previously generated; if so, return the previously generated address,
         // otherwise return an error.
-        if (mapUnifiedAddressMetadata.count(ufvkid) > 0) {
-            const auto& accountKeys = mapUnifiedAddressMetadata.at(ufvkid);
-            if (accountKeys.count(j) > 0) {
-                if (accountKeys.at(j) == receiverTypes) {
+        if (mapUnifiedFullViewingKeyMeta.count(ufvkid) > 0) {
+            auto receivers = mapUnifiedFullViewingKeyMeta.at(ufvkid).GetReceivers(j);
+            if (receivers.has_value()) {
+                if (receivers.value() == receiverTypes) {
                     ZcashdUnifiedAddressMetadata addrmeta(ufvkid, j, receiverTypes);
                     auto addr = ufvk.Address(j, receiverTypes);
                     return std::make_pair(addr.value(), addrmeta);
@@ -601,6 +601,8 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
                     return AddressGenerationError::ExistingAddressMismatch;
                 }
             }
+        } else {
+            mapUnifiedFullViewingKeyMeta[ufvkid] = ZcashdUnifiedFullViewingKeyMetadata(accountId);
         }
 
         // Find a working diversifier and construct the associated address.
@@ -622,7 +624,10 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
         // Save the metadata for the generated address so that we can re-derive
         // it in the future.
         ZcashdUnifiedAddressMetadata addrmeta(ufvkid, foundAddress.second, receiverTypes);
-        mapUnifiedAddressMetadata[ufvkid].insert({diversifierIndex, receiverTypes});
+
+        // we can safely ignore the return value here; we know that we're adding a new
+        // set of receivers given the receivers.has_value() check above.
+        mapUnifiedFullViewingKeyMeta[ufvkid].SetReceivers(diversifierIndex, receiverTypes);
         if (fFileBacked) {
             CWalletDB(strWalletFile).WriteUnifiedAddressMetadata(addrmeta);
         }
@@ -636,10 +641,10 @@ bool CWallet::LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &k
 {
     auto ufvkid = key.GetKeyID(Params());
     auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(key);
-    if (mapUnifiedAddressMetadata.count(ufvkid) > 0) {
+    if (mapUnifiedFullViewingKeyMeta.count(ufvkid) > 0) {
         // restore unified addresses that have been previously generated to the
         // keystore
-        for (const auto &[j, receiverTypes] : mapUnifiedAddressMetadata[ufvkid]) {
+        for (const auto &[j, receiverTypes] : mapUnifiedFullViewingKeyMeta.at(ufvkid).GetAllReceivers()) {
             auto addr = zufvk.Address(j, receiverTypes).value();
             AddUnifiedAddress(ufvkid, std::make_pair(addr, j));
         }
@@ -647,16 +652,21 @@ bool CWallet::LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &k
     return CCryptoKeyStore::AddUnifiedFullViewingKey(ufvkid, zufvk);
 }
 
-void CWallet::LoadUnifiedKeyMetadata(const ZcashdUnifiedSpendingKeyMetadata &skmeta)
+bool CWallet::LoadUnifiedKeyMetadata(const ZcashdUnifiedSpendingKeyMetadata &skmeta)
 {
-    AssertLockHeld(cs_wallet); // mapUnifiedKeyMetadata
+    AssertLockHeld(cs_wallet); // mapUnifiedSpendingKeyMeta
     auto metaKey = std::make_pair(skmeta.GetSeedFingerprint(), skmeta.GetAccountId());
-    mapUnifiedKeyMetadata.insert({metaKey, skmeta});
+    mapUnifiedSpendingKeyMeta.insert({metaKey, skmeta});
+    if (mapUnifiedFullViewingKeyMeta.count(skmeta.GetKeyID()) == 0) {
+        return mapUnifiedFullViewingKeyMeta[skmeta.GetKeyID()].SetAccountId(skmeta.GetAccountId());
+    }
+
+    return true;
 }
 
 bool CWallet::LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta)
 {
-    AssertLockHeld(cs_wallet); // mapUnifiedKeyMetadata
+    AssertLockHeld(cs_wallet); // mapUnifiedSpendingKeyMeta
     auto ufvk = GetUnifiedFullViewingKey(addrmeta.GetKeyID());
     if (ufvk.has_value()) {
         // restore unified addresses that have been previously generated
@@ -5810,14 +5820,19 @@ std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const l
         }
 
         diversifier_index_t j;
-        if (wallet.mapUnifiedAddressMetadata.count(ufvkid) > 0 &&
+        if (wallet.mapUnifiedFullViewingKeyMeta.count(ufvkid) > 0 &&
             librustzcash_sapling_diversifier_index(
                     ufvk.value().GetSaplingKey().value().dk.begin(),
                     saplingAddr.d.begin(),
-                    j.begin()) &&
-            wallet.mapUnifiedAddressMetadata.at(ufvkid).count(j) > 0) {
-
-            return ufvk.value().Address(j, wallet.mapUnifiedAddressMetadata.at(ufvkid).at(j));
+                    j.begin())) {
+            auto receivers = wallet.mapUnifiedFullViewingKeyMeta.at(ufvkid).GetReceivers(j);
+            if (receivers.has_value()) {
+                return ufvk.value().Address(j, receivers.value());
+            } else {
+                // If we don't know the receiver types at which the address was originally
+                // generated, we can't reconstruct the address.
+                return std::nullopt;
+            }
         } else {
             return std::nullopt;
         }
@@ -5834,14 +5849,23 @@ std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const C
         auto ufvkid = ufvkPair.value().first;
         // transparent address UFVK metadata is always accompanied by the child
         // index at which the address was produced
+        assert(ufvkPair.value().second.has_value());
         diversifier_index_t j = ufvkPair.value().second.value();
         auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
         if (!(ufvk.has_value() && ufvk.value().GetTransparentKey().has_value())) {
             throw std::runtime_error("CWallet::LookupUnifiedAddress(): UFVK has no P2PKH key part.");
         }
 
-        if (wallet.mapUnifiedAddressMetadata.count(ufvkid) > 0) {
-            return ufvk.value().Address(j, wallet.mapUnifiedAddressMetadata.at(ufvkid).at(j));
+        // Find the set of receivers at the diversifier index. If no metadata is available
+        // for the ufvk, or we do not know the receiver types for the address produced
+        // at this diversifier, we cannot reconstruct the address.
+        if (wallet.mapUnifiedFullViewingKeyMeta.count(ufvkid) > 0) {
+            auto receivers = wallet.mapUnifiedFullViewingKeyMeta.at(ufvkid).GetReceivers(j);
+            if (receivers.has_value()) {
+                return ufvk.value().Address(j, receivers.value());
+            } else {
+                return std::nullopt;
+            }
         } else {
             return std::nullopt;
         }

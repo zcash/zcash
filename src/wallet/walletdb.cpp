@@ -689,12 +689,18 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         else if (strType == "unifiedskmeta")
         {
             auto keymeta = ZcashdUnifiedSpendingKeyMetadata::Read(ssValue);
-            pwallet->LoadUnifiedKeyMetadata(keymeta);
+            if (!pwallet->LoadUnifiedKeyMetadata(keymeta)) {
+                strErr = "Error reading wallet database: account ID mismatch for unified spending key.";
+                return false;
+            };
         }
         else if (strType == "unifiedaddrmeta")
         {
             auto keymeta = ZcashdUnifiedAddressMetadata::Read(ssValue);
-            pwallet->LoadUnifiedAddressMetadata(keymeta);
+            if (!pwallet->LoadUnifiedAddressMetadata(keymeta)) {
+                strErr = "Error reading wallet database: cannot reproduce previously generated unified address.";
+                return false;
+            }
         }
         else if (strType == "pool")
         {

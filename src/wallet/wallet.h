@@ -638,9 +638,6 @@ public:
     std::set<uint256> GetConflicts() const;
 };
 
-
-
-
 class COutput
 {
 public:
@@ -656,9 +653,6 @@ public:
     CAmount Value() const { return tx->vout[i].nValue; }
     std::string ToString() const;
 };
-
-
-
 
 /** Private key that includes an expiration date in case it never gets used. */
 class CWalletKey
@@ -684,6 +678,49 @@ public:
         READWRITE(nTimeCreated);
         READWRITE(nTimeExpires);
         READWRITE(LIMITED_STRING(strComment, 65536));
+    }
+};
+
+class ZcashdUnifiedFullViewingKeyMetadata
+{
+private:
+    std::optional<libzcash::AccountId> accountId;
+    std::map<libzcash::diversifier_index_t, std::set<libzcash::ReceiverType>> addressReceivers;
+public:
+    ZcashdUnifiedFullViewingKeyMetadata() {}
+    ZcashdUnifiedFullViewingKeyMetadata(libzcash::AccountId accountId): accountId(accountId) {}
+
+    const std::map<libzcash::diversifier_index_t, std::set<libzcash::ReceiverType>>& GetAllReceivers() const {
+        return addressReceivers;
+    }
+
+    std::optional<std::set<libzcash::ReceiverType>> GetReceivers(
+            const libzcash::diversifier_index_t& j) const {
+        if (addressReceivers.count(j) > 0) {
+            return addressReceivers.at(j);
+        } else {
+            return std::nullopt;
+        }
+    }
+
+    bool SetReceivers(
+            const libzcash::diversifier_index_t& j,
+            const std::set<libzcash::ReceiverType>& receivers) {
+        if (addressReceivers.count(j) > 0) {
+            return false;
+        } else {
+            addressReceivers[j] = receivers;
+            return true;
+        }
+    }
+
+    bool SetAccountId(libzcash::AccountId accountIdIn) {
+        if (accountId.has_value()) {
+            return (accountIdIn == accountId.value());
+        } else {
+            accountId = accountIdIn;
+            return true;
+        }
     }
 };
 
@@ -856,8 +893,8 @@ public:
 
     std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapSproutZKeyMetadata;
     std::map<libzcash::SaplingIncomingViewingKey, CKeyMetadata> mapSaplingZKeyMetadata;
-    std::map<std::pair<libzcash::SeedFingerprint, libzcash::AccountId>, ZcashdUnifiedSpendingKeyMetadata> mapUnifiedKeyMetadata;
-    std::map<libzcash::UFVKId, std::map<libzcash::diversifier_index_t, std::set<libzcash::ReceiverType>>> mapUnifiedAddressMetadata;
+    std::map<std::pair<libzcash::SeedFingerprint, libzcash::AccountId>, ZcashdUnifiedSpendingKeyMetadata> mapUnifiedSpendingKeyMeta;
+    std::map<libzcash::UFVKId, ZcashdUnifiedFullViewingKeyMetadata> mapUnifiedFullViewingKeyMeta;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
     MasterKeyMap mapMasterKeys;
@@ -1159,7 +1196,7 @@ public:
     bool AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
     bool LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
 
-    void LoadUnifiedKeyMetadata(const ZcashdUnifiedSpendingKeyMetadata &skmeta);
+    bool LoadUnifiedKeyMetadata(const ZcashdUnifiedSpendingKeyMetadata &skmeta);
     bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
 
     /**
