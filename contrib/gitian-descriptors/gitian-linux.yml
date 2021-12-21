@@ -18,6 +18,7 @@ packages:
 - "g++-multilib"
 - "git-core"
 - "libc6-dev"
+- "libtinfo5"
 - "libtool"
 - "libxml2"
 - "m4"
