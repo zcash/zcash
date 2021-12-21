@@ -1,29 +1,9 @@
 [source.crates-io]
 replace-with = "vendored-sources"
 
-[source."https://github.com/ZcashFoundation/ed25519-zebra.git"]
-git = "https://github.com/ZcashFoundation/ed25519-zebra.git"
-rev = "d3512400227a362d08367088ffaa9bd4142a69c7"
-replace-with = "vendored-sources"
-
-[source."https://github.com/str4d/redjubjub.git"]
-git = "https://github.com/str4d/redjubjub.git"
-rev = "416a6a8ebf8bd42c114c938883016c04f338de72"
-replace-with = "vendored-sources"
-
-[source."https://github.com/zcash/incrementalmerkletree"]
-git = "https://github.com/zcash/incrementalmerkletree"
-rev = "b7bd6246122a6e9ace8edb51553fbf5228906cbb"
-replace-with = "vendored-sources"
-
 [source."https://github.com/zcash/librustzcash.git"]
 git = "https://github.com/zcash/librustzcash.git"
 rev = "5622b060b1f57de7afc3d0b4e425b9b4b22482a0"
-replace-with = "vendored-sources"
-
-[source."https://github.com/zcash/orchard.git"]
-git = "https://github.com/zcash/orchard.git"
-rev = "2c8241f25b943aa05203eacf9905db117c69bd29"
 replace-with = "vendored-sources"
 
 [source.vendored-sources]
