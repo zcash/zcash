@@ -858,8 +858,7 @@ private:
     /* Add a transparent secret key to the wallet. Internal use only. */
     CPubKey AddTransparentSecretKey(
             const uint256& seedFingerprint,
-            const std::pair<CKey, HDKeyPath>& extSecret,
-            const std::optional<libzcash::UFVKId>& ufvkId = std::nullopt);
+            const std::pair<CKey, HDKeyPath>& extSecret);
 
 protected:
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);
@@ -1056,10 +1055,7 @@ public:
      */
     CPubKey GenerateNewKey();
     //! Adds a key to the store, and saves it to disk.
-    bool AddKeyPubKey(
-            const CKey& key,
-            const CPubKey &pubkey,
-            const std::optional<libzcash::UFVKId>& ufvkId = std::nullopt);
+    bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
     //! Adds a key to the store, without saving it to disk (used by LoadWallet)
     bool LoadKey(const CKey& key, const CPubKey &pubkey) { return CCryptoKeyStore::AddKeyPubKey(key, pubkey); }
     //! Load metadata (used by LoadWallet)

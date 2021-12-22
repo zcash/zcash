@@ -301,8 +301,7 @@ CPubKey CWallet::GenerateNewKey()
 
 CPubKey CWallet::AddTransparentSecretKey(
         const uint256& seedFingerprint,
-        const std::pair<CKey, HDKeyPath>& extSecret,
-        const std::optional<libzcash::UFVKId>& ufvkId)
+        const std::pair<CKey, HDKeyPath>& extSecret)
 {
     CKey secret = extSecret.first;
     CPubKey pubkey = secret.GetPubKey();
@@ -316,7 +315,7 @@ CPubKey CWallet::AddTransparentSecretKey(
     if (nTimeFirstKey == 0 || keyMeta.nCreateTime < nTimeFirstKey)
         nTimeFirstKey = keyMeta.nCreateTime;
 
-    if (!AddKeyPubKey(secret, pubkey, ufvkId))
+    if (!AddKeyPubKey(secret, pubkey))
         throw std::runtime_error("CWallet::GenerateNewKey(): AddKeyPubKey failed");
 
     return pubkey;
@@ -324,8 +323,7 @@ CPubKey CWallet::AddTransparentSecretKey(
 
 bool CWallet::AddKeyPubKey(
         const CKey& secret,
-        const CPubKey &pubkey,
-        const std::optional<libzcash::UFVKId>& ufvkId)
+        const CPubKey &pubkey)
 {
     AssertLockHeld(cs_wallet); // mapKeyMetadata
     if (!CCryptoKeyStore::AddKeyPubKey(secret, pubkey))
@@ -611,7 +609,7 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
             auto seed = GetMnemonicSeed().value();
             auto b44 = libzcash::Bip44AccountChains::ForAccount(seed, BIP44CoinType(), accountId).value();
             auto key = b44.DeriveExternal(diversifierIndex.ToTransparentChildIndex().value()).value();
-            AddTransparentSecretKey(seed.Fingerprint(), key, ufvkid);
+            AddTransparentSecretKey(seed.Fingerprint(), key);
         }
 
         // Save the metadata for the generated address so that we can re-derive
