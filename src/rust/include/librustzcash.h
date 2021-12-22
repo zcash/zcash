@@ -364,7 +364,7 @@ extern "C" {
      * Arguments:
      * - dk: [c_uchar; 32] the byte representation of a Sapling diversifier key
      * - addr: [c_uchar; 11] the bytes of the diversifier
-     * - j_ret: [c_uchar; 11] array that will store the retulgin diversifier index
+     * - j_ret: [c_uchar; 11] array that will store the resulting diversifier index
      */
     bool librustzcash_sapling_diversifier_index(
         const unsigned char *dk,

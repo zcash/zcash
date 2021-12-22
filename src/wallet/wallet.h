@@ -696,8 +696,9 @@ public:
 
     std::optional<std::set<libzcash::ReceiverType>> GetReceivers(
             const libzcash::diversifier_index_t& j) const {
-        if (addressReceivers.count(j) > 0) {
-            return addressReceivers.at(j);
+        auto receivers = addressReceivers.find(j);
+        if (receivers != addressReceivers.end()) {
+            return receivers->second;
         } else {
             return std::nullopt;
         }
@@ -706,12 +707,7 @@ public:
     bool SetReceivers(
             const libzcash::diversifier_index_t& j,
             const std::set<libzcash::ReceiverType>& receivers) {
-        if (addressReceivers.count(j) > 0) {
-            return false;
-        } else {
-            addressReceivers[j] = receivers;
-            return true;
-        }
+        return addressReceivers.insert(std::make_pair(j, receivers)).second;
     }
 
     bool SetAccountId(libzcash::AccountId accountIdIn) {
@@ -753,7 +749,7 @@ private:
     bool fBroadcastTransactions;
 
     /**
-     * A map from protocol-specifiec transaction output identifier to
+     * A map from a protocol-specific transaction output identifier to
      * a txid.
      */
     template <class T>
@@ -859,7 +855,7 @@ private:
     void SyncMetaData(std::pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator>);
     void ChainTipAdded(const CBlockIndex *pindex, const CBlock *pblock, SproutMerkleTree sproutTree, SaplingMerkleTree saplingTree);
 
-    /* Add an extended secret key to the wallet. Internal use only. */
+    /* Add a transparent secret key to the wallet. Internal use only. */
     CPubKey AddTransparentSecretKey(
             const uint256& seedFingerprint,
             const std::pair<CKey, HDKeyPath>& extSecret,

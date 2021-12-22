@@ -590,8 +590,9 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
         // being requested is the same as the set of receiver types that was
         // previously generated; if so, return the previously generated address,
         // otherwise return an error.
-        if (mapUnifiedFullViewingKeyMeta.count(ufvkid) > 0) {
-            auto receivers = mapUnifiedFullViewingKeyMeta.at(ufvkid).GetReceivers(j);
+        auto metadata = mapUnifiedFullViewingKeyMeta.find(ufvkid);
+        if (metadata != mapUnifiedFullViewingKeyMeta.end()) {
+            auto receivers = metadata->second.GetReceivers(j);
             if (receivers.has_value()) {
                 if (receivers.value() == receiverTypes) {
                     ZcashdUnifiedAddressMetadata addrmeta(ufvkid, j, receiverTypes);
@@ -617,13 +618,13 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
             // the wallet.
             auto seed = GetMnemonicSeed().value();
             auto b44 = libzcash::Bip44AccountChains::ForAccount(seed, BIP44CoinType(), accountId).value();
-            auto key = b44.DeriveExternal(j.ToTransparentChildIndex().value()).value();
+            auto key = b44.DeriveExternal(diversifierIndex.ToTransparentChildIndex().value()).value();
             AddTransparentSecretKey(seed.Fingerprint(), key, ufvkid);
         }
 
         // Save the metadata for the generated address so that we can re-derive
         // it in the future.
-        ZcashdUnifiedAddressMetadata addrmeta(ufvkid, foundAddress.second, receiverTypes);
+        ZcashdUnifiedAddressMetadata addrmeta(ufvkid, diversifierIndex, receiverTypes);
 
         // we can safely ignore the return value here; we know that we're adding a new
         // set of receivers given the receivers.has_value() check above.
@@ -641,10 +642,11 @@ bool CWallet::LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &k
 {
     auto ufvkid = key.GetKeyID(Params());
     auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(key);
-    if (mapUnifiedFullViewingKeyMeta.count(ufvkid) > 0) {
+    auto metadata = mapUnifiedFullViewingKeyMeta.find(ufvkid);
+    if (metadata != mapUnifiedFullViewingKeyMeta.end()) {
         // restore unified addresses that have been previously generated to the
         // keystore
-        for (const auto &[j, receiverTypes] : mapUnifiedFullViewingKeyMeta.at(ufvkid).GetAllReceivers()) {
+        for (const auto &[j, receiverTypes] : metadata->second.GetAllReceivers()) {
             auto addr = zufvk.Address(j, receiverTypes).value();
             AddUnifiedAddress(ufvkid, std::make_pair(addr, j));
         }
@@ -5820,12 +5822,13 @@ std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const l
         }
 
         diversifier_index_t j;
-        if (wallet.mapUnifiedFullViewingKeyMeta.count(ufvkid) > 0 &&
+        auto metadata = wallet.mapUnifiedFullViewingKeyMeta.find(ufvkid);
+        if (metadata != wallet.mapUnifiedFullViewingKeyMeta.end()) {
             librustzcash_sapling_diversifier_index(
                     ufvk.value().GetSaplingKey().value().dk.begin(),
                     saplingAddr.d.begin(),
-                    j.begin())) {
-            auto receivers = wallet.mapUnifiedFullViewingKeyMeta.at(ufvkid).GetReceivers(j);
+                    j.begin());
+            auto receivers = metadata->second.GetReceivers(j);
             if (receivers.has_value()) {
                 return ufvk.value().Address(j, receivers.value());
             } else {
@@ -5859,8 +5862,9 @@ std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const C
         // Find the set of receivers at the diversifier index. If no metadata is available
         // for the ufvk, or we do not know the receiver types for the address produced
         // at this diversifier, we cannot reconstruct the address.
-        if (wallet.mapUnifiedFullViewingKeyMeta.count(ufvkid) > 0) {
-            auto receivers = wallet.mapUnifiedFullViewingKeyMeta.at(ufvkid).GetReceivers(j);
+        auto metadata = wallet.mapUnifiedFullViewingKeyMeta.find(ufvkid);
+        if (metadata != wallet.mapUnifiedFullViewingKeyMeta.end()) {
+            auto receivers = metadata->second.GetReceivers(j);
             if (receivers.has_value()) {
                 return ufvk.value().Address(j, receivers.value());
             } else {

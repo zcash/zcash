@@ -528,6 +528,7 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     auto zufvk = usk.value().ToFullViewingKey();
     auto ufvk = UnifiedFullViewingKey::FromZcashdUFVK(zufvk);
     auto ufvkid = ufvk.GetKeyID(Params());
+    EXPECT_FALSE(keyStore.GetUnifiedFullViewingKey(ufvkid).has_value());
 
     EXPECT_TRUE(keyStore.AddUnifiedFullViewingKey(ufvkid, zufvk));
     EXPECT_EQ(keyStore.GetUnifiedFullViewingKey(ufvkid).value(), zufvk);

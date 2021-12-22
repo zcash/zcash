@@ -2180,6 +2180,8 @@ TEST(WalletTests, GenerateUnifiedAddress) {
 
     // If the wallet does not have a mnemonic seed available, it is
     // treated as if the wallet is encrypted.
+    EXPECT_FALSE(wallet.IsCrypted());
+    EXPECT_FALSE(wallet.GetMnemonicSeed().has_value());
     UAGenerationResult expected = AddressGenerationError::WalletEncrypted;
     EXPECT_EQ(uaResult, expected);
 
