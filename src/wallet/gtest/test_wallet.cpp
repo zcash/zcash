@@ -2205,9 +2205,12 @@ TEST(WalletTests, GenerateUnifiedAddress) {
     bool success = std::holds_alternative<std::pair<UnifiedAddress, ZcashdUnifiedAddressMetadata>>(uaResult);
     EXPECT_TRUE(success);
 
-    auto zufvk = skpair.first.ToFullViewingKey();
+    auto ufvk = skpair.first.ToFullViewingKey();
     auto addrpair = std::get<std::pair<UnifiedAddress, ZcashdUnifiedAddressMetadata>>(uaResult);
     EXPECT_TRUE(addrpair.first.GetSaplingReceiver().has_value());
+    EXPECT_EQ(
+            addrpair.first.GetSaplingReceiver(),
+            ufvk.GetSaplingKey().value().Address(addrpair.second.GetDiversifierIndex()));
 
     auto u4r = wallet.GetUnifiedForReceiver(addrpair.first.GetSaplingReceiver().value());
     EXPECT_EQ(u4r, addrpair.first);

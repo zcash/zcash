@@ -1136,14 +1136,13 @@ pub extern "C" fn librustzcash_sapling_diversifier_index(
     dk: *const [c_uchar; 32],
     d: *const [c_uchar; 11],
     j_ret: *mut [c_uchar; 11],
-) -> bool {
+) {
     let dk = zip32::DiversifierKey(unsafe { *dk });
     let diversifier = sapling::Diversifier(unsafe { *d });
     let j_ret = unsafe { &mut *j_ret };
 
     let j = dk.diversifier_index(&diversifier);
     j_ret.copy_from_slice(&j.0);
-    true
 }
 
 #[no_mangle]

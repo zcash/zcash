@@ -221,11 +221,11 @@ bool CWalletDB::EraseSaplingExtendedFullViewingKey(
 // Unified address & key storage
 //
 
-bool CWalletDB::WriteUnifiedSpendingKeyMetadata(const ZcashdUnifiedSpendingKeyMetadata& keymeta)
+bool CWalletDB::WriteUnifiedAccount(const ZcashdUnifiedAccount& keymeta)
 {
     nWalletDBUpdateCounter++;
     auto ufvkId = keymeta.GetKeyID();
-    return Write(std::make_pair(std::string("unifiedskmeta"), ufvkId), keymeta);
+    return Write(std::make_pair(std::string("unifiedaccount"), keymeta), 0x00);
 }
 
 bool CWalletDB::WriteUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey& ufvk)
@@ -686,10 +686,18 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 return false;
             }
         }
-        else if (strType == "unifiedskmeta")
+        else if (strType == "unifiedaccount")
         {
-            auto keymeta = ZcashdUnifiedSpendingKeyMetadata::Read(ssValue);
-            if (!pwallet->LoadUnifiedKeyMetadata(keymeta)) {
+            auto acct = ZcashdUnifiedAccount::Read(ssKey);
+
+            uint8_t value;
+            ssValue >> value;
+            if (value != 0x00) {
+                strErr = "Error reading wallet database: invalid unified account value.";
+                return false;
+            }
+
+            if (!pwallet->LoadUnifiedAccount(acct)) {
                 strErr = "Error reading wallet database: account ID mismatch for unified spending key.";
                 return false;
             };

@@ -423,7 +423,7 @@ bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullVi
     return false;
 }
 
-std::pair<ZcashdUnifiedSpendingKey, ZcashdUnifiedSpendingKeyMetadata> CWallet::GenerateNewUnifiedSpendingKey() {
+std::pair<ZcashdUnifiedSpendingKey, ZcashdUnifiedAccount> CWallet::GenerateNewUnifiedSpendingKey() {
     AssertLockHeld(cs_wallet);
 
     if (!mnemonicHDChain.has_value()) {
@@ -448,7 +448,7 @@ std::pair<ZcashdUnifiedSpendingKey, ZcashdUnifiedSpendingKeyMetadata> CWallet::G
     }
 }
 
-std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedSpendingKeyMetadata>>
+std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedAccount>>
         CWallet::GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId) {
     AssertLockHeld(cs_wallet); // mapUnifiedSpendingKeyMeta
 
@@ -463,7 +463,7 @@ std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedSpendin
         auto ufvk = sk.ToFullViewingKey();
         auto ufvkid = ufvk.GetKeyID(Params());
 
-        ZcashdUnifiedSpendingKeyMetadata skmeta(seed.value().Fingerprint(), BIP44CoinType(), accountId, ufvkid);
+        ZcashdUnifiedAccount skmeta(seed.value().Fingerprint(), BIP44CoinType(), accountId, ufvkid);
 
         // We don't store the spending key directly; instead, we store each of
         // the spending key's components, in order to not violate invariants
@@ -503,7 +503,7 @@ std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedSpendin
         if (fFileBacked) {
             auto walletdb = CWalletDB(strWalletFile);
             if (!( walletdb.WriteUnifiedFullViewingKey(ufvk) &&
-                   walletdb.WriteUnifiedSpendingKeyMetadata(skmeta)
+                   walletdb.WriteUnifiedAccount(skmeta)
                  )) {
                 throw std::runtime_error("CWalletDB::GenerateUnifiedSpendingKeyForAccount(): walletdb write failed.");
             }
@@ -645,7 +645,7 @@ bool CWallet::LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &k
     return CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk);
 }
 
-bool CWallet::LoadUnifiedKeyMetadata(const ZcashdUnifiedSpendingKeyMetadata &skmeta)
+bool CWallet::LoadUnifiedAccount(const ZcashdUnifiedAccount &skmeta)
 {
     AssertLockHeld(cs_wallet); // mapUnifiedSpendingKeyMeta
     auto metaKey = std::make_pair(skmeta.GetSeedFingerprint(), skmeta.GetAccountId());

@@ -889,7 +889,7 @@ public:
 
     std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapSproutZKeyMetadata;
     std::map<libzcash::SaplingIncomingViewingKey, CKeyMetadata> mapSaplingZKeyMetadata;
-    std::map<std::pair<libzcash::SeedFingerprint, libzcash::AccountId>, ZcashdUnifiedSpendingKeyMetadata> mapUnifiedSpendingKeyMeta;
+    std::map<std::pair<libzcash::SeedFingerprint, libzcash::AccountId>, ZcashdUnifiedAccount> mapUnifiedSpendingKeyMeta;
     std::map<libzcash::UFVKId, ZcashdUnifiedFullViewingKeyMetadata> mapUnifiedFullViewingKeyMeta;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
@@ -1168,12 +1168,12 @@ public:
 
     //! Generate the unified spending key from the wallet's mnemonic seed
     //! for the next unused account identifier.
-    std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedSpendingKeyMetadata>
+    std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedAccount>
         GenerateNewUnifiedSpendingKey();
 
     //! Generate the next available unified spending key from the wallet's
     //! mnemonic seed.
-    std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedSpendingKeyMetadata>>
+    std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedAccount>>
         GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId);
 
     //! Retrieves the UFVK derived from the wallet's mnemonic seed for the specified account.
@@ -1192,7 +1192,7 @@ public:
     bool AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
     bool LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
 
-    bool LoadUnifiedKeyMetadata(const ZcashdUnifiedSpendingKeyMetadata &skmeta);
+    bool LoadUnifiedAccount(const ZcashdUnifiedAccount &skmeta);
     bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
 
     /**

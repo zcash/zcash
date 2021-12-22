@@ -107,6 +107,16 @@ public:
             const libzcash::ZcashdUnifiedFullViewingKey &ufvk
             ) = 0;
 
+    /**
+     * Add the transparent component of the unified address, if any,
+     * to the keystore to make it possible to identify the unified
+     * full viewing key from which a transparent address was derived.
+     * It is not necessary for implementations to add shielded address
+     * components to the keystore because those will be automatically
+     * reconstructed when scanning the chain with a shielded incoming
+     * viewing key upon discovery of the address as having received
+     * funds.
+     */
     virtual void AddUnifiedAddress(
             const libzcash::UFVKId& keyId,
             const std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>& ua
@@ -347,10 +357,6 @@ public:
     virtual bool AddUnifiedFullViewingKey(
             const libzcash::ZcashdUnifiedFullViewingKey &ufvk);
 
-    /**
-     * Add the transparent component of the unified address, if any,
-     * to the keystore to make it possible to identify the
-     */
     virtual void AddUnifiedAddress(
             const libzcash::UFVKId& keyId,
             const std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>& ua);
