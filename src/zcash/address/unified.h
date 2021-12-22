@@ -5,8 +5,9 @@
 #ifndef ZCASH_ZCASH_ADDRESS_UNIFIED_H
 #define ZCASH_ZCASH_ADDRESS_UNIFIED_H
 
-#include "zip32.h"
 #include "bip44.h"
+#include "key_constants.h"
+#include "zip32.h"
 
 namespace libzcash {
 
@@ -30,6 +31,16 @@ class UnifiedAddress;
 class UnifiedFullViewingKey;
 
 /**
+ * An internal identifier for a unified full viewing key, derived as a
+ * blake2b hash of the serialized form of the UFVK.
+ */
+class UFVKId: public uint256 {
+public:
+    UFVKId() : uint256() {}
+    UFVKId(const uint256& in) : uint256(in) {}
+};
+
+/**
  * An internal-only type for unified full viewing keys that represents only the
  * set of receiver types that are supported by zcashd. This type does not
  * support round-trip serialization to and from the UnifiedFullViewingKey type,
@@ -37,6 +48,7 @@ class UnifiedFullViewingKey;
  */
 class ZcashdUnifiedFullViewingKey {
 private:
+    UFVKId keyId;
     std::optional<CChainablePubKey> transparentKey;
     std::optional<SaplingDiversifiableFullViewingKey> saplingKey;
 
@@ -45,9 +57,16 @@ private:
     friend class ZcashdUnifiedSpendingKey;
 public:
     /**
-     * This constructor is lossy, and does not support round-trip transformations.
+     * This constructor is lossy; it ignores unknown receiver types
+     * and therefore does not support round-trip transformations.
      */
-    static ZcashdUnifiedFullViewingKey FromUnifiedFullViewingKey(const UnifiedFullViewingKey& ufvk);
+    static ZcashdUnifiedFullViewingKey FromUnifiedFullViewingKey(
+            const KeyConstants& keyConstants,
+            const UnifiedFullViewingKey& ufvk);
+
+    const UFVKId& GetKeyID() const {
+        return keyId;
+    }
 
     const std::optional<CChainablePubKey>& GetTransparentKey() const {
         return transparentKey;
@@ -96,8 +115,8 @@ public:
  */
 class ZcashdUnifiedSpendingKey {
 private:
-    std::optional<CExtKey> transparentKey;
-    std::optional<SaplingExtendedSpendingKey> saplingKey;
+    CExtKey transparentKey;
+    SaplingExtendedSpendingKey saplingKey;
 
     ZcashdUnifiedSpendingKey() {}
 public:
@@ -106,15 +125,15 @@ public:
             uint32_t bip44CoinType,
             libzcash::AccountId accountId);
 
-    const std::optional<CExtKey>& GetTransparentKey() const {
+    const CExtKey& GetTransparentKey() const {
         return transparentKey;
     }
 
-    const std::optional<SaplingExtendedSpendingKey>& GetSaplingExtendedSpendingKey() const {
+    const SaplingExtendedSpendingKey& GetSaplingExtendedSpendingKey() const {
         return saplingKey;
     }
 
-    ZcashdUnifiedFullViewingKey ToFullViewingKey() const;
+    UnifiedFullViewingKey ToFullViewingKey() const;
 };
 
 } //namespace libzcash

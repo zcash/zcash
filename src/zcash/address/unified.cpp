@@ -36,27 +36,23 @@ std::optional<ZcashdUnifiedSpendingKey> ZcashdUnifiedSpendingKey::ForAccount(
     return usk;
 }
 
-ZcashdUnifiedFullViewingKey ZcashdUnifiedSpendingKey::ToFullViewingKey() const {
-    ZcashdUnifiedFullViewingKey ufvk;
+UnifiedFullViewingKey ZcashdUnifiedSpendingKey::ToFullViewingKey() const {
+    UnifiedFullViewingKeyBuilder builder;
 
-    if (transparentKey.has_value()) {
-        auto extPubKey = transparentKey.value().Neuter();
+    auto extPubKey = transparentKey.Neuter();
+    builder.AddTransparentKey(CChainablePubKey::FromParts(extPubKey.chaincode, extPubKey.pubkey).value());
+    builder.AddSaplingKey(saplingKey.ToXFVK());
 
-        // TODO: how to ensure that the pubkey is in its compressed representation?
-        // Is that already guaranteed?
-        ufvk.transparentKey = CChainablePubKey::FromParts(extPubKey.chaincode, extPubKey.pubkey).value();
-    }
-
-    if (saplingKey.has_value()) {
-        ufvk.saplingKey = saplingKey.value().ToXFVK();
-    }
-
-    return ufvk;
+    // This call to .value() is safe as ZcashdUnifiedSpendingKey values are always
+    // constructed to contain all required components.
+    return builder.build().value();
 }
 
 ZcashdUnifiedFullViewingKey ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(
+        const KeyConstants& keyConstants,
         const UnifiedFullViewingKey& ufvk) {
     ZcashdUnifiedFullViewingKey result;
+    result.keyId = ufvk.GetKeyID(keyConstants);
 
     auto transparentKey = ufvk.GetTransparentKey();
     if (transparentKey.has_value()) {

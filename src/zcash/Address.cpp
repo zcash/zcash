@@ -93,7 +93,7 @@ std::pair<std::string, PaymentAddress> AddressInfoFromViewingKey::operator()(con
 std::pair<std::string, PaymentAddress> AddressInfoFromViewingKey::operator()(const UnifiedFullViewingKey &ufvk) const {
     return std::make_pair(
             "unified",
-            ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(ufvk)
+            ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(keyConstants, ufvk)
                 .FindAddress(diversifier_index_t(0))
                 .first
             );

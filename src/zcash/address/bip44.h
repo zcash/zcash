@@ -11,6 +11,10 @@ namespace libzcash {
 
 HDKeyPath Bip44TransparentAccountKeyPath(uint32_t bip44CoinType, libzcash::AccountId accountId);
 
+/**
+ * Derive a transparent extended key in compressed format for the specified
+ * seed, bip44 coin type, and account ID.
+ */
 std::optional<std::pair<CExtKey, HDKeyPath>> DeriveBip44TransparentAccountKey(const HDSeed& seed, uint32_t bip44CoinType, libzcash::AccountId accountId);
 
 class Bip44AccountChains {

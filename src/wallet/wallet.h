@@ -1177,7 +1177,7 @@ public:
         GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId);
 
     //! Retrieves the UFVK derived from the wallet's mnemonic seed for the specified account.
-    std::optional<std::pair<libzcash::UFVKId, libzcash::ZcashdUnifiedFullViewingKey>>
+    std::optional<libzcash::ZcashdUnifiedFullViewingKey>
         GetUnifiedFullViewingKeyByAccount(libzcash::AccountId account);
 
     //! Generate a new unified address for the specified account, diversifier, and

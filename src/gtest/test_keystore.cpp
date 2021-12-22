@@ -525,12 +525,12 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed, SLIP44_TESTNET_TYPE, 0);
     EXPECT_TRUE(usk.has_value());
 
-    auto zufvk = usk.value().ToFullViewingKey();
-    auto ufvk = UnifiedFullViewingKey::FromZcashdUFVK(zufvk);
-    auto ufvkid = ufvk.GetKeyID(Params());
+    auto ufvk = usk.value().ToFullViewingKey();
+    auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
+    auto ufvkid = zufvk.GetKeyID();
     EXPECT_FALSE(keyStore.GetUnifiedFullViewingKey(ufvkid).has_value());
 
-    EXPECT_TRUE(keyStore.AddUnifiedFullViewingKey(ufvkid, zufvk));
+    EXPECT_TRUE(keyStore.AddUnifiedFullViewingKey(zufvk));
     EXPECT_EQ(keyStore.GetUnifiedFullViewingKey(ufvkid).value(), zufvk);
 
     auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Sapling});
@@ -554,9 +554,9 @@ TEST(KeystoreTests, AddUnifiedAddress) {
     auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed, SLIP44_TESTNET_TYPE, 0);
     EXPECT_TRUE(usk.has_value());
 
-    auto zufvk = usk.value().ToFullViewingKey();
-    auto ufvk = UnifiedFullViewingKey::FromZcashdUFVK(zufvk);
-    auto ufvkid = ufvk.GetKeyID(Params());
+    auto ufvk = usk.value().ToFullViewingKey();
+    auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
+    auto ufvkid = zufvk.GetKeyID();
     auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling});
     EXPECT_TRUE(addrPair.first.GetP2PKHReceiver().has_value());
 

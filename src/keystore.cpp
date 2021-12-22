@@ -293,7 +293,6 @@ bool CBasicKeyStore::GetSaplingExtendedSpendingKey(const libzcash::SaplingPaymen
 //
 
 bool CBasicKeyStore::AddUnifiedFullViewingKey(
-        const libzcash::UFVKId& keyId,
         const libzcash::ZcashdUnifiedFullViewingKey &ufvk)
 {
     LOCK(cs_KeyStore);
@@ -302,7 +301,7 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
     auto saplingKey = ufvk.GetSaplingKey();
     if (saplingKey.has_value()) {
         auto ivk = saplingKey.value().fvk.in_viewing_key();
-        mapSaplingKeyUnified.insert(std::make_pair(ivk, keyId));
+        mapSaplingKeyUnified.insert(std::make_pair(ivk, ufvk.GetKeyID()));
     }
 
     // We can't reasonably add the transparent component here, because
@@ -312,7 +311,7 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
     // transparent part of the address must be added to the keystore.
 
     // Add the UFVK by key identifier.
-    mapUnifiedFullViewingKeys.insert({keyId, ufvk});
+    mapUnifiedFullViewingKeys.insert({ufvk.GetKeyID(), ufvk});
 
     return true;
 }

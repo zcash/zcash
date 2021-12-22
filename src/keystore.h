@@ -104,7 +104,6 @@ public:
 
     //! Unified addresses and keys
     virtual bool AddUnifiedFullViewingKey(
-            const libzcash::UFVKId& keyId,
             const libzcash::ZcashdUnifiedFullViewingKey &ufvk
             ) = 0;
 
@@ -346,7 +345,6 @@ public:
         libzcash::SproutViewingKey& vkOut) const;
 
     virtual bool AddUnifiedFullViewingKey(
-            const libzcash::UFVKId& keyId,
             const libzcash::ZcashdUnifiedFullViewingKey &ufvk);
 
     /**
