@@ -2273,7 +2273,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
 
             // We want to return unspent notes corresponding to any receiver within a
             // Unified Address.
-            for (const auto ra : std::visit(GetRawAddresses(), zaddr.value())) {
+            for (const auto ra : std::visit(GetRawShieldedAddresses(), zaddr.value())) {
                 bool hasSpendingKey = std::visit(match {
                     [&](const SaplingPaymentAddress& addr) {
                         return pwalletMain->HaveSaplingSpendingKeyForAddress(addr);
@@ -3154,10 +3154,16 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, decoded, nMinDepth, false, false);
 
     std::visit(match {
+        [&](const CKeyID& addr) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Transparent addresses are not supported by this endpoint.");
+        },
+        [&](const CScriptID& addr) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Transparent addresses are not supported by this endpoint.");
+        },
         [&](const libzcash::SproutPaymentAddress& addr) {
             bool hasSpendingKey = pwalletMain->HaveSproutSpendingKey(addr);
             auto nullifierSet = pwalletMain->GetNullifiersForAddresses({addr});
-            for (SproutNoteEntry & entry : sproutEntries) {
+            for (const SproutNoteEntry& entry : sproutEntries) {
                 UniValue obj(UniValue::VOBJ);
                 obj.pushKV("txid", entry.jsop.hash.ToString());
                 obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
@@ -3182,7 +3188,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         [&](const libzcash::SaplingPaymentAddress& addr) {
             bool hasSpendingKey = pwalletMain->HaveSaplingSpendingKeyForAddress(addr);
             auto nullifierSet = pwalletMain->GetNullifiersForAddresses({addr});
-            for (SaplingNoteEntry & entry : saplingEntries) {
+            for (const SaplingNoteEntry& entry : saplingEntries) {
                 UniValue obj(UniValue::VOBJ);
                 obj.pushKV("txid", entry.op.hash.ToString());
                 obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
@@ -3895,6 +3901,12 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
         if (decoded.has_value()) {
             std::visit(match {
+                [&](const CKeyID&) {
+                    // Handled elsewhere
+                },
+                [&](const CScriptID&) {
+                    // Handled elsewhere
+                },
                 [&](const libzcash::SaplingPaymentAddress& addr) {
                     mtx.vShieldedOutput.push_back(OutputDescription());
                 },
@@ -4458,7 +4470,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 if (zaddr.has_value()) {
                     // We want to merge notes corresponding to any receiver within a
                     // Unified Address.
-                    for (const libzcash::RawAddress& ra : std::visit(GetRawAddresses(), zaddr.value())) {
+                    for (const libzcash::RawAddress& ra : std::visit(GetRawShieldedAddresses(), zaddr.value())) {
                         zaddrs.insert(ra);
                         if (std::holds_alternative<libzcash::SaplingPaymentAddress>(ra)) {
                             isFromNonSprout = true;
@@ -4489,30 +4501,34 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     // Validate the destination address
     auto destaddress = params[1].get_str();
+    bool isToTaddr = false;
     bool isToSproutZaddr = false;
     bool isToSaplingZaddr = false;
-    CTxDestination taddr = keyIO.DecodeDestination(destaddress);
-    if (!IsValidDestination(taddr)) {
-        auto zaddr = keyIO.DecodePaymentAddress(destaddress);
-        if (zaddr.has_value()) {
-            std::visit(match {
-                [&](libzcash::SaplingPaymentAddress addr) {
-                    isToSaplingZaddr = true;
-                    // If Sapling is not active, do not allow sending to a sapling addresses.
-                    if (!saplingActive) {
-                        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
-                    }
-                },
-                [&](libzcash::SproutPaymentAddress addr) {
-                    isToSproutZaddr = true;
-                },
-                [&](libzcash::UnifiedAddress) {
-                    // TODO UNIFIED
+    auto paymentAddress = keyIO.DecodePaymentAddress(destaddress);
+    if (paymentAddress.has_value()) {
+        std::visit(match {
+            [&](CKeyID addr) {
+                isToTaddr = true;
+            },
+            [&](CScriptID addr) {
+                isToTaddr = true;
+            },
+            [&](libzcash::SaplingPaymentAddress addr) {
+                isToSaplingZaddr = true;
+                // If Sapling is not active, do not allow sending to a sapling addresses.
+                if (!saplingActive) {
+                    throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
                 }
-            }, zaddr.value());
-        } else {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
-        }
+            },
+            [&](libzcash::SproutPaymentAddress addr) {
+                isToSproutZaddr = true;
+            },
+            [&](libzcash::UnifiedAddress) {
+                // TODO UNIFIED
+            }
+        }, paymentAddress.value());
+    } else {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
     }
 
     if (canopyActive && isFromNonSprout && isToSproutZaddr) {
@@ -4750,7 +4766,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     contextInfo.pushKV("toaddress", params[1]);
     contextInfo.pushKV("fee", ValueFromAmount(nFee));
 
-    if (!sproutNoteInputs.empty() || !saplingNoteInputs.empty() || !IsValidDestination(taddr)) {
+    if (!sproutNoteInputs.empty() || !saplingNoteInputs.empty() || !isToTaddr) {
         // We have shielded inputs or the recipient is a shielded address, and
         // therefore we cannot create transactions before Sapling activates.
         if (!saplingActive) {

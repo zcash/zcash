@@ -1678,18 +1678,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
  #ifdef ENABLE_WALLET
         bool minerAddressInLocalWallet = false;
         if (pwalletMain) {
-            CTxDestination addr = keyIO.DecodeDestination(mapArgs["-mineraddress"]);
-            if (IsValidDestination(addr)) {
-                CKeyID keyID = std::get<CKeyID>(addr);
-                minerAddressInLocalWallet = pwalletMain->HaveKey(keyID);
-            } else {
-                auto zaddr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
-                if (!zaddr.has_value()) {
-                    return InitError(_("-mineraddress is not a valid zcash address."));
-                }
-                minerAddressInLocalWallet = std::visit(
-                    HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr.value());
+            auto zaddr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
+            if (!zaddr.has_value()) {
+                return InitError(_("-mineraddress is not a valid zcash address."));
             }
+            minerAddressInLocalWallet = std::visit(
+                HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr.value());
         }
         if (GetBoolArg("-minetolocalwallet", true) && !minerAddressInLocalWallet) {
             return InitError(_("-mineraddress is not in the local wallet. Either use a local address, or set -minetolocalwallet=0"));

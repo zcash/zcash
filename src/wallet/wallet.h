@@ -1369,6 +1369,8 @@ private:
 public:
     PaymentAddressBelongsToWallet(CWallet *wallet) : m_wallet(wallet) {}
 
+    bool operator()(const CKeyID &zaddr) const;
+    bool operator()(const CScriptID &zaddr) const;
     bool operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     bool operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     bool operator()(const libzcash::UnifiedAddress &uaddr) const;
@@ -1381,6 +1383,8 @@ private:
 public:
     GetViewingKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
 
+    std::optional<libzcash::ViewingKey> operator()(const CKeyID &zaddr) const;
+    std::optional<libzcash::ViewingKey> operator()(const CScriptID &zaddr) const;
     std::optional<libzcash::ViewingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     std::optional<libzcash::ViewingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     std::optional<libzcash::ViewingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
@@ -1393,6 +1397,8 @@ private:
 public:
     HaveSpendingKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
 
+    bool operator()(const CKeyID &addr) const;
+    bool operator()(const CScriptID &addr) const;
     bool operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     bool operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     bool operator()(const libzcash::UnifiedAddress &uaddr) const;
@@ -1405,8 +1411,11 @@ private:
 public:
     GetSpendingKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
 
+    std::optional<libzcash::SpendingKey> operator()(const CKeyID &zaddr) const;
+    std::optional<libzcash::SpendingKey> operator()(const CScriptID &zaddr) const;
     std::optional<libzcash::SpendingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     std::optional<libzcash::SpendingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    // FIXME: this doesn't make sense
     std::optional<libzcash::SpendingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
 };
 
@@ -1426,6 +1435,8 @@ private:
 public:
     GetSourceForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
 
+    PaymentAddressSource operator()(const CKeyID &zaddr) const;
+    PaymentAddressSource operator()(const CScriptID &zaddr) const;
     PaymentAddressSource operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     PaymentAddressSource operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     PaymentAddressSource operator()(const libzcash::UnifiedAddress &uaddr) const;

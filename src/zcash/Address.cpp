@@ -56,61 +56,67 @@ uint32_t TypecodeForReceiver::operator()(
 {
     return ZCASH_UA_TYPECODE_SAPLING;
 }
-
 uint32_t TypecodeForReceiver::operator()(
     const CScriptID &p2sh) const
 {
     return ZCASH_UA_TYPECODE_P2SH;
 }
-
 uint32_t TypecodeForReceiver::operator()(
     const CKeyID &p2sh) const
 {
     return ZCASH_UA_TYPECODE_P2PKH;
 }
-
 uint32_t TypecodeForReceiver::operator()(
     const libzcash::UnknownReceiver &unknown) const
 {
     return unknown.typecode;
 }
 
-std::optional<libzcash::RawAddress> ReceiverToRawAddress::operator()(
-    const libzcash::SaplingPaymentAddress &zaddr) const
-{
-    return zaddr;
-}
-
-std::optional<libzcash::RawAddress> ReceiverToRawAddress::operator()(
-    const CScriptID &p2sh) const
-{
-    return std::nullopt;
-}
+// ReceiverToRawAddress
 
 std::optional<libzcash::RawAddress> ReceiverToRawAddress::operator()(
     const CKeyID &p2sh) const
 {
     return std::nullopt;
 }
-
+std::optional<libzcash::RawAddress> ReceiverToRawAddress::operator()(
+    const CScriptID &p2sh) const
+{
+    return std::nullopt;
+}
+std::optional<libzcash::RawAddress> ReceiverToRawAddress::operator()(
+    const libzcash::SaplingPaymentAddress &zaddr) const
+{
+    return zaddr;
+}
 std::optional<libzcash::RawAddress> ReceiverToRawAddress::operator()(
     const libzcash::UnknownReceiver &p2sh) const
 {
     return std::nullopt;
 }
 
+// RecipientForPaymentAddress
+
+std::optional<libzcash::RawAddress> RecipientForPaymentAddress::operator()(
+    const CKeyID &p2sh) const
+{
+    return std::nullopt;
+}
+std::optional<libzcash::RawAddress> RecipientForPaymentAddress::operator()(
+    const CScriptID &p2sh) const
+{
+    return std::nullopt;
+}
 std::optional<libzcash::RawAddress> RecipientForPaymentAddress::operator()(
     const libzcash::SproutPaymentAddress &zaddr) const
 {
     return zaddr;
 }
-
 std::optional<libzcash::RawAddress> RecipientForPaymentAddress::operator()(
     const libzcash::SaplingPaymentAddress &zaddr) const
 {
     return zaddr;
 }
-
 std::optional<libzcash::RawAddress> RecipientForPaymentAddress::operator()(
     const libzcash::UnifiedAddress &uaddr) const
 {
@@ -122,19 +128,29 @@ std::optional<libzcash::RawAddress> RecipientForPaymentAddress::operator()(
     return std::nullopt;
 }
 
-std::set<libzcash::RawAddress> GetRawAddresses::operator()(
+// GetRawShieldedAddresses
+
+std::set<libzcash::RawAddress> GetRawShieldedAddresses::operator()(
+    const CKeyID &addr) const
+{
+    return {};
+}
+std::set<libzcash::RawAddress> GetRawShieldedAddresses::operator()(
+    const CScriptID &addr) const
+{
+    return {};
+}
+std::set<libzcash::RawAddress> GetRawShieldedAddresses::operator()(
     const libzcash::SproutPaymentAddress &zaddr) const
 {
     return {zaddr};
 }
-
-std::set<libzcash::RawAddress> GetRawAddresses::operator()(
+std::set<libzcash::RawAddress> GetRawShieldedAddresses::operator()(
     const libzcash::SaplingPaymentAddress &zaddr) const
 {
     return {zaddr};
 }
-
-std::set<libzcash::RawAddress> GetRawAddresses::operator()(
+std::set<libzcash::RawAddress> GetRawShieldedAddresses::operator()(
     const libzcash::UnifiedAddress &uaddr) const
 {
     std::set<libzcash::RawAddress> ret;

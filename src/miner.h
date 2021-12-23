@@ -32,6 +32,12 @@ class ExtractMinerAddress
 public:
     ExtractMinerAddress() {}
 
+    std::optional<MinerAddress> operator()(const CKeyID &addr) const {
+        return std::nullopt;
+    }
+    std::optional<MinerAddress> operator()(const CScriptID &addr) const {
+        return std::nullopt;
+    }
     std::optional<MinerAddress> operator()(const libzcash::SproutPaymentAddress &addr) const {
         return std::nullopt;
     }
@@ -40,7 +46,7 @@ public:
     }
     std::optional<MinerAddress> operator()(const libzcash::UnifiedAddress &addr) const {
         auto recipient = RecipientForPaymentAddress()(addr);
-        if (recipient) {
+        if (recipient.has_value()) {
             // This looks like a recursive call, but we are actually calling
             // ExtractMinerAddress with a different type:
             // - libzcash::PaymentAddress has a libzcash::UnifiedAddress
@@ -51,7 +57,7 @@ public:
             // This works because std::visit does not require the visitor to
             // solely match the std::variant, only that it can handle all of
             // the variant's alternatives.
-            return std::visit(ExtractMinerAddress(), *recipient);
+            return std::visit(ExtractMinerAddress(), recipient.value());
         } else {
             // Either the UA only contains unknown shielded receivers (unlikely that we
             // wouldn't know about them), or it only contains transparent receivers

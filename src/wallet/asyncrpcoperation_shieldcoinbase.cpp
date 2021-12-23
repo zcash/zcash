@@ -202,6 +202,14 @@ bool AsyncRPCOperation_shieldcoinbase::main_impl() {
     return std::visit(ShieldToAddress(this, sendAmount), tozaddr_);
 }
 
+bool ShieldToAddress::operator()(const CKeyID &addr) const {
+    return false;
+}
+
+bool ShieldToAddress::operator()(const CScriptID &addr) const {
+    return false;
+}
+
 bool ShieldToAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const {
     // update the transaction with these inputs
     CMutableTransaction rawTx(m_op->tx_);

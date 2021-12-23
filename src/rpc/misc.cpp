@@ -217,6 +217,28 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 class DescribePaymentAddressVisitor
 {
 public:
+    UniValue operator()(const CKeyID &addr) const {
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("type", "p2pkh");
+#ifdef ENABLE_WALLET
+        if (pwalletMain) {
+            obj.pushKV("ismine", pwalletMain->HaveKey(addr));
+        }
+#endif
+        return obj;
+    }
+
+    UniValue operator()(const CScriptID &addr) const {
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("type", "p2sh");
+#ifdef ENABLE_WALLET
+        if (pwalletMain) {
+            obj.pushKV("ismine", pwalletMain->HaveCScript(addr));
+        }
+#endif
+        return obj;
+    }
+
     UniValue operator()(const libzcash::SproutPaymentAddress &zaddr) const {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("type", "sprout");

@@ -122,6 +122,8 @@ public:
 
 /** Addresses that can appear in a string encoding. */
 typedef std::variant<
+    CKeyID,
+    CScriptID,
     SproutPaymentAddress,
     SaplingPaymentAddress,
     UnifiedAddress> PaymentAddress;
@@ -181,6 +183,8 @@ class RecipientForPaymentAddress {
 public:
     RecipientForPaymentAddress() {}
 
+    std::optional<libzcash::RawAddress> operator()(const CKeyID &addr) const;
+    std::optional<libzcash::RawAddress> operator()(const CScriptID &addr) const;
     std::optional<libzcash::RawAddress> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     std::optional<libzcash::RawAddress> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     std::optional<libzcash::RawAddress> operator()(const libzcash::UnifiedAddress &uaddr) const;
@@ -189,10 +193,12 @@ public:
 /**
  * Returns all protocol addresses contained within the given payment address.
  */
-class GetRawAddresses {
+class GetRawShieldedAddresses {
 public:
-    GetRawAddresses() {}
+    GetRawShieldedAddresses() {}
 
+    std::set<libzcash::RawAddress> operator()(const CKeyID &addr) const;
+    std::set<libzcash::RawAddress> operator()(const CScriptID &addr) const;
     std::set<libzcash::RawAddress> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     std::set<libzcash::RawAddress> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     std::set<libzcash::RawAddress> operator()(const libzcash::UnifiedAddress &uaddr) const;

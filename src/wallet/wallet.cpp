@@ -5041,7 +5041,7 @@ void CWallet::GetFilteredNotes(
     std::set<libzcash::RawAddress> filterAddresses;
 
     if (address.has_value()) {
-        for (const auto ra : std::visit(GetRawAddresses(), address.value())) {
+        for (const auto ra : std::visit(GetRawShieldedAddresses(), address.value())) {
             filterAddresses.insert(ra);
         }
     }
@@ -5185,37 +5185,57 @@ void CWallet::GetFilteredNotes(
 
 
 //
-// Shielded key and address generalizations
+// Payment address operations
 //
 
+// PaymentAddressBelongsToWallet
+
+bool PaymentAddressBelongsToWallet::operator()(const CKeyID &addr) const
+{
+    CScript script = GetScriptForDestination(addr);
+    return m_wallet->HaveKey(addr) || m_wallet->HaveWatchOnly(script);
+}
+bool PaymentAddressBelongsToWallet::operator()(const CScriptID &addr) const
+{
+    CScript script = GetScriptForDestination(addr);
+    return m_wallet->HaveCScript(addr) || m_wallet->HaveWatchOnly(script);
+}
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::SproutPaymentAddress &zaddr) const
 {
     return m_wallet->HaveSproutSpendingKey(zaddr) || m_wallet->HaveSproutViewingKey(zaddr);
 }
-
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
 {
     libzcash::SaplingIncomingViewingKey ivk;
 
     // If we have a SaplingExtendedSpendingKey in the wallet, then we will
     // also have the corresponding SaplingExtendedFullViewingKey.
-    return m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
+    return
+        m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
         m_wallet->HaveSaplingFullViewingKey(ivk);
 }
-
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::UnifiedAddress &uaddr) const
 {
     // TODO
     return false;
 }
 
-///
+// GetSourceForPaymentAddress
 
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const CKeyID &zaddr) const
+{
+    // TODO
+    return AddressNotFound;
+}
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const CScriptID &zaddr) const
+{
+    // TODO
+    return AddressNotFound;
+}
 PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const
 {
     return Random;
 }
-
 PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
 {
     libzcash::SaplingIncomingViewingKey ivk;
@@ -5240,15 +5260,24 @@ PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::Sapl
         return AddressNotFound;
     }
 }
-
 PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::UnifiedAddress &uaddr) const
 {
     // TODO
     return AddressNotFound;
 }
 
-///
+// GetViewingKeyForPaymentAddress
 
+std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
+    const CKeyID &zaddr) const
+{
+    return std::nullopt;
+}
+std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
+    const CScriptID &zaddr) const
+{
+    return std::nullopt;
+}
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::SproutPaymentAddress &zaddr) const
 {
@@ -5262,7 +5291,6 @@ std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     }
     return libzcash::ViewingKey(vk);
 }
-
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::SaplingPaymentAddress &zaddr) const
 {
@@ -5277,19 +5305,27 @@ std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
         return std::nullopt;
     }
 }
-
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::UnifiedAddress &uaddr) const
 {
     // TODO
-    return libzcash::ViewingKey();
+    return std::nullopt;
 }
 
+// HaveSpendingKeyForPaymentAddress
+
+bool HaveSpendingKeyForPaymentAddress::operator()(const CKeyID &addr) const
+{
+    return m_wallet->HaveKey(addr);
+}
+bool HaveSpendingKeyForPaymentAddress::operator()(const CScriptID &addr) const
+{
+    return m_wallet->HaveCScript(addr);
+}
 bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const
 {
     return m_wallet->HaveSproutSpendingKey(zaddr);
 }
-
 bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
 {
     libzcash::SaplingIncomingViewingKey ivk;
@@ -5299,13 +5335,24 @@ bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SaplingPayment
         m_wallet->GetSaplingFullViewingKey(ivk, extfvk) &&
         m_wallet->HaveSaplingSpendingKey(extfvk);
 }
-
 bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::UnifiedAddress &uaddr) const
 {
     // TODO
     return false;
 }
 
+// GetSpendingKeyForPaymentAddress
+
+std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
+    const CKeyID &zaddr) const
+{
+    return std::nullopt;
+}
+std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
+    const CScriptID &zaddr) const
+{
+    return std::nullopt;
+}
 std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
     const libzcash::SproutPaymentAddress &zaddr) const
 {
@@ -5316,7 +5363,6 @@ std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()
         return std::nullopt;
     }
 }
-
 std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
     const libzcash::SaplingPaymentAddress &zaddr) const
 {
@@ -5327,13 +5373,14 @@ std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()
         return std::nullopt;
     }
 }
-
 std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
     const libzcash::UnifiedAddress &uaddr) const
 {
     // TODO
     return libzcash::SpendingKey();
 }
+
+// AddViewingKeyToWallet
 
 KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::SproutViewingKey &vkey) const {
     auto addr = vkey.address();
@@ -5348,7 +5395,6 @@ KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::SproutViewingKey 
         return KeyNotAdded;
     }
 }
-
 KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::SaplingExtendedFullViewingKey &extfvk) const {
     if (m_wallet->HaveSaplingSpendingKey(extfvk)) {
         return SpendingKeyExists;
@@ -5360,6 +5406,8 @@ KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::SaplingExtendedFu
         return KeyNotAdded;
     }
 }
+
+// AddSpendingKeyToWallet
 
 KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKey &sk) const {
     auto addr = sk.address();
@@ -5376,7 +5424,6 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKe
         return KeyNotAdded;
     }
 }
-
 KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedSpendingKey &sk) const {
     auto extfvk = sk.ToXFVK();
     auto ivk = extfvk.fvk.in_viewing_key();
