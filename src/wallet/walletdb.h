@@ -172,16 +172,16 @@ public:
     }
 };
 
-class ZcashdUnifiedAccount {
+class ZcashdUnifiedAccountMetadata {
 private:
     libzcash::SeedFingerprint seedFp;
     uint32_t bip44CoinType;
     libzcash::AccountId accountId;
     libzcash::UFVKId ufvkId;
 
-    ZcashdUnifiedAccount() {}
+    ZcashdUnifiedAccountMetadata() {}
 public:
-    ZcashdUnifiedAccount(
+    ZcashdUnifiedAccountMetadata(
             libzcash::SeedFingerprint seedFp,
             uint32_t bip44CoinType,
             libzcash::AccountId accountId,
@@ -216,8 +216,8 @@ public:
     }
 
     template <typename Stream>
-    static ZcashdUnifiedAccount Read(Stream& stream) {
-        ZcashdUnifiedAccount meta;
+    static ZcashdUnifiedAccountMetadata Read(Stream& stream) {
+        ZcashdUnifiedAccountMetadata meta;
         stream >> meta;
         return meta;
     }
@@ -386,7 +386,7 @@ public:
 
     /// Unified key support.
 
-    bool WriteUnifiedAccount(const ZcashdUnifiedAccount& keymeta);
+    bool WriteUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata& keymeta);
     bool WriteUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey& ufvk);
     bool WriteUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata& addrmeta);
 

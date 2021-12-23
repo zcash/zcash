@@ -6,6 +6,7 @@
 #include "key_constants.h"
 #include "script/script.h"
 #include "uint256.h"
+#include "util/match.h"
 #include "zcash/address/orchard.hpp"
 #include "zcash/address/sapling.hpp"
 #include "zcash/address/sprout.hpp"
@@ -115,6 +116,26 @@ public:
     bool AddReceiver(Receiver receiver);
 
     const std::vector<Receiver>& GetReceiversAsParsed() const { return receivers; }
+
+    std::set<ReceiverType> GetKnownReceiverTypes() const {
+        std::set<ReceiverType> result;
+        for (const auto& receiver : receivers) {
+            std::visit(match {
+                [&](const libzcash::SaplingPaymentAddress &zaddr) {
+                    result.insert(ReceiverType::Sapling);
+                },
+                [&](const CScriptID &zaddr) {
+                    result.insert(ReceiverType::P2SH);
+                },
+                [&](const CKeyID &zaddr) {
+                    result.insert(ReceiverType::P2PKH);
+                },
+                [&](const libzcash::UnknownReceiver &uaddr) {
+                }
+            }, receiver);
+        }
+        return result;
+    }
 
     ReceiverIterator begin() const {
         return ReceiverIterator(GetSorted(), 0);

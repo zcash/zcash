@@ -316,9 +316,10 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
     return true;
 }
 
-void CBasicKeyStore::AddUnifiedAddress(
+bool CBasicKeyStore::AddUnifiedAddress(
         const libzcash::UFVKId& keyId,
-        const std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>& ua)
+        const libzcash::diversifier_index_t& diversifierIndex,
+        const libzcash::UnifiedAddress& ua)
 {
     LOCK(cs_KeyStore);
 
@@ -326,17 +327,19 @@ void CBasicKeyStore::AddUnifiedAddress(
     // the UA; all other lookups of the associated UFVK will be
     // made via the protocol-specific viewing key that is used
     // to trial-decrypt a transaction.
-    auto addrEntry = std::make_pair(keyId, ua.second);
+    auto addrEntry = std::make_pair(keyId, diversifierIndex);
 
-    auto p2pkhReceiver = ua.first.GetP2PKHReceiver();
+    auto p2pkhReceiver = ua.GetP2PKHReceiver();
     if (p2pkhReceiver.has_value()) {
         mapP2PKHUnified.insert(std::make_pair(p2pkhReceiver.value(), addrEntry));
     }
 
-    auto p2shReceiver = ua.first.GetP2SHReceiver();
+    auto p2shReceiver = ua.GetP2SHReceiver();
     if (p2shReceiver.has_value()) {
         mapP2SHUnified.insert(std::make_pair(p2shReceiver.value(), addrEntry));
     }
+
+    return true;
 }
 
 std::optional<libzcash::ZcashdUnifiedFullViewingKey> CBasicKeyStore::GetUnifiedFullViewingKey(

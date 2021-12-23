@@ -221,10 +221,9 @@ bool CWalletDB::EraseSaplingExtendedFullViewingKey(
 // Unified address & key storage
 //
 
-bool CWalletDB::WriteUnifiedAccount(const ZcashdUnifiedAccount& keymeta)
+bool CWalletDB::WriteUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata& keymeta)
 {
     nWalletDBUpdateCounter++;
-    auto ufvkId = keymeta.GetKeyID();
     return Write(std::make_pair(std::string("unifiedaccount"), keymeta), 0x00);
 }
 
@@ -238,8 +237,7 @@ bool CWalletDB::WriteUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey
 bool CWalletDB::WriteUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata& addrmeta)
 {
     nWalletDBUpdateCounter++;
-    auto ufvkId = addrmeta.GetKeyID();
-    return Write(std::make_pair(std::string("unifiedaddrmeta"), ufvkId), addrmeta);
+    return Write(std::make_pair(std::string("unifiedaddrmeta"), addrmeta), 0x00);
 }
 
 //
@@ -688,23 +686,31 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "unifiedaccount")
         {
-            auto acct = ZcashdUnifiedAccount::Read(ssKey);
+            auto acct = ZcashdUnifiedAccountMetadata::Read(ssKey);
 
             uint8_t value;
             ssValue >> value;
             if (value != 0x00) {
-                strErr = "Error reading wallet database: invalid unified account value.";
+                strErr = "Error reading wallet database: invalid unified account metadata.";
                 return false;
             }
 
-            if (!pwallet->LoadUnifiedAccount(acct)) {
+            if (!pwallet->LoadUnifiedAccountMetadata(acct)) {
                 strErr = "Error reading wallet database: account ID mismatch for unified spending key.";
                 return false;
             };
         }
         else if (strType == "unifiedaddrmeta")
         {
-            auto keymeta = ZcashdUnifiedAddressMetadata::Read(ssValue);
+            auto keymeta = ZcashdUnifiedAddressMetadata::Read(ssKey);
+
+            uint8_t value;
+            ssValue >> value;
+            if (value != 0x00) {
+                strErr = "Error reading wallet database: invalid unified address metadata.";
+                return false;
+            }
+
             if (!pwallet->LoadUnifiedAddressMetadata(keymeta)) {
                 strErr = "Error reading wallet database: cannot reproduce previously generated unified address.";
                 return false;

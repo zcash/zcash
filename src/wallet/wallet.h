@@ -412,7 +412,7 @@ enum class AddressGenerationError {
 };
 
 typedef std::variant<
-    std::pair<libzcash::UnifiedAddress, ZcashdUnifiedAddressMetadata>,
+    std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>,
     AddressGenerationError> UAGenerationResult;
 
 /**
@@ -681,14 +681,14 @@ public:
     }
 };
 
-class ZcashdUnifiedFullViewingKeyMetadata
+class UFVKAddressMetadata
 {
 private:
     std::optional<libzcash::AccountId> accountId;
     std::map<libzcash::diversifier_index_t, std::set<libzcash::ReceiverType>> addressReceivers;
 public:
-    ZcashdUnifiedFullViewingKeyMetadata() {}
-    ZcashdUnifiedFullViewingKeyMetadata(libzcash::AccountId accountId): accountId(accountId) {}
+    UFVKAddressMetadata() {}
+    UFVKAddressMetadata(libzcash::AccountId accountId): accountId(accountId) {}
 
     const std::map<libzcash::diversifier_index_t, std::set<libzcash::ReceiverType>>& GetAllReceivers() const {
         return addressReceivers;
@@ -704,10 +704,21 @@ public:
         }
     }
 
+    /**
+     * Add the specified set of receivers at the provided diversifier index.
+     *
+     * Returns `true` if this is a new entry or if the operation would not
+     * alter the existing set of receiver types at this index, `false`
+     * otherwise.
+     */
     bool SetReceivers(
             const libzcash::diversifier_index_t& j,
             const std::set<libzcash::ReceiverType>& receivers) {
-        return addressReceivers.insert(std::make_pair(j, receivers)).second;
+        if (addressReceivers.count(j) > 0) {
+            return addressReceivers[j] == receivers;
+        } else {
+            return addressReceivers.insert(std::make_pair(j, receivers)).second;
+        }
     }
 
     bool SetAccountId(libzcash::AccountId accountIdIn) {
@@ -888,8 +899,8 @@ public:
 
     std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapSproutZKeyMetadata;
     std::map<libzcash::SaplingIncomingViewingKey, CKeyMetadata> mapSaplingZKeyMetadata;
-    std::map<std::pair<libzcash::SeedFingerprint, libzcash::AccountId>, ZcashdUnifiedAccount> mapUnifiedSpendingKeyMeta;
-    std::map<libzcash::UFVKId, ZcashdUnifiedFullViewingKeyMetadata> mapUnifiedFullViewingKeyMeta;
+    std::map<std::pair<libzcash::SeedFingerprint, libzcash::AccountId>, libzcash::UFVKId> mapUnifiedAccountKeys;
+    std::map<libzcash::UFVKId, UFVKAddressMetadata> mapUfvkAddressMetadata;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
     MasterKeyMap mapMasterKeys;
@@ -1164,12 +1175,12 @@ public:
 
     //! Generate the unified spending key from the wallet's mnemonic seed
     //! for the next unused account identifier.
-    std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedAccount>
+    std::pair<libzcash::ZcashdUnifiedSpendingKey, libzcash::AccountId>
         GenerateNewUnifiedSpendingKey();
 
     //! Generate the next available unified spending key from the wallet's
     //! mnemonic seed.
-    std::optional<std::pair<libzcash::ZcashdUnifiedSpendingKey, ZcashdUnifiedAccount>>
+    std::optional<libzcash::ZcashdUnifiedSpendingKey>
         GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId);
 
     //! Retrieves the UFVK derived from the wallet's mnemonic seed for the specified account.
@@ -1183,13 +1194,13 @@ public:
         const libzcash::diversifier_index_t& j,
         const std::set<libzcash::ReceiverType>& receivers);
 
-    std::optional<libzcash::UnifiedAddress> GetUnifiedForReceiver(const libzcash::Receiver& receiver);
-
     bool AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
-    bool LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
 
-    bool LoadUnifiedAccount(const ZcashdUnifiedAccount &skmeta);
+    bool LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
+    bool LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skmeta);
     bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
+
+    std::optional<libzcash::UnifiedAddress> GetUnifiedForReceiver(const libzcash::Receiver& receiver);
 
     /**
      * Increment the next transaction order id

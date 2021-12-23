@@ -560,7 +560,7 @@ TEST(KeystoreTests, AddUnifiedAddress) {
     auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling});
     EXPECT_TRUE(addrPair.first.GetP2PKHReceiver().has_value());
 
-    keyStore.AddUnifiedAddress(ufvkid, addrPair);
+    keyStore.AddUnifiedAddress(ufvkid, addrPair.second, addrPair.first);
 
     auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(addrPair.first.GetP2PKHReceiver().value());
     EXPECT_TRUE(ufvkmeta.has_value());

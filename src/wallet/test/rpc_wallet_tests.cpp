@@ -79,7 +79,6 @@ static SaplingPaymentAddress DefaultSaplingAddress(CWallet* pwallet) {
     auto usk = pwallet->GenerateUnifiedSpendingKeyForAccount(0);
 
     return usk.value()
-        .first
         .ToFullViewingKey()
         .GetSaplingKey().value()
         .FindAddress(libzcash::diversifier_index_t(0)).first;

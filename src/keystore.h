@@ -117,10 +117,10 @@ public:
      * viewing key upon discovery of the address as having received
      * funds.
      */
-    virtual void AddUnifiedAddress(
-            const libzcash::UFVKId& keyId,
-            const std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>& ua
-            ) = 0;
+    virtual bool AddUnifiedAddress(
+        const libzcash::UFVKId& keyId,
+        const libzcash::diversifier_index_t& diversifierIndex,
+        const libzcash::UnifiedAddress& ua) = 0;
 
     virtual std::optional<libzcash::ZcashdUnifiedFullViewingKey> GetUnifiedFullViewingKey(
             const libzcash::UFVKId& keyId
@@ -357,9 +357,10 @@ public:
     virtual bool AddUnifiedFullViewingKey(
             const libzcash::ZcashdUnifiedFullViewingKey &ufvk);
 
-    virtual void AddUnifiedAddress(
-            const libzcash::UFVKId& keyId,
-            const std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>& ua);
+    virtual bool AddUnifiedAddress(
+        const libzcash::UFVKId& keyId,
+        const libzcash::diversifier_index_t& diversifierIndex,
+        const libzcash::UnifiedAddress& ua);
 
     virtual std::optional<libzcash::ZcashdUnifiedFullViewingKey> GetUnifiedFullViewingKey(
             const libzcash::UFVKId& keyId) const;
