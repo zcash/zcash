@@ -52,7 +52,7 @@ def sapling_digest(saplingBundle):
     if len(saplingBundle.spends) + len(saplingBundle.outputs) > 0:
         digest.update(sapling_spends_digest(saplingBundle))
         digest.update(sapling_outputs_digest(saplingBundle))
-        digest.update(struct.pack('<Q', saplingBundle.valueBalance))
+        digest.update(struct.pack('<q', saplingBundle.valueBalance))
 
     return digest.digest()
 
@@ -126,7 +126,7 @@ def sapling_outputs_noncompact_digest(saplingBundle):
     for desc in saplingBundle.outputs:
         digest.update(ser_uint256(desc.cv))
         digest.update(desc.encCiphertext[564:])
-        digest.update(desc.outCipherText)
+        digest.update(desc.outCiphertext)
     return digest.digest()
 
 # Orchard
@@ -139,7 +139,7 @@ def orchard_digest(orchardBundle):
         digest.update(orchard_actions_memos_digest(orchardBundle))
         digest.update(orchard_actions_noncompact_digest(orchardBundle))
         digest.update(struct.pack('<B', orchardBundle.flags()))
-        digest.update(struct.pack('<Q', orchardBundle.valueBalance))
+        digest.update(struct.pack('<q', orchardBundle.valueBalance))
         digest.update(bytes(orchardBundle.anchor))
 
     return digest.digest()

@@ -660,7 +660,7 @@ class OutputDescription(object):
         self.encCiphertext = f.read(580)
         self.outCiphertext = f.read(80)
         self.zkproof = Groth16Proof()
-        self.zkproof.deserialize()
+        self.zkproof.deserialize(f)
 
     def serialize(self):
         r = b""
@@ -971,6 +971,8 @@ class CTransaction(object):
             self.nLockTime = 0
             self.nExpiryHeight = 0
             self.valueBalance = 0
+            self.saplingBundle = SaplingBundle()
+            self.orchardBundle = OrchardBundle()
             self.shieldedSpends = []
             self.shieldedOutputs = []
             self.vJoinSplit = []
@@ -988,6 +990,8 @@ class CTransaction(object):
             self.nLockTime = tx.nLockTime
             self.nExpiryHeight = tx.nExpiryHeight
             self.valueBalance = tx.valueBalance
+            self.saplingBundle = copy.deepcopy(tx.saplingBundle)
+            self.orchardBundle = copy.deepcopy(tx.orchardBundle)
             self.shieldedSpends = copy.deepcopy(tx.shieldedSpends)
             self.shieldedOutputs = copy.deepcopy(tx.shieldedOutputs)
             self.vJoinSplit = copy.deepcopy(tx.vJoinSplit)
@@ -1075,6 +1079,7 @@ class CTransaction(object):
 
             # Common transaction fields
             r += struct.pack("<I", header)
+            r += struct.pack("<I", self.nVersionGroupId)
             r += struct.pack("<I", self.nConsensusBranchId)
             r += struct.pack("<I", self.nLockTime)
             r += struct.pack("<I", self.nExpiryHeight)
