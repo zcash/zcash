@@ -21,11 +21,18 @@ The presence of these APIs is indicated by a library API version of 2.
 Updated RPCs
 ------------
 
+- The `getblocktemplate` RPC method output now includes a `defaultroots` field,
+  which provides various tree roots and block commitments matching the contents
+  of the block template. If any part of the block template marked as `mutable`
+  in the RPC method output is mutated, these roots may need to be recomputed.
+  For more information on the derivation process, see the block header changes
+  in [ZIP 244](https://zips.z.cash/zip-0244#block-header-changes).
+
 - Fixed an issue where `ERROR: spent index not enabled` would be logged
-  unnecessarily on nodes that have either insightexplorer or lightwalletd
+  unnecessarily on nodes that have either `-insightexplorer` or `-lightwalletd`
   configuration options enabled.
 
-- The `getmininginfo` RPC now omits `currentblockize` and `currentblocktx`
+- The `getmininginfo` RPC now omits `currentblocksize` and `currentblocktx`
   when a block was never assembled via RPC on this node during its current
   process instantiation. (#5404)
 
