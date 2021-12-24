@@ -623,7 +623,31 @@ public:
 };
 
 
+class AddrSet {
+private:
+    std::set<libzcash::SproutPaymentAddress> sproutAddresses;
+    std::set<libzcash::SaplingPaymentAddress> saplingAddresses;
 
+    AddrSet() {}
+public:
+    static AddrSet ForPaymentAddresses(const std::vector<libzcash::PaymentAddress>& addrs);
+
+    const std::set<libzcash::SproutPaymentAddress>& GetSproutAddresses() const {
+        return sproutAddresses;
+    }
+
+    const std::set<libzcash::SaplingPaymentAddress>& GetSaplingAddresses() const {
+        return saplingAddresses;
+    }
+
+    bool HasSproutAddress(libzcash::SproutPaymentAddress addr) const {
+        return sproutAddresses.count(addr) > 0;
+    }
+
+    bool HasSaplingAddress(libzcash::SaplingPaymentAddress addr) const {
+        return saplingAddresses.count(addr) > 0;
+    }
+};
 
 class COutput
 {
@@ -1194,9 +1218,20 @@ public:
     void AddPendingSaplingMigrationTx(const CTransaction& tx);
     /** Saves witness caches and best block locator to disk. */
     void SetBestChain(const CBlockLocator& loc);
-    std::set<std::pair<libzcash::RawAddress, uint256>> GetNullifiersForAddresses(const std::set<libzcash::RawAddress> & addresses);
-    bool IsNoteSproutChange(const std::set<std::pair<libzcash::RawAddress, uint256>> & nullifierSet, const libzcash::RawAddress & address, const JSOutPoint & entry);
-    bool IsNoteSaplingChange(const std::set<std::pair<libzcash::RawAddress, uint256>> & nullifierSet, const libzcash::RawAddress & address, const SaplingOutPoint & entry);
+
+    std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> GetSproutNullifiers(
+            const std::set<libzcash::SproutPaymentAddress>& addresses);
+    bool IsNoteSproutChange(
+            const std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> & nullifierSet,
+            const libzcash::SproutPaymentAddress& address,
+            const JSOutPoint & entry);
+
+    std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> GetSaplingNullifiers(
+            const std::set<libzcash::SaplingPaymentAddress>& addresses);
+    bool IsNoteSaplingChange(
+            const std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> & nullifierSet,
+            const libzcash::SaplingPaymentAddress& address,
+            const SaplingOutPoint & entry);
 
     DBErrors LoadWallet(bool& fFirstRunRet);
     DBErrors ZapWalletTx(std::vector<CWalletTx>& vWtx);
@@ -1304,19 +1339,13 @@ public:
     /* Set the current encrypted HD seed, without saving it to disk (used by LoadWallet) */
     bool LoadCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& seed);
 
-    /* Find notes filtered by (optional) payment address, min depth, ability to spend */
-    void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
-                          std::vector<SaplingNoteEntry>& saplingEntries,
-                          std::optional<libzcash::PaymentAddress> address,
-                          int minDepth=1,
-                          bool ignoreSpent=true,
-                          bool requireSpendingKey=true);
+    bool HasSpendingKeys(const AddrSet& noteFilter) const;
 
     /* Find notes filtered by payment addresses, min depth, max depth, if they are spent,
        if a spending key is required, and if they are locked */
     void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
-                          std::set<libzcash::RawAddress>& filterAddresses,
+                          const std::optional<AddrSet>& noteFilter,
                           int minDepth=1,
                           int maxDepth=INT_MAX,
                           bool ignoreSpent=true,

@@ -684,49 +684,58 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
     SetBestChainINTERNAL(walletdb, loc);
 }
 
-std::set<std::pair<libzcash::RawAddress, uint256>> CWallet::GetNullifiersForAddresses(
-        const std::set<libzcash::RawAddress> & addresses)
-{
-    std::set<std::pair<libzcash::RawAddress, uint256>> nullifierSet;
-    // Sapling ivk -> list of addrs map
-    // (There may be more than one diversified address for a given ivk.)
-    std::map<libzcash::SaplingIncomingViewingKey, std::vector<libzcash::SaplingPaymentAddress>> ivkMap;
-    for (const auto & addr : addresses) {
-        auto saplingAddr = std::get_if<libzcash::SaplingPaymentAddress>(&addr);
-        if (saplingAddr != nullptr) {
-            libzcash::SaplingIncomingViewingKey ivk;
-            this->GetSaplingIncomingViewingKey(*saplingAddr, ivk);
-            ivkMap[ivk].push_back(*saplingAddr);
-        }
-    }
-    for (const auto & txPair : mapWallet) {
-        // Sprout
-        for (const auto & noteDataPair : txPair.second.mapSproutNoteData) {
-            auto & noteData = noteDataPair.second;
-            auto & nullifier = noteData.nullifier;
-            auto & address = noteData.address;
-            if (nullifier && addresses.count(address)) {
-                nullifierSet.insert(std::make_pair(address, nullifier.value()));
-            }
-        }
-        // Sapling
-        for (const auto & noteDataPair : txPair.second.mapSaplingNoteData) {
-            auto & noteData = noteDataPair.second;
-            auto & nullifier = noteData.nullifier;
-            auto & ivk = noteData.ivk;
-            if (nullifier && ivkMap.count(ivk)) {
-                for (const auto & addr : ivkMap[ivk]) {
-                    nullifierSet.insert(std::make_pair(addr, nullifier.value()));
+std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> CWallet::GetSproutNullifiers(
+        const std::set<libzcash::SproutPaymentAddress>& addresses) {
+    std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> nullifierSet;
+    if (!addresses.empty()) {
+        for (const auto& txPair : mapWallet) {
+            for (const auto & noteDataPair : txPair.second.mapSproutNoteData) {
+                auto & noteData = noteDataPair.second;
+                auto & nullifier = noteData.nullifier;
+                auto & address = noteData.address;
+                if (nullifier && addresses.count(address) > 0) {
+                    nullifierSet.insert(std::make_pair(address, nullifier.value()));
                 }
             }
         }
     }
+
+    return nullifierSet;
+}
+
+std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> CWallet::GetSaplingNullifiers(
+        const std::set<libzcash::SaplingPaymentAddress>& addresses) {
+    std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> nullifierSet;
+    if (!addresses.empty()) {
+        // Sapling ivk -> list of addrs map
+        // (There may be more than one diversified address for a given ivk.)
+        std::map<libzcash::SaplingIncomingViewingKey, std::vector<libzcash::SaplingPaymentAddress>> ivkMap;
+        for (const auto & addr : addresses) {
+            libzcash::SaplingIncomingViewingKey ivk;
+            this->GetSaplingIncomingViewingKey(addr, ivk);
+            ivkMap[ivk].push_back(addr);
+        }
+
+        for (const auto& txPair : mapWallet) {
+            for (const auto& noteDataPair : txPair.second.mapSaplingNoteData) {
+                auto & noteData = noteDataPair.second;
+                auto & nullifier = noteData.nullifier;
+                auto & ivk = noteData.ivk;
+                if (nullifier && ivkMap.count(ivk) > 0) {
+                    for (const auto & addr : ivkMap[ivk]) {
+                        nullifierSet.insert(std::make_pair(addr, nullifier.value()));
+                    }
+                }
+            }
+        }
+    }
+
     return nullifierSet;
 }
 
 bool CWallet::IsNoteSproutChange(
-        const std::set<std::pair<libzcash::RawAddress, uint256>> & nullifierSet,
-        const libzcash::RawAddress & address,
+        const std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> & nullifierSet,
+        const libzcash::SproutPaymentAddress& address,
         const JSOutPoint & jsop)
 {
     // A Note is marked as "change" if the address that received it
@@ -748,8 +757,9 @@ bool CWallet::IsNoteSproutChange(
     return false;
 }
 
-bool CWallet::IsNoteSaplingChange(const std::set<std::pair<libzcash::RawAddress, uint256>> & nullifierSet,
-        const libzcash::RawAddress & address,
+bool CWallet::IsNoteSaplingChange(
+        const std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> & nullifierSet,
+        const libzcash::SaplingPaymentAddress& address,
         const SaplingOutPoint & op)
 {
     // A Note is marked as "change" if the address that received it
@@ -760,6 +770,8 @@ bool CWallet::IsNoteSaplingChange(const std::set<std::pair<libzcash::RawAddress,
     // - Notes created by consolidation transactions (e.g. using
     //   z_mergetoaddress).
     // - Notes sent from one address to itself.
+    // FIXME: This also needs to check against the wallet's change address
+    // for the associated unified account when we add UA support
     for (const SpendDescription &spend : mapWallet[op.hash].vShieldedSpend) {
         if (nullifierSet.count(std::make_pair(address, spend.nullifier))) {
             return true;
@@ -5026,28 +5038,47 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
     return ::AcceptToMemoryPool(Params(), mempool, state, *this, fLimitFree, NULL, fRejectAbsurdFee);
 }
 
-/**
- * Find notes in the wallet filtered by payment address, min depth and ability to spend.
- * These notes are decrypted and added to the output parameter vector, outEntries.
- */
-void CWallet::GetFilteredNotes(
-    std::vector<SproutNoteEntry>& sproutEntries,
-    std::vector<SaplingNoteEntry>& saplingEntries,
-    std::optional<libzcash::PaymentAddress> address,
-    int minDepth,
-    bool ignoreSpent,
-    bool requireSpendingKey)
-{
-    std::set<libzcash::RawAddress> filterAddresses;
+AddrSet AddrSet::ForPaymentAddresses(const std::vector<libzcash::PaymentAddress>& paymentAddrs) {
+    AddrSet addrs;
+    for (const auto& addr: paymentAddrs) {
+        std::visit(match {
+            [&](const CKeyID& keyId) { },
+            [&](const CScriptID& scriptId) { },
+            [&](const libzcash::SproutPaymentAddress& addr) {
+                addrs.sproutAddresses.insert(addr);
+            },
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                addrs.saplingAddresses.insert(addr);
+            },
+            [&](const libzcash::UnifiedAddress& uaddr) {
+                for (auto& receiver : uaddr) {
+                    std::visit(match {
+                        [&](const libzcash::SaplingPaymentAddress& addr) {
+                            addrs.saplingAddresses.insert(addr);
+                        },
+                        [&](const auto& other) { }
+                    }, receiver);
+                }
+            },
+        }, addr);
+    }
+    return addrs;
+}
 
-    if (address.has_value()) {
-        for (const auto ra : std::visit(GetRawShieldedAddresses(), address.value())) {
-            filterAddresses.insert(ra);
+bool CWallet::HasSpendingKeys(const AddrSet& addrSet) const {
+    for (const auto& zaddr : addrSet.GetSproutAddresses()) {
+        if (!HaveSproutSpendingKey(zaddr)) {
+            return false;
         }
     }
-
-    GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
+    for (const auto& zaddr : addrSet.GetSaplingAddresses()) {
+        if (!HaveSaplingSpendingKeyForAddress(zaddr)) {
+            return false;
+        }
+    }
+    return true;
 }
+
 
 /**
  * Find notes in the wallet filtered by payment addresses, min depth, max depth,
@@ -5057,7 +5088,7 @@ void CWallet::GetFilteredNotes(
 void CWallet::GetFilteredNotes(
     std::vector<SproutNoteEntry>& sproutEntries,
     std::vector<SaplingNoteEntry>& saplingEntries,
-    std::set<libzcash::RawAddress>& filterAddresses,
+    const std::optional<AddrSet>& noteFilter,
     int minDepth,
     int maxDepth,
     bool ignoreSpent,
@@ -5087,8 +5118,8 @@ void CWallet::GetFilteredNotes(
             SproutNoteData nd = pair.second;
             SproutPaymentAddress pa = nd.address;
 
-            // skip notes which belong to a different payment address in the wallet
-            if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
+            // skip notes which do not conform to the filter, if supplied
+            if (noteFilter.has_value() && !noteFilter.value().HasSproutAddress(pa)) {
                 continue;
             }
 
@@ -5157,8 +5188,8 @@ void CWallet::GetFilteredNotes(
             assert(static_cast<bool>(maybe_pa));
             auto pa = maybe_pa.value();
 
-            // skip notes which belong to a different payment address in the wallet
-            if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
+            // skip notes which do not conform to the filter, if supplied
+            if (noteFilter.has_value() && !noteFilter.value().HasSaplingAddress(pa)) {
                 continue;
             }
 

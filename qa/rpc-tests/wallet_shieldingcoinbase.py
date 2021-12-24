@@ -151,7 +151,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
             results = self.nodes[1].z_listunspent(1, 999, False, [myzaddr])
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("Invalid parameter, spending key for address does not belong to wallet" in errorString, True)
+        assert_equal("Invalid parameter, spending key for an address does not belong to the wallet.", errorString)
 
         # Verify that debug=zrpcunsafe logs params, and that full txid is associated with opid
         initialized_line = check_node_log(self, 0, myopid + ": z_sendmany initialized", False)

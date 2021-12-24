@@ -935,7 +935,11 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     std::vector<SaplingNoteEntry> saplingEntries;
     // TODO: move this to the caller
     auto zaddr = KeyIO(Params()).DecodePaymentAddress(fromaddress_);
-    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddr, mindepth_);
+    std::optional<AddrSet> noteFilter = std::nullopt;
+    if (zaddr.has_value()) {
+        noteFilter = AddrSet::ForPaymentAddresses(std::vector({zaddr.value()}));
+    }
+    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, noteFilter, mindepth_);
 
     // If using the TransactionBuilder, we only want Sapling notes.
     // If not using it, we only want Sprout notes.

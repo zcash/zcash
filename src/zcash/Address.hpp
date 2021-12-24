@@ -12,9 +12,6 @@
 
 namespace libzcash {
 
-/** Protocol addresses that can receive funds in a transaction. */
-typedef std::variant<SproutPaymentAddress, SaplingPaymentAddress> RawAddress;
-
 class UnknownReceiver {
 public:
     uint32_t typecode;
@@ -161,47 +158,6 @@ public:
     uint32_t operator()(const CScriptID &p2sh) const;
     uint32_t operator()(const CKeyID &p2pkh) const;
     uint32_t operator()(const libzcash::UnknownReceiver &p2pkh) const;
-};
-
-/**
- * Converts the given UA receiver to a protocol address, if it is a shielded receiver.
- */
-class ReceiverToRawAddress {
-public:
-    ReceiverToRawAddress() {}
-
-    std::optional<libzcash::RawAddress> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    std::optional<libzcash::RawAddress> operator()(const CScriptID &p2sh) const;
-    std::optional<libzcash::RawAddress> operator()(const CKeyID &p2pkh) const;
-    std::optional<libzcash::RawAddress> operator()(const libzcash::UnknownReceiver &p2pkh) const;
-};
-
-/**
- * Returns the protocol address that should be used in transaction outputs.
- */
-class RecipientForPaymentAddress {
-public:
-    RecipientForPaymentAddress() {}
-
-    std::optional<libzcash::RawAddress> operator()(const CKeyID &addr) const;
-    std::optional<libzcash::RawAddress> operator()(const CScriptID &addr) const;
-    std::optional<libzcash::RawAddress> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
-    std::optional<libzcash::RawAddress> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    std::optional<libzcash::RawAddress> operator()(const libzcash::UnifiedAddress &uaddr) const;
-};
-
-/**
- * Returns all protocol addresses contained within the given payment address.
- */
-class GetRawShieldedAddresses {
-public:
-    GetRawShieldedAddresses() {}
-
-    std::set<libzcash::RawAddress> operator()(const CKeyID &addr) const;
-    std::set<libzcash::RawAddress> operator()(const CScriptID &addr) const;
-    std::set<libzcash::RawAddress> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
-    std::set<libzcash::RawAddress> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    std::set<libzcash::RawAddress> operator()(const libzcash::UnifiedAddress &uaddr) const;
 };
 
 #endif // ZC_ADDRESS_H_
