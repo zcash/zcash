@@ -3667,7 +3667,6 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
     return ret;
 }
 
-
 // JSDescription size depends on the transaction version
 #define V3_JS_DESCRIPTION_SIZE    (GetSerializeSize(JSDescription(), SER_NETWORK, (OVERWINTER_TX_VERSION | (1 << 31))))
 // Here we define the maximum number of zaddr outputs that can be included in a transaction.
@@ -3679,6 +3678,82 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
 // transaction.h comment: spending taddr output requires CTxIn >= 148 bytes and typical taddr txout is 34 bytes
 #define CTXIN_SPEND_DUST_SIZE   148
 #define CTXOUT_REGULAR_SIZE     34
+
+size_t EstimateTxSize(
+        const PaymentSource& paymentSource,
+        const std::vector<SendManyRecipient>& recipients) {
+    int nextBlockHeight = chainActive.Height() + 1;
+    CMutableTransaction mtx;
+    mtx.fOverwintered = true;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtx.nVersion = SAPLING_TX_VERSION;
+
+    bool fromTaddr = std::visit(match {
+        [&](const FromAnyTaddr& any) {
+            return true;
+        },
+        [&](const PaymentAddress& addr) {
+            return std::visit(match {
+                [&](const CKeyID& keyId) {
+                    return true;
+                },
+                [&](const CScriptID& scriptId) {
+                    return true;
+                },
+                [&](const libzcash::SproutPaymentAddress& addr) {
+                    return false;
+                },
+                [&](const libzcash::SaplingPaymentAddress& addr) {
+                    return false;
+                },
+                [&](const libzcash::UnifiedAddress& addr) {
+                    // TODO UA
+                    throw JSONRPCError(RPC_INVALID_PARAMETER, "Unified addresses not yet supported.");
+                    return false; // compiler is dumb
+                }
+            }, addr);
+        }
+    }, paymentSource);
+
+    // As a sanity check, estimate and verify that the size of the transaction will be valid.
+    // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
+    size_t txsize = 0;
+    size_t taddrRecipientCount = 0;
+    for (const SendManyRecipient& recipient : recipients) {
+        std::visit(match {
+            [&](const CKeyID&) {
+                taddrRecipientCount += 1;
+            },
+            [&](const CScriptID&) {
+                taddrRecipientCount += 1;
+            },
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                mtx.vShieldedOutput.push_back(OutputDescription());
+            },
+            [&](const libzcash::SproutPaymentAddress& addr) {
+                JSDescription jsdesc;
+                if (mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION)) {
+                    jsdesc.proof = GrothProof();
+                }
+                mtx.vJoinSplit.push_back(jsdesc);
+            },
+            [&](const libzcash::UnifiedAddress& ua) {
+                // FIXME
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Unified addresses not yet supported.");
+            }
+        }, recipient.address);
+    }
+
+    CTransaction tx(mtx);
+    txsize += GetSerializeSize(tx, SER_NETWORK, tx.nVersion);
+    if (fromTaddr) {
+        txsize += CTXIN_SPEND_DUST_SIZE;
+        txsize += CTXOUT_REGULAR_SIZE; // There will probably be taddr change
+    }
+    txsize += CTXOUT_REGULAR_SIZE * taddrRecipientCount;
+
+    return txsize;
+}
 
 UniValue z_sendmany(const UniValue& params, bool fHelp)
 {
@@ -3720,28 +3795,22 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     ThrowIfInitialBlockDownload();
+    KeyIO keyIO(Params());
 
     // Check that the from address is valid.
     auto fromaddress = params[0].get_str();
+    PaymentSource paymentSource;
     bool fromTaddr = false;
-    bool fromSapling = false;
     bool fromSprout = false;
-    KeyIO keyIO(Params());
+    bool fromSapling = false;
     if (fromaddress == "ANY_TADDR") {
-        fromTaddr = true;
+        paymentSource = FromAnyTaddr();
     } else {
         auto addr = keyIO.DecodePaymentAddress(fromaddress);
         if (!addr.has_value()) {
             throw JSONRPCError(
                     RPC_INVALID_ADDRESS_OR_KEY,
                     "Invalid from address: should be a taddr, a zaddr, or the string 'ANY_TADDR'.");
-        }
-
-        // This is a sanity check; the actual checks will come later when the spend is attempted.
-        if (!std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), addr.value())) {
-            throw JSONRPCError(
-                    RPC_INVALID_ADDRESS_OR_KEY,
-                    "Invalid from address: does not belong to this node, spending key not found.");
         }
 
         // Remember what sort of address this is
@@ -3764,190 +3833,80 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                         "Invalid from address: unified addresses are not yet supported.");
             }
         }, addr.value());
+
+        paymentSource = addr.value();
     }
 
     UniValue outputs = params[1].get_array();
-    if (outputs.size()==0)
+    if (outputs.size() == 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amounts array is empty.");
+    }
 
-    // Keep track of addresses to spot duplicates
-    set<std::string> setAddress;
-
-    // Track whether we see any Sprout addresses
-    bool noSproutAddrs = !fromSprout;
-
-    // Recipients
-    std::vector<SendManyRecipient> taddrRecipients;
-    std::vector<SendManyRecipient> zaddrRecipients;
+    std::vector<SendManyRecipient> recipients;
     CAmount nTotalOut = 0;
-
-    bool containsSproutOutput = false;
-    bool containsSaplingOutput = false;
-
     for (const UniValue& o : outputs.getValues()) {
         if (!o.isObject())
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected object");
 
         // sanity check, report error if unknown key-value pairs
-        for (const string& name_ : o.getKeys()) {
-            std::string s = name_;
-            if (s != "address" && s != "amount" && s!="memo")
-                throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown key: ")+s);
+        for (const std::string& s : o.getKeys()) {
+            if (s != "address" && s != "amount" && s != "memo")
+                throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown key: ") + s);
         }
 
-        string address = find_value(o, "address").get_str();
-
-        bool isZaddr = false;
-        auto toAddr = keyIO.DecodePaymentAddress(address);
-        if (toAddr.has_value()) {
-            bool toSprout = false;
-            bool toSapling = false;
-            std::visit(match {
-                [&](const CKeyID&) { },
-                [&](const CScriptID&) { },
-                [&](const libzcash::SaplingPaymentAddress& addr) {
-                    isZaddr = true;
-                    toSapling = true;
-                    containsSaplingOutput = true;
-                },
-                [&](const libzcash::SproutPaymentAddress& addr) {
-                    isZaddr = true;
-                    toSprout = true;
-                    containsSproutOutput = true;
-                    noSproutAddrs = false;
-                },
-                [&](const libzcash::UnifiedAddress& ua) {
-                    throw JSONRPCError(
-                            RPC_INVALID_ADDRESS_OR_KEY,
-                            "Invalid recipient address: unified addresses are not yet supported.");
-                }
-            }, toAddr.value());
-
-            // Sending to both Sprout and Sapling is currently unsupported using z_sendmany
-            if (containsSproutOutput && containsSaplingOutput) {
+        std::string addrStr = find_value(o, "address").get_str();
+        auto addr = keyIO.DecodePaymentAddress(addrStr);
+        if (addr.has_value()) {
+            // TODO: If we want to continue to support sending to Sprout, we'll simply relax the
+            // restriction here to allow sprout->sprout; these transfers will not be forbidden
+            // by later code.
+            bool toSprout = std::holds_alternative<libzcash::SproutPaymentAddress>(addr.value());
+            if (toSprout) { // && !fromSprout) {
                 throw JSONRPCError(
                     RPC_INVALID_PARAMETER,
-                    "Cannot send to both Sprout and Sapling addresses using z_sendmany");
-            }
-
-            // If sending between shielded addresses, they must be the same type
-            if ((fromSprout && toSapling) || (fromSapling && toSprout)) {
-                throw JSONRPCError(
-                    RPC_INVALID_PARAMETER,
-                    "Cannot send between Sprout and Sapling addresses using z_sendmany");
-            }
-
-            int nextBlockHeight = chainActive.Height() + 1;
-
-            if (fromTaddr && toSprout) {
-                const bool canopyActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_CANOPY);
-                if (canopyActive) {
-                    throw JSONRPCError(RPC_VERIFY_REJECTED, "Sprout shielding is not supported after Canopy");
-                }
+                    "Sending funds into the Sprout pool is not supported by z_sendmany");
             }
         } else {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
+            throw JSONRPCError(
+                    RPC_INVALID_PARAMETER,
+                    std::string("Invalid parameter, unknown address format: ") + addrStr);
         }
 
-        if (setAddress.count(address))
-            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+address);
-        setAddress.insert(address);
-
         UniValue memoValue = find_value(o, "memo");
-        string memo;
+        std::optional<std::string> memo;
         if (!memoValue.isNull()) {
             memo = memoValue.get_str();
-            if (!isZaddr) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Memo cannot be used with a taddr.  It can only be used with a zaddr.");
-            } else if (!IsHex(memo)) {
+            if (!std::visit(libzcash::HasShieldedRecipient(), addr.value())) {
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, memos cannot be sent to transparent addresses.");
+            } else if (!IsHex(memo.value())) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected memo data in hexadecimal format.");
             }
-            if (memo.length() > ZC_MEMO_SIZE*2) {
+
+            if (memo.value().length() > ZC_MEMO_SIZE*2) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER,  strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
             }
         }
 
         UniValue av = find_value(o, "amount");
         CAmount nAmount = AmountFromValue( av );
-        if (nAmount < 0)
+        if (nAmount < 0) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amount must be positive");
-
-        if (isZaddr) {
-            zaddrRecipients.push_back( SendManyRecipient(address, nAmount, memo) );
-        } else {
-            taddrRecipients.push_back( SendManyRecipient(address, nAmount, memo) );
         }
 
+        recipients.push_back(SendManyRecipient(addr.value(), nAmount, memo) );
         nTotalOut += nAmount;
     }
-
-    int nextBlockHeight = chainActive.Height() + 1;
-    CMutableTransaction mtx;
-    mtx.fOverwintered = true;
-    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-    mtx.nVersion = SAPLING_TX_VERSION;
-    unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
-    if (!Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_SAPLING)) {
-        if (Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_OVERWINTER)) {
-            mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
-            mtx.nVersion = OVERWINTER_TX_VERSION;
-        } else {
-            mtx.fOverwintered = false;
-            mtx.nVersion = 2;
-        }
-
-        max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
-
-        // Check the number of zaddr outputs does not exceed the limit.
-        if (zaddrRecipients.size() > Z_SENDMANY_MAX_ZADDR_OUTPUTS_BEFORE_SAPLING)  {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, too many zaddr outputs");
-        }
-        // If Sapling is not active, do not allow sending from or sending to Sapling addresses.
-        if (fromSapling || containsSaplingOutput) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
-        }
+    if (recipients.empty()) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "No recipients");
     }
 
-    // As a sanity check, estimate and verify that the size of the transaction will be valid.
-    // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
-    size_t txsize = 0;
-    for (int i = 0; i < zaddrRecipients.size(); i++) {
-        auto address = zaddrRecipients[i].address;
-        auto decoded = keyIO.DecodePaymentAddress(address);
-
-        if (decoded.has_value()) {
-            std::visit(match {
-                [&](const CKeyID&) {
-                    // Handled elsewhere
-                },
-                [&](const CScriptID&) {
-                    // Handled elsewhere
-                },
-                [&](const libzcash::SaplingPaymentAddress& addr) {
-                    mtx.vShieldedOutput.push_back(OutputDescription());
-                },
-                [&](const libzcash::SproutPaymentAddress& addr) {
-                    JSDescription jsdesc;
-                    if (mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION)) {
-                        jsdesc.proof = GrothProof();
-                    }
-                    mtx.vJoinSplit.push_back(jsdesc);
-                },
-                [&](const libzcash::UnifiedAddress& ua) {
-                    // TODO UNIFIED
-                }
-            }, decoded.value());
-        }
-    }
-    CTransaction tx(mtx);
-    txsize += GetSerializeSize(tx, SER_NETWORK, tx.nVersion);
-    if (fromTaddr) {
-        txsize += CTXIN_SPEND_DUST_SIZE;
-        txsize += CTXOUT_REGULAR_SIZE;      // There will probably be taddr change
-    }
-    txsize += CTXOUT_REGULAR_SIZE * taddrRecipients.size();
-    if (txsize > max_tx_size) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Too many outputs, size of raw transaction would be larger than limit of %d bytes", max_tx_size ));
+    // Sanity check for transaction size
+    // TODO: move this to the builder?
+    auto txsize = EstimateTxSize(paymentSource, recipients);
+    if (txsize > MAX_TX_SIZE_AFTER_SAPLING) {
+        throw JSONRPCError(
+                RPC_INVALID_PARAMETER,
+                strprintf("Too many outputs, size of raw transaction would be larger than limit of %d bytes", MAX_TX_SIZE_AFTER_SAPLING));
     }
 
     // Minimum confirmations
@@ -3960,9 +3919,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     }
 
     // Fee in Zatoshis, not currency format)
-    CAmount nFee        = DEFAULT_FEE;
-    CAmount nDefaultFee = nFee;
-
+    CAmount nFee = DEFAULT_FEE;
     if (params.size() > 3) {
         if (params[3].get_real() == 0.0) {
             nFee = 0;
@@ -3971,16 +3928,20 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         }
 
         // Check that the user specified fee is not absurd.
-        // This allows amount=0 (and all amount < nDefaultFee) transactions to use the default network fee
-        // or anything less than nDefaultFee instead of being forced to use a custom fee and leak metadata
-        if (nTotalOut < nDefaultFee) {
-            if (nFee > nDefaultFee) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Small transaction amount %s has fee %s that is greater than the default fee %s", FormatMoney(nTotalOut), FormatMoney(nFee), FormatMoney(nDefaultFee)));
+        // This allows amount=0 (and all amount < DEFAULT_FEE) transactions to use the default network fee
+        // or anything less than DEFAULT_FEE instead of being forced to use a custom fee and leak metadata
+        if (nTotalOut < DEFAULT_FEE) {
+            if (nFee > DEFAULT_FEE) {
+                throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        strprintf("Small transaction amount %s has fee %s that is greater than the default fee %s", FormatMoney(nTotalOut), FormatMoney(nFee), FormatMoney(DEFAULT_FEE)));
             }
         } else {
             // Check that the user specified fee is not absurd.
             if (nFee > nTotalOut) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Fee %s is greater than the sum of outputs %s and also greater than the default fee", FormatMoney(nFee), FormatMoney(nTotalOut)));
+                throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        strprintf("Fee %s is greater than the sum of outputs %s and also greater than the default fee", FormatMoney(nFee), FormatMoney(nTotalOut)));
             }
         }
     }
@@ -3993,33 +3954,14 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     o.pushKV("fee", std::stod(FormatMoney(nFee)));
     UniValue contextInfo = o;
 
-    if (!fromTaddr || !zaddrRecipients.empty()) {
-        // We have shielded inputs or outputs, and therefore cannot create
-        // transactions before Sapling activates.
-        if (!Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_SAPLING)) {
-            throw JSONRPCError(
-                RPC_INVALID_PARAMETER, "Cannot create shielded transactions before Sapling has activated");
-        }
-    }
-
-    // Builder (used if Sapling addresses are involved)
-    std::optional<TransactionBuilder> builder;
-    if (noSproutAddrs) {
-        builder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, pwalletMain);
-    }
-
-    // Contextual transaction we will build on
-    // (used if no Sapling addresses are involved)
-    CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
-        Params().GetConsensus(), nextBlockHeight, !noSproutAddrs);
-    bool isShielded = !fromTaddr || zaddrRecipients.size() > 0;
-    if (contextualTx.nVersion == 1 && isShielded) {
-        contextualTx.nVersion = 2; // Tx format should support vJoinSplits
-    }
+    int nextBlockHeight = chainActive.Height() + 1;
+    TransactionBuilder builder(Params().GetConsensus(), nextBlockHeight, pwalletMain);
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(builder, contextualTx, fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nFee, contextInfo) );
+    std::shared_ptr<AsyncRPCOperation> operation(
+            new AsyncRPCOperation_sendmany(builder, paymentSource, recipients, nMinDepth, nFee, contextInfo)
+            );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
     return operationId;

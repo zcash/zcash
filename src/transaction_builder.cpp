@@ -126,12 +126,12 @@ TransactionBuilderResult::TransactionBuilderResult(const CTransaction& tx) : may
 
 TransactionBuilderResult::TransactionBuilderResult(const std::string& error) : maybeError(error) {}
 
-bool TransactionBuilderResult::IsTx() { return maybeTx != std::nullopt; }
+bool TransactionBuilderResult::IsTx() { return maybeTx.has_value(); }
 
-bool TransactionBuilderResult::IsError() { return maybeError != std::nullopt; }
+bool TransactionBuilderResult::IsError() { return maybeError.has_value(); }
 
 CTransaction TransactionBuilderResult::GetTxOrThrow() {
-    if (maybeTx) {
+    if (maybeTx.has_value()) {
         return maybeTx.value();
     } else {
         throw JSONRPCError(RPC_WALLET_ERROR, "Failed to build transaction: " + GetError());
@@ -139,7 +139,7 @@ CTransaction TransactionBuilderResult::GetTxOrThrow() {
 }
 
 std::string TransactionBuilderResult::GetError() {
-    if (maybeError) {
+    if (maybeError.has_value()) {
         return maybeError.value();
     } else {
         // This can only happen if isTx() is true in which case we should not call getError()
@@ -216,7 +216,7 @@ void TransactionBuilder::AddSaplingOutput(
 
     libzcash::Zip212Enabled zip_212_enabled = libzcash::Zip212Enabled::BeforeZip212;
     // We use nHeight = chainActive.Height() + 1 since the output will be included in the next block
-    if (Params().GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+    if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
         zip_212_enabled = libzcash::Zip212Enabled::AfterZip212;
     }
 

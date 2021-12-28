@@ -26,7 +26,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
             self.nodes[3],
             self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 100}]),
             'failed',
-            'Could not find any non-coinbase UTXOs to spend. Coinbase UTXOs can only be sent to a single zaddr recipient from a single taddr.',
+            'Insufficient funds: have 0.00, need 100.00001; if you are attempting to shield transparent coinbase funds, ensure that you have specified only a single recipient address.',
         )
 
         # Prepare some non-coinbase UTXOs

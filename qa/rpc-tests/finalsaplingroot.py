@@ -131,10 +131,8 @@ class FinalSaplingRootTest(BitcoinTestFramework):
 
         # Mine a block with a Sprout shielded tx and verify the final Sapling root does not change
         zaddr1 = self.nodes[1].z_getnewaddress('sprout')
-        recipients = []
-        recipients.append({"address": zaddr1, "amount": Decimal('10')})
-        myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
-        wait_and_assert_operationid_status(self.nodes[0], myopid)
+        result = self.nodes[0].z_shieldcoinbase(taddr0, zaddr1, 0, 1)
+        wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
         self.sync_all()
         self.nodes[0].generate(1)

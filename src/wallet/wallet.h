@@ -630,6 +630,7 @@ private:
 
     AddrSet() {}
 public:
+    static AddrSet Empty() { return AddrSet(); }
     static AddrSet ForPaymentAddresses(const std::vector<libzcash::PaymentAddress>& addrs);
 
     const std::set<libzcash::SproutPaymentAddress>& GetSproutAddresses() const {
@@ -638,6 +639,10 @@ public:
 
     const std::set<libzcash::SaplingPaymentAddress>& GetSaplingAddresses() const {
         return saplingAddresses;
+    }
+
+    bool IsEmpty() const {
+        return sproutAddresses.empty() && saplingAddresses.empty();
     }
 
     bool HasSproutAddress(libzcash::SproutPaymentAddress addr) const {

@@ -5084,6 +5084,12 @@ bool CWallet::HasSpendingKeys(const AddrSet& addrSet) const {
  * Find notes in the wallet filtered by payment addresses, min depth, max depth,
  * if the note is spent, if a spending key is required, and if the notes are locked.
  * These notes are decrypted and added to the output parameter vector, outEntries.
+ *
+ * For the `noteFilter` argument, `std::nullopt` will return every address; if a
+ * value is provided, all returned notes will correspond to the addresses in
+ * that address set. If the empty address set is provided, this function will
+ * return early and the return arguments `sproutEntries` and `saplingEntries`
+ * will be unmodified.
  */
 void CWallet::GetFilteredNotes(
     std::vector<SproutNoteEntry>& sproutEntries,
@@ -5095,6 +5101,10 @@ void CWallet::GetFilteredNotes(
     bool requireSpendingKey,
     bool ignoreLocked)
 {
+    // Don't bother to do anything if the note filter would reject all notes
+    if (noteFilter.has_value() && noteFilter.value().IsEmpty())
+        return;
+
     LOCK2(cs_main, cs_wallet);
 
     KeyIO keyIO(Params());

@@ -29,8 +29,8 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
         saplingAddr = self.nodes[0].z_getnewaddress('sapling')
         t_addr = self.nodes[1].getnewaddress()
 
-        opid = self.nodes[0].z_sendmany(coinbase_addr, [{"address": sproutAddr, "amount": Decimal('10')}], 1, 0)
-        wait_and_assert_operationid_status(self.nodes[0], opid)
+        result = self.nodes[0].z_shieldcoinbase(coinbase_addr, sproutAddr, 0, 1)
+        wait_and_assert_operationid_status(self.nodes[0], result['opid'])
         self.nodes[0].generate(1)
         self.sync_all()
         assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('10'))

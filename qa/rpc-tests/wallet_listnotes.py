@@ -6,7 +6,6 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
-    get_coinbase_address,
     wait_and_assert_operationid_status,
     DEFAULT_FEE
 )
@@ -20,7 +19,6 @@ class WalletListNotes(BitcoinTestFramework):
         # Current height = 200
         assert_equal(200, self.nodes[0].getblockcount())
         sproutzaddr = self.nodes[0].z_getnewaddress('sprout')
-        saplingzaddr = self.nodes[0].z_getnewaddress('sapling')
 
         # we've got lots of coinbase (taddr) but no shielded funds yet
         assert_equal(0, Decimal(self.nodes[0].z_gettotalbalance()['private']))
@@ -30,11 +28,10 @@ class WalletListNotes(BitcoinTestFramework):
         self.sync_all()
         assert_equal(201, self.nodes[0].getblockcount())
 
-        # Shield coinbase funds (must be a multiple of 10, no change allowed)
-        receive_amount_10 = Decimal('10.0') - DEFAULT_FEE
-        recipients = [{"address":sproutzaddr, "amount":receive_amount_10}]
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients)
-        txid_1 = wait_and_assert_operationid_status(self.nodes[0], myopid)
+        # Shield one coinbase output
+        receive_amount_1 = Decimal('10.0') - DEFAULT_FEE
+        result = self.nodes[0].z_shieldcoinbase('*', sproutzaddr, DEFAULT_FEE, 1)
+        txid_1 = wait_and_assert_operationid_status(self.nodes[0], result['opid'])
         self.sync_all()
 
         # No funds (with (default) one or more confirmations) in sproutzaddr yet
@@ -51,7 +48,7 @@ class WalletListNotes(BitcoinTestFramework):
         assert_equal(txid_1,            unspent_cb[0]['txid'])
         assert_equal(True,              unspent_cb[0]['spendable'])
         assert_equal(sproutzaddr,       unspent_cb[0]['address'])
-        assert_equal(receive_amount_10, unspent_cb[0]['amount'])
+        assert_equal(receive_amount_1,  unspent_cb[0]['amount'])
 
         # list unspent, filtering by address, should produce same result
         unspent_cb_filter = self.nodes[0].z_listunspent(0, 9999, False, [sproutzaddr])
@@ -64,12 +61,12 @@ class WalletListNotes(BitcoinTestFramework):
         # Current height = 202
         assert_equal(202, self.nodes[0].getblockcount())
 
-        # Send 1.0 minus default fee from sproutzaddr to a new zaddr
-        sproutzaddr2 = self.nodes[0].z_getnewaddress('sprout')
-        receive_amount_1 = Decimal('1.0') - DEFAULT_FEE
-        change_amount_9 = receive_amount_10 - Decimal('1.0')
-        assert_equal('sprout', self.nodes[0].z_validateaddress(sproutzaddr2)['type'])
-        recipients = [{"address": sproutzaddr2, "amount":receive_amount_1}]
+        # Send 1.0 minus default fee from sproutzaddr to a new Sapling zaddr
+        saplingzaddr = self.nodes[0].z_getnewaddress('sapling')
+        receive_amount_2 = Decimal('1.0')
+        change_amount_2 = receive_amount_1 - receive_amount_2 - DEFAULT_FEE
+        assert_equal('sapling', self.nodes[0].z_validateaddress(saplingzaddr)['type'])
+        recipients = [{"address": saplingzaddr, "amount":receive_amount_2}]
         myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients)
         txid_2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
@@ -82,16 +79,16 @@ class WalletListNotes(BitcoinTestFramework):
         assert_equal(False,             unspent_tx[0]['change'])
         assert_equal(txid_2,            unspent_tx[0]['txid'])
         assert_equal(True,              unspent_tx[0]['spendable'])
-        assert_equal(sproutzaddr2,      unspent_tx[0]['address'])
-        assert_equal(receive_amount_1,  unspent_tx[0]['amount'])
+        assert_equal(saplingzaddr,      unspent_tx[0]['address'])
+        assert_equal(receive_amount_2,  unspent_tx[0]['amount'])
 
         assert_equal(True,              unspent_tx[1]['change'])
         assert_equal(txid_2,            unspent_tx[1]['txid'])
         assert_equal(True,              unspent_tx[1]['spendable'])
         assert_equal(sproutzaddr,       unspent_tx[1]['address'])
-        assert_equal(change_amount_9,   unspent_tx[1]['amount'])
+        assert_equal(change_amount_2,   unspent_tx[1]['amount'])
 
-        unspent_tx_filter = self.nodes[0].z_listunspent(0, 9999, False, [sproutzaddr2])
+        unspent_tx_filter = self.nodes[0].z_listunspent(0, 9999, False, [saplingzaddr])
         assert_equal(1, len(unspent_tx_filter))
         assert_equal(unspent_tx[0], unspent_tx_filter[0])
 
@@ -99,15 +96,15 @@ class WalletListNotes(BitcoinTestFramework):
         assert_equal(1, len(unspent_tx_filter))
         assert_equal(unspent_tx[1], unspent_tx_filter[0])
 
-        # No funds in saplingzaddr yet
-        assert_equal(0, len(self.nodes[0].z_listunspent(0, 9999, False, [saplingzaddr])))
+        self.nodes[0].generate(1)
+        self.sync_all()
 
-        # Send 2.0 minus default fee to our sapling zaddr
-        # (sending from a sprout zaddr to a sapling zaddr is disallowed,
-        # so send from coin base)
-        receive_amount_2 = Decimal('2.0') - DEFAULT_FEE
-        recipients = [{"address": saplingzaddr, "amount":receive_amount_2}]
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients)
+        # Send 2.0 minus default fee to a new sapling zaddr
+        saplingzaddr2 = self.nodes[0].z_getnewaddress('sapling')
+        receive_amount_3 = Decimal('2.0')
+        change_amount_3 = change_amount_2 - receive_amount_3 - DEFAULT_FEE
+        recipients = [{"address": saplingzaddr2, "amount":receive_amount_3}]
+        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients)
         txid_3 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         unspent_tx = self.nodes[0].z_listunspent(0)
@@ -119,31 +116,31 @@ class WalletListNotes(BitcoinTestFramework):
         assert_equal(False,             unspent_tx[0]['change'])
         assert_equal(txid_2,            unspent_tx[0]['txid'])
         assert_equal(True,              unspent_tx[0]['spendable'])
-        assert_equal(sproutzaddr2,      unspent_tx[0]['address'])
-        assert_equal(receive_amount_1,  unspent_tx[0]['amount'])
+        assert_equal(saplingzaddr,      unspent_tx[0]['address'])
+        assert_equal(receive_amount_2,  unspent_tx[0]['amount'])
 
         assert_equal(False,             unspent_tx[1]['change'])
         assert_equal(txid_3,            unspent_tx[1]['txid'])
         assert_equal(True,              unspent_tx[1]['spendable'])
-        assert_equal(saplingzaddr,      unspent_tx[1]['address'])
-        assert_equal(receive_amount_2,  unspent_tx[1]['amount'])
+        assert_equal(saplingzaddr2,     unspent_tx[1]['address'])
+        assert_equal(receive_amount_3,  unspent_tx[1]['amount'])
 
         assert_equal(True,              unspent_tx[2]['change'])
-        assert_equal(txid_2,            unspent_tx[2]['txid'])
+        assert_equal(txid_3,            unspent_tx[2]['txid'])
         assert_equal(True,              unspent_tx[2]['spendable'])
         assert_equal(sproutzaddr,       unspent_tx[2]['address'])
-        assert_equal(change_amount_9,   unspent_tx[2]['amount'])
+        assert_equal(change_amount_3,   unspent_tx[2]['amount'])
 
         unspent_tx_filter = self.nodes[0].z_listunspent(0, 9999, False, [saplingzaddr])
         assert_equal(1, len(unspent_tx_filter))
-        assert_equal(unspent_tx[1], unspent_tx_filter[0])
+        assert_equal(unspent_tx[0], unspent_tx_filter[0])
 
         # test that pre- and post-sapling can be filtered in a single call
         unspent_tx_filter = self.nodes[0].z_listunspent(0, 9999, False,
             [sproutzaddr, saplingzaddr])
         assert_equal(2, len(unspent_tx_filter))
         unspent_tx_filter = sorted(unspent_tx_filter, key=lambda k: k['amount'])
-        assert_equal(unspent_tx[1], unspent_tx_filter[0])
+        assert_equal(unspent_tx[0], unspent_tx_filter[0])
         assert_equal(unspent_tx[2], unspent_tx_filter[1])
 
         # so far, this node has no watchonly addresses, so results are the same
