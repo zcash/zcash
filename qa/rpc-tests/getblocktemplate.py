@@ -98,7 +98,8 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         block = codecs.encode(block, 'hex_codec')
 
         print("Submitting block")
-        node.submitblock(block)
+        submitblock_reply = node.submitblock(block)
+        assert_equal(None, submitblock_reply)
 
 
 if __name__ == '__main__':
