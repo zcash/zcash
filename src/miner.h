@@ -32,26 +32,11 @@ class ExtractMinerAddress
 public:
     ExtractMinerAddress() {}
 
-    std::optional<MinerAddress> operator()(const CKeyID &addr) const {
-        return std::nullopt;
-    }
-    std::optional<MinerAddress> operator()(const CScriptID &addr) const {
-        return std::nullopt;
-    }
-    std::optional<MinerAddress> operator()(const libzcash::SproutPaymentAddress &addr) const {
-        return std::nullopt;
-    }
-    std::optional<MinerAddress> operator()(const libzcash::SaplingPaymentAddress &addr) const {
-        return addr;
-    }
-    std::optional<MinerAddress> operator()(const libzcash::UnifiedAddress &addr) const {
-        for (const auto& receiver: addr) {
-            if (std::holds_alternative<libzcash::SaplingPaymentAddress>(receiver)) {
-                return std::get<libzcash::SaplingPaymentAddress>(receiver);
-            }
-        }
-        return std::nullopt;
-    }
+    std::optional<MinerAddress> operator()(const CKeyID &keyID) const;
+    std::optional<MinerAddress> operator()(const CScriptID &addr) const;
+    std::optional<MinerAddress> operator()(const libzcash::SproutPaymentAddress &addr) const;
+    std::optional<MinerAddress> operator()(const libzcash::SaplingPaymentAddress &addr) const;
+    std::optional<MinerAddress> operator()(const libzcash::UnifiedAddress &addr) const;
 };
 
 class KeepMinerAddress

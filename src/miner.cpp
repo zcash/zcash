@@ -702,27 +702,40 @@ class MinerAddressScript : public CReserveScript
     void KeepScript() {}
 };
 
+std::optional<MinerAddress> ExtractMinerAddress::operator()(const CKeyID &keyID) const {
+    boost::shared_ptr<MinerAddressScript> mAddr(new MinerAddressScript());
+    mAddr->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
+    return mAddr;
+}
+std::optional<MinerAddress> ExtractMinerAddress::operator()(const CScriptID &addr) const {
+    return std::nullopt;
+}
+std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::SproutPaymentAddress &addr) const {
+    return std::nullopt;
+}
+std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::SaplingPaymentAddress &addr) const {
+    return addr;
+}
+std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::UnifiedAddress &addr) const {
+    for (const auto& receiver: addr) {
+        if (std::holds_alternative<libzcash::SaplingPaymentAddress>(receiver)) {
+            return std::get<libzcash::SaplingPaymentAddress>(receiver);
+        }
+    }
+    return std::nullopt;
+}
+
+
 void GetMinerAddress(MinerAddress &minerAddress)
 {
     KeyIO keyIO(Params());
 
-    // Try a transparent address first
     auto mAddrArg = GetArg("-mineraddress", "");
-    CTxDestination addr = keyIO.DecodeDestination(mAddrArg);
-    if (IsValidDestination(addr)) {
-        boost::shared_ptr<MinerAddressScript> mAddr(new MinerAddressScript());
-        CKeyID keyID = std::get<CKeyID>(addr);
-
-        mAddr->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
-        minerAddress = mAddr;
-    } else {
-        // Try a payment address
-        auto zaddr0 = keyIO.DecodePaymentAddress(mAddrArg);
-        if (zaddr0.has_value()) {
-            auto zaddr = std::visit(ExtractMinerAddress(), zaddr0.value());
-            if (zaddr.has_value()) {
-                minerAddress = zaddr.value();
-            }
+    auto zaddr0 = keyIO.DecodePaymentAddress(mAddrArg);
+    if (zaddr0.has_value()) {
+        auto zaddr = std::visit(ExtractMinerAddress(), zaddr0.value());
+        if (zaddr.has_value()) {
+            minerAddress = zaddr.value();
         }
     }
 }
