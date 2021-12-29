@@ -94,14 +94,14 @@ private:
 
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 
-    bool isUsingBuilder_; // Indicates that no Sprout addresses are involved
+    bool isUsingBuilder_{false}; // Indicates that no Sprout addresses are involved
     uint32_t consensusBranchId_;
     CAmount fee_;
-    int mindepth_;
+    int mindepth_{0};
     std::string fromaddress_;
-    bool useanyutxo_;
-    bool isfromtaddr_;
-    bool isfromzaddr_;
+    bool useanyutxo_{false};
+    bool isfromtaddr_{false};
+    bool isfromzaddr_{false};
     CTxDestination fromtaddr_;
     PaymentAddress frompaymentaddress_;
 

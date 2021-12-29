@@ -22,6 +22,7 @@
 #include "timedata.h"
 #include "transaction_builder.h"
 #include "util.h"
+#include "util/match.h"
 #include "utilmoneystr.h"
 #include "utiltime.h"
 #include "wallet.h"
@@ -96,18 +97,36 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
     }
 
     KeyIO keyIO(Params());
-    toTaddr_ = keyIO.DecodeDestination(std::get<0>(recipient));
-    isToTaddr_ = IsValidDestination(toTaddr_);
+    isToTaddr_ = false;
     isToZaddr_ = false;
 
-    if (!isToTaddr_) {
-        auto address = keyIO.DecodePaymentAddress(std::get<0>(recipient));
-        if (address.has_value()) {
-            isToZaddr_ = true;
-            toPaymentAddress_ = address.value();
-        } else {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid recipient address");
-        }
+    auto address = keyIO.DecodePaymentAddress(std::get<0>(recipient));
+    if (address.has_value()) {
+        std::visit(match {
+            [&](const CKeyID& keyId) {
+                toTaddr_ = keyId;
+                isToTaddr_ = true;
+            },
+            [&](const CScriptID& scriptId) {
+                toTaddr_ = scriptId;
+                isToTaddr_ = true;
+            },
+            [&](const libzcash::SproutPaymentAddress& addr) {
+                toPaymentAddress_ = addr;
+                isToZaddr_ = true;
+            },
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                toPaymentAddress_ = addr;
+                isToZaddr_ = true;
+            },
+            [&](const libzcash::UnifiedAddress& addr) {
+                throw JSONRPCError(
+                        RPC_INVALID_ADDRESS_OR_KEY,
+                        "z_mergetoaddress does not yet support sending to unified addresses");
+            },
+        }, address.value());
+    } else {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid recipient address");
     }
 
     // Log the context info i.e. the call parameters to z_mergetoaddress

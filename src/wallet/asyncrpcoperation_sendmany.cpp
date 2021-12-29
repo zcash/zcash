@@ -21,6 +21,7 @@
 #include "transaction_builder.h"
 #include "timedata.h"
 #include "util.h"
+#include "util/match.h"
 #include "utilmoneystr.h"
 #include "wallet.h"
 #include "walletdb.h"
@@ -92,20 +93,41 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     KeyIO keyIO(Params());
 
     useanyutxo_ = fromAddress == "ANY_TADDR";
-    fromtaddr_ = keyIO.DecodeDestination(fromAddress);
-    isfromtaddr_ = useanyutxo_ || IsValidDestination(fromtaddr_);
-    isfromzaddr_ = false;
-
-    if (!isfromtaddr_) {
+    if (useanyutxo_) {
+        isfromtaddr_ = true;
+    } else {
         auto address = keyIO.DecodePaymentAddress(fromAddress);
         if (address.has_value()) {
             // We don't need to lock on the wallet as spending key related methods are thread-safe
             if (!std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), address.value())) {
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, no spending key found for zaddr");
+                throw JSONRPCError(
+                        RPC_INVALID_ADDRESS_OR_KEY,
+                        "Invalid from address, no spending key found for address");
             }
 
-            isfromzaddr_ = true;
-            frompaymentaddress_ = address.value();
+            std::visit(match {
+                [&](const CKeyID& keyId) {
+                    fromtaddr_ = keyId;
+                    isfromtaddr_ = true;
+                },
+                [&](const CScriptID& scriptId) {
+                    fromtaddr_ = scriptId;
+                    isfromtaddr_ = true;
+                },
+                [&](const libzcash::SproutPaymentAddress& addr) {
+                    frompaymentaddress_ = addr;
+                    isfromzaddr_ = true;
+                },
+                [&](const libzcash::SaplingPaymentAddress& addr) {
+                    frompaymentaddress_ = addr;
+                    isfromzaddr_ = true;
+                },
+                [&](const libzcash::UnifiedAddress& addr) {
+                    throw JSONRPCError(
+                        RPC_INVALID_ADDRESS_OR_KEY,
+                        "Unified addresses are not yet supported by z_sendmany");
+                }
+            }, address.value());
         } else {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address");
         }

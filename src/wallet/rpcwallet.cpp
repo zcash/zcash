@@ -2991,24 +2991,13 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
     return ret;
 }
 
-CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1, bool ignoreUnspendable=true) {
-    std::set<CTxDestination> destinations;
+CAmount getBalanceTaddr(const std::optional<CTxDestination>& taddr, int minDepth=1, bool ignoreUnspendable=true) {
     vector<COutput> vecOutputs;
     CAmount balance = 0;
-
-    KeyIO keyIO(Params());
-    if (transparentAddress.length() > 0) {
-        CTxDestination taddr = keyIO.DecodeDestination(transparentAddress);
-        if (!IsValidDestination(taddr)) {
-            throw std::runtime_error("invalid transparent address");
-        }
-        destinations.insert(taddr);
-    }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-
     for (const COutput& out : vecOutputs) {
         if (out.nDepth < minDepth) {
             continue;
@@ -3018,13 +3007,13 @@ CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1, bool ign
             continue;
         }
 
-        if (destinations.size()) {
+        if (taddr.has_value()) {
             CTxDestination address;
             if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
                 continue;
             }
 
-            if (!destinations.count(address)) {
+            if (address != taddr.value()) {
                 continue;
             }
         }
@@ -3244,26 +3233,35 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
     KeyIO keyIO(Params());
     // Check that the from address is valid.
     auto fromaddress = params[0].get_str();
-    bool fromTaddr = false;
-    CTxDestination taddr = keyIO.DecodeDestination(fromaddress);
     auto pa = keyIO.DecodePaymentAddress(fromaddress);
-    fromTaddr = IsValidDestination(taddr);
-    if (!fromTaddr) {
-        if (!pa.has_value()) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
-        }
-        if (!std::visit(PaymentAddressBelongsToWallet(pwalletMain), pa.value())) {
-             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, spending key or viewing key not found.");
-        }
+
+    if (!pa.has_value()) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
+    }
+    if (!std::visit(PaymentAddressBelongsToWallet(pwalletMain), pa.value())) {
+         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node.");
     }
 
     CAmount nBalance = 0;
-    if (fromTaddr) {
-        nBalance = getBalanceTaddr(fromaddress, nMinDepth, false);
-    } else {
-        // TODO: Return an error if a UA is provided (once we support UAs).
-        nBalance = getBalanceZaddr(pa, nMinDepth, INT_MAX, false);
-    }
+    std::visit(match {
+        [&](const CKeyID& addr) {
+            nBalance = getBalanceTaddr(addr, nMinDepth, false);
+        },
+        [&](const CScriptID& addr) {
+            nBalance = getBalanceTaddr(addr, nMinDepth, false);
+        },
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            nBalance = getBalanceZaddr(addr, nMinDepth, INT_MAX, false);
+        },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            nBalance = getBalanceZaddr(addr, nMinDepth, INT_MAX, false);
+        },
+        [&](const libzcash::UnifiedAddress& addr) {
+             throw JSONRPCError(
+                     RPC_INVALID_ADDRESS_OR_KEY,
+                     "Unified addresses are not yet supported for z_getbalance.");
+        },
+    }, pa.value());
 
     // inZat
     if (params.size() > 2 && params[2].get_bool()) {
@@ -3323,7 +3321,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
     // but they don't because wtx.GetAmounts() does not handle tx where there are no outputs
     // pwalletMain->GetBalance() does not accept min depth parameter
     // so we use our own method to get balance of utxos.
-    CAmount nBalance = getBalanceTaddr("", nMinDepth, !fIncludeWatchonly);
+    CAmount nBalance = getBalanceTaddr(std::nullopt, nMinDepth, !fIncludeWatchonly);
     CAmount nPrivateBalance = getBalanceZaddr(std::nullopt, nMinDepth, INT_MAX, !fIncludeWatchonly);
     CAmount nTotalBalance = nBalance + nPrivateBalance;
     UniValue result(UniValue::VOBJ);
@@ -3730,24 +3728,40 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     if (fromaddress == "ANY_TADDR") {
         fromTaddr = true;
     } else {
-        CTxDestination taddr = keyIO.DecodeDestination(fromaddress);
-        fromTaddr = IsValidDestination(taddr);
-        if (!fromTaddr) {
-            auto addr = keyIO.DecodePaymentAddress(fromaddress);
-            if (!addr.has_value()) {
-                // invalid
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
-            }
-
-            // This is a sanity check; the actual checks will come later when the spend is attempted.
-            if (!std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), addr.value())) {
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key not found.");
-            }
-
-            // Remember whether this is a Sprout or Sapling address
-            fromSapling = std::holds_alternative<libzcash::SaplingPaymentAddress>(addr.value());
-            fromSprout = std::holds_alternative<libzcash::SproutPaymentAddress>(addr.value());
+        auto addr = keyIO.DecodePaymentAddress(fromaddress);
+        if (!addr.has_value()) {
+            throw JSONRPCError(
+                    RPC_INVALID_ADDRESS_OR_KEY,
+                    "Invalid from address: should be a taddr, a zaddr, or the string 'ANY_TADDR'.");
         }
+
+        // This is a sanity check; the actual checks will come later when the spend is attempted.
+        if (!std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), addr.value())) {
+            throw JSONRPCError(
+                    RPC_INVALID_ADDRESS_OR_KEY,
+                    "Invalid from address: does not belong to this node, spending key not found.");
+        }
+
+        // Remember what sort of address this is
+        std::visit(match {
+            [&](const CKeyID&) {
+                fromTaddr = true;
+            },
+            [&](const CScriptID&) {
+                fromTaddr = true;
+            },
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                fromSapling = true;
+            },
+            [&](const libzcash::SproutPaymentAddress& addr) {
+                fromSprout = true;
+            },
+            [&](const libzcash::UnifiedAddress& ua) {
+                throw JSONRPCError(
+                        RPC_INVALID_ADDRESS_OR_KEY,
+                        "Invalid from address: unified addresses are not yet supported.");
+            }
+        }, addr.value());
     }
 
     UniValue outputs = params[1].get_array();
@@ -3780,45 +3794,57 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         }
 
         string address = find_value(o, "address").get_str();
+
         bool isZaddr = false;
-        CTxDestination taddr = keyIO.DecodeDestination(address);
-        if (!IsValidDestination(taddr)) {
-            auto addr = keyIO.DecodePaymentAddress(address);
-            if (addr.has_value()) {
-                isZaddr = true;
-
-                bool toSapling = std::holds_alternative<libzcash::SaplingPaymentAddress>(addr.value());
-                bool toSprout = std::holds_alternative<libzcash::SproutPaymentAddress>(addr.value());
-                noSproutAddrs = !toSprout && noSproutAddrs && toSapling;
-
-                containsSproutOutput |= toSprout;
-                containsSaplingOutput |= toSapling;
-
-                // Sending to both Sprout and Sapling is currently unsupported using z_sendmany
-                if (containsSproutOutput && containsSaplingOutput) {
+        auto toAddr = keyIO.DecodePaymentAddress(address);
+        if (toAddr.has_value()) {
+            bool toSprout = false;
+            bool toSapling = false;
+            std::visit(match {
+                [&](const CKeyID&) { },
+                [&](const CScriptID&) { },
+                [&](const libzcash::SaplingPaymentAddress& addr) {
+                    isZaddr = true;
+                    toSapling = true;
+                    containsSaplingOutput = true;
+                },
+                [&](const libzcash::SproutPaymentAddress& addr) {
+                    isZaddr = true;
+                    toSprout = true;
+                    containsSproutOutput = true;
+                    noSproutAddrs = false;
+                },
+                [&](const libzcash::UnifiedAddress& ua) {
                     throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Cannot send to both Sprout and Sapling addresses using z_sendmany");
+                            RPC_INVALID_ADDRESS_OR_KEY,
+                            "Invalid recipient address: unified addresses are not yet supported.");
                 }
+            }, toAddr.value());
 
-                // If sending between shielded addresses, they must be the same type
-                if ((fromSprout && toSapling) || (fromSapling && toSprout)) {
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Cannot send between Sprout and Sapling addresses using z_sendmany");
-                }
-
-                int nextBlockHeight = chainActive.Height() + 1;
-
-                if (fromTaddr && toSprout) {
-                    const bool canopyActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_CANOPY);
-                    if (canopyActive) {
-                        throw JSONRPCError(RPC_VERIFY_REJECTED, "Sprout shielding is not supported after Canopy");
-                    }
-                }
-            } else {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
+            // Sending to both Sprout and Sapling is currently unsupported using z_sendmany
+            if (containsSproutOutput && containsSaplingOutput) {
+                throw JSONRPCError(
+                    RPC_INVALID_PARAMETER,
+                    "Cannot send to both Sprout and Sapling addresses using z_sendmany");
             }
+
+            // If sending between shielded addresses, they must be the same type
+            if ((fromSprout && toSapling) || (fromSapling && toSprout)) {
+                throw JSONRPCError(
+                    RPC_INVALID_PARAMETER,
+                    "Cannot send between Sprout and Sapling addresses using z_sendmany");
+            }
+
+            int nextBlockHeight = chainActive.Height() + 1;
+
+            if (fromTaddr && toSprout) {
+                const bool canopyActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_CANOPY);
+                if (canopyActive) {
+                    throw JSONRPCError(RPC_VERIFY_REJECTED, "Sprout shielding is not supported after Canopy");
+                }
+            }
+        } else {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
         }
 
         if (setAddress.count(address))
