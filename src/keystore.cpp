@@ -306,7 +306,7 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
 
     // We can't reasonably add the transparent component here, because
     // of the way that transparent addresses are generated from the
-    // P2PHK part of the unified address. Instead, whenever a new
+    // P2PKH part of the unified address. Instead, whenever a new
     // unified address is generated, the keys associated with the
     // transparent part of the address must be added to the keystore.
 

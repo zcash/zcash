@@ -184,7 +184,7 @@ TEST(WalletTests, SproutNoteDataSerialisation) {
 
 
 TEST(WalletTests, FindUnspentSproutNotes) {
-    auto consensusParams = RegtestActivateSapling();
+    SelectParams(CBaseChainParams::TESTNET);
 
     CWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
@@ -379,8 +379,6 @@ TEST(WalletTests, SetSproutNoteAddrsInCWalletTx) {
 }
 
 TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
-    SelectParams(CBaseChainParams::REGTEST);
-
     std::vector<libzcash::Zip212Enabled> zip_212_enabled = {libzcash::Zip212Enabled::BeforeZip212, libzcash::Zip212Enabled::AfterZip212};
     const Consensus::Params& (*activations [])() = {RegtestActivateSapling, RegtestActivateCanopy};
     void (*deactivations [])() = {RegtestDeactivateSapling, RegtestDeactivateCanopy};
@@ -659,8 +657,6 @@ TEST(WalletTests, GetConflictedSproutNotes) {
 
 // Generate note A and spend to create note B, from which we spend to create two conflicting transactions
 TEST(WalletTests, GetConflictedSaplingNotes) {
-    SelectParams(CBaseChainParams::REGTEST);
-
     std::vector<libzcash::Zip212Enabled> zip_212_enabled = {libzcash::Zip212Enabled::BeforeZip212, libzcash::Zip212Enabled::AfterZip212};
     const Consensus::Params& (*activations [])() = {RegtestActivateSapling, RegtestActivateCanopy};
     void (*deactivations [])() = {RegtestDeactivateSapling, RegtestDeactivateCanopy};
@@ -1036,8 +1032,6 @@ TEST(WalletTests, SpentSproutNoteIsFromMe) {
 
 // Create note A, spend A to create note B, spend and verify note B is from me.
 TEST(WalletTests, SpentSaplingNoteIsFromMe) {
-    SelectParams(CBaseChainParams::REGTEST);
-
     std::vector<libzcash::Zip212Enabled> zip_212_enabled = {libzcash::Zip212Enabled::BeforeZip212, libzcash::Zip212Enabled::AfterZip212};
     const Consensus::Params& (*activations [])() = {RegtestActivateSapling, RegtestActivateCanopy};
     void (*deactivations [])() = {RegtestDeactivateSapling, RegtestDeactivateCanopy};
@@ -2173,7 +2167,7 @@ TEST(WalletTests, SaplingNoteLocking) {
 }
 
 TEST(WalletTests, GenerateUnifiedAddress) {
-    SelectParams(CBaseChainParams::TESTNET);
+    (void) RegtestActivateSapling();
     TestWallet wallet(Params());
 
     UAGenerationResult uaResult = wallet.GenerateUnifiedAddress(0, diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling});

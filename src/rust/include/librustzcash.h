@@ -355,7 +355,7 @@ extern "C" {
 
     /**
      * Decrypts a Sapling diversifier using the specified diversifier key
-     * to obtain the diversifier index `j` at which the diversivier was
+     * to obtain the diversifier index `j` at which the diversifier was
      * derived.
      *
      * Arguments:
