@@ -26,6 +26,7 @@
 #include "walletdb.h"
 #include "script/interpreter.h"
 #include "utiltime.h"
+#include "util/match.h"
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "miner.h"
 #include "wallet/paymentdisclosuredb.h"
@@ -63,7 +64,7 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
         TransactionBuilder builder,
         CMutableTransaction contextualTx,
         std::vector<ShieldCoinbaseUTXO> inputs,
-        std::string toAddress,
+        PaymentAddress toAddress,
         CAmount fee,
         UniValue contextInfo) :
         builder_(builder), tx_(contextualTx), inputs_(inputs), fee_(fee), contextinfo_(contextInfo)
@@ -79,13 +80,23 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
     }
 
     //  Check the destination address is valid for this network i.e. not testnet being used on mainnet
-    KeyIO keyIO(Params());
-    auto address = keyIO.DecodePaymentAddress(toAddress);
-    if (address.has_value()) {
-        tozaddr_ = address.value();
-    } else {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid to address");
-    }
+    std::visit(match {
+        [&](CKeyID addr) {
+            throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2pkh address.");
+        },
+        [&](CScriptID addr) {
+            throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2pkh address.");
+        },
+        [&](libzcash::SaplingPaymentAddress addr) {
+            tozaddr_ = addr;
+        },
+        [&](libzcash::SproutPaymentAddress addr) {
+            tozaddr_ = addr;
+        },
+        [&](libzcash::UnifiedAddress) {
+            throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a unified address.");
+        }
+    }, toAddress);
 
     // Log the context info
     if (LogAcceptCategory("zrpcunsafe")) {

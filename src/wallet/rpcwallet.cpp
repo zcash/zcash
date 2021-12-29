@@ -4207,31 +4207,46 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     auto fromaddress = params[0].get_str();
     bool isFromWildcard = fromaddress == "*";
     KeyIO keyIO(Params());
-    CTxDestination taddr;
+
+    // Set of source addresses to filter utxos by
+    std::set<CTxDestination> sources = {};
     if (!isFromWildcard) {
-        taddr = keyIO.DecodeDestination(fromaddress);
-        if (!IsValidDestination(taddr)) {
+        CTxDestination taddr = keyIO.DecodeDestination(fromaddress);
+        if (IsValidDestination(taddr)) {
+            sources.insert(taddr);
+        } else {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or \"*\".");
         }
-    }
-
-    // Validate the destination address
-    auto destaddress = params[1].get_str();
-    if (!keyIO.IsValidPaymentAddressString(destaddress)) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
     }
 
     int nextBlockHeight = chainActive.Height() + 1;
     const bool canopyActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_CANOPY);
 
-    if (canopyActive) {
-        auto decodeAddr = keyIO.DecodePaymentAddress(destaddress);
-        if (decodeAddr.has_value()) {
-            libzcash::PaymentAddress addr(decodeAddr.value());
-            if (std::holds_alternative<libzcash::SproutPaymentAddress>(addr)) {
-                throw JSONRPCError(RPC_VERIFY_REJECTED, "Sprout shielding is not supported after Canopy activation");
+    // Validate the destination address
+    auto destStr = params[1].get_str();
+    auto destaddress = keyIO.DecodePaymentAddress(destStr);
+    if (destaddress.has_value()) {
+        std::visit(match {
+            [&](const CKeyID& addr) {
+                throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2pkh address.");
+            },
+            [&](const CScriptID&) {
+                throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2sh address.");
+            },
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                // OK
+            },
+            [&](const libzcash::SproutPaymentAddress& addr) {
+                if (canopyActive) {
+                    throw JSONRPCError(RPC_VERIFY_REJECTED, "Sprout shielding is not supported after Canopy activation");
+                }
+            },
+            [&](const libzcash::UnifiedAddress& ua) {
+                throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a unified address.");
             }
-        }
+        }, destaddress.value());
+    } else {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destStr);
     }
 
     // Convert fee from currency format to zatoshis
@@ -4273,10 +4288,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     bool maxedOutFlag = false;
     const size_t mempoolLimit = nLimit;
 
-    // Set of addresses to filter utxos by
-    std::set<CTxDestination> destinations = {};
     if (!isFromWildcard) {
-        destinations.insert(taddr);
     }
 
     // Get available utxos
@@ -4293,8 +4305,9 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
             continue;
         }
-        // If taddr is not wildcard "*", filter utxos
-        if (destinations.size() > 0 && !destinations.count(address)) {
+
+        // If from address was not the wildcard "*", filter utxos
+        if (sources.size() > 0 && !sources.count(address)) {
             continue;
         }
 
@@ -4363,7 +4376,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(builder, contextualTx, inputs, destaddress, nFee, contextInfo) );
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(builder, contextualTx, inputs, destaddress.value(), nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
 
