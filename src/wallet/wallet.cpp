@@ -679,6 +679,11 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
 //     once the UFVK has been loaded.
 //   - if we have already loaded the unified full viewing key from disk,
 //     regenerate the address from its metadata and add it to the keystore
+//
+// While this is somewhat complicated, it has the benefit of making each
+// piece of unified full viewing key and address metadata write-once in
+// the wallet database; we never need to update ufvk or address metadata
+// once written.
 bool CWallet::LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &key)
 {
     auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), key);
