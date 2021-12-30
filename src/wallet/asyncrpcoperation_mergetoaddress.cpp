@@ -68,7 +68,7 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
     CAmount fee,
     UniValue contextInfo) :
     tx_(contextualTx), utxoInputs_(utxoInputs), sproutNoteInputs_(sproutNoteInputs),
-    saplingNoteInputs_(saplingNoteInputs), recipient_(recipient), fee_(fee), contextinfo_(contextInfo)
+    saplingNoteInputs_(saplingNoteInputs), memo_(recipient.second), fee_(fee), contextinfo_(contextInfo)
 {
     if (fee < 0 || fee > MAX_MONEY) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Fee is out of range");
@@ -76,10 +76,6 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
 
     if (utxoInputs.empty() && sproutNoteInputs.empty() && saplingNoteInputs.empty()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "No inputs");
-    }
-
-    if (std::get<0>(recipient).size() == 0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Recipient parameter missing");
     }
 
     if (sproutNoteInputs.size() > 0 && saplingNoteInputs.size() > 0) {
@@ -100,34 +96,29 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
     isToTaddr_ = false;
     isToZaddr_ = false;
 
-    auto address = keyIO.DecodePaymentAddress(std::get<0>(recipient));
-    if (address.has_value()) {
-        std::visit(match {
-            [&](const CKeyID& keyId) {
-                toTaddr_ = keyId;
-                isToTaddr_ = true;
-            },
-            [&](const CScriptID& scriptId) {
-                toTaddr_ = scriptId;
-                isToTaddr_ = true;
-            },
-            [&](const libzcash::SproutPaymentAddress& addr) {
-                toPaymentAddress_ = addr;
-                isToZaddr_ = true;
-            },
-            [&](const libzcash::SaplingPaymentAddress& addr) {
-                toPaymentAddress_ = addr;
-                isToZaddr_ = true;
-            },
-            [&](const libzcash::UnifiedAddress& addr) {
-                throw JSONRPCError(
-                        RPC_INVALID_ADDRESS_OR_KEY,
-                        "z_mergetoaddress does not yet support sending to unified addresses");
-            },
-        }, address.value());
-    } else {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid recipient address");
-    }
+    std::visit(match {
+        [&](const CKeyID& keyId) {
+            toTaddr_ = keyId;
+            isToTaddr_ = true;
+        },
+        [&](const CScriptID& scriptId) {
+            toTaddr_ = scriptId;
+            isToTaddr_ = true;
+        },
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            toPaymentAddress_ = addr;
+            isToZaddr_ = true;
+        },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            toPaymentAddress_ = addr;
+            isToZaddr_ = true;
+        },
+        [&](const libzcash::UnifiedAddress& addr) {
+            throw JSONRPCError(
+                    RPC_INVALID_ADDRESS_OR_KEY,
+                    "z_mergetoaddress does not yet support sending to unified addresses");
+        },
+    }, recipient.first);
 
     // Log the context info i.e. the call parameters to z_mergetoaddress
     if (LogAcceptCategory("zrpcunsafe")) {
@@ -350,9 +341,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         if (isToTaddr_) {
             builder_.AddTransparentOutput(toTaddr_, sendAmount);
         } else {
-            std::string zaddr = std::get<0>(recipient_);
-            std::string memo = std::get<1>(recipient_);
-            std::array<unsigned char, ZC_MEMO_SIZE> hexMemo = get_memo_from_hex_string(memo);
+            std::array<unsigned char, ZC_MEMO_SIZE> hexMemo = get_memo_from_hex_string(memo_);
             auto saplingPaymentAddress = std::get_if<libzcash::SaplingPaymentAddress>(&toPaymentAddress_);
             if (saplingPaymentAddress == nullptr) {
                 // This should never happen as we have already determined that the payment is to sapling
@@ -404,14 +393,11 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
      * END SCENARIO #1
      */
 
-
     // Prepare raw transaction to handle JoinSplits
     CMutableTransaction mtx(tx_);
     ed25519_generate_keypair(&joinSplitPrivKey_, &joinSplitPubKey_);
     mtx.joinSplitPubKey = joinSplitPubKey_;
     tx_ = CTransaction(mtx);
-    std::string hexMemo = std::get<1>(recipient_);
-
 
     /**
      * SCENARIO #2
@@ -427,8 +413,8 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         info.vpub_new = 0;
 
         JSOutput jso = JSOutput(std::get<libzcash::SproutPaymentAddress>(toPaymentAddress_), sendAmount);
-        if (hexMemo.size() > 0) {
-            jso.memo = get_memo_from_hex_string(hexMemo);
+        if (memo_.size() > 0) {
+            jso.memo = get_memo_from_hex_string(memo_);
         }
         info.vjsout.push_back(jso);
 
@@ -716,8 +702,8 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             if (isToZaddr_ && vpubNewProcessed) {
                 outputType = "target";
                 jso.addr = std::get<libzcash::SproutPaymentAddress>(toPaymentAddress_);
-                if (!hexMemo.empty()) {
-                    jso.memo = get_memo_from_hex_string(hexMemo);
+                if (!memo_.empty()) {
+                    jso.memo = get_memo_from_hex_string(memo_);
                 }
             }
             info.vjsout.push_back(jso);

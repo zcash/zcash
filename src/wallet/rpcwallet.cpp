@@ -4487,20 +4487,32 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             useAnySapling = true;
             isFromNonSprout = true;
         } else {
-            CTxDestination taddr = keyIO.DecodeDestination(address);
-            if (IsValidDestination(taddr)) {
-                taddrs.insert(taddr);
-                isFromNonSprout = true;
-            } else {
-                auto zaddr = keyIO.DecodePaymentAddress(address);
-                if (zaddr.has_value()) {
-                    zaddrs.push_back(zaddr.value());
-                    if (std::holds_alternative<libzcash::SaplingPaymentAddress>(zaddr.value())) {
+            auto addr = keyIO.DecodePaymentAddress(address);
+            if (addr.has_value()) {
+                std::visit(match {
+                    [&](const CKeyID& taddr) {
+                        taddrs.insert(taddr);
                         isFromNonSprout = true;
+                    },
+                    [&](const CScriptID& taddr) {
+                        taddrs.insert(taddr);
+                        isFromNonSprout = true;
+                    },
+                    [&](const libzcash::SaplingPaymentAddress& zaddr) {
+                        zaddrs.push_back(zaddr);
+                        isFromNonSprout = true;
+                    },
+                    [&](const libzcash::SproutPaymentAddress& zaddr) {
+                        zaddrs.push_back(zaddr);
+                    },
+                    [&](libzcash::UnifiedAddress) {
+                        throw JSONRPCError(
+                                RPC_INVALID_PARAMETER,
+                                "Unified addresses are not supported in z_mergetoaddress");
                     }
-                } else {
-                    throw JSONRPCError(RPC_INVALID_PARAMETER, string("Unknown address format: ") + address);
-                }
+                }, addr.value());
+            } else {
+                throw JSONRPCError(RPC_INVALID_PARAMETER, string("Unknown address format: ") + address);
             }
         }
 
@@ -4522,12 +4534,12 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     const bool canopyActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_CANOPY);
 
     // Validate the destination address
-    auto destaddress = params[1].get_str();
+    auto destStr = params[1].get_str();
+    auto destaddress = keyIO.DecodePaymentAddress(destStr);
     bool isToTaddr = false;
     bool isToSproutZaddr = false;
     bool isToSaplingZaddr = false;
-    auto paymentAddress = keyIO.DecodePaymentAddress(destaddress);
-    if (paymentAddress.has_value()) {
+    if (destaddress.has_value()) {
         std::visit(match {
             [&](CKeyID addr) {
                 isToTaddr = true;
@@ -4546,11 +4558,15 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 isToSproutZaddr = true;
             },
             [&](libzcash::UnifiedAddress) {
-                // TODO UNIFIED
+                throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "Invalid parameter, unified addresses are not yet supported.");
             }
-        }, paymentAddress.value());
+        }, destaddress.value());
     } else {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
+        throw JSONRPCError(
+                RPC_INVALID_PARAMETER,
+                string("Invalid parameter, unknown address format: ") + destStr);
     }
 
     if (canopyActive && isFromNonSprout && isToSproutZaddr) {
@@ -4600,7 +4616,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         }
     }
 
-    MergeToAddressRecipient recipient(destaddress, memo);
+    MergeToAddressRecipient recipient(destaddress.value(), memo);
 
     // Prepare to get UTXOs and notes
     std::vector<MergeToAddressInputUTXO> utxoInputs;
@@ -4769,7 +4785,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     // - We only have one from address
     // - It's equal to toaddress
     // - The address only contains a single UTXO or note
-    if (setAddress.size() == 1 && setAddress.count(destaddress) && (numUtxos + numNotes) == 1) {
+    if (setAddress.size() == 1 && setAddress.count(destStr) && (numUtxos + numNotes) == 1) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Destination address is also the only source address, and all its funds are already merged.");
     }
 

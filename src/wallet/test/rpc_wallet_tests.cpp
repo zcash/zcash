@@ -1926,8 +1926,9 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1);
 
     // Test constructor of AsyncRPCOperation_mergetoaddress
+    KeyIO keyIO(Params());
     MergeToAddressRecipient testnetzaddr(
-        "ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP",
+        keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value(),
         "testnet memo");
 
     try {
@@ -1945,14 +1946,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     }
 
     std::vector<MergeToAddressInputUTXO> inputs = { MergeToAddressInputUTXO{ COutPoint{uint256(), 0}, 0, CScript()} };
-
-    try {
-        MergeToAddressRecipient badaddr("", "memo");
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_mergetoaddress(std::nullopt, mtx, inputs, {}, {}, badaddr, 1));
-        BOOST_FAIL("Should have caused an error");
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Recipient parameter missing"));
-    }
 
     std::vector<MergeToAddressInputSproutNote> sproutNoteInputs =
         {MergeToAddressInputSproutNote{JSOutPoint(), SproutNote(), 0, SproutSpendingKey()}};
@@ -1981,6 +1974,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
 {
     SelectParams(CBaseChainParams::TESTNET);
     const Consensus::Params& consensusParams = Params().GetConsensus();
+    KeyIO keyIO(Params());
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -1994,10 +1988,9 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
 
     // Add keys manually
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
-    MergeToAddressRecipient taddr1(retValue.get_str(), "");
+    MergeToAddressRecipient taddr1(keyIO.DecodePaymentAddress(retValue.get_str()).value(), "");
     auto pa = pwalletMain->GenerateNewSproutZKey();
-    KeyIO keyIO(Params());
-    MergeToAddressRecipient zaddr1(keyIO.EncodePaymentAddress(pa), "DEADBEEF");
+    MergeToAddressRecipient zaddr1(pa, "DEADBEEF");
 
     // Insufficient funds
     {
