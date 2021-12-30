@@ -103,6 +103,15 @@ public:
         return false; //overflow
     }
 
+    std::optional<diversifier_index_t> succ() const {
+        diversifier_index_t next(*this);
+        if (next.increment()) {
+            return next;
+        } else {
+            return std::nullopt;
+        }
+    }
+
     std::optional<uint32_t> ToTransparentChildIndex() const;
 
     friend bool operator<(const diversifier_index_t& a, const diversifier_index_t& b) {
@@ -117,6 +126,9 @@ public:
         return false;
     }
 };
+
+// The maximum allowed transparent child index according to BIP-44
+const libzcash::diversifier_index_t MAX_TRANSPARENT_CHILD_IDX(0x7FFFFFFF);
 
 class SaplingDiversifiableFullViewingKey {
 public:

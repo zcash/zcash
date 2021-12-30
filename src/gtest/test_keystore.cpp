@@ -533,7 +533,7 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     EXPECT_TRUE(keyStore.AddUnifiedFullViewingKey(zufvk));
     EXPECT_EQ(keyStore.GetUnifiedFullViewingKey(ufvkid).value(), zufvk);
 
-    auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Sapling});
+    auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Sapling}).value();
     EXPECT_TRUE(addrPair.first.GetSaplingReceiver().has_value());
     auto saplingReceiver = addrPair.first.GetSaplingReceiver().value();
 
@@ -557,7 +557,7 @@ TEST(KeystoreTests, AddUnifiedAddress) {
     auto ufvk = usk.value().ToFullViewingKey();
     auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
     auto ufvkid = zufvk.GetKeyID();
-    auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling});
+    auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling}).value();
     EXPECT_TRUE(addrPair.first.GetP2PKHReceiver().has_value());
 
     keyStore.AddUnifiedAddress(ufvkid, addrPair.second, addrPair.first);

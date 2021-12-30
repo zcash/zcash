@@ -547,9 +547,10 @@ std::optional<ZcashdUnifiedFullViewingKey> CWallet::GetUnifiedFullViewingKeyByAc
 
 UAGenerationResult CWallet::GenerateUnifiedAddress(
     const libzcash::AccountId& accountId,
-    const libzcash::diversifier_index_t& j,
-    const std::set<libzcash::ReceiverType>& receiverTypes)
+    const std::set<libzcash::ReceiverType>& receiverTypes,
+    std::optional<libzcash::diversifier_index_t> j)
 {
+    bool searchDiversifiers = !j.has_value();
     if (!libzcash::HasShielded(receiverTypes)) {
         return AddressGenerationError::InvalidReceiverTypes;
     }
@@ -561,7 +562,11 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
     // ours rather than considering them as watch-only.
     bool hasTransparent = receiverTypes.find(ReceiverType::P2PKH) != receiverTypes.end();
     if (hasTransparent) {
-        if (!j.ToTransparentChildIndex().has_value()) {
+        // A preemptive check to ensure that the user has not specified an
+        // invalid transparent child index. If we search from a valid transparent
+        // child index into invalid child index space, later checks will return
+        // this error as `AddressGenerationError::DiversifierSpaceExhausted`
+        if (j.has_value() && !j.value().ToTransparentChildIndex().has_value()) {
             return AddressGenerationError::InvalidTransparentChildIndex;
         }
 
@@ -574,30 +579,66 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
     if (ufvk.has_value()) {
         auto ufvkid = ufvk.value().GetKeyID();
 
-        // Check whether an address has already been generated for this
-        // diversifier index. If so, ensure that the set of receiver types
-        // being requested is the same as the set of receiver types that was
-        // previously generated & return the previously generated address,
-        // otherwise return an error.
+        // Check whether an address has already been generated for any provided
+        // diversifier index. Return that address, or set the diversifier index
+        // at which we'll begin searching for the next available diversified
+        // address.
         auto metadata = mapUfvkAddressMetadata.find(ufvkid);
         if (metadata != mapUfvkAddressMetadata.end()) {
-            auto receivers = metadata->second.GetReceivers(j);
-            if (receivers.has_value()) {
-                if (receivers.value() == receiverTypes) {
-                    return std::make_pair(ufvk.value().Address(j, receiverTypes).value(), j);
-                } else {
-                    return AddressGenerationError::ExistingAddressMismatch;
+            if (j.has_value()) {
+
+                auto receivers = metadata->second.GetReceivers(j.value());
+                if (receivers.has_value()) {
+                    // Ensure that the set of receiver types being requested is
+                    // the same as the set of receiver types that was previously
+                    // generated. If they match, simply return that address.
+                    if (receivers.value() == receiverTypes) {
+                        return std::make_pair(ufvk.value().Address(j.value(), receiverTypes).value(), j.value());
+                    } else {
+                        return AddressGenerationError::ExistingAddressMismatch;
+                    }
                 }
+            } else {
+                // Set the diversifier index to one greater than the last used
+                // diversifier
+                j = metadata->second.GetNextDiversifierIndex();
+                if (!j.has_value()) {
+                    return AddressGenerationError::DiversifierSpaceExhausted;
+                }
+            }
+        } else {
+            // Begin searching from the zero diversifier index if we haven't
+            // yet generated an address from the specified UFVK and no
+            // diversifier index has been specified.
+            if (!j.has_value()) {
+                j = libzcash::diversifier_index_t(0);
             }
         }
 
         // Find a working diversifier and construct the associated address.
-        auto foundAddress = ufvk.value().FindAddress(j, receiverTypes);
-        auto diversifierIndex = foundAddress.second;
+        // At this point, we know that `j` will contain a value. Optimistically
+        // attempt to find an address at that diversifier; we'll search if we
+        // don't find one.
+        auto diversifierIndex = j.value();
+        auto address = ufvk.value().Address(diversifierIndex, receiverTypes);
+        if (!address.has_value() && searchDiversifiers) {
+            auto found = ufvk.value().FindAddress(j.value(), receiverTypes);
+            if (found.has_value()) {
+                address = found.value().first;
+                diversifierIndex = found.value().second;
+            } else {
+                return AddressGenerationError::DiversifierSpaceExhausted;
+            }
+        }
+
+        // Now that we're done searching, check that we actually got an address
+        if (!address.has_value()) {
+            return AddressGenerationError::NoAddressForDiversifier;
+        }
 
         // Persist the newly created address to the keystore
         mapUfvkAddressMetadata[ufvkid].SetReceivers(diversifierIndex, receiverTypes);
-        CCryptoKeyStore::AddUnifiedAddress(ufvkid, diversifierIndex, foundAddress.first);
+        CCryptoKeyStore::AddUnifiedAddress(ufvkid, diversifierIndex, address.value());
 
         // Save the metadata for the generated address so that we can re-derive
         // it in the future.
@@ -616,7 +657,7 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
             AddTransparentSecretKey(seed.Fingerprint(), key);
         }
 
-        return foundAddress;
+        return std::make_pair(address.value(), diversifierIndex);
     } else {
         return AddressGenerationError::NoSuchAccount;
     }

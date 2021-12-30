@@ -24,6 +24,12 @@ enum class ReceiverType: uint32_t {
  */
 bool HasShielded(const std::set<ReceiverType>& receiverTypes);
 
+/**
+ * Test whether the specified list of receiver types contains a
+ * shielded receiver type
+ */
+bool HasTransparent(const std::set<ReceiverType>& receiverTypes);
+
 class ZcashdUnifiedSpendingKey;
 
 // prototypes for the classes handling ZIP-316 encoding (in Address.hpp)
@@ -94,15 +100,21 @@ public:
      * Find the smallest diversifier index >= `j` such that it generates a valid
      * unified address according to the conditions specified in the documentation
      * for the `Address` method above, and returns the newly created address along
-     * with the diversifier index used to produce it.
+     * with the diversifier index used to produce it. Returns `std::nullopt` if the
+     * diversifier space is exhausted, or if the set of receiver types contains a
+     * transparent receiver and the diversifier exceeds the maximum transparent
+     * child index.
      *
      * This method will throw if `receiverTypes` does not include a shielded receiver type.
      */
-    std::pair<UnifiedAddress, diversifier_index_t> FindAddress(
+    std::optional<std::pair<UnifiedAddress, diversifier_index_t>> FindAddress(
             const diversifier_index_t& j,
             const std::set<ReceiverType>& receiverTypes) const;
 
-    std::pair<UnifiedAddress, diversifier_index_t> FindAddress(const diversifier_index_t& j) const;
+    /**
+     * Find the next available address that contains all supported receiver types.
+     */
+    std::optional<std::pair<UnifiedAddress, diversifier_index_t>> FindAddress(const diversifier_index_t& j) const;
 
     friend bool operator==(const ZcashdUnifiedFullViewingKey& a, const ZcashdUnifiedFullViewingKey& b)
     {

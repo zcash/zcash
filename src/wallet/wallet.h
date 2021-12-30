@@ -406,7 +406,8 @@ enum class AddressGenerationError {
     NoSuchAccount,
     InvalidReceiverTypes,
     ExistingAddressMismatch,
-    NoSaplingAddressForDiversifier,
+    NoAddressForDiversifier,
+    DiversifierSpaceExhausted,
     WalletEncrypted,
     InvalidTransparentChildIndex
 };
@@ -727,6 +728,26 @@ public:
         } else {
             accountId = accountIdIn;
             return true;
+        }
+    }
+
+    /**
+     * Search the for the maximum diversifier that has already been used to
+     * generate a new address, and return the next diversifier. Returns the
+     * zero diversifier index if no addresses have yet been generated,
+     * and returns std::nullopt if the increment operation would cause an
+     * overflow.
+     */
+    std::optional<libzcash::diversifier_index_t> GetNextDiversifierIndex() {
+        if (addressReceivers.empty()) {
+            return libzcash::diversifier_index_t(0);
+        } else {
+            auto lastIndex = addressReceivers.rbegin()->first;
+            if (lastIndex.increment()) {
+                return lastIndex;
+            } else {
+                return std::nullopt;
+            }
         }
     }
 };
@@ -1189,10 +1210,13 @@ public:
 
     //! Generate a new unified address for the specified account, diversifier, and
     //! set of receiver types.
+    //!
+    //! If no diversifier index is provided, the next unused diversifier index
+    //! will be selected.
     UAGenerationResult GenerateUnifiedAddress(
         const libzcash::AccountId& accountId,
-        const libzcash::diversifier_index_t& j,
-        const std::set<libzcash::ReceiverType>& receivers);
+        const std::set<libzcash::ReceiverType>& receivers,
+        std::optional<libzcash::diversifier_index_t> j = std::nullopt);
 
     bool AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
 

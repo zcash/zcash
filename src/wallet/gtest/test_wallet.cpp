@@ -2170,7 +2170,7 @@ TEST(WalletTests, GenerateUnifiedAddress) {
     (void) RegtestActivateSapling();
     TestWallet wallet(Params());
 
-    UAGenerationResult uaResult = wallet.GenerateUnifiedAddress(0, diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling});
+    UAGenerationResult uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
 
     // If the wallet does not have a mnemonic seed available, it is
     // treated as if the wallet is encrypted.
@@ -2186,16 +2186,13 @@ TEST(WalletTests, GenerateUnifiedAddress) {
     // If the user has not generated a unified spending key,
     // we cannot create an address for the account corresponding
     // to that spending key.
-    uaResult = wallet.GenerateUnifiedAddress(0, diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling});
+    uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
     expected = AddressGenerationError::NoSuchAccount;
     EXPECT_EQ(uaResult, expected);
 
     // Create an account, then generate an address for that account.
     auto skpair = wallet.GenerateNewUnifiedSpendingKey();
-    uaResult = wallet.GenerateUnifiedAddress(
-            skpair.second,
-            diversifier_index_t(0),
-            {ReceiverType::P2PKH, ReceiverType::Sapling});
+    uaResult = wallet.GenerateUnifiedAddress(skpair.second, {ReceiverType::P2PKH, ReceiverType::Sapling});
     auto ua = std::get_if<std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>>(&uaResult);
     EXPECT_NE(ua, nullptr);
 
@@ -2208,4 +2205,31 @@ TEST(WalletTests, GenerateUnifiedAddress) {
 
     auto u4r = wallet.GetUnifiedForReceiver(ua->first.GetSaplingReceiver().value());
     EXPECT_EQ(u4r, ua->first);
+
+    // Explicitly trigger the invalid transparent child index failure
+    uaResult = wallet.GenerateUnifiedAddress(
+            0,
+            {ReceiverType::P2PKH, ReceiverType::Sapling},
+            MAX_TRANSPARENT_CHILD_IDX.succ().value());
+    expected = AddressGenerationError::InvalidTransparentChildIndex;
+    EXPECT_EQ(uaResult, expected);
+
+    // Attempt to generate a UA at the maximum transparent child index. This might fail
+    // due to this index being invalid for Sapling; if so, it will return an error that
+    // the diversifier index is out of range. If it succeeds, we'll attempt to generate
+    // the next available diversifier, and this should always fail
+    uaResult = wallet.GenerateUnifiedAddress(
+            0,
+            {ReceiverType::P2PKH, ReceiverType::Sapling},
+            MAX_TRANSPARENT_CHILD_IDX);
+    ua = std::get_if<std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>>(&uaResult);
+    if (ua == nullptr) {
+        expected = AddressGenerationError::NoAddressForDiversifier;
+        EXPECT_EQ(uaResult, expected);
+    } else {
+        // the previous generation attempt succeeded, so this one should definitely fail.
+        uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
+        expected = AddressGenerationError::DiversifierSpaceExhausted;
+        EXPECT_EQ(uaResult, expected);
+    }
 }

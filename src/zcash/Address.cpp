@@ -95,6 +95,7 @@ std::pair<std::string, PaymentAddress> AddressInfoFromViewingKey::operator()(con
             "unified",
             ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(keyConstants, ufvk)
                 .FindAddress(diversifier_index_t(0))
+                .value() //safe because we're searching from 0
                 .first
             );
 }

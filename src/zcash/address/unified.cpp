@@ -14,8 +14,16 @@ using namespace libzcash;
 
 bool libzcash::HasShielded(const std::set<ReceiverType>& receiverTypes) {
     auto has_shielded = [](ReceiverType r) {
-        // TODO: update this as support for new protocols is added.
+        // TODO: update this as support for new shielded protocols is added.
         return r == ReceiverType::Sapling;
+    };
+    return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_shielded) != receiverTypes.end();
+}
+
+bool libzcash::HasTransparent(const std::set<ReceiverType>& receiverTypes) {
+    auto has_shielded = [](ReceiverType r) {
+        // TODO: update this as support for new transparent protocols is added.
+        return r == ReceiverType::P2PKH || r == ReceiverType::P2SH;
     };
     return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_shielded) != receiverTypes.end();
 }
@@ -108,20 +116,21 @@ std::optional<UnifiedAddress> ZcashdUnifiedFullViewingKey::Address(
     return ua;
 }
 
-std::pair<UnifiedAddress, diversifier_index_t> ZcashdUnifiedFullViewingKey::FindAddress(
+std::optional<std::pair<UnifiedAddress, diversifier_index_t>> ZcashdUnifiedFullViewingKey::FindAddress(
         const diversifier_index_t& j,
         const std::set<ReceiverType>& receiverTypes) const {
     diversifier_index_t j0(j);
+    bool hasTransparent = HasTransparent(receiverTypes);
     auto addr = Address(j0, receiverTypes);
     while (!addr.has_value()) {
-        if (!j0.increment())
-            throw std::runtime_error(std::string(__func__) + ": diversifier index overflow.");;
+        if (!j0.increment() || (hasTransparent && !j0.ToTransparentChildIndex().has_value()))
+            return std::nullopt;
         addr = Address(j0, receiverTypes);
     }
     return std::make_pair(addr.value(), j0);
 }
 
-std::pair<UnifiedAddress, diversifier_index_t> ZcashdUnifiedFullViewingKey::FindAddress(
+std::optional<std::pair<UnifiedAddress, diversifier_index_t>> ZcashdUnifiedFullViewingKey::FindAddress(
         const diversifier_index_t& j) const {
     return FindAddress(j, {ReceiverType::P2PKH, ReceiverType::Sapling, ReceiverType::Orchard});
 }
