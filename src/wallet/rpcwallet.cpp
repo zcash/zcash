@@ -278,9 +278,10 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     KeyIO keyIO(Params());
-    CTxDestination dest = keyIO.DecodeDestination(params[0].get_str());
+    auto destStr = params[0].get_str();
+    CTxDestination dest = keyIO.DecodeDestination(destStr);
     if (!IsValidDestination(dest)) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Zcash address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash transparent address: ") + destStr);
     }
 
     // Amount
@@ -675,7 +676,7 @@ UniValue signmessage(const UniValue& params, bool fHelp)
     KeyIO keyIO(Params());
     CTxDestination dest = keyIO.DecodeDestination(strAddress);
     if (!IsValidDestination(dest)) {
-        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash transparent address: ") + strAddress);
     }
 
     const CKeyID *keyID = std::get_if<CKeyID>(&dest);
@@ -729,9 +730,10 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
 
     KeyIO keyIO(Params());
     // Bitcoin address
-    CTxDestination dest = keyIO.DecodeDestination(params[0].get_str());
+    auto destStr = params[0].get_str();
+    CTxDestination dest = keyIO.DecodeDestination(destStr);
     if (!IsValidDestination(dest)) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Zcash address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash transparent address: ") + destStr);
     }
     CScript scriptPubKey = GetScriptForDestination(dest);
     if (!IsMine(*pwalletMain, scriptPubKey)) {
@@ -899,7 +901,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     for (const std::string& name_ : keys) {
         CTxDestination dest = keyIO.DecodeDestination(name_);
         if (!IsValidDestination(dest)) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash address: ") + name_);
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash transparent address: ") + name_);
         }
 
         if (destinations.count(dest)) {
@@ -2123,13 +2125,13 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     if (params.size() > 2) {
         UniValue inputs = params[2].get_array();
         for (size_t idx = 0; idx < inputs.size(); idx++) {
-            const UniValue& input = inputs[idx];
-            CTxDestination dest = keyIO.DecodeDestination(input.get_str());
+            auto destStr = inputs[idx].get_str();
+            CTxDestination dest = keyIO.DecodeDestination(destStr);
             if (!IsValidDestination(dest)) {
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash address: ") + input.get_str());
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash transparent address: ") + destStr);
             }
             if (!destinations.insert(dest).second) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, duplicated address: ") + input.get_str());
+                throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, duplicated address: ") + destStr);
             }
         }
     }
