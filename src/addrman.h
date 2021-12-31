@@ -5,11 +5,13 @@
 #ifndef BITCOIN_ADDRMAN_H
 #define BITCOIN_ADDRMAN_H
 
-#include "netbase.h"
+#include "netaddress.h"
 #include "protocol.h"
 #include "random.h"
+#include "streams.h"
 #include "sync.h"
 #include "timedata.h"
+#include "tinyformat.h"
 #include "util.h"
 
 #include <map>
@@ -27,6 +29,9 @@ class CAddrInfo : public CAddress
 public:
     //! last try whatsoever by us (memory only)
     int64_t nLastTry;
+
+    //! last counted attempt (memory only)
+    int64_t nLastCountAttempt;
 
 private:
     //! where knowledge about this address first came from
@@ -51,20 +56,17 @@ private:
 
 public:
 
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(*(CAddress*)this);
-        READWRITE(source);
-        READWRITE(nLastSuccess);
-        READWRITE(nAttempts);
+    SERIALIZE_METHODS(CAddrInfo, obj)
+    {
+        READWRITEAS(CAddress, obj);
+        READWRITE(obj.source, obj.nLastSuccess, obj.nAttempts);
     }
 
     void Init()
     {
         nLastSuccess = 0;
         nLastTry = 0;
+        nLastCountAttempt = 0;
         nAttempts = 0;
         nRefCount = 0;
         fInTried = false;
@@ -204,6 +206,9 @@ private:
     //! list of "new" buckets
     int vvNew[ADDRMAN_NEW_BUCKET_COUNT][ADDRMAN_BUCKET_SIZE];
 
+    //! last time Good was called (memory only)
+    int64_t nLastGood;
+
 protected:
     //! secret key to randomize bucket select with
     uint256 nKey;
@@ -257,9 +262,14 @@ protected:
     void Connected_(const CService &addr, int64_t nTime);
 
 public:
+    //! Serialization versions.
+    enum class Format : uint8_t {
+        V0_HISTORICAL = 0,    //!< historic format, before commit e6b343d88
+        V1_BIP155 = 1,        //!< same as V2_ASMAP plus addresses are in BIP155 format
+    };
     /**
      * serialized format:
-     * * version byte (currently 1)
+     * * version byte (@see `Format`)
      * * 0x20 + nKey (serialized as if it were a vector, for backward compatibility)
      * * nNew
      * * nTried
@@ -283,16 +293,19 @@ public:
      * This format is more complex, but significantly smaller (at most 1.5 MiB), and supports
      * changes to the ADDRMAN_ parameters without breaking the on-disk structure.
      *
-     * We don't use ADD_SERIALIZE_METHODS since the serialization and deserialization code has
+     * We don't use SERIALIZE_METHODS since the serialization and deserialization code has
      * very little in common.
      */
-    template<typename Stream>
-    void Serialize(Stream &s) const
+    template <typename Stream>
+    void Serialize(Stream& s_) const
     {
         LOCK(cs);
 
-        unsigned char nVersion = 1;
-        s << nVersion;
+        // Always serialize in the latest version (currently Format::V1_BIP155).
+
+        OverrideStream<Stream> s(&s_, s_.GetType(), s_.GetVersion() | ADDRV2_FORMAT);
+
+        s << static_cast<uint8_t>(Format::V1_BIP155);
         s << ((unsigned char)32);
         s << nKey;
         s << nNew;
@@ -336,15 +349,35 @@ public:
         }
     }
 
-    template<typename Stream>
-    void Unserialize(Stream& s)
+    template <typename Stream>
+    void Unserialize(Stream& s_)
     {
         LOCK(cs);
 
         Clear();
 
-        unsigned char nVersion;
-        s >> nVersion;
+        
+        Format format;
+        s_ >> Using<CustomUintFormatter<1>>(format);
+
+        static constexpr Format maximum_supported_format = Format::V1_BIP155;
+        if (format > maximum_supported_format) {
+            throw std::ios_base::failure(strprintf(
+                "Unsupported format of addrman database: %u. Maximum supported is %u. "
+                "Continuing operation without using the saved list of peers.",
+                static_cast<uint8_t>(format),
+                static_cast<uint8_t>(maximum_supported_format)));
+        }
+
+        int stream_version = s_.GetVersion();
+        if (format >= Format::V1_BIP155) {
+            // Add ADDRV2_FORMAT to the version so that the CNetAddr and CAddress
+            // unserialize methods know that an address in addrv2 format is coming.
+            stream_version |= ADDRV2_FORMAT;
+        }
+
+        OverrideStream<Stream> s(&s_, s_.GetType(), stream_version);
+
         unsigned char nKeySize;
         s >> nKeySize;
         if (nKeySize != 32) throw std::ios_base::failure("Incorrect keysize in addrman deserialization");
@@ -353,7 +386,7 @@ public:
         s >> nTried;
         int nUBuckets = 0;
         s >> nUBuckets;
-        if (nVersion != 0) {
+        if (format >= Format::V1_BIP155) {
             nUBuckets ^= (1 << 30);
         }
 
@@ -372,7 +405,7 @@ public:
             mapAddr[info] = n;
             info.nRandomPos = vRandom.size();
             vRandom.push_back(n);
-            if (nVersion != 1 || nUBuckets != ADDRMAN_NEW_BUCKET_COUNT) {
+            if (format != Format::V0_HISTORICAL || nUBuckets != ADDRMAN_NEW_BUCKET_COUNT) {
                 // In case the new table data cannot be used (nVersion unknown, or bucket count wrong),
                 // immediately try to give them a reference based on their primary source address.
                 int nUBucket = info.GetNewBucket(nKey);
@@ -416,7 +449,7 @@ public:
                 if (nIndex >= 0 && nIndex < nNew) {
                     CAddrInfo &info = mapInfo[nIndex];
                     int nUBucketPos = info.GetBucketPosition(nKey, true, bucket);
-                    if (nVersion == 1 && nUBuckets == ADDRMAN_NEW_BUCKET_COUNT && vvNew[bucket][nUBucketPos] == -1 && info.nRefCount < ADDRMAN_NEW_BUCKETS_PER_ADDRESS) {
+                    if (format == Format::V0_HISTORICAL && nUBuckets == ADDRMAN_NEW_BUCKET_COUNT && vvNew[bucket][nUBucketPos] == -1 && info.nRefCount < ADDRMAN_NEW_BUCKETS_PER_ADDRESS) {
                         info.nRefCount++;
                         vvNew[bucket][nUBucketPos] = nIndex;
                     }
@@ -461,6 +494,7 @@ public:
         nIdCount = 0;
         nTried = 0;
         nNew = 0;
+        nLastGood = 1; //Initially at 1 so that "never" is strictly worse.
     }
 
     CAddrMan()
@@ -569,12 +603,13 @@ public:
     //! Mark an entry as currently-connected-to.
     void Connected(const CService &addr, int64_t nTime = GetTime())
     {
-        LOCK(cs);
-        Check();
-        Connected_(addr, nTime);
-        Check();
+        {
+            LOCK(cs);
+            Check();
+            Connected_(addr, nTime);
+            Check();
+        }
     }
-
 };
 
 #endif // BITCOIN_ADDRMAN_H

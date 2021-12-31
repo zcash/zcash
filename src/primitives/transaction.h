@@ -93,6 +93,14 @@ static inline size_t JOINSPLIT_SIZE(int transactionVersion) {
 }
 
 /**
+ * A flag that is ORed into the protocol version to designate that a transaction
+ * should be (un)serialized without witness data.
+ * Make sure that this does not collide with any of the values in `version.h`
+ * or with `ADDRV2_FORMAT`.
+ */
+static const int SERIALIZE_TRANSACTION_NO_WITNESS = 0x40000000;
+
+/**
  * The storage format for Sapling Spend descriptions in v5 transactions.
  */
 class SpendDescriptionV5
@@ -549,7 +557,7 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(prevout);
-        READWRITE(*(CScriptBase*)(&scriptSig));
+        READWRITE(scriptSig);
         READWRITE(nSequence);
     }
 
@@ -598,7 +606,7 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(nValue);
-        READWRITE(*(CScriptBase*)(&scriptPubKey));
+        READWRITE(scriptPubKey);
     }
 
     void SetNull()

@@ -173,7 +173,9 @@ BITCOIN_CORE_H = \
   metrics.h \
   miner.h \
   net.h \
+  netaddress.h \
   netbase.h \
+  netmessagemaker.h \
   noui.h \
   policy/fees.h \
   policy/policy.h \
@@ -201,6 +203,7 @@ BITCOIN_CORE_H = \
   script/standard.h \
   script/ismine.h \
   serialize.h \
+  span.h \
   spentindex.h \
   streams.h \
   support/allocators/secure.h \
@@ -355,6 +358,8 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha1.h \
   crypto/sha256.cpp \
   crypto/sha256.h \
+  crypto/sha3.cpp \
+  crypto/sha3.h \
   crypto/sha512.cpp \
   crypto/sha512.h
 
@@ -390,6 +395,7 @@ libbitcoin_common_a_SOURCES = \
   key.cpp \
   key_io.cpp \
   keystore.cpp \
+  netaddress.cpp \
   netbase.cpp \
   primitives/block.cpp \
   primitives/transaction.cpp \

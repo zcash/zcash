@@ -5,6 +5,7 @@
 
 #include "torcontrol.h"
 #include "utilstrencodings.h"
+#include "netbase.h"
 #include "net.h"
 #include "util.h"
 #include "crypto/hmac_sha256.h"
@@ -496,16 +497,8 @@ void TorController::add_onion_cb(TorControlConnection& _conn, const TorControlRe
             if ((i = m.find("PrivateKey")) != m.end())
                 private_key = i->second;
         }
-        if (service_id.empty()) {
-            LogPrintf("tor: Error parsing ADD_ONION parameters:\n");
-            for (const std::string &s : reply.lines) {
-                LogPrintf("    %s\n", SanitizeString(s));
-            }
-            return;
-        }
-
-        service = CService(service_id+".onion", GetListenPort(), false);
-        LogPrintf("tor: Got service ID %s, advertizing service %s\n", service_id, service.ToString());
+        service = LookupNumeric(std::string(service_id+".onion"), Params().GetDefaultPort());
+        LogPrintf("tor: Got service ID %s, advertising service %s\n", service_id, service.ToString());
         if (WriteBinaryFile(GetPrivateKeyFile(), private_key)) {
             LogPrint("tor", "tor: Cached service private key to %s\n", GetPrivateKeyFile().string());
         } else {
@@ -528,14 +521,15 @@ void TorController::auth_cb(TorControlConnection& _conn, const TorControlReply& 
         // Now that we know Tor is running setup the proxy for onion addresses
         // if -onion isn't set to something else.
         if (GetArg("-onion", "") == "") {
-            proxyType addrOnion = proxyType(CService("127.0.0.1", 9050), true);
-            SetProxy(NET_TOR, addrOnion);
-            SetLimited(NET_TOR, false);
+            CService resolved(LookupNumeric("127.0.0.1", 9050));
+            proxyType addrOnion = proxyType(resolved, true);
+            SetProxy(NET_ONION, addrOnion);
+            SetReachable(NET_ONION, true);
         }
 
         // Finally - now create the service
         if (private_key.empty()) // No private key, generate one
-            private_key = "NEW:RSA1024"; // Explicitly request RSA1024 - see issue #9214
+            private_key = "NEW:ED25519-V3";
         // Request hidden service, redirect port.
         // Note that the 'virtual' port doesn't have to be the same as our internal port, but this is just a convenient
         // choice.  TODO; refactor the shutdown sequence some day.
@@ -566,10 +560,10 @@ static std::vector<uint8_t> ComputeResponse(const std::string &key, const std::v
 {
     CHMAC_SHA256 computeHash((const uint8_t*)key.data(), key.size());
     std::vector<uint8_t> computedHash(CHMAC_SHA256::OUTPUT_SIZE, 0);
-    computeHash.Write(begin_ptr(cookie), cookie.size());
-    computeHash.Write(begin_ptr(clientNonce), clientNonce.size());
-    computeHash.Write(begin_ptr(serverNonce), serverNonce.size());
-    computeHash.Finalize(begin_ptr(computedHash));
+    computeHash.Write(cookie.data(), cookie.size());
+    computeHash.Write(clientNonce.data(), clientNonce.size());
+    computeHash.Write(serverNonce.data(), serverNonce.size());
+    computeHash.Finalize(computedHash.data());
     return computedHash;
 }
 
@@ -721,7 +715,7 @@ void TorController::Reconnect()
 
 fs::path TorController::GetPrivateKeyFile()
 {
-    return GetDataDir() / "onion_private_key";
+    return GetDataDir() / "onion_v3_private_key";
 }
 
 void TorController::reconnect_cb(evutil_socket_t fd, short what, void *arg)

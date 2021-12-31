@@ -37,4 +37,7 @@ static const int NO_BLOOM_VERSION = 170004;
 //! - MSG_WTX type defined, which contains two 32-byte hashes.
 static const int CINV_WTX_VERSION = 170014;
 
+// Make sure that none of the values above collide with
+// `SERIALIZE_TRANSACTION_NO_WITNESS` or `ADDRV2_FORMAT`.
+
 #endif // BITCOIN_VERSION_H

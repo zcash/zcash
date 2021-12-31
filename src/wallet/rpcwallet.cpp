@@ -12,7 +12,6 @@
 #include "key_io.h"
 #include "main.h"
 #include "net.h"
-#include "netbase.h"
 #include "proof_verifier.h"
 #include "rpc/server.h"
 #include "timedata.h"

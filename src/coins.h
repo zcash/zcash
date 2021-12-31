@@ -163,7 +163,7 @@ public:
         assert(fFirst || fSecond || nMaskCode);
         unsigned int nCode = 8*(nMaskCode - (fFirst || fSecond ? 0 : 1)) + (fCoinBase ? 1 : 0) + (fFirst ? 2 : 0) + (fSecond ? 4 : 0);
         // version
-        ::Serialize(s, VARINT(this->nVersion));
+        ::Serialize(s, VARINT_MODE(this->nVersion, VarIntMode::NONNEGATIVE_SIGNED));
         // header code
         ::Serialize(s, VARINT(nCode));
         // spentness bitmask
@@ -180,14 +180,14 @@ public:
                 ::Serialize(s, CTxOutCompressor(REF(vout[i])));
         }
         // coinbase height
-        ::Serialize(s, VARINT(nHeight));
+        ::Serialize(s, VARINT_MODE(nHeight, VarIntMode::NONNEGATIVE_SIGNED));
     }
 
     template<typename Stream>
     void Unserialize(Stream &s) {
         unsigned int nCode = 0;
         // version
-        ::Unserialize(s, VARINT(this->nVersion));
+        ::Unserialize(s, VARINT_MODE(this->nVersion, VarIntMode::NONNEGATIVE_SIGNED));
         // header code
         ::Unserialize(s, VARINT(nCode));
         fCoinBase = nCode & 1;
@@ -210,10 +210,10 @@ public:
         vout.assign(vAvail.size(), CTxOut());
         for (unsigned int i = 0; i < vAvail.size(); i++) {
             if (vAvail[i])
-                ::Unserialize(s, REF(CTxOutCompressor(vout[i])));
+                ::Unserialize(s, CTxOutCompressor(vout[i]));
         }
         // coinbase height
-        ::Unserialize(s, VARINT(nHeight));
+        ::Unserialize(s, VARINT_MODE(nHeight, VarIntMode::NONNEGATIVE_SIGNED));
         Cleanup();
     }
 

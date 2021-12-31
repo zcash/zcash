@@ -1,3 +1,6 @@
+*configure~*
+*.ccls-cache*
+*compile_commands.json*
 *.tar.gz
 *.deb
 *.exe

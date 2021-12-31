@@ -3,8 +3,16 @@
 
 #include "httprpc.cpp"
 #include "httpserver.h"
+#include "netbase.h"
 
 using ::testing::Return;
+
+static CService ResolveService(const char* ip, int port = 0)
+{
+    CService serv;
+    Lookup(ip, serv, port, false), strprintf("failed to resolve: %s:%i", ip, port);
+    return serv;
+}
 
 class MockHTTPRequest : public HTTPRequest {
 public:
@@ -52,7 +60,7 @@ TEST(HTTPRPC, FailsWithBadAuth) {
     EXPECT_CALL(req, GetHeader("authorization"))
         .WillRepeatedly(Return(std::make_pair(true, "Basic spam:eggs")));
     EXPECT_CALL(req, GetPeer())
-        .WillRepeatedly(Return(CService("127.0.0.1:1337")));
+        .WillRepeatedly(Return(ResolveService("127.0.0.1:1337")));
     EXPECT_CALL(req, WriteHeader("WWW-Authenticate", "Basic realm=\"jsonrpc\""))
         .Times(1);
     EXPECT_CALL(req, WriteReply(HTTP_UNAUTHORIZED, ""))
