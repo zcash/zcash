@@ -536,17 +536,19 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Sapling}).value();
     EXPECT_TRUE(addrPair.first.GetSaplingReceiver().has_value());
     auto saplingReceiver = addrPair.first.GetSaplingReceiver().value();
+    auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
+    EXPECT_FALSE(ufvkmeta.has_value());
 
     auto saplingIvk = zufvk.GetSaplingKey().value().fvk.in_viewing_key();
     keyStore.AddSaplingIncomingViewingKey(saplingIvk, saplingReceiver);
 
-    auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
+    ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
     EXPECT_TRUE(ufvkmeta.has_value());
     EXPECT_EQ(ufvkmeta.value().first, ufvkid);
     EXPECT_FALSE(ufvkmeta.value().second.has_value());
 }
 
-TEST(KeystoreTests, AddUnifiedAddress) {
+TEST(KeystoreTests, AddTransparentReceiverForUnifiedAddress) {
     SelectParams(CBaseChainParams::TESTNET);
     CBasicKeyStore keyStore;
 
@@ -559,10 +561,12 @@ TEST(KeystoreTests, AddUnifiedAddress) {
     auto ufvkid = zufvk.GetKeyID();
     auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling}).value();
     EXPECT_TRUE(addrPair.first.GetP2PKHReceiver().has_value());
-
-    keyStore.AddUnifiedAddress(ufvkid, addrPair.second, addrPair.first);
-
     auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(addrPair.first.GetP2PKHReceiver().value());
+    EXPECT_FALSE(ufvkmeta.has_value());
+
+    keyStore.AddTransparentReceiverForUnifiedAddress(ufvkid, addrPair.second, addrPair.first);
+
+    ufvkmeta = keyStore.GetUFVKMetadataForReceiver(addrPair.first.GetP2PKHReceiver().value());
     EXPECT_TRUE(ufvkmeta.has_value());
     EXPECT_EQ(ufvkmeta.value().first, ufvkid);
 }

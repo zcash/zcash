@@ -182,7 +182,6 @@ TEST(WalletTests, SproutNoteDataSerialisation) {
     EXPECT_EQ(noteData[jsoutpt].witnesses, noteData2[jsoutpt].witnesses);
 }
 
-
 TEST(WalletTests, FindUnspentSproutNotes) {
     SelectParams(CBaseChainParams::TESTNET);
 
@@ -356,9 +355,6 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     mapBlockIndex.erase(blockHash);
     mapBlockIndex.erase(blockHash2);
     mapBlockIndex.erase(blockHash3);
-
-    // Revert to default
-    RegtestDeactivateSapling();
 }
 
 
@@ -2232,4 +2228,7 @@ TEST(WalletTests, GenerateUnifiedAddress) {
         expected = AddressGenerationError::DiversifierSpaceExhausted;
         EXPECT_EQ(uaResult, expected);
     }
+
+    // Revert to default
+    RegtestDeactivateSapling();
 }

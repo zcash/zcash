@@ -195,9 +195,7 @@ bool CWallet::AddSaplingZKey(const libzcash::SaplingExtendedSpendingKey &sk)
     return true;
 }
 
-bool CWallet::AddSaplingFullViewingKey(
-        const libzcash::SaplingExtendedFullViewingKey &extfvk,
-        const std::optional<libzcash::UFVKId>& ufvkId)
+bool CWallet::AddSaplingFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk)
 {
     AssertLockHeld(cs_wallet);
 
@@ -636,16 +634,16 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
             return AddressGenerationError::NoAddressForDiversifier;
         }
 
-        // Persist the newly created address to the keystore
-        mapUfvkAddressMetadata[ufvkid].SetReceivers(diversifierIndex, receiverTypes);
-        CCryptoKeyStore::AddUnifiedAddress(ufvkid, diversifierIndex, address.value());
+        assert(mapUfvkAddressMetadata[ufvkid].SetReceivers(diversifierIndex, receiverTypes));
+        // Writing this data is handled by `CWalletDB::WriteUnifiedAddressMetadata` below.
+        assert(CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(ufvkid, diversifierIndex, address.value()));
 
         // Save the metadata for the generated address so that we can re-derive
         // it in the future.
         ZcashdUnifiedAddressMetadata addrmeta(ufvkid, diversifierIndex, receiverTypes);
         if (fFileBacked && !CWalletDB(strWalletFile).WriteUnifiedAddressMetadata(addrmeta)) {
             throw std::runtime_error(
-                    "CWallet::AdddUnifiedAddress(): Writing unified address metadata failed");
+                    "CWallet::AddUnifiedAddress(): Writing unified address metadata failed");
         }
 
         if (hasTransparent) {
@@ -691,11 +689,14 @@ bool CWallet::LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &k
     if (metadata != mapUfvkAddressMetadata.end()) {
         // restore unified addresses that have been previously generated to the
         // keystore
-        for (const auto &[j, receiverTypes] : metadata->second.GetAllReceivers()) {
+        for (const auto &[j, receiverTypes] : metadata->second.GetKnownReceiverSetsByDiversifierIndex()) {
             auto addr = zufvk.Address(j, receiverTypes).value();
-            CCryptoKeyStore::AddUnifiedAddress(zufvk.GetKeyID(), j, addr);
+            if (!CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(zufvk.GetKeyID(), j, addr)) {
+                return false;
+            }
         }
     }
+
     return CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk);
 }
 
@@ -710,16 +711,18 @@ bool CWallet::LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skm
 bool CWallet::LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta)
 {
     AssertLockHeld(cs_wallet);
-    mapUfvkAddressMetadata[addrmeta.GetKeyID()].SetReceivers(
+    if (!mapUfvkAddressMetadata[addrmeta.GetKeyID()].SetReceivers(
                 addrmeta.GetDiversifierIndex(),
-                addrmeta.GetReceiverTypes());
+                addrmeta.GetReceiverTypes())) {
+        return false;
+    }
 
     auto ufvk = GetUnifiedFullViewingKey(addrmeta.GetKeyID());
     if (ufvk.has_value()) {
         // Regenerate the unified address and add it to the keystore.
         auto j = addrmeta.GetDiversifierIndex();
         auto addr = ufvk.value().Address(j, addrmeta.GetReceiverTypes()).value();
-        return CCryptoKeyStore::AddUnifiedAddress(addrmeta.GetKeyID(), j, addr);
+        return CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(addrmeta.GetKeyID(), j, addr);
     }
 
     return true;
@@ -5862,21 +5865,19 @@ std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const l
         }
 
         diversifier_index_t j;
-        auto metadata = wallet.mapUfvkAddressMetadata.find(ufvkid);
-        if (metadata != wallet.mapUfvkAddressMetadata.end()) {
-            librustzcash_sapling_diversifier_index(
-                    ufvk.value().GetSaplingKey().value().dk.begin(),
-                    saplingAddr.d.begin(),
-                    j.begin());
-            auto receivers = metadata->second.GetReceivers(j);
-            if (receivers.has_value()) {
-                return ufvk.value().Address(j, receivers.value());
-            } else {
-                // If we don't know the receiver types at which the address was originally
-                // generated, we can't reconstruct the address.
-                return std::nullopt;
-            }
+        // If the wallet is missing metadata at this UFVK id, it is probably
+        // corrupt and the node should shut down.
+        const auto& metadata = wallet.mapUfvkAddressMetadata.at(ufvkid);
+        librustzcash_sapling_diversifier_index(
+                ufvk.value().GetSaplingKey().value().dk.begin(),
+                saplingAddr.d.begin(),
+                j.begin());
+        auto receivers = metadata.GetReceivers(j);
+        if (receivers.has_value()) {
+            return ufvk.value().Address(j, receivers.value());
         } else {
+            // If we don't know the receiver types at which the address was originally
+            // generated, we can't reconstruct the address.
             return std::nullopt;
         }
     } else {
@@ -5899,17 +5900,16 @@ std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const C
             throw std::runtime_error("CWallet::LookupUnifiedAddress(): UFVK has no P2PKH key part.");
         }
 
-        // Find the set of receivers at the diversifier index. If no metadata is available
-        // for the ufvk, or we do not know the receiver types for the address produced
-        // at this diversifier, we cannot reconstruct the address.
-        auto metadata = wallet.mapUfvkAddressMetadata.find(ufvkid);
-        if (metadata != wallet.mapUfvkAddressMetadata.end()) {
-            auto receivers = metadata->second.GetReceivers(j);
-            if (receivers.has_value()) {
-                return ufvk.value().Address(j, receivers.value());
-            } else {
-                return std::nullopt;
-            }
+        // If the wallet is missing metadata at this UFVK id, it is probably
+        // corrupt and the node should shut down.
+        const auto& metadata = wallet.mapUfvkAddressMetadata.at(ufvkid);
+
+        // Find the set of receivers at the diversifier index. If we do not
+        // know the receiver types for the address produced at this
+        // diversifier, we cannot reconstruct the address.
+        auto receivers = metadata.GetReceivers(j);
+        if (receivers.has_value()) {
+            return ufvk.value().Address(j, receivers.value());
         } else {
             return std::nullopt;
         }

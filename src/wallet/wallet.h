@@ -685,13 +685,21 @@ public:
 class UFVKAddressMetadata
 {
 private:
+    // The account ID may be absent for imported UFVKs, and also may temporarily
+    // be absent when this data structure is in a partially-reconstructed state
+    // during the wallet load process.
     std::optional<libzcash::AccountId> accountId;
     std::map<libzcash::diversifier_index_t, std::set<libzcash::ReceiverType>> addressReceivers;
 public:
     UFVKAddressMetadata() {}
     UFVKAddressMetadata(libzcash::AccountId accountId): accountId(accountId) {}
 
-    const std::map<libzcash::diversifier_index_t, std::set<libzcash::ReceiverType>>& GetAllReceivers() const {
+    /**
+     * Return all currently known diversifier indices for which addresses
+     * have been generated, each accompanied by the associated set of receiver
+     * types that were used when generating that address.
+     */
+    const std::map<libzcash::diversifier_index_t, std::set<libzcash::ReceiverType>>& GetKnownReceiverSetsByDiversifierIndex() const {
         return addressReceivers;
     }
 
@@ -715,10 +723,11 @@ public:
     bool SetReceivers(
             const libzcash::diversifier_index_t& j,
             const std::set<libzcash::ReceiverType>& receivers) {
-        if (addressReceivers.count(j) > 0) {
-            return addressReceivers[j] == receivers;
+        const auto [it, success] = addressReceivers.insert(std::make_pair(j, receivers));
+        if (success) {
+            return true;
         } else {
-            return addressReceivers.insert(std::make_pair(j, receivers)).second;
+            return it->second == receivers;
         }
     }
 
@@ -742,12 +751,7 @@ public:
         if (addressReceivers.empty()) {
             return libzcash::diversifier_index_t(0);
         } else {
-            auto lastIndex = addressReceivers.rbegin()->first;
-            if (lastIndex.increment()) {
-                return lastIndex;
-            } else {
-                return std::nullopt;
-            }
+            return addressReceivers.rbegin()->first.succ();
         }
     }
 };
@@ -1167,8 +1171,7 @@ public:
     //! CBasicKeyStore::AddSaplingFullViewingKey is called directly when adding a
     //! full viewing key to the keystore, to avoid this override.
     bool AddSaplingFullViewingKey(
-            const libzcash::SaplingExtendedFullViewingKey &extfvk,
-            const std::optional<libzcash::UFVKId>& ufvkId = std::nullopt);
+            const libzcash::SaplingExtendedFullViewingKey &extfvk);
     bool AddSaplingIncomingViewingKey(
         const libzcash::SaplingIncomingViewingKey &ivk,
         const libzcash::SaplingPaymentAddress &addr);
@@ -1199,8 +1202,10 @@ public:
     std::pair<libzcash::ZcashdUnifiedSpendingKey, libzcash::AccountId>
         GenerateNewUnifiedSpendingKey();
 
-    //! Generate the next available unified spending key from the wallet's
-    //! mnemonic seed.
+    //! Generate the unified spending key for the specified ZIP-32/BIP-44
+    //! account identifier from the wallet's mnemonic seed, or returns
+    //! std::nullopt if the account identifier does not produce a valid
+    //! spending key for all receiver types.
     std::optional<libzcash::ZcashdUnifiedSpendingKey>
         GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId);
 

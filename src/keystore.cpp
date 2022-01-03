@@ -316,7 +316,7 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
     return true;
 }
 
-bool CBasicKeyStore::AddUnifiedAddress(
+bool CBasicKeyStore::AddTransparentReceiverForUnifiedAddress(
         const libzcash::UFVKId& keyId,
         const libzcash::diversifier_index_t& diversifierIndex,
         const libzcash::UnifiedAddress& ua)
@@ -361,10 +361,11 @@ CBasicKeyStore::GetUFVKMetadataForReceiver(const libzcash::Receiver& receiver) c
 
 std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
 FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
-    if (keystore.mapSaplingIncomingViewingKeys.count(saplingAddr) > 0) {
-        const auto& saplingIvk = keystore.mapSaplingIncomingViewingKeys.at(saplingAddr);
-        if (keystore.mapSaplingKeyUnified.count(saplingIvk) > 0) {
-            return std::make_pair(keystore.mapSaplingKeyUnified.at(saplingIvk), std::nullopt);
+    const auto saplingIvk = keystore.mapSaplingIncomingViewingKeys.find(saplingAddr);
+    if (saplingIvk != keystore.mapSaplingIncomingViewingKeys.end()) {
+        const auto ufvkId = keystore.mapSaplingKeyUnified.find(saplingIvk->second);
+        if (ufvkId != keystore.mapSaplingKeyUnified.end()) {
+            return std::make_pair(ufvkId->second, std::nullopt);
         } else {
             return std::nullopt;
         }
@@ -374,16 +375,18 @@ FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const
 }
 std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
 FindUFVKId::operator()(const CScriptID& scriptId) const {
-    if (keystore.mapP2SHUnified.count(scriptId) > 0) {
-        return keystore.mapP2SHUnified.at(scriptId);
+    const auto metadata = keystore.mapP2SHUnified.find(scriptId);
+    if (metadata != keystore.mapP2SHUnified.end()) {
+        return metadata->second;
     } else {
         return std::nullopt;
     }
 }
 std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
 FindUFVKId::operator()(const CKeyID& keyId) const {
-    if (keystore.mapP2PKHUnified.count(keyId) > 0) {
-        return keystore.mapP2PKHUnified.at(keyId);
+    const auto metadata = keystore.mapP2PKHUnified.find(keyId);
+    if (metadata != keystore.mapP2PKHUnified.end()) {
+        return metadata->second;
     } else {
         return std::nullopt;
     }

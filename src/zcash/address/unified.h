@@ -15,7 +15,7 @@ enum class ReceiverType: uint32_t {
     P2PKH = 0x00,
     P2SH = 0x01,
     Sapling = 0x02,
-    Orchard = 0x03
+    //Orchard = 0x03
 };
 
 /**

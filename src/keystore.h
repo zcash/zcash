@@ -117,7 +117,7 @@ public:
      * viewing key upon discovery of the address as having received
      * funds.
      */
-    virtual bool AddUnifiedAddress(
+    virtual bool AddTransparentReceiverForUnifiedAddress(
         const libzcash::UFVKId& keyId,
         const libzcash::diversifier_index_t& diversifierIndex,
         const libzcash::UnifiedAddress& ua) = 0;
@@ -357,7 +357,7 @@ public:
     virtual bool AddUnifiedFullViewingKey(
             const libzcash::ZcashdUnifiedFullViewingKey &ufvk);
 
-    virtual bool AddUnifiedAddress(
+    virtual bool AddTransparentReceiverForUnifiedAddress(
         const libzcash::UFVKId& keyId,
         const libzcash::diversifier_index_t& diversifierIndex,
         const libzcash::UnifiedAddress& ua);

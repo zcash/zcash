@@ -21,11 +21,11 @@ bool libzcash::HasShielded(const std::set<ReceiverType>& receiverTypes) {
 }
 
 bool libzcash::HasTransparent(const std::set<ReceiverType>& receiverTypes) {
-    auto has_shielded = [](ReceiverType r) {
+    auto has_transparent = [](ReceiverType r) {
         // TODO: update this as support for new transparent protocols is added.
         return r == ReceiverType::P2PKH || r == ReceiverType::P2SH;
     };
-    return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_shielded) != receiverTypes.end();
+    return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_transparent) != receiverTypes.end();
 }
 
 std::optional<ZcashdUnifiedSpendingKey> ZcashdUnifiedSpendingKey::ForAccount(
@@ -132,5 +132,5 @@ std::optional<std::pair<UnifiedAddress, diversifier_index_t>> ZcashdUnifiedFullV
 
 std::optional<std::pair<UnifiedAddress, diversifier_index_t>> ZcashdUnifiedFullViewingKey::FindAddress(
         const diversifier_index_t& j) const {
-    return FindAddress(j, {ReceiverType::P2PKH, ReceiverType::Sapling, ReceiverType::Orchard});
+    return FindAddress(j, {ReceiverType::P2PKH, ReceiverType::Sapling});
 }
