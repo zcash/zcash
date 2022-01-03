@@ -570,7 +570,7 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
     EXPECT_TRUE(ufvkmeta.has_value());
     EXPECT_EQ(ufvkmeta.value().first, ufvkid);
-    EXPECT_FALSE(ufvkmeta.value().second.has_value());
+    EXPECT_EQ(ufvkmeta.value().second, addrPair.second);
 }
 
 TEST(KeystoreTests, AddTransparentReceiverForUnifiedAddress) {

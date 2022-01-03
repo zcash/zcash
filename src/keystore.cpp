@@ -6,6 +6,7 @@
 #include "keystore.h"
 
 #include "key.h"
+#include "librustzcash.h"
 #include "pubkey.h"
 #include "util.h"
 
@@ -367,7 +368,7 @@ std::optional<libzcash::ZcashdUnifiedFullViewingKey> CBasicKeyStore::GetUnifiedF
     }
 }
 
-std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+std::optional<std::pair<libzcash::UFVKId, libzcash::diversifier_index_t>>
 CBasicKeyStore::GetUFVKMetadataForReceiver(const libzcash::Receiver& receiver) const
 {
     return std::visit(FindUFVKId(*this), receiver);
@@ -399,13 +400,18 @@ std::optional<libzcash::UFVKId> CBasicKeyStore::GetUFVKIdForViewingKey(const lib
     return result;
 }
 
-std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+std::optional<std::pair<libzcash::UFVKId, libzcash::diversifier_index_t>>
 FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
     const auto saplingIvk = keystore.mapSaplingIncomingViewingKeys.find(saplingAddr);
     if (saplingIvk != keystore.mapSaplingIncomingViewingKeys.end()) {
         const auto ufvkId = keystore.mapSaplingKeyUnified.find(saplingIvk->second);
         if (ufvkId != keystore.mapSaplingKeyUnified.end()) {
-            return std::make_pair(ufvkId->second, std::nullopt);
+            libzcash::diversifier_index_t j;
+            librustzcash_sapling_diversifier_index(
+                    keystore.mapSaplingFullViewingKeys.at(saplingIvk->second).dk.begin(),
+                    saplingAddr.d.begin(),
+                    j.begin());
+            return std::make_pair(ufvkId->second, j);
         } else {
             return std::nullopt;
         }
@@ -413,7 +419,7 @@ FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const
         return std::nullopt;
     }
 }
-std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+std::optional<std::pair<libzcash::UFVKId, libzcash::diversifier_index_t>>
 FindUFVKId::operator()(const CScriptID& scriptId) const {
     const auto metadata = keystore.mapP2SHUnified.find(scriptId);
     if (metadata != keystore.mapP2SHUnified.end()) {
@@ -422,7 +428,7 @@ FindUFVKId::operator()(const CScriptID& scriptId) const {
         return std::nullopt;
     }
 }
-std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+std::optional<std::pair<libzcash::UFVKId, libzcash::diversifier_index_t>>
 FindUFVKId::operator()(const CKeyID& keyId) const {
     const auto metadata = keystore.mapP2PKHUnified.find(keyId);
     if (metadata != keystore.mapP2PKHUnified.end()) {
@@ -431,7 +437,7 @@ FindUFVKId::operator()(const CKeyID& keyId) const {
         return std::nullopt;
     }
 }
-std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+std::optional<std::pair<libzcash::UFVKId, libzcash::diversifier_index_t>>
 FindUFVKId::operator()(const libzcash::UnknownReceiver& receiver) const {
     return std::nullopt;
 }

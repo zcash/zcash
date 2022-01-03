@@ -128,7 +128,7 @@ public:
             const libzcash::UFVKId& keyId
             ) const = 0;
 
-    virtual std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+    virtual std::optional<std::pair<libzcash::UFVKId, libzcash::diversifier_index_t>>
         GetUFVKMetadataForReceiver(
             const libzcash::Receiver& receiver
             ) const = 0;
@@ -373,7 +373,7 @@ public:
     virtual std::optional<libzcash::ZcashdUnifiedFullViewingKey> GetUnifiedFullViewingKey(
             const libzcash::UFVKId& keyId) const;
 
-    virtual std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+    virtual std::optional<std::pair<libzcash::UFVKId, libzcash::diversifier_index_t>>
         GetUFVKMetadataForReceiver(
             const libzcash::Receiver& receiver
             ) const;
@@ -398,13 +398,13 @@ private:
 public:
     FindUFVKId(const CBasicKeyStore& keystore): keystore(keystore) {}
 
-    std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+    std::optional<std::pair<libzcash::UFVKId, libzcash::diversifier_index_t>>
         operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const;
-    std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+    std::optional<std::pair<libzcash::UFVKId, libzcash::diversifier_index_t>>
         operator()(const CScriptID& scriptId) const;
-    std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+    std::optional<std::pair<libzcash::UFVKId, libzcash::diversifier_index_t>>
         operator()(const CKeyID& keyId) const;
-    std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+    std::optional<std::pair<libzcash::UFVKId, libzcash::diversifier_index_t>>
         operator()(const libzcash::UnknownReceiver& receiver) const;
 };
 
