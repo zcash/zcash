@@ -723,6 +723,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         entry.pushKV("data", EncodeHexTx(tx));
 
         entry.pushKV("hash", txHash.GetHex());
+        entry.pushKV("authdigest", tx.GetAuthDigest().GetHex());
 
         UniValue deps(UniValue::VARR);
         for (const CTxIn &in : tx.vin)
