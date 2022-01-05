@@ -12,6 +12,10 @@ const uint8_t ZCASH_UA_TYPECODE_SAPLING = 0x02;
 
 namespace libzcash {
 
+//
+// Unified Addresses
+//
+
 std::vector<const Receiver*> UnifiedAddress::GetSorted() const {
     std::vector<const libzcash::Receiver*> sorted;
     for (const auto& receiver : receivers) {
@@ -39,6 +43,37 @@ bool UnifiedAddress::AddReceiver(Receiver receiver) {
     return true;
 }
 
+std::optional<CKeyID> UnifiedAddress::GetP2PKHReceiver() const {
+    for (const auto& r : receivers) {
+        if (std::holds_alternative<CKeyID>(r)) {
+            return std::get<CKeyID>(r);
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<CScriptID> UnifiedAddress::GetP2SHReceiver() const {
+    for (const auto& r : receivers) {
+        if (std::holds_alternative<CScriptID>(r)) {
+            return std::get<CScriptID>(r);
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<SaplingPaymentAddress> UnifiedAddress::GetSaplingReceiver() const {
+    for (const auto& r : receivers) {
+        if (std::holds_alternative<SaplingPaymentAddress>(r)) {
+            return std::get<SaplingPaymentAddress>(r);
+        }
+    }
+
+    return std::nullopt;
+}
+
+
 std::pair<std::string, PaymentAddress> AddressInfoFromSpendingKey::operator()(const SproutSpendingKey &sk) const {
     return std::make_pair("sprout", sk.address());
 }
@@ -58,8 +93,9 @@ std::pair<std::string, PaymentAddress> AddressInfoFromViewingKey::operator()(con
 std::pair<std::string, PaymentAddress> AddressInfoFromViewingKey::operator()(const UnifiedFullViewingKey &ufvk) const {
     return std::make_pair(
             "unified",
-            ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(ufvk)
+            ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(keyConstants, ufvk)
                 .FindAddress(diversifier_index_t(0))
+                .value() //safe because we're searching from 0
                 .first
             );
 }
@@ -189,6 +225,10 @@ std::set<libzcash::RawAddress> GetRawAddresses::operator()(
     return ret;
 }
 
+//
+// Unified full viewing keys
+//
+
 std::optional<libzcash::UnifiedFullViewingKey> libzcash::UnifiedFullViewingKey::Decode(
         const std::string& str,
         const KeyConstants& keyConstants) {
@@ -279,4 +319,12 @@ libzcash::UnifiedFullViewingKey libzcash::UnifiedFullViewingKey::FromZcashdUFVK(
         throw std::invalid_argument("Cannot convert from invalid viewing key.");
     }
     return result.value();
+}
+
+libzcash::UFVKId libzcash::UnifiedFullViewingKey::GetKeyID(const KeyConstants& keyConstants) const {
+    // The ID of a ufvk is the blake2b hash of the serialized form of the
+    // ufvk with the receivers sorted in order of descending receiver type.
+    CBLAKE2bWriter h(SER_GETHASH, 0, ZCASH_UFVK_ID_PERSONAL);
+    h << Encode(keyConstants);
+    return libzcash::UFVKId(h.GetHash());
 }

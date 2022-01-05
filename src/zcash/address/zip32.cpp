@@ -19,8 +19,6 @@ const unsigned char ZCASH_HD_SEED_FP_PERSONAL[BLAKE2bPersonalBytes] =
 const unsigned char ZCASH_TADDR_OVK_PERSONAL[BLAKE2bPersonalBytes] =
     {'Z', 'c', 'T', 'a', 'd', 'd', 'r', 'T', 'o', 'S', 'a', 'p', 'l', 'i', 'n', 'g'};
 
-const libzcash::diversifier_index_t MAX_TRANSPARENT_CHILD_IDX(0x7FFFFFFF);
-
 uint256 HDSeed::Fingerprint() const
 {
     CBLAKE2bWriter h(SER_GETHASH, 0, ZCASH_HD_SEED_FP_PERSONAL);
@@ -48,12 +46,12 @@ uint256 ovkForShieldingFromTaddr(HDSeed& seed) {
 
 namespace libzcash {
 
-std::optional<unsigned int> diversifier_index_t::ToTransparentChildIndex() const {
+std::optional<uint32_t> diversifier_index_t::ToTransparentChildIndex() const {
     // ensure that the diversifier index is small enough for a t-addr
     if (MAX_TRANSPARENT_CHILD_IDX < *this) {
         return std::nullopt;
     } else {
-        return (unsigned int) GetUint64(0);
+        return (uint32_t) GetUint64(0);
     }
 }
 
@@ -173,10 +171,7 @@ std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::For
     // Derive account key at the given account index
     auto xsk = m_32h_cth.Derive(accountId | HARDENED_KEY_LIMIT);
 
-    // Create new metadata
-    auto hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
-
-    return std::make_pair(xsk, hdKeypath);
+    return std::make_pair(xsk, libzcash::Zip32AccountKeyPath(bip44CoinType, accountId));
 }
 
 std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::Legacy(const HDSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex) {
@@ -198,13 +193,7 @@ std::pair<SaplingExtendedSpendingKey, HDKeyPath> SaplingExtendedSpendingKey::Leg
     // Derive key at the specified address index
     auto xsk = m_32h_cth_l.Derive(addressIndex | HARDENED_KEY_LIMIT);
 
-    // Create new metadata
-    auto hdKeypath = "m/32'/"
-        + std::to_string(bip44CoinType) + "'/"
-        + std::to_string(ZCASH_LEGACY_ACCOUNT) + "'/"
-        + std::to_string(addressIndex) + "'";
-
-    return std::make_pair(xsk, hdKeypath);
+    return std::make_pair(xsk, libzcash::Zip32AccountKeyPath(bip44CoinType, ZCASH_LEGACY_ACCOUNT, addressIndex));
 }
 
 SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
@@ -217,6 +206,17 @@ SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
     ret.fvk = expsk.full_viewing_key();
     ret.dk = dk;
     return ret;
+}
+
+HDKeyPath Zip32AccountKeyPath(
+        uint32_t bip44CoinType,
+        libzcash::AccountId accountId,
+        std::optional<uint32_t> legacyAddressIndex) {
+    HDKeyPath addrSuffix = "";
+    if (legacyAddressIndex.has_value()) {
+        addrSuffix = "/" + std::to_string(legacyAddressIndex.value()) + "'";
+    }
+    return "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'" + addrSuffix;
 }
 
 std::optional<unsigned long> ParseHDKeypathAccount(uint32_t purpose, uint32_t coinType, const std::string& keyPath) {

@@ -9,6 +9,12 @@
 
 namespace libzcash {
 
+HDKeyPath Bip44TransparentAccountKeyPath(uint32_t bip44CoinType, libzcash::AccountId accountId);
+
+/**
+ * Derive a transparent extended key in compressed format for the specified
+ * seed, bip44 coin type, and account ID.
+ */
 std::optional<std::pair<CExtKey, HDKeyPath>> DeriveBip44TransparentAccountKey(const HDSeed& seed, uint32_t bip44CoinType, libzcash::AccountId accountId);
 
 class Bip44AccountChains {
@@ -27,8 +33,19 @@ public:
             uint32_t bip44CoinType,
             libzcash::AccountId accountId);
 
-    std::optional<std::pair<CExtKey, HDKeyPath>> DeriveExternal(uint32_t addrIndex);
-    std::optional<std::pair<CExtKey, HDKeyPath>> DeriveInternal(uint32_t addrIndex);
+    /**
+     * Generate the key corresponding to the specified index at the "external child"
+     * level of the BIP44 path for the account.
+     */
+    std::optional<std::pair<CKey, HDKeyPath>> DeriveExternal(uint32_t addrIndex);
+
+    /**
+     * Generate the key corresponding to the specified index at the "internal child"
+     * level of the BIP44 path for the account. This should probably only usually be
+     * used at address index 0, but ordinarily it won't need to be used at all since
+     * all change should be shielded by default.
+     */
+    std::optional<std::pair<CKey, HDKeyPath>> DeriveInternal(uint32_t addrIndex = 0);
 };
 
 } //namespace libzcash

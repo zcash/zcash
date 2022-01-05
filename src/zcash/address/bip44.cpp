@@ -4,6 +4,10 @@
 
 #include "bip44.h"
 
+HDKeyPath libzcash::Bip44TransparentAccountKeyPath(uint32_t bip44CoinType, libzcash::AccountId accountId) {
+    return "m/44'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
+}
+
 std::optional<std::pair<CExtKey, HDKeyPath>> libzcash::DeriveBip44TransparentAccountKey(const HDSeed& seed, uint32_t bip44CoinType, libzcash::AccountId accountId) {
     auto rawSeed = seed.RawSeed();
     auto m = CExtKey::Master(rawSeed.data(), rawSeed.size());
@@ -21,7 +25,7 @@ std::optional<std::pair<CExtKey, HDKeyPath>> libzcash::DeriveBip44TransparentAcc
     auto result = m_44h_cth.value().Derive(accountId | HARDENED_KEY_LIMIT);
     if (!result.has_value()) return std::nullopt;
 
-    auto hdKeypath = "m/44'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(accountId) + "'";
+    auto hdKeypath = libzcash::Bip44TransparentAccountKeyPath(bip44CoinType, accountId);
 
     return std::make_pair(result.value(), hdKeypath);
 }
@@ -42,29 +46,21 @@ std::optional<libzcash::Bip44AccountChains> libzcash::Bip44AccountChains::ForAcc
     return Bip44AccountChains(seed.Fingerprint(), bip44CoinType, accountId, external.value(), internal.value());
 }
 
-std::optional<std::pair<CExtKey, HDKeyPath>> libzcash::Bip44AccountChains::DeriveExternal(uint32_t addrIndex) {
+std::optional<std::pair<CKey, HDKeyPath>> libzcash::Bip44AccountChains::DeriveExternal(uint32_t addrIndex) {
     auto childKey = external.Derive(addrIndex);
     if (!childKey.has_value()) return std::nullopt;
 
-    auto hdKeypath = "m/44'/"
-        + std::to_string(bip44CoinType) + "'/"
-        + std::to_string(accountId) + "'/"
-        + "0/"
-        + std::to_string(addrIndex);
+    auto hdKeypath = Bip44TransparentAccountKeyPath(bip44CoinType, accountId) + "/0/" + std::to_string(addrIndex);
 
-    return std::make_pair(childKey.value(), hdKeypath);
+    return std::make_pair(childKey.value().key, hdKeypath);
 }
 
-std::optional<std::pair<CExtKey, HDKeyPath>> libzcash::Bip44AccountChains::DeriveInternal(uint32_t addrIndex) {
+std::optional<std::pair<CKey, HDKeyPath>> libzcash::Bip44AccountChains::DeriveInternal(uint32_t addrIndex) {
     auto childKey = internal.Derive(addrIndex);
     if (!childKey.has_value()) return std::nullopt;
 
-    auto hdKeypath = "m/44'/"
-        + std::to_string(bip44CoinType) + "'/"
-        + std::to_string(accountId) + "'/"
-        + "1/"
-        + std::to_string(addrIndex);
+    auto hdKeypath = Bip44TransparentAccountKeyPath(bip44CoinType, accountId) + "/1/" + std::to_string(addrIndex);
 
-    return std::make_pair(childKey.value(), hdKeypath);
+    return std::make_pair(childKey.value().key, hdKeypath);
 }
 

@@ -169,6 +169,7 @@ bool CWalletDB::WriteZKey(const libzcash::SproutPaymentAddress& addr, const libz
     // pair is: tuple_key("zkey", paymentaddress) --> secretkey
     return Write(std::make_pair(std::string("zkey"), addr), key, false);
 }
+
 bool CWalletDB::WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
                 const libzcash::SaplingExtendedSpendingKey &key,
                 const CKeyMetadata &keyMeta)
@@ -215,6 +216,33 @@ bool CWalletDB::EraseSaplingExtendedFullViewingKey(
     nWalletDBUpdateCounter++;
     return Erase(std::make_pair(std::string("sapextfvk"), extfvk));
 }
+
+//
+// Unified address & key storage
+//
+
+bool CWalletDB::WriteUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata& keymeta)
+{
+    nWalletDBUpdateCounter++;
+    return Write(std::make_pair(std::string("unifiedaccount"), keymeta), 0x00);
+}
+
+bool CWalletDB::WriteUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey& ufvk)
+{
+    nWalletDBUpdateCounter++;
+    auto ufvkId = ufvk.GetKeyID(Params());
+    return Write(std::make_pair(std::string("unifiedfvk"), ufvkId), ufvk.Encode(Params()));
+}
+
+bool CWalletDB::WriteUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata& addrmeta)
+{
+    nWalletDBUpdateCounter++;
+    return Write(std::make_pair(std::string("unifiedaddrmeta"), addrmeta), 0x00);
+}
+
+//
+//
+//
 
 bool CWalletDB::WriteCScript(const uint160& hash, const CScript& redeemScript)
 {
@@ -631,6 +659,62 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         else if (strType == "defaultkey")
         {
             ssValue >> pwallet->vchDefaultKey;
+        }
+        else if (strType == "unifiedfvk")
+        {
+            libzcash::UFVKId fp;
+            ssKey >> fp;
+
+            std::string ufvkenc;
+            ssValue >> ufvkenc;
+
+            auto ufvkopt = libzcash::UnifiedFullViewingKey::Decode(ufvkenc, Params());
+            if (ufvkopt.has_value()) {
+                auto ufvk = ufvkopt.value();
+                if (fp != ufvk.GetKeyID(Params())) {
+                    strErr = "Error reading wallet database: key fingerprint did not match decoded key";
+                    return false;
+                }
+                if (!pwallet->LoadUnifiedFullViewingKey(ufvk)) {
+                    strErr = "Error reading wallet database: LoadUnifiedFullViewingKey failed.";
+                    return false;
+                }
+            } else {
+                strErr = "Error reading wallet database: failed to decode unified full viewing key.";
+                return false;
+            }
+        }
+        else if (strType == "unifiedaccount")
+        {
+            auto acct = ZcashdUnifiedAccountMetadata::Read(ssKey);
+
+            uint8_t value;
+            ssValue >> value;
+            if (value != 0x00) {
+                strErr = "Error reading wallet database: invalid unified account metadata.";
+                return false;
+            }
+
+            if (!pwallet->LoadUnifiedAccountMetadata(acct)) {
+                strErr = "Error reading wallet database: account ID mismatch for unified spending key.";
+                return false;
+            };
+        }
+        else if (strType == "unifiedaddrmeta")
+        {
+            auto keymeta = ZcashdUnifiedAddressMetadata::Read(ssKey);
+
+            uint8_t value;
+            ssValue >> value;
+            if (value != 0x00) {
+                strErr = "Error reading wallet database: invalid unified address metadata.";
+                return false;
+            }
+
+            if (!pwallet->LoadUnifiedAddressMetadata(keymeta)) {
+                strErr = "Error reading wallet database: cannot reproduce previously generated unified address.";
+                return false;
+            }
         }
         else if (strType == "pool")
         {

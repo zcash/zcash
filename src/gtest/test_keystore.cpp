@@ -14,6 +14,8 @@
 
 #define MAKE_STRING(x) std::string((x), (x)+sizeof(x))
 
+using namespace libzcash;
+
 const uint32_t SLIP44_TESTNET_TYPE = 1;
 
 TEST(KeystoreTests, StoreAndRetrieveMnemonicSeed) {
@@ -531,4 +533,60 @@ TEST(KeystoreTests, StoreAndRetrieveSpendingKeyInEncryptedStore) {
     ASSERT_EQ(1, addrs.count(addr));
     ASSERT_EQ(1, addrs.count(addr2));
 }
+
+TEST(KeystoreTests, StoreAndRetrieveUFVK) {
+    SelectParams(CBaseChainParams::TESTNET);
+    CBasicKeyStore keyStore;
+
+    auto seed = MnemonicSeed::Random(SLIP44_TESTNET_TYPE);
+    auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed, SLIP44_TESTNET_TYPE, 0);
+    EXPECT_TRUE(usk.has_value());
+
+    auto ufvk = usk.value().ToFullViewingKey();
+    auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
+    auto ufvkid = zufvk.GetKeyID();
+    EXPECT_FALSE(keyStore.GetUnifiedFullViewingKey(ufvkid).has_value());
+
+    EXPECT_TRUE(keyStore.AddUnifiedFullViewingKey(zufvk));
+    EXPECT_EQ(keyStore.GetUnifiedFullViewingKey(ufvkid).value(), zufvk);
+
+    auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Sapling}).value();
+    EXPECT_TRUE(addrPair.first.GetSaplingReceiver().has_value());
+    auto saplingReceiver = addrPair.first.GetSaplingReceiver().value();
+    auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
+    EXPECT_FALSE(ufvkmeta.has_value());
+
+    auto saplingIvk = zufvk.GetSaplingKey().value().fvk.in_viewing_key();
+    keyStore.AddSaplingIncomingViewingKey(saplingIvk, saplingReceiver);
+
+    ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
+    EXPECT_TRUE(ufvkmeta.has_value());
+    EXPECT_EQ(ufvkmeta.value().first, ufvkid);
+    EXPECT_FALSE(ufvkmeta.value().second.has_value());
+}
+
+TEST(KeystoreTests, AddTransparentReceiverForUnifiedAddress) {
+    SelectParams(CBaseChainParams::TESTNET);
+    CBasicKeyStore keyStore;
+
+    auto seed = MnemonicSeed::Random(SLIP44_TESTNET_TYPE);
+    auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed, SLIP44_TESTNET_TYPE, 0);
+    EXPECT_TRUE(usk.has_value());
+
+    auto ufvk = usk.value().ToFullViewingKey();
+    auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
+    auto ufvkid = zufvk.GetKeyID();
+    auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling}).value();
+    EXPECT_TRUE(addrPair.first.GetP2PKHReceiver().has_value());
+    auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(addrPair.first.GetP2PKHReceiver().value());
+    EXPECT_FALSE(ufvkmeta.has_value());
+
+    keyStore.AddTransparentReceiverForUnifiedAddress(ufvkid, addrPair.second, addrPair.first);
+
+    ufvkmeta = keyStore.GetUFVKMetadataForReceiver(addrPair.first.GetP2PKHReceiver().value());
+    EXPECT_TRUE(ufvkmeta.has_value());
+    EXPECT_EQ(ufvkmeta.value().first, ufvkid);
+}
+
+
 #endif

@@ -287,3 +287,111 @@ bool CBasicKeyStore::GetSaplingExtendedSpendingKey(const libzcash::SaplingPaymen
             GetSaplingFullViewingKey(ivk, extfvk) &&
             GetSaplingSpendingKey(extfvk, extskOut);
 }
+
+//
+// Unified Keys
+//
+
+bool CBasicKeyStore::AddUnifiedFullViewingKey(
+        const libzcash::ZcashdUnifiedFullViewingKey &ufvk)
+{
+    LOCK(cs_KeyStore);
+
+    // Add the Sapling component of the UFVK to the wallet.
+    auto saplingKey = ufvk.GetSaplingKey();
+    if (saplingKey.has_value()) {
+        auto ivk = saplingKey.value().fvk.in_viewing_key();
+        mapSaplingKeyUnified.insert(std::make_pair(ivk, ufvk.GetKeyID()));
+    }
+
+    // We can't reasonably add the transparent component here, because
+    // of the way that transparent addresses are generated from the
+    // P2PKH part of the unified address. Instead, whenever a new
+    // unified address is generated, the keys associated with the
+    // transparent part of the address must be added to the keystore.
+
+    // Add the UFVK by key identifier.
+    mapUnifiedFullViewingKeys.insert({ufvk.GetKeyID(), ufvk});
+
+    return true;
+}
+
+bool CBasicKeyStore::AddTransparentReceiverForUnifiedAddress(
+        const libzcash::UFVKId& keyId,
+        const libzcash::diversifier_index_t& diversifierIndex,
+        const libzcash::UnifiedAddress& ua)
+{
+    LOCK(cs_KeyStore);
+
+    // It's only necessary to add p2pkh and p2sh components of
+    // the UA; all other lookups of the associated UFVK will be
+    // made via the protocol-specific viewing key that is used
+    // to trial-decrypt a transaction.
+    auto addrEntry = std::make_pair(keyId, diversifierIndex);
+
+    auto p2pkhReceiver = ua.GetP2PKHReceiver();
+    if (p2pkhReceiver.has_value()) {
+        mapP2PKHUnified.insert(std::make_pair(p2pkhReceiver.value(), addrEntry));
+    }
+
+    auto p2shReceiver = ua.GetP2SHReceiver();
+    if (p2shReceiver.has_value()) {
+        mapP2SHUnified.insert(std::make_pair(p2shReceiver.value(), addrEntry));
+    }
+
+    return true;
+}
+
+std::optional<libzcash::ZcashdUnifiedFullViewingKey> CBasicKeyStore::GetUnifiedFullViewingKey(
+        const libzcash::UFVKId& keyId) const
+{
+    auto mi = mapUnifiedFullViewingKeys.find(keyId);
+    if (mi != mapUnifiedFullViewingKeys.end()) {
+        return mi->second;
+    } else {
+        return std::nullopt;
+    }
+}
+
+std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+CBasicKeyStore::GetUFVKMetadataForReceiver(const libzcash::Receiver& receiver) const
+{
+    return std::visit(FindUFVKId(*this), receiver);
+}
+
+std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
+    const auto saplingIvk = keystore.mapSaplingIncomingViewingKeys.find(saplingAddr);
+    if (saplingIvk != keystore.mapSaplingIncomingViewingKeys.end()) {
+        const auto ufvkId = keystore.mapSaplingKeyUnified.find(saplingIvk->second);
+        if (ufvkId != keystore.mapSaplingKeyUnified.end()) {
+            return std::make_pair(ufvkId->second, std::nullopt);
+        } else {
+            return std::nullopt;
+        }
+    } else {
+        return std::nullopt;
+    }
+}
+std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+FindUFVKId::operator()(const CScriptID& scriptId) const {
+    const auto metadata = keystore.mapP2SHUnified.find(scriptId);
+    if (metadata != keystore.mapP2SHUnified.end()) {
+        return metadata->second;
+    } else {
+        return std::nullopt;
+    }
+}
+std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+FindUFVKId::operator()(const CKeyID& keyId) const {
+    const auto metadata = keystore.mapP2PKHUnified.find(keyId);
+    if (metadata != keystore.mapP2PKHUnified.end()) {
+        return metadata->second;
+    } else {
+        return std::nullopt;
+    }
+}
+std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+FindUFVKId::operator()(const libzcash::UnknownReceiver& receiver) const {
+    return std::nullopt;
+}

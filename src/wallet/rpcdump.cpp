@@ -870,7 +870,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
     }
 
-    auto addrInfo = std::visit(libzcash::AddressInfoFromViewingKey{}, viewingkey);
+    auto addrInfo = std::visit(libzcash::AddressInfoFromViewingKey(Params()), viewingkey);
     UniValue result(UniValue::VOBJ);
     const string strAddress = keyIO.EncodePaymentAddress(addrInfo.second);
     result.pushKV("type", addrInfo.first);

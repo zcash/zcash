@@ -402,6 +402,20 @@ public:
     bool AcceptToMemoryPool(bool fLimitFree=true, bool fRejectAbsurdFee=true);
 };
 
+enum class AddressGenerationError {
+    NoSuchAccount,
+    InvalidReceiverTypes,
+    ExistingAddressMismatch,
+    NoAddressForDiversifier,
+    DiversifierSpaceExhausted,
+    WalletEncrypted,
+    InvalidTransparentChildIndex
+};
+
+typedef std::variant<
+    std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>,
+    AddressGenerationError> UAGenerationResult;
+
 /**
  * A transaction with a bunch of additional info that only the owner cares about.
  * It includes any unrecorded transactions needed to link it back to the block chain.
@@ -625,9 +639,6 @@ public:
     std::set<uint256> GetConflicts() const;
 };
 
-
-
-
 class COutput
 {
 public:
@@ -643,9 +654,6 @@ public:
     CAmount Value() const { return tx->vout[i].nValue; }
     std::string ToString() const;
 };
-
-
-
 
 /** Private key that includes an expiration date in case it never gets used. */
 class CWalletKey
@@ -671,6 +679,80 @@ public:
         READWRITE(nTimeCreated);
         READWRITE(nTimeExpires);
         READWRITE(LIMITED_STRING(strComment, 65536));
+    }
+};
+
+class UFVKAddressMetadata
+{
+private:
+    // The account ID may be absent for imported UFVKs, and also may temporarily
+    // be absent when this data structure is in a partially-reconstructed state
+    // during the wallet load process.
+    std::optional<libzcash::AccountId> accountId;
+    std::map<libzcash::diversifier_index_t, std::set<libzcash::ReceiverType>> addressReceivers;
+public:
+    UFVKAddressMetadata() {}
+    UFVKAddressMetadata(libzcash::AccountId accountId): accountId(accountId) {}
+
+    /**
+     * Return all currently known diversifier indices for which addresses
+     * have been generated, each accompanied by the associated set of receiver
+     * types that were used when generating that address.
+     */
+    const std::map<libzcash::diversifier_index_t, std::set<libzcash::ReceiverType>>& GetKnownReceiverSetsByDiversifierIndex() const {
+        return addressReceivers;
+    }
+
+    std::optional<std::set<libzcash::ReceiverType>> GetReceivers(
+            const libzcash::diversifier_index_t& j) const {
+        auto receivers = addressReceivers.find(j);
+        if (receivers != addressReceivers.end()) {
+            return receivers->second;
+        } else {
+            return std::nullopt;
+        }
+    }
+
+    /**
+     * Add the specified set of receivers at the provided diversifier index.
+     *
+     * Returns `true` if this is a new entry or if the operation would not
+     * alter the existing set of receiver types at this index, `false`
+     * otherwise.
+     */
+    bool SetReceivers(
+            const libzcash::diversifier_index_t& j,
+            const std::set<libzcash::ReceiverType>& receivers) {
+        const auto [it, success] = addressReceivers.insert(std::make_pair(j, receivers));
+        if (success) {
+            return true;
+        } else {
+            return it->second == receivers;
+        }
+    }
+
+    bool SetAccountId(libzcash::AccountId accountIdIn) {
+        if (accountId.has_value()) {
+            return (accountIdIn == accountId.value());
+        } else {
+            accountId = accountIdIn;
+            return true;
+        }
+    }
+
+    /**
+     * Search the for the maximum diversifier that has already been used to
+     * generate a new address, and return the next diversifier. Returns the
+     * zero diversifier index if no addresses have yet been generated,
+     * and returns std::nullopt if the increment operation would cause an
+     * overflow.
+     */
+    std::optional<libzcash::diversifier_index_t> GetNextDiversifierIndex() {
+        if (addressReceivers.empty()) {
+            return libzcash::diversifier_index_t(0);
+        } else {
+            return addressReceivers.rbegin()->first.succ();
+        }
     }
 };
 
@@ -702,8 +784,13 @@ private:
     int nSetChainUpdates;
     bool fBroadcastTransactions;
 
+    /**
+     * A map from a protocol-specific transaction output identifier to
+     * a txid.
+     */
     template <class T>
     using TxSpendMap = std::multimap<T, uint256>;
+
     /**
      * Used to keep track of spent outpoints, and
      * detect and report conflicts (double-spends or
@@ -711,6 +798,7 @@ private:
      */
     typedef TxSpendMap<COutPoint> TxSpends;
     TxSpends mapTxSpends;
+
     /**
      * Used to keep track of spent Notes, and
      * detect and report conflicts (double-spends).
@@ -803,6 +891,11 @@ private:
     void SyncMetaData(std::pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator>);
     void ChainTipAdded(const CBlockIndex *pindex, const CBlock *pblock, SproutMerkleTree sproutTree, SaplingMerkleTree saplingTree);
 
+    /* Add a transparent secret key to the wallet. Internal use only. */
+    CPubKey AddTransparentSecretKey(
+            const uint256& seedFingerprint,
+            const std::pair<CKey, HDKeyPath>& extSecret);
+
 protected:
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);
     void MarkAffectedTransactionsDirty(const CTransaction& tx);
@@ -828,8 +921,11 @@ public:
 
     std::set<int64_t> setKeyPool;
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
+
     std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapSproutZKeyMetadata;
     std::map<libzcash::SaplingIncomingViewingKey, CKeyMetadata> mapSaplingZKeyMetadata;
+    std::map<std::pair<libzcash::SeedFingerprint, libzcash::AccountId>, libzcash::UFVKId> mapUnifiedAccountKeys;
+    std::map<libzcash::UFVKId, UFVKAddressMetadata> mapUfvkAddressMetadata;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
     MasterKeyMap mapMasterKeys;
@@ -1074,7 +1170,8 @@ public:
     //! full viewing key to disk. Inside CCryptoKeyStore and CBasicKeyStore,
     //! CBasicKeyStore::AddSaplingFullViewingKey is called directly when adding a
     //! full viewing key to the keystore, to avoid this override.
-    bool AddSaplingFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
+    bool AddSaplingFullViewingKey(
+            const libzcash::SaplingExtendedFullViewingKey &extfvk);
     bool AddSaplingIncomingViewingKey(
         const libzcash::SaplingIncomingViewingKey &ivk,
         const libzcash::SaplingPaymentAddress &addr);
@@ -1096,11 +1193,43 @@ public:
     bool LoadCryptedSaplingZKey(const libzcash::SaplingExtendedFullViewingKey &extfvk,
                                 const std::vector<unsigned char> &vchCryptedSecret);
 
-    /**
-     * Unified keys & addresses
-     */
-    libzcash::ZcashdUnifiedSpendingKey GenerateNewUnifiedSpendingKey();
-    std::optional<libzcash::ZcashdUnifiedSpendingKey> GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId);
+    //
+    // Unified keys & addresses
+    //
+
+    //! Generate the unified spending key from the wallet's mnemonic seed
+    //! for the next unused account identifier.
+    std::pair<libzcash::ZcashdUnifiedSpendingKey, libzcash::AccountId>
+        GenerateNewUnifiedSpendingKey();
+
+    //! Generate the unified spending key for the specified ZIP-32/BIP-44
+    //! account identifier from the wallet's mnemonic seed, or returns
+    //! std::nullopt if the account identifier does not produce a valid
+    //! spending key for all receiver types.
+    std::optional<libzcash::ZcashdUnifiedSpendingKey>
+        GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId);
+
+    //! Retrieves the UFVK derived from the wallet's mnemonic seed for the specified account.
+    std::optional<libzcash::ZcashdUnifiedFullViewingKey>
+        GetUnifiedFullViewingKeyByAccount(libzcash::AccountId account);
+
+    //! Generate a new unified address for the specified account, diversifier, and
+    //! set of receiver types.
+    //!
+    //! If no diversifier index is provided, the next unused diversifier index
+    //! will be selected.
+    UAGenerationResult GenerateUnifiedAddress(
+        const libzcash::AccountId& accountId,
+        const std::set<libzcash::ReceiverType>& receivers,
+        std::optional<libzcash::diversifier_index_t> j = std::nullopt);
+
+    bool AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
+
+    bool LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
+    bool LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skmeta);
+    bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
+
+    std::optional<libzcash::UnifiedAddress> GetUnifiedForReceiver(const libzcash::Receiver& receiver);
 
     /**
      * Increment the next transaction order id
@@ -1510,6 +1639,19 @@ public:
     KeyAddResult operator()(const libzcash::SproutSpendingKey &sk) const;
     KeyAddResult operator()(const libzcash::SaplingExtendedSpendingKey &sk) const;
     KeyAddResult operator()(const libzcash::InvalidEncoding& no) const;
+};
+
+class LookupUnifiedAddress {
+private:
+    const CWallet& wallet;
+
+public:
+    LookupUnifiedAddress(const CWallet& wallet): wallet(wallet) {}
+
+    std::optional<libzcash::UnifiedAddress> operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const;
+    std::optional<libzcash::UnifiedAddress> operator()(const CScriptID& scriptId) const;
+    std::optional<libzcash::UnifiedAddress> operator()(const CKeyID& keyId) const;
+    std::optional<libzcash::UnifiedAddress> operator()(const libzcash::UnknownReceiver& receiver) const;
 };
 
 

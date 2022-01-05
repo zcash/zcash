@@ -172,7 +172,6 @@ std::pair<SaplingExtendedSpendingKey, bool> CWallet::GenerateLegacySaplingZKey(u
     } else {
         return std::make_pair(xsk.first, false);
     }
-
 }
 
 // Add spending key to keystore
@@ -281,27 +280,14 @@ CPubKey CWallet::GenerateNewKey()
             BIP44CoinType(),
             ZCASH_LEGACY_ACCOUNT).value();
 
-    std::optional<std::pair<CExtKey, HDKeyPath>> extKey = std::nullopt;
+    std::optional<std::pair<CKey, HDKeyPath>> extKey = std::nullopt;
     do {
         extKey = accountChains.DeriveExternal(hdChain.GetLegacyTKeyCounter());
         hdChain.IncrementLegacyTKeyCounter();
         // if we did not successfully generate a key, try again.
     } while (!extKey.has_value());
 
-    CKey secret = extKey.value().first.key;
-    CPubKey pubkey = secret.GetPubKey();
-    assert(secret.VerifyPubKey(pubkey));
-
-    // Create new metadata
-    CKeyMetadata keyMeta(GetTime());
-    keyMeta.hdKeypath = extKey.value().second;
-    keyMeta.seedFp = seed.Fingerprint();
-    mapKeyMetadata[pubkey.GetID()] = keyMeta;
-    if (nTimeFirstKey == 0 || keyMeta.nCreateTime < nTimeFirstKey)
-        nTimeFirstKey = keyMeta.nCreateTime;
-
-    if (!AddKeyPubKey(secret, pubkey))
-        throw std::runtime_error("CWallet::GenerateNewKey(): AddKey failed");
+    auto pubkey = AddTransparentSecretKey(seed.Fingerprint(), extKey.value());
 
     // Update the persisted chain information
     if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
@@ -311,7 +297,31 @@ CPubKey CWallet::GenerateNewKey()
     return pubkey;
 }
 
-bool CWallet::AddKeyPubKey(const CKey& secret, const CPubKey &pubkey)
+CPubKey CWallet::AddTransparentSecretKey(
+        const uint256& seedFingerprint,
+        const std::pair<CKey, HDKeyPath>& extSecret)
+{
+    CKey secret = extSecret.first;
+    CPubKey pubkey = secret.GetPubKey();
+    assert(secret.VerifyPubKey(pubkey));
+
+    // Create new metadata
+    CKeyMetadata keyMeta(GetTime());
+    keyMeta.hdKeypath = extSecret.second;
+    keyMeta.seedFp = seedFingerprint;
+    mapKeyMetadata[pubkey.GetID()] = keyMeta;
+    if (nTimeFirstKey == 0 || keyMeta.nCreateTime < nTimeFirstKey)
+        nTimeFirstKey = keyMeta.nCreateTime;
+
+    if (!AddKeyPubKey(secret, pubkey))
+        throw std::runtime_error("CWallet::GenerateNewKey(): AddKeyPubKey failed");
+
+    return pubkey;
+}
+
+bool CWallet::AddKeyPubKey(
+        const CKey& secret,
+        const CPubKey &pubkey)
 {
     AssertLockHeld(cs_wallet); // mapKeyMetadata
     if (!CCryptoKeyStore::AddKeyPubKey(secret, pubkey))
@@ -328,11 +338,13 @@ bool CWallet::AddKeyPubKey(const CKey& secret, const CPubKey &pubkey)
 
     if (!fFileBacked)
         return true;
+
     if (!IsCrypted()) {
         return CWalletDB(strWalletFile).WriteKey(pubkey,
                                                  secret.GetPrivKey(),
                                                  mapKeyMetadata[pubkey.GetID()]);
     }
+
     return true;
 }
 
@@ -407,16 +419,18 @@ bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullVi
     return false;
 }
 
-ZcashdUnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
+std::pair<ZcashdUnifiedSpendingKey, libzcash::AccountId> CWallet::GenerateNewUnifiedSpendingKey() {
     AssertLockHeld(cs_wallet);
 
     if (!mnemonicHDChain.has_value()) {
         throw std::runtime_error(
                 "CWallet::GenerateNewUnifiedSpendingKey(): Wallet is missing mnemonic seed metadata.");
     }
+
     CHDChain& hdChain = mnemonicHDChain.value();
     while (true) {
-        auto usk = GenerateUnifiedSpendingKeyForAccount(hdChain.GetAccountCounter());
+        auto accountId = hdChain.GetAccountCounter();
+        auto usk = GenerateUnifiedSpendingKeyForAccount(accountId);
         hdChain.IncrementAccountCounter();
 
         if (usk.has_value()) {
@@ -426,12 +440,15 @@ ZcashdUnifiedSpendingKey CWallet::GenerateNewUnifiedSpendingKey() {
                         "CWallet::GenerateNewUnifiedSpendingKey(): Writing HD chain model failed");
             }
 
-            return usk.value();
+            return std::make_pair(usk.value(), accountId);
         }
     }
 }
 
-std::optional<libzcash::ZcashdUnifiedSpendingKey> CWallet::GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId) {
+std::optional<libzcash::ZcashdUnifiedSpendingKey>
+        CWallet::GenerateUnifiedSpendingKeyForAccount(libzcash::AccountId accountId) {
+    AssertLockHeld(cs_wallet); // mapUnifiedAccountKeys
+
     auto seed = GetMnemonicSeed();
     if (!seed.has_value()) {
         throw std::runtime_error(std::string(__func__) + ": Wallet has no mnemonic HD seed.");
@@ -439,12 +456,276 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey> CWallet::GenerateUnifiedSpendi
 
     auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed.value(), BIP44CoinType(), accountId);
     if (usk.has_value()) {
-        // TODO: Save the unified full viewing key & metadata to the wallet
+        auto ufvk = usk.value().ToFullViewingKey();
+        auto ufvkid = ufvk.GetKeyID(Params());
 
-        return usk.value().first;
+        ZcashdUnifiedAccountMetadata skmeta(seed.value().Fingerprint(), BIP44CoinType(), accountId, ufvkid);
+
+        // We don't store the spending key directly; instead, we store each of
+        // the spending key's components, in order to not violate invariants
+        // with respect to the encryption of the wallet. We store each
+        // component in the appropriate wallet subsystem, and store the
+        // metadata that can be used to re-derive the spending key along with
+        // the fingerprint of the associated full viewing key.
+
+        auto metaKey = std::make_pair(skmeta.GetSeedFingerprint(), skmeta.GetAccountId());
+        mapUnifiedAccountKeys.insert({metaKey, skmeta.GetKeyID()});
+
+        // Add Transparent component to the wallet
+        AddTransparentSecretKey(
+            skmeta.GetSeedFingerprint(),
+            std::make_pair(
+                usk.value().GetTransparentKey().key,
+                libzcash::Bip44TransparentAccountKeyPath(BIP44CoinType(), accountId)
+            )
+        );
+
+        // Add Sapling component to the wallet
+        auto saplingEsk = usk.value().GetSaplingExtendedSpendingKey();
+        auto saplingKeyPath = libzcash::Zip32AccountKeyPath(BIP44CoinType(), accountId);
+        auto addSpendingKey = AddSpendingKeyToWallet(
+            this, Params().GetConsensus(), GetTime(),
+            saplingKeyPath, skmeta.GetSeedFingerprint().GetHex(), true);
+        if (addSpendingKey(saplingEsk) == KeyNotAdded) {
+            // If adding the Sapling key to the wallet failed, abort the process.
+            throw std::runtime_error("CWalletDB::GenerateUnifiedSpendingKeyForAccount(): Unable to add Sapling key component to the wallet.");
+        }
+
+        auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
+        if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {
+            throw std::runtime_error("CWalletDB::GenerateUnifiedSpendingKeyForAccount(): Failed to add UFVK to the keystore.");
+        }
+
+        if (fFileBacked) {
+            auto walletdb = CWalletDB(strWalletFile);
+            if (!( walletdb.WriteUnifiedFullViewingKey(ufvk) &&
+                   walletdb.WriteUnifiedAccountMetadata(skmeta)
+                 )) {
+                throw std::runtime_error("CWalletDB::GenerateUnifiedSpendingKeyForAccount(): walletdb write failed.");
+            }
+        }
+
+        return usk;
     } else {
         return std::nullopt;
     }
+}
+
+bool CWallet::AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk)
+{
+    AssertLockHeld(cs_wallet);
+
+    auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
+    auto keyId = ufvk.GetKeyID(Params());
+    if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {
+        return false;
+    }
+
+    if (!fFileBacked) {
+        return true;
+    }
+
+    return CWalletDB(strWalletFile).WriteUnifiedFullViewingKey(ufvk);
+}
+
+std::optional<ZcashdUnifiedFullViewingKey> CWallet::GetUnifiedFullViewingKeyByAccount(libzcash::AccountId accountId) {
+    if (!mnemonicHDChain.has_value()) {
+        throw std::runtime_error(
+                "CWallet::GetUnifiedFullViewingKeyByAccount(): Wallet is missing mnemonic seed metadata.");
+    }
+
+    auto seedfp = mnemonicHDChain.value().GetSeedFingerprint();
+    auto entry = mapUnifiedAccountKeys.find(std::make_pair(seedfp, accountId));
+    if (entry != mapUnifiedAccountKeys.end()) {
+        return CCryptoKeyStore::GetUnifiedFullViewingKey(entry->second);
+    } else {
+        return std::nullopt;
+    }
+}
+
+UAGenerationResult CWallet::GenerateUnifiedAddress(
+    const libzcash::AccountId& accountId,
+    const std::set<libzcash::ReceiverType>& receiverTypes,
+    std::optional<libzcash::diversifier_index_t> j)
+{
+    bool searchDiversifiers = !j.has_value();
+    if (!libzcash::HasShielded(receiverTypes)) {
+        return AddressGenerationError::InvalidReceiverTypes;
+    }
+
+    // The wallet must be unlocked in order to generate new transparent UA
+    // receivers, because we need to be able to add the secret key for the
+    // external child address at the diversifier index to the wallet's
+    // transparent backend in order to be able to detect transactions as
+    // ours rather than considering them as watch-only.
+    bool hasTransparent = receiverTypes.find(ReceiverType::P2PKH) != receiverTypes.end();
+    if (hasTransparent) {
+        // A preemptive check to ensure that the user has not specified an
+        // invalid transparent child index. If we search from a valid transparent
+        // child index into invalid child index space, later checks will return
+        // this error as `AddressGenerationError::DiversifierSpaceExhausted`
+        if (j.has_value() && !j.value().ToTransparentChildIndex().has_value()) {
+            return AddressGenerationError::InvalidTransparentChildIndex;
+        }
+
+        if (IsCrypted() || !GetMnemonicSeed().has_value()) {
+            return AddressGenerationError::WalletEncrypted;
+        }
+    }
+
+    auto ufvk = GetUnifiedFullViewingKeyByAccount(accountId);
+    if (ufvk.has_value()) {
+        auto ufvkid = ufvk.value().GetKeyID();
+
+        // Check whether an address has already been generated for any provided
+        // diversifier index. Return that address, or set the diversifier index
+        // at which we'll begin searching for the next available diversified
+        // address.
+        auto metadata = mapUfvkAddressMetadata.find(ufvkid);
+        if (metadata != mapUfvkAddressMetadata.end()) {
+            if (j.has_value()) {
+
+                auto receivers = metadata->second.GetReceivers(j.value());
+                if (receivers.has_value()) {
+                    // Ensure that the set of receiver types being requested is
+                    // the same as the set of receiver types that was previously
+                    // generated. If they match, simply return that address.
+                    if (receivers.value() == receiverTypes) {
+                        return std::make_pair(ufvk.value().Address(j.value(), receiverTypes).value(), j.value());
+                    } else {
+                        return AddressGenerationError::ExistingAddressMismatch;
+                    }
+                }
+            } else {
+                // Set the diversifier index to one greater than the last used
+                // diversifier
+                j = metadata->second.GetNextDiversifierIndex();
+                if (!j.has_value()) {
+                    return AddressGenerationError::DiversifierSpaceExhausted;
+                }
+            }
+        } else {
+            // Begin searching from the zero diversifier index if we haven't
+            // yet generated an address from the specified UFVK and no
+            // diversifier index has been specified.
+            if (!j.has_value()) {
+                j = libzcash::diversifier_index_t(0);
+            }
+        }
+
+        // Find a working diversifier and construct the associated address.
+        // At this point, we know that `j` will contain a value. Optimistically
+        // attempt to find an address at that diversifier; we'll search if we
+        // don't find one.
+        auto diversifierIndex = j.value();
+        auto address = ufvk.value().Address(diversifierIndex, receiverTypes);
+        if (!address.has_value() && searchDiversifiers) {
+            auto found = ufvk.value().FindAddress(j.value(), receiverTypes);
+            if (found.has_value()) {
+                address = found.value().first;
+                diversifierIndex = found.value().second;
+            } else {
+                return AddressGenerationError::DiversifierSpaceExhausted;
+            }
+        }
+
+        // Now that we're done searching, check that we actually got an address
+        if (!address.has_value()) {
+            return AddressGenerationError::NoAddressForDiversifier;
+        }
+
+        assert(mapUfvkAddressMetadata[ufvkid].SetReceivers(diversifierIndex, receiverTypes));
+        // Writing this data is handled by `CWalletDB::WriteUnifiedAddressMetadata` below.
+        assert(CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(ufvkid, diversifierIndex, address.value()));
+
+        // Save the metadata for the generated address so that we can re-derive
+        // it in the future.
+        ZcashdUnifiedAddressMetadata addrmeta(ufvkid, diversifierIndex, receiverTypes);
+        if (fFileBacked && !CWalletDB(strWalletFile).WriteUnifiedAddressMetadata(addrmeta)) {
+            throw std::runtime_error(
+                    "CWallet::AddUnifiedAddress(): Writing unified address metadata failed");
+        }
+
+        if (hasTransparent) {
+            // Regenerate the secret key for the transparent address and add it to
+            // the wallet.
+            auto seed = GetMnemonicSeed().value();
+            auto b44 = libzcash::Bip44AccountChains::ForAccount(seed, BIP44CoinType(), accountId).value();
+            auto key = b44.DeriveExternal(diversifierIndex.ToTransparentChildIndex().value()).value();
+            AddTransparentSecretKey(seed.Fingerprint(), key);
+        }
+
+        return std::make_pair(address.value(), diversifierIndex);
+    } else {
+        return AddressGenerationError::NoSuchAccount;
+    }
+}
+
+// NOTE: There is an important relationship between `LoadUnifiedFullViewingKey`
+// and `LoadUnifiedAddressMetadata`. In all cases, by the end of the
+// wallet-loading process, `mapUfvkAddressMetadata` needs to be fully populated
+// for each unified full viewing key. However, we cannot guarantee in what
+// order UFVKs and unified address and account metadata are loaded from disk.
+// Therefore:
+// * When we load a unified full viewing key from disk, we repopulate
+//   the cache of generated addresses by regenerating the address for each
+//   (diversifierIndex, {receiverType...}) pair in `mapUfvkAddressMetadata`
+//   that we have loaded so far.
+// * When we load a unified address metadata record from disk:
+//   - if we have not yet loaded the unified full viewing key, simply add
+//     an entry `mapUfvkAddressMetadata` so that we can restore the address
+//     once the UFVK has been loaded.
+//   - if we have already loaded the unified full viewing key from disk,
+//     regenerate the address from its metadata and add it to the keystore
+//
+// While this is somewhat complicated, it has the benefit of making each
+// piece of unified full viewing key and address metadata write-once in
+// the wallet database; we never need to update ufvk or address metadata
+// once written.
+bool CWallet::LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &key)
+{
+    auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), key);
+    auto metadata = mapUfvkAddressMetadata.find(zufvk.GetKeyID());
+    if (metadata != mapUfvkAddressMetadata.end()) {
+        // restore unified addresses that have been previously generated to the
+        // keystore
+        for (const auto &[j, receiverTypes] : metadata->second.GetKnownReceiverSetsByDiversifierIndex()) {
+            auto addr = zufvk.Address(j, receiverTypes).value();
+            if (!CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(zufvk.GetKeyID(), j, addr)) {
+                return false;
+            }
+        }
+    }
+
+    return CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk);
+}
+
+bool CWallet::LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skmeta)
+{
+    AssertLockHeld(cs_wallet); // mapUnifiedAccountKeys
+    auto metaKey = std::make_pair(skmeta.GetSeedFingerprint(), skmeta.GetAccountId());
+    mapUnifiedAccountKeys.insert({metaKey, skmeta.GetKeyID()});
+    return mapUfvkAddressMetadata[skmeta.GetKeyID()].SetAccountId(skmeta.GetAccountId());
+}
+
+bool CWallet::LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta)
+{
+    AssertLockHeld(cs_wallet);
+    if (!mapUfvkAddressMetadata[addrmeta.GetKeyID()].SetReceivers(
+                addrmeta.GetDiversifierIndex(),
+                addrmeta.GetReceiverTypes())) {
+        return false;
+    }
+
+    auto ufvk = GetUnifiedFullViewingKey(addrmeta.GetKeyID());
+    if (ufvk.has_value()) {
+        // Regenerate the unified address and add it to the keystore.
+        auto j = addrmeta.GetDiversifierIndex();
+        auto addr = ufvk.value().Address(j, addrmeta.GetReceiverTypes()).value();
+        return CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(addrmeta.GetKeyID(), j, addr);
+    }
+
+    return true;
 }
 
 void CWallet::LoadKeyMetadata(const CPubKey &pubkey, const CKeyMetadata &meta)
@@ -5299,6 +5580,10 @@ void CWallet::GetFilteredNotes(
 }
 
 
+std::optional<UnifiedAddress> CWallet::GetUnifiedForReceiver(const Receiver& receiver) {
+    return std::visit(LookupUnifiedAddress(*this), receiver);
+}
+
 //
 // Shielded key and address generalizations
 //
@@ -5542,7 +5827,7 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
         if (m_wallet->HaveSaplingSpendingKey(extfvk)) {
             return KeyAlreadyExists;
         } else {
-            if (!m_wallet-> AddSaplingZKey(sk)) {
+            if (!m_wallet->AddSaplingZKey(sk)) {
                 return KeyNotAdded;
             }
 
@@ -5556,7 +5841,7 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
             if (hdKeypath.has_value()) {
                 m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath = hdKeypath.value();
             }
-            if (seedFpStr) {
+            if (seedFpStr.has_value()) {
                 uint256 seedFp;
                 seedFp.SetHex(seedFpStr.value());
                 m_wallet->mapSaplingZKeyMetadata[ivk].seedFp = seedFp;
@@ -5568,4 +5853,70 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
 
 KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::InvalidEncoding& no) const {
     throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
+}
+
+std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
+    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(saplingAddr);
+    if (ufvkPair.has_value()) {
+        auto ufvkid = ufvkPair.value().first;
+        auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
+        if (!(ufvk.has_value() && ufvk.value().GetSaplingKey().has_value())) {
+            throw std::runtime_error("CWallet::LookupUnifiedAddress(): UFVK has no Sapling key part.");
+        }
+
+        diversifier_index_t j;
+        // If the wallet is missing metadata at this UFVK id, it is probably
+        // corrupt and the node should shut down.
+        const auto& metadata = wallet.mapUfvkAddressMetadata.at(ufvkid);
+        librustzcash_sapling_diversifier_index(
+                ufvk.value().GetSaplingKey().value().dk.begin(),
+                saplingAddr.d.begin(),
+                j.begin());
+        auto receivers = metadata.GetReceivers(j);
+        if (receivers.has_value()) {
+            return ufvk.value().Address(j, receivers.value());
+        } else {
+            // If we don't know the receiver types at which the address was originally
+            // generated, we can't reconstruct the address.
+            return std::nullopt;
+        }
+    } else {
+        return std::nullopt;
+    }
+}
+std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const CScriptID& scriptId) const {
+    return std::nullopt;
+}
+std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const CKeyID& keyId) const {
+    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(keyId);
+    if (ufvkPair.has_value()) {
+        auto ufvkid = ufvkPair.value().first;
+        // transparent address UFVK metadata is always accompanied by the child
+        // index at which the address was produced
+        assert(ufvkPair.value().second.has_value());
+        diversifier_index_t j = ufvkPair.value().second.value();
+        auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
+        if (!(ufvk.has_value() && ufvk.value().GetTransparentKey().has_value())) {
+            throw std::runtime_error("CWallet::LookupUnifiedAddress(): UFVK has no P2PKH key part.");
+        }
+
+        // If the wallet is missing metadata at this UFVK id, it is probably
+        // corrupt and the node should shut down.
+        const auto& metadata = wallet.mapUfvkAddressMetadata.at(ufvkid);
+
+        // Find the set of receivers at the diversifier index. If we do not
+        // know the receiver types for the address produced at this
+        // diversifier, we cannot reconstruct the address.
+        auto receivers = metadata.GetReceivers(j);
+        if (receivers.has_value()) {
+            return ufvk.value().Address(j, receivers.value());
+        } else {
+            return std::nullopt;
+        }
+    } else {
+        return std::nullopt;
+    }
+}
+std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const libzcash::UnknownReceiver& receiver) const {
+    return std::nullopt;
 }
