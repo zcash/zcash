@@ -454,9 +454,9 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             "  \"finalsaplingroothash\" : \"xxxx\",   (string) (DEPRECATED) The hash of the light client root field in the block header\n"
             "  \"defaultroots\" : {                 (json object) root hashes that need to be recomputed if the transaction set is modified\n"
             "     \"merkleroot\" : \"xxxx\"           (string) The hash of the transactions in the block header\n"
-            "     \"authdataroot\" : \"xxxx\"         (string) The hash of the authorizing data merkel tree\n"
             "     \"chainhistoryroot\" : \"xxxx\"     (string) The hash of the chain history\n"
-            "     \"blockcommitmentshash\" : \"xxxx\" (string) The hash of the block commitments field in the block header\n"
+            "     \"authdataroot\" : \"xxxx\"         (string) (From NU5) The hash of the authorizing data merkel tree\n"
+            "     \"blockcommitmentshash\" : \"xxxx\" (string) (From NU5) The hash of the block commitments field in the block header\n"
             "  }\n"
             "  \"transactions\" : [                 (array) contents of non-coinbase transactions that should be included in the next block\n"
             "      {\n"
@@ -765,27 +765,25 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         aMutable.push_back("prevblock");
     }
 
-    auto hashAuthDataRoot = pblock->BuildAuthDataMerkleTree();
-    std::string hashBlockCommitments_hex = DeriveBlockCommitmentsHash(
-            pblocktemplate->hashChainHistoryRoot,
-            hashAuthDataRoot).GetHex();
     UniValue result(UniValue::VOBJ);
     result.pushKV("capabilities", aCaps);
     result.pushKV("version", pblock->nVersion);
     result.pushKV("previousblockhash", pblock->hashPrevBlock.GetHex());
     // The following 3 are deprecated; remove in a future release.
-    result.pushKV("blockcommitmentshash", hashBlockCommitments_hex);
-    result.pushKV("lightclientroothash", hashBlockCommitments_hex);
-    result.pushKV("finalsaplingroothash", hashBlockCommitments_hex);
+    result.pushKV("blockcommitmentshash", pblock->hashBlockCommitments.GetHex());
+    result.pushKV("lightclientroothash", pblock->hashBlockCommitments.GetHex());
+    result.pushKV("finalsaplingroothash", pblock->hashBlockCommitments.GetHex());
     {
         // These are items in the result object that are valid only if the
         // block template returned by this RPC is used unmodified. Otherwise,
         // these values must be recomputed.
         UniValue defaults(UniValue::VOBJ);
         defaults.pushKV("merkleroot", pblock->BuildMerkleTree().GetHex());
-        defaults.pushKV("authdataroot", hashAuthDataRoot.GetHex());
         defaults.pushKV("chainhistoryroot", pblocktemplate->hashChainHistoryRoot.GetHex());
-        defaults.pushKV("blockcommitmentshash", hashBlockCommitments_hex);
+        if (consensus.NetworkUpgradeActive(pindexPrev->nHeight+1, Consensus::UPGRADE_NU5)) {
+            defaults.pushKV("authdataroot", pblocktemplate->hashAuthDataRoot.GetHex());
+            defaults.pushKV("blockcommitmentshash", pblock->hashBlockCommitments.GetHex());
+        }
         result.pushKV("defaultroots", defaults);
     }
     result.pushKV("transactions", transactions);

@@ -57,7 +57,7 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         outputs = {self.transparent_addr: 0.1}
         node.sendmany('', outputs)
 
-    def gbt_submitblock(self):
+    def gbt_submitblock(self, nu5_active):
         node = self.node
         mempool_tx_list = node.getrawmempool()
 
@@ -68,9 +68,18 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         assert_equal(set(mempool_tx_list), set([tx['hash'] for tx in gbt['transactions']]))
 
         prevhash = int(gbt['previousblockhash'], 16)
-        blockcommitmentshash = int(gbt['defaultroots']['blockcommitmentshash'], 16)
         nTime = gbt['mintime']
         nBits = int(gbt['bits'], 16)
+
+        if nu5_active:
+            blockcommitmentshash = int(gbt['defaultroots']['blockcommitmentshash'], 16)
+        else:
+            blockcommitmentshash = int(gbt['defaultroots']['chainhistoryroot'], 16)
+            assert 'blockcommitmentshash' not in gbt['defaultroots']
+        # Confirm that the legacy fields match this default value.
+        assert_equal(blockcommitmentshash, int(gbt['blockcommitmentshash'], 16))
+        assert_equal(blockcommitmentshash, int(gbt['lightclientroothash'], 16))
+        assert_equal(blockcommitmentshash, int(gbt['finalsaplingroothash'], 16))
 
         f = BytesIO(hex_str_to_bytes(gbt['coinbasetxn']['data']))
         coinbase = CTransaction()
@@ -93,7 +102,10 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         assert_equal(block.hashMerkleRoot, block.calc_merkle_root(), "merkleroot")
         assert_equal(len(block.vtx), len(gbt['transactions']) + 1, "number of transactions")
         assert_equal(block.hashPrevBlock, int(gbt['previousblockhash'], 16), "prevhash")
-        assert_equal(uint256_from_str(block.calc_auth_data_root()), int(gbt['defaultroots']['authdataroot'], 16))
+        if nu5_active:
+            assert_equal(uint256_from_str(block.calc_auth_data_root()), int(gbt['defaultroots']['authdataroot'], 16))
+        else:
+            assert 'authdataroot' not in gbt['defaultroots']
         block.solve()
         block.calc_sha256()
 
@@ -128,18 +140,18 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         # Only the coinbase; this covers the case where the Merkle root
         # is equal to the coinbase txid.
         print("- only coinbase")
-        self.gbt_submitblock()
+        self.gbt_submitblock(False)
 
         # Adding one transaction triggering a single Merkle digest.
         print("- one transaction (plus coinbase)")
         self.add_transparent_tx_to_mempool()
-        self.gbt_submitblock()
+        self.gbt_submitblock(False)
 
         # Adding two transactions to trigger hash Merkle root edge case.
         print("- two transactions (plus coinbase)")
         self.add_transparent_tx_to_mempool()
         self.add_transparent_tx_to_mempool()
-        self.gbt_submitblock()
+        self.gbt_submitblock(False)
 
         # Activate NU5, repeat the above cases
         node.generate(7)
@@ -150,25 +162,25 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         # Only the coinbase; this covers the case where the block authdata root
         # is equal to the coinbase authdata
         print("- only coinbase")
-        self.gbt_submitblock()
+        self.gbt_submitblock(True)
 
         # Adding one transaction triggering a single Merkle digest.
         print("- one transaction (plus coinbase)")
         self.add_transparent_tx_to_mempool()
-        self.gbt_submitblock()
+        self.gbt_submitblock(True)
 
         # Adding two transactions to trigger hash Merkle root edge case.
         print("- two transactions (plus coinbase)")
         self.add_transparent_tx_to_mempool()
         self.add_transparent_tx_to_mempool()
-        self.gbt_submitblock()
+        self.gbt_submitblock(True)
 
         # Adding both v4 and v5 to cover legacy auth digest.
         print("- both v4 and v5 transactions (plus coinbase)")
         self.add_nu5_v4_tx_to_mempool()
         self.add_transparent_tx_to_mempool()
         self.add_transparent_tx_to_mempool()
-        self.gbt_submitblock()
+        self.gbt_submitblock(True)
 
 
 if __name__ == '__main__':
