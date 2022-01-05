@@ -116,15 +116,11 @@ public:
 
     std::string operator()(const CKeyID& id) const
     {
-        std::vector<unsigned char> data = keyConstants.Base58Prefix(KeyConstants::PUBKEY_ADDRESS);
-        data.insert(data.end(), id.begin(), id.end());
-        return EncodeBase58Check(data);
+        return DestinationEncoder(keyConstants)(id);
     }
     std::string operator()(const CScriptID& id) const
     {
-        std::vector<unsigned char> data = keyConstants.Base58Prefix(KeyConstants::SCRIPT_ADDRESS);
-        data.insert(data.end(), id.begin(), id.end());
-        return EncodeBase58Check(data);
+        return DestinationEncoder(keyConstants)(id);
     }
     std::string operator()(const libzcash::SproutPaymentAddress& zaddr) const
     {

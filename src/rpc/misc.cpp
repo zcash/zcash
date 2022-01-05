@@ -277,16 +277,16 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "z_validateaddress \"zaddr\"\n"
-            "\nReturn information about the given z address.\n"
+            "z_validateaddress \"address\"\n"
+            "\nReturn information about the given address.\n"
             "\nArguments:\n"
-            "1. \"zaddr\"     (string, required) The z address to validate\n"
+            "1. \"zaddr\"     (string, required) The address to validate\n"
             "\nResult:\n"
             "{\n"
-            "  \"isvalid\" : true|false,      (boolean) If the address is valid or not. If not, this is the only property returned.\n"
+            "  \"isvalid\" : true|false,        (boolean) If the address is valid or not. If not, this is the only property returned.\n"
             "  \"address\" : \"zaddr\",         (string) The z address validated\n"
-            "  \"type\" : \"xxxx\",             (string) \"sprout\" or \"sapling\"\n"
-            "  \"ismine\" : true|false,       (boolean) If the address is yours or not\n"
+            "  \"type\" : \"xxxx\",             (string) \"p2pkh\", \"p2sh\", \"sprout\" or \"sapling\"\n"
+            "  \"ismine\" : true|false,         (boolean) If the address is yours or not\n"
             "  \"payingkey\" : \"hex\",         (string) [sprout] The hex value of the paying key, a_pk\n"
             "  \"transmissionkey\" : \"hex\",   (string) [sprout] The hex value of the transmission key, pk_enc\n"
             "  \"diversifier\" : \"hex\",       (string) [sapling] The hex value of the diversifier, d\n"
