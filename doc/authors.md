@@ -1,7 +1,7 @@
 Zcash Contributors
 ==================
 
-Jack Grigg (1124)
+Jack Grigg (1127)
 Simon Liu (460)
 Sean Bowe (367)
 Daira Hopwood (270)
@@ -16,7 +16,7 @@ Jonas Schnelli (89)
 Jay Graber (89)
 Marco Falke (82)
 Cory Fields (75)
-Larry Ruane (69)
+Larry Ruane (72)
 Ying Tong Lai (56)
 Nathan Wilcox (56)
 Matt Corallo (52)
