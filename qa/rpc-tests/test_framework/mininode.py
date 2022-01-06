@@ -1126,11 +1126,14 @@ class CTransaction(object):
         if self.nVersion >= 5:
             from . import zip244
             txid = zip244.txid_digest(self)
+            self.auth_digest = zip244.auth_digest(self)
         else:
             txid = hash256(self.serialize())
+            self.auth_digest = b'\xFF'*32
         if self.sha256 is None:
             self.sha256 = uint256_from_str(txid)
         self.hash = encode(txid[::-1], 'hex_codec').decode('ascii')
+        self.auth_digest_hex = encode(self.auth_digest[::-1], 'hex_codec').decode('ascii')
 
     def is_valid(self):
         self.calc_sha256()
@@ -1262,6 +1265,27 @@ class CBlock(CBlockHeader):
                 newhashes.append(hash256(hashes[i] + hashes[i2]))
             hashes = newhashes
         return uint256_from_str(hashes[0])
+
+    def calc_auth_data_root(self):
+        hashes = []
+        nleaves = 0
+        for tx in self.vtx:
+            tx.calc_sha256()
+            hashes.append(tx.auth_digest)
+            nleaves += 1
+        # Continue adding leaves (of zeros) until reaching a power of 2
+        while nleaves & (nleaves-1) > 0:
+            hashes.append(b'\x00'*32)
+            nleaves += 1
+        while len(hashes) > 1:
+            newhashes = []
+            for i in range(0, len(hashes), 2):
+                digest = blake2b(digest_size=32, person=b'ZcashAuthDatHash')
+                digest.update(hashes[i])
+                digest.update(hashes[i+1])
+                newhashes.append(digest.digest())
+            hashes = newhashes
+        return hashes[0]
 
     def is_valid(self, n=48, k=5):
         # H(I||...
