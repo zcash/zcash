@@ -15,7 +15,7 @@ import struct
 
 from pyblake2 import blake2b
 
-from .mininode import ser_uint256
+from .mininode import ser_string, ser_uint256
 from .script import (
     SIGHASH_ANYONECANPAY,
     SIGHASH_NONE,
@@ -41,7 +41,7 @@ def transparent_digest(tx):
 def transparent_scripts_digest(tx):
     digest = blake2b(digest_size=32, person=b'ZTxAuthTransHash')
     for x in tx.vin:
-        digest.update(bytes(x.scriptSig))
+        digest.update(ser_string(x.scriptSig))
     return digest.digest()
 
 # Sapling
@@ -52,7 +52,7 @@ def sapling_digest(saplingBundle):
     if len(saplingBundle.spends) + len(saplingBundle.outputs) > 0:
         digest.update(sapling_spends_digest(saplingBundle))
         digest.update(sapling_outputs_digest(saplingBundle))
-        digest.update(struct.pack('<Q', saplingBundle.valueBalance))
+        digest.update(struct.pack('<q', saplingBundle.valueBalance))
 
     return digest.digest()
 
@@ -126,7 +126,7 @@ def sapling_outputs_noncompact_digest(saplingBundle):
     for desc in saplingBundle.outputs:
         digest.update(ser_uint256(desc.cv))
         digest.update(desc.encCiphertext[564:])
-        digest.update(desc.outCipherText)
+        digest.update(desc.outCiphertext)
     return digest.digest()
 
 # Orchard
@@ -139,7 +139,7 @@ def orchard_digest(orchardBundle):
         digest.update(orchard_actions_memos_digest(orchardBundle))
         digest.update(orchard_actions_noncompact_digest(orchardBundle))
         digest.update(struct.pack('<B', orchardBundle.flags()))
-        digest.update(struct.pack('<Q', orchardBundle.valueBalance))
+        digest.update(struct.pack('<q', orchardBundle.valueBalance))
         digest.update(bytes(orchardBundle.anchor))
 
     return digest.digest()
@@ -288,7 +288,7 @@ def outputs_sig_digest(tx, nHashType, txin):
 def txin_sig_digest(tx, txin):
     digest = blake2b(digest_size=32, person=b'Zcash___TxInHash')
     digest.update(bytes(tx.vin[txin.nIn].prevout))
-    digest.update(bytes(txin.scriptCode))
+    digest.update(ser_string(txin.scriptCode))
     digest.update(struct.pack('<Q', txin.amount))
     digest.update(struct.pack('<I', tx.vin[txin.nIn].nSequence))
     return digest.digest()

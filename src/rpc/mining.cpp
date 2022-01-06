@@ -322,8 +322,8 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"blocks\": nnn,             (numeric) The current block\n"
-            "  \"currentblocksize\": nnn,   (numeric) The last block size\n"
-            "  \"currentblocktx\": nnn,     (numeric) The last block transaction\n"
+            "  \"currentblocksize\": nnn,   (numeric, optional) The block size of the last assembled block (only present if a block was ever assembled)\n"
+            "  \"currentblocktx\": nnn,     (numeric, optional) The number of block non-coinbase transactions of the last assembled block (only present if a block was ever assembled)\n"
             "  \"difficulty\": xxx.xxxxx    (numeric) The current difficulty\n"
             "  \"errors\": \"...\"          (string) Current errors\n"
             "  \"generate\": true|false     (boolean) If the generation is on or off (see getgenerate or setgenerate calls)\n"
@@ -344,8 +344,8 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
 
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("blocks",           (int)chainActive.Height());
-    obj.pushKV("currentblocksize", (uint64_t)nLastBlockSize);
-    obj.pushKV("currentblocktx",   (uint64_t)nLastBlockTx);
+    if (last_block_size.has_value()) obj.pushKV("currentblocksize", last_block_size.value());
+    if (last_block_num_txs.has_value()) obj.pushKV("currentblocktx", last_block_num_txs.value());
     obj.pushKV("difficulty",       (double)GetNetworkDifficulty());
     auto warnings = GetWarnings("statusbar");
     obj.pushKV("errors",           warnings.first);
@@ -428,6 +428,11 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             "amounts, use 'getblocksubsidy HEIGHT' passing in the height returned\n"
             "by this API.\n"
 
+            "\nThe roots returned in 'defaultroots' are only valid if the block template is\n"
+            "used unmodified. If any part of the block template marked as 'mutable' in the\n"
+            "output is mutated, these roots may need to be recomputed. For more information\n"
+            "on the derivation process, see ZIP 244.\n"
+
             "\nArguments:\n"
             "1. \"jsonrequestobject\"       (string, optional) A json object in the following spec\n"
             "     {\n"
@@ -444,9 +449,15 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             "{\n"
             "  \"version\" : n,                     (numeric) The block version\n"
             "  \"previousblockhash\" : \"xxxx\",      (string) The hash of current highest block\n"
-            "  \"blockcommitmentshash\" : \"xxxx\",   (string) The hash of the block commitments field in the block header\n"
+            "  \"blockcommitmentshash\" : \"xxxx\",   (string) (DEPRECATED) The hash of the block commitments field in the block header\n"
             "  \"lightclientroothash\" : \"xxxx\",    (string) (DEPRECATED) The hash of the light client root field in the block header\n"
             "  \"finalsaplingroothash\" : \"xxxx\",   (string) (DEPRECATED) The hash of the light client root field in the block header\n"
+            "  \"defaultroots\" : {                 (json object) root hashes that need to be recomputed if the transaction set is modified\n"
+            "     \"merkleroot\" : \"xxxx\"           (string) The hash of the transactions in the block header\n"
+            "     \"chainhistoryroot\" : \"xxxx\"     (string) The hash of the chain history\n"
+            "     \"authdataroot\" : \"xxxx\"         (string) (From NU5) The hash of the authorizing data merkel tree\n"
+            "     \"blockcommitmentshash\" : \"xxxx\" (string) (From NU5) The hash of the block commitments field in the block header\n"
+            "  }\n"
             "  \"transactions\" : [                 (array) contents of non-coinbase transactions that should be included in the next block\n"
             "      {\n"
             "         \"data\" : \"xxxx\",            (string) transaction data encoded in hexadecimal (byte-for-byte)\n"
@@ -712,6 +723,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         entry.pushKV("data", EncodeHexTx(tx));
 
         entry.pushKV("hash", txHash.GetHex());
+        entry.pushKV("authdigest", tx.GetAuthDigest().GetHex());
 
         UniValue deps(UniValue::VARR);
         for (const CTxIn &in : tx.vin)
@@ -757,11 +769,23 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     result.pushKV("capabilities", aCaps);
     result.pushKV("version", pblock->nVersion);
     result.pushKV("previousblockhash", pblock->hashPrevBlock.GetHex());
+    // The following 3 are deprecated; remove in a future release.
     result.pushKV("blockcommitmentshash", pblock->hashBlockCommitments.GetHex());
-    // Deprecated; remove in a future release.
     result.pushKV("lightclientroothash", pblock->hashBlockCommitments.GetHex());
-    // Deprecated; remove in a future release.
     result.pushKV("finalsaplingroothash", pblock->hashBlockCommitments.GetHex());
+    {
+        // These are items in the result object that are valid only if the
+        // block template returned by this RPC is used unmodified. Otherwise,
+        // these values must be recomputed.
+        UniValue defaults(UniValue::VOBJ);
+        defaults.pushKV("merkleroot", pblock->BuildMerkleTree().GetHex());
+        defaults.pushKV("chainhistoryroot", pblocktemplate->hashChainHistoryRoot.GetHex());
+        if (consensus.NetworkUpgradeActive(pindexPrev->nHeight+1, Consensus::UPGRADE_NU5)) {
+            defaults.pushKV("authdataroot", pblocktemplate->hashAuthDataRoot.GetHex());
+            defaults.pushKV("blockcommitmentshash", pblock->hashBlockCommitments.GetHex());
+        }
+        result.pushKV("defaultroots", defaults);
+    }
     result.pushKV("transactions", transactions);
     if (coinbasetxn) {
         assert(txCoinbase.isObject());

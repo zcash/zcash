@@ -21,7 +21,7 @@ DOWNLOAD_URL="https://download.z.cash/downloads"
 IPFS_HASH="/ipfs/QmXRHVGLQBiKwvNq7c2vPxAKz1zRVmMYbmt7G5TQss7tY7"
 
 SHA256CMD="$(command -v sha256sum || echo shasum)"
-SHA256ARGS="$(command -v sha256sum >/dev/null || echo \"-a 256\")"
+SHA256ARGS="$(command -v sha256sum >/dev/null || echo '-a 256')"
 
 WGETCMD="$(command -v wget || echo '')"
 IPFSCMD="$(command -v ipfs || echo '')"

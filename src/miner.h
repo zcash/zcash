@@ -110,6 +110,10 @@ struct CBlockTemplate
     // Cached whenever we update `block`, so we can update hashBlockCommitments
     // when we change the coinbase transaction.
     uint256 hashChainHistoryRoot;
+    // Cached whenever we update `block`, so we can return it from `getblocktemplate`
+    // (enabling the caller to update `hashBlockCommitments` when they change
+    // `hashPrevBlock`).
+    uint256 hashAuthDataRoot;
     std::vector<CAmount> vTxFees;
     std::vector<int64_t> vTxSigOps;
 };

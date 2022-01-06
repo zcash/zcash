@@ -1,5 +1,5 @@
 ---
-name: "zcash-4.5.1-1"
+name: "zcash-4.6.0-1"
 enable_cache: true
 distro: "debian"
 suites:
@@ -18,6 +18,7 @@ packages:
 - "g++-multilib"
 - "git-core"
 - "libc6-dev"
+- "libtinfo5"
 - "libtool"
 - "libxml2"
 - "m4"

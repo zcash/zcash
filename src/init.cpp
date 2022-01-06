@@ -1149,6 +1149,29 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 return InitError(strprintf("Invalid network upgrade (%s)", vDeploymentParams[0]));
             }
         }
+
+        // To make testing easier (this code path is active only for regtest), activate missing network versions,
+        // so for example, if a Python (RPC) test does:
+        // extra_args = [
+        //    nuparams(BLOSSOM_BRANCH_ID, 205),
+        //    nuparams(HEARTWOOD_BRANCH_ID, 205),
+        //    nuparams(CANOPY_BRANCH_ID, 205),
+        //    nuparams(NU5_BRANCH_ID, 210),
+        // ]
+        //
+        // This can be simplified to:
+        // extra_args = [
+        //    nuparams(CANOPY_BRANCH_ID, 205),
+        //    nuparams(NU5_BRANCH_ID, 210),
+        // ]
+        const auto& consensus = chainparams.GetConsensus();
+        int nActivationHeight = Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        for (auto i = Consensus::MAX_NETWORK_UPGRADES-1; i >= Consensus::BASE_SPROUT + 1; --i) {
+            if (consensus.vUpgrades[i].nActivationHeight == Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT) {
+                UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex(i), nActivationHeight);
+            }
+            nActivationHeight = consensus.vUpgrades[i].nActivationHeight;
+        }
     }
 
     if (mapArgs.count("-nurejectoldversions")) {

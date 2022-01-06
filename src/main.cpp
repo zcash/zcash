@@ -2019,27 +2019,31 @@ bool AcceptToMemoryPool(
 bool GetTimestampIndex(unsigned int high, unsigned int low, bool fActiveOnly,
     std::vector<std::pair<uint256, unsigned int> > &hashes)
 {
-    if (!fTimestampIndex)
-        return error("Timestamp index not enabled");
-
-    if (!pblocktree->ReadTimestampIndex(high, low, fActiveOnly, hashes))
-        return error("Unable to get hashes for timestamps");
-
+    if (!fTimestampIndex) {
+        LogPrint("rpc", "Timestamp index not enabled");
+        return false;
+    }
+    if (!pblocktree->ReadTimestampIndex(high, low, fActiveOnly, hashes)) {
+        LogPrint("rpc", "Unable to get hashes for timestamps");
+        return false;
+    }
     return true;
 }
 
 bool GetSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value)
 {
     AssertLockHeld(cs_main);
-    if (!fSpentIndex)
-        return error("Spent index not enabled");
-
+    if (!fSpentIndex) {
+        LogPrint("rpc", "Spent index not enabled");
+        return false;
+    }
     if (mempool.getSpentIndex(key, value))
         return true;
 
-    if (!pblocktree->ReadSpentIndex(key, value))
-        return error("Unable to get spent index information");
-
+    if (!pblocktree->ReadSpentIndex(key, value)) {
+        LogPrint("rpc", "Unable to get spent index information");
+        return false;
+    }
     return true;
 }
 
@@ -2047,24 +2051,28 @@ bool GetAddressIndex(const uint160& addressHash, int type,
                      std::vector<CAddressIndexDbEntry>& addressIndex,
                      int start, int end)
 {
-    if (!fAddressIndex)
-        return error("address index not enabled");
-
-    if (!pblocktree->ReadAddressIndex(addressHash, type, addressIndex, start, end))
-        return error("unable to get txids for address");
-
+    if (!fAddressIndex) {
+        LogPrint("rpc", "address index not enabled");
+        return false;
+    }
+    if (!pblocktree->ReadAddressIndex(addressHash, type, addressIndex, start, end)) {
+        LogPrint("rpc", "unable to get txids for address");
+        return false;
+    }
     return true;
 }
 
 bool GetAddressUnspent(const uint160& addressHash, int type,
                        std::vector<CAddressUnspentDbEntry>& unspentOutputs)
 {
-    if (!fAddressIndex)
-        return error("address index not enabled");
-
-    if (!pblocktree->ReadAddressUnspentIndex(addressHash, type, unspentOutputs))
-        return error("unable to get txids for address");
-
+    if (!fAddressIndex) {
+        LogPrint("rpc", "address index not enabled");
+        return false;
+    }
+    if (!pblocktree->ReadAddressUnspentIndex(addressHash, type, unspentOutputs)) {
+        LogPrint("rpc", "unable to get txids for address");
+        return false;
+    }
     return true;
 }
 
@@ -5374,12 +5382,13 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
     // Flags used to permit skipping checks for efficiency
     auto verifier = ProofVerifier::Disabled(); // No need to verify JoinSplits twice
     bool fCheckTransactions = true;
-    // We may as well check Orchard authorizations if we are checking
-    // transactions, since we can batch-validate them.
-    auto orchardAuth = orchard::AuthValidator::Batch();
 
     for (CBlockIndex* pindex = chainActive.Tip(); pindex && pindex->pprev; pindex = pindex->pprev)
     {
+        // We may as well check Orchard authorizations if we are checking
+        // transactions, since we can batch-validate them.
+        auto orchardAuth = orchard::AuthValidator::Batch();
+
         boost::this_thread::interruption_point();
         uiInterface.ShowProgress(_("Verifying blocks..."), std::max(1, std::min(99, (int)(((double)(chainActive.Height() - pindex->nHeight)) / (double)nCheckDepth * (nCheckLevel >= 4 ? 50 : 100)))));
         if (pindex->nHeight < chainActive.Height()-nCheckDepth)
@@ -5419,6 +5428,10 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
             } else {
                 nGoodTransactions += block.vtx.size();
             }
+        }
+
+        if (!orchardAuth.Validate()) {
+            return error("VerifyDB(): Orchard batch validation failed for block at height %d", pindex->nHeight);
         }
 
         if (ShutdownRequested())
