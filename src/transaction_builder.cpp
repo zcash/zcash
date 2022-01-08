@@ -522,6 +522,7 @@ void TransactionBuilder::CheckOrSetUsingSprout()
         auto txVersionInfo = CurrentTxVersionInfo(consensusParams, nHeight, usingSprout.value());
         mtx.nVersionGroupId = txVersionInfo.nVersionGroupId;
         mtx.nVersion        = txVersionInfo.nVersion;
+        mtx.nConsensusBranchId = std::nullopt;
     }
 }
 
