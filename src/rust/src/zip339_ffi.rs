@@ -63,7 +63,7 @@ pub extern "C" fn zip339_free_phrase(phrase: *const c_char) {
     if !phrase.is_null() {
         unsafe {
             // It is correct to cast away const here; the memory is not actually immutable.
-            CString::from_raw(phrase as *mut c_char);
+            drop(CString::from_raw(phrase as *mut c_char));
         }
     }
 }
