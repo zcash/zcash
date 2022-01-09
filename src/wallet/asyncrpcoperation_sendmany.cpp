@@ -161,12 +161,17 @@ void AsyncRPCOperation_sendmany::main() {
     LogPrintf("%s",s);
 }
 
-struct TxValues {
+class TxValues {
+public:
     CAmount t_inputs_total{0};
     CAmount z_inputs_total{0};
     CAmount t_outputs_total{0};
     CAmount z_outputs_total{0};
     CAmount targetAmount{0};
+
+    CAmount GetChangeAmount() {
+        return t_inputs_total + z_inputs_total - targetAmount;
+    }
 };
 
 bool IsFromAnyTaddr(const PaymentSource& paymentSource) {
@@ -231,17 +236,40 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         !IsFromAnyTaddr(paymentSource_) && // allow coinbase inputs from at most a single t-addr
         transparentRecipients == 0; // cannot send transparent coinbase to transparent recipients
 
+    // Set the dust threshold so that we can select enough inputs to avoid
+    // creating dust change amounts.
+    CAmount dustThreshold{DefaultDustThreshold()};
+
     // Find spendable inputs, and select a minimal set of them that
     // can supply the required target amount.
     auto spendable = FindSpendableInputs(allowTransparentCoinbase);
-    if (!spendable.LimitToAmount(txValues.targetAmount)) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
-            strprintf("Insufficient funds: have %s, need %s",
-            FormatMoney(spendable.Total()), FormatMoney(txValues.targetAmount))
-            + (allowTransparentCoinbase ? "" :
-                "; if you are attempting to shield transparent coinbase funds, "
-                "ensure that you have specified only a single recipient address.")
-            );
+    if (!spendable.LimitToAmount(txValues.targetAmount, dustThreshold)) {
+        CAmount changeAmount{spendable.Total() - txValues.targetAmount};
+        if (changeAmount > 0 && changeAmount < dustThreshold) {
+            // TODO: this condition is silly; we should provide the option for the caller to
+            // forego change (definitionally amount below the dust amount) and send the
+            // extra to the recipient or the miner fee to avoid creating dust change, rather
+            // than prohibit them from sending entirely in this circumstance.
+            throw JSONRPCError(
+                    RPC_WALLET_INSUFFICIENT_FUNDS,
+                    strprintf(
+                        "Insufficient funds: have %s, need %s more to avoid creating invalid change output %s "
+                        "(dust threshold is %s)",
+                        FormatMoney(spendable.Total()),
+                        FormatMoney(dustThreshold - changeAmount),
+                        FormatMoney(changeAmount),
+                        FormatMoney(dustThreshold)));
+        } else {
+            throw JSONRPCError(
+                    RPC_WALLET_INSUFFICIENT_FUNDS,
+                    strprintf(
+                        "Insufficient funds: have %s, need %s",
+                        FormatMoney(spendable.Total()), FormatMoney(txValues.targetAmount))
+                        + (allowTransparentCoinbase ? "" :
+                            "; if you are attempting to shield transparent coinbase funds, "
+                            "ensure that you have specified only a single recipient address.")
+                    );
+        }
     }
 
     spendable.LogInputs(getId());
@@ -535,44 +563,59 @@ SpendableInputs AsyncRPCOperation_sendmany::FindSpendableInputs(bool allowTransp
     return unspent;
 }
 
-bool SpendableInputs::LimitToAmount(CAmount amount) {
+bool SpendableInputs::LimitToAmount(const CAmount amountRequired, const CAmount dustThreshold) {
+    assert(amountRequired >= 0 && dustThreshold > 0);
+
+    CAmount totalSelected{0};
+    auto haveSufficientFunds = [&]() {
+        // if the total would result in change below the dust threshold,
+        // we do not yet have sufficient funds
+        return totalSelected == amountRequired || totalSelected - amountRequired > dustThreshold;
+    };
+
     // select Sprout notes for spending first
-    std::sort(sproutNoteEntries.begin(), sproutNoteEntries.end(),
-        [](SproutNoteEntry i, SproutNoteEntry j) -> bool {
-            return i.note.value() > j.note.value();
-        });
-    auto sproutIt = sproutNoteEntries.begin();
-    while (sproutIt != sproutNoteEntries.end() && amount > 0) {
-        amount -= sproutIt->note.value();
-        ++sproutIt;
+    if (!haveSufficientFunds()) {
+        std::sort(sproutNoteEntries.begin(), sproutNoteEntries.end(),
+            [](SproutNoteEntry i, SproutNoteEntry j) -> bool {
+                return i.note.value() > j.note.value();
+            });
+        auto sproutIt = sproutNoteEntries.begin();
+        while (sproutIt != sproutNoteEntries.end() && !haveSufficientFunds()) {
+            totalSelected += sproutIt->note.value();
+            ++sproutIt;
+        }
+        sproutNoteEntries.erase(sproutIt, sproutNoteEntries.end());
     }
-    sproutNoteEntries.erase(sproutIt, sproutNoteEntries.end());
 
     // next select transparent utxos
-    std::sort(utxos.begin(), utxos.end(),
-        [](COutput i, COutput j) -> bool {
-            return i.Value() > j.Value();
-        });
-    auto utxoIt = utxos.begin();
-    while (utxoIt != utxos.end() && amount > 0) {
-        amount -= utxoIt->Value();
-        ++utxoIt;
+    if (!haveSufficientFunds()) {
+        std::sort(utxos.begin(), utxos.end(),
+            [](COutput i, COutput j) -> bool {
+                return i.Value() > j.Value();
+            });
+        auto utxoIt = utxos.begin();
+        while (utxoIt != utxos.end() && !haveSufficientFunds()) {
+            totalSelected += utxoIt->Value();
+            ++utxoIt;
+        }
+        utxos.erase(utxoIt, utxos.end());
     }
-    utxos.erase(utxoIt, utxos.end());
 
     // finally select Sapling outputs
-    std::sort(saplingNoteEntries.begin(), saplingNoteEntries.end(),
-        [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
-            return i.note.value() > j.note.value();
-        });
-    auto saplingIt = saplingNoteEntries.begin();
-    while (saplingIt != saplingNoteEntries.end() && amount > 0) {
-        amount -= saplingIt->note.value();
-        ++saplingIt;
+    if (!haveSufficientFunds()) {
+        std::sort(saplingNoteEntries.begin(), saplingNoteEntries.end(),
+            [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
+                return i.note.value() > j.note.value();
+            });
+        auto saplingIt = saplingNoteEntries.begin();
+        while (saplingIt != saplingNoteEntries.end() && !haveSufficientFunds()) {
+            totalSelected += saplingIt->note.value();
+            ++saplingIt;
+        }
+        saplingNoteEntries.erase(saplingIt, saplingNoteEntries.end());
     }
-    saplingNoteEntries.erase(saplingIt, saplingNoteEntries.end());
 
-    return (amount <= 0);
+    return haveSufficientFunds();
 }
 
 bool SpendableInputs::HasTransparentCoinbase() const {
@@ -609,6 +652,18 @@ void SpendableInputs::LogInputs(const AsyncRPCOperationId& id) const {
     }
 }
 
+/**
+ * Compute a dust threshold based upon a standard p2pkh txout.
+ */
+CAmount AsyncRPCOperation_sendmany::DefaultDustThreshold() {
+    CKey secret;
+    secret.MakeNewKey(true);
+    CScript scriptPubKey = GetScriptForDestination(secret.GetPubKey().GetID());
+    CTxOut txout(CAmount(1), scriptPubKey);
+    // TODO: use a local for minRelayTxFee rather than a global
+    return txout.GetDustThreshold(minRelayTxFee);
+}
+
 std::array<unsigned char, ZC_MEMO_SIZE> AsyncRPCOperation_sendmany::get_memo_from_hex_string(std::string s) {
     // initialize to default memo (no_memo), see section 5.5 of the protocol spec
     std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};
@@ -622,7 +677,9 @@ std::array<unsigned char, ZC_MEMO_SIZE> AsyncRPCOperation_sendmany::get_memo_fro
     }
 
     if (rawMemo.size() > ZC_MEMO_SIZE) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Memo size of %d is too big, maximum allowed is %d", rawMemo.size(), ZC_MEMO_SIZE));
+        throw JSONRPCError(
+                RPC_INVALID_PARAMETER,
+                strprintf("Memo size of %d is too big, maximum allowed is %d", rawMemo.size(), ZC_MEMO_SIZE));
     }
 
     // copy vector into boost array

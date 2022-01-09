@@ -1268,7 +1268,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
-        BOOST_CHECK(msg.find("Insufficient funds, have 0.00") != string::npos);
+        BOOST_CHECK(msg.find("Insufficient funds: have 0.00") != string::npos);
     }
 
     // get_memo_from_hex_string())

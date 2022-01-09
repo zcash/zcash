@@ -53,7 +53,7 @@ public:
      * amount. Returns `false` if the available inputs do not add up to the
      * desired amount.
      */
-    bool LimitToAmount(CAmount amount);
+    bool LimitToAmount(CAmount amount, CAmount dustThreshold);
 
     /**
      * Compute the total ZEC amount of spendable inputs.
@@ -122,7 +122,9 @@ private:
 
     SpendableInputs FindSpendableInputs(bool fAcceptCoinbase);
 
-    std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s);
+    static CAmount DefaultDustThreshold();
+
+    static std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s);
 
     uint256 main_impl();
 };
