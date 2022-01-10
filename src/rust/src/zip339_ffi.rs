@@ -47,15 +47,15 @@ pub extern "C" fn zip339_entropy_to_phrase(
 ) -> *const c_char {
     assert!(!entropy.is_null());
 
-    if let Ok(language) = language.try_into() {
+    || -> Option<_> {
+        let language = language.try_into().ok()?;
         let entropy = unsafe { slice::from_raw_parts(entropy, entropy_len) }.to_vec();
-        if let Ok(mnemonic) = zip339::Mnemonic::from_entropy_in(language, entropy) {
-            if let Ok(phrase) = CString::new(mnemonic.phrase()) {
-                return phrase.into_raw() as *const c_char;
-            }
-        }
-    }
-    ptr::null()
+        let mnemonic = zip339::Mnemonic::from_entropy_in(language, entropy).ok()?;
+        let phrase = CString::new(mnemonic.phrase()).ok()?;
+
+        Some(phrase.into_raw() as *const c_char)
+    }()
+    .unwrap_or(ptr::null())
 }
 
 /// Frees a phrase returned by `zip339_entropy_to_phrase`.
@@ -76,12 +76,13 @@ pub extern "C" fn zip339_free_phrase(phrase: *const c_char) {
 pub extern "C" fn zip339_validate_phrase(language: Language, phrase: *const c_char) -> bool {
     assert!(!phrase.is_null());
 
-    if let Ok(language) = language.try_into() {
-        if let Ok(phrase) = unsafe { CStr::from_ptr(phrase) }.to_str() {
-            return zip339::Mnemonic::validate_in(language, phrase).is_ok();
-        }
-    }
-    false
+    || -> Option<_> {
+        let language = language.try_into().ok()?;
+        let phrase = unsafe { CStr::from_ptr(phrase) }.to_str().ok()?;
+
+        Some(zip339::Mnemonic::validate_in(language, phrase).is_ok())
+    }()
+    .unwrap_or(false)
 }
 
 /// Copies the seed for the given phrase into the 64-byte buffer `buf`.
@@ -95,20 +96,22 @@ pub extern "C" fn zip339_phrase_to_seed(
     assert!(!phrase.is_null());
     assert!(!buf.is_null());
 
-    if let Ok(language) = language.try_into() {
-        if let Ok(phrase) = unsafe { CStr::from_ptr(phrase) }.to_str() {
-            if let Ok(mnemonic) = zip339::Mnemonic::from_phrase_in(language, phrase) {
-                // Use the empty passphrase.
-                let seed = mnemonic.to_seed("");
-                unsafe {
-                    ptr::copy(seed.as_ptr(), buf, 64);
-                }
-                return true;
-            }
+    || -> Option<_> {
+        let language = language.try_into().ok()?;
+        let phrase = unsafe { CStr::from_ptr(phrase) }.to_str().ok()?;
+        let mnemonic = zip339::Mnemonic::from_phrase_in(language, phrase).ok()?;
+
+        // Use the empty passphrase.
+        let seed = mnemonic.to_seed("");
+        unsafe {
+            ptr::copy(seed.as_ptr(), buf, 64);
         }
-    }
-    unsafe {
-        ptr::write_bytes(buf, 0, 64);
-    }
-    false
+        Some(true)
+    }()
+    .unwrap_or_else(|| {
+        unsafe {
+            ptr::write_bytes(buf, 0, 64);
+        }
+        false
+    })
 }
