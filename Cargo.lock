@@ -815,6 +815,7 @@ dependencies = [
  "zcash_note_encryption",
  "zcash_primitives",
  "zcash_proofs",
+ "zeroize",
 ]
 
 [[package]]
