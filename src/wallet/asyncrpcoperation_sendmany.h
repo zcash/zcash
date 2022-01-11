@@ -92,6 +92,7 @@ public:
         std::vector<SendManyRecipient> recipients,
         int minDepth,
         CAmount fee = DEFAULT_FEE,
+        bool allowRevealedAmounts = false,
         UniValue contextInfo = NullUniValue);
     virtual ~AsyncRPCOperation_sendmany();
 
@@ -118,7 +119,9 @@ private:
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 
     bool isfromtaddr_{false};
-    bool isfromzaddr_{false};
+    bool isfromsprout_{false};
+    bool isfromsapling_{false};
+    bool allowRevealedAmounts_{false};
 
     SpendableInputs FindSpendableInputs(bool fAcceptCoinbase);
 

@@ -3760,9 +3760,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 2 || params.size() > 4)
+    if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
-            "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf ) ( fee )\n"
+            "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf ) ( fee ) ( allowRevealedAmounts )\n"
             "\nSend multiple times. Amounts are decimal numbers with at most 8 digits of precision."
             "\nChange generated from one or more transparent addresses flows to a new transparent"
             "\naddress, while change generated from a shielded address returns to itself."
@@ -3782,8 +3782,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "      \"memo\":memo        (string, optional) If the address is a zaddr, raw data represented in hexadecimal string format\n"
             "    }, ... ]\n"
             "3. minconf               (numeric, optional, default=1) Only use funds confirmed at least this many times.\n"
-            "4. fee                   (numeric, optional, default="
-            + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
+            "4. fee                   (numeric, optional, default=" + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
+            "5. allowRevealedAmounts  (bool, optional, default=false) Permit cross-shielded-pool transfers, which will publicly reveal the amount(s) crossing pool boundaries.\n"
             "\nResult:\n"
             "\"operationid\"          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
             "\nExamples:\n"
@@ -3946,6 +3946,11 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         }
     }
 
+    bool allowRevealedAmounts{false};
+    if (params.size() > 4) {
+        allowRevealedAmounts = params[4].get_bool();
+    }
+
     // Use input parameters as the optional context info to be returned by z_getoperationstatus and z_getoperationresult.
     UniValue o(UniValue::VOBJ);
     o.pushKV("fromaddress", params[0]);
@@ -3960,7 +3965,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation(
-            new AsyncRPCOperation_sendmany(builder, paymentSource, recipients, nMinDepth, nFee, contextInfo)
+            new AsyncRPCOperation_sendmany(builder, paymentSource, recipients, nMinDepth, nFee, allowRevealedAmounts, contextInfo)
             );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();

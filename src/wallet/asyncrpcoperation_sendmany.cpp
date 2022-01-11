@@ -49,8 +49,11 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         std::vector<SendManyRecipient> recipients,
         int minDepth,
         CAmount fee,
+        bool allowRevealedAmounts,
         UniValue contextInfo) :
-        builder_(builder), paymentSource_(paymentSource), recipients_(recipients), mindepth_(minDepth), fee_(fee), contextinfo_(contextInfo)
+        builder_(builder), paymentSource_(paymentSource), recipients_(recipients),
+        mindepth_(minDepth), fee_(fee), allowRevealedAmounts_(allowRevealedAmounts),
+        contextinfo_(contextInfo)
 {
     assert(fee_ >= 0);
     assert(mindepth_ >= 0);
@@ -76,10 +79,10 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
                     isfromtaddr_ = true;
                 },
                 [&](const libzcash::SproutPaymentAddress& addr) {
-                    isfromzaddr_ = true;
+                    isfromsprout_ = true;
                 },
                 [&](const libzcash::SaplingPaymentAddress& addr) {
-                    isfromzaddr_ = true;
+                    isfromsapling_ = true;
                 },
                 [&](const libzcash::UnifiedAddress& addr) {
                     throw JSONRPCError(
@@ -90,7 +93,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         }
     }, paymentSource);
 
-    if (isfromzaddr_ && minDepth==0) {
+    if ((isfromsprout_ || isfromsapling_) && minDepth==0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be zero when sending from zaddr");
     }
 
@@ -193,7 +196,8 @@ bool IsFromAnyTaddr(const PaymentSource& paymentSource) {
 // 2. #1360 Note selection is not optimal
 // 3. #1277 Spendable notes are not locked, so an operation running in parallel could also try to use them
 uint256 AsyncRPCOperation_sendmany::main_impl() {
-    // TODO UA: these flags will become meaningless.
+    // TODO UA: this check will become meaningless.
+    bool isfromzaddr_ = isfromsprout_ || isfromsapling_;
     assert(isfromtaddr_ != isfromzaddr_);
 
     TxValues txValues;
@@ -218,6 +222,14 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 txValues.z_outputs_total += recipient.amount;
                 shieldedRecipients += 1;
+                if (isfromsprout_ && !allowRevealedAmounts_) {
+                    throw JSONRPCError(
+                            RPC_INVALID_PARAMETER,
+                            "Sending from Sprout to Sapling is not enabled by default because it will "
+                            "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
+                            "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
+                            "you wish to allow this transaction to proceed anyway.");
+                }
             },
             [&](const libzcash::UnifiedAddress& ua) {
                 // unreachable; currently disallowed by checks at construction
