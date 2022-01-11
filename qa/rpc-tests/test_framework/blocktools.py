@@ -4,7 +4,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-from pyblake2 import blake2b
+from hashlib import blake2b
 
 from .mininode import CBlock, CTransaction, CTxIn, CTxOut, COutPoint
 from .script import CScript, OP_0, OP_EQUAL, OP_HASH160, OP_TRUE, OP_CHECKSIG
