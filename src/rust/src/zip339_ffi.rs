@@ -4,6 +4,7 @@ use std::{
     ffi::{CStr, CString},
     ptr, slice,
 };
+use zeroize::Zeroize;
 
 use zcash_primitives::zip339;
 
@@ -63,7 +64,9 @@ pub extern "C" fn zip339_free_phrase(phrase: *const c_char) {
     if !phrase.is_null() {
         unsafe {
             // It is correct to cast away const here; the memory is not actually immutable.
-            drop(CString::from_raw(phrase as *mut c_char));
+            CString::from_raw(phrase as *mut c_char)
+                .into_bytes()
+                .zeroize();
         }
     }
 }
