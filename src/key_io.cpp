@@ -16,6 +16,7 @@
 #include <string.h>
 #include <algorithm>
 #include <variant>
+#include "util/match.h"
 
 namespace
 {
@@ -56,8 +57,8 @@ public:
     DataLenForReceiver() {}
 
     size_t operator()(const libzcash::SaplingPaymentAddress &zaddr) const { return 43; }
-    size_t operator()(const libzcash::P2SHAddress &p2sh) const { return 20; }
-    size_t operator()(const libzcash::P2PKHAddress &p2pkh) const { return 20; }
+    size_t operator()(const CScriptID &p2sh) const { return 20; }
+    size_t operator()(const CKeyID &p2pkh) const { return 20; }
     size_t operator()(const libzcash::UnknownReceiver &unknown) const { return unknown.data.size(); }
 };
 
@@ -82,11 +83,11 @@ public:
         memcpy(data, ss.data(), ss.size());
     }
 
-    void operator()(const libzcash::P2SHAddress &p2sh) const {
+    void operator()(const CScriptID &p2sh) const {
         memcpy(data, p2sh.begin(), p2sh.size());
     }
 
-    void operator()(const libzcash::P2PKHAddress &p2pkh) const {
+    void operator()(const CKeyID &p2pkh) const {
         memcpy(data, p2pkh.begin(), p2pkh.size());
     }
 
@@ -113,6 +114,14 @@ private:
 public:
     PaymentAddressEncoder(const KeyConstants& keyConstants) : keyConstants(keyConstants) {}
 
+    std::string operator()(const CKeyID& id) const
+    {
+        return DestinationEncoder(keyConstants)(id);
+    }
+    std::string operator()(const CScriptID& id) const
+    {
+        return DestinationEncoder(keyConstants)(id);
+    }
     std::string operator()(const libzcash::SproutPaymentAddress& zaddr) const
     {
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
@@ -151,8 +160,6 @@ public:
         zcash_address_string_free(encoded);
         return res;
     }
-
-    std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
 };
 
 class ViewingKeyEncoder
@@ -189,8 +196,6 @@ public:
         memory_cleanse(data.data(), data.size());
         return ret;
     }
-
-    std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
 };
 
 class SpendingKeyEncoder
@@ -227,8 +232,6 @@ public:
         memory_cleanse(data.data(), data.size());
         return ret;
     }
-
-    std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
 };
 
 // Sizes of SaplingPaymentAddress, SaplingExtendedFullViewingKey, and
@@ -355,17 +358,16 @@ std::string KeyIO::EncodePaymentAddress(const libzcash::PaymentAddress& zaddr)
     return std::visit(PaymentAddressEncoder(keyConstants), zaddr);
 }
 
-template<typename T1, typename T2, typename T3>
-T1 DecodeAny(
-    const KeyConstants& keyConstants,
-    const std::string& str,
-    std::pair<KeyConstants::Base58Type, size_t> sprout,
-    std::pair<KeyConstants::Bech32Type, size_t> sapling)
+template<typename T1, typename T2>
+std::optional<T1> DecodeSprout(
+        const KeyConstants& keyConstants,
+        const std::string& str,
+        const std::pair<KeyConstants::Base58Type, size_t>& keyMeta)
 {
     std::vector<unsigned char> data;
     if (DecodeBase58Check(str, data)) {
-        const std::vector<unsigned char>& prefix = keyConstants.Base58Prefix(sprout.first);
-        if ((data.size() == sprout.second + prefix.size()) &&
+        const std::vector<unsigned char>& prefix = keyConstants.Base58Prefix(keyMeta.first);
+        if ((data.size() == keyMeta.second + prefix.size()) &&
             std::equal(prefix.begin(), prefix.end(), data.begin())) {
             CSerializeData serialized(data.begin() + prefix.size(), data.end());
             CDataStream ss(serialized, SER_NETWORK, PROTOCOL_VERSION);
@@ -377,15 +379,26 @@ T1 DecodeAny(
         }
     }
 
-    data.clear();
+    memory_cleanse(data.data(), data.size());
+    return std::nullopt;
+}
+
+template<typename T1, typename T2>
+std::optional<T1> DecodeSapling(
+        const KeyConstants& keyConstants,
+        const std::string& str,
+        const std::pair<KeyConstants::Bech32Type, size_t>& keyMeta)
+{
+    std::vector<unsigned char> data;
+
     auto bech = bech32::Decode(str);
-    if (bech.first == keyConstants.Bech32HRP(sapling.first) &&
-        bech.second.size() == sapling.second) {
+    if (bech.first == keyConstants.Bech32HRP(keyMeta.first) &&
+        bech.second.size() == keyMeta.second) {
         // Bech32 decoding
         data.reserve((bech.second.size() * 5) / 8);
         if (ConvertBits<5, 8, false>([&](unsigned char c) { data.push_back(c); }, bech.second.begin(), bech.second.end())) {
             CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
-            T3 ret;
+            T2 ret;
             ss >> ret;
             memory_cleanse(data.data(), data.size());
             return ret;
@@ -393,7 +406,27 @@ T1 DecodeAny(
     }
 
     memory_cleanse(data.data(), data.size());
-    return libzcash::InvalidEncoding();
+    return std::nullopt;
+}
+
+template<typename T1, typename T2, typename T3>
+std::optional<T1> DecodeAny(
+    const KeyConstants& keyConstants,
+    const std::string& str,
+    const std::pair<KeyConstants::Base58Type, size_t>& sproutKeyMeta,
+    const std::pair<KeyConstants::Bech32Type, size_t>& saplingKeyMeta)
+{
+    auto sprout = DecodeSprout<T1, T2>(keyConstants, str, sproutKeyMeta);
+    if (sprout.has_value()) {
+        return sprout.value();
+    }
+
+    auto sapling = DecodeSapling<T1, T3>(keyConstants, str, saplingKeyMeta);
+    if (sapling.has_value()) {
+        return sapling.value();
+    }
+
+    return std::nullopt;
 }
 
 /**
@@ -421,7 +454,7 @@ static bool AddP2SHReceiver(void* ua, const unsigned char* raw)
         reinterpret_cast<const char*>(raw + 20),
         SER_NETWORK,
         PROTOCOL_VERSION);
-    libzcash::P2SHAddress receiver;
+    CScriptID receiver;
     ss >> receiver;
     return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
 }
@@ -436,7 +469,7 @@ static bool AddP2PKHReceiver(void* ua, const unsigned char* raw)
         reinterpret_cast<const char*>(raw + 20),
         SER_NETWORK,
         PROTOCOL_VERSION);
-    libzcash::P2PKHAddress receiver;
+    CKeyID receiver;
     ss >> receiver;
     return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
 }
@@ -447,7 +480,7 @@ static bool AddUnknownReceiver(void* ua, uint32_t typecode, const unsigned char*
     return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
 }
 
-libzcash::PaymentAddress KeyIO::DecodePaymentAddress(const std::string& str)
+std::optional<libzcash::PaymentAddress> KeyIO::DecodePaymentAddress(const std::string& str)
 {
     // Try parsing as a Unified Address.
     libzcash::UnifiedAddress ua;
@@ -463,19 +496,43 @@ libzcash::PaymentAddress KeyIO::DecodePaymentAddress(const std::string& str)
         return ua;
     }
 
-    // Fall back on trying Sprout or Sapling.
-    return DecodeAny<libzcash::PaymentAddress,
-        libzcash::SproutPaymentAddress,
-        libzcash::SaplingPaymentAddress>(
+    // Try parsing as a Sapling address
+    auto sapling = DecodeSapling<libzcash::SaplingPaymentAddress, libzcash::SaplingPaymentAddress>(
             keyConstants,
             str,
-            std::make_pair(KeyConstants::ZCPAYMENT_ADDRESS, libzcash::SerializedSproutPaymentAddressSize),
-            std::make_pair(KeyConstants::SAPLING_PAYMENT_ADDRESS, ConvertedSaplingPaymentAddressSize)
-        );
+            std::make_pair(KeyConstants::SAPLING_PAYMENT_ADDRESS, ConvertedSaplingPaymentAddressSize));
+    if (sapling.has_value()) {
+        return sapling.value();
+    }
+
+    // Try parsing as a Sprout address
+    auto sprout = DecodeSprout<libzcash::SproutPaymentAddress, libzcash::SproutPaymentAddress>(
+            keyConstants,
+            str,
+            std::make_pair(KeyConstants::ZCPAYMENT_ADDRESS, libzcash::SerializedSproutPaymentAddressSize));
+    if (sprout.has_value()) {
+        return sprout.value();
+    }
+
+    // Finally, try parsing as transparent
+    return std::visit(match {
+        [](const CKeyID& keyIdIn) {
+            std::optional<libzcash::PaymentAddress> keyId = keyIdIn;
+            return keyId;
+        },
+        [](const CScriptID& scriptIdIn) {
+            std::optional<libzcash::PaymentAddress> scriptId = scriptIdIn;
+            return scriptId;
+        },
+        [](const CNoDestination& d) {
+            std::optional<libzcash::PaymentAddress> result = std::nullopt;
+            return result;
+        }
+    }, DecodeDestination(str));
 }
 
 bool KeyIO::IsValidPaymentAddressString(const std::string& str) {
-    return IsValidPaymentAddress(DecodePaymentAddress(str));
+    return DecodePaymentAddress(str).has_value();
 }
 
 std::string KeyIO::EncodeViewingKey(const libzcash::ViewingKey& vk)
@@ -483,7 +540,7 @@ std::string KeyIO::EncodeViewingKey(const libzcash::ViewingKey& vk)
     return std::visit(ViewingKeyEncoder(keyConstants), vk);
 }
 
-libzcash::ViewingKey KeyIO::DecodeViewingKey(const std::string& str)
+std::optional<libzcash::ViewingKey> KeyIO::DecodeViewingKey(const std::string& str)
 {
     return DecodeAny<libzcash::ViewingKey,
         libzcash::SproutViewingKey,
@@ -500,7 +557,7 @@ std::string KeyIO::EncodeSpendingKey(const libzcash::SpendingKey& zkey)
     return std::visit(SpendingKeyEncoder(keyConstants), zkey);
 }
 
-libzcash::SpendingKey KeyIO::DecodeSpendingKey(const std::string& str)
+std::optional<libzcash::SpendingKey> KeyIO::DecodeSpendingKey(const std::string& str)
 {
 
     return DecodeAny<libzcash::SpendingKey,

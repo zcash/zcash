@@ -27,11 +27,11 @@ TEST(Keys, EncodeAndDecodeSapling)
                 Params().Bech32HRP(CChainParams::SAPLING_EXTENDED_SPEND_KEY));
 
             auto spendingkey2 = keyIO.DecodeSpendingKey(sk_string);
-            EXPECT_TRUE(IsValidSpendingKey(spendingkey2));
+            EXPECT_TRUE(spendingkey2.has_value());
 
-            ASSERT_TRUE(std::get_if<libzcash::SaplingExtendedSpendingKey>(&spendingkey2) != nullptr);
-            auto sk2 = std::get<libzcash::SaplingExtendedSpendingKey>(spendingkey2);
-            EXPECT_EQ(sk, sk2);
+            auto sk2 = std::get_if<libzcash::SaplingExtendedSpendingKey>(&spendingkey2.value());
+            EXPECT_NE(sk2, nullptr);
+            EXPECT_EQ(sk, *sk2);
         }
         {
             auto extfvk = sk.ToXFVK();
@@ -41,11 +41,11 @@ TEST(Keys, EncodeAndDecodeSapling)
                 Params().Bech32HRP(CChainParams::SAPLING_EXTENDED_FVK));
 
             auto viewingkey2 = keyIO.DecodeViewingKey(vk_string);
-            EXPECT_TRUE(IsValidViewingKey(viewingkey2));
+            EXPECT_TRUE(viewingkey2.has_value());
 
-            ASSERT_TRUE(std::get_if<libzcash::SaplingExtendedFullViewingKey>(&viewingkey2) != nullptr);
-            auto extfvk2 = std::get<libzcash::SaplingExtendedFullViewingKey>(viewingkey2);
-            EXPECT_EQ(extfvk, extfvk2);
+            auto extfvk2 = std::get_if<libzcash::SaplingExtendedFullViewingKey>(&viewingkey2.value());
+            EXPECT_NE(extfvk2, nullptr);
+            EXPECT_EQ(extfvk, *extfvk2);
         }
         {
             auto addr = sk.DefaultAddress();
@@ -56,11 +56,11 @@ TEST(Keys, EncodeAndDecodeSapling)
                 Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS));
 
             auto paymentaddr2 = keyIO.DecodePaymentAddress(addr_string);
-            EXPECT_TRUE(IsValidPaymentAddress(paymentaddr2));
+            EXPECT_TRUE(paymentaddr2.has_value());
 
-            ASSERT_TRUE(std::get_if<libzcash::SaplingPaymentAddress>(&paymentaddr2) != nullptr);
-            auto addr2 = std::get<libzcash::SaplingPaymentAddress>(paymentaddr2);
-            EXPECT_EQ(addr, addr2);
+            auto addr2 = std::get_if<libzcash::SaplingPaymentAddress>(&paymentaddr2.value());
+            EXPECT_NE(addr2, nullptr);
+            EXPECT_EQ(addr, *addr2);
         }
     }
 }
@@ -78,11 +78,11 @@ namespace libzcash {
             return tfm::format("Sapling(%s)", HexStr(ss.begin(), ss.end()));
         }
 
-        std::string operator()(const P2SHAddress &p2sh) const {
+        std::string operator()(const CScriptID &p2sh) const {
             return tfm::format("P2SH(%s)", p2sh.GetHex());
         }
 
-        std::string operator()(const P2PKHAddress &p2pkh) const {
+        std::string operator()(const CKeyID &p2pkh) const {
             return tfm::format("P2PKH(%s)", p2pkh.GetHex());
         }
 
@@ -140,11 +140,11 @@ TEST(Keys, EncodeAndDecodeUnified)
                 ua.AddReceiver(r);
             }
             if (!test[1].isNull()) {
-                libzcash::P2SHAddress r(ParseHex(test[1].get_str()));
+                CScriptID r(ParseHex(test[1].get_str()));
                 ua.AddReceiver(r);
             }
             if (!test[0].isNull()) {
-                libzcash::P2PKHAddress r(ParseHex(test[0].get_str()));
+                CKeyID r(ParseHex(test[0].get_str()));
                 ua.AddReceiver(r);
             }
 
@@ -152,8 +152,10 @@ TEST(Keys, EncodeAndDecodeUnified)
             std::string expected(expectedBytes.begin(), expectedBytes.end());
 
             auto decoded = keyIO.DecodePaymentAddress(expected);
-            ASSERT_TRUE(std::holds_alternative<libzcash::UnifiedAddress>(decoded));
-            EXPECT_EQ(std::get<libzcash::UnifiedAddress>(decoded), ua);
+            EXPECT_TRUE(decoded.has_value());
+            auto ua_ptr = std::get_if<libzcash::UnifiedAddress>(&decoded.value());
+            EXPECT_NE(ua_ptr, nullptr);
+            EXPECT_EQ(*ua_ptr, ua);
 
             auto encoded = keyIO.EncodePaymentAddress(ua);
             EXPECT_EQ(encoded, expected);

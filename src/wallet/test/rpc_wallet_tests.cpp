@@ -362,19 +362,24 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    UniValue retValue;
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
+    std::string taddr1 = retValue.get_str();
 
     BOOST_CHECK_THROW(CallRPC("z_getbalance too many args"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_getbalance invalidaddress"), runtime_error);
-    BOOST_CHECK_NO_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab"));
-    BOOST_CHECK_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab -1"), runtime_error);
-    BOOST_CHECK_NO_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab 0"));
+    // address does not belong to wallet
+    BOOST_CHECK_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab"), runtime_error);
+    BOOST_CHECK_NO_THROW(CallRPC(std::string("z_getbalance ") + taddr1));
+    // negative minconf not allowed
+    BOOST_CHECK_THROW(CallRPC(std::string("z_getbalance ") + taddr1 + " -1"), runtime_error);
+    BOOST_CHECK_NO_THROW(CallRPC(std::string("z_getbalance ") + taddr1 + std::string(" 0")));
+    // don't have the spending key
     BOOST_CHECK_THROW(CallRPC("z_getbalance tnRZ8bPq2pff3xBWhTJhNkVUkm2uhzksDeW5PvEa7aFKGT9Qi3YgTALZfjaY4jU3HLVKBtHdSXxoPoLA3naMPcHBcY88FcF 1"), runtime_error);
-
 
     BOOST_CHECK_THROW(CallRPC("z_gettotalbalance too manyargs"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_gettotalbalance -1"), runtime_error);
     BOOST_CHECK_NO_THROW(CallRPC("z_gettotalbalance 0"));
-
 
     BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress too many args"), runtime_error);
     // negative minconf not allowed
@@ -602,15 +607,16 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     BOOST_CHECK(addrs.size()==1);
 
     // check that we have the spending key for the address
-    auto address = keyIO.DecodePaymentAddress(testAddr);
-    BOOST_CHECK(IsValidPaymentAddress(address));
-    BOOST_ASSERT(std::get_if<libzcash::SproutPaymentAddress>(&address) != nullptr);
-    auto addr = std::get<libzcash::SproutPaymentAddress>(address);
-    BOOST_CHECK(pwalletMain->HaveSproutSpendingKey(addr));
+    auto decoded = keyIO.DecodePaymentAddress(testAddr);
+    BOOST_CHECK(decoded.has_value());
+    libzcash::PaymentAddress address(decoded.value());
+    BOOST_ASSERT(std::holds_alternative<libzcash::SproutPaymentAddress>(address));
+    auto sprout_addr = std::get<libzcash::SproutPaymentAddress>(address);
+    BOOST_CHECK(pwalletMain->HaveSproutSpendingKey(sprout_addr));
 
     // Verify the spending key is the same as the test data
     libzcash::SproutSpendingKey k;
-    BOOST_CHECK(pwalletMain->GetSproutSpendingKey(addr, k));
+    BOOST_CHECK(pwalletMain->GetSproutSpendingKey(sprout_addr, k));
     BOOST_CHECK_EQUAL(testKey, keyIO.EncodeSpendingKey(k));
 }
 
@@ -776,10 +782,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 
 // Check if address is of given type and spendable from our wallet.
 template <typename ADDR_TYPE>
-void CheckHaveAddr(const libzcash::PaymentAddress& addr) {
-
-    BOOST_CHECK(IsValidPaymentAddress(addr));
-    auto addr_of_type = std::get_if<ADDR_TYPE>(&addr);
+void CheckHaveAddr(const std::optional<libzcash::PaymentAddress>& addr) {
+    BOOST_CHECK(addr.has_value());
+    auto addr_of_type = std::get_if<ADDR_TYPE>(&(addr.value()));
     BOOST_ASSERT(addr_of_type != nullptr);
 
     HaveSpendingKeyForPaymentAddress test(pwalletMain);
@@ -1217,7 +1222,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
         std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy", 1*COIN, "") };
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(std::nullopt, mtx, "ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP", recipients, {}, 1) );
     } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "no spending key found for zaddr"));
+        BOOST_CHECK( find_error(objError, "no spending key found for address"));
     }
 }
 
@@ -1765,8 +1770,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
     }
 
     // Test constructor of AsyncRPCOperation_shieldcoinbase
-    std::string testnetzaddr = "ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP";
-    std::string mainnetzaddr = "zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U";
+    KeyIO keyIO(Params());
+    auto testnetzaddr = std::get<libzcash::SproutPaymentAddress>(keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value());
 
     try {
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, {}, testnetzaddr, -1 ));
@@ -1779,15 +1784,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
     } catch (const UniValue& objError) {
         BOOST_CHECK( find_error(objError, "Empty inputs"));
     }
-
-    // Testnet payment addresses begin with 'zt'.  This test detects an incorrect prefix.
-    try {
-        std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,0} };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, inputs, mainnetzaddr, 1) );
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Invalid to address"));
-    }
-
 }
 
 
@@ -1805,14 +1801,12 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight + 1);
 
     // Add keys manually
-    KeyIO keyIO(Params());
     auto pa = pwalletMain->GenerateNewSproutZKey();
-    std::string zaddr = keyIO.EncodePaymentAddress(pa);
 
     // Insufficient funds
     {
         std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,0} };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, inputs, zaddr) );
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, inputs, pa) );
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
@@ -1823,7 +1817,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
     {
         // Dummy input so the operation object can be instantiated.
         std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,100000} };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, inputs, zaddr) );
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, inputs, pa) );
         std::shared_ptr<AsyncRPCOperation_shieldcoinbase> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_shieldcoinbase> (operation);
         TEST_FRIEND_AsyncRPCOperation_shieldcoinbase proxy(ptr);
         static_cast<AsyncRPCOperation_shieldcoinbase *>(operation.get())->testmode = true;
@@ -1932,12 +1926,10 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1);
 
     // Test constructor of AsyncRPCOperation_mergetoaddress
+    KeyIO keyIO(Params());
     MergeToAddressRecipient testnetzaddr(
-        "ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP",
+        keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value(),
         "testnet memo");
-    MergeToAddressRecipient mainnetzaddr(
-        "zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U",
-        "mainnet memo");
 
     try {
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_mergetoaddress(std::nullopt,  mtx, {}, {}, {}, testnetzaddr, -1 ));
@@ -1954,14 +1946,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     }
 
     std::vector<MergeToAddressInputUTXO> inputs = { MergeToAddressInputUTXO{ COutPoint{uint256(), 0}, 0, CScript()} };
-
-    try {
-        MergeToAddressRecipient badaddr("", "memo");
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_mergetoaddress(std::nullopt, mtx, inputs, {}, {}, badaddr, 1));
-        BOOST_FAIL("Should have caused an error");
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Recipient parameter missing"));
-    }
 
     std::vector<MergeToAddressInputSproutNote> sproutNoteInputs =
         {MergeToAddressInputSproutNote{JSOutPoint(), SproutNote(), 0, SproutSpendingKey()}};
@@ -1982,15 +1966,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     } catch (const UniValue& objError) {
         BOOST_CHECK(find_error(objError, "Sprout notes are not supported by the TransactionBuilder"));
     }
-
-    // Testnet payment addresses begin with 'zt'.  This test detects an incorrect prefix.
-    try {
-        std::vector<MergeToAddressInputUTXO> inputs = { MergeToAddressInputUTXO{ COutPoint{uint256(), 0}, 0, CScript()} };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_mergetoaddress(std::nullopt, mtx, inputs, {}, {}, mainnetzaddr, 1) );
-        BOOST_FAIL("Should have caused an error");
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Invalid recipient address"));
-    }
 }
 
 
@@ -1999,6 +1974,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
 {
     SelectParams(CBaseChainParams::TESTNET);
     const Consensus::Params& consensusParams = Params().GetConsensus();
+    KeyIO keyIO(Params());
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -2012,10 +1988,9 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
 
     // Add keys manually
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
-    MergeToAddressRecipient taddr1(retValue.get_str(), "");
+    MergeToAddressRecipient taddr1(keyIO.DecodePaymentAddress(retValue.get_str()).value(), "");
     auto pa = pwalletMain->GenerateNewSproutZKey();
-    KeyIO keyIO(Params());
-    MergeToAddressRecipient zaddr1(keyIO.EncodePaymentAddress(pa), "DEADBEEF");
+    MergeToAddressRecipient zaddr1(pa, "DEADBEEF");
 
     // Insufficient funds
     {

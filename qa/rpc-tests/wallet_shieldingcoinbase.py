@@ -82,9 +82,11 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         # Node 3 will test that watch only address utxos are not selected
         self.nodes[3].importaddress(mytaddr)
         recipients= [{"address":myzaddr, "amount": Decimal('1')}]
-        myopid = self.nodes[3].z_sendmany(mytaddr, recipients)
-
-        wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "Insufficient transparent funds, no UTXOs found for taddr from address.", 10)
+        try:
+            myopid = self.nodes[3].z_sendmany(mytaddr, recipients)
+        except JSONRPCException as e:
+            errorString = e.error['message']
+        assert_equal("Invalid from address: does not belong to this node, spending key not found.", errorString);
 
         # This send will fail because our wallet does not allow any change when shielding a coinbase utxo,
         # as it's currently not possible to specify a change address in z_sendmany.
@@ -151,7 +153,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
             results = self.nodes[1].z_listunspent(1, 999, False, [myzaddr])
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("Invalid parameter, spending key for address does not belong to wallet" in errorString, True)
+        assert_equal("Invalid parameter, spending key for an address does not belong to the wallet.", errorString)
 
         # Verify that debug=zrpcunsafe logs params, and that full txid is associated with opid
         initialized_line = check_node_log(self, 0, myopid + ": z_sendmany initialized", False)

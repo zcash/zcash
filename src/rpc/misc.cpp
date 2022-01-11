@@ -217,7 +217,27 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 class DescribePaymentAddressVisitor
 {
 public:
-    UniValue operator()(const libzcash::InvalidEncoding &zaddr) const { return UniValue(UniValue::VOBJ); }
+    UniValue operator()(const CKeyID &addr) const {
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("type", "p2pkh");
+#ifdef ENABLE_WALLET
+        if (pwalletMain) {
+            obj.pushKV("ismine", pwalletMain->HaveKey(addr));
+        }
+#endif
+        return obj;
+    }
+
+    UniValue operator()(const CScriptID &addr) const {
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("type", "p2sh");
+#ifdef ENABLE_WALLET
+        if (pwalletMain) {
+            obj.pushKV("ismine", pwalletMain->HaveCScript(addr));
+        }
+#endif
+        return obj;
+    }
 
     UniValue operator()(const libzcash::SproutPaymentAddress &zaddr) const {
         UniValue obj(UniValue::VOBJ);
@@ -226,7 +246,7 @@ public:
         obj.pushKV("transmissionkey", zaddr.pk_enc.GetHex());
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
-            obj.pushKV("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr));
+            obj.pushKV("ismine", pwalletMain->HaveSproutSpendingKey(zaddr));
         }
 #endif
         return obj;
@@ -239,7 +259,7 @@ public:
         obj.pushKV("diversifiedtransmissionkey", zaddr.pk_d.GetHex());
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
-            obj.pushKV("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr));
+            obj.pushKV("ismine", pwalletMain->HaveSaplingSpendingKeyForAddress(zaddr));
         }
 #endif
         return obj;
@@ -257,16 +277,16 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "z_validateaddress \"zaddr\"\n"
-            "\nReturn information about the given z address.\n"
+            "z_validateaddress \"address\"\n"
+            "\nReturn information about the given address.\n"
             "\nArguments:\n"
-            "1. \"zaddr\"     (string, required) The z address to validate\n"
+            "1. \"address\"   (string, required) The address to validate\n"
             "\nResult:\n"
             "{\n"
-            "  \"isvalid\" : true|false,      (boolean) If the address is valid or not. If not, this is the only property returned.\n"
-            "  \"address\" : \"zaddr\",         (string) The z address validated\n"
-            "  \"type\" : \"xxxx\",             (string) \"sprout\" or \"sapling\"\n"
-            "  \"ismine\" : true|false,       (boolean) If the address is yours or not\n"
+            "  \"isvalid\" : true|false,        (boolean) If the address is valid or not. If not, this is the only property returned.\n"
+            "  \"address\" : \"addr\",          (string) The address validated\n"
+            "  \"type\" : \"xxxx\",             (string) \"p2pkh\", \"p2sh\", \"sprout\" or \"sapling\"\n"
+            "  \"ismine\" : true|false,         (boolean) If the address is yours or not\n"
             "  \"payingkey\" : \"hex\",         (string) [sprout] The hex value of the paying key, a_pk\n"
             "  \"transmissionkey\" : \"hex\",   (string) [sprout] The hex value of the transmission key, pk_enc\n"
             "  \"diversifier\" : \"hex\",       (string) [sapling] The hex value of the diversifier, d\n"
@@ -288,14 +308,14 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
     KeyIO keyIO(Params());
     string strAddress = params[0].get_str();
     auto address = keyIO.DecodePaymentAddress(strAddress);
-    bool isValid = IsValidPaymentAddress(address);
+    bool isValid = address.has_value();
 
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("isvalid", isValid);
     if (isValid)
     {
         ret.pushKV("address", strAddress);
-        UniValue detail = std::visit(DescribePaymentAddressVisitor(), address);
+        UniValue detail = std::visit(DescribePaymentAddressVisitor(), address.value());
         ret.pushKVs(detail);
     }
     return ret;

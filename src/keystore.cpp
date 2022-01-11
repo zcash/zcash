@@ -151,7 +151,7 @@ bool CBasicKeyStore::AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk)
     return true;
 }
 
-//! Sapling 
+//! Sapling
 bool CBasicKeyStore::AddSaplingSpendingKey(
     const libzcash::SaplingExtendedSpendingKey &sk)
 {
@@ -187,7 +187,7 @@ bool CBasicKeyStore::AddSaplingFullViewingKey(
     return CBasicKeyStore::AddSaplingIncomingViewingKey(ivk, extfvk.DefaultAddress());
 }
 
-// This function updates the wallet's internal address->ivk map. 
+// This function updates the wallet's internal address->ivk map.
 // If we add an address that is already in the map, the map will
 // remain unchanged as each address only has one ivk.
 bool CBasicKeyStore::AddSaplingIncomingViewingKey(
@@ -265,8 +265,9 @@ bool CBasicKeyStore::GetSaplingIncomingViewingKey(const libzcash::SaplingPayment
     return false;
 }
 
-bool CBasicKeyStore::GetSaplingExtendedSpendingKey(const libzcash::SaplingPaymentAddress &addr, 
-                                    libzcash::SaplingExtendedSpendingKey &extskOut) const {
+bool CBasicKeyStore::GetSaplingExtendedSpendingKey(
+        const libzcash::SaplingPaymentAddress &addr,
+        libzcash::SaplingExtendedSpendingKey &extskOut) const {
     libzcash::SaplingIncomingViewingKey ivk;
     libzcash::SaplingExtendedFullViewingKey extfvk;
 
@@ -274,4 +275,14 @@ bool CBasicKeyStore::GetSaplingExtendedSpendingKey(const libzcash::SaplingPaymen
     return GetSaplingIncomingViewingKey(addr, ivk) &&
             GetSaplingFullViewingKey(ivk, extfvk) &&
             GetSaplingSpendingKey(extfvk, extskOut);
+}
+
+bool CBasicKeyStore::HaveSaplingSpendingKeyForAddress(
+        const libzcash::SaplingPaymentAddress &addr) const {
+    libzcash::SaplingIncomingViewingKey ivk;
+    libzcash::SaplingExtendedFullViewingKey extfvk;
+
+    return GetSaplingIncomingViewingKey(addr, ivk) &&
+        GetSaplingFullViewingKey(ivk, extfvk) &&
+        HaveSaplingSpendingKey(extfvk);
 }

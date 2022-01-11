@@ -21,6 +21,7 @@
 #include "transaction_builder.h"
 #include "timedata.h"
 #include "util.h"
+#include "util/match.h"
 #include "utilmoneystr.h"
 #include "wallet.h"
 #include "walletdb.h"
@@ -92,21 +93,41 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     KeyIO keyIO(Params());
 
     useanyutxo_ = fromAddress == "ANY_TADDR";
-    fromtaddr_ = keyIO.DecodeDestination(fromAddress);
-    isfromtaddr_ = useanyutxo_ || IsValidDestination(fromtaddr_);
-    isfromzaddr_ = false;
-
-    if (!isfromtaddr_) {
+    if (useanyutxo_) {
+        isfromtaddr_ = true;
+    } else {
         auto address = keyIO.DecodePaymentAddress(fromAddress);
-        if (IsValidPaymentAddress(address)) {
+        if (address.has_value()) {
             // We don't need to lock on the wallet as spending key related methods are thread-safe
-            if (!std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), address)) {
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, no spending key found for zaddr");
+            if (!std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), address.value())) {
+                throw JSONRPCError(
+                        RPC_INVALID_ADDRESS_OR_KEY,
+                        "Invalid from address, no spending key found for address");
             }
 
-            isfromzaddr_ = true;
-            frompaymentaddress_ = address;
-            spendingkey_ = std::visit(GetSpendingKeyForPaymentAddress(pwalletMain), address).value();
+            std::visit(match {
+                [&](const CKeyID& keyId) {
+                    fromtaddr_ = keyId;
+                    isfromtaddr_ = true;
+                },
+                [&](const CScriptID& scriptId) {
+                    fromtaddr_ = scriptId;
+                    isfromtaddr_ = true;
+                },
+                [&](const libzcash::SproutPaymentAddress& addr) {
+                    frompaymentaddress_ = addr;
+                    isfromzaddr_ = true;
+                },
+                [&](const libzcash::SaplingPaymentAddress& addr) {
+                    frompaymentaddress_ = addr;
+                    isfromzaddr_ = true;
+                },
+                [&](const libzcash::UnifiedAddress& addr) {
+                    throw JSONRPCError(
+                        RPC_INVALID_ADDRESS_OR_KEY,
+                        "Unified addresses are not yet supported by z_sendmany");
+                }
+            }, address.value());
         } else {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address");
         }
@@ -306,9 +327,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         // Get various necessary keys
         SaplingExpandedSpendingKey expsk;
         uint256 ovk;
-        if (isfromzaddr_) {
-            auto sk = std::get<libzcash::SaplingExtendedSpendingKey>(spendingkey_);
-            expsk = sk.expsk;
+        auto saplingKey = std::visit(GetSaplingKeyForPaymentAddress(pwalletMain), frompaymentaddress_);
+        if (saplingKey.has_value()) {
+            expsk = saplingKey.value().expsk;
             ovk = expsk.full_viewing_key().ovk;
         } else {
             // Sending from a t-address, which we don't have an ovk for. Instead,
@@ -375,8 +396,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             auto hexMemo = r.memo;
 
             auto addr = keyIO.DecodePaymentAddress(address);
-            assert(std::get_if<libzcash::SaplingPaymentAddress>(&addr) != nullptr);
-            auto to = std::get<libzcash::SaplingPaymentAddress>(addr);
+            assert(addr.has_value() && std::get_if<libzcash::SaplingPaymentAddress>(&addr.value()) != nullptr);
+            auto to = std::get<libzcash::SaplingPaymentAddress>(addr.value());
 
             auto memo = get_memo_from_hex_string(hexMemo);
 
@@ -533,12 +554,14 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 std::string hexMemo = smr.memo;
                 zOutputsDeque.pop_front();
 
-                PaymentAddress pa = keyIO.DecodePaymentAddress(address);
-                JSOutput jso = JSOutput(std::get<libzcash::SproutPaymentAddress>(pa), value);
-                if (hexMemo.size() > 0) {
-                    jso.memo = get_memo_from_hex_string(hexMemo);
+                std::optional<PaymentAddress> pa = keyIO.DecodePaymentAddress(address);
+                if (pa.has_value()) {
+                    JSOutput jso = JSOutput(std::get<libzcash::SproutPaymentAddress>(pa.value()), value);
+                    if (hexMemo.size() > 0) {
+                        jso.memo = get_memo_from_hex_string(hexMemo);
+                    }
+                    info.vjsout.push_back(jso);
                 }
-                info.vjsout.push_back(jso);
 
                 // Funds are removed from the value pool and enter the private pool
                 info.vpub_old += value;
@@ -639,7 +662,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             intermediates.insert(std::make_pair(tree.root(), tree));    // chained js are interstitial (found in between block boundaries)
 
             // Decrypt the change note's ciphertext to retrieve some data we need
-            ZCNoteDecryption decryptor(std::get<libzcash::SproutSpendingKey>(spendingkey_).receiving_key());
+            // FIXME: make sure this .value() call is safe
+            auto sk = std::visit(GetSproutKeyForPaymentAddress(pwalletMain), frompaymentaddress_).value();
+            ZCNoteDecryption decryptor(sk.receiving_key());
             auto hSig = ZCJoinSplit::h_sig(
                 prevJoinSplit.randomSeed,
                 prevJoinSplit.nullifiers,
@@ -800,13 +825,15 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             assert(value==0);
             info.vjsout.push_back(JSOutput());  // dummy output while we accumulate funds into a change note for vpub_new
         } else {
-            PaymentAddress pa = keyIO.DecodePaymentAddress(address);
-            // If we are here, we know we have no Sapling outputs.
-            JSOutput jso = JSOutput(std::get<libzcash::SproutPaymentAddress>(pa), value);
-            if (hexMemo.size() > 0) {
-                jso.memo = get_memo_from_hex_string(hexMemo);
+            std::optional<PaymentAddress> pa = keyIO.DecodePaymentAddress(address);
+            if (pa.has_value()) {
+                // If we are here, we know we have no Sapling outputs.
+                JSOutput jso = JSOutput(std::get<libzcash::SproutPaymentAddress>(pa.value()), value);
+                if (hexMemo.size() > 0) {
+                    jso.memo = get_memo_from_hex_string(hexMemo);
+                }
+                info.vjsout.push_back(jso);
             }
-            info.vjsout.push_back(jso);
         }
 
         // create output for any change
@@ -927,7 +954,13 @@ bool AsyncRPCOperation_sendmany::load_inputs(TxValues& txValues) {
 bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
-    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, fromaddress_, mindepth_);
+    // TODO: move this to the caller
+    auto zaddr = KeyIO(Params()).DecodePaymentAddress(fromaddress_);
+    std::optional<AddrSet> noteFilter = std::nullopt;
+    if (zaddr.has_value()) {
+        noteFilter = AddrSet::ForPaymentAddresses(std::vector({zaddr.value()}));
+    }
+    pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, noteFilter, mindepth_);
 
     // If using the TransactionBuilder, we only want Sapling notes.
     // If not using it, we only want Sprout notes.
@@ -1017,7 +1050,8 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
         if (!witnesses[i]) {
             throw runtime_error("joinsplit input could not be found in tree");
         }
-        info.vjsin.push_back(JSInput(*witnesses[i], info.notes[i], std::get<libzcash::SproutSpendingKey>(spendingkey_)));
+        auto sk = std::visit(GetSproutKeyForPaymentAddress(pwalletMain), frompaymentaddress_).value();
+        info.vjsin.push_back(JSInput(*witnesses[i], info.notes[i], sk));
     }
 
     // Make sure there are two inputs and two outputs
