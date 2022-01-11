@@ -465,3 +465,15 @@ const notarized_checkpoint *komodo_state::CheckpointAtHeight(int32_t height) con
     } // we have some elements in the collection
     return nullptr;
 }
+
+const uint256& komodo_state::LastNotarizedHash() const { return last.notarized_hash; }
+void komodo_state::SetLastNotarizedHash(const uint256 &in) { last.notarized_hash = in; }
+const uint256& komodo_state::LastNotarizedDestTxId() const { return last.notarized_desttxid; }
+void komodo_state::SetLastNotarizedDestTxId(const uint256 &in) { last.notarized_desttxid = in; }
+const uint256& komodo_state::LastNotarizedMoM() const { return last.MoM; }
+void komodo_state::SetLastNotarizedMoM(const uint256 &in) { last.MoM = in; }
+const int32_t& komodo_state::LastNotarizedHeight() const { return last.notarized_height; }
+void komodo_state::SetLastNotarizedHeight(const int32_t in) { last.notarized_height = in; }
+const int32_t& komodo_state::LastNotarizedMoMDepth() const { return last.MoMdepth; }
+void komodo_state::SetLastNotarizedMoMDepth(const int32_t in) { last.MoMdepth =in; }
+uint64_t komodo_state::NumCheckpoints() const { return NPOINTS.size(); }

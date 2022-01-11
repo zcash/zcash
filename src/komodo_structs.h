@@ -323,16 +323,16 @@ protected:
     notarized_checkpoint last;
 
 public:
-    const uint256 &LastNotarizedHash() const { return last.notarized_hash; }
-    void SetLastNotarizedHash(const uint256 &in) { last.notarized_hash = in; }
-    const uint256 &LastNotarizedDestTxId() const { return last.notarized_desttxid; }
-    void SetLastNotarizedDestTxId(const uint256 &in) { last.notarized_desttxid = in; }
-    const uint256 &LastNotarizedMoM() const { return last.MoM; }
-    void SetLastNotarizedMoM(const uint256 &in) { last.MoM = in; }
-    const int32_t &LastNotarizedHeight() const { return last.notarized_height; }
-    void SetLastNotarizedHeight(const int32_t in) { last.notarized_height = in; }
-    const int32_t &LastNotarizedMoMDepth() const { return last.MoMdepth; }
-    void SetLastNotarizedMoMDepth(const int32_t in) { last.MoMdepth =in; }
+    const uint256 &LastNotarizedHash() const;
+    void SetLastNotarizedHash(const uint256 &in);
+    const uint256 &LastNotarizedDestTxId() const;
+    void SetLastNotarizedDestTxId(const uint256 &in);
+    const uint256 &LastNotarizedMoM() const;
+    void SetLastNotarizedMoM(const uint256 &in);
+    const int32_t &LastNotarizedHeight() const;
+    void SetLastNotarizedHeight(const int32_t in);
+    const int32_t &LastNotarizedMoMDepth() const;
+    void SetLastNotarizedMoMDepth(const int32_t in);
 
     /*****
      * @brief add a checkpoint to the collection and update member values
@@ -340,7 +340,7 @@ public:
      */
     void AddCheckpoint(const notarized_checkpoint &in);
 
-    uint64_t NumCheckpoints() const { return NPOINTS.size(); }
+    uint64_t NumCheckpoints() const;
 
     /****
      * Get the notarization data below a particular height
