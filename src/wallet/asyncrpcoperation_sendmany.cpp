@@ -544,7 +544,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         UniValue obj(UniValue::VOBJ);
         while (zOutputsDeque.size() > 0) {
             AsyncJoinSplitInfo info;
-            // FIXME: make sure this .value() call is safe
             info.vpub_old = 0;
             info.vpub_new = 0;
             int n = 0;

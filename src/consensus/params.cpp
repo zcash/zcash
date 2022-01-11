@@ -167,7 +167,7 @@ namespace Consensus {
         for (const auto& strAddr : strAddresses) {
             auto addr = keyIO.DecodePaymentAddress(strAddr);
             if (!addr.has_value()) {
-                throw std::runtime_error("Funding stream address was not valid Zcash address.");
+                throw std::runtime_error("Funding stream address was not a valid " PACKAGE_NAME " address.");
             }
 
             std::visit(match {
@@ -181,7 +181,7 @@ namespace Consensus {
                     addresses.push_back(zaddr);
                 },
                 [&](const auto& zaddr) {
-                    throw std::runtime_error("Funding stream address was not a valid transparent or Sapling address.");
+                    throw std::runtime_error("Funding stream address was not a valid transparent P2SH or Sapling address.");
                 }
             }, addr.value());
         }

@@ -97,7 +97,7 @@ private:
     bool isUsingBuilder_{false}; // Indicates that no Sprout addresses are involved
     uint32_t consensusBranchId_;
     CAmount fee_;
-    int mindepth_{0};
+    int mindepth_{1};
     std::string fromaddress_;
     bool useanyutxo_{false};
     bool isfromtaddr_{false};

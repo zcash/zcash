@@ -281,7 +281,7 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
     auto destStr = params[0].get_str();
     CTxDestination dest = keyIO.DecodeDestination(destStr);
     if (!IsValidDestination(dest)) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash transparent address: ") + destStr);
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid " PACKAGE_NAME " transparent address: ") + destStr);
     }
 
     // Amount
@@ -676,7 +676,7 @@ UniValue signmessage(const UniValue& params, bool fHelp)
     KeyIO keyIO(Params());
     CTxDestination dest = keyIO.DecodeDestination(strAddress);
     if (!IsValidDestination(dest)) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash transparent address: ") + strAddress);
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid " PACKAGE_NAME " transparent address: ") + strAddress);
     }
 
     const CKeyID *keyID = std::get_if<CKeyID>(&dest);
@@ -733,7 +733,7 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
     auto destStr = params[0].get_str();
     CTxDestination dest = keyIO.DecodeDestination(destStr);
     if (!IsValidDestination(dest)) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash transparent address: ") + destStr);
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid " PACKAGE_NAME " transparent address: ") + destStr);
     }
     CScript scriptPubKey = GetScriptForDestination(dest);
     if (!IsMine(*pwalletMain, scriptPubKey)) {
@@ -901,7 +901,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     for (const std::string& name_ : keys) {
         CTxDestination dest = keyIO.DecodeDestination(name_);
         if (!IsValidDestination(dest)) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash transparent address: ") + name_);
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid " PACKAGE_NAME " transparent address: ") + name_);
         }
 
         if (destinations.count(dest)) {
@@ -4289,9 +4289,6 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     size_t utxoCounter = 0;
     bool maxedOutFlag = false;
     const size_t mempoolLimit = nLimit;
-
-    if (!isFromWildcard) {
-    }
 
     // Get available utxos
     vector<COutput> vecOutputs;

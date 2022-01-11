@@ -925,7 +925,7 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
             if (pwalletMain->GetCScript(addr, redeemScript)) {
                 return FormatScript(redeemScript);
             } else {
-                throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold the private key for this address.");
+                throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold the redeem script for this P2SH address.");
             }
         },
         [&](const libzcash::SproutPaymentAddress& addr) {
@@ -933,7 +933,7 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
             if (pwalletMain->GetSproutSpendingKey(addr, key)) {
                 return keyIO.EncodeSpendingKey(key);
             } else {
-                throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold the private zkey for this zaddr");
+                throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold the private spending key for this Sprout address");
             }
         },
         [&](const libzcash::SaplingPaymentAddress& addr) {
@@ -941,7 +941,7 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
             if (pwalletMain->GetSaplingExtendedSpendingKey(addr, extsk)) {
                 return keyIO.EncodeSpendingKey(extsk);
             } else {
-                throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold the private zkey for this zaddr");
+                throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold the private spending key for this Sapling address");
             }
         },
         [&](const libzcash::UnifiedAddress& ua) {
