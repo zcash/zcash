@@ -93,8 +93,8 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         }
     }, paymentSource);
 
-    if ((isfromsprout_ || isfromsapling_) && minDepth==0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be zero when sending from zaddr");
+    if ((isfromsprout_ || isfromsapling_) && minDepth == 0) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be zero when sending from a shielded address");
     }
 
     // Log the context info i.e. the call parameters to z_sendmany
@@ -171,10 +171,6 @@ public:
     CAmount t_outputs_total{0};
     CAmount z_outputs_total{0};
     CAmount targetAmount{0};
-
-    CAmount GetChangeAmount() {
-        return t_inputs_total + z_inputs_total - targetAmount;
-    }
 };
 
 bool IsFromAnyTaddr(const PaymentSource& paymentSource) {
@@ -192,9 +188,16 @@ bool IsFromAnyTaddr(const PaymentSource& paymentSource) {
 // Errors in transaction construction will throw.
 //
 // Notes:
-// 1. #1159 Currently there is no limit set on the number of joinsplits, so size of tx could be invalid.
-// 2. #1360 Note selection is not optimal
-// 3. #1277 Spendable notes are not locked, so an operation running in parallel could also try to use them
+// 1. #1159 Currently there is no limit set on the number of elements, which could
+//     make the tx too large.
+// 2. #1360 Note selection is not optimal.
+// 3. #1277 Spendable notes are not locked, so an operation running in parallel
+//    could also try to use them.
+// 4. #1614 Anchors are chosen at the most recent block; this is unreliable and leaks
+//    information in case of rollback.
+// 5. #3615 There is no padding of inputs or outputs, which may leak information.
+//
+// At least 4. and 5. differ from the Rust transaction builder.
 uint256 AsyncRPCOperation_sendmany::main_impl() {
     // TODO UA: this check will become meaningless.
     bool isfromzaddr_ = isfromsprout_ || isfromsapling_;
@@ -225,7 +228,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 if (isfromsprout_ && !allowRevealedAmounts_) {
                     throw JSONRPCError(
                             RPC_INVALID_PARAMETER,
-                            "Sending from Sprout to Sapling is not enabled by default because it will "
+                            "Sending between shielded pools is not enabled by default because it will "
                             "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
                             "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
                             "you wish to allow this transaction to proceed anyway.");
@@ -258,10 +261,11 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     if (!spendable.LimitToAmount(txValues.targetAmount, dustThreshold)) {
         CAmount changeAmount{spendable.Total() - txValues.targetAmount};
         if (changeAmount > 0 && changeAmount < dustThreshold) {
-            // TODO: this condition is silly; we should provide the option for the caller to
-            // forego change (definitionally amount below the dust amount) and send the
-            // extra to the recipient or the miner fee to avoid creating dust change, rather
-            // than prohibit them from sending entirely in this circumstance.
+            // TODO: we should provide the option for the caller to explicitly
+            // forego change (definitionally an amount below the dust amount)
+            // and send the extra to the recipient or the miner fee to avoid
+            // creating dust change, rather than prohibit them from sending
+            // entirely in this circumstance.
             throw JSONRPCError(
                     RPC_WALLET_INSUFFICIENT_FUNDS,
                     strprintf(
@@ -278,8 +282,8 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                         "Insufficient funds: have %s, need %s",
                         FormatMoney(spendable.Total()), FormatMoney(txValues.targetAmount))
                         + (allowTransparentCoinbase ? "" :
-                            "; if you are attempting to shield transparent coinbase funds, "
-                            "ensure that you have specified only a single recipient address.")
+                            "; note that coinbase outputs will not be selected if you specify "
+                            "ANY_TADDR or if any transparent recipients are included.")
                     );
         }
     }
@@ -409,12 +413,12 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     CAmount sum = 0;
 
     // Create Sapling outpoints
-    std::vector<SaplingOutPoint> ops;
+    std::vector<SaplingOutPoint> saplingOutPoints;
     std::vector<SaplingNote> saplingNotes;
     std::vector<SaplingExtendedSpendingKey> saplingKeys;
 
     for (const auto& t : spendable.saplingNoteEntries) {
-        ops.push_back(t.op);
+        saplingOutPoints.push_back(t.op);
         saplingNotes.push_back(t.note);
 
         libzcash::SaplingExtendedSpendingKey saplingKey;
@@ -432,7 +436,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     std::vector<std::optional<SaplingWitness>> witnesses;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
-        pwalletMain->GetSaplingNoteWitnesses(ops, witnesses, anchor);
+        pwalletMain->GetSaplingNoteWitnesses(saplingOutPoints, witnesses, anchor);
     }
 
     // Add Sapling spends
@@ -491,6 +495,9 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     // to happen as creating a chained joinsplit transaction can take longer than the block interval.
     // So, we need to take locks on cs_main and pwalletMain->cs_wallet so that the witnesses aren't
     // updated.
+    //
+    // TODO: these locks would ideally be shared for selection of Sapling anchors and witnesses
+    // as well.
     std::vector<std::optional<SproutWitness>> vSproutWitnesses;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -585,7 +592,8 @@ bool SpendableInputs::LimitToAmount(const CAmount amountRequired, const CAmount 
         return totalSelected == amountRequired || totalSelected - amountRequired > dustThreshold;
     };
 
-    // select Sprout notes for spending first
+    // Select Sprout notes for spending first - if possible, we want users to
+    // spend any notes that they still have in the Sprout pool.
     if (!haveSufficientFunds()) {
         std::sort(sproutNoteEntries.begin(), sproutNoteEntries.end(),
             [](SproutNoteEntry i, SproutNoteEntry j) -> bool {
@@ -599,7 +607,10 @@ bool SpendableInputs::LimitToAmount(const CAmount amountRequired, const CAmount 
         sproutNoteEntries.erase(sproutIt, sproutNoteEntries.end());
     }
 
-    // next select transparent utxos
+    // Next select transparent utxos. We preferentially spend transparent funds,
+    // with the intent that we'd like to opportunistically shield whatever is
+    // possible, and we will always shield change after the introduction of
+    // unified addresses.
     if (!haveSufficientFunds()) {
         std::sort(utxos.begin(), utxos.end(),
             [](COutput i, COutput j) -> bool {
@@ -613,7 +624,10 @@ bool SpendableInputs::LimitToAmount(const CAmount amountRequired, const CAmount 
         utxos.erase(utxoIt, utxos.end());
     }
 
-    // finally select Sapling outputs
+    // Finally select Sapling outputs. After the introduction of Orchard to the
+    // wallet, the selection of Sapling and Orchard notes, and the
+    // determination of change amounts, should be done in a fashion that
+    // minimizes information leakage whenever possible.
     if (!haveSufficientFunds()) {
         std::sort(saplingNoteEntries.begin(), saplingNoteEntries.end(),
             [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
@@ -641,9 +655,18 @@ bool SpendableInputs::HasTransparentCoinbase() const {
 }
 
 void SpendableInputs::LogInputs(const AsyncRPCOperationId& id) const {
+    for (const auto& utxo : utxos) {
+        LogPrint("zrpcunsafe", "%s: found unspent transparent UTXO (txid=%s, index=%d, amount=%s, isCoinbase=%s)\n",
+            id,
+            utxo.tx->GetHash().ToString(),
+            utxo.i,
+            FormatMoney(utxo.Value()),
+            utxo.fIsCoinbase);
+    }
+
     for (const auto& entry : sproutNoteEntries) {
         std::string data(entry.memo.begin(), entry.memo.end());
-        LogPrint("zrpcunsafe", "%s: found unspent Sprout note (opid=%s, vJoinSplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
+        LogPrint("zrpcunsafe", "%s: found unspent Sprout note (txid=%s, vJoinSplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
             id,
             entry.jsop.hash.ToString().substr(0, 10),
             entry.jsop.js,
@@ -655,7 +678,7 @@ void SpendableInputs::LogInputs(const AsyncRPCOperationId& id) const {
 
     for (const auto& entry : saplingNoteEntries) {
         std::string data(entry.memo.begin(), entry.memo.end());
-        LogPrint("zrpcunsafe", "%s: found unspent Sapling note (opid=%s, vShieldedSpend=%d, amount=%s, memo=%s)\n",
+        LogPrint("zrpcunsafe", "%s: found unspent Sapling note (txid=%s, vShieldedSpend=%d, amount=%s, memo=%s)\n",
             id,
             entry.op.hash.ToString().substr(0, 10),
             entry.op.n,
@@ -691,7 +714,7 @@ std::array<unsigned char, ZC_MEMO_SIZE> AsyncRPCOperation_sendmany::get_memo_fro
     if (rawMemo.size() > ZC_MEMO_SIZE) {
         throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
-                strprintf("Memo size of %d is too big, maximum allowed is %d", rawMemo.size(), ZC_MEMO_SIZE));
+                strprintf("Memo size of %d bytes is too big, maximum allowed is %d bytes", rawMemo.size(), ZC_MEMO_SIZE));
     }
 
     // copy vector into boost array

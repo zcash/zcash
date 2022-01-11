@@ -2033,7 +2033,7 @@ bool CWallet::IsSaplingNullifierFromMe(const uint256& nullifier) const
     return false;
 }
 
-void CWallet::GetSproutNoteWitnesses(std::vector<JSOutPoint> notes,
+void CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
                                      std::vector<std::optional<SproutWitness>>& witnesses,
                                      uint256 &final_anchor)
 {
@@ -2060,7 +2060,7 @@ void CWallet::GetSproutNoteWitnesses(std::vector<JSOutPoint> notes,
     }
 }
 
-void CWallet::GetSaplingNoteWitnesses(std::vector<SaplingOutPoint> notes,
+void CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
                                       std::vector<std::optional<SaplingWitness>>& witnesses,
                                       uint256 &final_anchor)
 {

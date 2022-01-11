@@ -88,8 +88,11 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
             errorString = e.error['message']
         assert_equal("Invalid from address, no spending key found for address", errorString);
 
-        # This send will fail because our wallet does not allow any change when shielding a coinbase utxo,
-        # as it's currently not possible to specify a change address in z_sendmany.
+        # This send will fail because our consensus does not allow transparent change when 
+        # shielding a coinbase utxo. 
+        # TODO: After upgrading to unified address support, change will be sent to the most
+        # recent shielded spend authority corresponding to the account of the source address
+        # and this send will succeed, causing this test to fail.
         recipients = []
         recipients.append({"address":myzaddr, "amount":Decimal('1.23456789')})
 
@@ -233,9 +236,9 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":self.nodes[1].getnewaddress(), "amount":Decimal('10000.0')})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 10.00, need 10000.00001; if you are attempting to shield transparent coinbase funds, ensure that you have specified only a single recipient address.")
+        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 10.00, need 10000.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR or if any transparent recipients are included.")
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
-        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 9.99998, need 10000.00001; if you are attempting to shield transparent coinbase funds, ensure that you have specified only a single recipient address.")
+        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 9.99998, need 10000.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR or if any transparent recipients are included.")
 
         # Send will fail because of insufficient funds unless sender uses coinbase utxos
         try:

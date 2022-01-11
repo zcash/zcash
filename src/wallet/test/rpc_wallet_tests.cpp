@@ -1256,7 +1256,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
             std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, zaddr1, recipients, 0));
             BOOST_CHECK(false); // Fail test if an exception is not thrown
         } catch (const UniValue& objError) {
-            BOOST_CHECK(find_error(objError, "Minconf cannot be zero when sending from zaddr"));
+            BOOST_CHECK(find_error(objError, "Minconf cannot be zero when sending from a shielded address"));
         }
     }
 
@@ -1373,7 +1373,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
 
     std::vector<SendManyRecipient> recipients = { SendManyRecipient(pa, 1*COIN, "ABCD") };
-    std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, taddr, recipients, 1));
+    std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, taddr, recipients, 0));
     std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
 
     // Enable test mode so tx is not sent

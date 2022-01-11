@@ -3681,8 +3681,8 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
 
 size_t EstimateTxSize(
         const PaymentSource& paymentSource,
-        const std::vector<SendManyRecipient>& recipients) {
-    int nextBlockHeight = chainActive.Height() + 1;
+        const std::vector<SendManyRecipient>& recipients,
+        int nextBlockHeight) {
     CMutableTransaction mtx;
     mtx.fOverwintered = true;
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
@@ -3732,9 +3732,7 @@ size_t EstimateTxSize(
             },
             [&](const libzcash::SproutPaymentAddress& addr) {
                 JSDescription jsdesc;
-                if (mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION)) {
-                    jsdesc.proof = GrothProof();
-                }
+                jsdesc.proof = GrothProof();
                 mtx.vJoinSplit.push_back(jsdesc);
             },
             [&](const libzcash::UnifiedAddress& ua) {
@@ -3794,15 +3792,20 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    const auto& chainparams = Params();
+    int nextBlockHeight = chainActive.Height() + 1;
+
     ThrowIfInitialBlockDownload();
-    KeyIO keyIO(Params());
+    if (!chainparams.GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_SAPLING)) {
+        throw JSONRPCError(
+            RPC_INVALID_PARAMETER, "Cannot create shielded transactions before Sapling has activated");
+    }
+
+    KeyIO keyIO(chainparams);
 
     // Check that the from address is valid.
     auto fromaddress = params[0].get_str();
     PaymentSource paymentSource;
-    bool fromTaddr = false;
-    bool fromSprout = false;
-    bool fromSapling = false;
     if (fromaddress == "ANY_TADDR") {
         paymentSource = FromAnyTaddr();
     } else {
@@ -3813,26 +3816,12 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                     "Invalid from address: should be a taddr, a zaddr, or the string 'ANY_TADDR'.");
         }
 
-        // Remember what sort of address this is
-        std::visit(match {
-            [&](const CKeyID&) {
-                fromTaddr = true;
-            },
-            [&](const CScriptID&) {
-                fromTaddr = true;
-            },
-            [&](const libzcash::SaplingPaymentAddress& addr) {
-                fromSapling = true;
-            },
-            [&](const libzcash::SproutPaymentAddress& addr) {
-                fromSprout = true;
-            },
-            [&](const libzcash::UnifiedAddress& ua) {
-                throw JSONRPCError(
-                        RPC_INVALID_ADDRESS_OR_KEY,
-                        "Invalid from address: unified addresses are not yet supported.");
-            }
-        }, addr.value());
+        // Unified addresses are not yet supported.
+        if (std::holds_alternative<libzcash::UnifiedAddress>(addr.value())) {
+            throw JSONRPCError(
+                    RPC_INVALID_ADDRESS_OR_KEY,
+                    "Invalid from address: unified addresses are not yet supported.");
+        }
 
         paymentSource = addr.value();
     }
@@ -3842,6 +3831,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amounts array is empty.");
     }
 
+    std::set<std::string> addrStrings;
     std::vector<SendManyRecipient> recipients;
     CAmount nTotalOut = 0;
     for (const UniValue& o : outputs.getValues()) {
@@ -3861,7 +3851,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             // restriction here to allow sprout->sprout; these transfers will not be forbidden
             // by later code.
             bool toSprout = std::holds_alternative<libzcash::SproutPaymentAddress>(addr.value());
-            if (toSprout) { // && !fromSprout) {
+            if (toSprout) {
                 throw JSONRPCError(
                     RPC_INVALID_PARAMETER,
                     "Sending funds into the Sprout pool is not supported by z_sendmany");
@@ -3871,6 +3861,10 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                     RPC_INVALID_PARAMETER,
                     std::string("Invalid parameter, unknown address format: ") + addrStr);
         }
+
+        if (!addrStrings.insert(addrStr).second) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ") + addrStr);
+        };
 
         UniValue memoValue = find_value(o, "memo");
         std::optional<std::string> memo;
@@ -3902,7 +3896,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     // Sanity check for transaction size
     // TODO: move this to the builder?
-    auto txsize = EstimateTxSize(paymentSource, recipients);
+    auto txsize = EstimateTxSize(paymentSource, recipients, nextBlockHeight);
     if (txsize > MAX_TX_SIZE_AFTER_SAPLING) {
         throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
@@ -3959,8 +3953,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     o.pushKV("fee", std::stod(FormatMoney(nFee)));
     UniValue contextInfo = o;
 
-    int nextBlockHeight = chainActive.Height() + 1;
-    TransactionBuilder builder(Params().GetConsensus(), nextBlockHeight, pwalletMain);
+    TransactionBuilder builder(chainparams.GetConsensus(), nextBlockHeight, pwalletMain);
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();

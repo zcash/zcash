@@ -26,7 +26,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
             self.nodes[3],
             self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 100}]),
             'failed',
-            'Insufficient funds: have 0.00, need 100.00001; if you are attempting to shield transparent coinbase funds, ensure that you have specified only a single recipient address.',
+            'Insufficient funds: have 0.00, need 100.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR or if any transparent recipients are included.',
         )
 
         # Prepare some non-coinbase UTXOs
