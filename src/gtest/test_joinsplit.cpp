@@ -221,11 +221,11 @@ TEST(Joinsplit, HSig)
 /*
 // by Taylor Hornby
 
-import pyblake2
+import hashlib
 import binascii
 
 def hSig(randomSeed, nf1, nf2, joinSplitPubKey):
-    return pyblake2.blake2b(
+    return hashlib.blake2b(
         data=(randomSeed + nf1 + nf2 + joinSplitPubKey),
         digest_size=32,
         person=b"ZcashComputehSig"
