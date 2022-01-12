@@ -133,6 +133,17 @@ typedef std::variant<
     SproutSpendingKey,
     SaplingExtendedSpendingKey> SpendingKey;
 
+class HasShieldedRecipient {
+public:
+    bool operator()(const CKeyID& p2pkh) { return false; }
+    bool operator()(const CScriptID& p2sh) { return false; }
+    bool operator()(const SproutPaymentAddress& addr) { return true; }
+    bool operator()(const SaplingPaymentAddress& addr) { return true; }
+    // unified addresses must contain a shielded receiver, so we
+    // consider this to be safe by construction
+    bool operator()(const UnifiedAddress& addr) { return true; }
+};
+
 class AddressInfoFromSpendingKey {
 public:
     std::pair<std::string, PaymentAddress> operator()(const SproutSpendingKey&) const;
