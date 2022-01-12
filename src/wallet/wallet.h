@@ -686,6 +686,56 @@ public:
     std::string ToString() const;
 };
 
+class FromAnyTaddr {
+public:
+   friend bool operator==(const FromAnyTaddr &a, const FromAnyTaddr &b) { return true; }
+};
+
+/** A source from which the zcashd wallet can spend funds */
+typedef std::variant<FromAnyTaddr, libzcash::PaymentAddress> PaymentSource;
+
+class SpendableInputs {
+public:
+    std::vector<COutput> utxos;
+    std::vector<SproutNoteEntry> sproutNoteEntries;
+    std::vector<SaplingNoteEntry> saplingNoteEntries;
+
+    /**
+     * Selectively discard notes that are not required to obtain the desired
+     * amount. Returns `false` if the available inputs do not add up to the
+     * desired amount.
+     */
+    bool LimitToAmount(CAmount amount, CAmount dustThreshold);
+
+    /**
+     * Compute the total ZEC amount of spendable inputs.
+     */
+    CAmount Total() const {
+        CAmount result = 0;
+        for (const auto& t : utxos) {
+            result += t.Value();
+        }
+        for (const auto& t : sproutNoteEntries) {
+            result += t.note.value();
+        }
+        for (const auto& t : saplingNoteEntries) {
+            result += t.note.value();
+        }
+        return result;
+    }
+
+    /**
+     * Return whether or not the set of selected UTXOs contains
+     * coinbase outputs.
+     */
+    bool HasTransparentCoinbase() const;
+
+    /**
+     * List spendable inputs in zrpcunsafe log entries.
+     */
+    void LogInputs(const AsyncRPCOperationId& id) const;
+};
+
 /** Private key that includes an expiration date in case it never gets used. */
 class CWalletKey
 {
@@ -1094,6 +1144,11 @@ public:
      */
     static bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet);
 
+    SpendableInputs FindSpendableInputs(
+            PaymentSource paymentSource,
+            bool allowTransparentCoinbase,
+            uint32_t minDepth);
+
     bool IsSpent(const uint256& hash, unsigned int n) const;
     bool IsSproutSpent(const uint256& nullifier) const;
     bool IsSaplingSpent(const uint256& nullifier) const;
@@ -1501,8 +1556,8 @@ public:
     void SetMnemonicHDChain(const CHDChain& chain, bool memonly);
     const std::optional<CHDChain>& GetMnemonicHDChain() const { return mnemonicHDChain; }
 
-    bool CheckNetworkInfo(std::pair<std::string, std::string> networkInfo);
-    uint32_t BIP44CoinType();
+    bool CheckNetworkInfo(std::pair<std::string, std::string> networkInfo) const;
+    uint32_t BIP44CoinType() const;
 
     /**
      * Check whether the wallet contains spending keys for all the addresses
@@ -1519,7 +1574,7 @@ public:
                           int maxDepth=INT_MAX,
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true,
-                          bool ignoreLocked=true);
+                          bool ignoreLocked=true) const;
 
     /* Returns the wallets help message */
     static std::string GetWalletHelpString(bool showDebug);

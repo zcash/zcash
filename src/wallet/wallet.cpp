@@ -1359,6 +1359,56 @@ void CWallet::SyncMetaData(pair<typename TxSpendMap<T>::iterator, typename TxSpe
     }
 }
 
+SpendableInputs CWallet::FindSpendableInputs(
+        PaymentSource paymentSource,
+        bool allowTransparentCoinbase,
+        uint32_t minDepth) {
+    SpendableInputs unspent;
+
+    auto filters = std::visit(match {
+        [&](const PaymentAddress& addr) {
+            return std::visit(match {
+                [&](const CKeyID& keyId) {
+                    std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({keyId});
+                    return std::make_pair(t_filter, AddrSet::Empty());
+                },
+                [&](const CScriptID& scriptId) {
+                    std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({scriptId});
+                    return std::make_pair(t_filter, AddrSet::Empty());
+                },
+                [&](const auto& other) {
+                    std::optional<std::set<CTxDestination>> t_filter = std::nullopt;
+                    return std::make_pair(t_filter, AddrSet::ForPaymentAddresses({addr}));
+                }
+            }, addr);
+        },
+        [&](const FromAnyTaddr& taddr) {
+            std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({});
+            return std::make_pair(t_filter, AddrSet::Empty());
+        }
+    }, paymentSource);
+
+    if (filters.first.has_value()) {
+        this->AvailableCoins(
+                unspent.utxos,
+                false,                    // fOnlyConfirmed
+                nullptr,                  // coinControl
+                true,                     // fIncludeZeroValue
+                allowTransparentCoinbase, // fIncludeCoinBase
+                true,                     // fOnlySpendable
+                minDepth,                 // nMinDepth
+                &filters.first.value());  // onlyFilterByDests
+    }
+
+    this->GetFilteredNotes(
+            unspent.sproutNoteEntries,
+            unspent.saplingNoteEntries,
+            filters.second,
+            minDepth);
+
+    return unspent;
+}
+
 /**
  * Outpoint is spent if any non-conflicted transaction
  * spends it:
@@ -2694,14 +2744,14 @@ void CWallet::SetMnemonicHDChain(const CHDChain& chain, bool memonly)
     mnemonicHDChain = chain;
 }
 
-bool CWallet::CheckNetworkInfo(std::pair<std::string, std::string> readNetworkInfo)
+bool CWallet::CheckNetworkInfo(std::pair<std::string, std::string> readNetworkInfo) const
 {
     LOCK(cs_wallet);
     std::pair<string, string> networkInfo(PACKAGE_NAME, networkIdString);
     return readNetworkInfo == networkInfo;
 }
 
-uint32_t CWallet::BIP44CoinType() {
+uint32_t CWallet::BIP44CoinType() const {
     return Params(networkIdString).BIP44CoinType();
 }
 
@@ -5494,7 +5544,7 @@ void CWallet::GetFilteredNotes(
     int maxDepth,
     bool ignoreSpent,
     bool requireSpendingKey,
-    bool ignoreLocked)
+    bool ignoreLocked) const
 {
     // Don't bother to do anything if the note filter would reject all notes
     if (noteFilter.has_value() && noteFilter.value().IsEmpty())
@@ -6004,4 +6054,109 @@ std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const C
 }
 std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const libzcash::UnknownReceiver& receiver) const {
     return std::nullopt;
+}
+
+bool SpendableInputs::LimitToAmount(const CAmount amountRequired, const CAmount dustThreshold) {
+    assert(amountRequired >= 0 && dustThreshold > 0);
+
+    CAmount totalSelected{0};
+    auto haveSufficientFunds = [&]() {
+        // if the total would result in change below the dust threshold,
+        // we do not yet have sufficient funds
+        return totalSelected == amountRequired || totalSelected - amountRequired > dustThreshold;
+    };
+
+    // Select Sprout notes for spending first - if possible, we want users to
+    // spend any notes that they still have in the Sprout pool.
+    if (!haveSufficientFunds()) {
+        std::sort(sproutNoteEntries.begin(), sproutNoteEntries.end(),
+            [](SproutNoteEntry i, SproutNoteEntry j) -> bool {
+                return i.note.value() > j.note.value();
+            });
+        auto sproutIt = sproutNoteEntries.begin();
+        while (sproutIt != sproutNoteEntries.end() && !haveSufficientFunds()) {
+            totalSelected += sproutIt->note.value();
+            ++sproutIt;
+        }
+        sproutNoteEntries.erase(sproutIt, sproutNoteEntries.end());
+    }
+
+    // Next select transparent utxos. We preferentially spend transparent funds,
+    // with the intent that we'd like to opportunistically shield whatever is
+    // possible, and we will always shield change after the introduction of
+    // unified addresses.
+    if (!haveSufficientFunds()) {
+        std::sort(utxos.begin(), utxos.end(),
+            [](COutput i, COutput j) -> bool {
+                return i.Value() > j.Value();
+            });
+        auto utxoIt = utxos.begin();
+        while (utxoIt != utxos.end() && !haveSufficientFunds()) {
+            totalSelected += utxoIt->Value();
+            ++utxoIt;
+        }
+        utxos.erase(utxoIt, utxos.end());
+    }
+
+    // Finally select Sapling outputs. After the introduction of Orchard to the
+    // wallet, the selection of Sapling and Orchard notes, and the
+    // determination of change amounts, should be done in a fashion that
+    // minimizes information leakage whenever possible.
+    if (!haveSufficientFunds()) {
+        std::sort(saplingNoteEntries.begin(), saplingNoteEntries.end(),
+            [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
+                return i.note.value() > j.note.value();
+            });
+        auto saplingIt = saplingNoteEntries.begin();
+        while (saplingIt != saplingNoteEntries.end() && !haveSufficientFunds()) {
+            totalSelected += saplingIt->note.value();
+            ++saplingIt;
+        }
+        saplingNoteEntries.erase(saplingIt, saplingNoteEntries.end());
+    }
+
+    return haveSufficientFunds();
+}
+
+bool SpendableInputs::HasTransparentCoinbase() const {
+    for (const auto& out : utxos) {
+        if (out.fIsCoinbase) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void SpendableInputs::LogInputs(const AsyncRPCOperationId& id) const {
+    for (const auto& utxo : utxos) {
+        LogPrint("zrpcunsafe", "%s: found unspent transparent UTXO (txid=%s, index=%d, amount=%s, isCoinbase=%s)\n",
+            id,
+            utxo.tx->GetHash().ToString(),
+            utxo.i,
+            FormatMoney(utxo.Value()),
+            utxo.fIsCoinbase);
+    }
+
+    for (const auto& entry : sproutNoteEntries) {
+        std::string data(entry.memo.begin(), entry.memo.end());
+        LogPrint("zrpcunsafe", "%s: found unspent Sprout note (txid=%s, vJoinSplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
+            id,
+            entry.jsop.hash.ToString().substr(0, 10),
+            entry.jsop.js,
+            int(entry.jsop.n),  // uint8_t
+            FormatMoney(entry.note.value()),
+            HexStr(data).substr(0, 10)
+            );
+    }
+
+    for (const auto& entry : saplingNoteEntries) {
+        std::string data(entry.memo.begin(), entry.memo.end());
+        LogPrint("zrpcunsafe", "%s: found unspent Sapling note (txid=%s, vShieldedSpend=%d, amount=%s, memo=%s)\n",
+            id,
+            entry.op.hash.ToString().substr(0, 10),
+            entry.op.n,
+            FormatMoney(entry.note.value()),
+            HexStr(data).substr(0, 10));
+    }
 }

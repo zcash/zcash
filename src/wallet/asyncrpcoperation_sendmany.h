@@ -25,13 +25,6 @@
 
 using namespace libzcash;
 
-class FromAnyTaddr {
-public:
-    friend bool operator==(const FromAnyTaddr &a, const FromAnyTaddr &b) { return true; }
-};
-
-typedef std::variant<FromAnyTaddr, PaymentAddress> PaymentSource;
-
 class SendManyRecipient {
 public:
     PaymentAddress address;
@@ -40,48 +33,6 @@ public:
 
     SendManyRecipient(PaymentAddress address_, CAmount amount_, std::optional<std::string> memo_) :
         address(address_), amount(amount_), memo(memo_) {}
-};
-
-class SpendableInputs {
-public:
-    std::vector<COutput> utxos;
-    std::vector<SproutNoteEntry> sproutNoteEntries;
-    std::vector<SaplingNoteEntry> saplingNoteEntries;
-
-    /**
-     * Selectively discard notes that are not required to obtain the desired
-     * amount. Returns `false` if the available inputs do not add up to the
-     * desired amount.
-     */
-    bool LimitToAmount(CAmount amount, CAmount dustThreshold);
-
-    /**
-     * Compute the total ZEC amount of spendable inputs.
-     */
-    CAmount Total() const {
-        CAmount result = 0;
-        for (const auto& t : utxos) {
-            result += t.Value();
-        }
-        for (const auto& t : sproutNoteEntries) {
-            result += t.note.value();
-        }
-        for (const auto& t : saplingNoteEntries) {
-            result += t.note.value();
-        }
-        return result;
-    }
-
-    /**
-     * Return whether or not the set of selected UTXOs contains
-     * coinbase outputs.
-     */
-    bool HasTransparentCoinbase() const;
-
-    /**
-     * List spendable inputs in zrpcunsafe log entries.
-     */
-    void LogInputs(const AsyncRPCOperationId& id) const;
 };
 
 class TxOutputAmounts {
@@ -130,8 +81,6 @@ private:
     bool allowRevealedAmounts_{false};
     uint32_t transparentRecipients_{0};
     TxOutputAmounts txOutputAmounts_;
-
-    SpendableInputs FindSpendableInputs(bool fAcceptCoinbase);
 
     static CAmount DefaultDustThreshold();
 
