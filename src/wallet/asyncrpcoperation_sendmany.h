@@ -84,6 +84,12 @@ public:
     void LogInputs(const AsyncRPCOperationId& id) const;
 };
 
+class TxOutputAmounts {
+public:
+    CAmount t_outputs_total{0};
+    CAmount z_outputs_total{0};
+};
+
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
 public:
     AsyncRPCOperation_sendmany(
@@ -122,6 +128,8 @@ private:
     bool isfromsprout_{false};
     bool isfromsapling_{false};
     bool allowRevealedAmounts_{false};
+    uint32_t transparentRecipients_{0};
+    TxOutputAmounts txOutputAmounts_;
 
     SpendableInputs FindSpendableInputs(bool fAcceptCoinbase);
 

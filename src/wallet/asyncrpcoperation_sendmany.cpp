@@ -97,6 +97,39 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be zero when sending from a shielded address");
     }
 
+    // calculate the target totals
+    for (const SendManyRecipient& recipient : recipients_) {
+        std::visit(match {
+            [&](const CKeyID& addr) {
+                transparentRecipients_ += 1;
+                txOutputAmounts_.t_outputs_total += recipient.amount;
+            },
+            [&](const CScriptID& addr) {
+                transparentRecipients_ += 1;
+                txOutputAmounts_.t_outputs_total += recipient.amount;
+            },
+            [&](const libzcash::SproutPaymentAddress& addr) {
+                // unreachable; currently disallowed by checks at construction
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Sending to Sprout is disabled.");
+            },
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                txOutputAmounts_.z_outputs_total += recipient.amount;
+                if (isfromsprout_ && !allowRevealedAmounts_) {
+                    throw JSONRPCError(
+                            RPC_INVALID_PARAMETER,
+                            "Sending between shielded pools is not enabled by default because it will "
+                            "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
+                            "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
+                            "you wish to allow this transaction to proceed anyway.");
+                }
+            },
+            [&](const libzcash::UnifiedAddress& ua) {
+                // unreachable; currently disallowed by checks at construction
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Sending to unified addresses is disabled.");
+            }
+        }, recipient.address);
+    }
+
     // Log the context info i.e. the call parameters to z_sendmany
     if (LogAcceptCategory("zrpcunsafe")) {
         LogPrint("zrpcunsafe", "%s: z_sendmany initialized (params=%s)\n", getId(), contextInfo.write());
@@ -164,15 +197,6 @@ void AsyncRPCOperation_sendmany::main() {
     LogPrintf("%s",s);
 }
 
-class TxValues {
-public:
-    CAmount t_inputs_total{0};
-    CAmount z_inputs_total{0};
-    CAmount t_outputs_total{0};
-    CAmount z_outputs_total{0};
-    CAmount targetAmount{0};
-};
-
 bool IsFromAnyTaddr(const PaymentSource& paymentSource) {
     return std::visit(match {
         [&](const FromAnyTaddr& fromAny) {
@@ -203,53 +227,15 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     bool isfromzaddr_ = isfromsprout_ || isfromsapling_;
     assert(isfromtaddr_ != isfromzaddr_);
 
-    TxValues txValues;
-
-    // First calculate the target
-    int shieldedRecipients = 0;
-    int transparentRecipients = 0;
-    for (const SendManyRecipient& recipient : recipients_) {
-        std::visit(match {
-            [&](const CKeyID& addr) {
-                transparentRecipients += 1;
-                txValues.t_outputs_total += recipient.amount;
-            },
-            [&](const CScriptID& addr) {
-                transparentRecipients += 1;
-                txValues.t_outputs_total += recipient.amount;
-            },
-            [&](const libzcash::SproutPaymentAddress& addr) {
-                // unreachable; currently disallowed by checks at construction
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Sending to Sprout is disabled.");
-            },
-            [&](const libzcash::SaplingPaymentAddress& addr) {
-                txValues.z_outputs_total += recipient.amount;
-                shieldedRecipients += 1;
-                if (isfromsprout_ && !allowRevealedAmounts_) {
-                    throw JSONRPCError(
-                            RPC_INVALID_PARAMETER,
-                            "Sending between shielded pools is not enabled by default because it will "
-                            "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
-                            "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
-                            "you wish to allow this transaction to proceed anyway.");
-                }
-            },
-            [&](const libzcash::UnifiedAddress& ua) {
-                // unreachable; currently disallowed by checks at construction
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Sending to unified addresses is disabled.");
-            }
-        }, recipient.address);
-    }
-
-    CAmount sendAmount = txValues.z_outputs_total + txValues.t_outputs_total;
-    txValues.targetAmount = sendAmount + fee_;
+    CAmount sendAmount = txOutputAmounts_.z_outputs_total + txOutputAmounts_.t_outputs_total;
+    CAmount targetAmount = sendAmount + fee_;
 
     builder_.SetFee(fee_);
 
     // Only select coinbase if we are spending from at most a single t-address.
     bool allowTransparentCoinbase =
         !IsFromAnyTaddr(paymentSource_) && // allow coinbase inputs from at most a single t-addr
-        transparentRecipients == 0; // cannot send transparent coinbase to transparent recipients
+        transparentRecipients_ == 0; // cannot send transparent coinbase to transparent recipients
 
     // Set the dust threshold so that we can select enough inputs to avoid
     // creating dust change amounts.
@@ -258,8 +244,8 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     // Find spendable inputs, and select a minimal set of them that
     // can supply the required target amount.
     auto spendable = FindSpendableInputs(allowTransparentCoinbase);
-    if (!spendable.LimitToAmount(txValues.targetAmount, dustThreshold)) {
-        CAmount changeAmount{spendable.Total() - txValues.targetAmount};
+    if (!spendable.LimitToAmount(targetAmount, dustThreshold)) {
+        CAmount changeAmount{spendable.Total() - targetAmount};
         if (changeAmount > 0 && changeAmount < dustThreshold) {
             // TODO: we should provide the option for the caller to explicitly
             // forego change (definitionally an amount below the dust amount)
@@ -280,7 +266,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                     RPC_WALLET_INSUFFICIENT_FUNDS,
                     strprintf(
                         "Insufficient funds: have %s, need %s",
-                        FormatMoney(spendable.Total()), FormatMoney(txValues.targetAmount))
+                        FormatMoney(spendable.Total()), FormatMoney(targetAmount))
                         + (allowTransparentCoinbase ? "" :
                             "; note that coinbase outputs will not be selected if you specify "
                             "ANY_TADDR or if any transparent recipients are included.")
@@ -298,44 +284,46 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     // this limitation.
     assert(spendable.sproutNoteEntries.empty() || spendable.saplingNoteEntries.empty());
 
+    CAmount t_inputs_total{0};
+    CAmount z_inputs_total{0};
     for (const auto& t : spendable.utxos) {
-        txValues.t_inputs_total += t.Value();
+        t_inputs_total += t.Value();
     }
     for (const auto& t : spendable.sproutNoteEntries) {
-        txValues.z_inputs_total += t.note.value();
+        z_inputs_total += t.note.value();
     }
     for (const auto& t : spendable.saplingNoteEntries) {
-        txValues.z_inputs_total += t.note.value();
+        z_inputs_total += t.note.value();
     }
 
     // TODO UA: these restrictions should be removed.
-    assert(!isfromtaddr_ || txValues.z_inputs_total == 0);
-    assert(!isfromzaddr_ || txValues.t_inputs_total == 0);
+    assert(!isfromtaddr_ || z_inputs_total == 0);
+    assert(!isfromzaddr_ || t_inputs_total == 0);
 
-    if (isfromtaddr_ && (txValues.t_inputs_total < txValues.targetAmount)) {
+    if (isfromtaddr_ && (t_inputs_total < targetAmount)) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
             strprintf("Insufficient transparent funds, have %s, need %s",
-            FormatMoney(txValues.t_inputs_total), FormatMoney(txValues.targetAmount)));
+            FormatMoney(t_inputs_total), FormatMoney(targetAmount)));
     }
-    if (isfromzaddr_ && (txValues.z_inputs_total < txValues.targetAmount)) {
+    if (isfromzaddr_ && (z_inputs_total < targetAmount)) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
             strprintf("Insufficient shielded funds, have %s, need %s",
-            FormatMoney(txValues.z_inputs_total), FormatMoney(txValues.targetAmount)));
+            FormatMoney(z_inputs_total), FormatMoney(targetAmount)));
     }
 
     // When spending transparent coinbase outputs, all inputs must be fully
     // consumed, and they may only be sent to shielded recipients.
     if (spendable.HasTransparentCoinbase()) {
-        if (txValues.t_inputs_total != txValues.targetAmount) {
+        if (t_inputs_total != targetAmount) {
             throw JSONRPCError(
                     RPC_WALLET_ERROR,
                     strprintf(
                         "When shielding coinbase funds, the wallet does not allow any change. "
                         "The proposed transaction would result in %s in change.",
-                        FormatMoney(txValues.t_inputs_total - txValues.targetAmount)
+                        FormatMoney(t_inputs_total - targetAmount)
                         ));
         }
-        if (txValues.t_outputs_total != 0) {
+        if (txOutputAmounts_.t_outputs_total != 0) {
             throw JSONRPCError(
                     RPC_WALLET_ERROR,
                     "Coinbase funds may only be sent to shielded recipients.");
@@ -344,15 +332,15 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
     if (isfromtaddr_) {
         LogPrint("zrpc", "%s: spending %s to send %s with fee %s\n",
-            getId(), FormatMoney(txValues.targetAmount), FormatMoney(sendAmount), FormatMoney(fee_));
+            getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(fee_));
     } else {
         LogPrint("zrpcunsafe", "%s: spending %s to send %s with fee %s\n",
-            getId(), FormatMoney(txValues.targetAmount), FormatMoney(sendAmount), FormatMoney(fee_));
+            getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(fee_));
     }
-    LogPrint("zrpc", "%s: transparent input: %s (to choose from)\n", getId(), FormatMoney(txValues.t_inputs_total));
-    LogPrint("zrpcunsafe", "%s: private input: %s (to choose from)\n", getId(), FormatMoney(txValues.z_inputs_total));
-    LogPrint("zrpc", "%s: transparent output: %s\n", getId(), FormatMoney(txValues.t_outputs_total));
-    LogPrint("zrpcunsafe", "%s: private output: %s\n", getId(), FormatMoney(txValues.z_outputs_total));
+    LogPrint("zrpc", "%s: transparent input: %s (to choose from)\n", getId(), FormatMoney(t_inputs_total));
+    LogPrint("zrpcunsafe", "%s: private input: %s (to choose from)\n", getId(), FormatMoney(z_inputs_total));
+    LogPrint("zrpc", "%s: transparent output: %s\n", getId(), FormatMoney(txOutputAmounts_.t_outputs_total));
+    LogPrint("zrpcunsafe", "%s: private output: %s\n", getId(), FormatMoney(txOutputAmounts_.z_outputs_total));
     LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(fee_));
 
     CReserveKey keyChange(pwalletMain);
@@ -426,7 +414,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         saplingKeys.push_back(saplingKey);
 
         sum += t.note.value();
-        if (sum >= txValues.targetAmount) {
+        if (sum >= targetAmount) {
             break;
         }
     }
@@ -484,7 +472,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         builder_.AddTransparentInput(COutPoint(out.tx->GetHash(), out.i), txOut.scriptPubKey, txOut.nValue);
 
         sum += txOut.nValue;
-        if (sum >= txValues.targetAmount) {
+        if (sum >= targetAmount) {
             break;
         }
     }
@@ -520,7 +508,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         builder_.AddSproutInput(sk, t.note, vSproutWitnesses[i].value());
 
         sum += t.note.value();
-        if (sum >= txValues.targetAmount) {
+        if (sum >= targetAmount) {
             break;
         }
     }
