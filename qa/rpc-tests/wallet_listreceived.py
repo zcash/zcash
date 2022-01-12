@@ -226,7 +226,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(3, c[release], "Count of unconfirmed notes should be 3(2 in zaddr1 + 1 in zaddr2)")
 
     def run_test(self):
-        self.run_test_release('sprout', 200)
+        #self.run_test_release('sprout', 200)
         self.run_test_release('sapling', 214)
 
 if __name__ == '__main__':

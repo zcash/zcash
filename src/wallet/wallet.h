@@ -630,6 +630,7 @@ private:
 
     AddrSet() {}
 public:
+    static AddrSet Empty() { return AddrSet(); }
     static AddrSet ForPaymentAddresses(const std::vector<libzcash::PaymentAddress>& addrs);
 
     const std::set<libzcash::SproutPaymentAddress>& GetSproutAddresses() const {
@@ -638,6 +639,10 @@ public:
 
     const std::set<libzcash::SaplingPaymentAddress>& GetSaplingAddresses() const {
         return saplingAddresses;
+    }
+
+    bool IsEmpty() const {
+        return sproutAddresses.empty() && saplingAddresses.empty();
     }
 
     bool HasSproutAddress(libzcash::SproutPaymentAddress addr) const {
@@ -1190,11 +1195,11 @@ public:
     bool IsSaplingNullifierFromMe(const uint256& nullifier) const;
 
     void GetSproutNoteWitnesses(
-         std::vector<JSOutPoint> notes,
+         const std::vector<JSOutPoint>& notes,
          std::vector<std::optional<SproutWitness>>& witnesses,
          uint256 &final_anchor);
     void GetSaplingNoteWitnesses(
-         std::vector<SaplingOutPoint> notes,
+         const std::vector<SaplingOutPoint>& notes,
          std::vector<std::optional<SaplingWitness>>& witnesses,
          uint256 &final_anchor);
 

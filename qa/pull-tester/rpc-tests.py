@@ -62,7 +62,6 @@ BASE_SCRIPTS= [
     'reorg_limit.py',
     'mempool_limit.py',
     'p2p-fullblocktest.py',
-    'paymentdisclosure.py',
     # vv Tests less than 30s vv
     'wallet_1941.py',
     'wallet_addresses.py',

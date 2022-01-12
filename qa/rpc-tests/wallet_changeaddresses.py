@@ -81,14 +81,10 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
 
         taddr = self.nodes[0].getnewaddress()
         saplingAddr = self.nodes[0].z_getnewaddress('sapling')
-        sproutAddr = self.nodes[0].z_getnewaddress('sprout')
 
         print()
         print('Checking z_sendmany(taddr->Sapling)')
         check_change_taddr_reuse(saplingAddr)
-        print()
-        print('Checking z_sendmany(taddr->Sprout)')
-        check_change_taddr_reuse(sproutAddr)
         print()
         print('Checking z_sendmany(taddr->taddr)')
         check_change_taddr_reuse(taddr)
