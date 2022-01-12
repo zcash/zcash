@@ -34,7 +34,7 @@ typedef std::tuple<JSOutPoint, SproutNote, CAmount, SproutSpendingKey> MergeToAd
 typedef std::tuple<SaplingOutPoint, SaplingNote, CAmount, SaplingExpandedSpendingKey> MergeToAddressInputSaplingNote;
 
 // A recipient is a tuple of address, memo (optional if zaddr)
-typedef std::tuple<std::string, std::string> MergeToAddressRecipient;
+typedef std::pair<libzcash::PaymentAddress, std::string> MergeToAddressRecipient;
 
 // Package of info which is passed to perform_joinsplit methods.
 struct MergeToAddressJSInfo {
@@ -89,11 +89,11 @@ private:
     uint32_t consensusBranchId_;
     CAmount fee_;
     int mindepth_;
-    MergeToAddressRecipient recipient_;
     bool isToTaddr_;
     bool isToZaddr_;
     CTxDestination toTaddr_;
     PaymentAddress toPaymentAddress_;
+    std::string memo_;
 
     Ed25519VerificationKey joinSplitPubKey_;
     Ed25519SigningKey joinSplitPrivKey_;

@@ -72,10 +72,8 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
 
         # Node 0 shields to Node 2, a coinbase utxo of value 10.0 less default fee
         zsendamount = Decimal('10.0') - DEFAULT_FEE
-        recipients = []
-        recipients.append({"address":zaddr2, "amount": zsendamount})
-        myopid = self.nodes[0].z_sendmany(taddr0, recipients)
-        txid_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
+        result = self.nodes[0].z_shieldcoinbase(taddr0, zaddr2, DEFAULT_FEE, 1)
+        txid_shielded = wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
         # Skip over the three blocks prior to activation; no transactions can be mined
         # in them due to the nearly-expiring restrictions.
@@ -143,10 +141,8 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
 
         # Node 0 shields to Node 3, a coinbase utxo of value 10.0 less default fee
         zsendamount = Decimal('10.0') - DEFAULT_FEE
-        recipients = []
-        recipients.append({"address":zaddr3, "amount": zsendamount})
-        myopid = self.nodes[0].z_sendmany(taddr0, recipients)
-        txid_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
+        result = self.nodes[0].z_shieldcoinbase(taddr0, zaddr3, DEFAULT_FEE, 1)
+        txid_shielded = wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
         # Mine the first Blossom block
         self.sync_all()

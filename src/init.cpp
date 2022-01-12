@@ -1104,16 +1104,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     KeyIO keyIO(chainparams);
 #ifdef ENABLE_MINING
     if (mapArgs.count("-mineraddress")) {
-        CTxDestination addr = keyIO.DecodeDestination(mapArgs["-mineraddress"]);
-        if (!IsValidDestination(addr)) {
-            // Try a payment address
-            auto zaddr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
-            if (!std::visit(IsValidMinerAddress(), std::visit(ExtractMinerAddress(), zaddr)))
-            {
-                return InitError(strprintf(
-                    _("Invalid address for -mineraddress=<addr>: '%s' (must be a Sapling or transparent address)"),
-                    mapArgs["-mineraddress"]));
-            }
+        auto addr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
+        if (!(addr.has_value() && std::visit(ExtractMinerAddress(), addr.value()).has_value())) {
+            return InitError(strprintf(
+                _("Invalid address for -mineraddress=<addr>: '%s' (must be a Sapling or transparent P2PKH address)"),
+                mapArgs["-mineraddress"]));
         }
     }
 #endif
@@ -1684,15 +1679,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
  #ifdef ENABLE_WALLET
         bool minerAddressInLocalWallet = false;
         if (pwalletMain) {
-            CTxDestination addr = keyIO.DecodeDestination(mapArgs["-mineraddress"]);
-            if (IsValidDestination(addr)) {
-                CKeyID keyID = std::get<CKeyID>(addr);
-                minerAddressInLocalWallet = pwalletMain->HaveKey(keyID);
-            } else {
-                auto zaddr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
-                minerAddressInLocalWallet = std::visit(
-                    HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr);
+            auto zaddr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
+            if (!zaddr.has_value()) {
+                return InitError(_("-mineraddress is not a valid " PACKAGE_NAME " address."));
             }
+            minerAddressInLocalWallet = std::visit(
+                HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr.value());
         }
         if (GetBoolArg("-minetolocalwallet", true) && !minerAddressInLocalWallet) {
             return InitError(_("-mineraddress is not in the local wallet. Either use a local address, or set -minetolocalwallet=0"));

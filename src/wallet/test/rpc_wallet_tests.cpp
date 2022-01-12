@@ -376,19 +376,24 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
+    UniValue retValue;
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
+    std::string taddr1 = retValue.get_str();
 
     BOOST_CHECK_THROW(CallRPC("z_getbalance too many args"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_getbalance invalidaddress"), runtime_error);
-    BOOST_CHECK_NO_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab"));
-    BOOST_CHECK_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab -1"), runtime_error);
-    BOOST_CHECK_NO_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab 0"));
+    // address does not belong to wallet
+    BOOST_CHECK_THROW(CallRPC("z_getbalance tmC6YZnCUhm19dEXxh3Jb7srdBJxDawaCab"), runtime_error);
+    BOOST_CHECK_NO_THROW(CallRPC(std::string("z_getbalance ") + taddr1));
+    // negative minconf not allowed
+    BOOST_CHECK_THROW(CallRPC(std::string("z_getbalance ") + taddr1 + " -1"), runtime_error);
+    BOOST_CHECK_NO_THROW(CallRPC(std::string("z_getbalance ") + taddr1 + std::string(" 0")));
+    // don't have the spending key
     BOOST_CHECK_THROW(CallRPC("z_getbalance tnRZ8bPq2pff3xBWhTJhNkVUkm2uhzksDeW5PvEa7aFKGT9Qi3YgTALZfjaY4jU3HLVKBtHdSXxoPoLA3naMPcHBcY88FcF 1"), runtime_error);
-
 
     BOOST_CHECK_THROW(CallRPC("z_gettotalbalance too manyargs"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_gettotalbalance -1"), runtime_error);
     BOOST_CHECK_NO_THROW(CallRPC("z_gettotalbalance 0"));
-
 
     BOOST_CHECK_THROW(CallRPC("z_listreceivedbyaddress too many args"), runtime_error);
     // negative minconf not allowed
@@ -616,15 +621,16 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     BOOST_CHECK(addrs.size()==1);
 
     // check that we have the spending key for the address
-    auto address = keyIO.DecodePaymentAddress(testAddr);
-    BOOST_CHECK(IsValidPaymentAddress(address));
-    BOOST_ASSERT(std::get_if<libzcash::SproutPaymentAddress>(&address) != nullptr);
-    auto addr = std::get<libzcash::SproutPaymentAddress>(address);
-    BOOST_CHECK(pwalletMain->HaveSproutSpendingKey(addr));
+    auto decoded = keyIO.DecodePaymentAddress(testAddr);
+    BOOST_CHECK(decoded.has_value());
+    libzcash::PaymentAddress address(decoded.value());
+    BOOST_ASSERT(std::holds_alternative<libzcash::SproutPaymentAddress>(address));
+    auto sprout_addr = std::get<libzcash::SproutPaymentAddress>(address);
+    BOOST_CHECK(pwalletMain->HaveSproutSpendingKey(sprout_addr));
 
     // Verify the spending key is the same as the test data
     libzcash::SproutSpendingKey k;
-    BOOST_CHECK(pwalletMain->GetSproutSpendingKey(addr, k));
+    BOOST_CHECK(pwalletMain->GetSproutSpendingKey(sprout_addr, k));
     BOOST_CHECK_EQUAL(testKey, keyIO.EncodeSpendingKey(k));
 }
 
@@ -790,10 +796,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 
 // Check if address is of given type and spendable from our wallet.
 template <typename ADDR_TYPE>
-void CheckHaveAddr(const libzcash::PaymentAddress& addr) {
-
-    BOOST_CHECK(IsValidPaymentAddress(addr));
-    auto addr_of_type = std::get_if<ADDR_TYPE>(&addr);
+void CheckHaveAddr(const std::optional<libzcash::PaymentAddress>& addr) {
+    BOOST_CHECK(addr.has_value());
+    auto addr_of_type = std::get_if<ADDR_TYPE>(&(addr.value()));
     BOOST_ASSERT(addr_of_type != nullptr);
 
     HaveSpendingKeyForPaymentAddress test(pwalletMain);
@@ -1184,41 +1189,12 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");
     int nHeight = retValue.get_int();
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1);
-    if (mtx.nVersion == 1) {
-        mtx.nVersion = 2;
-    }
-
-    // Test constructor of AsyncRPCOperation_sendmany
-    try {
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::nullopt, mtx, "",{}, {}, -1));
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Minconf cannot be negative"));
-    }
+    TransactionBuilder builder(Params().GetConsensus(), nHeight + 1, pwalletMain);
 
     try {
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::nullopt, mtx, "",{}, {}, 1));
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "From address parameter missing"));
-    }
-
-    try {
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(std::nullopt, mtx, "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ", {}, {}, 1) );
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "No recipients"));
-    }
-
-    try {
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy", 1*COIN, "") };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(std::nullopt, mtx, "INVALID", recipients, {}, 1) );
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Invalid from address"));
-    }
-
-    // Testnet payment addresses begin with 'zt'.  This test detects an incorrect prefix.
-    try {
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy", 1*COIN, "") };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(std::nullopt, mtx, "zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U", recipients, {}, 1) );
+        libzcash::UnifiedAddress ua; //dummy
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient(ua, 1*COIN, std::nullopt) };
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, ua, recipients, 1));
     } catch (const UniValue& objError) {
         BOOST_CHECK( find_error(objError, "Invalid from address"));
     }
@@ -1226,10 +1202,13 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     // Note: The following will crash as a google test because AsyncRPCOperation_sendmany
     // invokes a method on pwalletMain, which is undefined in the google test environment.
     try {
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy", 1*COIN, "") };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(std::nullopt, mtx, "ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP", recipients, {}, 1) );
+        KeyIO keyIO(Params());
+        auto sender = keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value();
+        libzcash::UnifiedAddress ua; //dummy
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient(ua, 1*COIN, std::nullopt) };
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, sender, recipients, 1));
     } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "no spending key found for zaddr"));
+        BOOST_CHECK( find_error(objError, "no spending key found for address"));
     }
 }
 
@@ -1250,6 +1229,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 {
     SelectParams(CBaseChainParams::TESTNET);
     const Consensus::Params& consensusParams = Params().GetConsensus();
+    KeyIO keyIO(Params());
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -1259,54 +1239,55 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     // We removed the ability to create pre-Sapling Sprout proofs, so we can
     // only create Sapling-onwards transactions.
     int nHeight = consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight + 1);
-    if (mtx.nVersion == 1) {
-        mtx.nVersion = 2;
-    }
 
     // add keys manually
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
-    std::string taddr1 = retValue.get_str();
-    auto pa = pwalletMain->GenerateNewSproutZKey();
-    KeyIO keyIO(Params());
-    std::string zaddr1 = keyIO.EncodePaymentAddress(pa);
+    auto taddr1 = keyIO.DecodePaymentAddress(retValue.get_str()).value();
+
+    if (!pwalletMain->HaveMnemonicSeed()) {
+        pwalletMain->GenerateNewSeed();
+    }
+    auto zaddr1 = pwalletMain->GenerateNewLegacySaplingZKey();
 
     // there are no utxos to spend
     {
+        TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 100*COIN, "DEADBEEF") };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(std::nullopt, mtx, taddr1, {}, recipients, 1) );
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, taddr1, recipients, 1));
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
-        BOOST_CHECK( msg.find("Insufficient transparent funds") != string::npos);
+        BOOST_CHECK( msg.find("Insufficient funds") != string::npos);
     }
 
     // minconf cannot be zero when sending from zaddr
     {
+        TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
         try {
             std::vector<SendManyRecipient> recipients = {SendManyRecipient(taddr1, 100*COIN, "DEADBEEF")};
-            std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::nullopt, mtx, zaddr1, recipients, {}, 0));
+            std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, zaddr1, recipients, 0));
             BOOST_CHECK(false); // Fail test if an exception is not thrown
         } catch (const UniValue& objError) {
-            BOOST_CHECK(find_error(objError, "Minconf cannot be zero when sending from zaddr"));
+            BOOST_CHECK(find_error(objError, "Minconf cannot be zero when sending from a shielded address"));
         }
     }
 
-
     // there are no unspent notes to spend
     {
+        TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(taddr1, 100*COIN, "DEADBEEF") };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(std::nullopt, mtx, zaddr1, recipients, {}, 1) );
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, zaddr1, recipients, 1));
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
-        BOOST_CHECK( msg.find("Insufficient funds, no unspent notes") != string::npos);
+        BOOST_CHECK(msg.find("Insufficient funds: have 0.00") != string::npos);
     }
 
     // get_memo_from_hex_string())
     {
+        TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 100*COIN, "DEADBEEF") };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(std::nullopt, mtx, zaddr1, recipients, {}, 1) );
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, zaddr1, recipients, 1));
         std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
         TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
 
@@ -1352,106 +1333,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
             BOOST_CHECK( find_error(objError, "hexadecimal format"));
         }
     }
-
-
-    // add_taddr_change_output_to_tx() will append a vout to a raw transaction
-    {
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 100*COIN, "DEADBEEF") };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(std::nullopt, mtx, zaddr1, recipients, {}, 1) );
-        std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
-        TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
-
-        CTransaction tx = proxy.getTx();
-        BOOST_CHECK(tx.vout.size() == 0);
-
-        CReserveKey keyChange(pwalletMain);
-        CAmount amount = 12345600000;
-        proxy.add_taddr_change_output_to_tx(keyChange, amount);
-        tx = proxy.getTx();
-        BOOST_CHECK(tx.vout.size() == 1);
-        CTxOut out = tx.vout[0];
-        BOOST_CHECK_EQUAL(out.nValue, amount);
-
-        amount = 111100000;
-        proxy.add_taddr_change_output_to_tx(keyChange, amount);
-        tx = proxy.getTx();
-        BOOST_CHECK(tx.vout.size() == 2);
-        out = tx.vout[1];
-        BOOST_CHECK_EQUAL(out.nValue, amount);
-    }
-
-    // add_taddr_outputs_to_tx() will append many vouts to a raw transaction
-    {
-        std::vector<SendManyRecipient> recipients = {
-            SendManyRecipient("tmTGScYwiLMzHe4uGZtBYmuqoW4iEoYNMXt", 123000000, ""),
-            SendManyRecipient("tmUSbHz3vxnwLvRyNDXbwkZxjVyDodMJEhh", 456000000, ""),
-            SendManyRecipient("tmYZAXYPCP56Xa5JQWWPZuK7o7bfUQW6kkd", 789000000, ""),
-        };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(std::nullopt, mtx, zaddr1, recipients, {}, 1) );
-        std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
-        TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
-
-        proxy.add_taddr_outputs_to_tx();
-
-        CTransaction tx = proxy.getTx();
-        BOOST_CHECK(tx.vout.size() == 3);
-        BOOST_CHECK_EQUAL(tx.vout[0].nValue, 123000000);
-        BOOST_CHECK_EQUAL(tx.vout[1].nValue, 456000000);
-        BOOST_CHECK_EQUAL(tx.vout[2].nValue, 789000000);
-    }
-
-    // Test the perform_joinsplit methods.
-    {
-        // Dummy input so the operation object can be instantiated.
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 50000, "ABCD") };
-
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(std::nullopt, mtx, zaddr1, {}, recipients, 1) );
-        std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
-        TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
-
-        // Enable test mode so tx is not sent and proofs are not generated
-        static_cast<AsyncRPCOperation_sendmany *>(operation.get())->testmode = true;
-
-        AsyncJoinSplitInfo info;
-        std::vector<std::optional < SproutWitness>> witnesses;
-        uint256 anchor;
-        try {
-            proxy.perform_joinsplit(info, witnesses, anchor);
-        } catch (const std::runtime_error & e) {
-            BOOST_CHECK( string(e.what()).find("anchor is null")!= string::npos);
-        }
-
-        try {
-            std::vector<JSOutPoint> v;
-            proxy.perform_joinsplit(info, v);
-        } catch (const std::runtime_error & e) {
-            BOOST_CHECK( string(e.what()).find("anchor is null")!= string::npos);
-        }
-
-        info.notes.push_back(SproutNote());
-        try {
-            proxy.perform_joinsplit(info);
-        } catch (const std::runtime_error & e) {
-            BOOST_CHECK( string(e.what()).find("number of notes")!= string::npos);
-        }
-
-        info.notes.clear();
-        info.vjsin.push_back(JSInput());
-        info.vjsin.push_back(JSInput());
-        info.vjsin.push_back(JSInput());
-        try {
-            proxy.perform_joinsplit(info);
-        } catch (const std::runtime_error & e) {
-            BOOST_CHECK( string(e.what()).find("unsupported joinsplit input")!= string::npos);
-        }
-
-        info.vjsin.clear();
-        try {
-            proxy.perform_joinsplit(info);
-        } catch (const std::runtime_error & e) {
-            BOOST_CHECK( string(e.what()).find("error verifying joinsplit")!= string::npos);
-        }
-    }
 }
 
 
@@ -1471,8 +1352,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     // add keys manually
     auto taddr = pwalletMain->GenerateNewKey().GetID();
     std::string taddr1 = keyIO.EncodeDestination(taddr);
-    auto pa = DefaultSaplingAddress(pwalletMain);
-    std::string zaddr1 = keyIO.EncodePaymentAddress(pa);
+    auto pa = pwalletMain->GenerateNewLegacySaplingZKey();
 
     const Consensus::Params& consensusParams = Params().GetConsensus();
     retValue = CallRPC("getblockcount");
@@ -1505,8 +1385,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     auto builder = TransactionBuilder(consensusParams, nextBlockHeight, pwalletMain);
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
 
-    std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 1*COIN, "ABCD") };
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(builder, mtx, taddr1, {}, recipients, 0) );
+    std::vector<SendManyRecipient> recipients = { SendManyRecipient(pa, 1*COIN, "ABCD") };
+    std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, taddr, recipients, 0));
     std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
 
     // Enable test mode so tx is not sent
@@ -1779,8 +1659,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
     }
 
     // Test constructor of AsyncRPCOperation_shieldcoinbase
-    std::string testnetzaddr = "ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP";
-    std::string mainnetzaddr = "zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U";
+    KeyIO keyIO(Params());
+    auto testnetzaddr = std::get<libzcash::SproutPaymentAddress>(keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value());
 
     try {
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, {}, testnetzaddr, -1 ));
@@ -1793,15 +1673,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
     } catch (const UniValue& objError) {
         BOOST_CHECK( find_error(objError, "Empty inputs"));
     }
-
-    // Testnet payment addresses begin with 'zt'.  This test detects an incorrect prefix.
-    try {
-        std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,0} };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, inputs, mainnetzaddr, 1) );
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Invalid to address"));
-    }
-
 }
 
 
@@ -1819,14 +1690,12 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight + 1);
 
     // Add keys manually
-    KeyIO keyIO(Params());
     auto pa = pwalletMain->GenerateNewSproutZKey();
-    std::string zaddr = keyIO.EncodePaymentAddress(pa);
 
     // Insufficient funds
     {
         std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,0} };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, inputs, zaddr) );
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, inputs, pa) );
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
@@ -1837,7 +1706,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
     {
         // Dummy input so the operation object can be instantiated.
         std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,100000} };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, inputs, zaddr) );
+        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, inputs, pa) );
         std::shared_ptr<AsyncRPCOperation_shieldcoinbase> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_shieldcoinbase> (operation);
         TEST_FRIEND_AsyncRPCOperation_shieldcoinbase proxy(ptr);
         static_cast<AsyncRPCOperation_shieldcoinbase *>(operation.get())->testmode = true;
@@ -1946,12 +1815,10 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1);
 
     // Test constructor of AsyncRPCOperation_mergetoaddress
+    KeyIO keyIO(Params());
     MergeToAddressRecipient testnetzaddr(
-        "ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP",
+        keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value(),
         "testnet memo");
-    MergeToAddressRecipient mainnetzaddr(
-        "zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U",
-        "mainnet memo");
 
     try {
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_mergetoaddress(std::nullopt,  mtx, {}, {}, {}, testnetzaddr, -1 ));
@@ -1968,14 +1835,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     }
 
     std::vector<MergeToAddressInputUTXO> inputs = { MergeToAddressInputUTXO{ COutPoint{uint256(), 0}, 0, CScript()} };
-
-    try {
-        MergeToAddressRecipient badaddr("", "memo");
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_mergetoaddress(std::nullopt, mtx, inputs, {}, {}, badaddr, 1));
-        BOOST_FAIL("Should have caused an error");
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Recipient parameter missing"));
-    }
 
     std::vector<MergeToAddressInputSproutNote> sproutNoteInputs =
         {MergeToAddressInputSproutNote{JSOutPoint(), SproutNote(), 0, SproutSpendingKey()}};
@@ -1996,15 +1855,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     } catch (const UniValue& objError) {
         BOOST_CHECK(find_error(objError, "Sprout notes are not supported by the TransactionBuilder"));
     }
-
-    // Testnet payment addresses begin with 'zt'.  This test detects an incorrect prefix.
-    try {
-        std::vector<MergeToAddressInputUTXO> inputs = { MergeToAddressInputUTXO{ COutPoint{uint256(), 0}, 0, CScript()} };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_mergetoaddress(std::nullopt, mtx, inputs, {}, {}, mainnetzaddr, 1) );
-        BOOST_FAIL("Should have caused an error");
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Invalid recipient address"));
-    }
 }
 
 
@@ -2013,6 +1863,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
 {
     SelectParams(CBaseChainParams::TESTNET);
     const Consensus::Params& consensusParams = Params().GetConsensus();
+    KeyIO keyIO(Params());
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -2026,10 +1877,9 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
 
     // Add keys manually
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
-    MergeToAddressRecipient taddr1(retValue.get_str(), "");
+    MergeToAddressRecipient taddr1(keyIO.DecodePaymentAddress(retValue.get_str()).value(), "");
     auto pa = pwalletMain->GenerateNewSproutZKey();
-    KeyIO keyIO(Params());
-    MergeToAddressRecipient zaddr1(keyIO.EncodePaymentAddress(pa), "DEADBEEF");
+    MergeToAddressRecipient zaddr1(pa, "DEADBEEF");
 
     // Insufficient funds
     {

@@ -29,6 +29,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
+    fail,
     get_coinbase_address,
     start_node, start_nodes,
     sync_blocks, sync_mempools,
@@ -88,9 +89,14 @@ class TurnstileTest (BitcoinTestFramework):
         # Node 0 shields some funds
         dest_addr = self.nodes[0].z_getnewaddress(POOL_NAME.lower())
         taddr0 = get_coinbase_address(self.nodes[0])
-        recipients = []
-        recipients.append({"address": dest_addr, "amount": Decimal('10')})
-        myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
+        if (POOL_NAME == "SPROUT"):
+            myopid = self.nodes[0].z_shieldcoinbase(taddr0, dest_addr, 0, 1)['opid']
+        elif (POOL_NAME == "SAPLING"):
+            recipients = []
+            recipients.append({"address": dest_addr, "amount": Decimal('10')})
+            myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
+        else:
+            fail("Unrecognized pool name: " + POOL_NAME)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         self.nodes[0].generate(1)

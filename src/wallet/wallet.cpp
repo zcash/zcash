@@ -25,6 +25,7 @@
 #include "script/sign.h"
 #include "timedata.h"
 #include "utilmoneystr.h"
+#include "util/match.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "crypter.h"
@@ -1049,49 +1050,58 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
     SetBestChainINTERNAL(walletdb, loc);
 }
 
-std::set<std::pair<libzcash::RawAddress, uint256>> CWallet::GetNullifiersForAddresses(
-        const std::set<libzcash::RawAddress> & addresses)
-{
-    std::set<std::pair<libzcash::RawAddress, uint256>> nullifierSet;
-    // Sapling ivk -> list of addrs map
-    // (There may be more than one diversified address for a given ivk.)
-    std::map<libzcash::SaplingIncomingViewingKey, std::vector<libzcash::SaplingPaymentAddress>> ivkMap;
-    for (const auto & addr : addresses) {
-        auto saplingAddr = std::get_if<libzcash::SaplingPaymentAddress>(&addr);
-        if (saplingAddr != nullptr) {
-            libzcash::SaplingIncomingViewingKey ivk;
-            this->GetSaplingIncomingViewingKey(*saplingAddr, ivk);
-            ivkMap[ivk].push_back(*saplingAddr);
-        }
-    }
-    for (const auto & txPair : mapWallet) {
-        // Sprout
-        for (const auto & noteDataPair : txPair.second.mapSproutNoteData) {
-            auto & noteData = noteDataPair.second;
-            auto & nullifier = noteData.nullifier;
-            auto & address = noteData.address;
-            if (nullifier && addresses.count(address)) {
-                nullifierSet.insert(std::make_pair(address, nullifier.value()));
-            }
-        }
-        // Sapling
-        for (const auto & noteDataPair : txPair.second.mapSaplingNoteData) {
-            auto & noteData = noteDataPair.second;
-            auto & nullifier = noteData.nullifier;
-            auto & ivk = noteData.ivk;
-            if (nullifier && ivkMap.count(ivk)) {
-                for (const auto & addr : ivkMap[ivk]) {
-                    nullifierSet.insert(std::make_pair(addr, nullifier.value()));
+std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> CWallet::GetSproutNullifiers(
+        const std::set<libzcash::SproutPaymentAddress>& addresses) {
+    std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> nullifierSet;
+    if (!addresses.empty()) {
+        for (const auto& txPair : mapWallet) {
+            for (const auto & noteDataPair : txPair.second.mapSproutNoteData) {
+                auto & noteData = noteDataPair.second;
+                auto & nullifier = noteData.nullifier;
+                auto & address = noteData.address;
+                if (nullifier && addresses.count(address) > 0) {
+                    nullifierSet.insert(std::make_pair(address, nullifier.value()));
                 }
             }
         }
     }
+
+    return nullifierSet;
+}
+
+std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> CWallet::GetSaplingNullifiers(
+        const std::set<libzcash::SaplingPaymentAddress>& addresses) {
+    std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> nullifierSet;
+    if (!addresses.empty()) {
+        // Sapling ivk -> list of addrs map
+        // (There may be more than one diversified address for a given ivk.)
+        std::map<libzcash::SaplingIncomingViewingKey, std::vector<libzcash::SaplingPaymentAddress>> ivkMap;
+        for (const auto & addr : addresses) {
+            libzcash::SaplingIncomingViewingKey ivk;
+            this->GetSaplingIncomingViewingKey(addr, ivk);
+            ivkMap[ivk].push_back(addr);
+        }
+
+        for (const auto& txPair : mapWallet) {
+            for (const auto& noteDataPair : txPair.second.mapSaplingNoteData) {
+                auto & noteData = noteDataPair.second;
+                auto & nullifier = noteData.nullifier;
+                auto & ivk = noteData.ivk;
+                if (nullifier && ivkMap.count(ivk) > 0) {
+                    for (const auto & addr : ivkMap[ivk]) {
+                        nullifierSet.insert(std::make_pair(addr, nullifier.value()));
+                    }
+                }
+            }
+        }
+    }
+
     return nullifierSet;
 }
 
 bool CWallet::IsNoteSproutChange(
-        const std::set<std::pair<libzcash::RawAddress, uint256>> & nullifierSet,
-        const libzcash::RawAddress & address,
+        const std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> & nullifierSet,
+        const libzcash::SproutPaymentAddress& address,
         const JSOutPoint & jsop)
 {
     // A Note is marked as "change" if the address that received it
@@ -1113,8 +1123,9 @@ bool CWallet::IsNoteSproutChange(
     return false;
 }
 
-bool CWallet::IsNoteSaplingChange(const std::set<std::pair<libzcash::RawAddress, uint256>> & nullifierSet,
-        const libzcash::RawAddress & address,
+bool CWallet::IsNoteSaplingChange(
+        const std::set<std::pair<libzcash::SaplingPaymentAddress, uint256>> & nullifierSet,
+        const libzcash::SaplingPaymentAddress& address,
         const SaplingOutPoint & op)
 {
     // A Note is marked as "change" if the address that received it
@@ -1125,6 +1136,8 @@ bool CWallet::IsNoteSaplingChange(const std::set<std::pair<libzcash::RawAddress,
     // - Notes created by consolidation transactions (e.g. using
     //   z_mergetoaddress).
     // - Notes sent from one address to itself.
+    // FIXME: This also needs to check against the wallet's change address
+    // for the associated unified account when we add UA support
     for (const SpendDescription &spend : mapWallet[op.hash].vShieldedSpend) {
         if (nullifierSet.count(std::make_pair(address, spend.nullifier))) {
             return true;
@@ -2386,7 +2399,7 @@ bool CWallet::IsSaplingNullifierFromMe(const uint256& nullifier) const
     return false;
 }
 
-void CWallet::GetSproutNoteWitnesses(std::vector<JSOutPoint> notes,
+void CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
                                      std::vector<std::optional<SproutWitness>>& witnesses,
                                      uint256 &final_anchor)
 {
@@ -2413,7 +2426,7 @@ void CWallet::GetSproutNoteWitnesses(std::vector<JSOutPoint> notes,
     }
 }
 
-void CWallet::GetSaplingNoteWitnesses(std::vector<SaplingOutPoint> notes,
+void CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
                                       std::vector<std::optional<SaplingWitness>>& witnesses,
                                       uint256 &final_anchor)
 {
@@ -5322,8 +5335,8 @@ bool CWallet::ParameterInteraction(const CChainParams& params)
     // Check Sapling migration address if set and is a valid Sapling address
     if (mapArgs.count("-migrationdestaddress")) {
         std::string migrationDestAddress = mapArgs["-migrationdestaddress"];
-        libzcash::PaymentAddress address = keyIO.DecodePaymentAddress(migrationDestAddress);
-        if (std::get_if<libzcash::SaplingPaymentAddress>(&address) == nullptr) {
+        std::optional<libzcash::PaymentAddress> address = keyIO.DecodePaymentAddress(migrationDestAddress);
+        if (!address.has_value() || std::get_if<libzcash::SaplingPaymentAddress>(&address.value()) == nullptr) {
             return UIError(_("-migrationdestaddress must be a valid Sapling address."));
         }
     }
@@ -5420,46 +5433,73 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
     return ::AcceptToMemoryPool(Params(), mempool, state, *this, fLimitFree, NULL, fRejectAbsurdFee);
 }
 
-/**
- * Find notes in the wallet filtered by payment address, min depth and ability to spend.
- * These notes are decrypted and added to the output parameter vector, outEntries.
- */
-void CWallet::GetFilteredNotes(
-    std::vector<SproutNoteEntry>& sproutEntries,
-    std::vector<SaplingNoteEntry>& saplingEntries,
-    std::string address,
-    int minDepth,
-    bool ignoreSpent,
-    bool requireSpendingKey)
-{
-    std::set<libzcash::RawAddress> filterAddresses;
+AddrSet AddrSet::ForPaymentAddresses(const std::vector<libzcash::PaymentAddress>& paymentAddrs) {
+    AddrSet addrs;
+    for (const auto& addr: paymentAddrs) {
+        std::visit(match {
+            [&](const CKeyID& keyId) { },
+            [&](const CScriptID& scriptId) { },
+            [&](const libzcash::SproutPaymentAddress& addr) {
+                addrs.sproutAddresses.insert(addr);
+            },
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                addrs.saplingAddresses.insert(addr);
+            },
+            [&](const libzcash::UnifiedAddress& uaddr) {
+                for (auto& receiver : uaddr) {
+                    std::visit(match {
+                        [&](const libzcash::SaplingPaymentAddress& addr) {
+                            addrs.saplingAddresses.insert(addr);
+                        },
+                        [&](const auto& other) { }
+                    }, receiver);
+                }
+            },
+        }, addr);
+    }
+    return addrs;
+}
 
-    KeyIO keyIO(Params());
-    if (address.length() > 0) {
-        auto addr = keyIO.DecodePaymentAddress(address);
-        for (const auto ra : std::visit(GetRawAddresses(), addr)) {
-            filterAddresses.insert(ra);
+bool CWallet::HasSpendingKeys(const AddrSet& addrSet) const {
+    for (const auto& zaddr : addrSet.GetSproutAddresses()) {
+        if (!HaveSproutSpendingKey(zaddr)) {
+            return false;
         }
     }
-
-    GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
+    for (const auto& zaddr : addrSet.GetSaplingAddresses()) {
+        if (!HaveSaplingSpendingKeyForAddress(zaddr)) {
+            return false;
+        }
+    }
+    return true;
 }
+
 
 /**
  * Find notes in the wallet filtered by payment addresses, min depth, max depth,
  * if the note is spent, if a spending key is required, and if the notes are locked.
  * These notes are decrypted and added to the output parameter vector, outEntries.
+ *
+ * For the `noteFilter` argument, `std::nullopt` will return every address; if a
+ * value is provided, all returned notes will correspond to the addresses in
+ * that address set. If the empty address set is provided, this function will
+ * return early and the return arguments `sproutEntries` and `saplingEntries`
+ * will be unmodified.
  */
 void CWallet::GetFilteredNotes(
     std::vector<SproutNoteEntry>& sproutEntries,
     std::vector<SaplingNoteEntry>& saplingEntries,
-    std::set<libzcash::RawAddress>& filterAddresses,
+    const std::optional<AddrSet>& noteFilter,
     int minDepth,
     int maxDepth,
     bool ignoreSpent,
     bool requireSpendingKey,
     bool ignoreLocked)
 {
+    // Don't bother to do anything if the note filter would reject all notes
+    if (noteFilter.has_value() && noteFilter.value().IsEmpty())
+        return;
+
     LOCK2(cs_main, cs_wallet);
 
     KeyIO keyIO(Params());
@@ -5483,8 +5523,8 @@ void CWallet::GetFilteredNotes(
             SproutNoteData nd = pair.second;
             SproutPaymentAddress pa = nd.address;
 
-            // skip notes which belong to a different payment address in the wallet
-            if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
+            // skip notes which do not conform to the filter, if supplied
+            if (noteFilter.has_value() && !noteFilter.value().HasSproutAddress(pa)) {
                 continue;
             }
 
@@ -5553,8 +5593,8 @@ void CWallet::GetFilteredNotes(
             assert(static_cast<bool>(maybe_pa));
             auto pa = maybe_pa.value();
 
-            // skip notes which belong to a different payment address in the wallet
-            if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
+            // skip notes which do not conform to the filter, if supplied
+            if (noteFilter.has_value() && !noteFilter.value().HasSaplingAddress(pa)) {
                 continue;
             }
 
@@ -5563,7 +5603,7 @@ void CWallet::GetFilteredNotes(
             }
 
             // skip notes which cannot be spent
-            if (requireSpendingKey && !HaveSpendingKeyForPaymentAddress(this)(pa)) {
+            if (requireSpendingKey && !HaveSaplingSpendingKeyForAddress(pa)) {
                 continue;
             }
 
@@ -5585,42 +5625,57 @@ std::optional<UnifiedAddress> CWallet::GetUnifiedForReceiver(const Receiver& rec
 }
 
 //
-// Shielded key and address generalizations
+// Payment address operations
 //
 
+// PaymentAddressBelongsToWallet
+
+bool PaymentAddressBelongsToWallet::operator()(const CKeyID &addr) const
+{
+    CScript script = GetScriptForDestination(addr);
+    return m_wallet->HaveKey(addr) || m_wallet->HaveWatchOnly(script);
+}
+bool PaymentAddressBelongsToWallet::operator()(const CScriptID &addr) const
+{
+    CScript script = GetScriptForDestination(addr);
+    return m_wallet->HaveCScript(addr) || m_wallet->HaveWatchOnly(script);
+}
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::SproutPaymentAddress &zaddr) const
 {
     return m_wallet->HaveSproutSpendingKey(zaddr) || m_wallet->HaveSproutViewingKey(zaddr);
 }
-
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
 {
     libzcash::SaplingIncomingViewingKey ivk;
 
     // If we have a SaplingExtendedSpendingKey in the wallet, then we will
     // also have the corresponding SaplingExtendedFullViewingKey.
-    return m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
+    return
+        m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
         m_wallet->HaveSaplingFullViewingKey(ivk);
 }
-
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::UnifiedAddress &uaddr) const
 {
     // TODO
     return false;
 }
 
-bool PaymentAddressBelongsToWallet::operator()(const libzcash::InvalidEncoding& no) const
+// GetSourceForPaymentAddress
+
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const CKeyID &zaddr) const
 {
-    return false;
+    // TODO
+    return AddressNotFound;
 }
-
-///
-
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const CScriptID &zaddr) const
+{
+    // TODO
+    return AddressNotFound;
+}
 PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const
 {
     return Random;
 }
-
 PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
 {
     libzcash::SaplingIncomingViewingKey ivk;
@@ -5633,7 +5688,7 @@ PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::Sapl
             if (m_wallet->mapSaplingZKeyMetadata.count(ivk) > 0 &&
                     m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath != "") {
                 return LegacyHDSeed;
-            } else if (HaveSpendingKeyForPaymentAddress(m_wallet)(zaddr)) {
+            } else if (m_wallet->HaveSaplingSpendingKeyForAddress(zaddr)) {
                 return Imported;
             } else {
                 return ImportedWatchOnly;
@@ -5645,21 +5700,24 @@ PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::Sapl
         return AddressNotFound;
     }
 }
-
 PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::UnifiedAddress &uaddr) const
 {
     // TODO
     return AddressNotFound;
 }
 
-PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::InvalidEncoding& no) const
+// GetViewingKeyForPaymentAddress
+
+std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
+    const CKeyID &zaddr) const
 {
-    return AddressNotFound;
+    return std::nullopt;
 }
-
-
-///
-
+std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
+    const CScriptID &zaddr) const
+{
+    return std::nullopt;
+}
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::SproutPaymentAddress &zaddr) const
 {
@@ -5673,7 +5731,6 @@ std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     }
     return libzcash::ViewingKey(vk);
 }
-
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::SaplingPaymentAddress &zaddr) const
 {
@@ -5688,26 +5745,27 @@ std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
         return std::nullopt;
     }
 }
-
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::UnifiedAddress &uaddr) const
 {
     // TODO
-    return libzcash::ViewingKey();
+    return std::nullopt;
 }
 
-std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
-    const libzcash::InvalidEncoding& no) const
+// HaveSpendingKeyForPaymentAddress
+
+bool HaveSpendingKeyForPaymentAddress::operator()(const CKeyID &addr) const
 {
-    // Defaults to InvalidEncoding
-    return libzcash::ViewingKey();
+    return m_wallet->HaveKey(addr);
 }
-
+bool HaveSpendingKeyForPaymentAddress::operator()(const CScriptID &addr) const
+{
+    return m_wallet->HaveCScript(addr);
+}
 bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const
 {
     return m_wallet->HaveSproutSpendingKey(zaddr);
 }
-
 bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
 {
     libzcash::SaplingIncomingViewingKey ivk;
@@ -5717,53 +5775,88 @@ bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SaplingPayment
         m_wallet->GetSaplingFullViewingKey(ivk, extfvk) &&
         m_wallet->HaveSaplingSpendingKey(extfvk);
 }
-
 bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::UnifiedAddress &uaddr) const
 {
     // TODO
     return false;
 }
 
-bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::InvalidEncoding& no) const
-{
-    return false;
-}
+// GetSproutKeyForPaymentAddress
 
-std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
+std::optional<libzcash::SproutSpendingKey> GetSproutKeyForPaymentAddress::operator()(
+    const CKeyID &zaddr) const
+{
+    return std::nullopt;
+}
+std::optional<libzcash::SproutSpendingKey> GetSproutKeyForPaymentAddress::operator()(
+    const CScriptID &zaddr) const
+{
+    return std::nullopt;
+}
+std::optional<libzcash::SproutSpendingKey> GetSproutKeyForPaymentAddress::operator()(
     const libzcash::SproutPaymentAddress &zaddr) const
 {
     libzcash::SproutSpendingKey k;
     if (m_wallet->GetSproutSpendingKey(zaddr, k)) {
-        return libzcash::SpendingKey(k);
+        return k;
     } else {
         return std::nullopt;
     }
 }
+std::optional<libzcash::SproutSpendingKey> GetSproutKeyForPaymentAddress::operator()(
+    const libzcash::SaplingPaymentAddress &zaddr) const
+{
+    return std::nullopt;
+}
+std::optional<libzcash::SproutSpendingKey> GetSproutKeyForPaymentAddress::operator()(
+    const libzcash::UnifiedAddress &uaddr) const
+{
+    return std::nullopt;
+}
 
-std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
+// GetSaplingKeyForPaymentAddress
+
+std::optional<libzcash::SaplingExtendedSpendingKey> GetSaplingKeyForPaymentAddress::operator()(
+    const CKeyID &zaddr) const
+{
+    return std::nullopt;
+}
+std::optional<libzcash::SaplingExtendedSpendingKey> GetSaplingKeyForPaymentAddress::operator()(
+    const CScriptID &zaddr) const
+{
+    return std::nullopt;
+}
+std::optional<libzcash::SaplingExtendedSpendingKey> GetSaplingKeyForPaymentAddress::operator()(
+    const libzcash::SproutPaymentAddress &zaddr) const
+{
+    return std::nullopt;
+}
+std::optional<libzcash::SaplingExtendedSpendingKey> GetSaplingKeyForPaymentAddress::operator()(
     const libzcash::SaplingPaymentAddress &zaddr) const
 {
     libzcash::SaplingExtendedSpendingKey extsk;
     if (m_wallet->GetSaplingExtendedSpendingKey(zaddr, extsk)) {
-        return libzcash::SpendingKey(extsk);
+        return extsk;
     } else {
         return std::nullopt;
     }
 }
-
-std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
+std::optional<libzcash::SaplingExtendedSpendingKey> GetSaplingKeyForPaymentAddress::operator()(
     const libzcash::UnifiedAddress &uaddr) const
 {
-    // TODO
-    return libzcash::SpendingKey();
+    for (const libzcash::Receiver& receiver: uaddr) {
+        auto saplingAddr = std::get_if<SaplingPaymentAddress>(&receiver);
+        if (saplingAddr != nullptr) {
+            libzcash::SaplingExtendedSpendingKey extsk;
+            if (m_wallet->GetSaplingExtendedSpendingKey(*saplingAddr, extsk)) {
+                return extsk;
+            }
+        }
+    }
+    return std::nullopt;
 }
 
-std::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
-    const libzcash::InvalidEncoding& no) const
-{
-    // Defaults to InvalidEncoding
-    return libzcash::SpendingKey();
-}
+// AddViewingKeyToWallet
 
 KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::SproutViewingKey &vkey) const {
     auto addr = vkey.address();
@@ -5778,7 +5871,6 @@ KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::SproutViewingKey 
         return KeyNotAdded;
     }
 }
-
 KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::SaplingExtendedFullViewingKey &extfvk) const {
     if (m_wallet->HaveSaplingSpendingKey(extfvk)) {
         return SpendingKeyExists;
@@ -5795,9 +5887,7 @@ KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::UnifiedFullViewin
     throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Unified full viewing key import is not yet supported.");
 }
 
-KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::InvalidEncoding& no) const {
-    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
-}
+// AddSpendingKeyToWallet
 
 KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKey &sk) const {
     auto addr = sk.address();
@@ -5814,7 +5904,6 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKe
         return KeyNotAdded;
     }
 }
-
 KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedSpendingKey &sk) const {
     auto extfvk = sk.ToXFVK();
     auto ivk = extfvk.fvk.in_viewing_key();
@@ -5849,10 +5938,6 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
             return KeyAdded;
         }
     }
-}
-
-KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::InvalidEncoding& no) const {
-    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
 }
 
 std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {

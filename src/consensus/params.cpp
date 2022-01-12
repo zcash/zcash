@@ -9,6 +9,7 @@
 #include <script/standard.h>
 #include "upgrades.h"
 #include "util.h"
+#include "util/match.h"
 
 namespace Consensus {
     bool Params::NetworkUpgradeActive(int nHeight, Consensus::UpgradeIndex idx) const {
@@ -163,17 +164,26 @@ namespace Consensus {
 
         // Parse the address strings into concrete types.
         std::vector<FundingStreamAddress> addresses;
-        for (auto addr : strAddresses) {
-            auto taddr = keyIO.DecodeDestination(addr);
-            if (IsValidDestination(taddr)) {
-                addresses.push_back(GetScriptForDestination(taddr));
-            } else {
-                auto zaddr = keyIO.DecodePaymentAddress(addr);
-                // If the string is not a valid transparent or Sapling address, we will
-                // throw here.
-
-                addresses.push_back(std::get<libzcash::SaplingPaymentAddress>(zaddr));
+        for (const auto& strAddr : strAddresses) {
+            auto addr = keyIO.DecodePaymentAddress(strAddr);
+            if (!addr.has_value()) {
+                throw std::runtime_error("Funding stream address was not a valid " PACKAGE_NAME " address.");
             }
+
+            std::visit(match {
+                [&](const CKeyID& keyId) {
+                    addresses.push_back(GetScriptForDestination(keyId));
+                },
+                [&](const CScriptID& scriptId) {
+                    addresses.push_back(GetScriptForDestination(scriptId));
+                },
+                [&](const libzcash::SaplingPaymentAddress& zaddr) {
+                    addresses.push_back(zaddr);
+                },
+                [&](const auto& zaddr) {
+                    throw std::runtime_error("Funding stream address was not a valid transparent P2SH or Sapling address.");
+                }
+            }, addr.value());
         }
 
         auto validationResult = FundingStream::ValidateFundingStream(params, startHeight, endHeight, addresses);

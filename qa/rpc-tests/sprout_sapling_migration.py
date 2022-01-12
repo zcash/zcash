@@ -158,8 +158,8 @@ class SproutSaplingMigration(BitcoinTestFramework):
 
     def send_to_sprout_zaddr(self, tAddr, sproutAddr):
         # Send some ZEC to a Sprout address
-        opid = self.nodes[0].z_sendmany(tAddr, [{"address": sproutAddr, "amount": Decimal('10')}], 1, 0)
-        wait_and_assert_operationid_status(self.nodes[0], opid)
+        result = self.nodes[0].z_shieldcoinbase(tAddr, sproutAddr, 0, 1)
+        wait_and_assert_operationid_status(self.nodes[0], result['opid'])
         self.nodes[0].generate(1)
         self.sync_all()
 

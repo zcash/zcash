@@ -151,7 +151,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
             assert_equal(result["remainingUTXOs"], Decimal('0'))
             opid2 = result['opid']
 
-            # wait for both aysnc operations to complete
+            # wait for both async operations to complete
             wait_and_assert_operationid_status(self.nodes[0], opid1)
             wait_and_assert_operationid_status(self.nodes[0], opid2)
 
