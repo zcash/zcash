@@ -45,13 +45,13 @@ using namespace libzcash;
 
 AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         TransactionBuilder builder,
-        PaymentSource paymentSource,
+        ZTXOSelector ztxoSelector,
         std::vector<SendManyRecipient> recipients,
         int minDepth,
         CAmount fee,
         bool allowRevealedAmounts,
         UniValue contextInfo) :
-        builder_(builder), paymentSource_(paymentSource), recipients_(recipients),
+        builder_(builder), ztxoSelector_(ztxoSelector), recipients_(recipients),
         mindepth_(minDepth), fee_(fee), allowRevealedAmounts_(allowRevealedAmounts),
         contextinfo_(contextInfo)
 {
@@ -60,8 +60,8 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     assert(!recipients_.empty());
 
     std::visit(match {
-        [&](const FromAnyTaddr& any) {
-            isfromtaddr_ = true;
+        [&](const AccountZTXOSelector& acct) {
+            isfromtaddr_ = (acct.GetAccountId() == ZCASH_LEGACY_ACCOUNT);
         },
         [&](const PaymentAddress& addr) {
             // We don't need to lock on the wallet as spending key related methods are thread-safe
@@ -91,7 +91,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
                 }
             }, addr);
         }
-    }, paymentSource);
+    }, ztxoSelector);
 
     if ((isfromsprout_ || isfromsapling_) && minDepth == 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be zero when sending from a shielded address");
@@ -197,15 +197,15 @@ void AsyncRPCOperation_sendmany::main() {
     LogPrintf("%s",s);
 }
 
-bool IsFromAnyTaddr(const PaymentSource& paymentSource) {
+bool IsFromAnyTaddr(const ZTXOSelector& ztxoSelector) {
     return std::visit(match {
-        [&](const FromAnyTaddr& fromAny) {
-            return true;
+        [&](const AccountZTXOSelector& fa) {
+            return fa.GetAccountId() == ZCASH_LEGACY_ACCOUNT;
         },
-        [&](const PaymentAddress& addr) {
+        [&](const auto& other) {
             return false;
         }
-    }, paymentSource);
+    }, ztxoSelector);
 }
 
 // Construct and send the transaction, returning the resulting txid.
@@ -234,7 +234,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
     // Only select coinbase if we are spending from at most a single t-address.
     bool allowTransparentCoinbase =
-        !IsFromAnyTaddr(paymentSource_) && // allow coinbase inputs from at most a single t-addr
+        !IsFromAnyTaddr(ztxoSelector_) && // allow coinbase inputs from at most a single t-addr
         transparentRecipients_ == 0; // cannot send transparent coinbase to transparent recipients
 
     // Set the dust threshold so that we can select enough inputs to avoid
@@ -243,7 +243,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
     // Find spendable inputs, and select a minimal set of them that
     // can supply the required target amount.
-    auto spendable = pwalletMain->FindSpendableInputs(paymentSource_, allowTransparentCoinbase, mindepth_);
+    auto spendable = pwalletMain->FindSpendableInputs(ztxoSelector_, allowTransparentCoinbase, mindepth_);
     if (!spendable.LimitToAmount(targetAmount, dustThreshold)) {
         CAmount changeAmount{spendable.Total() - targetAmount};
         if (changeAmount > 0 && changeAmount < dustThreshold) {
@@ -368,34 +368,26 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         builder_.SendChangeTo(changeAddr);
     };
 
-    // FIXME: it would be better to use the most recent shielded pool change
-    // address for the wallet's default unified address account, and the
+    // FIXME: use the appropriate shielded pool change address for the
+    // source unified address account (or the legacy account), and the
     // associated OVK
     std::visit(match {
-        [&](const FromAnyTaddr& fromAny) {
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            ovk = getDefaultOVK();
+            builder_.SendChangeTo(addr);
+        },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            libzcash::SaplingExtendedSpendingKey saplingKey;
+            assert(pwalletMain->GetSaplingExtendedSpendingKey(addr, saplingKey));
+
+            ovk = saplingKey.expsk.full_viewing_key().ovk;
+            builder_.SendChangeTo(addr, ovk);
+        },
+        [&](const auto& other) {
             ovk = getDefaultOVK();
             setTransparentChangeRecipient();
-        },
-        [&](const PaymentAddress& addr) {
-            std::visit(match {
-                [&](const libzcash::SproutPaymentAddress& addr) {
-                    ovk = getDefaultOVK();
-                    builder_.SendChangeTo(addr);
-                },
-                [&](const libzcash::SaplingPaymentAddress& addr) {
-                    libzcash::SaplingExtendedSpendingKey saplingKey;
-                    assert(pwalletMain->GetSaplingExtendedSpendingKey(addr, saplingKey));
-
-                    ovk = saplingKey.expsk.full_viewing_key().ovk;
-                    builder_.SendChangeTo(addr, ovk);
-                },
-                [&](const auto& other) {
-                    ovk = getDefaultOVK();
-                    setTransparentChangeRecipient();
-                }
-            }, addr);
         }
-    }, paymentSource_);
+    }, ztxoSelector_);
 
     // Track the total of notes that we've added to the builder
     CAmount sum = 0;

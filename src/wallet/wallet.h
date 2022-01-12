@@ -686,13 +686,47 @@ public:
     std::string ToString() const;
 };
 
-class FromAnyTaddr {
+/**
+ * A class representing a BIP-44 account's spend authority, which can be used
+ * to choose prior Zcash transaction outputs, including both transparent UTXOs
+ * and shielded notes.
+ *
+ * If the set of receiver types provided is non-empty, only outputs for
+ * protocols corresponding to the provided set of receiver types may be used.
+ * If the set of receiver types is empty, no restrictions are placed upon what
+ * protocols outputs are selected for.
+ */
+class AccountZTXOSelector {
+    libzcash::AccountId accountId;
+    std::set<libzcash::ReceiverType> receiverTypes;
 public:
-   friend bool operator==(const FromAnyTaddr &a, const FromAnyTaddr &b) { return true; }
+    AccountZTXOSelector(libzcash::AccountId accountIdIn, std::set<libzcash::ReceiverType> receiverTypesIn):
+        accountId(accountIdIn), receiverTypes(receiverTypesIn) {}
+
+    libzcash::AccountId GetAccountId() const {
+        return accountId;
+    }
+
+    const std::set<libzcash::ReceiverType>& GetReceiverTypes() const {
+        return receiverTypes;
+    }
+
+    friend bool operator==(const AccountZTXOSelector &a, const AccountZTXOSelector &b) {
+        return a.accountId == b.accountId && a.receiverTypes == b.receiverTypes;
+    }
 };
 
-/** A source from which the zcashd wallet can spend funds */
-typedef std::variant<FromAnyTaddr, libzcash::PaymentAddress> PaymentSource;
+/**
+ * A selector which can be used to choose prior Zcash transaction outputs,
+ * including both transparent UTXOs and shielded notes.
+ */
+typedef std::variant<
+    CKeyID,
+    CScriptID,
+    libzcash::SproutPaymentAddress,
+    libzcash::SaplingPaymentAddress,
+    AccountZTXOSelector> ZTXOSelector;
+
 
 class SpendableInputs {
 public:
@@ -1144,10 +1178,19 @@ public:
      */
     static bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet);
 
+    /**
+     * Obtain the ZTXO selector for the specified payment address. If the
+     * `requireSpendingKey` flag is set, this will only return a selector
+     * that will choose outputs for which this wallet holds the spending keys.
+     */
+    std::optional<ZTXOSelector> ToZTXOSelector(
+            const libzcash::PaymentAddress& addr,
+            bool requireSpendingKey) const;
+
     SpendableInputs FindSpendableInputs(
-            PaymentSource paymentSource,
+            ZTXOSelector paymentSource,
             bool allowTransparentCoinbase,
-            uint32_t minDepth);
+            uint32_t minDepth) const;
 
     bool IsSpent(const uint256& hash, unsigned int n) const;
     bool IsSproutSpent(const uint256& nullifier) const;

@@ -86,7 +86,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
             myopid = self.nodes[3].z_sendmany(mytaddr, recipients)
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("Invalid from address, no spending key found for address", errorString);
+        assert_equal("Invalid from address, no payment source found for address.", errorString);
 
         # This send will fail because our consensus does not allow transparent change when 
         # shielding a coinbase utxo. 

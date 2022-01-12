@@ -4156,7 +4156,7 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
 #define CTXOUT_REGULAR_SIZE     34
 
 size_t EstimateTxSize(
-        const PaymentSource& paymentSource,
+        const ZTXOSelector& ztxoSelector,
         const std::vector<SendManyRecipient>& recipients,
         int nextBlockHeight) {
     CMutableTransaction mtx;
@@ -4165,31 +4165,23 @@ size_t EstimateTxSize(
     mtx.nVersion = SAPLING_TX_VERSION;
 
     bool fromTaddr = std::visit(match {
-        [&](const FromAnyTaddr& any) {
+        [&](const AccountZTXOSelector& acct) {
+            return acct.GetReceiverTypes().count(ReceiverType::P2PKH) > 0 ||
+                   acct.GetReceiverTypes().count(ReceiverType::P2SH) > 0;
+        },
+        [&](const CKeyID& keyId) {
             return true;
         },
-        [&](const PaymentAddress& addr) {
-            return std::visit(match {
-                [&](const CKeyID& keyId) {
-                    return true;
-                },
-                [&](const CScriptID& scriptId) {
-                    return true;
-                },
-                [&](const libzcash::SproutPaymentAddress& addr) {
-                    return false;
-                },
-                [&](const libzcash::SaplingPaymentAddress& addr) {
-                    return false;
-                },
-                [&](const libzcash::UnifiedAddress& addr) {
-                    // TODO UA
-                    throw JSONRPCError(RPC_INVALID_PARAMETER, "Unified addresses not yet supported.");
-                    return false; // compiler is dumb
-                }
-            }, addr);
+        [&](const CScriptID& scriptId) {
+            return true;
+        },
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            return false;
+        },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            return false;
         }
-    }, paymentSource);
+    }, ztxoSelector);
 
     // As a sanity check, estimate and verify that the size of the transaction will be valid.
     // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
@@ -4283,25 +4275,25 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     // Check that the from address is valid.
     // Unified address (UA) allowed here (#5185)
     auto fromaddress = params[0].get_str();
-    PaymentSource paymentSource;
+    ZTXOSelector ztxoSelector;
     if (fromaddress == "ANY_TADDR") {
-        paymentSource = FromAnyTaddr();
+        ztxoSelector = AccountZTXOSelector(ZCASH_LEGACY_ACCOUNT, {ReceiverType::P2PKH, ReceiverType::P2SH});
     } else {
-        auto addr = keyIO.DecodePaymentAddress(fromaddress);
-        if (!addr.has_value()) {
+        auto decoded = keyIO.DecodePaymentAddress(fromaddress);
+        if (!decoded.has_value()) {
             throw JSONRPCError(
                     RPC_INVALID_ADDRESS_OR_KEY,
                     "Invalid from address: should be a taddr, a zaddr, or the string 'ANY_TADDR'.");
         }
 
-        // Unified addresses are not yet supported.
-        if (std::holds_alternative<libzcash::UnifiedAddress>(addr.value())) {
+        auto ztxoSelectorOpt = pwalletMain->ToZTXOSelector(decoded.value(), true);
+        if (!ztxoSelectorOpt.has_value()) {
             throw JSONRPCError(
                     RPC_INVALID_ADDRESS_OR_KEY,
-                    "Invalid from address: unified addresses are not yet supported.");
+                    "Invalid from address, no payment source found for address.");
         }
 
-        paymentSource = addr.value();
+        ztxoSelector = ztxoSelectorOpt.value();
     }
 
     UniValue outputs = params[1].get_array();
@@ -4374,7 +4366,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     // Sanity check for transaction size
     // TODO: move this to the builder?
-    auto txsize = EstimateTxSize(paymentSource, recipients, nextBlockHeight);
+    auto txsize = EstimateTxSize(ztxoSelector, recipients, nextBlockHeight);
     if (txsize > MAX_TX_SIZE_AFTER_SAPLING) {
         throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
@@ -4436,7 +4428,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation(
-            new AsyncRPCOperation_sendmany(builder, paymentSource, recipients, nMinDepth, nFee, allowRevealedAmounts, contextInfo)
+            new AsyncRPCOperation_sendmany(builder, ztxoSelector, recipients, nMinDepth, nFee, allowRevealedAmounts, contextInfo)
             );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();

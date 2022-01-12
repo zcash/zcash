@@ -1191,19 +1191,11 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     int nHeight = retValue.get_int();
     TransactionBuilder builder(Params().GetConsensus(), nHeight + 1, pwalletMain);
 
-    try {
-        libzcash::UnifiedAddress ua; //dummy
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient(ua, 1*COIN, std::nullopt) };
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, ua, recipients, 1));
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Invalid from address"));
-    }
-
     // Note: The following will crash as a google test because AsyncRPCOperation_sendmany
     // invokes a method on pwalletMain, which is undefined in the google test environment.
     try {
         KeyIO keyIO(Params());
-        auto sender = keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value();
+        auto sender = std::get<libzcash::SproutPaymentAddress>(keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value());
         libzcash::UnifiedAddress ua; //dummy
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(ua, 1*COIN, std::nullopt) };
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, sender, recipients, 1));
@@ -1242,7 +1234,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // add keys manually
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
-    auto taddr1 = keyIO.DecodePaymentAddress(retValue.get_str()).value();
+    auto taddr1 = std::get<CKeyID>(keyIO.DecodePaymentAddress(retValue.get_str()).value());
 
     if (!pwalletMain->HaveMnemonicSeed()) {
         pwalletMain->GenerateNewSeed();

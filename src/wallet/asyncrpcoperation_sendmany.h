@@ -45,7 +45,7 @@ class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
 public:
     AsyncRPCOperation_sendmany(
         TransactionBuilder builder,
-        PaymentSource paymentSource,
+        ZTXOSelector ztxoSelector,
         std::vector<SendManyRecipient> recipients,
         int minDepth,
         CAmount fee = DEFAULT_FEE,
@@ -69,7 +69,7 @@ private:
     friend class TEST_FRIEND_AsyncRPCOperation_sendmany;    // class for unit testing
 
     TransactionBuilder builder_;
-    PaymentSource paymentSource_;
+    ZTXOSelector ztxoSelector_;
     std::vector<SendManyRecipient> recipients_;
     int mindepth_{1};
     CAmount fee_;

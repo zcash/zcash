@@ -1359,34 +1359,65 @@ void CWallet::SyncMetaData(pair<typename TxSpendMap<T>::iterator, typename TxSpe
     }
 }
 
+std::optional<ZTXOSelector> CWallet::ToZTXOSelector(const libzcash::PaymentAddress& addr, bool requireSpendingKey) const {
+    auto self = this;
+    std::optional<ZTXOSelector> result;
+    std::visit(match {
+        [&](const CKeyID& addr) {
+            if (!requireSpendingKey || self->HaveKey(addr)) {
+                result = addr;
+            }
+        },
+        [&](const CScriptID& addr) {
+            if (!requireSpendingKey || self->HaveCScript(addr)) {
+                result = addr;
+            }
+        },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            if (!requireSpendingKey || self->HaveSaplingSpendingKeyForAddress(addr)) {
+                result = addr;
+            }
+        },
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            if (!requireSpendingKey || self->HaveSproutSpendingKey(addr)) {
+                result = addr;
+            }
+        },
+        [&](const libzcash::UnifiedAddress& ua) {
+            // TODO: Find the unified account corresponding to this UA
+        }
+    }, addr);
+    return result;
+}
+
 SpendableInputs CWallet::FindSpendableInputs(
-        PaymentSource paymentSource,
+        ZTXOSelector selector,
         bool allowTransparentCoinbase,
-        uint32_t minDepth) {
+        uint32_t minDepth) const {
     SpendableInputs unspent;
 
     auto filters = std::visit(match {
-        [&](const PaymentAddress& addr) {
-            return std::visit(match {
-                [&](const CKeyID& keyId) {
-                    std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({keyId});
-                    return std::make_pair(t_filter, AddrSet::Empty());
-                },
-                [&](const CScriptID& scriptId) {
-                    std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({scriptId});
-                    return std::make_pair(t_filter, AddrSet::Empty());
-                },
-                [&](const auto& other) {
-                    std::optional<std::set<CTxDestination>> t_filter = std::nullopt;
-                    return std::make_pair(t_filter, AddrSet::ForPaymentAddresses({addr}));
-                }
-            }, addr);
+        [&](const CKeyID& keyId) {
+            std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({keyId});
+            return std::make_pair(t_filter, AddrSet::Empty());
         },
-        [&](const FromAnyTaddr& taddr) {
+        [&](const CScriptID& scriptId) {
+            std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({scriptId});
+            return std::make_pair(t_filter, AddrSet::Empty());
+        },
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            std::optional<std::set<CTxDestination>> t_filter = std::nullopt;
+            return std::make_pair(t_filter, AddrSet::ForPaymentAddresses({addr}));
+        },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            std::optional<std::set<CTxDestination>> t_filter = std::nullopt;
+            return std::make_pair(t_filter, AddrSet::ForPaymentAddresses({addr}));
+        },
+        [&](const AccountZTXOSelector& acct) {
             std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({});
             return std::make_pair(t_filter, AddrSet::Empty());
         }
-    }, paymentSource);
+    }, selector);
 
     if (filters.first.has_value()) {
         this->AvailableCoins(
