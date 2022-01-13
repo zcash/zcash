@@ -595,4 +595,30 @@ BOOST_AUTO_TEST_CASE(test_ParseArbitraryInt)
     BOOST_CHECK_EQUAL((*v)[21], 0x10);
 }
 
+BOOST_AUTO_TEST_CASE(test_ArbitraryIntStr)
+{
+    BOOST_CHECK_EQUAL(ArbitraryIntStr({}), "0");
+    BOOST_CHECK_EQUAL(ArbitraryIntStr({0}), "0");
+    BOOST_CHECK_EQUAL(ArbitraryIntStr({0, 0}), "0");
+    BOOST_CHECK_EQUAL(ArbitraryIntStr({0, 0, 0}), "0");
+    BOOST_CHECK_EQUAL(ArbitraryIntStr({0, 0, 0, 0}), "0");
+
+    BOOST_CHECK_EQUAL(ArbitraryIntStr({1}), "1");
+    BOOST_CHECK_EQUAL(ArbitraryIntStr({2}), "2");
+    BOOST_CHECK_EQUAL(ArbitraryIntStr({10}), "10");
+    BOOST_CHECK_EQUAL(ArbitraryIntStr({100}), "100");
+
+    BOOST_CHECK_EQUAL(ArbitraryIntStr({0xff}), "255");
+    BOOST_CHECK_EQUAL(ArbitraryIntStr({0x00, 0x01}), "256");
+    BOOST_CHECK_EQUAL(ArbitraryIntStr({0xff, 0x01}), "511");
+    BOOST_CHECK_EQUAL(ArbitraryIntStr({0x00, 0x02}), "512");
+
+    BOOST_CHECK_EQUAL(
+        ArbitraryIntStr({0xff, 0xff, 0xff, 0xff}),
+        "4294967295");
+    BOOST_CHECK_EQUAL(
+        ArbitraryIntStr({0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}),
+        "309485009821345068724781055");
+}
+
 BOOST_AUTO_TEST_SUITE_END()

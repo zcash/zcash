@@ -528,3 +528,38 @@ std::optional<std::vector<uint8_t>> ParseArbitraryInt(const std::string& num_str
     }
     return result;
 }
+
+std::string ArbitraryIntStr(std::vector<uint8_t> bytes)
+{
+    // Only serialize up to the most significant non-zero byte.
+    size_t end = bytes.size();
+    for (; end > 0  && bytes[end - 1] == 0; --end) {}
+
+    std::string result;
+    while (end > 0) {
+        // "Divide" bytes by 10.
+        uint16_t rem = 0;
+        for (int i = end - 1; i >= 0; --i) {
+            uint16_t tmp = rem * 256 + bytes[i];
+            rem = tmp % 10;
+            auto b = tmp / 10;
+            assert(b < 256);
+            bytes[i] = b;
+        }
+
+        // Write out the remainder as the next lowest digit.
+        result = tfm::format("%d%s", rem, result);
+
+        // If we've moved all the bits out of the MSB, drop it.
+        if (bytes[end - 1] == 0) {
+            end--;
+        }
+    }
+
+    // Handle the all-zero bytes case.
+    if (result.empty()) {
+        return "0";
+    } else {
+        return result;
+    }
+}
