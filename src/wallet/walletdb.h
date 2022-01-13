@@ -101,6 +101,7 @@ public:
     }
 
     void IncrementAccountCounter() {
+        // TODO: We should check for overflow somewhere and handle it.
         accountCounter += 1;
     }
 

@@ -16,6 +16,7 @@
 #include "proof_verifier.h"
 #include "rpc/server.h"
 #include "timedata.h"
+#include "tinyformat.h"
 #include "transaction_builder.h"
 #include "util.h"
 #include "util/match.h"
@@ -3016,18 +3017,15 @@ UniValue z_getnewaccount(const UniValue& params, bool fHelp)
     if (fHelp || params.size() > 0)
         throw runtime_error(
             "z_getnewaccount\n"
-            "\nPrepares and returns a new account, and its corresponding default address.\n"
+            "\nPrepares and returns a new account.\n"
             "\nAccounts are numbered starting from zero; this RPC method selects the next"
             "\navailable sequential account number within the UA-compatible HD seed phrase.\n"
-            "\nThe account will be prepared with spending keys for the best and second-best"
-            "\nshielded pools, and the transparent pool.\n"
             "\nEach new account is a separate group of funds within the wallet, and adds an"
-            "\nadditional performance cost to wallet scanning. If you want a new address"
-            "\nfor an existing account, use the z_getaddressforaccount RPC method.\n"
+            "\nadditional performance cost to wallet scanning.\n"
+            "\nUse the z_getaddressforaccount RPC method to obtain addresses for an account.\n"
             "\nResult:\n"
             "{\n"
             "  \"account\": n,       (numeric) the new account number\n"
-            "  \"unifiedaddress\"    (string) The default address for this account\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("z_getnewaccount", "")
@@ -3037,10 +3035,17 @@ UniValue z_getnewaccount(const UniValue& params, bool fHelp)
     if (!fExperimentalOrchardWallet) {
         throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
     }
-    int64_t account = 999999; // TODO placeholder
+
+    LOCK(pwalletMain->cs_wallet);
+
+    EnsureWalletIsUnlocked();
+
+    // Generate the new account.
+    auto skNew = pwalletMain->GenerateNewUnifiedSpendingKey();
+    const auto& account = skNew.second;
+
     UniValue result(UniValue::VOBJ);
-    result.pushKV("account", account);
-    result.pushKV("unifiedaddress", "TODO");
+    result.pushKV("account", (uint64_t)account);
     return result;
 }
 
