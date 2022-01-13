@@ -846,6 +846,10 @@ public:
         }
     }
 
+    std::optional<libzcash::AccountId> GetAccountId() const {
+        return accountId;
+    }
+
     bool SetAccountId(libzcash::AccountId accountIdIn) {
         if (accountId.has_value()) {
             return (accountIdIn == accountId.value());
@@ -1358,7 +1362,8 @@ public:
     bool LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skmeta);
     bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
 
-    std::optional<libzcash::UnifiedAddress> GetUnifiedForReceiver(const libzcash::Receiver& receiver);
+    std::optional<libzcash::UFVKId> FindUnifiedFullViewingKey(const libzcash::UnifiedAddress& addr) const;
+    std::optional<libzcash::UnifiedAddress> GetUnifiedForReceiver(const libzcash::Receiver& receiver) const;
 
     /**
      * Increment the next transaction order id

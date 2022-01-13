@@ -61,7 +61,10 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
 
     std::visit(match {
         [&](const AccountZTXOSelector& acct) {
-            isfromtaddr_ = (acct.GetAccountId() == ZCASH_LEGACY_ACCOUNT);
+            isfromtaddr_ =
+                acct.GetReceiverTypes().empty() ||
+                acct.GetReceiverTypes().count(ReceiverType::P2PKH) > 0 ||
+                acct.GetReceiverTypes().count(ReceiverType::P2SH) > 0;
         },
         [&](const PaymentAddress& addr) {
             // We don't need to lock on the wallet as spending key related methods are thread-safe
@@ -252,6 +255,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             // and send the extra to the recipient or the miner fee to avoid
             // creating dust change, rather than prohibit them from sending
             // entirely in this circumstance.
+            // (Daira disagrees, as this could leak information to the recipient)
             throw JSONRPCError(
                     RPC_WALLET_INSUFFICIENT_FUNDS,
                     strprintf(

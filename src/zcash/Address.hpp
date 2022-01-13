@@ -56,6 +56,8 @@ typedef std::variant<
     CKeyID,
     UnknownReceiver> Receiver;
 
+bool HasKnownReceiverType(const Receiver& receiver);
+
 struct ReceiverIterator {
     using iterator_category = std::random_access_iterator_tag;
     using difference_type   = std::ptrdiff_t;

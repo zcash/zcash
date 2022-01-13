@@ -73,6 +73,14 @@ std::optional<SaplingPaymentAddress> UnifiedAddress::GetSaplingReceiver() const 
     return std::nullopt;
 }
 
+bool HasKnownReceiverType(const Receiver& receiver) {
+    return std::visit(match {
+        [](const SaplingPaymentAddress& addr) { return true; },
+        [](const CScriptID& addr) { return true; },
+        [](const CKeyID& addr) { return true; },
+        [](const UnknownReceiver& addr) { return false; }
+    }, receiver);
+}
 
 std::pair<std::string, PaymentAddress> AddressInfoFromSpendingKey::operator()(const SproutSpendingKey &sk) const {
     return std::make_pair("sprout", sk.address());

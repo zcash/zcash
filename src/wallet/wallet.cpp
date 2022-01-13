@@ -1359,9 +1359,13 @@ void CWallet::SyncMetaData(pair<typename TxSpendMap<T>::iterator, typename TxSpe
     }
 }
 
+//
+// Zcash transaction output selectors
+//
+
 std::optional<ZTXOSelector> CWallet::ToZTXOSelector(const libzcash::PaymentAddress& addr, bool requireSpendingKey) const {
     auto self = this;
-    std::optional<ZTXOSelector> result;
+    std::optional<ZTXOSelector> result = std::nullopt;
     std::visit(match {
         [&](const CKeyID& addr) {
             if (!requireSpendingKey || self->HaveKey(addr)) {
@@ -1384,7 +1388,21 @@ std::optional<ZTXOSelector> CWallet::ToZTXOSelector(const libzcash::PaymentAddre
             }
         },
         [&](const libzcash::UnifiedAddress& ua) {
-            // TODO: Find the unified account corresponding to this UA
+            auto ufvkId = this->FindUnifiedFullViewingKey(ua);
+            if (ufvkId.has_value()) {
+                // TODO: at present, the `false` value for the `requireSpendingKey` argument
+                // is not respected for unified addresses, because we have no notion of
+                // an account for which we do not control the spending key. An alternate
+                // approach would be to use the UFVK directly in the case that we cannot
+                // determine a local account.
+                auto addrMetaIt = mapUfvkAddressMetadata.find(ufvkId.value());
+                if (addrMetaIt != mapUfvkAddressMetadata.end()) {
+                    auto accountId = addrMetaIt->second.GetAccountId();
+                    if (accountId.has_value()) {
+                        result = AccountZTXOSelector(accountId.value(), ua.GetKnownReceiverTypes());
+                    }
+                }
+            }
         }
     }, addr);
     return result;
@@ -5700,8 +5718,31 @@ void CWallet::GetFilteredNotes(
     }
 }
 
+std::optional<UFVKId> CWallet::FindUnifiedFullViewingKey(const libzcash::UnifiedAddress& addr) const {
+    std::optional<libzcash::UFVKId> ufvkId;
+    for (const auto& receiver : addr) {
+        // skip unknown receivers
+        if (libzcash::HasKnownReceiverType(receiver)) {
+            auto ufvkPair = this->GetUFVKMetadataForReceiver(receiver);
+            if (ufvkPair.has_value()) {
+                if (ufvkId.has_value()) {
+                    // Check that all the receivers belong to the same ufvk; if not,
+                    // we cannot identify a unique UFVK for the address.
+                    if (ufvkPair.value().first != ufvkId.value()) {
+                        return std::nullopt;
+                    }
+                } else {
+                    ufvkId = ufvkPair.value().first;
+                }
+            } else {
+                return std::nullopt;
+            }
+        }
+    }
+    return ufvkId;
+}
 
-std::optional<UnifiedAddress> CWallet::GetUnifiedForReceiver(const Receiver& receiver) {
+std::optional<UnifiedAddress> CWallet::GetUnifiedForReceiver(const Receiver& receiver) const {
     return std::visit(LookupUnifiedAddress(*this), receiver);
 }
 
