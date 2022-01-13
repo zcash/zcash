@@ -1227,6 +1227,12 @@ public:
 
     static ZTXOSelector LegacyTransparentZTXOSelector();
 
+    /**
+     * Look up the account for a given selector, ensuring that the account
+     * exists in this wallet.
+     */
+    std::optional<libzcash::AccountId> FindAccountForSelector(const ZTXOSelector& paymentSource) const;
+
     SpendableInputs FindSpendableInputs(
             ZTXOSelector paymentSource,
             bool allowTransparentCoinbase,

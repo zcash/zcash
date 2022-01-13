@@ -1416,6 +1416,39 @@ ZTXOSelector CWallet::LegacyTransparentZTXOSelector() {
             true);
 }
 
+std::optional<libzcash::AccountId> CWallet::FindAccountForSelector(const ZTXOSelector& selector) const {
+    auto self = this;
+    std::optional<libzcash::AccountId> result{};
+    std::visit(match {
+        [&](const CKeyID& addr) {
+            auto meta = self->GetUFVKMetadataForReceiver(addr);
+            if (meta.has_value()) {
+                result = self->GetUnifiedAccountId(meta.value().first);
+            }
+        },
+        [&](const CScriptID& addr) {
+            auto meta = self->GetUFVKMetadataForReceiver(addr);
+            if (meta.has_value()) {
+                result = self->GetUnifiedAccountId(meta.value().first);
+            }
+        },
+        [&](const libzcash::SproutPaymentAddress& addr) { },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            auto meta = GetUFVKMetadataForReceiver(addr);
+            if (meta.has_value()) {
+                result = self->GetUnifiedAccountId(meta.value().first);
+            }
+        },
+        [&](const AccountZTXOPattern& acct) {
+            if (self->mnemonicHDChain.has_value() &&
+                self->mapUnifiedAccountKeys.count(std::make_pair(self->mnemonicHDChain.value().GetSeedFingerprint(), acct.GetAccountId())) > 0) {
+                result = acct.GetAccountId();
+            }
+        }
+    }, selector.GetPattern());
+    return result;
+}
+
 bool CWallet::SelectorMatchesAddress(
         const ZTXOSelector& selector,
         const CTxDestination& address) const {
