@@ -73,6 +73,25 @@ std::optional<SaplingPaymentAddress> UnifiedAddress::GetSaplingReceiver() const 
     return std::nullopt;
 }
 
+std::optional<RecipientAddress> UnifiedAddress::GetPreferredRecipientAddress() const {
+    // Return the first receiver type we recognize; receivers are sorted in
+    // order from most-preferred to least.
+    std::optional<RecipientAddress> result;
+    for (const auto& receiver : *this) {
+        std::visit(match {
+            [&](const SaplingPaymentAddress& addr) { result = addr; },
+            [&](const CScriptID& addr) { result = addr; },
+            [&](const CKeyID& addr) { result = addr; },
+            [&](const UnknownReceiver& addr) { }
+        }, receiver);
+
+        if (result.has_value()) {
+            return result;
+        }
+    }
+    return std::nullopt;
+}
+
 bool HasKnownReceiverType(const Receiver& receiver) {
     return std::visit(match {
         [](const SaplingPaymentAddress& addr) { return true; },

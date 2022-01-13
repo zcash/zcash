@@ -90,6 +90,12 @@ private:
     size_t cur;
 };
 
+/** A recipient address to which a unified address can be resolved */
+typedef std::variant<
+    CKeyID,
+    CScriptID,
+    libzcash::SaplingPaymentAddress> RecipientAddress;
+
 class UnifiedAddress {
     std::vector<Receiver> receivers;
 
@@ -147,6 +153,8 @@ public:
     std::optional<CScriptID> GetP2SHReceiver() const;
 
     std::optional<SaplingPaymentAddress> GetSaplingReceiver() const;
+
+    std::optional<RecipientAddress> GetPreferredRecipientAddress() const;
 
     friend inline bool operator==(const UnifiedAddress& a, const UnifiedAddress& b) {
         return a.receivers == b.receivers;
