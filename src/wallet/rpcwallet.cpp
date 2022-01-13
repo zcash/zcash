@@ -4318,21 +4318,25 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         }
 
         std::string addrStr = find_value(o, "address").get_str();
-        auto addr = keyIO.DecodePaymentAddress(addrStr);
-        if (addr.has_value()) {
-            // TODO: If we want to continue to support sending to Sprout, we'll simply relax the
-            // restriction here to allow sprout->sprout; these transfers will not be forbidden
-            // by later code.
-            bool toSprout = std::holds_alternative<libzcash::SproutPaymentAddress>(addr.value());
+        auto decoded = keyIO.DecodePaymentAddress(addrStr);
+        if (!decoded.has_value()) {
+            throw JSONRPCError(
+                    RPC_INVALID_PARAMETER,
+                    std::string("Invalid parameter, unknown address format: ") + addrStr);
+        }
+
+        std::optional<RecipientAddress> addr = std::visit(SelectRecipientAddress(), decoded.value());
+        if (!addr.has_value()) {
+            bool toSprout = std::holds_alternative<libzcash::SproutPaymentAddress>(decoded.value());
             if (toSprout) {
                 throw JSONRPCError(
                     RPC_INVALID_PARAMETER,
                     "Sending funds into the Sprout pool is not supported by z_sendmany");
-            }
-        } else {
-            throw JSONRPCError(
+            } else {
+                throw JSONRPCError(
                     RPC_INVALID_PARAMETER,
-                    std::string("Invalid parameter, unknown address format: ") + addrStr);
+                    "Unified address contained no recognized receiver types.");
+            }
         }
 
         if (!addrStrings.insert(addrStr).second) {

@@ -27,11 +27,11 @@ using namespace libzcash;
 
 class SendManyRecipient {
 public:
-    PaymentAddress address;
+    RecipientAddress address;
     CAmount amount;
     std::optional<std::string> memo;
 
-    SendManyRecipient(PaymentAddress address_, CAmount amount_, std::optional<std::string> memo_) :
+    SendManyRecipient(RecipientAddress address_, CAmount amount_, std::optional<std::string> memo_) :
         address(address_), amount(amount_), memo(memo_) {}
 };
 

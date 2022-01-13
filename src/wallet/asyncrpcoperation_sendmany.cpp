@@ -96,10 +96,6 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
                 transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
             },
-            [&](const libzcash::SproutPaymentAddress& addr) {
-                // unreachable; currently disallowed by checks at construction
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Sending to Sprout is disabled.");
-            },
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 txOutputAmounts_.z_outputs_total += recipient.amount;
                 if (isfromsprout_ && !allowRevealedAmounts_) {
@@ -110,10 +106,6 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
                             "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
                             "you wish to allow this transaction to proceed anyway.");
                 }
-            },
-            [&](const libzcash::UnifiedAddress& ua) {
-                // unreachable; currently disallowed by checks at construction
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Sending to unified addresses is disabled.");
             }
         }, recipient.address);
     }
@@ -414,23 +406,11 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             [&](const CScriptID& scriptId) {
                 builder_.AddTransparentOutput(scriptId, r.amount);
             },
-            [&](const libzcash::SproutPaymentAddress& addr) {
-                //unreachable
-                throw JSONRPCError(
-                    RPC_INVALID_ADDRESS_OR_KEY,
-                    "Sending funds to Sprout is disabled.");
-            },
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 auto value = r.amount;
                 auto memo = get_memo_from_hex_string(r.memo.has_value() ? r.memo.value() : "");
 
                 builder_.AddSaplingOutput(ovk, addr, value, memo);
-            },
-            [&](const libzcash::UnifiedAddress& addr) {
-                //unreachable
-                throw JSONRPCError(
-                    RPC_INVALID_ADDRESS_OR_KEY,
-                    "Unified addresses are not yet supported by z_sendmany");
             }
         }, r.address);
     }

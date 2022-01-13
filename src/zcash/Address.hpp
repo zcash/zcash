@@ -269,6 +269,17 @@ public:
     bool operator()(const UnifiedAddress& addr) { return true; }
 };
 
+class SelectRecipientAddress {
+public:
+    std::optional<RecipientAddress> operator()(const CKeyID& p2pkh) { return p2pkh; }
+    std::optional<RecipientAddress> operator()(const CScriptID& p2sh) { return p2sh; }
+    std::optional<RecipientAddress> operator()(const SproutPaymentAddress& addr) { return std::nullopt; }
+    std::optional<RecipientAddress> operator()(const SaplingPaymentAddress& addr) { return addr; }
+    std::optional<RecipientAddress> operator()(const UnifiedAddress& addr) {
+        return addr.GetPreferredRecipientAddress();
+    }
+};
+
 class AddressInfoFromSpendingKey {
 public:
     std::pair<std::string, PaymentAddress> operator()(const SproutSpendingKey&) const;
