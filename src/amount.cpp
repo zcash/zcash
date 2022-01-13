@@ -7,6 +7,7 @@
 #include "policy/fees.h"
 
 #include "tinyformat.h"
+break force fail
 
 const std::string CURRENCY_UNIT = "ZEC";
 const std::string MINOR_CURRENCY_UNIT = "zatoshis";
