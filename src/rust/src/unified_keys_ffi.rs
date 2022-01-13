@@ -1,8 +1,12 @@
 use libc::c_char;
-use std::ffi::{CStr, CString};
+use std::{
+    convert::TryInto,
+    ffi::{CStr, CString},
+};
 use tracing::error;
 
 use zcash_address::unified::{Container, Encoding, Fvk, Ufvk};
+use zcash_primitives::transparent::ExternalPubKey;
 
 use crate::address_ffi::network_from_cstr;
 
@@ -164,4 +168,40 @@ pub extern "C" fn unified_full_viewing_key_from_components(
             std::ptr::null_mut()
         }
     }
+}
+
+/// Derives an outgoing viewing key from a transparent full viewing key.
+#[no_mangle]
+pub extern "C" fn unified_full_viewing_key_transparent_ovk(
+    fvk: *const Ufvk,
+    external: bool,
+    out: *mut [u8; 32],
+) -> bool {
+    let fvk = unsafe { fvk.as_ref() }.expect("Unified full viewing key pointer may not be null.");
+    let out = unsafe { &mut *out };
+
+    let mut tkey = None;
+    for item in fvk.items() {
+        match item {
+            Fvk::P2pkh(data) => {
+                let key: ExternalPubKey = (&data).try_into().unwrap();
+                tkey = Some(key);
+            }
+            _ => {
+                tkey = None;
+            }
+        }
+    }
+
+    if let Some(tkey) = tkey {
+        if external {
+            *out = tkey.external_ovk().as_bytes();
+        } else {
+            *out = tkey.internal_ovk().as_bytes();
+        }
+
+        return true;
+    }
+
+    false
 }
