@@ -4165,9 +4165,11 @@ size_t EstimateTxSize(
     mtx.nVersion = SAPLING_TX_VERSION;
 
     bool fromTaddr = std::visit(match {
-        [&](const AccountZTXOSelector& acct) {
-            return acct.GetReceiverTypes().count(ReceiverType::P2PKH) > 0 ||
-                   acct.GetReceiverTypes().count(ReceiverType::P2SH) > 0;
+        [&](const AccountZTXOPattern& acct) {
+            return
+                acct.GetReceiverTypes().empty() ||
+                acct.GetReceiverTypes().count(ReceiverType::P2PKH) > 0 ||
+                acct.GetReceiverTypes().count(ReceiverType::P2SH) > 0;
         },
         [&](const CKeyID& keyId) {
             return true;
@@ -4181,7 +4183,7 @@ size_t EstimateTxSize(
         [&](const libzcash::SaplingPaymentAddress& addr) {
             return false;
         }
-    }, ztxoSelector);
+    }, ztxoSelector.GetPattern());
 
     // As a sanity check, estimate and verify that the size of the transaction will be valid.
     // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
@@ -4275,26 +4277,27 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     // Check that the from address is valid.
     // Unified address (UA) allowed here (#5185)
     auto fromaddress = params[0].get_str();
-    ZTXOSelector ztxoSelector;
-    if (fromaddress == "ANY_TADDR") {
-        ztxoSelector = AccountZTXOSelector(ZCASH_LEGACY_ACCOUNT, {ReceiverType::P2PKH, ReceiverType::P2SH});
-    } else {
-        auto decoded = keyIO.DecodePaymentAddress(fromaddress);
-        if (!decoded.has_value()) {
-            throw JSONRPCError(
-                    RPC_INVALID_ADDRESS_OR_KEY,
-                    "Invalid from address: should be a taddr, a zaddr, or the string 'ANY_TADDR'.");
-        }
+    ZTXOSelector ztxoSelector = [&]() {
+        if (fromaddress == "ANY_TADDR") {
+            return CWallet::LegacyTransparentZTXOSelector();
+        } else {
+            auto decoded = keyIO.DecodePaymentAddress(fromaddress);
+            if (!decoded.has_value()) {
+                throw JSONRPCError(
+                        RPC_INVALID_ADDRESS_OR_KEY,
+                        "Invalid from address: should be a taddr, a zaddr, or the string 'ANY_TADDR'.");
+            }
 
-        auto ztxoSelectorOpt = pwalletMain->ToZTXOSelector(decoded.value(), true);
-        if (!ztxoSelectorOpt.has_value()) {
-            throw JSONRPCError(
-                    RPC_INVALID_ADDRESS_OR_KEY,
-                    "Invalid from address, no payment source found for address.");
-        }
+            auto ztxoSelectorOpt = pwalletMain->ToZTXOSelector(decoded.value(), true);
+            if (!ztxoSelectorOpt.has_value()) {
+                throw JSONRPCError(
+                        RPC_INVALID_ADDRESS_OR_KEY,
+                        "Invalid from address, no payment source found for address.");
+            }
 
-        ztxoSelector = ztxoSelectorOpt.value();
-    }
+            return ztxoSelectorOpt.value();
+        }
+    }();
 
     UniValue outputs = params[1].get_array();
     if (outputs.size() == 0) {

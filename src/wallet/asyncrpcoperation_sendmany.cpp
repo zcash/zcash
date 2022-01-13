@@ -58,43 +58,28 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     assert(fee_ >= 0);
     assert(mindepth_ >= 0);
     assert(!recipients_.empty());
+    assert(ztxoSelector.SpendingKeysAvailable());
 
     std::visit(match {
-        [&](const AccountZTXOSelector& acct) {
+        [&](const AccountZTXOPattern& acct) {
             isfromtaddr_ =
                 acct.GetReceiverTypes().empty() ||
                 acct.GetReceiverTypes().count(ReceiverType::P2PKH) > 0 ||
                 acct.GetReceiverTypes().count(ReceiverType::P2SH) > 0;
         },
-        [&](const PaymentAddress& addr) {
-            // We don't need to lock on the wallet as spending key related methods are thread-safe
-            if (!std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), addr)) {
-                throw JSONRPCError(
-                        RPC_INVALID_ADDRESS_OR_KEY,
-                        "Invalid from address, no spending key found for address");
-            }
-
-            std::visit(match {
-                [&](const CKeyID& keyId) {
-                    isfromtaddr_ = true;
-                },
-                [&](const CScriptID& scriptId) {
-                    isfromtaddr_ = true;
-                },
-                [&](const libzcash::SproutPaymentAddress& addr) {
-                    isfromsprout_ = true;
-                },
-                [&](const libzcash::SaplingPaymentAddress& addr) {
-                    isfromsapling_ = true;
-                },
-                [&](const libzcash::UnifiedAddress& addr) {
-                    throw JSONRPCError(
-                        RPC_INVALID_ADDRESS_OR_KEY,
-                        "Unified addresses are not yet supported by z_sendmany");
-                }
-            }, addr);
+        [&](const CKeyID& keyId) {
+            isfromtaddr_ = true;
+        },
+        [&](const CScriptID& scriptId) {
+            isfromtaddr_ = true;
+        },
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            isfromsprout_ = true;
+        },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            isfromsapling_ = true;
         }
-    }, ztxoSelector);
+    }, ztxoSelector.GetPattern());
 
     if ((isfromsprout_ || isfromsapling_) && minDepth == 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be zero when sending from a shielded address");
@@ -202,13 +187,13 @@ void AsyncRPCOperation_sendmany::main() {
 
 bool IsFromAnyTaddr(const ZTXOSelector& ztxoSelector) {
     return std::visit(match {
-        [&](const AccountZTXOSelector& fa) {
+        [&](const AccountZTXOPattern& fa) {
             return fa.GetAccountId() == ZCASH_LEGACY_ACCOUNT;
         },
         [&](const auto& other) {
             return false;
         }
-    }, ztxoSelector);
+    }, ztxoSelector.GetPattern());
 }
 
 // Construct and send the transaction, returning the resulting txid.
@@ -391,7 +376,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             ovk = getDefaultOVK();
             setTransparentChangeRecipient();
         }
-    }, ztxoSelector_);
+    }, ztxoSelector_.GetPattern());
 
     // Track the total of notes that we've added to the builder
     CAmount sum = 0;

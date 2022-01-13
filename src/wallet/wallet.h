@@ -696,11 +696,11 @@ public:
  * If the set of receiver types is empty, no restrictions are placed upon what
  * protocols outputs are selected for.
  */
-class AccountZTXOSelector {
+class AccountZTXOPattern {
     libzcash::AccountId accountId;
     std::set<libzcash::ReceiverType> receiverTypes;
 public:
-    AccountZTXOSelector(libzcash::AccountId accountIdIn, std::set<libzcash::ReceiverType> receiverTypesIn):
+    AccountZTXOPattern(libzcash::AccountId accountIdIn, std::set<libzcash::ReceiverType> receiverTypesIn):
         accountId(accountIdIn), receiverTypes(receiverTypesIn) {}
 
     libzcash::AccountId GetAccountId() const {
@@ -711,7 +711,7 @@ public:
         return receiverTypes;
     }
 
-    friend bool operator==(const AccountZTXOSelector &a, const AccountZTXOSelector &b) {
+    friend bool operator==(const AccountZTXOPattern &a, const AccountZTXOPattern &b) {
         return a.accountId == b.accountId && a.receiverTypes == b.receiverTypes;
     }
 };
@@ -725,8 +725,26 @@ typedef std::variant<
     CScriptID,
     libzcash::SproutPaymentAddress,
     libzcash::SaplingPaymentAddress,
-    AccountZTXOSelector> ZTXOSelector;
+    AccountZTXOPattern> ZTXOPattern;
 
+class ZTXOSelector {
+private:
+    ZTXOPattern pattern;
+    bool spendingKeysAvailable;
+
+    ZTXOSelector(ZTXOPattern patternIn, bool spendingKeysAvailableIn):
+        pattern(patternIn), spendingKeysAvailable(spendingKeysAvailableIn) {}
+
+    friend class CWallet;
+public:
+    const ZTXOPattern& GetPattern() const {
+        return pattern;
+    }
+
+    bool SpendingKeysAvailable() const {
+        return spendingKeysAvailable;
+    }
+};
 
 class SpendableInputs {
 public:
@@ -1190,6 +1208,8 @@ public:
     std::optional<ZTXOSelector> ToZTXOSelector(
             const libzcash::PaymentAddress& addr,
             bool requireSpendingKey) const;
+
+    static ZTXOSelector LegacyTransparentZTXOSelector();
 
     SpendableInputs FindSpendableInputs(
             ZTXOSelector paymentSource,
@@ -1689,20 +1709,6 @@ public:
     std::optional<libzcash::ViewingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     std::optional<libzcash::ViewingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     std::optional<libzcash::ViewingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
-};
-
-class HaveSpendingKeyForPaymentAddress
-{
-private:
-    CWallet *m_wallet;
-public:
-    HaveSpendingKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
-
-    bool operator()(const CKeyID &addr) const;
-    bool operator()(const CScriptID &addr) const;
-    bool operator()(const libzcash::SproutPaymentAddress &zaddr) const;
-    bool operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    bool operator()(const libzcash::UnifiedAddress &uaddr) const;
 };
 
 class GetSproutKeyForPaymentAddress

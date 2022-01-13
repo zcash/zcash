@@ -1365,26 +1365,26 @@ void CWallet::SyncMetaData(pair<typename TxSpendMap<T>::iterator, typename TxSpe
 
 std::optional<ZTXOSelector> CWallet::ToZTXOSelector(const libzcash::PaymentAddress& addr, bool requireSpendingKey) const {
     auto self = this;
-    std::optional<ZTXOSelector> result = std::nullopt;
+    std::optional<ZTXOPattern> pattern = std::nullopt;
     std::visit(match {
         [&](const CKeyID& addr) {
             if (!requireSpendingKey || self->HaveKey(addr)) {
-                result = addr;
+                pattern = addr;
             }
         },
         [&](const CScriptID& addr) {
             if (!requireSpendingKey || self->HaveCScript(addr)) {
-                result = addr;
+                pattern = addr;
             }
         },
         [&](const libzcash::SaplingPaymentAddress& addr) {
             if (!requireSpendingKey || self->HaveSaplingSpendingKeyForAddress(addr)) {
-                result = addr;
+                pattern = addr;
             }
         },
         [&](const libzcash::SproutPaymentAddress& addr) {
             if (!requireSpendingKey || self->HaveSproutSpendingKey(addr)) {
-                result = addr;
+                pattern = addr;
             }
         },
         [&](const libzcash::UnifiedAddress& ua) {
@@ -1399,13 +1399,24 @@ std::optional<ZTXOSelector> CWallet::ToZTXOSelector(const libzcash::PaymentAddre
                 if (addrMetaIt != mapUfvkAddressMetadata.end()) {
                     auto accountId = addrMetaIt->second.GetAccountId();
                     if (accountId.has_value()) {
-                        result = AccountZTXOSelector(accountId.value(), ua.GetKnownReceiverTypes());
+                        pattern = AccountZTXOPattern(accountId.value(), ua.GetKnownReceiverTypes());
                     }
                 }
             }
         }
     }, addr);
-    return result;
+
+    if (pattern.has_value()) {
+        return ZTXOSelector(pattern.value(), requireSpendingKey);
+    } else {
+        return std::nullopt;
+    }
+}
+
+ZTXOSelector CWallet::LegacyTransparentZTXOSelector() {
+    return ZTXOSelector(
+            AccountZTXOPattern(ZCASH_LEGACY_ACCOUNT, {ReceiverType::P2PKH, ReceiverType::P2SH}),
+            true);
 }
 
 SpendableInputs CWallet::FindSpendableInputs(
@@ -1431,11 +1442,11 @@ SpendableInputs CWallet::FindSpendableInputs(
             std::optional<std::set<CTxDestination>> t_filter = std::nullopt;
             return std::make_pair(t_filter, AddrSet::ForPaymentAddresses({addr}));
         },
-        [&](const AccountZTXOSelector& acct) {
+        [&](const AccountZTXOPattern& acct) {
             std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({});
             return std::make_pair(t_filter, AddrSet::Empty());
         }
-    }, selector);
+    }, selector.GetPattern());
 
     if (filters.first.has_value()) {
         this->AvailableCoins(
@@ -5872,35 +5883,6 @@ std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
 {
     // TODO
     return std::nullopt;
-}
-
-// HaveSpendingKeyForPaymentAddress
-
-bool HaveSpendingKeyForPaymentAddress::operator()(const CKeyID &addr) const
-{
-    return m_wallet->HaveKey(addr);
-}
-bool HaveSpendingKeyForPaymentAddress::operator()(const CScriptID &addr) const
-{
-    return m_wallet->HaveCScript(addr);
-}
-bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const
-{
-    return m_wallet->HaveSproutSpendingKey(zaddr);
-}
-bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
-{
-    libzcash::SaplingIncomingViewingKey ivk;
-    libzcash::SaplingExtendedFullViewingKey extfvk;
-
-    return m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
-        m_wallet->GetSaplingFullViewingKey(ivk, extfvk) &&
-        m_wallet->HaveSaplingSpendingKey(extfvk);
-}
-bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::UnifiedAddress &uaddr) const
-{
-    // TODO
-    return false;
 }
 
 // GetSproutKeyForPaymentAddress
