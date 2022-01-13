@@ -47,7 +47,7 @@ tracing-appender = "0.2"
 zcash_address = "0.0"
 zcash_history = "0.2"
 zcash_note_encryption = "0.1"
-zcash_primitives = "0.5"
+zcash_primitives = { version = "0.5", features = ["hdwallet", "ripemd160", "transparent-inputs"] }
 zcash_proofs = "0.5"
 ed25519-zebra = "3"
 zeroize = "1.4.2"
@@ -71,8 +71,9 @@ panic = 'abort'
 codegen-units = 1
 
 [patch.crates-io]
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "7801dddf35ca247345cf4f5c5e48791297cad531" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "7801dddf35ca247345cf4f5c5e48791297cad531" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "7801dddf35ca247345cf4f5c5e48791297cad531" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "7801dddf35ca247345cf4f5c5e48791297cad531" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "7801dddf35ca247345cf4f5c5e48791297cad531" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", branch = "autoshield-poc-daa" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", branch = "autoshield-poc-daa" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", branch = "autoshield-poc-daa" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", branch = "autoshield-poc-daa" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", branch = "autoshield-poc-daa" }
+hdwallet = { git = "https://github.com/nuttycom/hdwallet", branch = "update_secp256k1" }
