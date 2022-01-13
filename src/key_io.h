@@ -37,14 +37,14 @@ public:
     bool IsValidDestinationString(const std::string& str);
 
     std::string EncodePaymentAddress(const libzcash::PaymentAddress& zaddr);
-    libzcash::PaymentAddress DecodePaymentAddress(const std::string& str);
+    std::optional<libzcash::PaymentAddress> DecodePaymentAddress(const std::string& str);
     bool IsValidPaymentAddressString(const std::string& str);
 
     std::string EncodeViewingKey(const libzcash::ViewingKey& vk);
-    libzcash::ViewingKey DecodeViewingKey(const std::string& str);
+    std::optional<libzcash::ViewingKey> DecodeViewingKey(const std::string& str);
 
     std::string EncodeSpendingKey(const libzcash::SpendingKey& zkey);
-    libzcash::SpendingKey DecodeSpendingKey(const std::string& str);
+    std::optional<libzcash::SpendingKey> DecodeSpendingKey(const std::string& str);
 };
 
 #endif // BITCOIN_KEY_IO_H

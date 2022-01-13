@@ -202,9 +202,9 @@ BOOST_AUTO_TEST_CASE(zc_address_test)
             BOOST_CHECK(sk_string[1] == 'K');
 
             auto spendingkey2 = keyIO.DecodeSpendingKey(sk_string);
-            BOOST_CHECK(IsValidSpendingKey(spendingkey2));
-            BOOST_ASSERT(std::get_if<SproutSpendingKey>(&spendingkey2) != nullptr);
-            auto sk2 = std::get<SproutSpendingKey>(spendingkey2);
+            BOOST_CHECK(spendingkey2.has_value());
+            BOOST_ASSERT(std::get_if<SproutSpendingKey>(&spendingkey2.value()) != nullptr);
+            auto sk2 = std::get<SproutSpendingKey>(spendingkey2.value());
             BOOST_CHECK(sk.inner() == sk2.inner());
         }
         {
@@ -216,10 +216,10 @@ BOOST_AUTO_TEST_CASE(zc_address_test)
             BOOST_CHECK(addr_string[1] == 'c');
 
             auto paymentaddr2 = keyIO.DecodePaymentAddress(addr_string);
-            BOOST_ASSERT(IsValidPaymentAddress(paymentaddr2));
+            BOOST_ASSERT(paymentaddr2.has_value());
 
-            BOOST_ASSERT(std::get_if<SproutPaymentAddress>(&paymentaddr2) != nullptr);
-            auto addr2 = std::get<SproutPaymentAddress>(paymentaddr2);
+            BOOST_ASSERT(std::get_if<SproutPaymentAddress>(&paymentaddr2.value()) != nullptr);
+            auto addr2 = std::get<SproutPaymentAddress>(paymentaddr2.value());
             BOOST_CHECK(addr.a_pk == addr2.a_pk);
             BOOST_CHECK(addr.pk_enc == addr2.pk_enc);
         }
@@ -240,10 +240,10 @@ BOOST_AUTO_TEST_CASE(zs_address_test)
             BOOST_CHECK(sk_string.compare(0, 27, Params().Bech32HRP(CChainParams::SAPLING_EXTENDED_SPEND_KEY)) == 0);
 
             auto spendingkey2 = keyIO.DecodeSpendingKey(sk_string);
-            BOOST_CHECK(IsValidSpendingKey(spendingkey2));
+            BOOST_CHECK(spendingkey2.has_value());
 
-            BOOST_ASSERT(std::get_if<SaplingExtendedSpendingKey>(&spendingkey2) != nullptr);
-            auto sk2 = std::get<SaplingExtendedSpendingKey>(spendingkey2);
+            BOOST_ASSERT(std::get_if<SaplingExtendedSpendingKey>(&spendingkey2.value()) != nullptr);
+            auto sk2 = std::get<SaplingExtendedSpendingKey>(spendingkey2.value());
             BOOST_CHECK(sk == sk2);
         }
         {
@@ -253,10 +253,10 @@ BOOST_AUTO_TEST_CASE(zs_address_test)
             BOOST_CHECK(addr_string.compare(0, 15, Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS)) == 0);
 
             auto paymentaddr2 = keyIO.DecodePaymentAddress(addr_string);
-            BOOST_CHECK(IsValidPaymentAddress(paymentaddr2));
+            BOOST_CHECK(paymentaddr2.has_value());
 
-            BOOST_ASSERT(std::get_if<SaplingPaymentAddress>(&paymentaddr2) != nullptr);
-            auto addr2 = std::get<SaplingPaymentAddress>(paymentaddr2);
+            BOOST_ASSERT(std::get_if<SaplingPaymentAddress>(&paymentaddr2.value()) != nullptr);
+            auto addr2 = std::get<SaplingPaymentAddress>(paymentaddr2.value());
             BOOST_CHECK(addr == addr2);
         }
     }

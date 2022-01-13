@@ -277,8 +277,9 @@ bool CBasicKeyStore::GetSaplingIncomingViewingKey(const libzcash::SaplingPayment
     return false;
 }
 
-bool CBasicKeyStore::GetSaplingExtendedSpendingKey(const libzcash::SaplingPaymentAddress &addr,
-                                    libzcash::SaplingExtendedSpendingKey &extskOut) const {
+bool CBasicKeyStore::GetSaplingExtendedSpendingKey(
+        const libzcash::SaplingPaymentAddress &addr,
+        libzcash::SaplingExtendedSpendingKey &extskOut) const {
     libzcash::SaplingIncomingViewingKey ivk;
     libzcash::SaplingExtendedFullViewingKey extfvk;
 
@@ -286,6 +287,16 @@ bool CBasicKeyStore::GetSaplingExtendedSpendingKey(const libzcash::SaplingPaymen
     return GetSaplingIncomingViewingKey(addr, ivk) &&
             GetSaplingFullViewingKey(ivk, extfvk) &&
             GetSaplingSpendingKey(extfvk, extskOut);
+}
+
+bool CBasicKeyStore::HaveSaplingSpendingKeyForAddress(
+        const libzcash::SaplingPaymentAddress &addr) const {
+    libzcash::SaplingIncomingViewingKey ivk;
+    libzcash::SaplingExtendedFullViewingKey extfvk;
+
+    return GetSaplingIncomingViewingKey(addr, ivk) &&
+        GetSaplingFullViewingKey(ivk, extfvk) &&
+        HaveSaplingSpendingKey(extfvk);
 }
 
 //

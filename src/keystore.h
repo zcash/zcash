@@ -73,6 +73,8 @@ public:
     //! Check whether a Sapling spending key corresponding to a given Sapling viewing key is present in the store.
     virtual bool HaveSaplingSpendingKey(
         const libzcash::SaplingExtendedFullViewingKey &extfvk) const =0;
+    virtual bool HaveSaplingSpendingKeyForAddress(
+        const libzcash::SaplingPaymentAddress &addr) const =0;
     virtual bool GetSaplingSpendingKey(
         const libzcash::SaplingExtendedFullViewingKey &extfvk,
         libzcash::SaplingExtendedSpendingKey& skOut) const =0;
@@ -298,6 +300,7 @@ public:
         }
         return result;
     }
+    bool HaveSaplingSpendingKeyForAddress(const libzcash::SaplingPaymentAddress &addr) const;
     bool GetSaplingSpendingKey(
         const libzcash::SaplingExtendedFullViewingKey &extfvk,
         libzcash::SaplingExtendedSpendingKey &skOut) const
