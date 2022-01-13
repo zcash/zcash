@@ -185,17 +185,6 @@ void AsyncRPCOperation_sendmany::main() {
     LogPrintf("%s",s);
 }
 
-bool IsFromAnyTaddr(const ZTXOSelector& ztxoSelector) {
-    return std::visit(match {
-        [&](const AccountZTXOPattern& fa) {
-            return fa.GetAccountId() == ZCASH_LEGACY_ACCOUNT;
-        },
-        [&](const auto& other) {
-            return false;
-        }
-    }, ztxoSelector.GetPattern());
-}
-
 // Construct and send the transaction, returning the resulting txid.
 // Errors in transaction construction will throw.
 //
@@ -220,10 +209,9 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
     builder_.SetFee(fee_);
 
-    // Only select coinbase if we are spending from at most a single t-address.
-    bool allowTransparentCoinbase =
-        !IsFromAnyTaddr(ztxoSelector_) && // allow coinbase inputs from at most a single t-addr
-        transparentRecipients_ == 0; // cannot send transparent coinbase to transparent recipients
+    // Allow transparent coinbase inputs if there are no transparent
+    // recipients.
+    bool allowTransparentCoinbase = transparentRecipients_ == 0;
 
     // Set the dust threshold so that we can select enough inputs to avoid
     // creating dust change amounts.

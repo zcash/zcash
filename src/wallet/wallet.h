@@ -711,6 +711,18 @@ public:
         return receiverTypes;
     }
 
+    bool IncludesP2PKH() const {
+        return receiverTypes.empty() || receiverTypes.count(libzcash::ReceiverType::P2PKH) > 0;
+    }
+
+    bool IncludesP2SH() const {
+        return receiverTypes.empty() || receiverTypes.count(libzcash::ReceiverType::P2SH) > 0;
+    }
+
+    bool IncludesSapling() const {
+        return receiverTypes.empty() || receiverTypes.count(libzcash::ReceiverType::Sapling) > 0;
+    }
+
     friend bool operator==(const AccountZTXOPattern &a, const AccountZTXOPattern &b) {
         return a.accountId == b.accountId && a.receiverTypes == b.receiverTypes;
     }
@@ -744,6 +756,10 @@ public:
     bool SpendingKeysAvailable() const {
         return spendingKeysAvailable;
     }
+
+    bool SelectsTransparent();
+    bool SelectsSprout();
+    bool SelectsSapling();
 };
 
 class SpendableInputs {
@@ -1216,6 +1232,10 @@ public:
             bool allowTransparentCoinbase,
             uint32_t minDepth) const;
 
+    bool SelectorMatchesAddress(const ZTXOSelector& source, const CTxDestination& a0) const;
+    bool SelectorMatchesAddress(const ZTXOSelector& source, const libzcash::SproutPaymentAddress& a0) const;
+    bool SelectorMatchesAddress(const ZTXOSelector& source, const libzcash::SaplingPaymentAddress& a0) const;
+
     bool IsSpent(const uint256& hash, unsigned int n) const;
     bool IsSproutSpent(const uint256& nullifier) const;
     bool IsSaplingSpent(const uint256& nullifier) const;
@@ -1383,6 +1403,7 @@ public:
     bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
 
     std::optional<libzcash::UFVKId> FindUnifiedFullViewingKey(const libzcash::UnifiedAddress& addr) const;
+    std::optional<libzcash::AccountId> GetUnifiedAccountId(const libzcash::UFVKId& ufvkId) const;
     std::optional<libzcash::UnifiedAddress> GetUnifiedForReceiver(const libzcash::Receiver& receiver) const;
 
     /**

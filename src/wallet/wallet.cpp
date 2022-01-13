@@ -1395,12 +1395,9 @@ std::optional<ZTXOSelector> CWallet::ToZTXOSelector(const libzcash::PaymentAddre
                 // an account for which we do not control the spending key. An alternate
                 // approach would be to use the UFVK directly in the case that we cannot
                 // determine a local account.
-                auto addrMetaIt = mapUfvkAddressMetadata.find(ufvkId.value());
-                if (addrMetaIt != mapUfvkAddressMetadata.end()) {
-                    auto accountId = addrMetaIt->second.GetAccountId();
-                    if (accountId.has_value()) {
-                        pattern = AccountZTXOPattern(accountId.value(), ua.GetKnownReceiverTypes());
-                    }
+                auto accountId = this->GetUnifiedAccountId(ufvkId.value());
+                if (accountId.has_value()) {
+                    pattern = AccountZTXOPattern(accountId.value(), ua.GetKnownReceiverTypes());
                 }
             }
         }
@@ -1419,52 +1416,214 @@ ZTXOSelector CWallet::LegacyTransparentZTXOSelector() {
             true);
 }
 
+bool CWallet::SelectorMatchesAddress(
+        const ZTXOSelector& selector,
+        const CTxDestination& address) const {
+    auto self = this;
+    return std::visit(match {
+        [&](const CKeyID& keyId) {
+            CTxDestination keyIdDest = keyId;
+            return address == keyIdDest;
+        },
+        [&](const CScriptID& scriptId) {
+            CTxDestination scriptIdDest = scriptId;
+            return address == scriptIdDest;
+        },
+        [&](const libzcash::SproutPaymentAddress& addr) { return false; },
+        [&](const libzcash::SaplingPaymentAddress& addr) { return false; },
+        [&](const AccountZTXOPattern& acct) {
+            if (acct.IncludesP2PKH() || acct.IncludesP2SH()) {
+                std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>> meta;
+                std::visit(match {
+                    [&](const CNoDestination& none) { meta = std::nullopt; },
+                    [&](const auto& addr) { meta = self->GetUFVKMetadataForReceiver(addr); }
+                }, address);
+                if (meta.has_value()) {
+                    // use the coin if the account id corresponding to the UFVK is
+                    // the payment source account.
+                    return self->GetUnifiedAccountId(meta.value().first) == std::optional(acct.GetAccountId());
+                } else {
+                    // The legacy account is treated as a single pool of
+                    // transparent funds, reproducing wallet behavior prior to
+                    // the advent of unified addresses.
+                    return acct.GetAccountId() == ZCASH_LEGACY_ACCOUNT;
+                }
+            }
+            return false;
+        }
+    }, selector.GetPattern());
+}
+
+bool CWallet::SelectorMatchesAddress(
+        const ZTXOSelector& selector,
+        const libzcash::SproutPaymentAddress& a0) const {
+    return std::visit(match {
+        [&](const CKeyID& keyId) { return false; },
+        [&](const CScriptID& scriptId) { return false; },
+        [&](const libzcash::SproutPaymentAddress& a1) { return a0 == a1; },
+        [&](const libzcash::SaplingPaymentAddress& addr) { return false; },
+        [&](const AccountZTXOPattern& acct) { return false; }
+    }, selector.GetPattern());
+}
+
+bool CWallet::SelectorMatchesAddress(
+        const ZTXOSelector& selector,
+        const libzcash::SaplingPaymentAddress& a0) const {
+    auto self = this;
+    return std::visit(match {
+        [&](const CKeyID& keyId) { return false; },
+        [&](const CScriptID& scriptId) { return false; },
+        [&](const libzcash::SproutPaymentAddress& addr) { return false; },
+        [&](const libzcash::SaplingPaymentAddress& a1) { return a0 == a1; },
+        [&](const AccountZTXOPattern& acct) {
+            if (acct.GetReceiverTypes().empty() || acct.GetReceiverTypes().count(ReceiverType::Sapling) > 0) {
+                const auto meta = self->GetUFVKMetadataForReceiver(a0);
+                if (meta.has_value()) {
+                    // use the coin if the account id corresponding to the UFVK is
+                    // the payment source account.
+                    return self->GetUnifiedAccountId(meta.value().first) == std::optional(acct.GetAccountId());
+                } else {
+                    return false;
+                }
+            }
+            return false;
+        }
+    }, selector.GetPattern());
+}
+
 SpendableInputs CWallet::FindSpendableInputs(
         ZTXOSelector selector,
         bool allowTransparentCoinbase,
         uint32_t minDepth) const {
+    AssertLockHeld(cs_main);
+    AssertLockHeld(cs_wallet);
+
+    KeyIO keyIO(Params());
+
+    bool selectTransparent{selector.SelectsTransparent()};
+    bool selectSprout{selector.SelectsSprout()};
+    bool selectSapling{selector.SelectsSapling()};
+
     SpendableInputs unspent;
+    for (auto const& [wtxid, wtx] : mapWallet) {
+        bool isCoinbase = wtx.IsCoinBase();
+        auto nDepth = wtx.GetDepthInMainChain();
 
-    auto filters = std::visit(match {
-        [&](const CKeyID& keyId) {
-            std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({keyId});
-            return std::make_pair(t_filter, AddrSet::Empty());
-        },
-        [&](const CScriptID& scriptId) {
-            std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({scriptId});
-            return std::make_pair(t_filter, AddrSet::Empty());
-        },
-        [&](const libzcash::SproutPaymentAddress& addr) {
-            std::optional<std::set<CTxDestination>> t_filter = std::nullopt;
-            return std::make_pair(t_filter, AddrSet::ForPaymentAddresses({addr}));
-        },
-        [&](const libzcash::SaplingPaymentAddress& addr) {
-            std::optional<std::set<CTxDestination>> t_filter = std::nullopt;
-            return std::make_pair(t_filter, AddrSet::ForPaymentAddresses({addr}));
-        },
-        [&](const AccountZTXOPattern& acct) {
-            std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({});
-            return std::make_pair(t_filter, AddrSet::Empty());
+        // Filter the transactions before checking for coins
+        if (!CheckFinalTx(wtx)) continue;
+        if (nDepth < minDepth) continue;
+
+        if (selectTransparent &&
+            // skip transparent utxo selection if coinbase spend restrictions are not met
+            (!isCoinbase || (allowTransparentCoinbase && wtx.GetBlocksToMaturity() <= 0))) {
+
+            for (int i = 0; i < wtx.vout.size(); i++) {
+                const auto& output = wtx.vout[i];
+                isminetype mine = IsMine(output);
+
+                // skip spent utxos
+                if (IsSpent(wtxid, i)) continue;
+                // skip utxos that do not belong to the wallet
+                if (mine == ISMINE_NO || ((mine & ISMINE_SPENDABLE) == ISMINE_NO)) continue;
+                // skip locked utxos
+                if (IsLockedCoin(wtxid, i)) continue;
+                // skip zero-valued utxos
+                if (output.nValue == 0) continue;
+
+                // check to see if the coin conforms to the payment source
+                CTxDestination address;
+                bool isSelectable =
+                    ExtractDestination(output.scriptPubKey, address) &&
+                    this->SelectorMatchesAddress(selector, address);
+                if (isSelectable) {
+                    unspent.utxos.push_back(COutput(&wtx, i, nDepth, true, isCoinbase));
+                }
+            }
         }
-    }, selector.GetPattern());
 
-    if (filters.first.has_value()) {
-        this->AvailableCoins(
-                unspent.utxos,
-                false,                    // fOnlyConfirmed
-                nullptr,                  // coinControl
-                true,                     // fIncludeZeroValue
-                allowTransparentCoinbase, // fIncludeCoinBase
-                true,                     // fOnlySpendable
-                minDepth,                 // nMinDepth
-                &filters.first.value());  // onlyFilterByDests
+        if (selectSprout) {
+            for (auto const& [jsop, nd] : wtx.mapSproutNoteData) {
+                SproutPaymentAddress pa = nd.address;
+
+                // skip note which has been spent
+                if (nd.nullifier.has_value() && IsSproutSpent(nd.nullifier.value())) continue;
+                // skip notes which don't match the source
+                if (!this->SelectorMatchesAddress(selector, pa)) continue;
+                // skip notes for which we don't have the spending key
+                if (!this->HaveSproutSpendingKey(pa)) continue;
+                // skip locked notes
+                if (IsLockedNote(jsop)) continue;
+
+                // Get cached decryptor
+                ZCNoteDecryption decryptor;
+                if (!GetNoteDecryptor(pa, decryptor)) {
+                    // Note decryptors are created when the wallet is loaded, so it should always exist
+                    throw std::runtime_error(strprintf(
+                                "Could not find note decryptor for payment address %s",
+                                keyIO.EncodePaymentAddress(pa)));
+                }
+
+                // determine amount of funds in the note
+                int i = jsop.js; // Index into CTransaction.vJoinSplit
+                auto hSig = ZCJoinSplit::h_sig(
+                    wtx.vJoinSplit[i].randomSeed,
+                    wtx.vJoinSplit[i].nullifiers,
+                    wtx.joinSplitPubKey);
+
+                try {
+                    int j = jsop.n; // Index into JSDescription.ciphertexts
+                    SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
+                            decryptor,
+                            wtx.vJoinSplit[i].ciphertexts[j],
+                            wtx.vJoinSplit[i].ephemeralKey,
+                            hSig,
+                            (unsigned char) j);
+
+                    unspent.sproutNoteEntries.push_back(SproutNoteEntry {
+                        jsop, pa, plaintext.note(pa), plaintext.memo(), wtx.GetDepthInMainChain() });
+
+                } catch (const note_decryption_failed &err) {
+                    // Couldn't decrypt with this spending key
+                    throw std::runtime_error(strprintf(
+                            "Could not decrypt note for payment address %s",
+                            keyIO.EncodePaymentAddress(pa)));
+                } catch (const std::exception &exc) {
+                    // Unexpected failure
+                    throw std::runtime_error(strprintf(
+                            "Error while decrypting note for payment address %s: %s",
+                            keyIO.EncodePaymentAddress(pa), exc.what()));
+                }
+            }
+        }
+
+        if (selectSapling) {
+            for (auto const& [op, nd] : wtx.mapSaplingNoteData) {
+                auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
+
+                // The transaction would not have entered the wallet unless
+                // its plaintext had been successfully decrypted previously.
+                assert(optDeserialized != std::nullopt);
+
+                auto notePt = optDeserialized.value();
+                auto maybe_pa = nd.ivk.address(notePt.d);
+                assert(maybe_pa.has_value());
+                auto pa = maybe_pa.value();
+
+                // skip notes which have been spent
+                if (nd.nullifier.has_value() && IsSaplingSpent(nd.nullifier.value())) continue;
+                // skip notes which do not match the source
+                if (!this->SelectorMatchesAddress(selector, pa)) continue;
+                // skip notes if we don't have the spending key
+                if (!this->HaveSaplingSpendingKeyForAddress(pa)) continue;
+                // skip locked notes
+                if (IsLockedNote(op)) continue;
+
+                auto note = notePt.note(nd.ivk).value();
+                unspent.saplingNoteEntries.push_back(SaplingNoteEntry {
+                    op, pa, note, notePt.memo(), wtx.GetDepthInMainChain() });
+            }
+        }
     }
-
-    this->GetFilteredNotes(
-            unspent.sproutNoteEntries,
-            unspent.saplingNoteEntries,
-            filters.second,
-            minDepth);
 
     return unspent;
 }
@@ -5708,7 +5867,7 @@ void CWallet::GetFilteredNotes(
                 continue;
             }
 
-            if (ignoreSpent && nd.nullifier && IsSaplingSpent(*nd.nullifier)) {
+            if (ignoreSpent && nd.nullifier.has_value() && IsSaplingSpent(nd.nullifier.value())) {
                 continue;
             }
 
@@ -5751,6 +5910,15 @@ std::optional<UFVKId> CWallet::FindUnifiedFullViewingKey(const libzcash::Unified
         }
     }
     return ufvkId;
+}
+
+std::optional<libzcash::AccountId> CWallet::GetUnifiedAccountId(const libzcash::UFVKId& ufvkId) const {
+    auto addrMetaIt = mapUfvkAddressMetadata.find(ufvkId);
+    if (addrMetaIt != mapUfvkAddressMetadata.end()) {
+        return addrMetaIt->second.GetAccountId();
+    } else {
+        return std::nullopt;
+    }
 }
 
 std::optional<UnifiedAddress> CWallet::GetUnifiedForReceiver(const Receiver& receiver) const {
@@ -6108,6 +6276,34 @@ std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const C
 }
 std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const libzcash::UnknownReceiver& receiver) const {
     return std::nullopt;
+}
+
+bool ZTXOSelector::SelectsTransparent() {
+    return std::visit(match {
+        [](const CKeyID& keyId) { return true; },
+        [](const CScriptID& scriptId) { return true; },
+        [](const libzcash::SproutPaymentAddress& addr) { return false; },
+        [](const libzcash::SaplingPaymentAddress& addr) { return false; },
+        [](const AccountZTXOPattern& acct) { return acct.IncludesP2PKH() || acct.IncludesP2SH(); }
+    }, this->pattern);
+}
+bool ZTXOSelector::SelectsSprout() {
+    return std::visit(match {
+        [](const CKeyID& keyId) { return false; },
+        [](const CScriptID& scriptId) { return false; },
+        [](const libzcash::SproutPaymentAddress& addr) { return true; },
+        [](const libzcash::SaplingPaymentAddress& addr) { return false; },
+        [](const AccountZTXOPattern& acct) { return false; }
+    }, this->pattern);
+}
+bool ZTXOSelector::SelectsSapling() {
+    return std::visit(match {
+        [](const CKeyID& keyId) { return false; },
+        [](const CScriptID& scriptId) { return false; },
+        [](const libzcash::SproutPaymentAddress& addr) { return false; },
+        [](const libzcash::SaplingPaymentAddress& addr) { return true; },
+        [](const AccountZTXOPattern& acct) { return acct.IncludesSapling(); }
+    }, this->pattern);
 }
 
 bool SpendableInputs::LimitToAmount(const CAmount amountRequired, const CAmount dustThreshold) {
