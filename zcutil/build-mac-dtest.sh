@@ -18,11 +18,13 @@ Usage:
 $0 --help
   Show this help message and exit.
 
-$0 [ --enable-lcov ] [ MAKEARGS... ]
-  Build Zcash and most of its transitive dependencies from
-  source. MAKEARGS are applied to both dependencies and Zcash itself. If
-  --enable-lcov is passed, Zcash is configured to add coverage
+$0 [ --enable-lcov ] [ --enable-debug ] [ MAKEARGS... ]
+  Build Komodo and most of its transitive dependencies from
+  source. MAKEARGS are applied to both dependencies and Komodo itself. 
+  If --enable-lcov is passed, Komodo is configured to add coverage
   instrumentation, thus enabling "make cov" to work.
+  If --enable-debug is passed, Komodo is built with debugging information. It
+  must be passed after the previous arguments, if present.
 EOF
     exit 0
 fi
@@ -37,22 +39,25 @@ then
     shift
 fi
 
+# If --enable-debug is the next argument, enable debugging
+DEBUGGING_ARG=''
+if [ "x${1:-}" = 'x--enable-debug' ]
+then
+    DEBUG=1
+    export DEBUG
+    DEBUGGING_ARG='--enable-debug'
+    shift
+fi
+
 TRIPLET=`./depends/config.guess`
 PREFIX="$(pwd)/depends/$TRIPLET"
 
 make "$@" -C ./depends/ V=1 NO_QT=1 NO_PROTON=1
 
-#BUILD CCLIB
-
-WD=$PWD
-cd src/cc
-echo $PWD
-./makecustom
-cd $WD
-
 ./autogen.sh
+
 CPPFLAGS="-I$PREFIX/include -arch x86_64 -DTESTMODE" LDFLAGS="-L$PREFIX/lib -arch x86_64 -Wl,-no_pie" \
 CXXFLAGS="-arch x86_64 -I/usr/local/Cellar/gcc\@8/8.3.0/include/c++/8.3.0/ -I$PREFIX/include -fwrapv -fno-strict-aliasing -Wno-builtin-declaration-mismatch -Werror -Wno-error=attributes -g -Wl,-undefined -Wl,dynamic_lookup" \
-./configure --prefix="${PREFIX}" --with-gui=no "$HARDENING_ARG" "$LCOV_ARG"
+./configure --prefix="${PREFIX}" --with-gui=no "$HARDENING_ARG" "$LCOV_ARG" "$DEBUGGING_ARG"
 
-make "$@" V=1 NO_GTEST=1 STATIC=1
+make "$@" NO_GTEST=1 STATIC=1

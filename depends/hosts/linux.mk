@@ -1,7 +1,7 @@
 linux_CFLAGS=-pipe
 linux_CXXFLAGS=$(linux_CFLAGS)
 
-linux_release_CFLAGS=-O3
+linux_release_CFLAGS=-g -O3
 linux_release_CXXFLAGS=$(linux_release_CFLAGS)
 
 linux_debug_CFLAGS=-g -O0
