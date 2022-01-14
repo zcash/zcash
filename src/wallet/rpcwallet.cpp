@@ -3959,12 +3959,22 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         assert(pwalletMain->GetSaplingFullViewingKey(wtxPrev.mapSaplingNoteData.at(op).ivk, extfvk));
         ovks.insert(extfvk.fvk.ovk);
 
+        // If the note belongs to a Sapling address that is part of an account in the
+        // wallet, show the corresponding Unified Address.
+        std::string address;
+        const auto ua = pwalletMain->GetUnifiedForReceiver(pa);
+        if (ua.has_value()) {
+            address = keyIO.EncodePaymentAddress(ua.value());
+        } else {
+            address = keyIO.EncodePaymentAddress(pa);
+        }
+
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_SAPLING);
         entry.pushKV("spend", (int)i);
         entry.pushKV("txidPrev", op.hash.GetHex());
         entry.pushKV("outputPrev", (int)op.n);
-        entry.pushKV("address", keyIO.EncodePaymentAddress(pa));
+        entry.pushKV("address", address);
         entry.pushKV("value", ValueFromAmount(notePt.value()));
         entry.pushKV("valueZat", notePt.value());
         spends.push_back(entry);
@@ -4002,11 +4012,21 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         }
         auto memo = notePt.memo();
 
+        // If the note belongs to a Sapling address that is part of an account in the
+        // wallet, show the corresponding Unified Address.
+        std::string address;
+        const auto ua = pwalletMain->GetUnifiedForReceiver(pa);
+        if (ua.has_value()) {
+            address = keyIO.EncodePaymentAddress(ua.value());
+        } else {
+            address = keyIO.EncodePaymentAddress(pa);
+        }
+
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_SAPLING);
         entry.pushKV("output", (int)op.n);
         entry.pushKV("outgoing", isOutgoing);
-        entry.pushKV("address", keyIO.EncodePaymentAddress(pa));
+        entry.pushKV("address", address);
         entry.pushKV("value", ValueFromAmount(notePt.value()));
         entry.pushKV("valueZat", notePt.value());
         addMemo(entry, memo);

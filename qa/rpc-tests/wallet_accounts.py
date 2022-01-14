@@ -8,8 +8,12 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_raises_message,
+    get_coinbase_address,
     start_nodes,
+    wait_and_assert_operationid_status,
 )
+
+from decimal import Decimal
 
 # Test wallet accounts behaviour
 class WalletAccountsTest(BitcoinTestFramework):
@@ -60,6 +64,36 @@ class WalletAccountsTest(BitcoinTestFramework):
         # The UA contains the expected receiver kinds.
         self.check_receiver_types(ua0, ['transparent', 'sapling'])
         self.check_receiver_types(ua1, ['transparent', 'sapling'])
+
+        # Manually send funds to one of the receivers in the UA.
+        # TODO: Once z_sendmany supports UAs, receive to the UA instead of the receiver.
+        sapling0 = self.nodes[0].z_listunifiedreceivers(ua0)['sapling']
+        recipients = [{'address': sapling0, 'amount': Decimal('10')}]
+        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
+        txid = wait_and_assert_operationid_status(self.nodes[0], opid)
+
+        # The wallet should detect the new note as belonging to the UA.
+        tx_details = self.nodes[0].z_viewtransaction(txid)
+        assert_equal(len(tx_details['outputs']), 1)
+        assert_equal(tx_details['outputs'][0]['type'], 'sapling')
+        assert_equal(tx_details['outputs'][0]['address'], ua0)
+
+        self.sync_all()
+        self.nodes[2].generate(1)
+        self.sync_all()
+
+        # Manually send funds from the UA receiver.
+        # TODO: Once z_sendmany supports UAs, send from the UA instead of the receiver.
+        node1sapling = self.nodes[1].z_getnewaddress('sapling')
+        recipients = [{'address': node1sapling, 'amount': Decimal('1')}]
+        opid = self.nodes[0].z_sendmany(sapling0, recipients, 1, 0)
+        txid = wait_and_assert_operationid_status(self.nodes[0], opid)
+
+        # The wallet should detect the spent note as belonging to the UA.
+        tx_details = self.nodes[0].z_viewtransaction(txid)
+        assert_equal(len(tx_details['spends']), 1)
+        assert_equal(tx_details['spends'][0]['type'], 'sapling')
+        assert_equal(tx_details['spends'][0]['address'], ua0)
 
 
 if __name__ == '__main__':
