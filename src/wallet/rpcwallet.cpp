@@ -3285,11 +3285,32 @@ UniValue z_listunifiedreceivers(const UniValue& params, bool fHelp)
     if (!fExperimentalOrchardWallet) {
         throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
     }
-    std::string ua = params[0].get_str();
+
+    KeyIO keyIO(Params());
+    auto decoded = keyIO.DecodePaymentAddress(params[0].get_str());
+    if (!decoded.has_value()) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
+    }
+    if (!std::holds_alternative<libzcash::UnifiedAddress>(decoded.value())) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Address is not a unified address");
+    }
+    auto ua = std::get<libzcash::UnifiedAddress>(decoded.value());
+
     UniValue result(UniValue::VOBJ);
-    result.pushKV("transparent", "TODO");
-    result.pushKV("sapling", "TODO");
-    result.pushKV("orchard", "TODO " + ua);
+    for (const auto& receiver : ua) {
+        std::visit(match {
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                result.pushKV("sapling", keyIO.EncodePaymentAddress(addr));
+            },
+            [&](const CScriptID& addr) {
+                result.pushKV("transparent", keyIO.EncodePaymentAddress(addr));
+            },
+            [&](const CKeyID& addr) {
+                result.pushKV("transparent", keyIO.EncodePaymentAddress(addr));
+            },
+            [](auto rest) {},
+        }, receiver);
+    }
     return result;
 }
 

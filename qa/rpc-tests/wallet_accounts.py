@@ -19,6 +19,10 @@ class WalletAccountsTest(BitcoinTestFramework):
             '-orchardwallet',
         ]] * self.num_nodes)
 
+    def check_receiver_types(self, ua, expected):
+        actual = self.nodes[0].z_listunifiedreceivers(ua)
+        assert_equal(set(expected), set(actual))
+
     def run_test(self):
         # With a new wallet, the first account will be 0.
         account0 = self.nodes[0].z_getnewaccount()
@@ -52,6 +56,10 @@ class WalletAccountsTest(BitcoinTestFramework):
         assert_equal(set(addr1['pools']), set(['transparent', 'sapling']))
         ua1 = addr1['unifiedaddress']
         assert(ua0 != ua1)
+
+        # The UA contains the expected receiver kinds.
+        self.check_receiver_types(ua0, ['transparent', 'sapling'])
+        self.check_receiver_types(ua1, ['transparent', 'sapling'])
 
 
 if __name__ == '__main__':
