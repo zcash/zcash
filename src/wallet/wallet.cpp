@@ -1363,6 +1363,22 @@ void CWallet::SyncMetaData(pair<typename TxSpendMap<T>::iterator, typename TxSpe
 // Zcash transaction output selectors
 //
 
+std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAccount(
+    libzcash::AccountId account,
+    bool requireSpendingKey,
+    std::set<libzcash::ReceiverType> receiverTypes) const
+{
+    if (mnemonicHDChain.has_value() &&
+        mapUnifiedAccountKeys.count(
+            std::make_pair(mnemonicHDChain.value().GetSeedFingerprint(), account)
+        ) > 0)
+    {
+        return ZTXOSelector(AccountZTXOPattern(account, receiverTypes), requireSpendingKey);
+    } else {
+        return std::nullopt;
+    }
+}
+
 std::optional<ZTXOSelector> CWallet::ToZTXOSelector(const libzcash::PaymentAddress& addr, bool requireSpendingKey) const {
     auto self = this;
     std::optional<ZTXOPattern> pattern = std::nullopt;

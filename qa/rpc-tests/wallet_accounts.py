@@ -4,6 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.authproxy import JSONRPCException
+from test_framework.mininode import COIN
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
@@ -26,6 +27,18 @@ class WalletAccountsTest(BitcoinTestFramework):
     def check_receiver_types(self, ua, expected):
         actual = self.nodes[0].z_listunifiedreceivers(ua)
         assert_equal(set(expected), set(actual))
+
+    # Check we only have balances in the expected pools.
+    # Remember that empty pools are omitted from the output.
+    def check_account_balance(self, account, expected, minconf=None):
+        if minconf is None:
+            actual = self.nodes[0].z_getbalanceforaccount(account)
+        else:
+            actual = self.nodes[0].z_getbalanceforaccount(account, minconf)
+        assert_equal(set(expected), set(actual['pools']))
+        for pool in expected:
+            assert_equal(expected[pool] * COIN, actual['pools'][pool]['valueZat'])
+        assert_equal(actual['minimum_confirmations'], 1 if minconf is None else minconf)
 
     def run_test(self):
         # With a new wallet, the first account will be 0.
@@ -65,6 +78,10 @@ class WalletAccountsTest(BitcoinTestFramework):
         self.check_receiver_types(ua0, ['transparent', 'sapling'])
         self.check_receiver_types(ua1, ['transparent', 'sapling'])
 
+        # The balances of the accounts are all zero.
+        self.check_account_balance(0, {})
+        self.check_account_balance(1, {})
+
         # Manually send funds to one of the receivers in the UA.
         # TODO: Once z_sendmany supports UAs, receive to the UA instead of the receiver.
         sapling0 = self.nodes[0].z_listunifiedreceivers(ua0)['sapling']
@@ -78,9 +95,17 @@ class WalletAccountsTest(BitcoinTestFramework):
         assert_equal(tx_details['outputs'][0]['type'], 'sapling')
         assert_equal(tx_details['outputs'][0]['address'], ua0)
 
+        # The new balance should not be visible with the default minconf, but should be
+        # visible with minconf=0.
         self.sync_all()
+        self.check_account_balance(0, {})
+        self.check_account_balance(0, {'sapling': 10}, 0)
+
         self.nodes[2].generate(1)
         self.sync_all()
+
+        # The default minconf should now detect the balance.
+        self.check_account_balance(0, {'sapling': 10})
 
         # Manually send funds from the UA receiver.
         # TODO: Once z_sendmany supports UAs, send from the UA instead of the receiver.
@@ -94,6 +119,14 @@ class WalletAccountsTest(BitcoinTestFramework):
         assert_equal(len(tx_details['spends']), 1)
         assert_equal(tx_details['spends'][0]['type'], 'sapling')
         assert_equal(tx_details['spends'][0]['address'], ua0)
+
+        # The balances of the account should reflect whether zero-conf transactions are
+        # being considered. We will show either 0 (because the spent 10-ZEC note is never
+        # shown, as that transaction has been created and broadcast, and _might_ get mined
+        # up until the transaction expires), or 9 (if we include the unmined transaction).
+        self.sync_all()
+        self.check_account_balance(0, {})
+        self.check_account_balance(0, {'sapling': 9}, 0)
 
 
 if __name__ == '__main__':
