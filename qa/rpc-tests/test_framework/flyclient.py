@@ -15,10 +15,13 @@ def H(msg: bytes, consensusBranchId: int) -> bytes:
     digest.update(msg)
     return digest.digest()
 
-class ZcashMMRNode:
+class ZcashMMRNode():
     # leaf nodes have no children
+    print("before init")
     left_child: Optional['ZcashMMRNode']
+    print("after left child")
     right_child: Optional['ZcashMMRNode']
+    print("after right child")
 
     # commitments
     hashSubtreeCommitment: bytes
