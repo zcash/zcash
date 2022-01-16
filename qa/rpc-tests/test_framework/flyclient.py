@@ -15,7 +15,7 @@ def H(msg: bytes, consensusBranchId: int) -> bytes:
     digest.update(msg)
     return digest.digest()
 
-class ZcashMMRNode():
+class ZcashMMRNode:
     # leaf nodes have no children
     left_child: Optional['ZcashMMRNode']
     right_child: Optional['ZcashMMRNode']
