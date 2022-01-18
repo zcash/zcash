@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from pyblake2 import blake2b
 import struct
 from typing import (List, Optional)
