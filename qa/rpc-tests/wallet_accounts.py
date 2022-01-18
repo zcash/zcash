@@ -46,13 +46,13 @@ class WalletAccountsTest(BitcoinTestFramework):
         # address in account 0; this is however not necessarily at diversifier index 0.
         # We should be able to generate it directly and get the exact same data.
         j = addr0['diversifier_index']
-        assert_equal(self.nodes[0].z_getaddressforaccount(0, j), addr0)
+        assert_equal(self.nodes[0].z_getaddressforaccount(0, [], j), addr0)
         if j > 0:
             # We should get an error if we generate the address at diversifier index 0.
             assert_raises_message(
                 JSONRPCException,
                 'no address at diversifier index 0',
-                self.nodes[0].z_getaddressforaccount, 0, 0)
+                self.nodes[0].z_getaddressforaccount, 0, [], 0)
 
         # The first address for account 1 is different to account 0.
         addr1 = self.nodes[0].z_getaddressforaccount(1)
