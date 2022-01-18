@@ -79,12 +79,13 @@ impl UnifiedAddressHelper {
                     // ZIP 316: Senders MUST reject Unified Addresses in which any
                     // constituent address does not meet the validation requirements of
                     // its Receiver Encoding.
-                    // TODO: Add this API to the orchard crate.
-                    // if let Err(e) = orchard::Address::from_bytes(data) {
-                    //     tracing::error!("{}", e);
-                    //     false
-                    // } else {
+                    if orchard::Address::from_raw_address_bytes(&data)
+                        .is_none()
+                        .into()
                     {
+                        tracing::error!("Unified Address contains invalid Orchard receiver");
+                        false
+                    } else {
                         unsafe {
                             // TODO: Replace with Orchard support.
                             (unknown_cb.unwrap())(ua_obj, 0x03, data.as_ptr(), data.len())
