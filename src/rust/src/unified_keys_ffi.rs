@@ -56,11 +56,14 @@ pub extern "C" fn unified_full_viewing_key_parse(
                                 return std::ptr::null_mut();
                             }
                         }
-                        Fvk::P2pkh(_) => {
+                        Fvk::P2pkh(data) => {
                             // The first 32 bytes is the chaincode, which is opaque.
                             // The remaining 33 bytes should be the compressed encoding of
                             // a secp256k1 point.
-                            // TODO: Check secp256k1 encoding.
+                            if let Err(e) = secp256k1::PublicKey::from_slice(&data[32..]) {
+                                error!("Unified FVK contains invalid transparent FVK: {}", e);
+                                return std::ptr::null_mut();
+                            }
                         }
                         // Can't check anything for unknown typecodes.
                         Fvk::Unknown { .. } => (),
