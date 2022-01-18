@@ -76,9 +76,9 @@ impl UnifiedAddressHelper {
             .into_iter()
             .map(|receiver| match receiver {
                 unified::Receiver::Orchard(data) => {
-                    // ZIP 316: Senders MUST reject Unified Addresses in which any
-                    // constituent address does not meet the validation requirements of
-                    // its Receiver Encoding.
+                    // ZIP 316: Consumers MUST reject Unified Addresses/Viewing Keys in
+                    // which any constituent Item does not meet the validation
+                    // requirements of its encoding.
                     if orchard::Address::from_raw_address_bytes(&data)
                         .is_none()
                         .into()
@@ -93,9 +93,9 @@ impl UnifiedAddressHelper {
                     }
                 }
                 unified::Receiver::Sapling(data) => {
-                    // ZIP 316: Senders MUST reject Unified Addresses in which any
-                    // constituent address does not meet the validation requirements of
-                    // its Receiver Encoding.
+                    // ZIP 316: Consumers MUST reject Unified Addresses/Viewing Keys in
+                    // which any constituent Item does not meet the validation
+                    // requirements of its encoding.
                     if sapling::PaymentAddress::from_bytes(&data).is_none() {
                         tracing::error!("Unified Address contains invalid Sapling receiver");
                         false
