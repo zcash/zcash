@@ -168,5 +168,9 @@ bool ConvertBits(const O& outfn, I it, I end) {
 }
 
 std::optional<std::vector<uint8_t>> ParseArbitraryInt(const std::string& s);
+/**
+ * Serializes the given little-endian byte iterator to a decimal string.
+ */
+std::string ArbitraryIntStr(std::vector<uint8_t> i);
 
 #endif // BITCOIN_UTILSTRENCODINGS_H
