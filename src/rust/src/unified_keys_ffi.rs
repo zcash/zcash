@@ -34,7 +34,43 @@ pub extern "C" fn unified_full_viewing_key_parse(
 
     match unsafe { CStr::from_ptr(encoded) }.to_str() {
         Ok(encoded) => match Ufvk::decode(encoded) {
-            Ok((parsed_network, fvk)) if parsed_network == network => Box::into_raw(Box::new(fvk)),
+            Ok((parsed_network, fvk)) if parsed_network == network => {
+                // ZIP 316: Consumers MUST reject Unified Addresses/Viewing Keys in which
+                // any constituent Item does not meet the validation requirements of its
+                // encoding.
+                for item in fvk.items() {
+                    match item {
+                        Fvk::Orchard(data) => {
+                            if orchard::keys::FullViewingKey::from_bytes(&data).is_none() {
+                                error!("Unified FVK contains invalid Orchard FVK");
+                                return std::ptr::null_mut();
+                            }
+                        }
+                        Fvk::Sapling(data) => {
+                            // The last 32 bytes is the diversifier key, which is opaque.
+                            // The remaining 96 bytes should be a valid Sapling FVK.
+                            if zcash_primitives::sapling::keys::FullViewingKey::read(&data[..96])
+                                .is_err()
+                            {
+                                error!("Unified FVK contains invalid Sapling FVK");
+                                return std::ptr::null_mut();
+                            }
+                        }
+                        Fvk::P2pkh(data) => {
+                            // The first 32 bytes is the chaincode, which is opaque.
+                            // The remaining 33 bytes should be the compressed encoding of
+                            // a secp256k1 point.
+                            if let Err(e) = secp256k1::PublicKey::from_slice(&data[32..]) {
+                                error!("Unified FVK contains invalid transparent FVK: {}", e);
+                                return std::ptr::null_mut();
+                            }
+                        }
+                        // Can't check anything for unknown typecodes.
+                        Fvk::Unknown { .. } => (),
+                    }
+                }
+                Box::into_raw(Box::new(fvk))
+            }
             Ok((parsed_network, _)) => {
                 error!(
                     "Key was encoded for a different network ({:?}) than what was requested ({:?})",

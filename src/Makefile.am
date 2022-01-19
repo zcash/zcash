@@ -39,7 +39,14 @@ if ENABLE_WALLET
 LIBBITCOIN_WALLET=libbitcoin_wallet.a
 endif
 
-RUST_ENV_VARS = RUSTC="$(RUSTC)" TERM=dumb
+# We depend on the secp256k1 crate for some logic on the Rust side of the FFI. This crate
+# is a wrapper around libsecp256k1, which we already vendor in our code; the crate vendors
+# its own copy with non-colliding symbols. To ensure that we only use a single version of
+# libsecp256k1, we disable symbol renaming in the secp256k1-sys crate  so it links to the
+# same library as the C++ code.
+# - Note that this does not prevent the secp256k1-sys vendored code from being built; this
+#   requires https://github.com/rust-bitcoin/rust-secp256k1/issues/380 to be addressed.
+RUST_ENV_VARS = RUSTC="$(RUSTC)" TERM=dumb RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming"
 RUST_BUILD_OPTS = --lib --release --target $(RUST_TARGET)
 
 rust_verbose = $(rust_verbose_@AM_V@)
@@ -507,6 +514,7 @@ zcash_cli_LDADD = \
   $(LIBZCASH) \
   $(LIBRUSTZCASH) \
   $(LIBBITCOIN_CRYPTO) \
+  $(LIBSECP256K1) \
   $(LIBZCASH_LIBS)
 #
 
