@@ -126,6 +126,25 @@ libzcash::SaplingPaymentAddress SaplingDiversifiableFullViewingKey::DefaultAddre
     }
 }
 
+libzcash::SaplingPaymentAddress SaplingDiversifiableFullViewingKey::GetChangeAddress() const {
+    CDataStream ss_fvk(SER_NETWORK, PROTOCOL_VERSION);
+    ss_fvk << fvk;
+    CSerializeData fvk_bytes(ss_fvk.begin(), ss_fvk.end());
+
+    SaplingDiversifiableFullViewingKey internalDFVK;
+    CSerializeData fvk_bytes_ret(libzcash::SerializedSaplingFullViewingKeySize);
+    librustzcash_zip32_sapling_derive_internal_fvk(
+        reinterpret_cast<unsigned char*>(fvk_bytes.data()),
+        dk.begin(),
+        reinterpret_cast<unsigned char*>(fvk_bytes_ret.data()),
+        internalDFVK.dk.begin());
+
+    CDataStream ss_fvk_ret(fvk_bytes_ret, SER_NETWORK, PROTOCOL_VERSION);
+    ss_fvk_ret >> internalDFVK.fvk;
+
+    return internalDFVK.DefaultAddress();
+}
+
 SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Master(const HDSeed& seed)
 {
     auto rawSeed = seed.RawSeed();
@@ -206,6 +225,10 @@ SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
     ret.fvk = expsk.full_viewing_key();
     ret.dk = dk;
     return ret;
+}
+
+SaplingExtendedSpendingKey SaplingExtendedSpendingKey::DeriveInternalKey() const {
+    throw std::runtime_error("Not yet implemented");
 }
 
 HDKeyPath Zip32AccountKeyPath(

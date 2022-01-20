@@ -4044,7 +4044,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         // If the note belongs to a Sapling address that is part of an account in the
         // wallet, show the corresponding Unified Address.
         std::string address;
-        const auto ua = pwalletMain->GetUnifiedForReceiver(pa);
+        const auto ua = pwalletMain->FindUnifiedAddressByReceiver(pa);
         if (ua.has_value()) {
             address = keyIO.EncodePaymentAddress(ua.value());
         } else {
@@ -4097,7 +4097,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         // If the note belongs to a Sapling address that is part of an account in the
         // wallet, show the corresponding Unified Address.
         std::string address;
-        const auto ua = pwalletMain->GetUnifiedForReceiver(pa);
+        const auto ua = pwalletMain->FindUnifiedAddressByReceiver(pa);
         if (ua.has_value()) {
             address = keyIO.EncodePaymentAddress(ua.value());
         } else {

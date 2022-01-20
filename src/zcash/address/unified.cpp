@@ -134,3 +134,7 @@ std::optional<std::pair<UnifiedAddress, diversifier_index_t>> ZcashdUnifiedFullV
         const diversifier_index_t& j) const {
     return FindAddress(j, {ReceiverType::P2PKH, ReceiverType::Sapling});
 }
+
+RecipientAddress ZcashdUnifiedFullViewingKey::GetChangeAddress(const std::set<ChangeType>& changeOptions) const {
+    throw std::runtime_error("TODO");
+}

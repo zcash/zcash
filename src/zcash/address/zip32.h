@@ -155,6 +155,8 @@ public:
 
     libzcash::SaplingPaymentAddress DefaultAddress() const;
 
+    libzcash::SaplingPaymentAddress GetChangeAddress() const;
+
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
@@ -237,10 +239,11 @@ struct SaplingExtendedSpendingKey {
     static std::pair<SaplingExtendedSpendingKey, HDKeyPath> ForAccount(const HDSeed& seed, uint32_t bip44CoinType, libzcash::AccountId accountId);
     static std::pair<SaplingExtendedSpendingKey, HDKeyPath> Legacy(const HDSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex);
 
-
     SaplingExtendedSpendingKey Derive(uint32_t i) const;
 
     SaplingExtendedFullViewingKey ToXFVK() const;
+
+    SaplingExtendedSpendingKey DeriveInternalKey() const;
 
     friend bool operator==(const SaplingExtendedSpendingKey& a, const SaplingExtendedSpendingKey& b)
     {

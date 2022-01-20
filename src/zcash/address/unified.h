@@ -7,6 +7,7 @@
 
 #include "bip44.h"
 #include "key_constants.h"
+#include "script/script.h"
 #include "zip32.h"
 
 namespace libzcash {
@@ -16,6 +17,21 @@ enum class ReceiverType: uint32_t {
     P2SH = 0x01,
     Sapling = 0x02,
     //Orchard = 0x03
+};
+
+/** A recipient address to which a unified address can be resolved */
+typedef std::variant<
+    CKeyID,
+    CScriptID,
+    libzcash::SaplingPaymentAddress> RecipientAddress;
+
+/**
+ * An enumeration of the types of change that a transaction may
+ * produce.
+ */
+enum class ChangeType {
+    Sapling,
+    Transparent,
 };
 
 /**
@@ -32,7 +48,41 @@ bool HasTransparent(const std::set<ReceiverType>& receiverTypes);
 
 class ZcashdUnifiedSpendingKey;
 
+class UnknownReceiver {
+public:
+    uint32_t typecode;
+    std::vector<uint8_t> data;
+
+    UnknownReceiver(uint32_t typecode, std::vector<uint8_t> data) :
+        typecode(typecode), data(data) {}
+
+    friend inline bool operator==(const UnknownReceiver& a, const UnknownReceiver& b) {
+        return a.typecode == b.typecode && a.data == b.data;
+    }
+    friend inline bool operator<(const UnknownReceiver& a, const UnknownReceiver& b) {
+        // We don't know for certain the preference order of unknown receivers, but it is
+        // _likely_ that the higher typecode has higher preference. The exact sort order
+        // doesn't really matter, as unknown receivers have lower preference than known
+        // receivers.
+        return (a.typecode > b.typecode ||
+                (a.typecode == b.typecode && a.data < b.data));
+    }
+};
+
+/**
+ * Receivers that can appear in a Unified Address.
+ *
+ * These types are given in order of preference (as defined in ZIP 316), so that sorting
+ * variants by `operator<` is equivalent to sorting by preference.
+ */
+typedef std::variant<
+    SaplingPaymentAddress,
+    CScriptID,
+    CKeyID,
+    UnknownReceiver> Receiver;
+
 // prototypes for the classes handling ZIP-316 encoding (in Address.hpp)
+// TODO: ZIP-316 encoding should probably be moved here
 class UnifiedAddress;
 class UnifiedFullViewingKey;
 
@@ -115,6 +165,14 @@ public:
      * Find the next available address that contains all supported receiver types.
      */
     std::optional<std::pair<UnifiedAddress, diversifier_index_t>> FindAddress(const diversifier_index_t& j) const;
+
+    /**
+     * Return the change address for this UFVK, given the provided
+     * set of receiver types for pools involved in this transaction.
+     * If the provided set is empty, return the change address
+     * corresponding to the most-preferred pool.
+     */
+    RecipientAddress GetChangeAddress(const std::set<ChangeType>& changeOptions) const;
 
     friend bool operator==(const ZcashdUnifiedFullViewingKey& a, const ZcashdUnifiedFullViewingKey& b)
     {

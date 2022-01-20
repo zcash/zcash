@@ -1256,6 +1256,10 @@ public:
      */
     std::optional<libzcash::AccountId> FindAccountForSelector(const ZTXOSelector& paymentSource) const;
 
+    std::optional<libzcash::RecipientAddress> GenerateChangeAddressForAccount(
+            libzcash::AccountId accountId,
+            std::set<libzcash::ChangeType> changeOptions);
+
     SpendableInputs FindSpendableInputs(
             ZTXOSelector paymentSource,
             bool allowTransparentCoinbase,
@@ -1413,7 +1417,7 @@ public:
 
     //! Retrieves the UFVK derived from the wallet's mnemonic seed for the specified account.
     std::optional<libzcash::ZcashdUnifiedFullViewingKey>
-        GetUnifiedFullViewingKeyByAccount(libzcash::AccountId account);
+        GetUnifiedFullViewingKeyByAccount(libzcash::AccountId account) const;
 
     //! Generate a new unified address for the specified account, diversifier, and
     //! set of receiver types.
@@ -1433,7 +1437,9 @@ public:
 
     std::optional<libzcash::UFVKId> FindUnifiedFullViewingKey(const libzcash::UnifiedAddress& addr) const;
     std::optional<libzcash::AccountId> GetUnifiedAccountId(const libzcash::UFVKId& ufvkId) const;
-    std::optional<libzcash::UnifiedAddress> GetUnifiedForReceiver(const libzcash::Receiver& receiver) const;
+
+    std::optional<libzcash::ZcashdUnifiedFullViewingKey> FindUFVKByReceiver(const libzcash::Receiver& receiver) const;
+    std::optional<libzcash::UnifiedAddress> FindUnifiedAddressByReceiver(const libzcash::Receiver& receiver) const;
 
     /**
      * Increment the next transaction order id
@@ -1857,12 +1863,25 @@ public:
     KeyAddResult operator()(const libzcash::SaplingExtendedSpendingKey &sk) const;
 };
 
-class LookupUnifiedAddress {
+class UFVKForReceiver {
 private:
     const CWallet& wallet;
 
 public:
-    LookupUnifiedAddress(const CWallet& wallet): wallet(wallet) {}
+    UFVKForReceiver(const CWallet& wallet): wallet(wallet) {}
+
+    std::optional<libzcash::ZcashdUnifiedFullViewingKey> operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const;
+    std::optional<libzcash::ZcashdUnifiedFullViewingKey> operator()(const CScriptID& scriptId) const;
+    std::optional<libzcash::ZcashdUnifiedFullViewingKey> operator()(const CKeyID& keyId) const;
+    std::optional<libzcash::ZcashdUnifiedFullViewingKey> operator()(const libzcash::UnknownReceiver& receiver) const;
+};
+
+class UnifiedAddressForReceiver {
+private:
+    const CWallet& wallet;
+
+public:
+    UnifiedAddressForReceiver(const CWallet& wallet): wallet(wallet) {}
 
     std::optional<libzcash::UnifiedAddress> operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const;
     std::optional<libzcash::UnifiedAddress> operator()(const CScriptID& scriptId) const;

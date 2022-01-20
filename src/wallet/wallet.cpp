@@ -536,7 +536,7 @@ bool CWallet::AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &uf
     return CWalletDB(strWalletFile).WriteUnifiedFullViewingKey(ufvk);
 }
 
-std::optional<ZcashdUnifiedFullViewingKey> CWallet::GetUnifiedFullViewingKeyByAccount(libzcash::AccountId accountId) {
+std::optional<ZcashdUnifiedFullViewingKey> CWallet::GetUnifiedFullViewingKeyByAccount(libzcash::AccountId accountId) const {
     if (!mnemonicHDChain.has_value()) {
         throw std::runtime_error(
                 "CWallet::GetUnifiedFullViewingKeyByAccount(): Wallet is missing mnemonic seed metadata.");
@@ -1544,6 +1544,22 @@ bool CWallet::SelectorMatchesAddress(
             return false;
         }
     }, selector.GetPattern());
+}
+
+std::optional<RecipientAddress> CWallet::GenerateChangeAddressForAccount(
+        libzcash::AccountId accountId,
+        std::set<libzcash::ChangeType> changeOptions) {
+    auto ufvk = this->GetUnifiedFullViewingKeyByAccount(accountId);
+    if (ufvk.has_value()) {
+        for (libzcash::ChangeType t : changeOptions) {
+            if (t == libzcash::ChangeType::Transparent && accountId == ZCASH_LEGACY_ACCOUNT) {
+                return GenerateNewKey().GetID();
+            } else {
+                return ufvk.value().GetChangeAddress(changeOptions);
+            }
+        }
+    }
+    return std::nullopt;
 }
 
 SpendableInputs CWallet::FindSpendableInputs(
@@ -5980,8 +5996,12 @@ std::optional<libzcash::AccountId> CWallet::GetUnifiedAccountId(const libzcash::
     }
 }
 
-std::optional<UnifiedAddress> CWallet::GetUnifiedForReceiver(const Receiver& receiver) const {
-    return std::visit(LookupUnifiedAddress(*this), receiver);
+std::optional<ZcashdUnifiedFullViewingKey> CWallet::FindUFVKByReceiver(const libzcash::Receiver& receiver) const {
+    return std::visit(UFVKForReceiver(*this), receiver);
+}
+
+std::optional<UnifiedAddress> CWallet::FindUnifiedAddressByReceiver(const Receiver& receiver) const {
+    return std::visit(UnifiedAddressForReceiver(*this), receiver);
 }
 
 //
@@ -6213,7 +6233,6 @@ KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::SaplingExtendedFu
         return KeyNotAdded;
     }
 }
-
 KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::UnifiedFullViewingKey& no) const {
     throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Unified full viewing key import is not yet supported.");
 }
@@ -6271,14 +6290,53 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
     }
 }
 
-std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
+// UFVKForReceiver :: (CWallet&, Receiver) -> std::optional<ZcashdUnifiedFullViewingKey>
+
+std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
     auto ufvkPair = wallet.GetUFVKMetadataForReceiver(saplingAddr);
     if (ufvkPair.has_value()) {
         auto ufvkid = ufvkPair.value().first;
         auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
-        if (!(ufvk.has_value() && ufvk.value().GetSaplingKey().has_value())) {
-            throw std::runtime_error("CWallet::LookupUnifiedAddress(): UFVK has no Sapling key part.");
-        }
+        // If we have UFVK metadata, `GetUnifiedFullViewingKey` should always
+        // return a non-nullopt value, and since we obtained that metadata by
+        // lookup from as Sapling address, it should have a Sapling key component.
+        assert(ufvk.has_value() && ufvk.value().GetSaplingKey().has_value());
+        return ufvk.value();
+    } else {
+        return std::nullopt;
+    }
+}
+std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const CScriptID& scriptId) const {
+    // We do not currently generate unified addresses containing P2SH components,
+    // so there's nothing to look up here.
+    return std::nullopt;
+}
+std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const CKeyID& keyId) const {
+    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(keyId);
+    if (ufvkPair.has_value()) {
+        auto ufvkid = ufvkPair.value().first;
+        // transparent address UFVK metadata is always accompanied by the child
+        // index at which the address was produced
+        assert(ufvkPair.value().second.has_value());
+        auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
+        assert(ufvk.has_value() && ufvk.value().GetTransparentKey().has_value());
+        return ufvk.value();
+    } else {
+        return std::nullopt;
+    }
+}
+std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const libzcash::UnknownReceiver& receiver) const {
+    return std::nullopt;
+}
+
+// UnifiedAddressForReceiver :: (CWallet&, Receiver) -> std::optional<UnifiedAddress>
+
+std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
+    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(saplingAddr);
+    if (ufvkPair.has_value()) {
+        auto ufvkid = ufvkPair.value().first;
+        auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
+        assert(ufvk.has_value() && ufvk.value().GetSaplingKey().has_value());
 
         diversifier_index_t j;
         // If the wallet is missing metadata at this UFVK id, it is probably
@@ -6300,10 +6358,12 @@ std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const l
         return std::nullopt;
     }
 }
-std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const CScriptID& scriptId) const {
+std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(const CScriptID& scriptId) const {
+    // We do not currently generate unified addresses containing P2SH components,
+    // so there's nothing to look up here.
     return std::nullopt;
 }
-std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const CKeyID& keyId) const {
+std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(const CKeyID& keyId) const {
     auto ufvkPair = wallet.GetUFVKMetadataForReceiver(keyId);
     if (ufvkPair.has_value()) {
         auto ufvkid = ufvkPair.value().first;
@@ -6313,7 +6373,7 @@ std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const C
         diversifier_index_t j = ufvkPair.value().second.value();
         auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
         if (!(ufvk.has_value() && ufvk.value().GetTransparentKey().has_value())) {
-            throw std::runtime_error("CWallet::LookupUnifiedAddress(): UFVK has no P2PKH key part.");
+            throw std::runtime_error("CWallet::UnifiedAddressForReceiver(): UFVK has no P2PKH key part.");
         }
 
         // If the wallet is missing metadata at this UFVK id, it is probably
@@ -6333,7 +6393,7 @@ std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const C
         return std::nullopt;
     }
 }
-std::optional<libzcash::UnifiedAddress> LookupUnifiedAddress::operator()(const libzcash::UnknownReceiver& receiver) const {
+std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(const libzcash::UnknownReceiver& receiver) const {
     return std::nullopt;
 }
 

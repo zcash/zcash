@@ -55,7 +55,7 @@ use zcash_primitives::{
     },
     sapling::{merkle_hash, spend_sig},
     transaction::components::Amount,
-    zip32::{self, sapling_address, sapling_find_address},
+    zip32::{self, sapling_address, sapling_derive_internal_fvk, sapling_find_address},
 };
 use zcash_proofs::{
     circuit::sapling::TREE_DEPTH as SAPLING_TREE_DEPTH,
@@ -1079,6 +1079,25 @@ pub extern "C" fn librustzcash_zip32_xfvk_derive(
         .expect("should be able to serialize an ExtendedFullViewingKey");
 
     true
+}
+
+/// Derive the Sapling internal
+#[no_mangle]
+pub extern "C" fn librustzcash_zip32_sapling_derive_internal_fvk(
+    fvk: *const [c_uchar; 96],
+    dk: *const [c_uchar; 32],
+    fvk_ret: *mut [c_uchar; 96],
+    dk_ret: *mut [c_uchar; 32],
+) {
+    let fvk = FullViewingKey::read(&unsafe { *fvk }[..]).expect("valid Sapling FullViewingKey");
+    let dk = zip32::DiversifierKey(unsafe { *dk });
+
+    let (fvk_internal, dk_internal) = sapling_derive_internal_fvk(&fvk, &dk);
+    let fvk_ret = unsafe { &mut *fvk_ret };
+    let dk_ret = unsafe { &mut *dk_ret };
+
+    fvk_ret.copy_from_slice(&fvk_internal.to_bytes());
+    dk_ret.copy_from_slice(&dk_internal.0);
 }
 
 /// Derive a PaymentAddress from an ExtendedFullViewingKey.

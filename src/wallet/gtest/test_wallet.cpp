@@ -2199,7 +2199,7 @@ TEST(WalletTests, GenerateUnifiedAddress) {
             ua->first.GetSaplingReceiver(),
             ufvk.GetSaplingKey().value().Address(ua->second));
 
-    auto u4r = wallet.GetUnifiedForReceiver(ua->first.GetSaplingReceiver().value());
+    auto u4r = wallet.FindUnifiedAddressByReceiver(ua->first.GetSaplingReceiver().value());
     EXPECT_EQ(u4r, ua->first);
 
     // Explicitly trigger the invalid transparent child index failure

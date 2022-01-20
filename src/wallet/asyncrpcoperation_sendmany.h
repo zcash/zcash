@@ -75,12 +75,18 @@ private:
     CAmount fee_;
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 
-    bool isfromtaddr_{false};
     bool isfromsprout_{false};
     bool isfromsapling_{false};
     bool allowRevealedAmounts_{false};
     uint32_t transparentRecipients_{0};
     TxOutputAmounts txOutputAmounts_;
+
+    /**
+     * Compute the internal and external OVKs to use in transaction construction, given
+     * the payment source and the set of types that correspond to outputs selected for
+     * being spent in the transaction.
+     */
+    std::pair<uint256, uint256> SelectOVKs() const;
 
     static CAmount DefaultDustThreshold();
 
@@ -88,7 +94,6 @@ private:
 
     uint256 main_impl();
 };
-
 
 // To test private methods, a friend class can act as a proxy
 class TEST_FRIEND_AsyncRPCOperation_sendmany {

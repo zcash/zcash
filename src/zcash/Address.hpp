@@ -23,39 +23,6 @@ const unsigned char ZCASH_UFVK_ID_PERSONAL[BLAKE2bPersonalBytes] =
 
 namespace libzcash {
 
-class UnknownReceiver {
-public:
-    uint32_t typecode;
-    std::vector<uint8_t> data;
-
-    UnknownReceiver(uint32_t typecode, std::vector<uint8_t> data) :
-        typecode(typecode), data(data) {}
-
-    friend inline bool operator==(const UnknownReceiver& a, const UnknownReceiver& b) {
-        return a.typecode == b.typecode && a.data == b.data;
-    }
-    friend inline bool operator<(const UnknownReceiver& a, const UnknownReceiver& b) {
-        // We don't know for certain the preference order of unknown receivers, but it is
-        // _likely_ that the higher typecode has higher preference. The exact sort order
-        // doesn't really matter, as unknown receivers have lower preference than known
-        // receivers.
-        return (a.typecode > b.typecode ||
-                (a.typecode == b.typecode && a.data < b.data));
-    }
-};
-
-/**
- * Receivers that can appear in a Unified Address.
- *
- * These types are given in order of preference (as defined in ZIP 316), so that sorting
- * variants by `operator<` is equivalent to sorting by preference.
- */
-typedef std::variant<
-    SaplingPaymentAddress,
-    CScriptID,
-    CKeyID,
-    UnknownReceiver> Receiver;
-
 bool HasKnownReceiverType(const Receiver& receiver);
 
 struct ReceiverIterator {
@@ -90,11 +57,6 @@ private:
     size_t cur;
 };
 
-/** A recipient address to which a unified address can be resolved */
-typedef std::variant<
-    CKeyID,
-    CScriptID,
-    libzcash::SaplingPaymentAddress> RecipientAddress;
 
 class UnifiedAddress {
     std::vector<Receiver> receivers;

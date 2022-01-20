@@ -17,6 +17,7 @@ const size_t SerializedSaplingPaymentAddressSize = 43;
 const size_t SerializedSaplingFullViewingKeySize = 96;
 const size_t SerializedSaplingExpandedSpendingKeySize = 96;
 const size_t SerializedSaplingSpendingKeySize = 32;
+const size_t SerializedSaplingDiversifierKeySize = 32;
 
 typedef std::array<unsigned char, ZC_DIVERSIFIER_SIZE> diversifier_t;
 
@@ -133,7 +134,7 @@ public:
     SaplingExpandedSpendingKey expanded_spending_key() const;
     SaplingFullViewingKey full_viewing_key() const;
 
-    // Can derive Sapling addr from default diversifier 
+    // Can derive Sapling addr from default diversifier
     SaplingPaymentAddress default_address() const;
 };
 

@@ -13,6 +13,7 @@
 #include "script/script.h"
 #include "script/standard.h"
 #include "uint256.h"
+#include "util/match.h"
 #include "zcash/Address.hpp"
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "zcash/JoinSplit.hpp"
@@ -170,11 +171,8 @@ public:
 
     void AddTransparentOutput(const CTxDestination& to, CAmount value);
 
-    void SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, uint256 ovk);
-
-    void SendChangeTo(libzcash::SproutPaymentAddress);
-
-    void SendChangeTo(CTxDestination& changeAddr);
+    void SendChangeTo(const libzcash::RecipientAddress& changeAddr, const uint256& ovk);
+    void SendChangeToSprout(const libzcash::SproutPaymentAddress& changeAddr);
 
     TransactionBuilderResult Build();
 

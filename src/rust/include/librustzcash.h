@@ -307,6 +307,17 @@ extern "C" {
     );
 
     /**
+     * Derive the Sapling FVK for an internal BIP44 chain from the
+     * corresponding external chain FVK.
+     */
+    void librustzcash_zip32_sapling_derive_internal_fvk(
+        const unsigned char *fvk,
+        const unsigned char *dk,
+        unsigned char *fvk_ret,
+        unsigned char *dk_ret
+    );
+
+    /**
      * Derive a PaymentAddress from a (SaplingFullViewingKey, DiversifierKey)
      * pair.  Returns 'false' if no valid address can be derived for the
      * specified diversifier index.

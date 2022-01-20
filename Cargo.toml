@@ -71,8 +71,8 @@ panic = 'abort'
 codegen-units = 1
 
 [patch.crates-io]
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "7801dddf35ca247345cf4f5c5e48791297cad531" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "7801dddf35ca247345cf4f5c5e48791297cad531" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "7801dddf35ca247345cf4f5c5e48791297cad531" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "7801dddf35ca247345cf4f5c5e48791297cad531" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "7801dddf35ca247345cf4f5c5e48791297cad531" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "a01290869a4f0c4e05bdcca550795ea0e76e8550" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "a01290869a4f0c4e05bdcca550795ea0e76e8550" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "a01290869a4f0c4e05bdcca550795ea0e76e8550" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "a01290869a4f0c4e05bdcca550795ea0e76e8550" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "a01290869a4f0c4e05bdcca550795ea0e76e8550" }

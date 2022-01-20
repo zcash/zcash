@@ -268,17 +268,6 @@ TEST(TransactionBuilder, RejectsInvalidTransparentOutput)
     ASSERT_THROW(builder.AddTransparentOutput(taddr, 50), UniValue);
 }
 
-TEST(TransactionBuilder, RejectsInvalidTransparentChangeAddress)
-{
-    SelectParams(CBaseChainParams::REGTEST);
-    const Consensus::Params& consensusParams = Params().GetConsensus();
-
-    // Default CTxDestination type is an invalid address
-    CTxDestination taddr;
-    auto builder = TransactionBuilder(consensusParams, 1);
-    ASSERT_THROW(builder.SendChangeTo(taddr), UniValue);
-}
-
 TEST(TransactionBuilder, FailsWithNegativeChange)
 {
     auto consensusParams = RegtestActivateSapling();
@@ -344,7 +333,6 @@ TEST(TransactionBuilder, ChangeOutput)
     CKey tsk = AddTestCKeyToKeyStore(keystore);
     auto tkeyid = tsk.GetPubKey().GetID();
     auto scriptPubKey = GetScriptForDestination(tkeyid);
-    CTxDestination taddr = tkeyid;
 
     // No change address and no Sapling spends
     {
@@ -387,7 +375,7 @@ TEST(TransactionBuilder, ChangeOutput)
     {
         auto builder = TransactionBuilder(consensusParams, 1, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
-        builder.SendChangeTo(taddr);
+        builder.SendChangeTo(tkeyid, {});
         auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 1);
