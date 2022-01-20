@@ -127,6 +127,19 @@ void* zcash_script_new_precomputed_tx(
     }
 }
 
+void* zcash_script_new_precomputed_tx_v5(
+    const unsigned char* txTo,
+    unsigned int txToLen,
+    const unsigned char* allPrevOutputs,
+    unsigned int allPrevOutputsLen,
+    zcash_script_error* err)
+{
+    // TODO: add support for allPrevOutputs
+    (void)allPrevOutputs;
+    (void)allPrevOutputsLen;
+    return zcash_script_new_precomputed_tx(txTo, txToLen, err);
+}
+
 void zcash_script_free_precomputed_tx(void* pre_preTx)
 {
     PrecomputedTransaction* preTx = static_cast<PrecomputedTransaction*>(pre_preTx);
@@ -194,6 +207,25 @@ int zcash_script_verify(
     } catch (const std::exception&) {
         return set_error(err, zcash_script_ERR_TX_DESERIALIZE); // Error deserializing
     }
+}
+
+int zcash_script_verify_v5(
+    const unsigned char* scriptPubKey,
+    unsigned int scriptPubKeyLen,
+    int64_t amount,
+    const unsigned char* txTo,
+    unsigned int txToLen,
+    const unsigned char* allPrevOutputs,
+    unsigned int allPrevOutputsLen,
+    unsigned int nIn,
+    unsigned int flags,
+    uint32_t consensusBranchId,
+    zcash_script_error* err)
+{
+    // TODO: add support for allPrevOutputs
+    (void)allPrevOutputs;
+    (void)allPrevOutputsLen;
+    return zcash_script_verify(scriptPubKey, scriptPubKeyLen, amount, txTo, txToLen, nIn, flags, consensusBranchId, err);
 }
 
 unsigned int zcash_script_legacy_sigop_count_precomputed(

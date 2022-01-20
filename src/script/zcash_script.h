@@ -70,6 +70,26 @@ void* zcash_script_new_precomputed_tx(
     unsigned int txToLen,
     zcash_script_error* err);
 
+/// Deserializes the given transaction and precomputes values to improve
+/// script verification performance. Must be used for V5 transactions;
+/// may also be used for previous versions.
+///
+/// allPrevOutputs must point to the concatenation of all outputs from previous
+/// transactions that are spent by the inputs of the given transaction.
+/// The outputs must be encoded as specified by Bitcoin (value followed by
+/// pk_script, including a leading CompactSize).
+///
+/// Returns a pointer to the precomputed transaction. Free this with
+/// zcash_script_free_precomputed_tx once you are done.
+///
+/// If not NULL, err will contain an error/success code for the operation.
+void* zcash_script_new_precomputed_tx_v5(
+    const unsigned char* txTo,
+    unsigned int txToLen,
+    const unsigned char* allPrevOutputs,
+    unsigned int allPrevOutputsLen,
+    zcash_script_error* err);
+
 /// Frees a precomputed transaction previously created with
 /// zcash_script_new_precomputed_tx.
 void zcash_script_free_precomputed_tx(void* preTx);
@@ -105,6 +125,32 @@ EXPORT_SYMBOL int zcash_script_verify(
     int64_t amount,
     const unsigned char *txTo, unsigned int txToLen,
     unsigned int nIn, unsigned int flags,
+    uint32_t consensusBranchId,
+    zcash_script_error* err);
+
+/// Returns 1 if the input nIn of the serialized transaction pointed to by
+/// txTo correctly spends the scriptPubKey pointed to by scriptPubKey under
+/// the additional constraints specified by flags. Must be used for V5 transactions;
+/// may also be used for previous versions.
+///
+/// allPrevOutputs must point to the concatenation of all outputs from previous
+/// transactions that are spent by the inputs of the given transaction.
+/// The outputs must be encoded as specified by Bitcoin (value followed by
+/// pk_script, including a leading CompactSize).
+///
+/// If not NULL, err will contain an error/success code for the operation.
+/// Note that script verification failure is indicated by err being set to
+/// zcash_script_ERR_OK and a return value of 0.
+EXPORT_SYMBOL int zcash_script_verify_v5(
+    const unsigned char* scriptPubKey,
+    unsigned int scriptPubKeyLen,
+    int64_t amount,
+    const unsigned char* txTo,
+    unsigned int txToLen,
+    const unsigned char* allPrevOutputs,
+    unsigned int allPrevOutputsLen,
+    unsigned int nIn,
+    unsigned int flags,
     uint32_t consensusBranchId,
     zcash_script_error* err);
 
