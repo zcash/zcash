@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-#define ZCASH_SCRIPT_API_VER 2
+#define ZCASH_SCRIPT_API_VER 3
 
 typedef enum zcash_script_error_t
 {
@@ -74,10 +74,11 @@ void* zcash_script_new_precomputed_tx(
 /// script verification performance. Must be used for V5 transactions;
 /// may also be used for previous versions.
 ///
-/// allPrevOutputs must point to the concatenation of all outputs from previous
-/// transactions that are spent by the inputs of the given transaction.
-/// The outputs must be encoded as specified by Bitcoin (value followed by
-/// pk_script, including a leading CompactSize).
+/// allPrevOutputs must point to the encoding of the vector of all outputs
+/// from previous transactions that are spent by the inputs of the given transaction.
+/// The outputs must be encoded as specified by Bitcoin. The full encoding will thus
+/// consist of a CompactSize prefix containing the number of outputs, followed by
+/// the concatenated outputs, each of them encoded as (value, CompactSize, pk_script).
 ///
 /// Returns a pointer to the precomputed transaction. Free this with
 /// zcash_script_free_precomputed_tx once you are done.
@@ -129,22 +130,20 @@ EXPORT_SYMBOL int zcash_script_verify(
     zcash_script_error* err);
 
 /// Returns 1 if the input nIn of the serialized transaction pointed to by
-/// txTo correctly spends the scriptPubKey pointed to by scriptPubKey under
+/// txTo correctly spends the matching output in allPrevOutputs under
 /// the additional constraints specified by flags. Must be used for V5 transactions;
 /// may also be used for previous versions.
 ///
-/// allPrevOutputs must point to the concatenation of all outputs from previous
-/// transactions that are spent by the inputs of the given transaction.
-/// The outputs must be encoded as specified by Bitcoin (value followed by
-/// pk_script, including a leading CompactSize).
+/// allPrevOutputs must point to the encoding of the vector of all outputs
+/// from previous transactions that are spent by the inputs of the given transaction.
+/// The outputs must be encoded as specified by Bitcoin. The full encoding will thus
+/// consist of a CompactSize prefix containing the number of outputs, followed by
+/// the concatenated outputs, each of them encoded as (value, CompactSize, pk_script).
 ///
 /// If not NULL, err will contain an error/success code for the operation.
 /// Note that script verification failure is indicated by err being set to
 /// zcash_script_ERR_OK and a return value of 0.
 EXPORT_SYMBOL int zcash_script_verify_v5(
-    const unsigned char* scriptPubKey,
-    unsigned int scriptPubKeyLen,
-    int64_t amount,
     const unsigned char* txTo,
     unsigned int txToLen,
     const unsigned char* allPrevOutputs,

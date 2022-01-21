@@ -210,9 +210,6 @@ int zcash_script_verify(
 }
 
 int zcash_script_verify_v5(
-    const unsigned char* scriptPubKey,
-    unsigned int scriptPubKeyLen,
-    int64_t amount,
     const unsigned char* txTo,
     unsigned int txToLen,
     const unsigned char* allPrevOutputs,
@@ -225,7 +222,8 @@ int zcash_script_verify_v5(
     // TODO: add support for allPrevOutputs
     (void)allPrevOutputs;
     (void)allPrevOutputsLen;
-    return zcash_script_verify(scriptPubKey, scriptPubKeyLen, amount, txTo, txToLen, nIn, flags, consensusBranchId, err);
+    // TODO: get the first three params from allPrevOutputs
+    return zcash_script_verify(NULL, 0, 0, txTo, txToLen, nIn, flags, consensusBranchId, err);
 }
 
 unsigned int zcash_script_legacy_sigop_count_precomputed(
