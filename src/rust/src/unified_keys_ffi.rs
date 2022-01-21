@@ -203,5 +203,6 @@ pub extern "C" fn unified_full_viewing_key_transparent_ovk(
         return true;
     }
 
+    *out = [0; 32];
     false
 }
