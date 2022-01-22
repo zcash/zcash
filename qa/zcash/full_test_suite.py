@@ -182,7 +182,7 @@ STAGE_COMMANDS = {
     'util-test': util_test,
     'secp256k1': ['make', '-C', repofile('src/secp256k1'), 'check'],
     'univalue': ['make', '-C', repofile('src/univalue'), 'check'],
-    'rpc': [repofile('qa/pull-tester/rpc-tests.py'), '-j8'],
+    'rpc': [repofile('qa/pull-tester/rpc-tests.py'), '-j16', '-nozmq'],
 }
 
 
