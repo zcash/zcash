@@ -869,10 +869,11 @@ BOOST_AUTO_TEST_CASE(TxV5)
     //     tx,
     //     txid,
     //     auth_digest,
+    //     amounts,
+    //     script_pubkeys,
     //     Option<transparent_input>,
-    //     Option<script_code>,
-    //     Option<amount>,
-    //     sighash_all,
+    //     sighash_shielded,
+    //     Option<sighash_all>,
     //     Option<sighash_none>,
     //     Option<sighash_single>,
     //     Option<sighash_all_anyone>,
@@ -901,28 +902,42 @@ BOOST_AUTO_TEST_CASE(TxV5)
         BOOST_CHECK_EQUAL(tx.GetHash().GetHex(), test[1].getValStr());
         BOOST_CHECK_EQUAL(tx.GetAuthDigest().GetHex(), test[2].getValStr());
 
+        UniValue amountsArr = test[3].get_array();
+        UniValue scriptCodesArr = test[4].get_array();
+        std::vector<CAmount> amounts;
+        std::vector<CScript> scriptCodes;
+        if (tx.IsCoinBase()) {
+            BOOST_CHECK(amountsArr.empty());
+            BOOST_CHECK(scriptCodesArr.empty());
+        } else {
+            BOOST_CHECK_EQUAL(amountsArr.size(), tx.vin.size());
+            BOOST_CHECK_EQUAL(scriptCodesArr.size(), tx.vin.size());
+
+            for (size_t inpIdx = 0; inpIdx < tx.vin.size(); inpIdx++) {
+                amounts.push_back(amountsArr[inpIdx].get_int64());
+                auto scriptCodeBytes = ParseHex(scriptCodesArr[inpIdx].get_str());
+                scriptCodes.push_back(CScript(scriptCodeBytes.begin(), scriptCodeBytes.end()));
+            }
+        }
+
         // ZIP 244: Check the signature digests.
         unsigned int nIn = NOT_AN_INPUT;
-        if (!test[3].isNull()) {
-            nIn = test[3].get_int();
+        if (!test[5].isNull()) {
+            nIn = test[5].get_int();
         }
 
         CScript scriptCode;
-        if (!test[4].isNull()) {
-            auto scriptCodeBytes = ParseHex(test[4].get_str());
-            scriptCode = CScript(scriptCodeBytes.begin(), scriptCodeBytes.end());
-        }
-
         CAmount amount;
-        if (!test[5].isNull()) {
-            amount = test[5].get_int64();
+        if (nIn != NOT_AN_INPUT) {
+            scriptCode = scriptCodes[nIn];
+            amount = amounts[nIn];
         }
 
         const PrecomputedTransactionData txdata(tx);
 
         BOOST_CHECK_EQUAL(
             SignatureHash(
-                scriptCode, tx, nIn,
+                scriptCode, tx, NOT_AN_INPUT,
                 SIGHASH_ALL,
                 amount, *tx.GetConsensusBranchId(), txdata
             ).GetHex(),
@@ -932,7 +947,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
             BOOST_CHECK_EQUAL(
                 SignatureHash(
                     scriptCode, tx, nIn,
-                    SIGHASH_NONE,
+                    SIGHASH_ALL,
                     amount, *tx.GetConsensusBranchId(), txdata
                 ).GetHex(),
                 test[7].getValStr());
@@ -942,7 +957,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
             BOOST_CHECK_EQUAL(
                 SignatureHash(
                     scriptCode, tx, nIn,
-                    SIGHASH_SINGLE,
+                    SIGHASH_NONE,
                     amount, *tx.GetConsensusBranchId(), txdata
                 ).GetHex(),
                 test[8].getValStr());
@@ -952,7 +967,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
             BOOST_CHECK_EQUAL(
                 SignatureHash(
                     scriptCode, tx, nIn,
-                    SIGHASH_ALL | SIGHASH_ANYONECANPAY,
+                    SIGHASH_SINGLE,
                     amount, *tx.GetConsensusBranchId(), txdata
                 ).GetHex(),
                 test[9].getValStr());
@@ -962,7 +977,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
             BOOST_CHECK_EQUAL(
                 SignatureHash(
                     scriptCode, tx, nIn,
-                    SIGHASH_NONE | SIGHASH_ANYONECANPAY,
+                    SIGHASH_ALL | SIGHASH_ANYONECANPAY,
                     amount, *tx.GetConsensusBranchId(), txdata
                 ).GetHex(),
                 test[10].getValStr());
@@ -972,10 +987,20 @@ BOOST_AUTO_TEST_CASE(TxV5)
             BOOST_CHECK_EQUAL(
                 SignatureHash(
                     scriptCode, tx, nIn,
-                    SIGHASH_SINGLE | SIGHASH_ANYONECANPAY,
+                    SIGHASH_NONE | SIGHASH_ANYONECANPAY,
                     amount, *tx.GetConsensusBranchId(), txdata
                 ).GetHex(),
                 test[11].getValStr());
+        }
+
+        if (!test[12].isNull()) {
+            BOOST_CHECK_EQUAL(
+                SignatureHash(
+                    scriptCode, tx, nIn,
+                    SIGHASH_SINGLE | SIGHASH_ANYONECANPAY,
+                    amount, *tx.GetConsensusBranchId(), txdata
+                ).GetHex(),
+                test[12].getValStr());
         }
     }
 }
