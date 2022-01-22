@@ -361,6 +361,26 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
                            const Consensus::Params& consensusParams, uint32_t consensusBranchId,
                            std::vector<CScriptCheck> *pvChecks = NULL);
 
+/**
+ * Checks the signatures for a transaction's shielded components.
+ *
+ * This also currently checks the Sapling proofs, due to the way the Rust verification
+ * code is written. Sprout and Orchard proofs are currently checked in CheckTransaction().
+ * Once we have batch proof validation implemented, these will all be accumulated in
+ * CheckTransaction().
+ *
+ * The `isInitBlockDownload` argument is a function parameter to assist with testing.
+ */
+bool ContextualCheckShieldedInputs(
+        const CTransaction& tx,
+        CValidationState &state,
+        orchard::AuthValidator& orchardAuth,
+        const Consensus::Params& consensus,
+        uint32_t consensusBranchId,
+        bool nu5Active,
+        bool isMined,
+        bool (*isInitBlockDownload)(const Consensus::Params&) = IsInitialBlockDownload);
+
 /** Check a transaction contextually against a set of consensus rules */
 bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
                                 const CChainParams& chainparams, int nHeight, bool isMined,
@@ -373,7 +393,7 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);
 
 /** Context-independent validity checks */
 bool CheckTransaction(const CTransaction& tx, CValidationState& state,
-                      ProofVerifier& verifier, orchard::AuthValidator& orchardAuth);
+                      ProofVerifier& verifier);
 bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidationState &state);
 
 namespace Consensus {
@@ -479,7 +499,6 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state,
 bool CheckBlock(const CBlock& block, CValidationState& state,
                 const CChainParams& chainparams,
                 ProofVerifier& verifier,
-                orchard::AuthValidator& orchardAuth,
                 bool fCheckPOW,
                 bool fCheckMerkleRoot,
                 bool fCheckTransactions);
