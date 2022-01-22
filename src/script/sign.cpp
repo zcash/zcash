@@ -17,7 +17,7 @@ using namespace std;
 
 typedef std::vector<unsigned char> valtype;
 
-TransactionSignatureCreator::TransactionSignatureCreator(const CKeyStore* keystoreIn, const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn) : BaseSignatureCreator(keystoreIn), txTo(txToIn), nIn(nInIn), nHashType(nHashTypeIn), amount(amountIn), checker(txTo, nIn, amountIn) {}
+TransactionSignatureCreator::TransactionSignatureCreator(const CKeyStore* keystoreIn, const CTransaction* txToIn, const PrecomputedTransactionData& txToDataIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn) : BaseSignatureCreator(keystoreIn), txTo(txToIn), txToData(txToDataIn), nIn(nInIn), nHashType(nHashTypeIn), amount(amountIn), checker(txTo, txToDataIn, nIn, amountIn) {}
 
 bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, const CKeyID& address, const CScript& scriptCode, uint32_t consensusBranchId) const
 {
@@ -27,7 +27,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
 
     uint256 hash;
     try {
-        hash = SignatureHash(scriptCode, *txTo, nIn, nHashType, amount, consensusBranchId);
+        hash = SignatureHash(scriptCode, *txTo, nIn, nHashType, amount, consensusBranchId, txToData);
     } catch (logic_error ex) {
         return false;
     }
@@ -172,6 +172,7 @@ bool SignSignature(
     const CKeyStore &keystore,
     const CScript& fromPubKey,
     CMutableTransaction& txTo,
+    const PrecomputedTransactionData& txToData,
     unsigned int nIn,
     const CAmount& amount,
     int nHashType,
@@ -180,7 +181,7 @@ bool SignSignature(
     assert(nIn < txTo.vin.size());
 
     CTransaction txToConst(txTo);
-    TransactionSignatureCreator creator(&keystore, &txToConst, nIn, amount, nHashType);
+    TransactionSignatureCreator creator(&keystore, &txToConst, txToData, nIn, amount, nHashType);
 
     SignatureData sigdata;
     bool ret = ProduceSignature(creator, fromPubKey, sigdata, consensusBranchId);
@@ -192,6 +193,7 @@ bool SignSignature(
     const CKeyStore &keystore,
     const CTransaction& txFrom,
     CMutableTransaction& txTo,
+    const PrecomputedTransactionData& txToData,
     unsigned int nIn,
     int nHashType,
     uint32_t consensusBranchId)
@@ -201,7 +203,7 @@ bool SignSignature(
     assert(txin.prevout.n < txFrom.vout.size());
     const CTxOut& txout = txFrom.vout[txin.prevout.n];
 
-    return SignSignature(keystore, txout.scriptPubKey, txTo, nIn, txout.nValue, nHashType, consensusBranchId);
+    return SignSignature(keystore, txout.scriptPubKey, txTo, txToData, nIn, txout.nValue, nHashType, consensusBranchId);
 }
 
 static vector<valtype> CombineMultisig(const CScript& scriptPubKey, const BaseSignatureChecker& checker,

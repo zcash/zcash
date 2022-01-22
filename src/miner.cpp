@@ -219,9 +219,11 @@ public:
         uint256 dataToBeSigned;
         CScript scriptCode;
         try {
+            PrecomputedTransactionData txdata(mtx);
             dataToBeSigned = SignatureHash(
                 scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0,
-                CurrentEpochBranchId(nHeight, chainparams.GetConsensus()));
+                CurrentEpochBranchId(nHeight, chainparams.GetConsensus()),
+                txdata);
         } catch (std::logic_error ex) {
             librustzcash_sapling_proving_ctx_free(ctx);
             throw ex;

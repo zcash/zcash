@@ -1229,6 +1229,7 @@ bool ContextualCheckTransaction(
 
 bool ContextualCheckShieldedInputs(
         const CTransaction& tx,
+        const PrecomputedTransactionData& txdata,
         CValidationState &state,
         orchard::AuthValidator& orchardAuth,
         const Consensus::Params& consensus,
@@ -1259,8 +1260,8 @@ bool ContextualCheckShieldedInputs(
         // Empty output script.
         CScript scriptCode;
         try {
-            dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
-            prevDataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, prevConsensusBranchId);
+            dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
+            prevDataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, prevConsensusBranchId, txdata);
         } catch (std::logic_error ex) {
             // A logic error should never occur because we pass NOT_AN_INPUT and
             // SIGHASH_ALL to SignatureHash().
@@ -2001,6 +2002,7 @@ bool AcceptToMemoryPool(
         // Check shielded input signatures.
         if (!ContextualCheckShieldedInputs(
             tx,
+            txdata,
             state,
             orchardAuth,
             chainparams.GetConsensus(),
@@ -2535,7 +2537,7 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight)
 
 bool CScriptCheck::operator()() {
     const CScript &scriptSig = ptxTo->vin[nIn].scriptSig;
-    if (!VerifyScript(scriptSig, scriptPubKey, nFlags, CachingTransactionSignatureChecker(ptxTo, nIn, amount, cacheStore, *txdata), consensusBranchId, &error)) {
+    if (!VerifyScript(scriptSig, scriptPubKey, nFlags, CachingTransactionSignatureChecker(ptxTo, *txdata, nIn, amount, cacheStore), consensusBranchId, &error)) {
         return false;
     }
     return true;
@@ -3256,7 +3258,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
-            if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata[i], chainparams.GetConsensus(), consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
+            if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata.back(), chainparams.GetConsensus(), consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
             control.Add(vChecks);
@@ -3265,6 +3267,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // Check shielded inputs.
         if (!ContextualCheckShieldedInputs(
             tx,
+            txdata.back(),
             state,
             orchardAuth,
             chainparams.GetConsensus(),

@@ -1179,7 +1179,7 @@ uint256 SignatureHash(
     int nHashType,
     const CAmount& amount,
     uint32_t consensusBranchId,
-    const PrecomputedTransactionData* cache)
+    const PrecomputedTransactionData& txdata)
 {
     if (nIn >= txTo.vin.size() && nIn != NOT_AN_INPUT) {
         //  nIn out of range
@@ -1198,30 +1198,16 @@ uint256 SignatureHash(
             CDataStream sScriptCode(SER_NETWORK, PROTOCOL_VERSION);
             sScriptCode << *(CScriptBase*)(&scriptCode);
 
-            if (cache) {
-                uint256 hash;
-                zcash_transaction_transparent_signature_digest(
-                    cache->preTx.get(),
-                    nHashType,
-                    nIn,
-                    reinterpret_cast<const unsigned char*>(sScriptCode.data()),
-                    sScriptCode.size(),
-                    amount,
-                    hash.begin());
-                return hash;
-            } else {
-                PrecomputedTransactionData local(txTo);
-                uint256 hash;
-                zcash_transaction_transparent_signature_digest(
-                    local.preTx.get(),
-                    nHashType,
-                    nIn,
-                    reinterpret_cast<const unsigned char*>(sScriptCode.data()),
-                    sScriptCode.size(),
-                    amount,
-                    hash.begin());
-                return hash;
-            }
+            uint256 hash;
+            zcash_transaction_transparent_signature_digest(
+                txdata.preTx.get(),
+                nHashType,
+                nIn,
+                reinterpret_cast<const unsigned char*>(sScriptCode.data()),
+                sScriptCode.size(),
+                amount,
+                hash.begin());
+            return hash;
         }
     } else if (sigversion == SIGVERSION_OVERWINTER || sigversion == SIGVERSION_SAPLING) {
         uint256 hashPrevouts;
@@ -1232,15 +1218,15 @@ uint256 SignatureHash(
         uint256 hashShieldedOutputs;
 
         if (!(nHashType & SIGHASH_ANYONECANPAY)) {
-            hashPrevouts = cache ? cache->hashPrevouts : GetPrevoutHash(txTo);
+            hashPrevouts = txdata.hashPrevouts;
         }
 
         if (!(nHashType & SIGHASH_ANYONECANPAY) && (nHashType & 0x1f) != SIGHASH_SINGLE && (nHashType & 0x1f) != SIGHASH_NONE) {
-            hashSequence = cache ? cache->hashSequence : GetSequenceHash(txTo);
+            hashSequence = txdata.hashSequence;
         }
 
         if ((nHashType & 0x1f) != SIGHASH_SINGLE && (nHashType & 0x1f) != SIGHASH_NONE) {
-            hashOutputs = cache ? cache->hashOutputs : GetOutputsHash(txTo);
+            hashOutputs = txdata.hashOutputs;
         } else if ((nHashType & 0x1f) == SIGHASH_SINGLE && nIn < txTo.vout.size()) {
             CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_OUTPUTS_HASH_PERSONALIZATION);
             ss << txTo.vout[nIn];
@@ -1248,15 +1234,15 @@ uint256 SignatureHash(
         }
 
         if (!txTo.vJoinSplit.empty()) {
-            hashJoinSplits = cache ? cache->hashJoinSplits : GetJoinSplitsHash(txTo);
+            hashJoinSplits = txdata.hashJoinSplits;
         }
 
         if (!txTo.vShieldedSpend.empty()) {
-            hashShieldedSpends = cache ? cache->hashShieldedSpends : GetShieldedSpendsHash(txTo);
+            hashShieldedSpends = txdata.hashShieldedSpends;
         }
 
         if (!txTo.vShieldedOutput.empty()) {
-            hashShieldedOutputs = cache ? cache->hashShieldedOutputs : GetShieldedOutputsHash(txTo);
+            hashShieldedOutputs = txdata.hashShieldedOutputs;
         }
 
         uint32_t leConsensusBranchId = htole32(consensusBranchId);

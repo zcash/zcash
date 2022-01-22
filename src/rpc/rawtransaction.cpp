@@ -1043,6 +1043,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     // Use CTransaction for the constant parts of the
     // transaction to avoid rehashing.
     const CTransaction txConst(mergedTx);
+    const PrecomputedTransactionData txdata(txConst);
     // Sign what we can:
     for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
         CTxIn& txin = mergedTx.vin[i];
@@ -1057,17 +1058,17 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         SignatureData sigdata;
         // Only sign SIGHASH_SINGLE if there's a corresponding output:
         if (!fHashSingle || (i < mergedTx.vout.size()))
-            ProduceSignature(MutableTransactionSignatureCreator(&keystore, &mergedTx, i, amount, nHashType), prevPubKey, sigdata, consensusBranchId);
+            ProduceSignature(MutableTransactionSignatureCreator(&keystore, &mergedTx, txdata, i, amount, nHashType), prevPubKey, sigdata, consensusBranchId);
 
         // ... and merge in other signatures:
         for (const CMutableTransaction& txv : txVariants) {
-            sigdata = CombineSignatures(prevPubKey, TransactionSignatureChecker(&txConst, i, amount), sigdata, DataFromTransaction(txv, i), consensusBranchId);
+            sigdata = CombineSignatures(prevPubKey, TransactionSignatureChecker(&txConst, txdata, i, amount), sigdata, DataFromTransaction(txv, i), consensusBranchId);
         }
 
         UpdateTransaction(mergedTx, i, sigdata);
 
         ScriptError serror = SCRIPT_ERR_OK;
-        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, TransactionSignatureChecker(&txConst, i, amount), consensusBranchId, &serror)) {
+        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, TransactionSignatureChecker(&txConst, txdata, i, amount), consensusBranchId, &serror)) {
             TxInErrorToJSON(txin, vErrors, ScriptErrorString(serror));
         }
     }

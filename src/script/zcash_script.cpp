@@ -145,7 +145,7 @@ int zcash_script_verify_precomputed(
         preTx->tx.vin[nIn].scriptSig,
         CScript(scriptPubKey, scriptPubKey + scriptPubKeyLen),
         flags,
-        TransactionSignatureChecker(&preTx->tx, nIn, amount, preTx->txdata),
+        TransactionSignatureChecker(&preTx->tx, preTx->txdata, nIn, amount),
         consensusBranchId,
         NULL);
 }
@@ -174,7 +174,7 @@ int zcash_script_verify(
             tx.vin[nIn].scriptSig,
             CScript(scriptPubKey, scriptPubKey + scriptPubKeyLen),
             flags,
-            TransactionSignatureChecker(&tx, nIn, amount, txdata),
+            TransactionSignatureChecker(&tx, txdata, nIn, amount),
             consensusBranchId,
             NULL);
     } catch (const std::exception&) {

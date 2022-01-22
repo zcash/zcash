@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
                 CAmount amount = 0;
                 unsigned int verify_flags = ParseScriptFlags(test[2].get_str());
                 BOOST_CHECK_MESSAGE(VerifyScript(tx.vin[i].scriptSig, mapprevOutScriptPubKeys[tx.vin[i].prevout],
-                                                 verify_flags, TransactionSignatureChecker(&tx, i, amount, txdata), consensusBranchId, &err),
+                                                 verify_flags, TransactionSignatureChecker(&tx, txdata, i, amount), consensusBranchId, &err),
                                     strTest + comment);
                 BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_OK, ScriptErrorString(err) + comment);
             }
@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
                 unsigned int verify_flags = ParseScriptFlags(test[2].get_str());
                 CAmount amount = 0;
                 fValid = VerifyScript(tx.vin[i].scriptSig, mapprevOutScriptPubKeys[tx.vin[i].prevout],
-                                      verify_flags, TransactionSignatureChecker(&tx, i, amount, txdata), consensusBranchId, &err);
+                                      verify_flags, TransactionSignatureChecker(&tx, txdata, i, amount), consensusBranchId, &err);
             }
             BOOST_CHECK_MESSAGE(!fValid, strTest + comment);
             BOOST_CHECK_MESSAGE(err != SCRIPT_ERR_OK, ScriptErrorString(err) + comment);
@@ -451,15 +451,17 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         jsdesc->nullifiers[0] = GetRandHash();
         jsdesc->nullifiers[1] = GetRandHash();
 
+        const PrecomputedTransactionData txdata(newTx);
+
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(ContextualCheckTransaction(newTx, state, Params(), 0, true));
-        BOOST_CHECK(!ContextualCheckShieldedInputs(newTx, state, orchardAuth, Params().GetConsensus(), consensusBranchId, false, true));
+        BOOST_CHECK(!ContextualCheckShieldedInputs(newTx, txdata, state, orchardAuth, Params().GetConsensus(), consensusBranchId, false, true));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-invalid-joinsplit-signature");
 
         // Empty output script.
         CScript scriptCode;
         CTransaction signTx(newTx);
-        uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
+        uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
 
         assert(ed25519_sign(
             &joinSplitPrivKey,
@@ -469,7 +471,7 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         state = CValidationState();
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(ContextualCheckTransaction(newTx, state, Params(), 0, true));
-        BOOST_CHECK(ContextualCheckShieldedInputs(newTx, state, orchardAuth, Params().GetConsensus(), consensusBranchId, false, true));
+        BOOST_CHECK(ContextualCheckShieldedInputs(newTx, txdata, state, orchardAuth, Params().GetConsensus(), consensusBranchId, false, true));
         BOOST_CHECK_EQUAL(state.GetRejectReason(), "");
     }
     {
@@ -670,9 +672,11 @@ BOOST_AUTO_TEST_CASE(test_big_overwinter_transaction) {
         mtx.vout[i].scriptPubKey = CScript() << OP_1;
     }
 
+    PrecomputedTransactionData txdata(mtx);
+
     // sign all inputs
     for(uint32_t i = 0; i < mtx.vin.size(); i++) {
-        bool hashSigned = SignSignature(keystore, scriptPubKey, mtx, i, 1000, sigHashes.at(i % sigHashes.size()), consensusBranchId);
+        bool hashSigned = SignSignature(keystore, scriptPubKey, mtx, txdata, i, 1000, sigHashes.at(i % sigHashes.size()), consensusBranchId);
         assert(hashSigned);
     }
 
@@ -682,7 +686,6 @@ BOOST_AUTO_TEST_CASE(test_big_overwinter_transaction) {
     ssout >> tx;
 
     // check all inputs concurrently, with the cache
-    PrecomputedTransactionData txdata(tx);
     boost::thread_group threadGroup;
     CCheckQueue<CScriptCheck> scriptcheckqueue(128);
     CCheckQueueControl<CScriptCheck> control(&scriptcheckqueue);
@@ -915,11 +918,13 @@ BOOST_AUTO_TEST_CASE(TxV5)
             amount = test[5].get_int64();
         }
 
+        const PrecomputedTransactionData txdata(tx);
+
         BOOST_CHECK_EQUAL(
             SignatureHash(
                 scriptCode, tx, nIn,
                 SIGHASH_ALL,
-                amount, *tx.GetConsensusBranchId()
+                amount, *tx.GetConsensusBranchId(), txdata
             ).GetHex(),
             test[6].getValStr());
 
@@ -928,7 +933,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
                 SignatureHash(
                     scriptCode, tx, nIn,
                     SIGHASH_NONE,
-                    amount, *tx.GetConsensusBranchId()
+                    amount, *tx.GetConsensusBranchId(), txdata
                 ).GetHex(),
                 test[7].getValStr());
         }
@@ -938,7 +943,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
                 SignatureHash(
                     scriptCode, tx, nIn,
                     SIGHASH_SINGLE,
-                    amount, *tx.GetConsensusBranchId()
+                    amount, *tx.GetConsensusBranchId(), txdata
                 ).GetHex(),
                 test[8].getValStr());
         }
@@ -948,7 +953,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
                 SignatureHash(
                     scriptCode, tx, nIn,
                     SIGHASH_ALL | SIGHASH_ANYONECANPAY,
-                    amount, *tx.GetConsensusBranchId()
+                    amount, *tx.GetConsensusBranchId(), txdata
                 ).GetHex(),
                 test[9].getValStr());
         }
@@ -958,7 +963,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
                 SignatureHash(
                     scriptCode, tx, nIn,
                     SIGHASH_NONE | SIGHASH_ANYONECANPAY,
-                    amount, *tx.GetConsensusBranchId()
+                    amount, *tx.GetConsensusBranchId(), txdata
                 ).GetHex(),
                 test[10].getValStr());
         }
@@ -968,7 +973,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
                 SignatureHash(
                     scriptCode, tx, nIn,
                     SIGHASH_SINGLE | SIGHASH_ANYONECANPAY,
-                    amount, *tx.GetConsensusBranchId()
+                    amount, *tx.GetConsensusBranchId(), txdata
                 ).GetHex(),
                 test[11].getValStr());
         }

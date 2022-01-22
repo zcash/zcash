@@ -48,8 +48,9 @@ BOOST_FIXTURE_TEST_CASE(tx_mempool_block_doublespend, TestChain100Setup)
         spends[i].vout[0].scriptPubKey = scriptPubKey;
 
         // Sign:
+        const PrecomputedTransactionData txdata(spends[i]);
         std::vector<unsigned char> vchSig;
-        uint256 hash = SignatureHash(scriptPubKey, spends[i], 0, SIGHASH_ALL, coinbaseTxns[0].vout[0].nValue, SPROUT_BRANCH_ID);
+        uint256 hash = SignatureHash(scriptPubKey, spends[i], 0, SIGHASH_ALL, coinbaseTxns[0].vout[0].nValue, SPROUT_BRANCH_ID, txdata);
         BOOST_CHECK(coinbaseKey.Sign(hash, vchSig));
         vchSig.push_back((unsigned char)SIGHASH_ALL);
         spends[i].vin[0].scriptSig << vchSig;

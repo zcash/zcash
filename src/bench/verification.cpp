@@ -48,9 +48,11 @@ static void ECDSA(benchmark::State& state)
         mtx.vout[i].scriptPubKey = CScript() << OP_1;
     }
 
+    const PrecomputedTransactionData txdata(mtx);
+
     // sign all inputs
     for(uint32_t i = 0; i < mtx.vin.size(); i++) {
-        bool hashSigned = SignSignature(keystore, scriptPubKey, mtx, i, 1000, SIGHASH_ALL, consensusBranchId);
+        bool hashSigned = SignSignature(keystore, scriptPubKey, mtx, txdata, i, 1000, SIGHASH_ALL, consensusBranchId);
         assert(hashSigned);
     }
 
@@ -66,7 +68,7 @@ static void ECDSA(benchmark::State& state)
             tx.vin[0].scriptSig,
             scriptPubKey,
             SCRIPT_VERIFY_P2SH,
-            TransactionSignatureChecker(&tx, 0, 1000),
+            TransactionSignatureChecker(&tx, txdata, 0, 1000),
             consensusBranchId,
             &error);
     }

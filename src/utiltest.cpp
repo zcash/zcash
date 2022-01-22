@@ -69,7 +69,8 @@ CMutableTransaction GetValidSproutReceiveTransaction(
     uint32_t consensusBranchId = SPROUT_BRANCH_ID;
     CScript scriptCode;
     CTransaction signTx(mtx);
-    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
+    const PrecomputedTransactionData txdata(signTx);
+    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
 
     // Add the signature
     assert(ed25519_sign(
@@ -184,7 +185,8 @@ CWalletTx GetValidSproutSpend(const libzcash::SproutSpendingKey& sk,
     uint32_t consensusBranchId = SPROUT_BRANCH_ID;
     CScript scriptCode;
     CTransaction signTx(mtx);
-    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
+    const PrecomputedTransactionData txdata(signTx);
+    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
 
     // Add the signature
     assert(ed25519_sign(

@@ -116,7 +116,7 @@ uint256 SignatureHash(
     int nHashType,
     const CAmount& amount,
     uint32_t consensusBranchId,
-    const PrecomputedTransactionData* cache = NULL);
+    const PrecomputedTransactionData& txdata);
 
 class BaseSignatureChecker
 {
@@ -144,14 +144,13 @@ private:
     const CTransaction* txTo;
     unsigned int nIn;
     const CAmount amount;
-    const PrecomputedTransactionData* txdata;
+    const PrecomputedTransactionData& txdata;
 
 protected:
     virtual bool VerifySignature(const std::vector<unsigned char>& vchSig, const CPubKey& vchPubKey, const uint256& sighash) const;
 
 public:
-    TransactionSignatureChecker(const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn) : txTo(txToIn), nIn(nInIn), amount(amountIn), txdata(NULL) {}
-    TransactionSignatureChecker(const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, const PrecomputedTransactionData& txdataIn) : txTo(txToIn), nIn(nInIn), amount(amountIn), txdata(&txdataIn) {}
+    TransactionSignatureChecker(const CTransaction* txToIn, const PrecomputedTransactionData& txdataIn, unsigned int nInIn, const CAmount& amountIn) : txTo(txToIn), nIn(nInIn), amount(amountIn), txdata(txdataIn) {}
     bool CheckSig(const std::vector<unsigned char>& scriptSig, const std::vector<unsigned char>& vchPubKey, const CScript& scriptCode, uint32_t consensusBranchId) const;
     bool CheckLockTime(const CScriptNum& nLockTime) const;
 };
@@ -162,7 +161,7 @@ private:
     const CTransaction txTo;
 
 public:
-    MutableTransactionSignatureChecker(const CMutableTransaction* txToIn, unsigned int nInIn, const CAmount& amount) : TransactionSignatureChecker(&txTo, nInIn, amount), txTo(*txToIn) {}
+    MutableTransactionSignatureChecker(const CMutableTransaction* txToIn, const PrecomputedTransactionData& txdataIn, unsigned int nInIn, const CAmount& amount) : TransactionSignatureChecker(&txTo, txdataIn, nInIn, amount), txTo(*txToIn) {}
 };
 
 bool EvalScript(

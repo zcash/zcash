@@ -373,6 +373,7 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
  */
 bool ContextualCheckShieldedInputs(
         const CTransaction& tx,
+        const PrecomputedTransactionData& txdata,
         CValidationState &state,
         orchard::AuthValidator& orchardAuth,
         const Consensus::Params& consensus,
@@ -449,6 +450,8 @@ private:
     bool cacheStore;
     uint32_t consensusBranchId;
     ScriptError error;
+    // We store a pointer instead of a reference here, to allow it to be null for
+    // performance reasons (enabling fast swaps in CCheckQueue::Loop).
     PrecomputedTransactionData *txdata;
 
 public:

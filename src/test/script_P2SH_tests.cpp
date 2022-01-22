@@ -47,7 +47,8 @@ Verify(const CScript& scriptSig, const CScript& scriptPubKey, bool fStrict, Scri
     txTo.vin[0].scriptSig = scriptSig;
     txTo.vout[0].nValue = 1;
 
-    return VerifyScript(scriptSig, scriptPubKey, fStrict ? SCRIPT_VERIFY_P2SH : SCRIPT_VERIFY_NONE, MutableTransactionSignatureChecker(&txTo, 0, txFrom.vout[0].nValue), consensusBranchId, &err);
+    const PrecomputedTransactionData txdata(txTo);
+    return VerifyScript(scriptSig, scriptPubKey, fStrict ? SCRIPT_VERIFY_P2SH : SCRIPT_VERIFY_NONE, MutableTransactionSignatureChecker(&txTo, txdata, 0, txFrom.vout[0].nValue), consensusBranchId, &err);
 }
 
 
@@ -98,6 +99,7 @@ BOOST_DATA_TEST_CASE(sign, boost::unit_test::data::xrange(static_cast<int>(Conse
     BOOST_CHECK(IsStandardTx(txFrom, reason, Params()));
 
     CMutableTransaction txTo[8]; // Spending transactions
+    std::vector<PrecomputedTransactionData> txToData;
     for (int i = 0; i < 8; i++)
     {
         txTo[i].vin.resize(1);
@@ -106,10 +108,11 @@ BOOST_DATA_TEST_CASE(sign, boost::unit_test::data::xrange(static_cast<int>(Conse
         txTo[i].vin[0].prevout.hash = txFrom.GetHash();
         txTo[i].vout[0].nValue = 1;
         BOOST_CHECK_MESSAGE(IsMine(keystore, txFrom.vout[i].scriptPubKey), strprintf("IsMine %d", i));
+        txToData.push_back(PrecomputedTransactionData(txTo[i]));
     }
     for (int i = 0; i < 8; i++)
     {
-        BOOST_CHECK_MESSAGE(SignSignature(keystore, txFrom, txTo[i], 0, SIGHASH_ALL, consensusBranchId), strprintf("SignSignature %d", i));
+        BOOST_CHECK_MESSAGE(SignSignature(keystore, txFrom, txTo[i], txToData[i], 0, SIGHASH_ALL, consensusBranchId), strprintf("SignSignature %d", i));
     }
     // All of the above should be OK, and the txTos have valid signatures
     // Check to make sure signature verification fails if we use the wrong ScriptSig:
@@ -199,6 +202,7 @@ BOOST_DATA_TEST_CASE(set, boost::unit_test::data::xrange(static_cast<int>(Consen
     BOOST_CHECK(IsStandardTx(txFrom, reason, Params()));
 
     CMutableTransaction txTo[4]; // Spending transactions
+    std::vector<PrecomputedTransactionData> txToData;
     for (int i = 0; i < 4; i++)
     {
         txTo[i].vin.resize(1);
@@ -208,10 +212,11 @@ BOOST_DATA_TEST_CASE(set, boost::unit_test::data::xrange(static_cast<int>(Consen
         txTo[i].vout[0].nValue = 1*CENT;
         txTo[i].vout[0].scriptPubKey = inner[i];
         BOOST_CHECK_MESSAGE(IsMine(keystore, txFrom.vout[i].scriptPubKey), strprintf("IsMine %d", i));
+        txToData.push_back(PrecomputedTransactionData(txTo[i]));
     }
     for (int i = 0; i < 4; i++)
     {
-        BOOST_CHECK_MESSAGE(SignSignature(keystore, txFrom, txTo[i], 0, SIGHASH_ALL, consensusBranchId), strprintf("SignSignature %d", i));
+        BOOST_CHECK_MESSAGE(SignSignature(keystore, txFrom, txTo[i], txToData[i], 0, SIGHASH_ALL, consensusBranchId), strprintf("SignSignature %d", i));
         BOOST_CHECK_MESSAGE(IsStandardTx(txTo[i], reason, Params()), strprintf("txTo[%d].IsStandard", i));
     }
 }
@@ -347,9 +352,10 @@ BOOST_DATA_TEST_CASE(AreInputsStandard, boost::unit_test::data::xrange(static_ca
         txTo.vin[i].prevout.n = i;
         txTo.vin[i].prevout.hash = txFrom.GetHash();
     }
-    BOOST_CHECK(SignSignature(keystore, txFrom, txTo, 0, SIGHASH_ALL, consensusBranchId));
-    BOOST_CHECK(SignSignature(keystore, txFrom, txTo, 1, SIGHASH_ALL, consensusBranchId));
-    BOOST_CHECK(SignSignature(keystore, txFrom, txTo, 2, SIGHASH_ALL, consensusBranchId));
+    const PrecomputedTransactionData txToData(txTo);
+    BOOST_CHECK(SignSignature(keystore, txFrom, txTo, txToData, 0, SIGHASH_ALL, consensusBranchId));
+    BOOST_CHECK(SignSignature(keystore, txFrom, txTo, txToData, 1, SIGHASH_ALL, consensusBranchId));
+    BOOST_CHECK(SignSignature(keystore, txFrom, txTo, txToData, 2, SIGHASH_ALL, consensusBranchId));
     // SignSignature doesn't know how to sign these. We're
     // not testing validating signatures, so just create
     // dummy signatures that DO include the correct P2SH scripts:

@@ -834,7 +834,8 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
     // Empty output script.
     CScript scriptCode;
     CTransaction signTx(mtx);
-    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId_);
+    PrecomputedTransactionData txdata(signTx);
+    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId_, txdata);
 
     // Add the signature
     if (!ed25519_sign(
