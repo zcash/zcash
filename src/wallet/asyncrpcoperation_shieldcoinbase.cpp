@@ -361,7 +361,11 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
     // Empty output script.
     CScript scriptCode;
     CTransaction signTx(mtx);
-    PrecomputedTransactionData txdata(signTx);
+    std::vector<CTxOut> allPrevOutputs;
+    for (ShieldCoinbaseUTXO & t : inputs_) {
+        allPrevOutputs.emplace_back(t.amount, t.scriptPubKey);
+    }
+    PrecomputedTransactionData txdata(signTx, allPrevOutputs);
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
 
     // Add the signature

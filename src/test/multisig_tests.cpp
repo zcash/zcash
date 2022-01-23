@@ -79,7 +79,7 @@ BOOST_DATA_TEST_CASE(multisig_verify, boost::unit_test::data::xrange(static_cast
         txTo[i].vin[0].prevout.n = i;
         txTo[i].vin[0].prevout.hash = txFrom.GetHash();
         txTo[i].vout[0].nValue = 1;
-        txdata.push_back(PrecomputedTransactionData(txTo[i]));
+        txdata.push_back(PrecomputedTransactionData(txTo[i], {txFrom.vout[i]}));
     }
 
     vector<CKey> keys;
@@ -225,7 +225,7 @@ BOOST_DATA_TEST_CASE(multisig_Sign, boost::unit_test::data::xrange(static_cast<i
         txTo[i].vin[0].prevout.n = i;
         txTo[i].vin[0].prevout.hash = txFrom.GetHash();
         txTo[i].vout[0].nValue = 1;
-        txdata.push_back(PrecomputedTransactionData(txTo[i]));
+        txdata.push_back(PrecomputedTransactionData(txTo[i], {txFrom.vout[i]}));
     }
 
     for (int i = 0; i < 3; i++)

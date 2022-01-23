@@ -233,12 +233,14 @@ double benchmark_large_tx(size_t nInputs)
     spending_tx.nVersion = SAPLING_TX_VERSION;
 
     auto input_hash = orig_tx.GetHash();
+    std::vector<CTxOut> allPrevOutputs;
     // Add nInputs inputs
     for (size_t i = 0; i < nInputs; i++) {
         spending_tx.vin.emplace_back(input_hash, 0);
+        allPrevOutputs.push_back(orig_tx.vout[0]);
     }
 
-    PrecomputedTransactionData txdata(spending_tx);
+    PrecomputedTransactionData txdata(spending_tx, allPrevOutputs);
 
     // Sign for all the inputs
     auto consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;

@@ -41,6 +41,8 @@ typedef enum zcash_script_error_t
     zcash_script_ERR_TX_INDEX,
     zcash_script_ERR_TX_SIZE_MISMATCH,
     zcash_script_ERR_TX_DESERIALIZE,
+    // Defined since API version 3.
+    zcash_script_ERR_TX_VERSION,
 } zcash_script_error;
 
 /** Script verification flags */
@@ -53,6 +55,8 @@ enum
 
 /// Deserializes the given transaction and precomputes values to improve
 /// script verification performance.
+///
+/// This API cannot be used for v5+ transactions, and will return an error.
 ///
 /// Returns a pointer to the precomputed transaction. Free this with
 /// zcash_script_free_precomputed_tx once you are done.
@@ -90,6 +94,8 @@ EXPORT_SYMBOL int zcash_script_verify_precomputed(
 /// Returns 1 if the input nIn of the serialized transaction pointed to by
 /// txTo correctly spends the scriptPubKey pointed to by scriptPubKey under
 /// the additional constraints specified by flags.
+///
+/// This API cannot be used for v5+ transactions, and will return an error.
 ///
 /// If not NULL, err will contain an error/success code for the operation.
 /// Note that script verification failure is indicated by err being set to

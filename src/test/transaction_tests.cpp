@@ -115,7 +115,9 @@ BOOST_AUTO_TEST_CASE(tx_valid)
             BOOST_CHECK_MESSAGE(CheckTransaction(tx, state, verifier), strTest + comment);
             BOOST_CHECK_MESSAGE(state.IsValid(), comment);
 
-            PrecomputedTransactionData txdata(tx);
+            // None of these test vectors use ZIP 244.
+            assert(tx.nVersion < ZIP225_TX_VERSION);
+            PrecomputedTransactionData txdata(tx, {});
             for (unsigned int i = 0; i < tx.vin.size(); i++)
             {
                 if (!mapprevOutScriptPubKeys.count(tx.vin[i].prevout))
@@ -207,7 +209,9 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
             CValidationState state;
             fValid = CheckTransaction(tx, state, verifier) && state.IsValid();
 
-            PrecomputedTransactionData txdata(tx);
+            // None of these test vectors use ZIP 244.
+            assert(tx.nVersion < ZIP225_TX_VERSION);
+            PrecomputedTransactionData txdata(tx, {});
             for (unsigned int i = 0; i < tx.vin.size() && fValid; i++)
             {
                 if (!mapprevOutScriptPubKeys.count(tx.vin[i].prevout))
@@ -451,7 +455,10 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         jsdesc->nullifiers[0] = GetRandHash();
         jsdesc->nullifiers[1] = GetRandHash();
 
-        const PrecomputedTransactionData txdata(newTx);
+        // Fake coins being spent.
+        std::vector<CTxOut> allPrevOutputs;
+        allPrevOutputs.resize(newTx.vin.size());
+        const PrecomputedTransactionData txdata(newTx, allPrevOutputs);
 
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(ContextualCheckTransaction(newTx, state, Params(), 0, true));
@@ -672,7 +679,10 @@ BOOST_AUTO_TEST_CASE(test_big_overwinter_transaction) {
         mtx.vout[i].scriptPubKey = CScript() << OP_1;
     }
 
-    PrecomputedTransactionData txdata(mtx);
+    // Fake coins being spent.
+    std::vector<CTxOut> allPrevOutputs;
+    allPrevOutputs.resize(mtx.vin.size());
+    PrecomputedTransactionData txdata(mtx, allPrevOutputs);
 
     // sign all inputs
     for(uint32_t i = 0; i < mtx.vin.size(); i++) {
@@ -906,6 +916,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
         UniValue scriptCodesArr = test[4].get_array();
         std::vector<CAmount> amounts;
         std::vector<CScript> scriptCodes;
+        std::vector<CTxOut> allPrevOutputs;
         if (tx.IsCoinBase()) {
             BOOST_CHECK(amountsArr.empty());
             BOOST_CHECK(scriptCodesArr.empty());
@@ -917,6 +928,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
                 amounts.push_back(amountsArr[inpIdx].get_int64());
                 auto scriptCodeBytes = ParseHex(scriptCodesArr[inpIdx].get_str());
                 scriptCodes.push_back(CScript(scriptCodeBytes.begin(), scriptCodeBytes.end()));
+                allPrevOutputs.emplace_back(amounts[inpIdx], scriptCodes[inpIdx]);
             }
         }
 
@@ -933,7 +945,7 @@ BOOST_AUTO_TEST_CASE(TxV5)
             amount = amounts[nIn];
         }
 
-        const PrecomputedTransactionData txdata(tx);
+        const PrecomputedTransactionData txdata(tx, allPrevOutputs);
 
         BOOST_CHECK_EQUAL(
             SignatureHash(

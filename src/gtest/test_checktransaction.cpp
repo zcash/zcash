@@ -113,7 +113,10 @@ void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranch
     // Empty output script.
     CScript scriptCode;
     CTransaction signTx(mtx);
-    const PrecomputedTransactionData txdata(signTx);
+    // Fake coins being spent.
+    std::vector<CTxOut> allPrevOutputs;
+    allPrevOutputs.resize(signTx.vin.size());
+    const PrecomputedTransactionData txdata(signTx, allPrevOutputs);
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
     if (dataToBeSigned == one) {
         throw std::runtime_error("SignatureHash failed");
@@ -535,7 +538,11 @@ TEST(ContextualCheckShieldedInputsTest, BadTxnsInvalidJoinsplitSignature) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.joinSplitSig.bytes[0] += 1;
     CTransaction tx(mtx);
-    const PrecomputedTransactionData txdata(tx);
+
+    // Recreate the fake coins being spent.
+    std::vector<CTxOut> allPrevOutputs;
+    allPrevOutputs.resize(tx.vin.size());
+    const PrecomputedTransactionData txdata(tx, allPrevOutputs);
 
     MockCValidationState state;
     // during initial block download, for transactions being accepted into the
@@ -564,7 +571,11 @@ TEST(ContextualCheckShieldedInputsTest, JoinsplitSignatureDetectsOldBranchId) {
     // Create a valid transaction for the Sapling epoch.
     CMutableTransaction mtx = GetValidTransaction(saplingBranchId);
     CTransaction tx(mtx);
-    const PrecomputedTransactionData txdata(tx);
+
+    // Recreate the fake coins being spent.
+    std::vector<CTxOut> allPrevOutputs;
+    allPrevOutputs.resize(tx.vin.size());
+    const PrecomputedTransactionData txdata(tx, allPrevOutputs);
 
     MockCValidationState state;
     // Ensure that the transaction validates against Sapling.
@@ -603,10 +614,14 @@ TEST(ContextualCheckShieldedInputsTest, NonCanonicalEd25519Signature) {
     auto saplingBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
     CMutableTransaction mtx = GetValidTransaction(saplingBranchId);
 
+    // Recreate the fake coins being spent.
+    std::vector<CTxOut> allPrevOutputs;
+    allPrevOutputs.resize(mtx.vin.size());
+
     // Check that the signature is valid before we add L
     {
         CTransaction tx(mtx);
-        const PrecomputedTransactionData txdata(tx);
+        const PrecomputedTransactionData txdata(tx, allPrevOutputs);
         MockCValidationState state;
         EXPECT_TRUE(ContextualCheckShieldedInputs(tx, txdata, state, orchardAuth, consensus, saplingBranchId, false, true));
     }
@@ -626,7 +641,7 @@ TEST(ContextualCheckShieldedInputsTest, NonCanonicalEd25519Signature) {
     }
 
     CTransaction tx(mtx);
-    const PrecomputedTransactionData txdata(tx);
+    const PrecomputedTransactionData txdata(tx, allPrevOutputs);
 
     MockCValidationState state;
     // during initial block download, for transactions being accepted into the
@@ -1299,7 +1314,10 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
 
     // Coinbase transaction does not pass shielded input checks, as bindingSig
     // consensus rule is enforced.
-    PrecomputedTransactionData txdata(tx);
+    // - Note that coinbase txs don't have a previous output corresponding to
+    //   their transparent input; ZIP 244 handles this by making the coinbase
+    //   sighash the txid.
+    PrecomputedTransactionData txdata(tx, {});
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid", false, "")).Times(1);
     ContextualCheckShieldedInputs(
         tx, txdata, state, orchardAuth, chainparams.GetConsensus(), heartwoodBranchId, false, true);

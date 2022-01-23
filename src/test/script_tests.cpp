@@ -78,7 +78,7 @@ void DoTest(const CScript& scriptPubKey, const CScript& scriptSig, int flags, ui
     ScriptError err;
     CMutableTransaction txCredit = BuildCreditingTransaction(scriptPubKey);
     CMutableTransaction tx = BuildSpendingTransaction(scriptSig, txCredit);
-    const PrecomputedTransactionData txdata(tx);
+    const PrecomputedTransactionData txdata(tx, txCredit.vout);
     CMutableTransaction tx2 = tx;
     BOOST_CHECK_MESSAGE(VerifyScript(scriptSig, scriptPubKey, flags, MutableTransactionSignatureChecker(&tx, txdata, 0, txCredit.vout[0].nValue), consensusBranchId, &err) == expect, message);
     BOOST_CHECK_MESSAGE(expect == (err == SCRIPT_ERR_OK), std::string(ScriptErrorString(err)) + ": " + message);
@@ -231,7 +231,7 @@ public:
 
     TestBuilder& PushSig(const CKey& key, int nHashType = SIGHASH_ALL, unsigned int lenR = 32, unsigned int lenS = 32)
     {
-        const PrecomputedTransactionData txdata(spendTx);
+        const PrecomputedTransactionData txdata(spendTx, creditTx.vout);
         uint256 hash = SignatureHash(scriptPubKey, spendTx, 0, nHashType, 0, consensusBranchId, txdata);
         std::vector<unsigned char> vchSig, r, s;
         uint32_t iter = 0;
@@ -712,7 +712,7 @@ BOOST_DATA_TEST_CASE(script_CHECKMULTISIG12, boost::unit_test::data::xrange(stat
 
     CMutableTransaction txFrom12 = BuildCreditingTransaction(scriptPubKey12);
     CMutableTransaction txTo12 = BuildSpendingTransaction(CScript(), txFrom12);
-    const PrecomputedTransactionData txdata12(txTo12);
+    const PrecomputedTransactionData txdata12(txTo12, txFrom12.vout);
 
     CScript goodsig1 = sign_multisig(scriptPubKey12, key1, txTo12, txdata12, consensusBranchId);
     BOOST_CHECK(VerifyScript(goodsig1, scriptPubKey12, flags, MutableTransactionSignatureChecker(&txTo12, txdata12, 0, txFrom12.vout[0].nValue), consensusBranchId, &err));
@@ -746,7 +746,7 @@ BOOST_DATA_TEST_CASE(script_CHECKMULTISIG23, boost::unit_test::data::xrange(stat
 
     CMutableTransaction txFrom23 = BuildCreditingTransaction(scriptPubKey23);
     CMutableTransaction txTo23 = BuildSpendingTransaction(CScript(), txFrom23);
-    const PrecomputedTransactionData txdata23(txTo23);
+    const PrecomputedTransactionData txdata23(txTo23, txFrom23.vout);
 
     std::vector<CKey> keys;
     keys.push_back(key1); keys.push_back(key2);
@@ -822,7 +822,7 @@ BOOST_DATA_TEST_CASE(script_combineSigs, boost::unit_test::data::xrange(static_c
 
     CMutableTransaction txFrom = BuildCreditingTransaction(GetScriptForDestination(keys[0].GetPubKey().GetID()));
     CMutableTransaction txTo = BuildSpendingTransaction(CScript(), txFrom);
-    const PrecomputedTransactionData txToData(txTo);
+    const PrecomputedTransactionData txToData(txTo, txFrom.vout);
     CScript& scriptPubKey = txFrom.vout[0].scriptPubKey;
     CScript& scriptSig = txTo.vin[0].scriptSig;
 

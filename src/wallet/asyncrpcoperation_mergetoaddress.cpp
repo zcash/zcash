@@ -834,7 +834,11 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
     // Empty output script.
     CScript scriptCode;
     CTransaction signTx(mtx);
-    PrecomputedTransactionData txdata(signTx);
+    std::vector<CTxOut> allPrevOutputs;
+    for (const MergeToAddressInputUTXO& t : utxoInputs_) {
+        allPrevOutputs.emplace_back(std::get<1>(t), std::get<2>(t));
+    }
+    PrecomputedTransactionData txdata(signTx, allPrevOutputs);
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId_, txdata);
 
     // Add the signature

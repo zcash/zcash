@@ -202,7 +202,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
         // Empty output script.
         CScript scriptCode;
         CTransaction signTx(tx);
-        PrecomputedTransactionData txdata(signTx);
+        PrecomputedTransactionData txdata(signTx, {});
         uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
 
         assert(ed25519_sign(
@@ -237,7 +237,8 @@ BOOST_AUTO_TEST_CASE(sighash_test)
         CScript scriptCode;
         RandomScript(scriptCode);
         int nIn = insecure_rand() % txTo.vin.size();
-        const PrecomputedTransactionData txdata(txTo);
+        // We don't generate v5 transactions here; we have separate ZIP 244 test vectors.
+        const PrecomputedTransactionData txdata(txTo, {});
 
         uint256 sh, sho;
         sho = SignatureHashOld(scriptCode, txTo, nIn, nHashType);
@@ -336,7 +337,8 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           continue;
         }
 
-        const PrecomputedTransactionData txdata(tx);
+        // These test vectors do not include v5 transactions.
+        const PrecomputedTransactionData txdata(tx, {});
         sh = SignatureHash(scriptCode, tx, nIn, nHashType, 0, consensusBranchId, txdata);
         BOOST_CHECK_MESSAGE(sh.GetHex() == sigHashHex, strTest);
     }

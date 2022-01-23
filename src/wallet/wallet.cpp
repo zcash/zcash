@@ -4767,7 +4767,11 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 // Sign
                 int nIn = 0;
                 CTransaction txNewConst(txNew);
-                const PrecomputedTransactionData txdata(txNewConst);
+                std::vector<CTxOut> allPrevOutputs;
+                for (const std::pair<const CWalletTx*, unsigned int>& coin : setCoins) {
+                    allPrevOutputs.push_back(coin.first->vout[coin.second]);
+                }
+                const PrecomputedTransactionData txdata(txNewConst, allPrevOutputs);
                 for (const std::pair<const CWalletTx*, unsigned int>& coin : setCoins)
                 {
                     bool signSuccess;

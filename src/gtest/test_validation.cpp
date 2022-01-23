@@ -129,7 +129,8 @@ TEST(Validation, ContextualCheckInputsPassesWithCoinbase) {
     for (int idx = Consensus::BASE_SPROUT; idx < Consensus::MAX_NETWORK_UPGRADES; idx++) {
         auto consensusBranchId = NetworkUpgradeInfo[idx].nBranchId;
         CValidationState state;
-        PrecomputedTransactionData txdata(tx);
+        // Coinbase transactions have one synthetic input with no prevout.
+        PrecomputedTransactionData txdata(tx, {});
         EXPECT_TRUE(ContextualCheckInputs(tx, state, view, false, 0, false, txdata, Params(CBaseChainParams::MAIN).GetConsensus(), consensusBranchId));
     }
 }
@@ -180,7 +181,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
 
     // Ensure that the inputs validate against Overwinter.
     CValidationState state;
-    PrecomputedTransactionData txdata(tx);
+    PrecomputedTransactionData txdata(tx, {CTxOut(coinValue, scriptPubKey)});
     EXPECT_TRUE(ContextualCheckInputs(
         tx, state, view, true, 0, false, txdata,
         consensusParams, overwinterBranchId));
