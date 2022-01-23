@@ -1037,13 +1037,25 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         }
     }
 
+    std::vector<CTxOut> allPrevOutputs;
+    // We do not need to know the inputs for pre-v5 transactions.
+    // We can't sign v5+ transactions without knowing all inputs.
+    if (mergedTx.nVersion >= ZIP225_TX_VERSION) {
+        if (!view.HaveInputs(mergedTx)) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot sign v5 transactions without knowing all inputs");
+        }
+        for (const auto& input : mergedTx.vin) {
+            allPrevOutputs.push_back(view.GetOutputFor(input));
+        }
+    }
+
     // Script verification errors
     UniValue vErrors(UniValue::VARR);
 
     // Use CTransaction for the constant parts of the
     // transaction to avoid rehashing.
     const CTransaction txConst(mergedTx);
-    const PrecomputedTransactionData txdata(txConst);
+    const PrecomputedTransactionData txdata(txConst, allPrevOutputs);
     // Sign what we can:
     for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
         CTxIn& txin = mergedTx.vin[i];

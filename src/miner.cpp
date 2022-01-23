@@ -219,7 +219,11 @@ public:
         uint256 dataToBeSigned;
         CScript scriptCode;
         try {
-            PrecomputedTransactionData txdata(mtx);
+            // This is a shielded coinbase transaction, so the sighash is either pre-v5
+            // and doesn't use the allPrevOutputs field of PrecomputedTransactionData), or
+            // v5+ and S.2 of ZIP 244 defers to T.2, causing allPrevOutputs to be ignored.
+            // We therefore can set it to the empty list here.
+            PrecomputedTransactionData txdata(mtx, {});
             dataToBeSigned = SignatureHash(
                 scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0,
                 CurrentEpochBranchId(nHeight, chainparams.GetConsensus()),
@@ -532,11 +536,16 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
             if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
                 continue;
 
+            std::vector<CTxOut> allPrevOutputs;
+            for (const auto& input : tx.vin) {
+                allPrevOutputs.push_back(view.GetOutputFor(input));
+            }
+
             // Note that flags: we don't want to set mempool/IsStandard()
             // policy here, but we still have to ensure that the block we
             // create only contains transactions that are valid in new blocks.
             CValidationState state;
-            PrecomputedTransactionData txdata(tx);
+            PrecomputedTransactionData txdata(tx, allPrevOutputs);
             if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId))
                 continue;
 

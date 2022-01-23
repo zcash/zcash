@@ -39,24 +39,26 @@ bool zcash_transaction_digests(
 /// Returns `nullptr` if the transaction is invalid, or a v1-v4 transaction format.
 PrecomputedTxParts* zcash_transaction_precomputed_init(
     const unsigned char* txBytes,
-    size_t txBytes_len);
+    size_t txBytes_len,
+    const unsigned char* allPrevOutputs,
+    size_t allPrevOutputsLen);
 
 /// Frees a precomputed transaction from `zcash_transaction_precomputed_init`.
 void zcash_transaction_precomputed_free(PrecomputedTxParts* preTx);
 
-/// Calculates a signature digest for the given transparent input.
+/// Calculates a ZIP 244 signature digest for the given transaction.
+///
+/// `index` must be an index into the transaction's `vin`, or `NOT_AN_INPUT` for
+/// calculating the signature digest for shielded signatures.
 ///
 /// `sighash_ret` must point to a 32-byte array.
 ///
 /// Returns `false` if any of the parameters are invalid; in this case,
 /// `sighash_ret` will be unaltered.
-bool zcash_transaction_transparent_signature_digest(
+bool zcash_transaction_zip244_signature_digest(
     const PrecomputedTxParts* preTx,
     uint32_t sighashType,
     size_t index,
-    const unsigned char* scriptCode,
-    size_t scriptCode_len,
-    int64_t value,
     unsigned char* sighash_ret);
 
 #ifdef __cplusplus

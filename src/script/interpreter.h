@@ -98,7 +98,20 @@ struct PrecomputedTransactionData
     /** Precomputed transaction parts. */
     std::unique_ptr<PrecomputedTxParts, decltype(&zcash_transaction_precomputed_free)> preTx;
 
-    PrecomputedTransactionData(const CTransaction& tx);
+    PrecomputedTransactionData(
+        const CTransaction& tx,
+        const std::vector<CTxOut>& allPrevOutputs);
+
+    PrecomputedTransactionData(
+        const CTransaction& tx,
+        const unsigned char* allPrevOutputs,
+        size_t allPrevOutputsLen);
+
+private:
+    void SetPrecomputed(
+        const CTransaction& tx,
+        const unsigned char* allPrevOutputs,
+        size_t allPrevOutputsLen);
 };
 
 enum SigVersion

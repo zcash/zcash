@@ -468,7 +468,11 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& strInput)
     }
 
     const CKeyStore& keystore = tempKeystore;
-    const PrecomputedTransactionData txdata(mergedTx);
+    // We don't support v5 transactions via this API yet.
+    if (mergedTx.nVersion >= ZIP225_TX_VERSION) {
+        throw std::runtime_error("v5+ transactions not supported yet");
+    }
+    const PrecomputedTransactionData txdata(mergedTx, {});
 
     bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
 

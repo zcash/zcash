@@ -2761,6 +2761,9 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     CTransaction tx;
     if (!DecodeHexTx(tx, params[0].get_str()))
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+    if (tx.nVersion >= ZIP225_TX_VERSION) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "v5+ transactions do not support Sprout");
+    }
 
     UniValue inputs = params[1].get_obj();
     UniValue outputs = params[2].get_obj();
@@ -2889,7 +2892,8 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     // Empty output script.
     CScript scriptCode;
     CTransaction signTx(mtx);
-    PrecomputedTransactionData txdata(signTx);
+    // This API will never support v5+ transactions, and can ignore ZIP 244.
+    PrecomputedTransactionData txdata(signTx, {});
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
 

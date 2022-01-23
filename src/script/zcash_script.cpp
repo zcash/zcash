@@ -91,7 +91,10 @@ struct PrecomputedTransaction {
     const CTransaction tx;
     const PrecomputedTransactionData txdata;
 
-    PrecomputedTransaction(CTransaction txIn) : tx(txIn), txdata(txIn) {}
+    PrecomputedTransaction(
+        CTransaction txIn,
+        const unsigned char* allPrevOutputs,
+        size_t allPrevOutputsLen) : tx(txIn), txdata(txIn, allPrevOutputs, allPrevOutputsLen) {}
 };
 
 void* zcash_script_new_precomputed_tx(
@@ -107,10 +110,16 @@ void* zcash_script_new_precomputed_tx(
             set_error(err, zcash_script_ERR_TX_SIZE_MISMATCH);
             return nullptr;
         }
+        if (tx.nVersion >= ZIP225_TX_VERSION) {
+            set_error(err, zcash_script_ERR_TX_VERSION);
+            return nullptr;
+        }
 
         // Deserializing the tx did not error.
         set_error(err, zcash_script_ERR_OK);
-        auto preTx = new PrecomputedTransaction(tx);
+        // This is a pre-v5 tx, so the PrecomputedTransactionData constructor
+        // field `allPrevOutputs` is not used.
+        auto preTx = new PrecomputedTransaction(tx, nullptr, 0);
         return preTx;
     } catch (const std::exception&) {
         set_error(err, zcash_script_ERR_TX_DESERIALIZE); // Error deserializing
@@ -166,10 +175,15 @@ int zcash_script_verify(
             return set_error(err, zcash_script_ERR_TX_INDEX);
         if (GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) != txToLen)
             return set_error(err, zcash_script_ERR_TX_SIZE_MISMATCH);
+        if (tx.nVersion >= ZIP225_TX_VERSION) {
+            return set_error(err, zcash_script_ERR_TX_VERSION);
+        }
 
          // Regardless of the verification result, the tx did not error.
         set_error(err, zcash_script_ERR_OK);
-        PrecomputedTransactionData txdata(tx);
+        // This is a pre-v5 tx, so the PrecomputedTransactionData constructor
+        // field `allPrevOutputs` is not used.
+        PrecomputedTransactionData txdata(tx, {});
         return VerifyScript(
             tx.vin[nIn].scriptSig,
             CScript(scriptPubKey, scriptPubKey + scriptPubKeyLen),

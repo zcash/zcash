@@ -1128,8 +1128,32 @@ uint256 GetShieldedOutputsHash(const CTransaction& txTo) {
 
 } // anon namespace
 
-PrecomputedTransactionData::PrecomputedTransactionData(const CTransaction& txTo) :
+PrecomputedTransactionData::PrecomputedTransactionData(
+    const CTransaction& txTo,
+    const std::vector<CTxOut>& allPrevOutputs) :
     preTx(nullptr, zcash_transaction_precomputed_free)
+{
+    CDataStream sAllPrevOutputs(SER_NETWORK, PROTOCOL_VERSION);
+    sAllPrevOutputs << allPrevOutputs;
+    SetPrecomputed(
+        txTo,
+        reinterpret_cast<const unsigned char*>(sAllPrevOutputs.data()),
+        sAllPrevOutputs.size());
+}
+
+PrecomputedTransactionData::PrecomputedTransactionData(
+    const CTransaction& txTo,
+    const unsigned char* allPrevOutputs,
+    size_t allPrevOutputsLen) :
+    preTx(nullptr, zcash_transaction_precomputed_free)
+{
+    SetPrecomputed(txTo, allPrevOutputs, allPrevOutputsLen);
+}
+
+void PrecomputedTransactionData::SetPrecomputed(
+    const CTransaction& txTo,
+    const unsigned char* allPrevOutputs,
+    size_t allPrevOutputsLen)
 {
     bool isOverwinterV3 =
         txTo.fOverwintered &&
@@ -1153,7 +1177,10 @@ PrecomputedTransactionData::PrecomputedTransactionData(const CTransaction& txTo)
         ss << txTo;
         preTx.reset(zcash_transaction_precomputed_init(
             reinterpret_cast<const unsigned char*>(ss.data()),
-            ss.size()));
+            ss.size(), allPrevOutputs, allPrevOutputsLen));
+        if (preTx == nullptr) {
+            throw std::ios_base::failure("Invalid arguments to PrecomputedTransactionData");
+        }
     }
 }
 
@@ -1189,24 +1216,35 @@ uint256 SignatureHash(
     auto sigversion = SignatureHashVersion(txTo);
 
     if (sigversion == SIGVERSION_ZIP244) {
-        // The consensusBranchId parameter is ignored; we use the value stored
-        // in the transaction itself.
-        if (nIn == NOT_AN_INPUT) {
+        // ZIP 244, S.2: transparent_sig_digest
+        //
+        // If we are producing a hash for either a coinbase transaction, or a
+        // non-coinbase transaction that has no transparent inputs, the value of
+        // transparent_sig_digest is identical to the value specified in section
+        // T.2.
+        //
+        // https://zips.z.cash/zip-0244#s-2-transparent-sig-digest
+        if (txTo.IsCoinBase() || txTo.vin.empty()) {
+            // This situation only applies to shielded signatures.
+            assert(nIn == NOT_AN_INPUT);
             // The signature digest is just the txid! No need to cross the FFI.
             return txTo.GetHash();
         } else {
-            CDataStream sScriptCode(SER_NETWORK, PROTOCOL_VERSION);
-            sScriptCode << *(CScriptBase*)(&scriptCode);
-
+            // The amount parameter is ignored; we extract it from allPrevOutputs.
+            // - Note to future developers: if we ever replace the C++ logic for
+            //   pre-v5 transactions with Rust logic, make sure signrawtransaction
+            //   is updated to know about it!
+            // The consensusBranchId parameter is ignored; we use the value stored
+            // in the transaction itself.
             uint256 hash;
-            zcash_transaction_transparent_signature_digest(
+            if (!zcash_transaction_zip244_signature_digest(
                 txdata.preTx.get(),
                 nHashType,
                 nIn,
-                reinterpret_cast<const unsigned char*>(sScriptCode.data()),
-                sScriptCode.size(),
-                amount,
-                hash.begin());
+                hash.begin()))
+            {
+                throw std::logic_error("We should not reach here.");
+            }
             return hash;
         }
     } else if (sigversion == SIGVERSION_OVERWINTER || sigversion == SIGVERSION_SAPLING) {

@@ -1974,7 +1974,11 @@ bool AcceptToMemoryPool(
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
-        PrecomputedTransactionData txdata(tx);
+        std::vector<CTxOut> allPrevOutputs;
+        for (const auto& input : tx.vin) {
+            allPrevOutputs.push_back(view.GetOutputFor(input));
+        }
+        PrecomputedTransactionData txdata(tx, allPrevOutputs);
         if (!ContextualCheckInputs(tx, state, view, true, STANDARD_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId))
         {
             return false;
@@ -3190,6 +3194,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             return state.DoS(100, error("ConnectBlock(): too many sigops"),
                              REJECT_INVALID, "bad-blk-sigops");
 
+        // Coinbase transactions are the only case where this vector will not be the same
+        // length as `tx.vin` (since coinbase transactions have a single synthetic input).
+        // Only shielded coinbase transactions will need to produce sighashes for coinbase
+        // transactions; this is handled in ZIP 244 by having the coinbase sighash be the
+        // txid.
+        std::vector<CTxOut> allPrevOutputs;
+
         if (!tx.IsCoinBase())
         {
             if (!view.HaveInputs(tx))
@@ -3209,13 +3220,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 return state.DoS(100, false, rejectCode, rejectReason);
             }
 
+            for (const auto& input : tx.vin) {
+                allPrevOutputs.push_back(view.GetOutputFor(input));
+            }
+
             // insightexplorer
             // https://github.com/bitpay/bitcoin/commit/017f548ea6d89423ef568117447e61dd5707ec42#diff-7ec3c68a81efff79b6ca22ac1f1eabbaR2597
             if (fAddressIndex || fSpentIndex) {
                 for (size_t j = 0; j < tx.vin.size(); j++) {
 
                     const CTxIn input = tx.vin[j];
-                    const CTxOut &prevout = view.GetOutputFor(tx.vin[j]);
+                    const CTxOut &prevout = allPrevOutputs[j];
                     CScript::ScriptType scriptType = prevout.scriptPubKey.GetType();
                     const uint160 addrHash = prevout.scriptPubKey.AddressHash();
                     if (fAddressIndex && scriptType != CScript::UNKNOWN) {
@@ -3250,7 +3265,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                                  REJECT_INVALID, "bad-blk-sigops");
         }
 
-        txdata.emplace_back(tx);
+        txdata.emplace_back(tx, allPrevOutputs);
 
         if (!tx.IsCoinBase())
         {

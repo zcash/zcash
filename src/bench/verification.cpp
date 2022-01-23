@@ -48,7 +48,10 @@ static void ECDSA(benchmark::State& state)
         mtx.vout[i].scriptPubKey = CScript() << OP_1;
     }
 
-    const PrecomputedTransactionData txdata(mtx);
+    std::vector<CTxOut> allPrevOutputs;
+    // for benchmarking we simply use dummy inputs
+    allPrevOutputs.resize(mtx.vin.size());
+    const PrecomputedTransactionData txdata(mtx, allPrevOutputs);
 
     // sign all inputs
     for(uint32_t i = 0; i < mtx.vin.size(); i++) {
