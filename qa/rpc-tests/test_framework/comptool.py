@@ -30,6 +30,8 @@ using a script provided.
 To use, create a class that implements get_tests(), and pass it in
 as the test generator to TestManager.  get_tests() should be a python
 generator that returns TestInstance objects.  See below for definition.
+
+In practice get_tests is always implemented on a subclass of ComparisonTestFramework.
 '''
 
 # TestNode behaves as follows:
