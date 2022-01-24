@@ -186,7 +186,7 @@ class ComparisonTestFramework(BitcoinTestFramework):
 
     def __init__(self):
         super().__init__()
-        self.num_nodes = 2
+        self.num_nodes = 1
         self.setup_clean_chain = True
 
     def add_options(self, parser):

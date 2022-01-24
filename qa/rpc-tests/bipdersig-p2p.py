@@ -23,10 +23,6 @@ TODO: factor out common code from {bipdersig-p2p,bip65-cltv-p2p}.py.
 '''
 class BIP66Test(ComparisonTestFramework):
 
-    def __init__(self):
-        super().__init__()
-        self.num_nodes = 1
-
     def setup_network(self):
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir,
                                  extra_args=[['-debug', '-whitelist=127.0.0.1']],
