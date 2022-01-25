@@ -812,6 +812,11 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
     addr = CallRPC("z_getnewaddress sprout");
     CheckHaveAddr<SproutPaymentAddress>(keyIO.DecodePaymentAddress(addr.get_str()));
 
+    // Requesting a sprout address during IBD should fail
+    bool ibd = TestSetIBD(true);
+    CheckRPCThrows("z_getnewaddress sprout", "Error: Creating a Sprout address during initial block download is not supported.");
+    TestSetIBD(ibd);
+
     // Should throw on invalid argument
     CheckRPCThrows("z_getnewaddress garbage", "Invalid address type");
 
