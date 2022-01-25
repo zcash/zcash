@@ -154,6 +154,10 @@ public:
 
     std::optional<SaplingPaymentAddress> GetSaplingReceiver() const;
 
+    /**
+     * Return the most-preferred receiver from among the receiver types
+     * that we recognize.
+     */
     std::optional<RecipientAddress> GetPreferredRecipientAddress() const;
 
     friend inline bool operator==(const UnifiedAddress& a, const UnifiedAddress& b) {
