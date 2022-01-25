@@ -7,21 +7,24 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_node, connect_nodes_bi, sync_blocks, sync_mempools, \
-    wait_and_assert_operationid_status, get_coinbase_address, DEFAULT_FEE
+    wait_and_assert_operationid_status, get_coinbase_address, DEFAULT_FEE, \
+    NU5_BRANCH_ID, nuparams
 
 from decimal import Decimal
 
 class WalletShieldCoinbaseTest (BitcoinTestFramework):
-    def __init__(self, addr_type):
-        super(WalletShieldCoinbaseTest, self).__init__()
-        self.addr_type = addr_type
-
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 4)
 
     def setup_network(self, split=False):
-        args = ['-regtestprotectcoinbase', '-debug=zrpcunsafe']
+        args = [
+            '-regtestprotectcoinbase',
+            '-debug=zrpcunsafe',
+            '-experimentalfeatures',
+            '-orchardwallet',
+            nuparams(NU5_BRANCH_ID, self.nu5_activation),
+        ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))
         self.nodes.append(start_node(1, self.options.tmpdir, args))
@@ -52,11 +55,13 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         assert_equal(self.nodes[1].getbalance(), 10)
         assert_equal(self.nodes[2].getbalance(), 30)
 
+        # create one zaddr that is the target of all shielding
+        myzaddr = self.test_init_zaddr(self.nodes[0])
+
         do_not_shield_taddr = get_coinbase_address(self.nodes[0], 1)
 
         # Prepare to send taddr->zaddr
         mytaddr = get_coinbase_address(self.nodes[0], 4)
-        myzaddr = self.nodes[0].z_getnewaddress(self.addr_type)
 
         # Shielding will fail when trying to spend from watch-only address
         self.nodes[2].importaddress(mytaddr)
@@ -111,7 +116,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         # Confirm balances and that do_not_shield_taddr containing funds of 10 was left alone
         assert_equal(self.nodes[0].getbalance(), 10)
         assert_equal(self.nodes[0].z_getbalance(do_not_shield_taddr), Decimal('10.0'))
-        assert_equal(self.nodes[0].z_getbalance(myzaddr), Decimal('40.0') - DEFAULT_FEE)
+        self.test_check_balance_zaddr(self.nodes[0], Decimal('40.0') - DEFAULT_FEE)
         assert_equal(self.nodes[1].getbalance(), 20)
         assert_equal(self.nodes[2].getbalance(), 30)
 
@@ -123,7 +128,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(self.nodes[0].getbalance(), 10)
-        assert_equal(self.nodes[0].z_getbalance(myzaddr), Decimal('70.0') - DEFAULT_FEE)
+        self.test_check_balance_zaddr(self.nodes[0], Decimal('70.0') - DEFAULT_FEE)
         assert_equal(self.nodes[1].getbalance(), 30)
         assert_equal(self.nodes[2].getbalance(), 0)
 
@@ -185,3 +190,6 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         sync_mempools(self.nodes[:2])
         self.nodes[1].generate(1)
         self.sync_all()
+
+# Note, no "if __name__ == '__main__" and call the test here; it's called from
+# pool-specific derived classes in wallet_shieldcoinbase_*.py

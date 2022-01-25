@@ -4743,7 +4743,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
                 }
             },
             [&](const libzcash::UnifiedAddress& ua) {
-                throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a unified address.");
+                // OK
             }
         }, destaddress.value());
     } else {
