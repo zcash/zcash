@@ -1441,7 +1441,9 @@ std::optional<libzcash::AccountId> CWallet::FindAccountForSelector(const ZTXOSel
         },
         [&](const AccountZTXOPattern& acct) {
             if (self->mnemonicHDChain.has_value() &&
-                self->mapUnifiedAccountKeys.count(std::make_pair(self->mnemonicHDChain.value().GetSeedFingerprint(), acct.GetAccountId())) > 0) {
+                self->mapUnifiedAccountKeys.count(
+                    std::make_pair(self->mnemonicHDChain.value().GetSeedFingerprint(), acct.GetAccountId())
+                ) > 0) {
                 result = acct.GetAccountId();
             }
         }
@@ -1491,11 +1493,8 @@ bool CWallet::SelectorMatchesAddress(
         const ZTXOSelector& selector,
         const libzcash::SproutPaymentAddress& a0) const {
     return std::visit(match {
-        [&](const CKeyID& keyId) { return false; },
-        [&](const CScriptID& scriptId) { return false; },
         [&](const libzcash::SproutPaymentAddress& a1) { return a0 == a1; },
-        [&](const libzcash::SaplingPaymentAddress& addr) { return false; },
-        [&](const AccountZTXOPattern& acct) { return false; }
+        [&](const auto& addr) { return false; },
     }, selector.GetPattern());
 }
 
@@ -6321,21 +6320,13 @@ bool ZTXOSelector::SelectsTransparent() {
     }, this->pattern);
 }
 bool ZTXOSelector::SelectsSprout() {
-    return std::visit(match {
-        [](const CKeyID& keyId) { return false; },
-        [](const CScriptID& scriptId) { return false; },
-        [](const libzcash::SproutPaymentAddress& addr) { return true; },
-        [](const libzcash::SaplingPaymentAddress& addr) { return false; },
-        [](const AccountZTXOPattern& acct) { return false; }
-    }, this->pattern);
+    return std::holds_alternative<libzcash::SproutPaymentAddress>(this->pattern);
 }
 bool ZTXOSelector::SelectsSapling() {
     return std::visit(match {
-        [](const CKeyID& keyId) { return false; },
-        [](const CScriptID& scriptId) { return false; },
-        [](const libzcash::SproutPaymentAddress& addr) { return false; },
         [](const libzcash::SaplingPaymentAddress& addr) { return true; },
-        [](const AccountZTXOPattern& acct) { return acct.IncludesSapling(); }
+        [](const AccountZTXOPattern& acct) { return acct.IncludesSapling(); },
+        [](const auto& addr) { return false; }
     }, this->pattern);
 }
 

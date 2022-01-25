@@ -687,9 +687,15 @@ public:
 };
 
 /**
- * A class representing a BIP-44 account's spend authority, which can be used
- * to choose prior Zcash transaction outputs, including both transparent UTXOs
- * and shielded notes.
+ * A class representing the ZIP 316 unified spending authority associated with
+ * a ZIP 32 account and this wallet's mnemonic seed. This is intended to be
+ * used as a ZTXOPattern value to choose prior Zcash transaction outputs,
+ * including both transparent UTXOs and shielded notes.
+ *
+ * If the account ID is set to `ZCASH_LEGACY_ACCOUNT`, the instance instead
+ * represents the collective spend authorities of all legacy transparent addresses
+ * generated via the `getnewaddress` RPC method. Shielded notes will never be
+ * selected for this account ID.
  *
  * If the set of receiver types provided is non-empty, only outputs for
  * protocols corresponding to the provided set of receiver types may be used.
