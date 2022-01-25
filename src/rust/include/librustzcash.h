@@ -299,6 +299,12 @@ extern "C" {
         unsigned char *xsk_i
     );
 
+    /// Derive a internal ExtendedSpendingKey from an external key
+    void librustzcash_zip32_xsk_derive_internal(
+        const unsigned char *xsk_external,
+        unsigned char *xsk_internal
+    );
+
     /// Derive a child ExtendedFullViewingKey from a parent.
     bool librustzcash_zip32_xfvk_derive(
         const unsigned char *xfvk_parent,

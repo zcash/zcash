@@ -504,6 +504,13 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
             throw std::runtime_error("CWalletDB::GenerateUnifiedSpendingKeyForAccount(): Unable to add Sapling key component to the wallet.");
         }
 
+        // Add the Sapling change key to the wallet
+        auto saplingChangeEsk = saplingEsk.DeriveInternalKey();
+        if (addSpendingKey(saplingChangeEsk) == KeyNotAdded) {
+            // If adding the Sapling change key to the wallet failed, abort the process.
+            throw std::runtime_error("CWalletDB::GenerateUnifiedSpendingKeyForAccount(): Unable to add Sapling key component to the wallet.");
+        }
+
         auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
         if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {
             throw std::runtime_error("CWalletDB::GenerateUnifiedSpendingKeyForAccount(): Failed to add UFVK to the keystore.");

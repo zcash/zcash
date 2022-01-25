@@ -1059,6 +1059,23 @@ pub extern "C" fn librustzcash_zip32_xsk_derive(
         .expect("should be able to serialize an ExtendedSpendingKey");
 }
 
+/// Derive the Sapling internal spending key from the external extended
+/// spending key
+#[no_mangle]
+pub extern "C" fn librustzcash_zip32_xsk_derive_internal(
+    xsk_external: *const [c_uchar; 169],
+    xsk_internal_ret: *mut [c_uchar; 169],
+) {
+    let xsk_external = zip32::ExtendedSpendingKey::read(&unsafe { *xsk_external }[..])
+        .expect("valid ExtendedSpendingKey");
+
+    let xsk_internal = xsk_external.derive_internal();
+
+    xsk_internal
+        .write(&mut (unsafe { &mut *xsk_internal_ret })[..])
+        .expect("should be able to serialize an ExtendedSpendingKey");
+}
+
 /// Derive a child ExtendedFullViewingKey from a parent.
 #[no_mangle]
 pub extern "C" fn librustzcash_zip32_xfvk_derive(
@@ -1081,7 +1098,7 @@ pub extern "C" fn librustzcash_zip32_xfvk_derive(
     true
 }
 
-/// Derive the Sapling internal
+/// Derive the Sapling internal full viewing key from the corresponding external full viewing key
 #[no_mangle]
 pub extern "C" fn librustzcash_zip32_sapling_derive_internal_fvk(
     fvk: *const [c_uchar; 96],

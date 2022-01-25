@@ -4013,6 +4013,15 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         // Generate the common ovk for recovering t->z outputs.
         HDSeed seed = pwalletMain->GetHDSeedForRPC();
         ovks.insert(ovkForShieldingFromTaddr(seed));
+
+        auto legacyAcctUFVK = pwalletMain->GetUnifiedFullViewingKeyByAccount(ZCASH_LEGACY_ACCOUNT);
+        if (legacyAcctUFVK.has_value()) {
+            auto legacyAcctOVKs = legacyAcctUFVK.value().GetTransparentOVKsForShielding();
+            if (legacyAcctOVKs.has_value()) {
+                ovks.insert(legacyAcctOVKs.value().first);
+                ovks.insert(legacyAcctOVKs.value().second);
+            }
+        }
     }
 
     // Sapling spends

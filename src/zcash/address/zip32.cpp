@@ -232,7 +232,19 @@ SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
 }
 
 SaplingExtendedSpendingKey SaplingExtendedSpendingKey::DeriveInternalKey() const {
-    throw std::runtime_error("Not yet implemented");
+    CDataStream ss_p(SER_NETWORK, PROTOCOL_VERSION);
+    ss_p << *this;
+    CSerializeData external_key_bytes(ss_p.begin(), ss_p.end());
+
+    CSerializeData internal_key_bytes(ZIP32_XSK_SIZE);
+    librustzcash_zip32_xsk_derive_internal(
+        reinterpret_cast<unsigned char*>(external_key_bytes.data()),
+        reinterpret_cast<unsigned char*>(internal_key_bytes.data()));
+
+    CDataStream ss_i(internal_key_bytes, SER_NETWORK, PROTOCOL_VERSION);
+    SaplingExtendedSpendingKey xsk_internal;
+    ss_i >> xsk_internal;
+    return xsk_internal;
 }
 
 HDKeyPath Zip32AccountKeyPath(
