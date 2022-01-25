@@ -260,27 +260,13 @@ CPubKey CWallet::GenerateNewKey()
 {
     AssertLockHeld(cs_wallet); // mapKeyMetadata
 
-    auto seedOpt = GetMnemonicSeed();
-    if (!seedOpt.has_value()) {
-        throw std::runtime_error(
-                "CWallet::GenerateNewKey(): Wallet does not have a mnemonic seed.");
-    }
-    auto seed = seedOpt.value();
-
     if (!mnemonicHDChain.has_value()) {
         throw std::runtime_error(
                 "CWallet::GenerateNewKey(): Wallet is missing mnemonic seed metadata.");
     }
     CHDChain& hdChain = mnemonicHDChain.value();
 
-    // All mnemonic seeds are checked at construction to ensure that we can obtain
-    // a valid spending key for the account ZCASH_LEGACY_ACCOUNT;
-    // therefore, the `value()` call here is safe.
-    transparent::AccountKey accountKey = transparent::AccountKey::ForAccount(
-            seed,
-            BIP44CoinType(),
-            ZCASH_LEGACY_ACCOUNT).value();
-
+    transparent::AccountKey accountKey = this->GetLegacyAccountKey();
     std::optional<CPubKey> pubkey = std::nullopt;
     do {
         auto index = hdChain.GetLegacyTKeyCounter();
@@ -288,7 +274,10 @@ CPubKey CWallet::GenerateNewKey()
         hdChain.IncrementLegacyTKeyCounter();
         if (key.has_value()) {
             auto keyPath = transparent::AccountKey::KeyPath(BIP44CoinType(), ZCASH_LEGACY_ACCOUNT, true, index);
-            pubkey = AddTransparentSecretKey(seed.Fingerprint(), std::make_pair(key.value(), keyPath));
+            pubkey = AddTransparentSecretKey(
+                hdChain.GetSeedFingerprint(),
+                std::make_pair(key.value(), keyPath)
+            );
         }
         // if we did not successfully generate a key, try again.
     } while (!pubkey.has_value());
@@ -422,6 +411,24 @@ bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullVi
     }
     return false;
 }
+
+libzcash::transparent::AccountKey CWallet::GetLegacyAccountKey() const {
+    auto seedOpt = GetMnemonicSeed();
+    if (!seedOpt.has_value()) {
+        throw std::runtime_error(
+                "CWallet::GenerateNewKey(): Wallet does not have a mnemonic seed.");
+    }
+    auto seed = seedOpt.value();
+
+    // All mnemonic seeds are checked at construction to ensure that we can obtain
+    // a valid spending key for the account ZCASH_LEGACY_ACCOUNT;
+    // therefore, the `value()` call here is safe.
+    return transparent::AccountKey::ForAccount(
+            seed,
+            BIP44CoinType(),
+            ZCASH_LEGACY_ACCOUNT).value();
+}
+
 
 std::pair<ZcashdUnifiedSpendingKey, libzcash::AccountId> CWallet::GenerateNewUnifiedSpendingKey() {
     AssertLockHeld(cs_wallet);
@@ -6139,81 +6146,6 @@ std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::UnifiedAddress &uaddr) const
 {
     // TODO
-    return std::nullopt;
-}
-
-// GetSproutKeyForPaymentAddress
-
-std::optional<libzcash::SproutSpendingKey> GetSproutKeyForPaymentAddress::operator()(
-    const CKeyID &zaddr) const
-{
-    return std::nullopt;
-}
-std::optional<libzcash::SproutSpendingKey> GetSproutKeyForPaymentAddress::operator()(
-    const CScriptID &zaddr) const
-{
-    return std::nullopt;
-}
-std::optional<libzcash::SproutSpendingKey> GetSproutKeyForPaymentAddress::operator()(
-    const libzcash::SproutPaymentAddress &zaddr) const
-{
-    libzcash::SproutSpendingKey k;
-    if (m_wallet->GetSproutSpendingKey(zaddr, k)) {
-        return k;
-    } else {
-        return std::nullopt;
-    }
-}
-std::optional<libzcash::SproutSpendingKey> GetSproutKeyForPaymentAddress::operator()(
-    const libzcash::SaplingPaymentAddress &zaddr) const
-{
-    return std::nullopt;
-}
-std::optional<libzcash::SproutSpendingKey> GetSproutKeyForPaymentAddress::operator()(
-    const libzcash::UnifiedAddress &uaddr) const
-{
-    return std::nullopt;
-}
-
-// GetSaplingKeyForPaymentAddress
-
-std::optional<libzcash::SaplingExtendedSpendingKey> GetSaplingKeyForPaymentAddress::operator()(
-    const CKeyID &zaddr) const
-{
-    return std::nullopt;
-}
-std::optional<libzcash::SaplingExtendedSpendingKey> GetSaplingKeyForPaymentAddress::operator()(
-    const CScriptID &zaddr) const
-{
-    return std::nullopt;
-}
-std::optional<libzcash::SaplingExtendedSpendingKey> GetSaplingKeyForPaymentAddress::operator()(
-    const libzcash::SproutPaymentAddress &zaddr) const
-{
-    return std::nullopt;
-}
-std::optional<libzcash::SaplingExtendedSpendingKey> GetSaplingKeyForPaymentAddress::operator()(
-    const libzcash::SaplingPaymentAddress &zaddr) const
-{
-    libzcash::SaplingExtendedSpendingKey extsk;
-    if (m_wallet->GetSaplingExtendedSpendingKey(zaddr, extsk)) {
-        return extsk;
-    } else {
-        return std::nullopt;
-    }
-}
-std::optional<libzcash::SaplingExtendedSpendingKey> GetSaplingKeyForPaymentAddress::operator()(
-    const libzcash::UnifiedAddress &uaddr) const
-{
-    for (const libzcash::Receiver& receiver: uaddr) {
-        auto saplingAddr = std::get_if<SaplingPaymentAddress>(&receiver);
-        if (saplingAddr != nullptr) {
-            libzcash::SaplingExtendedSpendingKey extsk;
-            if (m_wallet->GetSaplingExtendedSpendingKey(*saplingAddr, extsk)) {
-                return extsk;
-            }
-        }
-    }
     return std::nullopt;
 }
 

@@ -1399,8 +1399,12 @@ public:
                                 const std::vector<unsigned char> &vchCryptedSecret);
 
     //
-    // Unified keys & addresses
+    // Unified keys, addresses, and accounts
     //
+
+    //! Obtain the account key for the legacy account by deriving it from
+    //! the wallet's mnemonic seed.
+    libzcash::transparent::AccountKey GetLegacyAccountKey() const;
 
     //! Generate the unified spending key from the wallet's mnemonic seed
     //! for the next unused account identifier.
@@ -1764,34 +1768,6 @@ public:
     std::optional<libzcash::ViewingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     std::optional<libzcash::ViewingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     std::optional<libzcash::ViewingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
-};
-
-class GetSproutKeyForPaymentAddress
-{
-private:
-    CWallet *m_wallet;
-public:
-    GetSproutKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
-
-    std::optional<libzcash::SproutSpendingKey> operator()(const CKeyID &zaddr) const;
-    std::optional<libzcash::SproutSpendingKey> operator()(const CScriptID &zaddr) const;
-    std::optional<libzcash::SproutSpendingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
-    std::optional<libzcash::SproutSpendingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    std::optional<libzcash::SproutSpendingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
-};
-
-class GetSaplingKeyForPaymentAddress
-{
-private:
-    CWallet *m_wallet;
-public:
-    GetSaplingKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
-
-    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const CKeyID &zaddr) const;
-    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const CScriptID &zaddr) const;
-    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
-    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
 };
 
 enum PaymentAddressSource {

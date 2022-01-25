@@ -261,8 +261,8 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     LogPrint("zrpcunsafe", "%s: private output: %s\n", getId(), FormatMoney(txOutputAmounts_.z_outputs_total));
     LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(fee_));
 
-    auto ovks = this->SelectOVKs();
     auto selectorAccountId = pwalletMain->FindAccountForSelector(ztxoSelector_);
+    auto ovks = this->SelectOVKs(spendable, selectorAccountId);
     std::visit(match {
         [&](const CKeyID& keyId) {
             auto accountId = selectorAccountId.value_or(ZCASH_LEGACY_ACCOUNT);
@@ -415,10 +415,64 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     return tx.GetHash();
 }
 
-std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs() const {
-    //TODO
+std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(
+        const SpendableInputs& spendable, std::optional<AccountId> accountId) const {
     uint256 internalOVK;
     uint256 externalOVK;
+    if (!spendable.saplingNoteEntries.empty()) {
+        std::visit(match {
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                libzcash::SaplingExtendedSpendingKey extsk;
+                assert(pwalletMain->GetSaplingExtendedSpendingKey(addr, extsk));
+                auto extfvk = extsk.ToXFVK();
+                externalOVK = extfvk.fvk.ovk;
+                internalOVK = extfvk.GetInternalDFVK().fvk.ovk;
+            },
+            [&](const AccountZTXOPattern& acct) {
+                auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId()).value();
+                auto dfvk = ufvk.GetSaplingKey().value();
+                externalOVK = dfvk.fvk.ovk;
+                internalOVK = dfvk.GetInternalDFVK().fvk.ovk;
+            },
+            [&](const auto& other) {
+                throw std::runtime_error("unreachable");
+            }
+        }, this->ztxoSelector_.GetPattern());
+    } else if (!spendable.utxos.empty()) {
+        std::optional<transparent::AccountPubKey> tfvk;
+        std::visit(match {
+            [&](const CKeyID& keyId) {
+                tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+            },
+            [&](const CScriptID& keyId) {
+                tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+            },
+            [&](const AccountZTXOPattern& acct) {
+                // by the time we're here, we know that the UFVK exists for this account
+                auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId()).value();
+                tfvk = ufvk.GetTransparentKey().value();
+            },
+            [&](const auto& other) {
+                //unreachable
+            }
+        }, this->ztxoSelector_.GetPattern());
+        assert(tfvk.has_value());
+
+        auto ovks = tfvk.value().GetOVKsForShielding();
+        internalOVK = ovks.first;
+        externalOVK = ovks.second;
+    } else if (!spendable.sproutNoteEntries.empty()) {
+        // use the legacy transparent account OVKs when sending from Sprout
+        auto tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+        auto ovks = tfvk.GetOVKsForShielding();
+        internalOVK = ovks.first;
+        externalOVK = ovks.second;
+    } else {
+        // This should be unreachable; it is left in place as a guard to ensure
+        // that when new input types are added to SpendableInputs in the future
+        // that we do not accidentally return the all-zeros OVK.
+        throw std::runtime_error("No spendable inputs.");
+    }
 
     return std::make_pair(internalOVK, externalOVK);
 }

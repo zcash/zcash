@@ -153,6 +153,8 @@ public:
         return std::make_pair(addr.value(), j);
     }
 
+    SaplingDiversifiableFullViewingKey GetInternalDFVK() const;
+
     libzcash::SaplingPaymentAddress DefaultAddress() const;
 
     libzcash::SaplingPaymentAddress GetChangeAddress() const;

@@ -126,7 +126,7 @@ libzcash::SaplingPaymentAddress SaplingDiversifiableFullViewingKey::DefaultAddre
     }
 }
 
-libzcash::SaplingPaymentAddress SaplingDiversifiableFullViewingKey::GetChangeAddress() const {
+libzcash::SaplingDiversifiableFullViewingKey SaplingDiversifiableFullViewingKey::GetInternalDFVK() const {
     CDataStream ss_fvk(SER_NETWORK, PROTOCOL_VERSION);
     ss_fvk << fvk;
     CSerializeData fvk_bytes(ss_fvk.begin(), ss_fvk.end());
@@ -141,7 +141,11 @@ libzcash::SaplingPaymentAddress SaplingDiversifiableFullViewingKey::GetChangeAdd
 
     CDataStream ss_fvk_ret(fvk_bytes_ret, SER_NETWORK, PROTOCOL_VERSION);
     ss_fvk_ret >> internalDFVK.fvk;
+    return internalDFVK;
+}
 
+libzcash::SaplingPaymentAddress SaplingDiversifiableFullViewingKey::GetChangeAddress() const {
+    auto internalDFVK = this->GetInternalDFVK();
     return internalDFVK.DefaultAddress();
 }
 

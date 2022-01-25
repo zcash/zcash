@@ -2,6 +2,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+#include <rust/unified_keys.h>
+
+#include "streams.h"
 #include "transparent.h"
 
 namespace libzcash {
@@ -31,6 +34,23 @@ std::optional<CKeyID> AccountPubKey::GetChangeAddress(const diversifier_index_t&
     if (!changeKey.has_value())  return std::nullopt;
 
     return changeKey.value().GetID();
+}
+
+std::pair<uint256, uint256> AccountPubKey::GetOVKsForShielding() const {
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << pubkey;
+    assert(ss.size() == 65);
+    CSerializeData ss_bytes(ss.begin(), ss.end());
+
+    uint256 internalOVK;
+    uint256 externalOVK;
+
+    assert(transparent_key_ovks(
+        reinterpret_cast<unsigned char*>(ss_bytes.data()),
+        internalOVK.begin(),
+        externalOVK.begin()));
+
+    return std::make_pair(internalOVK, externalOVK);
 }
 
 std::optional<std::pair<CKeyID, diversifier_index_t>> AccountPubKey::FindChangeAddress(diversifier_index_t j) const {

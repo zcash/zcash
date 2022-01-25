@@ -195,13 +195,6 @@ public:
      */
     std::optional<RecipientAddress> GetChangeAddress(const ChangeRequest& req) const;
 
-    /**
-     * Return the transparent change address for this UFVK a the given diversifier
-     * index, if the UFVK has a transparent component and it is possible to derive
-     * an address at this index.
-     */
-    std::optional<CKeyID> GetTransparentChangeAddress(const diversifier_index_t& j) const;
-
     friend bool operator==(const ZcashdUnifiedFullViewingKey& a, const ZcashdUnifiedFullViewingKey& b)
     {
         return a.transparentKey == b.transparentKey && a.saplingKey == b.saplingKey;

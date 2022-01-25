@@ -41,6 +41,12 @@ public:
      */
     std::optional<std::pair<CKeyID, diversifier_index_t>> FindChangeAddress(diversifier_index_t j) const;
 
+    /**
+     * Return the internal and external OVKs for shielding from transparent
+     * addresses derived from this key.
+     */
+    std::pair<uint256, uint256> GetOVKsForShielding() const;
+
     friend bool operator==(const AccountPubKey& a, const AccountPubKey& b)
     {
         return a.pubkey == b.pubkey;

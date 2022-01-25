@@ -83,10 +83,9 @@ private:
 
     /**
      * Compute the internal and external OVKs to use in transaction construction, given
-     * the payment source and the set of types that correspond to outputs selected for
-     * being spent in the transaction.
+     * the spendable inputs.
      */
-    std::pair<uint256, uint256> SelectOVKs() const;
+    std::pair<uint256, uint256> SelectOVKs(const SpendableInputs& spendable, std::optional<AccountId> accountId) const;
 
     static CAmount DefaultDustThreshold();
 

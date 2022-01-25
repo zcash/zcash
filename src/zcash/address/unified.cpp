@@ -5,6 +5,8 @@
 #include "zcash/Address.hpp"
 #include "unified.h"
 
+#include <rust/unified_keys.h>
+
 using namespace libzcash;
 
 //
@@ -126,9 +128,11 @@ std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(co
     std::optional<RecipientAddress> addr;
     std::visit(match {
         [&](const TransparentChangeRequest& req) {
-            auto changeKey = this->GetTransparentChangeAddress(req.GetIndex());
-            if (changeKey.has_value()) {
-                addr = changeKey.value();
+            if (transparentKey.has_value()) {
+                auto changeAddr = transparentKey.value().GetChangeAddress(req.GetIndex());
+                if (changeAddr.has_value()) {
+                    addr = changeAddr.value();
+                }
             }
         },
         [&](const SaplingChangeRequest& req) {
@@ -141,38 +145,3 @@ std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(co
     }, req);
     return addr;
 }
-
-std::optional<CKeyID> ZcashdUnifiedFullViewingKey::GetTransparentChangeAddress(const diversifier_index_t& j) const {
-    if (transparentKey.has_value()) {
-        auto childIndex = j.ToTransparentChildIndex();
-        if (!childIndex.has_value()) return std::nullopt;
-
-        auto changeKey = transparentKey.value().DeriveInternal(childIndex.value());
-        if (!changeKey.has_value())  return std::nullopt;
-
-        return changeKey.value().GetID();
-    } else {
-        return std::nullopt;
-    }
-}
-
-//std::optional<std::pair<uint256, uint256>> ZcashdUnifiedFullViewingKey::GetTransparentOVKsForShielding() const {
-//    if (transparentKey.has_value()) {
-//        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-//        ss << transparentKey.value().GetPubKey();
-//        assert(ss.size() == 65);
-//        CSerializeData ss_bytes(ss.begin(), ss.end());
-//
-//        uint256 internalOVK;
-//        uint256 externalOVK;
-//
-//        assert(transparent_key_ovks(
-//            reinterpret_cast<unsigned char*>(ss_bytes.data()),
-//            internalOVK.begin(),
-//            externalOVK.begin()));
-//
-//        return std::make_pair(internalOVK, externalOVK);
-//    } else {
-//        return std::nullopt;
-//    }
-//}
