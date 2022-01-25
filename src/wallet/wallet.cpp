@@ -1508,7 +1508,7 @@ bool CWallet::SelectorMatchesAddress(
         [&](const libzcash::SproutPaymentAddress& addr) { return false; },
         [&](const libzcash::SaplingPaymentAddress& a1) { return a0 == a1; },
         [&](const AccountZTXOPattern& acct) {
-            if (acct.GetReceiverTypes().empty() || acct.GetReceiverTypes().count(ReceiverType::Sapling) > 0) {
+            if (acct.IncludesSapling()) {
                 const auto meta = self->GetUFVKMetadataForReceiver(a0);
                 if (meta.has_value()) {
                     // use the coin if the account id corresponding to the UFVK is
