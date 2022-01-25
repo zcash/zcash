@@ -45,53 +45,41 @@ using namespace libzcash;
 
 AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         TransactionBuilder builder,
-        PaymentSource paymentSource,
+        ZTXOSelector ztxoSelector,
         std::vector<SendManyRecipient> recipients,
         int minDepth,
         CAmount fee,
         bool allowRevealedAmounts,
         UniValue contextInfo) :
-        builder_(builder), paymentSource_(paymentSource), recipients_(recipients),
+        builder_(builder), ztxoSelector_(ztxoSelector), recipients_(recipients),
         mindepth_(minDepth), fee_(fee), allowRevealedAmounts_(allowRevealedAmounts),
         contextinfo_(contextInfo)
 {
     assert(fee_ >= 0);
     assert(mindepth_ >= 0);
     assert(!recipients_.empty());
+    assert(ztxoSelector.RequireSpendingKeys());
 
     std::visit(match {
-        [&](const FromAnyTaddr& any) {
+        [&](const AccountZTXOPattern& acct) {
+            isfromtaddr_ =
+                acct.GetReceiverTypes().empty() ||
+                acct.GetReceiverTypes().count(ReceiverType::P2PKH) > 0 ||
+                acct.GetReceiverTypes().count(ReceiverType::P2SH) > 0;
+        },
+        [&](const CKeyID& keyId) {
             isfromtaddr_ = true;
         },
-        [&](const PaymentAddress& addr) {
-            // We don't need to lock on the wallet as spending key related methods are thread-safe
-            if (!std::visit(HaveSpendingKeyForPaymentAddress(pwalletMain), addr)) {
-                throw JSONRPCError(
-                        RPC_INVALID_ADDRESS_OR_KEY,
-                        "Invalid from address, no spending key found for address");
-            }
-
-            std::visit(match {
-                [&](const CKeyID& keyId) {
-                    isfromtaddr_ = true;
-                },
-                [&](const CScriptID& scriptId) {
-                    isfromtaddr_ = true;
-                },
-                [&](const libzcash::SproutPaymentAddress& addr) {
-                    isfromsprout_ = true;
-                },
-                [&](const libzcash::SaplingPaymentAddress& addr) {
-                    isfromsapling_ = true;
-                },
-                [&](const libzcash::UnifiedAddress& addr) {
-                    throw JSONRPCError(
-                        RPC_INVALID_ADDRESS_OR_KEY,
-                        "Unified addresses are not yet supported by z_sendmany");
-                }
-            }, addr);
+        [&](const CScriptID& scriptId) {
+            isfromtaddr_ = true;
+        },
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            isfromsprout_ = true;
+        },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            isfromsapling_ = true;
         }
-    }, paymentSource);
+    }, ztxoSelector.GetPattern());
 
     if ((isfromsprout_ || isfromsapling_) && minDepth == 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be zero when sending from a shielded address");
@@ -108,10 +96,6 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
                 transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
             },
-            [&](const libzcash::SproutPaymentAddress& addr) {
-                // unreachable; currently disallowed by checks at construction
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Sending to Sprout is disabled.");
-            },
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 txOutputAmounts_.z_outputs_total += recipient.amount;
                 if (isfromsprout_ && !allowRevealedAmounts_) {
@@ -122,10 +106,6 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
                             "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
                             "you wish to allow this transaction to proceed anyway.");
                 }
-            },
-            [&](const libzcash::UnifiedAddress& ua) {
-                // unreachable; currently disallowed by checks at construction
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Sending to unified addresses is disabled.");
             }
         }, recipient.address);
     }
@@ -197,17 +177,6 @@ void AsyncRPCOperation_sendmany::main() {
     LogPrintf("%s",s);
 }
 
-bool IsFromAnyTaddr(const PaymentSource& paymentSource) {
-    return std::visit(match {
-        [&](const FromAnyTaddr& fromAny) {
-            return true;
-        },
-        [&](const PaymentAddress& addr) {
-            return false;
-        }
-    }, paymentSource);
-}
-
 // Construct and send the transaction, returning the resulting txid.
 // Errors in transaction construction will throw.
 //
@@ -232,10 +201,9 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
     builder_.SetFee(fee_);
 
-    // Only select coinbase if we are spending from at most a single t-address.
-    bool allowTransparentCoinbase =
-        !IsFromAnyTaddr(paymentSource_) && // allow coinbase inputs from at most a single t-addr
-        transparentRecipients_ == 0; // cannot send transparent coinbase to transparent recipients
+    // Allow transparent coinbase inputs if there are no transparent
+    // recipients.
+    bool allowTransparentCoinbase = transparentRecipients_ == 0;
 
     // Set the dust threshold so that we can select enough inputs to avoid
     // creating dust change amounts.
@@ -243,7 +211,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
     // Find spendable inputs, and select a minimal set of them that
     // can supply the required target amount.
-    auto spendable = FindSpendableInputs(allowTransparentCoinbase);
+    auto spendable = pwalletMain->FindSpendableInputs(ztxoSelector_, allowTransparentCoinbase, mindepth_);
     if (!spendable.LimitToAmount(targetAmount, dustThreshold)) {
         CAmount changeAmount{spendable.Total() - targetAmount};
         if (changeAmount > 0 && changeAmount < dustThreshold) {
@@ -252,6 +220,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             // and send the extra to the recipient or the miner fee to avoid
             // creating dust change, rather than prohibit them from sending
             // entirely in this circumstance.
+            // (Daira disagrees, as this could leak information to the recipient)
             throw JSONRPCError(
                     RPC_WALLET_INSUFFICIENT_FUNDS,
                     strprintf(
@@ -368,34 +337,26 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         builder_.SendChangeTo(changeAddr);
     };
 
-    // FIXME: it would be better to use the most recent shielded pool change
-    // address for the wallet's default unified address account, and the
+    // FIXME: use the appropriate shielded pool change address for the
+    // source unified address account (or the legacy account), and the
     // associated OVK
     std::visit(match {
-        [&](const FromAnyTaddr& fromAny) {
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            ovk = getDefaultOVK();
+            builder_.SendChangeTo(addr);
+        },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            libzcash::SaplingExtendedSpendingKey saplingKey;
+            assert(pwalletMain->GetSaplingExtendedSpendingKey(addr, saplingKey));
+
+            ovk = saplingKey.expsk.full_viewing_key().ovk;
+            builder_.SendChangeTo(addr, ovk);
+        },
+        [&](const auto& other) {
             ovk = getDefaultOVK();
             setTransparentChangeRecipient();
-        },
-        [&](const PaymentAddress& addr) {
-            std::visit(match {
-                [&](const libzcash::SproutPaymentAddress& addr) {
-                    ovk = getDefaultOVK();
-                    builder_.SendChangeTo(addr);
-                },
-                [&](const libzcash::SaplingPaymentAddress& addr) {
-                    libzcash::SaplingExtendedSpendingKey saplingKey;
-                    assert(pwalletMain->GetSaplingExtendedSpendingKey(addr, saplingKey));
-
-                    ovk = saplingKey.expsk.full_viewing_key().ovk;
-                    builder_.SendChangeTo(addr, ovk);
-                },
-                [&](const auto& other) {
-                    ovk = getDefaultOVK();
-                    setTransparentChangeRecipient();
-                }
-            }, addr);
         }
-    }, paymentSource_);
+    }, ztxoSelector_.GetPattern());
 
     // Track the total of notes that we've added to the builder
     CAmount sum = 0;
@@ -445,23 +406,11 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             [&](const CScriptID& scriptId) {
                 builder_.AddTransparentOutput(scriptId, r.amount);
             },
-            [&](const libzcash::SproutPaymentAddress& addr) {
-                //unreachable
-                throw JSONRPCError(
-                    RPC_INVALID_ADDRESS_OR_KEY,
-                    "Sending funds to Sprout is disabled.");
-            },
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 auto value = r.amount;
                 auto memo = get_memo_from_hex_string(r.memo.has_value() ? r.memo.value() : "");
 
                 builder_.AddSaplingOutput(ovk, addr, value, memo);
-            },
-            [&](const libzcash::UnifiedAddress& addr) {
-                //unreachable
-                throw JSONRPCError(
-                    RPC_INVALID_ADDRESS_OR_KEY,
-                    "Unified addresses are not yet supported by z_sendmany");
             }
         }, r.address);
     }
@@ -521,158 +470,6 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     set_result(sendResult);
 
     return tx.GetHash();
-}
-
-SpendableInputs AsyncRPCOperation_sendmany::FindSpendableInputs(bool allowTransparentCoinbase) {
-    SpendableInputs unspent;
-
-    auto filters = std::visit(match {
-        [&](const PaymentAddress& addr) {
-            return std::visit(match {
-                [&](const CKeyID& keyId) {
-                    std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({keyId});
-                    return std::make_pair(t_filter, AddrSet::Empty());
-                },
-                [&](const CScriptID& scriptId) {
-                    std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({scriptId});
-                    return std::make_pair(t_filter, AddrSet::Empty());
-                },
-                [&](const auto& other) {
-                    std::optional<std::set<CTxDestination>> t_filter = std::nullopt;
-                    return std::make_pair(t_filter, AddrSet::ForPaymentAddresses({addr}));
-                }
-            }, addr);
-        },
-        [&](const FromAnyTaddr& taddr) {
-            std::optional<std::set<CTxDestination>> t_filter = std::set<CTxDestination>({});
-            return std::make_pair(t_filter, AddrSet::Empty());
-        }
-    }, paymentSource_);
-
-    if (filters.first.has_value()) {
-        pwalletMain->AvailableCoins(
-                unspent.utxos,
-                false,                    // fOnlyConfirmed
-                nullptr,                  // coinControl
-                true,                     // fIncludeZeroValue
-                allowTransparentCoinbase, // fIncludeCoinBase
-                true,                     // fOnlySpendable
-                mindepth_,                // nMinDepth
-                &filters.first.value());  // onlyFilterByDests
-    }
-
-    pwalletMain->GetFilteredNotes(
-            unspent.sproutNoteEntries,
-            unspent.saplingNoteEntries,
-            filters.second,
-            mindepth_);
-
-    return unspent;
-}
-
-bool SpendableInputs::LimitToAmount(const CAmount amountRequired, const CAmount dustThreshold) {
-    assert(amountRequired >= 0 && dustThreshold > 0);
-
-    CAmount totalSelected{0};
-    auto haveSufficientFunds = [&]() {
-        // if the total would result in change below the dust threshold,
-        // we do not yet have sufficient funds
-        return totalSelected == amountRequired || totalSelected - amountRequired > dustThreshold;
-    };
-
-    // Select Sprout notes for spending first - if possible, we want users to
-    // spend any notes that they still have in the Sprout pool.
-    if (!haveSufficientFunds()) {
-        std::sort(sproutNoteEntries.begin(), sproutNoteEntries.end(),
-            [](SproutNoteEntry i, SproutNoteEntry j) -> bool {
-                return i.note.value() > j.note.value();
-            });
-        auto sproutIt = sproutNoteEntries.begin();
-        while (sproutIt != sproutNoteEntries.end() && !haveSufficientFunds()) {
-            totalSelected += sproutIt->note.value();
-            ++sproutIt;
-        }
-        sproutNoteEntries.erase(sproutIt, sproutNoteEntries.end());
-    }
-
-    // Next select transparent utxos. We preferentially spend transparent funds,
-    // with the intent that we'd like to opportunistically shield whatever is
-    // possible, and we will always shield change after the introduction of
-    // unified addresses.
-    if (!haveSufficientFunds()) {
-        std::sort(utxos.begin(), utxos.end(),
-            [](COutput i, COutput j) -> bool {
-                return i.Value() > j.Value();
-            });
-        auto utxoIt = utxos.begin();
-        while (utxoIt != utxos.end() && !haveSufficientFunds()) {
-            totalSelected += utxoIt->Value();
-            ++utxoIt;
-        }
-        utxos.erase(utxoIt, utxos.end());
-    }
-
-    // Finally select Sapling outputs. After the introduction of Orchard to the
-    // wallet, the selection of Sapling and Orchard notes, and the
-    // determination of change amounts, should be done in a fashion that
-    // minimizes information leakage whenever possible.
-    if (!haveSufficientFunds()) {
-        std::sort(saplingNoteEntries.begin(), saplingNoteEntries.end(),
-            [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
-                return i.note.value() > j.note.value();
-            });
-        auto saplingIt = saplingNoteEntries.begin();
-        while (saplingIt != saplingNoteEntries.end() && !haveSufficientFunds()) {
-            totalSelected += saplingIt->note.value();
-            ++saplingIt;
-        }
-        saplingNoteEntries.erase(saplingIt, saplingNoteEntries.end());
-    }
-
-    return haveSufficientFunds();
-}
-
-bool SpendableInputs::HasTransparentCoinbase() const {
-    for (const auto& out : utxos) {
-        if (out.fIsCoinbase) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void SpendableInputs::LogInputs(const AsyncRPCOperationId& id) const {
-    for (const auto& utxo : utxos) {
-        LogPrint("zrpcunsafe", "%s: found unspent transparent UTXO (txid=%s, index=%d, amount=%s, isCoinbase=%s)\n",
-            id,
-            utxo.tx->GetHash().ToString(),
-            utxo.i,
-            FormatMoney(utxo.Value()),
-            utxo.fIsCoinbase);
-    }
-
-    for (const auto& entry : sproutNoteEntries) {
-        std::string data(entry.memo.begin(), entry.memo.end());
-        LogPrint("zrpcunsafe", "%s: found unspent Sprout note (txid=%s, vJoinSplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
-            id,
-            entry.jsop.hash.ToString().substr(0, 10),
-            entry.jsop.js,
-            int(entry.jsop.n),  // uint8_t
-            FormatMoney(entry.note.value()),
-            HexStr(data).substr(0, 10)
-            );
-    }
-
-    for (const auto& entry : saplingNoteEntries) {
-        std::string data(entry.memo.begin(), entry.memo.end());
-        LogPrint("zrpcunsafe", "%s: found unspent Sapling note (txid=%s, vShieldedSpend=%d, amount=%s, memo=%s)\n",
-            id,
-            entry.op.hash.ToString().substr(0, 10),
-            entry.op.n,
-            FormatMoney(entry.note.value()),
-            HexStr(data).substr(0, 10));
-    }
 }
 
 /**

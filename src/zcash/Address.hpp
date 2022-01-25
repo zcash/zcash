@@ -56,6 +56,8 @@ typedef std::variant<
     CKeyID,
     UnknownReceiver> Receiver;
 
+bool HasKnownReceiverType(const Receiver& receiver);
+
 struct ReceiverIterator {
     using iterator_category = std::random_access_iterator_tag;
     using difference_type   = std::ptrdiff_t;
@@ -87,6 +89,12 @@ private:
     std::vector<const Receiver*> sortedReceivers;
     size_t cur;
 };
+
+/** A recipient address to which a unified address can be resolved */
+typedef std::variant<
+    CKeyID,
+    CScriptID,
+    libzcash::SaplingPaymentAddress> RecipientAddress;
 
 class UnifiedAddress {
     std::vector<Receiver> receivers;
@@ -145,6 +153,12 @@ public:
     std::optional<CScriptID> GetP2SHReceiver() const;
 
     std::optional<SaplingPaymentAddress> GetSaplingReceiver() const;
+
+    /**
+     * Return the most-preferred receiver from among the receiver types
+     * that we recognize.
+     */
+    std::optional<RecipientAddress> GetPreferredRecipientAddress() const;
 
     friend inline bool operator==(const UnifiedAddress& a, const UnifiedAddress& b) {
         return a.receivers == b.receivers;
@@ -257,6 +271,17 @@ public:
     // unified addresses must contain a shielded receiver, so we
     // consider this to be safe by construction
     bool operator()(const UnifiedAddress& addr) { return true; }
+};
+
+class SelectRecipientAddress {
+public:
+    std::optional<RecipientAddress> operator()(const CKeyID& p2pkh) { return p2pkh; }
+    std::optional<RecipientAddress> operator()(const CScriptID& p2sh) { return p2sh; }
+    std::optional<RecipientAddress> operator()(const SproutPaymentAddress& addr) { return std::nullopt; }
+    std::optional<RecipientAddress> operator()(const SaplingPaymentAddress& addr) { return addr; }
+    std::optional<RecipientAddress> operator()(const UnifiedAddress& addr) {
+        return addr.GetPreferredRecipientAddress();
+    }
 };
 
 class AddressInfoFromSpendingKey {

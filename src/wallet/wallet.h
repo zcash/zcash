@@ -686,6 +686,130 @@ public:
     std::string ToString() const;
 };
 
+/**
+ * A class representing the ZIP 316 unified spending authority associated with
+ * a ZIP 32 account and this wallet's mnemonic seed. This is intended to be
+ * used as a ZTXOPattern value to choose prior Zcash transaction outputs,
+ * including both transparent UTXOs and shielded notes.
+ *
+ * If the account ID is set to `ZCASH_LEGACY_ACCOUNT`, the instance instead
+ * represents the collective spend authorities of all legacy transparent addresses
+ * generated via the `getnewaddress` RPC method. Shielded notes will never be
+ * selected for this account ID.
+ *
+ * If the set of receiver types provided is non-empty, only outputs for
+ * protocols corresponding to the provided set of receiver types may be used.
+ * If the set of receiver types is empty, no restrictions are placed upon what
+ * protocols outputs are selected for.
+ */
+class AccountZTXOPattern {
+    libzcash::AccountId accountId;
+    std::set<libzcash::ReceiverType> receiverTypes;
+public:
+    AccountZTXOPattern(libzcash::AccountId accountIdIn, std::set<libzcash::ReceiverType> receiverTypesIn):
+        accountId(accountIdIn), receiverTypes(receiverTypesIn) {}
+
+    libzcash::AccountId GetAccountId() const {
+        return accountId;
+    }
+
+    const std::set<libzcash::ReceiverType>& GetReceiverTypes() const {
+        return receiverTypes;
+    }
+
+    bool IncludesP2PKH() const {
+        return receiverTypes.empty() || receiverTypes.count(libzcash::ReceiverType::P2PKH) > 0;
+    }
+
+    bool IncludesP2SH() const {
+        return receiverTypes.empty() || receiverTypes.count(libzcash::ReceiverType::P2SH) > 0;
+    }
+
+    bool IncludesSapling() const {
+        return receiverTypes.empty() || receiverTypes.count(libzcash::ReceiverType::Sapling) > 0;
+    }
+
+    friend bool operator==(const AccountZTXOPattern &a, const AccountZTXOPattern &b) {
+        return a.accountId == b.accountId && a.receiverTypes == b.receiverTypes;
+    }
+};
+
+/**
+ * A selector which can be used to choose prior Zcash transaction outputs,
+ * including both transparent UTXOs and shielded notes.
+ */
+typedef std::variant<
+    CKeyID,
+    CScriptID,
+    libzcash::SproutPaymentAddress,
+    libzcash::SaplingPaymentAddress,
+    AccountZTXOPattern> ZTXOPattern;
+
+class ZTXOSelector {
+private:
+    ZTXOPattern pattern;
+    bool requireSpendingKeys;
+
+    ZTXOSelector(ZTXOPattern patternIn, bool requireSpendingKeysIn):
+        pattern(patternIn), requireSpendingKeys(requireSpendingKeysIn) {}
+
+    friend class CWallet;
+public:
+    const ZTXOPattern& GetPattern() const {
+        return pattern;
+    }
+
+    bool RequireSpendingKeys() const {
+        return requireSpendingKeys;
+    }
+
+    bool SelectsTransparent();
+    bool SelectsSprout();
+    bool SelectsSapling();
+};
+
+class SpendableInputs {
+public:
+    std::vector<COutput> utxos;
+    std::vector<SproutNoteEntry> sproutNoteEntries;
+    std::vector<SaplingNoteEntry> saplingNoteEntries;
+
+    /**
+     * Selectively discard notes that are not required to obtain the desired
+     * amount. Returns `false` if the available inputs do not add up to the
+     * desired amount.
+     */
+    bool LimitToAmount(CAmount amount, CAmount dustThreshold);
+
+    /**
+     * Compute the total ZEC amount of spendable inputs.
+     */
+    CAmount Total() const {
+        CAmount result = 0;
+        for (const auto& t : utxos) {
+            result += t.Value();
+        }
+        for (const auto& t : sproutNoteEntries) {
+            result += t.note.value();
+        }
+        for (const auto& t : saplingNoteEntries) {
+            result += t.note.value();
+        }
+        return result;
+    }
+
+    /**
+     * Return whether or not the set of selected UTXOs contains
+     * coinbase outputs.
+     */
+    bool HasTransparentCoinbase() const;
+
+    /**
+     * List spendable inputs in zrpcunsafe log entries.
+     */
+    void LogInputs(const AsyncRPCOperationId& id) const;
+};
+
 /** Private key that includes an expiration date in case it never gets used. */
 class CWalletKey
 {
@@ -760,6 +884,10 @@ public:
         } else {
             return it->second == receivers;
         }
+    }
+
+    std::optional<libzcash::AccountId> GetAccountId() const {
+        return accountId;
     }
 
     bool SetAccountId(libzcash::AccountId accountIdIn) {
@@ -1094,6 +1222,35 @@ public:
      */
     static bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet);
 
+    /**
+     * Obtain the ZTXO selector for the specified payment address. If the
+     * `requireSpendingKey` flag is set, this will only return a selector
+     * that will choose outputs for which this wallet holds the spending keys.
+     */
+    std::optional<ZTXOSelector> ToZTXOSelector(
+            const libzcash::PaymentAddress& addr,
+            bool requireSpendingKey) const;
+
+    static ZTXOSelector LegacyTransparentZTXOSelector();
+
+    /**
+     * Look up the account for a given selector. This resolves the account ID
+     * even in the in that a bare transparent or Sapling address that
+     * corresponds to a non-legacy account is provided as a selector.  This is
+     * used in z_sendmany to ensure that we always correctly determine change
+     * addresses and OVKs on the basis of account UFVKs when possible.
+     */
+    std::optional<libzcash::AccountId> FindAccountForSelector(const ZTXOSelector& paymentSource) const;
+
+    SpendableInputs FindSpendableInputs(
+            ZTXOSelector paymentSource,
+            bool allowTransparentCoinbase,
+            uint32_t minDepth) const;
+
+    bool SelectorMatchesAddress(const ZTXOSelector& source, const CTxDestination& a0) const;
+    bool SelectorMatchesAddress(const ZTXOSelector& source, const libzcash::SproutPaymentAddress& a0) const;
+    bool SelectorMatchesAddress(const ZTXOSelector& source, const libzcash::SaplingPaymentAddress& a0) const;
+
     bool IsSpent(const uint256& hash, unsigned int n) const;
     bool IsSproutSpent(const uint256& nullifier) const;
     bool IsSaplingSpent(const uint256& nullifier) const;
@@ -1260,7 +1417,9 @@ public:
     bool LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skmeta);
     bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
 
-    std::optional<libzcash::UnifiedAddress> GetUnifiedForReceiver(const libzcash::Receiver& receiver);
+    std::optional<libzcash::UFVKId> FindUnifiedFullViewingKey(const libzcash::UnifiedAddress& addr) const;
+    std::optional<libzcash::AccountId> GetUnifiedAccountId(const libzcash::UFVKId& ufvkId) const;
+    std::optional<libzcash::UnifiedAddress> GetUnifiedForReceiver(const libzcash::Receiver& receiver) const;
 
     /**
      * Increment the next transaction order id
@@ -1501,8 +1660,8 @@ public:
     void SetMnemonicHDChain(const CHDChain& chain, bool memonly);
     const std::optional<CHDChain>& GetMnemonicHDChain() const { return mnemonicHDChain; }
 
-    bool CheckNetworkInfo(std::pair<std::string, std::string> networkInfo);
-    uint32_t BIP44CoinType();
+    bool CheckNetworkInfo(std::pair<std::string, std::string> networkInfo) const;
+    uint32_t BIP44CoinType() const;
 
     /**
      * Check whether the wallet contains spending keys for all the addresses
@@ -1519,7 +1678,7 @@ public:
                           int maxDepth=INT_MAX,
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true,
-                          bool ignoreLocked=true);
+                          bool ignoreLocked=true) const;
 
     /* Returns the wallets help message */
     static std::string GetWalletHelpString(bool showDebug);
@@ -1586,20 +1745,6 @@ public:
     std::optional<libzcash::ViewingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
     std::optional<libzcash::ViewingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     std::optional<libzcash::ViewingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
-};
-
-class HaveSpendingKeyForPaymentAddress
-{
-private:
-    CWallet *m_wallet;
-public:
-    HaveSpendingKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
-
-    bool operator()(const CKeyID &addr) const;
-    bool operator()(const CScriptID &addr) const;
-    bool operator()(const libzcash::SproutPaymentAddress &zaddr) const;
-    bool operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    bool operator()(const libzcash::UnifiedAddress &uaddr) const;
 };
 
 class GetSproutKeyForPaymentAddress
