@@ -1684,7 +1684,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 return InitError(_("-mineraddress is not a valid " PACKAGE_NAME " address."));
             }
             auto ztxoSelector = pwalletMain->ToZTXOSelector(zaddr.value(), true);
-            minerAddressInLocalWallet = ztxoSelector.has_value() && ztxoSelector.value().SpendingKeysAvailable();
+            minerAddressInLocalWallet = ztxoSelector.has_value();
         }
         if (GetBoolArg("-minetolocalwallet", true) && !minerAddressInLocalWallet) {
             return InitError(_("-mineraddress is not in the local wallet. Either use a local address, or set -minetolocalwallet=0"));

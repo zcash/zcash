@@ -748,10 +748,10 @@ typedef std::variant<
 class ZTXOSelector {
 private:
     ZTXOPattern pattern;
-    bool spendingKeysAvailable;
+    bool requireSpendingKeys;
 
-    ZTXOSelector(ZTXOPattern patternIn, bool spendingKeysAvailableIn):
-        pattern(patternIn), spendingKeysAvailable(spendingKeysAvailableIn) {}
+    ZTXOSelector(ZTXOPattern patternIn, bool requireSpendingKeysIn):
+        pattern(patternIn), requireSpendingKeys(requireSpendingKeysIn) {}
 
     friend class CWallet;
 public:
@@ -759,8 +759,8 @@ public:
         return pattern;
     }
 
-    bool SpendingKeysAvailable() const {
-        return spendingKeysAvailable;
+    bool RequireSpendingKeys() const {
+        return requireSpendingKeys;
     }
 
     bool SelectsTransparent();

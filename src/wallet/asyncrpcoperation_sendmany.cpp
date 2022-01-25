@@ -58,7 +58,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     assert(fee_ >= 0);
     assert(mindepth_ >= 0);
     assert(!recipients_.empty());
-    assert(ztxoSelector.SpendingKeysAvailable());
+    assert(ztxoSelector.RequireSpendingKeys());
 
     std::visit(match {
         [&](const AccountZTXOPattern& acct) {
