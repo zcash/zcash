@@ -1234,8 +1234,11 @@ public:
     static ZTXOSelector LegacyTransparentZTXOSelector();
 
     /**
-     * Look up the account for a given selector, ensuring that the account
-     * exists in this wallet.
+     * Look up the account for a given selector. This resolves the account ID
+     * even in the in that a bare transparent or Sapling address that
+     * corresponds to a non-legacy account is provided as a selector.  This is
+     * used in z_sendmany to ensure that we always correctly determine change
+     * addresses and OVKs on the basis of account UFVKs when possible.
      */
     std::optional<libzcash::AccountId> FindAccountForSelector(const ZTXOSelector& paymentSource) const;
 
