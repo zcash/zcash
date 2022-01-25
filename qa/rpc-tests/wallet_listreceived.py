@@ -42,9 +42,13 @@ class ListReceivedTest (BitcoinTestFramework):
 
         # Decrypted transaction details should be correct
         pt = self.nodes[1].z_viewtransaction(txid)
+
         assert_equal(pt['txid'], txid)
         assert_equal(len(pt['spends']), 0)
         assert_equal(len(pt['outputs']), 1 if release == 'sprout' else 2)
+
+        # Expect one internal output and one external.
+        assert_equal(len([output for output in pt['outputs'] if output['outgoing']]), 1)
 
         # Output orders can be randomized, so we check the output
         # positions and contents separately
