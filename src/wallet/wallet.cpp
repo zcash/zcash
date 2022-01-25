@@ -1555,8 +1555,12 @@ SpendableInputs CWallet::FindSpendableInputs(
 
                 // skip spent utxos
                 if (IsSpent(wtxid, i)) continue;
-                // skip utxos that do not belong to the wallet
-                if (mine == ISMINE_NO || ((mine & ISMINE_SPENDABLE) == ISMINE_NO)) continue;
+                // skip utxos that don't belong to the wallet
+                if (mine == ISMINE_NO) continue;
+                // skip utxos that for which we don't have the spending keys, if
+                // spending keys are required
+                bool isSpendable = (mine & ISMINE_SPENDABLE) != ISMINE_NO || (mine & ISMINE_WATCH_SOLVABLE) != ISMINE_NO;
+                if (selector.RequireSpendingKeys() && !isSpendable) continue;
                 // skip locked utxos
                 if (IsLockedCoin(wtxid, i)) continue;
                 // skip zero-valued utxos
@@ -1582,7 +1586,7 @@ SpendableInputs CWallet::FindSpendableInputs(
                 // skip notes which don't match the source
                 if (!this->SelectorMatchesAddress(selector, pa)) continue;
                 // skip notes for which we don't have the spending key
-                if (!this->HaveSproutSpendingKey(pa)) continue;
+                if (selector.RequireSpendingKeys() && !this->HaveSproutSpendingKey(pa)) continue;
                 // skip locked notes
                 if (IsLockedNote(jsop)) continue;
 
@@ -1646,7 +1650,7 @@ SpendableInputs CWallet::FindSpendableInputs(
                 // skip notes which do not match the source
                 if (!this->SelectorMatchesAddress(selector, pa)) continue;
                 // skip notes if we don't have the spending key
-                if (!this->HaveSaplingSpendingKeyForAddress(pa)) continue;
+                if (selector.RequireSpendingKeys() && !this->HaveSaplingSpendingKeyForAddress(pa)) continue;
                 // skip locked notes
                 if (IsLockedNote(op)) continue;
 
