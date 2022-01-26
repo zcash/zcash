@@ -40,6 +40,22 @@ class WalletAccountsTest(BitcoinTestFramework):
             assert_equal(expected[pool] * COIN, actual['pools'][pool]['valueZat'])
         assert_equal(actual['minimum_confirmations'], 1 if minconf is None else minconf)
 
+    # Check we only have balances in the expected pools.
+    # Remember that empty pools are omitted from the output.
+    def check_address_balance(self, address, expected, minconf=None):
+        if minconf is None:
+            actual = self.nodes[0].z_getbalanceforaddress(address)
+        else:
+            actual = self.nodes[0].z_getbalanceforaddress(address, minconf)
+        assert_equal(set(expected), set(actual['pools']))
+        for pool in expected:
+            assert_equal(expected[pool] * COIN, actual['pools'][pool]['valueZat'])
+        assert_equal(actual['minimum_confirmations'], 1 if minconf is None else minconf)
+
+    def check_balance(self, account, address, expected, minconf=None):
+        self.check_account_balance(account, expected, minconf)
+        self.check_address_balance(address, expected, minconf)
+
     def run_test(self):
         # With a new wallet, the first account will be 0.
         account0 = self.nodes[0].z_getnewaccount()
@@ -79,8 +95,8 @@ class WalletAccountsTest(BitcoinTestFramework):
         self.check_receiver_types(ua1, ['transparent', 'sapling'])
 
         # The balances of the accounts are all zero.
-        self.check_account_balance(0, {})
-        self.check_account_balance(1, {})
+        self.check_balance(0, ua0, {})
+        self.check_balance(1, ua1, {})
 
         # Manually send funds to one of the receivers in the UA.
         # TODO: Once z_sendmany supports UAs, receive to the UA instead of the receiver.
@@ -98,14 +114,14 @@ class WalletAccountsTest(BitcoinTestFramework):
         # The new balance should not be visible with the default minconf, but should be
         # visible with minconf=0.
         self.sync_all()
-        self.check_account_balance(0, {})
-        self.check_account_balance(0, {'sapling': 10}, 0)
+        self.check_balance(0, ua0, {})
+        self.check_balance(0, ua0, {'sapling': 10}, 0)
 
         self.nodes[2].generate(1)
         self.sync_all()
 
         # The default minconf should now detect the balance.
-        self.check_account_balance(0, {'sapling': 10})
+        self.check_balance(0, ua0, {'sapling': 10})
 
         # Manually send funds from the UA receiver.
         # TODO: Once z_sendmany supports UAs, send from the UA instead of the receiver.
@@ -125,8 +141,8 @@ class WalletAccountsTest(BitcoinTestFramework):
         # shown, as that transaction has been created and broadcast, and _might_ get mined
         # up until the transaction expires), or 9 (if we include the unmined transaction).
         self.sync_all()
-        self.check_account_balance(0, {})
-        self.check_account_balance(0, {'sapling': 9}, 0)
+        self.check_balance(0, ua0, {})
+        self.check_balance(0, ua0, {'sapling': 9}, 0)
 
 
 if __name__ == '__main__':

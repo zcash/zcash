@@ -3641,6 +3641,14 @@ UniValue z_getbalanceforaddress(const UniValue& params, bool fHelp)
     if (!fExperimentalOrchardWallet) {
         throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
     }
+
+    KeyIO keyIO(Params());
+    auto decoded = keyIO.DecodePaymentAddress(params[0].get_str());
+    if (!decoded.has_value()) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
+    }
+    auto address = decoded.value();
+
     int minconf = 1;
     if (params.size() > 1) {
         minconf = params[1].get_int();
@@ -3648,11 +3656,45 @@ UniValue z_getbalanceforaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
         }
     }
+
+    LOCK(pwalletMain->cs_wallet);
+
+    // Get the receivers for this address.
+    auto selector = pwalletMain->ToZTXOSelector(address, false);
+    if (!selector.has_value()) {
+        // The only way we'd reach this is if the address is a unified address for which
+        // we do not know its UFVK.
+        throw JSONRPCError(
+            RPC_INVALID_PARAMETER,
+            "Error: wallet does not have the Unified Full Viewing Key for the given address");
+    }
+
+    auto spendableInputs = pwalletMain->FindSpendableInputs(selector.value(), true, minconf);
+
+    CAmount transparentBalance = 0;
+    CAmount sproutBalance = 0;
+    CAmount saplingBalance = 0;
+    for (const auto& t : spendableInputs.utxos) {
+        transparentBalance += t.Value();
+    }
+    for (const auto& t : spendableInputs.sproutNoteEntries) {
+        sproutBalance += t.note.value();
+    }
+    for (const auto& t : spendableInputs.saplingNoteEntries) {
+        saplingBalance += t.note.value();
+    }
+
     UniValue pools(UniValue::VOBJ);
-    pools.pushKV("transparent", 99999.99);
-    pools.pushKV("sprout", 99999.99);
-    pools.pushKV("sapling", 99999.99);
-    pools.pushKV("orchard", 99999.99);
+    auto renderBalance = [&](std::string poolName, CAmount balance) {
+        if (balance > 0) {
+            UniValue pool(UniValue::VOBJ);
+            pool.pushKV("valueZat", balance);
+            pools.pushKV(poolName, pool);
+        }
+    };
+    renderBalance("transparent", transparentBalance);
+    renderBalance("sprout", sproutBalance);
+    renderBalance("sapling", saplingBalance);
 
     UniValue result(UniValue::VOBJ);
     result.pushKV("pools", pools);
