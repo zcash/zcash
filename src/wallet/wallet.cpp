@@ -469,8 +469,15 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
         // metadata that can be used to re-derive the spending key along with
         // the fingerprint of the associated full viewing key.
 
+        // Set up the bidirectional maps between the account ID and the UFVK ID.
         auto metaKey = std::make_pair(skmeta.GetSeedFingerprint(), skmeta.GetAccountId());
-        mapUnifiedAccountKeys.insert({metaKey, skmeta.GetKeyID()});
+        mapUnifiedAccountKeys.insert({metaKey, ufvkid});
+        // We set up the UFVKAddressMetadata with the correct account ID (so we identify
+        // the UFVK as corresponding to this account) and empty receivers data (as we
+        // haven't generated any addresses yet). We don't need to persist this directly,
+        // because we persist skmeta below, and mapUfvkAddressMetadata is populated in
+        // LoadUnifiedAccountMetadata().
+        mapUfvkAddressMetadata.insert({ufvkid, UFVKAddressMetadata(accountId)});
 
         // Add Transparent component to the wallet
         AddTransparentSecretKey(
