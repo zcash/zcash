@@ -22,7 +22,7 @@ if sys.version > '3':
     bchr = lambda x: bytes([x])
     bord = lambda x: x
 
-from pyblake2 import blake2b
+from hashlib import blake2b
 
 from binascii import hexlify
 import struct

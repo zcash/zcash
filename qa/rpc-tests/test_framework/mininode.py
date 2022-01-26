@@ -36,7 +36,7 @@ from threading import RLock
 from threading import Thread
 import logging
 import copy
-from pyblake2 import blake2b
+from hashlib import blake2b
 
 from .equihash import (
     gbp_basic,

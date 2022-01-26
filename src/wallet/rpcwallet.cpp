@@ -2978,6 +2978,7 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
             "\nDEPRECATED\n"
             "\nReturns a new shielded address for receiving payments.\n"
             "\nWith no arguments, returns a Sapling address.\n"
+            "Generating a Sprout address is not allowed after Canopy has activated.\n"
             "\nArguments:\n"
             "1. \"type\"         (string, optional, default=\"" + defaultType + "\") The type of address. One of [\""
             + ADDR_TYPE_SPROUT + "\", \"" + ADDR_TYPE_SAPLING + "\"].\n"
@@ -3003,6 +3004,13 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
 
     KeyIO keyIO(chainparams);
     if (addrType == ADDR_TYPE_SPROUT) {
+        if (chainparams.GetConsensus().NetworkUpgradeActive(chainActive.Height(), Consensus::UPGRADE_CANOPY)) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address type, \""
+                               + ADDR_TYPE_SPROUT + "\" is not allowed after Canopy");
+        }
+        if (IsInitialBlockDownload(Params().GetConsensus())) {
+            throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Error: Creating a Sprout address during initial block download is not supported.");
+        }
         return keyIO.EncodePaymentAddress(pwalletMain->GenerateNewSproutZKey());
     } else if (addrType == ADDR_TYPE_SAPLING) {
         auto saplingAddress = pwalletMain->GenerateNewLegacySaplingZKey();

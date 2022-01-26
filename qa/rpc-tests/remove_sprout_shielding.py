@@ -41,6 +41,7 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
 
         # Shield coinbase to Sprout on node 0. Should pass
         sprout_addr = self.nodes[0].z_getnewaddress('sprout')
+        sprout_addr_node2 = self.nodes[2].z_getnewaddress('sprout')
         myopid = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), sprout_addr, 0)['opid']
         wait_and_assert_operationid_status(self.nodes[0], myopid)
         print("taddr -> Sprout z_shieldcoinbase tx accepted before Canopy on node 0")
@@ -69,6 +70,7 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         # included in the next (or later) block, after Canopy has activated.
         self.nodes[0].generate(5)
         self.sync_all()
+        assert_equal(self.nodes[0].getblockchaininfo()['upgrades']['e9ff75a6']['status'], 'pending')
 
         # Shield coinbase to Sprout on node 0. Should fail
         sprout_addr = self.nodes[0].z_getnewaddress('sprout')
@@ -101,8 +103,17 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         wait_and_assert_operationid_status(self.nodes[0], merge_tx_1['opid'])
         print("Sprout -> Sprout z_mergetoaddress tx accepted at Canopy activation on node 0")
 
+        # Activate Canopy
         self.nodes[0].generate(1)
         self.sync_all()
+        assert_equal(self.nodes[0].getblockchaininfo()['upgrades']['e9ff75a6']['status'], 'active')
+
+        # Generating a Sprout address should fail after Canopy.
+        assert_raises_message(
+            JSONRPCException,
+            "Invalid address type, \"sprout\" is not allowed after Canopy",
+            self.nodes[0].z_getnewaddress, 'sprout')
+        print("Sprout z_getnewaddress rejected at Canopy activation on node 0")
 
         # Shield coinbase to Sapling on node 0. Should pass
         sapling_addr = self.nodes[0].z_getnewaddress('sapling')
@@ -115,7 +126,7 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         self.sync_all()
 
         # Create z_mergetoaddress Sprout -> Sprout transaction on node 1. Should pass
-        merge_tx_2 = self.nodes[1].z_mergetoaddress(["ANY_SPROUT"], self.nodes[2].z_getnewaddress('sprout'))
+        merge_tx_2 = self.nodes[1].z_mergetoaddress(["ANY_SPROUT"], sprout_addr_node2)
         wait_and_assert_operationid_status(self.nodes[1], merge_tx_2['opid'])
         print("Sprout -> Sprout z_mergetoaddress tx accepted at NU5 activation on node 1")
 

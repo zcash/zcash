@@ -13,7 +13,7 @@
 
 import struct
 
-from pyblake2 import blake2b
+from hashlib import blake2b
 
 from .mininode import ser_string, ser_uint256
 from .script import (
