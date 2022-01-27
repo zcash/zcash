@@ -57,6 +57,7 @@
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/member.hpp>
+#include <boost/multi_index/mem_fun.hpp>
 #include <set>
 
 // structs prior to refactor
@@ -261,6 +262,7 @@ struct notarized_checkpoint
     int32_t MoMoMoffset = 0;
     int32_t kmdstarti = 0;
     int32_t kmdendi = 0;
+    int32_t notarized_height_minus_MoMdepth()const{ return notarized_height - ( MoMdepth & 0xffff ); }
 };
 
 typedef boost::multi_index::multi_index_container<
@@ -273,10 +275,10 @@ typedef boost::multi_index::multi_index_container<
                         >
                 >, // sorted by nHeight
                 boost::multi_index::ordered_non_unique<
-                        boost::multi_index::member<
-                                notarized_checkpoint, int32_t, &notarized_checkpoint::notarized_height
+                        boost::multi_index::const_mem_fun<
+                                notarized_checkpoint, int32_t, &notarized_checkpoint::notarized_height_minus_MoMdepth
                         >
-                > // sorted by notarized_height
+                > // sorted by notarized_height - (MoMdepth & 0xffff)
         > > notarized_checkpoint_container;
                             
 struct komodo_ccdataMoM

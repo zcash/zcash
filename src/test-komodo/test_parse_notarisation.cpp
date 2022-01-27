@@ -78,6 +78,7 @@ namespace old_space {
         sp->MoMdepth = np->MoMdepth = MoMdepth;
         portable_mutex_unlock(&komodo_mutex);
     }
+
     struct notarized_checkpoint *komodo_npptr_for_height(int32_t height, int *idx)
     {
         char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; 
@@ -449,7 +450,9 @@ TEST(TestParseNotarisation, OldVsNew)
     size_t npoints_max =  notarized_checkpoints.size();
     EXPECT_EQ(npoints_max, 8043);
 
-    komodo_state new_ks;
+    char symbol[4] = { 0 };
+    char dest[4] = { 0 };
+    komodo_state* new_ks = komodo_stateptr(symbol, dest);
 
     // set the MoMdepth for tests
     notarized_checkpoints[npoints_max-1].MoMdepth = 1; // set the last one to a depth of 1
@@ -470,7 +473,7 @@ TEST(TestParseNotarisation, OldVsNew)
         notarized_checkpoints[idx].MoM,
         notarized_checkpoints[idx].MoMdepth);
 
-        ::komodo_notarized_update(&new_ks,
+        ::komodo_notarized_update(new_ks,
         notarized_checkpoints[idx].nHeight,
         notarized_checkpoints[idx].notarized_height,
         notarized_checkpoints[idx].notarized_hash,
@@ -481,17 +484,17 @@ TEST(TestParseNotarisation, OldVsNew)
             max_chain_height = notarized_checkpoints[idx].nHeight;
     }
 
-    EXPECT_EQ(old_space::sp->NUM_NPOINTS, new_ks.NumCheckpoints() );
+    EXPECT_EQ(old_space::sp->NUM_NPOINTS, new_ks->NumCheckpoints() );
 
     // Check retrieval of notarization for height
 
-    // fails at 2449230
-    bool all_good = true;
     for (size_t i = 0; i <= max_chain_height+100; i++)
     {
         int idx_old = 0;
         notarized_checkpoint *np_old = old_space::komodo_npptr_for_height(i, &idx_old);
         const notarized_checkpoint *np_new = ::komodo_npptr(i);
+        EXPECT_TRUE( equal(np_old, np_new) );
+        /*
         if (!equal(np_old, np_new) )
         {
             std::cout << "Chceckpoints did not match at index " << std::to_string(i);
@@ -509,53 +512,24 @@ TEST(TestParseNotarisation, OldVsNew)
                         << " and a notarization height of " << std::to_string(np_new->notarized_height);
             std::cout << ".\n";
             all_good = false;
-            FAIL();
         }
-        }
-
-    EXPECT_TRUE(all_good);
-
-    /*
-        DONE:
-
-        old_space::komodo_npptr_for_height - new_space::komodo_npptr
-        old_space::komodo_notarizeddata    - new_space::komodo_notarizeddata
-
-        TODO:
-
-        - komodo_notarized_height
-
-    */
+        */
+    }
 
     // Check retrieval of data using komodo_notarizeddata()
 
-    // 2524223, 2524192, 2441342 - FAIL
-    //int32_t arr_nheights[] = { 2524224, 2524223, 2524210, 2524209, 2524200, 2524192, 2524190, 2524171, 2524170, 2441342 };
-    //
-    //size_t max_arr_nheights = sizeof(arr_nheights)/sizeof(arr_nheights[0]);
-    //int32_t old_ret_height, new_ret_height;
-
-    /*
-    for (size_t i = 0; i < max_height; i++) {
-        uint256 ret_notarized_hashp, ret_notarized_desttxidp;
+    for (size_t i = 0; i < max_chain_height; i++) {
+        uint256 old_notarized_hash, old_notarized_desttxid;
         int32_t old_ret_height = old_space::komodo_notarizeddata(i, 
-                &ret_notarized_hashp, &ret_notarized_desttxidp);
+                &old_notarized_hash, &old_notarized_desttxid);
 
-        int32_t new_ret_height = komodo_notarizeddata(i, &ret_notarized_hashp, &ret_notarized_desttxidp);
+        uint256 new_notarized_hash;
+        uint256 new_notarized_desttxid;
+        int32_t new_ret_height = komodo_notarizeddata(i, &new_notarized_hash, &new_notarized_desttxid);
         EXPECT_EQ(old_ret_height, new_ret_height);
-        // TODO: Check the out params for equality
+        EXPECT_EQ(old_notarized_hash, new_notarized_hash);
+        EXPECT_EQ(old_notarized_desttxid, new_notarized_desttxid);
     }
-    */
-    // check some specific locations (0, 777)
-    /*
-    notarized_checkpoint *np_old = old_space::komodo_npptr_at(0);
-
-    std::cout << "komodo_npptr_at(" << (0) << ") = " << (*np_old) << std::endl;
-    np_old = old_space::komodo_npptr_at(npoints_max-1);
-    std::cout << "komodo_npptr_at(" << (npoints_max-1) << ") = " << (*np_old) << std::endl;
-    np_old = old_space::komodo_npptr_at(777);
-    std::cout << "komodo_npptr_at(" << (777) << ") = " << (*np_old) << std::endl;
-    */
 
     // check komodo_prevMoMheight()
     EXPECT_EQ( old_space::komodo_prevMoMheight(), ::komodo_prevMoMheight());
