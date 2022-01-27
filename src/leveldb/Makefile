@@ -107,8 +107,8 @@ clean:
 	-rm -rf ios-x86/* ios-arm/*
 
 $(LIBRARY): $(LIBOBJECTS)
-	rm -f $@
-	$(AR) -rs $@ $(LIBOBJECTS)
+	@rm -f $@
+	@$(AR) -rs $@ $(LIBOBJECTS)
 
 db_bench: db/db_bench.o $(LIBOBJECTS) $(TESTUTIL)
 	$(CXX) $(LDFLAGS) db/db_bench.o $(LIBOBJECTS) $(TESTUTIL) -o $@ $(LIBS)
@@ -189,8 +189,8 @@ write_batch_test: db/write_batch_test.o $(LIBOBJECTS) $(TESTHARNESS)
 	$(CXX) $(LDFLAGS) db/write_batch_test.o $(LIBOBJECTS) $(TESTHARNESS) -o $@ $(LIBS)
 
 $(MEMENVLIBRARY) : $(MEMENVOBJECTS)
-	rm -f $@
-	$(AR) -rs $@ $(MEMENVOBJECTS)
+	@rm -f $@
+	@$(AR) -rs $@ $(MEMENVOBJECTS)
 
 memenv_test : helpers/memenv/memenv_test.o $(MEMENVLIBRARY) $(LIBRARY) $(TESTHARNESS)
 	$(CXX) $(LDFLAGS) helpers/memenv/memenv_test.o $(MEMENVLIBRARY) $(LIBRARY) $(TESTHARNESS) -o $@ $(LIBS)
@@ -220,8 +220,8 @@ IOSARCH=-arch armv6 -arch armv7 -arch armv7s -arch arm64
 
 else
 .cc.o:
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 .c.o:
-	$(CC) $(CFLAGS) -c $< -o $@
+	@$(CC) $(CFLAGS) -c $< -o $@
 endif

@@ -44,22 +44,22 @@ then
 Usage:
 $0 --help
   Show this help message and exit.
-$0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --enable-proton ] [ --disable-libs ] [ MAKEARGS... ]
-  Build Zcash and most of its transitive dependencies from
-  source. MAKEARGS are applied to both dependencies and Zcash itself.
-  If --enable-lcov is passed, Zcash is configured to add coverage
+$0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --enable-proton ] [ --disable-libs ] [ --enable-debug ] [ MAKEARGS... ]
+  Build Komodo and most of its transitive dependencies from
+  source. MAKEARGS are applied to both dependencies and Komodo itself.
+  If --enable-lcov is passed, Komodo is configured to add coverage
   instrumentation, thus enabling "make cov" to work.
-  If --disable-tests is passed instead, the Zcash tests are not built.
-  If --disable-mining is passed, Zcash is configured to not build any mining
+  If --disable-tests is passed instead, the Komodo tests are not built.
+  If --disable-mining is passed, Komodo is configured to not build any mining
   code. It must be passed after the test arguments, if present.
-  If --enable-proton is passed, Zcash is configured to build the Apache Qpid Proton
+  If --enable-proton is passed, Komodo is configured to build the Apache Qpid Proton
   library required for AMQP support. This library is not built by default.
   It must be passed after the test/mining arguments, if present.
+  If --enable-debug is passed, Komodo is built with debugging information. It
+  must be passed after the previous arguments, if present.
 EOF
     exit 0
 fi
-
-set -x
 
 # If --enable-lcov is the first argument, enable lcov coverage support:
 LCOV_ARG=''
@@ -92,24 +92,26 @@ then
     shift
 fi
 
-eval "$MAKE" --version
-as --version
-ld -v
+# If --enable-debug is the next argument, enable debugging
+DEBUGGING_ARG=''
+if [ "x${1:-}" = 'x--enable-debug' ]
+then
+    DEBUG=1
+    export DEBUG
+    DEBUGGING_ARG='--enable-debug'
+    shift
+fi
+
+if [[ -z "${VERBOSE-}" ]]; then
+   VERBOSITY="--enable-silent-rules"
+else
+   VERBOSITY="--disable-silent-rules"
+fi
 
 HOST="$HOST" BUILD="$BUILD" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
+
 ./autogen.sh
 
-CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" "$CONFIGURE_FLAGS" CXXFLAGS='-g'
+CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" "$DEBUGGING_ARG" "$CONFIGURE_FLAGS" CXXFLAGS='-g'
 
-#BUILD CCLIB
-
-WD=$PWD
-
-cd src/cc
-echo $PWD
-./makecustom
-
-
-cd $WD
-
-"$MAKE" "$@" V=1
+"$MAKE" "$@"

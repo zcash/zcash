@@ -3,6 +3,7 @@
 #include "crosschain.h"
 #include "cc/CCinclude.h"
 #include "komodo_defs.h"
+#include "komodo_hardfork.h"
 #include "hex.h"
 #include <cstring>
 
