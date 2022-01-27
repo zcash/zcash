@@ -4010,18 +4010,15 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
     // Collect OutgoingViewingKeys for recovering output information
     std::set<uint256> ovks;
     {
-        // Generate the common ovk for recovering t->z outputs.
+        // Generate the old, pre-UA accounts OVK for recovering t->z outputs.
         HDSeed seed = pwalletMain->GetHDSeedForRPC();
         ovks.insert(ovkForShieldingFromTaddr(seed));
 
-        auto legacyAcctUFVK = pwalletMain->GetUnifiedFullViewingKeyByAccount(ZCASH_LEGACY_ACCOUNT);
-        if (legacyAcctUFVK.has_value()) {
-            auto legacyAcctOVKs = legacyAcctUFVK.value().GetTransparentOVKsForShielding();
-            if (legacyAcctOVKs.has_value()) {
-                ovks.insert(legacyAcctOVKs.value().first);
-                ovks.insert(legacyAcctOVKs.value().second);
-            }
-        }
+        // Generate the OVKs for shielding from the legacy UA account
+        auto legacyKey = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+        auto legacyAcctOVKs = legacyKey.GetOVKsForShielding();
+        ovks.insert(legacyAcctOVKs.first);
+        ovks.insert(legacyAcctOVKs.second);
     }
 
     // Sapling spends
@@ -4385,6 +4382,24 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                         RPC_INVALID_ADDRESS_OR_KEY,
                         "Invalid from address, no payment source found for address.");
             }
+
+            auto selectorAccount = pwalletMain->FindAccountForSelector(ztxoSelectorOpt.value());
+            std::visit(match {
+                [&](const libzcash::UnifiedAddress& ua) {
+                    if (!selectorAccount.has_value() || selectorAccount.value() == ZCASH_LEGACY_ACCOUNT) {
+                        throw JSONRPCError(
+                                RPC_INVALID_ADDRESS_OR_KEY,
+                                "Invalid from address, UA does not correspond to a known account.");
+                    }
+                },
+                [&](const auto& other) {
+                    if (selectorAccount.has_value() && selectorAccount.value() != ZCASH_LEGACY_ACCOUNT) {
+                        throw JSONRPCError(
+                                RPC_INVALID_ADDRESS_OR_KEY,
+                                "Invalid from address, bare address does not correspond the legacy account.");
+                    }
+                }
+            }, decoded.value());
 
             return ztxoSelectorOpt.value();
         }

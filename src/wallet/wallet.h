@@ -1052,7 +1052,8 @@ private:
     /* Add a transparent secret key to the wallet. Internal use only. */
     CPubKey AddTransparentSecretKey(
             const uint256& seedFingerprint,
-            const std::pair<CKey, HDKeyPath>& extSecret);
+            const CKey& secret,
+            const HDKeyPath& keyPath);
 
 protected:
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);
@@ -1255,6 +1256,11 @@ public:
      */
     std::optional<libzcash::AccountId> FindAccountForSelector(const ZTXOSelector& paymentSource) const;
 
+    /**
+     * Generate a change address for the specified account. If a transparent change
+     * address is requested, this will generate a fresh diversified unified address,
+     * and return the associated transparent change address.
+     */
     std::optional<libzcash::RecipientAddress> GenerateChangeAddressForAccount(
             libzcash::AccountId accountId,
             std::set<libzcash::ChangeType> changeOptions);
@@ -1294,7 +1300,7 @@ public:
      * keystore implementation
      * Generate a new key
      */
-    CPubKey GenerateNewKey();
+    CPubKey GenerateNewKey(bool isChangeKey);
     //! Adds a key to the store, and saves it to disk.
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
     //! Adds a key to the store, without saving it to disk (used by LoadWallet)

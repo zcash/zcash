@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    CPubKey demoPubkey = pwalletMain->GenerateNewKey();
+    CPubKey demoPubkey = pwalletMain->GenerateNewKey(false);
     CTxDestination demoAddress(CTxDestination(demoPubkey.GetID()));
     UniValue retValue;
     string strPurpose = "receive";
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
         pwalletMain->SetAddressBook(demoPubkey.GetID(), "", strPurpose);
     });
 
-    CPubKey setaccountDemoPubkey = pwalletMain->GenerateNewKey();
+    CPubKey setaccountDemoPubkey = pwalletMain->GenerateNewKey(false);
     CTxDestination setaccountDemoAddress(CTxDestination(setaccountDemoPubkey.GetID()));
 
     /*********************************
@@ -1245,19 +1245,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         BOOST_CHECK( msg.find("Insufficient funds") != string::npos);
     }
 
-    // minconf cannot be zero when sending from zaddr
-    {
-        TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
-        try {
-            auto selector = pwalletMain->ToZTXOSelector(zaddr1, true).value();
-            std::vector<SendManyRecipient> recipients = {SendManyRecipient(taddr1, 100*COIN, "DEADBEEF")};
-            std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, selector, recipients, 0));
-            BOOST_CHECK(false); // Fail test if an exception is not thrown
-        } catch (const UniValue& objError) {
-            BOOST_CHECK(find_error(objError, "Minconf cannot be zero when sending from a shielded address"));
-        }
-    }
-
     // there are no unspent notes to spend
     {
         auto selector = pwalletMain->ToZTXOSelector(zaddr1, true).value();
@@ -1338,7 +1325,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 
     KeyIO keyIO(Params());
     // add keys manually
-    auto taddr = pwalletMain->GenerateNewKey().GetID();
+    auto taddr = pwalletMain->GenerateNewKey(false).GetID();
     std::string taddr1 = keyIO.EncodeDestination(taddr);
     auto pa = pwalletMain->GenerateNewLegacySaplingZKey();
 
@@ -1402,13 +1389,19 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
         tx.vShieldedOutput[0].cmu,
         tx.vShieldedOutput[0].ephemeralKey));
 
-    // We should be able to decrypt the outCiphertext with the ovk
-    // generated for transparent addresses
-    std::optional<MnemonicSeed> seed = pwalletMain->GetMnemonicSeed();
-    BOOST_ASSERT(seed.has_value());
+    auto accountKey = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+    auto ovks = accountKey.GetOVKsForShielding();
+    // We should not be able to decrypt with the internal change OVK for shielding
+    BOOST_CHECK(!AttemptSaplingOutDecryption(
+        tx.vShieldedOutput[0].outCiphertext,
+        ovks.first,
+        tx.vShieldedOutput[0].cv,
+        tx.vShieldedOutput[0].cmu,
+        tx.vShieldedOutput[0].ephemeralKey));
+    // We should be able to decrypt with the external OVK for shielding
     BOOST_CHECK(AttemptSaplingOutDecryption(
         tx.vShieldedOutput[0].outCiphertext,
-        ovkForShieldingFromTaddr(seed.value()),
+        ovks.second,
         tx.vShieldedOutput[0].cv,
         tx.vShieldedOutput[0].cmu,
         tx.vShieldedOutput[0].ephemeralKey));
@@ -1994,7 +1987,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
 void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
 
     auto AddTrx = [&consensusParams]() {
-        auto taddr = pwalletMain->GenerateNewKey().GetID();
+        auto taddr = pwalletMain->GenerateNewKey(false).GetID();
         CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, 1);
         CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
         mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));

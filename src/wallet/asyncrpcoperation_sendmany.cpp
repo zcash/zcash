@@ -266,15 +266,15 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     std::visit(match {
         [&](const CKeyID& keyId) {
             auto accountId = selectorAccountId.value_or(ZCASH_LEGACY_ACCOUNT);
-            builder_.SendChangeTo(
-                    pwalletMain->GenerateChangeAddressForAccount(accountId, { libzcash::ChangeType::Sapling }).value(),
-                    ovks.first);
+            auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
+                    accountId, { libzcash::ChangeType::Transparent }).value();
+            builder_.SendChangeTo(changeAddr, ovks.first);
         },
         [&](const CScriptID& scriptId) {
             auto accountId = selectorAccountId.value_or(ZCASH_LEGACY_ACCOUNT);
-            builder_.SendChangeTo(
-                    pwalletMain->GenerateChangeAddressForAccount(accountId, { libzcash::ChangeType::Sapling }).value(),
-                    ovks.first);
+            auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
+                    accountId, { libzcash::ChangeType::Transparent }).value();
+            builder_.SendChangeTo(changeAddr, ovks.first);
         },
         [&](const libzcash::SproutPaymentAddress& addr) {
             // for Sprout, we return change to the originating address.
