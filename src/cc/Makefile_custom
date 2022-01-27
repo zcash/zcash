@@ -10,9 +10,9 @@ RELEASEFLAGS	= -O2 -D NDEBUG -combine -fwhole-program
 $(info $(OS))
 OS := $(shell uname -s)
 $(info $(OS))
-TARGET  = ../libcc.so
-TARGET_DARWIN = ../libcc.dylib
-TARGET_WIN = ../libcc.dll
+TARGET  = customcc.so
+TARGET_DARWIN = customcc.dylib
+TARGET_WIN = customcc.dll
 SOURCES = cclib.cpp
 #HEADERS = $(shell echo ../cryptoconditions/include/*.h) -I/usr/local/Cellar/gcc\@8/8.3.0/include/c++/8.3.0/
 
@@ -22,13 +22,16 @@ $(TARGET): $(SOURCES)
 	$(info Building cclib to src/)
 ifeq ($(OS),Darwin)
 	$(CC_DARWIN) $(CFLAGS_DARWIN) $(DEBUGFLAGS) -o $(TARGET_DARWIN) -c $(SOURCES)
+	cp $(TARGET_DARWIN) ../libcc.dylib
 else ifeq ($(HOST),x86_64-w64-mingw32)
 	$(info WINDOWS)
 	$(CC_WIN) $(CFLAGS_WIN) $(DEBUGFLAGS) -o $(TARGET_WIN) -c $(SOURCES)
+	cp $(TARGET_WIN) ../libcc.dll
 #else ifeq ($(WIN_HOST),True) - todo: pass ENV var from build.sh if WIN host
 else
 	$(info LINUX)
 	$(CC) $(CFLAGS) $(DEBUGFLAGS) -o $(TARGET) -c $(SOURCES)
+	cp $(TARGET) ../libcc.so
 endif
 
 clean:

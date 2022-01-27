@@ -153,10 +153,10 @@ CFLAGS_FOR_BUILD += -Wall -Wextra -Wno-unused-function
 gen_context_OBJECTS = gen_context.o
 gen_context_BIN = gen_context$(BUILD_EXEEXT)
 gen_%.o: src/gen_%.c
-	$(AM_V_at)$(CC_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) $(CFLAGS_FOR_BUILD) -c $< -o $@
+	$(CC_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) $(CFLAGS_FOR_BUILD) -c $< -o $@
 
 $(gen_context_BIN): $(gen_context_OBJECTS)
-	$(AM_V_at)$(CC_FOR_BUILD) $^ -o $@
+	$(CC_FOR_BUILD) $^ -o $@
 
 $(libsecp256k1_la_OBJECTS): src/ecmult_static_context.h
 $(tests_OBJECTS): src/ecmult_static_context.h
