@@ -1223,6 +1223,20 @@ public:
     static bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet);
 
     /**
+     * Obtain the ZTXO selector for the specified account ID.
+     *
+     * Returns `std::nullopt` if the account ID has not been generated yet by
+     * the wallet.
+     *
+     * If the `requireSpendingKey` flag is set, this will only return a selector
+     * that will choose outputs for which this wallet holds the spending keys.
+     */
+    std::optional<ZTXOSelector> ZTXOSelectorForAccount(
+            libzcash::AccountId account,
+            bool requireSpendingKey,
+            std::set<libzcash::ReceiverType> receiverTypes={}) const;
+
+    /**
      * Obtain the ZTXO selector for the specified payment address. If the
      * `requireSpendingKey` flag is set, this will only return a selector
      * that will choose outputs for which this wallet holds the spending keys.
