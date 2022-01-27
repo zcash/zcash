@@ -453,7 +453,7 @@ const notarized_checkpoint *komodo_state::CheckpointAtHeight(int32_t height) con
         while (true)
         {
             if ( itr->MoMdepth != 0 
-                    && height > itr->notarized_height-(itr->MoMdepth&0xffff) 
+                    && height > itr->notarized_height-(itr->MoMdepth&0xffff) // 2s compliment if negative
                     && height <= itr->notarized_height )
             {
                 return &(*itr);

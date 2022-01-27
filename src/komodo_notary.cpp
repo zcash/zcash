@@ -432,7 +432,6 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
     }
 
     notarized_checkpoint new_cp;
-    memset(&new_cp, 0, sizeof(new_cp));
     new_cp.nHeight = nHeight;
     new_cp.notarized_height = notarized_height;
     new_cp.notarized_hash = notarized_hash;

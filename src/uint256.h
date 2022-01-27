@@ -130,7 +130,7 @@ public:
  */
 class uint256 : public base_blob<256> {
 public:
-    uint256() {}
+    uint256() : base_blob<256>() {}
     uint256(const base_blob<256>& b) : base_blob<256>(b) {}
     explicit uint256(const std::vector<unsigned char>& vch) : base_blob<256>(vch) {}
 

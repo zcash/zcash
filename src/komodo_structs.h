@@ -254,13 +254,13 @@ struct notarized_checkpoint
     uint256 notarized_desttxid;
     uint256 MoM;
     uint256 MoMoM;
-    int32_t nHeight;
-    int32_t notarized_height;
-    int32_t MoMdepth;
-    int32_t MoMoMdepth;
-    int32_t MoMoMoffset;
-    int32_t kmdstarti;
-    int32_t kmdendi;
+    int32_t nHeight = 0;
+    int32_t notarized_height = 0;
+    int32_t MoMdepth = 0;
+    int32_t MoMoMdepth = 0;
+    int32_t MoMoMoffset = 0;
+    int32_t kmdstarti = 0;
+    int32_t kmdendi = 0;
 };
 
 typedef boost::multi_index::multi_index_container<

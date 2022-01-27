@@ -55,7 +55,8 @@ namespace old_space {
     pthread_mutex_t komodo_mutex,staked_mutex;
 
     /* komodo_notary.h */
-    void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t notarized_height,uint256 notarized_hash,uint256 notarized_desttxid,uint256 MoM,int32_t MoMdepth)
+    void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t notarized_height,
+            uint256 notarized_hash,uint256 notarized_desttxid,uint256 MoM,int32_t MoMdepth)
     {
         struct notarized_checkpoint *np;
         if ( notarized_height >= nHeight )
@@ -79,16 +80,21 @@ namespace old_space {
     }
     struct notarized_checkpoint *komodo_npptr_for_height(int32_t height, int *idx)
     {
-        char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; int32_t i; struct komodo_state *sp; struct notarized_checkpoint *np = 0;
+        char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; 
+        int32_t i; 
+        struct komodo_state *sp; 
+        struct notarized_checkpoint *np = 0;
         //if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
         sp = &old_space::ks_old;
 
         {
-            for (i=sp->NUM_NPOINTS-1; i>=0; i--)
+            for (i=sp->NUM_NPOINTS-1; i>=0; i--) // iterate backwards from the end of the array
             {
                 *idx = i;
                 np = &sp->NPOINTS[i];
-                if ( np->MoMdepth != 0 && height > np->notarized_height-(np->MoMdepth&0xffff) && height <= np->notarized_height )
+                if ( np->MoMdepth != 0 
+                        && height > np->notarized_height-(np->MoMdepth&0xffff) 
+                        && height <= np->notarized_height )
                     return(np);
             }
         }
@@ -435,22 +441,24 @@ bool equal(const notarized_checkpoint* lhs, const notarized_checkpoint* rhs)
     return true;
 }
 
- TEST(TestParseNotarisation, OldVsNew)
- {
+TEST(TestParseNotarisation, OldVsNew)
+{
     // see test_parse_notarisation.h for notarized_checkpoints
     // how many are in the array?
-    size_t npoints_max =  sizeof(notarized_checkpoints)/sizeof(notarized_checkpoints[0]);
+    std::vector<notarized_checkpoint> notarized_checkpoints = get_test_checkpoints();
+    size_t npoints_max =  notarized_checkpoints.size();
     EXPECT_EQ(npoints_max, 8043);
 
     komodo_state new_ks;
 
-    // [ !!! ] set the MoMdepth for tests [ !!! ]
-    notarized_checkpoints[npoints_max-1].MoMdepth = 1;
-    notarized_checkpoints[npoints_max-3].MoMdepth = 20;
+    // set the MoMdepth for tests
+    notarized_checkpoints[npoints_max-1].MoMdepth = 1; // set the last one to a depth of 1
+    notarized_checkpoints[npoints_max-3].MoMdepth = 20; // set the one 3 from the end to a depth of 20
 
-    notarized_checkpoints[777].MoM.SetHex("0xdead");
+    notarized_checkpoints[777].MoM.SetHex("0xdead"); // set the 778th to a depth of 1
     notarized_checkpoints[777].MoMdepth = 1;
 
+    int32_t max_chain_height = 0;
     // fill the structures
     for (size_t idx = 0; idx < npoints_max; idx++)
     {
@@ -469,29 +477,41 @@ bool equal(const notarized_checkpoint* lhs, const notarized_checkpoint* rhs)
         notarized_checkpoints[idx].notarized_desttxid,
         notarized_checkpoints[idx].MoM,
         notarized_checkpoints[idx].MoMdepth);
+        if (notarized_checkpoints[idx].nHeight > max_chain_height)
+            max_chain_height = notarized_checkpoints[idx].nHeight;
     }
 
     EXPECT_EQ(old_space::sp->NUM_NPOINTS, new_ks.NumCheckpoints() );
 
     // Check retrieval of notarization for height
 
-    // 2524171 - FAIL
-    //int32_t arr_heights[] = { 2524224, 2524223, 2524210, 2524209, 2524200, 2524190, 2524171, 2524170 };
-    //size_t max_arr_heights = sizeof(arr_heights)/sizeof(arr_heights[0]);
-
-    int32_t max_height = 2524223;
+    // fails at 2449230
     bool all_good = true;
-    for (size_t i = 0; i < max_height; i++)
+    for (size_t i = 0; i <= max_chain_height+100; i++)
     {
         int idx_old = 0;
         notarized_checkpoint *np_old = old_space::komodo_npptr_for_height(i, &idx_old);
         const notarized_checkpoint *np_new = ::komodo_npptr(i);
         if (!equal(np_old, np_new) )
         {
-            std::cout << "Chceckpoints did not match at index " << std::to_string(i) << std::endl;
+            std::cout << "Chceckpoints did not match at index " << std::to_string(i);
+            if (np_old == nullptr)
+                std::cout << " Old is nullptr";
+            else
+                std::cout << ". Old has MoM depth of " << std::to_string(np_old->MoMdepth)
+                        << " and a chain height of " << std::to_string(np_old->nHeight)
+                        << " and a notarization height of " << std::to_string(np_old->notarized_height);
+            if (np_new == nullptr)
+                std::cout << ". New is nullptr";
+            else
+                std::cout << ". New has MoM depth of " << std::to_string(np_new->MoMdepth)
+                        << " and a chain height of " << std::to_string(np_new->nHeight)
+                        << " and a notarization height of " << std::to_string(np_new->notarized_height);
+            std::cout << ".\n";
             all_good = false;
+            FAIL();
         }
-    }
+        }
 
     EXPECT_TRUE(all_good);
 
@@ -540,7 +560,7 @@ bool equal(const notarized_checkpoint* lhs, const notarized_checkpoint* rhs)
     // check komodo_prevMoMheight()
     EXPECT_EQ( old_space::komodo_prevMoMheight(), ::komodo_prevMoMheight());
 
- }
+}
 
 // for l in `g 'parse notarisation' ~/.komodo/debug.log | pyline 'l.split()[8]'`; do hoek decodeTx '{"hex":"'`src/komodo-cli getrawtransaction "$l"`'"}' | jq '.outputs[1].script.op_return' | pyline 'import base64; print base64.b64decode(l).encode("hex")'; done
 
