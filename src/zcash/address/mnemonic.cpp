@@ -5,8 +5,6 @@
 #include "random.h"
 
 #include "mnemonic.h"
-
-#include "bip44.h"
 #include "unified.h"
 
 using namespace libzcash;
@@ -33,7 +31,7 @@ MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, siz
         // for a valid diversifier; unlike in the unified spending key case, diversifier
         // indices don't need to line up with anything.
         if (ZcashdUnifiedSpendingKey::ForAccount(seed, bip44CoinType, 0).has_value() &&
-            Bip44AccountChains::ForAccount(seed, bip44CoinType, ZCASH_LEGACY_ACCOUNT).has_value())  {
+            transparent::AccountKey::ForAccount(seed, bip44CoinType, ZCASH_LEGACY_ACCOUNT).has_value())  {
             return seed;
         }
     }

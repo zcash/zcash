@@ -195,10 +195,10 @@ std::optional<CChainablePubKey> libzcash::UnifiedFullViewingKey::GetTransparentK
     }
 }
 
-bool libzcash::UnifiedFullViewingKeyBuilder::AddTransparentKey(const CChainablePubKey& key) {
+bool libzcash::UnifiedFullViewingKeyBuilder::AddTransparentKey(const transparent::AccountPubKey& key) {
     if (t_bytes.has_value()) return false;
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << key;
+    ss << key.GetPubKey();
     assert(ss.size() == 65);
     std::vector<uint8_t> ss_bytes(ss.begin(), ss.end());
     t_bytes = ss_bytes;

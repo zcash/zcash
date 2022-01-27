@@ -201,7 +201,7 @@ private:
 public:
     UnifiedFullViewingKeyBuilder(): t_bytes(std::nullopt), sapling_bytes(std::nullopt) {}
 
-    bool AddTransparentKey(const CChainablePubKey&);
+    bool AddTransparentKey(const transparent::AccountPubKey&);
     bool AddSaplingKey(const SaplingDiversifiableFullViewingKey&);
 
     std::optional<UnifiedFullViewingKey> build() const;

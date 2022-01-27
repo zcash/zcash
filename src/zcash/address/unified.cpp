@@ -4,7 +4,6 @@
 
 #include "zcash/Address.hpp"
 #include "unified.h"
-#include "bip44.h"
 
 using namespace libzcash;
 
@@ -32,23 +31,19 @@ std::optional<ZcashdUnifiedSpendingKey> ZcashdUnifiedSpendingKey::ForAccount(
         const HDSeed& seed,
         uint32_t bip44CoinType,
         AccountId accountId) {
-    ZcashdUnifiedSpendingKey usk;
 
-    auto transparentKey = DeriveBip44TransparentAccountKey(seed, bip44CoinType, accountId);
+    auto transparentKey = transparent::AccountKey::ForAccount(seed, bip44CoinType, accountId);
     if (!transparentKey.has_value()) return std::nullopt;
-    usk.transparentKey = transparentKey.value().first;
 
     auto saplingKey = SaplingExtendedSpendingKey::ForAccount(seed, bip44CoinType, accountId);
-    usk.saplingKey = saplingKey.first;
 
-    return usk;
+    return ZcashdUnifiedSpendingKey(transparentKey.value(), saplingKey.first);
 }
 
 UnifiedFullViewingKey ZcashdUnifiedSpendingKey::ToFullViewingKey() const {
     UnifiedFullViewingKeyBuilder builder;
 
-    auto extPubKey = transparentKey.Neuter();
-    builder.AddTransparentKey(CChainablePubKey::FromParts(extPubKey.chaincode, extPubKey.pubkey).value());
+    builder.AddTransparentKey(transparentKey.ToAccountPubKey());
     builder.AddSaplingKey(saplingKey.ToXFVK());
 
     // This call to .value() is safe as ZcashdUnifiedSpendingKey values are always
@@ -95,22 +90,14 @@ std::optional<UnifiedAddress> ZcashdUnifiedFullViewingKey::Address(
 
     if (transparentKey.has_value() && receiverTypes.count(ReceiverType::P2PKH) > 0) {
         const auto& tkey = transparentKey.value();
+
         auto childIndex = j.ToTransparentChildIndex();
         if (!childIndex.has_value()) return std::nullopt;
 
-        CPubKey externalKey;
-        ChainCode externalChainCode;
-        if (!tkey.GetPubKey().Derive(externalKey, externalChainCode, 0, tkey.GetChainCode())) {
-            return std::nullopt;
-        }
+        auto externalPubkey = tkey.DeriveExternal(childIndex.value());
+        if (!externalPubkey.has_value()) return std::nullopt;
 
-        CPubKey childKey;
-        ChainCode childChainCode;
-        if (externalKey.Derive(childKey, childChainCode, childIndex.value(), externalChainCode)) {
-            ua.AddReceiver(childKey.GetID());
-        } else {
-            return std::nullopt;
-        }
+        ua.AddReceiver(externalPubkey.value().GetID());
     }
 
     return ua;
@@ -135,6 +122,57 @@ std::optional<std::pair<UnifiedAddress, diversifier_index_t>> ZcashdUnifiedFullV
     return FindAddress(j, {ReceiverType::P2PKH, ReceiverType::Sapling});
 }
 
-RecipientAddress ZcashdUnifiedFullViewingKey::GetChangeAddress(const std::set<ChangeType>& changeOptions) const {
-    throw std::runtime_error("TODO");
+std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(const ChangeRequest& req) const {
+    std::optional<RecipientAddress> addr;
+    std::visit(match {
+        [&](const TransparentChangeRequest& req) {
+            auto changeKey = this->GetTransparentChangeAddress(req.GetIndex());
+            if (changeKey.has_value()) {
+                addr = changeKey.value();
+            }
+        },
+        [&](const SaplingChangeRequest& req) {
+            std::optional<RecipientAddress> addr;
+            // currently true by construction, as a UFVK must have a shielded component
+            if (saplingKey.has_value()) {
+                addr = saplingKey.value().GetChangeAddress();
+            }
+        }
+    }, req);
+    return addr;
 }
+
+std::optional<CKeyID> ZcashdUnifiedFullViewingKey::GetTransparentChangeAddress(const diversifier_index_t& j) const {
+    if (transparentKey.has_value()) {
+        auto childIndex = j.ToTransparentChildIndex();
+        if (!childIndex.has_value()) return std::nullopt;
+
+        auto changeKey = transparentKey.value().DeriveInternal(childIndex.value());
+        if (!changeKey.has_value())  return std::nullopt;
+
+        return changeKey.value().GetID();
+    } else {
+        return std::nullopt;
+    }
+}
+
+//std::optional<std::pair<uint256, uint256>> ZcashdUnifiedFullViewingKey::GetTransparentOVKsForShielding() const {
+//    if (transparentKey.has_value()) {
+//        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+//        ss << transparentKey.value().GetPubKey();
+//        assert(ss.size() == 65);
+//        CSerializeData ss_bytes(ss.begin(), ss.end());
+//
+//        uint256 internalOVK;
+//        uint256 externalOVK;
+//
+//        assert(transparent_key_ovks(
+//            reinterpret_cast<unsigned char*>(ss_bytes.data()),
+//            internalOVK.begin(),
+//            externalOVK.begin()));
+//
+//        return std::make_pair(internalOVK, externalOVK);
+//    } else {
+//        return std::nullopt;
+//    }
+//}

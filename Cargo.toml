@@ -47,7 +47,7 @@ tracing-appender = "0.2"
 zcash_address = "0.0"
 zcash_history = "0.2"
 zcash_note_encryption = "0.1"
-zcash_primitives = "0.5"
+zcash_primitives = { version = "0.5", features = ["transparent-inputs"] }
 zcash_proofs = "0.5"
 ed25519-zebra = "3"
 zeroize = "1.4.2"
@@ -71,6 +71,7 @@ panic = 'abort'
 codegen-units = 1
 
 [patch.crates-io]
+hdwallet = { git = "https://github.com/nuttycom/hdwallet", rev = "576683b9f2865f1118c309017ff36e01f84420c9" }
 zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "a01290869a4f0c4e05bdcca550795ea0e76e8550" }
 zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "a01290869a4f0c4e05bdcca550795ea0e76e8550" }
 zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "a01290869a4f0c4e05bdcca550795ea0e76e8550" }

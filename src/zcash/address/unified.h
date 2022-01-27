@@ -5,7 +5,7 @@
 #ifndef ZCASH_ZCASH_ADDRESS_UNIFIED_H
 #define ZCASH_ZCASH_ADDRESS_UNIFIED_H
 
-#include "bip44.h"
+#include "transparent.h"
 #include "key_constants.h"
 #include "script/script.h"
 #include "zip32.h"
@@ -26,13 +26,31 @@ typedef std::variant<
     libzcash::SaplingPaymentAddress> RecipientAddress;
 
 /**
- * An enumeration of the types of change that a transaction may
- * produce.
+ * An enumeration of the types of change that a transaction may produce.  It is
+ * sorted in descending preference order, so that when iterating over a set of
+ * change types the most-preferred type is selected first.
  */
 enum class ChangeType {
     Sapling,
     Transparent,
 };
+
+class TransparentChangeRequest {
+private:
+    const diversifier_index_t& index;
+public:
+    TransparentChangeRequest(const diversifier_index_t& indexIn): index(indexIn) {}
+
+    const diversifier_index_t& GetIndex() const {
+        return index;
+    }
+};
+
+class SaplingChangeRequest {};
+
+typedef std::variant<
+    TransparentChangeRequest,
+    SaplingChangeRequest> ChangeRequest;
 
 /**
  * Test whether the specified list of receiver types contains a
@@ -105,7 +123,7 @@ public:
 class ZcashdUnifiedFullViewingKey {
 private:
     UFVKId keyId;
-    std::optional<CChainablePubKey> transparentKey;
+    std::optional<transparent::AccountPubKey> transparentKey;
     std::optional<SaplingDiversifiableFullViewingKey> saplingKey;
 
     ZcashdUnifiedFullViewingKey() {}
@@ -124,7 +142,10 @@ public:
         return keyId;
     }
 
-    const std::optional<CChainablePubKey>& GetTransparentKey() const {
+    /**
+     * Return the transparent key at the account level;
+     */
+    const std::optional<transparent::AccountPubKey>& GetTransparentKey() const {
         return transparentKey;
     }
 
@@ -172,7 +193,14 @@ public:
      * If the provided set is empty, return the change address
      * corresponding to the most-preferred pool.
      */
-    RecipientAddress GetChangeAddress(const std::set<ChangeType>& changeOptions) const;
+    std::optional<RecipientAddress> GetChangeAddress(const ChangeRequest& req) const;
+
+    /**
+     * Return the transparent change address for this UFVK a the given diversifier
+     * index, if the UFVK has a transparent component and it is possible to derive
+     * an address at this index.
+     */
+    std::optional<CKeyID> GetTransparentChangeAddress(const diversifier_index_t& j) const;
 
     friend bool operator==(const ZcashdUnifiedFullViewingKey& a, const ZcashdUnifiedFullViewingKey& b)
     {
@@ -185,17 +213,19 @@ public:
  */
 class ZcashdUnifiedSpendingKey {
 private:
-    CExtKey transparentKey;
+    transparent::AccountKey transparentKey;
     SaplingExtendedSpendingKey saplingKey;
 
-    ZcashdUnifiedSpendingKey() {}
+    ZcashdUnifiedSpendingKey(
+            transparent::AccountKey tkey,
+            SaplingExtendedSpendingKey skey): transparentKey(tkey), saplingKey(skey) {}
 public:
     static std::optional<ZcashdUnifiedSpendingKey> ForAccount(
             const HDSeed& seed,
             uint32_t bip44CoinType,
             libzcash::AccountId accountId);
 
-    const CExtKey& GetTransparentKey() const {
+    const transparent::AccountKey& GetTransparentKey() const {
         return transparentKey;
     }
 

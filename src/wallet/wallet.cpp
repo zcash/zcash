@@ -276,26 +276,29 @@ CPubKey CWallet::GenerateNewKey()
     // All mnemonic seeds are checked at construction to ensure that we can obtain
     // a valid spending key for the account ZCASH_LEGACY_ACCOUNT;
     // therefore, the `value()` call here is safe.
-    Bip44AccountChains accountChains = Bip44AccountChains::ForAccount(
+    transparent::AccountKey accountKey = transparent::AccountKey::ForAccount(
             seed,
             BIP44CoinType(),
             ZCASH_LEGACY_ACCOUNT).value();
 
-    std::optional<std::pair<CKey, HDKeyPath>> extKey = std::nullopt;
+    std::optional<CPubKey> pubkey = std::nullopt;
     do {
-        extKey = accountChains.DeriveExternal(hdChain.GetLegacyTKeyCounter());
+        auto index = hdChain.GetLegacyTKeyCounter();
+        auto key = accountKey.DeriveExternalSpendingKey(index);
         hdChain.IncrementLegacyTKeyCounter();
+        if (key.has_value()) {
+            auto keyPath = transparent::AccountKey::KeyPath(BIP44CoinType(), ZCASH_LEGACY_ACCOUNT, true, index);
+            pubkey = AddTransparentSecretKey(seed.Fingerprint(), std::make_pair(key.value(), keyPath));
+        }
         // if we did not successfully generate a key, try again.
-    } while (!extKey.has_value());
-
-    auto pubkey = AddTransparentSecretKey(seed.Fingerprint(), extKey.value());
+    } while (!pubkey.has_value());
 
     // Update the persisted chain information
     if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
         throw std::runtime_error("CWallet::GenerateNewKey(): Writing HD chain model failed");
     }
 
-    return pubkey;
+    return pubkey.value();
 }
 
 CPubKey CWallet::AddTransparentSecretKey(
@@ -479,14 +482,9 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
         // LoadUnifiedAccountMetadata().
         mapUfvkAddressMetadata.insert({ufvkid, UFVKAddressMetadata(accountId)});
 
-        // Add Transparent component to the wallet
-        AddTransparentSecretKey(
-            skmeta.GetSeedFingerprint(),
-            std::make_pair(
-                usk.value().GetTransparentKey().key,
-                libzcash::Bip44TransparentAccountKeyPath(BIP44CoinType(), accountId)
-            )
-        );
+        // We do not explicitly add any transparent component to the keystore;
+        // the secret keys that we need to store are the child spending keys
+        // that are produced whenever we create a transparent address.
 
         // Add Sapling component to the wallet
         auto saplingEsk = usk.value().GetSaplingExtendedSpendingKey();
@@ -658,9 +656,21 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
             // Regenerate the secret key for the transparent address and add it to
             // the wallet.
             auto seed = GetMnemonicSeed().value();
-            auto b44 = libzcash::Bip44AccountChains::ForAccount(seed, BIP44CoinType(), accountId).value();
-            auto key = b44.DeriveExternal(diversifierIndex.ToTransparentChildIndex().value()).value();
-            AddTransparentSecretKey(seed.Fingerprint(), key);
+            auto accountKey = transparent::AccountKey::ForAccount(seed, BIP44CoinType(), accountId).value();
+            // this .value is known to be safe from the earlier check
+            auto childIndex = diversifierIndex.ToTransparentChildIndex().value();
+            auto key = accountKey.DeriveExternalSpendingKey(childIndex).value();
+
+            AddTransparentSecretKey(
+                seed.Fingerprint(),
+                std::make_pair(
+                    key,
+                    transparent::AccountKey::KeyPath(BIP44CoinType(), accountId, true, childIndex)
+                )
+            );
+
+            // We do not add the change address for the transparent key, because
+            // we do not send transparent change when using unified accounts.
         }
 
         return std::make_pair(address.value(), diversifierIndex);
@@ -1555,7 +1565,7 @@ std::optional<RecipientAddress> CWallet::GenerateChangeAddressForAccount(
             if (t == libzcash::ChangeType::Transparent && accountId == ZCASH_LEGACY_ACCOUNT) {
                 return GenerateNewKey().GetID();
             } else {
-                return ufvk.value().GetChangeAddress(changeOptions);
+                return ufvk.value().GetChangeAddress(SaplingChangeRequest());
             }
         }
     }
