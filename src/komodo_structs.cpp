@@ -491,6 +491,7 @@ const notarized_checkpoint *komodo_state::CheckpointAtHeight(int32_t height) con
     return nullptr;
 }
 
+void komodo_state::clear_checkpoints() { NPOINTS.clear(); }
 const uint256& komodo_state::LastNotarizedHash() const { return last.notarized_hash; }
 void komodo_state::SetLastNotarizedHash(const uint256 &in) { last.notarized_hash = in; }
 const uint256& komodo_state::LastNotarizedDestTxId() const { return last.notarized_desttxid; }
@@ -502,3 +503,20 @@ void komodo_state::SetLastNotarizedHeight(const int32_t in) { last.notarized_hei
 const int32_t& komodo_state::LastNotarizedMoMDepth() const { return last.MoMdepth; }
 void komodo_state::SetLastNotarizedMoMDepth(const int32_t in) { last.MoMdepth =in; }
 uint64_t komodo_state::NumCheckpoints() const { return NPOINTS.size(); }
+
+bool operator==(const notarized_checkpoint& lhs, const notarized_checkpoint& rhs)
+{
+    if (lhs.notarized_hash != rhs.notarized_hash 
+            || lhs.notarized_desttxid != rhs.notarized_desttxid
+            || lhs.MoM != rhs.MoM
+            || lhs.MoMoM != rhs.MoMoM
+            || lhs.nHeight != rhs.nHeight
+            || lhs.notarized_height != rhs.notarized_height
+            || lhs.MoMdepth != rhs.MoMdepth
+            || lhs.MoMoMdepth != rhs.MoMoMdepth
+            || lhs.MoMoMoffset != rhs.MoMoMoffset
+            || lhs.kmdstarti != rhs.kmdstarti
+            || lhs.kmdendi != rhs.kmdendi)
+        return false;
+    return true;
+}

@@ -3,11 +3,11 @@
 #include "cc/eval.h"
 #include "core_io.h"
 #include "key.h"
-
 #include "testutils.h"
-
 #include "komodo_structs.h"
 #include "test_parse_notarisation.h"
+
+#include <fstream>
 
 komodo_state *komodo_stateptr(char *symbol,char *dest);
 void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t notarized_height,
@@ -406,49 +406,27 @@ TEST(TestParseNotarisation, test_notarizeddata)
     EXPECT_EQ(txid, expected_txid);
  }
 
-bool equal(const notarized_checkpoint* lhs, const notarized_checkpoint* rhs)
-{
-    if (lhs == nullptr && rhs == nullptr)
-        return true;
-    if (lhs == nullptr && rhs != nullptr)
-        return false;
-    if (lhs != nullptr && rhs == nullptr)
-        return false;
-
-    if( lhs->notarized_hash != rhs->notarized_hash )
-        return false;
-    if( lhs->notarized_desttxid != rhs->notarized_desttxid )
-        return false;
-    if( lhs->MoM != rhs->MoM )
-        return false;
-    if( lhs->MoMoM != rhs->MoMoM )
-        return false;
-    if( lhs->nHeight != rhs->nHeight)
-        return false;
-    if( lhs->notarized_height != rhs->notarized_height)
-        return false;
-    if( lhs->MoMdepth != rhs->MoMdepth)
-        return false;
-    if( lhs->MoMoMdepth != rhs->MoMoMdepth)
-        return false;
-    if( lhs->kmdstarti != rhs->kmdstarti)
-        return false;
-    if( lhs->kmdendi != rhs->kmdendi)
-        return false;
-    return true;
-}
-
 TEST(TestParseNotarisation, OldVsNew)
 {
-    // see test_parse_notarisation.h for notarized_checkpoints
-    // how many are in the array?
-    std::vector<notarized_checkpoint> notarized_checkpoints = get_test_checkpoints();
-    size_t npoints_max =  notarized_checkpoints.size();
-    EXPECT_EQ(npoints_max, 8043);
-
+    ASSETCHAINS_SYMBOL[0] = 0;
     char symbol[4] = { 0 };
     char dest[4] = { 0 };
-    komodo_state* new_ks = komodo_stateptr(symbol, dest);
+
+    // clear any checkpoints from previous tests
+    class my_komodo_state : public komodo_state
+    {
+    public:
+        void clear_checkpoints() { return komodo_state::clear_checkpoints(); }
+    };
+
+    my_komodo_state* new_ks = reinterpret_cast<my_komodo_state*>(komodo_stateptr(symbol, dest));
+    new_ks->clear_checkpoints();
+
+    // see test_parse_notarisation.h for notarized_checkpoints
+    // how many are in the array?
+    std::vector<notarized_checkpoint> notarized_checkpoints = get_test_checkpoints_from_file("notarizationdata.tst");
+    size_t npoints_max =  notarized_checkpoints.size();
+    EXPECT_EQ(npoints_max, 8043);
 
     // set the MoMdepth for tests
     notarized_checkpoints[npoints_max-1].MoMdepth = 1; // set the last one to a depth of 1
@@ -458,6 +436,7 @@ TEST(TestParseNotarisation, OldVsNew)
     notarized_checkpoints[777].MoMdepth = 1;
 
     int32_t max_chain_height = 0;
+    int32_t start_chain_height = 0;
     // fill the structures
     for (size_t idx = 0; idx < npoints_max; idx++)
     {
@@ -478,18 +457,25 @@ TEST(TestParseNotarisation, OldVsNew)
         notarized_checkpoints[idx].MoMdepth);
         if (notarized_checkpoints[idx].nHeight > max_chain_height)
             max_chain_height = notarized_checkpoints[idx].nHeight;
+        if (start_chain_height == 0 || start_chain_height > notarized_checkpoints[idx].nHeight)
+            start_chain_height = notarized_checkpoints[idx].nHeight;
     }
 
     EXPECT_EQ(old_space::sp->NUM_NPOINTS, new_ks->NumCheckpoints() );
 
     // Check retrieval of notarization for height
 
-    for (size_t i = 0; i <= max_chain_height+100; i++)
+    for (size_t i = start_chain_height - 100; i <= max_chain_height+100; i++)
     {
         int idx_old = 0;
         notarized_checkpoint *np_old = old_space::komodo_npptr_for_height(i, &idx_old);
         const notarized_checkpoint *np_new = ::komodo_npptr(i);
-        EXPECT_TRUE( equal(np_old, np_new) );
+        if (np_old != nullptr && np_new == nullptr)
+            FAIL();
+        if (np_old == nullptr && np_new != nullptr)
+            FAIL();
+        if (np_old != nullptr && np_new != nullptr)
+            EXPECT_EQ( *(np_old), *(np_new) );
         /*
         if (!equal(np_old, np_new) )
         {
@@ -514,7 +500,7 @@ TEST(TestParseNotarisation, OldVsNew)
 
     // Check retrieval of data using komodo_notarizeddata()
 
-    for (size_t i = 0; i < max_chain_height; i++) {
+    for (size_t i = start_chain_height - 100; i < max_chain_height + 100; i++) {
         uint256 old_notarized_hash, old_notarized_desttxid;
         int32_t old_ret_height = old_space::komodo_notarizeddata(i, 
                 &old_notarized_hash, &old_notarized_desttxid);

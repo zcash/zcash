@@ -1,10 +1,14 @@
 #include "komodo_structs.h"
 #include <vector>
+#include <fstream>
+
+#include <gtest/gtest.h>
 
 /****
  * Used for testing
  */
 
+/*
 struct my_notarized_checkpoint : public notarized_checkpoint
 {
     my_notarized_checkpoint(const std::string& hash, const std::string& dest_txid, const std::string& mom, 
@@ -24,12 +28,14 @@ struct my_notarized_checkpoint : public notarized_checkpoint
         this->kmdendi = endi;
     }
 };
+*/
 
 /***
  * Converting this to some kind of file will speed compile times. Until then, this object
  * file shouldn't change much, so the pain should only happen once.
  */
 
+/*
 my_notarized_checkpoint notarized_checkpoints[] = 
 {
     {"0x0adeca68daf59c4ec40ae6902dd84980750bb09c8775e2aba5c9561b922013da", "0x23707ce8e84482501dae9d4a0f953bc64788e91adde6a56982d5a8c5169b4130", "0x0", "0x0", 2441332, 2441320, 0, 0, 0, 0, 0}, 
@@ -8085,3 +8091,108 @@ std::vector<notarized_checkpoint> get_test_checkpoints()
         retval.push_back(notarized_checkpoints[i]);
     return retval;
 }
+
+*/
+
+/**
+ * @brief This creates a file based on the data above (which is usually commented out)
+ */
+
+/*
+void write_test_checkpoints(const std::string& filename, const std::vector<notarized_checkpoint>& checkpoints)
+{
+    std::ofstream out(filename, 
+            std::ios_base::openmode::_S_out 
+            | std::ios_base::openmode::_S_bin
+            | std::ios_base::openmode::_S_trunc);
+
+    for(auto itr = checkpoints.begin(); itr != checkpoints.end(); ++itr)
+    {
+        itr->notarized_hash.Serialize(out);
+        itr->notarized_desttxid.Serialize(out);
+        itr->MoM.Serialize(out);
+        itr->MoMoM.Serialize(out);
+        out.write(reinterpret_cast<const char*>( &((*itr).nHeight) ), sizeof(int32_t) );
+        out.write(reinterpret_cast<const char*>( &((*itr).notarized_height) ), sizeof(int32_t) );
+        out.write(reinterpret_cast<const char*>( &((*itr).MoMdepth) ), sizeof(int32_t) );
+        out.write(reinterpret_cast<const char*>( &((*itr).MoMoMdepth) ), sizeof(int32_t) );
+        out.write(reinterpret_cast<const char*>( &((*itr).MoMoMoffset) ), sizeof(int32_t) );
+        out.write(reinterpret_cast<const char*>( &((*itr).kmdstarti) ), sizeof(int32_t) );
+        out.write(reinterpret_cast<const char*>( &((*itr).kmdendi) ), sizeof(int32_t) );
+    }
+
+    out.close();
+}
+*/
+
+/***
+ * @brief read a binary file to get a long list of notarized_checkpoints for testing
+ * @param filename the file to read
+ * @returns a big vector
+ */
+std::vector<notarized_checkpoint> get_test_checkpoints_from_file(const std::string& filename)
+{
+    std::vector<notarized_checkpoint> retval;
+
+    std::ifstream in(filename, std::ios_base::openmode::_S_in
+            | std::ios_base::openmode::_S_bin);
+
+    if (!in.is_open())
+    {
+        // look in the test directory
+        std::string test = std::string("./test/") + filename;
+        in.open(test, std::ios_base::openmode::_S_in
+            | std::ios_base::openmode::_S_bin);
+    }
+    if (!in.is_open())
+    {
+        // look in the ../test directory
+        std::string test = std::string("../test/") + filename;
+        in.open(test, std::ios_base::openmode::_S_in
+            | std::ios_base::openmode::_S_bin);
+    }
+
+    while(!in.eof())
+    {
+        notarized_checkpoint cp;
+        cp.notarized_hash.Unserialize(in);
+        cp.notarized_desttxid.Unserialize(in);
+        cp.MoM.Unserialize(in);
+        cp.MoMoM.Unserialize(in);
+        in.read(reinterpret_cast<char*>( &(cp.nHeight) ), sizeof(int32_t) );
+        in.read(reinterpret_cast<char*>( &(cp.notarized_height) ), sizeof(int32_t) );
+        in.read(reinterpret_cast<char*>( &(cp.MoMdepth) ), sizeof(int32_t) );
+        in.read(reinterpret_cast<char*>( &(cp.MoMoMdepth) ), sizeof(int32_t) );
+        in.read(reinterpret_cast<char*>( &(cp.MoMoMoffset) ), sizeof(int32_t) );
+        in.read(reinterpret_cast<char*>( &(cp.kmdstarti) ), sizeof(int32_t) );
+        in.read(reinterpret_cast<char*>( &(cp.kmdendi) ), sizeof(int32_t) );
+        if (cp.nHeight == 0)
+            break;
+        retval.push_back(cp);
+    }
+    in.close();
+    return retval;
+}
+
+/*
+namespace BuildTestData
+{
+
+TEST(BuildTestData, WriteTestData)
+{
+    std::string filename = "notarization_checkpoints.tmp";
+    std::vector<notarized_checkpoint> from_text = get_test_checkpoints();
+    write_test_checkpoints( filename, from_text );
+    std::vector<notarized_checkpoint> from_file = get_test_checkpoints_from_file(filename);
+
+    EXPECT_EQ(from_text.size(), from_file.size());
+    for(size_t i = 0; i < from_text.size(); ++i)
+    {
+        auto text_rec = from_text[i];
+        auto file_rec = from_file[i];
+        EXPECT_EQ(text_rec, file_rec);
+    }
+}
+
+} // namespace BuildTestData
+*/

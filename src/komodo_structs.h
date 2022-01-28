@@ -262,7 +262,10 @@ struct notarized_checkpoint
     int32_t MoMoMoffset = 0;
     int32_t kmdstarti = 0;
     int32_t kmdendi = 0;
+    friend bool operator==(const notarized_checkpoint& lhs, const notarized_checkpoint& rhs);
 };
+
+bool operator==(const notarized_checkpoint& lhs, const notarized_checkpoint& rhs);
 
 struct komodo_ccdataMoM
 {
@@ -304,6 +307,11 @@ public:
     uint32_t RTbufs[64][3]; uint64_t RTmask;
     bool add_event(const std::string& symbol, const uint32_t height, std::shared_ptr<komodo::event> in);
 protected:
+    /***
+     * @brief clear the checkpoints collection
+     * @note should only be used by tests
+     */
+    void clear_checkpoints();
     std::vector<notarized_checkpoint> NPOINTS; // collection of notarizations
     mutable size_t NPOINTS_last_index = 0; // caches checkpoint linear search position
     notarized_checkpoint last;
