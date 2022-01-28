@@ -267,14 +267,16 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         [&](const CKeyID& keyId) {
             auto accountId = selectorAccountId.value_or(ZCASH_LEGACY_ACCOUNT);
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                    accountId, { libzcash::ChangeType::Transparent }).value();
-            builder_.SendChangeTo(changeAddr, ovks.first);
+                    accountId, { libzcash::ChangeType::Transparent });
+            assert(changeAddr.has_value());
+            builder_.SendChangeTo(changeAddr.value(), ovks.first);
         },
         [&](const CScriptID& scriptId) {
             auto accountId = selectorAccountId.value_or(ZCASH_LEGACY_ACCOUNT);
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                    accountId, { libzcash::ChangeType::Transparent }).value();
-            builder_.SendChangeTo(changeAddr, ovks.first);
+                    accountId, { libzcash::ChangeType::Transparent });
+            assert(changeAddr.has_value());
+            builder_.SendChangeTo(changeAddr.value(), ovks.first);
         },
         [&](const libzcash::SproutPaymentAddress& addr) {
             // for Sprout, we return change to the originating address.
@@ -286,15 +288,22 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             // address corresponding to the UFVK.
             if (selectorAccountId.has_value()) {
                 auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                        selectorAccountId.value(), { libzcash::ChangeType::Sapling }).value();
-                builder_.SendChangeTo(changeAddr, ovks.first);
+                        selectorAccountId.value(), { libzcash::ChangeType::Sapling });
+                assert(changeAddr.has_value());
+                builder_.SendChangeTo(changeAddr.value(), ovks.first);
             } else {
                 builder_.SendChangeTo(addr, ovks.first);
             }
         },
         [&](const AccountZTXOPattern& acct) {
-            auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                    selectorAccountId.value(), { libzcash::ChangeType::Sapling });
+            std::set<libzcash::ChangeType> changeTypes;
+            if (acct.GetAccountId() == ZCASH_LEGACY_ACCOUNT) {
+                changeTypes.insert(libzcash::ChangeType::Transparent);
+            } else {
+                changeTypes.insert(libzcash::ChangeType::Sapling);
+            }
+
+            auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(acct.GetAccountId(), changeTypes);
             assert(changeAddr.has_value());
             builder_.SendChangeTo(changeAddr.value(), ovks.first);
         }
@@ -420,24 +429,25 @@ std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(
     uint256 internalOVK;
     uint256 externalOVK;
     if (!spendable.saplingNoteEntries.empty()) {
+        std::optional<SaplingDiversifiableFullViewingKey> dfvk;
         std::visit(match {
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 libzcash::SaplingExtendedSpendingKey extsk;
                 assert(pwalletMain->GetSaplingExtendedSpendingKey(addr, extsk));
-                auto extfvk = extsk.ToXFVK();
-                externalOVK = extfvk.fvk.ovk;
-                internalOVK = extfvk.GetInternalDFVK().fvk.ovk;
+                dfvk = extsk.ToXFVK();
             },
             [&](const AccountZTXOPattern& acct) {
-                auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId()).value();
-                auto dfvk = ufvk.GetSaplingKey().value();
-                externalOVK = dfvk.fvk.ovk;
-                internalOVK = dfvk.GetInternalDFVK().fvk.ovk;
+                auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
+                dfvk = ufvk.value().GetSaplingKey().value();
             },
             [&](const auto& other) {
                 throw std::runtime_error("unreachable");
             }
         }, this->ztxoSelector_.GetPattern());
+        assert(dfvk.has_value());
+
+        externalOVK = dfvk.value().fvk.ovk;
+        internalOVK = dfvk.value().GetInternalDFVK().fvk.ovk;
     } else if (!spendable.utxos.empty()) {
         std::optional<transparent::AccountPubKey> tfvk;
         std::visit(match {
@@ -448,12 +458,15 @@ std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(
                 tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
             },
             [&](const AccountZTXOPattern& acct) {
-                // by the time we're here, we know that the UFVK exists for this account
-                auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId()).value();
-                tfvk = ufvk.GetTransparentKey().value();
+                if (acct.GetAccountId() == ZCASH_LEGACY_ACCOUNT) {
+                    tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+                } else {
+                    auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId()).value();
+                    tfvk = ufvk.GetTransparentKey().value();
+                }
             },
             [&](const auto& other) {
-                //unreachable
+                throw std::runtime_error("unreachable");
             }
         }, this->ztxoSelector_.GetPattern());
         assert(tfvk.has_value());
