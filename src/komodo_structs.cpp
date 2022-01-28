@@ -369,22 +369,51 @@ void komodo_state::AddCheckpoint(const notarized_checkpoint &in)
  */
 int32_t komodo_state::NotarizedData(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp) const
 {
-    // get the nearest height without going over
-    auto &idx = NPOINTS.get<1>(); // sorted by nHeight
-    auto itr = idx.upper_bound(nHeight);
-    if(itr == idx.end())
-        --itr;
-    while( true )
+    bool found = false;
+
+    if ( NPOINTS.size() > 0 )
     {
-        if( (*itr).nHeight < nHeight)
+        const notarized_checkpoint* np = nullptr;
+        if ( NPOINTS_last_index < NPOINTS.size() && NPOINTS_last_index > 0 ) // if we cached an NPOINT index
         {
-            *notarized_hashp = itr->notarized_hash;
-            *notarized_desttxidp = itr->notarized_desttxid;
-            return itr->notarized_height;
+            np = &NPOINTS[NPOINTS_last_index-1]; // grab the previous
+            if ( np->nHeight < nHeight ) // if that previous is below the height we are looking for
+            {
+                for (size_t i = NPOINTS_last_index; i < NPOINTS.size(); i++) // move forward
+                {
+                    if ( NPOINTS[i].nHeight >= nHeight ) // if we found the height we are looking for (or beyond)
+                    {
+                        found = true; // notify ourselves we were here
+                        break; // get out
+                    }
+                    np = &NPOINTS[i];
+                    NPOINTS_last_index = i;
+                }
+            }
         }
-        if (itr == idx.begin())
-            break;
-        --itr;
+        if ( !found ) // we still haven't found what we were looking for
+        {
+            np = nullptr; // reset
+            for (size_t i = 0; i < NPOINTS.size(); i++) // linear search from the start
+            {
+                if ( NPOINTS[i].nHeight >= nHeight )
+                {
+                    found = true;
+                    break;
+                }
+                np = &NPOINTS[i];
+                NPOINTS_last_index = i;
+            }
+        }
+        if ( np != nullptr )
+        {
+            if ( np->nHeight >= nHeight || (found && np[1].nHeight < nHeight) )
+                printf("warning: flag.%d i.%ld np->ht %d [1].ht %d >= nHeight.%d\n",
+                        (int)found,NPOINTS_last_index,np->nHeight,np[1].nHeight,nHeight);
+            *notarized_hashp = np->notarized_hash;
+            *notarized_desttxidp = np->notarized_desttxid;
+            return(np->notarized_height);
+        }
     }
     memset(notarized_hashp,0,sizeof(*notarized_hashp));
     memset(notarized_desttxidp,0,sizeof(*notarized_desttxidp));
@@ -429,14 +458,11 @@ int32_t komodo_state::PrevMoMHeight() const
     {
         return last.notarized_height;
     }
-    if (NPOINTS.size() > 0)
+
+    for(auto itr = NPOINTS.rbegin(); itr != NPOINTS.rend(); ++itr)
     {
-        auto &idx = NPOINTS.get<0>();
-        for( auto r_itr = idx.rbegin(); r_itr != idx.rend(); ++r_itr)
-        {
-            if (r_itr->MoM != zero)
-                return r_itr->notarized_height;
-        }
+        if( itr->MoM != zero)
+            return itr->notarized_height;
     }
     return 0;
 }
@@ -451,26 +477,17 @@ int32_t komodo_state::PrevMoMHeight() const
 const notarized_checkpoint *komodo_state::CheckpointAtHeight(int32_t height) const
 {
     // find the nearest notarization_height
-    if(NPOINTS.size() > 0)
+    // work backwards, get the first one that meets our criteria
+    auto itr = NPOINTS.rbegin();
+    for(auto itr = NPOINTS.rbegin(); itr != NPOINTS.rend(); ++itr)
     {
-        auto &idx = NPOINTS.get<2>(); // search by notarized_height
-        auto itr = idx.upper_bound(height);
-        if (itr == idx.end())
-            --itr;
-        // work backwards, get the first one that meets our criteria
-        while (true)
+        if ( itr->MoMdepth != 0 
+                && height > itr->notarized_height-(itr->MoMdepth&0xffff) // 2s compliment if negative
+                && height <= itr->notarized_height )
         {
-            if ( itr->MoMdepth != 0 
-                    && height > itr->notarized_height-(itr->MoMdepth&0xffff) // 2s compliment if negative
-                    && height <= itr->notarized_height )
-            {
-                return &(*itr);
-            }
-            if (itr == idx.begin())
-                break;
-            --itr;
+            return &(*itr);
         }
-    } // we have some elements in the collection
+    }
     return nullptr;
 }
 

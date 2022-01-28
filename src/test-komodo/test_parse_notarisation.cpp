@@ -25,8 +25,7 @@ public:
     }
     const notarized_checkpoint *last_checkpoint()
     {
-        auto &idx = NPOINTS.get<0>();
-        const auto &cp = idx.back();
+        const auto &cp = NPOINTS.back();
         return &cp;
     }
 };
@@ -152,32 +151,30 @@ namespace old_space {
             if ( sp->NUM_NPOINTS > 0 )
             {
                 flag = 0;
-                if ( sp->last_NPOINTSi < sp->NUM_NPOINTS && sp->last_NPOINTSi > 0 )
+                if ( sp->last_NPOINTSi < sp->NUM_NPOINTS && sp->last_NPOINTSi > 0 ) // if we cached an NPOINT index
                 {
-                    np = &sp->NPOINTS[sp->last_NPOINTSi-1];
-                    if ( np->nHeight < nHeight )
+                    np = &sp->NPOINTS[sp->last_NPOINTSi-1]; // grab the previous
+                    if ( np->nHeight < nHeight ) // if that previous is below the height we are looking for
                     {
-                        for (i=sp->last_NPOINTSi; i<sp->NUM_NPOINTS; i++)
+                        for (i=sp->last_NPOINTSi; i<sp->NUM_NPOINTS; i++) // move forward
                         {
-                            if ( sp->NPOINTS[i].nHeight >= nHeight )
+                            if ( sp->NPOINTS[i].nHeight >= nHeight ) // if we found the height we are looking for (or beyond)
                             {
-                                //printf("flag.1 i.%d np->ht %d [%d].ht %d >= nHeight.%d, last.%d num.%d\n",i,np->nHeight,i,sp->NPOINTS[i].nHeight,nHeight,sp->last_NPOINTSi,sp->NUM_NPOINTS);
-                                flag = 1;
-                                break;
+                                flag = 1; // notify ourselves we were here
+                                break; // get out
                             }
                             np = &sp->NPOINTS[i];
                             sp->last_NPOINTSi = i;
                         }
                     }
                 }
-                if ( flag == 0 )
+                if ( flag == 0 ) // we still haven't found what we were looking for
                 {
                     np = 0;
-                    for (i=0; i<sp->NUM_NPOINTS; i++)
+                    for (i=0; i<sp->NUM_NPOINTS; i++) // linear search from the start
                     {
                         if ( sp->NPOINTS[i].nHeight >= nHeight )
                         {
-                            //printf("i.%d np->ht %d [%d].ht %d >= nHeight.%d\n",i,np->nHeight,i,sp->NPOINTS[i].nHeight,nHeight);
                             break;
                         }
                         np = &sp->NPOINTS[i];
@@ -187,7 +184,6 @@ namespace old_space {
             }
             if ( np != 0 )
             {
-                //char str[65],str2[65]; printf("[%s] notarized_ht.%d\n",ASSETCHAINS_SYMBOL,np->notarized_height);
                 if ( np->nHeight >= nHeight || (i < sp->NUM_NPOINTS && np[1].nHeight < nHeight) )
                     printf("warning: flag.%d i.%d np->ht %d [1].ht %d >= nHeight.%d\n",flag,i,np->nHeight,np[1].nHeight,nHeight);
                 *notarized_hashp = np->notarized_hash;

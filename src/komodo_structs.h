@@ -262,25 +262,8 @@ struct notarized_checkpoint
     int32_t MoMoMoffset = 0;
     int32_t kmdstarti = 0;
     int32_t kmdendi = 0;
-    int32_t notarized_height_minus_MoMdepth()const{ return notarized_height - ( MoMdepth & 0xffff ); }
 };
 
-typedef boost::multi_index::multi_index_container<
-        notarized_checkpoint,
-        boost::multi_index::indexed_by<
-                boost::multi_index::sequenced<>, // sorted by insertion order
-                boost::multi_index::ordered_non_unique<
-                        boost::multi_index::member<
-                                notarized_checkpoint, int32_t, &notarized_checkpoint::nHeight
-                        >
-                >, // sorted by nHeight
-                boost::multi_index::ordered_non_unique<
-                        boost::multi_index::const_mem_fun<
-                                notarized_checkpoint, int32_t, &notarized_checkpoint::notarized_height_minus_MoMdepth
-                        >
-                > // sorted by notarized_height - (MoMdepth & 0xffff)
-        > > notarized_checkpoint_container;
-                            
 struct komodo_ccdataMoM
 {
     uint256 MoM;
@@ -321,7 +304,8 @@ public:
     uint32_t RTbufs[64][3]; uint64_t RTmask;
     bool add_event(const std::string& symbol, const uint32_t height, std::shared_ptr<komodo::event> in);
 protected:
-    notarized_checkpoint_container NPOINTS; // collection of notarizations
+    std::vector<notarized_checkpoint> NPOINTS; // collection of notarizations
+    mutable size_t NPOINTS_last_index = 0; // caches checkpoint linear search position
     notarized_checkpoint last;
 
 public:
