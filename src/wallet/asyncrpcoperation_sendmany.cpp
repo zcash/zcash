@@ -60,19 +60,28 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     assert(!recipients_.empty());
     assert(ztxoSelector.RequireSpendingKeys());
 
+    sendFromAccount_ = pwalletMain->FindAccountForSelector(ztxoSelector_).value_or(ZCASH_LEGACY_ACCOUNT);
+
+    // we always allow shielded change when not sending from the legacy account
+    if (sendFromAccount_ != ZCASH_LEGACY_ACCOUNT) {
+        allowedChangeTypes_.insert(libzcash::ChangeType::Sapling);
+    }
+
     // calculate the target totals
     for (const SendManyRecipient& recipient : recipients_) {
         std::visit(match {
             [&](const CKeyID& addr) {
                 transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
+                allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
             },
             [&](const CScriptID& addr) {
                 transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
+                allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
             },
             [&](const libzcash::SaplingPaymentAddress& addr) {
-                txOutputAmounts_.z_outputs_total += recipient.amount;
+                txOutputAmounts_.sapling_outputs_total += recipient.amount;
                 if (ztxoSelector_.SelectsSprout() && !allowRevealedAmounts_) {
                     throw JSONRPCError(
                             RPC_INVALID_PARAMETER,
@@ -167,7 +176,7 @@ void AsyncRPCOperation_sendmany::main() {
 //
 // At least 4. and 5. differ from the Rust transaction builder.
 uint256 AsyncRPCOperation_sendmany::main_impl() {
-    CAmount sendAmount = txOutputAmounts_.z_outputs_total + txOutputAmounts_.t_outputs_total;
+    CAmount sendAmount = txOutputAmounts_.sapling_outputs_total + txOutputAmounts_.t_outputs_total;
     CAmount targetAmount = sendAmount + fee_;
 
     builder_.SetFee(fee_);
@@ -258,23 +267,22 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     LogPrint("zrpc", "%s: transparent input: %s (to choose from)\n", getId(), FormatMoney(t_inputs_total));
     LogPrint("zrpcunsafe", "%s: private input: %s (to choose from)\n", getId(), FormatMoney(z_inputs_total));
     LogPrint("zrpc", "%s: transparent output: %s\n", getId(), FormatMoney(txOutputAmounts_.t_outputs_total));
-    LogPrint("zrpcunsafe", "%s: private output: %s\n", getId(), FormatMoney(txOutputAmounts_.z_outputs_total));
+    LogPrint("zrpcunsafe", "%s: private output: %s\n", getId(), FormatMoney(txOutputAmounts_.sapling_outputs_total));
     LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(fee_));
 
-    auto selectorAccountId = pwalletMain->FindAccountForSelector(ztxoSelector_);
-    auto ovks = this->SelectOVKs(spendable, selectorAccountId);
+    auto ovks = this->SelectOVKs(spendable);
     std::visit(match {
         [&](const CKeyID& keyId) {
-            auto accountId = selectorAccountId.value_or(ZCASH_LEGACY_ACCOUNT);
+            allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                    accountId, { libzcash::ChangeType::Transparent });
+                    sendFromAccount_, allowedChangeTypes_);
             assert(changeAddr.has_value());
             builder_.SendChangeTo(changeAddr.value(), ovks.first);
         },
         [&](const CScriptID& scriptId) {
-            auto accountId = selectorAccountId.value_or(ZCASH_LEGACY_ACCOUNT);
+            allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                    accountId, { libzcash::ChangeType::Transparent });
+                    sendFromAccount_, allowedChangeTypes_);
             assert(changeAddr.has_value());
             builder_.SendChangeTo(changeAddr.value(), ovks.first);
         },
@@ -286,24 +294,32 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             // for Sapling, if using a legacy address, return change to the
             // originating address; otherwise return it to the Sapling internal
             // address corresponding to the UFVK.
-            if (selectorAccountId.has_value()) {
+            if (sendFromAccount_ == ZCASH_LEGACY_ACCOUNT) {
+                builder_.SendChangeTo(addr, ovks.first);
+            } else {
                 auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                        selectorAccountId.value(), { libzcash::ChangeType::Sapling });
+                        sendFromAccount_, allowedChangeTypes_);
                 assert(changeAddr.has_value());
                 builder_.SendChangeTo(changeAddr.value(), ovks.first);
-            } else {
-                builder_.SendChangeTo(addr, ovks.first);
             }
         },
         [&](const AccountZTXOPattern& acct) {
-            std::set<libzcash::ChangeType> changeTypes;
-            if (acct.GetAccountId() == ZCASH_LEGACY_ACCOUNT) {
-                changeTypes.insert(libzcash::ChangeType::Transparent);
-            } else {
-                changeTypes.insert(libzcash::ChangeType::Sapling);
+            for (ReceiverType rtype : acct.GetReceiverTypes()) {
+                switch (rtype) {
+                    case ReceiverType::P2PKH:
+                    case ReceiverType::P2SH:
+                        allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+                        break;
+                    case ReceiverType::Sapling:
+                        allowedChangeTypes_.insert(libzcash::ChangeType::Sapling);
+                        break;
+                }
             }
 
-            auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(acct.GetAccountId(), changeTypes);
+            auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
+                        acct.GetAccountId(),
+                        allowedChangeTypes_);
+
             assert(changeAddr.has_value());
             builder_.SendChangeTo(changeAddr.value(), ovks.first);
         }
@@ -424,8 +440,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     return tx.GetHash();
 }
 
-std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(
-        const SpendableInputs& spendable, std::optional<AccountId> accountId) const {
+std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(const SpendableInputs& spendable) const {
     uint256 internalOVK;
     uint256 externalOVK;
     if (!spendable.saplingNoteEntries.empty()) {

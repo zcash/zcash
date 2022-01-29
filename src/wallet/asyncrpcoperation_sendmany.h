@@ -38,7 +38,7 @@ public:
 class TxOutputAmounts {
 public:
     CAmount t_outputs_total{0};
-    CAmount z_outputs_total{0};
+    CAmount sapling_outputs_total{0};
 };
 
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
@@ -79,13 +79,15 @@ private:
     bool isfromsapling_{false};
     bool allowRevealedAmounts_{false};
     uint32_t transparentRecipients_{0};
+    AccountId sendFromAccount_;
+    std::set<libzcash::ChangeType> allowedChangeTypes_;
     TxOutputAmounts txOutputAmounts_;
 
     /**
      * Compute the internal and external OVKs to use in transaction construction, given
      * the spendable inputs.
      */
-    std::pair<uint256, uint256> SelectOVKs(const SpendableInputs& spendable, std::optional<AccountId> accountId) const;
+    std::pair<uint256, uint256> SelectOVKs(const SpendableInputs& spendable) const;
 
     static CAmount DefaultDustThreshold();
 
