@@ -15,21 +15,13 @@
 #pragma once
 #include <memory>
 #include <list>
+#include <vector>
 #include <cstdint>
 
 #include "komodo_defs.h"
 
 #include "uthash.h"
 #include "utlist.h"
-
-/*#ifdef _WIN32
-#define PACKED
-#else
-#define PACKED __attribute__((packed))
-#endif*/
-
-#ifndef KOMODO_STRUCTS_H
-#define KOMODO_STRUCTS_H
 
 #define GENESIS_NBITS 0x1f00ffff
 #define KOMODO_MINRATIFY ((height < 90000) ? 7 : 11)
@@ -53,12 +45,6 @@
 #define KOMODO_ASSETCHAIN_MAXLEN 65
 
 #include "bits256.h"
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/mem_fun.hpp>
-#include <set>
 
 // structs prior to refactor
 struct komodo_kv { UT_hash_handle hh; bits256 pubkey; uint8_t *key,*value; int32_t height; uint32_t flags; uint16_t keylen,valuesize; };
@@ -369,5 +355,3 @@ public:
      */
     const notarized_checkpoint *CheckpointAtHeight(int32_t height) const;
 };
-
-#endif /* KOMODO_STRUCTS_H */
