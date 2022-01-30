@@ -1372,7 +1372,7 @@ public:
     //! spending key to the wallet if it has not alreay been persisted.
     //! Returns the newly created key, and a flag distinguishing
     //! whether or not the key was already known by the wallet.
-    std::pair<libzcash::SaplingExtendedSpendingKey, bool> GenerateLegacySaplingZKey(uint32_t addrIndex);
+    std::pair<libzcash::SaplingPaymentAddress, bool> GenerateLegacySaplingZKey(uint32_t addrIndex);
     //! Adds Sapling spending key to the store, and saves it to disk
     bool AddSaplingZKey(const libzcash::SaplingExtendedSpendingKey &key);
     //! Add Sapling full viewing key to the wallet.

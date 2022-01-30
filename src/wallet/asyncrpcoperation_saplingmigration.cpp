@@ -205,8 +205,8 @@ libzcash::SaplingPaymentAddress AsyncRPCOperation_saplingmigration::getMigration
     }
 
     // TODO: move off of legacy addresses.
-    auto generatedKey = pwalletMain->GenerateLegacySaplingZKey(0);
-    return generatedKey.first.ToXFVK().DefaultAddress();
+    auto generated = pwalletMain->GenerateLegacySaplingZKey(0);
+    return generated.first;
 }
 
 void AsyncRPCOperation_saplingmigration::cancel() {

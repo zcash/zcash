@@ -129,13 +129,12 @@ SaplingPaymentAddress CWallet::GenerateNewLegacySaplingZKey() {
 
     // loop until we find an unused address index
     while (true) {
-        auto generatedKey = GenerateLegacySaplingZKey(hdChain.GetLegacySaplingKeyCounter());
-        auto xfvk = generatedKey.first.ToXFVK();
+        auto generated = GenerateLegacySaplingZKey(hdChain.GetLegacySaplingKeyCounter());
 
         // advance the address index counter so that the next time we need to generate
         // a key we're pointing at a free index.
         hdChain.IncrementLegacySaplingKeyCounter();
-        if (!generatedKey.second) {
+        if (!generated.second) {
             // the key already existed, so try the next one
             continue;
         } else {
@@ -145,12 +144,12 @@ SaplingPaymentAddress CWallet::GenerateNewLegacySaplingZKey() {
                         "CWallet::GenerateNewLegacySaplingZKey(): Writing HD chain model failed");
             }
 
-            return xfvk.DefaultAddress();
+            return generated.first;
         }
     }
 }
 
-std::pair<SaplingExtendedSpendingKey, bool> CWallet::GenerateLegacySaplingZKey(uint32_t addrIndex) {
+std::pair<SaplingPaymentAddress, bool> CWallet::GenerateLegacySaplingZKey(uint32_t addrIndex) {
     auto seedOpt = GetMnemonicSeed();
     if (!seedOpt.has_value()) {
         throw std::runtime_error(
@@ -159,8 +158,9 @@ std::pair<SaplingExtendedSpendingKey, bool> CWallet::GenerateLegacySaplingZKey(u
     auto seed = seedOpt.value();
 
     auto xsk = libzcash::SaplingExtendedSpendingKey::Legacy(seed, BIP44CoinType(), addrIndex);
-    if (!HaveSaplingSpendingKey(xsk.first.ToXFVK())) {
-        auto ivk = xsk.first.expsk.full_viewing_key().in_viewing_key();
+    auto extfvk = xsk.first.ToXFVK();
+    if (!HaveSaplingSpendingKey(extfvk)) {
+        auto ivk = extfvk.fvk.in_viewing_key();
         CKeyMetadata keyMeta(GetTime());
         keyMeta.hdKeypath = xsk.second;
         keyMeta.seedFp = seed.Fingerprint();
@@ -169,9 +169,9 @@ std::pair<SaplingExtendedSpendingKey, bool> CWallet::GenerateLegacySaplingZKey(u
         if (!AddSaplingZKey(xsk.first)) {
             throw std::runtime_error("CWallet::GenerateLegacySaplingZKey(): AddSaplingZKey failed.");
         }
-        return std::make_pair(xsk.first, true) ;
+        return std::make_pair(extfvk.DefaultAddress(), true) ;
     } else {
-        return std::make_pair(xsk.first, false);
+        return std::make_pair(extfvk.DefaultAddress(), false);
     }
 }
 
