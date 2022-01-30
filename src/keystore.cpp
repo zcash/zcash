@@ -313,6 +313,8 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
     if (saplingKey.has_value()) {
         auto ivk = saplingKey.value().fvk.in_viewing_key();
         mapSaplingKeyUnified.insert(std::make_pair(ivk, ufvk.GetKeyID()));
+        auto changeIvk = saplingKey.value().GetInternalDFVK().fvk.in_viewing_key();
+        mapSaplingKeyUnified.insert(std::make_pair(changeIvk, ufvk.GetKeyID()));
     }
 
     // We can't reasonably add the transparent component here, because
