@@ -172,3 +172,19 @@ TEST(ZIP32, diversifier_index_t_lt)
     EXPECT_FALSE(libzcash::diversifier_index_t(0xffffffff) < libzcash::diversifier_index_t(0x01));
 }
 
+TEST(ZIP32, DeriveChangeAddress)
+{
+    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+        17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+    HDSeed seed(rawSeed);
+
+    auto accountSk = libzcash::SaplingExtendedSpendingKey::ForAccount(seed, 1, 0);
+    auto extfvk = accountSk.first.ToXFVK();
+    auto changeSk = accountSk.first.DeriveInternalKey();
+    auto changeDfvk = extfvk.GetInternalDFVK();
+
+    EXPECT_EQ(changeDfvk.DefaultAddress(), extfvk.GetChangeAddress());
+    EXPECT_EQ(changeSk.ToXFVK().DefaultAddress(), extfvk.GetChangeAddress());
+}
+
