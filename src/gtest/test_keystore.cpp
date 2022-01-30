@@ -270,6 +270,7 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingSpendingKey) {
     EXPECT_TRUE(keyStore.GetSaplingSpendingKey(extfvk, skOut));
     EXPECT_TRUE(keyStore.HaveSaplingFullViewingKey(ivk));
     EXPECT_TRUE(keyStore.GetSaplingFullViewingKey(ivk, extfvkOut));
+    keyStore.AddSaplingPaymentAddress(ivk, addr);
     EXPECT_TRUE(keyStore.HaveSaplingIncomingViewingKey(addr));
     EXPECT_TRUE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
     EXPECT_EQ(sk, skOut);
@@ -313,7 +314,8 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingFullViewingKey) {
     EXPECT_FALSE(keyStore.HaveSaplingSpendingKey(extfvk));
     EXPECT_FALSE(keyStore.GetSaplingSpendingKey(extfvk, skOut));
 
-    // ... but we should have an incoming viewing key
+    // The IVK must be manually associated with the address...
+    keyStore.AddSaplingPaymentAddress(ivk, addr);
     EXPECT_TRUE(keyStore.HaveSaplingIncomingViewingKey(addr));
     EXPECT_TRUE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
     EXPECT_EQ(ivk, ivkOut);

@@ -1810,8 +1810,9 @@ class AddViewingKeyToWallet
 {
 private:
     CWallet *m_wallet;
+    bool addDefaultAddress;
 public:
-    AddViewingKeyToWallet(CWallet *wallet) : m_wallet(wallet) {}
+    AddViewingKeyToWallet(CWallet *wallet, bool addDefaultAddressIn) : m_wallet(wallet), addDefaultAddress(addDefaultAddressIn) {}
 
     KeyAddResult operator()(const libzcash::SproutViewingKey &sk) const;
     KeyAddResult operator()(const libzcash::SaplingExtendedFullViewingKey &sk) const;
@@ -1827,17 +1828,19 @@ private:
     std::optional<std::string> hdKeypath; // currently sapling only
     std::optional<std::string> seedFpStr; // currently sapling only
     bool log;
+    bool addDefaultAddress;
 public:
     AddSpendingKeyToWallet(CWallet *wallet, const Consensus::Params &params) :
-        m_wallet(wallet), params(params), nTime(1), hdKeypath(std::nullopt), seedFpStr(std::nullopt), log(false) {}
+        m_wallet(wallet), params(params), nTime(1), hdKeypath(std::nullopt), seedFpStr(std::nullopt), log(false), addDefaultAddress(true) {}
     AddSpendingKeyToWallet(
         CWallet *wallet,
         const Consensus::Params &params,
         int64_t _nTime,
         std::optional<std::string> _hdKeypath,
         std::optional<std::string> _seedFp,
-        bool _log
-    ) : m_wallet(wallet), params(params), nTime(_nTime), hdKeypath(_hdKeypath), seedFpStr(_seedFp), log(_log) {}
+        bool _log,
+        bool _addDefaultAddress
+    ) : m_wallet(wallet), params(params), nTime(_nTime), hdKeypath(_hdKeypath), seedFpStr(_seedFp), log(_log), addDefaultAddress(_addDefaultAddress) {}
 
 
     KeyAddResult operator()(const libzcash::SproutSpendingKey &sk) const;

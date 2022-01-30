@@ -404,7 +404,7 @@ UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
             std::optional<std::string> seedFpStr = (vstr.size() > 3) ? std::optional<std::string>(vstr[3]) : std::nullopt;
             if (spendingkey.has_value()) {
                 auto addResult = std::visit(
-                    AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, hdKeypath, seedFpStr, true), spendingkey.value());
+                    AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, hdKeypath, seedFpStr, true, true), spendingkey.value());
                 if (addResult == KeyAlreadyExists){
                     LogPrint("zrpc", "Skipping import of zaddr (key already present)\n");
                 } else if (addResult == KeyNotAdded) {
@@ -878,7 +878,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     result.pushKV("type", addrInfo.first);
     result.pushKV("address", strAddress);
 
-    auto addResult = std::visit(AddViewingKeyToWallet(pwalletMain), viewingkey.value());
+    auto addResult = std::visit(AddViewingKeyToWallet(pwalletMain, true), viewingkey.value());
     if (addResult == SpendingKeyExists) {
         throw JSONRPCError(
             RPC_WALLET_ERROR,

@@ -196,7 +196,7 @@ bool CBasicKeyStore::AddSaplingFullViewingKey(
     auto ivk = extfvk.fvk.in_viewing_key();
     mapSaplingFullViewingKeys[ivk] = extfvk;
 
-    return CBasicKeyStore::AddSaplingPaymentAddress(ivk, extfvk.DefaultAddress());
+    return true;
 }
 
 // This function updates the wallet's internal address->ivk map.

@@ -170,6 +170,10 @@ std::pair<SaplingPaymentAddress, bool> CWallet::GenerateLegacySaplingZKey(uint32
             throw std::runtime_error("CWallet::GenerateLegacySaplingZKey(): AddSaplingZKey failed.");
         }
 
+        if (!AddSaplingPaymentAddress(ivk, extfvk.DefaultAddress())) {
+            throw std::runtime_error("CWallet::GenerateLegacySaplingZKey(): AddSaplingPaymentAddress failed.");
+        };
+
         return std::make_pair(extfvk.DefaultAddress(), true) ;
     } else {
         return std::make_pair(extfvk.DefaultAddress(), false);
@@ -227,9 +231,7 @@ bool CWallet::AddSaplingPaymentAddress(
         return true;
     }
 
-    if (!IsCrypted()) {
-        return CWalletDB(strWalletFile).WriteSaplingPaymentAddress(addr, ivk);
-    }
+    return CWalletDB(strWalletFile).WriteSaplingPaymentAddress(addr, ivk);
 
     return true;
 }
@@ -503,23 +505,34 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
         // the secret keys that we need to store are the child spending keys
         // that are produced whenever we create a transparent address.
 
-        // Add Sapling component to the wallet
-        auto saplingEsk = usk.value().GetSaplingExtendedSpendingKey();
-        auto saplingKeyPath = libzcash::Zip32AccountKeyPath(BIP44CoinType(), accountId);
-        auto addSpendingKey = AddSpendingKeyToWallet(
+        // Create the function that we'll use to add Sapling keys
+        // to the wallet.
+        auto addSaplingKey = AddSpendingKeyToWallet(
             this, Params().GetConsensus(), GetTime(),
-            saplingKeyPath, skmeta.GetSeedFingerprint().GetHex(), true);
-        if (addSpendingKey(saplingEsk) == KeyNotAdded) {
+            libzcash::Zip32AccountKeyPath(BIP44CoinType(), accountId),
+            skmeta.GetSeedFingerprint().GetHex(), true, false
+        );
+
+        // Add the Sapling spending key to the wallet
+        auto saplingEsk = usk.value().GetSaplingExtendedSpendingKey();
+        if (addSaplingKey(saplingEsk) == KeyNotAdded) {
             // If adding the Sapling key to the wallet failed, abort the process.
             throw std::runtime_error("CWalletDB::GenerateUnifiedSpendingKeyForAccount(): Unable to add Sapling key component to the wallet.");
         }
 
-        // Add the Sapling change key to the wallet
+        // Add the Sapling change spending key to the wallet
         auto saplingChangeEsk = saplingEsk.DeriveInternalKey();
-        if (addSpendingKey(saplingChangeEsk) == KeyNotAdded) {
+        if (addSaplingKey(saplingChangeEsk) == KeyNotAdded) {
             // If adding the Sapling change key to the wallet failed, abort the process.
             throw std::runtime_error("CWalletDB::GenerateUnifiedSpendingKeyForAccount(): Unable to add Sapling key component to the wallet.");
         }
+
+        // Associate the Sapling default change address with the IVK
+        auto saplingChangeDFVK = saplingEsk.ToXFVK().GetInternalDFVK();
+        auto saplingChangeIVK = saplingChangeDFVK.fvk.in_viewing_key();
+        if (!AddSaplingPaymentAddress(saplingChangeIVK, saplingChangeDFVK.GetChangeAddress())) {
+            throw std::runtime_error("CWallet::GenerateUnifiedSpendingKeyForAccount(): Failed to add Sapling change address to the wallet.");
+        };
 
         auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
         if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {
@@ -694,6 +707,17 @@ UAGenerationResult CWallet::GenerateUnifiedAddress(
                     ufvkid, diversifierIndex, address.value()
                 )
             );
+        }
+
+        // If the address has a Sapling component, add an association between
+        // that address and the Sapling IVK corresponding to the ufvk
+        auto hasSapling = receiverTypes.find(ReceiverType::Sapling) != receiverTypes.end();
+        if (hasSapling) {
+            auto dfvk = ufvk.value().GetSaplingKey();
+            auto saplingAddress = address.value().GetSaplingReceiver();
+            assert (dfvk.has_value() && saplingAddress.has_value());
+
+            AddSaplingPaymentAddress(dfvk.value().fvk.in_viewing_key(), saplingAddress.value());
         }
 
         // Save the metadata for the generated address so that we can re-derive
@@ -6208,7 +6232,9 @@ KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::SaplingExtendedFu
         return SpendingKeyExists;
     } else if (m_wallet->HaveSaplingFullViewingKey(extfvk.fvk.in_viewing_key())) {
         return KeyAlreadyExists;
-    } else if (m_wallet->AddSaplingFullViewingKey(extfvk)) {
+    } else if (
+            m_wallet->AddSaplingFullViewingKey(extfvk) &&
+            (!addDefaultAddress || m_wallet->AddSaplingPaymentAddress(extfvk.fvk.in_viewing_key(), extfvk.DefaultAddress()))) {
         return KeyAdded;
     } else {
         return KeyNotAdded;
@@ -6238,16 +6264,20 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKe
 KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedSpendingKey &sk) const {
     auto extfvk = sk.ToXFVK();
     auto ivk = extfvk.fvk.in_viewing_key();
+    auto addr = extfvk.DefaultAddress();
     KeyIO keyIO(Params());
-    {
+    { // TODO: why is this extra scope here?
         if (log){
-            LogPrint("zrpc", "Importing zaddr %s...\n", keyIO.EncodePaymentAddress(sk.ToXFVK().DefaultAddress()));
+            LogPrint("zrpc", "Importing zaddr %s...\n", keyIO.EncodePaymentAddress(addr));
         }
         // Don't throw error in case a key is already there
         if (m_wallet->HaveSaplingSpendingKey(extfvk)) {
             return KeyAlreadyExists;
         } else {
-            if (!m_wallet->AddSaplingZKey(sk)) {
+            if (!(
+                m_wallet->AddSaplingZKey(sk) &&
+                (!addDefaultAddress || m_wallet->AddSaplingPaymentAddress(ivk, addr))
+            )) {
                 return KeyNotAdded;
             }
 
