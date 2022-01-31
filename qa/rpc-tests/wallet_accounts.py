@@ -99,9 +99,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         self.check_balance(1, ua1, {})
 
         # Manually send funds to one of the receivers in the UA.
-        # TODO: Once z_sendmany supports UAs, receive to the UA instead of the receiver.
-        sapling0 = self.nodes[0].z_listunifiedreceivers(ua0)['sapling']
-        recipients = [{'address': sapling0, 'amount': Decimal('10')}]
+        recipients = [{'address': ua0, 'amount': Decimal('10')}]
         opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
         txid = wait_and_assert_operationid_status(self.nodes[0], opid)
 
@@ -124,10 +122,9 @@ class WalletAccountsTest(BitcoinTestFramework):
         self.check_balance(0, ua0, {'sapling': 10})
 
         # Manually send funds from the UA receiver.
-        # TODO: Once z_sendmany supports UAs, send from the UA instead of the receiver.
         node1sapling = self.nodes[1].z_getnewaddress('sapling')
         recipients = [{'address': node1sapling, 'amount': Decimal('1')}]
-        opid = self.nodes[0].z_sendmany(sapling0, recipients, 1, 0)
+        opid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0)
         txid = wait_and_assert_operationid_status(self.nodes[0], opid)
 
         # The wallet should detect the spent note as belonging to the UA.
