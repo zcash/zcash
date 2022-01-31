@@ -251,7 +251,7 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingSpendingKey) {
 
     auto sk = GetTestMasterSaplingSpendingKey();
     auto extfvk = sk.ToXFVK();
-    auto ivk = extfvk.fvk.in_viewing_key();
+    auto ivk = extfvk.ToIncomingViewingKey();
     auto addr = sk.ToXFVK().DefaultAddress();
 
     // Sanity-check: we can't get a key we haven't added
@@ -286,7 +286,7 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingFullViewingKey) {
 
     auto sk = GetTestMasterSaplingSpendingKey();
     auto extfvk = sk.ToXFVK();
-    auto ivk = extfvk.fvk.in_viewing_key();
+    auto ivk = extfvk.ToIncomingViewingKey();
     auto addr = sk.ToXFVK().DefaultAddress();
 
     // Sanity-check: we can't get a full viewing key we haven't added
@@ -560,7 +560,7 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
     EXPECT_FALSE(ufvkmeta.has_value());
 
-    auto saplingIvk = zufvk.GetSaplingKey().value().fvk.in_viewing_key();
+    auto saplingIvk = zufvk.GetSaplingKey().value().ToIncomingViewingKey();
     keyStore.AddSaplingPaymentAddress(saplingIvk, saplingReceiver);
 
     ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);

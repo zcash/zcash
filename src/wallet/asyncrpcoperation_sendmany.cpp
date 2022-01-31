@@ -461,8 +461,9 @@ std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(const Spendab
         }, this->ztxoSelector_.GetPattern());
         assert(dfvk.has_value());
 
-        externalOVK = dfvk.value().fvk.ovk;
-        internalOVK = dfvk.value().GetInternalDFVK().fvk.ovk;
+        auto ovks = dfvk.value().GetOVKs();
+        internalOVK = ovks.first;
+        externalOVK = ovks.second;
     } else if (!spendable.utxos.empty()) {
         std::optional<transparent::AccountPubKey> tfvk;
         std::visit(match {

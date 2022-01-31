@@ -72,14 +72,14 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     auto dpa = sk.ToXFVK().FindAddress(j).first;
 
     // add the default address
-    EXPECT_TRUE(wallet.AddSaplingPaymentAddress(sk.ToXFVK().fvk.in_viewing_key(), sk.ToXFVK().DefaultAddress()));
+    EXPECT_TRUE(wallet.AddSaplingPaymentAddress(sk.ToXFVK().ToIncomingViewingKey(), sk.ToXFVK().DefaultAddress()));
 
     // verify wallet only has the default address
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.ToXFVK().DefaultAddress()));
     EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(dpa));
 
     // manually add a diversified address
-    auto ivk = extfvk.fvk.in_viewing_key();
+    auto ivk = extfvk.ToIncomingViewingKey();
     EXPECT_TRUE(wallet.AddSaplingPaymentAddress(ivk, dpa));
 
     // verify wallet did add it

@@ -182,9 +182,7 @@ TEST(ZIP32, DeriveChangeAddress)
     auto accountSk = libzcash::SaplingExtendedSpendingKey::ForAccount(seed, 1, 0);
     auto extfvk = accountSk.first.ToXFVK();
     auto changeSk = accountSk.first.DeriveInternalKey();
-    auto changeDfvk = extfvk.GetInternalDFVK();
 
-    EXPECT_EQ(changeDfvk.DefaultAddress(), extfvk.GetChangeAddress());
     EXPECT_EQ(changeSk.ToXFVK().DefaultAddress(), extfvk.GetChangeAddress());
 }
 

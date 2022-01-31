@@ -56,7 +56,7 @@ std::optional<uint32_t> diversifier_index_t::ToTransparentChildIndex() const {
 }
 
 //
-// Sapling
+// SaplingExtendedFullViewingKey
 //
 
 std::optional<SaplingExtendedFullViewingKey> SaplingExtendedFullViewingKey::Derive(uint32_t i) const
@@ -79,6 +79,10 @@ std::optional<SaplingExtendedFullViewingKey> SaplingExtendedFullViewingKey::Deri
         return std::nullopt;
     }
 }
+
+//
+// SaplingDiversifiableFullViewingKey
+//
 
 std::optional<libzcash::SaplingPaymentAddress>
     SaplingDiversifiableFullViewingKey::Address(diversifier_index_t j) const
@@ -144,10 +148,23 @@ libzcash::SaplingDiversifiableFullViewingKey SaplingDiversifiableFullViewingKey:
     return internalDFVK;
 }
 
+libzcash::SaplingIncomingViewingKey SaplingDiversifiableFullViewingKey::GetChangeIVK() const {
+    auto internalDFVK = this->GetInternalDFVK();
+    return internalDFVK.fvk.in_viewing_key();
+}
+
 libzcash::SaplingPaymentAddress SaplingDiversifiableFullViewingKey::GetChangeAddress() const {
     auto internalDFVK = this->GetInternalDFVK();
     return internalDFVK.DefaultAddress();
 }
+
+std::pair<uint256, uint256> SaplingDiversifiableFullViewingKey::GetOVKs() const {
+    return std::make_pair(this->GetInternalDFVK().fvk.ovk, fvk.ovk);
+}
+
+//
+// SaplingExtendedSpendingKey
+//
 
 SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Master(const HDSeed& seed)
 {

@@ -131,6 +131,9 @@ public:
 const libzcash::diversifier_index_t MAX_TRANSPARENT_CHILD_IDX(0x7FFFFFFF);
 
 class SaplingDiversifiableFullViewingKey {
+protected:
+    SaplingDiversifiableFullViewingKey GetInternalDFVK() const;
+
 public:
     libzcash::SaplingFullViewingKey fvk;
     uint256 dk;
@@ -153,11 +156,20 @@ public:
         return std::make_pair(addr.value(), j);
     }
 
-    SaplingDiversifiableFullViewingKey GetInternalDFVK() const;
+    libzcash::SaplingIncomingViewingKey ToIncomingViewingKey() const {
+        return fvk.in_viewing_key();
+    }
 
     libzcash::SaplingPaymentAddress DefaultAddress() const;
 
+    libzcash::SaplingIncomingViewingKey GetChangeIVK() const;
     libzcash::SaplingPaymentAddress GetChangeAddress() const;
+
+    /**
+     * Returns the (internal, external) OVKs for shielded spends
+     * from the associated spend authority.
+     */
+    std::pair<uint256, uint256> GetOVKs() const;
 
     ADD_SERIALIZE_METHODS;
 

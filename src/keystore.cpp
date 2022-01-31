@@ -193,7 +193,7 @@ bool CBasicKeyStore::AddSaplingFullViewingKey(
     const libzcash::SaplingExtendedFullViewingKey &extfvk)
 {
     LOCK(cs_KeyStore);
-    auto ivk = extfvk.fvk.in_viewing_key();
+    auto ivk = extfvk.ToIncomingViewingKey();
     mapSaplingFullViewingKeys[ivk] = extfvk;
 
     return true;
@@ -311,9 +311,10 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
     // Add the Sapling component of the UFVK to the wallet.
     auto saplingKey = ufvk.GetSaplingKey();
     if (saplingKey.has_value()) {
-        auto ivk = saplingKey.value().fvk.in_viewing_key();
+        auto ivk = saplingKey.value().ToIncomingViewingKey();
         mapSaplingKeyUnified.insert(std::make_pair(ivk, ufvk.GetKeyID()));
-        auto changeIvk = saplingKey.value().GetInternalDFVK().fvk.in_viewing_key();
+
+        auto changeIvk = saplingKey.value().GetChangeIVK();
         mapSaplingKeyUnified.insert(std::make_pair(changeIvk, ufvk.GetKeyID()));
     }
 

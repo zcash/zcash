@@ -667,7 +667,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
         auto sk = GetTestMasterSaplingSpendingKey();
         auto expsk = sk.expsk;
         auto extfvk = sk.ToXFVK();
-        auto ivk = extfvk.fvk.in_viewing_key();
+        auto ivk = extfvk.ToIncomingViewingKey();
         auto pk = extfvk.DefaultAddress();
 
         ASSERT_TRUE(wallet.AddSaplingZKey(sk));
@@ -1042,7 +1042,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         auto sk = GetTestMasterSaplingSpendingKey();
         auto expsk = sk.expsk;
         auto extfvk = sk.ToXFVK();
-        auto ivk = extfvk.fvk.in_viewing_key();
+        auto ivk = extfvk.ToIncomingViewingKey();
         auto pk = extfvk.DefaultAddress();
 
         // Generate Sapling note A
@@ -1991,7 +1991,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto extfvk = sk.ToXFVK();
-    auto ivk = extfvk.fvk.in_viewing_key();
+    auto ivk = extfvk.ToIncomingViewingKey();
     auto pk = extfvk.DefaultAddress();
 
     ASSERT_TRUE(wallet.AddSaplingZKey(sk));
