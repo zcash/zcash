@@ -119,13 +119,14 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance("*"), node2utxobalance)
 
         # check zaddr balance with z_getbalance
-        assert_equal(self.nodes[2].z_getbalance(myzaddr), zsendmanynotevalue)
+        zbalance = zsendmanynotevalue
+        assert_equal(self.nodes[2].z_getbalance(myzaddr), zbalance)
 
         # check via z_gettotalbalance
         resp = self.nodes[2].z_gettotalbalance()
         assert_equal(Decimal(resp["transparent"]), node2utxobalance)
-        assert_equal(Decimal(resp["private"]), zsendmanynotevalue)
-        assert_equal(Decimal(resp["total"]), node2utxobalance + zsendmanynotevalue)
+        assert_equal(Decimal(resp["private"]), zbalance)
+        assert_equal(Decimal(resp["total"]), node2utxobalance + zbalance)
 
         # check confirmed shielded balance with getwalletinfo
         wallet_info = self.nodes[2].getwalletinfo()
@@ -152,6 +153,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         opid = self.nodes[2].z_sendmany(myzaddr, recipients)
         wait_and_assert_operationid_status(self.nodes[2], opid)
+        zbalance -= Decimal('2.0') + zsendmanyfee
 
         self.sync_all()
         self.nodes[2].generate(1)
@@ -193,8 +195,48 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
+        node2balance += Decimal('5.0')
         self.check_balance(0, 0, n0ua0, {'sapling': 5})
-        assert_equal(Decimal(self.nodes[2].getbalance()), node2balance + Decimal('5.0'))
+        assert_equal(Decimal(self.nodes[2].getbalance()), node2balance)
+
+        # Send some funds to a legacy sapling address that we can spend from
+        recipients = []
+        recipients.append({"address":myzaddr, "amount":3}) 
+        opid = self.nodes[0].z_sendmany(n0ua0, recipients, 1, 0)
+        wait_and_assert_operationid_status(self.nodes[0], opid)
+
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        zbalance += Decimal('3.0')
+        self.check_balance(0, 0, n0ua0, {'sapling': 2})
+        assert_equal(Decimal(self.nodes[2].z_getbalance(myzaddr)), zbalance)
+
+        # Send funds back from the legacy taddr to the UA
+        recipients = []
+        recipients.append({"address":n0ua0, "amount":4}) 
+        opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, 0)
+        wait_and_assert_operationid_status(self.nodes[2], opid)
+
+        self.nodes[2].generate(1)
+        self.sync_all()
+
+        node2balance -= Decimal('4.0')
+        self.check_balance(0, 0, n0ua0, {'sapling': 6})
+        assert_equal(Decimal(self.nodes[2].getbalance()), node2balance)
+
+        # Send funds back from the legacy zaddr to the UA
+        recipients = []
+        recipients.append({"address":n0ua0, "amount":2}) 
+        opid = self.nodes[2].z_sendmany(myzaddr, recipients, 1, 0)
+        wait_and_assert_operationid_status(self.nodes[2], opid)
+
+        self.nodes[2].generate(1)
+        self.sync_all()
+
+        zbalance -= Decimal('2.0')
+        self.check_balance(0, 0, n0ua0, {'sapling': 8})
+        assert_equal(Decimal(self.nodes[2].z_getbalance(myzaddr)), zbalance)
 
 if __name__ == '__main__':
     WalletZSendmanyTest().main()
