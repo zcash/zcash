@@ -12,12 +12,29 @@
 
 namespace libzcash {
 
+// prototypes for the classes handling ZIP-316 encoding (in Address.hpp)
+// TODO: ZIP-316 encoding should probably be moved here
+class UnifiedAddress;
+class UnifiedFullViewingKey;
+
 enum class ReceiverType: uint32_t {
     P2PKH = 0x00,
     P2SH = 0x01,
     Sapling = 0x02,
     //Orchard = 0x03
 };
+
+enum class UnifiedAddressGenerationError {
+    ShieldedReceiverNotFound,
+    ReceiverTypeNotAvailable,
+    NoAddressForDiversifier,
+    DiversifierSpaceExhausted,
+    InvalidTransparentChildIndex
+};
+
+typedef std::variant<
+    std::pair<UnifiedAddress, diversifier_index_t>,
+    UnifiedAddressGenerationError> UnifiedAddressGenerationResult;
 
 /** A recipient address to which a unified address can be resolved */
 typedef std::variant<
@@ -99,11 +116,6 @@ typedef std::variant<
     CKeyID,
     UnknownReceiver> Receiver;
 
-// prototypes for the classes handling ZIP-316 encoding (in Address.hpp)
-// TODO: ZIP-316 encoding should probably be moved here
-class UnifiedAddress;
-class UnifiedFullViewingKey;
-
 /**
  * An internal identifier for a unified full viewing key, derived as a
  * blake2b hash of the serialized form of the UFVK.
@@ -156,14 +168,17 @@ public:
     /**
      * Creates a new unified address having the specified receiver types, at the specified
      * diversifier index, unless the diversifer index would generate an invalid receiver.
-     * Returns `std::nullopt` if the diversifier index does not produce a valid receiver
-     * for one or more of the specified receiver types; under this circumstance, the caller
-     * should usually try successive diversifier indices until the operation returns a
-     * non-null value.
+     * Returns UnifiedAddressGenerationError::NoAddressForDiversifier if the diversifier
+     * index does not produce a valid receiver for one or more of the specified receiver
+     * types; under this circumstance, the caller should usually try successive diversifier
+     * indices until the operation returns a valid address. Returns
+     * `UnifiedAddressGenerationError::InvalidTransparentChildIndex` if a transparent
+     * receiver was requested but the specified diversifier was out of range.
      *
-     * This method will throw if `receiverTypes` does not include a shielded receiver type.
+     * If successful in deriving an address, this method returns a pair consisting of the
+     * newly derived address and the provided value `j`.
      */
-    std::optional<UnifiedAddress> Address(
+    UnifiedAddressGenerationResult Address(
             const diversifier_index_t& j,
             const std::set<ReceiverType>& receiverTypes) const;
 
@@ -171,21 +186,21 @@ public:
      * Find the smallest diversifier index >= `j` such that it generates a valid
      * unified address according to the conditions specified in the documentation
      * for the `Address` method above, and returns the newly created address along
-     * with the diversifier index used to produce it. Returns `std::nullopt` if the
+     * with the diversifier index used to produce it.
+     *
+     * Returns UnifiedAddressGenerationError::NoAddressForDiversifier if the
      * diversifier space is exhausted, or if the set of receiver types contains a
      * transparent receiver and the diversifier exceeds the maximum transparent
      * child index.
-     *
-     * This method will throw if `receiverTypes` does not include a shielded receiver type.
      */
-    std::optional<std::pair<UnifiedAddress, diversifier_index_t>> FindAddress(
+    UnifiedAddressGenerationResult FindAddress(
             const diversifier_index_t& j,
             const std::set<ReceiverType>& receiverTypes) const;
 
     /**
      * Find the next available address that contains all supported receiver types.
      */
-    std::optional<std::pair<UnifiedAddress, diversifier_index_t>> FindAddress(const diversifier_index_t& j) const;
+    UnifiedAddressGenerationResult FindAddress(const diversifier_index_t& j) const;
 
     /**
      * Return the change address for this UFVK, given the provided

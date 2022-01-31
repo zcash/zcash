@@ -401,19 +401,16 @@ public:
     bool AcceptToMemoryPool(bool fLimitFree=true, bool fRejectAbsurdFee=true);
 };
 
-enum class AddressGenerationError {
+enum class WalletUAGenerationError {
     NoSuchAccount,
-    InvalidReceiverTypes,
     ExistingAddressMismatch,
-    NoAddressForDiversifier,
-    DiversifierSpaceExhausted,
-    WalletEncrypted,
-    InvalidTransparentChildIndex
+    WalletEncrypted
 };
 
 typedef std::variant<
     std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>,
-    AddressGenerationError> UAGenerationResult;
+    libzcash::UnifiedAddressGenerationError,
+    WalletUAGenerationError> WalletUAGenerationResult;
 
 /**
  * A transaction with a bunch of additional info that only the owner cares about.
@@ -1433,7 +1430,7 @@ public:
     //!
     //! If no diversifier index is provided, the next unused diversifier index
     //! will be selected.
-    UAGenerationResult GenerateUnifiedAddress(
+    WalletUAGenerationResult GenerateUnifiedAddress(
         const libzcash::AccountId& accountId,
         const std::set<libzcash::ReceiverType>& receivers,
         std::optional<libzcash::diversifier_index_t> j = std::nullopt);

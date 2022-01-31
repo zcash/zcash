@@ -72,54 +72,70 @@ ZcashdUnifiedFullViewingKey ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingK
     return result;
 }
 
-std::optional<UnifiedAddress> ZcashdUnifiedFullViewingKey::Address(
+UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::Address(
         const diversifier_index_t& j,
         const std::set<ReceiverType>& receiverTypes) const
 {
     if (!HasShielded(receiverTypes)) {
-        throw std::runtime_error("Unified addresses must include a shielded receiver.");
+        return UnifiedAddressGenerationError::ShieldedReceiverNotFound;
+    }
+
+    if (receiverTypes.count(ReceiverType::P2SH) > 0) {
+        return UnifiedAddressGenerationError::ReceiverTypeNotAvailable;
     }
 
     UnifiedAddress ua;
-    if (saplingKey.has_value() && receiverTypes.count(ReceiverType::Sapling) > 0) {
-        auto saplingAddress = saplingKey.value().Address(j);
-        if (saplingAddress.has_value()) {
-            ua.AddReceiver(saplingAddress.value());
+    if (receiverTypes.count(ReceiverType::Sapling) > 0) {
+        if (saplingKey.has_value()) {
+            auto saplingAddress = saplingKey.value().Address(j);
+            if (saplingAddress.has_value()) {
+                ua.AddReceiver(saplingAddress.value());
+            } else {
+                return UnifiedAddressGenerationError::NoAddressForDiversifier;
+            }
         } else {
-            return std::nullopt;
+            return UnifiedAddressGenerationError::ReceiverTypeNotAvailable;
         }
     }
 
-    if (transparentKey.has_value() && receiverTypes.count(ReceiverType::P2PKH) > 0) {
-        const auto& tkey = transparentKey.value();
+    if (receiverTypes.count(ReceiverType::P2PKH) > 0) {
+        if (transparentKey.has_value()) {
+            const auto& tkey = transparentKey.value();
 
-        auto childIndex = j.ToTransparentChildIndex();
-        if (!childIndex.has_value()) return std::nullopt;
+            auto childIndex = j.ToTransparentChildIndex();
+            if (!childIndex.has_value()) return UnifiedAddressGenerationError::InvalidTransparentChildIndex;
 
-        auto externalPubkey = tkey.DeriveExternal(childIndex.value());
-        if (!externalPubkey.has_value()) return std::nullopt;
+            auto externalPubkey = tkey.DeriveExternal(childIndex.value());
+            if (!externalPubkey.has_value()) return UnifiedAddressGenerationError::NoAddressForDiversifier;
 
-        ua.AddReceiver(externalPubkey.value().GetID());
+            ua.AddReceiver(externalPubkey.value().GetID());
+        } else {
+            return UnifiedAddressGenerationError::ReceiverTypeNotAvailable;
+        }
     }
 
-    return ua;
+    return std::make_pair(ua, j);
 }
 
-std::optional<std::pair<UnifiedAddress, diversifier_index_t>> ZcashdUnifiedFullViewingKey::FindAddress(
+UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
         const diversifier_index_t& j,
         const std::set<ReceiverType>& receiverTypes) const {
     diversifier_index_t j0(j);
     bool hasTransparent = HasTransparent(receiverTypes);
     auto addr = Address(j0, receiverTypes);
-    while (!addr.has_value()) {
-        if (!j0.increment() || (hasTransparent && !j0.ToTransparentChildIndex().has_value()))
-            return std::nullopt;
+    while (addr == UnifiedAddressGenerationResult(UnifiedAddressGenerationError::NoAddressForDiversifier)) {
+        if (!j0.increment())
+            return UnifiedAddressGenerationError::DiversifierSpaceExhausted;
+
+        if (hasTransparent && !j0.ToTransparentChildIndex().has_value())
+            return UnifiedAddressGenerationError::InvalidTransparentChildIndex;
+
         addr = Address(j0, receiverTypes);
     }
-    return std::make_pair(addr.value(), j0);
+    return addr;
 }
 
-std::optional<std::pair<UnifiedAddress, diversifier_index_t>> ZcashdUnifiedFullViewingKey::FindAddress(
+UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
         const diversifier_index_t& j) const {
     return FindAddress(j, {ReceiverType::P2PKH, ReceiverType::Sapling});
 }

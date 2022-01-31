@@ -552,7 +552,9 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     EXPECT_TRUE(keyStore.AddUnifiedFullViewingKey(zufvk));
     EXPECT_EQ(keyStore.GetUnifiedFullViewingKey(ufvkid).value(), zufvk);
 
-    auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Sapling}).value();
+    auto addrPair = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Sapling}));
+
+
     EXPECT_TRUE(addrPair.first.GetSaplingReceiver().has_value());
     auto saplingReceiver = addrPair.first.GetSaplingReceiver().value();
     auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
@@ -578,7 +580,7 @@ TEST(KeystoreTests, AddTransparentReceiverForUnifiedAddress) {
     auto ufvk = usk.value().ToFullViewingKey();
     auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
     auto ufvkid = zufvk.GetKeyID();
-    auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling}).value();
+    auto addrPair = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling}));
     EXPECT_TRUE(addrPair.first.GetP2PKHReceiver().has_value());
     auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(addrPair.first.GetP2PKHReceiver().value());
     EXPECT_FALSE(ufvkmeta.has_value());
