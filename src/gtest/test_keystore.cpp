@@ -557,7 +557,7 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     EXPECT_FALSE(ufvkmeta.has_value());
 
     auto saplingIvk = zufvk.GetSaplingKey().value().fvk.in_viewing_key();
-    keyStore.AddSaplingIncomingViewingKey(saplingIvk, saplingReceiver);
+    keyStore.AddSaplingPaymentAddress(saplingIvk, saplingReceiver);
 
     ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
     EXPECT_TRUE(ufvkmeta.has_value());

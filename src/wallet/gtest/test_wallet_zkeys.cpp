@@ -10,7 +10,7 @@
  * This test covers Sapling methods on CWallet
  * GenerateNewLegacySaplingZKey()
  * AddSaplingZKey()
- * AddSaplingIncomingViewingKey()
+ * AddSaplingPaymentAddress()
  * LoadSaplingZKey()
  * LoadSaplingIncomingViewingKey()
  * LoadSaplingZKeyMetadata()
@@ -77,7 +77,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
 
     // manually add a diversified address
     auto ivk = extfvk.fvk.in_viewing_key();
-    EXPECT_TRUE(wallet.AddSaplingIncomingViewingKey(ivk, dpa));
+    EXPECT_TRUE(wallet.AddSaplingPaymentAddress(ivk, dpa));
 
     // verify wallet did add it
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.ToXFVK().DefaultAddress()));
@@ -454,7 +454,7 @@ TEST(WalletZkeysTest, WriteCryptedSaplingZkeyDirectToDb) {
 
     // Add diversified address to the wallet
     auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
-    EXPECT_TRUE(wallet.AddSaplingIncomingViewingKey(ivk, dpa));
+    EXPECT_TRUE(wallet.AddSaplingPaymentAddress(ivk, dpa));
 
     // encrypt wallet
     SecureString strWalletPass;

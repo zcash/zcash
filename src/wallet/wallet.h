@@ -1383,7 +1383,7 @@ public:
     //! full viewing key to the keystore, to avoid this override.
     bool AddSaplingFullViewingKey(
             const libzcash::SaplingExtendedFullViewingKey &extfvk);
-    bool AddSaplingIncomingViewingKey(
+    bool AddSaplingPaymentAddress(
         const libzcash::SaplingIncomingViewingKey &ivk,
         const libzcash::SaplingPaymentAddress &addr);
     bool AddCryptedSaplingSpendingKey(
