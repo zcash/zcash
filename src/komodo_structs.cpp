@@ -135,7 +135,7 @@ std::ostream& operator<<(std::ostream& os, const event& in)
  * @param pos the starting position (will advance)
  * @param data_len full length of data
  */
-event_pubkeys::event_pubkeys(uint8_t* data, long& pos, long data_len, int32_t height) : event_pubkeys(height)
+event_pubkeys::event_pubkeys(uint8_t* data, long& pos, long data_len, int32_t height) : event(EVENT_PUBKEYS, height)
 {
     num = data[pos++];
     if (num > 64)
@@ -143,7 +143,7 @@ event_pubkeys::event_pubkeys(uint8_t* data, long& pos, long data_len, int32_t he
     mem_nread(pubkeys, num, data, pos, data_len);
 }
 
-event_pubkeys::event_pubkeys(FILE* fp, int32_t height) : event_pubkeys(height)
+event_pubkeys::event_pubkeys(FILE* fp, int32_t height) : event(EVENT_PUBKEYS, height)
 {
     num = fgetc(fp);
     if ( fread(pubkeys,33,num,fp) != num )
@@ -478,7 +478,6 @@ const notarized_checkpoint *komodo_state::CheckpointAtHeight(int32_t height) con
 {
     // find the nearest notarization_height
     // work backwards, get the first one that meets our criteria
-    auto itr = NPOINTS.rbegin();
     for(auto itr = NPOINTS.rbegin(); itr != NPOINTS.rend(); ++itr)
     {
         if ( itr->MoMdepth != 0 

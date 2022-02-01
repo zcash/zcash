@@ -294,9 +294,9 @@ const notarized_checkpoint *komodo_npptr(int32_t height)
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN];
     char dest[KOMODO_ASSETCHAIN_MAXLEN]; 
-    komodo_state *sp;
 
-    if ( (sp= komodo_stateptr(symbol,dest)) != nullptr )
+    komodo_state *sp = komodo_stateptr(symbol, dest);
+    if ( sp != nullptr )
     {
         return sp->CheckpointAtHeight(height);
     }
@@ -311,9 +311,9 @@ int32_t komodo_prevMoMheight()
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN];
     char dest[KOMODO_ASSETCHAIN_MAXLEN];
-    komodo_state *sp;
 
-    if ( (sp= komodo_stateptr(symbol,dest)) != nullptr )
+    komodo_state *sp = komodo_stateptr(symbol,dest);
+    if ( sp != nullptr )
     {
         return sp->PrevMoMHeight();
     }
@@ -331,13 +331,13 @@ int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN];
     char dest[KOMODO_ASSETCHAIN_MAXLEN];
-    komodo_state *sp;
 
     *prevMoMheightp = 0;
     memset(hashp,0,sizeof(*hashp));
     memset(txidp,0,sizeof(*txidp));
 
-    if ( (sp= komodo_stateptr(symbol,dest)) != nullptr )
+    komodo_state *sp = komodo_stateptr(symbol, dest);
+    if ( sp != nullptr )
     {
         return sp->NotarizedHeight(prevMoMheightp, hashp, txidp);
     }
@@ -397,16 +397,15 @@ int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,in
  */
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
 {
-    int32_t i=0;
-    bool found = false;
     char symbol[KOMODO_ASSETCHAIN_MAXLEN];
-    char dest[KOMODO_ASSETCHAIN_MAXLEN]; 
-    komodo_state *sp;
+    char dest[KOMODO_ASSETCHAIN_MAXLEN];
 
-    if ( (sp= komodo_stateptr(symbol,dest)) != nullptr )
+    komodo_state *sp = komodo_stateptr(symbol,dest);
+    if ( sp != nullptr )
     {
         return sp->NotarizedData(nHeight, notarized_hashp, notarized_desttxidp);
     }
+    
     memset(notarized_hashp,0,sizeof(*notarized_hashp));
     memset(notarized_desttxidp,0,sizeof(*notarized_desttxidp));
     return 0;
