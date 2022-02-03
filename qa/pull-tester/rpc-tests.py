@@ -46,6 +46,8 @@ BASE_SCRIPTS= [
     'zcjoinsplit.py',
     'mergetoaddress_mixednotes.py',
     'wallet_shieldcoinbase_sapling.py',
+    'wallet_shieldcoinbase_ua_sapling.py',
+    'wallet_shieldcoinbase_ua_nu5.py',
     'turnstile.py',
     'walletbackup.py',
     'zkey_import_export.py',

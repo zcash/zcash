@@ -93,8 +93,8 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
         [&](libzcash::SproutPaymentAddress addr) {
             tozaddr_ = addr;
         },
-        [&](libzcash::UnifiedAddress) {
-            throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a unified address.");
+        [&](libzcash::UnifiedAddress addr) {
+            tozaddr_ = addr;
         }
     }, toAddress);
 
@@ -279,7 +279,12 @@ bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) c
 }
 
 bool ShieldToAddress::operator()(const libzcash::UnifiedAddress &uaddr) const {
-    // TODO
+    // TODO check if an Orchard address is present, send to it if so.
+    const auto receiver{uaddr.GetSaplingReceiver()};
+    if (receiver.has_value()) {
+        return ShieldToAddress(m_op, sendAmount)(receiver.value());
+    }
+    // This UA must contain a transparent address, which can't be the destination of coinbase shielding.
     return false;
 }
 
