@@ -2224,7 +2224,7 @@ TEST(WalletTests, GenerateUnifiedAddress) {
     } else {
         // the previous generation attempt succeeded, so this one should definitely fail.
         uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
-        expected = UnifiedAddressGenerationError::DiversifierSpaceExhausted;
+        expected = UnifiedAddressGenerationError::InvalidTransparentChildIndex;
         EXPECT_EQ(uaResult, expected);
     }
 
