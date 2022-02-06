@@ -5,6 +5,7 @@
 
 # Base class for RPC testing
 
+import inspect
 import logging
 import optparse
 import os
@@ -39,9 +40,14 @@ class BitcoinTestFramework(object):
     def run_test(self):
         raise NotImplementedError
 
+    def setup_logging(self):
+        filename = os.path.basename(inspect.getfile(self.__class__).rstrip(".py")) + "_test.log"
+        log_file = os.path.join(self.options.tmpdir, filename)
+        print(log_file)
+    
     def add_options(self, parser):
         pass
-
+    
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
         if self.setup_clean_chain:
@@ -138,6 +144,7 @@ class BitcoinTestFramework(object):
         success = False
         try:
             os.makedirs(self.options.tmpdir, exist_ok=False)
+            self.setup_logging()
             self.setup_chain()
             self.setup_network()
             self.run_test()
