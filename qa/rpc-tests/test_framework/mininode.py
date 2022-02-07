@@ -1963,15 +1963,12 @@ class NodeConn(asyncore.dispatcher):
             self.handle_close()
         self.rpc = rpc
 
-    def show_debug_msg(self, msg):
-        self.log.debug(msg)
-
     def handle_connect(self):
-        self.show_debug_msg("MiniNode: Connected & Listening: \n")
+        self.log.debug("MiniNode: Connected & Listening: \n")
         self.state = b"connected"
 
     def handle_close(self):
-        self.show_debug_msg("MiniNode: Closing Connection to %s:%d... "
+        self.log.debug("MiniNode: Closing Connection to %s:%d... "
                             % (self.dstaddr, self.dstport))
         self.state = b"closed"
         self.recvbuf = b""
@@ -2045,7 +2042,7 @@ class NodeConn(asyncore.dispatcher):
                     t.deserialize(f)
                     self.got_message(t)
                 else:
-                    self.show_debug_msg("Unknown command: '" + command + "' " +
+                    self.log.debug("Unknown command: '" + command + "' " +
                                         repr(msg))
         except Exception as e:
             print('got_data:', repr(e))
@@ -2055,7 +2052,7 @@ class NodeConn(asyncore.dispatcher):
     def send_message(self, message, pushbuf=False):
         if self.state != b"connected" and not pushbuf:
             return
-        self.show_debug_msg("Send %s" % repr(message))
+        self.log.debug("Send %s" % repr(message))
         command = message.command
         data = message.serialize()
         tmsg = self.MAGIC_BYTES[self.network]
@@ -2077,7 +2074,7 @@ class NodeConn(asyncore.dispatcher):
                 self.messagemap[b'ping'] = msg_ping_prebip31
         if self.last_sent + 30 * 60 < time.time():
             self.send_message(self.messagemap[b'ping']())
-        self.show_debug_msg("Recv %s" % repr(message))
+        self.log.debug("Recv %s" % repr(message))
         self.cb.deliver(self, message)
 
     def disconnect_node(self):
