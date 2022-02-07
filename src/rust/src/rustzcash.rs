@@ -30,7 +30,7 @@ use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::slice;
 use subtle::CtOption;
-use tracing::info;
+use tracing::{error, info};
 
 #[cfg(not(target_os = "windows"))]
 use std::ffi::OsStr;
@@ -532,13 +532,23 @@ pub extern "C" fn librustzcash_eh_isvalid(
     soln: *const c_uchar,
     soln_len: size_t,
 ) -> bool {
-    if (k >= n) || (n % 8 != 0) || (soln_len != (1 << k) * ((n / (k + 1)) as usize + 1) / 8) {
+    let expected_soln_len = (1 << k) * ((n / (k + 1)) as usize + 1) / 8;
+    if (k >= n) || (n % 8 != 0) || (soln_len != expected_soln_len) {
+        error!(
+            "eh_isvalid: params wrong, n={}, k={}, soln_len={} expected={}",
+            n, k, soln_len, expected_soln_len,
+        );
         return false;
     }
     let rs_input = unsafe { slice::from_raw_parts(input, input_len) };
     let rs_nonce = unsafe { slice::from_raw_parts(nonce, nonce_len) };
     let rs_soln = unsafe { slice::from_raw_parts(soln, soln_len) };
-    equihash::is_valid_solution(n, k, rs_input, rs_nonce, rs_soln).is_ok()
+    if let Err(e) = equihash::is_valid_solution(n, k, rs_input, rs_nonce, rs_soln) {
+        error!("eh_isvalid: is_valid_solution: {}", e);
+        false
+    } else {
+        true
+    }
 }
 
 /// Creates a Sapling verification context. Please free this when you're done.
