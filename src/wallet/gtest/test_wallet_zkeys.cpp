@@ -59,7 +59,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     wallet.GetSaplingSpendingKey(extfvk, keyOut);
     ASSERT_EQ(sk, keyOut);
 
-    // verify there is still only one key; adding the spending
+    // verify there is still only one address; adding the spending
     // key no longer adds the default address
     wallet.GetSaplingPaymentAddresses(addrs);
     EXPECT_EQ(1, addrs.size());
@@ -472,6 +472,8 @@ TEST(WalletZkeysTest, WriteCryptedSaplingZkeyDirectToDb) {
     wallet.Unlock(strWalletPass);
     auto address2 = wallet.GenerateNewLegacySaplingZKey();
 
+    // wallet should have three addresses: the default addresses for the two
+    // generated keys, and the added diversified address.
     wallet.GetSaplingPaymentAddresses(addrs);
     ASSERT_EQ(3, addrs.size());
 

@@ -13,7 +13,6 @@
 #include "script/script.h"
 #include "script/standard.h"
 #include "uint256.h"
-#include "util/match.h"
 #include "zcash/Address.hpp"
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "zcash/JoinSplit.hpp"

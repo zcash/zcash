@@ -232,8 +232,6 @@ bool CWallet::AddSaplingPaymentAddress(
     }
 
     return CWalletDB(strWalletFile).WriteSaplingPaymentAddress(addr, ivk);
-
-    return true;
 }
 
 
@@ -259,10 +257,9 @@ bool CWallet::AddSproutZKey(const libzcash::SproutSpendingKey &key)
     return true;
 }
 
-CPubKey CWallet::GenerateNewKey(bool isChangeKey)
+CPubKey CWallet::GenerateNewKey(bool external)
 {
     AssertLockHeld(cs_wallet); // mapKeyMetadata
-    bool external = !isChangeKey;
 
     if (!mnemonicHDChain.has_value()) {
         throw std::runtime_error(
@@ -679,7 +676,7 @@ WalletUAGenerationResult CWallet::GenerateUnifiedAddress(
 
         assert(mapUfvkAddressMetadata[ufvkid].SetReceivers(address.second, receiverTypes));
         if (hasTransparent) {
-            // We must construct the and add transparent spending key associated
+            // We must construct and add the transparent spending key associated
             // with the external and internal transparent child addresses to the
             // transparent keystore.
             auto usk = GenerateUnifiedSpendingKeyForAccount(accountId).value();
@@ -1635,7 +1632,7 @@ std::optional<RecipientAddress> CWallet::GenerateChangeAddressForAccount(
     // we're able to generate.
     for (libzcash::ChangeType t : changeOptions) {
         if (t == libzcash::ChangeType::Transparent && accountId == ZCASH_LEGACY_ACCOUNT) {
-            return GenerateNewKey(true).GetID();
+            return GenerateNewKey(false).GetID();
         } else {
             auto ufvk = this->GetUnifiedFullViewingKeyByAccount(accountId);
             if (ufvk.has_value()) {
@@ -4966,7 +4963,7 @@ bool CWallet::NewKeyPool()
         for (int i = 0; i < nKeys; i++)
         {
             int64_t nIndex = i+1;
-            walletdb.WritePool(nIndex, CKeyPool(GenerateNewKey(false)));
+            walletdb.WritePool(nIndex, CKeyPool(GenerateNewKey(true)));
             setKeyPool.insert(nIndex);
         }
         LogPrintf("CWallet::NewKeyPool wrote %d new keys\n", nKeys);
@@ -4996,7 +4993,7 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
             int64_t nEnd = 1;
             if (!setKeyPool.empty())
                 nEnd = *(--setKeyPool.end()) + 1;
-            if (!walletdb.WritePool(nEnd, CKeyPool(GenerateNewKey(false))))
+            if (!walletdb.WritePool(nEnd, CKeyPool(GenerateNewKey(true))))
                 throw runtime_error("TopUpKeyPool(): writing generated key failed");
             setKeyPool.insert(nEnd);
             LogPrintf("keypool added key %d, size=%u\n", nEnd, setKeyPool.size());
@@ -5063,7 +5060,7 @@ std::optional<CPubKey> CWallet::GetKeyFromPool()
         if (nIndex == -1)
         {
             if (IsLocked()) return std::nullopt;
-            return GenerateNewKey(false);
+            return GenerateNewKey(true);
         }
         KeepKey(nIndex);
         return keypool.vchPubKey;
@@ -6275,38 +6272,36 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
     auto ivk = extfvk.ToIncomingViewingKey();
     auto addr = extfvk.DefaultAddress();
     KeyIO keyIO(Params());
-    { // TODO: why is this extra scope here?
-        if (log){
-            LogPrint("zrpc", "Importing zaddr %s...\n", keyIO.EncodePaymentAddress(addr));
+    if (log){
+        LogPrint("zrpc", "Importing zaddr %s...\n", keyIO.EncodePaymentAddress(addr));
+    }
+    // Don't throw error in case a key is already there
+    if (m_wallet->HaveSaplingSpendingKey(extfvk)) {
+        return KeyAlreadyExists;
+    } else {
+        if (!(
+            m_wallet->AddSaplingZKey(sk) &&
+            (!addDefaultAddress || m_wallet->AddSaplingPaymentAddress(ivk, addr))
+        )) {
+            return KeyNotAdded;
         }
-        // Don't throw error in case a key is already there
-        if (m_wallet->HaveSaplingSpendingKey(extfvk)) {
-            return KeyAlreadyExists;
-        } else {
-            if (!(
-                m_wallet->AddSaplingZKey(sk) &&
-                (!addDefaultAddress || m_wallet->AddSaplingPaymentAddress(ivk, addr))
-            )) {
-                return KeyNotAdded;
-            }
 
-            // Sapling addresses can't have been used in transactions prior to activation.
-            if (params.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight == Consensus::NetworkUpgrade::ALWAYS_ACTIVE) {
-                m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = nTime;
-            } else {
-                // 154051200 seconds from epoch is Friday, 26 October 2018 00:00:00 GMT - definitely before Sapling activates
-                m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = std::max((int64_t) 154051200, nTime);
-            }
-            if (hdKeypath.has_value()) {
-                m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath = hdKeypath.value();
-            }
-            if (seedFpStr.has_value()) {
-                uint256 seedFp;
-                seedFp.SetHex(seedFpStr.value());
-                m_wallet->mapSaplingZKeyMetadata[ivk].seedFp = seedFp;
-            }
-            return KeyAdded;
+        // Sapling addresses can't have been used in transactions prior to activation.
+        if (params.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight == Consensus::NetworkUpgrade::ALWAYS_ACTIVE) {
+            m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = nTime;
+        } else {
+            // 154051200 seconds from epoch is Friday, 26 October 2018 00:00:00 GMT - definitely before Sapling activates
+            m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = std::max((int64_t) 154051200, nTime);
         }
+        if (hdKeypath.has_value()) {
+            m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath = hdKeypath.value();
+        }
+        if (seedFpStr.has_value()) {
+            uint256 seedFp;
+            seedFp.SetHex(seedFpStr.value());
+            m_wallet->mapSaplingZKeyMetadata[ivk].seedFp = seedFp;
+        }
+        return KeyAdded;
     }
 }
 

@@ -264,10 +264,10 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
     LogPrint("zrpcunsafe", "%s: spending %s to send %s with fee %s\n",
         getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(fee_));
-    LogPrint("zrpc", "%s: transparent input: %s (to choose from)\n", getId(), FormatMoney(t_inputs_total));
-    LogPrint("zrpcunsafe", "%s: private input: %s (to choose from)\n", getId(), FormatMoney(z_inputs_total));
-    LogPrint("zrpc", "%s: transparent output: %s\n", getId(), FormatMoney(txOutputAmounts_.t_outputs_total));
-    LogPrint("zrpcunsafe", "%s: private output: %s\n", getId(), FormatMoney(txOutputAmounts_.sapling_outputs_total));
+    LogPrint("zrpc", "%s: total transparent input: %s (to choose from)\n", getId(), FormatMoney(t_inputs_total));
+    LogPrint("zrpcunsafe", "%s: total shielded input: %s (to choose from)\n", getId(), FormatMoney(z_inputs_total));
+    LogPrint("zrpc", "%s: total transparent output: %s\n", getId(), FormatMoney(txOutputAmounts_.t_outputs_total));
+    LogPrint("zrpcunsafe", "%s: total shielded Sapling output: %s\n", getId(), FormatMoney(txOutputAmounts_.sapling_outputs_total));
     LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(fee_));
 
     auto ovks = this->SelectOVKs(spendable);

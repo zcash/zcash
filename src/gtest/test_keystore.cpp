@@ -260,9 +260,6 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingSpendingKey) {
     // Sanity-check: we can't get a full viewing key we haven't added
     EXPECT_FALSE(keyStore.HaveSaplingFullViewingKey(ivk));
     EXPECT_FALSE(keyStore.GetSaplingFullViewingKey(ivk, extfvkOut));
-    // Sanity-check: we can't get an incoming viewing key we haven't added
-    EXPECT_FALSE(keyStore.HaveSaplingIncomingViewingKey(addr));
-    EXPECT_FALSE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
 
     // When we specify the default address, we get the full mapping
     keyStore.AddSaplingSpendingKey(sk);
@@ -270,6 +267,11 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingSpendingKey) {
     EXPECT_TRUE(keyStore.GetSaplingSpendingKey(extfvk, skOut));
     EXPECT_TRUE(keyStore.HaveSaplingFullViewingKey(ivk));
     EXPECT_TRUE(keyStore.GetSaplingFullViewingKey(ivk, extfvkOut));
+
+    // We can't get an incoming viewing key for an address we haven't added
+    EXPECT_FALSE(keyStore.HaveSaplingIncomingViewingKey(addr));
+    EXPECT_FALSE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
+
     keyStore.AddSaplingPaymentAddress(ivk, addr);
     EXPECT_TRUE(keyStore.HaveSaplingIncomingViewingKey(addr));
     EXPECT_TRUE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
@@ -310,9 +312,11 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingFullViewingKey) {
     EXPECT_TRUE(keyStore.GetSaplingFullViewingKey(ivk, extfvkOut));
     EXPECT_EQ(extfvk, extfvkOut);
 
-    // We should still not have the spending key...
+    // We should still not have the spending key or
+    // be able to retrieve the IVK by the default address...
     EXPECT_FALSE(keyStore.HaveSaplingSpendingKey(extfvk));
     EXPECT_FALSE(keyStore.GetSaplingSpendingKey(extfvk, skOut));
+    EXPECT_FALSE(keyStore.HaveSaplingIncomingViewingKey(addr));
 
     // The IVK must be manually associated with the address...
     keyStore.AddSaplingPaymentAddress(ivk, addr);

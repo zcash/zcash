@@ -1254,9 +1254,17 @@ public:
     std::optional<libzcash::AccountId> FindAccountForSelector(const ZTXOSelector& paymentSource) const;
 
     /**
-     * Generate a change address for the specified account. If a transparent change
-     * address is requested, this will generate a fresh diversified unified address,
+     * Generate a change address for the specified account.
+     *
+     * If a shielded change address is requested, this will return the default
+     * unified address for the internal unified full viewing key.
+     *
+     * If a transparent change address is requested, this will generate a fresh
+     * diversified unified address from the internal unified full viewing key,
      * and return the associated transparent change address.
+     *
+     * Returns `std::nullopt` if the account does not have an internal spending
+     * key matching the requested `ChangeType`.
      */
     std::optional<libzcash::RecipientAddress> GenerateChangeAddressForAccount(
             libzcash::AccountId accountId,
@@ -1297,7 +1305,7 @@ public:
      * keystore implementation
      * Generate a new key
      */
-    CPubKey GenerateNewKey(bool isChangeKey);
+    CPubKey GenerateNewKey(bool external);
     //! Adds a key to the store, and saves it to disk.
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
     //! Adds a key to the store, without saving it to disk (used by LoadWallet)
@@ -1365,10 +1373,10 @@ public:
     //! Generates new Sapling key, stores the newly generated spending
     //! key to the wallet, and returns the default address for the newly generated key.
     libzcash::SaplingPaymentAddress GenerateNewLegacySaplingZKey();
-    //! Generates Sapling key at the specified address index, and stores the newly generated
-    //! spending key to the wallet if it has not alreay been persisted.
-    //! Returns the newly created key, and a flag distinguishing
-    //! whether or not the key was already known by the wallet.
+    //! Generates Sapling key at the specified address index, and stores that
+    //! key to the wallet if it has not already been persisted. Returns the
+    //! default address for the key, and a flag that is true when the key
+    //! was newly generated (not already in the wallet).
     std::pair<libzcash::SaplingPaymentAddress, bool> GenerateLegacySaplingZKey(uint32_t addrIndex);
     //! Adds Sapling spending key to the store, and saves it to disk
     bool AddSaplingZKey(const libzcash::SaplingExtendedSpendingKey &key);

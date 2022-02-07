@@ -175,8 +175,8 @@ public:
      * `UnifiedAddressGenerationError::InvalidTransparentChildIndex` if a transparent
      * receiver was requested but the specified diversifier was out of range.
      *
-     * If successful in deriving an address, this method returns a pair consisting of the
-     * newly derived address and the provided value `j`.
+     * If successful in deriving an address, this method returns a `UnifiedAddressGenerationResult`
+     * holding a pair consisting of the newly derived address and the provided value `j`.
      */
     UnifiedAddressGenerationResult Address(
             const diversifier_index_t& j,
@@ -206,7 +206,11 @@ public:
      * Return the change address for this UFVK, given the provided
      * set of receiver types for pools involved in this transaction.
      * If the provided set is empty, return the change address
-     * corresponding to the most-preferred pool.
+     * corresponding to the most-preferred pool. Returns `std::nullopt`
+     * if the request cannot be satisfied; for example, if a transparent
+     * change address is requested but derivation fails for the requested
+     * child index, or if the set of requested protocols does not intersect
+     * with those supported by the this UFVKs constituent keys.
      */
     std::optional<RecipientAddress> GetChangeAddress(const ChangeRequest& req) const;
 

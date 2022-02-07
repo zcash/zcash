@@ -25,31 +25,17 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
     # Check we only have balances in the expected pools.
     # Remember that empty pools are omitted from the output.
-    def check_account_balance(self, node, account, expected, minconf=None):
-        if minconf is None:
-            actual = self.nodes[node].z_getbalanceforaccount(account)
-        else:
-            actual = self.nodes[node].z_getbalanceforaccount(account, minconf)
-        assert_equal(set(expected), set(actual['pools']))
-        for pool in expected:
-            assert_equal(expected[pool] * COIN, actual['pools'][pool]['valueZat'])
-        assert_equal(actual['minimum_confirmations'], 1 if minconf is None else minconf)
-
-    # Check we only have balances in the expected pools.
-    # Remember that empty pools are omitted from the output.
-    def check_address_balance(self, node, address, expected, minconf=None):
-        if minconf is None:
-            actual = self.nodes[node].z_getbalanceforaddress(address)
-        else:
-            actual = self.nodes[node].z_getbalanceforaddress(address, minconf)
+    def _check_balance_for_rpc(self, rpcmethod, node, account, expected, minconf):
+        rpc = getattr(self.nodes[node], rpcmethod)
+        actual = rpc(account) if minconf is None else rpc(account, minconf)
         assert_equal(set(expected), set(actual['pools']))
         for pool in expected:
             assert_equal(expected[pool] * COIN, actual['pools'][pool]['valueZat'])
         assert_equal(actual['minimum_confirmations'], 1 if minconf is None else minconf)
 
     def check_balance(self, node, account, address, expected, minconf=None):
-        self.check_account_balance(node, account, expected, minconf)
-        self.check_address_balance(node, address, expected, minconf)
+        self._check_balance_for_rpc('z_getbalanceforaccount', node, account, expected, minconf)
+        self._check_balance_for_rpc('z_getbalanceforaddress', node, address, expected, minconf)
 
     def run_test(self):
         # z_sendmany is expected to fail if tx size breaks limit
@@ -170,10 +156,10 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         n0account0 = self.nodes[0].z_getnewaccount()['account']
         n0ua0 = self.nodes[0].z_getaddressforaccount(n0account0)['unifiedaddress']
 
-        # Change went to a fresh address, so use `ANY_TADDR` which 
+        # Change went to a fresh address, so use `ANY_TADDR` which
         # should hold the rest of our transparent funds.
         recipients = []
-        recipients.append({"address":n0ua0, "amount":10}) 
+        recipients.append({"address":n0ua0, "amount":10})
         opid = self.nodes[2].z_sendmany('ANY_TADDR', recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[2], opid)
 
@@ -188,7 +174,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         # Send some funds to a specific legacy taddr that we can spend from
         recipients = []
-        recipients.append({"address":mytaddr, "amount":5}) 
+        recipients.append({"address":mytaddr, "amount":5})
         opid = self.nodes[0].z_sendmany(n0ua0, recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
@@ -201,7 +187,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         # Send some funds to a legacy sapling address that we can spend from
         recipients = []
-        recipients.append({"address":myzaddr, "amount":3}) 
+        recipients.append({"address":myzaddr, "amount":3})
         opid = self.nodes[0].z_sendmany(n0ua0, recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
@@ -214,7 +200,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         # Send funds back from the legacy taddr to the UA
         recipients = []
-        recipients.append({"address":n0ua0, "amount":4}) 
+        recipients.append({"address":n0ua0, "amount":4})
         opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[2], opid)
 
@@ -227,7 +213,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         # Send funds back from the legacy zaddr to the UA
         recipients = []
-        recipients.append({"address":n0ua0, "amount":2}) 
+        recipients.append({"address":n0ua0, "amount":2})
         opid = self.nodes[2].z_sendmany(myzaddr, recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[2], opid)
 

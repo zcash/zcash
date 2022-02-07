@@ -313,8 +313,8 @@ extern "C" {
     );
 
     /**
-     * Derive the Sapling FVK for an internal BIP44 chain from the
-     * corresponding external chain FVK.
+     * Derive the Sapling internal FVK corresponding to the given
+     * Sapling external FVK.
      */
     void librustzcash_zip32_sapling_derive_internal_fvk(
         const unsigned char *fvk,

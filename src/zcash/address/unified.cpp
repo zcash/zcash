@@ -122,17 +122,14 @@ UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
         const std::set<ReceiverType>& receiverTypes) const {
     diversifier_index_t j0(j);
     bool hasTransparent = HasTransparent(receiverTypes);
-    auto addr = Address(j0, receiverTypes);
-    while (addr == UnifiedAddressGenerationResult(UnifiedAddressGenerationError::NoAddressForDiversifier)) {
-        if (!j0.increment())
-            return UnifiedAddressGenerationError::DiversifierSpaceExhausted;
+    do {
+        auto addr = Address(j0, receiverTypes);
+        if (addr != UnifiedAddressGenerationResult(UnifiedAddressGenerationError::NoAddressForDiversifier)) {
+            return addr;
+        }
+    } while (j0.increment());
 
-        if (hasTransparent && !j0.ToTransparentChildIndex().has_value())
-            return UnifiedAddressGenerationError::InvalidTransparentChildIndex;
-
-        addr = Address(j0, receiverTypes);
-    }
-    return addr;
+    return UnifiedAddressGenerationError::DiversifierSpaceExhausted;
 }
 
 UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
@@ -152,7 +149,7 @@ std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(co
             }
         },
         [&](const SaplingChangeRequest& req) {
-            // currently true by construction, as a UFVK must have a shielded component
+            // currently true by construction, as a UFVK must have a supported shielded component
             if (saplingKey.has_value()) {
                 addr = saplingKey.value().GetChangeAddress();
             }

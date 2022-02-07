@@ -3169,7 +3169,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
                         params[2].getValStr());
                     break;
                 case WalletUAGenerationError::WalletEncrypted:
-                    // By construction, we should never see these errors; this case is included
+                    // By construction, we should never see this error; this case is included
                     // only for future-proofing.
                     strErr = tfm::format("Error: wallet is encrypted.");
             }
@@ -4409,7 +4409,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                     if (selectorAccount.has_value() && selectorAccount.value() != ZCASH_LEGACY_ACCOUNT) {
                         throw JSONRPCError(
                                 RPC_INVALID_ADDRESS_OR_KEY,
-                                "Invalid from address, bare address does not correspond the legacy account.");
+                                "Invalid from address: is a bare receiver from a Unified Address in this wallet. Provide the UA as returned by z_getaddressforaccount instead.");
                     }
                 }
             }, decoded.value());
