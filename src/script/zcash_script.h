@@ -56,6 +56,9 @@ enum
 ///
 /// Returns a pointer to the precomputed transaction. Free this with
 /// zcash_script_free_precomputed_tx once you are done.
+/// The precomputed transaction is guaranteed to not keep a reference to any
+/// part of the input buffers, so they can be safely overwritten or deallocated
+/// after this function returns.
 ///
 /// If not NULL, err will contain an error/success code for the operation.
 void* zcash_script_new_precomputed_tx(
