@@ -186,7 +186,7 @@ class ComparisonTestFramework(BitcoinTestFramework):
 
     def __init__(self):
         super().__init__()
-        self.num_nodes = 2
+        self.num_nodes = 1
         self.setup_clean_chain = True
 
     def add_options(self, parser):
@@ -203,3 +203,6 @@ class ComparisonTestFramework(BitcoinTestFramework):
             extra_args=[['-debug', '-whitelist=127.0.0.1']] * self.num_nodes,
             binary=[self.options.testbinary] +
             [self.options.refbinary]*(self.num_nodes-1))
+
+    def get_tests(self):
+        raise NotImplementedError
