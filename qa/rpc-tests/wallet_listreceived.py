@@ -3,11 +3,13 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
     assert_true,
     assert_false,
+    assert_raises_message,
     get_coinbase_address,
     DEFAULT_FEE,
     DEFAULT_FEE_ZATS
@@ -32,47 +34,55 @@ class ListReceivedTest (BitcoinTestFramework):
     def test_received_sprout(self, height):
         self.generate_and_sync(height+2)
 
-        taddr0 = get_coinbase_address(self.nodes[0])
         zaddr1 = self.nodes[1].z_getnewaddress('sprout')
 
         # Send 10 ZEC each zaddr1 and zaddrExt via z_shieldcoinbase
-        result = self.nodes[0].z_shieldcoinbase(taddr0, zaddr1, 0, 1)
+        result = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), zaddr1, 0, 1)
         txid_shielding1 = wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
-        # TODO: the following z_shieldcoinbase call can't find any funds to shield,
-        # although there should be a unused transparent coinbase output. Is this a
-        # problem in z_shieldcoinbase output selection?
-        #
-        # zaddrExt = self.nodes[3].z_getnewaddress('sprout')
-        # result = self.nodes[0].z_shieldcoinbase(taddr0, zaddrExt, 0, 1)
-        # txid_shieldingExt = wait_and_assert_operationid_status(self.nodes[0], result['opid'])
+        zaddrExt = self.nodes[3].z_getnewaddress('sprout')
+        result = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), zaddrExt, 0, 1)
+        txid_shieldingExt = wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
         self.sync_all()
 
-        # Decrypted transaction details should be correct
-        # for txid in [txid_shielding1, txid_shieldingExt]:
-        for txid in [txid_shielding1]:
-            pt = self.nodes[1].z_viewtransaction(txid)
-            assert_equal(pt['txid'], txid)
-            assert_equal(len(pt['spends']), 0)
-            assert_equal(len(pt['outputs']), 1)
-            assert_equal(pt['outputs'][0]['type'], 'sprout')
-            assert_equal(pt['outputs'][0]['js'], 0)
-            jsOutputPrev = pt['outputs'][0]['jsOutput']
+        # Decrypted transaction details should not be visible on node 0
+        pt = self.nodes[0].z_viewtransaction(txid_shielding1)
+        assert_equal(pt['txid'], txid_shielding1)
+        assert_equal(len(pt['spends']), 0)
+        assert_equal(len(pt['outputs']), 0)
 
-            outputs = []
-            outputs.append({
-                'address': pt['outputs'][0]['address'],
-                'value': pt['outputs'][0]['value'],
-                'valueZat': pt['outputs'][0]['valueZat'],
-                'memo': pt['outputs'][0]['memo'],
-            })
-            assert({
-                'address': zaddr1,
-                'value': Decimal('10'),
-                'valueZat': 1000000000,
-                'memo': no_memo,
-            } in outputs)
+        # Decrypted transaction details should be correct on node 1
+        pt = self.nodes[1].z_viewtransaction(txid_shielding1)
+        assert_equal(pt['txid'], txid_shielding1)
+        assert_equal(len(pt['spends']), 0)
+        assert_equal(len(pt['outputs']), 1)
+        assert_equal(pt['outputs'][0]['type'], 'sprout')
+        assert_equal(pt['outputs'][0]['js'], 0)
+        assert_equal(pt['outputs'][0]['address'], zaddr1)
+        assert_equal(pt['outputs'][0]['value'], Decimal('10'))
+        assert_equal(pt['outputs'][0]['valueZat'], 1000000000)
+        assert_equal(pt['outputs'][0]['memo'], no_memo)
+        jsOutputPrev = pt['outputs'][0]['jsOutput']
+
+        # Second transaction should not be known to node 1
+        assert_raises_message(
+            JSONRPCException,
+            "Invalid or non-wallet transaction id",
+            self.nodes[1].z_viewtransaction,
+            txid_shieldingExt)
+
+        # Second transaction should be visible on node3
+        pt = self.nodes[3].z_viewtransaction(txid_shieldingExt)
+        assert_equal(pt['txid'], txid_shieldingExt)
+        assert_equal(len(pt['spends']), 0)
+        assert_equal(len(pt['outputs']), 1)
+        assert_equal(pt['outputs'][0]['type'], 'sprout')
+        assert_equal(pt['outputs'][0]['js'], 0)
+        assert_equal(pt['outputs'][0]['address'], zaddrExt)
+        assert_equal(pt['outputs'][0]['value'], Decimal('10'))
+        assert_equal(pt['outputs'][0]['valueZat'], 1000000000)
+        assert_equal(pt['outputs'][0]['memo'], no_memo)
 
         r = self.nodes[1].z_listreceivedbyaddress(zaddr1)
         assert_equal(0, len(r), "Should have received no confirmed note")
@@ -131,26 +141,19 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(pt['spends'][0]['value'], Decimal('10.0'))
         assert_equal(pt['spends'][0]['valueZat'], 1000000000)
 
-        # We expect a transparent output and a Sprout output. Output order can
-        # be randomized.
-        outputs.append({
-            'type': pt['outputs'][0]['type'],
-            'address': pt['outputs'][0]['address'],
-            'value': pt['outputs'][0]['value'],
-            'valueZat': pt['outputs'][0]['valueZat'],
-            'memo': pt['outputs'][0]['memo'],
-        })
+        # We expect a transparent output and a Sprout output, but the RPC does
+        # not define any particular ordering of these within the returned JSON.
+        outputs = [{
+            'type': output['type'],
+            'address': output['address'],
+            'value': output['value'],
+            'valueZat': output['valueZat'],
+        } for output in pt['outputs']]
+        for (i, output) in enumerate(pt['outputs']):
+            if 'memo' in output:
+                outputs[i]['memo'] = output['memo']
 
         # TODO: enable once z_viewtransaction displays transparent elements
-        #
-        # outputs.append({
-        #     'type': ['outputs'][1]['type'],
-        #     'address': pt['outputs'][1]['address'],
-        #     'value': pt['outputs'][1]['value'],
-        #     'valueZat': pt['outputs'][1]['valueZat'],
-        #     'memo': pt['outputs'][1]['memo'],
-        # })
-        #
         # assert({
         #     'type': 'transparent',
         #     'address': taddr,
@@ -179,7 +182,7 @@ class ListReceivedTest (BitcoinTestFramework):
         # The old note still exists (it's immutable), even though it is spent
         assert_equal(Decimal('10.0'), r[1]['amount'])
         assert_equal(1000000000, r[1]['amountZat'])
-        assert_false(r[1]['change'], "Note valued at 1.0 should not be change")
+        assert_false(r[1]['change'], "Note valued at 10.0 should not be change")
         assert_equal(no_memo, r[1]['memo'])
 
     def test_received_sapling(self, height):
@@ -209,7 +212,7 @@ class ListReceivedTest (BitcoinTestFramework):
         # Expect one internal output and one external.
         assert_equal(len([output for output in pt['outputs'] if output['outgoing']]), 1)
 
-        # Output orders can be randomized, so we check the output
+        # Outputs are not returned in a defined order so we check the output
         # positions and contents separately
         outputs = []
 
@@ -309,7 +312,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(pt['spends'][0]['value'], Decimal('1.0'))
         assert_equal(pt['spends'][0]['valueZat'], 100000000)
 
-        # Output orders can be randomized, so we check the output
+        # Outputs are not returned in a defined order so we check the output
         # positions and contents separately
         outputs = []
 

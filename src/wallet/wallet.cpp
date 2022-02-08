@@ -170,11 +170,12 @@ std::pair<SaplingPaymentAddress, bool> CWallet::GenerateLegacySaplingZKey(uint32
             throw std::runtime_error("CWallet::GenerateLegacySaplingZKey(): AddSaplingZKey failed.");
         }
 
-        if (!AddSaplingPaymentAddress(ivk, extfvk.DefaultAddress())) {
+        auto addr = extfvk.DefaultAddress();
+        if (!AddSaplingPaymentAddress(ivk, addr)) {
             throw std::runtime_error("CWallet::GenerateLegacySaplingZKey(): AddSaplingPaymentAddress failed.");
         };
 
-        return std::make_pair(extfvk.DefaultAddress(), true) ;
+        return std::make_pair(addr, true) ;
     } else {
         return std::make_pair(extfvk.DefaultAddress(), false);
     }
@@ -304,7 +305,7 @@ CPubKey CWallet::AddTransparentSecretKey(
 
     // Create new metadata
     CKeyMetadata keyMeta(GetTime());
-    keyMeta.hdKeypath = keyPath,
+    keyMeta.hdKeypath = keyPath;
     keyMeta.seedFp = seedFingerprint;
     mapKeyMetadata[pubkey.GetID()] = keyMeta;
     if (nTimeFirstKey == 0 || keyMeta.nCreateTime < nTimeFirstKey)
@@ -524,7 +525,10 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
             throw std::runtime_error("CWalletDB::GenerateUnifiedSpendingKeyForAccount(): Unable to add Sapling change key to the wallet.");
         }
 
-        // Associate the Sapling default change address with its IVK
+        // Associate the Sapling default change address with its IVK. We do this
+        // here because there is only ever a single Sapling change receiver, and
+        // it is never exposed to the user. External Sapling receivers are added
+        // when the user calls z_getaddressforaccount.
         auto saplingXFVK = saplingEsk.ToXFVK();
         if (!AddSaplingPaymentAddress(saplingXFVK.GetChangeIVK(), saplingXFVK.GetChangeAddress())) {
             throw std::runtime_error("CWallet::GenerateUnifiedSpendingKeyForAccount(): Failed to add Sapling change address to the wallet.");
@@ -677,8 +681,8 @@ WalletUAGenerationResult CWallet::GenerateUnifiedAddress(
         assert(mapUfvkAddressMetadata[ufvkid].SetReceivers(address.second, receiverTypes));
         if (hasTransparent) {
             // We must construct and add the transparent spending key associated
-            // with the external and internal transparent child addresses to the
-            // transparent keystore.
+            // with the external transparent child address to the transparent
+            // keystore.
             auto usk = GenerateUnifiedSpendingKeyForAccount(accountId).value();
             auto accountKey = usk.GetTransparentKey();
             // this .value is known to be safe from the earlier check
