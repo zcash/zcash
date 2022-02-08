@@ -60,29 +60,11 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     assert(!recipients_.empty());
     assert(ztxoSelector.RequireSpendingKeys());
 
-    std::visit(match {
-        [&](const AccountZTXOPattern& acct) {
-            isfromtaddr_ =
-                acct.GetReceiverTypes().empty() ||
-                acct.GetReceiverTypes().count(ReceiverType::P2PKH) > 0 ||
-                acct.GetReceiverTypes().count(ReceiverType::P2SH) > 0;
-        },
-        [&](const CKeyID& keyId) {
-            isfromtaddr_ = true;
-        },
-        [&](const CScriptID& scriptId) {
-            isfromtaddr_ = true;
-        },
-        [&](const libzcash::SproutPaymentAddress& addr) {
-            isfromsprout_ = true;
-        },
-        [&](const libzcash::SaplingPaymentAddress& addr) {
-            isfromsapling_ = true;
-        }
-    }, ztxoSelector.GetPattern());
+    sendFromAccount_ = pwalletMain->FindAccountForSelector(ztxoSelector_).value_or(ZCASH_LEGACY_ACCOUNT);
 
-    if ((isfromsprout_ || isfromsapling_) && minDepth == 0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be zero when sending from a shielded address");
+    // we always allow shielded change when not sending from the legacy account
+    if (sendFromAccount_ != ZCASH_LEGACY_ACCOUNT) {
+        allowedChangeTypes_.insert(libzcash::ChangeType::Sapling);
     }
 
     // calculate the target totals
@@ -91,14 +73,16 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
             [&](const CKeyID& addr) {
                 transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
+                allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
             },
             [&](const CScriptID& addr) {
                 transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
+                allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
             },
             [&](const libzcash::SaplingPaymentAddress& addr) {
-                txOutputAmounts_.z_outputs_total += recipient.amount;
-                if (isfromsprout_ && !allowRevealedAmounts_) {
+                txOutputAmounts_.sapling_outputs_total += recipient.amount;
+                if (ztxoSelector_.SelectsSprout() && !allowRevealedAmounts_) {
                     throw JSONRPCError(
                             RPC_INVALID_PARAMETER,
                             "Sending between shielded pools is not enabled by default because it will "
@@ -192,11 +176,7 @@ void AsyncRPCOperation_sendmany::main() {
 //
 // At least 4. and 5. differ from the Rust transaction builder.
 uint256 AsyncRPCOperation_sendmany::main_impl() {
-    // TODO UA: this check will become meaningless.
-    bool isfromzaddr_ = isfromsprout_ || isfromsapling_;
-    assert(isfromtaddr_ != isfromzaddr_);
-
-    CAmount sendAmount = txOutputAmounts_.z_outputs_total + txOutputAmounts_.t_outputs_total;
+    CAmount sendAmount = txOutputAmounts_.sapling_outputs_total + txOutputAmounts_.t_outputs_total;
     CAmount targetAmount = sendAmount + fee_;
 
     builder_.SetFee(fee_);
@@ -245,14 +225,6 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
     spendable.LogInputs(getId());
 
-    // At least one of z_sprout_inputs_ and z_sapling_inputs_ must be empty by design
-    //
-    // TODO: This restriction is true by construction as we have no mechanism
-    // for filtering for notes that will select both Sprout and Sapling notes
-    // simultaneously, but even if we did it would likely be safe to remove
-    // this limitation.
-    assert(spendable.sproutNoteEntries.empty() || spendable.saplingNoteEntries.empty());
-
     CAmount t_inputs_total{0};
     CAmount z_inputs_total{0};
     for (const auto& t : spendable.utxos) {
@@ -265,25 +237,16 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         z_inputs_total += t.note.value();
     }
 
-    // TODO UA: these restrictions should be removed.
-    assert(!isfromtaddr_ || z_inputs_total == 0);
-    assert(!isfromzaddr_ || t_inputs_total == 0);
-
-    if (isfromtaddr_ && (t_inputs_total < targetAmount)) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
-            strprintf("Insufficient transparent funds, have %s, need %s",
-            FormatMoney(t_inputs_total), FormatMoney(targetAmount)));
-    }
-    if (isfromzaddr_ && (z_inputs_total < targetAmount)) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
-            strprintf("Insufficient shielded funds, have %s, need %s",
-            FormatMoney(z_inputs_total), FormatMoney(targetAmount)));
+    if (z_inputs_total > 0 && mindepth_ == 0) {
+        throw JSONRPCError(
+                RPC_INVALID_PARAMETER,
+                "Minconf cannot be zero when sending from a shielded address");
     }
 
     // When spending transparent coinbase outputs, all inputs must be fully
     // consumed, and they may only be sent to shielded recipients.
     if (spendable.HasTransparentCoinbase()) {
-        if (t_inputs_total != targetAmount) {
+        if (t_inputs_total + z_inputs_total != targetAmount) {
             throw JSONRPCError(
                     RPC_WALLET_ERROR,
                     strprintf(
@@ -299,66 +262,71 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         }
     }
 
-    if (isfromtaddr_) {
-        LogPrint("zrpc", "%s: spending %s to send %s with fee %s\n",
-            getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(fee_));
-    } else {
-        LogPrint("zrpcunsafe", "%s: spending %s to send %s with fee %s\n",
-            getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(fee_));
-    }
-    LogPrint("zrpc", "%s: transparent input: %s (to choose from)\n", getId(), FormatMoney(t_inputs_total));
-    LogPrint("zrpcunsafe", "%s: private input: %s (to choose from)\n", getId(), FormatMoney(z_inputs_total));
-    LogPrint("zrpc", "%s: transparent output: %s\n", getId(), FormatMoney(txOutputAmounts_.t_outputs_total));
-    LogPrint("zrpcunsafe", "%s: private output: %s\n", getId(), FormatMoney(txOutputAmounts_.z_outputs_total));
+    LogPrint("zrpcunsafe", "%s: spending %s to send %s with fee %s\n",
+        getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(fee_));
+    LogPrint("zrpc", "%s: total transparent input: %s (to choose from)\n", getId(), FormatMoney(t_inputs_total));
+    LogPrint("zrpcunsafe", "%s: total shielded input: %s (to choose from)\n", getId(), FormatMoney(z_inputs_total));
+    LogPrint("zrpc", "%s: total transparent output: %s\n", getId(), FormatMoney(txOutputAmounts_.t_outputs_total));
+    LogPrint("zrpcunsafe", "%s: total shielded Sapling output: %s\n", getId(), FormatMoney(txOutputAmounts_.sapling_outputs_total));
     LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(fee_));
 
-    CReserveKey keyChange(pwalletMain);
-    uint256 ovk;
-
-    auto getDefaultOVK = [&]() {
-        HDSeed seed = pwalletMain->GetHDSeedForRPC();
-        return ovkForShieldingFromTaddr(seed);
-    };
-
-    auto setTransparentChangeRecipient = [&]() {
-        LOCK2(cs_main, pwalletMain->cs_wallet);
-
-        EnsureWalletIsUnlocked();
-        CPubKey vchPubKey;
-        bool ret = keyChange.GetReservedKey(vchPubKey);
-        if (!ret) {
-            // should never fail, as we just unlocked
-            throw JSONRPCError(
-                RPC_WALLET_KEYPOOL_RAN_OUT,
-                "Could not generate a taddr to use as a change address");
-        }
-
-        CTxDestination changeAddr = vchPubKey.GetID();
-        builder_.SendChangeTo(changeAddr);
-    };
-
-    // FIXME: use the appropriate shielded pool change address for the
-    // source unified address account (or the legacy account), and the
-    // associated OVK
+    auto ovks = this->SelectOVKs(spendable);
     std::visit(match {
+        [&](const CKeyID& keyId) {
+            allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+            auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
+                    sendFromAccount_, allowedChangeTypes_);
+            assert(changeAddr.has_value());
+            builder_.SendChangeTo(changeAddr.value(), ovks.first);
+        },
+        [&](const CScriptID& scriptId) {
+            allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+            auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
+                    sendFromAccount_, allowedChangeTypes_);
+            assert(changeAddr.has_value());
+            builder_.SendChangeTo(changeAddr.value(), ovks.first);
+        },
         [&](const libzcash::SproutPaymentAddress& addr) {
-            ovk = getDefaultOVK();
-            builder_.SendChangeTo(addr);
+            // for Sprout, we return change to the originating address.
+            builder_.SendChangeToSprout(addr);
         },
         [&](const libzcash::SaplingPaymentAddress& addr) {
-            libzcash::SaplingExtendedSpendingKey saplingKey;
-            assert(pwalletMain->GetSaplingExtendedSpendingKey(addr, saplingKey));
-
-            ovk = saplingKey.expsk.full_viewing_key().ovk;
-            builder_.SendChangeTo(addr, ovk);
+            // for Sapling, if using a legacy address, return change to the
+            // originating address; otherwise return it to the Sapling internal
+            // address corresponding to the UFVK.
+            if (sendFromAccount_ == ZCASH_LEGACY_ACCOUNT) {
+                builder_.SendChangeTo(addr, ovks.first);
+            } else {
+                auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
+                        sendFromAccount_, allowedChangeTypes_);
+                assert(changeAddr.has_value());
+                builder_.SendChangeTo(changeAddr.value(), ovks.first);
+            }
         },
-        [&](const auto& other) {
-            ovk = getDefaultOVK();
-            setTransparentChangeRecipient();
+        [&](const AccountZTXOPattern& acct) {
+            for (ReceiverType rtype : acct.GetReceiverTypes()) {
+                switch (rtype) {
+                    case ReceiverType::P2PKH:
+                    case ReceiverType::P2SH:
+                        allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+                        break;
+                    case ReceiverType::Sapling:
+                        allowedChangeTypes_.insert(libzcash::ChangeType::Sapling);
+                        break;
+                }
+            }
+
+            auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
+                        acct.GetAccountId(),
+                        allowedChangeTypes_);
+
+            assert(changeAddr.has_value());
+            builder_.SendChangeTo(changeAddr.value(), ovks.first);
         }
     }, ztxoSelector_.GetPattern());
 
-    // Track the total of notes that we've added to the builder
+    // Track the total of notes that we've added to the builder. This
+    // shouldn't strictly be necessary, given `spendable.LimitToAmount`
     CAmount sum = 0;
 
     // Create Sapling outpoints
@@ -410,7 +378,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 auto value = r.amount;
                 auto memo = get_memo_from_hex_string(r.memo.has_value() ? r.memo.value() : "");
 
-                builder_.AddSaplingOutput(ovk, addr, value, memo);
+                builder_.AddSaplingOutput(ovks.second, addr, value, memo);
             }
         }, r.address);
     }
@@ -466,10 +434,76 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     auto buildResult = builder_.Build();
     auto tx = buildResult.GetTxOrThrow();
 
-    UniValue sendResult = SendTransaction(tx, keyChange, testmode);
+    UniValue sendResult = SendTransaction(tx, std::nullopt, testmode);
     set_result(sendResult);
 
     return tx.GetHash();
+}
+
+std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(const SpendableInputs& spendable) const {
+    uint256 internalOVK;
+    uint256 externalOVK;
+    if (!spendable.saplingNoteEntries.empty()) {
+        std::optional<SaplingDiversifiableFullViewingKey> dfvk;
+        std::visit(match {
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                libzcash::SaplingExtendedSpendingKey extsk;
+                assert(pwalletMain->GetSaplingExtendedSpendingKey(addr, extsk));
+                dfvk = extsk.ToXFVK();
+            },
+            [&](const AccountZTXOPattern& acct) {
+                auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
+                dfvk = ufvk.value().GetSaplingKey().value();
+            },
+            [&](const auto& other) {
+                throw std::runtime_error("unreachable");
+            }
+        }, this->ztxoSelector_.GetPattern());
+        assert(dfvk.has_value());
+
+        auto ovks = dfvk.value().GetOVKs();
+        internalOVK = ovks.first;
+        externalOVK = ovks.second;
+    } else if (!spendable.utxos.empty()) {
+        std::optional<transparent::AccountPubKey> tfvk;
+        std::visit(match {
+            [&](const CKeyID& keyId) {
+                tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+            },
+            [&](const CScriptID& keyId) {
+                tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+            },
+            [&](const AccountZTXOPattern& acct) {
+                if (acct.GetAccountId() == ZCASH_LEGACY_ACCOUNT) {
+                    tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+                } else {
+                    auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId()).value();
+                    tfvk = ufvk.GetTransparentKey().value();
+                }
+            },
+            [&](const auto& other) {
+                throw std::runtime_error("unreachable");
+            }
+        }, this->ztxoSelector_.GetPattern());
+        assert(tfvk.has_value());
+
+        auto ovks = tfvk.value().GetOVKsForShielding();
+        internalOVK = ovks.first;
+        externalOVK = ovks.second;
+    } else if (!spendable.sproutNoteEntries.empty()) {
+        // use the legacy transparent account OVKs when sending from Sprout
+        auto tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+        auto ovks = tfvk.GetOVKsForShielding();
+        internalOVK = ovks.first;
+        externalOVK = ovks.second;
+    } else {
+        // This should be unreachable; it is left in place as a guard to ensure
+        // that when new input types are added to SpendableInputs in the future
+        // that we do not accidentally return the all-zeros OVK.
+        throw std::runtime_error("No spendable inputs.");
+    }
+
+    return std::make_pair(internalOVK, externalOVK);
 }
 
 /**
@@ -523,4 +557,3 @@ UniValue AsyncRPCOperation_sendmany::getStatus() const {
     obj.pushKV("params", contextinfo_ );
     return obj;
 }
-

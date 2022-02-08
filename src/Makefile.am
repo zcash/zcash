@@ -114,7 +114,7 @@ LIBZCASH_H = \
   zcash/IncrementalMerkleTree.hpp \
   zcash/NoteEncryption.hpp \
   zcash/Address.hpp \
-  zcash/address/bip44.h \
+  zcash/address/transparent.h \
   zcash/address/mnemonic.h \
   zcash/address/orchard.h \
   zcash/address/sapling.hpp \
@@ -547,7 +547,7 @@ libzcash_a_SOURCES = \
   zcash/IncrementalMerkleTree.cpp \
   zcash/NoteEncryption.cpp \
   zcash/Address.cpp \
-  zcash/address/bip44.cpp \
+  zcash/address/transparent.cpp \
   zcash/address/mnemonic.cpp \
   zcash/address/orchard.cpp \
   zcash/address/sapling.cpp \

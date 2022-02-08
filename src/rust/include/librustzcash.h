@@ -299,11 +299,28 @@ extern "C" {
         unsigned char *xsk_i
     );
 
+    /// Derive a internal ExtendedSpendingKey from an external key
+    void librustzcash_zip32_xsk_derive_internal(
+        const unsigned char *xsk_external,
+        unsigned char *xsk_internal
+    );
+
     /// Derive a child ExtendedFullViewingKey from a parent.
     bool librustzcash_zip32_xfvk_derive(
         const unsigned char *xfvk_parent,
         uint32_t i,
         unsigned char *xfvk_i
+    );
+
+    /**
+     * Derive the Sapling internal FVK corresponding to the given
+     * Sapling external FVK.
+     */
+    void librustzcash_zip32_sapling_derive_internal_fvk(
+        const unsigned char *fvk,
+        const unsigned char *dk,
+        unsigned char *fvk_ret,
+        unsigned char *dk_ret
     );
 
     /**

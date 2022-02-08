@@ -170,11 +170,8 @@ public:
 
     void AddTransparentOutput(const CTxDestination& to, CAmount value);
 
-    void SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, uint256 ovk);
-
-    void SendChangeTo(libzcash::SproutPaymentAddress);
-
-    void SendChangeTo(CTxDestination& changeAddr);
+    void SendChangeTo(const libzcash::RecipientAddress& changeAddr, const uint256& ovk);
+    void SendChangeToSprout(const libzcash::SproutPaymentAddress& changeAddr);
 
     TransactionBuilderResult Build();
 

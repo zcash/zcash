@@ -56,7 +56,7 @@ std::optional<uint32_t> diversifier_index_t::ToTransparentChildIndex() const {
 }
 
 //
-// Sapling
+// SaplingExtendedFullViewingKey
 //
 
 std::optional<SaplingExtendedFullViewingKey> SaplingExtendedFullViewingKey::Derive(uint32_t i) const
@@ -79,6 +79,10 @@ std::optional<SaplingExtendedFullViewingKey> SaplingExtendedFullViewingKey::Deri
         return std::nullopt;
     }
 }
+
+//
+// SaplingDiversifiableFullViewingKey
+//
 
 std::optional<libzcash::SaplingPaymentAddress>
     SaplingDiversifiableFullViewingKey::Address(diversifier_index_t j) const
@@ -125,6 +129,42 @@ libzcash::SaplingPaymentAddress SaplingDiversifiableFullViewingKey::DefaultAddre
         throw std::runtime_error("SaplingDiversifiableFullViewingKey::DefaultAddress(): No valid diversifiers out of 2^88!");
     }
 }
+
+libzcash::SaplingDiversifiableFullViewingKey SaplingDiversifiableFullViewingKey::GetInternalDFVK() const {
+    CDataStream ss_fvk(SER_NETWORK, PROTOCOL_VERSION);
+    ss_fvk << fvk;
+    CSerializeData fvk_bytes(ss_fvk.begin(), ss_fvk.end());
+
+    SaplingDiversifiableFullViewingKey internalDFVK;
+    CSerializeData fvk_bytes_ret(libzcash::SerializedSaplingFullViewingKeySize);
+    librustzcash_zip32_sapling_derive_internal_fvk(
+        reinterpret_cast<unsigned char*>(fvk_bytes.data()),
+        dk.begin(),
+        reinterpret_cast<unsigned char*>(fvk_bytes_ret.data()),
+        internalDFVK.dk.begin());
+
+    CDataStream ss_fvk_ret(fvk_bytes_ret, SER_NETWORK, PROTOCOL_VERSION);
+    ss_fvk_ret >> internalDFVK.fvk;
+    return internalDFVK;
+}
+
+libzcash::SaplingIncomingViewingKey SaplingDiversifiableFullViewingKey::GetChangeIVK() const {
+    auto internalDFVK = this->GetInternalDFVK();
+    return internalDFVK.fvk.in_viewing_key();
+}
+
+libzcash::SaplingPaymentAddress SaplingDiversifiableFullViewingKey::GetChangeAddress() const {
+    auto internalDFVK = this->GetInternalDFVK();
+    return internalDFVK.DefaultAddress();
+}
+
+std::pair<uint256, uint256> SaplingDiversifiableFullViewingKey::GetOVKs() const {
+    return std::make_pair(this->GetInternalDFVK().fvk.ovk, fvk.ovk);
+}
+
+//
+// SaplingExtendedSpendingKey
+//
 
 SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Master(const HDSeed& seed)
 {
@@ -206,6 +246,22 @@ SaplingExtendedFullViewingKey SaplingExtendedSpendingKey::ToXFVK() const
     ret.fvk = expsk.full_viewing_key();
     ret.dk = dk;
     return ret;
+}
+
+SaplingExtendedSpendingKey SaplingExtendedSpendingKey::DeriveInternalKey() const {
+    CDataStream ss_p(SER_NETWORK, PROTOCOL_VERSION);
+    ss_p << *this;
+    CSerializeData external_key_bytes(ss_p.begin(), ss_p.end());
+
+    CSerializeData internal_key_bytes(ZIP32_XSK_SIZE);
+    librustzcash_zip32_xsk_derive_internal(
+        reinterpret_cast<unsigned char*>(external_key_bytes.data()),
+        reinterpret_cast<unsigned char*>(internal_key_bytes.data()));
+
+    CDataStream ss_i(internal_key_bytes, SER_NETWORK, PROTOCOL_VERSION);
+    SaplingExtendedSpendingKey xsk_internal;
+    ss_i >> xsk_internal;
+    return xsk_internal;
 }
 
 HDKeyPath Zip32AccountKeyPath(

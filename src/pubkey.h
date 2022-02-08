@@ -221,6 +221,8 @@ public:
         return pubkey;
     }
 
+    std::optional<CChainablePubKey> Derive(unsigned int nChild) const;
+
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
@@ -271,6 +273,10 @@ struct CExtPubKey {
     void Encode(unsigned char code[BIP32_EXTKEY_SIZE]) const;
     void Decode(const unsigned char code[BIP32_EXTKEY_SIZE]);
     bool Derive(CExtPubKey& out, unsigned int nChild) const;
+
+    std::optional<CChainablePubKey> ToChainablePubKey() const {
+        return CChainablePubKey::FromParts(chaincode, pubkey);
+    }
 
     void Serialize(CSizeComputer& s) const
     {

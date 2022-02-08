@@ -38,7 +38,7 @@ public:
 class TxOutputAmounts {
 public:
     CAmount t_outputs_total{0};
-    CAmount z_outputs_total{0};
+    CAmount sapling_outputs_total{0};
 };
 
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
@@ -75,12 +75,19 @@ private:
     CAmount fee_;
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 
-    bool isfromtaddr_{false};
     bool isfromsprout_{false};
     bool isfromsapling_{false};
     bool allowRevealedAmounts_{false};
     uint32_t transparentRecipients_{0};
+    AccountId sendFromAccount_;
+    std::set<libzcash::ChangeType> allowedChangeTypes_;
     TxOutputAmounts txOutputAmounts_;
+
+    /**
+     * Compute the internal and external OVKs to use in transaction construction, given
+     * the spendable inputs.
+     */
+    std::pair<uint256, uint256> SelectOVKs(const SpendableInputs& spendable) const;
 
     static CAmount DefaultDustThreshold();
 
@@ -88,7 +95,6 @@ private:
 
     uint256 main_impl();
 };
-
 
 // To test private methods, a friend class can act as a proxy
 class TEST_FRIEND_AsyncRPCOperation_sendmany {

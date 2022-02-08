@@ -131,6 +131,9 @@ public:
 const libzcash::diversifier_index_t MAX_TRANSPARENT_CHILD_IDX(0x7FFFFFFF);
 
 class SaplingDiversifiableFullViewingKey {
+protected:
+    SaplingDiversifiableFullViewingKey GetInternalDFVK() const;
+
 public:
     libzcash::SaplingFullViewingKey fvk;
     uint256 dk;
@@ -153,7 +156,20 @@ public:
         return std::make_pair(addr.value(), j);
     }
 
+    libzcash::SaplingIncomingViewingKey ToIncomingViewingKey() const {
+        return fvk.in_viewing_key();
+    }
+
     libzcash::SaplingPaymentAddress DefaultAddress() const;
+
+    libzcash::SaplingIncomingViewingKey GetChangeIVK() const;
+    libzcash::SaplingPaymentAddress GetChangeAddress() const;
+
+    /**
+     * Returns the (internal, external) OVKs for shielded spends
+     * from the associated spend authority.
+     */
+    std::pair<uint256, uint256> GetOVKs() const;
 
     ADD_SERIALIZE_METHODS;
 
@@ -237,10 +253,11 @@ struct SaplingExtendedSpendingKey {
     static std::pair<SaplingExtendedSpendingKey, HDKeyPath> ForAccount(const HDSeed& seed, uint32_t bip44CoinType, libzcash::AccountId accountId);
     static std::pair<SaplingExtendedSpendingKey, HDKeyPath> Legacy(const HDSeed& seed, uint32_t bip44CoinType, uint32_t addressIndex);
 
-
     SaplingExtendedSpendingKey Derive(uint32_t i) const;
 
     SaplingExtendedFullViewingKey ToXFVK() const;
+
+    SaplingExtendedSpendingKey DeriveInternalKey() const;
 
     friend bool operator==(const SaplingExtendedSpendingKey& a, const SaplingExtendedSpendingKey& b)
     {

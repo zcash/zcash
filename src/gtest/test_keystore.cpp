@@ -251,7 +251,7 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingSpendingKey) {
 
     auto sk = GetTestMasterSaplingSpendingKey();
     auto extfvk = sk.ToXFVK();
-    auto ivk = extfvk.fvk.in_viewing_key();
+    auto ivk = extfvk.ToIncomingViewingKey();
     auto addr = sk.ToXFVK().DefaultAddress();
 
     // Sanity-check: we can't get a key we haven't added
@@ -260,9 +260,6 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingSpendingKey) {
     // Sanity-check: we can't get a full viewing key we haven't added
     EXPECT_FALSE(keyStore.HaveSaplingFullViewingKey(ivk));
     EXPECT_FALSE(keyStore.GetSaplingFullViewingKey(ivk, extfvkOut));
-    // Sanity-check: we can't get an incoming viewing key we haven't added
-    EXPECT_FALSE(keyStore.HaveSaplingIncomingViewingKey(addr));
-    EXPECT_FALSE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
 
     // When we specify the default address, we get the full mapping
     keyStore.AddSaplingSpendingKey(sk);
@@ -270,6 +267,12 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingSpendingKey) {
     EXPECT_TRUE(keyStore.GetSaplingSpendingKey(extfvk, skOut));
     EXPECT_TRUE(keyStore.HaveSaplingFullViewingKey(ivk));
     EXPECT_TRUE(keyStore.GetSaplingFullViewingKey(ivk, extfvkOut));
+
+    // We can't get an incoming viewing key for an address we haven't added
+    EXPECT_FALSE(keyStore.HaveSaplingIncomingViewingKey(addr));
+    EXPECT_FALSE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
+
+    keyStore.AddSaplingPaymentAddress(ivk, addr);
     EXPECT_TRUE(keyStore.HaveSaplingIncomingViewingKey(addr));
     EXPECT_TRUE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
     EXPECT_EQ(sk, skOut);
@@ -285,7 +288,7 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingFullViewingKey) {
 
     auto sk = GetTestMasterSaplingSpendingKey();
     auto extfvk = sk.ToXFVK();
-    auto ivk = extfvk.fvk.in_viewing_key();
+    auto ivk = extfvk.ToIncomingViewingKey();
     auto addr = sk.ToXFVK().DefaultAddress();
 
     // Sanity-check: we can't get a full viewing key we haven't added
@@ -309,11 +312,14 @@ TEST(KeystoreTests, StoreAndRetrieveSaplingFullViewingKey) {
     EXPECT_TRUE(keyStore.GetSaplingFullViewingKey(ivk, extfvkOut));
     EXPECT_EQ(extfvk, extfvkOut);
 
-    // We should still not have the spending key...
+    // We should still not have the spending key or
+    // be able to retrieve the IVK by the default address...
     EXPECT_FALSE(keyStore.HaveSaplingSpendingKey(extfvk));
     EXPECT_FALSE(keyStore.GetSaplingSpendingKey(extfvk, skOut));
+    EXPECT_FALSE(keyStore.HaveSaplingIncomingViewingKey(addr));
 
-    // ... but we should have an incoming viewing key
+    // The IVK must be manually associated with the address...
+    keyStore.AddSaplingPaymentAddress(ivk, addr);
     EXPECT_TRUE(keyStore.HaveSaplingIncomingViewingKey(addr));
     EXPECT_TRUE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
     EXPECT_EQ(ivk, ivkOut);
@@ -550,14 +556,16 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     EXPECT_TRUE(keyStore.AddUnifiedFullViewingKey(zufvk));
     EXPECT_EQ(keyStore.GetUnifiedFullViewingKey(ufvkid).value(), zufvk);
 
-    auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Sapling}).value();
+    auto addrPair = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Sapling}));
+
+
     EXPECT_TRUE(addrPair.first.GetSaplingReceiver().has_value());
     auto saplingReceiver = addrPair.first.GetSaplingReceiver().value();
     auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
     EXPECT_FALSE(ufvkmeta.has_value());
 
-    auto saplingIvk = zufvk.GetSaplingKey().value().fvk.in_viewing_key();
-    keyStore.AddSaplingIncomingViewingKey(saplingIvk, saplingReceiver);
+    auto saplingIvk = zufvk.GetSaplingKey().value().ToIncomingViewingKey();
+    keyStore.AddSaplingPaymentAddress(saplingIvk, saplingReceiver);
 
     ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
     EXPECT_TRUE(ufvkmeta.has_value());
@@ -576,7 +584,7 @@ TEST(KeystoreTests, AddTransparentReceiverForUnifiedAddress) {
     auto ufvk = usk.value().ToFullViewingKey();
     auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
     auto ufvkid = zufvk.GetKeyID();
-    auto addrPair = zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling}).value();
+    auto addrPair = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::P2PKH, ReceiverType::Sapling}));
     EXPECT_TRUE(addrPair.first.GetP2PKHReceiver().has_value());
     auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(addrPair.first.GetP2PKHReceiver().value());
     EXPECT_FALSE(ufvkmeta.has_value());

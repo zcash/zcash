@@ -4,7 +4,8 @@
 
 #include "zcash/Address.hpp"
 #include "unified.h"
-#include "bip44.h"
+
+#include <rust/unified_keys.h>
 
 using namespace libzcash;
 
@@ -32,23 +33,19 @@ std::optional<ZcashdUnifiedSpendingKey> ZcashdUnifiedSpendingKey::ForAccount(
         const HDSeed& seed,
         uint32_t bip44CoinType,
         AccountId accountId) {
-    ZcashdUnifiedSpendingKey usk;
 
-    auto transparentKey = DeriveBip44TransparentAccountKey(seed, bip44CoinType, accountId);
+    auto transparentKey = transparent::AccountKey::ForAccount(seed, bip44CoinType, accountId);
     if (!transparentKey.has_value()) return std::nullopt;
-    usk.transparentKey = transparentKey.value().first;
 
     auto saplingKey = SaplingExtendedSpendingKey::ForAccount(seed, bip44CoinType, accountId);
-    usk.saplingKey = saplingKey.first;
 
-    return usk;
+    return ZcashdUnifiedSpendingKey(transparentKey.value(), saplingKey.first);
 }
 
 UnifiedFullViewingKey ZcashdUnifiedSpendingKey::ToFullViewingKey() const {
     UnifiedFullViewingKeyBuilder builder;
 
-    auto extPubKey = transparentKey.Neuter();
-    builder.AddTransparentKey(CChainablePubKey::FromParts(extPubKey.chaincode, extPubKey.pubkey).value());
+    builder.AddTransparentKey(transparentKey.ToAccountPubKey());
     builder.AddSaplingKey(saplingKey.ToXFVK());
 
     // This call to .value() is safe as ZcashdUnifiedSpendingKey values are always
@@ -75,62 +72,88 @@ ZcashdUnifiedFullViewingKey ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingK
     return result;
 }
 
-std::optional<UnifiedAddress> ZcashdUnifiedFullViewingKey::Address(
+UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::Address(
         const diversifier_index_t& j,
         const std::set<ReceiverType>& receiverTypes) const
 {
     if (!HasShielded(receiverTypes)) {
-        throw std::runtime_error("Unified addresses must include a shielded receiver.");
+        return UnifiedAddressGenerationError::ShieldedReceiverNotFound;
+    }
+
+    if (receiverTypes.count(ReceiverType::P2SH) > 0) {
+        return UnifiedAddressGenerationError::ReceiverTypeNotAvailable;
     }
 
     UnifiedAddress ua;
-    if (saplingKey.has_value() && receiverTypes.count(ReceiverType::Sapling) > 0) {
-        auto saplingAddress = saplingKey.value().Address(j);
-        if (saplingAddress.has_value()) {
-            ua.AddReceiver(saplingAddress.value());
+    if (receiverTypes.count(ReceiverType::Sapling) > 0) {
+        if (saplingKey.has_value()) {
+            auto saplingAddress = saplingKey.value().Address(j);
+            if (saplingAddress.has_value()) {
+                ua.AddReceiver(saplingAddress.value());
+            } else {
+                return UnifiedAddressGenerationError::NoAddressForDiversifier;
+            }
         } else {
-            return std::nullopt;
+            return UnifiedAddressGenerationError::ReceiverTypeNotAvailable;
         }
     }
 
-    if (transparentKey.has_value() && receiverTypes.count(ReceiverType::P2PKH) > 0) {
-        const auto& tkey = transparentKey.value();
-        auto childIndex = j.ToTransparentChildIndex();
-        if (!childIndex.has_value()) return std::nullopt;
+    if (receiverTypes.count(ReceiverType::P2PKH) > 0) {
+        if (transparentKey.has_value()) {
+            const auto& tkey = transparentKey.value();
 
-        CPubKey externalKey;
-        ChainCode externalChainCode;
-        if (!tkey.GetPubKey().Derive(externalKey, externalChainCode, 0, tkey.GetChainCode())) {
-            return std::nullopt;
-        }
+            auto childIndex = j.ToTransparentChildIndex();
+            if (!childIndex.has_value()) return UnifiedAddressGenerationError::InvalidTransparentChildIndex;
 
-        CPubKey childKey;
-        ChainCode childChainCode;
-        if (externalKey.Derive(childKey, childChainCode, childIndex.value(), externalChainCode)) {
-            ua.AddReceiver(childKey.GetID());
+            auto externalPubkey = tkey.DeriveExternal(childIndex.value());
+            if (!externalPubkey.has_value()) return UnifiedAddressGenerationError::NoAddressForDiversifier;
+
+            ua.AddReceiver(externalPubkey.value().GetID());
         } else {
-            return std::nullopt;
+            return UnifiedAddressGenerationError::ReceiverTypeNotAvailable;
         }
     }
 
-    return ua;
+    return std::make_pair(ua, j);
 }
 
-std::optional<std::pair<UnifiedAddress, diversifier_index_t>> ZcashdUnifiedFullViewingKey::FindAddress(
+UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
         const diversifier_index_t& j,
         const std::set<ReceiverType>& receiverTypes) const {
     diversifier_index_t j0(j);
     bool hasTransparent = HasTransparent(receiverTypes);
-    auto addr = Address(j0, receiverTypes);
-    while (!addr.has_value()) {
-        if (!j0.increment() || (hasTransparent && !j0.ToTransparentChildIndex().has_value()))
-            return std::nullopt;
-        addr = Address(j0, receiverTypes);
-    }
-    return std::make_pair(addr.value(), j0);
+    do {
+        auto addr = Address(j0, receiverTypes);
+        if (addr != UnifiedAddressGenerationResult(UnifiedAddressGenerationError::NoAddressForDiversifier)) {
+            return addr;
+        }
+    } while (j0.increment());
+
+    return UnifiedAddressGenerationError::DiversifierSpaceExhausted;
 }
 
-std::optional<std::pair<UnifiedAddress, diversifier_index_t>> ZcashdUnifiedFullViewingKey::FindAddress(
+UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
         const diversifier_index_t& j) const {
     return FindAddress(j, {ReceiverType::P2PKH, ReceiverType::Sapling});
+}
+
+std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(const ChangeRequest& req) const {
+    std::optional<RecipientAddress> addr;
+    std::visit(match {
+        [&](const TransparentChangeRequest& req) {
+            if (transparentKey.has_value()) {
+                auto changeAddr = transparentKey.value().GetChangeAddress(req.GetIndex());
+                if (changeAddr.has_value()) {
+                    addr = changeAddr.value();
+                }
+            }
+        },
+        [&](const SaplingChangeRequest& req) {
+            // currently true by construction, as a UFVK must have a supported shielded component
+            if (saplingKey.has_value()) {
+                addr = saplingKey.value().GetChangeAddress();
+            }
+        }
+    }, req);
+    return addr;
 }

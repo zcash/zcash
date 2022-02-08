@@ -98,6 +98,16 @@ bool CPubKey::Derive(CPubKey& pubkeyChild, ChainCode &ccChild, unsigned int nChi
     return true;
 }
 
+std::optional<CChainablePubKey> CChainablePubKey::Derive(unsigned int nChild) const {
+    CPubKey pubkeyChild;
+    ChainCode ccChild;
+    if (pubkey.Derive(pubkeyChild, ccChild, nChild, chaincode)) {
+        return CChainablePubKey::FromParts(ccChild, pubkeyChild);
+    } else {
+        return std::nullopt;
+    }
+}
+
 void CExtPubKey::Encode(unsigned char code[BIP32_EXTKEY_SIZE]) const {
     code[0] = nDepth;
     memcpy(code+1, vchFingerprint, 4);

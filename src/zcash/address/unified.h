@@ -5,11 +5,17 @@
 #ifndef ZCASH_ZCASH_ADDRESS_UNIFIED_H
 #define ZCASH_ZCASH_ADDRESS_UNIFIED_H
 
-#include "bip44.h"
+#include "transparent.h"
 #include "key_constants.h"
+#include "script/script.h"
 #include "zip32.h"
 
 namespace libzcash {
+
+// prototypes for the classes handling ZIP-316 encoding (in Address.hpp)
+// TODO: ZIP-316 encoding should probably be moved here
+class UnifiedAddress;
+class UnifiedFullViewingKey;
 
 enum class ReceiverType: uint32_t {
     P2PKH = 0x00,
@@ -17,6 +23,51 @@ enum class ReceiverType: uint32_t {
     Sapling = 0x02,
     //Orchard = 0x03
 };
+
+enum class UnifiedAddressGenerationError {
+    ShieldedReceiverNotFound,
+    ReceiverTypeNotAvailable,
+    NoAddressForDiversifier,
+    DiversifierSpaceExhausted,
+    InvalidTransparentChildIndex
+};
+
+typedef std::variant<
+    std::pair<UnifiedAddress, diversifier_index_t>,
+    UnifiedAddressGenerationError> UnifiedAddressGenerationResult;
+
+/** A recipient address to which a unified address can be resolved */
+typedef std::variant<
+    CKeyID,
+    CScriptID,
+    libzcash::SaplingPaymentAddress> RecipientAddress;
+
+/**
+ * An enumeration of the types of change that a transaction may produce.  It is
+ * sorted in descending preference order, so that when iterating over a set of
+ * change types the most-preferred type is selected first.
+ */
+enum class ChangeType {
+    Sapling,
+    Transparent,
+};
+
+class TransparentChangeRequest {
+private:
+    const diversifier_index_t& index;
+public:
+    TransparentChangeRequest(const diversifier_index_t& indexIn): index(indexIn) {}
+
+    const diversifier_index_t& GetIndex() const {
+        return index;
+    }
+};
+
+class SaplingChangeRequest {};
+
+typedef std::variant<
+    TransparentChangeRequest,
+    SaplingChangeRequest> ChangeRequest;
 
 /**
  * Test whether the specified list of receiver types contains a
@@ -32,9 +83,38 @@ bool HasTransparent(const std::set<ReceiverType>& receiverTypes);
 
 class ZcashdUnifiedSpendingKey;
 
-// prototypes for the classes handling ZIP-316 encoding (in Address.hpp)
-class UnifiedAddress;
-class UnifiedFullViewingKey;
+class UnknownReceiver {
+public:
+    uint32_t typecode;
+    std::vector<uint8_t> data;
+
+    UnknownReceiver(uint32_t typecode, std::vector<uint8_t> data) :
+        typecode(typecode), data(data) {}
+
+    friend inline bool operator==(const UnknownReceiver& a, const UnknownReceiver& b) {
+        return a.typecode == b.typecode && a.data == b.data;
+    }
+    friend inline bool operator<(const UnknownReceiver& a, const UnknownReceiver& b) {
+        // We don't know for certain the preference order of unknown receivers, but it is
+        // _likely_ that the higher typecode has higher preference. The exact sort order
+        // doesn't really matter, as unknown receivers have lower preference than known
+        // receivers.
+        return (a.typecode > b.typecode ||
+                (a.typecode == b.typecode && a.data < b.data));
+    }
+};
+
+/**
+ * Receivers that can appear in a Unified Address.
+ *
+ * These types are given in order of preference (as defined in ZIP 316), so that sorting
+ * variants by `operator<` is equivalent to sorting by preference.
+ */
+typedef std::variant<
+    SaplingPaymentAddress,
+    CScriptID,
+    CKeyID,
+    UnknownReceiver> Receiver;
 
 /**
  * An internal identifier for a unified full viewing key, derived as a
@@ -55,7 +135,7 @@ public:
 class ZcashdUnifiedFullViewingKey {
 private:
     UFVKId keyId;
-    std::optional<CChainablePubKey> transparentKey;
+    std::optional<transparent::AccountPubKey> transparentKey;
     std::optional<SaplingDiversifiableFullViewingKey> saplingKey;
 
     ZcashdUnifiedFullViewingKey() {}
@@ -74,7 +154,10 @@ public:
         return keyId;
     }
 
-    const std::optional<CChainablePubKey>& GetTransparentKey() const {
+    /**
+     * Return the transparent key at the account level;
+     */
+    const std::optional<transparent::AccountPubKey>& GetTransparentKey() const {
         return transparentKey;
     }
 
@@ -85,14 +168,17 @@ public:
     /**
      * Creates a new unified address having the specified receiver types, at the specified
      * diversifier index, unless the diversifer index would generate an invalid receiver.
-     * Returns `std::nullopt` if the diversifier index does not produce a valid receiver
-     * for one or more of the specified receiver types; under this circumstance, the caller
-     * should usually try successive diversifier indices until the operation returns a
-     * non-null value.
+     * Returns UnifiedAddressGenerationError::NoAddressForDiversifier if the diversifier
+     * index does not produce a valid receiver for one or more of the specified receiver
+     * types; under this circumstance, the caller should usually try successive diversifier
+     * indices until the operation returns a valid address. Returns
+     * `UnifiedAddressGenerationError::InvalidTransparentChildIndex` if a transparent
+     * receiver was requested but the specified diversifier was out of range.
      *
-     * This method will throw if `receiverTypes` does not include a shielded receiver type.
+     * If successful in deriving an address, this method returns a `UnifiedAddressGenerationResult`
+     * holding a pair consisting of the newly derived address and the provided value `j`.
      */
-    std::optional<UnifiedAddress> Address(
+    UnifiedAddressGenerationResult Address(
             const diversifier_index_t& j,
             const std::set<ReceiverType>& receiverTypes) const;
 
@@ -100,21 +186,33 @@ public:
      * Find the smallest diversifier index >= `j` such that it generates a valid
      * unified address according to the conditions specified in the documentation
      * for the `Address` method above, and returns the newly created address along
-     * with the diversifier index used to produce it. Returns `std::nullopt` if the
+     * with the diversifier index used to produce it.
+     *
+     * Returns UnifiedAddressGenerationError::NoAddressForDiversifier if the
      * diversifier space is exhausted, or if the set of receiver types contains a
      * transparent receiver and the diversifier exceeds the maximum transparent
      * child index.
-     *
-     * This method will throw if `receiverTypes` does not include a shielded receiver type.
      */
-    std::optional<std::pair<UnifiedAddress, diversifier_index_t>> FindAddress(
+    UnifiedAddressGenerationResult FindAddress(
             const diversifier_index_t& j,
             const std::set<ReceiverType>& receiverTypes) const;
 
     /**
      * Find the next available address that contains all supported receiver types.
      */
-    std::optional<std::pair<UnifiedAddress, diversifier_index_t>> FindAddress(const diversifier_index_t& j) const;
+    UnifiedAddressGenerationResult FindAddress(const diversifier_index_t& j) const;
+
+    /**
+     * Return the change address for this UFVK, given the provided
+     * set of receiver types for pools involved in this transaction.
+     * If the provided set is empty, return the change address
+     * corresponding to the most-preferred pool. Returns `std::nullopt`
+     * if the request cannot be satisfied; for example, if a transparent
+     * change address is requested but derivation fails for the requested
+     * child index, or if the set of requested protocols does not intersect
+     * with those supported by the this UFVKs constituent keys.
+     */
+    std::optional<RecipientAddress> GetChangeAddress(const ChangeRequest& req) const;
 
     friend bool operator==(const ZcashdUnifiedFullViewingKey& a, const ZcashdUnifiedFullViewingKey& b)
     {
@@ -127,17 +225,19 @@ public:
  */
 class ZcashdUnifiedSpendingKey {
 private:
-    CExtKey transparentKey;
+    transparent::AccountKey transparentKey;
     SaplingExtendedSpendingKey saplingKey;
 
-    ZcashdUnifiedSpendingKey() {}
+    ZcashdUnifiedSpendingKey(
+            transparent::AccountKey tkey,
+            SaplingExtendedSpendingKey skey): transparentKey(tkey), saplingKey(skey) {}
 public:
     static std::optional<ZcashdUnifiedSpendingKey> ForAccount(
             const HDSeed& seed,
             uint32_t bip44CoinType,
             libzcash::AccountId accountId);
 
-    const CExtKey& GetTransparentKey() const {
+    const transparent::AccountKey& GetTransparentKey() const {
         return transparentKey;
     }
 

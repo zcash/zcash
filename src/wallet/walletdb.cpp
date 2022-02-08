@@ -138,7 +138,7 @@ bool CWalletDB::WriteCryptedSaplingZKey(
 {
     const bool fEraseUnencryptedKey = true;
     nWalletDBUpdateCounter++;
-    auto ivk = extfvk.fvk.in_viewing_key();
+    auto ivk = extfvk.ToIncomingViewingKey();
 
     if (!Write(std::make_pair(std::string("sapzkeymeta"), ivk), keyMeta))
         return false;

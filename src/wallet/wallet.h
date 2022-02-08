@@ -23,7 +23,6 @@
 #include "wallet/crypter.h"
 #include "wallet/walletdb.h"
 #include "wallet/rpcwallet.h"
-#include "zcash/address/bip44.h"
 #include "zcash/address/unified.h"
 #include "zcash/address/mnemonic.h"
 #include "zcash/Address.hpp"
@@ -402,19 +401,16 @@ public:
     bool AcceptToMemoryPool(bool fLimitFree=true, bool fRejectAbsurdFee=true);
 };
 
-enum class AddressGenerationError {
+enum class WalletUAGenerationError {
     NoSuchAccount,
-    InvalidReceiverTypes,
     ExistingAddressMismatch,
-    NoAddressForDiversifier,
-    DiversifierSpaceExhausted,
-    WalletEncrypted,
-    InvalidTransparentChildIndex
+    WalletEncrypted
 };
 
 typedef std::variant<
     std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>,
-    AddressGenerationError> UAGenerationResult;
+    libzcash::UnifiedAddressGenerationError,
+    WalletUAGenerationError> WalletUAGenerationResult;
 
 /**
  * A transaction with a bunch of additional info that only the owner cares about.
@@ -1053,7 +1049,8 @@ private:
     /* Add a transparent secret key to the wallet. Internal use only. */
     CPubKey AddTransparentSecretKey(
             const uint256& seedFingerprint,
-            const std::pair<CKey, HDKeyPath>& extSecret);
+            const CKey& secret,
+            const HDKeyPath& keyPath);
 
 protected:
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);
@@ -1256,6 +1253,23 @@ public:
      */
     std::optional<libzcash::AccountId> FindAccountForSelector(const ZTXOSelector& paymentSource) const;
 
+    /**
+     * Generate a change address for the specified account.
+     *
+     * If a shielded change address is requested, this will return the default
+     * unified address for the internal unified full viewing key.
+     *
+     * If a transparent change address is requested, this will generate a fresh
+     * diversified unified address from the internal unified full viewing key,
+     * and return the associated transparent change address.
+     *
+     * Returns `std::nullopt` if the account does not have an internal spending
+     * key matching the requested `ChangeType`.
+     */
+    std::optional<libzcash::RecipientAddress> GenerateChangeAddressForAccount(
+            libzcash::AccountId accountId,
+            std::set<libzcash::ChangeType> changeOptions);
+
     SpendableInputs FindSpendableInputs(
             ZTXOSelector paymentSource,
             bool allowTransparentCoinbase,
@@ -1291,7 +1305,7 @@ public:
      * keystore implementation
      * Generate a new key
      */
-    CPubKey GenerateNewKey();
+    CPubKey GenerateNewKey(bool external);
     //! Adds a key to the store, and saves it to disk.
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
     //! Adds a key to the store, without saving it to disk (used by LoadWallet)
@@ -1359,11 +1373,11 @@ public:
     //! Generates new Sapling key, stores the newly generated spending
     //! key to the wallet, and returns the default address for the newly generated key.
     libzcash::SaplingPaymentAddress GenerateNewLegacySaplingZKey();
-    //! Generates Sapling key at the specified address index, and stores the newly generated
-    //! spending key to the wallet if it has not alreay been persisted.
-    //! Returns the newly created key, and a flag distinguishing
-    //! whether or not the key was already known by the wallet.
-    std::pair<libzcash::SaplingExtendedSpendingKey, bool> GenerateLegacySaplingZKey(uint32_t addrIndex);
+    //! Generates Sapling key at the specified address index, and stores that
+    //! key to the wallet if it has not already been persisted. Returns the
+    //! default address for the key, and a flag that is true when the key
+    //! was newly generated (not already in the wallet).
+    std::pair<libzcash::SaplingPaymentAddress, bool> GenerateLegacySaplingZKey(uint32_t addrIndex);
     //! Adds Sapling spending key to the store, and saves it to disk
     bool AddSaplingZKey(const libzcash::SaplingExtendedSpendingKey &key);
     //! Add Sapling full viewing key to the wallet.
@@ -1374,7 +1388,7 @@ public:
     //! full viewing key to the keystore, to avoid this override.
     bool AddSaplingFullViewingKey(
             const libzcash::SaplingExtendedFullViewingKey &extfvk);
-    bool AddSaplingIncomingViewingKey(
+    bool AddSaplingPaymentAddress(
         const libzcash::SaplingIncomingViewingKey &ivk,
         const libzcash::SaplingPaymentAddress &addr);
     bool AddCryptedSaplingSpendingKey(
@@ -1396,8 +1410,12 @@ public:
                                 const std::vector<unsigned char> &vchCryptedSecret);
 
     //
-    // Unified keys & addresses
+    // Unified keys, addresses, and accounts
     //
+
+    //! Obtain the account key for the legacy account by deriving it from
+    //! the wallet's mnemonic seed.
+    libzcash::transparent::AccountKey GetLegacyAccountKey() const;
 
     //! Generate the unified spending key from the wallet's mnemonic seed
     //! for the next unused account identifier.
@@ -1413,14 +1431,14 @@ public:
 
     //! Retrieves the UFVK derived from the wallet's mnemonic seed for the specified account.
     std::optional<libzcash::ZcashdUnifiedFullViewingKey>
-        GetUnifiedFullViewingKeyByAccount(libzcash::AccountId account);
+        GetUnifiedFullViewingKeyByAccount(libzcash::AccountId account) const;
 
     //! Generate a new unified address for the specified account, diversifier, and
     //! set of receiver types.
     //!
     //! If no diversifier index is provided, the next unused diversifier index
     //! will be selected.
-    UAGenerationResult GenerateUnifiedAddress(
+    WalletUAGenerationResult GenerateUnifiedAddress(
         const libzcash::AccountId& accountId,
         const std::set<libzcash::ReceiverType>& receivers,
         std::optional<libzcash::diversifier_index_t> j = std::nullopt);
@@ -1433,7 +1451,9 @@ public:
 
     std::optional<libzcash::UFVKId> FindUnifiedFullViewingKey(const libzcash::UnifiedAddress& addr) const;
     std::optional<libzcash::AccountId> GetUnifiedAccountId(const libzcash::UFVKId& ufvkId) const;
-    std::optional<libzcash::UnifiedAddress> GetUnifiedForReceiver(const libzcash::Receiver& receiver) const;
+
+    std::optional<libzcash::ZcashdUnifiedFullViewingKey> FindUFVKByReceiver(const libzcash::Receiver& receiver) const;
+    std::optional<libzcash::UnifiedAddress> FindUnifiedAddressByReceiver(const libzcash::Receiver& receiver) const;
 
     /**
      * Increment the next transaction order id
@@ -1761,34 +1781,6 @@ public:
     std::optional<libzcash::ViewingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
 };
 
-class GetSproutKeyForPaymentAddress
-{
-private:
-    CWallet *m_wallet;
-public:
-    GetSproutKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
-
-    std::optional<libzcash::SproutSpendingKey> operator()(const CKeyID &zaddr) const;
-    std::optional<libzcash::SproutSpendingKey> operator()(const CScriptID &zaddr) const;
-    std::optional<libzcash::SproutSpendingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
-    std::optional<libzcash::SproutSpendingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    std::optional<libzcash::SproutSpendingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
-};
-
-class GetSaplingKeyForPaymentAddress
-{
-private:
-    CWallet *m_wallet;
-public:
-    GetSaplingKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
-
-    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const CKeyID &zaddr) const;
-    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const CScriptID &zaddr) const;
-    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
-    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    std::optional<libzcash::SaplingExtendedSpendingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
-};
-
 enum PaymentAddressSource {
     Random,
     LegacyHDSeed,
@@ -1823,8 +1815,9 @@ class AddViewingKeyToWallet
 {
 private:
     CWallet *m_wallet;
+    bool addDefaultAddress;
 public:
-    AddViewingKeyToWallet(CWallet *wallet) : m_wallet(wallet) {}
+    AddViewingKeyToWallet(CWallet *wallet, bool addDefaultAddressIn) : m_wallet(wallet), addDefaultAddress(addDefaultAddressIn) {}
 
     KeyAddResult operator()(const libzcash::SproutViewingKey &sk) const;
     KeyAddResult operator()(const libzcash::SaplingExtendedFullViewingKey &sk) const;
@@ -1840,29 +1833,44 @@ private:
     std::optional<std::string> hdKeypath; // currently sapling only
     std::optional<std::string> seedFpStr; // currently sapling only
     bool log;
+    bool addDefaultAddress;
 public:
     AddSpendingKeyToWallet(CWallet *wallet, const Consensus::Params &params) :
-        m_wallet(wallet), params(params), nTime(1), hdKeypath(std::nullopt), seedFpStr(std::nullopt), log(false) {}
+        m_wallet(wallet), params(params), nTime(1), hdKeypath(std::nullopt), seedFpStr(std::nullopt), log(false), addDefaultAddress(true) {}
     AddSpendingKeyToWallet(
         CWallet *wallet,
         const Consensus::Params &params,
         int64_t _nTime,
         std::optional<std::string> _hdKeypath,
         std::optional<std::string> _seedFp,
-        bool _log
-    ) : m_wallet(wallet), params(params), nTime(_nTime), hdKeypath(_hdKeypath), seedFpStr(_seedFp), log(_log) {}
+        bool _log,
+        bool _addDefaultAddress
+    ) : m_wallet(wallet), params(params), nTime(_nTime), hdKeypath(_hdKeypath), seedFpStr(_seedFp), log(_log), addDefaultAddress(_addDefaultAddress) {}
 
 
     KeyAddResult operator()(const libzcash::SproutSpendingKey &sk) const;
     KeyAddResult operator()(const libzcash::SaplingExtendedSpendingKey &sk) const;
 };
 
-class LookupUnifiedAddress {
+class UFVKForReceiver {
 private:
     const CWallet& wallet;
 
 public:
-    LookupUnifiedAddress(const CWallet& wallet): wallet(wallet) {}
+    UFVKForReceiver(const CWallet& wallet): wallet(wallet) {}
+
+    std::optional<libzcash::ZcashdUnifiedFullViewingKey> operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const;
+    std::optional<libzcash::ZcashdUnifiedFullViewingKey> operator()(const CScriptID& scriptId) const;
+    std::optional<libzcash::ZcashdUnifiedFullViewingKey> operator()(const CKeyID& keyId) const;
+    std::optional<libzcash::ZcashdUnifiedFullViewingKey> operator()(const libzcash::UnknownReceiver& receiver) const;
+};
+
+class UnifiedAddressForReceiver {
+private:
+    const CWallet& wallet;
+
+public:
+    UnifiedAddressForReceiver(const CWallet& wallet): wallet(wallet) {}
 
     std::optional<libzcash::UnifiedAddress> operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const;
     std::optional<libzcash::UnifiedAddress> operator()(const CScriptID& scriptId) const;

@@ -6,6 +6,8 @@
 
 extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
 
+// TODO: instead of passing a TestMode flag, tests should override `CommitTransaction`
+// on the wallet.
 UniValue SendTransaction(CTransaction& tx, std::optional<std::reference_wrapper<CReserveKey>> reservekey, bool testmode) {
     UniValue o(UniValue::VOBJ);
     // Send the transaction

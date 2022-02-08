@@ -10,7 +10,7 @@
  * This test covers Sapling methods on CWallet
  * GenerateNewLegacySaplingZKey()
  * AddSaplingZKey()
- * AddSaplingIncomingViewingKey()
+ * AddSaplingPaymentAddress()
  * LoadSaplingZKey()
  * LoadSaplingIncomingViewingKey()
  * LoadSaplingZKeyMetadata()
@@ -59,11 +59,11 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     wallet.GetSaplingSpendingKey(extfvk, keyOut);
     ASSERT_EQ(sk, keyOut);
 
-    // verify there are two keys
+    // verify there is still only one address; adding the spending
+    // key no longer adds the default address
     wallet.GetSaplingPaymentAddresses(addrs);
-    EXPECT_EQ(2, addrs.size());
+    EXPECT_EQ(1, addrs.size());
     EXPECT_EQ(1, addrs.count(address));
-    EXPECT_EQ(1, addrs.count(sk.ToXFVK().DefaultAddress()));
 
     // Find a diversified address that does not use the same diversifier as the default address.
     // By starting our search at `10` we ensure there's no more than a 2^-10 chance that we
@@ -71,13 +71,16 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     libzcash::diversifier_index_t j(10);
     auto dpa = sk.ToXFVK().FindAddress(j).first;
 
+    // add the default address
+    EXPECT_TRUE(wallet.AddSaplingPaymentAddress(sk.ToXFVK().ToIncomingViewingKey(), sk.ToXFVK().DefaultAddress()));
+
     // verify wallet only has the default address
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.ToXFVK().DefaultAddress()));
     EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(dpa));
 
     // manually add a diversified address
-    auto ivk = extfvk.fvk.in_viewing_key();
-    EXPECT_TRUE(wallet.AddSaplingIncomingViewingKey(ivk, dpa));
+    auto ivk = extfvk.ToIncomingViewingKey();
+    EXPECT_TRUE(wallet.AddSaplingPaymentAddress(ivk, dpa));
 
     // verify wallet did add it
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk.ToXFVK().DefaultAddress()));
@@ -98,7 +101,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
 
     // Load a diversified address for the third key into the wallet
     auto dpa2 = sk2.ToXFVK().FindAddress(j).first;
-    EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(sk2.ToXFVK().DefaultAddress()));
+    EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(sk2.ToXFVK().DefaultAddress()));
     EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(dpa2));
     EXPECT_TRUE(wallet.LoadSaplingPaymentAddress(dpa2, ivk2));
     EXPECT_TRUE(wallet.HaveSaplingIncomingViewingKey(dpa2));
@@ -454,7 +457,7 @@ TEST(WalletZkeysTest, WriteCryptedSaplingZkeyDirectToDb) {
 
     // Add diversified address to the wallet
     auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
-    EXPECT_TRUE(wallet.AddSaplingIncomingViewingKey(ivk, dpa));
+    EXPECT_TRUE(wallet.AddSaplingPaymentAddress(ivk, dpa));
 
     // encrypt wallet
     SecureString strWalletPass;
@@ -468,6 +471,11 @@ TEST(WalletZkeysTest, WriteCryptedSaplingZkeyDirectToDb) {
     // unlock wallet and then add
     wallet.Unlock(strWalletPass);
     auto address2 = wallet.GenerateNewLegacySaplingZKey();
+
+    // wallet should have three addresses: the default addresses for the two
+    // generated keys, and the added diversified address.
+    wallet.GetSaplingPaymentAddresses(addrs);
+    ASSERT_EQ(3, addrs.size());
 
     // flush the wallet to prevent race conditions
     wallet.Flush();

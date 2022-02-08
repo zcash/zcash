@@ -3,6 +3,7 @@ use std::ffi::{CStr, CString};
 use tracing::error;
 
 use zcash_address::unified::{Container, Encoding, Fvk, Ufvk};
+use zcash_primitives::legacy::keys::AccountPubKey;
 
 use crate::address_ffi::network_from_cstr;
 
@@ -162,6 +163,32 @@ pub extern "C" fn unified_full_viewing_key_from_components(
                 e
             );
             std::ptr::null_mut()
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn transparent_key_ovks(
+    t_key: *const [u8; 65],
+    internal_ovk_ret: *mut [u8; 32],
+    external_ovk_ret: *mut [u8; 32],
+) -> bool {
+    let key_bytes = unsafe { t_key.as_ref() }.expect("Transparent FVK pointer may not be null.");
+    let internal_ovk = unsafe { &mut *internal_ovk_ret };
+    let external_ovk = unsafe { &mut *external_ovk_ret };
+    match AccountPubKey::deserialize(key_bytes) {
+        Ok(epubkey) => {
+            let (internal, external) = epubkey.ovks_for_shielding();
+            *internal_ovk = internal.as_bytes();
+            *external_ovk = external.as_bytes();
+            true
+        }
+        Err(e) => {
+            error!(
+                "An error occurred parsing the transparent full viewing key: {:?}",
+                e
+            );
+            false
         }
     }
 }

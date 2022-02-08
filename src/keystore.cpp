@@ -193,16 +193,16 @@ bool CBasicKeyStore::AddSaplingFullViewingKey(
     const libzcash::SaplingExtendedFullViewingKey &extfvk)
 {
     LOCK(cs_KeyStore);
-    auto ivk = extfvk.fvk.in_viewing_key();
+    auto ivk = extfvk.ToIncomingViewingKey();
     mapSaplingFullViewingKeys[ivk] = extfvk;
 
-    return CBasicKeyStore::AddSaplingIncomingViewingKey(ivk, extfvk.DefaultAddress());
+    return true;
 }
 
 // This function updates the wallet's internal address->ivk map.
 // If we add an address that is already in the map, the map will
 // remain unchanged as each address only has one ivk.
-bool CBasicKeyStore::AddSaplingIncomingViewingKey(
+bool CBasicKeyStore::AddSaplingPaymentAddress(
     const libzcash::SaplingIncomingViewingKey &ivk,
     const libzcash::SaplingPaymentAddress &addr)
 {
@@ -311,8 +311,11 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
     // Add the Sapling component of the UFVK to the wallet.
     auto saplingKey = ufvk.GetSaplingKey();
     if (saplingKey.has_value()) {
-        auto ivk = saplingKey.value().fvk.in_viewing_key();
+        auto ivk = saplingKey.value().ToIncomingViewingKey();
         mapSaplingKeyUnified.insert(std::make_pair(ivk, ufvk.GetKeyID()));
+
+        auto changeIvk = saplingKey.value().GetChangeIVK();
+        mapSaplingKeyUnified.insert(std::make_pair(changeIvk, ufvk.GetKeyID()));
     }
 
     // We can't reasonably add the transparent component here, because

@@ -667,7 +667,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
         auto sk = GetTestMasterSaplingSpendingKey();
         auto expsk = sk.expsk;
         auto extfvk = sk.ToXFVK();
-        auto ivk = extfvk.fvk.in_viewing_key();
+        auto ivk = extfvk.ToIncomingViewingKey();
         auto pk = extfvk.DefaultAddress();
 
         ASSERT_TRUE(wallet.AddSaplingZKey(sk));
@@ -1042,7 +1042,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         auto sk = GetTestMasterSaplingSpendingKey();
         auto expsk = sk.expsk;
         auto extfvk = sk.ToXFVK();
-        auto ivk = extfvk.fvk.in_viewing_key();
+        auto ivk = extfvk.ToIncomingViewingKey();
         auto pk = extfvk.DefaultAddress();
 
         // Generate Sapling note A
@@ -1991,7 +1991,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto extfvk = sk.ToXFVK();
-    auto ivk = extfvk.fvk.in_viewing_key();
+    auto ivk = extfvk.ToIncomingViewingKey();
     auto pk = extfvk.DefaultAddress();
 
     ASSERT_TRUE(wallet.AddSaplingZKey(sk));
@@ -2166,13 +2166,13 @@ TEST(WalletTests, GenerateUnifiedAddress) {
     (void) RegtestActivateSapling();
     TestWallet wallet(Params());
 
-    UAGenerationResult uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
+    auto uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
 
     // If the wallet does not have a mnemonic seed available, it is
     // treated as if the wallet is encrypted.
     EXPECT_FALSE(wallet.IsCrypted());
     EXPECT_FALSE(wallet.GetMnemonicSeed().has_value());
-    UAGenerationResult expected = AddressGenerationError::WalletEncrypted;
+    WalletUAGenerationResult expected = WalletUAGenerationError::WalletEncrypted;
     EXPECT_EQ(uaResult, expected);
 
     wallet.GenerateNewSeed();
@@ -2183,7 +2183,7 @@ TEST(WalletTests, GenerateUnifiedAddress) {
     // we cannot create an address for the account corresponding
     // to that spending key.
     uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
-    expected = AddressGenerationError::NoSuchAccount;
+    expected = WalletUAGenerationError::NoSuchAccount;
     EXPECT_EQ(uaResult, expected);
 
     // Create an account, then generate an address for that account.
@@ -2192,22 +2192,21 @@ TEST(WalletTests, GenerateUnifiedAddress) {
     auto ua = std::get_if<std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>>(&uaResult);
     EXPECT_NE(ua, nullptr);
 
-    EXPECT_TRUE(ua->first.GetSaplingReceiver().has_value());
-
+    auto uaSaplingReceiver = ua->first.GetSaplingReceiver();
+    EXPECT_TRUE(uaSaplingReceiver.has_value());
     auto ufvk = skpair.first.ToFullViewingKey();
-    EXPECT_EQ(
-            ua->first.GetSaplingReceiver(),
-            ufvk.GetSaplingKey().value().Address(ua->second));
+    EXPECT_EQ(uaSaplingReceiver.value(), ufvk.GetSaplingKey().value().Address(ua->second));
 
-    auto u4r = wallet.GetUnifiedForReceiver(ua->first.GetSaplingReceiver().value());
-    EXPECT_EQ(u4r, ua->first);
+    auto u4r = wallet.FindUnifiedAddressByReceiver(uaSaplingReceiver.value());
+    EXPECT_TRUE(u4r.has_value());
+    EXPECT_EQ(u4r.value(), ua->first);
 
     // Explicitly trigger the invalid transparent child index failure
     uaResult = wallet.GenerateUnifiedAddress(
             0,
             {ReceiverType::P2PKH, ReceiverType::Sapling},
             MAX_TRANSPARENT_CHILD_IDX.succ().value());
-    expected = AddressGenerationError::InvalidTransparentChildIndex;
+    expected = UnifiedAddressGenerationError::InvalidTransparentChildIndex;
     EXPECT_EQ(uaResult, expected);
 
     // Attempt to generate a UA at the maximum transparent child index. This might fail
@@ -2220,12 +2219,12 @@ TEST(WalletTests, GenerateUnifiedAddress) {
             MAX_TRANSPARENT_CHILD_IDX);
     ua = std::get_if<std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>>(&uaResult);
     if (ua == nullptr) {
-        expected = AddressGenerationError::NoAddressForDiversifier;
+        expected = UnifiedAddressGenerationError::NoAddressForDiversifier;
         EXPECT_EQ(uaResult, expected);
     } else {
         // the previous generation attempt succeeded, so this one should definitely fail.
         uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
-        expected = AddressGenerationError::DiversifierSpaceExhausted;
+        expected = UnifiedAddressGenerationError::InvalidTransparentChildIndex;
         EXPECT_EQ(uaResult, expected);
     }
 

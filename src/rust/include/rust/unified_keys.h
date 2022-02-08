@@ -103,6 +103,22 @@ UnifiedFullViewingKeyPtr* unified_full_viewing_key_from_components(
     const unsigned char* t_key,
     const unsigned char* sapling_key);
 
+/**
+ * Derive the internal and external OVKs for the binary encoding
+ * of a transparent FVK (the concatenated bytes of the serialized
+ * `(ChainCode, CPubKey)` pair.)
+ *
+ * Returns `true` if `t_key` was successfully deserialized,
+ * in which case `internal_ovk_ret` and `external_ovk_ret` (which
+ * should both point to 32-byte arrays) will have been updated
+ * with the appropriate key bytes; otherwise, this procedure
+ * returns `false` and the return values are unmodified.
+ */
+bool transparent_key_ovks(
+    const unsigned char* t_key,
+    unsigned char* internal_ovk_ret,
+    unsigned char* external_ovk_ret);
+
 #ifdef __cplusplus
 }
 #endif

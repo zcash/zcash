@@ -30,7 +30,7 @@ use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::slice;
 use subtle::CtOption;
-use tracing::info;
+use tracing::{error, info};
 
 #[cfg(not(target_os = "windows"))]
 use std::ffi::OsStr;
@@ -55,7 +55,7 @@ use zcash_primitives::{
     },
     sapling::{merkle_hash, spend_sig},
     transaction::components::Amount,
-    zip32::{self, sapling_address, sapling_find_address},
+    zip32::{self, sapling_address, sapling_derive_internal_fvk, sapling_find_address},
 };
 use zcash_proofs::{
     circuit::sapling::TREE_DEPTH as SAPLING_TREE_DEPTH,
@@ -532,13 +532,23 @@ pub extern "C" fn librustzcash_eh_isvalid(
     soln: *const c_uchar,
     soln_len: size_t,
 ) -> bool {
-    if (k >= n) || (n % 8 != 0) || (soln_len != (1 << k) * ((n / (k + 1)) as usize + 1) / 8) {
+    let expected_soln_len = (1 << k) * ((n / (k + 1)) as usize + 1) / 8;
+    if (k >= n) || (n % 8 != 0) || (soln_len != expected_soln_len) {
+        error!(
+            "eh_isvalid: params wrong, n={}, k={}, soln_len={} expected={}",
+            n, k, soln_len, expected_soln_len,
+        );
         return false;
     }
     let rs_input = unsafe { slice::from_raw_parts(input, input_len) };
     let rs_nonce = unsafe { slice::from_raw_parts(nonce, nonce_len) };
     let rs_soln = unsafe { slice::from_raw_parts(soln, soln_len) };
-    equihash::is_valid_solution(n, k, rs_input, rs_nonce, rs_soln).is_ok()
+    if let Err(e) = equihash::is_valid_solution(n, k, rs_input, rs_nonce, rs_soln) {
+        error!("eh_isvalid: is_valid_solution: {}", e);
+        false
+    } else {
+        true
+    }
 }
 
 /// Creates a Sapling verification context. Please free this when you're done.
@@ -1059,6 +1069,23 @@ pub extern "C" fn librustzcash_zip32_xsk_derive(
         .expect("should be able to serialize an ExtendedSpendingKey");
 }
 
+/// Derive the Sapling internal spending key from the external extended
+/// spending key
+#[no_mangle]
+pub extern "C" fn librustzcash_zip32_xsk_derive_internal(
+    xsk_external: *const [c_uchar; 169],
+    xsk_internal_ret: *mut [c_uchar; 169],
+) {
+    let xsk_external = zip32::ExtendedSpendingKey::read(&unsafe { *xsk_external }[..])
+        .expect("valid ExtendedSpendingKey");
+
+    let xsk_internal = xsk_external.derive_internal();
+
+    xsk_internal
+        .write(&mut (unsafe { &mut *xsk_internal_ret })[..])
+        .expect("should be able to serialize an ExtendedSpendingKey");
+}
+
 /// Derive a child ExtendedFullViewingKey from a parent.
 #[no_mangle]
 pub extern "C" fn librustzcash_zip32_xfvk_derive(
@@ -1079,6 +1106,25 @@ pub extern "C" fn librustzcash_zip32_xfvk_derive(
         .expect("should be able to serialize an ExtendedFullViewingKey");
 
     true
+}
+
+/// Derive the Sapling internal full viewing key from the corresponding external full viewing key
+#[no_mangle]
+pub extern "C" fn librustzcash_zip32_sapling_derive_internal_fvk(
+    fvk: *const [c_uchar; 96],
+    dk: *const [c_uchar; 32],
+    fvk_ret: *mut [c_uchar; 96],
+    dk_ret: *mut [c_uchar; 32],
+) {
+    let fvk = FullViewingKey::read(&unsafe { *fvk }[..]).expect("valid Sapling FullViewingKey");
+    let dk = zip32::DiversifierKey(unsafe { *dk });
+
+    let (fvk_internal, dk_internal) = sapling_derive_internal_fvk(&fvk, &dk);
+    let fvk_ret = unsafe { &mut *fvk_ret };
+    let dk_ret = unsafe { &mut *dk_ret };
+
+    fvk_ret.copy_from_slice(&fvk_internal.to_bytes());
+    dk_ret.copy_from_slice(&dk_internal.0);
 }
 
 /// Derive a PaymentAddress from an ExtendedFullViewingKey.

@@ -115,13 +115,12 @@ std::pair<std::string, PaymentAddress> AddressInfoFromViewingKey::operator()(con
     return std::make_pair("sapling", xfvk.DefaultAddress());
 }
 std::pair<std::string, PaymentAddress> AddressInfoFromViewingKey::operator()(const UnifiedFullViewingKey &ufvk) const {
-    return std::make_pair(
-            "unified",
-            ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(keyConstants, ufvk)
-                .FindAddress(diversifier_index_t(0))
-                .value() //safe because we're searching from 0
-                .first
-            );
+    // using std::get here is safe because we're searching from 0
+    auto addr = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(
+        ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(keyConstants, ufvk)
+            .FindAddress(diversifier_index_t(0))
+    );
+    return std::make_pair("unified", addr.first);
 }
 
 } // namespace libzcash
@@ -195,10 +194,10 @@ std::optional<CChainablePubKey> libzcash::UnifiedFullViewingKey::GetTransparentK
     }
 }
 
-bool libzcash::UnifiedFullViewingKeyBuilder::AddTransparentKey(const CChainablePubKey& key) {
+bool libzcash::UnifiedFullViewingKeyBuilder::AddTransparentKey(const transparent::AccountPubKey& key) {
     if (t_bytes.has_value()) return false;
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << key;
+    ss << key.GetPubKey();
     assert(ss.size() == 65);
     std::vector<uint8_t> ss_bytes(ss.begin(), ss.end());
     t_bytes = ss_bytes;
