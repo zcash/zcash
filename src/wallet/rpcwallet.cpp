@@ -3678,7 +3678,7 @@ UniValue z_getbalanceforaddress(const UniValue& params, bool fHelp)
         }
     }
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Get the receivers for this address.
     auto selector = pwalletMain->ToZTXOSelector(address, false);
@@ -3780,7 +3780,7 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
         }
     }
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Get the receivers for this account.
     auto selector = pwalletMain->ZTXOSelectorForAccount(account, false);
