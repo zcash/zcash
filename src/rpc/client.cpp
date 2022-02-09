@@ -122,6 +122,8 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_getbalance", 1},
     { "z_getbalance", 2},
     { "z_getbalanceforaccount", 0},
+    { "z_getbalanceforaccount", 1},
+    { "z_getbalanceforaddress", 1},
     { "z_gettotalbalance", 0},
     { "z_gettotalbalance", 1},
     { "z_gettotalbalance", 2},
