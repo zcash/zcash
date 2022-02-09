@@ -2,7 +2,11 @@
 
 export LC_ALL=C
 
-cargo deps --no-transitive-deps | dot \
+# default arguments are --no-transitive-deps
+ARGS="${*:---no-transitive-deps}"
+echo "Using args: $ARGS"
+
+cargo deps $ARGS | dot \
     -Earrowhead=vee \
     -Gratio=0.45 \
     -Gsize=50 \
