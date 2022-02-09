@@ -47,6 +47,9 @@ New RPC Methods
   being confirmed might be leaked via the user's shell history or the system
   process table; `zcashd-wallet-tool` is specifically provided to avoid this
   problem.
+- 'z_getbalanceforviewingkey' This newly created API allows a user to obtain
+  balance information for funds visible to a Sprout, Sapling, or Unified full
+  viewing key.
 
 RPC Changes
 -----------

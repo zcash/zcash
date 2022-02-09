@@ -132,6 +132,11 @@ public:
         GetUFVKMetadataForReceiver(
             const libzcash::Receiver& receiver
             ) const = 0;
+
+    virtual std::optional<libzcash::UFVKId>
+        GetUFVKIdForViewingKey(
+            const libzcash::ViewingKey& vk
+            ) const = 0;
 };
 
 typedef std::map<CKeyID, CKey> KeyMap;
@@ -371,6 +376,11 @@ public:
     virtual std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
         GetUFVKMetadataForReceiver(
             const libzcash::Receiver& receiver
+            ) const;
+
+    virtual std::optional<libzcash::UFVKId>
+        GetUFVKIdForViewingKey(
+            const libzcash::ViewingKey& vk
             ) const;
 };
 

@@ -35,7 +35,8 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
     def check_balance(self, node, account, address, expected, minconf=None):
         self._check_balance_for_rpc('z_getbalanceforaccount', node, account, expected, minconf)
-        self._check_balance_for_rpc('z_getbalanceforaddress', node, address, expected, minconf)
+        fvk = self.nodes[node].z_exportviewingkey(address)
+        self._check_balance_for_rpc('z_getbalanceforviewingkey', node, fvk, expected, minconf)
 
     def run_test(self):
         # z_sendmany is expected to fail if tx size breaks limit

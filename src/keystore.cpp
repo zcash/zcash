@@ -373,6 +373,32 @@ CBasicKeyStore::GetUFVKMetadataForReceiver(const libzcash::Receiver& receiver) c
     return std::visit(FindUFVKId(*this), receiver);
 }
 
+std::optional<libzcash::UFVKId> CBasicKeyStore::GetUFVKIdForViewingKey(const libzcash::ViewingKey& vk) const
+{
+    std::optional<libzcash::UFVKId> result;
+    std::visit(match {
+        [&](const libzcash::SproutViewingKey& vk) {},
+        [&](const libzcash::SaplingExtendedFullViewingKey& extfvk) {
+            const auto saplingIvk = extfvk.ToIncomingViewingKey();
+            const auto ufvkId = mapSaplingKeyUnified.find(saplingIvk);
+            if (ufvkId != mapSaplingKeyUnified.end()) {
+                result = ufvkId->second;
+            }
+        },
+        [&](const libzcash::UnifiedFullViewingKey& ufvk) {
+            const auto saplingDfvk = ufvk.GetSaplingKey();
+            if (saplingDfvk.has_value()) {
+                const auto saplingIvk = saplingDfvk.value().ToIncomingViewingKey();
+                const auto ufvkId = mapSaplingKeyUnified.find(saplingIvk);
+                if (ufvkId != mapSaplingKeyUnified.end()) {
+                    result = ufvkId->second;
+                }
+            }
+        }
+    }, vk);
+    return result;
+}
+
 std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
 FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
     const auto saplingIvk = keystore.mapSaplingIncomingViewingKeys.find(saplingAddr);

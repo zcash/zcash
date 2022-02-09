@@ -3551,7 +3551,7 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
             "\nReturns the balance of a taddr or zaddr belonging to the node's wallet.\n"
             "\nCAUTION: If the wallet has only an incoming viewing key for this address, then spends cannot be"
             "\ndetected, and so the returned balance may be larger than the actual balance."
-            "\nThe argument address may not be a Unified Address; please use z_getbalanceforaddress instead.\n"
+            "\nThe argument address may not be a Unified Address; please use z_getbalanceforviewingkey instead.\n"
             "\nArguments:\n"
             "1. \"address\"        (string) The selected address. It may be a transparent or shielded address.\n"
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
@@ -3618,32 +3618,32 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
     return ValueFromAmount(nBalance);
 }
 
-UniValue z_getbalanceforaddress(const UniValue& params, bool fHelp)
+UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "z_getbalanceforaddress \"address\" ( minconf )\n"
-            "\nReturns the per-pool balances of a Unified Address belonging to the node's wallet."
+            "z_getbalanceforviewingkey \"fvk\" ( minconf )\n"
+            "\nReturns the per-pool balances viewable by a full viewing key known to the node's wallet."
             "\nArguments:\n"
-            "1. \"address\"      (string) The selected address. It may be a transparent or shielded address.\n"
-            "2. minconf        (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
+            "1. \"fvk\"        (string) The selected full viewing key.\n"
+            "2. minconf      (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "\nResult:\n"
             "{\n"
             "  \"pools\": {\n"
             "    \"transparent\": {\n"
-            "        \"valueZat\": amount   (numeric) The amount held in the transparent pool by this account\n"
+            "        \"valueZat\": amount   (numeric) The amount held in the transparent pool viewable by this fvk\n"
             "    \"},\n"
             "    \"sprout\": {\n"
-            "        \"valueZat\": amount   (numeric) The amount held in the sprout pool by this account\n"
+            "        \"valueZat\": amount   (numeric) The amount held in the sprout pool viewable by this fvk\n"
             "    \"},\n"
             "    \"sapling\": {\n"
-            "        \"valueZat\": amount   (numeric) The amount held in the sapling pool by this account\n"
+            "        \"valueZat\": amount   (numeric) The amount held in the sapling pool viewable by this fvk\n"
             "    \"},\n"
             "    \"orchard\": {\n"
-            "        \"valueZat\": amount   (numeric) The amount held in the orchard pool by this account\n"
+            "        \"valueZat\": amount   (numeric) The amount held in the orchard pool viewable by this fvk\n"
             "    \"}\n"
             "  \"},\n"
             "  \"minimum_confirmations\": n (numeric) The given minconf argument\n"
@@ -3651,12 +3651,12 @@ UniValue z_getbalanceforaddress(const UniValue& params, bool fHelp)
             "Result amounts are in units of " + MINOR_CURRENCY_UNIT + ".\n"
             "Pools for which the balance is zero are not shown.\n"
             "\nExamples:\n"
-            "\nThe per-pool amount received by address \"myaddress\" with at least 1 block confirmed\n"
-            + HelpExampleCli("z_getbalanceforaddress", "\"myaddress\"") +
-            "\nThe per-pool amount received by address \"myaddress\" with at least 5 blocks confirmed\n"
-            + HelpExampleCli("z_getbalanceforaddress", "\"myaddress\" 5") +
+            "\nThe per-pool amount viewable by key \"myfvk\" with at least 1 block confirmed\n"
+            + HelpExampleCli("z_getbalanceforviewingkey", "\"myfvk\"") +
+            "\nThe per-pool amount viewable by key \"myfvk\" with at least 5 blocks confirmed\n"
+            + HelpExampleCli("z_getbalanceforviewingkey", "\"myfvk\" 5") +
             "\nAs a JSON RPC call\n"
-            + HelpExampleRpc("z_getbalanceforaddress", "\"myaddress\", 5")
+            + HelpExampleRpc("z_getbalanceforviewingkey", "\"myfvk\", 5")
         );
 
     if (!fExperimentalOrchardWallet) {
@@ -3664,11 +3664,11 @@ UniValue z_getbalanceforaddress(const UniValue& params, bool fHelp)
     }
 
     KeyIO keyIO(Params());
-    auto decoded = keyIO.DecodePaymentAddress(params[0].get_str());
+    auto decoded = keyIO.DecodeViewingKey(params[0].get_str());
     if (!decoded.has_value()) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid full viewing key");
     }
-    auto address = decoded.value();
+    auto fvk = decoded.value();
 
     int minconf = 1;
     if (params.size() > 1) {
@@ -3680,14 +3680,17 @@ UniValue z_getbalanceforaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    // Get the receivers for this address.
-    auto selector = pwalletMain->ToZTXOSelector(address, false);
+    // Sprout viewing keys cannot provide accurate balance information because they
+    // cannot detect spends, so we require that the wallet control the spending key
+    // in the case that a Sprout viewing key is provided. Sapling and unified
+    // FVKs make it possible to correctly determine balance without having the
+    // spending key, so we permit that here.
+    bool requireSpendingKey = std::holds_alternative<libzcash::SproutViewingKey>(fvk);
+    auto selector = pwalletMain->ZTXOSelectorForViewingKey(fvk, requireSpendingKey);
     if (!selector.has_value()) {
-        // The only way we'd reach this is if the address is a unified address for which
-        // we do not know its UFVK.
         throw JSONRPCError(
             RPC_INVALID_PARAMETER,
-            "Error: wallet does not have the Unified Full Viewing Key for the given address");
+            "Error: the wallet does not recognize the specified viewing key.");
     }
 
     auto spendableInputs = pwalletMain->FindSpendableInputs(selector.value(), true, minconf);
@@ -4278,10 +4281,19 @@ size_t EstimateTxSize(
         [&](const CScriptID& scriptId) {
             return true;
         },
+        [&](const libzcash::UnifiedFullViewingKey& ufvk) {
+            return ufvk.GetTransparentKey().has_value();
+        },
         [&](const libzcash::SproutPaymentAddress& addr) {
             return false;
         },
+        [&](const libzcash::SproutViewingKey& addr) {
+            return false;
+        },
         [&](const libzcash::SaplingPaymentAddress& addr) {
+            return false;
+        },
+        [&](const libzcash::SaplingExtendedFullViewingKey& addr) {
             return false;
         }
     }, ztxoSelector.GetPattern());
@@ -4380,7 +4392,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     auto fromaddress = params[0].get_str();
     ZTXOSelector ztxoSelector = [&]() {
         if (fromaddress == "ANY_TADDR") {
-            return CWallet::LegacyTransparentZTXOSelector();
+            return CWallet::LegacyTransparentZTXOSelector(true);
         } else {
             auto decoded = keyIO.DecodePaymentAddress(fromaddress);
             if (!decoded.has_value()) {
@@ -4389,7 +4401,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                         "Invalid from address: should be a taddr, a zaddr, or the string 'ANY_TADDR'.");
             }
 
-            auto ztxoSelectorOpt = pwalletMain->ToZTXOSelector(decoded.value(), true);
+            auto ztxoSelectorOpt = pwalletMain->ZTXOSelectorForAddress(decoded.value(), true);
             if (!ztxoSelectorOpt.has_value()) {
                 throw JSONRPCError(
                         RPC_INVALID_ADDRESS_OR_KEY,
@@ -5542,7 +5554,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_listunspent",            &z_listunspent,            false },
     { "wallet",             "z_getbalance",             &z_getbalance,             false },
     { "wallet",             "z_gettotalbalance",        &z_gettotalbalance,        false },
-    { "wallet",             "z_getbalanceforaddress",   &z_getbalanceforaddress,   false },
+    { "wallet",             "z_getbalanceforviewingkey",&z_getbalanceforviewingkey,false },
     { "wallet",             "z_getbalanceforaccount",   &z_getbalanceforaccount,   false },
     { "wallet",             "z_mergetoaddress",         &z_mergetoaddress,         false },
     { "wallet",             "z_sendmany",               &z_sendmany,               false },

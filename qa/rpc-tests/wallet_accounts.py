@@ -43,10 +43,11 @@ class WalletAccountsTest(BitcoinTestFramework):
     # Check we only have balances in the expected pools.
     # Remember that empty pools are omitted from the output.
     def check_address_balance(self, address, expected, minconf=None):
+        fvk = self.nodes[0].z_exportviewingkey(address)
         if minconf is None:
-            actual = self.nodes[0].z_getbalanceforaddress(address)
+            actual = self.nodes[0].z_getbalanceforviewingkey(fvk)
         else:
-            actual = self.nodes[0].z_getbalanceforaddress(address, minconf)
+            actual = self.nodes[0].z_getbalanceforviewingkey(fvk, minconf)
         assert_equal(set(expected), set(actual['pools']))
         for pool in expected:
             assert_equal(expected[pool] * COIN, actual['pools'][pool]['valueZat'])

@@ -738,7 +738,10 @@ typedef std::variant<
     CKeyID,
     CScriptID,
     libzcash::SproutPaymentAddress,
+    libzcash::SproutViewingKey,
     libzcash::SaplingPaymentAddress,
+    libzcash::SaplingExtendedFullViewingKey,
+    libzcash::UnifiedFullViewingKey,
     AccountZTXOPattern> ZTXOPattern;
 
 class ZTXOSelector {
@@ -1220,7 +1223,7 @@ public:
     static bool SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet);
 
     /**
-     * Obtain the ZTXO selector for the specified account ID.
+     * Returns the ZTXO selector for the specified account ID.
      *
      * Returns `std::nullopt` if the account ID has not been generated yet by
      * the wallet.
@@ -1234,15 +1237,30 @@ public:
             std::set<libzcash::ReceiverType> receiverTypes={}) const;
 
     /**
-     * Obtain the ZTXO selector for the specified payment address. If the
-     * `requireSpendingKey` flag is set, this will only return a selector
-     * that will choose outputs for which this wallet holds the spending keys.
+     * Returns the ZTXO selector for the specified payment address, if the
+     * address is known to the wallet. If the `requireSpendingKey` flag is set,
+     * this will only return a selector that will choose outputs for which this
+     * wallet holds the spending keys.
      */
-    std::optional<ZTXOSelector> ToZTXOSelector(
+    std::optional<ZTXOSelector> ZTXOSelectorForAddress(
             const libzcash::PaymentAddress& addr,
             bool requireSpendingKey) const;
 
-    static ZTXOSelector LegacyTransparentZTXOSelector();
+    /**
+     * Returns the ZTXO selector for the specified viewing key, if that key
+     * is known to the wallet. If the `requireSpendingKey` flag is set, this
+     * will only return a selector that will choose outputs for which this
+     * wallet holds the spending keys.
+     */
+    std::optional<ZTXOSelector> ZTXOSelectorForViewingKey(
+            const libzcash::ViewingKey& vk,
+            bool requireSpendingKey) const;
+
+    /**
+     * Returns the ZTXO selector that will select UTXOs sent to legacy
+     * transparent addresses managed by this wallet.
+     */
+    static ZTXOSelector LegacyTransparentZTXOSelector(bool requireSpendingKey);
 
     /**
      * Look up the account for a given selector. This resolves the account ID

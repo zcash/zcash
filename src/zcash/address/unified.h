@@ -214,6 +214,18 @@ public:
      */
     std::optional<RecipientAddress> GetChangeAddress(const ChangeRequest& req) const;
 
+    /**
+     * Return the "best available" change address. This returns `std::nullopt`
+     * only in the case of derivation failure for all key types. This will only
+     * return a transparent change address under highly exceptional
+     * circumstances, (i.e. it was not possible to derive a change address for
+     * *any* shielded pool) in which case the change address returned will be
+     * associated with diversifier index 0.
+     */
+    std::optional<RecipientAddress> GetChangeAddress() const;
+
+    UnifiedFullViewingKey ToFullViewingKey() const;
+
     friend bool operator==(const ZcashdUnifiedFullViewingKey& a, const ZcashdUnifiedFullViewingKey& b)
     {
         return a.transparentKey == b.transparentKey && a.saplingKey == b.saplingKey;

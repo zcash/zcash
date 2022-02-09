@@ -290,6 +290,10 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             // for Sprout, we return change to the originating address.
             builder_.SendChangeToSprout(addr);
         },
+        [&](const libzcash::SproutViewingKey& vk) {
+            // for Sprout, we return change to the originating address.
+            builder_.SendChangeToSprout(vk.address());
+        },
         [&](const libzcash::SaplingPaymentAddress& addr) {
             // for Sapling, if using a legacy address, return change to the
             // originating address; otherwise return it to the Sapling internal
@@ -302,6 +306,29 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 assert(changeAddr.has_value());
                 builder_.SendChangeTo(changeAddr.value(), ovks.first);
             }
+        },
+        [&](const libzcash::SaplingExtendedFullViewingKey& fvk) {
+            // for Sapling, if using a legacy address, return change to the
+            // originating address; otherwise return it to the Sapling internal
+            // address corresponding to the UFVK.
+            if (sendFromAccount_ == ZCASH_LEGACY_ACCOUNT) {
+                builder_.SendChangeTo(fvk.DefaultAddress(), ovks.first);
+            } else {
+                auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
+                        sendFromAccount_, allowedChangeTypes_);
+                assert(changeAddr.has_value());
+                builder_.SendChangeTo(changeAddr.value(), ovks.first);
+            }
+        },
+        [&](const libzcash::UnifiedFullViewingKey& fvk) {
+            auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), fvk);
+            auto changeAddr = zufvk.GetChangeAddress();
+            if (!changeAddr.has_value()) {
+                throw JSONRPCError(
+                        RPC_WALLET_ERROR,
+                        "Could not generate a change address from the specified full viewing key ");
+            }
+            builder_.SendChangeTo(changeAddr.value(), ovks.first);
         },
         [&](const AccountZTXOPattern& acct) {
             for (ReceiverType rtype : acct.GetReceiverTypes()) {
