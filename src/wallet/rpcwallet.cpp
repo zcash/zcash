@@ -500,7 +500,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
 
                 UniValue sapling_obj(UniValue::VOBJ);
 
-                if (source == LegacyHDSeed || source == MnemonicHDSeed) {
+                if (source == PaymentAddressSource::LegacyHDSeed || source == PaymentAddressSource::MnemonicHDSeed) {
                     std::string hdKeyPath = pwalletMain->mapSaplingZKeyMetadata[ivk].hdKeypath;
                     if (hdKeyPath != "") {
                         sapling_obj.pushKV("zip32KeyPath", hdKeyPath);
@@ -531,7 +531,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
         {
             UniValue imported_sprout_addrs(UniValue::VARR);
             for (const SproutPaymentAddress& addr : sproutAddresses) {
-                if (GetSourceForPaymentAddress(pwalletMain)(addr) == Imported) {
+                if (GetSourceForPaymentAddress(pwalletMain)(addr) == PaymentAddressSource::Imported) {
                     imported_sprout_addrs.push_back(keyIO.EncodePaymentAddress(addr));
                 }
             }
@@ -544,7 +544,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
             }
         }
 
-        hasData |= add_sapling(saplingAddresses, Imported, entry);
+        hasData |= add_sapling(saplingAddresses, PaymentAddressSource::Imported, entry);
 
         if (hasData) {
             ret.push_back(entry);
@@ -573,7 +573,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
         {
             UniValue watchonly_sprout_addrs(UniValue::VARR);
             for (const SproutPaymentAddress& addr : sproutAddresses) {
-                if (GetSourceForPaymentAddress(pwalletMain)(addr) == ImportedWatchOnly) {
+                if (GetSourceForPaymentAddress(pwalletMain)(addr) == PaymentAddressSource::ImportedWatchOnly) {
                     watchonly_sprout_addrs.push_back(keyIO.EncodePaymentAddress(addr));
                 }
             }
@@ -586,7 +586,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
             }
         }
 
-        hasData |= add_sapling(saplingAddresses, ImportedWatchOnly, entry);
+        hasData |= add_sapling(saplingAddresses, PaymentAddressSource::ImportedWatchOnly, entry);
 
         if (hasData) {
             ret.push_back(entry);
@@ -598,7 +598,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("source", "legacy_hdseed");
 
-        bool hasData = add_sapling(saplingAddresses, LegacyHDSeed, entry);
+        bool hasData = add_sapling(saplingAddresses, PaymentAddressSource::LegacyHDSeed, entry);
 
         if (hasData) {
             ret.push_back(entry);
