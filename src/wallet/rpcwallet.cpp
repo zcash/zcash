@@ -2256,21 +2256,22 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "Optionally filter to only include notes sent to specified addresses.\n"
             "When minconf is 0, unspent notes with zero confirmations are returned, even though they are not immediately spendable.\n"
             "Results are an array of Objects, each of which has:\n"
-            "{txid, jsindex, jsoutindex, confirmations, address, amount, memo} (Sprout)\n"
-            "{txid, outindex, confirmations, address, amount, memo} (Sapling)\n"
+            "{txid, type, jsindex, jsoutindex, confirmations, address, amount, memo} (Sprout)\n"
+            "{txid, type, outindex, confirmations, address, amount, memo} (Sapling)\n"
             "\nArguments:\n"
             "1. minconf          (numeric, optional, default=1) The minimum confirmations to filter\n"
             "2. maxconf          (numeric, optional, default=9999999) The maximum confirmations to filter\n"
             "3. includeWatchonly (bool, optional, default=false) Also include watchonly addresses (see 'z_importviewingkey')\n"
-            "4. \"addresses\"      (string) A json array of zaddrs (both Sprout and Sapling) to filter on.  Duplicate addresses not allowed.\n"
+            "4. \"addresses\"      (string) A json array of shielded addresses to filter on.  Duplicate addresses not allowed.\n"
             "    [\n"
-            "      \"address\"     (string) zaddr\n"
+            "      \"address\"     (string) Sprout, Sapling, or Unified address\n"
             "      ,...\n"
             "    ]\n"
             "\nResult (output indices for only one pool will be present):\n"
             "[                             (array of json object)\n"
             "  {\n"
             "    \"txid\" : \"txid\",          (string) the transaction id \n"
+            "    \"type\" : \"sprout|sapling|orchard\", (string) The shielded pool\n"
             "    \"jsindex\" (sprout) : n,       (numeric) the joinsplit index\n"
             "    \"jsoutindex\" (sprout) : n,       (numeric) the output index of the joinsplit\n"
             "    \"outindex\" (sapling) : n,       (numeric) the output index\n"
@@ -2373,6 +2374,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
     for (auto & entry : sproutEntries) {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("txid", entry.jsop.hash.ToString());
+        obj.pushKV("type", ADDR_TYPE_SPROUT);
         obj.pushKV("jsindex", (int)entry.jsop.js );
         obj.pushKV("jsoutindex", (int)entry.jsop.n);
         obj.pushKV("confirmations", entry.confirmations);
@@ -2391,12 +2393,19 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
     for (auto & entry : saplingEntries) {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("txid", entry.op.hash.ToString());
+        obj.pushKV("type", ADDR_TYPE_SAPLING);
         obj.pushKV("outindex", (int)entry.op.n);
         obj.pushKV("confirmations", entry.confirmations);
         bool hasSaplingSpendingKey = pwalletMain->HaveSaplingSpendingKeyForAddress(entry.address);
         obj.pushKV("spendable", hasSaplingSpendingKey);
-        // TODO: If we found this entry via a UA, show that instead.
-        obj.pushKV("address", keyIO.EncodePaymentAddress(entry.address));
+        obj.pushKV("address", keyIO.EncodePaymentAddress([&]() {
+            auto ua = pwalletMain->FindUnifiedAddressByReceiver(entry.address);
+            if (ua.has_value()) {
+                return libzcash::PaymentAddress{ua.value()};
+            } else {
+                return libzcash::PaymentAddress{entry.address};
+            }
+        }()));
         obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value()))); // note.value() is equivalent to plaintext.value()
         obj.pushKV("memo", HexStr(entry.memo));
         if (hasSaplingSpendingKey) {
@@ -4067,13 +4076,14 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
         // If the note belongs to a Sapling address that is part of an account in the
         // wallet, show the corresponding Unified Address.
-        std::string address;
-        const auto ua = pwalletMain->FindUnifiedAddressByReceiver(pa);
-        if (ua.has_value()) {
-            address = keyIO.EncodePaymentAddress(ua.value());
-        } else {
-            address = keyIO.EncodePaymentAddress(pa);
-        }
+        std::string address = keyIO.EncodePaymentAddress([&]() {
+            auto ua = pwalletMain->FindUnifiedAddressByReceiver(pa);
+            if (ua.has_value()) {
+                return libzcash::PaymentAddress{ua.value()};
+            } else {
+                return libzcash::PaymentAddress{pa};
+            }
+        }());
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_SAPLING);
@@ -4120,13 +4130,14 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
         // If the note belongs to a Sapling address that is part of an account in the
         // wallet, show the corresponding Unified Address.
-        std::string address;
-        const auto ua = pwalletMain->FindUnifiedAddressByReceiver(pa);
-        if (ua.has_value()) {
-            address = keyIO.EncodePaymentAddress(ua.value());
-        } else {
-            address = keyIO.EncodePaymentAddress(pa);
-        }
+        std::string address = keyIO.EncodePaymentAddress([&]() {
+            auto ua = pwalletMain->FindUnifiedAddressByReceiver(pa);
+            if (ua.has_value()) {
+                return libzcash::PaymentAddress{ua.value()};
+            } else {
+                return libzcash::PaymentAddress{pa};
+            }
+        }());
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_SAPLING);
