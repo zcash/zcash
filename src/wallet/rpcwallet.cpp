@@ -3235,6 +3235,7 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
             "z_listaddresses ( includeWatchonly )\n"
             "\nDEPRECATED\n"
             "\nReturns the list of shielded addresses belonging to the wallet.\n"
+            "\nThis never returns Unified Addresses; see 'listaddresses' for them.\n"
             "\nArguments:\n"
             "1. includeWatchonly (bool, optional, default=false) Also include watchonly addresses (see 'z_importviewingkey')\n"
             "\nResult:\n"
@@ -3269,6 +3270,10 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
         std::set<libzcash::SaplingPaymentAddress> addresses;
         pwalletMain->GetSaplingPaymentAddresses(addresses);
         for (auto addr : addresses) {
+            // Don't show Sapling receivers that are part of an account in the wallet.
+            if (pwalletMain->FindUnifiedAddressByReceiver(addr).has_value()) {
+                continue;
+            }
             if (fIncludeWatchonly || pwalletMain->HaveSaplingSpendingKeyForAddress(addr)) {
                 ret.push_back(keyIO.EncodePaymentAddress(addr));
             }
