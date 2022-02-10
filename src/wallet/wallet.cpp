@@ -2279,7 +2279,7 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
 
         Lock();
         Unlock(strWalletPassphrase);
-        NewKeyPool();
+        // TODO: migrate to a new mnemonic when encrypting an unencrypted wallet?
         Lock();
 
         // Need to completely rewrite the wallet file; if we don't, bdb might keep
@@ -3122,6 +3122,11 @@ void CWallet::GenerateNewSeed(Language language)
     // as a hdchain object
     CHDChain newHdChain(seed.Fingerprint(), nCreationTime);
     SetMnemonicHDChain(newHdChain, false);
+
+    // Now that we can derive keys deterministically, clear out the legacy
+    // transparent keypool of all randomly-generated keys, and fill it with
+    // internal keys (for use as change addresses or miner outputs).
+    NewKeyPool();
 }
 
 bool CWallet::SetMnemonicSeed(const MnemonicSeed& seed)
@@ -5024,8 +5029,9 @@ bool CWallet::SetDefaultKey(const CPubKey &vchPubKey)
 }
 
 /**
- * Mark old keypool keys as used,
- * and generate all new keys
+ * Mark old keypool keys as used, and derive new internal keys.
+ *
+ * This is only used when first migrating to HD-derived transparent keys.
  */
 bool CWallet::NewKeyPool()
 {
@@ -5043,7 +5049,7 @@ bool CWallet::NewKeyPool()
         for (int i = 0; i < nKeys; i++)
         {
             int64_t nIndex = i+1;
-            walletdb.WritePool(nIndex, CKeyPool(GenerateNewKey(true)));
+            walletdb.WritePool(nIndex, CKeyPool(GenerateNewKey(false)));
             setKeyPool.insert(nIndex);
         }
         LogPrintf("CWallet::NewKeyPool wrote %d new keys\n", nKeys);
@@ -5073,7 +5079,7 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
             int64_t nEnd = 1;
             if (!setKeyPool.empty())
                 nEnd = *(--setKeyPool.end()) + 1;
-            if (!walletdb.WritePool(nEnd, CKeyPool(GenerateNewKey(true))))
+            if (!walletdb.WritePool(nEnd, CKeyPool(GenerateNewKey(false))))
                 throw runtime_error("TopUpKeyPool(): writing generated key failed");
             setKeyPool.insert(nEnd);
             LogPrintf("keypool added key %d, size=%u\n", nEnd, setKeyPool.size());
