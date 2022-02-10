@@ -6126,7 +6126,21 @@ bool PaymentAddressBelongsToWallet::operator()(const libzcash::SaplingPaymentAdd
 }
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::UnifiedAddress &uaddr) const
 {
-    // TODO
+    auto hdChain = m_wallet->GetMnemonicHDChain();
+    assert(hdChain.has_value());
+
+    auto ufvkid = m_wallet->FindUnifiedFullViewingKey(uaddr);
+    if (ufvkid.has_value()) {
+        // Look through the UFVKs that we have generated, and confirm that the
+        // seed fingerprint for the key we find for the ufvkid corresponds to
+        // the wallet's mnemonic seed.
+        for (const auto& [k, v] : m_wallet->mapUnifiedAccountKeys) {
+            if (v == ufvkid.value() && k.first == hdChain.value().GetSeedFingerprint()) {
+                return true;
+            }
+        }
+    }
+
     return false;
 }
 
