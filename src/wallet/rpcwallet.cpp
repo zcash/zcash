@@ -3627,6 +3627,7 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
         throw runtime_error(
             "z_getbalanceforviewingkey \"fvk\" ( minconf )\n"
             "\nReturns the per-pool balances viewable by a full viewing key known to the node's wallet."
+            "\nSprout viewing keys may be used only if the wallet controls the corresponding spending key."
             "\nArguments:\n"
             "1. \"fvk\"        (string) The selected full viewing key.\n"
             "2. minconf      (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"

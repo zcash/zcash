@@ -48,8 +48,10 @@ New RPC Methods
   process table; `zcashd-wallet-tool` is specifically provided to avoid this
   problem.
 - 'z_getbalanceforviewingkey' This newly created API allows a user to obtain
-  balance information for funds visible to a Sprout, Sapling, or Unified full
-  viewing key.
+  balance information for funds visible to a Sapling or Unified full
+  viewing key; if a Sprout viewing key is provided, this method allows 
+  retrieval of the balance only in the case that the wallet controls the
+  corresponding spending key.
 
 RPC Changes
 -----------
