@@ -157,3 +157,31 @@ std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(co
     }, req);
     return addr;
 }
+
+std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress() const {
+    if (saplingKey.has_value()) {
+        return saplingKey.value().GetChangeAddress();
+    }
+    if (transparentKey.has_value()) {
+        auto changeAddr = transparentKey.value().GetChangeAddress(diversifier_index_t(0));
+        if (changeAddr.has_value()) {
+            return changeAddr.value();
+        }
+    }
+    return std::nullopt;
+}
+
+UnifiedFullViewingKey ZcashdUnifiedFullViewingKey::ToFullViewingKey() const {
+    UnifiedFullViewingKeyBuilder builder;
+
+    if (transparentKey.has_value()) {
+        builder.AddTransparentKey(transparentKey.value());
+    }
+    if (saplingKey.has_value()) {
+        builder.AddSaplingKey(saplingKey.value());
+    }
+
+    // This call to .value() is safe as ZcashdUnifiedFullViewingKey values are always
+    // constructed to contain all required components.
+    return builder.build().value();
+}

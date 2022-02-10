@@ -11,6 +11,7 @@
 #include "uint256.h"
 #include "utiltime.h"
 #include "zcash/address/sapling.hpp"
+#include <librustzcash.h>
 #include <rust/zip339.h>
 
 #include <optional>
@@ -170,6 +171,12 @@ public:
      * from the associated spend authority.
      */
     std::pair<uint256, uint256> GetOVKs() const;
+
+    diversifier_index_t DecryptDiversifier(const diversifier_t& d) const {
+        diversifier_index_t j;
+        librustzcash_sapling_diversifier_index(dk.begin(), d.begin(), j.begin());
+        return j;
+    }
 
     ADD_SERIALIZE_METHODS;
 

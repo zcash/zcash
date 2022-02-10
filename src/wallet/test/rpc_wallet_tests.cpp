@@ -801,7 +801,7 @@ void CheckHaveAddr(const std::optional<libzcash::PaymentAddress>& addr) {
     auto addr_of_type = std::get_if<ADDR_TYPE>(&(addr.value()));
     BOOST_ASSERT(addr_of_type != nullptr);
 
-    BOOST_CHECK(pwalletMain->ToZTXOSelector(*addr_of_type, true).has_value());
+    BOOST_CHECK(pwalletMain->ZTXOSelectorForAddress(*addr_of_type, true).has_value());
 }
 
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
@@ -1235,7 +1235,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // there are no utxos to spend
     {
-        auto selector = pwalletMain->ToZTXOSelector(taddr1, true).value();
+        auto selector = pwalletMain->ZTXOSelectorForAddress(taddr1, true).value();
         TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 100*COIN, "DEADBEEF") };
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, selector, recipients, 1));
@@ -1247,7 +1247,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // there are no unspent notes to spend
     {
-        auto selector = pwalletMain->ToZTXOSelector(zaddr1, true).value();
+        auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true).value();
         TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(taddr1, 100*COIN, "DEADBEEF") };
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, selector, recipients, 1));
@@ -1259,7 +1259,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // get_memo_from_hex_string())
     {
-        auto selector = pwalletMain->ToZTXOSelector(zaddr1, true).value();
+        auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true).value();
         TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 100*COIN, "DEADBEEF") };
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, selector, recipients, 1));
@@ -1360,7 +1360,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     auto builder = TransactionBuilder(consensusParams, nextBlockHeight, pwalletMain);
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
 
-    auto selector = pwalletMain->ToZTXOSelector(taddr, true).value();
+    auto selector = pwalletMain->ZTXOSelectorForAddress(taddr, true).value();
     std::vector<SendManyRecipient> recipients = { SendManyRecipient(pa, 1*COIN, "ABCD") };
     std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, selector, recipients, 0));
     std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);

@@ -177,6 +177,17 @@ public:
 
     UFVKId GetKeyID(const KeyConstants& keyConstants) const;
 
+    std::set<ReceiverType> GetKnownReceiverTypes() const {
+        std::set<ReceiverType> result;
+        if (GetTransparentKey().has_value()) {
+            result.insert(ReceiverType::P2PKH);
+        }
+        if (GetSaplingKey().has_value()) {
+            result.insert(ReceiverType::Sapling);
+        }
+        return result;
+    }
+
     UnifiedFullViewingKey& operator=(UnifiedFullViewingKey&& key)
     {
         if (this != &key) {
