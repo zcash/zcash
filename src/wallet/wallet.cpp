@@ -271,12 +271,12 @@ CPubKey CWallet::GenerateNewKey(bool external)
     transparent::AccountKey accountKey = this->GetLegacyAccountKey();
     std::optional<CPubKey> pubkey = std::nullopt;
     do {
-        auto index = hdChain.GetLegacyTKeyCounter();
+        auto index = hdChain.GetLegacyTKeyCounter(external);
         auto key = external ?
             accountKey.DeriveExternalSpendingKey(index) :
             accountKey.DeriveInternalSpendingKey(index);
 
-        hdChain.IncrementLegacyTKeyCounter();
+        hdChain.IncrementLegacyTKeyCounter(external);
         if (key.has_value()) {
             pubkey = AddTransparentSecretKey(
                 hdChain.GetSeedFingerprint(),

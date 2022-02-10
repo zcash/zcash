@@ -214,7 +214,6 @@ class WalletBackupTest(BitcoinTestFramework):
         self.start_three(['-rescan'])
         sync_blocks(self.nodes)
 
-        # TODO: Alter keypool to not use external addresses, so this passes.
         assert_equal(self.nodes[0].getbalance(), balance0)
         assert_equal(self.nodes[1].getbalance(), balance1)
         assert_equal(self.nodes[2].getbalance(), balance2)

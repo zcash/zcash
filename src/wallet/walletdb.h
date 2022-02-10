@@ -49,7 +49,8 @@ private:
     uint256 seedFp;
     int64_t nCreateTime; // 0 means unknown
     uint32_t accountCounter;
-    uint32_t legacyTKeyCounter;
+    uint32_t legacyTKeyExternalCounter;
+    uint32_t legacyTKeyInternalCounter;
     uint32_t legacySaplingKeyCounter;
     bool mnemonicSeedBackupConfirmed;
 
@@ -61,7 +62,8 @@ private:
         seedFp.SetNull();
         nCreateTime = 0;
         accountCounter = 0;
-        legacyTKeyCounter = 0;
+        legacyTKeyExternalCounter = 0;
+        legacyTKeyInternalCounter = 0;
         legacySaplingKeyCounter = 0;
         mnemonicSeedBackupConfirmed = false;
     }
@@ -69,7 +71,7 @@ public:
     static const int VERSION_HD_BASE = 1;
     static const int CURRENT_VERSION = VERSION_HD_BASE;
 
-    CHDChain(uint256 seedFpIn, int64_t nCreateTimeIn): nVersion(CHDChain::CURRENT_VERSION), seedFp(seedFpIn), nCreateTime(nCreateTimeIn), accountCounter(0), legacyTKeyCounter(0), legacySaplingKeyCounter(0), mnemonicSeedBackupConfirmed(false) {}
+    CHDChain(uint256 seedFpIn, int64_t nCreateTimeIn): nVersion(CHDChain::CURRENT_VERSION), seedFp(seedFpIn), nCreateTime(nCreateTimeIn), accountCounter(0), legacyTKeyExternalCounter(0), legacyTKeyInternalCounter(0), legacySaplingKeyCounter(0), mnemonicSeedBackupConfirmed(false) {}
 
     ADD_SERIALIZE_METHODS;
 
@@ -80,7 +82,8 @@ public:
         READWRITE(seedFp);
         READWRITE(nCreateTime);
         READWRITE(accountCounter);
-        READWRITE(legacyTKeyCounter);
+        READWRITE(legacyTKeyExternalCounter);
+        READWRITE(legacyTKeyInternalCounter);
         READWRITE(legacySaplingKeyCounter);
         READWRITE(mnemonicSeedBackupConfirmed);
     }
@@ -105,12 +108,16 @@ public:
         accountCounter += 1;
     }
 
-    uint32_t GetLegacyTKeyCounter() {
-        return legacyTKeyCounter;
+    uint32_t GetLegacyTKeyCounter(bool external) {
+        return external ? legacyTKeyExternalCounter : legacyTKeyInternalCounter;
     }
 
-    void IncrementLegacyTKeyCounter() {
-        legacyTKeyCounter += 1;
+    void IncrementLegacyTKeyCounter(bool external) {
+        if (external) {
+            legacyTKeyExternalCounter += 1;
+        } else {
+            legacyTKeyInternalCounter += 1;
+        }
     }
 
     uint32_t GetLegacySaplingKeyCounter() const {
