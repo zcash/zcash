@@ -5130,23 +5130,6 @@ void CWallet::ReturnKey(int64_t nIndex)
     LogPrintf("keypool return %d\n", nIndex);
 }
 
-std::optional<CPubKey> CWallet::GetKeyFromPool()
-{
-    int64_t nIndex = 0;
-    CKeyPool keypool;
-    {
-        LOCK(cs_wallet);
-        ReserveKeyFromKeyPool(nIndex, keypool);
-        if (nIndex == -1)
-        {
-            if (IsLocked()) return std::nullopt;
-            return GenerateNewKey(true);
-        }
-        KeepKey(nIndex);
-        return keypool.vchPubKey;
-    }
-}
-
 int64_t CWallet::GetOldestKeyPoolTime()
 {
     int64_t nIndex = 0;
@@ -5715,9 +5698,9 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
     if (fFirstRun)
     {
         // Create new keyUser and set as default key
-        std::optional<CPubKey> newDefaultKey = walletInstance->GetKeyFromPool();
-        if (newDefaultKey.has_value()) {
-            walletInstance->SetDefaultKey(newDefaultKey.value());
+        if (!walletInstance->IsCrypted()) {
+            CPubKey newDefaultKey = walletInstance->GenerateNewKey(true);
+            walletInstance->SetDefaultKey(newDefaultKey);
             if (!walletInstance->SetAddressBook(walletInstance->vchDefaultKey.GetID(), "", "receive"))
                 return UIError(_("Cannot write default address") += "\n");
         }

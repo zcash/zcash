@@ -40,13 +40,13 @@ class KeyPoolTest(BitcoinTestFramework):
         bitcoind_processes[0].wait()
         # Restart node 0
         nodes[0] = start_node(0, self.options.tmpdir)
-        # Keep creating keys
-        addr = nodes[0].getnewaddress()
+        # We can't create any external addresses, which don't use the keypool.
+        # We should get an error that we need to unlock the wallet.
         try:
             addr = nodes[0].getnewaddress()
-            raise AssertionError('Keypool should be exhausted after one address')
+            raise AssertionError('Wallet should be locked.')
         except JSONRPCException as e:
-            assert(e.error['code']==-12)
+            assert_equal(e.error['code'], -13)
 
         # put three new keys in the keypool
         nodes[0].walletpassphrase('test', 12000)
