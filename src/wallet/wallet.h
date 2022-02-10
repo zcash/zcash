@@ -1799,7 +1799,7 @@ public:
     std::optional<libzcash::ViewingKey> operator()(const libzcash::UnifiedAddress &uaddr) const;
 };
 
-enum PaymentAddressSource {
+enum class PaymentAddressSource {
     Random,
     LegacyHDSeed,
     MnemonicHDSeed,
@@ -1814,6 +1814,8 @@ private:
     CWallet *m_wallet;
 public:
     GetSourceForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
+
+    PaymentAddressSource GetUnifiedSource(const libzcash::Receiver& receiver) const;
 
     PaymentAddressSource operator()(const CKeyID &zaddr) const;
     PaymentAddressSource operator()(const CScriptID &zaddr) const;

@@ -6193,63 +6193,119 @@ bool PaymentAddressBelongsToWallet::operator()(const libzcash::SproutPaymentAddr
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
 {
     libzcash::SaplingIncomingViewingKey ivk;
-
-    // If we have a SaplingExtendedSpendingKey in the wallet, then we will
-    // also have the corresponding SaplingExtendedFullViewingKey.
     return
         m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
         m_wallet->HaveSaplingFullViewingKey(ivk);
 }
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::UnifiedAddress &uaddr) const
 {
-    // TODO
-    return false;
+    return m_wallet->FindUnifiedFullViewingKey(uaddr).has_value();
 }
 
 // GetSourceForPaymentAddress
 
-PaymentAddressSource GetSourceForPaymentAddress::operator()(const CKeyID &zaddr) const
+PaymentAddressSource GetSourceForPaymentAddress::GetUnifiedSource(const libzcash::Receiver& receiver) const
 {
-    // TODO
-    return AddressNotFound;
+    auto hdChain = m_wallet->GetMnemonicHDChain();
+    auto ufvkMeta = m_wallet->GetUFVKMetadataForReceiver(receiver);
+    if (ufvkMeta.has_value()) {
+        auto ufvkid = ufvkMeta.value().first;
+        // Look through the UFVKs that we have generated, and confirm that the
+        // seed fingerprint for the key we find for the ufvkid corresponds to
+        // the wallet's mnemonic seed.
+        for (const auto& [k, v] : m_wallet->mapUnifiedAccountKeys) {
+            if (v == ufvkid && hdChain.has_value() && k.first == hdChain.value().GetSeedFingerprint()) {
+                return PaymentAddressSource::MnemonicHDSeed;
+            }
+        }
+        return PaymentAddressSource::ImportedWatchOnly;
+    } else {
+        return PaymentAddressSource::AddressNotFound;
+    }
 }
-PaymentAddressSource GetSourceForPaymentAddress::operator()(const CScriptID &zaddr) const
+
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const CKeyID &addr) const
 {
-    // TODO
-    return AddressNotFound;
+    auto ufvkSource = this->GetUnifiedSource(addr);
+    if (ufvkSource == PaymentAddressSource::AddressNotFound) {
+        if (m_wallet->HaveKey(addr)) {
+            return PaymentAddressSource::Random;
+        } else {
+            if (m_wallet->HaveWatchOnly(GetScriptForDestination(addr))) {
+                return PaymentAddressSource::ImportedWatchOnly;
+            }
+        }
+    }
+
+    return ufvkSource;
+}
+PaymentAddressSource GetSourceForPaymentAddress::operator()(const CScriptID &addr) const
+{
+    auto ufvkSource = this->GetUnifiedSource(addr);
+    if (ufvkSource == PaymentAddressSource::AddressNotFound) {
+        if (m_wallet->HaveCScript(addr)) {
+            return PaymentAddressSource::Imported;
+        } else if (m_wallet->HaveWatchOnly(GetScriptForDestination(addr))) {
+            return PaymentAddressSource::ImportedWatchOnly;
+        }
+    }
+
+    return ufvkSource;
 }
 PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const
 {
-    return Random;
+    if (m_wallet->HaveSproutSpendingKey(zaddr)) {
+        return PaymentAddressSource::Random;
+    } else if (m_wallet->HaveSproutViewingKey(zaddr)) {
+        return PaymentAddressSource::ImportedWatchOnly;
+    } else {
+        return PaymentAddressSource::AddressNotFound;
+    }
 }
 PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
 {
-    libzcash::SaplingIncomingViewingKey ivk;
+    auto ufvkSource = this->GetUnifiedSource(zaddr);
+    if (ufvkSource == PaymentAddressSource::AddressNotFound) {
+        libzcash::SaplingIncomingViewingKey ivk;
 
-    // If we have a SaplingExtendedSpendingKey in the wallet, then we will
-    // also have the corresponding SaplingExtendedFullViewingKey.
-    if (m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk)) {
-        if (m_wallet->HaveSaplingFullViewingKey(ivk)) {
-            // If we have the HD keypath, it's related to the legacy seed
-            if (m_wallet->mapSaplingZKeyMetadata.count(ivk) > 0 &&
-                    m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath != "") {
-                return LegacyHDSeed;
-            } else if (m_wallet->HaveSaplingSpendingKeyForAddress(zaddr)) {
-                return Imported;
+        // If we have a SaplingExtendedSpendingKey in the wallet, then we will
+        // also have the corresponding SaplingExtendedFullViewingKey.
+        if (m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk)) {
+            if (m_wallet->HaveSaplingFullViewingKey(ivk)) {
+                // If we have the HD keypath, it's related to the legacy seed
+                if (m_wallet->mapSaplingZKeyMetadata.count(ivk) > 0 &&
+                        m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath != "") {
+                    return PaymentAddressSource::LegacyHDSeed;
+                } else if (m_wallet->HaveSaplingSpendingKeyForAddress(zaddr)) {
+                    return PaymentAddressSource::Imported;
+                } else {
+                    return PaymentAddressSource::ImportedWatchOnly;
+                }
             } else {
-                return ImportedWatchOnly;
+                return PaymentAddressSource::ImportedWatchOnly;
             }
-        } else {
-            return ImportedWatchOnly;
         }
-    } else {
-        return AddressNotFound;
     }
+
+    return ufvkSource;
 }
 PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::UnifiedAddress &uaddr) const
 {
-    // TODO
-    return AddressNotFound;
+    auto hdChain = m_wallet->GetMnemonicHDChain();
+    auto ufvkid = m_wallet->FindUnifiedFullViewingKey(uaddr);
+    if (ufvkid.has_value()) {
+        // Look through the UFVKs that we have generated, and confirm that the
+        // seed fingerprint for the key we find for the ufvkid corresponds to
+        // the wallet's mnemonic seed.
+        for (const auto& [k, v] : m_wallet->mapUnifiedAccountKeys) {
+            if (v == ufvkid.value() && hdChain.has_value() && k.first == hdChain.value().GetSeedFingerprint()) {
+                return PaymentAddressSource::MnemonicHDSeed;
+            }
+        }
+        return PaymentAddressSource::ImportedWatchOnly;
+    } else {
+        return PaymentAddressSource::AddressNotFound;
+    }
 }
 
 // GetViewingKeyForPaymentAddress
