@@ -129,6 +129,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         assert(len(results) == 0)
         results = self.nodes[0].z_listunspent(0) # set minconf to zero
         assert(len(results) == 1)
+        assert_equal(results[0]["type"], "sapling")
         assert_equal(results[0]["address"], myzaddr)
         assert_equal(results[0]["amount"], shieldvalue)
         assert_equal(results[0]["confirmations"], 0)
@@ -140,6 +141,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         # Verify that z_listunspent returns one note which has been confirmed
         results = self.nodes[0].z_listunspent()
         assert(len(results) == 1)
+        assert_equal(results[0]["type"], "sapling")
         assert_equal(results[0]["address"], myzaddr)
         assert_equal(results[0]["amount"], shieldvalue)
         assert_equal(results[0]["confirmations"], 1)
@@ -148,6 +150,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         # Verify that z_listunspent returns note for watchonly address on node 3.
         results = self.nodes[3].z_listunspent(1, 999, True)
         assert(len(results) == 1)
+        assert_equal(results[0]["type"], "sapling")
         assert_equal(results[0]["address"], myzaddr)
         assert_equal(results[0]["amount"], shieldvalue)
         assert_equal(results[0]["confirmations"], 1)

@@ -26,6 +26,15 @@ class WalletShieldCoinbaseUANU5(WalletShieldCoinbaseTest):
         assert_equal(balances['pools']['sapling']['valueZat'], expected * COIN)
         # assert_equal(balances['pools']['orchard']['valueZat'], expected * COIN)
 
+        # While we're at it, check that z_listunspent only shows outputs with
+        # the Unified Address (not the Orchard receiver), and of the expected
+        # type.
+        unspent = node.z_listunspent(1, 999999, False, [self.addr])
+        assert_equal(
+            [{'type': 'sapling', 'address': self.addr} for _ in unspent],
+            [{'type': x['type'], 'address': x['address']} for x in unspent],
+        )
+
 
 if __name__ == '__main__':
     print("Test shielding to a unified address with NU5 activated")
