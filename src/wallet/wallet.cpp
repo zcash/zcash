@@ -6117,31 +6117,13 @@ bool PaymentAddressBelongsToWallet::operator()(const libzcash::SproutPaymentAddr
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
 {
     libzcash::SaplingIncomingViewingKey ivk;
-
-    // If we have a SaplingExtendedSpendingKey in the wallet, then we will
-    // also have the corresponding SaplingExtendedFullViewingKey.
     return
         m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
         m_wallet->HaveSaplingFullViewingKey(ivk);
 }
 bool PaymentAddressBelongsToWallet::operator()(const libzcash::UnifiedAddress &uaddr) const
 {
-    auto hdChain = m_wallet->GetMnemonicHDChain();
-    assert(hdChain.has_value());
-
-    auto ufvkid = m_wallet->FindUnifiedFullViewingKey(uaddr);
-    if (ufvkid.has_value()) {
-        // Look through the UFVKs that we have generated, and confirm that the
-        // seed fingerprint for the key we find for the ufvkid corresponds to
-        // the wallet's mnemonic seed.
-        for (const auto& [k, v] : m_wallet->mapUnifiedAccountKeys) {
-            if (v == ufvkid.value() && k.first == hdChain.value().GetSeedFingerprint()) {
-                return true;
-            }
-        }
-    }
-
-    return false;
+    return m_wallet->FindUnifiedFullViewingKey(uaddr).has_value();
 }
 
 // GetSourceForPaymentAddress
@@ -6149,8 +6131,6 @@ bool PaymentAddressBelongsToWallet::operator()(const libzcash::UnifiedAddress &u
 PaymentAddressSource GetSourceForPaymentAddress::GetUnifiedSource(const libzcash::Receiver& receiver) const
 {
     auto hdChain = m_wallet->GetMnemonicHDChain();
-    assert(hdChain.has_value());
-
     auto ufvkMeta = m_wallet->GetUFVKMetadataForReceiver(receiver);
     if (ufvkMeta.has_value()) {
         auto ufvkid = ufvkMeta.value().first;
@@ -6158,7 +6138,7 @@ PaymentAddressSource GetSourceForPaymentAddress::GetUnifiedSource(const libzcash
         // seed fingerprint for the key we find for the ufvkid corresponds to
         // the wallet's mnemonic seed.
         for (const auto& [k, v] : m_wallet->mapUnifiedAccountKeys) {
-            if (v == ufvkid && k.first == hdChain.value().GetSeedFingerprint()) {
+            if (v == ufvkid && hdChain.has_value() && k.first == hdChain.value().GetSeedFingerprint()) {
                 return PaymentAddressSource::MnemonicHDSeed;
             }
         }
@@ -6189,10 +6169,8 @@ PaymentAddressSource GetSourceForPaymentAddress::operator()(const CScriptID &add
     if (ufvkSource == PaymentAddressSource::AddressNotFound) {
         if (m_wallet->HaveCScript(addr)) {
             return PaymentAddressSource::Imported;
-        } else {
-            if (m_wallet->HaveWatchOnly(GetScriptForDestination(addr))) {
-                return PaymentAddressSource::ImportedWatchOnly;
-            }
+        } else if (m_wallet->HaveWatchOnly(GetScriptForDestination(addr))) {
+            return PaymentAddressSource::ImportedWatchOnly;
         }
     }
 
@@ -6238,15 +6216,13 @@ PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::Sapl
 PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::UnifiedAddress &uaddr) const
 {
     auto hdChain = m_wallet->GetMnemonicHDChain();
-    assert(hdChain.has_value());
-
     auto ufvkid = m_wallet->FindUnifiedFullViewingKey(uaddr);
     if (ufvkid.has_value()) {
         // Look through the UFVKs that we have generated, and confirm that the
         // seed fingerprint for the key we find for the ufvkid corresponds to
         // the wallet's mnemonic seed.
         for (const auto& [k, v] : m_wallet->mapUnifiedAccountKeys) {
-            if (v == ufvkid.value() && k.first == hdChain.value().GetSeedFingerprint()) {
+            if (v == ufvkid.value() && hdChain.has_value() && k.first == hdChain.value().GetSeedFingerprint()) {
                 return PaymentAddressSource::MnemonicHDSeed;
             }
         }
