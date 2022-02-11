@@ -10,11 +10,12 @@ from test_framework.util import (
     assert_true,
     assert_false,
     assert_raises_message,
+    connect_nodes_bi,
     get_coinbase_address,
     DEFAULT_FEE,
     DEFAULT_FEE_ZATS
 )
-from test_framework.util import wait_and_assert_operationid_status
+from test_framework.util import wait_and_assert_operationid_status, start_nodes
 from decimal import Decimal
 
 my_memo_str = 'c0ffee' # stay awake
@@ -24,6 +25,20 @@ my_memo = my_memo + '0'*(1024-len(my_memo))
 no_memo = 'f6' + ('0'*1022) # see section 5.5 of the protocol spec
 
 class ListReceivedTest (BitcoinTestFramework):
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 3
+        self.setup_clean_chain = True
+
+    def setup_network(self):
+        self.nodes = start_nodes(
+            self.num_nodes, self.options.tmpdir,
+            extra_args=[['-experimentalfeatures', '-orchardwallet']] * self.num_nodes)
+        connect_nodes_bi(self.nodes, 0, 1)
+        connect_nodes_bi(self.nodes, 1, 2)
+        self.is_network_split = False
+        self.sync_all()
+
     def generate_and_sync(self, new_height):
         current_height = self.nodes[0].getblockcount()
         assert(new_height > current_height)
@@ -40,7 +55,7 @@ class ListReceivedTest (BitcoinTestFramework):
         result = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), zaddr1, 0, 1)
         txid_shielding1 = wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
-        zaddrExt = self.nodes[3].z_getnewaddress('sprout')
+        zaddrExt = self.nodes[2].z_getnewaddress('sprout')
         result = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), zaddrExt, 0, 1)
         txid_shieldingExt = wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
@@ -72,8 +87,8 @@ class ListReceivedTest (BitcoinTestFramework):
             self.nodes[1].z_viewtransaction,
             txid_shieldingExt)
 
-        # Second transaction should be visible on node3
-        pt = self.nodes[3].z_viewtransaction(txid_shieldingExt)
+        # Second transaction should be visible on node0
+        pt = self.nodes[2].z_viewtransaction(txid_shieldingExt)
         assert_equal(pt['txid'], txid_shieldingExt)
         assert_equal(len(pt['spends']), 0)
         assert_equal(len(pt['outputs']), 1)
@@ -190,9 +205,9 @@ class ListReceivedTest (BitcoinTestFramework):
         self.generate_and_sync(height+1)
         taddr = self.nodes[1].getnewaddress()
         zaddr1 = self.nodes[1].z_getnewaddress('sapling')
-        zaddrExt = self.nodes[3].z_getnewaddress('sapling')
+        zaddrExt = self.nodes[2].z_getnewaddress('sapling')
 
-        self.nodes[0].sendtoaddress(taddr, 4.0)
+        txid_taddr = self.nodes[0].sendtoaddress(taddr, 4.0)
         self.generate_and_sync(height+2)
 
         # Send 1 ZEC to zaddr1
@@ -219,6 +234,7 @@ class ListReceivedTest (BitcoinTestFramework):
 
         assert_equal(pt['outputs'][0]['type'], 'sapling')
         if pt['outputs'][0]['address'] == zaddr1:
+            assert_false('jsOutput' in pt['outputs'][0])
             assert_equal(pt['outputs'][0]['outgoing'], False)
             assert_equal(pt['outputs'][0]['memoStr'], my_memo_str)
         else:
@@ -380,9 +396,96 @@ class ListReceivedTest (BitcoinTestFramework):
         c = self.nodes[1].z_getnotescount(0)
         assert_equal(3, c['sapling'], "Count of unconfirmed notes should be 3(2 in zaddr1 + 1 in zaddr2)")
 
+        # As part of UA support, a transparent address is now accepted
+        r = self.nodes[1].z_listreceivedbyaddress(taddr, 0)
+        assert_equal(len(r), 1)
+        assert_equal(r[0]['pool'], 'transparent')
+        assert_equal(r[0]['txid'], txid_taddr)
+        assert_equal(r[0]['amount'], Decimal('4'))
+        assert_equal(r[0]['amountZat'], 400000000)
+        assert_equal(r[0]['confirmations'], 3)
+        assert r[0]['outindex'] < 2
+
+        # Test unified address
+        node = self.nodes[1]
+
+        # Create a unified address on one node, try z_listreceivedbyaddress on another node
+        account = self.nodes[0].z_getnewaccount()['account']
+        r = self.nodes[0].z_getaddressforaccount(account)
+        unified_addr = r['unifiedaddress']
+        # this address isn't in node1's wallet
+        assert_raises_message(
+            JSONRPCException,
+            "From address does not belong to this node",
+            node.z_listreceivedbyaddress, unified_addr, 0)
+
+        # create a UA on node1
+        r = node.z_getnewaccount()
+        account = r['account']
+        r = node.z_getaddressforaccount(account)
+        unified_addr = r['unifiedaddress']
+        receivers = node.z_listunifiedreceivers(unified_addr)
+        assert_equal(len(receivers), 2)
+        assert 'transparent' in receivers
+        assert 'sapling' in receivers
+        # Wallet contains no notes
+        r = node.z_listreceivedbyaddress(unified_addr, 0)
+        assert_equal(len(r), 0, "unified_addr should have received zero notes")
+
+        # Create a note in this UA on node1
+        opid = node.z_sendmany(zaddr1, [{'address': unified_addr, 'amount': 0.1}])
+        txid_sapling = wait_and_assert_operationid_status(node, opid)
+        self.generate_and_sync(height+5)
+
+        # Create a UTXO that unified_address's transparent component references, on node1
+        outputs = {receivers['transparent']: 0.2}
+        txid_taddr = node.sendmany("", outputs)
+
+        r = node.z_listreceivedbyaddress(unified_addr, 0)
+        assert_equal(len(r), 2, "unified_addr should have received 2 payments")
+        print(r)
+        outputs = [];
+        outputs.append({
+            'pool': r[0]['pool'],
+            'txid': r[0]['txid'],
+            'amount': r[0]['amount'],
+            'amountZat': r[0]['amountZat'],
+            'change': r[0]['change'] if 'change' in r[0] else None,
+            'memo': r[0]['memo'] if 'memo' in r[0] else None,
+            'confirmations': r[0]['confirmations']
+        })
+        outputs.append({
+            'pool': r[1]['pool'],
+            'txid': r[1]['txid'],
+            'amount': r[1]['amount'],
+            'amountZat': r[1]['amountZat'],
+            'change': r[1]['change'] if 'change' in r[1] else None,
+            'memo': r[1]['memo'] if 'memo' in r[1] else None,
+            'confirmations': r[1]['confirmations']
+        })
+        assert({
+            'pool': 'sapling',
+            'txid': txid_sapling,
+            'amount': Decimal('0.1'),
+            'amountZat': 10000000,
+            'change': False,
+            'memo': no_memo,
+            'confirmations': 0,
+        } in outputs)
+        assert({
+            'pool': 'transparent',
+            'txid': txid_taddr,
+            'amount': Decimal('0.2'),
+            'amountZat': 20000000,
+            'change': False,
+            'memo': None,
+            'confirmations': 0,
+        } in outputs)
+
     def run_test(self):
         self.test_received_sprout(200)
         self.test_received_sapling(214)
+
 
 if __name__ == '__main__':
     ListReceivedTest().main()
