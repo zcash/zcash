@@ -10,6 +10,8 @@
 #include "script/script.h"
 #include "zip32.h"
 
+#include <variant>
+
 namespace libzcash {
 
 // prototypes for the classes handling ZIP-316 encoding (in Address.hpp)
