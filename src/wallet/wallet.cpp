@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2016-2022 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -3008,24 +3009,37 @@ CAmount CWallet::GetCredit(const CTxOut& txout, const isminefilter& filter) cons
 
 bool CWallet::IsChange(const CTxOut& txout) const
 {
-    // TODO: fix handling of 'change' outputs. The assumption is that any
-    // payment to a script that is ours, but is not in the address book
-    // is change. That assumption is likely to break when we implement multisignature
-    // wallets that return change back into a multi-signature-protected address;
-    // a better way of identifying which outputs are 'the send' and which are
-    // 'the change' will need to be implemented (maybe extend CWalletTx to remember
-    // which output, if any, was change).
-    if (::IsMine(*this, txout.scriptPubKey))
-    {
-        CTxDestination address;
-        if (!ExtractDestination(txout.scriptPubKey, address))
-            return true;
+    // Addresses must be ours to be change
+    if (!::IsMine(*this, txout.scriptPubKey))
+        return false;
 
-        LOCK(cs_wallet);
-        if (!mapAddressBook.count(address))
-            return true;
-    }
-    return false;
+    // Only p2pkh addresses are used for change
+    CTxDestination address;
+    if (!ExtractDestination(txout.scriptPubKey, address))
+        return true;
+
+    LOCK(cs_wallet);
+    // Any payment to a script that is in the address book is not change.
+    if (mapAddressBook.count(address))
+        return false;
+
+    // We look to key metadata to determine whether the address was generated
+    // using an internal key path. This could fail to identify some legacy
+    // change addresses as change outputs.
+    return std::visit(match {
+        [&](const CKeyID& key) {
+            auto keyMetaIt = mapKeyMetadata.find(key);
+            return
+                // If we don't have key metadata, it's a legacy address that is not
+                // in the address book, so we judge it to be change.
+                keyMetaIt == mapKeyMetadata.end() ||
+                keyMetaIt->second.hdKeypath == "" ||
+                // If we do have non-null key metadata, we inspect the metadata to
+                // make our determination
+                IsInternalKeyPath(44, BIP44CoinType(), keyMetaIt->second.hdKeypath);
+        },
+        [&](const auto& other) { return false; }
+    }, address);
 }
 
 CAmount CWallet::GetChange(const CTxOut& txout) const

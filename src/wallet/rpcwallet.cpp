@@ -3443,7 +3443,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "  \"jsindex\" (sprout) : n,       (numeric) the joinsplit index\n"
             "  \"jsoutindex\" (sprout) : n,    (numeric) the output index of the joinsplit\n"
             "  \"outindex\" (transparent, sapling, orchard) : n, (numeric) the output index for transparent and Sapling outputs, or the action index for Orchard\n"
-            "  \"change\": true|false,         (boolean) true if the address that received the note is also one of the sending addresses\n"
+            "  \"change\": true|false,         (boolean) true if the output was received to a change address\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("z_listreceivedbyaddress", "\"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
@@ -3498,6 +3498,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                     obj.pushKV("amountZat", txout.nValue);
                     obj.pushKV("outindex", int(i));
                     obj.pushKV("confirmations", nDepth);
+                    obj.pushKV("change", pwalletMain->IsChange(txout));
                     result.push_back(obj);
                 }
             }

@@ -477,7 +477,7 @@ class ListReceivedTest (BitcoinTestFramework):
             'txid': txid_taddr,
             'amount': Decimal('0.2'),
             'amountZat': 20000000,
-            'change': None,
+            'change': False,
             'memo': None,
             'confirmations': 0,
         } in outputs)

@@ -287,6 +287,11 @@ std::optional<unsigned long> ParseHDKeypathAccount(
         uint32_t coinType,
         const std::string& keyPath);
 
+bool IsInternalKeyPath(
+        uint32_t purpose,
+        uint32_t coinType,
+        const std::string& keyPath);
+
 } //namespace libzcash
 
 #endif // ZCASH_ZCASH_ADDRESS_ZIP32_H

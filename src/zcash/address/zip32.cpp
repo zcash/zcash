@@ -285,4 +285,14 @@ std::optional<unsigned long> ParseHDKeypathAccount(uint32_t purpose, uint32_t co
     }
 }
 
+bool IsInternalKeyPath(uint32_t purpose, uint32_t coinType, const std::string& keyPath) {
+    std::regex pattern("m/" + std::to_string(purpose)  + "'/" + std::to_string(coinType) + "'/[0-9]+'/([01])/.*");
+    std::smatch matches;
+    if (std::regex_match(keyPath, matches, pattern)) {
+        return stoul(matches[1]) == 1;
+    } else {
+        return false;
+    }
+}
+
 };
