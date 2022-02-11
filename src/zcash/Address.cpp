@@ -184,11 +184,11 @@ std::optional<libzcash::SaplingDiversifiableFullViewingKey> libzcash::UnifiedFul
     }
 }
 
-std::optional<CChainablePubKey> libzcash::UnifiedFullViewingKey::GetTransparentKey() const {
+std::optional<libzcash::transparent::AccountPubKey> libzcash::UnifiedFullViewingKey::GetTransparentKey() const {
     std::vector<uint8_t> buffer(65);
     if (unified_full_viewing_key_read_transparent(inner.get(), buffer.data())) {
         CDataStream ss(buffer, SER_NETWORK, PROTOCOL_VERSION);
-        return CChainablePubKey::Read(ss);
+        return libzcash::transparent::AccountPubKey(CChainablePubKey::Read(ss));
     } else {
         return std::nullopt;
     }
@@ -197,7 +197,7 @@ std::optional<CChainablePubKey> libzcash::UnifiedFullViewingKey::GetTransparentK
 bool libzcash::UnifiedFullViewingKeyBuilder::AddTransparentKey(const transparent::AccountPubKey& key) {
     if (t_bytes.has_value()) return false;
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << key.GetPubKey();
+    ss << key.GetChainablePubKey();
     assert(ss.size() == 65);
     std::vector<uint8_t> ss_bytes(ss.begin(), ss.end());
     t_bytes = ss_bytes;

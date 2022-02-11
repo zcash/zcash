@@ -16,7 +16,7 @@ private:
 public:
     AccountPubKey(CChainablePubKey pubkey): pubkey(pubkey) {};
 
-    const CChainablePubKey& GetPubKey() const {
+    const CChainablePubKey& GetChainablePubKey() const {
         return pubkey;
     }
 
