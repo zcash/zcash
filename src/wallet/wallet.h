@@ -1531,12 +1531,13 @@ public:
      */
     static CAmount GetRequiredFee(unsigned int nTxBytes);
 
+private:
     bool NewKeyPool();
+public:
     bool TopUpKeyPool(unsigned int kpSize = 0);
     void ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool);
     void KeepKey(int64_t nIndex);
     void ReturnKey(int64_t nIndex);
-    std::optional<CPubKey> GetKeyFromPool();
     int64_t GetOldestKeyPoolTime();
     void GetAllReserveKeys(std::set<CKeyID>& setAddress) const;
 
