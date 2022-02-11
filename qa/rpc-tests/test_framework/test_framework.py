@@ -40,11 +40,11 @@ class BitcoinTestFramework(object):
     def run_test(self):
         raise NotImplementedError
 
-    def setup_logging(self):
+    def setup_logging(self, sensitivity=logging.DEBUG):
         stem = os.path.basename(inspect.getfile(self.__class__).rstrip(".py")) 
         filename = stem + "_test.log"
         log_file = os.path.join(self.options.tmpdir, filename)
-        logging.basicConfig(filename=log_file, level=logging.INFO)
+        logging.basicConfig(filename=log_file, level=sensitivity)
     
     def add_options(self, parser):
         pass
