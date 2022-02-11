@@ -9,6 +9,8 @@
 #include "zcash/address/zip32.h"
 #include <rust/orchard/keys.h>
 
+namespace orchard { class Builder; }
+
 namespace libzcash {
 
 class OrchardIncomingViewingKey;
@@ -23,6 +25,7 @@ private:
     OrchardRawAddress(OrchardRawAddressPtr* ptr) : inner(ptr, orchard_address_free) {}
 
     friend class OrchardIncomingViewingKey;
+    friend class ::orchard::Builder;
 public:
     OrchardRawAddress(OrchardRawAddress&& key) : inner(std::move(key.inner)) {}
 

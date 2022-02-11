@@ -71,6 +71,7 @@ mod streams_ffi;
 mod tracing_ffi;
 
 mod address_ffi;
+mod builder_ffi;
 mod history_ffi;
 mod incremental_merkle_tree_ffi;
 mod orchard_ffi;

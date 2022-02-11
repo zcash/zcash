@@ -21,7 +21,106 @@
 
 #include <optional>
 
+#include <rust/builder.h>
+
 #define NO_MEMO {{0xF6}}
+
+namespace orchard { class UnauthorizedBundle; }
+
+uint256 ProduceZip244SignatureHash(
+    const CTransaction& tx,
+    const orchard::UnauthorizedBundle& orchardBundle);
+
+namespace orchard {
+
+/// A builder that constructs an `UnauthorizedBundle` from a set of notes to be spent,
+/// and recipients to receive funds.
+class Builder {
+private:
+    /// The Orchard builder. Memory is allocated by Rust. If this is `nullptr` then
+    /// `Builder::Build` has been called, and all subsequent operations will throw an
+    /// exception.
+    std::unique_ptr<OrchardBuilderPtr, decltype(&orchard_builder_free)> inner;
+
+    Builder() : inner(nullptr, orchard_builder_free) { }
+
+public:
+    Builder(bool spendsEnabled, bool outputsEnabled, uint256 anchor);
+
+    // Builder should never be copied
+    Builder(const Builder&) = delete;
+    Builder& operator=(const Builder&) = delete;
+    Builder(Builder&& builder) : inner(std::move(builder.inner)) {}
+    Builder& operator=(Builder&& builder)
+    {
+        if (this != &builder) {
+            inner = std::move(builder.inner);
+        }
+        return *this;
+    }
+
+    /// Adds an address which will receive funds in this bundle.
+    void AddOutput(
+        const std::optional<uint256>& ovk,
+        const libzcash::OrchardRawAddress& to,
+        CAmount value,
+        std::array<unsigned char, ZC_MEMO_SIZE> memo = NO_MEMO);
+
+    /// Builds a bundle containing the given spent notes and recipients.
+    ///
+    /// Returns `std::nullopt` if an error occurs.
+    ///
+    /// Calling this method invalidates this object; in particular, if an error occurs
+    /// this builder must be discarded and a new builder created. Subsequent usage of this
+    /// object in any way will cause an exception. This emulates Rust's compile-time move
+    /// semantics at runtime.
+    std::optional<UnauthorizedBundle> Build();
+};
+
+/// An unauthorized Orchard bundle, ready for its proof to be created and signatures
+/// applied.
+class UnauthorizedBundle {
+private:
+    /// An optional Orchard bundle (with `nullptr` corresponding to `None`).
+    /// Memory is allocated by Rust.
+    std::unique_ptr<OrchardUnauthorizedBundlePtr, decltype(&orchard_unauthorized_bundle_free)> inner;
+
+    UnauthorizedBundle() : inner(nullptr, orchard_unauthorized_bundle_free) {}
+    UnauthorizedBundle(OrchardUnauthorizedBundlePtr* bundle) : inner(bundle, orchard_unauthorized_bundle_free) {}
+    friend class Builder;
+    // The parentheses here are necessary to avoid the following compilation error:
+    //     error: C++ requires a type specifier for all declarations
+    //             friend uint256 ::ProduceZip244SignatureHash(
+    //             ~~~~~~           ^
+    friend uint256 (::ProduceZip244SignatureHash(
+        const CTransaction& tx,
+        const UnauthorizedBundle& orchardBundle));
+
+public:
+    // UnauthorizedBundle should never be copied
+    UnauthorizedBundle(const UnauthorizedBundle&) = delete;
+    UnauthorizedBundle& operator=(const UnauthorizedBundle&) = delete;
+    UnauthorizedBundle(UnauthorizedBundle&& bundle) : inner(std::move(bundle.inner)) {}
+    UnauthorizedBundle& operator=(UnauthorizedBundle&& bundle)
+    {
+        if (this != &bundle) {
+            inner = std::move(bundle.inner);
+        }
+        return *this;
+    }
+
+    /// Adds proofs and signatures to this bundle.
+    ///
+    /// Returns `std::nullopt` if an error occurs.
+    ///
+    /// Calling this method invalidates this object; in particular, if an error occurs
+    /// this bundle must be discarded and a new bundle built. Subsequent usage of this
+    /// object in any way will cause an exception. This emulates Rust's compile-time
+    /// move semantics at runtime.
+    std::optional<OrchardBundle> ProveAndSign(uint256 sighash);
+};
+
+} // namespace orchard
 
 struct SpendDescriptionInfo {
     libzcash::SaplingExpandedSpendingKey expsk;
@@ -107,7 +206,6 @@ public:
 class TransactionBuilder
 {
 private:
-    std::optional<bool> usingSprout;
     Consensus::Params consensusParams;
     int nHeight;
     const CKeyStore* keystore;
@@ -115,6 +213,8 @@ private:
     CCriticalSection* cs_coinsView;
     CMutableTransaction mtx;
     CAmount fee = 10000;
+    std::optional<orchard::Builder> orchardBuilder;
+    CAmount valueBalanceOrchard = 0;
 
     std::vector<SpendDescriptionInfo> spends;
     std::vector<OutputDescriptionInfo> outputs;
@@ -131,13 +231,65 @@ public:
     TransactionBuilder(
         const Consensus::Params& consensusParams,
         int nHeight,
+        std::optional<uint256> orchardAnchor,
         CKeyStore* keyStore = nullptr,
         CCoinsViewCache* coinsView = nullptr,
         CCriticalSection* cs_coinsView = nullptr);
 
+    // TransactionBuilder should never be copied
+    TransactionBuilder(const TransactionBuilder&) = delete;
+    TransactionBuilder& operator=(const TransactionBuilder&) = delete;
+    TransactionBuilder(TransactionBuilder&& builder) :
+        consensusParams(std::move(builder.consensusParams)),
+        nHeight(std::move(builder.nHeight)),
+        keystore(std::move(builder.keystore)),
+        coinsView(std::move(builder.coinsView)),
+        cs_coinsView(std::move(builder.cs_coinsView)),
+        mtx(std::move(builder.mtx)),
+        fee(std::move(builder.fee)),
+        orchardBuilder(std::move(builder.orchardBuilder)),
+        valueBalanceOrchard(std::move(builder.valueBalanceOrchard)),
+        spends(std::move(builder.spends)),
+        outputs(std::move(builder.outputs)),
+        jsInputs(std::move(builder.jsInputs)),
+        jsOutputs(std::move(builder.jsOutputs)),
+        tIns(std::move(builder.tIns)),
+        saplingChangeAddr(std::move(builder.saplingChangeAddr)),
+        sproutChangeAddr(std::move(builder.sproutChangeAddr)),
+        tChangeAddr(std::move(builder.tChangeAddr)) {}
+    TransactionBuilder& operator=(TransactionBuilder&& builder)
+    {
+        if (this != &builder) {
+            consensusParams = std::move(builder.consensusParams);
+            nHeight = std::move(builder.nHeight);
+            keystore = std::move(builder.keystore);
+            coinsView = std::move(builder.coinsView);
+            cs_coinsView = std::move(builder.cs_coinsView);
+            mtx = std::move(builder.mtx);
+            fee = std::move(builder.fee);
+            orchardBuilder = std::move(builder.orchardBuilder);
+            valueBalanceOrchard = std::move(builder.valueBalanceOrchard);
+            spends = std::move(builder.spends);
+            outputs = std::move(builder.outputs);
+            jsInputs = std::move(builder.jsInputs);
+            jsOutputs = std::move(builder.jsOutputs);
+            tIns = std::move(builder.tIns);
+            saplingChangeAddr = std::move(builder.saplingChangeAddr);
+            sproutChangeAddr = std::move(builder.sproutChangeAddr);
+            tChangeAddr = std::move(builder.tChangeAddr);
+        }
+        return *this;
+    }
+
     void SetExpiryHeight(uint32_t nExpiryHeight);
 
     void SetFee(CAmount fee);
+
+    void AddOrchardOutput(
+        const std::optional<uint256>& ovk,
+        const libzcash::OrchardRawAddress& to,
+        CAmount value,
+        std::array<unsigned char, ZC_MEMO_SIZE> memo = NO_MEMO);
 
     // Throws if the anchor does not match the anchor used by
     // previously-added Sapling spends.
