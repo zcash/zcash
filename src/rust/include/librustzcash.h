@@ -286,27 +286,27 @@ extern "C" {
     );
 
     /// Derive the master ExtendedSpendingKey from a seed.
-    void librustzcash_zip32_xsk_master(
+    void librustzcash_zip32_sapling_xsk_master(
         const unsigned char *seed,
         size_t seedlen,
         unsigned char *xsk_master
     );
 
     /// Derive a child ExtendedSpendingKey from a parent.
-    void librustzcash_zip32_xsk_derive(
+    void librustzcash_zip32_sapling_xsk_derive(
         const unsigned char *xsk_parent,
         uint32_t i,
         unsigned char *xsk_i
     );
 
     /// Derive a internal ExtendedSpendingKey from an external key
-    void librustzcash_zip32_xsk_derive_internal(
+    void librustzcash_zip32_sapling_xsk_derive_internal(
         const unsigned char *xsk_external,
         unsigned char *xsk_internal
     );
 
     /// Derive a child ExtendedFullViewingKey from a parent.
-    bool librustzcash_zip32_xfvk_derive(
+    bool librustzcash_zip32_sapling_xfvk_derive(
         const unsigned char *xfvk_parent,
         uint32_t i,
         unsigned char *xfvk_i

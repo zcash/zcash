@@ -30,32 +30,18 @@ class WalletAccountsTest(BitcoinTestFramework):
 
     # Check we only have balances in the expected pools.
     # Remember that empty pools are omitted from the output.
-    def check_account_balance(self, account, expected, minconf=None):
-        if minconf is None:
-            actual = self.nodes[0].z_getbalanceforaccount(account)
-        else:
-            actual = self.nodes[0].z_getbalanceforaccount(account, minconf)
+    def _check_balance_for_rpc(self, rpcmethod, node, account, expected, minconf):
+        rpc = getattr(self.nodes[node], rpcmethod)
+        actual = rpc(account) if minconf is None else rpc(account, minconf)
         assert_equal(set(expected), set(actual['pools']))
         for pool in expected:
             assert_equal(expected[pool] * COIN, actual['pools'][pool]['valueZat'])
         assert_equal(actual['minimum_confirmations'], 1 if minconf is None else minconf)
 
-    # Check we only have balances in the expected pools.
-    # Remember that empty pools are omitted from the output.
-    def check_address_balance(self, address, expected, minconf=None):
-        fvk = self.nodes[0].z_exportviewingkey(address)
-        if minconf is None:
-            actual = self.nodes[0].z_getbalanceforviewingkey(fvk)
-        else:
-            actual = self.nodes[0].z_getbalanceforviewingkey(fvk, minconf)
-        assert_equal(set(expected), set(actual['pools']))
-        for pool in expected:
-            assert_equal(expected[pool] * COIN, actual['pools'][pool]['valueZat'])
-        assert_equal(actual['minimum_confirmations'], 1 if minconf is None else minconf)
-
-    def check_balance(self, account, address, expected, minconf=None):
-        self.check_account_balance(account, expected, minconf)
-        self.check_address_balance(address, expected, minconf)
+    def check_balance(self, node, account, address, expected, minconf=None):
+        self._check_balance_for_rpc('z_getbalanceforaccount', node, account, expected, minconf)
+        fvk = self.nodes[node].z_exportviewingkey(address)
+        self._check_balance_for_rpc('z_getbalanceforviewingkey', node, fvk, expected, minconf)
 
     def run_test(self):
         # With a new wallet, the first account will be 0.
@@ -96,8 +82,8 @@ class WalletAccountsTest(BitcoinTestFramework):
         self.check_receiver_types(ua1, ['transparent', 'sapling'])
 
         # The balances of the accounts are all zero.
-        self.check_balance(0, ua0, {})
-        self.check_balance(1, ua1, {})
+        self.check_balance(0, 0, ua0, {})
+        self.check_balance(0, 1, ua1, {})
 
         # Manually send funds to one of the receivers in the UA.
         recipients = [{'address': ua0, 'amount': Decimal('10')}]
@@ -113,14 +99,14 @@ class WalletAccountsTest(BitcoinTestFramework):
         # The new balance should not be visible with the default minconf, but should be
         # visible with minconf=0.
         self.sync_all()
-        self.check_balance(0, ua0, {})
-        self.check_balance(0, ua0, {'sapling': 10}, 0)
+        self.check_balance(0, 0, ua0, {})
+        self.check_balance(0, 0, ua0, {'sapling': 10}, 0)
 
         self.nodes[2].generate(1)
         self.sync_all()
 
         # The default minconf should now detect the balance.
-        self.check_balance(0, ua0, {'sapling': 10})
+        self.check_balance(0, 0, ua0, {'sapling': 10})
 
         # Manually send funds from the UA receiver.
         node1sapling = self.nodes[1].z_getnewaddress('sapling')
@@ -139,8 +125,8 @@ class WalletAccountsTest(BitcoinTestFramework):
         # shown, as that transaction has been created and broadcast, and _might_ get mined
         # up until the transaction expires), or 9 (if we include the unmined transaction).
         self.sync_all()
-        self.check_balance(0, ua0, {})
-        self.check_balance(0, ua0, {'sapling': 9}, 0)
+        self.check_balance(0, 0, ua0, {})
+        self.check_balance(0, 0, ua0, {'sapling': 9}, 0)
 
 
 if __name__ == '__main__':
