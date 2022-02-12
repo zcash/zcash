@@ -36,12 +36,14 @@ class ListReceivedTest (BitcoinTestFramework):
             extra_args=[['-experimentalfeatures', '-orchardwallet']] * self.num_nodes)
         connect_nodes_bi(self.nodes, 0, 1)
         connect_nodes_bi(self.nodes, 1, 2)
+        connect_nodes_bi(self.nodes, 0, 2)
         self.is_network_split = False
         self.sync_all()
 
     def generate_and_sync(self, new_height):
         current_height = self.nodes[0].getblockcount()
         assert(new_height > current_height)
+        self.sync_all()
         self.nodes[0].generate(new_height - current_height)
         self.sync_all()
         assert_equal(new_height, self.nodes[0].getblockcount())
@@ -186,9 +188,8 @@ class ListReceivedTest (BitcoinTestFramework):
 
         # zaddr1 should have a note with change
         r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0)
-        r = sorted(r, key = lambda received: received['amount'])
         assert_equal(2, len(r), "zaddr1 Should have received 2 notes")
-
+        r = sorted(r, key = lambda received: received['amount'])
         assert_equal(txid, r[0]['txid'])
         assert_equal(Decimal('9.4')-DEFAULT_FEE, r[0]['amount'])
         assert_equal(940000000-DEFAULT_FEE_ZATS, r[0]['amountZat'])
@@ -225,53 +226,25 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(len(pt['spends']), 0)
         assert_equal(len(pt['outputs']), 2)
 
-        # Expect one internal output and one external.
-        assert_equal(len([output for output in pt['outputs'] if output['outgoing']]), 1)
+        # Outputs are not returned in a defined order but the amounts are deterministic
+        outputs = sorted(pt['outputs'], key=lambda x: x['valueZat'])
+        assert_equal(outputs[0]['type'], 'sapling')
+        assert_equal(outputs[0]['address'], zaddr1)
+        assert_equal(outputs[0]['value'], Decimal('1'))
+        assert_equal(outputs[0]['valueZat'], 100000000)
+        assert_equal(outputs[0]['output'], 0)
+        assert_equal(outputs[0]['outgoing'], False)
+        assert_equal(outputs[0]['memo'], my_memo)
+        assert_equal(outputs[0]['memoStr'], my_memo_str)
 
-        # Outputs are not returned in a defined order so we check the output
-        # positions and contents separately
-        outputs = []
-
-        assert_equal(pt['outputs'][0]['type'], 'sapling')
-        if pt['outputs'][0]['address'] == zaddr1:
-            assert_false('jsOutput' in pt['outputs'][0])
-            assert_equal(pt['outputs'][0]['outgoing'], False)
-            assert_equal(pt['outputs'][0]['memoStr'], my_memo_str)
-        else:
-            assert_equal(pt['outputs'][0]['outgoing'], True)
-        outputs.append({
-            'address': pt['outputs'][0]['address'],
-            'value': pt['outputs'][0]['value'],
-            'valueZat': pt['outputs'][0]['valueZat'],
-            'memo': pt['outputs'][0]['memo'],
-        })
-
-        assert_equal(pt['outputs'][1]['type'], 'sapling')
-        if pt['outputs'][1]['address'] == zaddr1:
-            assert_equal(pt['outputs'][1]['outgoing'], False)
-            assert_equal(pt['outputs'][1]['memoStr'], my_memo_str)
-        else:
-            assert_equal(pt['outputs'][1]['outgoing'], True)
-        outputs.append({
-            'address': pt['outputs'][1]['address'],
-            'value': pt['outputs'][1]['value'],
-            'valueZat': pt['outputs'][1]['valueZat'],
-            'memo': pt['outputs'][1]['memo'],
-        })
-
-        assert({
-            'address': zaddr1,
-            'value': Decimal('1'),
-            'valueZat': 100000000,
-            'memo': my_memo,
-        } in outputs)
-
-        assert({
-            'address': zaddrExt,
-            'value': Decimal('2'),
-            'valueZat': 200000000,
-            'memo': no_memo,
-        } in outputs)
+        assert_equal(outputs[1]['type'], 'sapling')
+        assert_equal(outputs[1]['address'], zaddrExt)
+        assert_equal(outputs[1]['value'], Decimal('2'))
+        assert_equal(outputs[1]['valueZat'], 200000000)
+        assert_equal(outputs[1]['output'], 1)
+        assert_equal(outputs[1]['outgoing'], True)
+        assert_equal(outputs[1]['memo'], no_memo)
+        assert 'memoStr' not in outputs[1]
 
         r = self.nodes[1].z_listreceivedbyaddress(zaddr1)
         assert_equal(0, len(r), "Should have received no confirmed note")
@@ -329,72 +302,55 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(pt['spends'][0]['value'], Decimal('1.0'))
         assert_equal(pt['spends'][0]['valueZat'], 100000000)
 
-        # Outputs are not returned in a defined order so we check the output
-        # positions and contents separately
-        outputs = []
+        # Outputs are not returned in a defined order but the amounts are deterministic
+        outputs = sorted(pt['outputs'], key=lambda x: x['valueZat'])
+        assert_equal(outputs[0]['type'], 'sapling')
+        assert_equal(outputs[0]['address'], zaddr1)
+        assert_equal(outputs[0]['value'], Decimal('0.4') - DEFAULT_FEE)
+        assert_equal(outputs[0]['valueZat'], 40000000 - DEFAULT_FEE_ZATS)
+        assert_equal(outputs[0]['output'], 1)
+        assert_equal(outputs[0]['outgoing'], False)
+        assert_equal(outputs[0]['memo'], no_memo)
+        assert 'memoStr' not in outputs[0]
 
-        assert_equal(pt['outputs'][0]['type'], 'sapling')
-        assert_equal(pt['outputs'][0]['output'], 0)
-        assert_equal(pt['outputs'][0]['outgoing'], False)
-        outputs.append({
-            'address': pt['outputs'][0]['address'],
-            'value': pt['outputs'][0]['value'],
-            'valueZat': pt['outputs'][0]['valueZat'],
-            'memo': pt['outputs'][0]['memo'],
-        })
-
-        assert_equal(pt['outputs'][1]['type'], 'sapling')
-        assert_equal(pt['outputs'][1]['output'], 1)
-        assert_equal(pt['outputs'][1]['outgoing'], False)
-        outputs.append({
-            'address': pt['outputs'][1]['address'],
-            'value': pt['outputs'][1]['value'],
-            'valueZat': pt['outputs'][1]['valueZat'],
-            'memo': pt['outputs'][1]['memo'],
-        })
-
-        assert({
-            'address': zaddr2,
-            'value': Decimal('0.6'),
-            'valueZat': 60000000,
-            'memo': no_memo,
-        } in outputs)
-        assert({
-            'address': zaddr1,
-            'value': Decimal('0.4') - DEFAULT_FEE,
-            'valueZat': 40000000 - DEFAULT_FEE_ZATS,
-            'memo': no_memo,
-        } in outputs)
+        assert_equal(outputs[1]['type'], 'sapling')
+        assert_equal(outputs[1]['address'], zaddr2)
+        assert_equal(outputs[1]['value'], Decimal('0.6'))
+        assert_equal(outputs[1]['valueZat'], 60000000)
+        assert_equal(outputs[1]['output'], 0)
+        assert_equal(outputs[1]['outgoing'], False)
+        assert_equal(outputs[1]['memo'], no_memo)
+        assert 'memoStr' not in outputs[1]
 
         # zaddr1 should have a note with change
         r = self.nodes[1].z_listreceivedbyaddress(zaddr1, 0)
-        r = sorted(r, key = lambda received: received['amount'])
         assert_equal(2, len(r), "zaddr1 Should have received 2 notes")
-
+        r = sorted(r, key = lambda received: received['amount'])
         assert_equal(txid, r[0]['txid'])
         assert_equal(Decimal('0.4')-DEFAULT_FEE, r[0]['amount'])
         assert_equal(40000000-DEFAULT_FEE_ZATS, r[0]['amountZat'])
-        assert_true(r[0]['change'], "Note valued at (0.4-"+str(DEFAULT_FEE)+") should be change")
+        assert_equal(r[0]['change'], True, "Note valued at (0.4-"+str(DEFAULT_FEE)+") should be change")
         assert_equal(no_memo, r[0]['memo'])
 
         # The old note still exists (it's immutable), even though it is spent
         assert_equal(Decimal('1.0'), r[1]['amount'])
         assert_equal(100000000, r[1]['amountZat'])
-        assert_false(r[1]['change'], "Note valued at 1.0 should not be change")
+        assert_equal(r[1]['change'], False, "Note valued at 1.0 should not be change")
         assert_equal(my_memo, r[1]['memo'])
 
         # zaddr2 should not have change
         r = self.nodes[1].z_listreceivedbyaddress(zaddr2, 0)
+        assert_equal(len(r), 1, "zaddr2 Should have received 1 notes")
         r = sorted(r, key = lambda received: received['amount'])
-        assert_equal(1, len(r), "zaddr2 Should have received 1 notes")
-        assert_equal(txid, r[0]['txid'])
-        assert_equal(Decimal('0.6'), r[0]['amount'])
-        assert_equal(60000000, r[0]['amountZat'])
-        assert_false(r[0]['change'], "Note valued at 0.6 should not be change")
-        assert_equal(no_memo, r[0]['memo'])
+        assert_equal(r[0]['txid'], txid)
+        assert_equal(r[0]['amount'], Decimal('0.6'))
+        assert_equal(r[0]['amountZat'], 60000000)
+        assert_equal(r[0]['change'], False, "Note valued at 0.6 should not be change")
+        assert_equal(r[0]['memo'], no_memo)
+        assert 0 <= r[0]['outindex'] < 2
 
         c = self.nodes[1].z_getnotescount(0)
-        assert_equal(3, c['sapling'], "Count of unconfirmed notes should be 3(2 in zaddr1 + 1 in zaddr2)")
+        assert_equal(c['sapling'], 3, "Count of unconfirmed notes should be 3(2 in zaddr1 + 1 in zaddr2)")
 
         # As part of UA support, a transparent address is now accepted
         r = self.nodes[1].z_listreceivedbyaddress(taddr, 0)
@@ -404,7 +360,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(r[0]['amount'], Decimal('4'))
         assert_equal(r[0]['amountZat'], 400000000)
         assert_equal(r[0]['confirmations'], 3)
-        assert r[0]['outindex'] < 2
+        assert 0 <= r[0]['outindex'] < 2
 
         # Test unified address
         node = self.nodes[1]
@@ -443,44 +399,31 @@ class ListReceivedTest (BitcoinTestFramework):
 
         r = node.z_listreceivedbyaddress(unified_addr, 0)
         assert_equal(len(r), 2, "unified_addr should have received 2 payments")
-        print(r)
-        outputs = [];
-        outputs.append({
-            'pool': r[0]['pool'],
-            'txid': r[0]['txid'],
-            'amount': r[0]['amount'],
-            'amountZat': r[0]['amountZat'],
-            'change': r[0]['change'] if 'change' in r[0] else None,
-            'memo': r[0]['memo'] if 'memo' in r[0] else None,
-            'confirmations': r[0]['confirmations']
-        })
-        outputs.append({
-            'pool': r[1]['pool'],
-            'txid': r[1]['txid'],
-            'amount': r[1]['amount'],
-            'amountZat': r[1]['amountZat'],
-            'change': r[1]['change'] if 'change' in r[1] else None,
-            'memo': r[1]['memo'] if 'memo' in r[1] else None,
-            'confirmations': r[1]['confirmations']
-        })
-        assert({
-            'pool': 'sapling',
-            'txid': txid_sapling,
-            'amount': Decimal('0.1'),
-            'amountZat': 10000000,
-            'change': False,
-            'memo': no_memo,
-            'confirmations': 0,
-        } in outputs)
-        assert({
-            'pool': 'transparent',
-            'txid': txid_taddr,
-            'amount': Decimal('0.2'),
-            'amountZat': 20000000,
-            'change': False,
-            'memo': None,
-            'confirmations': 0,
-        } in outputs)
+        # The return list order isn't defined, so sort by pool name
+        r = sorted(r, key=lambda x: x['pool'])
+        assert_equal(r[0]['pool'], 'sapling')
+        assert_equal(r[0]['txid'], txid_sapling)
+        assert_equal(r[0]['amount'], Decimal('0.1'))
+        assert_equal(r[0]['amountZat'], 10000000)
+        assert_equal(r[0]['memo'], no_memo)
+        assert 0 <= r[0]['outindex'] < 2
+        assert_equal(r[0]['confirmations'], 1)
+        assert_equal(r[0]['change'], False)
+        assert_equal(r[0]['blockheight'], height+5)
+        assert_equal(r[0]['blockindex'], 1)
+        assert 'blocktime' in r[0]
+ 
+        assert_equal(r[1]['pool'], 'transparent')
+        assert_equal(r[1]['txid'], txid_taddr)
+        assert_equal(r[1]['amount'], Decimal('0.2'))
+        assert_equal(r[1]['amountZat'], 20000000)
+        assert 0 <= r[1]['outindex'] < 2
+        assert_equal(r[1]['confirmations'], 0)
+        assert_equal(r[1]['change'], False)
+        assert 'memo' not in r[1]
+        assert_equal(r[1]['blockheight'], 0) # not yet mined
+        assert_equal(r[1]['blockindex'], -1) # not yet mined
+        assert 'blocktime' in r[1]
 
     def run_test(self):
         self.test_received_sprout(200)

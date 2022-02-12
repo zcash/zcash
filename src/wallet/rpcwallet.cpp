@@ -3492,13 +3492,20 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                 const CTxOut& txout{wtx.vout[i]};
                 if (txout.scriptPubKey == scriptPubKey) {
                     UniValue obj(UniValue::VOBJ);
+                    auto txid{wtx.GetHash()};
                     obj.pushKV("pool", "transparent");
-                    obj.pushKV("txid", wtx.GetHash().ToString());
+                    obj.pushKV("txid", txid.ToString());
                     obj.pushKV("amount", ValueFromAmount(txout.nValue));
                     obj.pushKV("amountZat", txout.nValue);
                     obj.pushKV("outindex", int(i));
                     obj.pushKV("confirmations", nDepth);
                     obj.pushKV("change", pwalletMain->IsChange(txout));
+
+                    txblock BlockData(txid);
+                    obj.pushKV("blockheight", BlockData.height);
+                    obj.pushKV("blockindex", BlockData.index);
+                    obj.pushKV("blocktime", BlockData.time);
+
                     result.push_back(obj);
                 }
             }
