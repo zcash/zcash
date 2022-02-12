@@ -25,7 +25,7 @@ class TestManager(NodeConnCB):
     # set up NodeConnCB callbacks, overriding base class
     def on_getdata(self, conn, message):
         delimiter = '\nINFO:'+self.log.name+': '
-        formatted = delimiter.join([str(x) for x in message.inv])
+        formatted = delimiter.join([str(x.hash) for x in message.inv])
         self.log.info("got getdata:\n%s" % formatted)
         # Log the requests
         for inv in message.inv:
