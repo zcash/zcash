@@ -244,7 +244,7 @@ libzcash::UnifiedFullViewingKey libzcash::UnifiedFullViewingKey::FromZcashdUFVK(
 
 libzcash::UFVKId libzcash::UnifiedFullViewingKey::GetKeyID(const KeyConstants& keyConstants) const {
     // The ID of a ufvk is the blake2b hash of the serialized form of the
-    // ufvk with the receivers sorted in order of descending receiver type.
+    // ufvk with the receivers sorted in typecode order.
     CBLAKE2bWriter h(SER_GETHASH, 0, ZCASH_UFVK_ID_PERSONAL);
     h << Encode(keyConstants);
     return libzcash::UFVKId(h.GetHash());

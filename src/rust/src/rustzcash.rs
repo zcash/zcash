@@ -1039,7 +1039,7 @@ pub extern "C" fn librustzcash_sapling_proving_ctx_free(ctx: *mut SaplingProving
 
 /// Derive the master ExtendedSpendingKey from a seed.
 #[no_mangle]
-pub extern "C" fn librustzcash_zip32_xsk_master(
+pub extern "C" fn librustzcash_zip32_sapling_xsk_master(
     seed: *const c_uchar,
     seedlen: size_t,
     xsk_master: *mut [c_uchar; 169],
@@ -1054,7 +1054,7 @@ pub extern "C" fn librustzcash_zip32_xsk_master(
 
 /// Derive a child ExtendedSpendingKey from a parent.
 #[no_mangle]
-pub extern "C" fn librustzcash_zip32_xsk_derive(
+pub extern "C" fn librustzcash_zip32_sapling_xsk_derive(
     xsk_parent: *const [c_uchar; 169],
     i: u32,
     xsk_i: *mut [c_uchar; 169],
@@ -1072,7 +1072,7 @@ pub extern "C" fn librustzcash_zip32_xsk_derive(
 /// Derive the Sapling internal spending key from the external extended
 /// spending key
 #[no_mangle]
-pub extern "C" fn librustzcash_zip32_xsk_derive_internal(
+pub extern "C" fn librustzcash_zip32_sapling_xsk_derive_internal(
     xsk_external: *const [c_uchar; 169],
     xsk_internal_ret: *mut [c_uchar; 169],
 ) {
@@ -1088,7 +1088,7 @@ pub extern "C" fn librustzcash_zip32_xsk_derive_internal(
 
 /// Derive a child ExtendedFullViewingKey from a parent.
 #[no_mangle]
-pub extern "C" fn librustzcash_zip32_xfvk_derive(
+pub extern "C" fn librustzcash_zip32_sapling_xfvk_derive(
     xfvk_parent: *const [c_uchar; 169],
     i: u32,
     xfvk_i: *mut [c_uchar; 169],

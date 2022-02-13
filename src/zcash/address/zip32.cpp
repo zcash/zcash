@@ -66,7 +66,7 @@ std::optional<SaplingExtendedFullViewingKey> SaplingExtendedFullViewingKey::Deri
     CSerializeData p_bytes(ss_p.begin(), ss_p.end());
 
     CSerializeData i_bytes(ZIP32_XFVK_SIZE);
-    if (librustzcash_zip32_xfvk_derive(
+    if (librustzcash_zip32_sapling_xfvk_derive(
         reinterpret_cast<unsigned char*>(p_bytes.data()),
         i,
         reinterpret_cast<unsigned char*>(i_bytes.data())
@@ -170,7 +170,7 @@ SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Master(const HDSeed& seed
 {
     auto rawSeed = seed.RawSeed();
     CSerializeData m_bytes(ZIP32_XSK_SIZE);
-    librustzcash_zip32_xsk_master(
+    librustzcash_zip32_sapling_xsk_master(
         rawSeed.data(),
         rawSeed.size(),
         reinterpret_cast<unsigned char*>(m_bytes.data()));
@@ -188,7 +188,7 @@ SaplingExtendedSpendingKey SaplingExtendedSpendingKey::Derive(uint32_t i) const
     CSerializeData p_bytes(ss_p.begin(), ss_p.end());
 
     CSerializeData i_bytes(ZIP32_XSK_SIZE);
-    librustzcash_zip32_xsk_derive(
+    librustzcash_zip32_sapling_xsk_derive(
         reinterpret_cast<unsigned char*>(p_bytes.data()),
         i,
         reinterpret_cast<unsigned char*>(i_bytes.data()));
@@ -254,7 +254,7 @@ SaplingExtendedSpendingKey SaplingExtendedSpendingKey::DeriveInternalKey() const
     CSerializeData external_key_bytes(ss_p.begin(), ss_p.end());
 
     CSerializeData internal_key_bytes(ZIP32_XSK_SIZE);
-    librustzcash_zip32_xsk_derive_internal(
+    librustzcash_zip32_sapling_xsk_derive_internal(
         reinterpret_cast<unsigned char*>(external_key_bytes.data()),
         reinterpret_cast<unsigned char*>(internal_key_bytes.data()));
 

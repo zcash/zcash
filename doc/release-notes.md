@@ -7,14 +7,14 @@ Notable changes
 Mnemonic Recovery Phrases
 -------------------------
 
-The zcashd wallet has been modified to support ZIP 339 (to be compatible with BIP 39)
-which describes how to derive the wallet's HD seed from a mnemonic phrase.
-The mnemonic phrase will be generated on load of the wallet, or the first time
-the wallet is unlocked, and is available via the `z_exportwallet` RPC call. All
-new addresses produced by the wallet are now derived from this seed using the
-HD wallet functionality described in ZIP 32 and ZIP 316. For users upgrading an
-existing Zcashd wallet, it is recommended that the wallet be backed up prior to
-upgrading to the 4.5.2 Zcashd release.
+The zcashd wallet has been modified to support BIP 39, which describes how to
+derive the wallet's HD seed from a mnemonic phrase.  The mnemonic phrase will
+be generated on load of the wallet, or the first time the wallet is unlocked,
+and is available via the `z_exportwallet` RPC call. All new addresses produced
+by the wallet are now derived from this seed using the HD wallet functionality
+described in ZIP 32 and ZIP 316. For users upgrading an existing Zcashd wallet,
+it is recommended that the wallet be backed up prior to upgrading to the 4.5.2
+Zcashd release.
 
 Following the upgrade to 4.5.2, Zcashd will require that the user confirm that
 they have backed up their new emergency recovery phrase, which may be obtained
