@@ -173,7 +173,7 @@ public:
 
     std::optional<SaplingDiversifiableFullViewingKey> GetSaplingKey() const;
 
-    std::optional<CChainablePubKey> GetTransparentKey() const;
+    std::optional<transparent::AccountPubKey> GetTransparentKey() const;
 
     UFVKId GetKeyID(const KeyConstants& keyConstants) const;
 

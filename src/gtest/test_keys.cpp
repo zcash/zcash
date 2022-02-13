@@ -122,7 +122,7 @@ TEST(Keys, EncodeAndDecodeUnifiedAddresses)
 
         try {
             libzcash::UnifiedAddress ua;
-            // ["p2pkh_bytes, p2sh_bytes, sapling_raw_addr, orchard_raw_addr, unified_addr"]
+            // ["p2pkh_bytes, p2sh_bytes, sapling_raw_addr, orchard_raw_addr, unknown_typecode, unknown_bytes, unified_addr, root_seed, account, diversifier_index"],
             // These were added to the UA in preference order by the Python test vectors.
             if (!test[3].isNull()) {
                 auto data = ParseHex(test[3].get_str());
@@ -148,7 +148,7 @@ TEST(Keys, EncodeAndDecodeUnifiedAddresses)
                 ua.AddReceiver(r);
             }
 
-            auto expectedBytes = ParseHex(test[4].get_str());
+            auto expectedBytes = ParseHex(test[6].get_str());
             std::string expected(expectedBytes.begin(), expectedBytes.end());
 
             auto decoded = keyIO.DecodePaymentAddress(expected);
@@ -166,6 +166,89 @@ TEST(Keys, EncodeAndDecodeUnifiedAddresses)
         }
     }
 }
+
+TEST(Keys, DeriveUnifiedFullViewingKeys)
+{
+    SelectParams(CBaseChainParams::MAIN);
+    KeyIO keyIO(Params());
+
+    UniValue ua_tests = read_json(MAKE_STRING(json_tests::unified_full_viewing_keys));
+
+    for (size_t idx = 0; idx < ua_tests.size(); idx++) {
+        UniValue test = ua_tests[idx];
+
+        std::string strTest = test.write();
+        if (test.size() < 1) // Allow for extra stuff (useful for comments)
+        {
+            FAIL() << "Bad test: " << strTest;
+            continue;
+        }
+        if (test.size() == 1) continue; // comment
+
+        try {
+            auto seed_hex = test[6].get_str();
+            auto seed_data = ParseHex(seed_hex);
+            RawHDSeed raw_seed(seed_data.begin(), seed_data.end());
+            ASSERT_EQ(HexStr(raw_seed), seed_hex);
+
+            HDSeed hdseed(raw_seed);
+            auto usk = libzcash::ZcashdUnifiedSpendingKey::ForAccount(
+                    hdseed,
+                    133, //ZCASH_MAIN_COINTYPE
+                    test[7].get_int());
+            ASSERT_TRUE(usk.has_value());
+            auto ufvk = usk->ToFullViewingKey();
+
+            if (!test[0].isNull()) {
+                auto expectedHex = test[0].get_str();
+
+                // Ensure that the serialized transparent account key matches the test data.
+                auto tkey = ufvk.GetTransparentKey().value();
+                CDataStream ssEncode(SER_NETWORK, PROTOCOL_VERSION);
+                ssEncode << tkey.GetChainablePubKey();
+                EXPECT_EQ(ssEncode.size(), 65);
+                auto tkeyHex = HexStr(ssEncode.begin(), ssEncode.end());
+                EXPECT_EQ(expectedHex, tkeyHex);
+
+                // Ensure that parsing the test data derives the correct account pubkey.
+                auto data = ParseHex(expectedHex);
+                ASSERT_EQ(data.size(), 65);
+                CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
+                auto expected = libzcash::transparent::AccountPubKey(CChainablePubKey::Read(ss));
+                EXPECT_EQ(expected, tkey);
+            }
+            if (!test[1].isNull()) {
+                auto expectedHex = test[1].get_str();
+
+                // Ensure that the serialized Sapling dfvk matches the test data.
+                auto saplingKey = ufvk.GetSaplingKey().value();
+                CDataStream ssEncode(SER_NETWORK, PROTOCOL_VERSION);
+                ssEncode << saplingKey;
+                EXPECT_EQ(ssEncode.size(), 128);
+                auto skeyHex = HexStr(ssEncode.begin(), ssEncode.end());
+                EXPECT_EQ(expectedHex, skeyHex);
+
+                // Ensure that parsing the test data derives the correct dfvk
+                auto data = ParseHex(expectedHex);
+                ASSERT_EQ(data.size(), 128);
+                CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
+                auto key = libzcash::SaplingDiversifiableFullViewingKey::Read(ss);
+                EXPECT_EQ(key, saplingKey);
+            }
+            // Enable the following after Orchard keys are supported.
+            //{
+            //    auto fvk_data = ParseHex(test[5].get_str());
+            //    std::string expected(fvk_data.begin(), fvk_data.end());
+            //    EXPECT_EQ(expected, ufvk.Encode(Params(CBaseChainParams::MAIN)));
+            //}
+        } catch (const std::exception& ex) {
+            FAIL() << "Bad test, couldn't deserialize data: " << strTest << ": " << ex.what();
+        } catch (...) {
+            FAIL() << "Bad test, couldn't deserialize data: " << strTest;
+        }
+    }
+}
+
 
 TEST(Keys, EncodeAndDecodeUnifiedFullViewingKeys)
 {
