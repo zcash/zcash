@@ -203,6 +203,57 @@ public:
     bool Derive(CPubKey& pubkeyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const;
 };
 
+class CChainablePubKey {
+private:
+    ChainCode chaincode;
+    CPubKey pubkey;
+
+    CChainablePubKey() {}
+    CChainablePubKey(ChainCode chaincode, CPubKey pubkey): chaincode(chaincode), pubkey(pubkey) {}
+public:
+    static std::optional<CChainablePubKey> FromParts(ChainCode chaincode, CPubKey pubkey);
+
+    const ChainCode& GetChainCode() const {
+        return chaincode;
+    }
+
+    const CPubKey& GetPubKey() const {
+        return pubkey;
+    }
+
+    std::optional<CChainablePubKey> Derive(unsigned int nChild) const;
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(chaincode);
+        if (ser_action.ForRead()) {
+            std::array<uint8_t, CPubKey::COMPRESSED_PUBLIC_KEY_SIZE> pubkeyBytes;
+            READWRITE(pubkeyBytes);
+            pubkey = CPubKey(pubkeyBytes.begin(), pubkeyBytes.end());
+            assert(pubkey.IsCompressed());
+        } else {
+            assert(pubkey.size() == CPubKey::COMPRESSED_PUBLIC_KEY_SIZE);
+            std::array<uint8_t, CPubKey::COMPRESSED_PUBLIC_KEY_SIZE> pubkeyBytes;
+            std::copy(pubkey.begin(), pubkey.end(), pubkeyBytes.begin());
+            READWRITE(pubkeyBytes);
+        }
+    }
+
+    template <typename Stream>
+    static CChainablePubKey Read(Stream& stream) {
+        CChainablePubKey key;
+        stream >> key;
+        return key;
+    }
+
+    friend bool operator==(const CChainablePubKey &a, const CChainablePubKey &b)
+    {
+        return a.chaincode == b.chaincode && a.pubkey == b.pubkey;
+    }
+};
+
 struct CExtPubKey {
     unsigned char nDepth;
     unsigned char vchFingerprint[4];
@@ -222,6 +273,10 @@ struct CExtPubKey {
     void Encode(unsigned char code[BIP32_EXTKEY_SIZE]) const;
     void Decode(const unsigned char code[BIP32_EXTKEY_SIZE]);
     bool Derive(CExtPubKey& out, unsigned int nChild) const;
+
+    std::optional<CChainablePubKey> ToChainablePubKey() const {
+        return CChainablePubKey::FromParts(chaincode, pubkey);
+    }
 
     void Serialize(CSizeComputer& s) const
     {

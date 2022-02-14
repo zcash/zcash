@@ -98,6 +98,16 @@ bool CPubKey::Derive(CPubKey& pubkeyChild, ChainCode &ccChild, unsigned int nChi
     return true;
 }
 
+std::optional<CChainablePubKey> CChainablePubKey::Derive(unsigned int nChild) const {
+    CPubKey pubkeyChild;
+    ChainCode ccChild;
+    if (pubkey.Derive(pubkeyChild, ccChild, nChild, chaincode)) {
+        return CChainablePubKey::FromParts(ccChild, pubkeyChild);
+    } else {
+        return std::nullopt;
+    }
+}
+
 void CExtPubKey::Encode(unsigned char code[BIP32_EXTKEY_SIZE]) const {
     code[0] = nDepth;
     memcpy(code+1, vchFingerprint, 4);
@@ -132,6 +142,14 @@ bool CExtPubKey::Derive(CExtPubKey &out, unsigned int _nChild) const {
         return false;
     }
     return (!secp256k1_ecdsa_signature_normalize(secp256k1_context_verify, NULL, &sig));
+}
+
+/* static */ std::optional<CChainablePubKey> CChainablePubKey::FromParts(ChainCode chaincode, CPubKey pubkey) {
+    if (pubkey.IsCompressed()) {
+        return CChainablePubKey(chaincode, pubkey);
+    } else {
+        return std::nullopt;
+    }
 }
 
 /* static */ int ECCVerifyHandle::refcount = 0;

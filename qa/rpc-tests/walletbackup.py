@@ -96,10 +96,10 @@ class WalletBackupTest(BitcoinTestFramework):
         self.sync_all()
 
     # As above, this mirrors the original bash test.
-    def start_three(self):
-        self.nodes[0] = start_node(0, self.options.tmpdir)
-        self.nodes[1] = start_node(1, self.options.tmpdir)
-        self.nodes[2] = start_node(2, self.options.tmpdir)
+    def start_three(self, extra_args=None):
+        self.nodes[0] = start_node(0, self.options.tmpdir, extra_args)
+        self.nodes[1] = start_node(1, self.options.tmpdir, extra_args)
+        self.nodes[2] = start_node(2, self.options.tmpdir, extra_args)
         connect_nodes(self.nodes[0], 3)
         connect_nodes(self.nodes[1], 3)
         connect_nodes(self.nodes[2], 3)
@@ -191,6 +191,29 @@ class WalletBackupTest(BitcoinTestFramework):
         self.start_three()
         sync_blocks(self.nodes)
 
+        # We made extra transactions that involved addresses generated after the
+        # backups were taken, and external addresses do not use the keypool, so
+        # the balances shouldn't line up.
+        balance0backup = self.nodes[0].getbalance()
+        balance1backup = self.nodes[1].getbalance()
+        balance2backup = self.nodes[2].getbalance()
+        assert(balance0backup != balance0)
+        assert(balance1backup != balance1)
+        assert(balance2backup != balance2)
+
+        # However, because addresses are derived deterministically, we can
+        # recover the balances by generating the extra addresses and then
+        # rescanning.
+        for i in range(5):
+            self.nodes[0].getnewaddress()
+            self.nodes[1].getnewaddress()
+            self.nodes[2].getnewaddress()
+
+        logging.info("Re-starting nodes with -rescan")
+        self.stop_three()
+        self.start_three(['-rescan'])
+        sync_blocks(self.nodes)
+
         assert_equal(self.nodes[0].getbalance(), balance0)
         assert_equal(self.nodes[1].getbalance(), balance1)
         assert_equal(self.nodes[2].getbalance(), balance2)
@@ -215,9 +238,9 @@ class WalletBackupTest(BitcoinTestFramework):
 
         sync_blocks(self.nodes)
 
-        assert_equal(self.nodes[0].getbalance(), balance0)
-        assert_equal(self.nodes[1].getbalance(), balance1)
-        assert_equal(self.nodes[2].getbalance(), balance2)
+        assert_equal(self.nodes[0].getbalance(), balance0backup)
+        assert_equal(self.nodes[1].getbalance(), balance1backup)
+        assert_equal(self.nodes[2].getbalance(), balance2backup)
 
 
 if __name__ == '__main__':

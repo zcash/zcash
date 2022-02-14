@@ -684,7 +684,7 @@ void ThreadImport(std::vector<fs::path> vImportFiles, const CChainParams& chainp
  */
 bool InitSanityCheck(void)
 {
-    if(!ECC_InitSanityCheck()) {
+    if(!CKey::ECC_InitSanityCheck()) {
         InitError("Elliptic curve cryptography sanity check failure. Aborting.");
         return false;
     }
@@ -945,6 +945,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     auto err = InitExperimentalMode();
     if (err) {
         return InitError(err.value());
+    }
+
+    // Just temporarily (until fully functional), don't allow the Orchard wallet
+    // extensions if we're on mainnet
+    if (fExperimentalOrchardWallet && chainparams.NetworkIDString() == "main") {
+        return InitError(_("The -orchardwallet setting is not yet available on mainnet."));
     }
 
     // if using block pruning, then disable txindex
@@ -1677,8 +1683,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             if (!zaddr.has_value()) {
                 return InitError(_("-mineraddress is not a valid " PACKAGE_NAME " address."));
             }
-            minerAddressInLocalWallet = std::visit(
-                HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr.value());
+            auto ztxoSelector = pwalletMain->ZTXOSelectorForAddress(zaddr.value(), true);
+            minerAddressInLocalWallet = ztxoSelector.has_value();
         }
         if (GetBoolArg("-minetolocalwallet", true) && !minerAddressInLocalWallet) {
             return InitError(_("-mineraddress is not in the local wallet. Either use a local address, or set -minetolocalwallet=0"));

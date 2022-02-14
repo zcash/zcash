@@ -25,76 +25,27 @@
 
 using namespace libzcash;
 
-class FromAnyTaddr {
-public:
-    friend bool operator==(const FromAnyTaddr &a, const FromAnyTaddr &b) { return true; }
-};
-
-typedef std::variant<FromAnyTaddr, PaymentAddress> PaymentSource;
-
 class SendManyRecipient {
 public:
-    PaymentAddress address;
+    RecipientAddress address;
     CAmount amount;
     std::optional<std::string> memo;
 
-    SendManyRecipient(PaymentAddress address_, CAmount amount_, std::optional<std::string> memo_) :
+    SendManyRecipient(RecipientAddress address_, CAmount amount_, std::optional<std::string> memo_) :
         address(address_), amount(amount_), memo(memo_) {}
-};
-
-class SpendableInputs {
-public:
-    std::vector<COutput> utxos;
-    std::vector<SproutNoteEntry> sproutNoteEntries;
-    std::vector<SaplingNoteEntry> saplingNoteEntries;
-
-    /**
-     * Selectively discard notes that are not required to obtain the desired
-     * amount. Returns `false` if the available inputs do not add up to the
-     * desired amount.
-     */
-    bool LimitToAmount(CAmount amount, CAmount dustThreshold);
-
-    /**
-     * Compute the total ZEC amount of spendable inputs.
-     */
-    CAmount Total() const {
-        CAmount result = 0;
-        for (const auto& t : utxos) {
-            result += t.Value();
-        }
-        for (const auto& t : sproutNoteEntries) {
-            result += t.note.value();
-        }
-        for (const auto& t : saplingNoteEntries) {
-            result += t.note.value();
-        }
-        return result;
-    }
-
-    /**
-     * Return whether or not the set of selected UTXOs contains
-     * coinbase outputs.
-     */
-    bool HasTransparentCoinbase() const;
-
-    /**
-     * List spendable inputs in zrpcunsafe log entries.
-     */
-    void LogInputs(const AsyncRPCOperationId& id) const;
 };
 
 class TxOutputAmounts {
 public:
     CAmount t_outputs_total{0};
-    CAmount z_outputs_total{0};
+    CAmount sapling_outputs_total{0};
 };
 
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
 public:
     AsyncRPCOperation_sendmany(
         TransactionBuilder builder,
-        PaymentSource paymentSource,
+        ZTXOSelector ztxoSelector,
         std::vector<SendManyRecipient> recipients,
         int minDepth,
         CAmount fee = DEFAULT_FEE,
@@ -118,20 +69,25 @@ private:
     friend class TEST_FRIEND_AsyncRPCOperation_sendmany;    // class for unit testing
 
     TransactionBuilder builder_;
-    PaymentSource paymentSource_;
+    ZTXOSelector ztxoSelector_;
     std::vector<SendManyRecipient> recipients_;
     int mindepth_{1};
     CAmount fee_;
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 
-    bool isfromtaddr_{false};
     bool isfromsprout_{false};
     bool isfromsapling_{false};
     bool allowRevealedAmounts_{false};
     uint32_t transparentRecipients_{0};
+    AccountId sendFromAccount_;
+    std::set<libzcash::ChangeType> allowedChangeTypes_;
     TxOutputAmounts txOutputAmounts_;
 
-    SpendableInputs FindSpendableInputs(bool fAcceptCoinbase);
+    /**
+     * Compute the internal and external OVKs to use in transaction construction, given
+     * the spendable inputs.
+     */
+    std::pair<uint256, uint256> SelectOVKs(const SpendableInputs& spendable) const;
 
     static CAmount DefaultDustThreshold();
 
@@ -139,7 +95,6 @@ private:
 
     uint256 main_impl();
 };
-
 
 // To test private methods, a friend class can act as a proxy
 class TEST_FRIEND_AsyncRPCOperation_sendmany {

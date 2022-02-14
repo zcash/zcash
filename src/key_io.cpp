@@ -196,6 +196,10 @@ public:
         memory_cleanse(data.data(), data.size());
         return ret;
     }
+
+    std::string operator()(const libzcash::UnifiedFullViewingKey& ufvk) const {
+        return ufvk.Encode(keyConstants);
+    }
 };
 
 class SpendingKeyEncoder
@@ -542,6 +546,13 @@ std::string KeyIO::EncodeViewingKey(const libzcash::ViewingKey& vk)
 
 std::optional<libzcash::ViewingKey> KeyIO::DecodeViewingKey(const std::string& str)
 {
+    // Try parsing as a Unified full viewing key
+    auto ufvk = libzcash::UnifiedFullViewingKey::Decode(str, keyConstants);
+    if (ufvk.has_value()) {
+        return ufvk.value();
+    }
+
+    // Fall back on trying Sprout or Sapling.
     return DecodeAny<libzcash::ViewingKey,
         libzcash::SproutViewingKey,
         libzcash::SaplingExtendedFullViewingKey>(

@@ -64,6 +64,13 @@ std::string base_blob<BITS>::ToString() const
     return (GetHex());
 }
 
+// Explicit instantiations for base_blob<88>
+template base_blob<88>::base_blob(const std::vector<unsigned char>&);
+template std::string base_blob<88>::GetHex() const;
+template std::string base_blob<88>::ToString() const;
+template void base_blob<88>::SetHex(const char*);
+template void base_blob<88>::SetHex(const std::string&);
+
 // Explicit instantiations for base_blob<160>
 template base_blob<160>::base_blob(const std::vector<unsigned char>&);
 template std::string base_blob<160>::GetHex() const;

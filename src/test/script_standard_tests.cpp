@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(script_standard_Solver_success)
     CKey keys[3];
     CPubKey pubkeys[3];
     for (int i = 0; i < 3; i++) {
-        keys[i].MakeNewKey(true);
+        keys[i] = CKey::TestOnlyRandomKey(true);
         pubkeys[i] = keys[i].GetPubKey();
     }
 
@@ -103,9 +103,8 @@ BOOST_AUTO_TEST_CASE(script_standard_Solver_success)
 
 BOOST_AUTO_TEST_CASE(script_standard_Solver_failure)
 {
-    CKey key;
+    CKey key = CKey::TestOnlyRandomKey(true);
     CPubKey pubkey;
-    key.MakeNewKey(true);
     pubkey = key.GetPubKey();
 
     CScript s;
@@ -165,9 +164,8 @@ BOOST_AUTO_TEST_CASE(script_standard_Solver_failure)
 
 BOOST_AUTO_TEST_CASE(script_standard_ExtractDestination)
 {
-    CKey key;
+    CKey key = CKey::TestOnlyRandomKey(true);
     CPubKey pubkey;
-    key.MakeNewKey(true);
     pubkey = key.GetPubKey();
 
     CScript s;
@@ -221,7 +219,7 @@ BOOST_AUTO_TEST_CASE(script_standard_ExtractDestinations)
     CKey keys[3];
     CPubKey pubkeys[3];
     for (int i = 0; i < 3; i++) {
-        keys[i].MakeNewKey(true);
+        keys[i] = CKey::TestOnlyRandomKey(true);
         pubkeys[i] = keys[i].GetPubKey();
     }
 
@@ -297,7 +295,7 @@ BOOST_AUTO_TEST_CASE(script_standard_GetScriptFor_)
     CKey keys[3];
     CPubKey pubkeys[3];
     for (int i = 0; i < 3; i++) {
-        keys[i].MakeNewKey(true);
+        keys[i] = CKey::TestOnlyRandomKey(true);
         pubkeys[i] = keys[i].GetPubKey();
     }
 
@@ -343,12 +341,11 @@ BOOST_AUTO_TEST_CASE(script_standard_IsMine)
     CKey keys[2];
     CPubKey pubkeys[2];
     for (int i = 0; i < 2; i++) {
-        keys[i].MakeNewKey(true);
+        keys[i] = CKey::TestOnlyRandomKey(true);
         pubkeys[i] = keys[i].GetPubKey();
     }
 
-    CKey uncompressedKey;
-    uncompressedKey.MakeNewKey(false);
+    CKey uncompressedKey = CKey::TestOnlyRandomKey(false);
     CPubKey uncompressedPubkey = uncompressedKey.GetPubKey();
 
     CScript scriptPubKey;

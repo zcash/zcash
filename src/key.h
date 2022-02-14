@@ -15,7 +15,6 @@
 #include <stdexcept>
 #include <vector>
 
-
 /**
  * secure_allocator is defined in allocators.h
  * CPrivKey is a serialized private key, with all parameters included
@@ -62,6 +61,19 @@ public:
         keydata.resize(32);
     }
 
+    /**
+     * Construct a random key. This is used only for internal sanity checks;
+     * all keys that actually control live funds should be derived from the
+     * wallet's mnemonic seed.
+     */
+    static CKey TestOnlyRandomKey(bool fCompressedIn);
+
+    //! Initialize from a CPrivKey (serialized OpenSSL-format private key data).
+    static std::optional<CKey> FromPrivKey(const CPrivKey& vchPrivKey, bool fCompressed);
+
+    /** Check that required EC support is available at runtime. */
+    static bool ECC_InitSanityCheck();
+
     friend bool operator==(const CKey& a, const CKey& b)
     {
         return a.fCompressed == b.fCompressed &&
@@ -94,12 +106,6 @@ public:
 
     //! Check whether the public key corresponding to this private key is (to be) compressed.
     bool IsCompressed() const { return fCompressed; }
-
-    //! Initialize from a CPrivKey (serialized OpenSSL-format private key data).
-    bool SetPrivKey(const CPrivKey& vchPrivKey, bool fCompressed);
-
-    //! Generate a new private key using a cryptographic PRNG.
-    void MakeNewKey(bool fCompressed);
 
     /**
      * Convert the private key to a CPrivKey (serialized OpenSSL-format private key data).
@@ -160,11 +166,12 @@ struct CExtKey {
             a.key == b.key;
     }
 
+    static CExtKey Master(const unsigned char* seed, unsigned int nSeedLen);
+
     void Encode(unsigned char code[BIP32_EXTKEY_SIZE]) const;
     void Decode(const unsigned char code[BIP32_EXTKEY_SIZE]);
-    bool Derive(CExtKey& out, unsigned int nChild) const;
+    std::optional<CExtKey> Derive(unsigned int nChild) const;
     CExtPubKey Neuter() const;
-    void SetMaster(const unsigned char* seed, unsigned int nSeedLen);
     template <typename Stream>
     void Serialize(Stream& s) const
     {
@@ -190,7 +197,5 @@ void ECC_Start(void);
 /** Deinitialize the elliptic curve support. No-op if ECC_Start wasn't called first. */
 void ECC_Stop(void);
 
-/** Check that required EC support is available at runtime. */
-bool ECC_InitSanityCheck(void);
 
 #endif // BITCOIN_KEY_H

@@ -404,7 +404,7 @@ UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
             std::optional<std::string> seedFpStr = (vstr.size() > 3) ? std::optional<std::string>(vstr[3]) : std::nullopt;
             if (spendingkey.has_value()) {
                 auto addResult = std::visit(
-                    AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, hdKeypath, seedFpStr, true), spendingkey.value());
+                    AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, hdKeypath, seedFpStr, true, true), spendingkey.value());
                 if (addResult == KeyAlreadyExists){
                     LogPrint("zrpc", "Skipping import of zaddr (key already present)\n");
                 } else if (addResult == KeyNotAdded) {
@@ -611,13 +611,33 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
     file << strprintf("# * Created on %s\n", EncodeDumpTime(GetTime()));
     file << strprintf("# * Best block at time of backup was %i (%s),\n", chainActive.Height(), chainActive.Tip()->GetBlockHash().ToString());
     file << strprintf("#   mined on %s\n", EncodeDumpTime(chainActive.Tip()->GetBlockTime()));
-    {
-        HDSeed hdSeed;
-        pwalletMain->GetHDSeed(hdSeed);
-        auto rawSeed = hdSeed.RawSeed();
-        file << strprintf("# HDSeed=%s fingerprint=%s", HexStr(rawSeed.begin(), rawSeed.end()), hdSeed.Fingerprint().GetHex());
-        file << "\n";
+
+    std::optional<MnemonicSeed> hdSeed = pwalletMain->GetMnemonicSeed();
+    if (hdSeed.has_value()) {
+        auto mSeed = hdSeed.value();
+        file << strprintf(
+                "# Emergency Recovery Information:\n"
+                "# - recovery_phrase=\"%s\"\n"
+                "# - language=%s\n"
+                "# - fingerprint=%s\n",
+                mSeed.GetMnemonic(),
+                MnemonicSeed::LanguageName(mSeed.GetLanguage()),
+                mSeed.Fingerprint().GetHex()
+                );
     }
+
+    std::optional<HDSeed> legacySeed = pwalletMain->GetLegacyHDSeed();
+    if (legacySeed.has_value()) {
+        auto rawSeed = legacySeed.value().RawSeed();
+        file << strprintf(
+                "# Legacy HD Seed:\n"
+                "# - seed=%s\n"
+                "# - fingerprint=%s\n",
+                HexStr(rawSeed.begin(), rawSeed.end()),
+                legacySeed.value().Fingerprint().GetHex()
+                );
+    }
+
     file << "\n";
     for (std::vector<std::pair<int64_t, CKeyID> >::const_iterator it = vKeyBirth.begin(); it != vKeyBirth.end(); it++) {
         const CKeyID &keyid = it->second;
@@ -852,13 +872,13 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
     }
 
-    auto addrInfo = std::visit(libzcash::AddressInfoFromViewingKey{}, viewingkey.value());
+    auto addrInfo = std::visit(libzcash::AddressInfoFromViewingKey(Params()), viewingkey.value());
     UniValue result(UniValue::VOBJ);
     const string strAddress = keyIO.EncodePaymentAddress(addrInfo.second);
     result.pushKV("type", addrInfo.first);
     result.pushKV("address", strAddress);
 
-    auto addResult = std::visit(AddViewingKeyToWallet(pwalletMain), viewingkey.value());
+    auto addResult = std::visit(AddViewingKeyToWallet(pwalletMain, true), viewingkey.value());
     if (addResult == SpendingKeyExists) {
         throw JSONRPCError(
             RPC_WALLET_ERROR,

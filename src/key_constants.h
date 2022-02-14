@@ -5,7 +5,10 @@
 #ifndef ZCASH_KEY_CONSTANTS_H
 #define ZCASH_KEY_CONSTANTS_H
 
-class KeyConstants 
+#include <string>
+#include <vector>
+
+class KeyConstants
 {
 public:
     enum Base58Type {
@@ -33,8 +36,22 @@ public:
     };
 
     virtual std::string NetworkIDString() const =0;
+    virtual uint32_t BIP44CoinType() const =0;
     virtual const std::vector<unsigned char>& Base58Prefix(Base58Type type) const =0;
     virtual const std::string& Bech32HRP(Bech32Type type) const =0;
+};
+
+class CBaseKeyConstants : public KeyConstants {
+public:
+    std::string strNetworkID;
+    uint32_t bip44CoinType;
+    std::vector<unsigned char> base58Prefixes[KeyConstants::MAX_BASE58_TYPES];
+    std::string bech32HRPs[KeyConstants::MAX_BECH32_TYPES];
+
+    std::string NetworkIDString() const { return strNetworkID; }
+    uint32_t BIP44CoinType() const { return bip44CoinType; }
+    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
+    const std::string& Bech32HRP(Bech32Type type) const { return bech32HRPs[type]; }
 };
 
 #endif // ZCASH_KEY_CONSTANTS_H

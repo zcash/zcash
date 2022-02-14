@@ -20,6 +20,7 @@
 #include <optional>
 
 using ::testing::Return;
+using namespace libzcash;
 
 ACTION(ThrowLogicError) {
     throw std::logic_error("Boom");
@@ -181,12 +182,12 @@ TEST(WalletTests, SproutNoteDataSerialisation) {
     EXPECT_EQ(noteData[jsoutpt].witnesses, noteData2[jsoutpt].witnesses);
 }
 
-
 TEST(WalletTests, FindUnspentSproutNotes) {
-    auto consensusParams = RegtestActivateSapling();
+    SelectParams(CBaseChainParams::TESTNET);
 
     CWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
+
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
@@ -354,9 +355,6 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     mapBlockIndex.erase(blockHash);
     mapBlockIndex.erase(blockHash2);
     mapBlockIndex.erase(blockHash3);
-
-    // Revert to default
-    RegtestDeactivateSapling();
 }
 
 
@@ -377,8 +375,6 @@ TEST(WalletTests, SetSproutNoteAddrsInCWalletTx) {
 }
 
 TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
-    SelectParams(CBaseChainParams::REGTEST);
-
     std::vector<libzcash::Zip212Enabled> zip_212_enabled = {libzcash::Zip212Enabled::BeforeZip212, libzcash::Zip212Enabled::AfterZip212};
     const Consensus::Params& (*activations [])() = {RegtestActivateSapling, RegtestActivateCanopy};
     void (*deactivations [])() = {RegtestDeactivateSapling, RegtestDeactivateCanopy};
@@ -393,7 +389,7 @@ TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
         auto expsk = sk.expsk;
         auto fvk = expsk.full_viewing_key();
         auto ivk = fvk.in_viewing_key();
-        auto pk = sk.DefaultAddress();
+        auto pk = sk.ToXFVK().DefaultAddress();
 
         libzcash::SaplingNote note(pk, 50000, zip_212_enabled[ver]);
         auto cm = note.cmu().value();
@@ -468,6 +464,7 @@ TEST(WalletTests, SetInvalidSaplingNoteDataInCWalletTx) {
 }
 
 TEST(WalletTests, CheckSproutNoteCommitmentAgainstNotePlaintext) {
+    SelectParams(CBaseChainParams::REGTEST);
     CWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
@@ -492,6 +489,7 @@ TEST(WalletTests, CheckSproutNoteCommitmentAgainstNotePlaintext) {
 }
 
 TEST(WalletTests, GetSproutNoteNullifier) {
+    SelectParams(CBaseChainParams::REGTEST);
     CWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
@@ -527,7 +525,6 @@ TEST(WalletTests, GetSproutNoteNullifier) {
 
 TEST(WalletTests, FindMySaplingNotes) {
     auto consensusParams = RegtestActivateSapling();
-
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
@@ -535,7 +532,7 @@ TEST(WalletTests, FindMySaplingNotes) {
     auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto extfvk = sk.ToXFVK();
-    auto pa = sk.DefaultAddress();
+    auto pa = extfvk.DefaultAddress();
 
     auto testNote = GetTestSaplingNote(pa, 50000);
 
@@ -562,6 +559,7 @@ TEST(WalletTests, FindMySaplingNotes) {
 }
 
 TEST(WalletTests, FindMySproutNotes) {
+    SelectParams(CBaseChainParams::REGTEST);
     CWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
@@ -588,8 +586,10 @@ TEST(WalletTests, FindMySproutNotes) {
 }
 
 TEST(WalletTests, FindMySproutNotesInEncryptedWallet) {
+    SelectParams(CBaseChainParams::REGTEST);
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
+
     uint256 r {GetRandHash()};
     CKeyingMaterial vMasterKey (r.begin(), r.end());
 
@@ -619,6 +619,7 @@ TEST(WalletTests, FindMySproutNotesInEncryptedWallet) {
 }
 
 TEST(WalletTests, GetConflictedSproutNotes) {
+    SelectParams(CBaseChainParams::REGTEST);
     CWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
@@ -652,8 +653,6 @@ TEST(WalletTests, GetConflictedSproutNotes) {
 
 // Generate note A and spend to create note B, from which we spend to create two conflicting transactions
 TEST(WalletTests, GetConflictedSaplingNotes) {
-    SelectParams(CBaseChainParams::REGTEST);
-
     std::vector<libzcash::Zip212Enabled> zip_212_enabled = {libzcash::Zip212Enabled::BeforeZip212, libzcash::Zip212Enabled::AfterZip212};
     const Consensus::Params& (*activations [])() = {RegtestActivateSapling, RegtestActivateCanopy};
     void (*deactivations [])() = {RegtestDeactivateSapling, RegtestDeactivateCanopy};
@@ -668,8 +667,8 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
         auto sk = GetTestMasterSaplingSpendingKey();
         auto expsk = sk.expsk;
         auto extfvk = sk.ToXFVK();
-        auto ivk = extfvk.fvk.in_viewing_key();
-        auto pk = sk.DefaultAddress();
+        auto ivk = extfvk.ToIncomingViewingKey();
+        auto pk = extfvk.DefaultAddress();
 
         ASSERT_TRUE(wallet.AddSaplingZKey(sk));
         ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
@@ -779,6 +778,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
 }
 
 TEST(WalletTests, SproutNullifierIsSpent) {
+    SelectParams(CBaseChainParams::REGTEST);
     CWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
 
@@ -821,7 +821,6 @@ TEST(WalletTests, SproutNullifierIsSpent) {
 
 TEST(WalletTests, SaplingNullifierIsSpent) {
     auto consensusParams = RegtestActivateSapling();
-
     TestWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
 
@@ -829,7 +828,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto extfvk = sk.ToXFVK();
-    auto pa = sk.DefaultAddress();
+    auto pa = extfvk.DefaultAddress();
 
     auto testNote = GetTestSaplingNote(pa, 50000);
 
@@ -878,6 +877,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
 }
 
 TEST(WalletTests, NavigateFromSproutNullifierToNote) {
+    SelectParams(CBaseChainParams::REGTEST);
     CWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
@@ -906,7 +906,6 @@ TEST(WalletTests, NavigateFromSproutNullifierToNote) {
 
 TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     auto consensusParams = RegtestActivateSapling();
-
     TestWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
 
@@ -914,7 +913,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto extfvk = sk.ToXFVK();
-    auto pa = sk.DefaultAddress();
+    auto pa = extfvk.DefaultAddress();
 
     auto testNote = GetTestSaplingNote(pa, 50000);
 
@@ -998,6 +997,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
 }
 
 TEST(WalletTests, SpentSproutNoteIsFromMe) {
+    SelectParams(CBaseChainParams::REGTEST);
     CWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
@@ -1028,8 +1028,6 @@ TEST(WalletTests, SpentSproutNoteIsFromMe) {
 
 // Create note A, spend A to create note B, spend and verify note B is from me.
 TEST(WalletTests, SpentSaplingNoteIsFromMe) {
-    SelectParams(CBaseChainParams::REGTEST);
-
     std::vector<libzcash::Zip212Enabled> zip_212_enabled = {libzcash::Zip212Enabled::BeforeZip212, libzcash::Zip212Enabled::AfterZip212};
     const Consensus::Params& (*activations [])() = {RegtestActivateSapling, RegtestActivateCanopy};
     void (*deactivations [])() = {RegtestDeactivateSapling, RegtestDeactivateCanopy};
@@ -1044,8 +1042,8 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         auto sk = GetTestMasterSaplingSpendingKey();
         auto expsk = sk.expsk;
         auto extfvk = sk.ToXFVK();
-        auto ivk = extfvk.fvk.in_viewing_key();
-        auto pk = sk.DefaultAddress();
+        auto ivk = extfvk.ToIncomingViewingKey();
+        auto pk = extfvk.DefaultAddress();
 
         // Generate Sapling note A
         libzcash::SaplingNote note(pk, 50000, zip_212_enabled[ver]);
@@ -1238,8 +1236,10 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
 }
 
 TEST(WalletTests, CachedWitnessesChainTip) {
+    SelectParams(CBaseChainParams::REGTEST);
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
+
     std::pair<uint256, uint256> anchors1;
     CBlock block1;
     SproutMerkleTree sproutTree;
@@ -1341,8 +1341,10 @@ TEST(WalletTests, CachedWitnessesChainTip) {
 }
 
 TEST(WalletTests, CachedWitnessesDecrementFirst) {
+    SelectParams(CBaseChainParams::REGTEST);
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
+
     SproutMerkleTree sproutTree;
     SaplingMerkleTree saplingTree;
 
@@ -1422,8 +1424,10 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
 }
 
 TEST(WalletTests, CachedWitnessesCleanIndex) {
+    SelectParams(CBaseChainParams::REGTEST);
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
+
     std::vector<CBlock> blocks;
     std::vector<CBlockIndex> indices;
     std::vector<JSOutPoint> sproutNotes;
@@ -1510,6 +1514,7 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
 }
 
 TEST(WalletTests, ClearNoteWitnessCache) {
+    SelectParams(CBaseChainParams::REGTEST);
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
@@ -1577,8 +1582,10 @@ TEST(WalletTests, ClearNoteWitnessCache) {
 }
 
 TEST(WalletTests, WriteWitnessCache) {
+    SelectParams(CBaseChainParams::REGTEST);
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
+
     MockWalletDB walletdb;
     CBlockLocator loc;
 
@@ -1664,9 +1671,9 @@ TEST(WalletTests, WriteWitnessCache) {
 
 TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     SelectParams(CBaseChainParams::REGTEST);
-
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
+
     MockWalletDB walletdb;
     CBlockLocator loc;
 
@@ -1746,8 +1753,10 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
 }
 
 TEST(WalletTests, UpdateSproutNullifierNoteMap) {
+    SelectParams(CBaseChainParams::REGTEST);
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
+
     uint256 r {GetRandHash()};
     CKeyingMaterial vMasterKey (r.begin(), r.end());
 
@@ -1782,6 +1791,7 @@ TEST(WalletTests, UpdateSproutNullifierNoteMap) {
 }
 
 TEST(WalletTests, UpdatedSproutNoteData) {
+    SelectParams(CBaseChainParams::REGTEST);
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
@@ -1831,7 +1841,6 @@ TEST(WalletTests, UpdatedSproutNoteData) {
 
 TEST(WalletTests, UpdatedSaplingNoteData) {
     auto consensusParams = RegtestActivateSapling();
-
     TestWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
 
@@ -1841,13 +1850,13 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     auto sk = m.Derive(0);
     auto expsk = sk.expsk;
     auto extfvk = sk.ToXFVK();
-    auto pa = sk.DefaultAddress();
+    auto pa = extfvk.DefaultAddress();
 
     // Generate dummy recipient Sapling address
     auto sk2 = m.Derive(1);
     auto expsk2 = sk2.expsk;
     auto extfvk2 = sk2.ToXFVK();
-    auto pa2 = sk2.DefaultAddress();
+    auto pa2 = extfvk2.DefaultAddress();
 
     auto testNote = GetTestSaplingNote(pa, 50000);
 
@@ -1941,6 +1950,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
 }
 
 TEST(WalletTests, MarkAffectedSproutTransactionsDirty) {
+    SelectParams(CBaseChainParams::REGTEST);
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
@@ -1974,7 +1984,6 @@ TEST(WalletTests, MarkAffectedSproutTransactionsDirty) {
 
 TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     auto consensusParams = RegtestActivateSapling();
-
     TestWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
 
@@ -1982,8 +1991,8 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     auto sk = GetTestMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto extfvk = sk.ToXFVK();
-    auto ivk = extfvk.fvk.in_viewing_key();
-    auto pk = sk.DefaultAddress();
+    auto ivk = extfvk.ToIncomingViewingKey();
+    auto pk = extfvk.DefaultAddress();
 
     ASSERT_TRUE(wallet.AddSaplingZKey(sk));
     ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
@@ -2084,6 +2093,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
 }
 
 TEST(WalletTests, SproutNoteLocking) {
+    SelectParams(CBaseChainParams::REGTEST);
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
@@ -2118,8 +2128,10 @@ TEST(WalletTests, SproutNoteLocking) {
 }
 
 TEST(WalletTests, SaplingNoteLocking) {
+    SelectParams(CBaseChainParams::REGTEST);
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
+
     SaplingOutPoint sop1 {uint256(), 1};
     SaplingOutPoint sop2 {uint256(), 2};
 
@@ -2148,4 +2160,74 @@ TEST(WalletTests, SaplingNoteLocking) {
     wallet.UnlockAllSaplingNotes();
     EXPECT_FALSE(wallet.IsLockedNote(sop1));
     EXPECT_FALSE(wallet.IsLockedNote(sop2));
+}
+
+TEST(WalletTests, GenerateUnifiedAddress) {
+    (void) RegtestActivateSapling();
+    TestWallet wallet(Params());
+
+    auto uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
+
+    // If the wallet does not have a mnemonic seed available, it is
+    // treated as if the wallet is encrypted.
+    EXPECT_FALSE(wallet.IsCrypted());
+    EXPECT_FALSE(wallet.GetMnemonicSeed().has_value());
+    WalletUAGenerationResult expected = WalletUAGenerationError::WalletEncrypted;
+    EXPECT_EQ(uaResult, expected);
+
+    wallet.GenerateNewSeed();
+    EXPECT_FALSE(wallet.IsCrypted());
+    EXPECT_TRUE(wallet.GetMnemonicSeed().has_value());
+
+    // If the user has not generated a unified spending key,
+    // we cannot create an address for the account corresponding
+    // to that spending key.
+    uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
+    expected = WalletUAGenerationError::NoSuchAccount;
+    EXPECT_EQ(uaResult, expected);
+
+    // Create an account, then generate an address for that account.
+    auto skpair = wallet.GenerateNewUnifiedSpendingKey();
+    uaResult = wallet.GenerateUnifiedAddress(skpair.second, {ReceiverType::P2PKH, ReceiverType::Sapling});
+    auto ua = std::get_if<std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>>(&uaResult);
+    EXPECT_NE(ua, nullptr);
+
+    auto uaSaplingReceiver = ua->first.GetSaplingReceiver();
+    EXPECT_TRUE(uaSaplingReceiver.has_value());
+    auto ufvk = skpair.first.ToFullViewingKey();
+    EXPECT_EQ(uaSaplingReceiver.value(), ufvk.GetSaplingKey().value().Address(ua->second));
+
+    auto u4r = wallet.FindUnifiedAddressByReceiver(uaSaplingReceiver.value());
+    EXPECT_TRUE(u4r.has_value());
+    EXPECT_EQ(u4r.value(), ua->first);
+
+    // Explicitly trigger the invalid transparent child index failure
+    uaResult = wallet.GenerateUnifiedAddress(
+            0,
+            {ReceiverType::P2PKH, ReceiverType::Sapling},
+            MAX_TRANSPARENT_CHILD_IDX.succ().value());
+    expected = UnifiedAddressGenerationError::InvalidTransparentChildIndex;
+    EXPECT_EQ(uaResult, expected);
+
+    // Attempt to generate a UA at the maximum transparent child index. This might fail
+    // due to this index being invalid for Sapling; if so, it will return an error that
+    // the diversifier index is out of range. If it succeeds, we'll attempt to generate
+    // the next available diversifier, and this should always fail
+    uaResult = wallet.GenerateUnifiedAddress(
+            0,
+            {ReceiverType::P2PKH, ReceiverType::Sapling},
+            MAX_TRANSPARENT_CHILD_IDX);
+    ua = std::get_if<std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>>(&uaResult);
+    if (ua == nullptr) {
+        expected = UnifiedAddressGenerationError::NoAddressForDiversifier;
+        EXPECT_EQ(uaResult, expected);
+    } else {
+        // the previous generation attempt succeeded, so this one should definitely fail.
+        uaResult = wallet.GenerateUnifiedAddress(0, {ReceiverType::P2PKH, ReceiverType::Sapling});
+        expected = UnifiedAddressGenerationError::InvalidTransparentChildIndex;
+        EXPECT_EQ(uaResult, expected);
+    }
+
+    // Revert to default
+    RegtestDeactivateSapling();
 }

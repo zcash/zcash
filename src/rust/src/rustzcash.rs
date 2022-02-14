@@ -46,14 +46,16 @@ use zcash_primitives::{
     block::equihash,
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
     merkle_tree::MerklePath,
-    sapling::{merkle_hash, spend_sig},
     sapling::{
+        self,
+        keys::FullViewingKey,
         note_encryption::sapling_ka_agree,
         redjubjub::{self, Signature},
         Diversifier, Note, PaymentAddress, ProofGenerationKey, Rseed, ViewingKey,
     },
+    sapling::{merkle_hash, spend_sig},
     transaction::components::Amount,
-    zip32,
+    zip32::{self, sapling_address, sapling_derive_internal_fvk, sapling_find_address},
 };
 use zcash_proofs::{
     circuit::sapling::TREE_DEPTH as SAPLING_TREE_DEPTH,
@@ -72,7 +74,9 @@ mod address_ffi;
 mod history_ffi;
 mod incremental_merkle_tree_ffi;
 mod orchard_ffi;
+mod orchard_keys_ffi;
 mod transaction_ffi;
+mod unified_keys_ffi;
 mod zip339_ffi;
 
 mod test_harness_ffi;
@@ -1035,7 +1039,7 @@ pub extern "C" fn librustzcash_sapling_proving_ctx_free(ctx: *mut SaplingProving
 
 /// Derive the master ExtendedSpendingKey from a seed.
 #[no_mangle]
-pub extern "C" fn librustzcash_zip32_xsk_master(
+pub extern "C" fn librustzcash_zip32_sapling_xsk_master(
     seed: *const c_uchar,
     seedlen: size_t,
     xsk_master: *mut [c_uchar; 169],
@@ -1050,7 +1054,7 @@ pub extern "C" fn librustzcash_zip32_xsk_master(
 
 /// Derive a child ExtendedSpendingKey from a parent.
 #[no_mangle]
-pub extern "C" fn librustzcash_zip32_xsk_derive(
+pub extern "C" fn librustzcash_zip32_sapling_xsk_derive(
     xsk_parent: *const [c_uchar; 169],
     i: u32,
     xsk_i: *mut [c_uchar; 169],
@@ -1065,9 +1069,26 @@ pub extern "C" fn librustzcash_zip32_xsk_derive(
         .expect("should be able to serialize an ExtendedSpendingKey");
 }
 
+/// Derive the Sapling internal spending key from the external extended
+/// spending key
+#[no_mangle]
+pub extern "C" fn librustzcash_zip32_sapling_xsk_derive_internal(
+    xsk_external: *const [c_uchar; 169],
+    xsk_internal_ret: *mut [c_uchar; 169],
+) {
+    let xsk_external = zip32::ExtendedSpendingKey::read(&unsafe { *xsk_external }[..])
+        .expect("valid ExtendedSpendingKey");
+
+    let xsk_internal = xsk_external.derive_internal();
+
+    xsk_internal
+        .write(&mut (unsafe { &mut *xsk_internal_ret })[..])
+        .expect("should be able to serialize an ExtendedSpendingKey");
+}
+
 /// Derive a child ExtendedFullViewingKey from a parent.
 #[no_mangle]
-pub extern "C" fn librustzcash_zip32_xfvk_derive(
+pub extern "C" fn librustzcash_zip32_sapling_xfvk_derive(
     xfvk_parent: *const [c_uchar; 169],
     i: u32,
     xfvk_i: *mut [c_uchar; 169],
@@ -1087,30 +1108,87 @@ pub extern "C" fn librustzcash_zip32_xfvk_derive(
     true
 }
 
+/// Derive the Sapling internal full viewing key from the corresponding external full viewing key
+#[no_mangle]
+pub extern "C" fn librustzcash_zip32_sapling_derive_internal_fvk(
+    fvk: *const [c_uchar; 96],
+    dk: *const [c_uchar; 32],
+    fvk_ret: *mut [c_uchar; 96],
+    dk_ret: *mut [c_uchar; 32],
+) {
+    let fvk = FullViewingKey::read(&unsafe { *fvk }[..]).expect("valid Sapling FullViewingKey");
+    let dk = zip32::DiversifierKey(unsafe { *dk });
+
+    let (fvk_internal, dk_internal) = sapling_derive_internal_fvk(&fvk, &dk);
+    let fvk_ret = unsafe { &mut *fvk_ret };
+    let dk_ret = unsafe { &mut *dk_ret };
+
+    fvk_ret.copy_from_slice(&fvk_internal.to_bytes());
+    dk_ret.copy_from_slice(&dk_internal.0);
+}
+
 /// Derive a PaymentAddress from an ExtendedFullViewingKey.
 #[no_mangle]
-pub extern "C" fn librustzcash_zip32_xfvk_address(
-    xfvk: *const [c_uchar; 169],
+pub extern "C" fn librustzcash_zip32_sapling_address(
+    fvk: *const [c_uchar; 96],
+    dk: *const [c_uchar; 32],
+    j: *const [c_uchar; 11],
+    addr_ret: *mut [c_uchar; 43],
+) -> bool {
+    let fvk = FullViewingKey::read(&unsafe { *fvk }[..]).expect("valid Sapling FullViewingKey");
+    let dk = zip32::DiversifierKey(unsafe { *dk });
+    let j = zip32::DiversifierIndex(unsafe { *j });
+
+    match sapling_address(&fvk, &dk, j) {
+        Some(addr) => {
+            let addr_ret = unsafe { &mut *addr_ret };
+            addr_ret.copy_from_slice(&addr.to_bytes());
+
+            true
+        }
+        None => false,
+    }
+}
+
+/// Derive a PaymentAddress from an ExtendedFullViewingKey.
+#[no_mangle]
+pub extern "C" fn librustzcash_zip32_find_sapling_address(
+    fvk: *const [c_uchar; 96],
+    dk: *const [c_uchar; 32],
     j: *const [c_uchar; 11],
     j_ret: *mut [c_uchar; 11],
     addr_ret: *mut [c_uchar; 43],
 ) -> bool {
-    let xfvk = zip32::ExtendedFullViewingKey::read(&unsafe { *xfvk }[..])
-        .expect("valid ExtendedFullViewingKey");
+    let fvk = FullViewingKey::read(&unsafe { *fvk }[..]).expect("valid Sapling FullViewingKey");
+    let dk = zip32::DiversifierKey(unsafe { *dk });
     let j = zip32::DiversifierIndex(unsafe { *j });
 
-    let addr = match xfvk.find_address(j) {
-        Some(addr) => addr,
-        None => return false,
-    };
+    match sapling_find_address(&fvk, &dk, j) {
+        Some((j, addr)) => {
+            let j_ret = unsafe { &mut *j_ret };
+            let addr_ret = unsafe { &mut *addr_ret };
 
+            j_ret.copy_from_slice(&j.0);
+            addr_ret.copy_from_slice(&addr.to_bytes());
+
+            true
+        }
+        None => false,
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn librustzcash_sapling_diversifier_index(
+    dk: *const [c_uchar; 32],
+    d: *const [c_uchar; 11],
+    j_ret: *mut [c_uchar; 11],
+) {
+    let dk = zip32::DiversifierKey(unsafe { *dk });
+    let diversifier = sapling::Diversifier(unsafe { *d });
     let j_ret = unsafe { &mut *j_ret };
-    let addr_ret = unsafe { &mut *addr_ret };
 
-    j_ret.copy_from_slice(&(addr.0).0);
-    addr_ret.copy_from_slice(&addr.1.to_bytes());
-
-    true
+    let j = dk.diversifier_index(&diversifier);
+    j_ret.copy_from_slice(&j.0);
 }
 
 #[no_mangle]

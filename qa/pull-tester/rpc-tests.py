@@ -46,6 +46,8 @@ BASE_SCRIPTS= [
     'zcjoinsplit.py',
     'mergetoaddress_mixednotes.py',
     'wallet_shieldcoinbase_sapling.py',
+    'wallet_shieldcoinbase_ua_sapling.py',
+    'wallet_shieldcoinbase_ua_nu5.py',
     'turnstile.py',
     'walletbackup.py',
     'zkey_import_export.py',
@@ -64,6 +66,7 @@ BASE_SCRIPTS= [
     'p2p-fullblocktest.py',
     # vv Tests less than 30s vv
     'wallet_1941.py',
+    'wallet_accounts.py',
     'wallet_addresses.py',
     'wallet_anchorfork.py',
     'wallet_changeindicator.py',

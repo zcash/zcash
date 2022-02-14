@@ -506,3 +506,60 @@ bool ParseFixedPoint(const std::string &val, int decimals, int64_t *amount_out)
     return true;
 }
 
+/// Parse the decimal string into a little-endian byte vector.
+std::optional<std::vector<uint8_t>> ParseArbitraryInt(const std::string& num_string)
+{
+    std::vector<unsigned char> result;
+    const size_t start = num_string.find_first_not_of(WHITESPACE);
+    if (start == std::string::npos) return std::nullopt;
+    const size_t end = num_string.find_last_not_of(WHITESPACE);
+    assert(end != std::string::npos);
+    for (char c : num_string.substr(start, end-start+1)) {
+        if (c < '0' || c > '9') {
+            return std::nullopt;
+        }
+        uint16_t v = c - '0';
+        for (auto& r : result) {
+            v += r * 10;
+            r = v & 0xFF;   // store low byte of the value
+            v >>= 8;        // carry to the next result position
+        }
+        if (v > 0) result.push_back(v);
+    }
+    return result;
+}
+
+std::string ArbitraryIntStr(std::vector<uint8_t> bytes)
+{
+    // Only serialize up to the most significant non-zero byte.
+    size_t end = bytes.size();
+    for (; end > 0  && bytes[end - 1] == 0; --end) {}
+
+    std::string result;
+    while (end > 0) {
+        // "Divide" bytes by 10.
+        uint16_t rem = 0;
+        for (int i = end - 1; i >= 0; --i) {
+            uint16_t tmp = rem * 256 + bytes[i];
+            rem = tmp % 10;
+            auto b = tmp / 10;
+            assert(b < 256);
+            bytes[i] = b;
+        }
+
+        // Write out the remainder as the next lowest digit.
+        result = tfm::format("%d%s", rem, result);
+
+        // If we've moved all the bits out of the MSB, drop it.
+        if (bytes[end - 1] == 0) {
+            end--;
+        }
+    }
+
+    // Handle the all-zero bytes case.
+    if (result.empty()) {
+        return "0";
+    } else {
+        return result;
+    }
+}

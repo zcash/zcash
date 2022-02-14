@@ -39,7 +39,14 @@ if ENABLE_WALLET
 LIBBITCOIN_WALLET=libbitcoin_wallet.a
 endif
 
-RUST_ENV_VARS = RUSTC="$(RUSTC)" TERM=dumb
+# We depend on the secp256k1 crate for some logic on the Rust side of the FFI. This crate
+# is a wrapper around libsecp256k1, which we already vendor in our code; the crate vendors
+# its own copy with non-colliding symbols. To ensure that we only use a single version of
+# libsecp256k1, we disable symbol renaming in the secp256k1-sys crate  so it links to the
+# same library as the C++ code.
+# - Note that this does not prevent the secp256k1-sys vendored code from being built; this
+#   requires https://github.com/rust-bitcoin/rust-secp256k1/issues/380 to be addressed.
+RUST_ENV_VARS = RUSTC="$(RUSTC)" TERM=dumb RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming"
 RUST_BUILD_OPTS = --lib --release --target $(RUST_TARGET)
 
 rust_verbose = $(rust_verbose_@AM_V@)
@@ -107,8 +114,12 @@ LIBZCASH_H = \
   zcash/IncrementalMerkleTree.hpp \
   zcash/NoteEncryption.hpp \
   zcash/Address.hpp \
+  zcash/address/transparent.h \
+  zcash/address/mnemonic.h \
+  zcash/address/orchard.h \
   zcash/address/sapling.hpp \
   zcash/address/sprout.hpp \
+  zcash/address/unified.h \
   zcash/address/zip32.h \
   zcash/History.hpp \
   zcash/JoinSplit.hpp \
@@ -503,6 +514,7 @@ zcash_cli_LDADD = \
   $(LIBZCASH) \
   $(LIBRUSTZCASH) \
   $(LIBBITCOIN_CRYPTO) \
+  $(LIBSECP256K1) \
   $(LIBZCASH_LIBS)
 #
 
@@ -535,8 +547,12 @@ libzcash_a_SOURCES = \
   zcash/IncrementalMerkleTree.cpp \
   zcash/NoteEncryption.cpp \
   zcash/Address.cpp \
+  zcash/address/transparent.cpp \
+  zcash/address/mnemonic.cpp \
+  zcash/address/orchard.cpp \
   zcash/address/sapling.cpp \
   zcash/address/sprout.cpp \
+  zcash/address/unified.cpp \
   zcash/address/zip32.cpp \
   zcash/History.cpp \
   zcash/JoinSplit.cpp \

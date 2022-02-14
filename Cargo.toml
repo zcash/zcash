@@ -38,6 +38,7 @@ jubjub = "0.8"
 memuse = "0.2"
 nonempty = "0.7"
 orchard = "=0.1.0-beta.1"
+secp256k1 = "0.20"
 subtle = "2.2"
 rand_core = "0.6"
 tracing = "0.1"
@@ -46,7 +47,7 @@ tracing-appender = "0.2"
 zcash_address = "0.0"
 zcash_history = "0.2"
 zcash_note_encryption = "0.1"
-zcash_primitives = "0.5"
+zcash_primitives = { version = "0.5", features = ["transparent-inputs"] }
 zcash_proofs = "0.5"
 ed25519-zebra = "3"
 zeroize = "1.4.2"
@@ -70,8 +71,9 @@ panic = 'abort'
 codegen-units = 1
 
 [patch.crates-io]
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "5622b060b1f57de7afc3d0b4e425b9b4b22482a0" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "5622b060b1f57de7afc3d0b4e425b9b4b22482a0" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "5622b060b1f57de7afc3d0b4e425b9b4b22482a0" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "5622b060b1f57de7afc3d0b4e425b9b4b22482a0" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "5622b060b1f57de7afc3d0b4e425b9b4b22482a0" }
+hdwallet = { git = "https://github.com/nuttycom/hdwallet", rev = "576683b9f2865f1118c309017ff36e01f84420c9" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "4f4a25252f0fc6b84c44316d810107bc7ea7f32a" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "4f4a25252f0fc6b84c44316d810107bc7ea7f32a" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "4f4a25252f0fc6b84c44316d810107bc7ea7f32a" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "4f4a25252f0fc6b84c44316d810107bc7ea7f32a" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "4f4a25252f0fc6b84c44316d810107bc7ea7f32a" }

@@ -86,7 +86,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
             myopid = self.nodes[3].z_sendmany(mytaddr, recipients)
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal("Invalid from address, no spending key found for address", errorString);
+        assert_equal("Invalid from address, no payment source found for address.", errorString);
 
         # This send will fail because our consensus does not allow transparent change when 
         # shielding a coinbase utxo. 
@@ -129,6 +129,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         assert(len(results) == 0)
         results = self.nodes[0].z_listunspent(0) # set minconf to zero
         assert(len(results) == 1)
+        assert_equal(results[0]["type"], "sapling")
         assert_equal(results[0]["address"], myzaddr)
         assert_equal(results[0]["amount"], shieldvalue)
         assert_equal(results[0]["confirmations"], 0)
@@ -140,6 +141,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         # Verify that z_listunspent returns one note which has been confirmed
         results = self.nodes[0].z_listunspent()
         assert(len(results) == 1)
+        assert_equal(results[0]["type"], "sapling")
         assert_equal(results[0]["address"], myzaddr)
         assert_equal(results[0]["amount"], shieldvalue)
         assert_equal(results[0]["confirmations"], 1)
@@ -148,6 +150,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         # Verify that z_listunspent returns note for watchonly address on node 3.
         results = self.nodes[3].z_listunspent(1, 999, True)
         assert(len(results) == 1)
+        assert_equal(results[0]["type"], "sapling")
         assert_equal(results[0]["address"], myzaddr)
         assert_equal(results[0]["amount"], shieldvalue)
         assert_equal(results[0]["confirmations"], 1)

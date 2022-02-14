@@ -26,7 +26,7 @@ pub type GetReceiverLenCb =
 pub type GetReceiverDataCb =
     unsafe extern "C" fn(ua: Option<UnifiedAddressObj>, index: usize, data: *mut u8, length: usize);
 
-fn network_from_cstr(network: *const c_char) -> Option<Network> {
+pub(crate) fn network_from_cstr(network: *const c_char) -> Option<Network> {
     match unsafe { CStr::from_ptr(network) }.to_str().unwrap() {
         "main" => Some(Network::Main),
         "test" => Some(Network::Test),
@@ -72,19 +72,20 @@ impl UnifiedAddressHelper {
         }
 
         self.ua
-            .items_as_parsed()
-            .iter()
+            .items()
+            .into_iter()
             .map(|receiver| match receiver {
                 unified::Receiver::Orchard(data) => {
-                    // ZIP 316: Senders MUST reject Unified Addresses in which any
-                    // constituent address does not meet the validation requirements of
-                    // its Receiver Encoding.
-                    // TODO: Add this API to the orchard crate.
-                    // if let Err(e) = orchard::Address::from_bytes(data) {
-                    //     tracing::error!("{}", e);
-                    //     false
-                    // } else {
+                    // ZIP 316: Consumers MUST reject Unified Addresses/Viewing Keys in
+                    // which any constituent Item does not meet the validation
+                    // requirements of its encoding.
+                    if orchard::Address::from_raw_address_bytes(&data)
+                        .is_none()
+                        .into()
                     {
+                        tracing::error!("Unified Address contains invalid Orchard receiver");
+                        false
+                    } else {
                         unsafe {
                             // TODO: Replace with Orchard support.
                             (unknown_cb.unwrap())(ua_obj, 0x03, data.as_ptr(), data.len())
@@ -92,10 +93,10 @@ impl UnifiedAddressHelper {
                     }
                 }
                 unified::Receiver::Sapling(data) => {
-                    // ZIP 316: Senders MUST reject Unified Addresses in which any
-                    // constituent address does not meet the validation requirements of
-                    // its Receiver Encoding.
-                    if sapling::PaymentAddress::from_bytes(data).is_none() {
+                    // ZIP 316: Consumers MUST reject Unified Addresses/Viewing Keys in
+                    // which any constituent Item does not meet the validation
+                    // requirements of its encoding.
+                    if sapling::PaymentAddress::from_bytes(&data).is_none() {
                         tracing::error!("Unified Address contains invalid Sapling receiver");
                         false
                     } else {
@@ -109,7 +110,7 @@ impl UnifiedAddressHelper {
                     (p2pkh_cb.unwrap())(ua_obj, data.as_ptr())
                 },
                 unified::Receiver::Unknown { typecode, data } => unsafe {
-                    (unknown_cb.unwrap())(ua_obj, *typecode, data.as_ptr(), data.len())
+                    (unknown_cb.unwrap())(ua_obj, typecode, data.as_ptr(), data.len())
                 },
             })
             .all(|b| b)
@@ -212,7 +213,7 @@ pub extern "C" fn zcash_address_serialize_unified(
         }
     };
 
-    let ua = match unified::Address::try_from_items_preserving_order(receivers) {
+    let ua = match unified::Address::try_from_items(receivers) {
         Ok(ua) => ua,
         Err(e) => {
             tracing::error!("{}", e);

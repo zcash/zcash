@@ -58,10 +58,10 @@ TEST(ZIP32, TestVectors) {
         m_1.ToXFVK().DefaultAddress().d,
         testing::ElementsAreArray({ 0x8b, 0x41, 0x38, 0x32, 0x0d, 0xfa, 0xfd, 0x7b, 0x39, 0x97, 0x81 }));
 
-    auto m_1_2h = m_1.Derive(2 | ZIP32_HARDENED_KEY_LIMIT);
+    auto m_1_2h = m_1.Derive(2 | HARDENED_KEY_LIMIT);
     EXPECT_EQ(m_1_2h.depth, 2);
     EXPECT_EQ(m_1_2h.parentFVKTag, 0x079e99db);
-    EXPECT_EQ(m_1_2h.childIndex, 2 | ZIP32_HARDENED_KEY_LIMIT);
+    EXPECT_EQ(m_1_2h.childIndex, 2 | HARDENED_KEY_LIMIT);
     EXPECT_EQ(
         m_1_2h.chaincode,
         uint256S("35d4a883737742ca41a4baa92323bdb3c93dcb3b462a26b039971bedf415ce97"));
@@ -84,7 +84,7 @@ TEST(ZIP32, TestVectors) {
     auto m_1_2hv = m_1_2h.ToXFVK();
     EXPECT_EQ(m_1_2hv.depth, 2);
     EXPECT_EQ(m_1_2hv.parentFVKTag, 0x079e99db);
-    EXPECT_EQ(m_1_2hv.childIndex, 2 | ZIP32_HARDENED_KEY_LIMIT);
+    EXPECT_EQ(m_1_2hv.childIndex, 2 | HARDENED_KEY_LIMIT);
     EXPECT_EQ(
         m_1_2hv.chaincode,
         uint256S("35d4a883737742ca41a4baa92323bdb3c93dcb3b462a26b039971bedf415ce97"));
@@ -103,7 +103,7 @@ TEST(ZIP32, TestVectors) {
     EXPECT_EQ(m_1_2hv.DefaultAddress(), m_1_2h.ToXFVK().DefaultAddress());
 
     // Hardened derivation from an xfvk fails
-    EXPECT_FALSE(m_1_2hv.Derive(3 | ZIP32_HARDENED_KEY_LIMIT));
+    EXPECT_FALSE(m_1_2hv.Derive(3 | HARDENED_KEY_LIMIT));
 
     // Non-hardened derivation succeeds
     auto maybe_m_1_2hv_3 = m_1_2hv.Derive(3);
@@ -132,3 +132,57 @@ TEST(ZIP32, TestVectors) {
         m_1_2hv_3.DefaultAddress().d,
         testing::ElementsAreArray({ 0x03, 0x0f, 0xfb, 0x26, 0x3a, 0x93, 0x9e, 0x23, 0x0e, 0x96, 0xdd }));
 }
+
+TEST(ZIP32, ParseHDKeypathAccount) {
+    auto expect_account = [](std::string sAccount, uint32_t coinType, long expected) {
+        auto result = libzcash::ParseHDKeypathAccount(32, coinType, sAccount);
+        EXPECT_TRUE(result.has_value());
+        EXPECT_EQ(result.value(), expected);
+    };
+
+    std::string sAccount = "m/32'/1234'/5'";
+    expect_account(sAccount, 1234, 5);
+
+    sAccount = "m/32'/1234'/50'";
+    expect_account(sAccount, 1234, 50);
+
+    sAccount = "m/32'/1234'/5'/0";
+    expect_account(sAccount, 1234, 5);
+
+    sAccount = "m/32'/133'/2147483646'/1";
+    expect_account(sAccount, 133, 2147483646);
+}
+
+TEST(ZIP32, diversifier_index_t_increment)
+{
+    libzcash::diversifier_index_t d_zero(0);
+    libzcash::diversifier_index_t d_one(1);
+    EXPECT_TRUE(d_zero.increment());
+    EXPECT_EQ(d_zero, d_one);
+}
+
+TEST(ZIP32, diversifier_index_t_lt)
+{
+    EXPECT_TRUE(libzcash::diversifier_index_t(0) < libzcash::diversifier_index_t(1));
+    EXPECT_FALSE(libzcash::diversifier_index_t(1) < libzcash::diversifier_index_t(0));
+    EXPECT_FALSE(libzcash::diversifier_index_t(0) < libzcash::diversifier_index_t(0));
+    EXPECT_TRUE(libzcash::diversifier_index_t(0xfffffffe) < libzcash::diversifier_index_t(0xffffffff));
+    EXPECT_FALSE(libzcash::diversifier_index_t(0xffffffff) < libzcash::diversifier_index_t(0xfffffffe));
+    EXPECT_TRUE(libzcash::diversifier_index_t(0x01) < libzcash::diversifier_index_t(0xffffffff));
+    EXPECT_FALSE(libzcash::diversifier_index_t(0xffffffff) < libzcash::diversifier_index_t(0x01));
+}
+
+TEST(ZIP32, DeriveChangeAddress)
+{
+    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+        17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+    HDSeed seed(rawSeed);
+
+    auto accountSk = libzcash::SaplingExtendedSpendingKey::ForAccount(seed, 1, 0);
+    auto extfvk = accountSk.first.ToXFVK();
+    auto changeSk = accountSk.first.DeriveInternalKey();
+
+    EXPECT_EQ(changeSk.ToXFVK().DefaultAddress(), extfvk.GetChangeAddress());
+}
+

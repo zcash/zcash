@@ -133,7 +133,7 @@ public:
     SaplingExpandedSpendingKey expanded_spending_key() const;
     SaplingFullViewingKey full_viewing_key() const;
 
-    // Can derive Sapling addr from default diversifier 
+    // Can derive Sapling addr from default diversifier
     SaplingPaymentAddress default_address() const;
 };
 

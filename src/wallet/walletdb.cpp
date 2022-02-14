@@ -138,7 +138,7 @@ bool CWalletDB::WriteCryptedSaplingZKey(
 {
     const bool fEraseUnencryptedKey = true;
     nWalletDBUpdateCounter++;
-    auto ivk = extfvk.fvk.in_viewing_key();
+    auto ivk = extfvk.ToIncomingViewingKey();
 
     if (!Write(std::make_pair(std::string("sapzkeymeta"), ivk), keyMeta))
         return false;
@@ -169,6 +169,7 @@ bool CWalletDB::WriteZKey(const libzcash::SproutPaymentAddress& addr, const libz
     // pair is: tuple_key("zkey", paymentaddress) --> secretkey
     return Write(std::make_pair(std::string("zkey"), addr), key, false);
 }
+
 bool CWalletDB::WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
                 const libzcash::SaplingExtendedSpendingKey &key,
                 const CKeyMetadata &keyMeta)
@@ -215,6 +216,33 @@ bool CWalletDB::EraseSaplingExtendedFullViewingKey(
     nWalletDBUpdateCounter++;
     return Erase(std::make_pair(std::string("sapextfvk"), extfvk));
 }
+
+//
+// Unified address & key storage
+//
+
+bool CWalletDB::WriteUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata& keymeta)
+{
+    nWalletDBUpdateCounter++;
+    return Write(std::make_pair(std::string("unifiedaccount"), keymeta), 0x00);
+}
+
+bool CWalletDB::WriteUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey& ufvk)
+{
+    nWalletDBUpdateCounter++;
+    auto ufvkId = ufvk.GetKeyID(Params());
+    return Write(std::make_pair(std::string("unifiedfvk"), ufvkId), ufvk.Encode(Params()));
+}
+
+bool CWalletDB::WriteUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata& addrmeta)
+{
+    nWalletDBUpdateCounter++;
+    return Write(std::make_pair(std::string("unifiedaddrmeta"), addrmeta), 0x00);
+}
+
+//
+//
+//
 
 bool CWalletDB::WriteCScript(const uint160& hash, const CScript& redeemScript)
 {
@@ -632,6 +660,62 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         {
             ssValue >> pwallet->vchDefaultKey;
         }
+        else if (strType == "unifiedfvk")
+        {
+            libzcash::UFVKId fp;
+            ssKey >> fp;
+
+            std::string ufvkenc;
+            ssValue >> ufvkenc;
+
+            auto ufvkopt = libzcash::UnifiedFullViewingKey::Decode(ufvkenc, Params());
+            if (ufvkopt.has_value()) {
+                auto ufvk = ufvkopt.value();
+                if (fp != ufvk.GetKeyID(Params())) {
+                    strErr = "Error reading wallet database: key fingerprint did not match decoded key";
+                    return false;
+                }
+                if (!pwallet->LoadUnifiedFullViewingKey(ufvk)) {
+                    strErr = "Error reading wallet database: LoadUnifiedFullViewingKey failed.";
+                    return false;
+                }
+            } else {
+                strErr = "Error reading wallet database: failed to decode unified full viewing key.";
+                return false;
+            }
+        }
+        else if (strType == "unifiedaccount")
+        {
+            auto acct = ZcashdUnifiedAccountMetadata::Read(ssKey);
+
+            uint8_t value;
+            ssValue >> value;
+            if (value != 0x00) {
+                strErr = "Error reading wallet database: invalid unified account metadata.";
+                return false;
+            }
+
+            if (!pwallet->LoadUnifiedAccountMetadata(acct)) {
+                strErr = "Error reading wallet database: account ID mismatch for unified spending key.";
+                return false;
+            };
+        }
+        else if (strType == "unifiedaddrmeta")
+        {
+            auto keymeta = ZcashdUnifiedAddressMetadata::Read(ssKey);
+
+            uint8_t value;
+            ssValue >> value;
+            if (value != 0x00) {
+                strErr = "Error reading wallet database: invalid unified address metadata.";
+                return false;
+            }
+
+            if (!pwallet->LoadUnifiedAddressMetadata(keymeta)) {
+                strErr = "Error reading wallet database: cannot reproduce previously generated unified address.";
+                return false;
+            }
+        }
         else if (strType == "pool")
         {
             int64_t nIndex;
@@ -685,6 +769,37 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         {
             ssValue >> pwallet->nWitnessCacheSize;
         }
+        else if (strType == "mnemonicphrase")
+        {
+            uint256 seedFp;
+            ssKey >> seedFp;
+            auto seed = MnemonicSeed::Read(ssValue);
+
+            if (seed.Fingerprint() != seedFp)
+            {
+                strErr = "Error reading wallet database: mnemonic phrase corrupt";
+                return false;
+            }
+
+            if (!pwallet->LoadMnemonicSeed(seed))
+            {
+                strErr = "Error reading wallet database: LoadMnemonicSeed failed";
+                return false;
+            }
+        }
+        else if (strType == "cmnemonicphrase")
+        {
+            uint256 seedFp;
+            vector<unsigned char> vchCryptedSecret;
+            ssKey >> seedFp;
+            ssValue >> vchCryptedSecret;
+            if (!pwallet->LoadCryptedMnemonicSeed(seedFp, vchCryptedSecret))
+            {
+                strErr = "Error reading wallet database: LoadCryptedMnemonicSeed failed";
+                return false;
+            }
+            wss.fIsEncrypted = true;
+        }
         else if (strType == "hdseed")
         {
             uint256 seedFp;
@@ -699,7 +814,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 return false;
             }
 
-            if (!pwallet->LoadHDSeed(seed))
+            if (!pwallet->LoadLegacyHDSeed(seed))
             {
                 strErr = "Error reading wallet database: LoadHDSeed failed";
                 return false;
@@ -711,18 +826,17 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             vector<unsigned char> vchCryptedSecret;
             ssKey >> seedFp;
             ssValue >> vchCryptedSecret;
-            if (!pwallet->LoadCryptedHDSeed(seedFp, vchCryptedSecret))
+            if (!pwallet->LoadCryptedLegacyHDSeed(seedFp, vchCryptedSecret))
             {
                 strErr = "Error reading wallet database: LoadCryptedHDSeed failed";
                 return false;
             }
             wss.fIsEncrypted = true;
         }
-        else if (strType == "hdchain")
+        else if (strType == "mnemonichdchain")
         {
-            CHDChain chain;
-            ssValue >> chain;
-            pwallet->SetHDChain(chain, true);
+            auto chain = CHDChain::Read(ssValue);
+            pwallet->SetMnemonicHDChain(chain, true);
         }
         else if (strType == "networkinfo")
         {
@@ -744,6 +858,7 @@ static bool IsKeyType(string strType)
 {
     return (strType== "key" || strType == "wkey" ||
             strType == "hdseed" || strType == "chdseed" ||
+            strType == "mnemonicphrase" || strType == "cmnemonicphrase" ||
             strType == "zkey" || strType == "czkey" ||
             strType == "sapzkey" || strType == "csapzkey" ||
             strType == "vkey" || strType == "sapextfvk" ||
@@ -1160,22 +1275,22 @@ bool CWalletDB::WriteNetworkInfo(const std::string& networkId)
     return Write(std::string("networkinfo"), networkInfo);
 }
 
-bool CWalletDB::WriteHDSeed(const HDSeed& seed)
+bool CWalletDB::WriteMnemonicSeed(const MnemonicSeed& seed)
 {
     nWalletDBUpdateCounter++;
-    return Write(std::make_pair(std::string("hdseed"), seed.Fingerprint()), seed.RawSeed());
+    return Write(std::make_pair(std::string("mnemonicphrase"), seed.Fingerprint()), seed);
 }
 
-bool CWalletDB::WriteCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& vchCryptedSecret)
+bool CWalletDB::WriteCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char>& vchCryptedSecret)
 {
     nWalletDBUpdateCounter++;
-    return Write(std::make_pair(std::string("chdseed"), seedFp), vchCryptedSecret);
+    return Write(std::make_pair(std::string("cmnemonicphrase"), seedFp), vchCryptedSecret);
 }
 
-bool CWalletDB::WriteHDChain(const CHDChain& chain)
+bool CWalletDB::WriteMnemonicHDChain(const CHDChain& chain)
 {
     nWalletDBUpdateCounter++;
-    return Write(std::string("hdchain"), chain);
+    return Write(std::string("mnemonichdchain"), chain);
 }
 
 void CWalletDB::IncrementUpdateCounter()

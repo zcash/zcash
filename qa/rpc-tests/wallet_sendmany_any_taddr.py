@@ -21,14 +21,6 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
         node3taddr1 = self.nodes[3].getnewaddress()
         node3taddr2 = self.nodes[3].getnewaddress()
 
-        # We should not be able to spend multiple coinbase UTXOs at once.
-        wait_and_assert_operationid_status(
-            self.nodes[3],
-            self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 100}]),
-            'failed',
-            'Insufficient funds: have 0.00, need 100.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR or if any transparent recipients are included.',
-        )
-
         # Prepare some non-coinbase UTXOs
         wait_and_assert_operationid_status(
             self.nodes[3],
