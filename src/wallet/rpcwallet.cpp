@@ -3470,6 +3470,30 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr.");
     }
 
+    // A non-unified address argument that is a receiver within a
+    // unified address known to this wallet is not allowed.
+    if (std::visit(match {
+        [&](const CKeyID& addr) {
+            return pwalletMain->FindUnifiedAddressByReceiver(addr).has_value();
+         },
+        [&](const CScriptID& addr) {
+            return pwalletMain->FindUnifiedAddressByReceiver(addr).has_value();
+        },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            return pwalletMain->FindUnifiedAddressByReceiver(addr).has_value();
+        },
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            // A unified address can't contain a Sprout receiver.
+            return false;
+        },
+        [&](const libzcash::UnifiedAddress& addr) {
+            // We allow unified addresses themselves, which cannot recurse.
+            return false;
+        }
+    }, decoded.value())) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "The provided address is a bare receiver from a Unified Address in this wallet. Provide the full UA instead.");
+    }
+
     // Visitor to support Sprout and Sapling addrs
     if (!std::visit(PaymentAddressBelongsToWallet(pwalletMain), decoded.value())) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key or viewing key not found.");
