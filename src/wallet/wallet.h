@@ -143,6 +143,17 @@ struct CRecipient
     bool fSubtractFeeFromAmount;
 };
 
+class SendManyRecipient {
+public:
+    std::optional<libzcash::UnifiedAddress> ua;
+    libzcash::RecipientAddress address;
+    CAmount amount;
+    std::optional<std::string> memo;
+
+    SendManyRecipient(std::optional<libzcash::UnifiedAddress> ua_, libzcash::RecipientAddress address_, CAmount amount_, std::optional<std::string> memo_) :
+        ua(ua_), address(address_), amount(amount_), memo(memo_) {}
+};
+
 typedef std::map<std::string, std::string> mapValue_t;
 
 

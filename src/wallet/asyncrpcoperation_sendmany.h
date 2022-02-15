@@ -25,16 +25,6 @@
 
 using namespace libzcash;
 
-class SendManyRecipient {
-public:
-    RecipientAddress address;
-    CAmount amount;
-    std::optional<std::string> memo;
-
-    SendManyRecipient(RecipientAddress address_, CAmount amount_, std::optional<std::string> memo_) :
-        address(address_), amount(amount_), memo(memo_) {}
-};
-
 class TxOutputAmounts {
 public:
     CAmount t_outputs_total{0};
