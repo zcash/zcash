@@ -364,7 +364,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         // Build the transaction
         tx_ = builder_.Build().GetTxOrThrow();
 
-        UniValue sendResult = SendTransaction(tx_, std::nullopt, testmode);
+        UniValue sendResult = SendTransaction(tx_, {}, std::nullopt, testmode);
         set_result(sendResult);
 
         return true;

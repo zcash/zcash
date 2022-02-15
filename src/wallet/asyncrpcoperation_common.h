@@ -20,7 +20,11 @@
  * If testmode is true, do not commit the transaction,
  * return {"test": 1, "txid": tx.GetHash().ToString(), "hex": EncodeHexTx(tx)}
  */
-UniValue SendTransaction(CTransaction& tx, std::optional<std::reference_wrapper<CReserveKey>> reservekey, bool testmode);
+UniValue SendTransaction(
+        const CTransaction& tx,
+        const std::vector<SendManyRecipient>& recipients,
+        std::optional<std::reference_wrapper<CReserveKey>> reservekey,
+        bool testmode);
 
 /**
  * Sign and send a raw transaction.

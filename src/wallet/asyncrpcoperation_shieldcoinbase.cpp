@@ -273,7 +273,7 @@ bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) c
     // Build the transaction
     m_op->tx_ = m_op->builder_.Build().GetTxOrThrow();
 
-    UniValue sendResult = SendTransaction(m_op->tx_, std::nullopt, m_op->testmode);
+    UniValue sendResult = SendTransaction(m_op->tx_, {}, std::nullopt, m_op->testmode);
     m_op->set_result(sendResult);
 
     return true;
@@ -283,7 +283,34 @@ bool ShieldToAddress::operator()(const libzcash::UnifiedAddress &uaddr) const {
     // TODO check if an Orchard address is present, send to it if so.
     const auto receiver{uaddr.GetSaplingReceiver()};
     if (receiver.has_value()) {
-        return ShieldToAddress(m_op, sendAmount)(receiver.value());
+        m_op->builder_.SetFee(m_op->fee_);
+
+        // Sending from a t-address, which we don't have an ovk for. Instead,
+        // generate a common one from the HD seed. This ensures the data is
+        // recoverable, while keeping it logically separate from the ZIP 32
+        // Sapling key hierarchy, which the user might not be using.
+        // FIXME: update to use the ZIP-316 OVK
+        HDSeed seed = pwalletMain->GetHDSeedForRPC();
+        uint256 ovk = ovkForShieldingFromTaddr(seed);
+
+        // Add transparent inputs
+        CAmount total;
+        for (auto t : m_op->inputs_) {
+            m_op->builder_.AddTransparentInput(COutPoint(t.txid, t.vout), t.scriptPubKey, t.amount);
+            total += t.amount;
+        }
+
+        // Send all value to the target z-addr
+        m_op->builder_.SendChangeTo(receiver.value(), ovk);
+
+        // Build the transaction
+        m_op->tx_ = m_op->builder_.Build().GetTxOrThrow();
+
+        SendManyRecipient r(uaddr, receiver.value(), total, std::nullopt);
+        UniValue sendResult = SendTransaction(m_op->tx_, {r}, std::nullopt, m_op->testmode);
+        m_op->set_result(sendResult);
+
+        return true;
     }
     // This UA must contain a transparent address, which can't be the destination of coinbase shielding.
     return false;
