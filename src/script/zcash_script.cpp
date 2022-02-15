@@ -134,10 +134,23 @@ void* zcash_script_new_precomputed_tx_v5(
     unsigned int allPrevOutputsLen,
     zcash_script_error* err)
 {
-    // TODO: add support for allPrevOutputs
-    (void)allPrevOutputs;
-    (void)allPrevOutputsLen;
-    return zcash_script_new_precomputed_tx(txTo, txToLen, err);
+    try {
+        TxInputStream stream(SER_NETWORK, PROTOCOL_VERSION, txTo, txToLen);
+        CTransaction tx;
+        stream >> tx;
+        if (GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) != txToLen) {
+            set_error(err, zcash_script_ERR_TX_SIZE_MISMATCH);
+            return nullptr;
+        }
+
+        // Deserializing the tx did not error.
+        set_error(err, zcash_script_ERR_OK);
+        auto preTx = new PrecomputedTransaction(tx, allPrevOutputs, allPrevOutputsLen);
+        return preTx;
+    } catch (const std::exception&) {
+        set_error(err, zcash_script_ERR_TX_DESERIALIZE); // Error deserializing
+        return nullptr;
+    }
 }
 
 void zcash_script_free_precomputed_tx(void* pre_preTx)
@@ -219,11 +232,31 @@ int zcash_script_verify_v5(
     uint32_t consensusBranchId,
     zcash_script_error* err)
 {
-    // TODO: add support for allPrevOutputs
-    (void)allPrevOutputs;
-    (void)allPrevOutputsLen;
-    // TODO: get the first three params from allPrevOutputs
-    return zcash_script_verify(NULL, 0, 0, txTo, txToLen, nIn, flags, consensusBranchId, err);
+    try {
+        TxInputStream stream(SER_NETWORK, PROTOCOL_VERSION, txTo, txToLen);
+        CTransaction tx;
+        stream >> tx;
+        if (nIn >= tx.vin.size())
+            return set_error(err, zcash_script_ERR_TX_INDEX);
+        if (GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) != txToLen)
+            return set_error(err, zcash_script_ERR_TX_SIZE_MISMATCH);
+
+        // TODO: get scriptPubKey, scriptPubKeyLen and amount
+        // from allPrevOutputs[nIn]
+
+         // Regardless of the verification result, the tx did not error.
+        set_error(err, zcash_script_ERR_OK);
+        PrecomputedTransactionData txdata(tx, allPrevOutputs, allPrevOutputsLen);
+        return VerifyScript(
+            tx.vin[nIn].scriptSig,
+            CScript(scriptPubKey, scriptPubKey + scriptPubKeyLen),
+            flags,
+            TransactionSignatureChecker(&tx, txdata, nIn, amount),
+            consensusBranchId,
+            NULL);
+    } catch (const std::exception&) {
+        return set_error(err, zcash_script_ERR_TX_DESERIALIZE); // Error deserializing
+    }
 }
 
 unsigned int zcash_script_legacy_sigop_count_precomputed(
