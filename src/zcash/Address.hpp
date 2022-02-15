@@ -66,6 +66,13 @@ class UnifiedAddress {
 public:
     UnifiedAddress() {}
 
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(receivers);
+    }
+
     /**
      * Adds the given receiver to this unified address.
      *

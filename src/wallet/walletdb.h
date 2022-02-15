@@ -314,6 +314,61 @@ public:
     }
 };
 
+// Serialization wrapper for reading and writing RecipientAddress
+// in CompactSize format.
+class CSerializeRecipientAddress {
+    libzcash::ReceiverType typecode;
+
+    public:
+        libzcash::RecipientAddress recipient;
+        CSerializeRecipientAddress() {} // for serialization only
+        CSerializeRecipientAddress(libzcash::RecipientAddress recipient): recipient(recipient) {}
+
+        template<typename Stream>
+        void Serialize(Stream& s) const {
+            std::visit(match {
+                [&](const CKeyID& keyId) {
+                    ReceiverTypeSer(libzcash::ReceiverType::P2PKH).Serialize(s);
+                    s << keyId;
+                },
+                [&](const CScriptID& scriptId) {
+                    ReceiverTypeSer(libzcash::ReceiverType::P2SH).Serialize(s);
+                    s << scriptId;
+                },
+                [&](const libzcash::SaplingPaymentAddress& saplingAddr) {
+                    ReceiverTypeSer(libzcash::ReceiverType::Sapling).Serialize(s);
+                    s << saplingAddr;
+                }
+            }, recipient);
+        }
+
+        template<typename Stream>
+        void Unserialize(Stream& s) {
+            // This cast is fine because ZIP 316 uses CompactSize serialization including the
+            // size limit, which means it is at most a uint32_t.
+            typecode = (libzcash::ReceiverType) ReadCompactSize(s);
+            switch (typecode) {
+                case libzcash::ReceiverType::P2PKH: {
+                    CKeyID key;
+                    s >> key;
+                    recipient = key;
+                    break;
+                }
+                case libzcash::ReceiverType::P2SH: {
+                    CScriptID script;
+                    s >> script;
+                    recipient = script;
+                    break;
+                }
+                case libzcash::ReceiverType::Sapling: {
+                    libzcash::SaplingPaymentAddress saplingAddr;
+                    s >> saplingAddr;
+                    recipient = saplingAddr;
+                    break;
+                }
+            }
+        }
+};
 
 /** Access to the wallet database */
 class CWalletDB : public CDB
@@ -355,6 +410,8 @@ public:
     bool ErasePool(int64_t nPool);
 
     bool WriteMinVersion(int nVersion);
+
+    bool WriteRecipientMapping(const uint256& txid, const libzcash::RecipientAddress& address, const libzcash::UnifiedAddress& ua);
 
     /// Write destination data key,value tuple to database
     bool WriteDestData(const std::string &address, const std::string &key, const std::string &value);

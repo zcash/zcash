@@ -12,6 +12,7 @@
 #include "proof_verifier.h"
 #include "protocol.h"
 #include "serialize.h"
+#include "script/standard.h"
 #include "sync.h"
 #include "util.h"
 #include "utiltime.h"
@@ -311,6 +312,13 @@ bool CWalletDB::ErasePool(int64_t nPool)
 bool CWalletDB::WriteMinVersion(int nVersion)
 {
     return Write(std::string("minversion"), nVersion);
+}
+
+bool CWalletDB::WriteRecipientMapping(const uint256& txid, const libzcash::RecipientAddress& address, const libzcash::UnifiedAddress& ua)
+{
+    std::pair<uint256, CSerializeRecipientAddress> key = std::make_pair(txid, CSerializeRecipientAddress(address));
+    std::string uaString = KeyIO(Params()).EncodePaymentAddress(ua);
+    return Write(std::make_pair(std::string("recipientmapping"), key), uaString);
 }
 
 class CWalletScanState {
@@ -844,6 +852,45 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssValue >> networkInfo;
             if (!pwallet->CheckNetworkInfo(networkInfo)) {
                 strErr = "Error in wallet database: unexpected network";
+                return false;
+            }
+        }
+        else if (strType == "recipientmapping")
+        {
+            uint256 txid;
+            CSerializeRecipientAddress recipient;
+            std::string rawUa;
+            ssKey >> txid;
+            ssKey >> recipient;
+            ssValue >> rawUa;
+
+            auto pa = keyIO.DecodePaymentAddress(rawUa);
+            if (!pa.has_value()) {
+                strErr = "Error in wallet database: non-UnifiedAddress in recipientmapping";
+                return false;
+            }
+            auto uaPtr = std::get_if<libzcash::UnifiedAddress>(&pa.value());
+            if (uaPtr == nullptr) {
+                strErr = "Error in wallet database: failed to deserialize unified address";
+                return false;
+            }
+
+            libzcash::Receiver recipientReceiver;
+            std::visit(match {
+                [&](const CKeyID& key) { recipientReceiver = key; },
+                [&](const CScriptID& scriptId) { recipientReceiver = scriptId; },
+                [&](const libzcash::SaplingPaymentAddress& addr) { recipientReceiver = addr; }
+            }, recipient.recipient);
+
+            bool found = false;
+            for (const auto& receiver : uaPtr->GetReceiversAsParsed()) {
+                if (receiver == recipientReceiver) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                strErr = "Error in wallet database: recipientmapping UA does not contain recipient";
                 return false;
             }
         }

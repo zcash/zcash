@@ -13,6 +13,11 @@ UniValue SendTransaction(const CTransaction& tx, const std::vector<SendManyRecip
     // Send the transaction
     if (!testmode) {
         CWalletTx wtx(pwalletMain, tx);
+        // save the mapping from (receiver, txid) to UA
+        if (!pwalletMain->SaveRecipientMappings(tx.GetHash(), recipients)) {
+            // More details in debug.log
+            throw JSONRPCError(RPC_WALLET_ERROR, "SendTransaction: SaveRecipientMappings failed");
+        }
         if (!pwalletMain->CommitTransaction(wtx, reservekey)) {
             // More details in debug.log
             throw JSONRPCError(RPC_WALLET_ERROR, "SendTransaction: CommitTransaction failed");
