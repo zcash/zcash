@@ -7,6 +7,7 @@
 #include "pubkey.h"
 #include "rpc/protocol.h"
 #include "transaction_builder.h"
+#include "gtest/test_transaction_builder.h"
 #include "utiltest.h"
 #include "zcash/Address.hpp"
 #include "zcash/address/mnemonic.h"
@@ -15,69 +16,6 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
-// Fake an empty view
-class TransactionBuilderCoinsViewDB : public CCoinsView {
-public:
-    std::map<uint256, SproutMerkleTree> sproutTrees;
-
-    TransactionBuilderCoinsViewDB() {}
-
-    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
-        auto it = sproutTrees.find(rt);
-        if (it != sproutTrees.end()) {
-            tree = it->second;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
-        return false;
-    }
-
-    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
-        return false;
-    }
-
-    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
-        return false;
-    }
-
-    bool GetCoins(const uint256 &txid, CCoins &coins) const {
-        return false;
-    }
-
-    bool HaveCoins(const uint256 &txid) const {
-        return false;
-    }
-
-    uint256 GetBestBlock() const {
-        uint256 a;
-        return a;
-    }
-
-    uint256 GetBestAnchor(ShieldedType type) const {
-        uint256 a;
-        return a;
-    }
-
-    bool BatchWrite(CCoinsMap &mapCoins,
-                    const uint256 &hashBlock,
-                    const uint256 &hashSproutAnchor,
-                    const uint256 &hashSaplingAnchor,
-                    CAnchorsSproutMap &mapSproutAnchors,
-                    CAnchorsSaplingMap &mapSaplingAnchors,
-                    CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap saplingNullifiersMap) {
-        return false;
-    }
-
-    bool GetStats(CCoinsStats &stats) const {
-        return false;
-    }
-};
 
 TEST(TransactionBuilder, TransparentToSapling)
 {

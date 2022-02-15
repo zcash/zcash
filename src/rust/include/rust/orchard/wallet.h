@@ -82,7 +82,8 @@ bool orchard_wallet_tx_contains_my_notes(
 
 /**
  * Add the specified spending key to the wallet's key store.
- * This will also compute and add the associated incoming viewing key.
+ * This will also compute and add the associated full and
+ * incoming viewing keys.
  */
 void orchard_wallet_add_spending_key(
         OrchardWalletPtr* wallet,
