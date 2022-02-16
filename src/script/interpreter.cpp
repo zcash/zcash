@@ -1231,6 +1231,30 @@ uint256 SignatureHash(
             // The signature digest is just the txid! No need to cross the FFI.
             return txTo.GetHash();
         } else {
+            // S.2a: hash_type
+            //
+            // The following restrictions apply, which cause validation failure
+            // if violated:
+            // - Using any undefined hash_type (not 0x01, 0x02, 0x03, 0x81,
+            //   0x82, or 0x83).
+            // - Using SIGHASH_SINGLE without a "corresponding output" (an
+            //   output with the same index as the input being verified).
+            switch (nHashType) {
+            case SIGHASH_SINGLE:
+            case SIGHASH_ANYONECANPAY | SIGHASH_SINGLE:
+                if (nIn >= txTo.vout.size()) {
+                    throw std::logic_error(
+                        "ZIP 244: Used SIGHASH_SINGLE without a corresponding output");
+                }
+            case SIGHASH_ALL:
+            case SIGHASH_NONE:
+            case SIGHASH_ANYONECANPAY | SIGHASH_ALL:
+            case SIGHASH_ANYONECANPAY | SIGHASH_NONE:
+                break;
+            default:
+                throw std::logic_error("ZIP 244: Used undefined hash_type");
+            }
+
             // The amount parameter is ignored; we extract it from allPrevOutputs.
             // - Note to future developers: if we ever replace the C++ logic for
             //   pre-v5 transactions with Rust logic, make sure signrawtransaction
