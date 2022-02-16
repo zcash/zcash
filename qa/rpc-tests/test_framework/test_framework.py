@@ -40,13 +40,6 @@ class BitcoinTestFramework(object):
     def run_test(self):
         raise NotImplementedError
 
-    def setup_logging(self, sensitivity=logging.DEBUG):
-        # This means that the log file name is a pointer to the producing test's filename.
-        stem = os.path.basename(inspect.getfile(self.__class__).rstrip(".py")) 
-        filename = stem + "_test.log"
-        log_file = os.path.join(self.options.tmpdir, filename)
-        logging.basicConfig(filename=log_file, filemode='w', level=sensitivity)
-    
     def add_options(self, parser):
         pass
     
@@ -107,6 +100,21 @@ class BitcoinTestFramework(object):
         wait_bitcoinds()
         self.setup_network(False)
 
+    def setup_logging(self):
+        # This means that the log file name is a pointer to the producing test's filename.
+        stem = os.path.basename(inspect.getfile(self.__class__).rstrip(".py")) 
+        filename = stem + "_test.log"
+        log_file = os.path.join(self.options.tmpdir, filename)
+        # Adapted from:  https://docs.python.org/3.8/howto/logging.html#logging-to-a-filename
+        # assuming loglevel is bound to the string value obtained from the
+        # command line argument. Convert to upper case to allow the user to
+        # specify --log=DEBUG or --log=debug
+        sensitivity = self.options.log_sensitivity.upper()
+        numeric_level = getattr(logging, sensitivity, None)
+        if not isinstance(numeric_level, int):
+            raise ValueError('Invalid log level: %s' % loglevel)
+        logging.basicConfig(filename=log_file, filemode='w', level=sensitivity)
+    
     def main(self):
 
         parser = optparse.OptionParser(usage="%prog [options]")
@@ -128,7 +136,7 @@ class BitcoinTestFramework(object):
                           help="Write tested RPC commands into this directory")
         parser.add_option("--log_tests", dest="log_tests", default=False, action="store_true",
                           help="Log the behavior of test code (i.e. within './qa/')")
-        parser.add_option("--log_sensitivity", dest="log_sensitivity", action="store",
+        parser.add_option("--log_sensitivity", dest="log_sensitivity", default="DEBUG", action="store",
                           help="Set the sensitivity of the root logger, LogRecords with lower importance are not handled.")
         
         self.add_options(parser)
@@ -151,7 +159,8 @@ class BitcoinTestFramework(object):
         success = False
         try:
             os.makedirs(self.options.tmpdir, exist_ok=False)
-            self.setup_logging()
+            if self.options.log_tests:
+                self.setup_logging()
             self.setup_chain()
             self.setup_network()
             self.run_test()
