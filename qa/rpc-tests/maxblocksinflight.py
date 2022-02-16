@@ -24,9 +24,10 @@ MAX_REQUESTS = 128
 class TestManager(NodeConnCB):
     # set up NodeConnCB callbacks, overriding base class
     def on_getdata(self, conn, message):
-        delimiter = '\nINFO:'+self.log.name+': '
+        level = "debug"
+        delimiter = '\n'+level.upper()+':'+self.log.name+': '
         formatted = delimiter.join([str(x.hash) for x in message.inv])
-        self.log.info("got getdata:\n%s" % formatted)
+        getattr(self.log, level)("got getdata:\n%s" % formatted)
         # Log the requests
         for inv in message.inv:
             if inv.hash not in self.blockReqCounts:
@@ -54,9 +55,10 @@ class TestManager(NodeConnCB):
             numBlocksToGenerate = [ 8, 16, 128, 1024 ]
             for count in range(len(numBlocksToGenerate)):
                 current_invs = []
-                for i in range(numBlocksToGenerate[count]):
+                for _ in range(numBlocksToGenerate[count]):
                     current_invs.append(CInv(2, random.randrange(0, 1<<256)))
                 if len(current_invs) > 0:
+                    self.log.info(len(current_invs))
                     self.connection.send_message(msg_inv(current_invs))
 
                 # Wait and see how many blocks were requested
