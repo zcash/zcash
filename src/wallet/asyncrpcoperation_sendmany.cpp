@@ -51,7 +51,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         CAmount fee,
         bool allowRevealedAmounts,
         UniValue contextInfo) :
-        builder_(builder), ztxoSelector_(ztxoSelector), recipients_(recipients),
+        builder_(std::move(builder)), ztxoSelector_(ztxoSelector), recipients_(recipients),
         mindepth_(minDepth), fee_(fee), allowRevealedAmounts_(allowRevealedAmounts),
         contextinfo_(contextInfo)
 {

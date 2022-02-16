@@ -11,9 +11,10 @@
 #include <rust/orchard.h>
 
 class OrchardMerkleFrontier;
+namespace orchard { class UnauthorizedBundle; }
 
 /**
- * The Orchard component of a transaction.
+ * The Orchard component of an authorized transaction.
  */
 class OrchardBundle
 {
@@ -22,7 +23,10 @@ private:
     /// Memory is allocated by Rust.
     std::unique_ptr<OrchardBundlePtr, decltype(&orchard_bundle_free)> inner;
 
+    OrchardBundle(OrchardBundlePtr* bundle) : inner(bundle, orchard_bundle_free) {}
+
     friend class OrchardMerkleFrontier;
+    friend class orchard::UnauthorizedBundle;
 public:
     OrchardBundle() : inner(nullptr, orchard_bundle_free) {}
 

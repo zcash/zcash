@@ -72,8 +72,9 @@ codegen-units = 1
 
 [patch.crates-io]
 hdwallet = { git = "https://github.com/nuttycom/hdwallet", rev = "576683b9f2865f1118c309017ff36e01f84420c9" }
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "4f4a25252f0fc6b84c44316d810107bc7ea7f32a" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "4f4a25252f0fc6b84c44316d810107bc7ea7f32a" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "4f4a25252f0fc6b84c44316d810107bc7ea7f32a" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "4f4a25252f0fc6b84c44316d810107bc7ea7f32a" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "4f4a25252f0fc6b84c44316d810107bc7ea7f32a" }
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "c4cd541e6c9ca657fa33fdd686d70d81bf3e4e65" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "3d935a94e75786a67c3ea4992d7c372af203086f" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "3d935a94e75786a67c3ea4992d7c372af203086f" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "3d935a94e75786a67c3ea4992d7c372af203086f" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "3d935a94e75786a67c3ea4992d7c372af203086f" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "3d935a94e75786a67c3ea4992d7c372af203086f" }

@@ -4623,12 +4623,15 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     o.pushKV("fee", std::stod(FormatMoney(nFee)));
     UniValue contextInfo = o;
 
-    TransactionBuilder builder(chainparams.GetConsensus(), nextBlockHeight, pwalletMain);
+    // TODO: Allow Orchard recipients by specifying an Orchard anchor.
+    auto orchardAnchor = std::nullopt;
+    TransactionBuilder builder(chainparams.GetConsensus(), nextBlockHeight, orchardAnchor, pwalletMain);
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation(
-            new AsyncRPCOperation_sendmany(builder, ztxoSelector, recipients, nMinDepth, nFee, allowRevealedAmounts, contextInfo)
+            new AsyncRPCOperation_sendmany(
+                std::move(builder), ztxoSelector, recipients, nMinDepth, nFee, allowRevealedAmounts, contextInfo)
             );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
@@ -4972,8 +4975,10 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     contextInfo.pushKV("fee", ValueFromAmount(nFee));
 
     // Builder (used if Sapling addresses are involved)
+    // TODO: Allow Orchard recipients by specifying an Orchard anchor.
+    auto orchardAnchor = std::nullopt;
     TransactionBuilder builder = TransactionBuilder(
-        Params().GetConsensus(), nextBlockHeight, pwalletMain);
+        Params().GetConsensus(), nextBlockHeight, orchardAnchor, pwalletMain);
 
     // Contextual transaction we will build on
     // (used if no Sapling addresses are involved)
@@ -4985,7 +4990,8 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(builder, contextualTx, inputs, destaddress.value(), nFee, contextInfo) );
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(
+        std::move(builder), contextualTx, inputs, destaddress.value(), nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
 
@@ -5439,12 +5445,15 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     // Builder (used if Sapling addresses are involved)
     std::optional<TransactionBuilder> builder;
     if (isToSaplingZaddr || saplingNoteInputs.size() > 0) {
-        builder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, pwalletMain);
+        // TODO: Allow Orchard recipients by specifying an Orchard anchor.
+        auto orchardAnchor = std::nullopt;
+        builder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, orchardAnchor, pwalletMain);
     }
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation(
-        new AsyncRPCOperation_mergetoaddress(builder, contextualTx, utxoInputs, sproutNoteInputs, saplingNoteInputs, recipient, nFee, contextInfo) );
+        new AsyncRPCOperation_mergetoaddress(
+            std::move(builder), contextualTx, utxoInputs, sproutNoteInputs, saplingNoteInputs, recipient, nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
 
