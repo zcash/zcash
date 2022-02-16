@@ -45,7 +45,7 @@ void Builder::AddOutput(
     const std::optional<uint256>& ovk,
     const libzcash::OrchardRawAddress& to,
     CAmount value,
-    std::array<unsigned char, ZC_MEMO_SIZE> memo)
+    const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo)
 {
     if (!inner) {
         throw std::logic_error("orchard::Builder has already been used");
@@ -56,7 +56,7 @@ void Builder::AddOutput(
         ovk.has_value() ? ovk->begin() : nullptr,
         to.inner.get(),
         value,
-        memo.data());
+        memo.has_value() ? memo->data() : nullptr);
 }
 
 std::optional<UnauthorizedBundle> Builder::Build() {
@@ -264,7 +264,7 @@ void TransactionBuilder::AddOrchardOutput(
     const std::optional<uint256>& ovk,
     const libzcash::OrchardRawAddress& to,
     CAmount value,
-    std::array<unsigned char, ZC_MEMO_SIZE> memo)
+    const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo)
 {
     if (!orchardBuilder.has_value()) {
         throw std::runtime_error("TransactionBuilder cannot add Orchard output without Orchard anchor");

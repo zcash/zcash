@@ -46,9 +46,9 @@ pub extern "C" fn orchard_builder_add_recipient(
         .map(OutgoingViewingKey::from);
     let recipient = unsafe { recipient.as_ref() }.expect("Recipient may not be null.");
     let value = NoteValue::from_raw(value);
-    let memo = unsafe { memo.as_ref() }.expect("Memo may not be null.");
+    let memo = unsafe { memo.as_ref() }.copied();
 
-    match builder.add_recipient(ovk, *recipient, value, Some(*memo)) {
+    match builder.add_recipient(ovk, *recipient, value, memo) {
         Ok(()) => true,
         Err(e) => {
             error!("Failed to add Orchard recipient: {}", e);

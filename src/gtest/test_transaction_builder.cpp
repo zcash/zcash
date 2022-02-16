@@ -278,7 +278,7 @@ TEST(TransactionBuilder, TransparentToOrchard)
     // 0.0005 t-ZEC in, 0.0004 z-ZEC out, default fee
     auto builder = TransactionBuilder(consensusParams, 1, orchardAnchor, &keystore);
     builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 50000);
-    builder.AddOrchardOutput(std::nullopt, recipient, 40000);
+    builder.AddOrchardOutput(std::nullopt, recipient, 40000, std::nullopt);
     auto maybeTx = builder.Build();
     EXPECT_TRUE(maybeTx.IsTx());
     if (maybeTx.IsError()) {

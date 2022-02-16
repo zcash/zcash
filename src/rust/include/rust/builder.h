@@ -35,6 +35,8 @@ void orchard_builder_free(OrchardBuilderPtr* ptr);
 ///
 /// `ovk` is a pointer to the outgoing viewing key to make this recipient recoverable by,
 /// or `null` to make the recipient unrecoverable by the sender.
+///
+/// `memo` is a pointer to the 512-byte memo field encoding, or `null` for "no memo".
 bool orchard_builder_add_recipient(
     OrchardBuilderPtr* ptr,
     const unsigned char* ovk,

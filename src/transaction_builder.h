@@ -64,7 +64,7 @@ public:
         const std::optional<uint256>& ovk,
         const libzcash::OrchardRawAddress& to,
         CAmount value,
-        std::array<unsigned char, ZC_MEMO_SIZE> memo = NO_MEMO);
+        const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo);
 
     /// Builds a bundle containing the given spent notes and recipients.
     ///
@@ -289,7 +289,7 @@ public:
         const std::optional<uint256>& ovk,
         const libzcash::OrchardRawAddress& to,
         CAmount value,
-        std::array<unsigned char, ZC_MEMO_SIZE> memo = NO_MEMO);
+        const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo);
 
     // Throws if the anchor does not match the anchor used by
     // previously-added Sapling spends.
