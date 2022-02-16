@@ -3892,7 +3892,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
     if (fHelp || params.size() > 2)
         throw runtime_error(
             "z_gettotalbalance ( minconf includeWatchonly )\n"
-            "\nDEPRECATED. Please use the z_getbalanceforaccount RPC instead. \n"
+            "\nDEPRECATED. Please use the z_getbalanceforaccount RPC instead.\n"
             "\nReturn the total value of funds stored in the node's wallet.\n"
             "\nCAUTION: If the wallet contains any addresses for which it only has incoming viewing keys,"
             "\nthe returned private balance may be larger than the actual balance, because spends cannot"
