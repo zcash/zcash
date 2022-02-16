@@ -126,6 +126,11 @@ class BitcoinTestFramework(object):
                           help="The seed to use for assigning port numbers (default: current process id)")
         parser.add_option("--coveragedir", dest="coveragedir",
                           help="Write tested RPC commands into this directory")
+        parser.add_option("--log_tests", dest="log_tests", default=False, action="store_true",
+                          help="Log the behavior of test code (i.e. within './qa/')")
+        parser.add_option("--log_sensitivity", dest="log_sensitivity", action="store",
+                          help="Set the sensitivity of the root logger, LogRecords with lower importance are not handled.")
+        
         self.add_options(parser)
         (self.options, self.args) = parser.parse_args()
 
