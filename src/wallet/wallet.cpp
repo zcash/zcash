@@ -6472,9 +6472,6 @@ std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()
     auto ufvkPair = wallet.GetUFVKMetadataForReceiver(keyId);
     if (ufvkPair.has_value()) {
         auto ufvkid = ufvkPair.value().first;
-        // transparent address UFVK metadata is always accompanied by the child
-        // index at which the address was produced
-        assert(ufvkPair.value().second.has_value());
         auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
         assert(ufvk.has_value() && ufvk.value().GetTransparentKey().has_value());
         return ufvk.value();
@@ -6493,17 +6490,15 @@ std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(co
     if (ufvkPair.has_value()) {
         auto ufvkid = ufvkPair.value().first;
         auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
-        assert(ufvk.has_value());
+        if (!(ufvk.has_value() && ufvk.value().GetSaplingKey().has_value())) {
+            throw std::runtime_error("CWallet::LookupUnifiedAddress(): UFVK has no Sapling key part.");
+        }
 
-        // If the wallet is missing metadata at this UFVK id, it is probably
-        // corrupt and the node should shut down.
-        const auto& metadata = wallet.mapUfvkAddressMetadata.at(ufvkid);
-        auto saplingKey = ufvk.value().GetSaplingKey();
-        if (saplingKey.has_value()) {
-            diversifier_index_t j = saplingKey.value().DecryptDiversifier(saplingAddr.d);
-            auto receivers = metadata.GetReceivers(j);
+        auto metadata = wallet.mapUfvkAddressMetadata.find(ufvkid);
+        if (metadata != wallet.mapUfvkAddressMetadata.end()) {
+            auto receivers = metadata->second.GetReceivers(ufvkPair.value().second);
             if (receivers.has_value()) {
-                auto addr = ufvk.value().Address(j, receivers.value());
+                auto addr = ufvk.value().Address(ufvkPair.value().second, receivers.value());
                 auto addrPtr = std::get_if<std::pair<UnifiedAddress, diversifier_index_t>>(&addr);
                 if (addrPtr != nullptr) {
                     return addrPtr->first;
@@ -6524,8 +6519,7 @@ std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(co
         auto ufvkid = ufvkPair.value().first;
         // transparent address UFVK metadata is always accompanied by the child
         // index at which the address was produced
-        assert(ufvkPair.value().second.has_value());
-        diversifier_index_t j = ufvkPair.value().second.value();
+        diversifier_index_t j = ufvkPair.value().second;
         auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
         if (!(ufvk.has_value() && ufvk.value().GetTransparentKey().has_value())) {
             throw std::runtime_error("CWallet::UnifiedAddressForReceiver(): UFVK has no P2PKH key part.");
