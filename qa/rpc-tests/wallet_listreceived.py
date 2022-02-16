@@ -384,6 +384,15 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(len(receivers), 2)
         assert 'transparent' in receivers
         assert 'sapling' in receivers
+        assert_raises_message(
+            JSONRPCException,
+            "The provided address is a bare receiver from a Unified Address in this wallet.",
+            node.z_listreceivedbyaddress, receivers['transparent'], 0)
+        assert_raises_message(
+            JSONRPCException,
+            "The provided address is a bare receiver from a Unified Address in this wallet.",
+            node.z_listreceivedbyaddress, receivers['sapling'], 0)
+
         # Wallet contains no notes
         r = node.z_listreceivedbyaddress(unified_addr, 0)
         assert_equal(len(r), 0, "unified_addr should have received zero notes")
