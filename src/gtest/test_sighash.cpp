@@ -75,8 +75,9 @@ TEST(SigHashTest, Zip244RejectsUnknownHashTypes) {
     CAmount amount;
     uint32_t consensusBranchId;
 
-    // Nothing should be thrown for known sighash types.
+    // An error should be thrown for unknown sighash types.
     std::vector<uint8_t> unknownSighashTypes {
+        0, // Known in BIP 341, unknown in ZIP 244.
         SIGHASH_SINGLE + 1,
         0x7f,
         0xff,

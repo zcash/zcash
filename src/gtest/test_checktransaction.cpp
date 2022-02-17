@@ -1319,8 +1319,8 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     //   sighash the txid.
     PrecomputedTransactionData txdata(tx, {});
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid", false, "")).Times(1);
-    ContextualCheckShieldedInputs(
-        tx, txdata, state, orchardAuth, chainparams.GetConsensus(), heartwoodBranchId, false, true);
+    EXPECT_FALSE(ContextualCheckShieldedInputs(
+        tx, txdata, state, orchardAuth, chainparams.GetConsensus(), heartwoodBranchId, false, true));
 
     RegtestDeactivateHeartwood();
 }

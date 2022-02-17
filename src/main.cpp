@@ -1265,7 +1265,7 @@ bool ContextualCheckShieldedInputs(
         } catch (std::logic_error ex) {
             // A logic error should never occur because we pass NOT_AN_INPUT and
             // SIGHASH_ALL to SignatureHash().
-            return state.DoS(100, error("ContextualCheckTransaction(): error computing signature hash"),
+            return state.DoS(100, error("ContextualCheckShieldedInputs(): error computing signature hash"),
                              REJECT_INVALID, "error-computing-signature-hash");
         }
     }
@@ -1289,7 +1289,7 @@ bool ContextualCheckShieldedInputs(
             }
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
-                error("ContextualCheckTransaction(): invalid joinsplit signature"),
+                error("ContextualCheckShieldedInputs(): invalid joinsplit signature"),
                 REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
         }
     }
@@ -1319,7 +1319,7 @@ bool ContextualCheckShieldedInputs(
                 librustzcash_sapling_verification_ctx_free(ctx);
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckTransaction(): Sapling spend description invalid"),
+                    error("ContextualCheckShieldedInputs(): Sapling spend description invalid"),
                     REJECT_INVALID, "bad-txns-sapling-spend-description-invalid");
             }
         }
@@ -1337,7 +1337,7 @@ bool ContextualCheckShieldedInputs(
                 // This should be a non-contextual check, but we check it here
                 // as we need to pass over the outputs anyway in order to then
                 // call librustzcash_sapling_final_check().
-                return state.DoS(100, error("ContextualCheckTransaction(): Sapling output description invalid"),
+                return state.DoS(100, error("ContextualCheckShieldedInputs(): Sapling output description invalid"),
                                       REJECT_INVALID, "bad-txns-sapling-output-description-invalid");
             }
         }
@@ -1352,7 +1352,7 @@ bool ContextualCheckShieldedInputs(
             librustzcash_sapling_verification_ctx_free(ctx);
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
-                error("ContextualCheckTransaction(): Sapling binding signature invalid"),
+                error("ContextualCheckShieldedInputs(): Sapling binding signature invalid"),
                 REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid");
         }
 
@@ -1973,7 +1973,7 @@ bool AcceptToMemoryPool(
         }
 
         // Check against previous transactions
-        // This is done last to help prevent CPU exhaustion denial-of-service attacks.
+        // This is done near the end to help prevent CPU exhaustion denial-of-service attacks.
         std::vector<CTxOut> allPrevOutputs;
         for (const auto& input : tx.vin) {
             allPrevOutputs.push_back(view.GetOutputFor(input));
