@@ -206,6 +206,24 @@ pub extern "C" fn zcash_transaction_precomputed_init(
                     error!("all_prev_outputs had trailing data");
                     return ptr::null_mut();
                 }
+                Ok(all_prev_outputs)
+                    if !tx
+                        .transparent_bundle()
+                        .map(|t| {
+                            if t.is_coinbase() {
+                                // Coinbase txs have one fake input.
+                                all_prev_outputs.is_empty()
+                            } else {
+                                // For non-coinbase txs, every input is real.
+                                t.vin.len() == all_prev_outputs.len()
+                            }
+                        })
+                        // If we have no transparent part, we should have no prev outputs.
+                        .unwrap_or_else(|| all_prev_outputs.is_empty()) =>
+                {
+                    error!("all_prev_outputs is incorrect length");
+                    return ptr::null_mut();
+                }
                 Ok(all_prev_outputs) => MapTransparent {
                     auth: TransparentAuth { all_prev_outputs },
                 },
