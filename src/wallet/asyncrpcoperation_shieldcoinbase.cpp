@@ -273,7 +273,8 @@ bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) c
     // Build the transaction
     m_op->tx_ = m_op->builder_.Build().GetTxOrThrow();
 
-    UniValue sendResult = SendTransaction(m_op->tx_, {}, std::nullopt, m_op->testmode);
+    std::vector<RecipientMapping> recipientMappings;
+    UniValue sendResult = SendTransaction(m_op->tx_, recipientMappings, std::nullopt, m_op->testmode);
     m_op->set_result(sendResult);
 
     return true;
@@ -306,8 +307,8 @@ bool ShieldToAddress::operator()(const libzcash::UnifiedAddress &uaddr) const {
         // Build the transaction
         m_op->tx_ = m_op->builder_.Build().GetTxOrThrow();
 
-        SendManyRecipient r(uaddr, receiver.value(), total, std::nullopt);
-        UniValue sendResult = SendTransaction(m_op->tx_, {r}, std::nullopt, m_op->testmode);
+        std::vector<RecipientMapping> recipientMappings = {RecipientMapping(uaddr, receiver.value())};
+        UniValue sendResult = SendTransaction(m_op->tx_, recipientMappings, std::nullopt, m_op->testmode);
         m_op->set_result(sendResult);
 
         return true;

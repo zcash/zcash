@@ -4846,31 +4846,6 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 }
 
 /**
- * @brief
- *
- */
-bool CWallet::SaveRecipientMappings(const uint256& txid, const std::vector<SendManyRecipient>& recipients)
-{
-    {
-        LOCK2(cs_main, cs_wallet);
-        LogPrintf("SaveRecipientMappings:\n%s", txid.ToString());
-
-        for (const SendManyRecipient& recipient : recipients)
-        {
-            if (recipient.ua.has_value()) {
-                CWalletDB(strWalletFile).WriteRecipientMapping(
-                    txid,
-                    recipient.address,
-                    recipient.ua.value()
-                );
-            }
-        }
-
-    }
-    return true;
-}
-
-/**
  * Call after CreateTransaction unless you want to abort
  */
 bool CWallet::CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_wrapper<CReserveKey>> reservekey)
