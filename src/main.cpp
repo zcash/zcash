@@ -3552,7 +3552,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // DERSIG (BIP66) is also always enforced, but does not have a flag.
 
     CBlockUndo blockundo;
-
+    /*
     if ( ASSETCHAINS_CC != 0 )
     {
         if ( scriptcheckqueue.IsIdle() == 0 )
@@ -3561,6 +3561,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             sleep(1);
         }
     }
+    */
     CCheckQueueControl<CScriptCheck> control(fExpensiveChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
 
     int64_t nTimeStart = GetTimeMicros();
