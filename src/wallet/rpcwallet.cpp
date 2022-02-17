@@ -4557,7 +4557,11 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amount must be positive");
         }
 
-        std::optional<libzcash::UnifiedAddress> ua = std::get<libzcash::UnifiedAddress>(decoded.value());
+        std::optional<libzcash::UnifiedAddress> ua = std::nullopt;
+        if (std::holds_alternative<libzcash::UnifiedAddress>(decoded.value())) {
+            ua = std::get<libzcash::UnifiedAddress>(decoded.value());
+        }
+
         recipients.push_back(SendManyRecipient(ua, addr.value(), nAmount, memo));
         nTotalOut += nAmount;
     }
