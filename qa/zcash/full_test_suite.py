@@ -174,7 +174,11 @@ STAGES = [
     'rpc0',
     'rpc1',
     'rpc2',
-    'rpc3',   
+    'rpc3',
+    'rpc4',
+    'rpc5',
+    'rpc6',
+    'rpc7', 
 ]
 
 STAGE_COMMANDS = {
@@ -191,6 +195,10 @@ STAGE_COMMANDS = {
     'rpc1': [repofile('qa/pull-tester/rpc-tests.py'), '--nozmq', '-j16', '-m1', '-t4'],
     'rpc2': [repofile('qa/pull-tester/rpc-tests.py'), '--nozmq', '-j16', '-m2', '-t4'],
     'rpc3': [repofile('qa/pull-tester/rpc-tests.py'), '--nozmq', '-j16', '-m3', '-t4'],
+    'rpc4': [repofile('qa/pull-tester/rpc-tests.py'), '--nozmq', '-j16', '-m0', '-t4'],
+    'rpc5': [repofile('qa/pull-tester/rpc-tests.py'), '--nozmq', '-j16', '-m1', '-t4'],
+    'rpc6': [repofile('qa/pull-tester/rpc-tests.py'), '--nozmq', '-j16', '-m2', '-t4'],
+    'rpc7': [repofile('qa/pull-tester/rpc-tests.py'), '--nozmq', '-j16', '-m3', '-t4'],
 }
 
 
