@@ -864,14 +864,9 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssKey >> recipient;
             ssValue >> rawUa;
 
-            auto pa = keyIO.DecodePaymentAddress(rawUa);
-            if (!pa.has_value()) {
+            auto ua = libzcash::UnifiedAddress::Parse(Params(), rawUa);
+            if (!ua.has_value()) {
                 strErr = "Error in wallet database: non-UnifiedAddress in recipientmapping";
-                return false;
-            }
-            auto uaPtr = std::get_if<libzcash::UnifiedAddress>(&pa.value());
-            if (uaPtr == nullptr) {
-                strErr = "Error in wallet database: failed to deserialize unified address";
                 return false;
             }
 
@@ -883,7 +878,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             }, recipient.recipient);
 
             bool found = false;
-            for (const auto& receiver : uaPtr->GetReceiversAsParsed()) {
+            for (const auto& receiver : ua.value().GetReceiversAsParsed()) {
                 if (receiver == recipientReceiver) {
                     found = true;
                     break;

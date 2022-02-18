@@ -247,7 +247,7 @@ const size_t ConvertedSaplingExtendedFullViewingKeySize = (ZIP32_XFVK_SIZE * 8 +
 const size_t ConvertedSaplingExtendedSpendingKeySize = (ZIP32_XSK_SIZE * 8 + 4) / 5;
 } // namespace
 
-CTxDestination KeyIO::DecodeDestination(const std::string& str)
+CTxDestination KeyIO::DecodeDestination(const std::string& str) const
 {
     std::vector<unsigned char> data;
     uint160 hash;
@@ -271,7 +271,7 @@ CTxDestination KeyIO::DecodeDestination(const std::string& str)
     return CNoDestination();
 };
 
-CKey KeyIO::DecodeSecret(const std::string& str)
+CKey KeyIO::DecodeSecret(const std::string& str) const
 {
     CKey key;
     std::vector<unsigned char> data;
@@ -287,7 +287,7 @@ CKey KeyIO::DecodeSecret(const std::string& str)
     return key;
 }
 
-std::string KeyIO::EncodeSecret(const CKey& key)
+std::string KeyIO::EncodeSecret(const CKey& key) const
 {
     assert(key.IsValid());
     std::vector<unsigned char> data = keyConstants.Base58Prefix(KeyConstants::SECRET_KEY);
@@ -300,7 +300,7 @@ std::string KeyIO::EncodeSecret(const CKey& key)
     return ret;
 }
 
-CExtPubKey KeyIO::DecodeExtPubKey(const std::string& str)
+CExtPubKey KeyIO::DecodeExtPubKey(const std::string& str) const
 {
     CExtPubKey key;
     std::vector<unsigned char> data;
@@ -313,7 +313,7 @@ CExtPubKey KeyIO::DecodeExtPubKey(const std::string& str)
     return key;
 }
 
-std::string KeyIO::EncodeExtPubKey(const CExtPubKey& key)
+std::string KeyIO::EncodeExtPubKey(const CExtPubKey& key) const
 {
     std::vector<unsigned char> data = keyConstants.Base58Prefix(KeyConstants::EXT_PUBLIC_KEY);
     size_t size = data.size();
@@ -323,7 +323,7 @@ std::string KeyIO::EncodeExtPubKey(const CExtPubKey& key)
     return ret;
 }
 
-CExtKey KeyIO::DecodeExtKey(const std::string& str)
+CExtKey KeyIO::DecodeExtKey(const std::string& str) const
 {
     CExtKey key;
     std::vector<unsigned char> data;
@@ -336,7 +336,7 @@ CExtKey KeyIO::DecodeExtKey(const std::string& str)
     return key;
 }
 
-std::string KeyIO::EncodeExtKey(const CExtKey& key)
+std::string KeyIO::EncodeExtKey(const CExtKey& key) const
 {
     std::vector<unsigned char> data = keyConstants.Base58Prefix(KeyConstants::EXT_SECRET_KEY);
     size_t size = data.size();
@@ -347,17 +347,17 @@ std::string KeyIO::EncodeExtKey(const CExtKey& key)
     return ret;
 }
 
-std::string KeyIO::EncodeDestination(const CTxDestination& dest)
+std::string KeyIO::EncodeDestination(const CTxDestination& dest) const
 {
     return std::visit(DestinationEncoder(keyConstants), dest);
 }
 
-bool KeyIO::IsValidDestinationString(const std::string& str)
+bool KeyIO::IsValidDestinationString(const std::string& str) const
 {
     return IsValidDestination(DecodeDestination(str));
 }
 
-std::string KeyIO::EncodePaymentAddress(const libzcash::PaymentAddress& zaddr)
+std::string KeyIO::EncodePaymentAddress(const libzcash::PaymentAddress& zaddr) const
 {
     return std::visit(PaymentAddressEncoder(keyConstants), zaddr);
 }
@@ -433,71 +433,12 @@ std::optional<T1> DecodeAny(
     return std::nullopt;
 }
 
-/**
- * `raw` MUST be 43 bytes.
- */
-static bool AddSaplingReceiver(void* ua, const unsigned char* raw)
-{
-    CDataStream ss(
-        reinterpret_cast<const char*>(raw),
-        reinterpret_cast<const char*>(raw + 43),
-        SER_NETWORK,
-        PROTOCOL_VERSION);
-    libzcash::SaplingPaymentAddress receiver;
-    ss >> receiver;
-    return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
-}
-
-/**
- * `raw` MUST be 20 bytes.
- */
-static bool AddP2SHReceiver(void* ua, const unsigned char* raw)
-{
-    CDataStream ss(
-        reinterpret_cast<const char*>(raw),
-        reinterpret_cast<const char*>(raw + 20),
-        SER_NETWORK,
-        PROTOCOL_VERSION);
-    CScriptID receiver;
-    ss >> receiver;
-    return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
-}
-
-/**
- * `raw` MUST be 20 bytes.
- */
-static bool AddP2PKHReceiver(void* ua, const unsigned char* raw)
-{
-    CDataStream ss(
-        reinterpret_cast<const char*>(raw),
-        reinterpret_cast<const char*>(raw + 20),
-        SER_NETWORK,
-        PROTOCOL_VERSION);
-    CKeyID receiver;
-    ss >> receiver;
-    return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
-}
-
-static bool AddUnknownReceiver(void* ua, uint32_t typecode, const unsigned char* data, size_t len)
-{
-    libzcash::UnknownReceiver receiver(typecode, std::vector(data, data + len));
-    return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
-}
-
-std::optional<libzcash::PaymentAddress> KeyIO::DecodePaymentAddress(const std::string& str)
+std::optional<libzcash::PaymentAddress> KeyIO::DecodePaymentAddress(const std::string& str) const
 {
     // Try parsing as a Unified Address.
-    libzcash::UnifiedAddress ua;
-    if (zcash_address_parse_unified(
-        str.c_str(),
-        keyConstants.NetworkIDString().c_str(),
-        &ua,
-        AddSaplingReceiver,
-        AddP2SHReceiver,
-        AddP2PKHReceiver,
-        AddUnknownReceiver)
-    ) {
-        return ua;
+    auto ua = libzcash::UnifiedAddress::Parse(keyConstants, str);
+    if (ua.has_value()) {
+        return ua.value();
     }
 
     // Try parsing as a Sapling address
@@ -535,16 +476,17 @@ std::optional<libzcash::PaymentAddress> KeyIO::DecodePaymentAddress(const std::s
     }, DecodeDestination(str));
 }
 
-bool KeyIO::IsValidPaymentAddressString(const std::string& str) {
+bool KeyIO::IsValidPaymentAddressString(const std::string& str) const
+{
     return DecodePaymentAddress(str).has_value();
 }
 
-std::string KeyIO::EncodeViewingKey(const libzcash::ViewingKey& vk)
+std::string KeyIO::EncodeViewingKey(const libzcash::ViewingKey& vk) const
 {
     return std::visit(ViewingKeyEncoder(keyConstants), vk);
 }
 
-std::optional<libzcash::ViewingKey> KeyIO::DecodeViewingKey(const std::string& str)
+std::optional<libzcash::ViewingKey> KeyIO::DecodeViewingKey(const std::string& str) const
 {
     // Try parsing as a Unified full viewing key
     auto ufvk = libzcash::UnifiedFullViewingKey::Decode(str, keyConstants);
@@ -563,12 +505,12 @@ std::optional<libzcash::ViewingKey> KeyIO::DecodeViewingKey(const std::string& s
         );
 }
 
-std::string KeyIO::EncodeSpendingKey(const libzcash::SpendingKey& zkey)
+std::string KeyIO::EncodeSpendingKey(const libzcash::SpendingKey& zkey) const
 {
     return std::visit(SpendingKeyEncoder(keyConstants), zkey);
 }
 
-std::optional<libzcash::SpendingKey> KeyIO::DecodeSpendingKey(const std::string& str)
+std::optional<libzcash::SpendingKey> KeyIO::DecodeSpendingKey(const std::string& str) const
 {
 
     return DecodeAny<libzcash::SpendingKey,

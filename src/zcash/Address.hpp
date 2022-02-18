@@ -66,6 +66,8 @@ class UnifiedAddress {
 public:
     UnifiedAddress() {}
 
+    static std::optional<UnifiedAddress> Parse(const KeyConstants& keyConstants, const std::string& str);
+
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
