@@ -171,6 +171,10 @@ STAGES = [
     'secp256k1',
     'univalue',
     'rpc',
+    'rpc0',
+    'rpc1',
+    'rpc2',
+    'rpc3',   
 ]
 
 STAGE_COMMANDS = {
