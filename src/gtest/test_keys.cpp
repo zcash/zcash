@@ -73,6 +73,12 @@ namespace libzcash {
     public:
         ReceiverToString() {}
 
+        std::string operator()(const OrchardRawAddress &zaddr) const {
+            CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+            ss << zaddr;
+            return tfm::format("Orchard(%s)", HexStr(ss.begin(), ss.end()));
+        }
+
         std::string operator()(const SaplingPaymentAddress &zaddr) const {
             CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
             ss << zaddr;
@@ -126,8 +132,11 @@ TEST(Keys, EncodeAndDecodeUnifiedAddresses)
             // These were added to the UA in preference order by the Python test vectors.
             if (!test[3].isNull()) {
                 auto data = ParseHex(test[3].get_str());
-                libzcash::UnknownReceiver r(0x03, data);
-                ua.AddReceiver(r);
+                CDataStream ss(
+                    data,
+                    SER_NETWORK,
+                    PROTOCOL_VERSION);
+                ua.AddReceiver(libzcash::OrchardRawAddress::Read(ss));
             }
             if (!test[2].isNull()) {
                 auto data = ParseHex(test[2].get_str());

@@ -399,6 +399,8 @@ public:
     FindUFVKId(const CBasicKeyStore& keystore): keystore(keystore) {}
 
     std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+        operator()(const libzcash::OrchardRawAddress& orchardAddr) const;
+    std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
         operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const;
     std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
         operator()(const CScriptID& scriptId) const;

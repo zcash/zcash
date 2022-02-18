@@ -1931,6 +1931,7 @@ private:
 public:
     UFVKForReceiver(const CWallet& wallet): wallet(wallet) {}
 
+    std::optional<libzcash::ZcashdUnifiedFullViewingKey> operator()(const libzcash::OrchardRawAddress& orchardAddr) const;
     std::optional<libzcash::ZcashdUnifiedFullViewingKey> operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const;
     std::optional<libzcash::ZcashdUnifiedFullViewingKey> operator()(const CScriptID& scriptId) const;
     std::optional<libzcash::ZcashdUnifiedFullViewingKey> operator()(const CKeyID& keyId) const;
@@ -1945,6 +1946,7 @@ private:
 public:
     UnifiedAddressForReceiver(const CWallet& wallet): wallet(wallet) {}
 
+    std::optional<libzcash::UnifiedAddress> operator()(const libzcash::OrchardRawAddress& orchardAddr) const;
     std::optional<libzcash::UnifiedAddress> operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const;
     std::optional<libzcash::UnifiedAddress> operator()(const CScriptID& scriptId) const;
     std::optional<libzcash::UnifiedAddress> operator()(const CKeyID& keyId) const;

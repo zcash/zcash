@@ -33,6 +33,34 @@ OrchardRawAddressPtr* orchard_address_clone(
 void orchard_address_free(OrchardRawAddressPtr* ptr);
 
 /**
+ * Parses Orchard raw address bytes from the given stream.
+ *
+ * - If the key does not parse correctly, the returned pointer will be null.
+ */
+OrchardRawAddressPtr* orchard_raw_address_parse(
+    void* stream,
+    read_callback_t read_cb);
+
+
+/**
+ * Serializes Orchard raw address bytes to the given stream.
+ *
+ * This will return `false` and leave the stream unmodified if
+ * `raw_address == nullptr`;
+ */
+bool orchard_raw_address_serialize(
+    const OrchardRawAddressPtr* raw_address,
+    void* stream,
+    write_callback_t write_cb);
+
+/**
+ * Implements the "equal" operation for comparing two Orchard addresses.
+ */
+bool orchard_address_eq(
+    const OrchardRawAddressPtr* k0,
+    const OrchardRawAddressPtr* k1);
+
+/**
  * Implements the "less than" operation `k0 < k1` for comparing two Orchard
  * addresses.  This is a comparison of the raw bytes, only useful for cases
  * where a semantically irrelevant ordering is needed (such as for map keys).

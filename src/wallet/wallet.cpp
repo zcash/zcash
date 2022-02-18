@@ -6555,6 +6555,10 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
 
 // UFVKForReceiver :: (CWallet&, Receiver) -> std::optional<ZcashdUnifiedFullViewingKey>
 
+std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const libzcash::OrchardRawAddress& orchardAddr) const {
+    // TODO: Implement once we have Orchard in UFVKs
+    return std::nullopt;
+}
 std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
     auto ufvkPair = wallet.GetUFVKMetadataForReceiver(saplingAddr);
     if (ufvkPair.has_value()) {
@@ -6593,6 +6597,12 @@ std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()
 }
 
 // UnifiedAddressForReceiver :: (CWallet&, Receiver) -> std::optional<UnifiedAddress>
+
+std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(
+        const libzcash::OrchardRawAddress& orchardAddr) const {
+    // TODO: Implement once we have Orchard in UFVKs
+    return std::nullopt;
+}
 
 std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
     auto ufvkPair = wallet.GetUFVKMetadataForReceiver(saplingAddr);

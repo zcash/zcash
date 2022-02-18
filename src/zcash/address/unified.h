@@ -8,6 +8,7 @@
 #include "transparent.h"
 #include "key_constants.h"
 #include "script/script.h"
+#include "zcash/address/orchard.hpp"
 #include "zip32.h"
 
 #include <variant>
@@ -23,7 +24,7 @@ enum class ReceiverType: uint32_t {
     P2PKH = 0x00,
     P2SH = 0x01,
     Sapling = 0x02,
-    //Orchard = 0x03
+    Orchard = 0x03
 };
 
 enum class UnifiedAddressGenerationError {
@@ -113,6 +114,7 @@ public:
  * variants by `operator<` is equivalent to sorting by preference.
  */
 typedef std::variant<
+    OrchardRawAddress,
     SaplingPaymentAddress,
     CScriptID,
     CKeyID,

@@ -84,6 +84,9 @@ public:
         std::set<ReceiverType> result;
         for (const auto& receiver : receivers) {
             std::visit(match {
+                [&](const libzcash::OrchardRawAddress &zaddr) {
+                    result.insert(ReceiverType::Orchard);
+                },
                 [&](const libzcash::SaplingPaymentAddress &zaddr) {
                     result.insert(ReceiverType::Sapling);
                 },
@@ -115,6 +118,8 @@ public:
     std::optional<CScriptID> GetP2SHReceiver() const;
 
     std::optional<SaplingPaymentAddress> GetSaplingReceiver() const;
+
+    std::optional<OrchardRawAddress> GetOrchardReceiver() const;
 
     /**
      * Return the most-preferred receiver from among the receiver types
@@ -283,6 +288,7 @@ class TypecodeForReceiver {
 public:
     TypecodeForReceiver() {}
 
+    uint32_t operator()(const libzcash::OrchardRawAddress &zaddr) const;
     uint32_t operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     uint32_t operator()(const CScriptID &p2sh) const;
     uint32_t operator()(const CKeyID &p2pkh) const;

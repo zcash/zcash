@@ -31,6 +31,10 @@ private:
     friend class ::OrchardWallet;
     friend class ::orchard::Builder;
 public:
+    static OrchardRawAddress KeyIoOnlyFromReceiver(OrchardRawAddressPtr* ptr) {
+        return OrchardRawAddress(ptr);
+    }
+
     OrchardRawAddress(OrchardRawAddress&& key) : inner(std::move(key.inner)) {}
 
     OrchardRawAddress(const OrchardRawAddress& key) :
@@ -52,8 +56,37 @@ public:
         return *this;
     }
 
+    friend bool operator==(const OrchardRawAddress& c1, const OrchardRawAddress& c2) {
+        return orchard_address_eq(c1.inner.get(), c2.inner.get());
+    }
+
     friend bool operator<(const OrchardRawAddress& c1, const OrchardRawAddress& c2) {
         return orchard_address_lt(c1.inner.get(), c2.inner.get());
+    }
+
+    template<typename Stream>
+    void Serialize(Stream& s) const {
+        RustStream rs(s);
+        if (!orchard_raw_address_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
+            throw std::ios_base::failure("Failed to serialize Orchard raw address to bytes");
+        }
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream& s) {
+        RustStream rs(s);
+        OrchardRawAddressPtr* addr = orchard_raw_address_parse(&rs, RustStream<Stream>::read_callback);
+        if (addr == nullptr) {
+            throw std::ios_base::failure("Failed to parse Orchard raw address bytes");
+        }
+        inner.reset(addr);
+    }
+
+    template<typename Stream>
+    static OrchardRawAddress Read(Stream& stream) {
+        OrchardRawAddress key;
+        stream >> key;
+        return key;
     }
 };
 

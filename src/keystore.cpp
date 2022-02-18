@@ -404,6 +404,12 @@ std::optional<libzcash::UFVKId> CBasicKeyStore::GetUFVKIdForViewingKey(const lib
 }
 
 std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+FindUFVKId::operator()(const libzcash::OrchardRawAddress& orchardAddr) const {
+    // TODO: Implement once we have Orchard in UFVKs
+    return std::nullopt;
+}
+
+std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
 FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
     const auto saplingIvk = keystore.mapSaplingIncomingViewingKeys.find(saplingAddr);
     if (saplingIvk != keystore.mapSaplingIncomingViewingKeys.end()) {

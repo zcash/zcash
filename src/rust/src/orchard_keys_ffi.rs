@@ -29,6 +29,56 @@ pub extern "C" fn orchard_address_free(addr: *mut Address) {
 }
 
 #[no_mangle]
+pub extern "C" fn orchard_raw_address_parse(
+    stream: Option<StreamObj>,
+    read_cb: Option<ReadCb>,
+) -> *mut Address {
+    let mut reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
+
+    let mut buf = [0u8; 43];
+    match reader.read_exact(&mut buf) {
+        Err(e) => {
+            error!("Stream failure reading bytes of Orchard raw address: {}", e);
+            std::ptr::null_mut()
+        }
+        Ok(()) => {
+            let read = Address::from_raw_address_bytes(&buf);
+            if read.is_some().into() {
+                Box::into_raw(Box::new(read.unwrap()))
+            } else {
+                error!("Failed to parse Orchard raw address.");
+                std::ptr::null_mut()
+            }
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_raw_address_serialize(
+    key: *const Address,
+    stream: Option<StreamObj>,
+    write_cb: Option<WriteCb>,
+) -> bool {
+    let key = unsafe { key.as_ref() }.expect("Orchard raw address pointer may not be null.");
+
+    let mut writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
+    match writer.write_all(&key.to_raw_address_bytes()) {
+        Ok(()) => true,
+        Err(e) => {
+            error!("Stream failure writing Orchard raw address: {}", e);
+            false
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_address_eq(a0: *const Address, a1: *const Address) -> bool {
+    let a0 = unsafe { a0.as_ref() };
+    let a1 = unsafe { a1.as_ref() };
+    a0 == a1
+}
+
+#[no_mangle]
 pub extern "C" fn orchard_address_lt(a0: *const Address, a1: *const Address) -> bool {
     let a0 = unsafe { a0.as_ref() };
     let a1 = unsafe { a1.as_ref() };
