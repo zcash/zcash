@@ -13,7 +13,9 @@
 #include "undo.h"
 #include "primitives/transaction.h"
 #include "pubkey.h"
+#include "transaction_builder.h"
 #include "zcash/Note.hpp"
+#include "zcash/address/mnemonic.h"
 
 #include <vector>
 #include <map>
@@ -267,6 +269,7 @@ public:
     CTransaction tx;
     uint256 sproutNullifier;
     uint256 saplingNullifier;
+    uint256 orchardNullifier;
 
     TxWithNullifiers()
     {
@@ -282,7 +285,13 @@ public:
         sd.nullifier = saplingNullifier;
         mutableTx.vShieldedSpend.push_back(sd);
 
-        // TODO: Orchard nullifier
+        // The Orchard bundle builder always pads to two Actions, so we can just
+        // use an empty builder to create a dummy Orchard bundle.
+        uint256 orchardAnchor;
+        uint256 dataToBeSigned;
+        auto builder = orchard::Builder(true, true, orchardAnchor);
+        mutableTx.orchardBundle = builder.Build().value().ProveAndSign(dataToBeSigned).value();
+        orchardNullifier = mutableTx.orchardBundle.GetNullifiers()[0];
 
         tx = CTransaction(mutableTx);
     }
@@ -311,12 +320,18 @@ BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
 void checkNullifierCache(const CCoinsViewCacheTest &cache, const TxWithNullifiers &txWithNullifiers, bool shouldBeInCache) {
     // Make sure the nullifiers have not gotten mixed up
     BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.sproutNullifier, SAPLING));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.sproutNullifier, ORCHARD));
     BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.saplingNullifier, SPROUT));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.saplingNullifier, ORCHARD));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.orchardNullifier, SPROUT));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.orchardNullifier, SAPLING));
     // Check if the nullifiers either are or are not in the cache
     bool containsSproutNullifier = cache.GetNullifier(txWithNullifiers.sproutNullifier, SPROUT);
     bool containsSaplingNullifier = cache.GetNullifier(txWithNullifiers.saplingNullifier, SAPLING);
+    bool containsOrchardNullifier = cache.GetNullifier(txWithNullifiers.orchardNullifier, ORCHARD);
     BOOST_CHECK(containsSproutNullifier == shouldBeInCache);
     BOOST_CHECK(containsSaplingNullifier == shouldBeInCache);
+    BOOST_CHECK(containsOrchardNullifier == shouldBeInCache);
 }
 
 BOOST_AUTO_TEST_CASE(nullifier_regression_test)
