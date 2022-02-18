@@ -315,7 +315,8 @@ public:
 };
 
 // Serialization wrapper for reading and writing RecipientAddress
-// in CompactSize format.
+// as a pair of typecode and address bytes, similar to how unified address
+// receivers are written (but excluding the unknown receiver case)
 class CSerializeRecipientAddress {
     libzcash::ReceiverType typecode;
 
