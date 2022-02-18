@@ -6554,7 +6554,7 @@ std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(co
     return std::nullopt;
 }
 
-bool ZTXOSelector::SelectsTransparent() {
+bool ZTXOSelector::SelectsTransparent() const {
     return std::visit(match {
         [](const CKeyID& keyId) { return true; },
         [](const CScriptID& scriptId) { return true; },
@@ -6566,14 +6566,14 @@ bool ZTXOSelector::SelectsTransparent() {
         [](const AccountZTXOPattern& acct) { return acct.IncludesP2PKH() || acct.IncludesP2SH(); }
     }, this->pattern);
 }
-bool ZTXOSelector::SelectsSprout() {
+bool ZTXOSelector::SelectsSprout() const {
     return std::visit(match {
         [](const libzcash::SproutViewingKey& addr) { return true; },
         [](const libzcash::SproutPaymentAddress& extfvk) { return true; },
         [](const auto& addr) { return false; }
     }, this->pattern);
 }
-bool ZTXOSelector::SelectsSapling() {
+bool ZTXOSelector::SelectsSapling() const {
     return std::visit(match {
         [](const libzcash::SaplingPaymentAddress& addr) { return true; },
         [](const libzcash::SaplingExtendedSpendingKey& extfvk) { return true; },
