@@ -213,6 +213,29 @@ bool AsyncRPCOperation_shieldcoinbase::main_impl() {
     return std::visit(ShieldToAddress(this, sendAmount), tozaddr_);
 }
 
+void ShieldToAddress::shieldToAddress(const libzcash::RecipientAddress& recipient, AsyncRPCOperation_shieldcoinbase *m_op) {
+    m_op->builder_.SetFee(m_op->fee_);
+
+    // Sending from a t-address, which we don't have an ovk for. Instead,
+    // generate a common one from the HD seed. This ensures the data is
+    // recoverable, while keeping it logically separate from the ZIP 32
+    // Sapling key hierarchy, which the user might not be using.
+    // FIXME: update to use the ZIP-316 OVK
+    HDSeed seed = pwalletMain->GetHDSeedForRPC();
+    uint256 ovk = ovkForShieldingFromTaddr(seed);
+
+    // Add transparent inputs
+    for (auto t : m_op->inputs_) {
+        m_op->builder_.AddTransparentInput(COutPoint(t.txid, t.vout), t.scriptPubKey, t.amount);
+    }
+
+    // Send all value to the target recipient
+    m_op->builder_.SendChangeTo(recipient, ovk);
+
+    // Build the transaction
+    m_op->tx_ = m_op->builder_.Build().GetTxOrThrow();
+}
+
 bool ShieldToAddress::operator()(const CKeyID &addr) const {
     return false;
 }
@@ -250,28 +273,8 @@ bool ShieldToAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) co
     return true;
 }
 
-
 bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
-    m_op->builder_.SetFee(m_op->fee_);
-
-    // Sending from a t-address, which we don't have an ovk for. Instead,
-    // generate a common one from the HD seed. This ensures the data is
-    // recoverable, while keeping it logically separate from the ZIP 32
-    // Sapling key hierarchy, which the user might not be using.
-    // FIXME: update to use the ZIP-316 OVK
-    HDSeed seed = pwalletMain->GetHDSeedForRPC();
-    uint256 ovk = ovkForShieldingFromTaddr(seed);
-
-    // Add transparent inputs
-    for (auto t : m_op->inputs_) {
-        m_op->builder_.AddTransparentInput(COutPoint(t.txid, t.vout), t.scriptPubKey, t.amount);
-    }
-
-    // Send all value to the target z-addr
-    m_op->builder_.SendChangeTo(zaddr, ovk);
-
-    // Build the transaction
-    m_op->tx_ = m_op->builder_.Build().GetTxOrThrow();
+    ShieldToAddress::shieldToAddress(zaddr, m_op);
 
     std::vector<RecipientMapping> recipientMappings;
     UniValue sendResult = SendTransaction(m_op->tx_, recipientMappings, std::nullopt, m_op->testmode);
@@ -284,28 +287,7 @@ bool ShieldToAddress::operator()(const libzcash::UnifiedAddress &uaddr) const {
     // TODO check if an Orchard address is present, send to it if so.
     const auto receiver{uaddr.GetSaplingReceiver()};
     if (receiver.has_value()) {
-        m_op->builder_.SetFee(m_op->fee_);
-
-        // Sending from a t-address, which we don't have an ovk for. Instead,
-        // generate a common one from the HD seed. This ensures the data is
-        // recoverable, while keeping it logically separate from the ZIP 32
-        // Sapling key hierarchy, which the user might not be using.
-        // FIXME: update to use the ZIP-316 OVK
-        HDSeed seed = pwalletMain->GetHDSeedForRPC();
-        uint256 ovk = ovkForShieldingFromTaddr(seed);
-
-        // Add transparent inputs
-        CAmount total;
-        for (auto t : m_op->inputs_) {
-            m_op->builder_.AddTransparentInput(COutPoint(t.txid, t.vout), t.scriptPubKey, t.amount);
-            total += t.amount;
-        }
-
-        // Send all value to the target z-addr
-        m_op->builder_.SendChangeTo(receiver.value(), ovk);
-
-        // Build the transaction
-        m_op->tx_ = m_op->builder_.Build().GetTxOrThrow();
+        ShieldToAddress::shieldToAddress(receiver.value(), m_op);
 
         std::vector<RecipientMapping> recipientMappings = {RecipientMapping(uaddr, receiver.value())};
         UniValue sendResult = SendTransaction(m_op->tx_, recipientMappings, std::nullopt, m_op->testmode);
