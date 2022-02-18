@@ -318,11 +318,11 @@ public:
 // as a pair of typecode and address bytes, similar to how unified address
 // receivers are written (but excluding the unknown receiver case)
 class CSerializeRecipientAddress {
+    libzcash::RecipientAddress recipient;
     libzcash::ReceiverType typecode;
+    CSerializeRecipientAddress() {} // for serialization only
 
     public:
-        libzcash::RecipientAddress recipient;
-        CSerializeRecipientAddress() {} // for serialization only
         CSerializeRecipientAddress(libzcash::RecipientAddress recipient): recipient(recipient) {}
 
         template<typename Stream>
@@ -368,6 +368,13 @@ class CSerializeRecipientAddress {
                     break;
                 }
             }
+        }
+
+        template <typename Stream>
+        static libzcash::RecipientAddress Read(Stream& stream) {
+            CSerializeRecipientAddress csr;
+            stream >> csr;
+            return csr.recipient;
         }
 };
 

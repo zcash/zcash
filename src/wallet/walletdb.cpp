@@ -858,10 +858,9 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         else if (strType == "recipientmapping")
         {
             uint256 txid;
-            CSerializeRecipientAddress recipient;
             std::string rawUa;
             ssKey >> txid;
-            ssKey >> recipient;
+            auto recipient = CSerializeRecipientAddress::Read(ssKey);
             ssValue >> rawUa;
 
             auto ua = libzcash::UnifiedAddress::Parse(Params(), rawUa);
@@ -875,7 +874,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 [&](const CKeyID& key) { recipientReceiver = key; },
                 [&](const CScriptID& scriptId) { recipientReceiver = scriptId; },
                 [&](const libzcash::SaplingPaymentAddress& addr) { recipientReceiver = addr; }
-            }, recipient.recipient);
+            }, recipient);
 
             bool found = false;
             for (const auto& receiver : ua.value().GetReceiversAsParsed()) {
