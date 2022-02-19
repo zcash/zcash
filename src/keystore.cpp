@@ -312,14 +312,26 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
 {
     LOCK(cs_KeyStore);
 
+    auto ufvkId = ufvk.GetKeyID();
+
+    // Add the Orchard component of the UFVK to the wallet.
+    auto orchardKey = ufvk.GetOrchardKey();
+    if (orchardKey.has_value()) {
+        auto ivk = orchardKey.value().ToIncomingViewingKey();
+        mapOrchardKeyUnified.insert(std::make_pair(ivk, ufvkId));
+
+        auto ivkInternal = orchardKey.value().ToInternalIncomingViewingKey();
+        mapOrchardKeyUnified.insert(std::make_pair(ivkInternal, ufvkId));
+    }
+
     // Add the Sapling component of the UFVK to the wallet.
     auto saplingKey = ufvk.GetSaplingKey();
     if (saplingKey.has_value()) {
         auto ivk = saplingKey.value().ToIncomingViewingKey();
-        mapSaplingKeyUnified.insert(std::make_pair(ivk, ufvk.GetKeyID()));
+        mapSaplingKeyUnified.insert(std::make_pair(ivk, ufvkId));
 
         auto changeIvk = saplingKey.value().GetChangeIVK();
-        mapSaplingKeyUnified.insert(std::make_pair(changeIvk, ufvk.GetKeyID()));
+        mapSaplingKeyUnified.insert(std::make_pair(changeIvk, ufvkId));
     }
 
     // We can't reasonably add the transparent component here, because
@@ -329,7 +341,7 @@ bool CBasicKeyStore::AddUnifiedFullViewingKey(
     // transparent part of the address must be added to the keystore.
 
     // Add the UFVK by key identifier.
-    mapUnifiedFullViewingKeys.insert({ufvk.GetKeyID(), ufvk});
+    mapUnifiedFullViewingKeys.insert({ufvkId, ufvk});
 
     return true;
 }
@@ -390,6 +402,15 @@ std::optional<libzcash::UFVKId> CBasicKeyStore::GetUFVKIdForViewingKey(const lib
             }
         },
         [&](const libzcash::UnifiedFullViewingKey& ufvk) {
+            const auto orchardFvk = ufvk.GetOrchardKey();
+            if (orchardFvk.has_value()) {
+                const auto orchardIvk = orchardFvk.value().ToIncomingViewingKey();
+                const auto ufvkId = mapOrchardKeyUnified.find(orchardIvk);
+                if (ufvkId != mapOrchardKeyUnified.end()) {
+                    result = ufvkId->second;
+                    return;
+                }
+            }
             const auto saplingDfvk = ufvk.GetSaplingKey();
             if (saplingDfvk.has_value()) {
                 const auto saplingIvk = saplingDfvk.value().ToIncomingViewingKey();
@@ -405,7 +426,15 @@ std::optional<libzcash::UFVKId> CBasicKeyStore::GetUFVKIdForViewingKey(const lib
 
 std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
 FindUFVKId::operator()(const libzcash::OrchardRawAddress& orchardAddr) const {
-    // TODO: Implement once we have Orchard in UFVKs
+    for (const auto& [k, v] : keystore.mapUnifiedFullViewingKeys) {
+        auto fvk = v.GetOrchardKey();
+        if (fvk.has_value()) {
+            auto d_idx = fvk.value().ToIncomingViewingKey().DecryptDiversifier(orchardAddr);
+            if (d_idx.has_value()) {
+                return std::make_pair(k, d_idx);
+            }
+        }
+    }
     return std::nullopt;
 }
 

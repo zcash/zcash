@@ -185,6 +185,7 @@ protected:
     std::map<CKeyID, std::pair<libzcash::UFVKId, libzcash::diversifier_index_t>> mapP2PKHUnified;
     std::map<CScriptID, std::pair<libzcash::UFVKId, libzcash::diversifier_index_t>> mapP2SHUnified;
     std::map<libzcash::SaplingIncomingViewingKey, libzcash::UFVKId> mapSaplingKeyUnified;
+    std::map<libzcash::OrchardIncomingViewingKey, libzcash::UFVKId> mapOrchardKeyUnified;
     std::map<libzcash::UFVKId, libzcash::ZcashdUnifiedFullViewingKey> mapUnifiedFullViewingKeys;
 
     friend class FindUFVKId;

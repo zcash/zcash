@@ -293,14 +293,13 @@ TEST(Keys, EncodeAndDecodeUnifiedFullViewingKeys)
             auto key = libzcash::SaplingDiversifiableFullViewingKey::Read(ss);
             ASSERT_TRUE(builder.AddSaplingKey(key));
         }
-
-        // Orchard keys and unknown items are not yet supported; instead,
-        // we just test that we're able to parse the unified key string
-        // and that the constituent items match the elements; if no Sapling
-        // key is present then UFVK construction would fail because it might
-        // presume the UFVK to be transparent-only.
-        if (test[1].isNull())
-            continue;
+        if (!test[2].isNull()) {
+            auto data = ParseHex(test[2].get_str());
+            ASSERT_EQ(data.size(), 96);
+            CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
+            auto key = libzcash::OrchardFullViewingKey::Read(ss);
+            ASSERT_TRUE(builder.AddOrchardKey(key));
+        }
 
         auto built = builder.build();
         ASSERT_TRUE(built.has_value());
@@ -313,5 +312,6 @@ TEST(Keys, EncodeAndDecodeUnifiedFullViewingKeys)
 
         EXPECT_EQ(decoded.value().GetTransparentKey(), built.value().GetTransparentKey());
         EXPECT_EQ(decoded.value().GetSaplingKey(), built.value().GetSaplingKey());
+        EXPECT_EQ(decoded.value().GetOrchardKey(), built.value().GetOrchardKey());
     }
 }

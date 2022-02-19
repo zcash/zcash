@@ -16,7 +16,7 @@ using namespace libzcash;
 bool libzcash::HasShielded(const std::set<ReceiverType>& receiverTypes) {
     auto has_shielded = [](ReceiverType r) {
         // TODO: update this as support for new shielded protocols is added.
-        return r == ReceiverType::Sapling;
+        return r == ReceiverType::Sapling || r == ReceiverType::Orchard;
     };
     return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_shielded) != receiverTypes.end();
 }
@@ -69,6 +69,11 @@ ZcashdUnifiedFullViewingKey ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingK
         result.saplingKey = saplingKey.value();
     }
 
+    auto orchardKey = ufvk.GetOrchardKey();
+    if (orchardKey.has_value()) {
+        result.orchardKey = orchardKey.value();
+    }
+
     return result;
 }
 
@@ -85,6 +90,14 @@ UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::Address(
     }
 
     UnifiedAddress ua;
+    if (receiverTypes.count(ReceiverType::Orchard) > 0) {
+        if (orchardKey.has_value()) {
+            ua.AddReceiver(orchardKey.value().ToIncomingViewingKey().Address(j));
+        } else {
+            return UnifiedAddressGenerationError::ReceiverTypeNotAvailable;
+        }
+    }
+
     if (receiverTypes.count(ReceiverType::Sapling) > 0) {
         if (saplingKey.has_value()) {
             auto saplingAddress = saplingKey.value().Address(j);
@@ -179,6 +192,9 @@ UnifiedFullViewingKey ZcashdUnifiedFullViewingKey::ToFullViewingKey() const {
     }
     if (saplingKey.has_value()) {
         builder.AddSaplingKey(saplingKey.value());
+    }
+    if (orchardKey.has_value()) {
+        builder.AddOrchardKey(orchardKey.value());
     }
 
     // This call to .value() is safe as ZcashdUnifiedFullViewingKey values are always

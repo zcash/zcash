@@ -146,6 +146,26 @@ pub extern "C" fn orchard_incoming_viewing_key_to_address(
 }
 
 #[no_mangle]
+pub extern "C" fn orchard_incoming_viewing_key_decrypt_diversifier(
+    key: *const IncomingViewingKey,
+    addr: *const Address,
+    j_ret: *mut [u8; 11],
+) -> bool {
+    let key =
+        unsafe { key.as_ref() }.expect("Orchard incoming viewing key pointer may not be null.");
+    let addr = unsafe { addr.as_ref() }.expect("Orchard raw address pointer may not be null.");
+    let j_ret = unsafe { j_ret.as_mut() }.expect("j_ret may not be null.");
+
+    match key.diversifier_index(addr) {
+        Some(j) => {
+            j_ret.copy_from_slice(j.to_bytes());
+            true
+        }
+        None => false,
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn orchard_incoming_viewing_key_serialize(
     key: *const IncomingViewingKey,
     stream: Option<StreamObj>,
@@ -247,6 +267,18 @@ pub extern "C" fn orchard_full_viewing_key_to_incoming_viewing_key(
 ) -> *mut IncomingViewingKey {
     unsafe { key.as_ref() }
         .map(|key| Box::into_raw(Box::new(IncomingViewingKey::from(key))))
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_full_viewing_key_to_internal_incoming_viewing_key(
+    fvk: *const FullViewingKey,
+) -> *mut IncomingViewingKey {
+    unsafe { fvk.as_ref() }
+        .map(|fvk| {
+            let internal_fvk = fvk.derive_internal();
+            Box::into_raw(Box::new(IncomingViewingKey::from(&internal_fvk)))
+        })
         .unwrap_or(std::ptr::null_mut())
 }
 

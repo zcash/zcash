@@ -8,7 +8,7 @@ replace-with = "vendored-sources"
 
 [source."https://github.com/zcash/orchard.git"]
 git = "https://github.com/zcash/orchard.git"
-rev = "4dc1ae059a59ee911134cb3e731c7be627a71d4d"
+rev = "3b8d07f7b64b2329622089ac9698e4cce97e2f14"
 replace-with = "vendored-sources"
 
 [source."https://github.com/nuttycom/hdwallet.git"]

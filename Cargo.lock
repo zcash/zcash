@@ -1090,7 +1090,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orchard"
 version = "0.1.0-beta.1"
-source = "git+https://github.com/zcash/orchard.git?rev=4dc1ae059a59ee911134cb3e731c7be627a71d4d#4dc1ae059a59ee911134cb3e731c7be627a71d4d"
+source = "git+https://github.com/zcash/orchard.git?rev=3b8d07f7b64b2329622089ac9698e4cce97e2f14#3b8d07f7b64b2329622089ac9698e4cce97e2f14"
 dependencies = [
  "aes",
  "arrayvec 0.7.2",

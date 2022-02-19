@@ -192,6 +192,16 @@ std::string libzcash::UnifiedFullViewingKey::Encode(const KeyConstants& keyConst
     return res;
 }
 
+std::optional<libzcash::OrchardFullViewingKey> libzcash::UnifiedFullViewingKey::GetOrchardKey() const {
+    std::vector<uint8_t> buffer(96);
+    if (unified_full_viewing_key_read_orchard(inner.get(), buffer.data())) {
+        CDataStream ss(buffer, SER_NETWORK, PROTOCOL_VERSION);
+        return OrchardFullViewingKey::Read(ss);
+    } else {
+        return std::nullopt;
+    }
+}
+
 std::optional<libzcash::SaplingDiversifiableFullViewingKey> libzcash::UnifiedFullViewingKey::GetSaplingKey() const {
     std::vector<uint8_t> buffer(128);
     if (unified_full_viewing_key_read_sapling(inner.get(), buffer.data())) {
@@ -232,10 +242,21 @@ bool libzcash::UnifiedFullViewingKeyBuilder::AddSaplingKey(const SaplingDiversif
     return true;
 }
 
+bool libzcash::UnifiedFullViewingKeyBuilder::AddOrchardKey(const OrchardFullViewingKey& key) {
+    if (orchard_bytes.has_value()) return false;
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << key;
+    assert(ss.size() == 96);
+    std::vector<uint8_t> ss_bytes(ss.begin(), ss.end());
+    orchard_bytes = ss_bytes;
+    return true;
+}
+
 std::optional<libzcash::UnifiedFullViewingKey> libzcash::UnifiedFullViewingKeyBuilder::build() const {
     UnifiedFullViewingKeyPtr* ptr = unified_full_viewing_key_from_components(
             t_bytes.has_value() ? t_bytes.value().data() : nullptr,
-            sapling_bytes.has_value() ? sapling_bytes.value().data() : nullptr);
+            sapling_bytes.has_value() ? sapling_bytes.value().data() : nullptr,
+            orchard_bytes.has_value() ? orchard_bytes.value().data() : nullptr);
 
     if (ptr == nullptr) {
         return std::nullopt;
@@ -251,6 +272,9 @@ libzcash::UnifiedFullViewingKey libzcash::UnifiedFullViewingKey::FromZcashdUFVK(
     }
     if (key.GetSaplingKey().has_value()) {
         builder.AddSaplingKey(key.GetSaplingKey().value());
+    }
+    if (key.GetOrchardKey().has_value()) {
+        builder.AddOrchardKey(key.GetOrchardKey().value());
     }
 
     auto result = builder.build();

@@ -6556,8 +6556,18 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
 // UFVKForReceiver :: (CWallet&, Receiver) -> std::optional<ZcashdUnifiedFullViewingKey>
 
 std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const libzcash::OrchardRawAddress& orchardAddr) const {
-    // TODO: Implement once we have Orchard in UFVKs
-    return std::nullopt;
+    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(orchardAddr);
+    if (ufvkPair.has_value()) {
+        auto ufvkid = ufvkPair.value().first;
+        auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
+        // If we have UFVK metadata, `GetUnifiedFullViewingKey` should always
+        // return a non-nullopt value, and since we obtained that metadata by
+        // lookup from an Orchard address, it should have a Orchard key component.
+        assert(ufvk.has_value() && ufvk.value().GetOrchardKey().has_value());
+        return ufvk.value();
+    } else {
+        return std::nullopt;
+    }
 }
 std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
     auto ufvkPair = wallet.GetUFVKMetadataForReceiver(saplingAddr);
@@ -6600,7 +6610,30 @@ std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()
 
 std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(
         const libzcash::OrchardRawAddress& orchardAddr) const {
-    // TODO: Implement once we have Orchard in UFVKs
+    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(orchardAddr);
+    if (ufvkPair.has_value()) {
+        auto ufvkid = ufvkPair.value().first;
+        auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
+        assert(ufvk.has_value());
+
+        // If the wallet is missing metadata at this UFVK id, it is probably
+        // corrupt and the node should shut down.
+        const auto& metadata = wallet.mapUfvkAddressMetadata.at(ufvkid);
+        auto orchardKey = ufvk.value().GetOrchardKey();
+        if (orchardKey.has_value()) {
+            auto j = orchardKey.value().ToIncomingViewingKey().DecryptDiversifier(orchardAddr);
+            if (j.has_value()) {
+                auto receivers = metadata.GetReceivers(j.value());
+                if (receivers.has_value()) {
+                    auto addr = ufvk.value().Address(j.value(), receivers.value());
+                    auto addrPtr = std::get_if<std::pair<UnifiedAddress, diversifier_index_t>>(&addr);
+                    if (addrPtr != nullptr) {
+                        return addrPtr->first;
+                    }
+                }
+            }
+        }
+    }
     return std::nullopt;
 }
 

@@ -141,6 +141,7 @@ private:
     UFVKId keyId;
     std::optional<transparent::AccountPubKey> transparentKey;
     std::optional<SaplingDiversifiableFullViewingKey> saplingKey;
+    std::optional<OrchardFullViewingKey> orchardKey;
 
     ZcashdUnifiedFullViewingKey() {}
 
@@ -167,6 +168,10 @@ public:
 
     const std::optional<SaplingDiversifiableFullViewingKey>& GetSaplingKey() const {
         return saplingKey;
+    }
+
+    const std::optional<OrchardFullViewingKey>& GetOrchardKey() const {
+        return orchardKey;
     }
 
     /**

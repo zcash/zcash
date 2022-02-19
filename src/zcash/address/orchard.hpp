@@ -9,6 +9,8 @@
 #include "zcash/address/zip32.h"
 #include <rust/orchard/keys.h>
 
+#include <optional>
+
 class OrchardWallet;
 namespace orchard { class Builder; }
 
@@ -113,6 +115,12 @@ public:
 
     OrchardRawAddress Address(const diversifier_index_t& j) const;
 
+    /**
+     * Decrypts the diversifier for the given raw address, and returns it if that
+     * address was derived from this IVK; otherwise returns std::nullopt;
+     */
+    std::optional<diversifier_index_t> DecryptDiversifier(const OrchardRawAddress& addr) const;
+
     OrchardIncomingViewingKey& operator=(OrchardIncomingViewingKey&& key)
     {
         if (this != &key) {
@@ -183,6 +191,8 @@ public:
         inner(orchard_full_viewing_key_clone(key.inner.get()), orchard_full_viewing_key_free) {}
 
     OrchardIncomingViewingKey ToIncomingViewingKey() const;
+
+    OrchardIncomingViewingKey ToInternalIncomingViewingKey() const;
 
     OrchardFullViewingKey& operator=(OrchardFullViewingKey&& key)
     {

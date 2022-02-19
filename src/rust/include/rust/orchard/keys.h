@@ -98,6 +98,18 @@ OrchardRawAddressPtr* orchard_incoming_viewing_key_to_address(
     const unsigned char* j);
 
 /**
+ * Decrypts the diversifier component of an Orchard raw address with the
+ * specified IVK, and verifies that the address was derived from that IVK.
+ *
+ * Returns `false` and leaves the `j_ret` parameter unmodified if the address
+ * was not derived from the specified IVK.
+ */
+bool orchard_incoming_viewing_key_decrypt_diversifier(
+    const OrchardIncomingViewingKeyPtr* incoming_viewing_key,
+    const OrchardRawAddressPtr* addr,
+    uint8_t *j_ret);
+
+/**
  * Parses an Orchard incoming viewing key from the given stream.
  *
  * - If the key does not parse correctly, the returned pointer will be null.
@@ -177,6 +189,12 @@ bool orchard_full_viewing_key_serialize(
  * Returns the incoming viewing key for the specified full viewing key.
  */
 OrchardIncomingViewingKeyPtr* orchard_full_viewing_key_to_incoming_viewing_key(
+    const OrchardFullViewingKeyPtr* key);
+
+/**
+ * Returns the internal incoming viewing key for the specified full viewing key.
+ */
+OrchardIncomingViewingKeyPtr* orchard_full_viewing_key_to_internal_incoming_viewing_key(
     const OrchardFullViewingKeyPtr* key);
 
 /**

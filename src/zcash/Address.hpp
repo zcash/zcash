@@ -176,6 +176,8 @@ public:
 
     std::string Encode(const KeyConstants& keyConstants) const;
 
+    std::optional<OrchardFullViewingKey> GetOrchardKey() const;
+
     std::optional<SaplingDiversifiableFullViewingKey> GetSaplingKey() const;
 
     std::optional<transparent::AccountPubKey> GetTransparentKey() const;
@@ -189,6 +191,9 @@ public:
         }
         if (GetSaplingKey().has_value()) {
             result.insert(ReceiverType::Sapling);
+        }
+        if (GetOrchardKey().has_value()) {
+            result.insert(ReceiverType::Orchard);
         }
         return result;
     }
@@ -214,11 +219,16 @@ class UnifiedFullViewingKeyBuilder {
 private:
     std::optional<std::vector<uint8_t>> t_bytes;
     std::optional<std::vector<uint8_t>> sapling_bytes;
+    std::optional<std::vector<uint8_t>> orchard_bytes;
 public:
-    UnifiedFullViewingKeyBuilder(): t_bytes(std::nullopt), sapling_bytes(std::nullopt) {}
+    UnifiedFullViewingKeyBuilder():
+        t_bytes(std::nullopt),
+        sapling_bytes(std::nullopt),
+        orchard_bytes(std::nullopt) {}
 
     bool AddTransparentKey(const transparent::AccountPubKey&);
     bool AddSaplingKey(const SaplingDiversifiableFullViewingKey&);
+    bool AddOrchardKey(const OrchardFullViewingKey&);
 
     std::optional<UnifiedFullViewingKey> build() const;
 };

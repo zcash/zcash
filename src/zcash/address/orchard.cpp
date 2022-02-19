@@ -10,7 +10,20 @@ OrchardRawAddress OrchardIncomingViewingKey::Address(const diversifier_index_t& 
     return OrchardRawAddress(orchard_incoming_viewing_key_to_address(inner.get(), j.begin()));
 }
 
+std::optional<diversifier_index_t> OrchardIncomingViewingKey::DecryptDiversifier(const OrchardRawAddress& addr) const {
+    diversifier_index_t j_ret;
+    if (orchard_incoming_viewing_key_decrypt_diversifier(inner.get(), addr.inner.get(), j_ret.begin())) {
+        return j_ret;
+    } else {
+        return std::nullopt;
+    }
+}
+
 OrchardIncomingViewingKey OrchardFullViewingKey::ToIncomingViewingKey() const {
+    return OrchardIncomingViewingKey(orchard_full_viewing_key_to_incoming_viewing_key(inner.get()));
+}
+
+OrchardIncomingViewingKey OrchardFullViewingKey::ToInternalIncomingViewingKey() const {
     return OrchardIncomingViewingKey(orchard_full_viewing_key_to_incoming_viewing_key(inner.get()));
 }
 
