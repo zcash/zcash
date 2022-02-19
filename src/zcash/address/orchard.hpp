@@ -9,11 +9,14 @@
 #include "zcash/address/zip32.h"
 #include <rust/orchard/keys.h>
 
+class OrchardWallet;
 namespace orchard { class Builder; }
 
 namespace libzcash {
 
+class OrchardFullViewingKey;
 class OrchardIncomingViewingKey;
+class OrchardSpendingKey;
 
 class OrchardRawAddress
 {
@@ -25,6 +28,7 @@ private:
     OrchardRawAddress(OrchardRawAddressPtr* ptr) : inner(ptr, orchard_address_free) {}
 
     friend class OrchardIncomingViewingKey;
+    friend class ::OrchardWallet;
     friend class ::orchard::Builder;
 public:
     OrchardRawAddress(OrchardRawAddress&& key) : inner(std::move(key.inner)) {}
@@ -47,23 +51,28 @@ public:
         }
         return *this;
     }
-};
 
-class OrchardFullViewingKey;
+    friend bool operator<(const OrchardRawAddress& c1, const OrchardRawAddress& c2) {
+        return orchard_address_lt(c1.inner.get(), c2.inner.get());
+    }
+};
 
 class OrchardIncomingViewingKey
 {
 private:
     std::unique_ptr<OrchardIncomingViewingKeyPtr, decltype(&orchard_incoming_viewing_key_free)> inner;
 
-    OrchardIncomingViewingKey() : inner(nullptr, orchard_incoming_viewing_key_free) {}
+    OrchardIncomingViewingKey() :
+        inner(nullptr, orchard_incoming_viewing_key_free) {}
 
     OrchardIncomingViewingKey(OrchardIncomingViewingKeyPtr* key) :
         inner(key, orchard_incoming_viewing_key_free) {}
 
     friend class OrchardFullViewingKey;
-public:
+    friend class OrchardSpendingKey;
+    friend class ::OrchardWallet;
 
+public:
     OrchardIncomingViewingKey(OrchardIncomingViewingKey&& key) : inner(std::move(key.inner)) {}
 
     OrchardIncomingViewingKey(const OrchardIncomingViewingKey& key) :
@@ -122,8 +131,6 @@ public:
     }
 };
 
-class OrchardSpendingKey;
-
 class OrchardFullViewingKey
 {
 private:
@@ -135,11 +142,14 @@ private:
         inner(ptr, orchard_full_viewing_key_free) {}
 
     friend class OrchardSpendingKey;
+    friend class ::OrchardWallet;
 public:
     OrchardFullViewingKey(OrchardFullViewingKey&& key) : inner(std::move(key.inner)) {}
 
     OrchardFullViewingKey(const OrchardFullViewingKey& key) :
         inner(orchard_full_viewing_key_clone(key.inner.get()), orchard_full_viewing_key_free) {}
+
+    OrchardIncomingViewingKey ToIncomingViewingKey() const;
 
     OrchardFullViewingKey& operator=(OrchardFullViewingKey&& key)
     {
@@ -186,8 +196,6 @@ public:
         stream >> key;
         return key;
     }
-
-    OrchardIncomingViewingKey ToIncomingViewingKey() const;
 };
 
 class OrchardSpendingKey
@@ -199,6 +207,8 @@ private:
 
     OrchardSpendingKey(OrchardSpendingKeyPtr* ptr) :
         inner(ptr, orchard_spending_key_free) {}
+
+    friend class ::OrchardWallet;
 public:
     OrchardSpendingKey(OrchardSpendingKey&& key) : inner(std::move(key.inner)) {}
 
@@ -209,6 +219,8 @@ public:
             const HDSeed& seed,
             uint32_t bip44CoinType,
             libzcash::AccountId accountId);
+
+    OrchardFullViewingKey ToFullViewingKey() const;
 
     OrchardSpendingKey& operator=(OrchardSpendingKey&& key)
     {
@@ -250,8 +262,6 @@ public:
         stream >> key;
         return key;
     }
-
-    OrchardFullViewingKey ToFullViewingKey() const;
 };
 
 } // namespace libzcash

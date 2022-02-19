@@ -69,6 +69,7 @@ mod ed25519;
 mod metrics_ffi;
 mod streams_ffi;
 mod tracing_ffi;
+mod zcashd_orchard;
 
 mod address_ffi;
 mod builder_ffi;
@@ -78,6 +79,7 @@ mod orchard_ffi;
 mod orchard_keys_ffi;
 mod transaction_ffi;
 mod unified_keys_ffi;
+mod wallet;
 mod zip339_ffi;
 
 mod test_harness_ffi;
@@ -161,7 +163,7 @@ pub extern "C" fn librustzcash_init_zksnark_params(
     let (spend_path, output_path, sprout_path) = (
         Path::new(&spend_path),
         Path::new(&output_path),
-        sprout_path.as_ref().map(|p| Path::new(p)),
+        sprout_path.as_ref().map(Path::new),
     );
 
     // Load params
