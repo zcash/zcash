@@ -42,7 +42,6 @@ pub struct DecryptedNote {
 }
 
 struct TxNotes {
-    txid: TxId,
     decrypted_notes: BTreeMap<usize, DecryptedNote>,
 }
 
@@ -154,7 +153,6 @@ impl Wallet {
         bundle: &Bundle<Authorized, Amount>,
     ) -> Vec<usize> {
         let mut tx_notes = TxNotes {
-            txid: *txid,
             decrypted_notes: BTreeMap::new(),
         };
 
@@ -242,14 +240,14 @@ impl Wallet {
         require_spending_key: bool,
     ) -> Vec<(OutPoint, DecryptedNote)> {
         self.wallet_tx_notes
-            .values()
-            .flat_map(|tx_notes| {
+            .iter()
+            .flat_map(|(txid, tx_notes)| {
                 tx_notes
                     .decrypted_notes
                     .iter()
                     .filter_map(move |(idx, dnote)| {
                         let outpoint = OutPoint {
-                            txid: tx_notes.txid,
+                            txid: *txid,
                             action_idx: *idx,
                         };
 
