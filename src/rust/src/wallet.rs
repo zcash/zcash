@@ -45,7 +45,9 @@ struct TxNotes {
     decrypted_notes: BTreeMap<usize, DecryptedNote>,
 }
 
-/// A type used to pass note metadata across the FFI boundary
+/// A type used to pass note metadata across the FFI boundary.
+/// This must have the same representation as `struct RawOrchardNoteMetadata`
+/// in `rust/include/rust/orchard/wallet.h`.
 #[repr(C)]
 pub struct NoteMetadata {
     txid: [u8; 32],
@@ -410,17 +412,13 @@ pub extern "C" fn orchard_wallet_get_filtered_notes(
         wallet.get_filtered_notes(ivk, ignore_spent, ignore_locked, require_spending_key)
     {
         let recipient = Box::new(dnote.note.recipient());
-        unsafe {
-            (push_cb.unwrap())(
-                result,
-                NoteMetadata {
-                    txid: *outpoint.txid.as_ref(),
-                    action_idx: outpoint.action_idx as u32,
-                    recipient: Box::into_raw(recipient),
-                    note_value: dnote.note.value().inner() as i64,
-                    memo: dnote.memo,
-                },
-            )
+        let metadata = NoteMetadata {
+            txid: *outpoint.txid.as_ref(),
+            action_idx: outpoint.action_idx as u32,
+            recipient: Box::into_raw(recipient),
+            note_value: dnote.note.value().inner() as i64,
+            memo: dnote.memo,
         };
+        unsafe { (push_cb.unwrap())(result, metadata) };
     }
 }

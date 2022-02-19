@@ -19,7 +19,8 @@ typedef struct OrchardWalletPtr OrchardWalletPtr;
 
 /**
  * Constructs a new empty Orchard wallet and return a pointer to it.
- * Memory is allocated by Rust and must be manually freed.
+ * Memory is allocated by Rust and must be manually freed using
+ * `orchard_wallet_free`.
  */
 OrchardWalletPtr* orchard_wallet_new();
 
@@ -111,6 +112,9 @@ bool orchard_wallet_add_raw_address(
  * Returns a pointer to the Orchard incoming viewing key
  * corresponding to the specified raw address, if it is
  * known to the wallet, or `nullptr` otherwise.
+ *
+ * Memory is allocated by Rust and must be manually freed using
+ * `orchard_incoming_viewing_key_free`.
  */
 OrchardIncomingViewingKeyPtr* orchard_wallet_get_ivk_for_address(
         const OrchardWalletPtr* wallet,

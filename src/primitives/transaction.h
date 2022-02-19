@@ -523,7 +523,7 @@ public:
     std::string ToString() const;
 };
 
-/** An outpoint - a combination of a transaction hash and an index n into its orchard
+/** An outpoint - a combination of a txid and an index n into its orchard
  * actions */
 class OrchardOutPoint : public BaseOutPoint
 {

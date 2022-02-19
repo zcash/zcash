@@ -143,8 +143,6 @@ public:
         uint256 txid;
         std::move(std::begin(rawNoteMeta.txid), std::end(rawNoteMeta.txid), txid.begin());
         OrchardOutPoint op(txid, rawNoteMeta.actionIdx);
-        // TODO: what's the efficient way to copy the memo in the OrchardNoteMetadata
-        // constructor?
         std::array<uint8_t, ZC_MEMO_SIZE> memo;
         std::move(std::begin(rawNoteMeta.memo), std::end(rawNoteMeta.memo), memo.begin());
         OrchardNoteMetadata noteMeta(

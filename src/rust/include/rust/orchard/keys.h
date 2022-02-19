@@ -35,7 +35,7 @@ void orchard_address_free(OrchardRawAddressPtr* ptr);
 /**
  * Implements the "less than" operation `k0 < k1` for comparing two Orchard
  * addresses.  This is a comparison of the raw bytes, only useful for cases
- * where a semantically irrelevant ordering is needed (such as for map keys.)
+ * where a semantically irrelevant ordering is needed (such as for map keys).
  */
 bool orchard_address_lt(
     const OrchardRawAddressPtr* k0,
@@ -83,7 +83,7 @@ OrchardIncomingViewingKeyPtr* orchard_incoming_viewing_key_parse(
  * Serializes an Orchard incoming viewing key to the given stream.
  *
  * This will return `false` and leave the stream unmodified if
- * `incoming_viewing_key == nullptr`;
+ * `incoming_viewing_key == nullptr`.
  */
 bool orchard_incoming_viewing_key_serialize(
     const OrchardIncomingViewingKeyPtr* incoming_viewing_key,
@@ -138,7 +138,7 @@ OrchardFullViewingKeyPtr* orchard_full_viewing_key_parse(
  * Serializes an Orchard full viewing key to the given stream.
  *
  * This will return `false` and leave the stream unmodified if
- * `full_viewing_key == nullptr`;
+ * `full_viewing_key == nullptr`.
  */
 bool orchard_full_viewing_key_serialize(
     const OrchardFullViewingKeyPtr* full_viewing_key,
@@ -201,7 +201,8 @@ OrchardSpendingKeyPtr* orchard_spending_key_parse(
 /**
  * Serializes an Orchard spending key to the given stream.
  *
- * If `spending_key == nullptr`, this will return `false`
+ * This will return `false` and leave the stream unmodified if
+ * `spending_key == nullptr`.
  */
 bool orchard_spending_key_serialize(
     const OrchardSpendingKeyPtr* spending_key,
@@ -212,7 +213,7 @@ bool orchard_spending_key_serialize(
  * Returns the full viewing key for the specified spending key.
  *
  * The resulting pointer must be ultimately freed by the caller
- * using `orchard_full_viewing_key_free`
+ * using `orchard_full_viewing_key_free`.
  */
 OrchardFullViewingKeyPtr* orchard_spending_key_to_full_viewing_key(
     const OrchardSpendingKeyPtr* key);
