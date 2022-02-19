@@ -248,10 +248,12 @@ class ZcashdUnifiedSpendingKey {
 private:
     transparent::AccountKey transparentKey;
     SaplingExtendedSpendingKey saplingKey;
+    OrchardSpendingKey orchardKey;
 
     ZcashdUnifiedSpendingKey(
             transparent::AccountKey tkey,
-            SaplingExtendedSpendingKey skey): transparentKey(tkey), saplingKey(skey) {}
+            SaplingExtendedSpendingKey skey,
+            OrchardSpendingKey okey): transparentKey(tkey), saplingKey(skey), orchardKey(okey) {}
 public:
     static std::optional<ZcashdUnifiedSpendingKey> ForAccount(
             const HDSeed& seed,
@@ -264,6 +266,10 @@ public:
 
     const SaplingExtendedSpendingKey& GetSaplingExtendedSpendingKey() const {
         return saplingKey;
+    }
+
+    const OrchardSpendingKey& GetOrchardKey() const {
+        return orchardKey;
     }
 
     UnifiedFullViewingKey ToFullViewingKey() const;

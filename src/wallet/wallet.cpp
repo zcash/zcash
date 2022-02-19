@@ -576,7 +576,8 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
             throw std::runtime_error("CWallet::GenerateUnifiedSpendingKeyForAccount(): Failed to add Sapling change address to the wallet.");
         };
 
-        // TODO ORCHARD: Add Orchard component to the wallet
+        // Add Orchard spending key to the wallet
+        orchardWallet.AddSpendingKey(usk.value().GetOrchardKey());
 
         auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
         if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {

@@ -195,6 +195,16 @@ TEST(Keys, DeriveUnifiedFullViewingKeys)
         if (test.size() == 1) continue; // comment
 
         try {
+            // [
+            //     t_key_bytes,
+            //     sapling_fvk_bytes,
+            //     orchard_fvk_bytes,
+            //     unknown_fvk_typecode,
+            //     unknown_fvk_bytes,
+            //     unified_fvk,
+            //     root_seed,
+            //     account,
+            // ],
             auto seed_hex = test[6].get_str();
             auto seed_data = ParseHex(seed_hex);
             RawHDSeed raw_seed(seed_data.begin(), seed_data.end());
@@ -243,6 +253,24 @@ TEST(Keys, DeriveUnifiedFullViewingKeys)
                 CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
                 auto key = libzcash::SaplingDiversifiableFullViewingKey::Read(ss);
                 EXPECT_EQ(key, saplingKey);
+            }
+            if (!test[2].isNull()) {
+                auto expectedHex = test[2].get_str();
+
+                // Ensure that the serialized Orchard fvk matches the test data.
+                auto orchardKey = ufvk.GetOrchardKey().value();
+                CDataStream ssEncode(SER_NETWORK, PROTOCOL_VERSION);
+                ssEncode << orchardKey;
+                EXPECT_EQ(ssEncode.size(), 96);
+                auto skeyHex = HexStr(ssEncode.begin(), ssEncode.end());
+                EXPECT_EQ(expectedHex, skeyHex);
+
+                // Ensure that parsing the test data derives the correct dfvk
+                auto data = ParseHex(expectedHex);
+                ASSERT_EQ(data.size(), 96);
+                CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
+                auto key = libzcash::OrchardFullViewingKey::Read(ss);
+                EXPECT_EQ(key, orchardKey);
             }
             // Enable the following after Orchard keys are supported.
             //{

@@ -39,7 +39,9 @@ std::optional<ZcashdUnifiedSpendingKey> ZcashdUnifiedSpendingKey::ForAccount(
 
     auto saplingKey = SaplingExtendedSpendingKey::ForAccount(seed, bip44CoinType, accountId);
 
-    return ZcashdUnifiedSpendingKey(transparentKey.value(), saplingKey.first);
+    auto orchardKey = OrchardSpendingKey::ForAccount(seed, bip44CoinType, accountId);
+
+    return ZcashdUnifiedSpendingKey(transparentKey.value(), saplingKey.first, orchardKey);
 }
 
 UnifiedFullViewingKey ZcashdUnifiedSpendingKey::ToFullViewingKey() const {
@@ -47,6 +49,7 @@ UnifiedFullViewingKey ZcashdUnifiedSpendingKey::ToFullViewingKey() const {
 
     builder.AddTransparentKey(transparentKey.ToAccountPubKey());
     builder.AddSaplingKey(saplingKey.ToXFVK());
+    builder.AddOrchardKey(orchardKey.ToFullViewingKey());
 
     // This call to .value() is safe as ZcashdUnifiedSpendingKey values are always
     // constructed to contain all required components.
