@@ -290,14 +290,14 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
         }
         else if ( height != 0 )
         {
-            if ( sp != 0 )
+            if ( sp != nullptr )
             {
                 std::shared_ptr<komodo::event_notarized> evt = std::make_shared<komodo::event_notarized>(height, dest);
-                evt->blockhash = sp->NOTARIZED_HASH;
-                evt->desttxid = sp->NOTARIZED_DESTTXID;
-                evt->notarizedheight = sp->NOTARIZED_HEIGHT;
-                evt->MoM = sp->MoM;
-                evt->MoMdepth = sp->MoMdepth;
+                evt->blockhash = sp->LastNotarizedHash();
+                evt->desttxid = sp->LastNotarizedDestTxId();
+                evt->notarizedheight = sp->LastNotarizedHeight();
+                evt->MoM = sp->LastNotarizedMoM();
+                evt->MoMdepth = sp->LastNotarizedMoMDepth();
                 write_event(evt, fp);
                 komodo_eventadd_notarized(sp,symbol,height,evt);
             }
@@ -313,8 +313,8 @@ int32_t komodo_validate_chain(uint256 srchash,int32_t notarized_height)
         return(0);
     if ( IsInitialBlockDownload() == 0 && ((pindex= komodo_getblockindex(srchash)) == 0 || pindex->GetHeight() != notarized_height) )
     {
-        if ( sp->NOTARIZED_HEIGHT > 0 && sp->NOTARIZED_HEIGHT < notarized_height )
-            rewindtarget = sp->NOTARIZED_HEIGHT - 1;
+        if ( sp->LastNotarizedHeight() > 0 && sp->LastNotarizedHeight() < notarized_height )
+            rewindtarget = sp->LastNotarizedHeight() - 1;
         else if ( notarized_height > 101 )
             rewindtarget = notarized_height - 101;
         else rewindtarget = 0;
@@ -322,8 +322,8 @@ int32_t komodo_validate_chain(uint256 srchash,int32_t notarized_height)
         {
             if ( last_rewind != 0 )
             {
-                //KOMODO_REWIND = rewindtarget;
-                fprintf(stderr,"%s FORK detected. notarized.%d %s not in this chain! last notarization %d -> rewindtarget.%d\n",ASSETCHAINS_SYMBOL,notarized_height,srchash.ToString().c_str(),sp->NOTARIZED_HEIGHT,rewindtarget);
+                fprintf(stderr,"%s FORK detected. notarized.%d %s not in this chain! last notarization %d -> rewindtarget.%d\n",
+                        ASSETCHAINS_SYMBOL,notarized_height,srchash.ToString().c_str(),sp->LastNotarizedHeight(),rewindtarget);
             }
             last_rewind = rewindtarget;
         }
@@ -490,7 +490,6 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                     }
                     else
                     {
-                        komodo_rwccdata(ASSETCHAINS_SYMBOL,1,&ccdata,&MoMoMdata);
                         if ( matched != 0 )
                             printf("[%s] matched.%d VALID (%s) MoM.%s [%d] CCid.%u\n",ASSETCHAINS_SYMBOL,matched,ccdata.symbol,MoM.ToString().c_str(),MoMdepth&0xffff,(MoMdepth>>16)&0xffff);
                     }
@@ -499,22 +498,23 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                     memset(&ccdata,0,sizeof(ccdata));
                     memset(&MoMoMdata,0,sizeof(MoMoMdata));
                 }
-                else if ( ASSETCHAINS_SYMBOL[0] == 0 && matched != 0 && notarized != 0 && validated != 0 )
-                    komodo_rwccdata((char *)"KMD",1,&ccdata,0);
                 
-                if ( matched != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
+                if ( matched != 0 && *notarizedheightp > sp->LastNotarizedHeight() && *notarizedheightp < height )
                 {
-                    sp->NOTARIZED_HEIGHT = *notarizedheightp;
-                    sp->NOTARIZED_HASH = srchash;
-                    sp->NOTARIZED_DESTTXID = desttxid;
+                    sp->SetLastNotarizedHeight(*notarizedheightp);
+                    sp->SetLastNotarizedHash(srchash);
+                    sp->SetLastNotarizedDestTxId(desttxid);
                     if ( MoM != zero && (MoMdepth&0xffff) > 0 )
                     {
-                        sp->MoM = MoM;
-                        sp->MoMdepth = MoMdepth;
+                        sp->SetLastNotarizedMoM(MoM);
+                        sp->SetLastNotarizedMoMDepth(MoMdepth);
                     }
-                    komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
-                    //if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                        printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",ASSETCHAINS_SYMBOL,height,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,sp->MoM.ToString().c_str(),sp->MoMdepth);
+                    komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->LastNotarizedMoM(),sp->LastNotarizedMoMDepth());
+                    printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",
+                            ASSETCHAINS_SYMBOL,height,sp->LastNotarizedHeight(),
+                            ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),
+                            ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,
+                            sp->LastNotarizedMoM().ToString().c_str(),sp->LastNotarizedMoMDepth());
                     
                     if ( ASSETCHAINS_SYMBOL[0] == 0 )
                     {
@@ -540,10 +540,11 @@ int32_t komodo_voutupdate(bool fJustCheck,int32_t *isratificationp,int32_t notar
                             komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen-len+4+3+(scriptbuf[1] == 0x4d),j,zero,0);
                         }
                     }
-                } //else if ( fJustCheck )
-                //    return (-3); // if the notarisation is only invalid because its out of order it cannot be mined in a block with a valid one!
+                }
             } else if ( opretlen != 149 && height > 600000 && matched != 0 )
-                printf("%s validated.%d notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s len.%d opretlen.%d\n",ccdata.symbol,validated,notarized,(long long)signedmask,height,*notarizedheightp,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),desttxid.ToString().c_str(),len,opretlen);
+                printf("%s validated.%d notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s len.%d opretlen.%d\n",
+                        ccdata.symbol,validated,notarized,(long long)signedmask,height,*notarizedheightp,sp->LastNotarizedHeight(),
+                        ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),desttxid.ToString().c_str(),len,opretlen);
         }
         else if ( matched != 0 && i == 0 && j == 1 && opretlen == 149 )
         {
@@ -721,9 +722,9 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
             // simulate DPoW in regtest mode for dpowconfs tests/etc
             if ( Params().NetworkIDString() == "regtest" && ( height%7 == 0) ) {
                 notarized              = 1;
-                sp->NOTARIZED_HEIGHT   = height;
-                sp->NOTARIZED_HASH     = block.GetHash();
-                sp->NOTARIZED_DESTTXID = txhash;
+                sp->SetLastNotarizedHeight(height);
+                sp->SetLastNotarizedHash(block.GetHash());
+                sp->SetLastNotarizedDestTxId(txhash);
             }
             for (j=0; j<numvouts; j++)
             {

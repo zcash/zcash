@@ -15,21 +15,13 @@
 #pragma once
 #include <memory>
 #include <list>
+#include <vector>
 #include <cstdint>
 
 #include "komodo_defs.h"
 
 #include "uthash.h"
 #include "utlist.h"
-
-/*#ifdef _WIN32
-#define PACKED
-#else
-#define PACKED __attribute__((packed))
-#endif*/
-
-#ifndef KOMODO_STRUCTS_H
-#define KOMODO_STRUCTS_H
 
 #define GENESIS_NBITS 0x1f00ffff
 #define KOMODO_MINRATIFY ((height < 90000) ? 7 : 11)
@@ -242,11 +234,24 @@ struct pax_transaction
 
 struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; };
+
 struct notarized_checkpoint
 {
-    uint256 notarized_hash,notarized_desttxid,MoM,MoMoM;
-    int32_t nHeight,notarized_height,MoMdepth,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
+    uint256 notarized_hash;
+    uint256 notarized_desttxid;
+    uint256 MoM;
+    uint256 MoMoM;
+    int32_t nHeight = 0;
+    int32_t notarized_height = 0;
+    int32_t MoMdepth = 0;
+    int32_t MoMoMdepth = 0;
+    int32_t MoMoMoffset = 0;
+    int32_t kmdstarti = 0;
+    int32_t kmdendi = 0;
+    friend bool operator==(const notarized_checkpoint& lhs, const notarized_checkpoint& rhs);
 };
+
+bool operator==(const notarized_checkpoint& lhs, const notarized_checkpoint& rhs);
 
 struct komodo_ccdataMoM
 {
@@ -272,17 +277,81 @@ struct komodo_ccdata
     char symbol[65];
 };
 
-struct komodo_state
+class komodo_state
 {
-    uint256 NOTARIZED_HASH,NOTARIZED_DESTTXID,MoM;
-    int32_t SAVEDHEIGHT,CURRENT_HEIGHT,NOTARIZED_HEIGHT,MoMdepth;
+public:
+    int32_t SAVEDHEIGHT;
+    int32_t CURRENT_HEIGHT;
     uint32_t SAVEDTIMESTAMP;
-    uint64_t deposited,issued,withdrawn,approved,redeemed,shorted;
-    struct notarized_checkpoint *NPOINTS; 
-    int32_t NUM_NPOINTS,last_NPOINTSi;
+    uint64_t deposited;
+    uint64_t issued;
+    uint64_t withdrawn;
+    uint64_t approved;
+    uint64_t redeemed;
+    uint64_t shorted;
     std::list<std::shared_ptr<komodo::event>> events;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
     bool add_event(const std::string& symbol, const uint32_t height, std::shared_ptr<komodo::event> in);
-};
+protected:
+    /***
+     * @brief clear the checkpoints collection
+     * @note should only be used by tests
+     */
+    void clear_checkpoints();
+    std::vector<notarized_checkpoint> NPOINTS; // collection of notarizations
+    mutable size_t NPOINTS_last_index = 0; // caches checkpoint linear search position
+    notarized_checkpoint last;
 
-#endif /* KOMODO_STRUCTS_H */
+public:
+    const uint256 &LastNotarizedHash() const;
+    void SetLastNotarizedHash(const uint256 &in);
+    const uint256 &LastNotarizedDestTxId() const;
+    void SetLastNotarizedDestTxId(const uint256 &in);
+    const uint256 &LastNotarizedMoM() const;
+    void SetLastNotarizedMoM(const uint256 &in);
+    const int32_t &LastNotarizedHeight() const;
+    void SetLastNotarizedHeight(const int32_t in);
+    const int32_t &LastNotarizedMoMDepth() const;
+    void SetLastNotarizedMoMDepth(const int32_t in);
+
+    /*****
+     * @brief add a checkpoint to the collection and update member values
+     * @param in the new values
+     */
+    void AddCheckpoint(const notarized_checkpoint &in);
+
+    uint64_t NumCheckpoints() const;
+
+    /****
+     * Get the notarization data below a particular height
+     * @param[in] nHeight the height desired
+     * @param[out] notarized_hashp the hash of the notarized block
+     * @param[out] notarized_desttxidp the desttxid
+     * @returns the notarized height
+     */
+    int32_t NotarizedData(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp) const;
+
+    /******
+     * @brief Get the last notarization information
+     * @param[out] prevMoMheightp the MoM height
+     * @param[out] hashp the notarized hash
+     * @param[out] txidp the DESTTXID
+     * @returns the notarized height
+     */
+    int32_t NotarizedHeight(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp);
+
+    /****
+     * Search for the last (chronological) MoM notarized height
+     * @returns the last notarized height that has a MoM
+     */
+    int32_t PrevMoMHeight() const;
+
+    /******
+     * @brief Search the notarized checkpoints for a particular height
+     * @note Finding a mach does include other criteria other than height
+     *      such that the checkpoint includes the desired height
+     * @param height the notarized_height desired
+     * @returns the checkpoint or nullptr
+     */
+    const notarized_checkpoint *CheckpointAtHeight(int32_t height) const;
+};

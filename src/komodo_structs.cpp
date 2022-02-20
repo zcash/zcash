@@ -349,3 +349,173 @@ std::ostream& operator<<(std::ostream& os, const event_pricefeed& in)
 }
 
 } // namespace komodo
+
+/*****
+ * @brief add a checkpoint to the collection and update member values
+ * @param in the new values
+ */
+void komodo_state::AddCheckpoint(const notarized_checkpoint &in)
+{
+    NPOINTS.push_back(in);
+    last = in;
+}
+
+/****
+ * Get the notarization data below a particular height
+ * @param[in] nHeight the height desired
+ * @param[out] notarized_hashp the hash of the notarized block
+ * @param[out] notarized_desttxidp the desttxid
+ * @returns the notarized height
+ */
+int32_t komodo_state::NotarizedData(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp) const
+{
+    bool found = false;
+
+    if ( NPOINTS.size() > 0 )
+    {
+        const notarized_checkpoint* np = nullptr;
+        if ( NPOINTS_last_index < NPOINTS.size() && NPOINTS_last_index > 0 ) // if we cached an NPOINT index
+        {
+            np = &NPOINTS[NPOINTS_last_index-1]; // grab the previous
+            if ( np->nHeight < nHeight ) // if that previous is below the height we are looking for
+            {
+                for (size_t i = NPOINTS_last_index; i < NPOINTS.size(); i++) // move forward
+                {
+                    if ( NPOINTS[i].nHeight >= nHeight ) // if we found the height we are looking for (or beyond)
+                    {
+                        found = true; // notify ourselves we were here
+                        break; // get out
+                    }
+                    np = &NPOINTS[i];
+                    NPOINTS_last_index = i;
+                }
+            }
+        }
+        if ( !found ) // we still haven't found what we were looking for
+        {
+            np = nullptr; // reset
+            for (size_t i = 0; i < NPOINTS.size(); i++) // linear search from the start
+            {
+                if ( NPOINTS[i].nHeight >= nHeight )
+                {
+                    found = true;
+                    break;
+                }
+                np = &NPOINTS[i];
+                NPOINTS_last_index = i;
+            }
+        }
+        if ( np != nullptr )
+        {
+            if ( np->nHeight >= nHeight || (found && np[1].nHeight < nHeight) )
+                printf("warning: flag.%d i.%ld np->ht %d [1].ht %d >= nHeight.%d\n",
+                        (int)found,NPOINTS_last_index,np->nHeight,np[1].nHeight,nHeight);
+            *notarized_hashp = np->notarized_hash;
+            *notarized_desttxidp = np->notarized_desttxid;
+            return(np->notarized_height);
+        }
+    }
+    memset(notarized_hashp,0,sizeof(*notarized_hashp));
+    memset(notarized_desttxidp,0,sizeof(*notarized_desttxidp));
+    return 0;
+}
+
+/******
+ * @brief Get the last notarization information
+ * @param[out] prevMoMheightp the MoM height
+ * @param[out] hashp the notarized hash
+ * @param[out] txidp the DESTTXID
+ * @returns the notarized height
+ */
+int32_t komodo_state::NotarizedHeight(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp)
+{
+    CBlockIndex *pindex;
+    if ( (pindex= komodo_blockindex(last.notarized_hash)) == 0 || pindex->GetHeight() < 0 )
+    {
+        // found orphaned notarization, adjust the values in the komodo_state object
+        last.notarized_hash.SetNull();
+        last.notarized_desttxid.SetNull();
+        last.notarized_height = 0;
+    }
+    else
+    {
+        *hashp = last.notarized_hash;
+        *txidp = last.notarized_desttxid;
+        *prevMoMheightp = PrevMoMHeight();
+    }
+    return last.notarized_height;
+}
+
+/****
+ * Search for the last (chronological) MoM notarized height
+ * @returns the last notarized height that has a MoM
+ */
+int32_t komodo_state::PrevMoMHeight() const
+{
+    static uint256 zero;
+    // shortcut
+    if (last.MoM != zero)
+    {
+        return last.notarized_height;
+    }
+
+    for(auto itr = NPOINTS.rbegin(); itr != NPOINTS.rend(); ++itr)
+    {
+        if( itr->MoM != zero)
+            return itr->notarized_height;
+    }
+    return 0;
+}
+
+/******
+ * @brief Search the notarized checkpoints for a particular height
+ * @note Finding a mach does include other criteria other than height
+ *      such that the checkpoint includes the desired height
+ * @param height the notarized_height desired
+ * @returns the checkpoint or nullptr
+ */
+const notarized_checkpoint *komodo_state::CheckpointAtHeight(int32_t height) const
+{
+    // find the nearest notarization_height
+    // work backwards, get the first one that meets our criteria
+    for(auto itr = NPOINTS.rbegin(); itr != NPOINTS.rend(); ++itr)
+    {
+        if ( itr->MoMdepth != 0 
+                && height > itr->notarized_height-(itr->MoMdepth&0xffff) // 2s compliment if negative
+                && height <= itr->notarized_height )
+        {
+            return &(*itr);
+        }
+    }
+    return nullptr;
+}
+
+void komodo_state::clear_checkpoints() { NPOINTS.clear(); }
+const uint256& komodo_state::LastNotarizedHash() const { return last.notarized_hash; }
+void komodo_state::SetLastNotarizedHash(const uint256 &in) { last.notarized_hash = in; }
+const uint256& komodo_state::LastNotarizedDestTxId() const { return last.notarized_desttxid; }
+void komodo_state::SetLastNotarizedDestTxId(const uint256 &in) { last.notarized_desttxid = in; }
+const uint256& komodo_state::LastNotarizedMoM() const { return last.MoM; }
+void komodo_state::SetLastNotarizedMoM(const uint256 &in) { last.MoM = in; }
+const int32_t& komodo_state::LastNotarizedHeight() const { return last.notarized_height; }
+void komodo_state::SetLastNotarizedHeight(const int32_t in) { last.notarized_height = in; }
+const int32_t& komodo_state::LastNotarizedMoMDepth() const { return last.MoMdepth; }
+void komodo_state::SetLastNotarizedMoMDepth(const int32_t in) { last.MoMdepth =in; }
+uint64_t komodo_state::NumCheckpoints() const { return NPOINTS.size(); }
+
+bool operator==(const notarized_checkpoint& lhs, const notarized_checkpoint& rhs)
+{
+    if (lhs.notarized_hash != rhs.notarized_hash 
+            || lhs.notarized_desttxid != rhs.notarized_desttxid
+            || lhs.MoM != rhs.MoM
+            || lhs.MoMoM != rhs.MoMoM
+            || lhs.nHeight != rhs.nHeight
+            || lhs.notarized_height != rhs.notarized_height
+            || lhs.MoMdepth != rhs.MoMdepth
+            || lhs.MoMoMdepth != rhs.MoMoMdepth
+            || lhs.MoMoMoffset != rhs.MoMoMoffset
+            || lhs.kmdstarti != rhs.kmdstarti
+            || lhs.kmdendi != rhs.kmdendi)
+        return false;
+    return true;
+}

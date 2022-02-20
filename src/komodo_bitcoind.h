@@ -162,7 +162,14 @@ int32_t komodo_blockheight(uint256 hash);
 
 uint32_t komodo_blocktime(uint256 hash);
 
-int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash);
+/******
+ * @brief Verify that a height and hash match the most recent (based on height) notarized_checkpoint
+ * @param[out] notarized_heightp the notarized height found
+ * @param[in] nHeight the height that should be greater than the notarized height
+ * @param[in] hash the hash that should match the notarized hash
+ * @returns true on success
+ */
+bool komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash);
 
 uint32_t komodo_interest_args(uint32_t *txheighttimep,int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 
