@@ -236,26 +236,6 @@ OrchardSpendingKeyPtr* orchard_spending_key_clone(
 void orchard_spending_key_free(OrchardSpendingKeyPtr* ptr);
 
 /**
- * Parses an Orchard spending key from the given stream.
- *
- * - If the key does not parse correctly, the returned pointer will be null.
- */
-OrchardSpendingKeyPtr* orchard_spending_key_parse(
-    void* stream,
-    read_callback_t read_cb);
-
-/**
- * Serializes an Orchard spending key to the given stream.
- *
- * This will return `false` and leave the stream unmodified if
- * `spending_key == nullptr`.
- */
-bool orchard_spending_key_serialize(
-    const OrchardSpendingKeyPtr* spending_key,
-    void* stream,
-    write_callback_t write_cb);
-
-/**
  * Returns the full viewing key for the specified spending key.
  *
  * The resulting pointer must be ultimately freed by the caller

@@ -280,31 +280,6 @@ public:
         }
         return *this;
     }
-
-    template<typename Stream>
-    void Serialize(Stream& s) const {
-        RustStream rs(s);
-        if (!orchard_spending_key_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
-            throw std::ios_base::failure("Failed to serialize Orchard spending key");
-        }
-    }
-
-    template<typename Stream>
-    void Unserialize(Stream& s) {
-        RustStream rs(s);
-        OrchardSpendingKeyPtr* key = orchard_spending_key_parse(&rs, RustStream<Stream>::read_callback);
-        if (key == nullptr) {
-            throw std::ios_base::failure("Failed to parse Orchard spending key");
-        }
-        inner.reset(key);
-    }
-
-    template<typename Stream>
-    static OrchardSpendingKey Read(Stream& stream) {
-        OrchardSpendingKey key;
-        stream >> key;
-        return key;
-    }
 };
 
 } // namespace libzcash
