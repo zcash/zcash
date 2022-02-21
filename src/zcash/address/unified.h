@@ -264,7 +264,7 @@ public:
         return transparentKey;
     }
 
-    const SaplingExtendedSpendingKey& GetSaplingExtendedSpendingKey() const {
+    const SaplingExtendedSpendingKey& GetSaplingKey() const {
         return saplingKey;
     }
 

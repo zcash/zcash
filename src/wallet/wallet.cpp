@@ -554,7 +554,7 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
         );
 
         // Add the Sapling spending key to the wallet
-        auto saplingEsk = usk.value().GetSaplingExtendedSpendingKey();
+        auto saplingEsk = usk.value().GetSaplingKey();
         if (addSaplingKey(saplingEsk) == KeyNotAdded) {
             // If adding the Sapling key to the wallet failed, abort the process.
             throw std::runtime_error("CWalletDB::GenerateUnifiedSpendingKeyForAccount(): Unable to add Sapling spending key to the wallet.");
