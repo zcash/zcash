@@ -1480,7 +1480,7 @@ public:
 
     //! Generate the unified spending key from the wallet's mnemonic seed
     //! for the next unused account identifier.
-    std::pair<libzcash::ZcashdUnifiedSpendingKey, libzcash::AccountId>
+    std::pair<libzcash::UnifiedFullViewingKey, libzcash::AccountId>
         GenerateNewUnifiedSpendingKey();
 
     //! Generate the unified spending key for the specified ZIP-32/BIP-44

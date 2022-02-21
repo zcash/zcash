@@ -3057,8 +3057,8 @@ UniValue z_getnewaccount(const UniValue& params, bool fHelp)
     EnsureWalletIsUnlocked();
 
     // Generate the new account.
-    auto skNew = pwalletMain->GenerateNewUnifiedSpendingKey();
-    const auto& account = skNew.second;
+    auto ufvkNew = pwalletMain->GenerateNewUnifiedSpendingKey();
+    const auto& account = ufvkNew.second;
 
     UniValue result(UniValue::VOBJ);
     result.pushKV("account", (uint64_t)account);

@@ -477,7 +477,7 @@ libzcash::transparent::AccountKey CWallet::GetLegacyAccountKey() const {
 }
 
 
-std::pair<ZcashdUnifiedSpendingKey, libzcash::AccountId> CWallet::GenerateNewUnifiedSpendingKey() {
+std::pair<UnifiedFullViewingKey, libzcash::AccountId> CWallet::GenerateNewUnifiedSpendingKey() {
     AssertLockHeld(cs_wallet);
 
     if (!mnemonicHDChain.has_value()) {
@@ -488,17 +488,17 @@ std::pair<ZcashdUnifiedSpendingKey, libzcash::AccountId> CWallet::GenerateNewUni
     CHDChain& hdChain = mnemonicHDChain.value();
     while (true) {
         auto accountId = hdChain.GetAccountCounter();
-        auto usk = GenerateUnifiedSpendingKeyForAccount(accountId);
+        auto generated = GenerateUnifiedSpendingKeyForAccount(accountId);
         hdChain.IncrementAccountCounter();
 
-        if (usk.has_value()) {
+        if (generated.has_value()) {
             // Update the persisted chain information
             if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
                 throw std::runtime_error(
                         "CWallet::GenerateNewUnifiedSpendingKey(): Writing HD chain model failed");
             }
 
-            return std::make_pair(usk.value(), accountId);
+            return std::make_pair(generated.value().ToFullViewingKey(), accountId);
         }
     }
 }
