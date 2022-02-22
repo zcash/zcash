@@ -1235,7 +1235,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     {
         auto selector = pwalletMain->ZTXOSelectorForAddress(taddr1, true).value();
         TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 100*COIN, "DEADBEEF") };
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, zaddr1, 100*COIN, "DEADBEEF") };
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, selector, recipients, 1));
         operation->main();
         BOOST_CHECK(operation->isFailed());
@@ -1247,7 +1247,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     {
         auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true).value();
         TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient(taddr1, 100*COIN, "DEADBEEF") };
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, taddr1, 100*COIN, "DEADBEEF") };
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, selector, recipients, 1));
         operation->main();
         BOOST_CHECK(operation->isFailed());
@@ -1259,7 +1259,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     {
         auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true).value();
         TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 100*COIN, "DEADBEEF") };
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, zaddr1, 100*COIN, "DEADBEEF") };
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, selector, recipients, 1));
         std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
         TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
@@ -1359,7 +1359,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
 
     auto selector = pwalletMain->ZTXOSelectorForAddress(taddr, true).value();
-    std::vector<SendManyRecipient> recipients = { SendManyRecipient(pa, 1*COIN, "ABCD") };
+    std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, pa, 1*COIN, "ABCD") };
     std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, selector, recipients, 0));
     std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
 

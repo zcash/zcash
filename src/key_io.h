@@ -23,28 +23,28 @@ private:
 public:
     KeyIO(const KeyConstants& keyConstants): keyConstants(keyConstants) { }
 
-    CKey DecodeSecret(const std::string& str);
-    std::string EncodeSecret(const CKey& key);
+    CKey DecodeSecret(const std::string& str) const;
+    std::string EncodeSecret(const CKey& key) const;
 
-    CExtKey DecodeExtKey(const std::string& str);
-    std::string EncodeExtKey(const CExtKey& extkey);
-    CExtPubKey DecodeExtPubKey(const std::string& str);
-    std::string EncodeExtPubKey(const CExtPubKey& extpubkey);
+    CExtKey DecodeExtKey(const std::string& str) const;
+    std::string EncodeExtKey(const CExtKey& extkey) const;
+    CExtPubKey DecodeExtPubKey(const std::string& str) const;
+    std::string EncodeExtPubKey(const CExtPubKey& extpubkey) const;
 
-    std::string EncodeDestination(const CTxDestination& dest);
-    CTxDestination DecodeDestination(const std::string& str);
+    std::string EncodeDestination(const CTxDestination& dest) const;
+    CTxDestination DecodeDestination(const std::string& str) const;
 
-    bool IsValidDestinationString(const std::string& str);
+    bool IsValidDestinationString(const std::string& str) const;
 
-    std::string EncodePaymentAddress(const libzcash::PaymentAddress& zaddr);
-    std::optional<libzcash::PaymentAddress> DecodePaymentAddress(const std::string& str);
-    bool IsValidPaymentAddressString(const std::string& str);
+    std::string EncodePaymentAddress(const libzcash::PaymentAddress& zaddr) const;
+    std::optional<libzcash::PaymentAddress> DecodePaymentAddress(const std::string& str) const;
+    bool IsValidPaymentAddressString(const std::string& str) const;
 
-    std::string EncodeViewingKey(const libzcash::ViewingKey& vk);
-    std::optional<libzcash::ViewingKey> DecodeViewingKey(const std::string& str);
+    std::string EncodeViewingKey(const libzcash::ViewingKey& vk) const;
+    std::optional<libzcash::ViewingKey> DecodeViewingKey(const std::string& str) const;
 
-    std::string EncodeSpendingKey(const libzcash::SpendingKey& zkey);
-    std::optional<libzcash::SpendingKey> DecodeSpendingKey(const std::string& str);
+    std::string EncodeSpendingKey(const libzcash::SpendingKey& zkey) const;
+    std::optional<libzcash::SpendingKey> DecodeSpendingKey(const std::string& str) const;
 };
 
 #endif // BITCOIN_KEY_IO_H

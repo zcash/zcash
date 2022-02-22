@@ -25,14 +25,13 @@
 
 using namespace libzcash;
 
-class SendManyRecipient {
+class SendManyRecipient : public RecipientMapping {
 public:
-    RecipientAddress address;
     CAmount amount;
     std::optional<std::string> memo;
 
-    SendManyRecipient(RecipientAddress address_, CAmount amount_, std::optional<std::string> memo_) :
-        address(address_), amount(amount_), memo(memo_) {}
+    SendManyRecipient(std::optional<libzcash::UnifiedAddress> ua_, libzcash::RecipientAddress address_, CAmount amount_, std::optional<std::string> memo_) :
+        RecipientMapping(ua_, address_), amount(amount_), memo(memo_) {}
 };
 
 class TxOutputAmounts {

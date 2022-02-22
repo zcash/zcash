@@ -143,6 +143,15 @@ struct CRecipient
     bool fSubtractFeeFromAmount;
 };
 
+class RecipientMapping {
+public:
+    std::optional<libzcash::UnifiedAddress> ua;
+    libzcash::RecipientAddress address;
+
+    RecipientMapping(std::optional<libzcash::UnifiedAddress> ua_, libzcash::RecipientAddress address_) :
+        ua(ua_), address(address_) {}
+};
+
 typedef std::map<std::string, std::string> mapValue_t;
 
 
@@ -1517,6 +1526,32 @@ public:
      */
     bool CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, int& nChangePosRet,
                            std::string& strFailReason, const CCoinControl *coinControl = NULL, bool sign = true);
+
+    /**
+     * Save a set of (txid, RecipientAddress, std::optional<UnifiedAddress>) mappings to the wallet.
+     * This information is persisted so that it's possible to correctly display the unified
+     * address to which a payment was sent.
+     */
+    template <typename RecipientMapping>
+    bool SaveRecipientMappings(const uint256& txid, const std::vector<RecipientMapping>& recipients)
+    {
+        LOCK2(cs_main, cs_wallet);
+        LogPrintf("SaveRecipientMappings:\n%s", txid.ToString());
+
+        for (const auto& recipient : recipients)
+        {
+            if (recipient.ua.has_value()) {
+                CWalletDB(strWalletFile).WriteRecipientMapping(
+                    txid,
+                    recipient.address,
+                    recipient.ua.value()
+                );
+            }
+        }
+
+        return true;
+    }
+
     bool CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_wrapper<CReserveKey>> reservekey);
 
     static CFeeRate minTxFee;
@@ -1898,6 +1933,5 @@ public:
     std::optional<libzcash::UnifiedAddress> operator()(const CKeyID& keyId) const;
     std::optional<libzcash::UnifiedAddress> operator()(const libzcash::UnknownReceiver& receiver) const;
 };
-
 
 #endif // BITCOIN_WALLET_WALLET_H
