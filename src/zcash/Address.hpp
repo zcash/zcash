@@ -87,6 +87,8 @@ public:
      */
     bool AddReceiver(Receiver receiver);
 
+    bool ContainsReceiver(const Receiver& receiver) const;
+
     const std::vector<Receiver>& GetReceiversAsParsed() const { return receivers; }
 
     std::set<ReceiverType> GetKnownReceiverTypes() const {

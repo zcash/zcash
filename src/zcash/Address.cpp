@@ -111,6 +111,15 @@ bool UnifiedAddress::AddReceiver(Receiver receiver) {
     return true;
 }
 
+bool UnifiedAddress::ContainsReceiver(const Receiver& receiver) const {
+    for (const auto& r : GetReceiversAsParsed()) {
+        if (r == receiver) {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::optional<CKeyID> UnifiedAddress::GetP2PKHReceiver() const {
     for (const auto& r : receivers) {
         if (std::holds_alternative<CKeyID>(r)) {

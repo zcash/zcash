@@ -316,6 +316,12 @@ bool CWalletDB::WriteMinVersion(int nVersion)
 
 bool CWalletDB::WriteRecipientMapping(const uint256& txid, const libzcash::RecipientAddress& address, const libzcash::UnifiedAddress& ua)
 {
+    auto recipientReceiver = libzcash::RecipientAddressToReceiver(address);
+    // Check that recipient address exists in given UA.
+    if (!ua.ContainsReceiver(recipientReceiver)) {
+        return false;
+    }
+
     std::pair<uint256, CSerializeRecipientAddress> key = std::make_pair(txid, CSerializeRecipientAddress(address));
     std::string uaString = KeyIO(Params()).EncodePaymentAddress(ua);
     return Write(std::make_pair(std::string("recipientmapping"), key), uaString);
@@ -869,21 +875,9 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 return false;
             }
 
-            libzcash::Receiver recipientReceiver;
-            std::visit(match {
-                [&](const CKeyID& key) { recipientReceiver = key; },
-                [&](const CScriptID& scriptId) { recipientReceiver = scriptId; },
-                [&](const libzcash::SaplingPaymentAddress& addr) { recipientReceiver = addr; }
-            }, recipient);
+            auto recipientReceiver = libzcash::RecipientAddressToReceiver(recipient);
 
-            bool found = false;
-            for (const auto& receiver : ua.value().GetReceiversAsParsed()) {
-                if (receiver == recipientReceiver) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
+            if (!ua.value().ContainsReceiver(recipientReceiver)) {
                 strErr = "Error in wallet database: recipientmapping UA does not contain recipient";
                 return false;
             }
