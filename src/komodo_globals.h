@@ -15,6 +15,7 @@
 #pragma once
 #include <mutex>
 #include "komodo_defs.h"
+#include "komodo_hardfork.h"
 #include "komodo_structs.h"
 
 void komodo_prefetch(FILE *fp);
