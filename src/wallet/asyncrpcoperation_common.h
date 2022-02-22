@@ -44,7 +44,7 @@ UniValue SendTransaction(
         }
         o.pushKV("txid", tx.GetHash().ToString());
     } else {
-        // Test mode does not send the transaction to the network.
+        // Test mode does not send the transaction to the network nor save the recipient mappings.
         o.pushKV("test", 1);
         o.pushKV("txid", tx.GetHash().ToString());
         o.pushKV("hex", EncodeHexTx(tx));

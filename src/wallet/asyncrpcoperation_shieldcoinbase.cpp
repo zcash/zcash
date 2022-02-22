@@ -220,7 +220,7 @@ void ShieldToAddress::shieldToAddress(const libzcash::RecipientAddress& recipien
     // generate a common one from the HD seed. This ensures the data is
     // recoverable, while keeping it logically separate from the ZIP 32
     // Sapling key hierarchy, which the user might not be using.
-    // FIXME: update to use the ZIP-316 OVK (#5561)
+    // FIXME: update to use the ZIP-316 OVK (#5511)
     HDSeed seed = pwalletMain->GetHDSeedForRPC();
     uint256 ovk = ovkForShieldingFromTaddr(seed);
 

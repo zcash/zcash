@@ -34,6 +34,7 @@ std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::opti
     CTransaction tx;
     stream >> tx;
 
+    // Recipient mappings are not available when sending a raw transaction.
     std::vector<RecipientMapping> recipientMappings;
     UniValue sendResult = SendTransaction(tx, recipientMappings, reservekey, testmode);
 
