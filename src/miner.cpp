@@ -32,7 +32,6 @@
 #include "consensus/validation.h"
 #ifdef ENABLE_MINING
 #include "crypto/equihash.h"
-#include "crypto/verus_hash.h"
 #endif
 #include "hash.h"
 #include "key_io.h"
