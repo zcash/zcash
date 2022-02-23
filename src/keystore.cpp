@@ -442,15 +442,36 @@ std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_in
 FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
     const auto saplingIvk = keystore.mapSaplingIncomingViewingKeys.find(saplingAddr);
     if (saplingIvk != keystore.mapSaplingIncomingViewingKeys.end()) {
+        // We have either generated this as a receiver via `z_getaddressforaccount` or a
+        // legacy Sapling address via `z_getnewaddress`, or we have previously detected
+        // this via trial-decryption of a note.
         const auto ufvkId = keystore.mapSaplingKeyUnified.find(saplingIvk->second);
         if (ufvkId != keystore.mapSaplingKeyUnified.end()) {
             return std::make_pair(ufvkId->second, std::nullopt);
         } else {
+            // If we have the addr -> ivk map entry but not the ivk -> UFVK map entry,
+            // then this is definitely a legacy Sapling address.
             return std::nullopt;
         }
-    } else {
-        return std::nullopt;
     }
+
+    // We haven't generated this receiver via `z_getaddressforaccount` (or this is a
+    // recovery from a backed-up mnemonic which doesn't store receiver types selected by
+    // users). Trial-decrypt the diversifier of the Sapling address with every UFVK in the
+    // wallet, to check directly if it belongs to any of them.
+    for (const auto& [k, v] : keystore.mapUnifiedFullViewingKeys) {
+        auto dfvk = v.GetSaplingKey();
+        if (dfvk.has_value()) {
+            auto d_idx = dfvk.value().DecryptDiversifier(saplingAddr.d);
+            auto derived_addr = dfvk.value().Address(d_idx);
+            if (derived_addr.has_value() && derived_addr.value() == saplingAddr) {
+                return std::make_pair(k, d_idx);
+            }
+        }
+    }
+
+    // We definitely don't know of any UFVK linked to this Sapling address.
+    return std::nullopt;
 }
 std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
 FindUFVKId::operator()(const CScriptID& scriptId) const {

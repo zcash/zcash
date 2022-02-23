@@ -557,17 +557,22 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     EXPECT_EQ(keyStore.GetUnifiedFullViewingKey(ufvkid).value(), zufvk);
 
     auto addrPair = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Sapling}));
-
-
     EXPECT_TRUE(addrPair.first.GetSaplingReceiver().has_value());
     auto saplingReceiver = addrPair.first.GetSaplingReceiver().value();
-    auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
-    EXPECT_FALSE(ufvkmeta.has_value());
 
+    // We detect this even though we haven't added the Sapling address, because
+    // we trial-decrypt diversifiers (which also means we learn the index).
+    auto ufvkmetaUnadded = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
+    EXPECT_TRUE(ufvkmetaUnadded.has_value());
+    EXPECT_EQ(ufvkmetaUnadded.value().first, ufvkid);
+    EXPECT_EQ(ufvkmetaUnadded.value().second.value(), addrPair.second);
+
+    // Adding the Sapling addr -> ivk map entry causes us to find the same UFVK,
+    // but as we're no longer trial-decrypting we don't learn the index.
     auto saplingIvk = zufvk.GetSaplingKey().value().ToIncomingViewingKey();
     keyStore.AddSaplingPaymentAddress(saplingIvk, saplingReceiver);
 
-    ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
+    auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
     EXPECT_TRUE(ufvkmeta.has_value());
     EXPECT_EQ(ufvkmeta.value().first, ufvkid);
     EXPECT_FALSE(ufvkmeta.value().second.has_value());
