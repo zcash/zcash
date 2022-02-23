@@ -25,8 +25,9 @@ public:
         OrchardOutPoint op,
         const libzcash::OrchardRawAddress& address,
         CAmount noteValue,
-        const std::array<unsigned char, ZC_MEMO_SIZE>& memo):
-        op(op), address(address), noteValue(noteValue), memo(memo), confirmations(0) {}
+        const std::array<unsigned char, ZC_MEMO_SIZE>& memo,
+        int confirmations):
+        op(op), address(address), noteValue(noteValue), memo(memo), confirmations(confirmations) {}
 
     const OrchardOutPoint& GetOutPoint() const {
         return op;
@@ -64,6 +65,10 @@ public:
     // OrchardWallet should never be copied
     OrchardWallet(const OrchardWallet&) = delete;
     OrchardWallet& operator=(const OrchardWallet&) = delete;
+
+    const OrchardWalletPtr* GetPointer() const {
+        return inner.get();
+    }
 
     void CheckpointNoteCommitmentTree() {
         orchard_wallet_checkpoint(inner.get());
@@ -149,28 +154,10 @@ public:
                 op,
                 libzcash::OrchardRawAddress(rawNoteMeta.addr),
                 rawNoteMeta.noteValue,
-                memo);
-        // TODO: noteMeta.confirmations is only available from the C++ wallet
+                memo,
+                rawNoteMeta.confirmations);
 
         reinterpret_cast<std::vector<OrchardNoteMetadata>*>(orchardNotesRet)->push_back(noteMeta);
-    }
-
-    void GetFilteredNotes(
-        std::vector<OrchardNoteMetadata>& orchardNotesRet,
-        const std::optional<libzcash::OrchardIncomingViewingKey>& ivk,
-        bool ignoreSpent,
-        bool ignoreLocked,
-        bool requireSpendingKey) const {
-
-        orchard_wallet_get_filtered_notes(
-            inner.get(),
-            ivk.has_value() ? ivk.value().inner.get() : nullptr,
-            ignoreSpent,
-            ignoreLocked,
-            requireSpendingKey,
-            &orchardNotesRet,
-            PushOrchardNoteMeta
-            );
     }
 };
 

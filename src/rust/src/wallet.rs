@@ -55,6 +55,7 @@ pub struct NoteMetadata {
     recipient: *const Address,
     note_value: i64,
     memo: [u8; 512],
+    confirmations: i32
 }
 
 struct KeyStore {
@@ -237,13 +238,16 @@ impl Wallet {
     pub fn get_filtered_notes(
         &self,
         ivk: Option<&IncomingViewingKey>,
+        get_confs: impl Fn(&TxId) -> i32,
         ignore_spent: bool,
         ignore_locked: bool,
         require_spending_key: bool,
-    ) -> Vec<(OutPoint, DecryptedNote)> {
+    ) -> Vec<(OutPoint, DecryptedNote, i32)> {
         self.wallet_tx_notes
             .iter()
             .flat_map(|(txid, tx_notes)| {
+                let confs = get_confs(txid);
+
                 tx_notes
                     .decrypted_notes
                     .iter()
@@ -265,7 +269,7 @@ impl Wallet {
                                 {
                                     None
                                 } else {
-                                    Some((outpoint, (*dnote).clone()))
+                                    Some((outpoint, (*dnote).clone(), confs))
                                 }
                             })
                     })
@@ -392,6 +396,8 @@ pub extern "C" fn orchard_wallet_tx_contains_my_notes(
     wallet.tx_contains_my_notes(&txid)
 }
 
+pub type CppWalletObj = std::ptr::NonNull<libc::c_void>;
+pub type ConfsCb = unsafe extern "C" fn(cppwallet: Option<CppWalletObj>, ptxid: *const u8) -> i32;
 pub type VecObj = std::ptr::NonNull<libc::c_void>;
 pub type PushCb = unsafe extern "C" fn(obj: Option<VecObj>, meta: NoteMetadata);
 
@@ -399,6 +405,8 @@ pub type PushCb = unsafe extern "C" fn(obj: Option<VecObj>, meta: NoteMetadata);
 pub extern "C" fn orchard_wallet_get_filtered_notes(
     wallet: *const Wallet,
     ivk: *const IncomingViewingKey,
+    cpp_wallet: Option<CppWalletObj>,
+    confs_cb: Option<ConfsCb>,
     ignore_spent: bool,
     ignore_locked: bool,
     require_spending_key: bool,
@@ -408,9 +416,13 @@ pub extern "C" fn orchard_wallet_get_filtered_notes(
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
     let ivk = unsafe { ivk.as_ref() };
 
-    for (outpoint, dnote) in
-        wallet.get_filtered_notes(ivk, ignore_spent, ignore_locked, require_spending_key)
-    {
+    for (outpoint, dnote, confs) in wallet.get_filtered_notes(
+        ivk,
+        |txid| unsafe { (confs_cb.unwrap())(cpp_wallet, txid.as_ref().as_ptr()) },
+        ignore_spent,
+        ignore_locked,
+        require_spending_key,
+    ) {
         let recipient = Box::new(dnote.note.recipient());
         let metadata = NoteMetadata {
             txid: *outpoint.txid.as_ref(),
@@ -418,6 +430,7 @@ pub extern "C" fn orchard_wallet_get_filtered_notes(
             recipient: Box::into_raw(recipient),
             note_value: dnote.note.value().inner() as i64,
             memo: dnote.memo,
+            confirmations: confs
         };
         unsafe { (push_cb.unwrap())(result, metadata) };
     }

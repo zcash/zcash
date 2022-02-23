@@ -1548,6 +1548,8 @@ public:
     CAmount GetImmatureWatchOnlyBalance() const;
     CAmount GetLegacyBalance(const isminefilter& filter, int minDepth) const;
 
+    static int GetConfirmationsForTxid(void* pwallet, const unsigned char* ptxid);
+
     /**
      * Insert additional inputs into the transaction by
      * calling CreateTransaction();
@@ -1764,6 +1766,15 @@ public:
      * contained in the given address set.
      */
     bool HasSpendingKeys(const NoteFilter& noteFilter) const;
+
+    void GetFilteredOrchardNotes(
+        void* pwallet,
+        const OrchardWallet& orchardWallet,
+        std::vector<OrchardNoteMetadata>& orchardNotesRet,
+        const std::optional<libzcash::OrchardIncomingViewingKey>& ivk,
+        bool ignoreSpent,
+        bool ignoreLocked,
+        bool requireSpendingKey) const;
 
     /* Find notes filtered by payment addresses, min depth, max depth, if they are spent,
        if a spending key is required, and if they are locked */

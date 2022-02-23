@@ -41,6 +41,7 @@
 #include "validationinterface.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
+#include "wallet/orchard.h"
 #include "wallet/walletdb.h"
 #endif
 #include "warnings.h"

@@ -31,6 +31,7 @@
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "crypter.h"
+#include "wallet/orchard.h"
 #include "wallet/asyncrpcoperation_saplingmigration.h"
 
 #include <algorithm>
@@ -4254,6 +4255,20 @@ CAmount CWallet::GetLegacyBalance(const isminefilter& filter, int minDepth) cons
     return balance;
 }
 
+int CWallet::GetConfirmationsForTxid(void* pwallet, const unsigned char* ptxid) {
+    uint256 txid;
+    std::copy(ptxid, ptxid + 32, txid.begin());
+    auto wtx = reinterpret_cast<CWallet*>(pwallet)->GetWalletTx(txid);
+    if (wtx) {
+        return wtx->GetDepthInMainChain();
+    } else {
+        // We can't throw exceptions across the FFI, but we don't need to as in this case
+        // the filter won't ever be selecting this note, so we can treat it as conflicted.
+        LogPrintf("Wallet inconsistency: We have an Orchard WalletTx without a corresponding CWalletTx");
+        return -1;
+    }
+}
+
 void CWallet::AvailableCoins(vector<COutput>& vCoins,
                              bool fOnlyConfirmed,
                              const CCoinControl *coinControl,
@@ -6057,6 +6072,27 @@ bool CWallet::HasSpendingKeys(const NoteFilter& addrSet) const {
     return true;
 }
 
+void CWallet::GetFilteredOrchardNotes(
+    void* pwallet,
+    const OrchardWallet& orchardWallet,
+    std::vector<OrchardNoteMetadata>& orchardNotesRet,
+    const std::optional<libzcash::OrchardIncomingViewingKey>& ivk,
+    bool ignoreSpent,
+    bool ignoreLocked,
+    bool requireSpendingKey) const {
+
+    orchard_wallet_get_filtered_notes(
+        orchardWallet.GetPointer(),
+        ivk.has_value() ? ivk.value().GetPointer() : nullptr,
+        pwallet,
+        CWallet::GetConfirmationsForTxid,
+        ignoreSpent,
+        ignoreLocked,
+        requireSpendingKey,
+        &orchardNotesRet,
+        OrchardWallet::PushOrchardNoteMeta
+        );
+}
 
 /**
  * Find notes in the wallet filtered by payment addresses, min depth, max depth,
@@ -6206,7 +6242,9 @@ void CWallet::GetFilteredNotes(
         for (const OrchardRawAddress& addr: noteFilter.value().GetOrchardAddresses()) {
             auto ivk = orchardWallet.GetIncomingViewingKeyForAddress(addr);
             if (ivk.has_value()) {
-                orchardWallet.GetFilteredNotes(
+                pwalletMain->GetFilteredOrchardNotes(
+                        pwalletMain,
+                        orchardWallet,
                         orchardNotesRet,
                         ivk.value(),
                         ignoreSpent,
@@ -6216,21 +6254,14 @@ void CWallet::GetFilteredNotes(
         }
     } else {
         // return all Orchard notes
-        orchardWallet.GetFilteredNotes(
+        pwalletMain->GetFilteredOrchardNotes(
+                pwalletMain,
+                orchardWallet,
                 orchardNotesRet,
                 std::nullopt,
                 ignoreSpent,
                 ignoreLocked,
                 requireSpendingKey);
-    }
-
-    for (auto &orchardNoteMeta : orchardNotesRet) {
-        auto wtx = GetWalletTx(orchardNoteMeta.GetOutPoint().hash);
-        if (wtx) {
-            orchardNoteMeta.SetConfirmations(wtx->GetDepthInMainChain());
-        } else {
-            throw std::runtime_error("Wallet inconsistency: We have an Orchard WalletTx without a corresponding CWalletTx");
-        }
     }
 }
 

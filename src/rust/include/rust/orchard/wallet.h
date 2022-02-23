@@ -131,8 +131,10 @@ struct RawOrchardNoteMetadata {
     OrchardRawAddressPtr* addr;
     CAmount noteValue;
     unsigned char memo[512];
+    int confirmations;
 };
 
+typedef int (*confs_callback_t)(void* pwallet, const unsigned char* ptxid);
 typedef void (*push_callback_t)(void* resultVector, const RawOrchardNoteMetadata noteMeta);
 
 /**
@@ -149,6 +151,8 @@ typedef void (*push_callback_t)(void* resultVector, const RawOrchardNoteMetadata
 void orchard_wallet_get_filtered_notes(
         const OrchardWalletPtr* wallet,
         const OrchardIncomingViewingKeyPtr* ivk,
+        void* pCppWallet,
+        confs_callback_t confs_cb,
         bool ignoreSpent,
         bool ignoreLocked,
         bool requireSpendingKey,

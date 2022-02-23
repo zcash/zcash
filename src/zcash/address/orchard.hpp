@@ -78,6 +78,10 @@ public:
     OrchardIncomingViewingKey(const OrchardIncomingViewingKey& key) :
         inner(orchard_incoming_viewing_key_clone(key.inner.get()), orchard_incoming_viewing_key_free) {}
 
+    const OrchardIncomingViewingKeyPtr* GetPointer() const {
+        return inner.get();
+    }
+
     OrchardRawAddress Address(const diversifier_index_t& j) const;
 
     OrchardIncomingViewingKey& operator=(OrchardIncomingViewingKey&& key)
