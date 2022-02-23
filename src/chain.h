@@ -223,6 +223,7 @@ public:
         nNotaryPay = 0;
         pprev = NULL;
         pskip = NULL;
+        nHeight = 0;
         nFile = 0;
         nDataPos = 0;
         nUndoPos = 0;
