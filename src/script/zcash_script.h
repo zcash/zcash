@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-#define ZCASH_SCRIPT_API_VER 2
+#define ZCASH_SCRIPT_API_VER 3
 
 typedef enum zcash_script_error_t
 {
@@ -43,6 +43,7 @@ typedef enum zcash_script_error_t
     zcash_script_ERR_TX_DESERIALIZE,
     // Defined since API version 3.
     zcash_script_ERR_TX_VERSION,
+    zcash_script_ERR_TX_INVALID_SCRIPT,
 } zcash_script_error;
 
 /** Script verification flags */
@@ -52,6 +53,19 @@ enum
     zcash_script_SCRIPT_FLAGS_VERIFY_P2SH                = (1U << 0), // evaluate P2SH (BIP16) subscripts
     zcash_script_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9), // enable CHECKLOCKTIMEVERIFY (BIP65)
 };
+
+/** Address type enumeration */
+typedef enum zcash_script_type_t
+{
+    zcash_script_TYPE_P2PKH = 1,
+    zcash_script_TYPE_P2SH  = 2,
+} zcash_script_type;
+
+/// A Zcash transparent address encoded as 20 bytes.
+typedef struct zcash_script_uint160_t
+{
+    unsigned char value[20];
+} zcash_script_uint160;
 
 /// Deserializes the given transaction and precomputes values to improve
 /// script verification performance.
@@ -127,6 +141,26 @@ EXPORT_SYMBOL unsigned int zcash_script_legacy_sigop_count_precomputed(
 EXPORT_SYMBOL unsigned int zcash_script_legacy_sigop_count(
     const unsigned char *txTo,
     unsigned int txToLen,
+    zcash_script_error* err);
+
+/// Return the destination address for transparent output nOut of the precomputed transaction
+/// pointed to by preTx.
+/// If not NULL, type will contain the address type.
+/// If not NULL, err will contain an error/success code for the operation.
+EXPORT_SYMBOL zcash_script_uint160 zcash_script_transparent_output_address_precomputed(
+    const void* pre_preTx,
+    unsigned int nOut,
+    zcash_script_type* type,
+    zcash_script_error* err);
+
+/// Return the destination address for transparent output nOut of the transaction txTo.
+/// If not NULL, type will contain the address type.
+/// If not NULL, err will contain an error/success code for the operation.
+EXPORT_SYMBOL zcash_script_uint160 zcash_script_transparent_output_address(
+    const unsigned char *txTo,
+    unsigned int txToLen,
+    unsigned int nOut,
+    zcash_script_type* type,
     zcash_script_error* err);
 
 /// Returns the current version of the zcash_script library.

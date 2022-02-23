@@ -232,6 +232,94 @@ unsigned int zcash_script_legacy_sigop_count(
     }
 }
 
+zcash_script_uint160 zcash_script_transparent_output_address_precomputed(
+    const void* pre_preTx,
+    unsigned int nOut,
+    zcash_script_type* type,
+    zcash_script_error* err)
+{
+    const PrecomputedTransaction* preTx = static_cast<const PrecomputedTransaction*>(pre_preTx);
+
+    zcash_script_uint160 r;
+    memset(&r, 0, sizeof(r));
+
+    if (nOut >= preTx->tx.vout.size()) {
+        set_error(err, zcash_script_ERR_TX_INDEX);
+        return r;
+    }
+
+    const CTxOut& out = preTx->tx.vout[nOut];
+    CScript::ScriptType scriptType = out.scriptPubKey.GetType();
+    switch (scriptType) {
+        case CScript::ScriptType::P2PKH:
+            if (type) {
+                *type = zcash_script_TYPE_P2PKH;
+            }
+            break;
+        case CScript::ScriptType::P2SH:
+            if (type) {
+                *type = zcash_script_TYPE_P2SH;
+            }
+            break;
+        default:
+            set_error(err, zcash_script_ERR_TX_INVALID_SCRIPT);
+            return r;
+    }
+    const uint160 addr = out.scriptPubKey.AddressHash();
+
+    assert(sizeof(r.value) == addr.size());
+    memcpy(r.value, addr.begin(), addr.size());
+    set_error(err, zcash_script_ERR_OK);
+    return r;
+}
+
+zcash_script_uint160 zcash_script_transparent_output_address(
+    const unsigned char *txTo,
+    unsigned int txToLen,
+    unsigned int nOut,
+    zcash_script_type* type,
+    zcash_script_error* err)
+{
+    TxInputStream stream(SER_NETWORK, PROTOCOL_VERSION, txTo, txToLen);
+    CTransaction tx;
+    zcash_script_uint160 r;
+    memset(&r, 0, sizeof(r));
+
+    stream >> tx;
+    if (nOut >= tx.vout.size()) {
+        set_error(err, zcash_script_ERR_TX_INDEX);
+        return r;
+    }
+    if (GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) != txToLen) {
+        set_error(err, zcash_script_ERR_TX_SIZE_MISMATCH);
+        return r;
+    }
+
+    const CTxOut& out = tx.vout[nOut];
+    CScript::ScriptType scriptType = out.scriptPubKey.GetType();
+    switch (scriptType) {
+        case CScript::ScriptType::P2PKH:
+            if (type) {
+                *type = zcash_script_TYPE_P2PKH;
+            }
+            break;
+        case CScript::ScriptType::P2SH:
+            if (type) {
+                *type = zcash_script_TYPE_P2SH;
+            }
+            break;
+        default:
+            set_error(err, zcash_script_ERR_TX_INVALID_SCRIPT);
+            return r;
+    }
+    const uint160 addr = out.scriptPubKey.AddressHash();
+
+    assert(sizeof(r.value) == addr.size());
+    memcpy(r.value, addr.begin(), addr.size());
+    set_error(err, zcash_script_ERR_OK);
+    return r;
+}
+
 unsigned int zcash_script_version()
 {
     // Just use the API version for now
