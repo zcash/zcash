@@ -2007,14 +2007,7 @@ int32_t komodo_checkPOW(int64_t stakeTxValue, int32_t slowflag,CBlock *pblock,in
     }
     //if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
     //    bnTarget = komodo_adaptivepow_target(height,bnTarget,pblock->nTime);
-    if ( ASSETCHAINS_LWMAPOS != 0 && bhash > bnTarget )
-    {
-        // if proof of stake is active, check if this is a valid PoS block before we fail
-        if (verusCheckPOSBlock(slowflag, pblock, height))
-        {
-            return(0);
-        }
-    }
+
     if ( (ASSETCHAINS_SYMBOL[0] != 0 || height > 792000) && bhash > bnTarget )
     {
         failed = 1;

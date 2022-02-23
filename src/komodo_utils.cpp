@@ -669,7 +669,7 @@ uint64_t komodo_block_prg(uint32_t nHeight)
             uint64_t x = hashSrc64 >> (i * 8);
             hashSrc[i] = (uint8_t)(x & 0xff);
         }
-        verus_hash(hashResult.bytes, hashSrc, sizeof(hashSrc));
+        vcalc_sha256(0, hashResult.bytes, hashSrc, sizeof(hashSrc));
         for ( i = 0; i < 8; i++ )
         {
             result = (result << 8) | hashResult.bytes[i];

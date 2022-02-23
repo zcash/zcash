@@ -150,7 +150,6 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
 int64_t komodo_block_unlocktime(uint32_t nHeight);
 uint64_t komodo_commission(const CBlock *block,int32_t height);
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig, uint256 merkleroot);
-int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig, CPubKey &pk);
 uint256 komodo_calcmerkleroot(CBlock *pblock, uint256 prevBlockHash, int32_t nHeight, bool fNew, CScript scriptPubKey);
 int32_t komodo_newStakerActive(int32_t height, uint32_t timestamp);
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33, void* ptr);
@@ -642,48 +641,33 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[512],*ptr;
             CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), stakeHeight);
 
-            if (ASSETCHAINS_LWMAPOS != 0)
+            blocktime = GetTime();
+            uint256 merkleroot = komodo_calcmerkleroot(pblock, pindexPrev->GetBlockHash(), nHeight, true, scriptPubKeyIn);
+            //fprintf(stderr, "MINER: merkleroot.%s\n", merkleroot.GetHex().c_str());
+            /*
+                Instead of a split RPC and writing heaps of code, I added this.
+                It works with the consensus, because the stakeTx valuein-valueout+blockReward is enforced for the coinbase of staking blocks.
+                For example:
+                utxovalue = 30;
+                30% of the value of the staking utxo is added to the coinbase the same as fees,returning the remaining 70% to the address that staked.
+                utxovalue can be adjusted from any number 0 to 100 via the setstakingsplit RPC.
+                Can also be set with -splitperc= command line arg, or conf file.
+                0 means that it functions as it did previously (default).
+                100 means it automates the pos64staker in the daemon, combining the stake tx and the coinbase to an address. Either to -pubkey or a new address from the keystore.
+                Mining with a % here and without pubkey will over time create varied sized utxos, and evenly distribute them over many addresses and segids.
+            */
             {
-                uint32_t nBitsPOS;
-                arith_uint256 posHash;
-
-                siglen = verus_staked(pblock, txStaked, nBitsPOS, posHash, utxosig, pk);
-                blocktime = GetTime();
-
-                // change the scriptPubKeyIn to the same output script exactly as the staking transaction
-                if (siglen > 0)
-                    scriptPubKeyIn = CScript(txStaked.vout[0].scriptPubKey);
+                LOCK(cs_main);
+                utxovalue = ASSETCHAINS_STAKED_SPLIT_PERCENTAGE;
             }
-            else
-            {
-                blocktime = GetTime();                
-                uint256 merkleroot = komodo_calcmerkleroot(pblock, pindexPrev->GetBlockHash(), nHeight, true, scriptPubKeyIn);
-                //fprintf(stderr, "MINER: merkleroot.%s\n", merkleroot.GetHex().c_str());
-                /*
-                    Instead of a split RPC and writing heaps of code, I added this.
-                    It works with the consensus, because the stakeTx valuein-valueout+blockReward is enforced for the coinbase of staking blocks.
-                    For example:
-                    utxovalue = 30;
-                    30% of the value of the staking utxo is added to the coinbase the same as fees,returning the remaining 70% to the address that staked.
-                    utxovalue can be adjusted from any number 0 to 100 via the setstakingsplit RPC.
-                    Can also be set with -splitperc= command line arg, or conf file. 
-                    0 means that it functions as it did previously (default).
-                    100 means it automates the pos64staker in the daemon, combining the stake tx and the coinbase to an address. Either to -pubkey or a new address from the keystore.
-                    Mining with a % here and without pubkey will over time create varied sized utxos, and evenly distribute them over many addresses and segids.
-                */
-                {
-                    LOCK(cs_main);
-                    utxovalue = ASSETCHAINS_STAKED_SPLIT_PERCENTAGE;
-                }
-                 
-                siglen = komodo_staked(txStaked, pblock->nBits, &blocktime, &txtime, &utxotxid, &utxovout, &utxovalue, utxosig, merkleroot);
-                if ( komodo_newStakerActive(nHeight, blocktime) != 0 )
-                    nFees += utxovalue;
-                //fprintf(stderr, "added to coinbase.%llu staking tx valueout.%llu\n", (long long unsigned)utxovalue, (long long unsigned)txStaked.vout[0].nValue);
-                uint32_t delay = ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH ? ASSETCHAINS_STAKED_BLOCK_FUTURE_MAX : ASSETCHAINS_STAKED_BLOCK_FUTURE_HALF;
-                if ( komodo_waituntilelegible(blocktime, stakeHeight, delay) == 0 )
-                    return(0);
-            }
+
+            siglen = komodo_staked(txStaked, pblock->nBits, &blocktime, &txtime, &utxotxid, &utxovout, &utxovalue, utxosig, merkleroot);
+            if ( komodo_newStakerActive(nHeight, blocktime) != 0 )
+                nFees += utxovalue;
+            //fprintf(stderr, "added to coinbase.%llu staking tx valueout.%llu\n", (long long unsigned)utxovalue, (long long unsigned)txStaked.vout[0].nValue);
+            uint32_t delay = ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH ? ASSETCHAINS_STAKED_BLOCK_FUTURE_MAX : ASSETCHAINS_STAKED_BLOCK_FUTURE_HALF;
+            if ( komodo_waituntilelegible(blocktime, stakeHeight, delay) == 0 )
+                return(0);
 
             if ( siglen > 0 )
             {
@@ -818,7 +802,6 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
 
-        // if not Verus stake, setup nonce, otherwise, leave it alone
         if (!isStake || ASSETCHAINS_LWMAPOS == 0)
         {
             // Randomise nonce

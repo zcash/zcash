@@ -5577,12 +5577,6 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33, void *
     return(siglen);
 }
 
-int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig, CPubKey &pk)
-{
-    return pwalletMain->VerusStakeTransaction(pBlock, txNew, nBits, hashResult, utxosig, pk);
-}
-
-
 #include "../cc/CCfaucet.h"
 #include "../cc/CCassets.h"
 #include "../cc/CCrewards.h"
