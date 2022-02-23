@@ -726,42 +726,6 @@ public:
         return a.hash != b.hash;
     }
 
-    // verus hash will be the same for a given txid, output number, block height, and blockhash of 100 blocks past
-    static uint256 _GetVerusPOSHash(CPOSNonce *pNonce, const uint256 &txid, int32_t voutNum, int32_t height, const uint256 &pastHash, int64_t value)
-    {
-        pNonce->SetPOSEntropy(pastHash, txid, voutNum);
-        CVerusHashWriter hashWriter  = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
-
-        hashWriter << ASSETCHAINS_MAGIC;
-
-        // we only use the new style of POS hash after changeover and 100 blocks of enforced proper nonce updating
-        if (CPOSNonce::NewPOSActive(height))
-        {
-            hashWriter << *pNonce;
-            hashWriter << height;
-            return ArithToUint256(UintToArith256(hashWriter.GetHash()) / value);
-        }
-        else
-        {
-            hashWriter << pastHash;
-            hashWriter << height;
-            hashWriter << txid;
-            hashWriter << voutNum;
-            return ArithToUint256(UintToArith256(hashWriter.GetHash()) / value);
-        }
-    }
-
-    // Nonce is modified to include the transaction information
-    uint256 GetVerusPOSHash(CPOSNonce *pNonce, int32_t voutNum, int32_t height, const uint256 &pastHash) const
-    {
-        uint256 txid = GetHash();
-
-        if (voutNum >= vout.size())
-            return uint256S("ff0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
-
-        return _GetVerusPOSHash(pNonce, txid, voutNum, height, pastHash, (uint64_t)vout[voutNum].nValue);
-    }
-
     std::string ToString() const;
 };
 
