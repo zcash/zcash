@@ -177,7 +177,7 @@ UniValue geterablockheights(const UniValue& params, bool fHelp, const CPubKey& m
       
     CBlockIndex *pindex; int8_t lastera,era = 0; UniValue ret(UniValue::VOBJ);
 
-    for (size_t i = 1; i < chainActive.LastTip()->GetHeight(); i++)
+    for (size_t i = 1; i < chainActive.LastTip()->nHeight; i++)
     {
         pindex = chainActive[i];
         era = getera(pindex->nTime)+1;
@@ -299,7 +299,7 @@ UniValue getinfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
         if ( (notaryid= StakedNotaryID(notaryname, (char *)NOTARY_ADDRESS.c_str())) != -1 ) {
             obj.push_back(Pair("notaryid",        notaryid));
             obj.push_back(Pair("notaryname",      notaryname));
-        } else if( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.LastTip()->GetHeight(),komodo_chainactive_timestamp())) >= 0 )  {
+        } else if( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.LastTip()->nHeight,komodo_chainactive_timestamp())) >= 0 )  {
             obj.push_back(Pair("notaryid",        notaryid));
             if ( KOMODO_LASTMINED != 0 )
                 obj.push_back(Pair("lastmined", KOMODO_LASTMINED));
@@ -1241,7 +1241,7 @@ CAmount checkburnaddress(CAmount &received, int64_t &nNotaryPay, int32_t &height
             // Get notary pay from current chain tip
             CBlockIndex* pindex = chainActive.LastTip();
             nNotaryPay = pindex->nNotaryPay;
-            height = pindex->GetHeight();
+            height = pindex->nHeight;
         }
     }
     return balance;

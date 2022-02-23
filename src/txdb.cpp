@@ -276,7 +276,7 @@ bool CCoinsViewDB::GetStats(CCoinsStats &stats) const {
     }
     {
         LOCK(cs_main);
-        stats.nHeight = mapBlockIndex.find(stats.hashBlock)->second->GetHeight();
+        stats.nHeight = mapBlockIndex.find(stats.hashBlock)->second->nHeight;
     }
     stats.hashSerialized = ss.GetHash();
     stats.nTotalAmount = nTotalAmount;
@@ -701,7 +701,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 // Construct block index object
                 CBlockIndex* pindexNew = InsertBlockIndex(diskindex.GetBlockHash());
                 pindexNew->pprev          = InsertBlockIndex(diskindex.hashPrev);
-                pindexNew->SetHeight(diskindex.GetHeight());
+                pindexNew->nHeight = diskindex.nHeight;
                 pindexNew->nFile          = diskindex.nFile;
                 pindexNew->nDataPos       = diskindex.nDataPos;
                 pindexNew->nUndoPos       = diskindex.nUndoPos;
@@ -720,7 +720,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nSaplingValue  = diskindex.nSaplingValue;
                 pindexNew->segid          = diskindex.segid;
                 pindexNew->nNotaryPay     = diskindex.nNotaryPay;
-//fprintf(stderr,"loadguts ht.%d\n",pindexNew->GetHeight());
+//fprintf(stderr,"loadguts ht.%d\n",pindexNew->nHeight);
                 // Consistency checks
                 auto header = pindexNew->GetBlockHeader();
                 if (header.GetHash() != pindexNew->GetBlockHash())
@@ -729,8 +729,8 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 if ( 0 ) // POW will be checked before any block is connected
                 {
                     uint8_t pubkey33[33];
-                    komodo_index2pubkey33(pubkey33,pindexNew,pindexNew->GetHeight());
-                    if (!CheckProofOfWork(header,pubkey33,pindexNew->GetHeight(),Params().GetConsensus()))
+                    komodo_index2pubkey33(pubkey33,pindexNew,pindexNew->nHeight);
+                    if (!CheckProofOfWork(header,pubkey33,pindexNew->nHeight,Params().GetConsensus()))
                         return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
                 }
                 pcursor->Next();

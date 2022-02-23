@@ -311,7 +311,7 @@ int32_t komodo_validate_chain(uint256 srchash,int32_t notarized_height)
     static int32_t last_rewind; int32_t rewindtarget; CBlockIndex *pindex; struct komodo_state *sp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN];
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
         return(0);
-    if ( IsInitialBlockDownload() == 0 && ((pindex= komodo_getblockindex(srchash)) == 0 || pindex->GetHeight() != notarized_height) )
+    if ( IsInitialBlockDownload() == 0 && ((pindex= komodo_getblockindex(srchash)) == 0 || pindex->nHeight != notarized_height) )
     {
         if ( sp->LastNotarizedHeight() > 0 && sp->LastNotarizedHeight() < notarized_height )
             rewindtarget = sp->LastNotarizedHeight() - 1;
@@ -615,7 +615,7 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
         return(0);
     }
     memset(&zero,0,sizeof(zero));
-    komodo_init(pindex->GetHeight());
+    komodo_init(pindex->nHeight);
     KOMODO_INITDONE = (uint32_t)time(NULL);
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
     {
@@ -636,29 +636,29 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
             lastStakedEra = staked_era;
         }
     }
-    numnotaries = komodo_notaries(pubkeys,pindex->GetHeight(),pindex->GetBlockTime());
+    numnotaries = komodo_notaries(pubkeys,pindex->nHeight,pindex->GetBlockTime());
     calc_rmd160_sha256(rmd160,pubkeys[0],33);
-    if ( pindex->GetHeight() > hwmheight )
-        hwmheight = pindex->GetHeight();
+    if ( pindex->nHeight > hwmheight )
+        hwmheight = pindex->nHeight;
     else
     {
-        if ( pindex->GetHeight() != hwmheight )
+        if ( pindex->nHeight != hwmheight )
         {
-            printf("%s hwmheight.%d vs pindex->GetHeight().%d t.%u reorg.%d\n",ASSETCHAINS_SYMBOL,hwmheight,pindex->GetHeight(),(uint32_t)pindex->nTime,hwmheight-pindex->GetHeight());
-            komodo_purge_ccdata((int32_t)pindex->GetHeight());
-            hwmheight = pindex->GetHeight();
+            printf("%s hwmheight.%d vs pindex->nHeight.%d t.%u reorg.%d\n",ASSETCHAINS_SYMBOL,hwmheight,pindex->nHeight,(uint32_t)pindex->nTime,hwmheight-pindex->nHeight);
+            komodo_purge_ccdata((int32_t)pindex->nHeight);
+            hwmheight = pindex->nHeight;
         }
         if (!fJustCheck)
         {
-            komodo_event_rewind(sp,symbol,pindex->GetHeight());
-            komodo_stateupdate(pindex->GetHeight(),0,0,0,zero,0,0,0,0,-pindex->GetHeight(),pindex->nTime,0,0,0,0,zero,0);
+            komodo_event_rewind(sp,symbol,pindex->nHeight);
+            komodo_stateupdate(pindex->nHeight,0,0,0,zero,0,0,0,0,-pindex->nHeight,pindex->nTime,0,0,0,0,zero,0);
         }
     }
-    komodo_currentheight_set(chainActive.LastTip()->GetHeight());
+    komodo_currentheight_set(chainActive.LastTip()->nHeight);
     int transaction = 0;
     if ( pindex != 0 )
     {
-        height = pindex->GetHeight();
+        height = pindex->nHeight;
         txn_count = block.vtx.size();
         for (i=0; i<txn_count; i++)
         {
@@ -789,13 +789,13 @@ int32_t komodo_connectblock(bool fJustCheck, CBlockIndex *pindex,CBlock& block)
         }
         if ( !fJustCheck && IS_KOMODO_NOTARY && ASSETCHAINS_SYMBOL[0] == 0 )
             printf("%s ht.%d\n",ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL,height);
-        if ( !fJustCheck && pindex->GetHeight() == hwmheight )
+        if ( !fJustCheck && pindex->nHeight == hwmheight )
             komodo_stateupdate(height,0,0,0,zero,0,0,0,0,height,(uint32_t)pindex->nTime,0,0,0,0,zero,0);
     } 
     else 
         { fprintf(stderr,"komodo_connectblock: unexpected null pindex\n"); return(0); }
     //KOMODO_INITDONE = (uint32_t)time(NULL);
-    //fprintf(stderr,"%s end connect.%d\n",ASSETCHAINS_SYMBOL,pindex->GetHeight());
+    //fprintf(stderr,"%s end connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
     if (fJustCheck)
     {
         if ( notarisations.size() == 0 )

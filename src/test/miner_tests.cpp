@@ -387,13 +387,13 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 
     // subsidy changing
     int nHeight = chainActive.Height();
-    chainActive.Tip()->SetHeight(209999);
+    chainActive.Tip()->nHeight = 209999;
     BOOST_CHECK(pblocktemplate = CreateNewBlock(CPubKey(),scriptPubKey,-1));
     delete pblocktemplate;
-    chainActive.Tip()->SetHeight(210000);
+    chainActive.Tip()->nHeight = 210000;
     BOOST_CHECK(pblocktemplate = CreateNewBlock(CPubKey(),scriptPubKey,-1));
     delete pblocktemplate;
-    chainActive.Tip()->SetHeight(nHeight);
+    chainActive.Tip()->nHeight = nHeight;
 
     // non-final txs in mempool
     SetMockTime(chainActive.Tip()->GetMedianTimePast()+1);
@@ -404,7 +404,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vin[0].nSequence = 0;
     tx.vout[0].nValue = 49000LL;
     tx.vout[0].scriptPubKey = CScript() << OP_1;
-    tx.nLockTime = chainActive.Tip()->GetHeight()+1;
+    tx.nLockTime = chainActive.Tip()->nHeight+1;
     hash = tx.GetHash();
     mempool.addUnchecked(hash, entry.Time(GetTime()).SpendsCoinbase(true).FromTx(tx));
     BOOST_CHECK(!CheckFinalTx(tx, LOCKTIME_MEDIAN_TIME_PAST));
@@ -430,7 +430,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     delete pblocktemplate;
 
     // However if we advance height and time by one, both will.
-    chainActive.Tip()->SetHeight(chainActive.Tip()->GetHeight() + 1);
+    chainActive.Tip()->nHeight = chainActive.Tip()->nHeight + 1;
     SetMockTime(chainActive.Tip()->GetMedianTimePast()+2);
 
     // FIXME: we should *actually* create a new block so the following test
@@ -442,7 +442,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 2);
     delete pblocktemplate;
 
-    chainActive.Tip()->SetHeight(chainActive.Tip()->GetHeight() - 1);
+    chainActive.Tip()->nHeight = chainActive.Tip()->nHeight - 1;
     SetMockTime(0);
     mempool.clear();
 

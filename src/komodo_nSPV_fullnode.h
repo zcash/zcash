@@ -90,7 +90,7 @@ int32_t NSPV_ntzextract(struct NSPV_ntz *ptr,uint256 ntztxid,int32_t txidht,uint
 int32_t NSPV_getntzsresp(struct NSPV_ntzsresp *ptr,int32_t origreqheight)
 {
     struct NSPV_ntzargs prev,next; int32_t reqheight = origreqheight;
-    if ( reqheight < chainActive.LastTip()->GetHeight() )
+    if ( reqheight < chainActive.LastTip()->nHeight )
         reqheight++;
     if ( NSPV_notarized_bracket(&prev,&next,reqheight) == 0 )
     {
@@ -134,7 +134,7 @@ int32_t NSPV_getinfo(struct NSPV_inforesp *ptr,int32_t reqheight)
     int32_t prevMoMheight,len = 0; CBlockIndex *pindex, *pindex2; struct NSPV_ntzsresp pair;
     if ( (pindex= chainActive.LastTip()) != 0 )
     {
-        ptr->height = pindex->GetHeight();
+        ptr->height = pindex->nHeight;
         ptr->blockhash = pindex->GetBlockHash();
         memset(&pair,0,sizeof(pair));
         if ( NSPV_getntzsresp(&pair,ptr->height-1) < 0 )
@@ -167,7 +167,7 @@ int32_t NSPV_getaddressutxos(struct NSPV_utxosresp *ptr,char *coinaddr,bool isCC
         skipcount = 0;
     if ( (ptr->numutxos= (int32_t)unspentOutputs.size()) >= 0 && ptr->numutxos < maxlen )
     {
-        tipheight = chainActive.LastTip()->GetHeight();
+        tipheight = chainActive.LastTip()->nHeight;
         ptr->nodeheight = tipheight;
         if ( skipcount >= ptr->numutxos )
             skipcount = ptr->numutxos-1;
@@ -333,7 +333,7 @@ int32_t NSPV_getccmoduleutxos(struct NSPV_utxosresp *ptr, char *coinaddr, int64_
     ptr->numutxos = 0;
     strncpy(ptr->coinaddr, coinaddr, sizeof(ptr->coinaddr) - 1);
     ptr->CCflag = 1;
-    tipheight = chainActive.LastTip()->GetHeight();  
+    tipheight = chainActive.LastTip()->nHeight;  
     ptr->nodeheight = tipheight; // will be checked in libnspv
     //}
    
@@ -441,7 +441,7 @@ int32_t NSPV_getaddresstxids(struct NSPV_txidsresp *ptr,char *coinaddr,bool isCC
     int32_t maxlen,txheight,ind=0,n = 0,len = 0; CTransaction tx; uint256 hashBlock;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     SetCCtxids(txids,coinaddr,isCC);
-    ptr->nodeheight = chainActive.LastTip()->GetHeight();
+    ptr->nodeheight = chainActive.LastTip()->nHeight;
     maxlen = MAX_BLOCK_SIZE(ptr->nodeheight) - 512;
     maxlen /= sizeof(*ptr->txids);
     strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
@@ -624,7 +624,7 @@ int32_t NSPV_mempoolfuncs(bits256 *satoshisp,int32_t *vindexp,std::vector<uint25
 int32_t NSPV_mempooltxids(struct NSPV_mempoolresp *ptr,char *coinaddr,uint8_t isCC,uint8_t funcid,uint256 txid,int32_t vout)
 {
     std::vector<uint256> txids; bits256 satoshis; uint256 tmp,tmpdest; int32_t i,len = 0;
-    ptr->nodeheight = chainActive.LastTip()->GetHeight();
+    ptr->nodeheight = chainActive.LastTip()->nHeight;
     strncpy(ptr->coinaddr,coinaddr,sizeof(ptr->coinaddr)-1);
     ptr->CCflag = isCC;
     ptr->txid = txid;

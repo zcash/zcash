@@ -430,7 +430,7 @@ int32_t komodo_state::NotarizedData(int32_t nHeight,uint256 *notarized_hashp,uin
 int32_t komodo_state::NotarizedHeight(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp)
 {
     CBlockIndex *pindex;
-    if ( (pindex= komodo_blockindex(last.notarized_hash)) == 0 || pindex->GetHeight() < 0 )
+    if ( (pindex= komodo_blockindex(last.notarized_hash)) == 0 || pindex->nHeight < 0 )
     {
         // found orphaned notarization, adjust the values in the komodo_state object
         last.notarized_hash.SetNull();

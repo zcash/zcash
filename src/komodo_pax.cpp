@@ -593,13 +593,13 @@ uint64_t komodo_paxpriceB(uint64_t seed,int32_t height,char *base,char *rel,uint
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume)
 {
     int32_t i,nonz=0; int64_t diff; uint64_t price,seed,sum = 0;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.LastTip() != 0 && height > chainActive.LastTip()->GetHeight() )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.LastTip() != 0 && height > chainActive.LastTip()->nHeight )
     {
         if ( height < 100000000 )
         {
             static uint32_t counter;
             if ( counter++ < 3 )
-                printf("komodo_paxprice height.%d vs tip.%d\n",height,chainActive.LastTip()->GetHeight());
+                printf("komodo_paxprice height.%d vs tip.%d\n",height,chainActive.LastTip()->nHeight);
         }
         return(0);
     }

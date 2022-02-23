@@ -551,7 +551,7 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
     mypk = pubkey2pk(Mypubkey());
     Marmarapk = GetUnspendable(cp,0);
     remaining = change = 0;
-    height = chainActive.LastTip()->GetHeight();
+    height = chainActive.LastTip()->nHeight;
     if ( (n= MarmaraGetbatontxid(creditloop,batontxid,refbatontxid)) > 0 )
     {
         if ( myGetTransaction(batontxid,batontx,hashBlock) != 0 && (numvouts= batontx.vout.size()) > 1 )
@@ -564,9 +564,9 @@ UniValue MarmaraSettlement(uint64_t txfee,uint256 refbatontxid)
                     result.push_back(Pair("error",(char *)"invalid refcreatetxid, setting to creditloop[0]"));
                     return(result);
                 }
-                else if ( chainActive.LastTip()->GetHeight() < refmatures )
+                else if ( chainActive.LastTip()->nHeight < refmatures )
                 {
-                    fprintf(stderr,"doesnt mature for another %d blocks\n",refmatures - chainActive.LastTip()->GetHeight());
+                    fprintf(stderr,"doesnt mature for another %d blocks\n",refmatures - chainActive.LastTip()->nHeight);
                     result.push_back(Pair("result",(char *)"error"));
                     result.push_back(Pair("error",(char *)"cant settle immature creditloop"));
                     return(result);
@@ -713,7 +713,7 @@ UniValue MarmaraReceive(uint64_t txfee,CPubKey senderpk,int64_t amount,std::stri
         errorstr = (char *)"for now, only MARMARA loops are supported";
     else if ( amount <= txfee )
         errorstr = (char *)"amount must be for more than txfee";
-    else if ( matures <= chainActive.LastTip()->GetHeight() )
+    else if ( matures <= chainActive.LastTip()->nHeight )
         errorstr = (char *)"it must mature in the future";
     if ( errorstr == 0 )
     {
@@ -767,7 +767,7 @@ UniValue MarmaraIssue(uint64_t txfee,uint8_t funcid,CPubKey receiverpk,int64_t a
         errorstr = (char *)"for now, only MARMARA loops are supported";
     else if ( amount <= txfee )
         errorstr = (char *)"amount must be for more than txfee";
-    else if ( matures <= chainActive.LastTip()->GetHeight() )
+    else if ( matures <= chainActive.LastTip()->nHeight )
         errorstr = (char *)"it must mature in the future";
     if ( errorstr == 0 )
     {

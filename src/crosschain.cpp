@@ -166,7 +166,7 @@ TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_
         CBlockIndex blockIdx;
         if (!eval->GetTxConfirmed(assetChainProof.first, sourceNotarisation, blockIdx))
             throw std::runtime_error("Notarisation not found");
-        kmdHeight = blockIdx.GetHeight();
+        kmdHeight = blockIdx.nHeight;
     }
 
     // We now have a kmdHeight of the notarisation from chain A. So we know that a MoM exists
@@ -278,7 +278,7 @@ bool GetNextBacknotarisation(uint256 kmdNotarisationTxid, Notarisation &out)
         return false;
     }
 
-    return (bool) ScanNotarisationsFromHeight(block.GetHeight()+1, &IsSameAssetChain, out);
+    return (bool) ScanNotarisationsFromHeight(block.nHeight+1, &IsSameAssetChain, out);
 }
 
 
@@ -309,7 +309,7 @@ bool CheckMoMoM(uint256 kmdNotarisationHash, uint256 momom)
         return nota.second.MoMoM == momom;
     };
 
-    return (bool) ScanNotarisationsFromHeight(block.GetHeight()-100, checkMoMoM, nota);
+    return (bool) ScanNotarisationsFromHeight(block.nHeight-100, checkMoMoM, nota);
 
 }
 
@@ -352,7 +352,7 @@ bool CheckNotariesApproval(uint256 burntxid, const std::vector<uint256> & notary
                         if (merkleBlock.txn.ExtractMatches(prooftxids) != merkleBlock.header.hashMerkleRoot ||  // check block merkle root is correct
                             std::find(prooftxids.begin(), prooftxids.end(), burntxid) != prooftxids.end()) {    // check burn txid is in proven txids list
                             
-                            if (komodo_notaries(notaries_pubkeys, block.GetHeight(), block.GetBlockTime()) >= 0) {
+                            if (komodo_notaries(notaries_pubkeys, block.nHeight, block.GetBlockTime()) >= 0) {
                                 // check it is a notary who signed approved tx:
                                 int i;
                                 for (i = 0; i < sizeof(notaries_pubkeys) / sizeof(notaries_pubkeys[0]); i++) {
@@ -441,19 +441,19 @@ TxProof GetAssetchainProof(uint256 hash,CTransaction burnTx)
             throw std::runtime_error("tx still in mempool");
 
         blockIndex = komodo_getblockindex(blockHash);
-        int h = blockIndex->GetHeight();
+        int h = blockIndex->nHeight;
         // The assumption here is that the first notarisation for a height GTE than
         // the transaction block height will contain the corresponding MoM. If there
         // are sequence issues with the notarisations this may fail.
         auto isTarget = [&](Notarisation &nota) {
             if (!IsSameAssetChain(nota)) return false;
-            return nota.second.height >= blockIndex->GetHeight();
+            return nota.second.height >= blockIndex->nHeight;
         };
-        if (!ScanNotarisationsFromHeight(blockIndex->GetHeight(), isTarget, nota))
+        if (!ScanNotarisationsFromHeight(blockIndex->nHeight, isTarget, nota))
             throw std::runtime_error("backnotarisation not yet confirmed");
 
         // index of block in MoM leaves
-        nIndex = nota.second.height - blockIndex->GetHeight();
+        nIndex = nota.second.height - blockIndex->nHeight;
     }
 
     // build merkle chain from blocks to MoM

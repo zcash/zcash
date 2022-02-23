@@ -45,7 +45,7 @@ int tx_height( const uint256 &hash ){
 
     BlockMap::const_iterator it = mapBlockIndex.find(hashBlock);
     if (it != mapBlockIndex.end()) {
-        nHeight = it->second->GetHeight();
+        nHeight = it->second->nHeight;
         //fprintf(stderr,"blockHash %s height %d\n",hashBlock.ToString().c_str(), nHeight);
     } else {
         // Unconfirmed xtns
@@ -708,13 +708,13 @@ int32_t komodo_isPoS(CBlock *pblock, int32_t height,CTxDestination *addressout)
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
-    //fprintf(stderr,"disconnect ht.%d\n",pindex->GetHeight());
-    komodo_init(pindex->GetHeight());
+    //fprintf(stderr,"disconnect ht.%d\n",pindex->nHeight);
+    komodo_init(pindex->nHeight);
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
-        //sp->rewinding = pindex->GetHeight();
-        //fprintf(stderr,"-%d ",pindex->GetHeight());
-    } else printf("komodo_disconnect: ht.%d cant get komodo_state.(%s)\n",pindex->GetHeight(),ASSETCHAINS_SYMBOL);
+        //sp->rewinding = pindex->nHeight;
+        //fprintf(stderr,"-%d ",pindex->nHeight);
+    } else printf("komodo_disconnect: ht.%d cant get komodo_state.(%s)\n",pindex->nHeight,ASSETCHAINS_SYMBOL);
 }
 
 int32_t komodo_is_notarytx(const CTransaction& tx)
@@ -744,7 +744,7 @@ int32_t komodo_block2height(CBlock *block)
     BlockMap::const_iterator it = mapBlockIndex.find(block->GetHash());
     if ( it != mapBlockIndex.end() && (pindex = it->second) != 0 )
     {
-        height2 = (int32_t)pindex->GetHeight();
+        height2 = (int32_t)pindex->nHeight;
         if ( height2 >= 0 )
             return(height2);
     }
@@ -828,9 +828,9 @@ CBlockIndex *komodo_chainactive(int32_t height)
 {
     if ( chainActive.LastTip() != 0 )
     {
-        if ( height <= chainActive.LastTip()->GetHeight() )
+        if ( height <= chainActive.LastTip()->nHeight )
             return(chainActive[height]);
-        // else fprintf(stderr,"komodo_chainactive height %d > active.%d\n",height,chainActive.LastTip()->GetHeight());
+        // else fprintf(stderr,"komodo_chainactive height %d > active.%d\n",height,chainActive.LastTip()->nHeight);
     }
     //fprintf(stderr,"komodo_chainactive null chainActive.LastTip() height %d\n",height);
     return(0);
@@ -1005,7 +1005,7 @@ int32_t komodo_blockheight(uint256 hash)
     if ( (it = mapBlockIndex.find(hash)) != mapBlockIndex.end() )
     {
         if ( (pindex= it->second) != 0 )
-            return(pindex->GetHeight());
+            return(pindex->nHeight);
     }
     return(0);
 }
@@ -1037,16 +1037,16 @@ bool komodo_checkpoint(int32_t *notarized_heightp, int32_t nHeight, uint256 hash
     // get the most recent (highest) notarized_checkpointdata
     uint256 notarized_hash;
     uint256 notarized_desttxid;
-    int32_t notarized_height = komodo_notarizeddata(pindex->GetHeight(),&notarized_hash,&notarized_desttxid);
+    int32_t notarized_height = komodo_notarizeddata(pindex->nHeight,&notarized_hash,&notarized_desttxid);
     *notarized_heightp = notarized_height;
 
     BlockMap::const_iterator it;
     CBlockIndex *notary;
-    if ( notarized_height >= 0 && notarized_height <= pindex->GetHeight() 
+    if ( notarized_height >= 0 && notarized_height <= pindex->nHeight 
             && (it = mapBlockIndex.find(notarized_hash)) != mapBlockIndex.end() && (notary = it->second) != nullptr )
     {
         //verify that the block info returned from komodo_notarizeddata matches the actual block
-        if ( notary->GetHeight() == notarized_height ) // if notarized_hash not in chain, reorg
+        if ( notary->nHeight == notarized_height ) // if notarized_hash not in chain, reorg
         {
             if ( nHeight < notarized_height )
                 return false;
@@ -1075,7 +1075,7 @@ uint32_t komodo_interest_args(uint32_t *txheighttimep,int32_t *txheightp,uint32_
         if ( (pindex= komodo_getblockindex(hashBlock)) != 0 )
         {
             *valuep = tx.vout[n].nValue;
-            *txheightp = pindex->GetHeight();
+            *txheightp = pindex->nHeight;
             *txheighttimep = pindex->nTime;
             if ( *tiptimep == 0 && (tipindex= chainActive.LastTip()) != 0 )
                 *tiptimep = (uint32_t)tipindex->nTime;
@@ -1107,7 +1107,7 @@ uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 
 int32_t komodo_nextheight()
 {
     CBlockIndex *pindex; int32_t ht;
-    if ( (pindex= chainActive.LastTip()) != 0 && (ht= pindex->GetHeight()) > 0 )
+    if ( (pindex= chainActive.LastTip()) != 0 && (ht= pindex->nHeight) > 0 )
         return(ht+1);
     else return(komodo_longestchain() + 1);
 }
@@ -1118,7 +1118,7 @@ int32_t komodo_isrealtime(int32_t *kmdheightp)
     if ( (sp= komodo_stateptrget((char *)"KMD")) != 0 )
         *kmdheightp = sp->CURRENT_HEIGHT;
     else *kmdheightp = 0;
-    if ( (pindex= chainActive.LastTip()) != 0 && pindex->GetHeight() >= (int32_t)komodo_longestchain() )
+    if ( (pindex= chainActive.LastTip()) != 0 && pindex->nHeight >= (int32_t)komodo_longestchain() )
         return(1);
     else return(0);
 }
@@ -1854,7 +1854,7 @@ bool komodo_appendACscriptpub()
     {
         CTransaction tx; uint256 blockhash; 
         // get transaction and check that it occured before height 100. 
-        if ( myGetTransaction(KOMODO_EARLYTXID,tx,blockhash) && mapBlockIndex[blockhash]->GetHeight() < KOMODO_EARLYTXID_HEIGHT )
+        if ( myGetTransaction(KOMODO_EARLYTXID,tx,blockhash) && mapBlockIndex[blockhash]->nHeight < KOMODO_EARLYTXID_HEIGHT )
         {
              for (int i = 0; i < tx.vout.size(); i++) 
              {
@@ -1897,7 +1897,7 @@ void GetKomodoEarlytxidScriptPub()
     }
     CTransaction tx; uint256 blockhash; int32_t i;
     // get transaction and check that it occured before height 100. 
-    if ( myGetTransaction(KOMODO_EARLYTXID,tx,blockhash) && mapBlockIndex[blockhash]->GetHeight() < KOMODO_EARLYTXID_HEIGHT )
+    if ( myGetTransaction(KOMODO_EARLYTXID,tx,blockhash) && mapBlockIndex[blockhash]->nHeight < KOMODO_EARLYTXID_HEIGHT )
     {
         for (i = 0; i < tx.vout.size(); i++) 
             if ( tx.vout[i].scriptPubKey[0] == OP_RETURN )
@@ -2001,7 +2001,7 @@ int32_t komodo_checkPOW(int64_t stakeTxValue, int32_t slowflag,CBlock *pblock,in
         }
         BlockMap::const_iterator it = mapBlockIndex.find(pblock->hashPrevBlock);
         if ( it != mapBlockIndex.end() && (pprev= it->second) != 0 )
-            height = pprev->GetHeight() + 1;
+            height = pprev->nHeight + 1;
         if ( height == 0 )
             return(0);
     }
@@ -2264,22 +2264,22 @@ int64_t komodo_coinsupply(int64_t *zfundsp,int64_t *sproutfundsp,int32_t height)
     *zfundsp = *sproutfundsp = 0;
     if ( (pindex= komodo_chainactive(height)) != 0 )
     {
-        while ( pindex != 0 && pindex->GetHeight() > 0 )
+        while ( pindex != 0 && pindex->nHeight > 0 )
         {
             if ( pindex->newcoins == 0 && pindex->zfunds == 0 )
             {
                 if ( komodo_blockload(block,pindex) == 0 )
-                    pindex->newcoins = komodo_newcoins(&pindex->zfunds,&pindex->sproutfunds,pindex->GetHeight(),&block);
+                    pindex->newcoins = komodo_newcoins(&pindex->zfunds,&pindex->sproutfunds,pindex->nHeight,&block);
                 else
                 {
-                    fprintf(stderr,"error loading block.%d\n",pindex->GetHeight());
+                    fprintf(stderr,"error loading block.%d\n",pindex->nHeight);
                     return(0);
                 }
             }
             supply += pindex->newcoins;
             zfunds += pindex->zfunds;
             sproutfunds += pindex->sproutfunds;
-            //printf("start ht.%d new %.8f -> supply %.8f zfunds %.8f -> %.8f\n",pindex->GetHeight(),dstr(pindex->newcoins),dstr(supply),dstr(pindex->zfunds),dstr(zfunds));
+            //printf("start ht.%d new %.8f -> supply %.8f zfunds %.8f -> %.8f\n",pindex->nHeight,dstr(pindex->newcoins),dstr(supply),dstr(pindex->zfunds),dstr(zfunds));
             pindex = pindex->pprev;
         }
     }
@@ -2329,7 +2329,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     memset(utxosig,0,72);
     if ( (tipindex= chainActive.Tip()) == 0 )
         return(0);
-    nHeight = tipindex->GetHeight() + 1;
+    nHeight = tipindex->nHeight + 1;
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
     if ( *blocktimep < tipindex->nTime+60 )
@@ -2341,7 +2341,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     if ( array != 0 )
     {
         LOCK(cs_main);
-        CBlockIndex* pblockindex = chainActive[tipindex->GetHeight()];
+        CBlockIndex* pblockindex = chainActive[tipindex->nHeight];
         CBlock block; CTxDestination addressout;
         if ( ReadBlockFromDisk(block, pblockindex, 1) && komodo_isPoS(&block, nHeight, &addressout) != 0 && IsMine(*pwalletMain,addressout) != 0 )
         {
@@ -2363,7 +2363,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         }
         BOOST_FOREACH(const COutput& out, vecOutputs)
         {
-            if ( (tipindex= chainActive.Tip()) == 0 || tipindex->GetHeight()+1 > nHeight )
+            if ( (tipindex= chainActive.Tip()) == 0 || tipindex->nHeight+1 > nHeight )
             {
                 fprintf(stderr,"[%s:%d] chain tip changed during staking loop t.%u counter.%d\n",ASSETCHAINS_SYMBOL,nHeight,(uint32_t)time(NULL),counter);
                 return(0);
@@ -2397,7 +2397,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     {
         if ( fRequestShutdown || !GetBoolArg("-gen",false) )
             return(0);
-        if ( (tipindex= chainActive.Tip()) == 0 || tipindex->GetHeight()+1 > nHeight )
+        if ( (tipindex= chainActive.Tip()) == 0 || tipindex->nHeight+1 > nHeight )
         {
             fprintf(stderr,"[%s:%d] chain tip changed during staking loop t.%u counter.%d\n",ASSETCHAINS_SYMBOL,nHeight,(uint32_t)time(NULL),i);
             return(0);

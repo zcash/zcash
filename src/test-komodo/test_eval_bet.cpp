@@ -225,7 +225,7 @@ public:
         eval.txs[sessionTx.GetHash()] = sessionTx;
 
         CBlockIndex sessionBlock;
-        sessionBlock.SetHeight(10);
+        sessionBlock.nHeight = 10;
         eval.blocks[sessionTx.GetHash()] = sessionBlock;
 
         std::vector<CTransaction> sessionSpends;
