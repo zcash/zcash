@@ -22,7 +22,6 @@
 #define BITCOIN_PRIMITIVES_BLOCK_H
 
 #include "primitives/transaction.h"
-#include "primitives/nonce.h"
 #include "serialize.h"
 #include "uint256.h"
 #include "arith_uint256.h"

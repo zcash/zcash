@@ -17,7 +17,6 @@
 
 #include <curl/curl.h>
 #include <curl/easy.h>
-#include "primitives/nonce.h"
 #include "consensus/params.h"
 #include "komodo_defs.h"
 #include "script/standard.h"

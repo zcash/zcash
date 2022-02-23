@@ -30,7 +30,6 @@
 #include "arith_uint256.h"
 #include "consensus/consensus.h"
 #include "hash.h"
-#include "nonce.h"
 
 #ifndef __APPLE__
 #include <stdint.h>
