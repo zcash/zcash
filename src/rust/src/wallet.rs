@@ -73,8 +73,12 @@ impl KeyStore {
     }
 
     pub fn add_full_viewing_key(&mut self, fvk: FullViewingKey) {
-        let ivk = IncomingViewingKey::from(&fvk);
-        self.viewing_keys.insert(ivk, fvk);
+        // When we add a full viewing key, we need to add both the internal and external
+        // incoming viewing keys.
+        let external_ivk = IncomingViewingKey::from(&fvk);
+        let internal_ivk = IncomingViewingKey::from(&fvk.derive_internal());
+        self.viewing_keys.insert(external_ivk, fvk.clone());
+        self.viewing_keys.insert(internal_ivk, fvk);
     }
 
     pub fn add_spending_key(&mut self, sk: SpendingKey) {

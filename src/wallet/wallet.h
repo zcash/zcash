@@ -1463,7 +1463,15 @@ public:
     bool AddOrchardZKey(const libzcash::OrchardSpendingKey &sk);
     bool AddOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk);
     /**
-     * Adds an address/ivk mapping to the in-memory wallet. Returns `true`
+     * Adds an address/ivk mapping to the in-memory wallet. Returns `false` if
+     * the mapping could not be persisted, or the IVK does not correspond to an
+     * FVK known by the wallet.
+     */
+    bool AddOrchardRawAddress(
+        const libzcash::OrchardIncomingViewingKey &ivk,
+        const libzcash::OrchardRawAddress &addr);
+    /**
+     * Loads an address/ivk mapping to the in-memory wallet. Returns `true`
      * if the provided IVK corresponds to an FVK known by the wallet.
      */
     bool LoadOrchardRawAddress(

@@ -578,6 +578,35 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     EXPECT_FALSE(ufvkmeta.value().second.has_value());
 }
 
+TEST(KeystoreTests, StoreAndRetrieveUFVKByOrchard) {
+    SelectParams(CBaseChainParams::TESTNET);
+    CBasicKeyStore keyStore;
+
+    auto seed = MnemonicSeed::Random(SLIP44_TESTNET_TYPE);
+    auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed, SLIP44_TESTNET_TYPE, 0);
+    EXPECT_TRUE(usk.has_value());
+
+    auto ufvk = usk.value().ToFullViewingKey();
+    auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
+    auto ufvkid = zufvk.GetKeyID();
+    EXPECT_FALSE(keyStore.GetUnifiedFullViewingKey(ufvkid).has_value());
+
+    EXPECT_TRUE(keyStore.AddUnifiedFullViewingKey(zufvk));
+    EXPECT_EQ(keyStore.GetUnifiedFullViewingKey(ufvkid).value(), zufvk);
+
+    auto addrPair = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Orchard}));
+    EXPECT_TRUE(addrPair.first.GetOrchardReceiver().has_value());
+    auto orchardReceiver = addrPair.first.GetOrchardReceiver().value();
+
+    // We don't store Orchard addresses in CBasicKeyStore (the addr -> ivk
+    // mapping is stored in the Rust wallet), but we still detect this because
+    // we trial-decrypt diversifiers (which also means we learn the index).
+    auto ufvkmetaUnadded = keyStore.GetUFVKMetadataForReceiver(orchardReceiver);
+    EXPECT_TRUE(ufvkmetaUnadded.has_value());
+    EXPECT_EQ(ufvkmetaUnadded.value().first, ufvkid);
+    EXPECT_EQ(ufvkmetaUnadded.value().second.value(), addrPair.second);
+}
+
 TEST(KeystoreTests, AddTransparentReceiverForUnifiedAddress) {
     SelectParams(CBaseChainParams::TESTNET);
     CBasicKeyStore keyStore;

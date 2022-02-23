@@ -268,6 +268,25 @@ bool CWallet::AddOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fv
     return true; // TODO ORCHARD: persist fvk
 }
 
+// Add Orchard payment address -> incoming viewing key map entry
+bool CWallet::AddOrchardRawAddress(
+    const libzcash::OrchardIncomingViewingKey &ivk,
+    const libzcash::OrchardRawAddress &addr)
+{
+    AssertLockHeld(cs_wallet); // orchardWallet
+    if (!orchardWallet.AddRawAddress(addr, ivk)) {
+        // We should never add an Orchard raw address for which we don't know
+        // the corresponding FVK.
+        return false;
+    };
+
+    if (!fFileBacked) {
+        return true;
+    }
+
+    return true; // TODO ORCHARD: ensure mapping will be recreated on wallet load
+}
+
 // Loads a payment address -> incoming viewing key map entry
 // to the in-memory wallet's keystore.
 bool CWallet::LoadOrchardRawAddress(
@@ -577,7 +596,17 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
         };
 
         // Add Orchard spending key to the wallet
-        orchardWallet.AddSpendingKey(usk.value().GetOrchardKey());
+        auto orchardSk = usk.value().GetOrchardKey();
+        orchardWallet.AddSpendingKey(orchardSk);
+
+        // Associate the Orchard default change address with its IVK. We do this
+        // here because there is only ever a single Orchard change receiver, and
+        // it is never exposed to the user. External Orchard receivers are added
+        // when the user calls z_getaddressforaccount.
+        auto orchardInternalFvk = orchardSk.ToFullViewingKey().ToInternalIncomingViewingKey();
+        if (!AddOrchardRawAddress(orchardInternalFvk, orchardInternalFvk.Address(0))) {
+            throw std::runtime_error("CWallet::GenerateUnifiedSpendingKeyForAccount(): Failed to add Sapling change address to the wallet.");
+        };
 
         auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
         if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {
@@ -765,6 +794,17 @@ WalletUAGenerationResult CWallet::GenerateUnifiedAddress(
             assert (dfvk.has_value() && saplingAddress.has_value());
 
             AddSaplingPaymentAddress(dfvk.value().ToIncomingViewingKey(), saplingAddress.value());
+        }
+
+        // If the address has an Orchard component, add an association between
+        // that address and the Orchard IVK corresponding to the ufvk
+        auto hasOrchard = receiverTypes.find(ReceiverType::Orchard) != receiverTypes.end();
+        if (hasOrchard) {
+            auto fvk = ufvk.value().GetOrchardKey();
+            auto orchardReceiver = address.first.GetOrchardReceiver();
+            assert (fvk.has_value() && orchardReceiver.has_value());
+
+            AddOrchardRawAddress(fvk.value().ToIncomingViewingKey(), orchardReceiver.value());
         }
 
         // Save the metadata for the generated address so that we can re-derive

@@ -24,7 +24,7 @@ OrchardIncomingViewingKey OrchardFullViewingKey::ToIncomingViewingKey() const {
 }
 
 OrchardIncomingViewingKey OrchardFullViewingKey::ToInternalIncomingViewingKey() const {
-    return OrchardIncomingViewingKey(orchard_full_viewing_key_to_incoming_viewing_key(inner.get()));
+    return OrchardIncomingViewingKey(orchard_full_viewing_key_to_internal_incoming_viewing_key(inner.get()));
 }
 
 OrchardSpendingKey OrchardSpendingKey::ForAccount(
