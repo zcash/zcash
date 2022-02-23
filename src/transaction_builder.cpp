@@ -38,7 +38,7 @@ Builder::Builder(
     bool outputsEnabled,
     uint256 anchor) : inner(nullptr, orchard_builder_free)
 {
-    inner.reset(orchard_builder_new(spendsEnabled, outputsEnabled, anchor.begin()));
+    inner.reset(orchard_builder_new(spendsEnabled, outputsEnabled, anchor.IsNull() ? nullptr : anchor.begin()));
 }
 
 void Builder::AddOutput(
@@ -57,6 +57,8 @@ void Builder::AddOutput(
         to.inner.get(),
         value,
         memo.has_value() ? memo->data() : nullptr);
+
+    hasActions = true;
 }
 
 std::optional<UnauthorizedBundle> Builder::Build() {
@@ -235,10 +237,12 @@ TransactionBuilder::TransactionBuilder(
     coinsView(coinsView),
     cs_coinsView(cs_coinsView)
 {
-    if (orchardAnchor.has_value()) {
+    mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
+
+    // Ignore the Orchard anchor if we can't use it yet.
+    if (orchardAnchor.has_value() && mtx.nVersion >= ZIP225_MIN_TX_VERSION) {
         orchardBuilder = orchard::Builder(true, true, orchardAnchor.value());
     }
-    mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
 }
 
 // This exception is thrown in certain scenarios when building JoinSplits fails.
@@ -267,7 +271,14 @@ void TransactionBuilder::AddOrchardOutput(
     const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo)
 {
     if (!orchardBuilder.has_value()) {
-        throw std::runtime_error("TransactionBuilder cannot add Orchard output without Orchard anchor");
+        // Try to give a useful error.
+        if (!(jsInputs.empty() && jsOutputs.empty())) {
+            throw std::runtime_error("TransactionBuilder cannot add Orchard output to Sprout transaction");
+        } else if (mtx.nVersion < ZIP225_MIN_TX_VERSION) {
+            throw std::runtime_error("TransactionBuilder cannot add Orchard output before NU5 activation");
+        } else {
+            throw std::runtime_error("TransactionBuilder cannot add Orchard output without Orchard anchor");
+        }
     }
 
     orchardBuilder.value().AddOutput(ovk, to, value, memo);
@@ -376,6 +387,7 @@ void TransactionBuilder::SendChangeTo(
         const libzcash::RecipientAddress& changeAddr,
         const uint256& ovk) {
     tChangeAddr = std::nullopt;
+    orchardChangeAddr = std::nullopt;
     saplingChangeAddr = std::nullopt;
     sproutChangeAddr = std::nullopt;
 
@@ -388,12 +400,16 @@ void TransactionBuilder::SendChangeTo(
         },
         [&](const libzcash::SaplingPaymentAddress& changeDest) {
             saplingChangeAddr = std::make_pair(ovk, changeDest);
+        },
+        [&](const libzcash::OrchardRawAddress& changeDest) {
+            orchardChangeAddr = std::make_pair(ovk, changeDest);
         }
     }, changeAddr);
 }
 
 void TransactionBuilder::SendChangeToSprout(const libzcash::SproutPaymentAddress& zaddr) {
     tChangeAddr = std::nullopt;
+    orchardChangeAddr = std::nullopt;
     saplingChangeAddr = std::nullopt;
     sproutChangeAddr = zaddr;
 }
@@ -431,7 +447,9 @@ TransactionBuilderResult TransactionBuilder::Build()
         // was set, send change to the first Sapling address given as input
         // if any; otherwise the first Sprout address given as input.
         // (A t-address can only be used as the change address if explicitly set.)
-        if (saplingChangeAddr) {
+        if (orchardChangeAddr) {
+            AddOrchardOutput(orchardChangeAddr->first, orchardChangeAddr->second, change, std::nullopt);
+        } else if (saplingChangeAddr) {
             AddSaplingOutput(saplingChangeAddr->first, saplingChangeAddr->second, change);
         } else if (sproutChangeAddr) {
             AddSproutOutput(sproutChangeAddr.value(), change);
@@ -456,7 +474,7 @@ TransactionBuilderResult TransactionBuilder::Build()
     //
 
     std::optional<orchard::UnauthorizedBundle> orchardBundle;
-    if (orchardBuilder.has_value()) {
+    if (orchardBuilder.has_value() && orchardBuilder->HasActions()) {
         auto bundle = orchardBuilder->Build();
         if (bundle.has_value()) {
             orchardBundle = std::move(bundle);

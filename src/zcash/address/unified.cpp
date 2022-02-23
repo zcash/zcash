@@ -34,6 +34,7 @@ Receiver libzcash::RecipientAddressToReceiver(const RecipientAddress& recipient)
     return std::visit(match {
         [](const CKeyID& key) { return Receiver(key); },
         [](const CScriptID& scriptId) { return Receiver(scriptId); },
+        [](const libzcash::OrchardRawAddress& addr) { return Receiver(addr); },
         [](const libzcash::SaplingPaymentAddress& addr) { return Receiver(addr); }
     }, recipient);
 }

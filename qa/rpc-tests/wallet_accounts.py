@@ -7,9 +7,11 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import COIN
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
+    NU5_BRANCH_ID,
     assert_equal,
     assert_raises_message,
     get_coinbase_address,
+    nuparams,
     start_nodes,
     wait_and_assert_operationid_status,
 )
@@ -22,6 +24,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         return start_nodes(self.num_nodes, self.options.tmpdir, [[
             '-experimentalfeatures',
             '-orchardwallet',
+            nuparams(NU5_BRANCH_ID, 210),
         ]] * self.num_nodes)
 
     def check_receiver_types(self, ua, expected):
@@ -149,6 +152,33 @@ class WalletAccountsTest(BitcoinTestFramework):
         self.sync_all()
         self.check_balance(0, 0, ua0, {})
         self.check_balance(0, 0, ua0, {'sapling': 9}, 0)
+
+        # Activate NU5
+        self.nodes[2].generate(9)
+        self.sync_all()
+        assert_equal(self.nodes[0].getblockchaininfo()['blocks'], 210)
+
+        # Send more coinbase funds to the UA.
+        recipients = [{'address': ua0, 'amount': Decimal('10')}]
+        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
+        txid = wait_and_assert_operationid_status(self.nodes[0], opid)
+
+        # The wallet should detect the new note as belonging to the UA.
+        # TODO: Uncomment once z_viewtransaction shows Orchard details.
+        #tx_details = self.nodes[0].z_viewtransaction(txid)
+        #assert_equal(len(tx_details['outputs']), 1)
+        #assert_equal(tx_details['outputs'][0]['type'], 'orchard')
+        #assert_equal(tx_details['outputs'][0]['address'], ua0)
+
+        # The new balance should not be visible with the default minconf, but should be
+        # visible with minconf=0.
+        self.sync_all()
+        self.check_balance(0, 0, ua0, {'sapling': 9})
+        # TODO: Uncomment once CWallet::FindSpendableInputs returns Orchard notes.
+        #self.check_balance(0, 0, ua0, {'sapling': 9, 'orchard': 10}, 0)
+
+        self.nodes[2].generate(1)
+        self.sync_all()
 
 
 if __name__ == '__main__':

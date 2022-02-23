@@ -1,10 +1,12 @@
 use std::convert::TryInto;
 use std::ptr;
 
+use incrementalmerkletree::Hashable;
 use orchard::{
     builder::{Builder, InProgress, Unauthorized, Unproven},
     bundle::{Authorized, Flags},
     keys::OutgoingViewingKey,
+    tree::MerkleHashOrchard,
     value::NoteValue,
     Bundle,
 };
@@ -25,10 +27,12 @@ pub extern "C" fn orchard_builder_new(
     outputs_enabled: bool,
     anchor: *const [u8; 32],
 ) -> *mut Builder {
-    let anchor = unsafe { anchor.as_ref() }.expect("Anchor pointer may not be null.");
+    let anchor = unsafe { anchor.as_ref() }
+        .map(|a| orchard::Anchor::from_bytes(*a).unwrap())
+        .unwrap_or_else(|| MerkleHashOrchard::empty_root(32.into()).into());
     Box::into_raw(Box::new(Builder::new(
         Flags::from_parts(spends_enabled, outputs_enabled),
-        orchard::Anchor::from_bytes(*anchor).unwrap(),
+        anchor,
     )))
 }
 

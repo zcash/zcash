@@ -41,8 +41,9 @@ private:
     /// `Builder::Build` has been called, and all subsequent operations will throw an
     /// exception.
     std::unique_ptr<OrchardBuilderPtr, decltype(&orchard_builder_free)> inner;
+    bool hasActions;
 
-    Builder() : inner(nullptr, orchard_builder_free) { }
+    Builder() : inner(nullptr, orchard_builder_free), hasActions(false) { }
 
 public:
     Builder(bool spendsEnabled, bool outputsEnabled, uint256 anchor);
@@ -65,6 +66,12 @@ public:
         const libzcash::OrchardRawAddress& to,
         CAmount value,
         const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo);
+
+    /// Returns `true` if any spends or outputs have been added to this builder. This can
+    /// be used to avoid calling `Build()` and creating a dummy Orchard bundle.
+    bool HasActions() {
+        return hasActions;
+    }
 
     /// Builds a bundle containing the given spent notes and recipients.
     ///
@@ -223,6 +230,7 @@ private:
     std::vector<TransparentInputInfo> tIns;
 
     std::optional<std::pair<uint256, libzcash::SaplingPaymentAddress>> saplingChangeAddr;
+    std::optional<std::pair<uint256, libzcash::OrchardRawAddress>> orchardChangeAddr;
     std::optional<libzcash::SproutPaymentAddress> sproutChangeAddr;
     std::optional<CTxDestination> tChangeAddr;
 

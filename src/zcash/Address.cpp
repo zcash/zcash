@@ -167,13 +167,17 @@ std::optional<OrchardRawAddress> UnifiedAddress::GetOrchardReceiver() const {
     return std::nullopt;
 }
 
-std::optional<RecipientAddress> UnifiedAddress::GetPreferredRecipientAddress() const {
+std::optional<RecipientAddress> UnifiedAddress::GetPreferredRecipientAddress(
+    const Consensus::Params& consensus, int height) const
+{
+    bool nu5Active = consensus.NetworkUpgradeActive(height, Consensus::UPGRADE_NU5);
+
     // Return the first receiver type we recognize; receivers are sorted in
     // order from most-preferred to least.
     std::optional<RecipientAddress> result;
     for (const auto& receiver : *this) {
         std::visit(match {
-            [&](const OrchardRawAddress& addr) { /* TODO: Return once we enable Orchard as recipient */ },
+            [&](const OrchardRawAddress& addr) { if (nu5Active) result = addr; },
             [&](const SaplingPaymentAddress& addr) { result = addr; },
             [&](const CScriptID& addr) { result = addr; },
             [&](const CKeyID& addr) { result = addr; },
