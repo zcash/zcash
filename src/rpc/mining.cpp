@@ -93,7 +93,7 @@ int64_t GetNetworkHashPS(int lookup, int height)
     if (minTime == maxTime)
         return 0;
 
-    arith_uint256 workDiff = pb->chainPower.chainWork - pb0->chainPower.chainWork;
+    arith_uint256 workDiff = pb->nChainWork - pb0->nChainWork;
     int64_t timeDiff = maxTime - minTime;
 
     return (int64_t)(workDiff.getdouble() / timeDiff);

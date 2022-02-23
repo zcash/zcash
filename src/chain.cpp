@@ -31,9 +31,9 @@ void CChain::SetTip(CBlockIndex *pindex) {
         vChain.clear();
         return;
     }
-    vChain.resize(pindex->GetHeight() + 1);
-    while (pindex && vChain[pindex->GetHeight()] != pindex) {
-        vChain[pindex->GetHeight()] = pindex;
+    vChain.resize(pindex->nHeight + 1);
+    while (pindex && vChain[pindex->nHeight] != pindex) {
+        vChain[pindex->nHeight] = pindex;
         pindex = pindex->pprev;
     }
 }
@@ -48,10 +48,10 @@ CBlockLocator CChain::GetLocator(const CBlockIndex *pindex) const {
     while (pindex) {
         vHave.push_back(pindex->GetBlockHash());
         // Stop when we have added the genesis block.
-        if (pindex->GetHeight() == 0)
+        if (pindex->nHeight == 0)
             break;
         // Exponentially larger steps back, plus the genesis block.
-        int nHeight = std::max(pindex->GetHeight() - nStep, 0);
+        int nHeight = std::max(pindex->nHeight - nStep, 0);
         if (Contains(pindex)) {
             // Use O(1) CChain index if possible.
             pindex = (*this)[nHeight];
@@ -69,62 +69,12 @@ CBlockLocator CChain::GetLocator(const CBlockIndex *pindex) const {
 const CBlockIndex *CChain::FindFork(const CBlockIndex *pindex) const {
     if ( pindex == 0 )
         return(0);
-    if (pindex->GetHeight() > Height())
+    if (pindex->nHeight > Height())
         pindex = pindex->GetAncestor(Height());
     while (pindex && !Contains(pindex))
         pindex = pindex->pprev;
     return pindex;
 }
-
-CChainPower::CChainPower(CBlockIndex *pblockIndex)
-{
-     nHeight = pblockIndex->GetHeight();
-     chainStake = arith_uint256(0);
-     chainWork = arith_uint256(0);
-}
-
-CChainPower::CChainPower(CBlockIndex *pblockIndex, const arith_uint256 &stake, const arith_uint256 &work)
-{
-     nHeight = pblockIndex->GetHeight();
-     chainStake = stake;
-     chainWork = work;
-}
-
-bool operator==(const CChainPower &p1, const CChainPower &p2)
-{
-    arith_uint256 bigZero = arith_uint256(0);
-    arith_uint256 workDivisor = p1.chainWork > p2.chainWork ? p1.chainWork : (p2.chainWork != bigZero ? p2.chainWork : 1);
-    arith_uint256 stakeDivisor = p1.chainStake > p2.chainStake ? p1.chainStake : (p2.chainStake != bigZero ? p2.chainStake : 1);
-
-    // use up 16 bits for precision
-    return ((p1.chainWork << 16) / workDivisor + (p1.chainStake << 16) / stakeDivisor) ==
-            ((p2.chainWork << 16) / workDivisor + (p2.chainStake << 16) / stakeDivisor);
-}
-
-bool operator<(const CChainPower &p1, const CChainPower &p2)
-{
-    arith_uint256 bigZero = arith_uint256(0);
-    arith_uint256 workDivisor = p1.chainWork > p2.chainWork ? p1.chainWork : (p2.chainWork != bigZero ? p2.chainWork : 1);
-    arith_uint256 stakeDivisor = p1.chainStake > p2.chainStake ? p1.chainStake : (p2.chainStake != bigZero ? p2.chainStake : 1);
-
-    // use up 16 bits for precision
-    return ((p1.chainWork << 16) / workDivisor + (p1.chainStake << 16) / stakeDivisor) <
-            ((p2.chainWork << 16) / workDivisor + (p2.chainStake << 16) / stakeDivisor);
-}
-
-bool operator<=(const CChainPower &p1, const CChainPower &p2)
-{
-    arith_uint256 bigZero = arith_uint256(0);
-    arith_uint256 workDivisor = p1.chainWork > p2.chainWork ? p1.chainWork : (p2.chainWork != bigZero ? p2.chainWork : 1);
-    arith_uint256 stakeDivisor = p1.chainStake > p2.chainStake ? p1.chainStake : (p2.chainStake != bigZero ? p2.chainStake : 1);
-
-    // use up 16 bits for precision
-    return ((p1.chainWork << 16) / workDivisor + (p1.chainStake << 16) / stakeDivisor) <=
-            ((p2.chainWork << 16) / workDivisor + (p2.chainStake << 16) / stakeDivisor);
-}
-
-
-
 
 /** Turn the lowest '1' bit in the binary representation of a number into a '0'. */
 int static inline InvertLowestOne(int n) { return n & (n - 1); }
@@ -142,11 +92,11 @@ int static inline GetSkipHeight(int height) {
 
 CBlockIndex* CBlockIndex::GetAncestor(int height)
 {
-    if (height > GetHeight() || height < 0)
+    if (height > nHeight || height < 0)
         return NULL;
 
     CBlockIndex* pindexWalk = this;
-    int heightWalk = GetHeight();
+    int heightWalk = nHeight;
     while ( heightWalk > height && pindexWalk != 0 )
     {
         int heightSkip = GetSkipHeight(heightWalk);
@@ -175,5 +125,5 @@ const CBlockIndex* CBlockIndex::GetAncestor(int height) const
 void CBlockIndex::BuildSkip()
 {
     if (pprev)
-        pskip = pprev->GetAncestor(GetSkipHeight(GetHeight()));
+        pskip = pprev->GetAncestor(GetSkipHeight(nHeight));
 }
