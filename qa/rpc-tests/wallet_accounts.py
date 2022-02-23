@@ -55,7 +55,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         # Generate the first address for account 0.
         addr0 = self.nodes[0].z_getaddressforaccount(0)
         assert_equal(addr0['account'], 0)
-        assert_equal(set(addr0['pools']), set(['transparent', 'sapling']))
+        assert_equal(set(addr0['pools']), set(['transparent', 'sapling', 'orchard']))
         ua0 = addr0['unifiedaddress']
 
         # We pick mnemonic phrases to ensure that we can always generate the default
@@ -70,16 +70,38 @@ class WalletAccountsTest(BitcoinTestFramework):
                 'no address at diversifier index 0',
                 self.nodes[0].z_getaddressforaccount, 0, [], 0)
 
+        # The second address for account 0 is different to the first address.
+        addr0_2 = self.nodes[0].z_getaddressforaccount(0)
+        assert_equal(addr0_2['account'], 0)
+        assert_equal(set(addr0_2['pools']), set(['transparent', 'sapling', 'orchard']))
+        ua0_2 = addr0_2['unifiedaddress']
+        assert(ua0 != ua0_2)
+
+        # We can generate a fully-shielded address.
+        addr0_3 = self.nodes[0].z_getaddressforaccount(0, ['sapling', 'orchard'])
+        assert_equal(addr0_3['account'], 0)
+        assert_equal(set(addr0_3['pools']), set(['sapling', 'orchard']))
+        ua0_3 = addr0_3['unifiedaddress']
+
+        # We can generate an address without a Sapling receiver.
+        addr0_4 = self.nodes[0].z_getaddressforaccount(0, ['transparent', 'orchard'])
+        assert_equal(addr0_4['account'], 0)
+        assert_equal(set(addr0_4['pools']), set(['transparent', 'orchard']))
+        ua0_4 = addr0_4['unifiedaddress']
+
         # The first address for account 1 is different to account 0.
         addr1 = self.nodes[0].z_getaddressforaccount(1)
         assert_equal(addr1['account'], 1)
-        assert_equal(set(addr1['pools']), set(['transparent', 'sapling']))
+        assert_equal(set(addr1['pools']), set(['transparent', 'sapling', 'orchard']))
         ua1 = addr1['unifiedaddress']
         assert(ua0 != ua1)
 
         # The UA contains the expected receiver kinds.
-        self.check_receiver_types(ua0, ['transparent', 'sapling'])
-        self.check_receiver_types(ua1, ['transparent', 'sapling'])
+        self.check_receiver_types(ua0,   ['transparent', 'sapling', 'orchard'])
+        self.check_receiver_types(ua0_2, ['transparent', 'sapling', 'orchard'])
+        self.check_receiver_types(ua0_3, [               'sapling', 'orchard'])
+        self.check_receiver_types(ua0_4, ['transparent',            'orchard'])
+        self.check_receiver_types(ua1,   ['transparent', 'sapling', 'orchard'])
 
         # The balances of the accounts are all zero.
         self.check_balance(0, 0, ua0, {})

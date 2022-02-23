@@ -605,7 +605,7 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
         // when the user calls z_getaddressforaccount.
         auto orchardInternalFvk = orchardSk.ToFullViewingKey().ToInternalIncomingViewingKey();
         if (!AddOrchardRawAddress(orchardInternalFvk, orchardInternalFvk.Address(0))) {
-            throw std::runtime_error("CWallet::GenerateUnifiedSpendingKeyForAccount(): Failed to add Sapling change address to the wallet.");
+            throw std::runtime_error("CWallet::GenerateUnifiedSpendingKeyForAccount(): Failed to add Orchard change address to the wallet.");
         };
 
         auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);

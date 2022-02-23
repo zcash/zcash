@@ -381,9 +381,10 @@ class ListReceivedTest (BitcoinTestFramework):
         r = node.z_getaddressforaccount(account)
         unified_addr = r['unifiedaddress']
         receivers = node.z_listunifiedreceivers(unified_addr)
-        assert_equal(len(receivers), 2)
+        assert_equal(len(receivers), 3)
         assert 'transparent' in receivers
         assert 'sapling' in receivers
+        assert 'orchard' in receivers
         # Wallet contains no notes
         r = node.z_listreceivedbyaddress(unified_addr, 0)
         assert_equal(len(r), 0, "unified_addr should have received zero notes")

@@ -3119,14 +3119,16 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
                 receivers.insert(ReceiverType::P2PKH);
             } else if (p == "sapling") {
                 receivers.insert(ReceiverType::Sapling);
+            } else if (p == "orchard") {
+                receivers.insert(ReceiverType::Orchard);
             } else {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "pool arguments must be \"transparent\", or \"sapling\"");
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "pool arguments must be \"transparent\", \"sapling\", or \"orchard\"");
             }
         }
     }
     if (receivers.empty()) {
         // Default is the best and second-best shielded pools, and the transparent pool.
-        receivers = {ReceiverType::P2PKH, ReceiverType::Sapling};
+        receivers = {ReceiverType::P2PKH, ReceiverType::Sapling, ReceiverType::Orchard};
     }
 
     std::optional<libzcash::diversifier_index_t> j = std::nullopt;
@@ -3219,6 +3221,9 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
                 break;
             case ReceiverType::Sapling:
                 pools.push_back("sapling");
+                break;
+            case ReceiverType::Orchard:
+                pools.push_back("orchard");
                 break;
             default:
                 // Unreachable
@@ -3331,6 +3336,12 @@ UniValue z_listunifiedreceivers(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ);
     for (const auto& receiver : ua) {
         std::visit(match {
+            [&](const libzcash::OrchardRawAddress& addr) {
+                // Create a single-receiver UA that just contains this Orchard receiver.
+                UnifiedAddress singleReceiver;
+                singleReceiver.AddReceiver(addr);
+                result.pushKV("orchard", keyIO.EncodePaymentAddress(singleReceiver));
+            },
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 result.pushKV("sapling", keyIO.EncodePaymentAddress(addr));
             },
@@ -3762,6 +3773,7 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
     CAmount transparentBalance = 0;
     CAmount sproutBalance = 0;
     CAmount saplingBalance = 0;
+    CAmount orchardBalance = 0;
     for (const auto& t : spendableInputs.utxos) {
         transparentBalance += t.Value();
     }
@@ -3770,6 +3782,9 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
     }
     for (const auto& t : spendableInputs.saplingNoteEntries) {
         saplingBalance += t.note.value();
+    }
+    for (const auto& t : spendableInputs.orchardNoteMetadata) {
+        orchardBalance += t.GetNoteValue();
     }
 
     UniValue pools(UniValue::VOBJ);
@@ -3783,6 +3798,7 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
     renderBalance("transparent", transparentBalance);
     renderBalance("sprout", sproutBalance);
     renderBalance("sapling", saplingBalance);
+    renderBalance("orchard", orchardBalance);
 
     UniValue result(UniValue::VOBJ);
     result.pushKV("pools", pools);
@@ -3863,11 +3879,15 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
 
     CAmount transparentBalance = 0;
     CAmount saplingBalance = 0;
+    CAmount orchardBalance = 0;
     for (const auto& t : spendableInputs.utxos) {
         transparentBalance += t.Value();
     }
     for (const auto& t : spendableInputs.saplingNoteEntries) {
         saplingBalance += t.note.value();
+    }
+    for (const auto& t : spendableInputs.orchardNoteMetadata) {
+        orchardBalance += t.GetNoteValue();
     }
 
     UniValue pools(UniValue::VOBJ);
@@ -3880,6 +3900,7 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
     };
     renderBalance("transparent", transparentBalance);
     renderBalance("sapling", saplingBalance);
+    renderBalance("orchard", orchardBalance);
 
     UniValue result(UniValue::VOBJ);
     result.pushKV("pools", pools);

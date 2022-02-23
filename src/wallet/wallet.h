@@ -794,6 +794,7 @@ public:
     std::vector<COutput> utxos;
     std::vector<SproutNoteEntry> sproutNoteEntries;
     std::vector<SaplingNoteEntry> saplingNoteEntries;
+    std::vector<OrchardNoteMetadata> orchardNoteMetadata;
 
     /**
      * Selectively discard notes that are not required to obtain the desired
@@ -815,6 +816,9 @@ public:
         }
         for (const auto& t : saplingNoteEntries) {
             result += t.note.value();
+        }
+        for (const auto& t : orchardNoteMetadata) {
+            result += t.GetNoteValue();
         }
         return result;
     }
