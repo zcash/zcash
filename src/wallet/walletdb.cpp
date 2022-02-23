@@ -219,6 +219,17 @@ bool CWalletDB::EraseSaplingExtendedFullViewingKey(
 }
 
 //
+// Orchard wallet persistence
+//
+
+bool CWalletDB::WriteOrchardWitnesses(const OrchardWallet& wallet) {
+    nWalletDBUpdateCounter++;
+    return Write(
+            std::string("orchard_note_commitment_tree"),
+            OrchardWalletNoteCommitmentTreeWriter(wallet));
+}
+
+//
 // Unified address & key storage
 //
 
@@ -881,6 +892,11 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 strErr = "Error in wallet database: recipientmapping UA does not contain recipient";
                 return false;
             }
+        }
+        else if (strType == "orchard_note_commitment_tree")
+        {
+            auto loader = pwallet->GetOrchardNoteCommitmentTreeLoader();
+            ssValue >> loader;
         }
     } catch (...)
     {

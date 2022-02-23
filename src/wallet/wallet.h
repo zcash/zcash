@@ -1064,6 +1064,13 @@ protected:
                     }
                 }
             }
+            // Add persistence of Orchard incremental witness tree
+            orchardWallet.GarbageCollect();
+            if (!walletdb.WriteOrchardWitnesses(orchardWallet)) {
+                LogPrintf("SetBestChain(): Failed to write Orchard witnesses, aborting atomic write\n");
+                walletdb.TxnAbort();
+                return;
+            }
             if (!walletdb.WriteWitnessCacheSize(nWitnessCacheSize)) {
                 LogPrintf("SetBestChain(): Failed to write nWitnessCacheSize, aborting atomic write\n");
                 walletdb.TxnAbort();
@@ -1485,7 +1492,7 @@ public:
                                 const std::vector<unsigned char> &vchCryptedSecret);
 
     //
-    // Orchard Keys
+    // Orchard Support
     //
 
     bool AddOrchardZKey(const libzcash::OrchardSpendingKey &sk);
@@ -1505,6 +1512,12 @@ public:
     bool LoadOrchardRawAddress(
         const libzcash::OrchardRawAddress &addr,
         const libzcash::OrchardIncomingViewingKey &ivk);
+
+    /**
+     * Returns a loader that can be used to read an Orchard note commitment
+     * tree from a stream into the Orchard wallet.
+     */
+    OrchardWalletNoteCommitmentTreeLoader GetOrchardNoteCommitmentTreeLoader();
 
     //
     // Unified keys, addresses, and accounts
