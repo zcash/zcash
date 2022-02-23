@@ -2,22 +2,23 @@ TESTS += komodo-test
 bin_PROGRAMS += komodo-test
 
 # tool for generating our public parameters
-komodo_test_SOURCES = \
-	test-komodo/main.cpp \
-	test-komodo/testutils.cpp \
-	test-komodo/test_cryptoconditions.cpp \
-	test-komodo/test_coinimport.cpp \
-	test-komodo/test_eval_bet.cpp \
-	test-komodo/test_eval_notarisation.cpp \
-	test-komodo/test_parse_notarisation.cpp \
+    komodo_test_SOURCES = \
+    test-komodo/main.cpp \
+    test-komodo/testutils.cpp \
+    test-komodo/test_cryptoconditions.cpp \
+    test-komodo/test_coinimport.cpp \
+    test-komodo/test_eval_bet.cpp \
+    test-komodo/test_eval_notarisation.cpp \
+    test-komodo/test_parse_notarisation.cpp \
     test-komodo/test_parse_notarisation_data.cpp \
-	test-komodo/test_buffered_file.cpp \
-	test-komodo/test_sha256_crypto.cpp \
-	test-komodo/test_script_standard_tests.cpp \
-	test-komodo/test_addrman.cpp \
-	test-komodo/test_netbase_tests.cpp \
+    test-komodo/test_buffered_file.cpp \
+    test-komodo/test_sha256_crypto.cpp \
+    test-komodo/test_script_standard_tests.cpp \
+    test-komodo/test_addrman.cpp \
+    test-komodo/test_netbase_tests.cpp \
     test-komodo/test_events.cpp \
-    test-komodo/test_hex.cpp
+    test-komodo/test_hex.cpp \
+    test-komodo/test_haraka_removal.cpp
 
 komodo_test_CPPFLAGS = $(komodod_CPPFLAGS)
 
