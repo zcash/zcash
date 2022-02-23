@@ -120,7 +120,8 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     if (params.size() > 2)
         fRescan = params[2].get_bool();
 
-    KeyIO keyIO(Params());
+    const auto& chainparams = Params();
+    KeyIO keyIO(chainparams);
 
     CKey key = keyIO.DecodeSecret(strSecret);
     if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
@@ -146,7 +147,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
         pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
 
         if (fRescan) {
-            pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
+            pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true, false);
         }
     }
 
@@ -233,7 +234,8 @@ UniValue importaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    KeyIO keyIO(Params());
+    const auto& chainparams = Params();
+    KeyIO keyIO(chainparams);
     CTxDestination dest = keyIO.DecodeDestination(params[0].get_str());
     if (IsValidDestination(dest)) {
         if (fP2SH) {
@@ -249,7 +251,7 @@ UniValue importaddress(const UniValue& params, bool fHelp)
 
     if (fRescan)
     {
-        pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
+        pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true, false);
         pwalletMain->ReacceptWalletTransactions();
     }
 
@@ -305,7 +307,7 @@ UniValue importpubkey(const UniValue& params, bool fHelp)
 
     if (fRescan)
     {
-        pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
+        pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true, false);
         pwalletMain->ReacceptWalletTransactions();
     }
 
@@ -380,7 +382,8 @@ UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
     int64_t nFilesize = std::max((int64_t)1, (int64_t)file.tellg());
     file.seekg(0, file.beg);
 
-    KeyIO keyIO(Params());
+    const auto& chainparams = Params();
+    KeyIO keyIO(chainparams);
 
     pwalletMain->ShowProgress(_("Importing..."), 0); // show progress dialog in GUI
     while (file.good()) {
@@ -404,7 +407,7 @@ UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
             std::optional<std::string> seedFpStr = (vstr.size() > 3) ? std::optional<std::string>(vstr[3]) : std::nullopt;
             if (spendingkey.has_value()) {
                 auto addResult = std::visit(
-                    AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, hdKeypath, seedFpStr, true, true), spendingkey.value());
+                    AddSpendingKeyToWallet(pwalletMain, chainparams.GetConsensus(), nTime, hdKeypath, seedFpStr, true, true), spendingkey.value());
                 if (addResult == KeyAlreadyExists){
                     LogPrint("zrpc", "Skipping import of zaddr (key already present)\n");
                 } else if (addResult == KeyNotAdded) {
@@ -465,7 +468,7 @@ UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
         pwalletMain->nTimeFirstKey = nTimeBegin;
 
     LogPrintf("Rescanning last %i blocks\n", chainActive.Height() - pindex->nHeight + 1);
-    pwalletMain->ScanForWalletTransactions(pindex);
+    pwalletMain->ScanForWalletTransactions(pindex, false, false);
     pwalletMain->MarkDirty();
 
     if (!fGood)
@@ -771,7 +774,8 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     }
 
-    KeyIO keyIO(Params());
+    const auto& chainparams = Params();
+    KeyIO keyIO(chainparams);
     string strSecret = params[0].get_str();
     auto spendingkey = keyIO.DecodeSpendingKey(strSecret);
     if (!spendingkey.has_value()) {
@@ -784,7 +788,7 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     result.pushKV("address", keyIO.EncodePaymentAddress(addrInfo.second));
 
     // Sapling support
-    auto addResult = std::visit(AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus()), spendingkey.value());
+    auto addResult = std::visit(AddSpendingKeyToWallet(pwalletMain, chainparams.GetConsensus()), spendingkey.value());
     if (addResult == KeyAlreadyExists && fIgnoreExistingKey) {
         return result;
     }
@@ -798,7 +802,7 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
 
     // We want to scan for transactions and notes
     if (fRescan) {
-        pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
+        pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true, false);
     }
 
     return result;
@@ -866,14 +870,15 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     }
 
-    KeyIO keyIO(Params());
+    const auto& chainparams = Params();
+    KeyIO keyIO(chainparams);
     string strVKey = params[0].get_str();
     auto viewingkey = keyIO.DecodeViewingKey(strVKey);
     if (!viewingkey.has_value()) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
     }
 
-    auto addrInfo = std::visit(libzcash::AddressInfoFromViewingKey(Params()), viewingkey.value());
+    auto addrInfo = std::visit(libzcash::AddressInfoFromViewingKey(chainparams), viewingkey.value());
     UniValue result(UniValue::VOBJ);
     const string strAddress = keyIO.EncodePaymentAddress(addrInfo.second);
     result.pushKV("type", addrInfo.first);
@@ -894,7 +899,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
 
     // We want to scan for transactions and notes
     if (fRescan) {
-        pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
+        pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true, false);
     }
 
     return result;

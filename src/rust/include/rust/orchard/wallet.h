@@ -34,20 +34,33 @@ void orchard_wallet_free(OrchardWalletPtr* wallet);
  * Adds a checkpoint to the wallet's note commitment tree to enable
  * a future rewind.
  */
-void orchard_wallet_checkpoint(
-        OrchardWalletPtr* wallet
+bool orchard_wallet_checkpoint(
+        OrchardWalletPtr* wallet,
+        uint32_t blockHeight
         );
+
+/**
+ * Returns whether or not the wallet has any checkpointed state to
+ * which it can rewind.
+ */
+bool orchard_wallet_is_checkpointed(const OrchardWalletPtr* wallet);
 
 /**
  * Rewinds to the most recently added checkpoint.
  */
 bool orchard_wallet_rewind(
-        OrchardWalletPtr* wallet
+        OrchardWalletPtr* wallet,
+        uint32_t blockHeight,
+        uint32_t* blocksRewoundRet
         );
 
 /**
  * Searches the provided bundle for notes that are visible to the specified
  * wallet's incoming viewing keys, and adds those notes to the wallet.
+ *
+ * The provided bundle must be a component of the transaction from which
+ * `txid` was derived, and the specified block height must be the height
+ * at which this transaction was mined.
  */
 void orchard_wallet_add_notes_from_bundle(
         OrchardWalletPtr* wallet,

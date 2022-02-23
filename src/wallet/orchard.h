@@ -65,12 +65,32 @@ public:
     OrchardWallet(const OrchardWallet&) = delete;
     OrchardWallet& operator=(const OrchardWallet&) = delete;
 
-    void CheckpointNoteCommitmentTree() {
-        orchard_wallet_checkpoint(inner.get());
+    /**
+     * Checkpoint the note commitment tree. This returns `false` and leaves the
+     * note commitment tree unmodified if the block height does not match the
+     * last block height scanned for transactions. This must be called exactly
+     * once per block.
+     */
+    bool CheckpointNoteCommitmentTree(int nBlockHeight) {
+        return orchard_wallet_checkpoint(inner.get(), (uint32_t) nBlockHeight);
     }
 
-    bool RewindToLastCheckpoint() {
-        return orchard_wallet_rewind(inner.get());
+    /**
+     * Rewind to the most recent checkpoint, and mark as unspent any notes
+     * previously identified as having been spent by transactions in the
+     * latest block.
+     */
+    bool IsCheckpointed() const {
+        return orchard_wallet_is_checkpointed(inner.get());
+    }
+
+    /**
+     * Rewind to the most recent checkpoint, and mark as unspent any notes
+     * previously identified as having been spent by transactions in the
+     * latest block.
+     */
+    bool Rewind(int nBlockHeight, uint32_t& blocksRewoundRet) {
+        return orchard_wallet_rewind(inner.get(), (uint32_t) nBlockHeight, &blocksRewoundRet);
     }
 
     /**
