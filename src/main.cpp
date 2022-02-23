@@ -4493,9 +4493,9 @@ static bool ActivateBestChainStep(bool fSkipdpow, CValidationState &state, CBloc
                                ), reorgLength, MAX_REORG_LENGTH) + "\n\n" +
         _("Reorganization details") + ":\n" +
         "- " + strprintf(_("Current tip: %s, height %d, work %s\n"),
-                         pindexOldTip->phashBlock->GetHex(), pindexOldTip->nHeight, pindexOldTip->nChainWork.GetHex(),
+                         pindexOldTip->phashBlock->GetHex(), pindexOldTip->nHeight, pindexOldTip->nChainWork.GetHex()) +
         "- " + strprintf(_("New tip:     %s, height %d, work %s\n"),
-                         pindexMostWork->phashBlock->GetHex(), pindexMostWork->nHeight, pindexMostWork->nChainWork.GetHex(),
+                         pindexMostWork->phashBlock->GetHex(), pindexMostWork->nHeight, pindexMostWork->nChainWork.GetHex()) +
         "- " + strprintf(_("Fork point:  %s %s, height %d"),
                          ASSETCHAINS_SYMBOL,pindexFork->phashBlock->GetHex(), pindexFork->nHeight) + "\n\n" +
         _("Please help, human!");
@@ -5238,11 +5238,18 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                     //LogPrintf("Rejected by mempool, reason: .%s.\n", state.GetRejectReason().c_str());
                     // take advantage of other checks, but if we were only rejected because it is a valid staking
                     // transaction, sync with wallets and don't mark as a reject
+
+                    /*
                     if (i == (block.vtx.size() - 1) && ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock() && state.GetRejectReason() == "staking")
                     {
                         sTx = Tx;
                         ptx = &sTx;
-                    } else rejects++;
+                    }
+                    else
+                    */
+                    {
+                        rejects++;
+                    }
                 }
                 // here we remove any txs in the temp mempool that were included in the block.
                 tmpmempool.remove(tx, removed, false);
