@@ -477,7 +477,7 @@ libzcash::transparent::AccountKey CWallet::GetLegacyAccountKey() const {
 }
 
 
-std::pair<ZcashdUnifiedSpendingKey, libzcash::AccountId> CWallet::GenerateNewUnifiedSpendingKey() {
+std::pair<UnifiedFullViewingKey, libzcash::AccountId> CWallet::GenerateNewUnifiedSpendingKey() {
     AssertLockHeld(cs_wallet);
 
     if (!mnemonicHDChain.has_value()) {
@@ -488,17 +488,17 @@ std::pair<ZcashdUnifiedSpendingKey, libzcash::AccountId> CWallet::GenerateNewUni
     CHDChain& hdChain = mnemonicHDChain.value();
     while (true) {
         auto accountId = hdChain.GetAccountCounter();
-        auto usk = GenerateUnifiedSpendingKeyForAccount(accountId);
+        auto generated = GenerateUnifiedSpendingKeyForAccount(accountId);
         hdChain.IncrementAccountCounter();
 
-        if (usk.has_value()) {
+        if (generated.has_value()) {
             // Update the persisted chain information
             if (fFileBacked && !CWalletDB(strWalletFile).WriteMnemonicHDChain(hdChain)) {
                 throw std::runtime_error(
                         "CWallet::GenerateNewUnifiedSpendingKey(): Writing HD chain model failed");
             }
 
-            return std::make_pair(usk.value(), accountId);
+            return std::make_pair(generated.value().ToFullViewingKey(), accountId);
         }
     }
 }
@@ -554,7 +554,7 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
         );
 
         // Add the Sapling spending key to the wallet
-        auto saplingEsk = usk.value().GetSaplingExtendedSpendingKey();
+        auto saplingEsk = usk.value().GetSaplingKey();
         if (addSaplingKey(saplingEsk) == KeyNotAdded) {
             // If adding the Sapling key to the wallet failed, abort the process.
             throw std::runtime_error("CWalletDB::GenerateUnifiedSpendingKeyForAccount(): Unable to add Sapling spending key to the wallet.");
@@ -576,7 +576,8 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
             throw std::runtime_error("CWallet::GenerateUnifiedSpendingKeyForAccount(): Failed to add Sapling change address to the wallet.");
         };
 
-        // TODO ORCHARD: Add Orchard component to the wallet
+        // Add Orchard spending key to the wallet
+        orchardWallet.AddSpendingKey(usk.value().GetOrchardKey());
 
         auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
         if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {
@@ -725,8 +726,9 @@ WalletUAGenerationResult CWallet::GenerateUnifiedAddress(
         assert(mapUfvkAddressMetadata[ufvkid].SetReceivers(address.second, receiverTypes));
         if (hasTransparent) {
             // We must construct and add the transparent spending key associated
-            // with the external transparent child address to the transparent
-            // keystore.
+            // with the external and internal transparent child addresses to the
+            // transparent keystore. This call to `value` will succeed because
+            // this key must have been previously generated.
             auto usk = GenerateUnifiedSpendingKeyForAccount(accountId).value();
             auto accountKey = usk.GetTransparentKey();
             // this .value is known to be safe from the earlier check
@@ -6425,6 +6427,9 @@ std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
 {
     return std::nullopt;
 }
+
+// GetViewingKeyForPaymentAddress visitor
+
 std::optional<libzcash::ViewingKey> GetViewingKeyForPaymentAddress::operator()(
     const libzcash::SproutPaymentAddress &zaddr) const
 {
@@ -6551,6 +6556,20 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
 
 // UFVKForReceiver :: (CWallet&, Receiver) -> std::optional<ZcashdUnifiedFullViewingKey>
 
+std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const libzcash::OrchardRawAddress& orchardAddr) const {
+    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(orchardAddr);
+    if (ufvkPair.has_value()) {
+        auto ufvkid = ufvkPair.value().first;
+        auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
+        // If we have UFVK metadata, `GetUnifiedFullViewingKey` should always
+        // return a non-nullopt value, and since we obtained that metadata by
+        // lookup from an Orchard address, it should have a Orchard key component.
+        assert(ufvk.has_value() && ufvk.value().GetOrchardKey().has_value());
+        return ufvk.value();
+    } else {
+        return std::nullopt;
+    }
+}
 std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
     auto ufvkPair = wallet.GetUFVKMetadataForReceiver(saplingAddr);
     if (ufvkPair.has_value()) {
@@ -6589,6 +6608,35 @@ std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()
 }
 
 // UnifiedAddressForReceiver :: (CWallet&, Receiver) -> std::optional<UnifiedAddress>
+
+std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(
+        const libzcash::OrchardRawAddress& orchardAddr) const {
+    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(orchardAddr);
+    if (ufvkPair.has_value()) {
+        auto ufvkid = ufvkPair.value().first;
+        auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
+        assert(ufvk.has_value());
+
+        // If the wallet is missing metadata at this UFVK id, it is probably
+        // corrupt and the node should shut down.
+        const auto& metadata = wallet.mapUfvkAddressMetadata.at(ufvkid);
+        auto orchardKey = ufvk.value().GetOrchardKey();
+        if (orchardKey.has_value()) {
+            auto j = orchardKey.value().ToIncomingViewingKey().DecryptDiversifier(orchardAddr);
+            if (j.has_value()) {
+                auto receivers = metadata.GetReceivers(j.value());
+                if (receivers.has_value()) {
+                    auto addr = ufvk.value().Address(j.value(), receivers.value());
+                    auto addrPtr = std::get_if<std::pair<UnifiedAddress, diversifier_index_t>>(&addr);
+                    if (addrPtr != nullptr) {
+                        return addrPtr->first;
+                    }
+                }
+            }
+        }
+    }
+    return std::nullopt;
+}
 
 std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
     auto ufvkPair = wallet.GetUFVKMetadataForReceiver(saplingAddr);

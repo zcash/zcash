@@ -73,6 +73,12 @@ namespace libzcash {
     public:
         ReceiverToString() {}
 
+        std::string operator()(const OrchardRawAddress &zaddr) const {
+            CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+            ss << zaddr;
+            return tfm::format("Orchard(%s)", HexStr(ss.begin(), ss.end()));
+        }
+
         std::string operator()(const SaplingPaymentAddress &zaddr) const {
             CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
             ss << zaddr;
@@ -126,8 +132,11 @@ TEST(Keys, EncodeAndDecodeUnifiedAddresses)
             // These were added to the UA in preference order by the Python test vectors.
             if (!test[3].isNull()) {
                 auto data = ParseHex(test[3].get_str());
-                libzcash::UnknownReceiver r(0x03, data);
-                ua.AddReceiver(r);
+                CDataStream ss(
+                    data,
+                    SER_NETWORK,
+                    PROTOCOL_VERSION);
+                ua.AddReceiver(libzcash::OrchardRawAddress::Read(ss));
             }
             if (!test[2].isNull()) {
                 auto data = ParseHex(test[2].get_str());
@@ -186,6 +195,16 @@ TEST(Keys, DeriveUnifiedFullViewingKeys)
         if (test.size() == 1) continue; // comment
 
         try {
+            // [
+            //     t_key_bytes,
+            //     sapling_fvk_bytes,
+            //     orchard_fvk_bytes,
+            //     unknown_fvk_typecode,
+            //     unknown_fvk_bytes,
+            //     unified_fvk,
+            //     root_seed,
+            //     account,
+            // ],
             auto seed_hex = test[6].get_str();
             auto seed_data = ParseHex(seed_hex);
             RawHDSeed raw_seed(seed_data.begin(), seed_data.end());
@@ -234,6 +253,24 @@ TEST(Keys, DeriveUnifiedFullViewingKeys)
                 CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
                 auto key = libzcash::SaplingDiversifiableFullViewingKey::Read(ss);
                 EXPECT_EQ(key, saplingKey);
+            }
+            if (!test[2].isNull()) {
+                auto expectedHex = test[2].get_str();
+
+                // Ensure that the serialized Orchard fvk matches the test data.
+                auto orchardKey = ufvk.GetOrchardKey().value();
+                CDataStream ssEncode(SER_NETWORK, PROTOCOL_VERSION);
+                ssEncode << orchardKey;
+                EXPECT_EQ(ssEncode.size(), 96);
+                auto skeyHex = HexStr(ssEncode.begin(), ssEncode.end());
+                EXPECT_EQ(expectedHex, skeyHex);
+
+                // Ensure that parsing the test data derives the correct dfvk
+                auto data = ParseHex(expectedHex);
+                ASSERT_EQ(data.size(), 96);
+                CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
+                auto key = libzcash::OrchardFullViewingKey::Read(ss);
+                EXPECT_EQ(key, orchardKey);
             }
             // Enable the following after Orchard keys are supported.
             //{
@@ -284,14 +321,13 @@ TEST(Keys, EncodeAndDecodeUnifiedFullViewingKeys)
             auto key = libzcash::SaplingDiversifiableFullViewingKey::Read(ss);
             ASSERT_TRUE(builder.AddSaplingKey(key));
         }
-
-        // Orchard keys and unknown items are not yet supported; instead,
-        // we just test that we're able to parse the unified key string
-        // and that the constituent items match the elements; if no Sapling
-        // key is present then UFVK construction would fail because it might
-        // presume the UFVK to be transparent-only.
-        if (test[1].isNull())
-            continue;
+        if (!test[2].isNull()) {
+            auto data = ParseHex(test[2].get_str());
+            ASSERT_EQ(data.size(), 96);
+            CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
+            auto key = libzcash::OrchardFullViewingKey::Read(ss);
+            ASSERT_TRUE(builder.AddOrchardKey(key));
+        }
 
         auto built = builder.build();
         ASSERT_TRUE(built.has_value());
@@ -304,5 +340,6 @@ TEST(Keys, EncodeAndDecodeUnifiedFullViewingKeys)
 
         EXPECT_EQ(decoded.value().GetTransparentKey(), built.value().GetTransparentKey());
         EXPECT_EQ(decoded.value().GetSaplingKey(), built.value().GetSaplingKey());
+        EXPECT_EQ(decoded.value().GetOrchardKey(), built.value().GetOrchardKey());
     }
 }

@@ -29,6 +29,56 @@ pub extern "C" fn orchard_address_free(addr: *mut Address) {
 }
 
 #[no_mangle]
+pub extern "C" fn orchard_raw_address_parse(
+    stream: Option<StreamObj>,
+    read_cb: Option<ReadCb>,
+) -> *mut Address {
+    let mut reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
+
+    let mut buf = [0u8; 43];
+    match reader.read_exact(&mut buf) {
+        Err(e) => {
+            error!("Stream failure reading bytes of Orchard raw address: {}", e);
+            std::ptr::null_mut()
+        }
+        Ok(()) => {
+            let read = Address::from_raw_address_bytes(&buf);
+            if read.is_some().into() {
+                Box::into_raw(Box::new(read.unwrap()))
+            } else {
+                error!("Failed to parse Orchard raw address.");
+                std::ptr::null_mut()
+            }
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_raw_address_serialize(
+    key: *const Address,
+    stream: Option<StreamObj>,
+    write_cb: Option<WriteCb>,
+) -> bool {
+    let key = unsafe { key.as_ref() }.expect("Orchard raw address pointer may not be null.");
+
+    let mut writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
+    match writer.write_all(&key.to_raw_address_bytes()) {
+        Ok(()) => true,
+        Err(e) => {
+            error!("Stream failure writing Orchard raw address: {}", e);
+            false
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_address_eq(a0: *const Address, a1: *const Address) -> bool {
+    let a0 = unsafe { a0.as_ref() };
+    let a1 = unsafe { a1.as_ref() };
+    a0 == a1
+}
+
+#[no_mangle]
 pub extern "C" fn orchard_address_lt(a0: *const Address, a1: *const Address) -> bool {
     let a0 = unsafe { a0.as_ref() };
     let a1 = unsafe { a1.as_ref() };
@@ -93,6 +143,26 @@ pub extern "C" fn orchard_incoming_viewing_key_to_address(
 
     let diversifier_index = DiversifierIndex::from(unsafe { *diversifier_index });
     Box::into_raw(Box::new(key.address_at(diversifier_index)))
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_incoming_viewing_key_decrypt_diversifier(
+    key: *const IncomingViewingKey,
+    addr: *const Address,
+    j_ret: *mut [u8; 11],
+) -> bool {
+    let key =
+        unsafe { key.as_ref() }.expect("Orchard incoming viewing key pointer may not be null.");
+    let addr = unsafe { addr.as_ref() }.expect("Orchard raw address pointer may not be null.");
+    let j_ret = unsafe { j_ret.as_mut() }.expect("j_ret may not be null.");
+
+    match key.diversifier_index(addr) {
+        Some(j) => {
+            j_ret.copy_from_slice(j.to_bytes());
+            true
+        }
+        None => false,
+    }
 }
 
 #[no_mangle]
@@ -197,6 +267,18 @@ pub extern "C" fn orchard_full_viewing_key_to_incoming_viewing_key(
 ) -> *mut IncomingViewingKey {
     unsafe { key.as_ref() }
         .map(|key| Box::into_raw(Box::new(IncomingViewingKey::from(key))))
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_full_viewing_key_to_internal_incoming_viewing_key(
+    fvk: *const FullViewingKey,
+) -> *mut IncomingViewingKey {
+    unsafe { fvk.as_ref() }
+        .map(|fvk| {
+            let internal_fvk = fvk.derive_internal();
+            Box::into_raw(Box::new(IncomingViewingKey::from(&internal_fvk)))
+        })
         .unwrap_or(std::ptr::null_mut())
 }
 

@@ -2200,14 +2200,15 @@ TEST(WalletTests, GenerateUnifiedAddress) {
     EXPECT_EQ(uaResult, expected);
 
     // Create an account, then generate an address for that account.
-    auto skpair = wallet.GenerateNewUnifiedSpendingKey();
-    uaResult = wallet.GenerateUnifiedAddress(skpair.second, {ReceiverType::P2PKH, ReceiverType::Sapling});
+    auto ufvkpair = wallet.GenerateNewUnifiedSpendingKey();
+    auto ufvk = ufvkpair.first;
+    auto account = ufvkpair.second;
+    uaResult = wallet.GenerateUnifiedAddress(account, {ReceiverType::P2PKH, ReceiverType::Sapling});
     auto ua = std::get_if<std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>>(&uaResult);
     EXPECT_NE(ua, nullptr);
 
     auto uaSaplingReceiver = ua->first.GetSaplingReceiver();
     EXPECT_TRUE(uaSaplingReceiver.has_value());
-    auto ufvk = skpair.first.ToFullViewingKey();
     EXPECT_EQ(uaSaplingReceiver.value(), ufvk.GetSaplingKey().value().Address(ua->second));
 
     auto u4r = wallet.FindUnifiedAddressByReceiver(uaSaplingReceiver.value());

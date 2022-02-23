@@ -340,6 +340,9 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                     case ReceiverType::Sapling:
                         allowedChangeTypes_.insert(libzcash::ChangeType::Sapling);
                         break;
+                    case ReceiverType::Orchard:
+                        // TODO
+                        break;
                 }
             }
 

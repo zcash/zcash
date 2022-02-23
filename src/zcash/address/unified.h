@@ -8,6 +8,7 @@
 #include "transparent.h"
 #include "key_constants.h"
 #include "script/script.h"
+#include "zcash/address/orchard.hpp"
 #include "zip32.h"
 
 #include <variant>
@@ -23,7 +24,7 @@ enum class ReceiverType: uint32_t {
     P2PKH = 0x00,
     P2SH = 0x01,
     Sapling = 0x02,
-    //Orchard = 0x03
+    Orchard = 0x03
 };
 
 enum class UnifiedAddressGenerationError {
@@ -113,6 +114,7 @@ public:
  * variants by `operator<` is equivalent to sorting by preference.
  */
 typedef std::variant<
+    OrchardRawAddress,
     SaplingPaymentAddress,
     CScriptID,
     CKeyID,
@@ -139,6 +141,7 @@ private:
     UFVKId keyId;
     std::optional<transparent::AccountPubKey> transparentKey;
     std::optional<SaplingDiversifiableFullViewingKey> saplingKey;
+    std::optional<OrchardFullViewingKey> orchardKey;
 
     ZcashdUnifiedFullViewingKey() {}
 
@@ -165,6 +168,10 @@ public:
 
     const std::optional<SaplingDiversifiableFullViewingKey>& GetSaplingKey() const {
         return saplingKey;
+    }
+
+    const std::optional<OrchardFullViewingKey>& GetOrchardKey() const {
+        return orchardKey;
     }
 
     /**
@@ -241,10 +248,12 @@ class ZcashdUnifiedSpendingKey {
 private:
     transparent::AccountKey transparentKey;
     SaplingExtendedSpendingKey saplingKey;
+    OrchardSpendingKey orchardKey;
 
     ZcashdUnifiedSpendingKey(
             transparent::AccountKey tkey,
-            SaplingExtendedSpendingKey skey): transparentKey(tkey), saplingKey(skey) {}
+            SaplingExtendedSpendingKey skey,
+            OrchardSpendingKey okey): transparentKey(tkey), saplingKey(skey), orchardKey(okey) {}
 public:
     static std::optional<ZcashdUnifiedSpendingKey> ForAccount(
             const HDSeed& seed,
@@ -255,8 +264,12 @@ public:
         return transparentKey;
     }
 
-    const SaplingExtendedSpendingKey& GetSaplingExtendedSpendingKey() const {
+    const SaplingExtendedSpendingKey& GetSaplingKey() const {
         return saplingKey;
+    }
+
+    const OrchardSpendingKey& GetOrchardKey() const {
+        return orchardKey;
     }
 
     UnifiedFullViewingKey ToFullViewingKey() const;

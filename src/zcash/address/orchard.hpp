@@ -9,6 +9,8 @@
 #include "zcash/address/zip32.h"
 #include <rust/orchard/keys.h>
 
+#include <optional>
+
 class OrchardWallet;
 namespace orchard { class Builder; }
 
@@ -31,6 +33,10 @@ private:
     friend class ::OrchardWallet;
     friend class ::orchard::Builder;
 public:
+    static OrchardRawAddress KeyIoOnlyFromReceiver(OrchardRawAddressPtr* ptr) {
+        return OrchardRawAddress(ptr);
+    }
+
     OrchardRawAddress(OrchardRawAddress&& key) : inner(std::move(key.inner)) {}
 
     OrchardRawAddress(const OrchardRawAddress& key) :
@@ -52,8 +58,37 @@ public:
         return *this;
     }
 
+    friend bool operator==(const OrchardRawAddress& c1, const OrchardRawAddress& c2) {
+        return orchard_address_eq(c1.inner.get(), c2.inner.get());
+    }
+
     friend bool operator<(const OrchardRawAddress& c1, const OrchardRawAddress& c2) {
         return orchard_address_lt(c1.inner.get(), c2.inner.get());
+    }
+
+    template<typename Stream>
+    void Serialize(Stream& s) const {
+        RustStream rs(s);
+        if (!orchard_raw_address_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
+            throw std::ios_base::failure("Failed to serialize Orchard raw address to bytes");
+        }
+    }
+
+    template<typename Stream>
+    void Unserialize(Stream& s) {
+        RustStream rs(s);
+        OrchardRawAddressPtr* addr = orchard_raw_address_parse(&rs, RustStream<Stream>::read_callback);
+        if (addr == nullptr) {
+            throw std::ios_base::failure("Failed to parse Orchard raw address bytes");
+        }
+        inner.reset(addr);
+    }
+
+    template<typename Stream>
+    static OrchardRawAddress Read(Stream& stream) {
+        OrchardRawAddress key;
+        stream >> key;
+        return key;
     }
 };
 
@@ -79,6 +114,12 @@ public:
         inner(orchard_incoming_viewing_key_clone(key.inner.get()), orchard_incoming_viewing_key_free) {}
 
     OrchardRawAddress Address(const diversifier_index_t& j) const;
+
+    /**
+     * Decrypts the diversifier for the given raw address, and returns it if that
+     * address was derived from this IVK; otherwise returns std::nullopt;
+     */
+    std::optional<diversifier_index_t> DecryptDiversifier(const OrchardRawAddress& addr) const;
 
     OrchardIncomingViewingKey& operator=(OrchardIncomingViewingKey&& key)
     {
@@ -150,6 +191,8 @@ public:
         inner(orchard_full_viewing_key_clone(key.inner.get()), orchard_full_viewing_key_free) {}
 
     OrchardIncomingViewingKey ToIncomingViewingKey() const;
+
+    OrchardIncomingViewingKey ToInternalIncomingViewingKey() const;
 
     OrchardFullViewingKey& operator=(OrchardFullViewingKey&& key)
     {
@@ -236,31 +279,6 @@ public:
             inner.reset(orchard_spending_key_clone(key.inner.get()));
         }
         return *this;
-    }
-
-    template<typename Stream>
-    void Serialize(Stream& s) const {
-        RustStream rs(s);
-        if (!orchard_spending_key_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
-            throw std::ios_base::failure("Failed to serialize Orchard spending key");
-        }
-    }
-
-    template<typename Stream>
-    void Unserialize(Stream& s) {
-        RustStream rs(s);
-        OrchardSpendingKeyPtr* key = orchard_spending_key_parse(&rs, RustStream<Stream>::read_callback);
-        if (key == nullptr) {
-            throw std::ios_base::failure("Failed to parse Orchard spending key");
-        }
-        inner.reset(key);
-    }
-
-    template<typename Stream>
-    static OrchardSpendingKey Read(Stream& stream) {
-        OrchardSpendingKey key;
-        stream >> key;
-        return key;
     }
 };
 
