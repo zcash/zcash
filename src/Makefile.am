@@ -37,8 +37,6 @@ LIBBITCOIN_COMMON=libbitcoin_common.a
 LIBBITCOIN_CLI=libbitcoin_cli.a
 LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
-LIBVERUS_CRYPTO=crypto/libverus_crypto.a
-LIBVERUS_PORTABLE_CRYPTO=crypto/libverus_portable_crypto.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
 LIBCRYPTOCONDITIONS=cryptoconditions/libcryptoconditions_core.la
 LIBSNARK=snark/libsnark.a
@@ -100,8 +98,6 @@ EXTRA_LIBRARIES += $(LIBCJSON)
 # But to build the less dependent modules first, we manually select their order here:
 EXTRA_LIBRARIES += \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBVERUS_CRYPTO) \
-  $(LIBVERUS_PORTABLE_CRYPTO) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_SERVER) \
@@ -188,9 +184,6 @@ BITCOIN_CORE_H = \
   consensus/validation.h \
   core_io.h \
   core_memusage.h \
-  crypto/haraka.h \
-  crypto/haraka_portable.h \
-  crypto/verus_hash.h \
   deprecation.h \
   fs.h \
   hash.h \
@@ -322,10 +315,6 @@ libbitcoin_server_a_SOURCES = \
   fs.cpp \
   crosschain.cpp \
   crosschain_authority.cpp \
-  crypto/haraka.h \
-  crypto/haraka_portable.h \
-  crypto/verus_hash.h \
-  crypto/verus_hash.cpp \
   deprecation.cpp \
   httprpc.cpp \
   httpserver.cpp \
@@ -429,11 +418,7 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha256.cpp \
   crypto/sha256.h \
   crypto/sha512.cpp \
-  crypto/sha512.h \
-  crypto/haraka.h \
-  crypto/haraka_portable.h \
-  crypto/verus_hash.h \
-  crypto/verus_hash.cpp
+  crypto/sha512.h
 
 if EXPERIMENTAL_ASM
   crypto_libbitcoin_crypto_a_SOURCES += crypto/sha256_sse4.cpp
@@ -451,20 +436,6 @@ crypto_libbitcoin_crypto_a_SOURCES += \
 	${EQUIHASH_TROMP_SOURCES}
 endif
 
-# Verus hash specific library - optimized
-crypto_libverus_crypto_a_CPPFLAGS = -O3 -Wint-conversion -march=x86-64 -msse4 -msse4.1 -msse4.2 -mssse3 -mavx -maes -g -funroll-loops -fomit-frame-pointer -fPIC $(AM_CPPFLAGS)
-crypto_libverus_crypto_a_CXXFLAGS = -O3 -Wint-conversion -march=x86-64 -msse4 -msse4.1 -msse4.2 -mssse3 -mavx -maes -g -funroll-loops -fomit-frame-pointer -fPIC $(AM_CXXFLAGS)
-crypto_libverus_crypto_a_SOURCES = \
-  crypto/haraka.h \
-  crypto/haraka.c
-
-# Verus hash specific library - portable
-crypto_libverus_portable_crypto_a_CPPFLAGS = -O3 -Wint-conversion -march=x86-64 -g -funroll-loops -fomit-frame-pointer -fPIC $(AM_CPPFLAGS)
-crypto_libverus_portable_crypto_a_CXXFLAGS = -O3 -Wint-conversion -march=x86-64 -g -funroll-loops -fomit-frame-pointer -fPIC $(AM_CXXFLAGS)
-crypto_libverus_portable_crypto_a_SOURCES = \
-  crypto/haraka_portable.h \
-  crypto/haraka_portable.c
-
 # common: shared between zcashd and non-server tools
 libbitcoin_common_a_CPPFLAGS = -fPIC $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_common_a_CXXFLAGS = -fPIC $(AM_CXXFLAGS) $(PIE_FLAGS)
@@ -479,10 +450,6 @@ libbitcoin_common_a_SOURCES = \
   consensus/upgrades.cpp \
   core_read.cpp \
   core_write.cpp \
-  crypto/haraka.h \
-  crypto/haraka_portable.h \
-  crypto/verus_hash.h \
-  crypto/verus_hash.cpp \
   hash.cpp \
   hex.c \
   importcoin.cpp \
@@ -587,8 +554,6 @@ komodod_LDADD = \
   $(LIBBITCOIN_ZMQ) \
   $(LIBBITCOIN_PROTON) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBVERUS_CRYPTO) \
-  $(LIBVERUS_PORTABLE_CRYPTO) \
   $(LIBZCASH) \
   $(LIBSNARK) \
   $(LIBLEVELDB) \
@@ -611,8 +576,6 @@ komodod_LDADD += \
   $(ZMQ_LIBS) \
   $(PROTON_LIBS) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBVERUS_CRYPTO) \
-  $(LIBVERUS_PORTABLE_CRYPTO) \
   $(LIBZCASH_LIBS) \
   -lcurl
 
@@ -666,17 +629,13 @@ komodo_cli_LDADD = \
 	$(EVENT_LIBS) \
 	$(LIBZCASH) \
 	$(LIBBITCOIN_CRYPTO) \
-  $(LIBVERUS_CRYPTO) \
-  $(LIBVERUS_PORTABLE_CRYPTO) \
-	$(LIBZCASH_LIBS)
+  $(LIBZCASH_LIBS)
 
 if ENABLE_WALLET
 wallet_utility_LDADD = \
 	libbitcoin_wallet.a \
 	$(LIBBITCOIN_COMMON) \
 	$(LIBBITCOIN_CRYPTO) \
-  $(LIBVERUS_CRYPTO) \
-  $(LIBVERUS_PORTABLE_CRYPTO) \
 	$(LIBSECP256K1) \
 	$(LIBBITCOIN_UTIL) \
 	$(BOOST_LIBS) \
@@ -707,8 +666,6 @@ komodo_tx_LDADD = \
   $(LIBZCASH) \
   $(LIBSNARK) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBVERUS_CRYPTO) \
-  $(LIBVERUS_PORTABLE_CRYPTO) \
   $(LIBZCASH_LIBS) \
   $(LIBCRYPTOCONDITIONS)
 
