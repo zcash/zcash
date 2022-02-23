@@ -2523,7 +2523,7 @@ bool IsInitialBlockDownload()
     }
     if (0 && ptr->nChainWork < UintToArith256(chainParams.GetConsensus().nMinimumChainWork))
     {
-        fprintf(stderr,"chainpower insufficient in IsInitialDownload\n");
+        fprintf(stderr,"nChainWork insufficient in IsInitialDownload\n");
         return true;
     }
     state = ((chainActive.Height() < ptr->nHeight - 24*60) ||
@@ -6091,7 +6091,7 @@ bool static LoadBlockIndexDB()
     LogPrintf("%s: loaded guts\n", __func__);
     boost::this_thread::interruption_point();
 
-    // Calculate chainPower
+    // Calculate nChainWork
     vector<pair<int, CBlockIndex*> > vSortedByHeight;
     vSortedByHeight.reserve(mapBlockIndex.size());
     BOOST_FOREACH(const PAIRTYPE(uint256, CBlockIndex*)& item, mapBlockIndex)
