@@ -228,7 +228,7 @@ TEST(WalletZkeysTest, WriteZkeyDirectToDb) {
     mapArgs["-datadir"] = pathTemp.string();
 
     bool fFirstRun;
-    CWallet wallet(Params(), "wallet.dat");
+    CWallet wallet(Params(), "wallet_direct_zkey_test.dat");
     LOCK(wallet.cs_wallet);
     ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
 
@@ -252,7 +252,7 @@ TEST(WalletZkeysTest, WriteZkeyDirectToDb) {
     auto addr = sk.address();
     int64_t now = GetTime();
     CKeyMetadata meta(now);
-    CWalletDB db("wallet.dat");
+    CWalletDB db("wallet_direct_zkey_test.dat");
     db.WriteZKey(addr, sk, meta);
 
     // wallet should not be aware of key
