@@ -794,6 +794,7 @@ public:
     std::vector<COutput> utxos;
     std::vector<SproutNoteEntry> sproutNoteEntries;
     std::vector<SaplingNoteEntry> saplingNoteEntries;
+    std::vector<OrchardNoteMetadata> orchardNoteMetadata;
 
     /**
      * Selectively discard notes that are not required to obtain the desired
@@ -815,6 +816,9 @@ public:
         }
         for (const auto& t : saplingNoteEntries) {
             result += t.note.value();
+        }
+        for (const auto& t : orchardNoteMetadata) {
+            result += t.GetNoteValue();
         }
         return result;
     }
@@ -1463,7 +1467,15 @@ public:
     bool AddOrchardZKey(const libzcash::OrchardSpendingKey &sk);
     bool AddOrchardFullViewingKey(const libzcash::OrchardFullViewingKey &fvk);
     /**
-     * Adds an address/ivk mapping to the in-memory wallet. Returns `true`
+     * Adds an address/ivk mapping to the in-memory wallet. Returns `false` if
+     * the mapping could not be persisted, or the IVK does not correspond to an
+     * FVK known by the wallet.
+     */
+    bool AddOrchardRawAddress(
+        const libzcash::OrchardIncomingViewingKey &ivk,
+        const libzcash::OrchardRawAddress &addr);
+    /**
+     * Loads an address/ivk mapping to the in-memory wallet. Returns `true`
      * if the provided IVK corresponds to an FVK known by the wallet.
      */
     bool LoadOrchardRawAddress(

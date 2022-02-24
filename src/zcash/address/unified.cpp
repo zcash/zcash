@@ -150,7 +150,7 @@ UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
 
 UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
         const diversifier_index_t& j) const {
-    return FindAddress(j, {ReceiverType::P2PKH, ReceiverType::Sapling});
+    return FindAddress(j, {ReceiverType::P2PKH, ReceiverType::Sapling, ReceiverType::Orchard});
 }
 
 std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(const ChangeRequest& req) const {

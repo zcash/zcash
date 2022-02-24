@@ -44,6 +44,10 @@ class TestWallet : public CWallet {
 public:
     TestWallet(const CChainParams& params) : CWallet(params) { }
 
+    OrchardWallet& GetOrchardWallet() {
+        return orchardWallet;
+    }
+
     bool EncryptKeys(CKeyingMaterial& vMasterKeyIn) {
         return CCryptoKeyStore::EncryptKeys(vMasterKeyIn);
     }
@@ -2241,6 +2245,46 @@ TEST(WalletTests, GenerateUnifiedAddress) {
         expected = UnifiedAddressGenerationError::InvalidTransparentChildIndex;
         EXPECT_EQ(uaResult, expected);
     }
+
+    // Revert to default
+    RegtestDeactivateSapling();
+}
+
+TEST(WalletTests, GenerateUnifiedSpendingKeyAddsOrchardAddresses) {
+    (void) RegtestActivateSapling();
+    TestWallet wallet(Params());
+    wallet.GenerateNewSeed();
+
+    // Create an account.
+    auto ufvkpair = wallet.GenerateNewUnifiedSpendingKey();
+    auto ufvk = ufvkpair.first;
+    auto account = ufvkpair.second;
+    auto fvk = ufvk.GetOrchardKey();
+    EXPECT_TRUE(fvk.has_value());
+
+    // At this point the Orchard wallet should contain the change address, but
+    // no other addresses. We detect this by trying to look up their IVKs.
+    auto changeAddr = fvk->ToInternalIncomingViewingKey().Address(libzcash::diversifier_index_t{0});
+    auto internalIvk = wallet.GetOrchardWallet().GetIncomingViewingKeyForAddress(changeAddr);
+    EXPECT_TRUE(internalIvk.has_value());
+    EXPECT_EQ(internalIvk.value(), fvk->ToInternalIncomingViewingKey());
+    auto externalAddr = fvk->ToIncomingViewingKey().Address(libzcash::diversifier_index_t{0});
+    auto externalIvk = wallet.GetOrchardWallet().GetIncomingViewingKeyForAddress(externalAddr);
+    EXPECT_FALSE(externalIvk.has_value());
+
+    // Generate an address.
+    auto uaResult = wallet.GenerateUnifiedAddress(account, {ReceiverType::Orchard});
+    auto ua = std::get_if<std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t>>(&uaResult);
+    EXPECT_NE(ua, nullptr);
+
+    auto uaOrchardReceiver = ua->first.GetOrchardReceiver();
+    EXPECT_TRUE(uaOrchardReceiver.has_value());
+    EXPECT_EQ(uaOrchardReceiver.value(), externalAddr);
+
+    // Now we can look up the external IVK.
+    externalIvk = wallet.GetOrchardWallet().GetIncomingViewingKeyForAddress(externalAddr);
+    EXPECT_TRUE(externalIvk.has_value());
+    EXPECT_EQ(externalIvk.value(), fvk->ToIncomingViewingKey());
 
     // Revert to default
     RegtestDeactivateSapling();
