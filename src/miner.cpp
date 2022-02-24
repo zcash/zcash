@@ -243,12 +243,6 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
     // Collect memory pool transactions into the block
     CAmount nFees = 0;
 
-    // we will attempt to spend any cheats we see
-    CTransaction cheatTx;
-    boost::optional<CTransaction> cheatSpend;
-
-    uint256 cbHash;
-    
     boost::this_thread::interruption_point(); // exit thread before entering locks. 
     
     CBlockIndex* pindexPrev = 0;
