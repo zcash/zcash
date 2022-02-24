@@ -537,7 +537,6 @@ std::string HelpMessage(HelpMessageMode mode)
 
 #ifdef ENABLE_MINING
     strUsage += HelpMessageGroup(_("Mining options:"));
-    strUsage += HelpMessageOpt("-mint", strprintf(_("Mint/stake coins automatically (default: %u)"), 0));
     strUsage += HelpMessageOpt("-gen", strprintf(_("Mine/generate coins (default: %u)"), 0));
     strUsage += HelpMessageOpt("-genproclimit=<n>", strprintf(_("Set the number of threads for coin mining if enabled (-1 = all cores, default: %d)"), 0));
     strUsage += HelpMessageOpt("-equihashsolver=<name>", _("Specify the Equihash solver to be used if enabled (default: \"default\")"));
