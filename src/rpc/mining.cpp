@@ -610,39 +610,42 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         {
             checktxtime = boost::get_system_time() + boost::posix_time::seconds(10);
 
-            boost::unique_lock<boost::mutex> lock(csBestBlock);
-            while (chainActive.Tip()->GetBlockHash() == hashWatchedChain && IsRPCRunning())
+            // Release the main lock while waiting
+            LEAVE_CRITICAL_SECTION(cs_main);
             {
-                // Release the main lock while waiting
-                LEAVE_CRITICAL_SECTION(cs_main);
+                boost::unique_lock<boost::mutex> lock(csBestBlock);
+                while (chainActive.Tip()->GetBlockHash() == hashWatchedChain && IsRPCRunning())
+                {
+                    // Before waiting, generate the coinbase for the block following the next
+                    // block (since this is cpu-intensive), so that when next block arrives,
+                    // we can quickly respond with a template for following block.
+                    // Note that the time to create the coinbase tx here does not add to,
+                    // but instead is included in, the 10 second delay, since we're waiting
+                    // until an absolute time is reached.
+                    if (!cached_next_cb_mtx && IsShieldedMinerAddress(minerAddress)) {
+                        cached_next_cb_height = nHeight + 2;
+                        cached_next_cb_mtx = CreateCoinbaseTransaction(
+                            Params(), CAmount{0}, minerAddress, cached_next_cb_height);
+                        next_cb_mtx = cached_next_cb_mtx;
+                    }
+                    bool timedout = !cvBlockChange.timed_wait(lock, checktxtime);
 
-                // Before waiting, generate the coinbase for the block following the next
-                // block (since this is cpu-intensive), so that when next block arrives,
-                // we can quickly respond with a template for following block.
-                // Note that the time to create the coinbase tx here does not add to,
-                // but instead is included in, the 10 second delay, since we're waiting
-                // until an absolute time is reached.
-                if (!cached_next_cb_mtx && IsShieldedMinerAddress(minerAddress)) {
-                    cached_next_cb_height = nHeight + 2;
-                    cached_next_cb_mtx = CreateCoinbaseTransaction(
-                        Params(), CAmount{0}, minerAddress, cached_next_cb_height);
-                    next_cb_mtx = cached_next_cb_mtx;
+                    // Optimization: even if timed out, a new block may have arrived
+                    // while waiting for cs_main; if so, don't discard next_cb_mtx.
+                    if (chainActive.Tip()->GetBlockHash() != hashWatchedChain) break;
+
+                    // Timeout: Check transactions for update
+                    if (timedout && mempool.GetTransactionsUpdated() != nTransactionsUpdatedLastLP) {
+                        // Create a non-empty block.
+                        next_cb_mtx = nullopt;
+                        break;
+                    }
+                    checktxtime += boost::posix_time::seconds(10);
                 }
-                bool timedout = !cvBlockChange.timed_wait(lock, checktxtime);
-                ENTER_CRITICAL_SECTION(cs_main);
-
-                // Optimization: even if timed out, a new block may have arrived
-                // while waiting for cs_main; if so, don't discard next_cb_mtx.
-                if (chainActive.Tip()->GetBlockHash() != hashWatchedChain) break;
-
-                // Timeout: Check transactions for update
-                if (timedout && mempool.GetTransactionsUpdated() != nTransactionsUpdatedLastLP) {
-                    // Create a non-empty block.
-                    next_cb_mtx = nullopt;
-                    break;
-                }
-                checktxtime += boost::posix_time::seconds(10);
             }
+            // Reacquire the lock after the wait
+            ENTER_CRITICAL_SECTION(cs_main);
+
             if (chainActive.Tip()->nHeight != nHeight + 1) {
                 // Unexpected height (reorg or >1 blocks arrived while waiting) invalidates coinbase tx.
                 next_cb_mtx = nullopt;
