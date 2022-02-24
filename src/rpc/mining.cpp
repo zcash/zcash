@@ -163,7 +163,6 @@ UniValue getnetworkhashps(const UniValue& params, bool fHelp, const CPubKey& myp
 }
 
 #ifdef ENABLE_MINING
-extern bool VERUS_MINTBLOCKS;
 UniValue getgenerate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 0)
@@ -185,7 +184,7 @@ UniValue getgenerate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
     LOCK(cs_main);
     UniValue obj(UniValue::VOBJ);
-    bool staking = VERUS_MINTBLOCKS;
+    bool staking = false;
     if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
         staking = true;
     obj.push_back(Pair("staking",          staking));
@@ -371,25 +370,8 @@ UniValue setgenerate(const UniValue& params, bool fHelp, const CPubKey& mypk)
         //if (nGenProcLimit == 0)
         //    fGenerate = false;
     }
-    if ( ASSETCHAINS_LWMAPOS != 0 )
-    {
-        if (fGenerate && !nGenProcLimit)
-        {
-            VERUS_MINTBLOCKS = 1;
-            fGenerate = GetBoolArg("-gen", false);
-            KOMODO_MININGTHREADS = nGenProcLimit;
-        }
-        else if (!fGenerate)
-        {
-            VERUS_MINTBLOCKS = 0;
-            KOMODO_MININGTHREADS = 0;
-        }
-        else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
-    }
-    else
-    {
-        KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
-    }
+
+    KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
 
     mapArgs["-gen"] = (fGenerate ? "1" : "0");
     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
@@ -500,7 +482,7 @@ UniValue getmininginfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
     obj.push_back(Pair("testnet",          Params().TestnetToBeDeprecatedFieldRPC()));
     obj.push_back(Pair("chain",            Params().NetworkIDString()));
 #ifdef ENABLE_MINING
-    bool staking = VERUS_MINTBLOCKS;
+    bool staking = false;
     if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
         staking = true;
     obj.push_back(Pair("staking",          staking));

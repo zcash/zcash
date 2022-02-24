@@ -1499,25 +1499,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( blocktime+iter+segid*2 < txtime+minage )
             continue;
         diff = (iter + blocktime - txtime - minage);
-        // Disable PoS64 on VerusHash, doesnt work properly.
-        if ( 0 ) // ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
-        {
-            /*if ( PoSperc < ASSETCHAINS_STAKED )
-            {
-                // Under PoS % target and we need to increase diff.
-                //fprintf(stderr, "PoS too low diff.%i changed to.",diff);
-                diff = diff * ( (ASSETCHAINS_STAKED - PoSperc + 1) * (ASSETCHAINS_STAKED - PoSperc + 1) * ( nHeight < 50 ? 1000 : 1));
-                //fprintf(stderr, "%i \n",diff);
-            }
-            else */ 
-            if ( PoSperc > ASSETCHAINS_STAKED )
-            {
-                // Over PoS target need to lower diff.
-                //fprintf(stderr, "PoS too high diff.%i changed to.",diff);
-                diff = diff / ( (PoSperc - ASSETCHAINS_STAKED + 1) * (PoSperc - ASSETCHAINS_STAKED + 1) );
-                //fprintf(stderr, "%i \n",diff);
-            }
-        }
+
         if ( diff < 0 )
             diff = 60;
         else if ( diff > 3600*24*30 )
@@ -1528,17 +1510,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( iter > 0 )
             diff += segid*2;
         coinage = (value * diff);
-        if ( 0 ) //&& ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH || ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1 )
-        {
-            if ( PoSperc < ASSETCHAINS_STAKED )
-            {
-                // Under PoS % target and we need to increase diff.
-                //fprintf(stderr, "PoS too low diff.%i changed to.",diff);
-                if ( blocktime+iter+segid*2 > prevtime+128 )
-                    coinage *= ((blocktime+iter+segid*2) - (prevtime+102));
-                //fprintf(stderr, "%i \n",diff);
-            }   
-        }
+
         if ( blocktime+iter+segid*2 > prevtime+480 )
             coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
         coinage256 = arith_uint256(coinage+1);

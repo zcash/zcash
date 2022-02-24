@@ -33,7 +33,6 @@
 
 static const int SPROUT_VALUE_VERSION = 1001400;
 static const int SAPLING_VALUE_VERSION = 1010100;
-extern int32_t ASSETCHAINS_LWMAPOS;
 extern char ASSETCHAINS_SYMBOL[65];
 extern uint64_t ASSETCHAINS_NOTARY_PAY[];
 extern int32_t ASSETCHAINS_STAKED;

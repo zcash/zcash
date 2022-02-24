@@ -796,23 +796,21 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
 
-        if (!isStake || ASSETCHAINS_LWMAPOS == 0)
-        {
-            // Randomise nonce
-            arith_uint256 nonce = UintToArith256(GetRandHash());
+        //if (!isStake || true)
+        // Randomise nonce
+        arith_uint256 nonce = UintToArith256(GetRandHash());
 
-            // Clear the top 16 and bottom 16 or 24 bits (for local use as thread flags and counters)
-            nonce <<= ASSETCHAINS_NONCESHIFT[ASSETCHAINS_ALGO];
-            nonce >>= 16;
-            pblock->nNonce = ArithToUint256(nonce);
-        }
+        // Clear the top 16 and bottom 16 or 24 bits (for local use as thread flags and counters)
+        nonce <<= ASSETCHAINS_NONCESHIFT[ASSETCHAINS_ALGO];
+        nonce >>= 16;
+        pblock->nNonce = ArithToUint256(nonce);
 
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         pblock->hashFinalSaplingRoot   = sapling_tree.root();
 
         // all Verus PoS chains need this data in the block at all times
-        if ( ASSETCHAINS_LWMAPOS || ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED == 0 || KOMODO_MININGTHREADS > 0 )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED == 0 || KOMODO_MININGTHREADS > 0 )
         {
             UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
             pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
@@ -1706,7 +1704,7 @@ void static BitcoinMiner()
                 return;
         }
 
-        if ((nThreads == 0 || !fGenerate) && (VERUS_MINTBLOCKS == 0 || pwallet == NULL))
+        if ((nThreads == 0 || !fGenerate) && pwallet == NULL)
             return;
 
         minerThreads = new boost::thread_group();
