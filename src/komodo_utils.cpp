@@ -658,45 +658,21 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
 // from all other blocks. the sequence is extremely likely, but not guaranteed to be unique for each block chain
 uint64_t komodo_block_prg(uint32_t nHeight)
 {
-    if (strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 || nHeight >= 12800)
+    uint64_t i, result = 0, hashSrc64 = ((uint64_t)ASSETCHAINS_MAGIC << 32) | (uint64_t)nHeight;
+    uint8_t hashSrc[8];
+    bits256 hashResult;
+
+    for ( i = 0; i < sizeof(hashSrc); i++ )
     {
-        uint64_t i, result = 0, hashSrc64 = ((uint64_t)ASSETCHAINS_MAGIC << 32) | (uint64_t)nHeight;
-        uint8_t hashSrc[8];
-        bits256 hashResult;
-
-        for ( i = 0; i < sizeof(hashSrc); i++ )
-        {
-            uint64_t x = hashSrc64 >> (i * 8);
-            hashSrc[i] = (uint8_t)(x & 0xff);
-        }
-        vcalc_sha256(0, hashResult.bytes, hashSrc, sizeof(hashSrc));
-        for ( i = 0; i < 8; i++ )
-        {
-            result = (result << 8) | hashResult.bytes[i];
-        }
-        return result;
+        uint64_t x = hashSrc64 >> (i * 8);
+        hashSrc[i] = (uint8_t)(x & 0xff);
     }
-    else
+    vcalc_sha256(0, hashResult.bytes, hashSrc, sizeof(hashSrc));
+    for ( i = 0; i < 8; i++ )
     {
-        int i;
-        uint8_t hashSrc[8];
-        uint64_t result=0, hashSrc64 = (uint64_t)ASSETCHAINS_MAGIC << 32 + nHeight;
-        bits256 hashResult;
-
-        for ( i = 0; i < sizeof(hashSrc); i++ )
-        {
-            hashSrc[i] = hashSrc64 & 0xff;
-            hashSrc64 >>= 8;
-            int8_t b = hashSrc[i];
-        }
-
-        vcalc_sha256(0, hashResult.bytes, hashSrc, sizeof(hashSrc));
-        for ( i = 0; i < 8; i++ )
-        {
-            result = (result << 8) + hashResult.bytes[i];
-        }
-        return result;
+        result = (result << 8) | hashResult.bytes[i];
     }
+    return result;
 }
 
 // given a block height, this returns the unlock time for that block height, derived from
@@ -710,19 +686,8 @@ int64_t komodo_block_unlocktime(uint32_t nHeight)
         unlocktime = ASSETCHAINS_TIMEUNLOCKTO;
     else
     {
-        if (strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 || nHeight >= 12800)
-        {
-            unlocktime = komodo_block_prg(nHeight) % (ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM);
-            unlocktime += ASSETCHAINS_TIMEUNLOCKFROM;
-        }
-        else
-        {
-            unlocktime = komodo_block_prg(nHeight) / (0xffffffffffffffff / ((ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM) + 1));
-            // boundary and power of 2 can make it exceed to time by 1
-            unlocktime = unlocktime + ASSETCHAINS_TIMEUNLOCKFROM;
-            if (unlocktime > ASSETCHAINS_TIMEUNLOCKTO)
-                unlocktime--;
-        }
+        unlocktime = komodo_block_prg(nHeight) % (ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM);
+        unlocktime += ASSETCHAINS_TIMEUNLOCKFROM;
     }
     return ((int64_t)unlocktime);
 }
@@ -1793,6 +1758,9 @@ void komodo_args(char *argv0)
 
         strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
 
+        /* VRSC chain is incompatible with Komodo daemon */
+        assert(strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0);
+
         MAX_MONEY = komodo_max_money();
 
         if ( (baseid = komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
@@ -1930,8 +1898,6 @@ void komodo_args(char *argv0)
             ASSETCHAINS_HALVING[0] *= 5;
             fprintf(stderr,"PIRATE halving changed to %d %.1f days ASSETCHAINS_LASTERA.%llu\n",(int32_t)ASSETCHAINS_HALVING[0],(double)ASSETCHAINS_HALVING[0]/1440,(long long)ASSETCHAINS_LASTERA);
         }
-        else if ( strcmp("VRSC",ASSETCHAINS_SYMBOL) == 0 )
-            dpowconfs = 0;
         else if ( ASSETCHAINS_PRIVATE != 0 )
         {
             fprintf(stderr,"-ac_private for a non-PIRATE chain is not supported. The only reason to have an -ac_private chain is for total privacy and that is best achieved with the largest anon set. PIRATE has that and it is recommended to just use PIRATE\n");
