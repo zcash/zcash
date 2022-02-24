@@ -2093,8 +2093,18 @@ bool CWallet::IsMine(const CTransaction& tx)
     return false;
 }
 
+/*
+    Before Verus changes CWallet::IsMine(const CTransaction& tx) called other version
+    of IsMine for each vout: CWallet::IsMine(const CTxOut& txout), so now we have two
+    similar functions:
+        - isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum) (wallet.cpp)
+        - isminetype IsMineInner(const CKeyStore& keystore, const CScript& _scriptPubKey, IsMineSigVersion sigversion) (wallet_ismine.cpp)
+    TODO: sort this out (!)
+*/
+
 // special case handling for non-standard/Verus OP_RETURN script outputs, which need the transaction
 // to determine ownership
+
 isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
 {
     vector<valtype> vSolutions;
@@ -2206,6 +2216,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
 
     return ISMINE_NO;
 }
+
 
 bool CWallet::IsFromMe(const CTransaction& tx) const
 {
