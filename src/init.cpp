@@ -223,7 +223,6 @@ void Shutdown()
     /// module was initialized.
     static char shutoffstr[128];
     sprintf(shutoffstr,"%s-shutoff",ASSETCHAINS_SYMBOL);
-    //RenameThread("verus-shutoff");
     RenameThread(shutoffstr);
     mempool.AddTransactionsUpdated(1);
 
@@ -605,7 +604,6 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-ac_timelockgte",  _("Timelocked coinbase minimum amount to be locked"));
     strUsage += HelpMessageOpt("-ac_timelockto",   _("Timelocked coinbase stop height"));
     strUsage += HelpMessageOpt("-ac_txpow", _("Enforce transaction-rate limit, default 0"));
-    strUsage += HelpMessageOpt("-ac_veruspos", _("Use Verus Proof-Of-Stake (-ac_veruspos=50) default 0"));
 
     return strUsage;
 }
