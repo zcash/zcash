@@ -1644,9 +1644,6 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     return(isPoS != 0);
 }
 
-bool GetStakeParams(const CTransaction &stakeTx, CStakeParams &stakeParams);
-bool ValidateMatchingStake(const CTransaction &ccTx, uint32_t voutNum, const CTransaction &stakeTx, bool &cheating);
-
 uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount)
 {
     int8_t curEra = 0; int64_t ret = 0;
