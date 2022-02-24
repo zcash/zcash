@@ -60,7 +60,7 @@ namespace TestHarakaRemoval {
         EXPECT_EQ(HexStr(ss), stream_genesis_block_diskindex_hex);
     }
 
-    #define PRG_VALUES_BEFORE_PR 1
+    //#define PRG_VALUES_BEFORE_PR 1
     TEST(TestHarakaRemoval, test_block_prg) {
 
         EXPECT_EQ(ASSETCHAINS_SYMBOL[0], 0);
@@ -71,8 +71,12 @@ namespace TestHarakaRemoval {
         ASSETCHAINS_TIMEUNLOCKTO = 1180800;
 
         uint32_t blockHeights[] = {0, 1, 2, 777, 12799, 12800, 12801, 77777};
+
         uint64_t prgs_before[] = {0x6aa022c76ea23202ULL, 0xa4343592ba79a12bULL, 0x8492b17946e3552eULL, 0x621f743cd167c10bULL, 0x7ea1b1eacc9c250aULL, 0xb92db22ac0811ea7ULL, 0x319262efefeb69ddULL, 0x5522d49c081b0043ULL};
         int64_t unlocktimes_before[] = {1096258, 270251, 355694, 691211, 486730, 731303, 1017117, 212419};
+
+        uint64_t prgs_after[] = {0x1b42e023859afad2ULL, 0xc6168584c5efc09cULL, 0x7d593d18594511c0ULL, 0xad7eac80b7188a0cULL, 0x59003b61d7bf2c21ULL, 0x73c53cc4b45e9b90ULL, 0x4ccd186d27aa79a5ULL, 0xcd983da802179b26ULL};
+        int64_t unlocktimes_after[] = {433234, 339804, 288576, 505676, 1172513, 976336, 359589, 1098534};
 
         #ifdef PRG_VALUES_BEFORE_PR
         /*
@@ -88,6 +92,18 @@ namespace TestHarakaRemoval {
 
             EXPECT_EQ(komodo_block_prg(blockHeights[i]), prgs_before[i]);
             EXPECT_EQ(komodo_block_unlocktime(blockHeights[i]), unlocktimes_before[i]);
+
+        }
+        #else
+        /*
+            Behavior after:
+            - use sha256 always
+
+        */
+        for (size_t i = 0; i < sizeof(blockHeights)/sizeof(blockHeights[0]); i++) {
+
+            EXPECT_EQ(komodo_block_prg(blockHeights[i]), prgs_after[i]);
+            EXPECT_EQ(komodo_block_unlocktime(blockHeights[i]), unlocktimes_after[i]);
 
         }
         #endif
