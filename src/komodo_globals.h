@@ -93,18 +93,20 @@ uint8_t ASSETCHAINS_CCDISABLES[256];
 std::vector<std::string> ASSETCHAINS_PRICES,ASSETCHAINS_STOCKS;
 
 #define _ASSETCHAINS_EQUIHASH 0
-uint32_t ASSETCHAINS_NUMALGOS = 3;
+
+uint32_t ASSETCHAINS_NUMALGOS = 1;
 uint32_t ASSETCHAINS_EQUIHASH = _ASSETCHAINS_EQUIHASH;
-uint32_t ASSETCHAINS_VERUSHASH = 1;
-uint32_t ASSETCHAINS_VERUSHASHV1_1 = 2;
-const char *ASSETCHAINS_ALGORITHMS[] = {"equihash", "verushash", "verushash11"};
-uint64_t ASSETCHAINS_NONCEMASK[] = {0xffff,0xfffffff,0xfffffff};
-uint32_t ASSETCHAINS_NONCESHIFT[] = {32,16,16};
-uint32_t ASSETCHAINS_HASHESPERROUND[] = {1,4096,4096};
-uint32_t ASSETCHAINS_ALGO = _ASSETCHAINS_EQUIHASH;
+
+const char *ASSETCHAINS_ALGORITHMS[]    = { "equihash" };
+uint64_t ASSETCHAINS_NONCEMASK[]        = { 0xffff };
+uint32_t ASSETCHAINS_NONCESHIFT[]       = { 32 };
+uint32_t ASSETCHAINS_HASHESPERROUND[]   = { 1 };
 // min diff returned from GetNextWorkRequired needs to be added here for each algo, so they can work with ac_staked.
-uint32_t ASSETCHAINS_MINDIFF[] = {537857807,504303375,487526159};
-                                            // ^ wrong!
+uint32_t ASSETCHAINS_MINDIFF[]          = { 537857807 }; // KOMODO_MINDIFF_NBITS = 0x200f0f0f
+
+uint32_t ASSETCHAINS_ALGO = _ASSETCHAINS_EQUIHASH;
+
+
 // Verus proof of stake controls
 int32_t ASSETCHAINS_LWMAPOS = 0;        // percentage of blocks should be PoS
 int32_t VERUS_BLOCK_POSUNITS = 1024;    // one block is 1000 units
