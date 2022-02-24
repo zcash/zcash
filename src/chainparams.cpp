@@ -104,7 +104,7 @@ public:
         strNetworkID = "main";
         strCurrencyUnits = "KMD";
         bip44CoinType = 141; // As registered in https://github.com/satoshilabs/slips/blob/master/slip-0044.md 
-        consensus.fCoinbaseMustBeProtected = false; // true this is only true wuth Verus and enforced after block 12800
+        consensus.fCoinbaseMustBeProtected = false;
         consensus.nSubsidySlowStartInterval = 20000;
         consensus.nSubsidyHalvingInterval = 840000;
         consensus.nMajorityEnforceBlockUpgrade = 750;
