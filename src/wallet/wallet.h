@@ -771,9 +771,9 @@ public:
         return requireSpendingKeys;
     }
 
-    bool SelectsTransparent();
-    bool SelectsSprout();
-    bool SelectsSapling();
+    bool SelectsTransparent() const;
+    bool SelectsSprout() const;
+    bool SelectsSapling() const;
 };
 
 class SpendableInputs {

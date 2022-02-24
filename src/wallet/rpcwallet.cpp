@@ -27,6 +27,7 @@
 #include "primitives/transaction.h"
 #include "zcbenchmarks.h"
 #include "script/interpreter.h"
+#include "zcash/Zcash.h"
 #include "zcash/Address.hpp"
 #include "zcash/address/zip32.h"
 
@@ -4352,43 +4353,16 @@ size_t EstimateTxSize(
         int nextBlockHeight) {
     CMutableTransaction mtx;
     mtx.fOverwintered = true;
-    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-    mtx.nVersion = SAPLING_TX_VERSION;
+    mtx.nConsensusBranchId = CurrentEpochBranchId(nextBlockHeight, Params().GetConsensus());
 
-    bool fromTaddr = std::visit(match {
-        [&](const AccountZTXOPattern& acct) {
-            return
-                acct.GetReceiverTypes().empty() ||
-                acct.GetReceiverTypes().count(ReceiverType::P2PKH) > 0 ||
-                acct.GetReceiverTypes().count(ReceiverType::P2SH) > 0;
-        },
-        [&](const CKeyID& keyId) {
-            return true;
-        },
-        [&](const CScriptID& scriptId) {
-            return true;
-        },
-        [&](const libzcash::UnifiedFullViewingKey& ufvk) {
-            return ufvk.GetTransparentKey().has_value();
-        },
-        [&](const libzcash::SproutPaymentAddress& addr) {
-            return false;
-        },
-        [&](const libzcash::SproutViewingKey& addr) {
-            return false;
-        },
-        [&](const libzcash::SaplingPaymentAddress& addr) {
-            return false;
-        },
-        [&](const libzcash::SaplingExtendedFullViewingKey& addr) {
-            return false;
-        }
-    }, ztxoSelector.GetPattern());
+    bool fromSprout = ztxoSelector.SelectsSprout();
+    bool fromTaddr = ztxoSelector.SelectsTransparent();
 
     // As a sanity check, estimate and verify that the size of the transaction will be valid.
     // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
     size_t txsize = 0;
     size_t taddrRecipientCount = 0;
+    size_t orchardRecipientCount = 0;
     for (const SendManyRecipient& recipient : recipients) {
         std::visit(match {
             [&](const CKeyID&) {
@@ -4405,11 +4379,25 @@ size_t EstimateTxSize(
                 jsdesc.proof = GrothProof();
                 mtx.vJoinSplit.push_back(jsdesc);
             },
-            [&](const libzcash::UnifiedAddress& ua) {
-                // FIXME
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Unified addresses not yet supported.");
+            [&](const libzcash::OrchardRawAddress& addr) {
+                if (fromSprout) {
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER, 
+                        "Sending funds from a Sprout address to a Unified Address is not supported by z_sendmany");
+                }
+                orchardRecipientCount += 1;
             }
         }, recipient.address);
+    }
+
+    bool nu5Active = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_NU5);
+
+    if (fromSprout || !nu5Active) {
+        mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+        mtx.nVersion = SAPLING_TX_VERSION;        
+    } else {
+        mtx.nVersionGroupId = ZIP225_VERSION_GROUP_ID;
+        mtx.nVersion = ZIP225_TX_VERSION;
     }
 
     CTransaction tx(mtx);
@@ -4420,6 +4408,12 @@ size_t EstimateTxSize(
     }
     txsize += CTXOUT_REGULAR_SIZE * taddrRecipientCount;
 
+    if (orchardRecipientCount > 0) {
+        // - The Orchard transaction builder pads to a minimum of 2 actions.
+        // - We subtract 1 because `GetSerializeSize(tx, ...)` already counts
+        //   `ZC_ZIP225_ORCHARD_NUM_ACTIONS_BASE_SIZE`.
+        txsize += ZC_ZIP225_ORCHARD_BASE_SIZE - 1 + ZC_ZIP225_ORCHARD_MARGINAL_SIZE * std::max(2, (int) orchardRecipientCount);
+    }
     return txsize;
 }
 
