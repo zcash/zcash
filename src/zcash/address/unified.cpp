@@ -31,14 +31,11 @@ bool libzcash::HasTransparent(const std::set<ReceiverType>& receiverTypes) {
 }
 
 Receiver libzcash::RecipientAddressToReceiver(const RecipientAddress& recipient) {
-    Receiver recipientReceiver;
-    std::visit(match {
-        [&](const CKeyID& key) { recipientReceiver = key; },
-        [&](const CScriptID& scriptId) { recipientReceiver = scriptId; },
-        [&](const libzcash::SaplingPaymentAddress& addr) { recipientReceiver = addr; }
+    return std::visit(match {
+        [](const CKeyID& key) { return Receiver(key); },
+        [](const CScriptID& scriptId) { return Receiver(scriptId); },
+        [](const libzcash::SaplingPaymentAddress& addr) { return Receiver(addr); }
     }, recipient);
-
-    return recipientReceiver;
 }
 
 std::optional<ZcashdUnifiedSpendingKey> ZcashdUnifiedSpendingKey::ForAccount(

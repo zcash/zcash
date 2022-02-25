@@ -367,6 +367,10 @@ class CSerializeRecipientAddress {
                     recipient = saplingAddr;
                     break;
                 }
+                case libzcash::ReceiverType::Orchard: {
+                    // TODO ORCHARD: Handle when we add Orchard to RecipientAddress
+                    break;
+                }
             }
         }
 
