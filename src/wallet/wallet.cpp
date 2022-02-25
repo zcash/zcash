@@ -1955,6 +1955,39 @@ SpendableInputs CWallet::FindSpendableInputs(
         }
     }
 
+    // for Orchard, we select both the internal and external IVKs.
+    auto orchardIvks = std::visit(match {
+        [&](const libzcash::UnifiedFullViewingKey& ufvk) -> std::vector<OrchardIncomingViewingKey> {
+            auto fvk = ufvk.GetOrchardKey();
+            if (fvk.has_value()) {
+                return {fvk->ToIncomingViewingKey(), fvk->ToInternalIncomingViewingKey()};
+            }
+            return {};
+        },
+        [&](const AccountZTXOPattern& acct) -> std::vector<OrchardIncomingViewingKey> {
+            auto ufvk = GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
+            if (ufvk.has_value()) {
+                auto fvk = ufvk->GetOrchardKey();
+                if (fvk.has_value()) {
+                    return {fvk->ToIncomingViewingKey(), fvk->ToInternalIncomingViewingKey()};
+                }
+            }
+            return {};
+        },
+        [&](const auto& addr) -> std::vector<OrchardIncomingViewingKey> { return {}; }
+    }, selector.GetPattern());
+
+    for (const auto& ivk : orchardIvks) {
+        // TODO ORCHARD: Allow the minimum number of confirmations
+        // to be specified
+        std::vector<OrchardNoteMetadata> incomingNotes;
+        orchardWallet.GetFilteredNotes(incomingNotes, ivk, true, true, true);
+        unspent.orchardNoteMetadata.insert(
+                unspent.orchardNoteMetadata.begin(),
+                incomingNotes.begin(),
+                incomingNotes.end());
+    }
+
     return unspent;
 }
 
