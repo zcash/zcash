@@ -81,15 +81,6 @@ struct JSDescriptionInfo {
     );
 };
 
-struct TransparentInputInfo {
-    CScript scriptPubKey;
-    CAmount value;
-
-    TransparentInputInfo(
-        CScript scriptPubKey,
-        CAmount value) : scriptPubKey(scriptPubKey), value(value) {}
-};
-
 class TransactionBuilderResult {
 private:
     std::optional<CTransaction> maybeTx;
@@ -120,7 +111,7 @@ private:
     std::vector<OutputDescriptionInfo> outputs;
     std::vector<libzcash::JSInput> jsInputs;
     std::vector<libzcash::JSOutput> jsOutputs;
-    std::vector<TransparentInputInfo> tIns;
+    std::vector<CTxOut> tIns;
 
     std::optional<std::pair<uint256, libzcash::SaplingPaymentAddress>> saplingChangeAddr;
     std::optional<libzcash::SproutPaymentAddress> sproutChangeAddr;

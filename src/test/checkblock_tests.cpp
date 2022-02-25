@@ -11,8 +11,6 @@
 #include "utiltime.h"
 #include "zcash/Proof.hpp"
 
-#include <rust/orchard.h>
-
 #include <cstdio>
 
 #include <boost/test/unit_test.hpp>
@@ -59,8 +57,7 @@ BOOST_AUTO_TEST_CASE(May15)
         // After May 15'th, big blocks are OK:
         forkingBlock.nTime = tMay15; // Invalidates PoW
         auto verifier = ProofVerifier::Strict();
-        auto orchardAuth = orchard::AuthValidator::Disabled(); // Block is before NU5
-        BOOST_CHECK(CheckBlock(forkingBlock, state, Params(), verifier, orchardAuth, false, false, true));
+        BOOST_CHECK(CheckBlock(forkingBlock, state, Params(), verifier, false, false, true));
     }
 
     SetMockTime(0);

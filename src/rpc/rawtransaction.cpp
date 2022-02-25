@@ -1037,12 +1037,25 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         }
     }
 
+    std::vector<CTxOut> allPrevOutputs;
+    // We do not need to know the inputs for pre-v5 transactions.
+    // We can't sign v5+ transactions without knowing all inputs.
+    if (mergedTx.nVersion >= ZIP225_TX_VERSION) {
+        if (!view.HaveInputs(mergedTx)) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot sign v5 transactions without knowing all inputs");
+        }
+        for (const auto& input : mergedTx.vin) {
+            allPrevOutputs.push_back(view.GetOutputFor(input));
+        }
+    }
+
     // Script verification errors
     UniValue vErrors(UniValue::VARR);
 
     // Use CTransaction for the constant parts of the
     // transaction to avoid rehashing.
     const CTransaction txConst(mergedTx);
+    const PrecomputedTransactionData txdata(txConst, allPrevOutputs);
     // Sign what we can:
     for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
         CTxIn& txin = mergedTx.vin[i];
@@ -1057,17 +1070,17 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         SignatureData sigdata;
         // Only sign SIGHASH_SINGLE if there's a corresponding output:
         if (!fHashSingle || (i < mergedTx.vout.size()))
-            ProduceSignature(MutableTransactionSignatureCreator(&keystore, &mergedTx, i, amount, nHashType), prevPubKey, sigdata, consensusBranchId);
+            ProduceSignature(MutableTransactionSignatureCreator(&keystore, &mergedTx, txdata, i, amount, nHashType), prevPubKey, sigdata, consensusBranchId);
 
         // ... and merge in other signatures:
         for (const CMutableTransaction& txv : txVariants) {
-            sigdata = CombineSignatures(prevPubKey, TransactionSignatureChecker(&txConst, i, amount), sigdata, DataFromTransaction(txv, i), consensusBranchId);
+            sigdata = CombineSignatures(prevPubKey, TransactionSignatureChecker(&txConst, txdata, i, amount), sigdata, DataFromTransaction(txv, i), consensusBranchId);
         }
 
         UpdateTransaction(mergedTx, i, sigdata);
 
         ScriptError serror = SCRIPT_ERR_OK;
-        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, TransactionSignatureChecker(&txConst, i, amount), consensusBranchId, &serror)) {
+        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, TransactionSignatureChecker(&txConst, txdata, i, amount), consensusBranchId, &serror)) {
             TxInErrorToJSON(txin, vErrors, ScriptErrorString(serror));
         }
     }

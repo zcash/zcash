@@ -1224,26 +1224,48 @@ bool ContextualCheckTransaction(
         // Rules that apply generally before the next release epoch
     }
 
+    return true;
+}
+
+bool ContextualCheckShieldedInputs(
+        const CTransaction& tx,
+        const PrecomputedTransactionData& txdata,
+        CValidationState &state,
+        orchard::AuthValidator& orchardAuth,
+        const Consensus::Params& consensus,
+        uint32_t consensusBranchId,
+        bool nu5Active,
+        bool isMined,
+        bool (*isInitBlockDownload)(const Consensus::Params&))
+{
+    const int DOS_LEVEL_BLOCK = 100;
+    // DoS level set to 10 to be more forgiving.
+    const int DOS_LEVEL_MEMPOOL = 10;
+
+    // For rules that are relaxing (or might become relaxing when a future
+    // network upgrade is implemented), we need to account for IBD mode.
+    auto dosLevelPotentiallyRelaxing = isMined ? DOS_LEVEL_BLOCK : (
+        isInitBlockDownload(consensus) ? 0 : DOS_LEVEL_MEMPOOL);
+
     auto prevConsensusBranchId = PrevEpochBranchId(consensusBranchId, consensus);
     uint256 dataToBeSigned;
     uint256 prevDataToBeSigned;
 
     // Create signature hashes for shielded components.
-    // Orchard signatures are checked in CheckTransaction, so we
-    // don't need to take Orchard into account here.
     if (!tx.vJoinSplit.empty() ||
         !tx.vShieldedSpend.empty() ||
-        !tx.vShieldedOutput.empty())
+        !tx.vShieldedOutput.empty() ||
+        tx.GetOrchardBundle().IsPresent())
     {
         // Empty output script.
         CScript scriptCode;
         try {
-            dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
-            prevDataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, prevConsensusBranchId);
+            dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
+            prevDataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, prevConsensusBranchId, txdata);
         } catch (std::logic_error ex) {
             // A logic error should never occur because we pass NOT_AN_INPUT and
             // SIGHASH_ALL to SignatureHash().
-            return state.DoS(100, error("ContextualCheckTransaction(): error computing signature hash"),
+            return state.DoS(100, error("ContextualCheckShieldedInputs(): error computing signature hash"),
                              REJECT_INVALID, "error-computing-signature-hash");
         }
     }
@@ -1267,7 +1289,7 @@ bool ContextualCheckTransaction(
             }
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
-                error("ContextualCheckTransaction(): invalid joinsplit signature"),
+                error("ContextualCheckShieldedInputs(): invalid joinsplit signature"),
                 REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
         }
     }
@@ -1297,7 +1319,7 @@ bool ContextualCheckTransaction(
                 librustzcash_sapling_verification_ctx_free(ctx);
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
-                    error("ContextualCheckTransaction(): Sapling spend description invalid"),
+                    error("ContextualCheckShieldedInputs(): Sapling spend description invalid"),
                     REJECT_INVALID, "bad-txns-sapling-spend-description-invalid");
             }
         }
@@ -1315,7 +1337,7 @@ bool ContextualCheckTransaction(
                 // This should be a non-contextual check, but we check it here
                 // as we need to pass over the outputs anyway in order to then
                 // call librustzcash_sapling_final_check().
-                return state.DoS(100, error("ContextualCheckTransaction(): Sapling output description invalid"),
+                return state.DoS(100, error("ContextualCheckShieldedInputs(): Sapling output description invalid"),
                                       REJECT_INVALID, "bad-txns-sapling-output-description-invalid");
             }
         }
@@ -1330,19 +1352,22 @@ bool ContextualCheckTransaction(
             librustzcash_sapling_verification_ctx_free(ctx);
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
-                error("ContextualCheckTransaction(): Sapling binding signature invalid"),
+                error("ContextualCheckShieldedInputs(): Sapling binding signature invalid"),
                 REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid");
         }
 
         librustzcash_sapling_verification_ctx_free(ctx);
     }
 
+    // Queue Orchard signatures to be batch-validated.
+    tx.GetOrchardBundle().QueueSignatureValidation(orchardAuth, dataToBeSigned);
+
     return true;
 }
 
 
 bool CheckTransaction(const CTransaction& tx, CValidationState &state,
-                      ProofVerifier& verifier, orchard::AuthValidator& orchardAuth)
+                      ProofVerifier& verifier)
 {
     // Don't count coinbase transactions because mining skews the count
     if (!tx.IsCoinBase()) {
@@ -1373,9 +1398,6 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
                 100, error("CheckTransaction(): Orchard bundle proof does not verify"),
                 REJECT_INVALID, "bad-txns-orchard-verification-failed");
         }
-
-        // Queue Orchard signatures to be batch-validated.
-        orchardBundle.QueueSignatureValidation(orchardAuth, tx.GetHash());
 
         return true;
     }
@@ -1763,12 +1785,8 @@ bool AcceptToMemoryPool(
         return false;
     }
 
-    // This will be a single-transaction batch, which is still more efficient as every
-    // Orchard bundle contains at least two signatures.
-    auto orchardAuth = orchard::AuthValidator::Batch();
-
     auto verifier = ProofVerifier::Strict();
-    if (!CheckTransaction(tx, state, verifier, orchardAuth))
+    if (!CheckTransaction(tx, state, verifier))
         return false;
 
     // Check transaction contextually against the set of consensus rules which apply in the next block to be mined.
@@ -1954,16 +1972,13 @@ bool AcceptToMemoryPool(
                 strprintf("%d > %d", nFees, maxTxFee));
         }
 
-        // Check Orchard bundle authorizations.
-        // This is done near the end to help prevent CPU exhaustion
-        // denial-of-service attacks.
-        if (!orchardAuth.Validate()) {
-            return state.DoS(100, false, REJECT_INVALID, "bad-orchard-bundle-authorization");
-        }
-
         // Check against previous transactions
-        // This is done last to help prevent CPU exhaustion denial-of-service attacks.
-        PrecomputedTransactionData txdata(tx);
+        // This is done near the end to help prevent CPU exhaustion denial-of-service attacks.
+        std::vector<CTxOut> allPrevOutputs;
+        for (const auto& input : tx.vin) {
+            allPrevOutputs.push_back(view.GetOutputFor(input));
+        }
+        PrecomputedTransactionData txdata(tx, allPrevOutputs);
         if (!ContextualCheckInputs(tx, state, view, true, STANDARD_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId))
         {
             return false;
@@ -1982,6 +1997,29 @@ bool AcceptToMemoryPool(
         {
             return error("%s: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s, %s",
                 __func__, hash.ToString(), FormatStateMessage(state));
+        }
+
+        // This will be a single-transaction batch, which is still more efficient as every
+        // Orchard bundle contains at least two signatures.
+        auto orchardAuth = orchard::AuthValidator::Batch();
+
+        // Check shielded input signatures.
+        if (!ContextualCheckShieldedInputs(
+            tx,
+            txdata,
+            state,
+            orchardAuth,
+            chainparams.GetConsensus(),
+            consensusBranchId,
+            chainparams.GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_NU5),
+            false))
+        {
+            return false;
+        }
+
+        // Check Orchard bundle authorizations.
+        if (!orchardAuth.Validate()) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-orchard-bundle-authorization");
         }
 
         {
@@ -2503,7 +2541,7 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight)
 
 bool CScriptCheck::operator()() {
     const CScript &scriptSig = ptxTo->vin[nIn].scriptSig;
-    if (!VerifyScript(scriptSig, scriptPubKey, nFlags, CachingTransactionSignatureChecker(ptxTo, nIn, amount, cacheStore, *txdata), consensusBranchId, &error)) {
+    if (!VerifyScript(scriptSig, scriptPubKey, nFlags, CachingTransactionSignatureChecker(ptxTo, *txdata, nIn, amount, cacheStore), consensusBranchId, &error)) {
         return false;
     }
     return true;
@@ -3017,7 +3055,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     bool fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
 
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
-    if (!CheckBlock(block, state, chainparams, verifier, orchardAuth,
+    if (!CheckBlock(block, state, chainparams, verifier,
         !fJustCheck, !fJustCheck, fCheckTransactions))
     {
         return false;
@@ -3156,6 +3194,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             return state.DoS(100, error("ConnectBlock(): too many sigops"),
                              REJECT_INVALID, "bad-blk-sigops");
 
+        // Coinbase transactions are the only case where this vector will not be the same
+        // length as `tx.vin` (since coinbase transactions have a single synthetic input).
+        // Only shielded coinbase transactions will need to produce sighashes for coinbase
+        // transactions; this is handled in ZIP 244 by having the coinbase sighash be the
+        // txid.
+        std::vector<CTxOut> allPrevOutputs;
+
         if (!tx.IsCoinBase())
         {
             if (!view.HaveInputs(tx))
@@ -3175,13 +3220,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 return state.DoS(100, false, rejectCode, rejectReason);
             }
 
+            for (const auto& input : tx.vin) {
+                allPrevOutputs.push_back(view.GetOutputFor(input));
+            }
+
             // insightexplorer
             // https://github.com/bitpay/bitcoin/commit/017f548ea6d89423ef568117447e61dd5707ec42#diff-7ec3c68a81efff79b6ca22ac1f1eabbaR2597
             if (fAddressIndex || fSpentIndex) {
                 for (size_t j = 0; j < tx.vin.size(); j++) {
 
                     const CTxIn input = tx.vin[j];
-                    const CTxOut &prevout = view.GetOutputFor(tx.vin[j]);
+                    const CTxOut &prevout = allPrevOutputs[j];
                     CScript::ScriptType scriptType = prevout.scriptPubKey.GetType();
                     const uint160 addrHash = prevout.scriptPubKey.AddressHash();
                     if (fAddressIndex && scriptType != CScript::UNKNOWN) {
@@ -3216,7 +3265,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                                  REJECT_INVALID, "bad-blk-sigops");
         }
 
-        txdata.emplace_back(tx);
+        txdata.emplace_back(tx, allPrevOutputs);
 
         if (!tx.IsCoinBase())
         {
@@ -3224,10 +3273,27 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
-            if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata[i], chainparams.GetConsensus(), consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
+            if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata.back(), chainparams.GetConsensus(), consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
             control.Add(vChecks);
+        }
+
+        // Check shielded inputs.
+        if (!ContextualCheckShieldedInputs(
+            tx,
+            txdata.back(),
+            state,
+            orchardAuth,
+            chainparams.GetConsensus(),
+            consensusBranchId,
+            chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5),
+            true))
+        {
+            return error(
+                "ConnectBlock(): ContextualCheckShieldedInputs() on %s failed with %s",
+                tx.GetHash().ToString(),
+                FormatStateMessage(state));
         }
 
         // insightexplorer
@@ -4578,7 +4644,6 @@ bool CheckBlock(const CBlock& block,
                 CValidationState& state,
                 const CChainParams& chainparams,
                 ProofVerifier& verifier,
-                orchard::AuthValidator& orchardAuth,
                 bool fCheckPOW,
                 bool fCheckMerkleRoot,
                 bool fCheckTransactions)
@@ -4629,7 +4694,7 @@ bool CheckBlock(const CBlock& block,
 
     // Check transactions
     for (const CTransaction& tx : block.vtx)
-        if (!CheckTransaction(tx, state, verifier, orchardAuth))
+        if (!CheckTransaction(tx, state, verifier))
             return error("CheckBlock(): CheckTransaction of %s failed with %s",
                 tx.GetHash().ToString(),
                 FormatStateMessage(state));
@@ -4842,7 +4907,7 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
  * Store block on disk.
  * If dbp is non-NULL, the file is known to already reside on disk.
  *
- * JoinSplit proofs and Orchard authorizations are not verified here; the only
+ * JoinSplit proofs are not verified here; the only
  * caller of AcceptBlock (ProcessNewBlock) later invokes ActivateBestChain,
  * which ultimately calls ConnectBlock in a manner that can verify the proofs.
  */
@@ -4879,10 +4944,9 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
 
     // See method docstring for why these are always disabled.
     auto verifier = ProofVerifier::Disabled();
-    auto orchardAuth = orchard::AuthValidator::Disabled();
 
     bool fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
-    if ((!CheckBlock(block, state, chainparams, verifier, orchardAuth, true, true, fCheckTransactions)) ||
+    if ((!CheckBlock(block, state, chainparams, verifier, true, true, fCheckTransactions)) ||
          !ContextualCheckBlock(block, state, chainparams, pindex->pprev, fCheckTransactions)) {
         if (state.IsInvalid() && !state.CorruptionPossible()) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
@@ -4971,15 +5035,14 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
     indexDummy.pprev = pindexPrev;
     indexDummy.nHeight = pindexPrev->nHeight + 1;
 
-    // JoinSplit proofs and Orchard authorizations are verified in ConnectBlock
+    // JoinSplit proofs are verified in ConnectBlock
     auto verifier = ProofVerifier::Disabled();
-    auto orchardAuth = orchard::AuthValidator::Disabled();
 
     // NOTE: CheckBlockHeader is called by CheckBlock
     if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev))
         return false;
     // The following may be duplicative of the `CheckBlock` call within `ConnectBlock`
-    if (!CheckBlock(block, state, chainparams, verifier, orchardAuth, false, fCheckMerkleRoot, true))
+    if (!CheckBlock(block, state, chainparams, verifier, false, fCheckMerkleRoot, true))
         return false;
     if (!ContextualCheckBlock(block, state, chainparams, pindexPrev, true))
         return false;
@@ -5385,10 +5448,6 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
 
     for (CBlockIndex* pindex = chainActive.Tip(); pindex && pindex->pprev; pindex = pindex->pprev)
     {
-        // We may as well check Orchard authorizations if we are checking
-        // transactions, since we can batch-validate them.
-        auto orchardAuth = orchard::AuthValidator::Batch();
-
         boost::this_thread::interruption_point();
         uiInterface.ShowProgress(_("Verifying blocks..."), std::max(1, std::min(99, (int)(((double)(chainActive.Height() - pindex->nHeight)) / (double)nCheckDepth * (nCheckLevel >= 4 ? 50 : 100)))));
         if (pindex->nHeight < chainActive.Height()-nCheckDepth)
@@ -5401,7 +5460,7 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
 
         // check level 1: verify block validity
         fCheckTransactions = ShouldCheckTransactions(chainparams, pindex);
-        if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams, verifier, orchardAuth, true, true, fCheckTransactions))
+        if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams, verifier, true, true, fCheckTransactions))
             return error("VerifyDB(): *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
 
         // check level 2: verify undo validity
@@ -5428,10 +5487,6 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
             } else {
                 nGoodTransactions += block.vtx.size();
             }
-        }
-
-        if (!orchardAuth.Validate()) {
-            return error("VerifyDB(): Orchard batch validation failed for block at height %d", pindex->nHeight);
         }
 
         if (ShutdownRequested())

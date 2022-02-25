@@ -261,7 +261,7 @@ void TransactionBuilder::AddTransparentInput(COutPoint utxo, CScript scriptPubKe
     }
 
     mtx.vin.emplace_back(utxo);
-    tIns.emplace_back(scriptPubKey, value);
+    tIns.emplace_back(value, scriptPubKey);
 }
 
 void TransactionBuilder::AddTransparentOutput(const CTxDestination& to, CAmount value)
@@ -322,7 +322,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         change -= jsOutput.value;
     }
     for (auto tIn : tIns) {
-        change += tIn.value;
+        change += tIn.nValue;
     }
     for (auto tOut : mtx.vout) {
         change -= tOut.nValue;
@@ -446,12 +446,13 @@ TransactionBuilderResult TransactionBuilder::Build()
     //
 
     auto consensusBranchId = CurrentEpochBranchId(nHeight, consensusParams);
+    const PrecomputedTransactionData txdata(mtx, tIns);
 
     // Empty output script.
     uint256 dataToBeSigned;
     CScript scriptCode;
     try {
-        dataToBeSigned = SignatureHash(scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
+        dataToBeSigned = SignatureHash(scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
     } catch (std::logic_error ex) {
         librustzcash_sapling_proving_ctx_free(ctx);
         return TransactionBuilderResult("Could not construct signature hash: " + std::string(ex.what()));
@@ -498,7 +499,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         SignatureData sigdata;
         bool signSuccess = ProduceSignature(
             TransactionSignatureCreator(
-                keystore, &txNewConst, nIn, tIn.value, SIGHASH_ALL),
+                keystore, &txNewConst, txdata, nIn, tIn.nValue, SIGHASH_ALL),
             tIn.scriptPubKey, sigdata, consensusBranchId);
 
         if (!signSuccess) {

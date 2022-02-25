@@ -18,8 +18,6 @@
 #include "wallet/wallet.h"
 #include "zcash/Proof.hpp"
 
-#include <rust/orchard.h>
-
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 #include <atomic>
@@ -326,9 +324,8 @@ public:
     bool fAnyUnordered;
     int nFileVersion;
     vector<uint256> vWalletUpgrade;
-    orchard::AuthValidator orchardAuth;
 
-    CWalletScanState(): orchardAuth(orchard::AuthValidator::Batch()) {
+    CWalletScanState() {
         nKeys = nCKeys = nKeyMeta = nZKeys = nCZKeys = nZKeyMeta = nSapZAddrs = 0;
         fIsEncrypted = false;
         fAnyUnordered = false;
@@ -368,7 +365,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             CValidationState state;
             auto verifier = ProofVerifier::Strict();
             if (!(
-                CheckTransaction(wtx, state, verifier, wss.orchardAuth) &&
+                CheckTransaction(wtx, state, verifier) &&
                 (wtx.GetHash() == hash) &&
                 state.IsValid())
             ) {
@@ -927,12 +924,6 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                 LogPrintf("%s\n", strErr);
         }
         pcursor->close();
-
-        // Run the Orchard batch validator; if it fails, treat it like a bad transaction record.
-        if (!wss.orchardAuth.Validate()) {
-            fNoncriticalErrors = true;
-            SoftSetBoolArg("-rescan", true);
-        }
     }
     catch (const boost::thread_interrupted&) {
         throw;
