@@ -726,7 +726,7 @@ std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::Unif
 }
 
 
-void GetMinerAddress(MinerAddress &minerAddress)
+void GetMinerAddress(std::optional<MinerAddress> &minerAddress)
 {
     KeyIO keyIO(Params());
 
@@ -804,8 +804,8 @@ void static BitcoinMiner(const CChainParams& chainparams)
     // Each thread has its own counter
     unsigned int nExtraNonce = 0;
 
-    MinerAddress minerAddress;
-    GetMainSignals().AddressForMining(minerAddress);
+    std::optional<MinerAddress> maybeMinerAddress;
+    GetMainSignals().AddressForMining(maybeMinerAddress);
 
     unsigned int n = chainparams.GetConsensus().nEquihashN;
     unsigned int k = chainparams.GetConsensus().nEquihashK;
@@ -826,9 +826,10 @@ void static BitcoinMiner(const CChainParams& chainparams)
 
     try {
         // Throw an error if no address valid for mining was provided.
-        if (!std::visit(IsValidMinerAddress(), minerAddress)) {
+        if (!(maybeMinerAddress.has_value() && std::visit(IsValidMinerAddress(), maybeMinerAddress.value()))) {
             throw std::runtime_error("No miner address available (mining requires a wallet or -mineraddress)");
         }
+        auto minerAddress = maybeMinerAddress.value();
 
         while (true) {
             if (chainparams.MiningRequiresPeers()) {

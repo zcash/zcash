@@ -186,18 +186,19 @@ UniValue generate(const UniValue& params, bool fHelp)
     int nHeight = 0;
     int nGenerate = params[0].get_int();
 
-    MinerAddress minerAddress;
-    GetMainSignals().AddressForMining(minerAddress);
+    std::optional<MinerAddress> maybeMinerAddress;
+    GetMainSignals().AddressForMining(maybeMinerAddress);
+
+    // Throw an error if no address valid for mining was provided.
+    if (!(maybeMinerAddress.has_value() && std::visit(IsValidMinerAddress(), maybeMinerAddress.value()))) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
+    }
+    auto minerAddress = maybeMinerAddress.value();
 
     // If the keypool is exhausted, no script is returned at all.  Catch this.
     auto resv = std::get_if<boost::shared_ptr<CReserveScript>>(&minerAddress);
     if (resv && !resv->get()) {
         throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
-    }
-
-    // Throw an error if no address valid for mining was provided.
-    if (!std::visit(IsValidMinerAddress(), minerAddress)) {
-        throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
     }
 
     {   // Don't keep cs_main locked
@@ -569,9 +570,14 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     if (IsInitialBlockDownload(Params().GetConsensus()))
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zcash is downloading blocks...");
 
+    std::optional<MinerAddress> maybeMinerAddress;
+    GetMainSignals().AddressForMining(maybeMinerAddress);
 
-    MinerAddress minerAddress;
-    GetMainSignals().AddressForMining(minerAddress);
+    // Throw an error if no address valid for mining was provided.
+    if (!(maybeMinerAddress.has_value() && std::visit(IsValidMinerAddress(), maybeMinerAddress.value()))) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (getblocktemplate requires a wallet or -mineraddress)");
+    }
+    auto minerAddress = maybeMinerAddress.value();
 
     static unsigned int nTransactionsUpdatedLast;
     static std::optional<CMutableTransaction> cached_next_cb_mtx;

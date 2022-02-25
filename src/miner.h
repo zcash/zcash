@@ -89,7 +89,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
 
 #ifdef ENABLE_MINING
 /** Get -mineraddress */
-void GetMinerAddress(MinerAddress &minerAddress);
+void GetMinerAddress(std::optional<MinerAddress> &minerAddress);
 /** Modify the extranonce in a block */
 void IncrementExtraNonce(
     CBlockTemplate* pblocktemplate,
