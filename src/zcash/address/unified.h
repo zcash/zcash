@@ -120,6 +120,8 @@ typedef std::variant<
     CKeyID,
     UnknownReceiver> Receiver;
 
+Receiver RecipientAddressToReceiver(const RecipientAddress& recipient);
+
 /**
  * An internal identifier for a unified full viewing key, derived as a
  * blake2b hash of the serialized form of the UFVK.

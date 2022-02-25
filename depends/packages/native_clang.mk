@@ -18,6 +18,10 @@ $(package)_download_file_aarch64_linux=clang+llvm-$($(package)_version)-aarch64-
 $(package)_file_name_aarch64_linux=clang-llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
 $(package)_sha256_hash_aarch64_linux=968d65d2593850ee9b37fcda074fb7641529bd45d2f976af6c8197de3c22612f
 
+ifneq (,$(wildcard /etc/arch-release))
+$(package)_dependencies=native_libtinfo
+endif
+
 # Ensure we have clang native to the builder, not the target host
 ifneq ($(canonical_host),$(build))
 $(package)_exact_download_path=$($(package)_download_path_$(build_os))

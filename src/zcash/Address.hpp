@@ -66,6 +66,15 @@ class UnifiedAddress {
 public:
     UnifiedAddress() {}
 
+    static std::optional<UnifiedAddress> Parse(const KeyConstants& keyConstants, const std::string& str);
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(receivers);
+    }
+
     /**
      * Adds the given receiver to this unified address.
      *
@@ -77,6 +86,8 @@ public:
      * - The UA would contain both P2PKH and P2SH receivers.
      */
     bool AddReceiver(Receiver receiver);
+
+    bool ContainsReceiver(const Receiver& receiver) const;
 
     const std::vector<Receiver>& GetReceiversAsParsed() const { return receivers; }
 

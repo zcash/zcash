@@ -12,6 +12,7 @@
 #include "proof_verifier.h"
 #include "protocol.h"
 #include "serialize.h"
+#include "script/standard.h"
 #include "sync.h"
 #include "util.h"
 #include "utiltime.h"
@@ -311,6 +312,19 @@ bool CWalletDB::ErasePool(int64_t nPool)
 bool CWalletDB::WriteMinVersion(int nVersion)
 {
     return Write(std::string("minversion"), nVersion);
+}
+
+bool CWalletDB::WriteRecipientMapping(const uint256& txid, const libzcash::RecipientAddress& address, const libzcash::UnifiedAddress& ua)
+{
+    auto recipientReceiver = libzcash::RecipientAddressToReceiver(address);
+    // Check that recipient address exists in given UA.
+    if (!ua.ContainsReceiver(recipientReceiver)) {
+        return false;
+    }
+
+    std::pair<uint256, CSerializeRecipientAddress> key = std::make_pair(txid, CSerializeRecipientAddress(address));
+    std::string uaString = KeyIO(Params()).EncodePaymentAddress(ua);
+    return Write(std::make_pair(std::string("recipientmapping"), key), uaString);
 }
 
 class CWalletScanState {
@@ -844,6 +858,27 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssValue >> networkInfo;
             if (!pwallet->CheckNetworkInfo(networkInfo)) {
                 strErr = "Error in wallet database: unexpected network";
+                return false;
+            }
+        }
+        else if (strType == "recipientmapping")
+        {
+            uint256 txid;
+            std::string rawUa;
+            ssKey >> txid;
+            auto recipient = CSerializeRecipientAddress::Read(ssKey);
+            ssValue >> rawUa;
+
+            auto ua = libzcash::UnifiedAddress::Parse(Params(), rawUa);
+            if (!ua.has_value()) {
+                strErr = "Error in wallet database: non-UnifiedAddress in recipientmapping";
+                return false;
+            }
+
+            auto recipientReceiver = libzcash::RecipientAddressToReceiver(recipient);
+
+            if (!ua.value().ContainsReceiver(recipientReceiver)) {
+                strErr = "Error in wallet database: recipientmapping UA does not contain recipient";
                 return false;
             }
         }
