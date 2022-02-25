@@ -1,6 +1,7 @@
 #ifndef ZC_ADDRESS_H_
 #define ZC_ADDRESS_H_
 
+#include "consensus/params.h"
 #include "key_constants.h"
 #include "pubkey.h"
 #include "key_constants.h"
@@ -134,9 +135,10 @@ public:
 
     /**
      * Return the most-preferred receiver from among the receiver types
-     * that we recognize.
+     * that we recognize and can use at the given block height.
      */
-    std::optional<RecipientAddress> GetPreferredRecipientAddress() const;
+    std::optional<RecipientAddress> GetPreferredRecipientAddress(
+        const Consensus::Params& consensus, int height) const;
 
     friend inline bool operator==(const UnifiedAddress& a, const UnifiedAddress& b) {
         return a.receivers == b.receivers;
@@ -261,25 +263,29 @@ typedef std::variant<
     SproutSpendingKey,
     SaplingExtendedSpendingKey> SpendingKey;
 
-class HasShieldedRecipient {
+class IsShieldedRecipient {
 public:
     bool operator()(const CKeyID& p2pkh) { return false; }
     bool operator()(const CScriptID& p2sh) { return false; }
     bool operator()(const SproutPaymentAddress& addr) { return true; }
     bool operator()(const SaplingPaymentAddress& addr) { return true; }
-    // unified addresses must contain a shielded receiver, so we
-    // consider this to be safe by construction
-    bool operator()(const UnifiedAddress& addr) { return true; }
+    bool operator()(const OrchardRawAddress& addr) { return true; }
 };
 
 class SelectRecipientAddress {
+    const Consensus::Params& consensus;
+    int height;
+
 public:
+    SelectRecipientAddress(const Consensus::Params& consensus, int height) :
+        consensus(consensus), height(height) {}
+
     std::optional<RecipientAddress> operator()(const CKeyID& p2pkh) { return p2pkh; }
     std::optional<RecipientAddress> operator()(const CScriptID& p2sh) { return p2sh; }
     std::optional<RecipientAddress> operator()(const SproutPaymentAddress& addr) { return std::nullopt; }
     std::optional<RecipientAddress> operator()(const SaplingPaymentAddress& addr) { return addr; }
     std::optional<RecipientAddress> operator()(const UnifiedAddress& addr) {
-        return addr.GetPreferredRecipientAddress();
+        return addr.GetPreferredRecipientAddress(consensus, height);
     }
 };
 

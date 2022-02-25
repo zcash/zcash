@@ -90,6 +90,17 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
                             "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
                             "you wish to allow this transaction to proceed anyway.");
                 }
+            },
+            [&](const libzcash::OrchardRawAddress& addr) {
+                txOutputAmounts_.orchard_outputs_total += recipient.amount;
+                if ((ztxoSelector_.SelectsSprout() || ztxoSelector_.SelectsSapling()) && !allowRevealedAmounts_) {
+                    throw JSONRPCError(
+                            RPC_INVALID_PARAMETER,
+                            "Sending between shielded pools is not enabled by default because it will "
+                            "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
+                            "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
+                            "you wish to allow this transaction to proceed anyway.");
+                }
             }
         }, recipient.address);
     }
@@ -176,7 +187,10 @@ void AsyncRPCOperation_sendmany::main() {
 //
 // At least 4. and 5. differ from the Rust transaction builder.
 uint256 AsyncRPCOperation_sendmany::main_impl() {
-    CAmount sendAmount = txOutputAmounts_.sapling_outputs_total + txOutputAmounts_.t_outputs_total;
+    CAmount sendAmount = (
+        txOutputAmounts_.orchard_outputs_total +
+        txOutputAmounts_.sapling_outputs_total +
+        txOutputAmounts_.t_outputs_total);
     CAmount targetAmount = sendAmount + fee_;
 
     builder_.SetFee(fee_);
@@ -268,6 +282,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     LogPrint("zrpcunsafe", "%s: total shielded input: %s (to choose from)\n", getId(), FormatMoney(z_inputs_total));
     LogPrint("zrpc", "%s: total transparent output: %s\n", getId(), FormatMoney(txOutputAmounts_.t_outputs_total));
     LogPrint("zrpcunsafe", "%s: total shielded Sapling output: %s\n", getId(), FormatMoney(txOutputAmounts_.sapling_outputs_total));
+    LogPrint("zrpcunsafe", "%s: total shielded Orchard output: %s\n", getId(), FormatMoney(txOutputAmounts_.orchard_outputs_total));
     LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(fee_));
 
     auto ovks = this->SelectOVKs(spendable);
@@ -409,6 +424,12 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 auto memo = get_memo_from_hex_string(r.memo.has_value() ? r.memo.value() : "");
 
                 builder_.AddSaplingOutput(ovks.second, addr, value, memo);
+            },
+            [&](const libzcash::OrchardRawAddress& addr) {
+                auto value = r.amount;
+                auto memo = r.memo.has_value() ? std::optional(get_memo_from_hex_string(r.memo.value())) : std::nullopt;
+
+                builder_.AddOrchardOutput(ovks.second, addr, value, memo);
             }
         }, r.address);
     }

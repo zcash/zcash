@@ -43,7 +43,8 @@ typedef std::variant<
 typedef std::variant<
     CKeyID,
     CScriptID,
-    libzcash::SaplingPaymentAddress> RecipientAddress;
+    libzcash::SaplingPaymentAddress,
+    libzcash::OrchardRawAddress> RecipientAddress;
 
 /**
  * An enumeration of the types of change that a transaction may produce.  It is

@@ -50,6 +50,7 @@ unsigned int nTxConfirmTarget = DEFAULT_TX_CONFIRM_TARGET;
 bool bSpendZeroConfChange = DEFAULT_SPEND_ZEROCONF_CHANGE;
 bool fSendFreeTransactions = DEFAULT_SEND_FREE_TRANSACTIONS;
 bool fPayAtLeastCustomFee = true;
+unsigned int nOrchardAnchorConfirmations = DEFAULT_ORCHARD_ANCHOR_CONFIRMATIONS;
 
 const char * DEFAULT_WALLET_DAT = "wallet.dat";
 
@@ -5963,6 +5964,13 @@ bool CWallet::ParameterInteraction(const CChainParams& params)
         if (!address.has_value() || std::get_if<libzcash::SaplingPaymentAddress>(&address.value()) == nullptr) {
             return UIError(_("-migrationdestaddress must be a valid Sapling address."));
         }
+    }
+    if (mapArgs.count("-orchardanchorconfirmations")) {
+        int64_t confirmations = atoi64(mapArgs["-orchardanchorconfirmations"]);
+        if (confirmations < 1) {
+            return UIError(strprintf(_("Invalid value for -orchardanchorconfirmations='%u' (must be least 1)"), confirmations));
+        }
+        nOrchardAnchorConfirmations = confirmations;
     }
 
     return true;

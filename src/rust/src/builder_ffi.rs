@@ -1,10 +1,12 @@
 use std::convert::TryInto;
 use std::ptr;
 
+use incrementalmerkletree::Hashable;
 use orchard::{
     builder::{Builder, InProgress, Unauthorized, Unproven},
     bundle::{Authorized, Flags},
     keys::OutgoingViewingKey,
+    tree::MerkleHashOrchard,
     value::NoteValue,
     Bundle,
 };
@@ -14,6 +16,7 @@ use zcash_primitives::transaction::{
     components::{sapling, transparent, Amount},
     sighash::{SignableInput, SIGHASH_ALL},
     sighash_v5::v5_signature_hash,
+    txid::TxIdDigester,
     Authorization, TransactionData, TxVersion,
 };
 
@@ -25,10 +28,12 @@ pub extern "C" fn orchard_builder_new(
     outputs_enabled: bool,
     anchor: *const [u8; 32],
 ) -> *mut Builder {
-    let anchor = unsafe { anchor.as_ref() }.expect("Anchor pointer may not be null.");
+    let anchor = unsafe { anchor.as_ref() }
+        .map(|a| orchard::Anchor::from_bytes(*a).unwrap())
+        .unwrap_or_else(|| MerkleHashOrchard::empty_root(32.into()).into());
     Box::into_raw(Box::new(Builder::new(
         Flags::from_parts(spends_enabled, outputs_enabled),
-        orchard::Anchor::from_bytes(*anchor).unwrap(),
+        anchor,
     )))
 }
 
@@ -155,13 +160,9 @@ pub extern "C" fn zcash_builder_zip244_shielded_signature_digest(
             .tx
             .into_data()
             .map_bundles(|b| b, |b| b, |_| Some(bundle.clone()));
+    let txid_parts = txdata.digest(TxIdDigester);
 
-    let sighash = v5_signature_hash(
-        &txdata,
-        SIGHASH_ALL,
-        &SignableInput::Shielded,
-        &precomputed_tx.txid_parts,
-    );
+    let sighash = v5_signature_hash(&txdata, SIGHASH_ALL, &SignableInput::Shielded, &txid_parts);
 
     // `v5_signature_hash` output is always 32 bytes.
     *unsafe { &mut *sighash_ret } = sighash.as_ref().try_into().unwrap();

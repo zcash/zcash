@@ -38,6 +38,7 @@ class TxOutputAmounts {
 public:
     CAmount t_outputs_total{0};
     CAmount sapling_outputs_total{0};
+    CAmount orchard_outputs_total{0};
 };
 
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {

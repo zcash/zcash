@@ -339,6 +339,10 @@ class CSerializeRecipientAddress {
                 [&](const libzcash::SaplingPaymentAddress& saplingAddr) {
                     ReceiverTypeSer(libzcash::ReceiverType::Sapling).Serialize(s);
                     s << saplingAddr;
+                },
+                [&](const libzcash::OrchardRawAddress& orchardAddr) {
+                    ReceiverTypeSer(libzcash::ReceiverType::Orchard).Serialize(s);
+                    s << orchardAddr;
                 }
             }, recipient);
         }
@@ -368,7 +372,8 @@ class CSerializeRecipientAddress {
                     break;
                 }
                 case libzcash::ReceiverType::Orchard: {
-                    // TODO ORCHARD: Handle when we add Orchard to RecipientAddress
+                    auto orchardAddr = libzcash::OrchardRawAddress::Read(s);
+                    recipient = orchardAddr;
                     break;
                 }
             }

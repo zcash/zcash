@@ -23,6 +23,8 @@ struct OrchardUnauthorizedBundlePtr;
 typedef struct OrchardUnauthorizedBundlePtr OrchardUnauthorizedBundlePtr;
 
 /// Construct a new Orchard transaction builder.
+///
+/// If `anchor` is `null`, the root of the empty Orchard commitment tree is used.
 OrchardBuilderPtr* orchard_builder_new(
     bool spends_enabled,
     bool outputs_enabled,
