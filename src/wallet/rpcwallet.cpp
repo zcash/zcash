@@ -27,6 +27,7 @@
 #include "primitives/transaction.h"
 #include "zcbenchmarks.h"
 #include "script/interpreter.h"
+#include "zcash/Zcash.h"
 #include "zcash/Address.hpp"
 #include "zcash/address/zip32.h"
 
@@ -3483,6 +3484,30 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr.");
     }
 
+    // A non-unified address argument that is a receiver within a
+    // unified address known to this wallet is not allowed.
+    if (std::visit(match {
+        [&](const CKeyID& addr) {
+            return pwalletMain->FindUnifiedAddressByReceiver(addr).has_value();
+         },
+        [&](const CScriptID& addr) {
+            return pwalletMain->FindUnifiedAddressByReceiver(addr).has_value();
+        },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            return pwalletMain->FindUnifiedAddressByReceiver(addr).has_value();
+        },
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            // A unified address can't contain a Sprout receiver.
+            return false;
+        },
+        [&](const libzcash::UnifiedAddress& addr) {
+            // We allow unified addresses themselves, which cannot recurse.
+            return false;
+        }
+    }, decoded.value())) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "The provided address is a bare receiver from a Unified Address in this wallet. Provide the full UA instead.");
+    }
+
     // Visitor to support Sprout and Sapling addrs
     if (!std::visit(PaymentAddressBelongsToWallet(pwalletMain), decoded.value())) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key or viewing key not found.");
@@ -3917,6 +3942,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
     if (fHelp || params.size() > 2)
         throw runtime_error(
             "z_gettotalbalance ( minconf includeWatchonly )\n"
+            "\nDEPRECATED. Please use the z_getbalanceforaccount RPC instead.\n"
             "\nReturn the total value of funds stored in the node's wallet.\n"
             "\nCAUTION: If the wallet contains any addresses for which it only has incoming viewing keys,"
             "\nthe returned private balance may be larger than the actual balance, because spends cannot"
@@ -4352,43 +4378,16 @@ size_t EstimateTxSize(
         int nextBlockHeight) {
     CMutableTransaction mtx;
     mtx.fOverwintered = true;
-    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-    mtx.nVersion = SAPLING_TX_VERSION;
+    mtx.nConsensusBranchId = CurrentEpochBranchId(nextBlockHeight, Params().GetConsensus());
 
-    bool fromTaddr = std::visit(match {
-        [&](const AccountZTXOPattern& acct) {
-            return
-                acct.GetReceiverTypes().empty() ||
-                acct.GetReceiverTypes().count(ReceiverType::P2PKH) > 0 ||
-                acct.GetReceiverTypes().count(ReceiverType::P2SH) > 0;
-        },
-        [&](const CKeyID& keyId) {
-            return true;
-        },
-        [&](const CScriptID& scriptId) {
-            return true;
-        },
-        [&](const libzcash::UnifiedFullViewingKey& ufvk) {
-            return ufvk.GetTransparentKey().has_value();
-        },
-        [&](const libzcash::SproutPaymentAddress& addr) {
-            return false;
-        },
-        [&](const libzcash::SproutViewingKey& addr) {
-            return false;
-        },
-        [&](const libzcash::SaplingPaymentAddress& addr) {
-            return false;
-        },
-        [&](const libzcash::SaplingExtendedFullViewingKey& addr) {
-            return false;
-        }
-    }, ztxoSelector.GetPattern());
+    bool fromSprout = ztxoSelector.SelectsSprout();
+    bool fromTaddr = ztxoSelector.SelectsTransparent();
 
     // As a sanity check, estimate and verify that the size of the transaction will be valid.
     // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
     size_t txsize = 0;
     size_t taddrRecipientCount = 0;
+    size_t orchardRecipientCount = 0;
     for (const SendManyRecipient& recipient : recipients) {
         std::visit(match {
             [&](const CKeyID&) {
@@ -4405,11 +4404,25 @@ size_t EstimateTxSize(
                 jsdesc.proof = GrothProof();
                 mtx.vJoinSplit.push_back(jsdesc);
             },
-            [&](const libzcash::UnifiedAddress& ua) {
-                // FIXME
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Unified addresses not yet supported.");
+            [&](const libzcash::OrchardRawAddress& addr) {
+                if (fromSprout) {
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER, 
+                        "Sending funds from a Sprout address to a Unified Address is not supported by z_sendmany");
+                }
+                orchardRecipientCount += 1;
             }
         }, recipient.address);
+    }
+
+    bool nu5Active = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_NU5);
+
+    if (fromSprout || !nu5Active) {
+        mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+        mtx.nVersion = SAPLING_TX_VERSION;        
+    } else {
+        mtx.nVersionGroupId = ZIP225_VERSION_GROUP_ID;
+        mtx.nVersion = ZIP225_TX_VERSION;
     }
 
     CTransaction tx(mtx);
@@ -4420,6 +4433,12 @@ size_t EstimateTxSize(
     }
     txsize += CTXOUT_REGULAR_SIZE * taddrRecipientCount;
 
+    if (orchardRecipientCount > 0) {
+        // - The Orchard transaction builder pads to a minimum of 2 actions.
+        // - We subtract 1 because `GetSerializeSize(tx, ...)` already counts
+        //   `ZC_ZIP225_ORCHARD_NUM_ACTIONS_BASE_SIZE`.
+        txsize += ZC_ZIP225_ORCHARD_BASE_SIZE - 1 + ZC_ZIP225_ORCHARD_MARGINAL_SIZE * std::max(2, (int) orchardRecipientCount);
+    }
     return txsize;
 }
 
@@ -4582,7 +4601,12 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amount must be positive");
         }
 
-        recipients.push_back(SendManyRecipient(addr.value(), nAmount, memo));
+        std::optional<libzcash::UnifiedAddress> ua = std::nullopt;
+        if (std::holds_alternative<libzcash::UnifiedAddress>(decoded.value())) {
+            ua = std::get<libzcash::UnifiedAddress>(decoded.value());
+        }
+
+        recipients.push_back(SendManyRecipient(ua, addr.value(), nAmount, memo));
         nTotalOut += nAmount;
     }
     if (recipients.empty()) {

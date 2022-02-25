@@ -99,6 +99,8 @@ class ShieldToAddress
 private:
     AsyncRPCOperation_shieldcoinbase *m_op;
     CAmount sendAmount;
+
+    static void shieldToAddress(const libzcash::RecipientAddress& recipient, AsyncRPCOperation_shieldcoinbase *m_op);
 public:
     ShieldToAddress(AsyncRPCOperation_shieldcoinbase *op, CAmount sendAmount) :
         m_op(op), sendAmount(sendAmount) {}

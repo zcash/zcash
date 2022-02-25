@@ -4,6 +4,7 @@
 
 #include "zcash/Address.hpp"
 #include "unified.h"
+#include "util/match.h"
 
 #include <rust/unified_keys.h>
 
@@ -27,6 +28,14 @@ bool libzcash::HasTransparent(const std::set<ReceiverType>& receiverTypes) {
         return r == ReceiverType::P2PKH || r == ReceiverType::P2SH;
     };
     return std::find_if(receiverTypes.begin(), receiverTypes.end(), has_transparent) != receiverTypes.end();
+}
+
+Receiver libzcash::RecipientAddressToReceiver(const RecipientAddress& recipient) {
+    return std::visit(match {
+        [](const CKeyID& key) { return Receiver(key); },
+        [](const CScriptID& scriptId) { return Receiver(scriptId); },
+        [](const libzcash::SaplingPaymentAddress& addr) { return Receiver(addr); }
+    }, recipient);
 }
 
 std::optional<ZcashdUnifiedSpendingKey> ZcashdUnifiedSpendingKey::ForAccount(

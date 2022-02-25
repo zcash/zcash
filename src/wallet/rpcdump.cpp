@@ -547,6 +547,7 @@ UniValue dumpwallet(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "dumpwallet \"filename\"\n"
+            "\nDEPRECATED. Please use the z_exportwallet RPC instead.\n"
             "\nDumps taddr wallet keys in a human-readable format.  Overwriting an existing file is not permitted.\n"
             "\nArguments:\n"
             "1. \"filename\"    (string, required) The filename, saved in folder set by zcashd -exportdir option\n"

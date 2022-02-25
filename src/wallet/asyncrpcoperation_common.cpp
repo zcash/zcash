@@ -6,27 +6,6 @@
 
 extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
 
-// TODO: instead of passing a TestMode flag, tests should override `CommitTransaction`
-// on the wallet.
-UniValue SendTransaction(CTransaction& tx, std::optional<std::reference_wrapper<CReserveKey>> reservekey, bool testmode) {
-    UniValue o(UniValue::VOBJ);
-    // Send the transaction
-    if (!testmode) {
-        CWalletTx wtx(pwalletMain, tx);
-        if (!pwalletMain->CommitTransaction(wtx, reservekey)) {
-            // More details in debug.log
-            throw JSONRPCError(RPC_WALLET_ERROR, "SendTransaction: CommitTransaction failed");
-        }
-        o.pushKV("txid", tx.GetHash().ToString());
-    } else {
-        // Test mode does not send the transaction to the network.
-        o.pushKV("test", 1);
-        o.pushKV("txid", tx.GetHash().ToString());
-        o.pushKV("hex", EncodeHexTx(tx));
-    }
-    return o;
-}
-
 std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::optional<std::reference_wrapper<CReserveKey>> reservekey, bool testmode) {
     // Sign the raw transaction
     UniValue rawtxnValue = find_value(obj, "rawtxn");
@@ -55,7 +34,9 @@ std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::opti
     CTransaction tx;
     stream >> tx;
 
-    UniValue sendResult = SendTransaction(tx, reservekey, testmode);
+    // Recipient mappings are not available when sending a raw transaction.
+    std::vector<RecipientMapping> recipientMappings;
+    UniValue sendResult = SendTransaction(tx, recipientMappings, reservekey, testmode);
 
     return std::make_pair(tx, sendResult);
 }
