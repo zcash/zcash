@@ -93,7 +93,7 @@ protected:
 
     void TearDown() override {
         // Revert to test default. No-op on mainnet params.
-        RegtestDeactivateSapling();
+        RegtestDeactivateBlossom();
     }
 
     // Returns a valid but empty mutable transaction at block height 1.
