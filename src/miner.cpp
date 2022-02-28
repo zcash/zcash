@@ -269,6 +269,19 @@ public:
         auto miner_reward = SetFoundersRewardAndGetMinerValue(ctx);
         builder.AddOutput(ovk, to, miner_reward, std::nullopt);
 
+        // orchard::Builder pads to two Actions, but does so using a "no OVK" policy for
+        // dummy outputs, which violates coinbase rules requiring all shielded outputs to
+        // be recoverable. We manually add a dummy output to sidestep this issue.
+        // TODO: If/when we have funding streams going to Orchard recipients, this dummy
+        // output can be removed.
+        RawHDSeed rawSeed(32, 0);
+        GetRandBytes(rawSeed.data(), 32);
+        auto dummyTo = libzcash::OrchardSpendingKey::ForAccount(HDSeed(rawSeed), Params().BIP44CoinType(), 0)
+            .ToFullViewingKey()
+            .ToIncomingViewingKey()
+            .Address(0);
+        builder.AddOutput(ovk, dummyTo, 0, std::nullopt);
+
         auto bundle = builder.Build();
         if (!bundle.has_value()) {
             librustzcash_sapling_proving_ctx_free(ctx);
