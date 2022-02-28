@@ -2203,6 +2203,9 @@ TEST(WalletTests, GenerateUnifiedAddress) {
     expected = WalletUAGenerationError::NoSuchAccount;
     EXPECT_EQ(uaResult, expected);
 
+    // lock required by GenerateNewUnifiedSpendingKey
+    LOCK(wallet.cs_wallet);
+
     // Create an account, then generate an address for that account.
     auto ufvkpair = wallet.GenerateNewUnifiedSpendingKey();
     auto ufvk = ufvkpair.first;
@@ -2254,6 +2257,9 @@ TEST(WalletTests, GenerateUnifiedSpendingKeyAddsOrchardAddresses) {
     (void) RegtestActivateSapling();
     TestWallet wallet(Params());
     wallet.GenerateNewSeed();
+
+    // lock required by GenerateNewUnifiedSpendingKey
+    LOCK(wallet.cs_wallet);
 
     // Create an account.
     auto ufvkpair = wallet.GenerateNewUnifiedSpendingKey();
