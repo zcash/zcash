@@ -276,6 +276,7 @@ fn run(opts: &CliOptions) -> Result<(), io::Error> {
     println!("\nSaved the export file to '{}'.", export_path);
     println!("IMPORTANT: This file contains secrets that allow spending all wallet funds.\n");
 
+    // TODO: better handling of file not found and permission errors.
     let export_file = File::open(export_path)?;
     let phrase_line: Vec<_> = io::BufReader::new(export_file)
         .lines()
@@ -504,7 +505,10 @@ fn clear_and_show_cautions(export_path: &str) {
             "have been left in the file '{}'.\n\n",
             "Don't forget to restart zcashd without '-exportdir', if running it\n",
             "long-term with that option is not desired or would be a security\n",
-            "hazard in your environment."
+            "hazard in your environment.\n\n",
+            "When choosing a location for the physical backup of your emergency\n",
+            "recovery phrase, please make sure to consider both risk of theft,\n",
+            "and your long-term ability to remember where it is kept."
         ),
         export_path,
     );
