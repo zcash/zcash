@@ -822,51 +822,11 @@ WalletUAGenerationResult CWallet::GenerateUnifiedAddress(
     }
 }
 
-// NOTE: There is an important relationship between `LoadUnifiedFullViewingKey`
-// and `LoadUnifiedAddressMetadata`. In all cases, by the end of the
-// wallet-loading process, `mapUfvkAddressMetadata` needs to be fully populated
-// for each unified full viewing key. However, we cannot guarantee in what
-// order UFVKs and unified address and account metadata are loaded from disk.
-// Therefore:
-// * When we load a unified full viewing key from disk, we repopulate
-//   the cache of generated addresses by regenerating the address for each
-//   (diversifierIndex, {receiverType...}) pair in `mapUfvkAddressMetadata`
-//   that we have loaded so far.
-// * When we load a unified address metadata record from disk:
-//   - if we have not yet loaded the unified full viewing key, simply add
-//     an entry `mapUfvkAddressMetadata` so that we can restore the address
-//     once the UFVK has been loaded.
-//   - if we have already loaded the unified full viewing key from disk,
-//     regenerate the address from its metadata and add it to the keystore
-//
-// While this is somewhat complicated, it has the benefit of making each
-// piece of unified full viewing key and address metadata write-once in
-// the wallet database; we never need to update ufvk or address metadata
-// once written.
 bool CWallet::LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &key)
 {
-    auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), key);
-    auto metadata = mapUfvkAddressMetadata.find(zufvk.GetKeyID());
-    if (metadata != mapUfvkAddressMetadata.end()) {
-        // restore unified addresses that have been previously generated to the
-        // keystore
-        for (const auto &[j, receiverTypes] : metadata->second.GetKnownReceiverSetsByDiversifierIndex()) {
-            bool restored = std::visit(match {
-                [&](const UnifiedAddressGenerationError& err) {
-                    return false;
-                },
-                [&](const std::pair<UnifiedAddress, diversifier_index_t>& addr) {
-                    return CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(
-                            zufvk.GetKeyID(), addr.second, addr.first);
-                }
-            }, zufvk.Address(j, receiverTypes));
-
-            // failure to restore the generated address is an error
-            if (!restored) return false;
-        }
-    }
-
-    return CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk);
+    return CCryptoKeyStore::AddUnifiedFullViewingKey(
+        ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), key)
+    );
 }
 
 bool CWallet::LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skmeta)
@@ -880,23 +840,47 @@ bool CWallet::LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skm
 bool CWallet::LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta)
 {
     AssertLockHeld(cs_wallet);
-    if (!mapUfvkAddressMetadata[addrmeta.GetKeyID()].SetReceivers(
+
+    return mapUfvkAddressMetadata[addrmeta.GetKeyID()].SetReceivers(
                 addrmeta.GetDiversifierIndex(),
-                addrmeta.GetReceiverTypes())) {
-        return false;
-    }
+                addrmeta.GetReceiverTypes());
+}
 
-    auto ufvk = GetUnifiedFullViewingKey(addrmeta.GetKeyID());
-    if (ufvk.has_value()) {
-        // Regenerate the unified address and add it to the keystore.
-        auto j = addrmeta.GetDiversifierIndex();
-        auto addr = ufvk.value().Address(j, addrmeta.GetReceiverTypes());
-        auto addrPtr = std::get_if<std::pair<UnifiedAddress, diversifier_index_t>>(&addr);
+bool CWallet::LoadUnifiedCaches()
+{
+    AssertLockHeld(cs_wallet);
 
-        if (addrPtr == nullptr) {
-            return false;
+    for (auto account = mapUnifiedAccountKeys.begin(); account != mapUnifiedAccountKeys.end(); ++account) {
+        auto ufvkId = account->second;
+        auto ufvk = GetUnifiedFullViewingKey(ufvkId);
+        if (ufvk.has_value()) {
+            auto metadata = mapUfvkAddressMetadata.find(ufvkId);
+            if (metadata != mapUfvkAddressMetadata.end()) {
+                // restore unified addresses that have been previously generated to the
+                // keystore
+                for (const auto &[j, receiverTypes] : metadata->second.GetKnownReceiverSetsByDiversifierIndex()) {
+                    bool restored = std::visit(match {
+                        [&](const UnifiedAddressGenerationError& err) {
+                            return false;
+                        },
+                        [&](const std::pair<UnifiedAddress, diversifier_index_t>& addr) {
+                            return CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(
+                                    ufvkId, addr.second, addr.first);
+                        }
+                    }, ufvk.value().Address(j, receiverTypes));
+
+                    // failure to restore the generated address is an error
+                    if (!restored) return false;
+                }
+            } else {
+                // Loaded an account, but didn't initialize
+                // `mapUfvkAddressMetadata` for the corresponding viewing key.
+                return false;
+            }
         } else {
-            return CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(addrmeta.GetKeyID(), j, addrPtr->first);
+            // Loaded an account, but the corresponding viewing key could not be
+            // found.
+            return false;
         }
     }
 
