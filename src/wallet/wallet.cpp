@@ -850,12 +850,39 @@ bool CWallet::LoadUnifiedCaches()
 {
     AssertLockHeld(cs_wallet);
 
+    auto seed = GetMnemonicSeed();
+
     for (auto account = mapUnifiedAccountKeys.begin(); account != mapUnifiedAccountKeys.end(); ++account) {
         auto ufvkId = account->second;
         auto ufvk = GetUnifiedFullViewingKey(ufvkId);
+
+        if (!seed.has_value()) {
+            // We loaded an account but we didn't load the mnemonic seed, so
+            // we cannot recover the secret keys.
+            return false;
+        }
+
         if (ufvk.has_value()) {
             auto metadata = mapUfvkAddressMetadata.find(ufvkId);
             if (metadata != mapUfvkAddressMetadata.end()) {
+                auto accountId = metadata->second.GetAccountId();
+                if (!accountId.has_value()) {
+                    // The account record was not loaded and yet there were
+                    // address records loaded.
+                    return false;
+                }
+                auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed.value(), BIP44CoinType(), accountId.value());
+                if (!usk.has_value()) {
+                    // Unable to generate a unified spending key for this account ID.
+                    return false;
+                }
+
+                // add Orchard spending key to the orchard wallet
+                {
+                    auto orchardSk = usk.value().GetOrchardKey();
+                    orchardWallet.AddSpendingKey(orchardSk);
+                }
+
                 // restore unified addresses that have been previously generated to the
                 // keystore
                 for (const auto &[j, receiverTypes] : metadata->second.GetKnownReceiverSetsByDiversifierIndex()) {
