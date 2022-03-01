@@ -29,6 +29,9 @@ LIBSECP256K1=secp256k1/libsecp256k1.la
 LIBUNIVALUE=univalue/libunivalue.la
 LIBZCASH=libzcash.a
 
+WALLET_TOOL_BIN=zcashd-wallet-tool$(EXEEXT)
+WALLET_TOOL_BUILD=$(top_builddir)/target/$(RUST_TARGET)/release/zcashd-wallet-tool$(EXEEXT)
+
 if ENABLE_ZMQ
 LIBBITCOIN_ZMQ=libbitcoin_zmq.a
 endif
@@ -47,7 +50,7 @@ endif
 # - Note that this does not prevent the secp256k1-sys vendored code from being built; this
 #   requires https://github.com/rust-bitcoin/rust-secp256k1/issues/380 to be addressed.
 RUST_ENV_VARS = RUSTC="$(RUSTC)" TERM=dumb RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming"
-RUST_BUILD_OPTS = --lib --release --target $(RUST_TARGET)
+RUST_BUILD_OPTS = --release --target $(RUST_TARGET) --manifest-path $(top_srcdir)/Cargo.toml
 
 rust_verbose = $(rust_verbose_@AM_V@)
 rust_verbose_ = $(rust_verbose_@AM_DEFAULT_V@)
@@ -72,10 +75,16 @@ $(CARGO_CONFIGURED): $(top_srcdir)/.cargo/config.offline
 	$(AM_V_at)touch $@
 endif
 
-cargo-build: $(CARGO_CONFIGURED)
-	$(RUST_ENV_VARS) $(CARGO) build $(RUST_BUILD_OPTS) $(rust_verbose) --manifest-path $(top_srcdir)/Cargo.toml
+cargo-build-lib: $(CARGO_CONFIGURED)
+	$(RUST_ENV_VARS) $(CARGO) build --lib $(RUST_BUILD_OPTS) $(rust_verbose)
 
-$(LIBRUSTZCASH): cargo-build
+cargo-build-bins: $(CARGO_CONFIGURED)
+	$(RUST_ENV_VARS) $(CARGO) build --bins $(RUST_BUILD_OPTS) $(rust_verbose)
+
+$(WALLET_TOOL_BIN): cargo-build-bins
+	$(AM_V_at)cp $(WALLET_TOOL_BUILD) $@
+
+$(LIBRUSTZCASH): cargo-build-lib
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
@@ -99,6 +108,7 @@ lib_LTLIBRARIES = $(LIBZCASH_SCRIPT)
 
 bin_PROGRAMS =
 noinst_PROGRAMS =
+bin_SCRIPTS =
 TESTS =
 BENCHMARKS =
 
@@ -108,6 +118,7 @@ endif
 
 if BUILD_BITCOIN_UTILS
   bin_PROGRAMS += zcash-cli zcash-tx
+  bin_SCRIPTS += $(WALLET_TOOL_BIN)
 endif
 
 LIBZCASH_H = \
@@ -129,7 +140,7 @@ LIBZCASH_H = \
   zcash/util.h \
   zcash/Zcash.h
 
-.PHONY: FORCE cargo-build check-symbols check-security
+.PHONY: FORCE cargo-build-lib cargo-build-bins check-symbols check-security
 # bitcoin core #
 BITCOIN_CORE_H = \
   addrdb.h \

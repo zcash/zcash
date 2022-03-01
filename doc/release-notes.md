@@ -19,17 +19,17 @@ Zcashd release.
 Following the upgrade to 4.5.2, Zcashd will require that the user confirm that
 they have backed up their new emergency recovery phrase, which may be obtained
 from the output of the `z_exportwallet` RPC call. This confirmation can be
-performed manually using the `zcashd-wallet-tool` utility that is supplied with
-this release.  The wallet will not allow the generation of new addresses until
-this confirmation has been performed. It is recommended that after this
-upgrade, that funds tied to preexisting addresses be migrated to newly
-generated addresses so that all wallet funds are recoverable using the
-emergency recovery phrase going forward.  If you choose not to migrate funds in
-this fashion, you will continue to need to securely back up the entire
-`wallet.dat` file to ensure that you do not lose access to existing funds;
-EXISTING FUNDS WILL NOT BE RECOVERABLE USING THE EMERGENCY RECOVERY PHRASE
-UNLESS THEY HAVE BEEN MOVED TO A NEWLY GENERATED ADDRESS FOLLOWING THE 4.5.2
-UPGRADE.
+performed manually using the `zcashd-wallet-tool` utility that is supplied
+with this release (built or installed in the same directory as `zcashd`).
+The wallet will not allow the generation of new addresses until this
+confirmation has been performed. It is recommended that after this upgrade,
+that funds tied to preexisting addresses be migrated to newly generated
+addresses so that all wallet funds are recoverable using the emergency
+recovery phrase going forward. If you choose not to migrate funds in this
+fashion, you will continue to need to securely back up the entire `wallet.dat`
+file to ensure that you do not lose access to existing funds; EXISTING FUNDS
+WILL NOT BE RECOVERABLE USING THE EMERGENCY RECOVERY PHRASE UNLESS THEY HAVE
+BEEN MOVED TO A NEWLY GENERATED ADDRESS FOLLOWING THE 4.5.2 UPGRADE.
 
 New RPC Methods
 ---------------

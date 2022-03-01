@@ -1750,7 +1750,11 @@ UniValue walletconfirmbackup(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "walletconfirmbackup \"emergency recovery phrase\"\n"
-            "\nNotify the wallet that the user has backed up the emergency recovery phrase,\n"
+            "\nCAUTION: This is an internal method that is not intended to be called directly by\n"
+            "users. Please use the zcashd-wallet-tool utility (built or installed in the same directory\n"
+            "as zcashd) instead. In particular, this method should not be used from zcash-cli, in order\n"
+            "to avoid exposing the recovery phrase on the command line.\n\n"
+            "Notify the wallet that the user has backed up the emergency recovery phrase,\n"
             "which can be obtained by making a call to z_exportwallet. The zcashd embedded wallet\n"
             "requires confirmation that the emergency recovery phrase has been backed up before it\n"
             "will permit new spending keys or addresses to be generated.\n"
