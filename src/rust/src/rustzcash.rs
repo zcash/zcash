@@ -160,7 +160,7 @@ pub extern "C" fn librustzcash_init_zksnark_params(
     let (spend_path, output_path, sprout_path) = (
         Path::new(&spend_path),
         Path::new(&output_path),
-        sprout_path.as_ref().map(|p| Path::new(p)),
+        sprout_path.as_ref().map(Path::new),
     );
 
     // Load params
