@@ -19,7 +19,7 @@ native_ccache 4.6 2022-05-01
 
 # Clang is currently pinned to LLVM 13
 
-# Rust is currently pinned to 1.56.1
+# Rust is currently pinned to 1.59.0
 
 # We're never updating to this version
 bdb 18.1.40 2024-02-01
