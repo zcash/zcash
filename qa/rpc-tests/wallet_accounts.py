@@ -174,8 +174,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         # visible with minconf=0.
         self.sync_all()
         self.check_balance(0, 0, ua0, {'sapling': 9})
-        # TODO: Uncomment once CWallet::FindSpendableInputs returns Orchard notes.
-        #self.check_balance(0, 0, ua0, {'sapling': 9, 'orchard': 10}, 0)
+        self.check_balance(0, 0, ua0, {'sapling': 9, 'orchard': 10}, 0)
 
         self.nodes[2].generate(1)
         self.sync_all()

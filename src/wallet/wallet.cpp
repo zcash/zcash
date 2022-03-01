@@ -1978,14 +1978,15 @@ SpendableInputs CWallet::FindSpendableInputs(
     }, selector.GetPattern());
 
     for (const auto& ivk : orchardIvks) {
-        // TODO ORCHARD: Allow the minimum number of confirmations
-        // to be specified
         std::vector<OrchardNoteMetadata> incomingNotes;
         orchardWallet.GetFilteredNotes(incomingNotes, ivk, true, true, true);
-        unspent.orchardNoteMetadata.insert(
-                unspent.orchardNoteMetadata.begin(),
-                incomingNotes.begin(),
-                incomingNotes.end());
+
+        for (const auto& noteMeta : incomingNotes) {
+            auto mit = mapWallet.find(noteMeta.GetOutPoint().hash);
+            if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= minDepth) {
+                unspent.orchardNoteMetadata.push_back(noteMeta);
+            }
+        }
     }
 
     return unspent;
