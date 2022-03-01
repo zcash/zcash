@@ -27,7 +27,7 @@ crate-type = ["staticlib"]
 
 [[bin]]
 name = "zcashd-wallet-tool"
-path = "src/rust/src/wallet_tool.rs"
+path = "src/rust/bin/wallet_tool.rs"
 
 [dependencies]
 bellman = "0.11"
