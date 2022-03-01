@@ -2674,21 +2674,21 @@ void CWallet::UpdateSaplingNullifierNoteMapForBlock(const CBlock *pblock) {
     }
 }
 
-bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb)
-{
+void CWallet::LoadWalletTx(const CWalletTx& wtxIn) {
     uint256 hash = wtxIn.GetHash();
+    mapWallet[hash] = wtxIn;
+    CWalletTx& wtx = mapWallet[hash];
+    wtx.BindWallet(this);
+    wtxOrdered.insert(make_pair(wtx.nOrderPos, &wtx));
+    UpdateNullifierNoteMapWithTx(mapWallet[hash]);
+    AddToSpends(hash);
+}
 
-    if (fFromLoadWallet)
-    {
-        mapWallet[hash] = wtxIn;
-        CWalletTx& wtx = mapWallet[hash];
-        wtx.BindWallet(this);
-        wtxOrdered.insert(make_pair(wtx.nOrderPos, &wtx));
-        UpdateNullifierNoteMapWithTx(mapWallet[hash]);
-        AddToSpends(hash);
-    }
-    else
-    {
+bool CWallet::AddToWallet(const CWalletTx& wtxIn, CWalletDB* pwalletdb)
+{
+    { // additional scope left in place for backport whitespace compatibility
+        uint256 hash = wtxIn.GetHash();
+
         LOCK(cs_wallet);
         // Inserts only if not already there, returns tx inserted or tx found
         pair<map<uint256, CWalletTx>::iterator, bool> ret = mapWallet.insert(make_pair(hash, wtxIn));
@@ -2790,7 +2790,6 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
             boost::replace_all(strCmd, "%s", wtxIn.GetHash().GetHex());
             boost::thread t(runCommand, strCmd); // thread runs free
         }
-
     }
     return true;
 }
@@ -2846,7 +2845,7 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  */
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, const int nHeight, bool fUpdate)
 {
-    {
+    { // extra scope left in place for backport whitespace compatibility
         AssertLockHeld(cs_wallet);
 
         // Check whether the transaction is already known by the wallet.
@@ -2891,10 +2890,10 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
             // startup through our SetBestChain-mechanism
             CWalletDB walletdb(strWalletFile, "r+", false);
 
-            return AddToWallet(wtx, false, &walletdb);
+            return AddToWallet(wtx, &walletdb);
         }
+        return false;
     }
-    return false;
 }
 
 void CWallet::SyncTransaction(const CTransaction& tx, const CBlock* pblock, const int nHeight)
@@ -5055,7 +5054,7 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_
 
             // Add tx to wallet, because if it has change it's also ours,
             // otherwise just for transaction history.
-            AddToWallet(wtxNew, false, pwalletdb);
+            AddToWallet(wtxNew, pwalletdb);
 
             // Notify that old coins are spent
             set<CWalletTx*> setCoins;
@@ -5932,6 +5931,7 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
         if (walletdb.ReadBestBlock(locator))
             pindexRescan = FindForkInGlobalIndex(chainActive, locator);
     }
+
     if (chainActive.Tip() && chainActive.Tip() != pindexRescan)
     {
         // We can't rescan beyond non-pruned blocks, stop and throw an error.
