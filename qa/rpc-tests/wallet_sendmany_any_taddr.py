@@ -67,5 +67,22 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
         assert_equal(self.nodes[3].z_getbalance(node3taddr1), 0)
         assert_equal(self.nodes[3].z_getbalance(node3taddr2), 0)
 
+        # Send from a change t-address.
+        wait_and_assert_operationid_status(
+            self.nodes[3],
+            self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 20}]),
+        )
+
+        self.sync_all()
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        # The recipient has their funds!
+        assert_equal(self.nodes[1].z_getbalance(recipient), 120)
+
+        # Check that ANY_TADDR note selection doesn't attempt a double-spend
+        myopid = self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 20}])
+        wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "Insufficient funds: have 14.99998, need 20.00001")
+
 if __name__ == '__main__':
     WalletSendManyAnyTaddr().main()
