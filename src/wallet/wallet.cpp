@@ -881,6 +881,13 @@ bool CWallet::LoadUnifiedCaches()
                 {
                     auto orchardSk = usk.value().GetOrchardKey();
                     orchardWallet.AddSpendingKey(orchardSk);
+
+                    // Associate the Orchard default change address with its IVK
+                    auto orchardInternalIvk = orchardSk.ToFullViewingKey().ToInternalIncomingViewingKey();
+                    if (!AddOrchardRawAddress(orchardInternalIvk, orchardInternalIvk.Address(0))) {
+                        // Unable to generate a default internal address
+                        return false;
+                    }
                 }
 
                 // restore unified addresses that have been previously generated to the
@@ -891,6 +898,19 @@ bool CWallet::LoadUnifiedCaches()
                             return false;
                         },
                         [&](const std::pair<UnifiedAddress, diversifier_index_t>& addr) {
+                            // Associate the orchard address with our IVK, if there's
+                            // an orchard receiver present in this address.
+                            auto orchardFvk = ufvk.value().GetOrchardKey();
+                            auto orchardReceiver = addr.first.GetOrchardReceiver();
+                            assert (orchardFvk.has_value() == orchardReceiver.has_value());
+
+                            if (orchardFvk.has_value()) {
+                                if (!AddOrchardRawAddress(orchardFvk.value().ToIncomingViewingKey(), orchardReceiver.value())) {
+                                    // Unable to add an orchard address -> IVK mapping to the wallet
+                                    return false;
+                                }
+                            }
+
                             return CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(
                                     ufvkId, addr.second, addr.first);
                         }
