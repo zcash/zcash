@@ -1749,7 +1749,7 @@ SpendableInputs CWallet::FindSpendableInputs(
 
         // Filter the transactions before checking for coins
         if (!CheckFinalTx(wtx)) continue;
-        if (nDepth < minDepth) continue;
+        if (nDepth < 0 || nDepth < minDepth) continue;
 
         if (selectTransparent &&
             // skip transparent utxo selection if coinbase spend restrictions are not met
