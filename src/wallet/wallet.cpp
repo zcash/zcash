@@ -5865,6 +5865,8 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
     {
         // Create new keyUser and set as default key
         if (!walletInstance->IsCrypted()) {
+            LOCK(walletInstance->cs_wallet);
+
             CPubKey newDefaultKey = walletInstance->GenerateNewKey(true);
             walletInstance->SetDefaultKey(newDefaultKey);
             if (!walletInstance->SetAddressBook(walletInstance->vchDefaultKey.GetID(), "", "receive"))
