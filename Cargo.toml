@@ -73,9 +73,11 @@ codegen-units = 1
 
 [patch.crates-io]
 hdwallet = { git = "https://github.com/nuttycom/hdwallet", rev = "576683b9f2865f1118c309017ff36e01f84420c9" }
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "ff243b4f0055d89d3abb526e234688a09c3d8cb7" }
-zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "ff243b4f0055d89d3abb526e234688a09c3d8cb7" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "ff243b4f0055d89d3abb526e234688a09c3d8cb7" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "ff243b4f0055d89d3abb526e234688a09c3d8cb7" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "ff243b4f0055d89d3abb526e234688a09c3d8cb7" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "ff243b4f0055d89d3abb526e234688a09c3d8cb7" }
+incrementalmerkletree = { git = "https://github.com/zcash/incrementalmerkletree.git", rev = "dd57b430dee7c0b163f4035fef2280cd1935036c" }
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "3ddf6c49f7484ed1295bd5351317bbfe49e14472" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "c423167b30f7b7afeeabe09ae5abceb49ce7d06e" }
+zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "c423167b30f7b7afeeabe09ae5abceb49ce7d06e" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "c423167b30f7b7afeeabe09ae5abceb49ce7d06e" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "c423167b30f7b7afeeabe09ae5abceb49ce7d06e" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "c423167b30f7b7afeeabe09ae5abceb49ce7d06e" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "c423167b30f7b7afeeabe09ae5abceb49ce7d06e" }
