@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "fs.h"
+#include "db.h"
 #include "zcash/Address.hpp"
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
@@ -227,7 +228,10 @@ TEST(WalletZkeysTest, WriteZkeyDirectToDb) {
     fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
-    bool fFirstRun;
+    bool fFirstRun, fFirstRunDummy;
+    CWallet dummyWallet(Params(), "wallet_direct_zkey_test.dat");
+    dummyWallet.LoadWallet(fFirstRunDummy);
+    bitdb.RemoveDb("wallet_direct_zkey_test.dat");
     CWallet wallet(Params(), "wallet_direct_zkey_test.dat");
     LOCK(wallet.cs_wallet);
     ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
@@ -300,7 +304,10 @@ TEST(WalletZkeysTest, WriteViewingKeyDirectToDB) {
     fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
-    bool fFirstRun;
+    bool fFirstRun, fFirstRunDummy;
+    CWallet dummyWallet(Params(), "wallet-vkey.dat");
+    dummyWallet.LoadWallet(fFirstRunDummy);
+    bitdb.RemoveDb("wallet-vkey.dat");
     CWallet wallet(Params(), "wallet-vkey.dat");
     LOCK(wallet.cs_wallet);
     ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
@@ -347,7 +354,10 @@ TEST(WalletZkeysTest, WriteCryptedzkeyDirectToDb) {
     fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
-    bool fFirstRun;
+    bool fFirstRun, fFirstRunDummy;
+    CWallet dummyWallet(Params(), "wallet_crypted.dat");
+    dummyWallet.LoadWallet(fFirstRunDummy);
+    bitdb.RemoveDb("wallet_crypted.dat");
     CWallet wallet(Params(), "wallet_crypted.dat");
     LOCK(wallet.cs_wallet);
     ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
@@ -422,7 +432,10 @@ TEST(WalletZkeysTest, WriteCryptedSaplingZkeyDirectToDb) {
     fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
-    bool fFirstRun;
+    bool fFirstRun, fFirstRunDummy;
+    CWallet dummyWallet(Params(), "wallet_crypted_sapling.dat");
+    dummyWallet.LoadWallet(fFirstRunDummy);
+    bitdb.RemoveDb("wallet_crypted_sapling.dat");
     CWallet wallet(Params(), "wallet_crypted_sapling.dat");
     LOCK(wallet.cs_wallet);
     ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
