@@ -310,5 +310,15 @@ TEST(orchardMerkleTree, appendBundle) {
         uint256 anchor(merkle_roots_orchard[i].anchor);
 
         ASSERT_EQ(newTree.root(), anchor);
+
+        // Sanity check roundtrip serialization of the updated tree
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << newTree;
+
+        OrchardMerkleFrontier readBack;
+        ss >> readBack;
+
+        EXPECT_NE(newTree.root(), OrchardMerkleFrontier::empty_root());
+        EXPECT_EQ(newTree.root(), readBack.root());
     }
 }
