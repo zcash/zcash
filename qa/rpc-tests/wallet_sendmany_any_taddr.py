@@ -122,7 +122,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
         assert_equal(0, self.nodes[2].getbalance())
 
         # Check that ANY_TADDR doesn't select an expired output.
-        wait_and_assert_operationid_status(self.nodes[2], self.nodes[2].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 13}]), "failed", "SendTransaction: CommitTransaction failed")
+        wait_and_assert_operationid_status(self.nodes[2], self.nodes[2].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 13}]), "failed", "Insufficient funds: have 0.00, need 13.00001")
 
 if __name__ == '__main__':
     WalletSendManyAnyTaddr().main()
