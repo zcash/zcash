@@ -857,8 +857,8 @@ bool CWallet::LoadUnifiedCaches()
         auto ufvk = GetUnifiedFullViewingKey(ufvkId);
 
         if (!seed.has_value()) {
-            // We loaded an account but we didn't load the mnemonic seed, so
-            // we cannot recover the secret keys.
+            LogPrintf("%s: Error: Mnemonic seed was not loaded despite an account existing in the wallet.\n",
+                __func__);
             return false;
         }
 
@@ -867,13 +867,14 @@ bool CWallet::LoadUnifiedCaches()
             if (metadata != mapUfvkAddressMetadata.end()) {
                 auto accountId = metadata->second.GetAccountId();
                 if (!accountId.has_value()) {
-                    // The account record was not loaded and yet there were
-                    // address records loaded.
+                    LogPrintf("%s: Error: Address records exist for an account that was not loaded in the wallet.\n",
+                        __func__);
                     return false;
                 }
                 auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed.value(), BIP44CoinType(), accountId.value());
                 if (!usk.has_value()) {
-                    // Unable to generate a unified spending key for this account ID.
+                    LogPrintf("%s: Error: Unable to generate a unified spending key for an account.\n",
+                        __func__);
                     return false;
                 }
 
@@ -885,7 +886,8 @@ bool CWallet::LoadUnifiedCaches()
                     // Associate the Orchard default change address with its IVK
                     auto orchardInternalIvk = orchardSk.ToFullViewingKey().ToInternalIncomingViewingKey();
                     if (!AddOrchardRawAddress(orchardInternalIvk, orchardInternalIvk.Address(0))) {
-                        // Unable to generate a default internal address
+                        LogPrintf("%s: Error: Unable to generate a default internal address.\n",
+                            __func__);
                         return false;
                     }
                 }
@@ -895,6 +897,8 @@ bool CWallet::LoadUnifiedCaches()
                 for (const auto &[j, receiverTypes] : metadata->second.GetKnownReceiverSetsByDiversifierIndex()) {
                     bool restored = std::visit(match {
                         [&](const UnifiedAddressGenerationError& err) {
+                            LogPrintf("%s: Error: Unable to generate a unified address.\n",
+                                __func__);
                             return false;
                         },
                         [&](const std::pair<UnifiedAddress, diversifier_index_t>& addr) {
@@ -904,14 +908,15 @@ bool CWallet::LoadUnifiedCaches()
                             auto orchardReceiver = addr.first.GetOrchardReceiver();
 
                             if (orchardFvk.has_value() != orchardReceiver.has_value()) {
-                                // Inconsistency between full viewing key and address
-                                // metadata.
+                                LogPrintf("%s: Error: Orchard receiver in unified address is inconsistent with the unified viewing key.\n",
+                                    __func__);
                                 return false;
                             }
 
                             if (orchardFvk.has_value()) {
                                 if (!AddOrchardRawAddress(orchardFvk.value().ToIncomingViewingKey(), orchardReceiver.value())) {
-                                    // Unable to add an orchard address -> IVK mapping to the wallet
+                                    LogPrintf("%s: Error: Unable to add Orchard address -> IVK mapping.\n",
+                                        __func__);
                                     return false;
                                 }
                             }
@@ -927,11 +932,13 @@ bool CWallet::LoadUnifiedCaches()
             } else {
                 // Loaded an account, but didn't initialize
                 // `mapUfvkAddressMetadata` for the corresponding viewing key.
+                LogPrintf("%s: Error: UFVK address map not initialized despite an account existing.\n",
+                    __func__);
                 return false;
             }
         } else {
-            // Loaded an account, but the corresponding viewing key could not be
-            // found.
+            LogPrintf("%s: Error: Unified viewing key missing for an account.\n",
+                __func__);
             return false;
         }
     }
