@@ -6,6 +6,7 @@ src/zcashd
 src/zcashd-wallet-tool
 src/zcash-cli
 src/zcash-gtest
+src/zcash-inspect
 src/zcash-tx
 src/test/test_bitcoin
 zcutil/bin/
