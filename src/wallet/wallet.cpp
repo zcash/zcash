@@ -902,7 +902,12 @@ bool CWallet::LoadUnifiedCaches()
                             // an orchard receiver present in this address.
                             auto orchardFvk = ufvk.value().GetOrchardKey();
                             auto orchardReceiver = addr.first.GetOrchardReceiver();
-                            assert (orchardFvk.has_value() == orchardReceiver.has_value());
+
+                            if (orchardFvk.has_value() != orchardReceiver.has_value()) {
+                                // Inconsistency between full viewing key and address
+                                // metadata.
+                                return false;
+                            }
 
                             if (orchardFvk.has_value()) {
                                 if (!AddOrchardRawAddress(orchardFvk.value().ToIncomingViewingKey(), orchardReceiver.value())) {
