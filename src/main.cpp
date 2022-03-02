@@ -3136,7 +3136,19 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
 
     OrchardMerkleFrontier orchard_tree;
-    assert(view.GetOrchardAnchorAt(view.GetBestAnchor(ORCHARD), orchard_tree));
+    if (pindex->pprev && chainparams.GetConsensus().NetworkUpgradeActive(pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
+        // Verify that the view's current state corresponds to the previous block.
+        assert(pindex->pprev->hashFinalOrchardRoot == view.GetBestAnchor(ORCHARD));
+        // We only call ConnectBlock() on top of the active chain's tip.
+        assert(!pindex->pprev->hashFinalOrchardRoot.IsNull());
+
+        assert(view.GetOrchardAnchorAt(pindex->pprev->hashFinalOrchardRoot, orchard_tree));
+    } else {
+        if (pindex->pprev) {
+            assert(pindex->pprev->hashFinalOrchardRoot.IsNull());
+        }
+        assert(view.GetOrchardAnchorAt(OrchardMerkleFrontier::empty_root(), orchard_tree));
+    }
 
     // Grab the consensus branch ID for this block and its parent
     auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
