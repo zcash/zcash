@@ -161,11 +161,17 @@ extern std::optional<uint64_t> last_block_num_txs;
 extern std::optional<uint64_t> last_block_size;
 extern const std::string strMessageMagic;
 
-// These prevent lock-ordering problems in getblocktemplate() RPC
+//! These four variables are used to notify getblocktemplate RPC of new tips.
+//! When UpdateTip() establishes a new tip (best block), it must awaken a
+//! waiting getblocktemplate RPC (if there is one) immediately. But upon waking
+//! up, getblocktemplate cannot call chainActive->Tip() because it does not
+//! (and cannot) hold cs_main. So the g_best_block_height and g_best_block variables
+//! (protected by g_best_block_mutex) provide the needed height and block
+//! hash respectively to getblocktemplate without it requiring cs_main.
 extern CWaitableCriticalSection g_best_block_mutex;
 extern CConditionVariable g_best_block_cv;
-extern uint256 g_best_block;
 extern int g_best_block_height;
+extern uint256 g_best_block;
 
 extern std::atomic_bool fImporting;
 extern std::atomic_bool fReindex;
