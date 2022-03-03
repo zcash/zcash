@@ -2909,6 +2909,17 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
         view.PopAnchor(SaplingMerkleTree::empty_root(), SAPLING);
     }
 
+    // Set the old best Orchard anchor back. We can get this from the
+    // `hashFinalOrchardRoot` of the last block. However, if the last
+    // block was not on or after the Orchard activation height, this
+    // will be set to `null`. For logical consistency, in this case we
+    // set the last anchor to the empty root.
+    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
+        view.PopAnchor(pindex->pprev->hashFinalOrchardRoot, ORCHARD);
+    } else {
+        view.PopAnchor(OrchardMerkleFrontier::empty_root(), ORCHARD);
+    }
+
     // This is guaranteed to be filled by LoadBlockIndex.
     assert(pindex->nCachedBranchId);
     auto consensusBranchId = pindex->nCachedBranchId.value();

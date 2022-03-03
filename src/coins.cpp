@@ -683,6 +683,14 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt, ShieldedType type) {
                 hashSaplingAnchor
             );
             break;
+        case ORCHARD:
+            AbstractPopAnchor<OrchardMerkleFrontier, CAnchorsOrchardMap, CAnchorsOrchardCacheEntry>(
+                newrt,
+                ORCHARD,
+                cacheOrchardAnchors,
+                hashOrchardAnchor
+            );
+            break;
         default:
             throw std::runtime_error("Unknown shielded type");
     }
