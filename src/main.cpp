@@ -2909,6 +2909,17 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
         view.PopAnchor(SaplingMerkleTree::empty_root(), SAPLING);
     }
 
+    // Set the old best Orchard anchor back. We can get this from the
+    // `hashFinalOrchardRoot` of the last block. However, if the last
+    // block was not on or after the Orchard activation height, this
+    // will be set to `null`. For logical consistency, in this case we
+    // set the last anchor to the empty root.
+    if (chainparams.GetConsensus().NetworkUpgradeActive(pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
+        view.PopAnchor(pindex->pprev->hashFinalOrchardRoot, ORCHARD);
+    } else {
+        view.PopAnchor(OrchardMerkleFrontier::empty_root(), ORCHARD);
+    }
+
     // This is guaranteed to be filled by LoadBlockIndex.
     assert(pindex->nCachedBranchId);
     auto consensusBranchId = pindex->nCachedBranchId.value();
@@ -3136,7 +3147,19 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
 
     OrchardMerkleFrontier orchard_tree;
-    assert(view.GetOrchardAnchorAt(view.GetBestAnchor(ORCHARD), orchard_tree));
+    if (pindex->pprev && chainparams.GetConsensus().NetworkUpgradeActive(pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
+        // Verify that the view's current state corresponds to the previous block.
+        assert(pindex->pprev->hashFinalOrchardRoot == view.GetBestAnchor(ORCHARD));
+        // We only call ConnectBlock() on top of the active chain's tip.
+        assert(!pindex->pprev->hashFinalOrchardRoot.IsNull());
+
+        assert(view.GetOrchardAnchorAt(pindex->pprev->hashFinalOrchardRoot, orchard_tree));
+    } else {
+        if (pindex->pprev) {
+            assert(pindex->pprev->hashFinalOrchardRoot.IsNull());
+        }
+        assert(view.GetOrchardAnchorAt(OrchardMerkleFrontier::empty_root(), orchard_tree));
+    }
 
     // Grab the consensus branch ID for this block and its parent
     auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
