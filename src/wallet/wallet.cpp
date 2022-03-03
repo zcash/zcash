@@ -3937,11 +3937,11 @@ int CWallet::ScanForWalletTransactions(
         // checkpoints. Note data will be restored by the calls to AddToWalletIfInvolvingMe,
         // and then the call to `ChainTipAdded` that later occurs for each block will restore
         // the witness data that is being removed in the rewind here.
+        auto nu5_height = chainParams.GetConsensus().GetActivationHeight(Consensus::UPGRADE_NU5);
         bool performOrchardWalletUpdates{false};
         if (orchardWallet.IsCheckpointed()) {
             // We have a checkpoint, so attempt to rewind the Orchard wallet at most as
             // far as the NU5 activation block.
-            auto nu5_height = chainParams.GetConsensus().GetActivationHeight(Consensus::UPGRADE_NU5);
             // If there's no activation height, we shouldn't have a checkpoint already,
             // and this is a programming error.
             assert(nu5_height.has_value());
@@ -3962,6 +3962,11 @@ int CWallet::ScanForWalletTransactions(
                     throw std::runtime_error("CWallet::ScanForWalletTransactions(): Orchard wallet is out of sync. Please restart your node with -rescan.");
                 }
             }
+        } else if (isInitScan && pindex->nHeight < nu5_height) {
+            // If it's the initial scan and we're starting below the nu5 activation
+            // height, we're effectively rescanning from genesis and so it's safe
+            // to update the note commitment tree as we progress.
+            performOrchardWalletUpdates = true;
         }
 
         ShowProgress(_("Rescanning..."), 0); // show rescan progress in GUI as dialog or on splashscreen, if -rescan on startup
@@ -6015,8 +6020,17 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
                 return UIError(_("Prune: last wallet synchronisation goes beyond pruned data. You need to -reindex (download the whole blockchain again in case of pruned node)"));
         }
 
+        // If a rescan would begin at a point before NU5 activation height, reset
+        // the Orchard wallet state to empty.
+        if (pindexRescan->nHeight <= Params().GetConsensus().GetActivationHeight(Consensus::UPGRADE_NU5)) {
+            walletInstance->orchardWallet.Reset();
+        }
+
         uiInterface.InitMessage(_("Rescanning..."));
-        LogPrintf("Rescanning last %i blocks (from block %i)...\n", chainActive.Height() - pindexRescan->nHeight, pindexRescan->nHeight);
+        LogPrintf(
+                "Rescanning last %i blocks (from block %i)...\n",
+                chainActive.Height() - pindexRescan->nHeight,
+                pindexRescan->nHeight);
         nStart = GetTimeMillis();
         walletInstance->ScanForWalletTransactions(pindexRescan, true, true);
         LogPrintf(" rescan      %15dms\n", GetTimeMillis() - nStart);

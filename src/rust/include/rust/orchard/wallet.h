@@ -31,6 +31,15 @@ OrchardWalletPtr* orchard_wallet_new();
 void orchard_wallet_free(OrchardWalletPtr* wallet);
 
 /**
+ * Reset the state of the wallet to be suitable for rescan from the NU5 activation
+ * height.  This removes all witness and spentness information from the wallet. The
+ * keystore is unmodified and decrypted note, nullifier, and conflict data are left
+ * in place with the expectation that they will be overwritten and/or updated in
+ * the rescan process.
+ */
+bool orchard_wallet_reset(OrchardWalletPtr* wallet);
+
+/**
  * Adds a checkpoint to the wallet's note commitment tree to enable
  * a future rewind.
  */

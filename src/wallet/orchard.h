@@ -66,19 +66,27 @@ public:
     OrchardWallet& operator=(const OrchardWallet&) = delete;
 
     /**
-     * Checkpoint the note commitment tree. This returns `false` and leaves the
-     * note commitment tree unmodified if the block height does not match the
-     * last block height scanned for transactions. This must be called exactly
-     * once per block.
+     * Reset the state of the wallet to be suitable for rescan from the NU5 activation
+     * height.  This removes all witness and spentness information from the wallet. The
+     * keystore is unmodified and decrypted note, nullifier, and conflict data are left
+     * in place with the expectation that they will be overwritten and/or updated in the
+     * rescan process.
+     */
+    bool Reset() {
+        return orchard_wallet_reset(inner.get());
+    }
+
+    /**
+     * Checkpoint the note commitment tree. This returns `false` and leaves the note
+     * commitment tree unmodified if the block height does not match the last block
+     * height scanned for transactions. This must be called exactly once per block.
      */
     bool CheckpointNoteCommitmentTree(int nBlockHeight) {
         return orchard_wallet_checkpoint(inner.get(), (uint32_t) nBlockHeight);
     }
 
     /**
-     * Rewind to the most recent checkpoint, and mark as unspent any notes
-     * previously identified as having been spent by transactions in the
-     * latest block.
+     * Return whether the orchard note commitment tree contains any checkpoints.
      */
     bool IsCheckpointed() const {
         return orchard_wallet_is_checkpointed(inner.get());

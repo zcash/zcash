@@ -488,6 +488,12 @@ pub extern "C" fn orchard_wallet_free(wallet: *mut Wallet) {
 }
 
 #[no_mangle]
+pub extern "C" fn orchard_wallet_reset(wallet: *mut Wallet) {
+    let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
+    wallet.reset();
+}
+
+#[no_mangle]
 pub extern "C" fn orchard_wallet_checkpoint(wallet: *mut Wallet, block_height: u32) -> bool {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
     wallet.checkpoint(block_height.into())
