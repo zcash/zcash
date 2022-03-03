@@ -1534,6 +1534,14 @@ public:
     bool LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skmeta);
     bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
 
+    //! Reconstructs (in memory) caches and mappings for unified accounts,
+    //! addresses and keying material. This should be called once, after the
+    //! remainder of the on-disk wallet data has been loaded.
+    //!
+    //! Returns true if and only if there were no detected inconsistencies or
+    //! failures in reconstructing the cache.
+    bool LoadUnifiedCaches();
+
     std::optional<libzcash::UFVKId> FindUnifiedFullViewingKey(const libzcash::UnifiedAddress& addr) const;
     std::optional<libzcash::AccountId> GetUnifiedAccountId(const libzcash::UFVKId& ufvkId) const;
 

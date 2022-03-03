@@ -822,51 +822,11 @@ WalletUAGenerationResult CWallet::GenerateUnifiedAddress(
     }
 }
 
-// NOTE: There is an important relationship between `LoadUnifiedFullViewingKey`
-// and `LoadUnifiedAddressMetadata`. In all cases, by the end of the
-// wallet-loading process, `mapUfvkAddressMetadata` needs to be fully populated
-// for each unified full viewing key. However, we cannot guarantee in what
-// order UFVKs and unified address and account metadata are loaded from disk.
-// Therefore:
-// * When we load a unified full viewing key from disk, we repopulate
-//   the cache of generated addresses by regenerating the address for each
-//   (diversifierIndex, {receiverType...}) pair in `mapUfvkAddressMetadata`
-//   that we have loaded so far.
-// * When we load a unified address metadata record from disk:
-//   - if we have not yet loaded the unified full viewing key, simply add
-//     an entry `mapUfvkAddressMetadata` so that we can restore the address
-//     once the UFVK has been loaded.
-//   - if we have already loaded the unified full viewing key from disk,
-//     regenerate the address from its metadata and add it to the keystore
-//
-// While this is somewhat complicated, it has the benefit of making each
-// piece of unified full viewing key and address metadata write-once in
-// the wallet database; we never need to update ufvk or address metadata
-// once written.
 bool CWallet::LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &key)
 {
-    auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), key);
-    auto metadata = mapUfvkAddressMetadata.find(zufvk.GetKeyID());
-    if (metadata != mapUfvkAddressMetadata.end()) {
-        // restore unified addresses that have been previously generated to the
-        // keystore
-        for (const auto &[j, receiverTypes] : metadata->second.GetKnownReceiverSetsByDiversifierIndex()) {
-            bool restored = std::visit(match {
-                [&](const UnifiedAddressGenerationError& err) {
-                    return false;
-                },
-                [&](const std::pair<UnifiedAddress, diversifier_index_t>& addr) {
-                    return CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(
-                            zufvk.GetKeyID(), addr.second, addr.first);
-                }
-            }, zufvk.Address(j, receiverTypes));
-
-            // failure to restore the generated address is an error
-            if (!restored) return false;
-        }
-    }
-
-    return CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk);
+    return CCryptoKeyStore::AddUnifiedFullViewingKey(
+        ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), key)
+    );
 }
 
 bool CWallet::LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skmeta)
@@ -880,23 +840,106 @@ bool CWallet::LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skm
 bool CWallet::LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta)
 {
     AssertLockHeld(cs_wallet);
-    if (!mapUfvkAddressMetadata[addrmeta.GetKeyID()].SetReceivers(
+
+    return mapUfvkAddressMetadata[addrmeta.GetKeyID()].SetReceivers(
                 addrmeta.GetDiversifierIndex(),
-                addrmeta.GetReceiverTypes())) {
-        return false;
-    }
+                addrmeta.GetReceiverTypes());
+}
 
-    auto ufvk = GetUnifiedFullViewingKey(addrmeta.GetKeyID());
-    if (ufvk.has_value()) {
-        // Regenerate the unified address and add it to the keystore.
-        auto j = addrmeta.GetDiversifierIndex();
-        auto addr = ufvk.value().Address(j, addrmeta.GetReceiverTypes());
-        auto addrPtr = std::get_if<std::pair<UnifiedAddress, diversifier_index_t>>(&addr);
+bool CWallet::LoadUnifiedCaches()
+{
+    AssertLockHeld(cs_wallet);
 
-        if (addrPtr == nullptr) {
+    auto seed = GetMnemonicSeed();
+
+    for (auto account = mapUnifiedAccountKeys.begin(); account != mapUnifiedAccountKeys.end(); ++account) {
+        auto ufvkId = account->second;
+        auto ufvk = GetUnifiedFullViewingKey(ufvkId);
+
+        if (!seed.has_value()) {
+            LogPrintf("%s: Error: Mnemonic seed was not loaded despite an account existing in the wallet.\n",
+                __func__);
             return false;
+        }
+
+        if (ufvk.has_value()) {
+            auto metadata = mapUfvkAddressMetadata.find(ufvkId);
+            if (metadata != mapUfvkAddressMetadata.end()) {
+                auto accountId = metadata->second.GetAccountId();
+                if (!accountId.has_value()) {
+                    LogPrintf("%s: Error: Address records exist for an account that was not loaded in the wallet.\n",
+                        __func__);
+                    return false;
+                }
+                auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed.value(), BIP44CoinType(), accountId.value());
+                if (!usk.has_value()) {
+                    LogPrintf("%s: Error: Unable to generate a unified spending key for an account.\n",
+                        __func__);
+                    return false;
+                }
+
+                // add Orchard spending key to the orchard wallet
+                {
+                    auto orchardSk = usk.value().GetOrchardKey();
+                    orchardWallet.AddSpendingKey(orchardSk);
+
+                    // Associate the Orchard default change address with its IVK
+                    auto orchardInternalIvk = orchardSk.ToFullViewingKey().ToInternalIncomingViewingKey();
+                    if (!AddOrchardRawAddress(orchardInternalIvk, orchardInternalIvk.Address(0))) {
+                        LogPrintf("%s: Error: Unable to generate a default internal address.\n",
+                            __func__);
+                        return false;
+                    }
+                }
+
+                // restore unified addresses that have been previously generated to the
+                // keystore
+                for (const auto &[j, receiverTypes] : metadata->second.GetKnownReceiverSetsByDiversifierIndex()) {
+                    bool restored = std::visit(match {
+                        [&](const UnifiedAddressGenerationError& err) {
+                            LogPrintf("%s: Error: Unable to generate a unified address.\n",
+                                __func__);
+                            return false;
+                        },
+                        [&](const std::pair<UnifiedAddress, diversifier_index_t>& addr) {
+                            // Associate the orchard address with our IVK, if there's
+                            // an orchard receiver present in this address.
+                            auto orchardFvk = ufvk.value().GetOrchardKey();
+                            auto orchardReceiver = addr.first.GetOrchardReceiver();
+
+                            if (orchardFvk.has_value() != orchardReceiver.has_value()) {
+                                LogPrintf("%s: Error: Orchard receiver in unified address is inconsistent with the unified viewing key.\n",
+                                    __func__);
+                                return false;
+                            }
+
+                            if (orchardFvk.has_value()) {
+                                if (!AddOrchardRawAddress(orchardFvk.value().ToIncomingViewingKey(), orchardReceiver.value())) {
+                                    LogPrintf("%s: Error: Unable to add Orchard address -> IVK mapping.\n",
+                                        __func__);
+                                    return false;
+                                }
+                            }
+
+                            return CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(
+                                    ufvkId, addr.second, addr.first);
+                        }
+                    }, ufvk.value().Address(j, receiverTypes));
+
+                    // failure to restore the generated address is an error
+                    if (!restored) return false;
+                }
+            } else {
+                // Loaded an account, but didn't initialize
+                // `mapUfvkAddressMetadata` for the corresponding viewing key.
+                LogPrintf("%s: Error: UFVK address map not initialized despite an account existing.\n",
+                    __func__);
+                return false;
+            }
         } else {
-            return CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(addrmeta.GetKeyID(), j, addrPtr->first);
+            LogPrintf("%s: Error: Unified viewing key missing for an account.\n",
+                __func__);
+            return false;
         }
     }
 
