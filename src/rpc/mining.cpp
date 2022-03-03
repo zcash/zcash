@@ -190,16 +190,21 @@ UniValue generate(const UniValue& params, bool fHelp)
     GetMainSignals().AddressForMining(maybeMinerAddress);
 
     // Throw an error if no address valid for mining was provided.
-    if (!(maybeMinerAddress.has_value() && std::visit(IsValidMinerAddress(), maybeMinerAddress.value()))) {
+    if (!maybeMinerAddress.has_value()) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
+    } else {
+        // Detect and handle keypool exhaustion separately from IsValidMinerAddress().
+        auto resv = std::get_if<boost::shared_ptr<CReserveScript>>(&maybeMinerAddress.value());
+        if (resv && !resv->get()) {
+            throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
+        }
+
+        // Catch any other invalid miner address issues.
+        if (!std::visit(IsValidMinerAddress(), maybeMinerAddress.value())) {
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Miner address is invalid");
+        }
     }
     auto minerAddress = maybeMinerAddress.value();
-
-    // If the keypool is exhausted, no script is returned at all.  Catch this.
-    auto resv = std::get_if<boost::shared_ptr<CReserveScript>>(&minerAddress);
-    if (resv && !resv->get()) {
-        throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
-    }
 
     {   // Don't keep cs_main locked
         LOCK(cs_main);
