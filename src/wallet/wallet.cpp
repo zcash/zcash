@@ -6331,12 +6331,13 @@ void CWallet::GetFilteredNotes(
         }
     }
 
+    std::vector<OrchardNoteMetadata> orchardNotes;
     if (noteFilter.has_value()) {
         for (const OrchardRawAddress& addr: noteFilter.value().GetOrchardAddresses()) {
             auto ivk = orchardWallet.GetIncomingViewingKeyForAddress(addr);
             if (ivk.has_value()) {
                 orchardWallet.GetFilteredNotes(
-                        orchardNotesRet,
+                        orchardNotes,
                         ivk.value(),
                         ignoreSpent,
                         ignoreLocked,
@@ -6346,17 +6347,20 @@ void CWallet::GetFilteredNotes(
     } else {
         // return all Orchard notes
         orchardWallet.GetFilteredNotes(
-                orchardNotesRet,
+                orchardNotes,
                 std::nullopt,
                 ignoreSpent,
                 ignoreLocked,
                 requireSpendingKey);
     }
 
-    for (auto &orchardNoteMeta : orchardNotesRet) {
-        auto wtx = GetWalletTx(orchardNoteMeta.GetOutPoint().hash);
+    for (auto& noteMeta : orchardNotes) {
+        auto wtx = GetWalletTx(noteMeta.GetOutPoint().hash);
         if (wtx) {
-            orchardNoteMeta.SetConfirmations(wtx->GetDepthInMainChain());
+            if (wtx->GetDepthInMainChain() >= minDepth) {
+                noteMeta.SetConfirmations(wtx->GetDepthInMainChain());
+                orchardNotesRet.push_back(noteMeta);
+            }
         } else {
             throw std::runtime_error("Wallet inconsistency: We have an Orchard WalletTx without a corresponding CWalletTx");
         }
