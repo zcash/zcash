@@ -125,7 +125,7 @@ pub struct Wallet {
     /// The in-memory index from nullifier to the outpoint of the note from which that
     /// nullifier was derived.
     nullifiers: BTreeMap<Nullifier, OutPoint>,
-    /// The incremental merkle tree used to track note commitments and witnesses for notes
+    /// The incremental Merkle tree used to track note commitments and witnesses for notes
     /// belonging to the wallet.
     witness_tree: BridgeTree<MerkleHashOrchard, MERKLE_DEPTH>,
     /// The block height at which the last checkpoint was created, if any.
@@ -136,9 +136,9 @@ pub struct Wallet {
     /// Notes marked as locked (currently reserved for pending transactions)
     locked_notes: BTreeSet<OutPoint>,
     /// Notes marked as spent as a consequence of their nullifiers having been
-    /// observed in bundle action inputs. The keys of this map are the notes
-    /// that have been spent, and the values are the outpoints identifying
-    /// the actions in which they are spent.
+    /// observed in bundle action inputs. The keys of this map are the outpoints
+    /// where the spent notes were created, and the values are the outpoints
+    /// identifying the actions in which they are spent.
     spent_notes: BTreeMap<OutPoint, OutPoint>,
     /// For each nullifier which appears more than once in transactions that this
     /// wallet has observed, the set of outpoints corresponding to those nullifiers.
@@ -331,9 +331,10 @@ impl Wallet {
             // that we can detect when the note is later spent.
             if let Some(fvk) = self.key_store.viewing_keys.get(&ivk) {
                 let nf = note.nullifier(fvk);
-                // if we already have an entry for this nullifier that does not correspond
-                // to the current outpoint, then add the existing outpoint to the
-                // conflicts map.
+                // If we already have an entry for this nullifier that does not correspond
+                // to the current outpoint, then add the existing outpoint and the current
+                // outpoint to the conflicts map. (The existing output will already be
+                // present if this is not the first detected conflict for this nullifier.)
                 if let Some(op) = self.nullifiers.get(&nf) {
                     if op != &outpoint {
                         let conflicts = self.conflicts.entry(nf).or_insert_with(BTreeSet::new);
