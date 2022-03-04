@@ -2,6 +2,7 @@
 #include "key.h"
 #include "pubkey.h"
 #include "util.h"
+#include "utiltest.h"
 
 #include "librustzcash.h"
 #include <sodium.h>
