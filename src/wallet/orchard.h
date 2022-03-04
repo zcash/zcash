@@ -82,6 +82,7 @@ public:
      * height scanned for transactions. This must be called exactly once per block.
      */
     bool CheckpointNoteCommitmentTree(int nBlockHeight) {
+        assert(nBlockHeight >= 0);
         return orchard_wallet_checkpoint(inner.get(), (uint32_t) nBlockHeight);
     }
 
