@@ -3410,6 +3410,9 @@ CAmount getBalanceZaddr(std::optional<libzcash::PaymentAddress> address, int min
     for (auto & entry : saplingEntries) {
         balance += CAmount(entry.note.value());
     }
+    for (auto & entry : orchardEntries) {
+        balance += entry.GetNoteValue();
+    }
     return balance;
 }
 
@@ -4407,7 +4410,7 @@ size_t EstimateTxSize(
             [&](const libzcash::OrchardRawAddress& addr) {
                 if (fromSprout) {
                     throw JSONRPCError(
-                        RPC_INVALID_PARAMETER, 
+                        RPC_INVALID_PARAMETER,
                         "Sending funds from a Sprout address to a Unified Address is not supported by z_sendmany");
                 }
                 orchardRecipientCount += 1;
@@ -4419,7 +4422,7 @@ size_t EstimateTxSize(
 
     if (fromSprout || !nu5Active) {
         mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-        mtx.nVersion = SAPLING_TX_VERSION;        
+        mtx.nVersion = SAPLING_TX_VERSION;
     } else {
         mtx.nVersionGroupId = ZIP225_VERSION_GROUP_ID;
         mtx.nVersion = ZIP225_TX_VERSION;
