@@ -45,6 +45,7 @@ typedef enum zcash_script_error_t
     zcash_script_ERR_TX_VERSION,
     zcash_script_ERR_ALL_PREV_OUTPUTS_SIZE_MISMATCH,
     zcash_script_ERR_ALL_PREV_OUTPUTS_DESERIALIZE,
+    zcash_script_ERR_VERIFY_SCRIPT,
 } zcash_script_error;
 
 /** Script verification flags */
