@@ -2872,7 +2872,9 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
         wtx.mapSaplingNoteData = tmp;
     }
 
-    return !unchangedSproutFlag || !unchangedSaplingFlag;
+    bool unchangedOrchardFlag = (wtxIn.mapOrchardActionData.empty() || wtxIn.mapOrchardActionData == wtx.mapOrchardActionData);
+
+    return !unchangedSproutFlag || !unchangedSaplingFlag || !unchangedOrchardFlag;
 }
 
 /**

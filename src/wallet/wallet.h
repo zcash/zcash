@@ -581,8 +581,7 @@ public:
         }
 
         if (fOverwintered && nVersion >= ZIP225_TX_VERSION) {
-            // ORCHARD TODO: serialize/deserialize orchard bits using a pointer
-            // to the Orchard wallet & the txid as referents
+            READWRITE(mapOrchardActionData);
         }
 
         if (ser_action.ForRead())

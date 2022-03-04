@@ -97,17 +97,17 @@ class OrchardIncomingViewingKey
 private:
     std::unique_ptr<OrchardIncomingViewingKeyPtr, decltype(&orchard_incoming_viewing_key_free)> inner;
 
-    OrchardIncomingViewingKey() :
-        inner(nullptr, orchard_incoming_viewing_key_free) {}
-
     OrchardIncomingViewingKey(OrchardIncomingViewingKeyPtr* key) :
         inner(key, orchard_incoming_viewing_key_free) {}
 
     friend class OrchardFullViewingKey;
     friend class OrchardSpendingKey;
     friend class ::OrchardWallet;
-
 public:
+    // DO NOT USE - this is exposed for serialization purposes only.
+    OrchardIncomingViewingKey() :
+        inner(nullptr, orchard_incoming_viewing_key_free) {}
+
     OrchardIncomingViewingKey(OrchardIncomingViewingKey&& key) : inner(std::move(key.inner)) {}
 
     OrchardIncomingViewingKey(const OrchardIncomingViewingKey& key) :
@@ -139,15 +139,20 @@ public:
 
     friend bool operator==(const OrchardIncomingViewingKey& a, const OrchardIncomingViewingKey& b)
     {
+        assert(a.inner.get() != nullptr);
+        assert(b.inner.get() != nullptr);
         return orchard_incoming_viewing_key_eq(a.inner.get(), b.inner.get());
     }
 
     friend bool operator<(const OrchardIncomingViewingKey& c1, const OrchardIncomingViewingKey& c2) {
+        assert(c1.inner.get() != nullptr);
+        assert(c2.inner.get() != nullptr);
         return orchard_incoming_viewing_key_lt(c1.inner.get(), c2.inner.get());
     }
 
     template<typename Stream>
     void Serialize(Stream& s) const {
+        assert(inner.get() != nullptr);
         RustStream rs(s);
         if (!orchard_incoming_viewing_key_serialize(inner.get(), &rs, RustStream<Stream>::write_callback)) {
             throw std::ios_base::failure("Failed to serialize Orchard incoming viewing key");
