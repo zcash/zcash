@@ -96,6 +96,13 @@ bool orchard_wallet_append_bundle_commitments(
         );
 
 /**
+ * Returns the root of the wallet's note commitment tree.
+ */
+void orchard_wallet_commitment_tree_root(
+        const OrchardWalletPtr* wallet,
+        unsigned char* root_ret);
+
+/**
  * Returns whether the specified transaction contains any Orchard notes that belong
  * to this wallet.
  */

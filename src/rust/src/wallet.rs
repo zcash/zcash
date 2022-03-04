@@ -472,6 +472,10 @@ impl Wallet {
             })
             .collect()
     }
+
+    pub fn note_commitment_tree_root(&self) -> MerkleHashOrchard {
+        self.witness_tree.root()
+    }
 }
 
 #[no_mangle]
@@ -507,18 +511,23 @@ pub extern "C" fn orchard_wallet_is_checkpointed(wallet: *const Wallet) -> bool 
 
 #[no_mangle]
 pub extern "C" fn orchard_wallet_rewind(
-    wallet: *mut Wallet, 
+    wallet: *mut Wallet,
     to_height: BlockHeight,
-    blocks_rewound: *mut u32) -> bool {
+    blocks_rewound: *mut u32,
+) -> bool {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
-    let blocks_rewound = unsafe { blocks_rewound.as_mut() }.expect("Return value pointer may not be null.");
+    let blocks_rewound =
+        unsafe { blocks_rewound.as_mut() }.expect("Return value pointer may not be null.");
     match wallet.rewind(to_height) {
         Ok(rewound) => {
             *blocks_rewound = rewound;
             true
         }
         Err(e) => {
-            error!("Unable to rewind the wallet to height {:?}: {:?}", to_height, e);
+            error!(
+                "Unable to rewind the wallet to height {:?}: {:?}",
+                to_height, e
+            );
             false
         }
     }
@@ -557,6 +566,17 @@ pub extern "C" fn orchard_wallet_append_bundle_commitments(
     }
 
     true
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_commitment_tree_root(
+    wallet: *const Wallet,
+    root_ret: *mut [u8; 32],
+) {
+    let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null");
+    let root_ret = unsafe { root_ret.as_mut() }.expect("Cannot return to the null pointer.");
+
+    *root_ret = wallet.note_commitment_tree_root().to_bytes();
 }
 
 #[no_mangle]

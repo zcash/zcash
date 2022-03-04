@@ -135,6 +135,12 @@ public:
         return true;
     }
 
+    uint256 GetLatestAnchor() const {
+        uint256 value;
+        orchard_wallet_commitment_tree_root(inner.get(), value.begin());
+        return value;
+    }
+
     bool TxContainsMyNotes(const uint256& txid) {
         return orchard_wallet_tx_contains_my_notes(
                 inner.get(),
