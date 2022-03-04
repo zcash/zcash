@@ -63,18 +63,6 @@ pub struct TxNotes {
     decrypted_notes: BTreeMap<usize, DecryptedNote>,
 }
 
-/// A type used to pass note metadata across the FFI boundary.
-/// This must have the same representation as `struct RawOrchardNoteMetadata`
-/// in `rust/include/rust/orchard/wallet.h`.
-#[repr(C)]
-pub struct NoteMetadata {
-    txid: [u8; 32],
-    action_idx: u32,
-    recipient: *mut Address,
-    note_value: i64,
-    memo: [u8; 512],
-}
-
 struct KeyStore {
     payment_addresses: BTreeMap<OrderedAddress, IncomingViewingKey>,
     viewing_keys: BTreeMap<IncomingViewingKey, FullViewingKey>,
@@ -306,13 +294,13 @@ impl Wallet {
     }
 
     /// Add note data for those notes that are decryptable with one of this wallet's
-    /// incoming viewing keys to the wallet, and return the indices of the actions that we
-    /// were able to decrypt.
+    /// incoming viewing keys to the wallet, and return a map from incoming viewing
+    /// key to the vector of action indices that that key decrypts.
     pub fn add_notes_from_bundle(
         &mut self,
         txid: &TxId,
         bundle: &Bundle<Authorized, Amount>,
-    ) -> Vec<usize> {
+    ) -> BTreeMap<usize, IncomingViewingKey> {
         let mut tx_notes = TxNotes {
             tx_height: None,
             decrypted_notes: BTreeMap::new(),
@@ -342,7 +330,7 @@ impl Wallet {
             .keys()
             .cloned()
             .collect::<Vec<_>>();
-        let mut result = vec![];
+        let mut result = BTreeMap::new();
         for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_for_keys(&keys) {
             let outpoint = OutPoint {
                 txid: *txid,
@@ -362,8 +350,8 @@ impl Wallet {
 
             // add the association between the address and the IVK used
             // to decrypt the note
-            self.key_store.add_raw_address(recipient, ivk);
-            result.push(action_idx);
+            self.key_store.add_raw_address(recipient, ivk.clone());
+            result.entry(action_idx).or_insert(ivk);
         }
 
         if !tx_notes.decrypted_notes.is_empty() {
@@ -496,6 +484,14 @@ impl Wallet {
     }
 }
 
+//
+// FFI
+//
+
+/// A type alias for a pointer to a C++ vector used for collecting
+/// return values across the FFI.
+pub type VecObj = std::ptr::NonNull<libc::c_void>;
+
 #[no_mangle]
 pub extern "C" fn orchard_wallet_new() -> *mut Wallet {
     let empty_wallet = Wallet::empty();
@@ -551,16 +547,38 @@ pub extern "C" fn orchard_wallet_rewind(
     }
 }
 
+/// A type used to pass action decryption metadata across the FFI boundary.
+/// This must have the same representation as `struct RawOrchardActionIVK`
+/// in `rust/include/rust/orchard/wallet.h`.
+#[repr(C)]
+pub struct FFIActionIvk {
+    action_idx: u32,
+    ivk_ptr: *mut IncomingViewingKey,
+}
+
+/// A C++-allocated function pointer that can push a FFIActionIVK value
+/// onto a C++ vector.
+pub type ActionIvkPushCb = unsafe extern "C" fn(obj: Option<VecObj>, value: FFIActionIvk);
+
 #[no_mangle]
 pub extern "C" fn orchard_wallet_add_notes_from_bundle(
     wallet: *mut Wallet,
     txid: *const [c_uchar; 32],
     bundle: *const Bundle<Authorized, Amount>,
+    result: Option<VecObj>,
+    push_cb: Option<ActionIvkPushCb>,
 ) {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
     let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
     if let Some(bundle) = unsafe { bundle.as_ref() } {
-        wallet.add_notes_from_bundle(&txid, bundle);
+        let added = wallet.add_notes_from_bundle(&txid, bundle);
+        for (action_idx, ivk) in added.into_iter() {
+            let action_ivk = FFIActionIvk {
+                action_idx: action_idx.try_into().unwrap(),
+                ivk_ptr: Box::into_raw(Box::new(ivk.clone())),
+            };
+            unsafe { (push_cb.unwrap())(result, action_ivk) };
+        }
     }
 }
 
@@ -655,8 +673,21 @@ pub extern "C" fn orchard_wallet_tx_contains_my_notes(
     wallet.tx_contains_my_notes(&txid)
 }
 
-pub type VecObj = std::ptr::NonNull<libc::c_void>;
-pub type PushCb = unsafe extern "C" fn(obj: Option<VecObj>, meta: NoteMetadata);
+/// A type used to pass note metadata across the FFI boundary.
+/// This must have the same representation as `struct RawOrchardNoteMetadata`
+/// in `rust/include/rust/orchard/wallet.h`.
+#[repr(C)]
+pub struct FFINoteMetadata {
+    txid: [u8; 32],
+    action_idx: u32,
+    recipient: *mut Address,
+    note_value: i64,
+    memo: [u8; 512],
+}
+
+/// A C++-allocated function pointer that can push a FFINoteMetadata value
+/// onto a C++ vector.
+pub type NotePushCb = unsafe extern "C" fn(obj: Option<VecObj>, meta: FFINoteMetadata);
 
 #[no_mangle]
 pub extern "C" fn orchard_wallet_get_filtered_notes(
@@ -665,13 +696,13 @@ pub extern "C" fn orchard_wallet_get_filtered_notes(
     ignore_mined: bool,
     require_spending_key: bool,
     result: Option<VecObj>,
-    push_cb: Option<PushCb>,
+    push_cb: Option<NotePushCb>,
 ) {
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
     let ivk = unsafe { ivk.as_ref() };
 
     for (outpoint, dnote) in wallet.get_filtered_notes(ivk, ignore_mined, require_spending_key) {
-        let metadata = NoteMetadata {
+        let metadata = FFINoteMetadata {
             txid: *outpoint.txid.as_ref(),
             action_idx: outpoint.action_idx as u32,
             recipient: Box::into_raw(Box::new(dnote.note.recipient())),

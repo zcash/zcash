@@ -50,15 +50,13 @@ bool orchard_wallet_checkpoint(
         );
 
 /**
- * Returns whether or not the wallet has any checkpointed state to
- * which it can rewind.
+ * Returns whether or not the wallet has any checkpointed state to which it can rewind.
  */
 bool orchard_wallet_is_checkpointed(const OrchardWalletPtr* wallet);
 
 /**
- * Rewinds to the most recent checkpoint, and marks as unspent any notes
- * previously identified as having been spent by transactions in the
- * latest block.
+ * Rewinds to the most recent checkpoint, and marks as unspent any notes previously
+ * identified as having been spent by transactions in the latest block.
  *
  * The `blockHeight` argument provides the height to which the witness tree should be
  * rewound, such that after the rewind this height corresponds to the latest block
@@ -76,16 +74,37 @@ bool orchard_wallet_rewind(
         );
 
 /**
- * Searches the provided bundle for notes that are visible to the specified
- * wallet's incoming viewing keys, and adds those notes to the wallet.
+ * A C struct used to transfer action_idx/IVK pairs back from Rust across the FFI
+ * boundary. This must have the same in-memory representation as the `NoteMetadata` type
+ * in orchard_ffi/wallet.rs.
  *
- * The provided bundle must be a component of the transaction from which
- * `txid` was derived.
+ * Values of the `ivk` pointer must be freed manually; the best way to do this is to
+ * wrap this pointer in an `OrchardIncomingViewingKey` which handles deallocation
+ * in the object destructor.
+ */
+struct RawOrchardActionIVK {
+    uint32_t actionIdx;
+    OrchardIncomingViewingKeyPtr* ivk;
+};
+
+typedef void (*push_action_ivk_callback_t)(void* resultCollection, const RawOrchardActionIVK actionIvk);
+
+/**
+ * Searches the provided bundle for notes that are visible to the specified wallet's
+ * incoming viewing keys, and adds those notes to the wallet.  For each note decryptable
+ * by one of the wallet's keys, this method will insert a `RawOrchardActionIVK` value into
+ * the provided `resultCollection` using the `push_cb` callback. Note that this callback
+ * can perform transformations on the provided RawOrchardActionIVK in this process.
+ *
+ * The provided bundle must be a component of the transaction from which `txid` was
+ * derived.
  */
 void orchard_wallet_add_notes_from_bundle(
         OrchardWalletPtr* wallet,
         const unsigned char txid[32],
-        const OrchardBundlePtr* bundle
+        const OrchardBundlePtr* bundle,
+        void* resultCollection,
+        push_action_ivk_callback_t push_cb
         );
 
 /**
@@ -114,34 +133,32 @@ void orchard_wallet_commitment_tree_root(
         unsigned char* root_ret);
 
 /**
- * Returns whether the specified transaction contains any Orchard notes that belong
- * to this wallet.
+ * Returns whether the specified transaction contains any Orchard notes that belong to
+ * this wallet.
  */
 bool orchard_wallet_tx_contains_my_notes(
         const OrchardWalletPtr* wallet,
         const unsigned char txid[32]);
 
 /**
- * Add the specified spending key to the wallet's key store.
- * This will also compute and add the associated full and
- * incoming viewing keys.
+ * Add the specified spending key to the wallet's key store.  This will also compute and
+ * add the associated full and incoming viewing keys.
  */
 void orchard_wallet_add_spending_key(
         OrchardWalletPtr* wallet,
         const OrchardSpendingKeyPtr* sk);
 
 /**
- * Add the specified full viewing key to the wallet's key store.
- * This will also compute and add the associated incoming viewing key.
+ * Add the specified full viewing key to the wallet's key store.  This will also compute
+ * and add the associated incoming viewing key.
  */
 void orchard_wallet_add_full_viewing_key(
         OrchardWalletPtr* wallet,
         const OrchardFullViewingKeyPtr* fvk);
 
 /**
- * Add the specified raw address to the wallet's key store,
- * associated with the incoming viewing key from which that
- * address was derived.
+ * Add the specified raw address to the wallet's key store, associated with the incoming
+ * viewing key from which that address was derived.
  */
 bool orchard_wallet_add_raw_address(
         OrchardWalletPtr* wallet,
@@ -149,9 +166,8 @@ bool orchard_wallet_add_raw_address(
         const OrchardIncomingViewingKeyPtr* ivk);
 
 /**
- * Returns a pointer to the Orchard incoming viewing key
- * corresponding to the specified raw address, if it is
- * known to the wallet, or `nullptr` otherwise.
+ * Returns a pointer to the Orchard incoming viewing key corresponding to the specified
+ * raw address, if it is known to the wallet, or `nullptr` otherwise.
  *
  * Memory is allocated by Rust and must be manually freed using
  * `orchard_incoming_viewing_key_free`.
@@ -161,9 +177,9 @@ OrchardIncomingViewingKeyPtr* orchard_wallet_get_ivk_for_address(
         const OrchardRawAddressPtr* addr);
 
 /**
- * A C struct used to transfer note metadata information across the Rust FFI
- * boundary. This must have the same in-memory representation as the
- * `NoteMetadata` type in orchard_ffi/wallet.rs.
+ * A C struct used to transfer note metadata information across the Rust FFI boundary.
+ * This must have the same in-memory representation as the `NoteMetadata` type in
+ * orchard_ffi/wallet.rs.
  */
 struct RawOrchardNoteMetadata {
     unsigned char txid[32];
@@ -173,20 +189,19 @@ struct RawOrchardNoteMetadata {
     unsigned char memo[512];
 };
 
-typedef void (*push_callback_t)(void* resultVector, const RawOrchardNoteMetadata noteMeta);
+typedef void (*push_note_callback_t)(void* resultVector, const RawOrchardNoteMetadata noteMeta);
 
 /**
- * Finds notes that belong to the wallet that were sent to addresses derived
- * from the specified incoming viewing key, subject to the specified flags, and
- * uses the provided callback to push RawOrchardNoteMetadata values
- * corresponding to those notes on to the provided result vector.  Note that
- * the push_cb callback can perform any necessary conversion from a
- * RawOrchardNoteMetadata value in addition to modifying the provided
+ * Finds notes that belong to the wallet that were sent to addresses derived from the
+ * specified incoming viewing key, subject to the specified flags, and uses the provided
+ * callback to push RawOrchardNoteMetadata values corresponding to those notes on to the
+ * provided result vector.  Note that the push_cb callback can perform any necessary
+ * conversion from a RawOrchardNoteMetadata value in addition to modifying the provided
  * result vector.
  *
- * If `ivk` is null, all notes belonging to the wallet will be returned.
- * The `RawOrchardNoteMetadata::addr` pointers for values provided to the
- * callback must be manually freed by the caller.
+ * If `ivk` is null, all notes belonging to the wallet will be returned.  The
+ * `RawOrchardNoteMetadata::addr` pointers for values provided to the callback must be
+ * manually freed by the caller.
  */
 void orchard_wallet_get_filtered_notes(
         const OrchardWalletPtr* wallet,
@@ -194,17 +209,16 @@ void orchard_wallet_get_filtered_notes(
         bool ignoreMined,
         bool requireSpendingKey,
         void* resultVector,
-        push_callback_t push_cb
+        push_note_callback_t push_cb
         );
 
 
 typedef void (*push_txid_callback_t)(void* resultVector, unsigned char txid[32]);
 
 /**
- * Returns a vector of transaction IDs for transactions that have been observed
- * as spending the given outpoint (transaction ID and action index) by using
- * the `push_cb` callback to push transaction IDs onto the provided result
- * vector.
+ * Returns a vector of transaction IDs for transactions that have been observed as
+ * spending the given outpoint (transaction ID and action index) by using the `push_cb`
+ * callback to push transaction IDs onto the provided result vector.
  */
 void orchard_wallet_get_potential_spends(
         const OrchardWalletPtr* wallet,
@@ -213,7 +227,6 @@ void orchard_wallet_get_potential_spends(
         void* resultVector,
         push_txid_callback_t push_cb
         );
-
 
 #ifdef __cplusplus
 }

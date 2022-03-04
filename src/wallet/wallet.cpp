@@ -2917,8 +2917,9 @@ bool CWallet::AddToWalletIfInvolvingMe(
         }
 
         // Orchard
+        mapOrchardActionData_t orchardActionData;
         if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
-            orchardWallet.AddNotesIfInvolvingMe(tx);
+            orchardActionData = orchardWallet.AddNotesIfInvolvingMe(tx);
         }
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0 || orchardWallet.TxContainsMyNotes(tx.GetHash()))
@@ -2931,6 +2932,10 @@ bool CWallet::AddToWalletIfInvolvingMe(
 
             if (saplingNoteData.size() > 0) {
                 wtx.SetSaplingNoteData(saplingNoteData);
+            }
+
+            if (orchardActionData.size() > 0) {
+                wtx.SetOrchardActionData(orchardActionData);
             }
 
             // Get merkle branch if transaction was found in a block
@@ -3495,7 +3500,7 @@ bool CWallet::LoadCryptedLegacyHDSeed(const uint256& seedFp, const std::vector<u
     return CCryptoKeyStore::SetCryptedLegacyHDSeed(seedFp, seed);
 }
 
-void CWalletTx::SetSproutNoteData(mapSproutNoteData_t &noteData)
+void CWalletTx::SetSproutNoteData(const mapSproutNoteData_t& noteData)
 {
     mapSproutNoteData.clear();
     for (const std::pair<JSOutPoint, SproutNoteData> nd : noteData) {
@@ -3511,7 +3516,7 @@ void CWalletTx::SetSproutNoteData(mapSproutNoteData_t &noteData)
     }
 }
 
-void CWalletTx::SetSaplingNoteData(mapSaplingNoteData_t &noteData)
+void CWalletTx::SetSaplingNoteData(const mapSaplingNoteData_t& noteData)
 {
     mapSaplingNoteData.clear();
     for (const std::pair<SaplingOutPoint, SaplingNoteData> nd : noteData) {
@@ -3519,6 +3524,18 @@ void CWalletTx::SetSaplingNoteData(mapSaplingNoteData_t &noteData)
             mapSaplingNoteData[nd.first] = nd.second;
         } else {
             throw std::logic_error("CWalletTx::SetSaplingNoteData(): Invalid note");
+        }
+    }
+}
+
+void CWalletTx::SetOrchardActionData(const mapOrchardActionData_t& actionData)
+{
+    mapOrchardActionData.clear();
+    for (const auto& [action_idx, ivk] : actionData) {
+        if (action_idx < GetOrchardBundle().GetNumActions()) {
+            mapOrchardActionData.insert_or_assign(action_idx, ivk);
+        } else {
+            throw std::logic_error("CWalletTx::SetOrchardActionData(): Invalid action index");
         }
     }
 }
