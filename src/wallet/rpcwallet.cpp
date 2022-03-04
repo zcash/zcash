@@ -4382,7 +4382,7 @@ size_t EstimateTxSize(
             [&](const libzcash::OrchardRawAddress& addr) {
                 if (fromSprout) {
                     throw JSONRPCError(
-                        RPC_INVALID_PARAMETER, 
+                        RPC_INVALID_PARAMETER,
                         "Sending funds from a Sprout address to a Unified Address is not supported by z_sendmany");
                 }
                 orchardRecipientCount += 1;
@@ -4394,7 +4394,7 @@ size_t EstimateTxSize(
 
     if (fromSprout || !nu5Active) {
         mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-        mtx.nVersion = SAPLING_TX_VERSION;        
+        mtx.nVersion = SAPLING_TX_VERSION;
     } else {
         mtx.nVersionGroupId = ZIP225_VERSION_GROUP_ID;
         mtx.nVersion = ZIP225_TX_VERSION;
@@ -4479,7 +4479,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             if (!decoded.has_value()) {
                 throw JSONRPCError(
                         RPC_INVALID_ADDRESS_OR_KEY,
-                        "Invalid from address: should be a taddr, a zaddr, or the string 'ANY_TADDR'.");
+                        "Invalid from address: should be a taddr, zaddr, UA, or the string 'ANY_TADDR'.");
             }
 
             auto ztxoSelectorOpt = pwalletMain->ZTXOSelectorForAddress(decoded.value(), true);
@@ -4516,7 +4516,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amounts array is empty.");
     }
 
-    std::set<std::string> addrStrings;
+    std::set<RecipientAddress> recipientAddrs;
     std::vector<SendManyRecipient> recipients;
     CAmount nTotalOut = 0;
     for (const UniValue& o : outputs.getValues()) {
@@ -4551,9 +4551,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             }
         }
 
-        if (!addrStrings.insert(addrStr).second) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ") + addrStr);
-        };
+        if (!recipientAddrs.insert(addr.value()).second) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated recipient from address: ") + addrStr);
+        }
 
         UniValue memoValue = find_value(o, "memo");
         std::optional<std::string> memo;
