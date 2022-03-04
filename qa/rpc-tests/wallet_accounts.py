@@ -176,6 +176,10 @@ class WalletAccountsTest(BitcoinTestFramework):
         self.check_balance(0, 0, ua0, {'sapling': 9})
         self.check_balance(0, 0, ua0, {'sapling': 9, 'orchard': 10}, 0)
 
+        # The total balance with the default minconf should be just the Sapling balance
+        assert_equal('9.00', self.nodes[0].z_gettotalbalance()['private'])
+        assert_equal('19.00', self.nodes[0].z_gettotalbalance(0)['private'])
+
         self.nodes[2].generate(1)
         self.sync_all()
 
