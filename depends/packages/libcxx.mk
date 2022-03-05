@@ -21,14 +21,15 @@ endef
 
 else
 # For Windows cross-compilation, use the MSYS2 binaries.
+# Using 13.0.0-3 because 13.0.1-1 has missing `new` and `delete` symbols.
 $(package)_download_path=https://repo.msys2.org/mingw/x86_64
-$(package)_download_file=mingw-w64-x86_64-libc++-13.0.1-1-any.pkg.tar.zst
-$(package)_file_name=mingw-w64-x86_64-libcxx-13.0.1-1-any.pkg.tar.zst
-$(package)_sha256_hash=0a7afcd88e14d6914f21f641b752ab40b106c6173f9842e22f5a5ae4701a2858
+$(package)_download_file=mingw-w64-x86_64-libc++-13.0.0-3-any.pkg.tar.zst
+$(package)_file_name=mingw-w64-x86_64-libcxx-13.0.0-3-any.pkg.tar.zst
+$(package)_sha256_hash=0f8819e88273579f7c9262456c6b8f4d73e1693095c2364d1192c61c5f6a1a4f
 
-$(package)_libcxxabi_download_file=mingw-w64-x86_64-libc++abi-13.0.1-1-any.pkg.tar.zst
-$(package)_libcxxabi_file_name=mingw-w64-x86_64-libcxxabi-13.0.1-1-any.pkg.tar.zst
-$(package)_libcxxabi_sha256_hash=f937818912aa6b0250e360e866f2a7dde663d1356e9fdfebf83f6b900de89391
+$(package)_libcxxabi_download_file=mingw-w64-x86_64-libc++abi-13.0.0-3-any.pkg.tar.zst
+$(package)_libcxxabi_file_name=mingw-w64-x86_64-libcxxabi-13.0.0-3-any.pkg.tar.zst
+$(package)_libcxxabi_sha256_hash=7224a7252a566938afe91ea8f130682abd29b10e13c9a3c2347af523ca0d7c42
 
 $(package)_extra_sources += $($(package)_libcxxabi_file_name)
 
