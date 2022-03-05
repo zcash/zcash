@@ -852,6 +852,7 @@ bool CWallet::LoadUnifiedCaches()
 
     auto seed = GetMnemonicSeed();
 
+    // Restore unified key metadata
     for (auto account = mapUnifiedAccountKeys.begin(); account != mapUnifiedAccountKeys.end(); ++account) {
         auto ufvkId = account->second;
         auto ufvk = GetUnifiedFullViewingKey(ufvkId);
@@ -940,6 +941,15 @@ bool CWallet::LoadUnifiedCaches()
             LogPrintf("%s: Error: Unified viewing key missing for an account.\n",
                 __func__);
             return false;
+        }
+    }
+
+    // Restore decrypted Orchard notes.
+    for (const auto& [txid, walletTx] : mapWallet) {
+        if (!walletTx.mapOrchardActionData.empty()) {
+            if (!orchardWallet.RestoreDecryptedNotes(walletTx, walletTx.mapOrchardActionData)) {
+                return false;
+            }
         }
     }
 

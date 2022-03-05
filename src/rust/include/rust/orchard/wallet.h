@@ -108,6 +108,21 @@ void orchard_wallet_add_notes_from_bundle(
         );
 
 /**
+ * Decrypts a selection of notes from the bundle with specified incoming viewing
+ * keys, and adds those notes to the wallet.
+ *
+ * The provided bundle must be a component of the transaction from which
+ * `txid` was derived.
+ */
+bool orchard_wallet_restore_notes(
+        OrchardWalletPtr* wallet,
+        const unsigned char txid[32],
+        const OrchardBundlePtr* bundle,
+        const RawOrchardActionIVK* actionIvks,
+        size_t actionIvksLen
+        );
+
+/**
  * Add the note commitment values for the specified bundle to the wallet's note
  * commitment tree, and mark any Orchard notes that belong to the wallet so
  * that we can construct authentication paths to these notes in the future.

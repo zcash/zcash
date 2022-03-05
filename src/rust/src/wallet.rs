@@ -2,6 +2,7 @@ use incrementalmerkletree::{bridgetree::BridgeTree, Frontier, Tree};
 use libc::c_uchar;
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryInto;
+use std::slice;
 use tracing::error;
 
 use zcash_primitives::{
@@ -162,6 +163,17 @@ pub enum RewindError {
     InsufficientCheckpoints(usize),
 }
 
+#[derive(Debug, Clone)]
+pub enum BundleDecryptionError {
+    /// The action at the specified index failed to decrypt with
+    /// the provided IVK.
+    ActionDecryptionFailed(usize),
+    /// The wallet did not contain the full viewing key corresponding
+    /// to the incoming viewing key that successfullly decrypted a
+    /// note.
+    FvkNotFound(IncomingViewingKey),
+}
+
 impl Wallet {
     pub fn empty() -> Self {
         Wallet {
@@ -301,11 +313,6 @@ impl Wallet {
         txid: &TxId,
         bundle: &Bundle<Authorized, Amount>,
     ) -> BTreeMap<usize, IncomingViewingKey> {
-        let mut tx_notes = TxNotes {
-            tx_height: None,
-            decrypted_notes: BTreeMap::new(),
-        };
-
         // Check for spends of our notes by matching against the nullifiers
         // we're tracking, and when we detect one, associate the current
         // txid and action as spending the note.
@@ -331,7 +338,56 @@ impl Wallet {
             .cloned()
             .collect::<Vec<_>>();
         let mut result = BTreeMap::new();
+
         for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_for_keys(&keys) {
+            assert!(self.add_decrypted_note(txid, action_idx, ivk.clone(), note, recipient, memo));
+            result.entry(action_idx).or_insert(ivk);
+        }
+
+        result
+    }
+
+    /// Add note data to the wallet by attempting to
+    /// incoming viewing keys to the wallet, and return a map from incoming viewing
+    /// key to the vector of action indices that that key decrypts.
+    pub fn add_notes_from_bundle_with_hints(
+        &mut self,
+        txid: &TxId,
+        bundle: &Bundle<Authorized, Amount>,
+        hints: &BTreeMap<usize, &IncomingViewingKey>,
+    ) -> Result<(), BundleDecryptionError> {
+        for (action_idx, ivk) in hints.iter() {
+            if let Some((note, recipient, memo)) = bundle.decrypt_output_with_key(*action_idx, ivk)
+            {
+                if !self.add_decrypted_note(
+                    txid,
+                    *action_idx,
+                    (*ivk).clone(),
+                    note,
+                    recipient,
+                    memo,
+                ) {
+                    return Err(BundleDecryptionError::FvkNotFound((*ivk).clone()));
+                }
+            } else {
+                return Err(BundleDecryptionError::ActionDecryptionFailed(*action_idx));
+            }
+        }
+        Ok(())
+    }
+
+    fn add_decrypted_note(
+        &mut self,
+        txid: &TxId,
+        action_idx: usize,
+        ivk: IncomingViewingKey,
+        note: Note,
+        recipient: Address,
+        memo: [u8; 512],
+    ) -> bool {
+        // Generate the nullifier for the received note and add it to the nullifiers map so
+        // that we can detect when the note is later spent.
+        if let Some(fvk) = self.key_store.viewing_keys.get(&ivk) {
             let outpoint = OutPoint {
                 txid: *txid,
                 action_idx,
@@ -339,26 +395,30 @@ impl Wallet {
 
             // Generate the nullifier for the received note and add it to the nullifiers map so
             // that we can detect when the note is later spent.
-            if let Some(fvk) = self.key_store.viewing_keys.get(&ivk) {
-                let nf = note.nullifier(fvk);
-                self.nullifiers.insert(nf, outpoint);
-            }
+            let nf = note.nullifier(fvk);
+            self.nullifiers.insert(nf, outpoint);
 
             // add the decrypted note data to the wallet
             let note_data = DecryptedNote { note, memo };
-            tx_notes.decrypted_notes.insert(action_idx, note_data);
+            self.wallet_received_notes
+                .entry(*txid)
+                .or_insert_with(|| TxNotes {
+                    tx_height: None,
+                    decrypted_notes: BTreeMap::new(),
+                })
+                .decrypted_notes
+                .insert(action_idx, note_data);
+
+            self.nullifiers.insert(nf, outpoint);
 
             // add the association between the address and the IVK used
             // to decrypt the note
             self.key_store.add_raw_address(recipient, ivk.clone());
-            result.entry(action_idx).or_insert(ivk);
-        }
 
-        if !tx_notes.decrypted_notes.is_empty() {
-            self.wallet_received_notes.insert(*txid, tx_notes);
+            true
+        } else {
+            false
         }
-
-        result
     }
 
     /// Add note commitments for the Orchard components of a transaction to the note
@@ -578,6 +638,37 @@ pub extern "C" fn orchard_wallet_add_notes_from_bundle(
                 ivk_ptr: Box::into_raw(Box::new(ivk.clone())),
             };
             unsafe { (push_cb.unwrap())(result, action_ivk) };
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_restore_notes(
+    wallet: *mut Wallet,
+    txid: *const [c_uchar; 32],
+    bundle: *const Bundle<Authorized, Amount>,
+    hints: *const FFIActionIvk,
+    hints_len: usize,
+) -> bool {
+    let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
+    let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
+    let bundle = unsafe { bundle.as_ref() }.expect("bundle pointer may not be null.");
+
+    let hints_data = unsafe { slice::from_raw_parts(hints, hints_len) };
+
+    let mut hints = BTreeMap::new();
+    for action_ivk in hints_data {
+        hints.insert(
+            action_ivk.action_idx.try_into().unwrap(),
+            unsafe { action_ivk.ivk_ptr.as_ref() }.expect("ivk pointer may not be null"),
+        );
+    }
+
+    match wallet.add_notes_from_bundle_with_hints(&txid, bundle, &hints) {
+        Ok(_) => true,
+        Err(e) => {
+            error!("Failed to restore decrypted notes to wallet: {:?}", e);
+            false
         }
     }
 }

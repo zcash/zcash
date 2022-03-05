@@ -1059,7 +1059,7 @@ protected:
                 // are empty. This covers transactions that have no Sprout or Sapling data
                 // (i.e. are purely transparent), as well as shielding and unshielding
                 // transactions in which we only have transparent addresses involved.
-                if (!(wtx.mapSproutNoteData.empty() && wtx.mapSaplingNoteData.empty())) {
+                if (!(wtx.mapSproutNoteData.empty() && wtx.mapSaplingNoteData.empty() && wtx.mapOrchardActionData.empty())) {
                     if (!walletdb.WriteTx(wtx)) {
                         LogPrintf("SetBestChain(): Failed to write CWalletTx, aborting atomic write\n");
                         walletdb.TxnAbort();
