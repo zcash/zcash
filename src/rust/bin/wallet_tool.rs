@@ -382,8 +382,8 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
         try_to_clear(concat!(
             "\n\n\n\n\n\n\n\n\n\n\n\n",
             "Please adjust the terminal window so that you can't see the\n",
-            "recovery phrase above. After finishing the backup, clear the\n",
-            "terminal window"
+            "recovery phrase above. After finishing the backup, close the\n",
+            "terminal window or clear it"
         ));
 
         println!("\nNow we're going to confirm that you backed up the recovery phrase.");
@@ -548,7 +548,7 @@ fn clear_and_show_cautions(export_path: &str) {
     try_to_clear(concat!(
         "\nCAUTION: This terminal window might be showing secrets (or have\n",
         "them in the scrollback). Please copy any useful information and\n",
-        "then clear it"
+        "then close it, or clear it"
     ));
 
     println!(
