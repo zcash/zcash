@@ -2416,7 +2416,11 @@ void CWallet::DecrementNoteWitnesses(const Consensus::Params& consensus, const C
         // pindex->nHeight is the height of the block being removed, so we rewind
         // to the previous block height
         uint32_t blocksRewound{0};
-        orchardWallet.Rewind(pindex->nHeight - 1, blocksRewound);
+        if (!orchardWallet.Rewind(pindex->nHeight - 1, blocksRewound)) {
+            LogPrintf(
+                    "DecrementNoteWitnesses: Orchard wallet rewind unsuccessful at height %d; rewound %d",
+                    pindex->nHeight - 1, blocksRewound);
+        }
         // TODO ORCHARD: Enable the following assertions.
         //assert(orchardWallet.Rewind(pindex->nHeight - 1, blocksRewound));
         //assert(blocksRewound == 1);
@@ -4010,7 +4014,10 @@ int CWallet::ScanForWalletTransactions(
                     // can't rewind far enough. This is an unrecoverable failure; it means that we
                     // can't get back to a valid wallet state without resetting the wallet all
                     // the way back to NU5 activation.
-                    throw std::runtime_error("CWallet::ScanForWalletTransactions(): Orchard wallet is out of sync. Please restart your node with -rescan.");
+
+                    LogPrintf("Orchard wallet is out of sync: %d blockd rewound.", blocksRewound);
+                    // TODO ORCHARD: enable after wallet persistence
+                    // throw std::runtime_error("CWallet::ScanForWalletTransactions(): Orchard wallet is out of sync. Please restart your node with -rescan.");
                 }
             }
         } else if (isInitScan && pindex->nHeight < nu5_height) {
@@ -4061,12 +4068,12 @@ int CWallet::ScanForWalletTransactions(
             }
         }
 
-        // After rescanning, persist Sapling note data that might have changed, e.g. nullifiers.
-        // Do not flush the wallet here for performance reasons.
+        // After rescanning, persist Sapling & Orchard note data that might have changed,
+        // e.g. nullifiers. Do not flush the wallet here for performance reasons.
         CWalletDB walletdb(strWalletFile, "r+", false);
         for (auto hash : myTxHashes) {
             CWalletTx wtx = mapWallet[hash];
-            if (!wtx.mapSaplingNoteData.empty()) {
+            if (!wtx.mapSaplingNoteData.empty() || !wtx.mapOrchardActionData.empty()) {
                 if (!walletdb.WriteTx(wtx)) {
                     LogPrintf("Rescanning... WriteToDisk failed to update Sapling note data for: %s\n", hash.ToString());
                 }
