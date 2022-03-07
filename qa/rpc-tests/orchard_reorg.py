@@ -14,14 +14,10 @@ from test_framework.util import (
     CANOPY_BRANCH_ID,
     NU5_BRANCH_ID,
     assert_equal,
-    connect_nodes_bi,
     get_coinbase_address,
     nuparams,
     start_nodes,
-    stop_nodes,
-    sync_blocks,
     wait_and_assert_operationid_status,
-    wait_bitcoinds,
 )
 
 from finalsaplingroot import ORCHARD_TREE_EMPTY_ROOT
@@ -122,19 +118,7 @@ class OrchardReorgTest(BitcoinTestFramework):
 
         # Reconnect the nodes; node 0 will re-org to node 2's chain.
         print("Re-joining the network so that node 0 reorgs")
-        # We can't use `self.join_network()` because the coinbase-spending second Orchard
-        # transaction doesn't propagate from node 1's mempool to node 2 on restart. Inline
-        # the block-syncing parts here.
-        assert self.is_network_split
-        stop_nodes(self.nodes)
-        wait_bitcoinds()
-        self.nodes = self.setup_nodes()
-        connect_nodes_bi(self.nodes, 1, 2)
-        sync_blocks(self.nodes[1:3])
-        connect_nodes_bi(self.nodes, 0, 1)
-        connect_nodes_bi(self.nodes, 2, 3)
-        self.is_network_split = False
-        sync_blocks(self.nodes)
+        self.join_network()
 
         # Verify that node 0's latest Orchard root matches what we expect.
         orchardroot_postreorg = self.nodes[0].getblock(self.nodes[2].getbestblockhash())['finalorchardroot']
