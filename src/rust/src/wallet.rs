@@ -30,8 +30,16 @@ pub struct LastObserved {
     block_tx_idx: Option<usize>,
 }
 
+/// A pointer to a particular action in an Orchard transaction output.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OutPoint {
+    txid: TxId,
+    action_idx: usize,
+}
+
+/// A pointer to a previous output being spent in an Orchard action.
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct InPoint {
     txid: TxId,
     action_idx: usize,
 }
@@ -137,12 +145,12 @@ pub struct Wallet {
     locked_notes: BTreeSet<OutPoint>,
     /// Notes marked as spent as a consequence of their nullifiers having been
     /// observed in bundle action inputs. The keys of this map are the outpoints
-    /// where the spent notes were created, and the values are the outpoints
+    /// where the spent notes were created, and the values are the inpoints
     /// identifying the actions in which they are spent.
-    spent_notes: BTreeMap<OutPoint, OutPoint>,
+    spent_notes: BTreeMap<OutPoint, InPoint>,
     /// For each nullifier which appears more than once in transactions that this
     /// wallet has observed, the set of outpoints corresponding to those nullifiers.
-    conflicts: BTreeMap<Nullifier, BTreeSet<OutPoint>>,
+    conflicts: BTreeMap<Nullifier, BTreeSet<InPoint>>,
 }
 
 #[derive(Debug, Clone)]
@@ -300,17 +308,30 @@ impl Wallet {
 
         // Check for spends of our notes by matching against the nullifiers
         // we're tracking, and when we detect one, associate the current
-        // txid as spending the note.
+        // txid and action as spending the note.
         for (action_idx, action) in bundle.actions().iter().enumerate() {
             let nf = action.nullifier();
+            // find the outpoint where the note being spent in this action was created
             if let Some(outpoint) = self.nullifiers.get(nf) {
-                self.spent_notes.insert(
-                    *outpoint,
-                    OutPoint {
-                        txid: *txid,
-                        action_idx,
-                    },
-                );
+                let inpoint = InPoint {
+                    txid: *txid,
+                    action_idx,
+                };
+
+                // If we already have an entry for this nullifier that does not correspond
+                // to the current inpoint, then add the existing inpoint and the current
+                // inpoint to the conflicts map. (The existing inpoint will already be
+                // present if this is not the first detected conflict for this nullifier.)
+                if let Some(cur_inpoint) = self.spent_notes.get(outpoint) {
+                    if cur_inpoint != &inpoint {
+                        let conflicts = self.conflicts.entry(*nf).or_insert_with(BTreeSet::new);
+                        conflicts.insert(*cur_inpoint);
+                        conflicts.insert(inpoint);
+                    }
+                }
+
+                // optimistically consider the latest inpoint to be the correct one
+                self.spent_notes.insert(*outpoint, inpoint);
             }
         }
 
@@ -331,18 +352,6 @@ impl Wallet {
             // that we can detect when the note is later spent.
             if let Some(fvk) = self.key_store.viewing_keys.get(&ivk) {
                 let nf = note.nullifier(fvk);
-                // If we already have an entry for this nullifier that does not correspond
-                // to the current outpoint, then add the existing outpoint and the current
-                // outpoint to the conflicts map. (The existing output will already be
-                // present if this is not the first detected conflict for this nullifier.)
-                if let Some(op) = self.nullifiers.get(&nf) {
-                    if op != &outpoint {
-                        let conflicts = self.conflicts.entry(nf).or_insert_with(BTreeSet::new);
-                        conflicts.insert(*op);
-                        conflicts.insert(outpoint);
-                    };
-                }
-
                 self.nullifiers.insert(nf, outpoint);
             }
 
