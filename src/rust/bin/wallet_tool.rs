@@ -336,14 +336,16 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
     // This panic hook allows us to make a best effort to clear the screen (and then print
     // another reminder about secrets in the export file) even if a panic occurs.
 
-    let moved_export_path = export_path.to_string(); // borrow checker workaround
     let old_hook = panic::take_hook();
-    panic::set_hook(Box::new(move |panic_info| {
-        clear_and_show_cautions(&moved_export_path);
+    {
+        let export_path = export_path.to_string();
+        panic::set_hook(Box::new(move |panic_info| {
+            clear_and_show_cautions(&export_path);
 
-        let s = panic_info.payload().downcast_ref::<&str>().unwrap_or(&"");
-        eprintln!("\nPanic: {}\n{:?}", s, Backtrace::new());
-    }));
+            let s = panic_info.payload().downcast_ref::<&str>().unwrap_or(&"");
+            eprintln!("\nPanic: {}\n{:?}", s, Backtrace::new());
+        }));
+    }
 
     let res = (|| -> anyhow::Result<()> {
         println!("The recovery phrase is:\n");
