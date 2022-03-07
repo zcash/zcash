@@ -6463,8 +6463,9 @@ void CWallet::GetFilteredNotes(
 
         auto wtx = GetWalletTx(noteMeta.GetOutPoint().hash);
         if (wtx) {
-            if (wtx->GetDepthInMainChain() >= minDepth) {
-                noteMeta.SetConfirmations(wtx->GetDepthInMainChain());
+            auto confirmations = wtx->GetDepthInMainChain();
+            if (confirmations >= minDepth && confirmations <= maxDepth) {
+                noteMeta.SetConfirmations(confirmations);
                 orchardNotesRet.push_back(noteMeta);
             }
         } else {
