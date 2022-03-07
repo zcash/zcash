@@ -10,9 +10,11 @@ use std::process::{self, Command, Output};
 use std::str::from_utf8;
 use std::time::SystemTime;
 
+use anyhow::{self, Context};
 use backtrace::Backtrace;
 use gumdrop::{Options, ParsingStyle};
 use rand::{thread_rng, Rng};
+use thiserror::Error;
 use time::macros::format_description;
 use time::OffsetDateTime;
 
@@ -104,6 +106,24 @@ impl CliOptions {
     }
 }
 
+#[derive(Debug, Error)]
+enum WalletToolError {
+    #[error("zcash-cli executable not found")]
+    ZcashCliNotFound,
+
+    #[error("Unexpected response from zcash-cli or zcashd")]
+    UnexpectedResponse,
+
+    #[error("Could not connect to zcashd")]
+    ZcashdConnection,
+
+    #[error("zcashd -exportdir option not set")]
+    ExportDirNotSet,
+
+    #[error("Could not parse a recovery phrase from the export file")]
+    RecoveryPhraseNotFound,
+}
+
 pub fn main() {
     // Allow either Bitcoin-style or GNU-style arguments.
     let mut args = env::args();
@@ -151,7 +171,7 @@ pub fn main() {
     }
 }
 
-fn run(opts: &CliOptions) -> Result<(), io::Error> {
+fn run(opts: &CliOptions) -> anyhow::Result<()> {
     let cli_options: Vec<String> = opts.to_zcash_cli_options();
 
     println!(concat!(
@@ -170,13 +190,12 @@ fn run(opts: &CliOptions) -> Result<(), io::Error> {
     cli_args.extend_from_slice(&["z_exportwallet".to_string(), "\x01".to_string()]);
     let out = exec(&zcash_cli, &cli_args, opts.debug)?;
     let cli_err: Vec<_> = from_utf8(&out.stderr)
-        .map_err(|_| io::Error::from(ErrorKind::InvalidData))?
+        .with_context(|| "Output from zcash-cli was not UTF-8")?
         .lines()
         .map(|s| s.trim_end_matches('\r'))
         .collect();
 
-    if cli_err.len() < 3 || cli_err[0] != "error code: -4" || cli_err[1] != "error message:" {
-        // TODO: distinguish not running case more precisely
+    if !cli_err.is_empty() && cli_err[0].starts_with("error: couldn't connect") {
         println!(concat!(
             "\nNo, we could not connect. zcashd might not be running; in that case\n",
             "please start it. The '-exportdir' option should be set to the absolute\n",
@@ -190,18 +209,37 @@ fn run(opts: &CliOptions) -> Result<(), io::Error> {
             "use the same connection options for zcashd-wallet-tool (see '--help' for\n",
             "accepted options) as for zcash-cli.\n"
         ));
-        return Err(io::Error::from(ErrorKind::Other));
+        return Err(WalletToolError::ZcashdConnection.into());
     }
-    if cli_err[2].contains("zcashd -exportdir") {
+    if !cli_err.is_empty() && cli_err[0] == "error code: -28" {
         println!(concat!(
-            "\nIt looks like zcashd is running without the '-exportdir' option.\n\n",
-            "Please start or restart zcashd with '-exportdir' set to the absolute\n",
+            "\nNo, we could not connect. zcashd seems to be initializing; please try\n",
+            "again once it has finished.\n",
+        ));
+        return Err(WalletToolError::ZcashdConnection.into());
+    }
+    if cli_err.len() < 3
+        || cli_err[0] != "error code: -4"
+        || !cli_err[2].starts_with("Filename is invalid")
+    {
+        let e = if cli_err[2].contains("zcashd -exportdir") {
+            println!("\nIt looks like zcashd is running without the '-exportdir' option.");
+            WalletToolError::ExportDirNotSet
+        } else {
+            println!(
+                "\nThere was an unexpected response from zcashd:\n> {}",
+                cli_err.join("\n> ")
+            );
+            WalletToolError::UnexpectedResponse
+        };
+        println!(concat!(
+            "\nPlease start or restart zcashd with '-exportdir' set to the absolute\n",
             "path of the directory you want to save the wallet export file to.\n",
             "(Don't forget to restart zcashd without '-exportdir' after finishing\n",
             "the backup, if running it long-term with that option is not desired\n",
-            "or would be a security hazard in your environment.)"
+            "or would be a security hazard in your environment.)\n",
         ));
-        return Err(io::Error::from(ErrorKind::Other));
+        return Err(e.into());
     }
     println!("Yes, and it is running with the '-exportdir' option as required.");
 
@@ -238,7 +276,7 @@ fn run(opts: &CliOptions) -> Result<(), io::Error> {
         cli_args.extend_from_slice(&["z_exportwallet".to_string(), filename.to_string()]);
         let out = exec(&zcash_cli, &cli_args, opts.debug)?;
         let cli_err: Vec<_> = from_utf8(&out.stderr)
-            .map_err(|_| io::Error::from(ErrorKind::InvalidData))?
+            .with_context(|| "Output from zcash-cli was not UTF-8")?
             .lines()
             .map(|s| s.trim_end_matches('\r'))
             .collect();
@@ -261,7 +299,7 @@ fn run(opts: &CliOptions) -> Result<(), io::Error> {
     };
 
     let cli_out: Vec<_> = from_utf8(&out.stdout)
-        .map_err(|_| io::Error::from(ErrorKind::InvalidData))?
+        .with_context(|| "Output from zcash-cli was not UTF-8")?
         .lines()
         .map(|s| s.trim_end_matches('\r'))
         .collect();
@@ -269,15 +307,15 @@ fn run(opts: &CliOptions) -> Result<(), io::Error> {
         eprintln!("DEBUG: stdout {:?}", cli_out);
     }
     if cli_out.is_empty() {
-        return Err(io::Error::from(ErrorKind::InvalidData));
+        return Err(WalletToolError::UnexpectedResponse.into());
     }
     let export_path = cli_out[0];
 
     println!("\nSaved the export file to '{}'.", export_path);
     println!("IMPORTANT: This file contains secrets that allow spending all wallet funds.\n");
 
-    // TODO: better handling of file not found and permission errors.
-    let export_file = File::open(export_path)?;
+    let export_file = File::open(export_path)
+        .with_context(|| format!("Could not open {:?} for reading", export_path))?;
     let phrase_line: Vec<_> = io::BufReader::new(export_file)
         .lines()
         .filter(|s| {
@@ -287,7 +325,7 @@ fn run(opts: &CliOptions) -> Result<(), io::Error> {
         })
         .collect();
     if phrase_line.len() != 1 || phrase_line[0].is_err() {
-        return Err(io::Error::from(ErrorKind::InvalidData));
+        return Err(WalletToolError::RecoveryPhraseNotFound.into());
     }
     let phrase = phrase_line[0]
         .as_ref()
@@ -307,7 +345,7 @@ fn run(opts: &CliOptions) -> Result<(), io::Error> {
         eprintln!("\nPanic: {}\n{:?}", s, Backtrace::new());
     }));
 
-    let res = (|| -> io::Result<()> {
+    let res = (|| -> anyhow::Result<()> {
         println!("The recovery phrase is:\n");
 
         const WORDS_PER_LINE: usize = 3;
@@ -380,7 +418,7 @@ fn run(opts: &CliOptions) -> Result<(), io::Error> {
     exec(&zcash_cli, &cli_args, false)
         .and_then(|out| {
             let cli_err: Vec<_> = from_utf8(&out.stderr)
-                .map_err(|_| io::Error::from(ErrorKind::InvalidData))?
+                .with_context(|| "Output from zcash-cli was not UTF-8")?
                 .lines()
                 .map(|s| s.trim_end_matches('\r'))
                 .collect();
@@ -388,19 +426,25 @@ fn run(opts: &CliOptions) -> Result<(), io::Error> {
                 eprintln!("DEBUG: stderr {:?}", cli_err);
             }
             if !cli_err.is_empty() {
-                // TODO: distinguish errors: cannot connect, vs incorrect passphrase
-                // (RPC_WALLET_PASSPHRASE_INCORRECT), vs other errors.
-                Err(io::Error::from(ErrorKind::Other))
-            } else {
-                println!(concat!(
-                    "\nThe backup of the emergency recovery phrase for the zcashd\n",
-                    "wallet has been successfully confirmed 🙂. You can now use the\n",
-                    "zcashd RPC methods that create keys and addresses in that wallet.\n\n",
-                    "If you use other wallets, their recovery information will need\n",
-                    "to be backed up separately.\n"
-                ));
-                Ok(())
+                if cli_err[0].starts_with("error: couldn't connect") {
+                    println!("\nWe could not connect to zcashd; it may have exited.");
+                    return Err(WalletToolError::ZcashdConnection.into());
+                } else {
+                    println!(
+                        "\nThere was an unexpected response from zcashd:\n> {}",
+                        cli_err.join("\n> "),
+                    );
+                    return Err(WalletToolError::UnexpectedResponse.into());
+                }
             }
+            println!(concat!(
+                "\nThe backup of the emergency recovery phrase for the zcashd\n",
+                "wallet has been successfully confirmed 🙂. You can now use the\n",
+                "zcashd RPC methods that create keys and addresses in that wallet.\n\n",
+                "If you use other wallets, their recovery information will need\n",
+                "to be backed up separately.\n"
+            ));
+            Ok(())
         })
         .map_err(|e| {
             println!(concat!(
@@ -410,15 +454,21 @@ fn run(opts: &CliOptions) -> Result<(), io::Error> {
                 "help or try to use 'zcash-cli -stdin walletconfirmbackup' manually.\n"
             ));
             e
-        })
+        })?;
+    Ok(())
 }
 
-fn prompt<'a>(input: &mut Stdin, buf: &'a mut String) -> io::Result<&'a str> {
-    let n = input.read_line(buf)?;
-    if n == 0 {
-        return Err(io::Error::from(ErrorKind::UnexpectedEof));
+fn prompt<'a>(input: &mut Stdin, buf: &'a mut String) -> anyhow::Result<&'a str> {
+    input
+        .read_line(buf)
+        .with_context(|| "Error reading from stdin")?;
+
+    if !buf.ends_with('\n') {
+        Err(io::Error::from(ErrorKind::UnexpectedEof))
+            .with_context(|| "End of file reading from stdin")
+    } else {
+        Ok(buf.trim_end_matches(|c| c == '\r' || c == '\n').trim())
     }
-    Ok(buf.trim_end_matches(|c| c == '\r' || c == '\n').trim())
 }
 
 fn ordinal(num: usize) -> String {
@@ -435,9 +485,10 @@ fn ordinal(num: usize) -> String {
     format!("{}{}", num, suffix)
 }
 
-fn zcash_cli_path(debug: bool) -> io::Result<PathBuf> {
+fn zcash_cli_path(debug: bool) -> anyhow::Result<PathBuf> {
     // First look for `zcash_cli[.exe]` as a sibling of the executable.
-    let mut exe = env::current_exe()?;
+    let mut exe = env::current_exe()
+        .with_context(|| "Cannot determine the path of the running executable")?;
     exe.set_file_name("zcash-cli");
     exe.set_extension(EXE_EXTENSION);
     if debug {
@@ -454,7 +505,7 @@ fn zcash_cli_path(debug: bool) -> io::Result<PathBuf> {
         // or in `../../src/zcash_cli[.exe]` under the same proviso
         exe.pop(); // ../..
         if exe.file_name() != Some(OsStr::new("target")) {
-            return Err(io::Error::from(ErrorKind::NotFound));
+            return Err(WalletToolError::ZcashCliNotFound.into());
         }
     }
     // Replace 'target/' with 'src/'.
@@ -464,18 +515,17 @@ fn zcash_cli_path(debug: bool) -> io::Result<PathBuf> {
     if debug {
         eprintln!("DEBUG: Testing for zcash-cli at {:?}", exe);
     }
-    if exe.exists() {
-        Ok(exe)
-    } else {
-        Err(io::Error::from(ErrorKind::NotFound))
+    if !exe.exists() {
+        return Err(WalletToolError::ZcashCliNotFound.into());
     }
+    Ok(exe)
 }
 
-fn exec(exe_path: &Path, args: &[String], debug: bool) -> Result<Output, io::Error> {
+fn exec(exe_path: &Path, args: &[String], debug: bool) -> anyhow::Result<Output> {
     if debug {
         eprintln!("DEBUG: Running {:?} {:?}", exe_path, args);
     }
-    Command::new(exe_path).args(args).output()
+    Ok(Command::new(exe_path).args(args).output()?)
 }
 
 fn default_filename_base() -> String {
