@@ -168,7 +168,7 @@ pub enum RewindError {
 }
 
 #[derive(Debug, Clone)]
-pub enum BundleDecryptionError {
+pub enum BundleLoadError {
     /// The action at the specified index failed to decrypt with
     /// the provided IVK.
     ActionDecryptionFailed(usize),
@@ -176,6 +176,26 @@ pub enum BundleDecryptionError {
     /// to the incoming viewing key that successfullly decrypted a
     /// note.
     FvkNotFound(IncomingViewingKey),
+    /// An action index identified as potentially spending one of our
+    /// notes is not a valid action index for the bundle.
+    InvalidActionIndex(usize),
+}
+
+/// A struct used to return metadata about how a bundle was determined
+/// to be involved with the wallet.
+#[derive(Debug, Clone)]
+pub struct BundleWalletInvolvement {
+    receive_action_metadata: BTreeMap<usize, IncomingViewingKey>,
+    spend_action_metadata: Vec<usize>,
+}
+
+impl BundleWalletInvolvement {
+    pub fn new() -> Self {
+        BundleWalletInvolvement {
+            receive_action_metadata: BTreeMap::new(),
+            spend_action_metadata: Vec::new(),
+        }
+    }
 }
 
 impl Wallet {
@@ -320,24 +340,11 @@ impl Wallet {
         &mut self,
         txid: &TxId,
         bundle: &Bundle<Authorized, Amount>,
-    ) -> BTreeMap<usize, IncomingViewingKey> {
-        // Check for spends of our notes by matching against the nullifiers
-        // we're tracking, and when we detect one, associate the current
-        // txid and action as spending the note.
-        for (action_idx, action) in bundle.actions().iter().enumerate() {
-            let nf = action.nullifier();
-            // If a nullifier corresponds to one of our notes, add its inpoint as a
-            // potential spend (the transaction may not end up being mined).
-            if self.nullifiers.contains_key(nf) {
-                self.potential_spends
-                    .entry(*nf)
-                    .or_insert_with(BTreeSet::new)
-                    .insert(InPoint {
-                        txid: *txid,
-                        action_idx,
-                    });
-            }
-        }
+    ) -> BundleWalletInvolvement {
+        let mut involvement = BundleWalletInvolvement::new();
+        // If we recognize any of our notes as being consumed as inputs to actions
+        // in this bundle, record them as potential spends.
+        involvement.spend_action_metadata = self.add_potential_spends(txid, bundle);
 
         let keys = self
             .key_store
@@ -345,7 +352,6 @@ impl Wallet {
             .keys()
             .cloned()
             .collect::<Vec<_>>();
-        let mut result = BTreeMap::new();
 
         for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_for_keys(&keys) {
             assert!(self.add_decrypted_note(
@@ -357,22 +363,38 @@ impl Wallet {
                 recipient,
                 memo
             ));
-            result.insert(action_idx, ivk);
+            involvement.receive_action_metadata.insert(action_idx, ivk);
         }
 
-        result
+        involvement
     }
 
     /// Add note data to the wallet by attempting to
     /// incoming viewing keys to the wallet, and return a map from incoming viewing
     /// key to the vector of action indices that that key decrypts.
-    pub fn add_notes_from_bundle_with_hints(
+    pub fn load_bundle(
         &mut self,
         tx_height: Option<BlockHeight>,
         txid: &TxId,
         bundle: &Bundle<Authorized, Amount>,
         hints: BTreeMap<usize, &IncomingViewingKey>,
-    ) -> Result<(), BundleDecryptionError> {
+        potential_spend_idxs: &[u32],
+    ) -> Result<(), BundleLoadError> {
+        for action_idx in potential_spend_idxs {
+            let action_idx: usize = (*action_idx).try_into().unwrap();
+            if action_idx < bundle.actions().len() {
+                self.add_potential_spend(
+                    bundle.actions()[action_idx].nullifier(),
+                    InPoint {
+                        txid: *txid,
+                        action_idx,
+                    },
+                );
+            } else {
+                return Err(BundleLoadError::InvalidActionIndex(action_idx));
+            }
+        }
+
         for (action_idx, ivk) in hints.into_iter() {
             if let Some((note, recipient, memo)) = bundle.decrypt_output_with_key(action_idx, ivk) {
                 if !self.add_decrypted_note(
@@ -384,15 +406,16 @@ impl Wallet {
                     recipient,
                     memo,
                 ) {
-                    return Err(BundleDecryptionError::FvkNotFound(ivk.clone()));
+                    return Err(BundleLoadError::FvkNotFound(ivk.clone()));
                 }
             } else {
-                return Err(BundleDecryptionError::ActionDecryptionFailed(action_idx));
+                return Err(BundleLoadError::ActionDecryptionFailed(action_idx));
             }
         }
         Ok(())
     }
 
+    // Common functionality for add_notes_from_bundle and load_bundle
     #[allow(clippy::too_many_arguments)]
     fn add_decrypted_note(
         &mut self,
@@ -442,6 +465,43 @@ impl Wallet {
         } else {
             false
         }
+    }
+
+    /// For each Orchard action in the provided bundle, if the wallet
+    /// is tracking a note corresponding to the action's revealed nullifer,
+    /// mark that note as potentially spent.
+    pub fn add_potential_spends(
+        &mut self,
+        txid: &TxId,
+        bundle: &Bundle<Authorized, Amount>,
+    ) -> Vec<usize> {
+        // Check for spends of our notes by matching against the nullifiers
+        // we're tracking, and when we detect one, associate the current
+        // txid and action as spending the note.
+        let mut spend_action_idxs = vec![];
+        for (action_idx, action) in bundle.actions().iter().enumerate() {
+            let nf = action.nullifier();
+            // If a nullifier corresponds to one of our notes, add its inpoint as a
+            // potential spend (the transaction may not end up being mined).
+            if self.nullifiers.contains_key(nf) {
+                self.add_potential_spend(
+                    nf,
+                    InPoint {
+                        txid: *txid,
+                        action_idx,
+                    },
+                );
+                spend_action_idxs.push(action_idx);
+            }
+        }
+        spend_action_idxs
+    }
+
+    fn add_potential_spend(&mut self, nf: &Nullifier, inpoint: InPoint) {
+        self.potential_spends
+            .entry(*nf)
+            .or_insert_with(BTreeSet::new)
+            .insert(inpoint);
     }
 
     /// Add note commitments for the Orchard components of a transaction to the note
@@ -525,8 +585,8 @@ impl Wallet {
 
     /// Returns whether the transaction contains any notes either sent to or spent by this
     /// wallet.
-    pub fn tx_contains_my_notes(&self, txid: &TxId) -> bool {
-        self.wallet_received_notes.get(txid).is_some()
+    pub fn tx_involves_my_notes(&self, txid: &TxId) -> bool {
+        self.wallet_received_notes.contains_key(txid)
             || self.nullifiers.values().any(|v| v.txid == *txid)
     }
 
@@ -680,41 +740,57 @@ pub struct FFIActionIvk {
     ivk_ptr: *mut IncomingViewingKey,
 }
 
-/// A C++-allocated function pointer that can push a FFIActionIVK value
-/// onto a C++ vector.
+/// A C++-allocated function pointer that can pass a FFIActionIVK value
+/// to a C++ callback receiver.
 pub type ActionIvkPushCb =
     unsafe extern "C" fn(obj: Option<FFICallbackReceiver>, value: FFIActionIvk);
+
+/// A C++-allocated function pointer that can pass a FFIActionIVK value
+/// to a C++ callback receiver.
+pub type SpendIndexPushCb = unsafe extern "C" fn(obj: Option<FFICallbackReceiver>, value: u32);
 
 #[no_mangle]
 pub extern "C" fn orchard_wallet_add_notes_from_bundle(
     wallet: *mut Wallet,
     txid: *const [c_uchar; 32],
     bundle: *const Bundle<Authorized, Amount>,
-    result: Option<FFICallbackReceiver>,
-    push_cb: Option<ActionIvkPushCb>,
-) {
+    cb_receiver: Option<FFICallbackReceiver>,
+    action_ivk_push_cb: Option<ActionIvkPushCb>,
+    spend_idx_push_cb: Option<SpendIndexPushCb>,
+) -> bool {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
     let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
     if let Some(bundle) = unsafe { bundle.as_ref() } {
         let added = wallet.add_notes_from_bundle(&txid, bundle);
-        for (action_idx, ivk) in added.into_iter() {
+        let mut involved = false;
+        for (action_idx, ivk) in added.receive_action_metadata.into_iter() {
             let action_ivk = FFIActionIvk {
                 action_idx: action_idx.try_into().unwrap(),
                 ivk_ptr: Box::into_raw(Box::new(ivk.clone())),
             };
-            unsafe { (push_cb.unwrap())(result, action_ivk) };
+            unsafe { (action_ivk_push_cb.unwrap())(cb_receiver, action_ivk) };
+            involved = true;
         }
+        for action_idx in added.spend_action_metadata {
+            unsafe { (spend_idx_push_cb.unwrap())(cb_receiver, action_idx.try_into().unwrap()) };
+            involved = true;
+        }
+        involved
+    } else {
+        false
     }
 }
 
 #[no_mangle]
-pub extern "C" fn orchard_wallet_restore_notes(
+pub extern "C" fn orchard_wallet_load_bundle(
     wallet: *mut Wallet,
     block_height: *const u32,
     txid: *const [c_uchar; 32],
     bundle: *const Bundle<Authorized, Amount>,
     hints: *const FFIActionIvk,
     hints_len: usize,
+    potential_spend_idxs: *const u32,
+    potential_spend_idxs_len: usize,
 ) -> bool {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
     let block_height = unsafe { block_height.as_ref() }.map(|h| BlockHeight::from(*h));
@@ -722,6 +798,8 @@ pub extern "C" fn orchard_wallet_restore_notes(
     let bundle = unsafe { bundle.as_ref() }.expect("bundle pointer may not be null.");
 
     let hints_data = unsafe { slice::from_raw_parts(hints, hints_len) };
+    let potential_spend_idxs =
+        unsafe { slice::from_raw_parts(potential_spend_idxs, potential_spend_idxs_len) };
 
     let mut hints = BTreeMap::new();
     for action_ivk in hints_data {
@@ -731,7 +809,7 @@ pub extern "C" fn orchard_wallet_restore_notes(
         );
     }
 
-    match wallet.add_notes_from_bundle_with_hints(block_height, &txid, bundle, hints) {
+    match wallet.load_bundle(block_height, &txid, bundle, hints, potential_spend_idxs) {
         Ok(_) => true,
         Err(e) => {
             error!("Failed to restore decrypted notes to wallet: {:?}", e);
@@ -837,14 +915,14 @@ pub extern "C" fn orchard_wallet_get_ivk_for_address(
 }
 
 #[no_mangle]
-pub extern "C" fn orchard_wallet_tx_contains_my_notes(
+pub extern "C" fn orchard_wallet_tx_involves_my_notes(
     wallet: *const Wallet,
     txid: *const [c_uchar; 32],
 ) -> bool {
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
     let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
 
-    wallet.tx_contains_my_notes(&txid)
+    wallet.tx_involves_my_notes(&txid)
 }
 
 /// A type used to pass note metadata across the FFI boundary.

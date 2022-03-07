@@ -14,6 +14,8 @@
 #include "rust/orchard/wallet.h"
 #include "zcash/address/orchard.hpp"
 
+class OrchardWallet;
+
 class OrchardNoteMetadata
 {
 private:
@@ -50,6 +52,58 @@ public:
         return noteValue;
     }
 };
+
+/**
+ * A container and serialization wrapper for storing information derived from
+ * a transaction that is relevant to restoring Orchard wallet caches.
+ */
+class OrchardWalletTxMeta
+{
+private:
+    // A map from action index to the IVK belonging to our wallet that decrypts
+    // that action
+    std::map<uint32_t, libzcash::OrchardIncomingViewingKey> mapOrchardActionData;
+    // A vector of the action indices that spend notes belonging to our wallet
+    std::vector<uint32_t> vActionsSpendingMyNotes;
+
+    friend class OrchardWallet;
+public:
+    OrchardWalletTxMeta() {}
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        int nVersion = s.GetVersion();
+        if (!(s.GetType() & SER_GETHASH)) {
+            READWRITE(nVersion);
+        }
+        READWRITE(mapOrchardActionData);
+        READWRITE(vActionsSpendingMyNotes);
+    }
+
+    const std::map<uint32_t, libzcash::OrchardIncomingViewingKey>& GetMyActionIVKs() const {
+        return mapOrchardActionData;
+    }
+
+    const std::vector<uint32_t>& GetActionsSpendingMyNotes() const {
+        return vActionsSpendingMyNotes;
+    }
+
+    bool empty() const {
+        return (mapOrchardActionData.empty() && vActionsSpendingMyNotes.empty());
+    }
+
+    friend bool operator==(const OrchardWalletTxMeta& a, const OrchardWalletTxMeta& b) {
+        return (a.mapOrchardActionData == b.mapOrchardActionData &&
+                a.vActionsSpendingMyNotes == b.vActionsSpendingMyNotes);
+    }
+
+    friend bool operator!=(const OrchardWalletTxMeta& a, const OrchardWalletTxMeta& b) {
+        return !(a == b);
+    }
+};
+
 
 class OrchardWallet
 {
@@ -111,28 +165,36 @@ public:
         return orchard_wallet_rewind(inner.get(), (uint32_t) nBlockHeight, &blocksRewoundRet);
     }
 
-    static void PushOrchardActionIVK(void* orchardActionsIVKRet, RawOrchardActionIVK actionIVK) {
-        reinterpret_cast<std::map<uint32_t, libzcash::OrchardIncomingViewingKey>*>(orchardActionsIVKRet)->insert_or_assign(
+    static void PushOrchardActionIVK(void* rec, RawOrchardActionIVK actionIVK) {
+        reinterpret_cast<OrchardWalletTxMeta*>(rec)->mapOrchardActionData.insert_or_assign(
                 actionIVK.actionIdx, libzcash::OrchardIncomingViewingKey(actionIVK.ivk)
                 );
+    }
+
+    static void PushSpendActionIdx(void* rec, uint32_t actionIdx) {
+        reinterpret_cast<OrchardWalletTxMeta*>(rec)->vActionsSpendingMyNotes.push_back(actionIdx);
     }
 
     /**
      * Add notes that are decryptable with IVKs for which the wallet
      * contains the full viewing key to the wallet, and return the
-     * mapping from each decrypted Orchard action index to the IVK
-     * that was used to decrypt that action's note.
+     * metadata describing the wallet's involvement with this action,
+     * or std::nullopt if the transaction does not involve the wallet.
      */
-    std::map<uint32_t, libzcash::OrchardIncomingViewingKey> AddNotesIfInvolvingMe(const CTransaction& tx) {
-        std::map<uint32_t, libzcash::OrchardIncomingViewingKey> result;
-        orchard_wallet_add_notes_from_bundle(
+    std::optional<OrchardWalletTxMeta> AddNotesIfInvolvingMe(const CTransaction& tx) {
+        OrchardWalletTxMeta txMeta;
+        if (orchard_wallet_add_notes_from_bundle(
                 inner.get(),
                 tx.GetHash().begin(),
                 tx.GetOrchardBundle().inner.get(),
-                &result,
-                PushOrchardActionIVK
-                );
-        return result;
+                &txMeta,
+                PushOrchardActionIVK,
+                PushSpendActionIdx
+                )) {
+            return txMeta;
+        } else {
+            return std::nullopt;
+        }
     }
 
     /**
@@ -140,24 +202,25 @@ public:
      * Orchard bundle with provided incoming viewing keys, and adds those
      * notes to the wallet.
      */
-    bool RestoreDecryptedNotes(
+    bool LoadWalletTx(
             const std::optional<int> nBlockHeight,
             const CTransaction& tx,
-            std::map<uint32_t, libzcash::OrchardIncomingViewingKey> hints
+            const OrchardWalletTxMeta& txMeta
             ) {
         std::vector<RawOrchardActionIVK> rawHints;
-        for (const auto& [action_idx, ivk] : hints) {
+        for (const auto& [action_idx, ivk] : txMeta.mapOrchardActionData) {
             rawHints.push_back({ action_idx, ivk.inner.get() });
         }
         uint32_t blockHeight = nBlockHeight.has_value() ? (uint32_t) nBlockHeight.value() : 0;
-        return orchard_wallet_restore_notes(
+        return orchard_wallet_load_bundle(
                 inner.get(),
                 nBlockHeight.has_value() ? &blockHeight : nullptr,
                 tx.GetHash().begin(),
                 tx.GetOrchardBundle().inner.get(),
                 rawHints.data(),
-                rawHints.size()
-                );
+                rawHints.size(),
+                txMeta.vActionsSpendingMyNotes.data(),
+                txMeta.vActionsSpendingMyNotes.size());
     }
 
     /**
@@ -190,8 +253,8 @@ public:
         return value;
     }
 
-    bool TxContainsMyNotes(const uint256& txid) {
-        return orchard_wallet_tx_contains_my_notes(
+    bool TxInvolvesMyNotes(const uint256& txid) {
+        return orchard_wallet_tx_involves_my_notes(
                 inner.get(),
                 txid.begin());
     }

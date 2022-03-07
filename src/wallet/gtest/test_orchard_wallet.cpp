@@ -44,7 +44,7 @@ CTransaction FakeOrchardTx(const OrchardSpendingKey& sk, libzcash::diversifier_i
     return maybeTx.GetTxOrThrow();
 }
 
-TEST(OrchardWalletTests, TxContainsMyNotes) {
+TEST(OrchardWalletTests, TxInvolvesMyNotes) {
     auto consensusParams = RegtestActivateNU5();
     OrchardWallet wallet;
 
@@ -58,21 +58,21 @@ TEST(OrchardWalletTests, TxContainsMyNotes) {
     wallet.AddNotesIfInvolvingMe(tx);
 
     // Check that we detect the transaction as ours
-    EXPECT_TRUE(wallet.TxContainsMyNotes(tx.GetHash()));
+    EXPECT_TRUE(wallet.TxInvolvesMyNotes(tx.GetHash()));
 
     // Create a transaction sending to a different diversified address
     auto tx1 = FakeOrchardTx(sk, libzcash::diversifier_index_t(0xffffffffffffffff));
     wallet.AddNotesIfInvolvingMe(tx1);
 
     // Check that we also detect this transaction as ours
-    EXPECT_TRUE(wallet.TxContainsMyNotes(tx1.GetHash()));
+    EXPECT_TRUE(wallet.TxInvolvesMyNotes(tx1.GetHash()));
 
     // Now generate a new key, and send a transaction to it without adding
     // the key to the wallet; it should not be detected as ours.
     auto skNotOurs = RandomOrchardSpendingKey();
     auto tx2 = FakeOrchardTx(skNotOurs, libzcash::diversifier_index_t(0));
     wallet.AddNotesIfInvolvingMe(tx2);
-    EXPECT_FALSE(wallet.TxContainsMyNotes(tx2.GetHash()));
+    EXPECT_FALSE(wallet.TxInvolvesMyNotes(tx2.GetHash()));
 
     RegtestDeactivateNU5();
 }

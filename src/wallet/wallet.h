@@ -335,7 +335,6 @@ public:
 
 typedef std::map<JSOutPoint, SproutNoteData> mapSproutNoteData_t;
 typedef std::map<SaplingOutPoint, SaplingNoteData> mapSaplingNoteData_t;
-typedef std::map<uint32_t, libzcash::OrchardIncomingViewingKey> mapOrchardActionData_t;
 
 /** Sprout note, its location in a transaction, and number of confirmations. */
 struct SproutNoteEntry
@@ -464,11 +463,8 @@ public:
     mapValue_t mapValue;
     mapSproutNoteData_t mapSproutNoteData;
     mapSaplingNoteData_t mapSaplingNoteData;
-    mapOrchardActionData_t mapOrchardActionData;
-    // ORCHARD note data is not stored with the CMerkleTx directly, but is
-    // accessible via pwallet->orchardWallet. Here we just store the indices
-    // of the actions that belong to this wallet.
-    std::vector<size_t> vOrchardActionIndices;
+    OrchardWalletTxMeta orchardTxMeta;
+
     std::vector<std::pair<std::string, std::string> > vOrderForm;
     unsigned int fTimeReceivedIsTxTime;
     unsigned int nTimeReceived; //!< time received by this node
@@ -582,7 +578,7 @@ public:
         }
 
         if (fOverwintered && nVersion >= ZIP225_TX_VERSION) {
-            READWRITE(mapOrchardActionData);
+            READWRITE(orchardTxMeta);
         }
 
         if (ser_action.ForRead())
@@ -619,7 +615,7 @@ public:
 
     void SetSproutNoteData(const mapSproutNoteData_t& noteData);
     void SetSaplingNoteData(const mapSaplingNoteData_t& noteData);
-    void SetOrchardActionData(const mapOrchardActionData_t& actionData);
+    void SetOrchardTxMeta(OrchardWalletTxMeta actionData);
 
     std::pair<libzcash::SproutNotePlaintext, libzcash::SproutPaymentAddress> DecryptSproutNote(
         JSOutPoint jsop) const;
