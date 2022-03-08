@@ -213,8 +213,7 @@ impl Wallet {
         // block must be checkpointed
         if self
             .last_checkpoint
-            .iter()
-            .any(|last_height| block_height != *last_height + 1)
+            .map_or(false, |last_height| block_height != last_height + 1)
         {
             return false;
         }
@@ -428,10 +427,7 @@ impl Wallet {
             }
 
             // for notes that are ours, witness the current state of the tree
-            if my_notes_for_tx
-                .iter()
-                .any(|n| n.decrypted_notes.contains_key(&action_idx))
-            {
+            if my_notes_for_tx.map_or(false, |n| n.decrypted_notes.contains_key(&action_idx)) {
                 self.witness_tree.witness();
             }
 

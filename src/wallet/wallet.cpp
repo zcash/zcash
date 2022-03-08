@@ -2041,8 +2041,6 @@ SpendableInputs CWallet::FindSpendableInputs(
 
             auto mit = mapWallet.find(noteMeta.GetOutPoint().hash);
             if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= minDepth) {
-                // Check whether any of the potential spends exist in the main chain or
-                // the mempool.
                 unspent.orchardNoteMetadata.push_back(noteMeta);
             }
         }

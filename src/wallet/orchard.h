@@ -99,6 +99,7 @@ public:
      * latest block.
      */
     bool Rewind(int nBlockHeight, uint32_t& blocksRewoundRet) {
+        assert(nBlockHeight >= 0);
         return orchard_wallet_rewind(inner.get(), (uint32_t) nBlockHeight, &blocksRewoundRet);
     }
 

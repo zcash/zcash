@@ -59,6 +59,15 @@ bool orchard_wallet_is_checkpointed(const OrchardWalletPtr* wallet);
  * Rewinds to the most recent checkpoint, and marks as unspent any notes
  * previously identified as having been spent by transactions in the
  * latest block.
+ *
+ * The `blockHeight` argument provides the height to which the witness tree should be
+ * rewound, such that after the rewind this height corresponds to the latest block
+ * appended to the tree. The number of blocks that were removed from the witness
+ * tree in the rewind process is returned via `blocksRewoundRet`.
+ *
+ * Returns `true` if the rewind is successful, in which case the number of blocks that were
+ * removed from the witness tree in the rewind process is returned via `blocksRewoundRet`;
+ * this returns `false` and leaves `blocksRewoundRet` unmodified.
  */
 bool orchard_wallet_rewind(
         OrchardWalletPtr* wallet,
@@ -71,8 +80,7 @@ bool orchard_wallet_rewind(
  * wallet's incoming viewing keys, and adds those notes to the wallet.
  *
  * The provided bundle must be a component of the transaction from which
- * `txid` was derived, and the specified block height must be the height
- * at which this transaction was mined.
+ * `txid` was derived.
  */
 void orchard_wallet_add_notes_from_bundle(
         OrchardWalletPtr* wallet,
@@ -173,10 +181,12 @@ typedef void (*push_callback_t)(void* resultVector, const RawOrchardNoteMetadata
  * uses the provided callback to push RawOrchardNoteMetadata values
  * corresponding to those notes on to the provided result vector.  Note that
  * the push_cb callback can perform any necessary conversion from a
- * RawOrchardNoteMetadata value prior in addition to modifying the provided
+ * RawOrchardNoteMetadata value in addition to modifying the provided
  * result vector.
  *
  * If `ivk` is null, all notes belonging to the wallet will be returned.
+ * The `RawOrchardNoteMetadata::addr` pointers for values provided to the
+ * callback must be manually freed by the caller.
  */
 void orchard_wallet_get_filtered_notes(
         const OrchardWalletPtr* wallet,
@@ -188,8 +198,14 @@ void orchard_wallet_get_filtered_notes(
         );
 
 
-typedef void (*push_txid_callback_t)(void* resultVector, unsigned char[32]);
+typedef void (*push_txid_callback_t)(void* resultVector, unsigned char txid[32]);
 
+/**
+ * Returns a vector of transaction IDs for transactions that have been observed
+ * as spending the given outpoint (transaction ID and action index) by using
+ * the `push_cb` callback to push transaction IDs onto the provided result
+ * vector.
+ */
 void orchard_wallet_get_potential_spends(
         const OrchardWalletPtr* wallet,
         const unsigned char txid[32],
