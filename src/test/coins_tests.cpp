@@ -290,7 +290,7 @@ public:
         uint256 orchardAnchor;
         uint256 dataToBeSigned;
         auto builder = orchard::Builder(true, true, orchardAnchor);
-        mutableTx.orchardBundle = builder.Build().value().ProveAndSign(dataToBeSigned).value();
+        mutableTx.orchardBundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
         orchardNullifier = mutableTx.orchardBundle.GetNullifiers()[0];
 
         tx = CTransaction(mutableTx);
@@ -322,7 +322,7 @@ template<> void AppendRandomLeaf(OrchardMerkleFrontier &tree) {
     uint256 orchardAnchor;
     uint256 dataToBeSigned;
     auto builder = orchard::Builder(true, true, orchardAnchor);
-    auto bundle = builder.Build().value().ProveAndSign(dataToBeSigned).value();
+    auto bundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
     tree.AppendBundle(bundle);
 }
 

@@ -31,6 +31,18 @@ OrchardIncomingViewingKey OrchardFullViewingKey::ToInternalIncomingViewingKey() 
     return OrchardIncomingViewingKey(orchard_full_viewing_key_to_internal_incoming_viewing_key(inner.get()));
 }
 
+uint256 OrchardFullViewingKey::ToExternalOutgoingViewingKey() const {
+    uint256 ovk;
+    orchard_full_viewing_key_to_external_outgoing_viewing_key(inner.get(), ovk.begin());
+    return ovk;
+}
+
+uint256 OrchardFullViewingKey::ToInternalOutgoingViewingKey() const {
+    uint256 ovk;
+    orchard_full_viewing_key_to_internal_outgoing_viewing_key(inner.get(), ovk.begin());
+    return ovk;
+}
+
 OrchardSpendingKey OrchardSpendingKey::ForAccount(
         const HDSeed& seed,
         uint32_t bip44CoinType,

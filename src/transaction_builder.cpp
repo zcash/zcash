@@ -41,6 +41,23 @@ Builder::Builder(
     inner.reset(orchard_builder_new(spendsEnabled, outputsEnabled, anchor.IsNull() ? nullptr : anchor.begin()));
 }
 
+bool Builder::AddSpend(orchard::SpendInfo spendInfo)
+{
+    if (!inner) {
+        throw std::logic_error("orchard::Builder has already been used");
+    }
+
+    if (orchard_builder_add_spend(
+        inner.get(),
+        spendInfo.inner.release()))
+    {
+        hasActions = true;
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void Builder::AddOutput(
     const std::optional<uint256>& ovk,
     const libzcash::OrchardRawAddress& to,
@@ -75,14 +92,20 @@ std::optional<UnauthorizedBundle> Builder::Build() {
 }
 
 std::optional<OrchardBundle> UnauthorizedBundle::ProveAndSign(
+    const std::vector<libzcash::OrchardSpendingKey>& keys,
     uint256 sighash)
 {
     if (!inner) {
         throw std::logic_error("orchard::UnauthorizedBundle has already been used");
     }
 
+    std::vector<const OrchardSpendingKeyPtr*> pKeys;
+    for (const auto& key : keys) {
+        pKeys.push_back(key.inner.get());
+    }
+
     auto authorizedBundle = orchard_unauthorized_bundle_prove_and_sign(
-        inner.release(), sighash.begin());
+        inner.release(), pKeys.data(), pKeys.size(), sighash.begin());
     if (authorizedBundle == nullptr) {
         return std::nullopt;
     } else {
@@ -262,6 +285,34 @@ void TransactionBuilder::SetExpiryHeight(uint32_t nExpiryHeight)
         throw new std::runtime_error("TransactionBuilder::SetExpiryHeight: invalid expiry height");
     }
     mtx.nExpiryHeight = nExpiryHeight;
+}
+
+bool TransactionBuilder::AddOrchardSpend(
+    libzcash::OrchardSpendingKey sk,
+    orchard::SpendInfo spendInfo)
+{
+    if (!orchardBuilder.has_value()) {
+        // Try to give a useful error.
+        if (!(jsInputs.empty() && jsOutputs.empty())) {
+            throw std::runtime_error("TransactionBuilder cannot spend Orchard notes in a Sprout transaction");
+        } else if (mtx.nVersion < ZIP225_MIN_TX_VERSION) {
+            throw std::runtime_error("TransactionBuilder cannot spend Orchard notes before NU5 activation");
+        } else {
+            throw std::runtime_error("TransactionBuilder cannot spend Orchard notes without Orchard anchor");
+        }
+    }
+
+    auto fromAddr = spendInfo.FromAddress();
+    auto value = spendInfo.Value();
+    auto res = orchardBuilder.value().AddSpend(std::move(spendInfo));
+    if (res) {
+        orchardSpendingKeys.push_back(sk);
+        if (!firstOrchardSpendAddr.has_value()) {
+            firstOrchardSpendAddr = fromAddr;
+        }
+        valueBalanceOrchard += value;
+    }
+    return res;
 }
 
 void TransactionBuilder::AddOrchardOutput(
@@ -456,6 +507,9 @@ TransactionBuilderResult TransactionBuilder::Build()
         } else if (tChangeAddr) {
             // tChangeAddr has already been validated.
             AddTransparentOutput(tChangeAddr.value(), change);
+        } else if (firstOrchardSpendAddr.has_value()) {
+            auto ovk = orchardSpendingKeys[0].ToFullViewingKey().ToInternalOutgoingViewingKey();
+            AddOrchardOutput(ovk, firstOrchardSpendAddr.value(), change, std::nullopt);
         } else if (!spends.empty()) {
             auto fvk = spends[0].expsk.full_viewing_key();
             auto note = spends[0].note;
@@ -586,7 +640,8 @@ TransactionBuilderResult TransactionBuilder::Build()
     }
 
     if (orchardBundle.has_value()) {
-        auto authorizedBundle = orchardBundle.value().ProveAndSign(dataToBeSigned);
+        auto authorizedBundle = orchardBundle.value().ProveAndSign(
+            orchardSpendingKeys, dataToBeSigned);
         if (authorizedBundle.has_value()) {
             mtx.orchardBundle = authorizedBundle.value();
         } else {

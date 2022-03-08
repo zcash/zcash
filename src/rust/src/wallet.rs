@@ -1,8 +1,10 @@
-use incrementalmerkletree::{bridgetree::BridgeTree, Frontier, Tree};
+use std::convert::TryInto;
+use std::ptr;
+use std::slice;
+
+use incrementalmerkletree::{bridgetree::BridgeTree, Frontier, Position, Tree};
 use libc::c_uchar;
 use std::collections::{BTreeMap, BTreeSet};
-use std::convert::TryInto;
-use std::slice;
 use tracing::error;
 
 use zcash_primitives::{
@@ -14,11 +16,11 @@ use orchard::{
     bundle::Authorized,
     keys::{FullViewingKey, IncomingViewingKey, SpendingKey},
     note::Nullifier,
-    tree::MerkleHashOrchard,
+    tree::{MerkleHashOrchard, MerklePath},
     Address, Bundle, Note,
 };
 
-use crate::zcashd_orchard::OrderedAddress;
+use crate::{builder_ffi::OrchardSpendInfo, zcashd_orchard::OrderedAddress};
 
 use super::incremental_merkle_tree_ffi::MERKLE_DEPTH;
 
@@ -50,6 +52,8 @@ pub struct InPoint {
 pub struct DecryptedNote {
     note: Note,
     memo: [u8; 512],
+    /// The position of the note's commitment within the global Merkle tree.
+    position: Option<Position>,
 }
 
 /// A data structure tracking the note data that was decrypted from a single transaction,
@@ -285,10 +289,13 @@ impl Wallet {
             // observed the note is set to `None` as the transaction will no longer have been
             // observed as having been mined.
             for (txid, n) in self.wallet_received_notes.iter_mut() {
-                // Erase block height information for any received notes
-                // that have been un-mined by the rewind.
+                // Erase block height and commitment tree information for any received
+                // notes that have been un-mined by the rewind.
                 if !to_retain.contains(txid) {
                     n.tx_height = None;
+                    for dnote in n.decrypted_notes.values_mut() {
+                        dnote.position = None;
+                    }
                 }
             }
             self.last_observed = Some(last_observed);
@@ -411,7 +418,11 @@ impl Wallet {
             self.nullifiers.insert(nf, outpoint);
 
             // add the decrypted note data to the wallet
-            let note_data = DecryptedNote { note, memo };
+            let note_data = DecryptedNote {
+                note,
+                memo,
+                position: None,
+            };
             self.wallet_received_notes
                 .entry(*txid)
                 .or_insert_with(|| TxNotes {
@@ -476,7 +487,7 @@ impl Wallet {
             tx_notes.tx_height = Some(block_height);
         }
 
-        let my_notes_for_tx = self.wallet_received_notes.get(txid);
+        let mut my_notes_for_tx = self.wallet_received_notes.get_mut(txid);
         for (action_idx, action) in bundle.actions().iter().enumerate() {
             // append the note commitment for each action to the witness tree
             if !self
@@ -487,8 +498,13 @@ impl Wallet {
             }
 
             // for notes that are ours, witness the current state of the tree
-            if my_notes_for_tx.map_or(false, |n| n.decrypted_notes.contains_key(&action_idx)) {
-                self.witness_tree.witness();
+            if let Some(dnote) = my_notes_for_tx
+                .as_mut()
+                .and_then(|n| n.decrypted_notes.get_mut(&action_idx))
+            {
+                let (pos, cmx) = self.witness_tree.witness().expect("tree is not empty");
+                assert_eq!(cmx, MerkleHashOrchard::from_cmx(action.cmx()));
+                dnote.position = Some(pos);
             }
 
             // For nullifiers that are ours that we detect as spent by this action,
@@ -553,6 +569,42 @@ impl Wallet {
 
     pub fn note_commitment_tree_root(&self) -> MerkleHashOrchard {
         self.witness_tree.root()
+    }
+
+    /// Fetches the information necessary to spend the note at the given `OutPoint`,
+    /// relative to the current root known to the wallet of the Orchard commitment tree.
+    ///
+    /// Returns `None` if the `OutPoint` is not known to the wallet, or the Orchard bundle
+    /// containing the note has not been passed to `Wallet::append_bundle_commitments`.
+    pub fn get_spend_info(&self, outpoint: OutPoint) -> Option<OrchardSpendInfo> {
+        // TODO: Take `confirmations` parameter and obtain the Merkle path to the root at
+        // that checkpoint, not the latest root.
+        self.wallet_received_notes
+            .get(&outpoint.txid)
+            .and_then(|tx_notes| tx_notes.decrypted_notes.get(&outpoint.action_idx))
+            .and_then(|dnote| {
+                self.key_store
+                    .ivk_for_address(&dnote.note.recipient())
+                    .and_then(|ivk| self.key_store.viewing_keys.get(ivk))
+                    .zip(dnote.position)
+                    .map(|(fvk, position)| {
+                        let path = self
+                            .witness_tree
+                            .authentication_path(
+                                position,
+                                &MerkleHashOrchard::from_cmx(&dnote.note.commitment().into()),
+                            )
+                            .expect("wallet always has paths to positioned notes");
+                        OrchardSpendInfo::from_parts(
+                            fvk.clone(),
+                            dnote.note,
+                            MerklePath::from_parts(
+                                u64::from(position).try_into().unwrap(),
+                                path.try_into().unwrap(),
+                            ),
+                        )
+                    })
+            })
     }
 }
 
@@ -842,5 +894,28 @@ pub extern "C" fn orchard_wallet_get_potential_spends(
         for inpoint in inpoints {
             unsafe { (push_cb.unwrap())(result, inpoint.txid.as_ref()) };
         }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_get_spend_info(
+    wallet: *const Wallet,
+    txid: *const [c_uchar; 32],
+    action_idx: usize,
+) -> *mut OrchardSpendInfo {
+    let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
+    let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
+
+    let outpoint = OutPoint { txid, action_idx };
+
+    if let Some(ret) = wallet.get_spend_info(outpoint) {
+        Box::into_raw(Box::new(ret))
+    } else {
+        tracing::error!(
+            "Requested note in action {} of transaction {} wasn't in the wallet",
+            outpoint.action_idx,
+            outpoint.txid
+        );
+        ptr::null_mut()
     }
 }

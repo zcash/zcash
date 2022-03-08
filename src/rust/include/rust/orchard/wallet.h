@@ -6,6 +6,7 @@
 #define ZCASH_RUST_INCLUDE_RUST_ORCHARD_WALLET_H
 
 #include "rust/orchard/keys.h"
+#include "rust/builder.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -250,6 +251,20 @@ void orchard_wallet_get_potential_spends(
         void* resultVector,
         push_txid_callback_t push_cb
         );
+
+/**
+ * Fetches the information needed to spend the wallet note at the given outpoint,
+ * relative to the current root known to the wallet of the Orchard commitment
+ * tree.
+ *
+ * Returns `null` if the outpoint is not known to the wallet, or the Orchard
+ * bundle containing the note has not been passed to
+ * `orchard_wallet_append_bundle_commitments`.
+ */
+OrchardSpendInfoPtr* orchard_wallet_get_spend_info(
+        const OrchardWalletPtr* wallet,
+        const unsigned char txid[32],
+        uint32_t action_idx);
 
 #ifdef __cplusplus
 }

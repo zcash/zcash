@@ -13,6 +13,11 @@
 extern "C" {
 #endif
 
+/// A type-safe pointer to a Rust-allocated struct containing the information
+/// needed to spend an Orchard note.
+struct OrchardSpendInfoPtr;
+typedef struct OrchardSpendInfoPtr OrchardSpendInfoPtr;
+
 /// Pointer to Rust-allocated Orchard bundle builder.
 struct OrchardBuilderPtr;
 typedef struct OrchardBuilderPtr OrchardBuilderPtr;
@@ -21,6 +26,10 @@ typedef struct OrchardBuilderPtr OrchardBuilderPtr;
 /// or authorizing data.
 struct OrchardUnauthorizedBundlePtr;
 typedef struct OrchardUnauthorizedBundlePtr OrchardUnauthorizedBundlePtr;
+
+/// Frees the memory associated with an Orchard spend info struct that was
+/// allocated by Rust.
+void orchard_spend_info_free(OrchardSpendInfoPtr* ptr);
 
 /// Construct a new Orchard transaction builder.
 ///
@@ -32,6 +41,16 @@ OrchardBuilderPtr* orchard_builder_new(
 
 /// Frees an Orchard builder returned from `orchard_builder_new`.
 void orchard_builder_free(OrchardBuilderPtr* ptr);
+
+/// Adds a note to be spent in this bundle.
+///
+/// Returns `false` if the Merkle path in `spend_info` does not have the
+/// required anchor.
+///
+/// `spend_info` is always freed by this method.
+bool orchard_builder_add_spend(
+    OrchardBuilderPtr* ptr,
+    OrchardSpendInfoPtr* spend_info);
 
 /// Adds an address which will receive funds in this bundle.
 ///
@@ -63,6 +82,8 @@ void orchard_unauthorized_bundle_free(OrchardUnauthorizedBundlePtr* bundle);
 /// `bundle` is always freed by this method.
 OrchardBundlePtr* orchard_unauthorized_bundle_prove_and_sign(
     OrchardUnauthorizedBundlePtr* bundle,
+    const OrchardSpendingKeyPtr** keys,
+    size_t keys_len,
     const unsigned char* sighash);
 
 /// Calculates a ZIP 244 shielded signature digest for the given under-construction

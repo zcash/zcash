@@ -1,14 +1,17 @@
 use std::convert::TryInto;
 use std::ptr;
+use std::slice;
 
 use incrementalmerkletree::Hashable;
+use libc::size_t;
+use orchard::keys::SpendingKey;
 use orchard::{
     builder::{Builder, InProgress, Unauthorized, Unproven},
     bundle::{Authorized, Flags},
-    keys::OutgoingViewingKey,
-    tree::MerkleHashOrchard,
+    keys::{FullViewingKey, OutgoingViewingKey},
+    tree::{MerkleHashOrchard, MerklePath},
     value::NoteValue,
-    Bundle,
+    Bundle, Note,
 };
 use rand_core::OsRng;
 use tracing::error;
@@ -21,6 +24,29 @@ use zcash_primitives::transaction::{
 };
 
 use crate::{transaction_ffi::PrecomputedTxParts, ORCHARD_PK};
+
+pub struct OrchardSpendInfo {
+    fvk: FullViewingKey,
+    note: Note,
+    merkle_path: MerklePath,
+}
+
+impl OrchardSpendInfo {
+    pub fn from_parts(fvk: FullViewingKey, note: Note, merkle_path: MerklePath) -> Self {
+        OrchardSpendInfo {
+            fvk,
+            note,
+            merkle_path,
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_spend_info_free(spend_info: *mut OrchardSpendInfo) {
+    if !spend_info.is_null() {
+        drop(unsafe { Box::from_raw(spend_info) });
+    }
+}
 
 #[no_mangle]
 pub extern "C" fn orchard_builder_new(
@@ -35,6 +61,27 @@ pub extern "C" fn orchard_builder_new(
         Flags::from_parts(spends_enabled, outputs_enabled),
         anchor,
     )))
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_builder_add_spend(
+    builder: *mut Builder,
+    orchard_spend_info: *mut OrchardSpendInfo,
+) -> bool {
+    let builder = unsafe { builder.as_mut() }.expect("Builder may not be null.");
+    let orchard_spend_info = unsafe { Box::from_raw(orchard_spend_info) };
+
+    match builder.add_spend(
+        orchard_spend_info.fvk,
+        orchard_spend_info.note,
+        orchard_spend_info.merkle_path,
+    ) {
+        Ok(()) => true,
+        Err(e) => {
+            error!("Failed to add Orchard spend: {}", e);
+            false
+        }
+    }
 }
 
 #[no_mangle]
@@ -100,15 +147,27 @@ pub extern "C" fn orchard_unauthorized_bundle_free(
 #[no_mangle]
 pub extern "C" fn orchard_unauthorized_bundle_prove_and_sign(
     bundle: *mut Bundle<InProgress<Unproven, Unauthorized>, Amount>,
+    keys: *const *const SpendingKey,
+    keys_len: size_t,
     sighash: *const [u8; 32],
 ) -> *mut Bundle<Authorized, Amount> {
     let bundle = unsafe { Box::from_raw(bundle) };
+    let keys = unsafe { slice::from_raw_parts(keys, keys_len) };
     let sighash = unsafe { sighash.as_ref() }.expect("sighash pointer may not be null.");
     let pk = unsafe { ORCHARD_PK.as_ref() }.unwrap();
 
+    let signing_keys = keys
+        .iter()
+        .map(|sk| {
+            unsafe { sk.as_ref() }
+                .expect("SpendingKey pointers must not be null")
+                .into()
+        })
+        .collect::<Vec<_>>();
+
     let res = bundle
         .create_proof(pk)
-        .and_then(|b| b.apply_signatures(OsRng, *sighash, &[]));
+        .and_then(|b| b.apply_signatures(OsRng, *sighash, &signing_keys));
 
     match res {
         Ok(signed) => Box::into_raw(Box::new(signed)),

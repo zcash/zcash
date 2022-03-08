@@ -25,6 +25,7 @@
 
 #define NO_MEMO {{0xF6}}
 
+class OrchardWallet;
 namespace orchard { class UnauthorizedBundle; }
 
 uint256 ProduceZip244SignatureHash(
@@ -32,6 +33,45 @@ uint256 ProduceZip244SignatureHash(
     const orchard::UnauthorizedBundle& orchardBundle);
 
 namespace orchard {
+
+/// The information necessary to spend an Orchard note.
+class SpendInfo
+{
+private:
+    /// Memory is allocated by Rust.
+    std::unique_ptr<OrchardSpendInfoPtr, decltype(&orchard_spend_info_free)> inner;
+    libzcash::OrchardRawAddress from;
+    uint64_t noteValue;
+
+    // SpendInfo() : inner(nullptr, orchard_spend_info_free) {}
+    SpendInfo(
+        OrchardSpendInfoPtr* spendInfo,
+        libzcash::OrchardRawAddress fromIn,
+        uint64_t noteValueIn
+    ) : inner(spendInfo, orchard_spend_info_free), from(fromIn), noteValue(noteValueIn) {}
+
+    friend class Builder;
+    friend class ::OrchardWallet;
+
+public:
+    // SpendInfo should never be copied
+    SpendInfo(const SpendInfo&) = delete;
+    SpendInfo& operator=(const SpendInfo&) = delete;
+    SpendInfo(SpendInfo&& spendInfo) :
+        inner(std::move(spendInfo.inner)), from(std::move(spendInfo.from)), noteValue(std::move(spendInfo.noteValue)) {}
+    SpendInfo& operator=(SpendInfo&& spendInfo)
+    {
+        if (this != &spendInfo) {
+            inner = std::move(spendInfo.inner);
+            from = std::move(spendInfo.from);
+            noteValue = std::move(spendInfo.noteValue);
+        }
+        return *this;
+    }
+
+    inline libzcash::OrchardRawAddress FromAddress() const { return from; };
+    inline uint64_t Value() const { return noteValue; };
+};
 
 /// A builder that constructs an `UnauthorizedBundle` from a set of notes to be spent,
 /// and recipients to receive funds.
@@ -59,6 +99,12 @@ public:
         }
         return *this;
     }
+
+    /// Adds a note to be spent in this bundle.
+    ///
+    /// Returns `false` if the given Merkle path does not have the required anchor
+    /// for the given note.
+    bool AddSpend(orchard::SpendInfo spendInfo);
 
     /// Adds an address which will receive funds in this bundle.
     void AddOutput(
@@ -124,7 +170,8 @@ public:
     /// this bundle must be discarded and a new bundle built. Subsequent usage of this
     /// object in any way will cause an exception. This emulates Rust's compile-time
     /// move semantics at runtime.
-    std::optional<OrchardBundle> ProveAndSign(uint256 sighash);
+    std::optional<OrchardBundle> ProveAndSign(
+        const std::vector<libzcash::OrchardSpendingKey>& keys, uint256 sighash);
 };
 
 } // namespace orchard
@@ -223,6 +270,8 @@ private:
     std::optional<orchard::Builder> orchardBuilder;
     CAmount valueBalanceOrchard = 0;
 
+    std::vector<libzcash::OrchardSpendingKey> orchardSpendingKeys;
+    std::optional<libzcash::OrchardRawAddress> firstOrchardSpendAddr;
     std::vector<SpendDescriptionInfo> spends;
     std::vector<OutputDescriptionInfo> outputs;
     std::vector<libzcash::JSInput> jsInputs;
@@ -292,6 +341,10 @@ public:
     void SetExpiryHeight(uint32_t nExpiryHeight);
 
     void SetFee(CAmount fee);
+
+    bool AddOrchardSpend(
+        libzcash::OrchardSpendingKey sk,
+        orchard::SpendInfo spendInfo);
 
     void AddOrchardOutput(
         const std::optional<uint256>& ovk,

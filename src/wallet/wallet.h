@@ -15,6 +15,7 @@
 #include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "tinyformat.h"
+#include "transaction_builder.h"
 #include "ui_interface.h"
 #include "util.h"
 #include "utilstrencodings.h"
@@ -1689,6 +1690,8 @@ public:
          const std::vector<SaplingOutPoint>& notes,
          std::vector<std::optional<SaplingWitness>>& witnesses,
          uint256 &final_anchor);
+    std::vector<orchard::SpendInfo> GetOrchardSpendInfo(
+        const std::vector<OrchardNoteMetadata>& orchardNoteMetadata) const;
 
     isminetype IsMine(const CTxIn& txin) const;
     CAmount GetDebit(const CTxIn& txin, const isminefilter& filter) const;

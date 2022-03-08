@@ -2,8 +2,10 @@ use std::io::{Read, Write};
 use std::slice;
 use tracing::error;
 
-use orchard::keys::{DiversifierIndex, FullViewingKey, IncomingViewingKey, SpendingKey};
-use orchard::Address;
+use orchard::{
+    keys::{DiversifierIndex, FullViewingKey, IncomingViewingKey, OutgoingViewingKey, SpendingKey},
+    Address,
+};
 
 use crate::{
     streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb},
@@ -280,6 +282,31 @@ pub extern "C" fn orchard_full_viewing_key_to_internal_incoming_viewing_key(
             Box::into_raw(Box::new(IncomingViewingKey::from(&internal_fvk)))
         })
         .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_full_viewing_key_to_external_outgoing_viewing_key(
+    fvk: *const FullViewingKey,
+    ovk_ret: *mut [u8; 32],
+) {
+    let fvk = unsafe { fvk.as_ref() }.expect("fvk must not be null");
+    let ovk_ret = unsafe { ovk_ret.as_mut() }.expect("ovk_ret must not be null");
+
+    let ovk = OutgoingViewingKey::from(fvk);
+    *ovk_ret = *ovk.as_ref();
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_full_viewing_key_to_internal_outgoing_viewing_key(
+    fvk: *const FullViewingKey,
+    ovk_ret: *mut [u8; 32],
+) {
+    let fvk = unsafe { fvk.as_ref() }.expect("fvk must not be null");
+    let ovk_ret = unsafe { ovk_ret.as_mut() }.expect("ovk_ret must not be null");
+
+    let internal_fvk = fvk.derive_internal();
+    let ovk = OutgoingViewingKey::from(&internal_fvk);
+    *ovk_ret = *ovk.as_ref();
 }
 
 #[no_mangle]
