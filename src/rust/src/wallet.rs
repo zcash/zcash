@@ -286,6 +286,12 @@ impl Wallet {
                 }
             }
             self.last_observed = Some(last_observed);
+            self.last_checkpoint = if checkpoint_count > blocks_to_rewind as usize {
+                Some(checkpoint_height - blocks_to_rewind)
+            } else {
+                // checkpoint_count == blocks_to_rewind
+                None
+            };
 
             Ok(blocks_to_rewind)
         } else {
