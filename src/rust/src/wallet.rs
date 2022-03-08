@@ -1,6 +1,7 @@
 use incrementalmerkletree::{bridgetree::BridgeTree, Frontier, Tree};
 use libc::c_uchar;
 use std::collections::{BTreeMap, BTreeSet};
+use std::convert::TryInto;
 use tracing::error;
 
 use zcash_primitives::{
@@ -69,7 +70,7 @@ pub struct TxNotes {
 pub struct NoteMetadata {
     txid: [u8; 32],
     action_idx: u32,
-    recipient: *const Address,
+    recipient: *mut Address,
     note_value: i64,
     memo: [u8; 512],
 }
@@ -122,6 +123,12 @@ impl KeyStore {
     pub fn ivk_for_address(&self, addr: &Address) -> Option<&IncomingViewingKey> {
         self.payment_addresses.get(&OrderedAddress::new(*addr))
     }
+
+    pub fn get_nullifier(&self, note: &Note) -> Option<Nullifier> {
+        self.ivk_for_address(&note.recipient())
+            .and_then(|ivk| self.viewing_keys.get(ivk))
+            .map(|fvk| note.nullifier(fvk))
+    }
 }
 
 pub struct Wallet {
@@ -141,16 +148,15 @@ pub struct Wallet {
     /// The block height and transaction index of the note most recently added to
     /// `witness_tree`
     last_observed: Option<LastObserved>,
-    /// Notes marked as locked (currently reserved for pending transactions)
-    locked_notes: BTreeSet<OutPoint>,
-    /// Notes marked as spent as a consequence of their nullifiers having been
-    /// observed in bundle action inputs. The keys of this map are the outpoints
-    /// where the spent notes were created, and the values are the inpoints
-    /// identifying the actions in which they are spent.
-    spent_notes: BTreeMap<OutPoint, InPoint>,
+    /// Notes marked as mined as a consequence of their nullifiers having been observed
+    /// in bundle action inputs in bundles appended to the commitment tree.  The keys of
+    /// this map are the outpoints where the spent notes were created, and the values
+    /// are the inpoints identifying the actions in which they are spent.
+    mined_notes: BTreeMap<OutPoint, InPoint>,
     /// For each nullifier which appears more than once in transactions that this
-    /// wallet has observed, the set of outpoints corresponding to those nullifiers.
-    conflicts: BTreeMap<Nullifier, BTreeSet<InPoint>>,
+    /// wallet has observed, the set of inpoints where those nullifiers were
+    /// observed as as having been spent.
+    potential_spends: BTreeMap<Nullifier, BTreeSet<InPoint>>,
 }
 
 #[derive(Debug, Clone)]
@@ -177,9 +183,8 @@ impl Wallet {
             witness_tree: BridgeTree::new(MAX_CHECKPOINTS),
             last_checkpoint: None,
             last_observed: None,
-            locked_notes: BTreeSet::new(),
-            spent_notes: BTreeMap::new(),
-            conflicts: BTreeMap::new(),
+            mined_notes: BTreeMap::new(),
+            potential_spends: BTreeMap::new(),
         }
     }
 
@@ -195,8 +200,7 @@ impl Wallet {
         self.witness_tree = BridgeTree::new(MAX_CHECKPOINTS);
         self.last_checkpoint = None;
         self.last_observed = None;
-        self.locked_notes = BTreeSet::new();
-        self.spent_notes = BTreeMap::new();
+        self.mined_notes = BTreeMap::new();
     }
 
     /// Checkpoints the note commitment tree. This returns `false` and leaves the note
@@ -276,8 +280,11 @@ impl Wallet {
                 })
                 .collect();
 
-            self.spent_notes.retain(|_, v| to_retain.contains(&v.txid));
-            self.nullifiers.retain(|_, v| to_retain.contains(&v.txid));
+            self.mined_notes.retain(|_, v| to_retain.contains(&v.txid));
+            // nullifier and received note data are retained, because these values are stable
+            // once we've observed a note for the first time. The block height at which we
+            // observed the note is set to `None` as the transaction will no longer have been
+            // observed as having been mined.
             for (txid, n) in self.wallet_received_notes.iter_mut() {
                 // Erase block height information for any received notes
                 // that have been un-mined by the rewind.
@@ -317,27 +324,16 @@ impl Wallet {
         // txid and action as spending the note.
         for (action_idx, action) in bundle.actions().iter().enumerate() {
             let nf = action.nullifier();
-            // find the outpoint where the note being spent in this action was created
-            if let Some(outpoint) = self.nullifiers.get(nf) {
-                let inpoint = InPoint {
-                    txid: *txid,
-                    action_idx,
-                };
-
-                // If we already have an entry for this nullifier that does not correspond
-                // to the current inpoint, then add the existing inpoint and the current
-                // inpoint to the conflicts map. (The existing inpoint will already be
-                // present if this is not the first detected conflict for this nullifier.)
-                if let Some(cur_inpoint) = self.spent_notes.get(outpoint) {
-                    if cur_inpoint != &inpoint {
-                        let conflicts = self.conflicts.entry(*nf).or_insert_with(BTreeSet::new);
-                        conflicts.insert(*cur_inpoint);
-                        conflicts.insert(inpoint);
-                    }
-                }
-
-                // optimistically consider the latest inpoint to be the correct one
-                self.spent_notes.insert(*outpoint, inpoint);
+            // If a nullifier corresponds to one of our notes, add its inpoint as a
+            // potential spend (the transaction may not end up being mined).
+            if self.nullifiers.contains_key(nf) {
+                self.potential_spends
+                    .entry(*nf)
+                    .or_insert_with(BTreeSet::new)
+                    .insert(InPoint {
+                        txid: *txid,
+                        action_idx,
+                    });
             }
         }
 
@@ -438,6 +434,18 @@ impl Wallet {
             {
                 self.witness_tree.witness();
             }
+
+            // For nullifiers that are ours that we detect as spent by this action,
+            // we will record that input as being mined.
+            if let Some(outpoint) = self.nullifiers.get(action.nullifier()) {
+                self.mined_notes.insert(
+                    *outpoint,
+                    InPoint {
+                        txid: *txid,
+                        action_idx,
+                    },
+                );
+            }
         }
 
         Ok(())
@@ -453,8 +461,7 @@ impl Wallet {
     pub fn get_filtered_notes(
         &self,
         ivk: Option<&IncomingViewingKey>,
-        ignore_spent: bool,
-        ignore_locked: bool,
+        ignore_mined: bool,
         require_spending_key: bool,
     ) -> Vec<(OutPoint, DecryptedNote)> {
         self.wallet_received_notes
@@ -474,8 +481,7 @@ impl Wallet {
                             // if `ivk` is `None`, return all notes that match the other conditions
                             .filter(|dnote_ivk| ivk.map_or(true, |ivk| &ivk == dnote_ivk))
                             .and_then(|dnote_ivk| {
-                                if (ignore_spent && self.spent_notes.contains_key(&outpoint))
-                                    || (ignore_locked && self.locked_notes.contains(&outpoint))
+                                if (ignore_mined && self.mined_notes.contains_key(&outpoint))
                                     || (require_spending_key
                                         && self.key_store.spending_key_for_ivk(dnote_ivk).is_none())
                                 {
@@ -660,8 +666,7 @@ pub type PushCb = unsafe extern "C" fn(obj: Option<VecObj>, meta: NoteMetadata);
 pub extern "C" fn orchard_wallet_get_filtered_notes(
     wallet: *const Wallet,
     ivk: *const IncomingViewingKey,
-    ignore_spent: bool,
-    ignore_locked: bool,
+    ignore_mined: bool,
     require_spending_key: bool,
     result: Option<VecObj>,
     push_cb: Option<PushCb>,
@@ -669,17 +674,40 @@ pub extern "C" fn orchard_wallet_get_filtered_notes(
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
     let ivk = unsafe { ivk.as_ref() };
 
-    for (outpoint, dnote) in
-        wallet.get_filtered_notes(ivk, ignore_spent, ignore_locked, require_spending_key)
-    {
-        let recipient = Box::new(dnote.note.recipient());
+    for (outpoint, dnote) in wallet.get_filtered_notes(ivk, ignore_mined, require_spending_key) {
         let metadata = NoteMetadata {
             txid: *outpoint.txid.as_ref(),
             action_idx: outpoint.action_idx as u32,
-            recipient: Box::into_raw(recipient),
+            recipient: Box::into_raw(Box::new(dnote.note.recipient())),
             note_value: dnote.note.value().inner() as i64,
             memo: dnote.memo,
         };
         unsafe { (push_cb.unwrap())(result, metadata) };
+    }
+}
+
+pub type PushTxId = unsafe extern "C" fn(obj: Option<VecObj>, txid: *const [u8; 32]);
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_get_potential_spends(
+    wallet: *const Wallet,
+    txid: *const [c_uchar; 32],
+    action_idx: u32,
+    result: Option<VecObj>,
+    push_cb: Option<PushTxId>,
+) {
+    let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
+    let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
+
+    if let Some(inpoints) = wallet
+        .wallet_received_notes
+        .get(&txid)
+        .and_then(|txnotes| txnotes.decrypted_notes.get(&action_idx.try_into().unwrap()))
+        .and_then(|dnote| wallet.key_store.get_nullifier(&dnote.note))
+        .and_then(|nf| wallet.potential_spends.get(&nf))
+    {
+        for inpoint in inpoints {
+            unsafe { (push_cb.unwrap())(result, inpoint.txid.as_ref()) };
+        }
     }
 }

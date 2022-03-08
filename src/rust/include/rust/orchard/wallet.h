@@ -181,12 +181,23 @@ typedef void (*push_callback_t)(void* resultVector, const RawOrchardNoteMetadata
 void orchard_wallet_get_filtered_notes(
         const OrchardWalletPtr* wallet,
         const OrchardIncomingViewingKeyPtr* ivk,
-        bool ignoreSpent,
-        bool ignoreLocked,
+        bool ignoreMined,
         bool requireSpendingKey,
         void* resultVector,
         push_callback_t push_cb
         );
+
+
+typedef void (*push_txid_callback_t)(void* resultVector, unsigned char[32]);
+
+void orchard_wallet_get_potential_spends(
+        const OrchardWalletPtr* wallet,
+        const unsigned char txid[32],
+        const uint32_t action_idx,
+        void* resultVector,
+        push_txid_callback_t push_cb
+        );
+
 
 #ifdef __cplusplus
 }

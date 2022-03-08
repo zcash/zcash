@@ -2032,11 +2032,17 @@ SpendableInputs CWallet::FindSpendableInputs(
 
     for (const auto& ivk : orchardIvks) {
         std::vector<OrchardNoteMetadata> incomingNotes;
-        orchardWallet.GetFilteredNotes(incomingNotes, ivk, true, true, true);
+        orchardWallet.GetFilteredNotes(incomingNotes, ivk, true, true);
 
         for (const auto& noteMeta : incomingNotes) {
+            if (IsOrchardSpent(noteMeta.GetOutPoint())) {
+                continue;
+            }
+
             auto mit = mapWallet.find(noteMeta.GetOutPoint().hash);
             if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= minDepth) {
+                // Check whether any of the potential spends exist in the main chain or
+                // the mempool.
                 unspent.orchardNoteMetadata.push_back(noteMeta);
             }
         }
@@ -2092,6 +2098,16 @@ bool CWallet::IsSaplingSpent(const uint256& nullifier) const {
     for (TxNullifiers::const_iterator it = range.first; it != range.second; ++it) {
         const uint256& wtxid = it->second;
         std::map<uint256, CWalletTx>::const_iterator mit = mapWallet.find(wtxid);
+        if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= 0) {
+            return true; // Spent
+        }
+    }
+    return false;
+}
+
+bool CWallet::IsOrchardSpent(const OrchardOutPoint& outpoint) const {
+    for (const auto& txid : orchardWallet.GetPotentialSpends(outpoint)) {
+        std::map<uint256, CWalletTx>::const_iterator mit = mapWallet.find(txid);
         if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= 0) {
             return true; // Spent
         }
@@ -6430,7 +6446,6 @@ void CWallet::GetFilteredNotes(
                         orchardNotes,
                         ivk.value(),
                         ignoreSpent,
-                        ignoreLocked,
                         requireSpendingKey);
             }
         }
@@ -6440,11 +6455,14 @@ void CWallet::GetFilteredNotes(
                 orchardNotes,
                 std::nullopt,
                 ignoreSpent,
-                ignoreLocked,
                 requireSpendingKey);
     }
 
     for (auto& noteMeta : orchardNotes) {
+        if (ignoreSpent && IsOrchardSpent(noteMeta.GetOutPoint())) {
+            continue;
+        }
+
         auto wtx = GetWalletTx(noteMeta.GetOutPoint().hash);
         if (wtx) {
             if (wtx->GetDepthInMainChain() >= minDepth) {

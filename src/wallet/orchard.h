@@ -193,19 +193,35 @@ public:
     void GetFilteredNotes(
         std::vector<OrchardNoteMetadata>& orchardNotesRet,
         const std::optional<libzcash::OrchardIncomingViewingKey>& ivk,
-        bool ignoreSpent,
-        bool ignoreLocked,
+        bool ignoreMined,
         bool requireSpendingKey) const {
 
         orchard_wallet_get_filtered_notes(
             inner.get(),
             ivk.has_value() ? ivk.value().inner.get() : nullptr,
-            ignoreSpent,
-            ignoreLocked,
+            ignoreMined,
             requireSpendingKey,
             &orchardNotesRet,
             PushOrchardNoteMeta
             );
+    }
+
+    static void PushTxId(void* txidsRet, unsigned char txid[32]) {
+        uint256 txid_out;
+        std::copy(txid, txid + 32, txid_out.begin());
+        reinterpret_cast<std::vector<uint256>*>(txidsRet)->push_back(txid_out);
+    }
+
+    std::vector<uint256> GetPotentialSpends(const OrchardOutPoint& outPoint) const {
+        std::vector<uint256> result;
+        orchard_wallet_get_potential_spends(
+            inner.get(),
+            outPoint.hash.begin(),
+            outPoint.n,
+            &result,
+            PushTxId
+            );
+        return result;
     }
 };
 
