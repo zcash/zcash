@@ -5547,7 +5547,7 @@ void CWallet::UpdatedTransaction(const uint256 &hashTx)
     }
 }
 
-void CWallet::GetAddressForMining(MinerAddress &minerAddress)
+void CWallet::GetAddressForMining(std::optional<MinerAddress> &minerAddress)
 {
     if (!GetArg("-mineraddress", "").empty()) {
         return;

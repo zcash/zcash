@@ -24,13 +24,18 @@ static const int DEFAULT_GENERATE_THREADS = 1;
 static const bool DEFAULT_PRINTPRIORITY = false;
 
 typedef std::variant<
+    libzcash::OrchardRawAddress,
     libzcash::SaplingPaymentAddress,
     boost::shared_ptr<CReserveScript>> MinerAddress;
 
 class ExtractMinerAddress
 {
+    const Consensus::Params& consensus;
+    int height;
+
 public:
-    ExtractMinerAddress() {}
+    ExtractMinerAddress(const Consensus::Params& consensus, int height) :
+        consensus(consensus), height(height) {}
 
     std::optional<MinerAddress> operator()(const CKeyID &keyID) const;
     std::optional<MinerAddress> operator()(const CScriptID &addr) const;
@@ -44,6 +49,7 @@ class KeepMinerAddress
 public:
     KeepMinerAddress() {}
 
+    void operator()(const libzcash::OrchardRawAddress &addr) const {}
     void operator()(const libzcash::SaplingPaymentAddress &pa) const {}
     void operator()(const boost::shared_ptr<CReserveScript> &coinbaseScript) const {
         coinbaseScript->KeepScript();
@@ -57,6 +63,9 @@ class IsValidMinerAddress
 public:
     IsValidMinerAddress() {}
 
+    bool operator()(const libzcash::OrchardRawAddress &addr) const {
+        return true;
+    }
     bool operator()(const libzcash::SaplingPaymentAddress &pa) const {
         return true;
     }
@@ -89,7 +98,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
 
 #ifdef ENABLE_MINING
 /** Get -mineraddress */
-void GetMinerAddress(MinerAddress &minerAddress);
+void GetMinerAddress(std::optional<MinerAddress> &minerAddress);
 /** Modify the extranonce in a block */
 void IncrementExtraNonce(
     CBlockTemplate* pblocktemplate,

@@ -1105,7 +1105,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #ifdef ENABLE_MINING
     if (mapArgs.count("-mineraddress")) {
         auto addr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
-        if (!(addr.has_value() && std::visit(ExtractMinerAddress(), addr.value()).has_value())) {
+        if (!(addr.has_value() && std::visit(ExtractMinerAddress(chainparams.GetConsensus(), 0), addr.value()).has_value())) {
             return InitError(strprintf(
                 _("Invalid address for -mineraddress=<addr>: '%s' (must be a Sapling or transparent P2PKH address)"),
                 mapArgs["-mineraddress"]));
