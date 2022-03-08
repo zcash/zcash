@@ -57,12 +57,12 @@ class WalletOrchardTest(BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
-        # Mine the tx & activate Orchard
+        # Mine the tx & activate NU5
         self.sync_all()
         self.nodes[0].generate(10)
         self.sync_all()
 
-        # Check the value on saplingAddr2
+        # Check the value sent to saplingAddr2 was received in node 2's account
         assert_equal(
                 {'pools': {'sapling': {'valueZat': Decimal('1000000000')}}, 'minimum_confirmations': 1}, 
                 self.nodes[2].z_getbalanceforaccount(acct2))

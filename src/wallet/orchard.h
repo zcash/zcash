@@ -78,8 +78,8 @@ public:
 
     /**
      * Checkpoint the note commitment tree. This returns `false` and leaves the note
-     * commitment tree unmodified if the block height does not match the last block
-     * height scanned for transactions. This must be called exactly once per block.
+     * commitment tree unmodified if the block height specified is not the successor
+     * to the last block height checkpointed.
      */
     bool CheckpointNoteCommitmentTree(int nBlockHeight) {
         assert(nBlockHeight >= 0);
@@ -94,7 +94,7 @@ public:
     }
 
     /**
-     * Rewind to the most recent checkpoint, and mark as unspent any notes
+     * Rewinds to the most recent checkpoint, and marks as unspent any notes
      * previously identified as having been spent by transactions in the
      * latest block.
      */

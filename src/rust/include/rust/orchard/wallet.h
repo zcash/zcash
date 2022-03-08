@@ -40,8 +40,9 @@ void orchard_wallet_free(OrchardWalletPtr* wallet);
 bool orchard_wallet_reset(OrchardWalletPtr* wallet);
 
 /**
- * Adds a checkpoint to the wallet's note commitment tree to enable
- * a future rewind.
+ * Checkpoint the note commitment tree. This returns `false` and leaves the note
+ * commitment tree unmodified if the block height specified is not the successor
+ * to the last block height checkpointed.
  */
 bool orchard_wallet_checkpoint(
         OrchardWalletPtr* wallet,
@@ -55,7 +56,9 @@ bool orchard_wallet_checkpoint(
 bool orchard_wallet_is_checkpointed(const OrchardWalletPtr* wallet);
 
 /**
- * Rewinds to the most recently added checkpoint.
+ * Rewinds to the most recent checkpoint, and marks as unspent any notes
+ * previously identified as having been spent by transactions in the
+ * latest block.
  */
 bool orchard_wallet_rewind(
         OrchardWalletPtr* wallet,
