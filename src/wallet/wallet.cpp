@@ -3795,7 +3795,15 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     else
         txNew.nLockTime = (uint32_t)chainActive.Tip()->GetMedianTimePast();
 
-    if (IS_MODE_EXCHANGEWALLET && ASSETCHAINS_SYMBOL[0] == 0) txNew.nLockTime = 0;
+    if (IS_MODE_EXCHANGEWALLET && ASSETCHAINS_SYMBOL[0] == 0) 
+        txNew.nLockTime = 0;
+    else
+    {
+        if ( !komodo_hardfork_active((uint32_t)chainActive.LastTip()->nTime) )
+            txNew.nLockTime = (uint32_t)chainActive.LastTip()->nTime + 1; // set to a time close to now
+        else
+            txNew.nLockTime = (uint32_t)chainActive.Tip()->GetMedianTimePast();
+    }
 
     // Activates after Overwinter network upgrade
     if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
