@@ -72,4 +72,6 @@ TEST(OrchardWalletTests, TxContainsMyNotes) {
     auto tx2 = FakeOrchardTx(skNotOurs, libzcash::diversifier_index_t(0));
     wallet.AddNotesIfInvolvingMe(tx2);
     EXPECT_FALSE(wallet.TxContainsMyNotes(tx2.GetHash()));
+
+    RegtestDeactivateNU5();
 }

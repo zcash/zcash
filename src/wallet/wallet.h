@@ -1026,14 +1026,21 @@ protected:
     /**
      * pindex is the new tip being connected.
      */
-    void IncrementNoteWitnesses(const CBlockIndex* pindex,
-                                const CBlock* pblock,
-                                SproutMerkleTree& sproutTree,
-                                SaplingMerkleTree& saplingTree);
+    void IncrementNoteWitnesses(
+            const Consensus::Params& consensus,
+            const CBlockIndex* pindex,
+            const CBlock* pblock,
+            SproutMerkleTree& sproutTree,
+            SaplingMerkleTree& saplingTree,
+            bool performOrchardWalletUpdates
+            );
     /**
      * pindex is the old tip being disconnected.
      */
-    void DecrementNoteWitnesses(const CBlockIndex* pindex);
+    void DecrementNoteWitnesses(
+            const Consensus::Params& consensus,
+            const CBlockIndex* pindex
+            );
 
     template <typename WalletDB>
     void SetBestChainINTERNAL(WalletDB& walletdb, const CBlockLocator& loc) {
@@ -1085,7 +1092,12 @@ protected:
 private:
     template <class T>
     void SyncMetaData(std::pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator>);
-    void ChainTipAdded(const CBlockIndex *pindex, const CBlock *pblock, SproutMerkleTree sproutTree, SaplingMerkleTree saplingTree);
+    void ChainTipAdded(
+            const CBlockIndex *pindex,
+            const CBlock *pblock,
+            SproutMerkleTree sproutTree,
+            SaplingMerkleTree saplingTree,
+            bool performOrchardWalletUpdates);
 
     /* Add a transparent secret key to the wallet. Internal use only. */
     CPubKey AddTransparentSecretKey(
@@ -1345,6 +1357,7 @@ public:
     bool IsSpent(const uint256& hash, unsigned int n) const;
     bool IsSproutSpent(const uint256& nullifier) const;
     bool IsSaplingSpent(const uint256& nullifier) const;
+    bool IsOrchardSpent(const OrchardOutPoint& outpoint) const;
 
     bool IsLockedCoin(uint256 hash, unsigned int n) const;
     void LockCoin(COutPoint& output);
@@ -1561,15 +1574,25 @@ public:
     void UpdateNullifierNoteMapWithTx(const CWalletTx& wtx);
     void UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx);
     void UpdateSaplingNullifierNoteMapForBlock(const CBlock* pblock);
-    bool AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb);
+    void LoadWalletTx(const CWalletTx& wtxIn);
+    bool AddToWallet(const CWalletTx& wtxIn, CWalletDB* pwalletdb);
     void SyncTransaction(const CTransaction& tx, const CBlock* pblock, const int nHeight);
-    bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, const int nHeight, bool fUpdate);
+    bool AddToWalletIfInvolvingMe(
+            const Consensus::Params& consensus,
+            const CTransaction& tx,
+            const CBlock* pblock,
+            const int nHeight,
+            bool fUpdate
+            );
     void EraseFromWallet(const uint256 &hash);
     void WitnessNoteCommitment(
          std::vector<uint256> commitments,
          std::vector<std::optional<SproutWitness>>& witnesses,
          uint256 &final_anchor);
-    int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
+    int ScanForWalletTransactions(
+        CBlockIndex* pindexStart,
+        bool fUpdate,
+        bool isInitScan);
     void ReacceptWalletTransactions();
     void ResendWalletTransactions(int64_t nBestBlockTime);
     std::vector<uint256> ResendWalletTransactionsBefore(int64_t nTime);

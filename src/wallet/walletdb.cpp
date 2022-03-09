@@ -413,7 +413,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             if (wtx.nOrderPos == -1)
                 wss.fAnyUnordered = true;
 
-            pwallet->AddToWallet(wtx, true, NULL);
+            pwallet->LoadWalletTx(wtx);
         }
         else if (strType == "watchs")
         {

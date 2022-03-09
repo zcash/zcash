@@ -205,7 +205,11 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
     // Find spendable inputs, and select a minimal set of them that
     // can supply the required target amount.
-    auto spendable = pwalletMain->FindSpendableInputs(ztxoSelector_, allowTransparentCoinbase, mindepth_);
+    SpendableInputs spendable;
+    {
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        spendable = pwalletMain->FindSpendableInputs(ztxoSelector_, allowTransparentCoinbase, mindepth_);
+    }
     if (!spendable.LimitToAmount(targetAmount, dustThreshold)) {
         CAmount changeAmount{spendable.Total() - targetAmount};
         if (changeAmount > 0 && changeAmount < dustThreshold) {

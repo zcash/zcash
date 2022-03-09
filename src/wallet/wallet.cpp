@@ -1169,9 +1169,13 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
 void CWallet::ChainTipAdded(const CBlockIndex *pindex,
                             const CBlock *pblock,
                             SproutMerkleTree sproutTree,
-                            SaplingMerkleTree saplingTree)
+                            SaplingMerkleTree saplingTree,
+                            bool performOrchardWalletUpdates)
 {
-    IncrementNoteWitnesses(pindex, pblock, sproutTree, saplingTree);
+    IncrementNoteWitnesses(
+            Params().GetConsensus(),
+            pindex, pblock,
+            sproutTree, saplingTree, performOrchardWalletUpdates);
     UpdateSaplingNullifierNoteMapForBlock(pblock);
 
     // SetBestChain() can be expensive for large wallets, so do only
@@ -1203,17 +1207,18 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
                        // witnesses / rewind the tree
                        std::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added)
 {
+    const auto& consensus = Params().GetConsensus();
     if (added.has_value()) {
-        ChainTipAdded(pindex, pblock, added->first, added->second);
+        ChainTipAdded(pindex, pblock, added->first, added->second, true);
         // Prevent migration transactions from being created when node is syncing after launch,
         // and also when node wakes up from suspension/hibernation and incoming blocks are old.
-        if (!IsInitialBlockDownload(Params().GetConsensus()) &&
+        if (!IsInitialBlockDownload(consensus) &&
             pblock->GetBlockTime() > GetTime() - 3 * 60 * 60)
         {
             RunSaplingMigration(pindex->nHeight);
         }
     } else {
-        DecrementNoteWitnesses(pindex);
+        DecrementNoteWitnesses(consensus, pindex);
         UpdateSaplingNullifierNoteMapForBlock(pblock);
     }
 }
@@ -1434,6 +1439,7 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
             }
             range_n = mapTxSproutNullifiers.equal_range(nullifier);
             for (TxNullifiers::const_iterator it = range_n.first; it != range_n.second; ++it) {
+                // TODO: Take into account transaction expiry for v4 transactions; see #5585
                 result.insert(it->second);
             }
         }
@@ -1448,9 +1454,13 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
         }
         range_o = mapTxSaplingNullifiers.equal_range(nullifier);
         for (TxNullifiers::const_iterator it = range_o.first; it != range_o.second; ++it) {
+            // TODO: Take into account transaction expiry; see #5585
             result.insert(it->second);
         }
     }
+
+    // TODO ORCHARD; see #5593
+
     return result;
 }
 
@@ -2022,9 +2032,13 @@ SpendableInputs CWallet::FindSpendableInputs(
 
     for (const auto& ivk : orchardIvks) {
         std::vector<OrchardNoteMetadata> incomingNotes;
-        orchardWallet.GetFilteredNotes(incomingNotes, ivk, true, true, true);
+        orchardWallet.GetFilteredNotes(incomingNotes, ivk, true, true);
 
         for (const auto& noteMeta : incomingNotes) {
+            if (IsOrchardSpent(noteMeta.GetOutPoint())) {
+                continue;
+            }
+
             auto mit = mapWallet.find(noteMeta.GetOutPoint().hash);
             if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= minDepth) {
                 unspent.orchardNoteMetadata.push_back(noteMeta);
@@ -2082,6 +2096,16 @@ bool CWallet::IsSaplingSpent(const uint256& nullifier) const {
     for (TxNullifiers::const_iterator it = range.first; it != range.second; ++it) {
         const uint256& wtxid = it->second;
         std::map<uint256, CWalletTx>::const_iterator mit = mapWallet.find(wtxid);
+        if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= 0) {
+            return true; // Spent
+        }
+    }
+    return false;
+}
+
+bool CWallet::IsOrchardSpent(const OrchardOutPoint& outpoint) const {
+    for (const auto& txid : orchardWallet.GetPotentialSpends(outpoint)) {
+        std::map<uint256, CWalletTx>::const_iterator mit = mapWallet.find(txid);
         if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= 0) {
             return true; // Spent
         }
@@ -2238,10 +2262,13 @@ void UpdateWitnessHeights(NoteDataMap& noteDataMap, int indexHeight, int64_t nWi
     }
 }
 
-void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
-                                     const CBlock* pblockIn,
-                                     SproutMerkleTree& sproutTree,
-                                     SaplingMerkleTree& saplingTree)
+void CWallet::IncrementNoteWitnesses(
+        const Consensus::Params& consensus,
+        const CBlockIndex* pindex,
+        const CBlock* pblockIn,
+        SproutMerkleTree& sproutTree,
+        SaplingMerkleTree& saplingTree,
+        bool performOrchardWalletUpdates)
 {
     LOCK(cs_wallet);
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -2249,8 +2276,9 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
        ::CopyPreviousWitnesses(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize);
     }
 
-    // ORCHARD: Add a checkpoint before we add information from the new block
-    orchardWallet.CheckpointNoteCommitmentTree();
+    if (performOrchardWalletUpdates && consensus.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+        assert(orchardWallet.CheckpointNoteCommitmentTree(pindex->nHeight));
+    }
 
     if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
         nWitnessCacheSize += 1;
@@ -2259,7 +2287,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
     const CBlock* pblock {pblockIn};
     CBlock block;
     if (!pblock) {
-        ReadBlockFromDisk(block, pindex, Params().GetConsensus());
+        ReadBlockFromDisk(block, pindex, consensus);
         pblock = &block;
     }
 
@@ -2303,8 +2331,13 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
         }
     }
 
-    // ORCHARD: Update the Orchard note commitment tree.
-    assert(orchardWallet.AppendNoteCommitments(pindex->nHeight, *pblock));
+    // If we're at or beyond NU5 activation, update the Orchard note commitment tree.
+    if (performOrchardWalletUpdates && consensus.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+        orchardWallet.AppendNoteCommitments(pindex->nHeight, *pblock);
+        // TODO ORCHARD: Enable the following assertions.
+        //assert(orchardWallet.AppendNoteCommitments(pindex->nHeight, *pblock));
+        //assert(pindex->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
+    }
 
     // Update witness heights
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -2357,7 +2390,7 @@ void DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t n
     }
 }
 
-void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
+void CWallet::DecrementNoteWitnesses(const Consensus::Params& consensus, const CBlockIndex* pindex)
 {
     LOCK(cs_wallet);
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -2369,7 +2402,18 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
     assert(nWitnessCacheSize > 0);
 
     // ORCHARD: rewind to the last checkpoint.
-    orchardWallet.RewindToLastCheckpoint();
+    if (consensus.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+        // pindex->nHeight is the height of the block being removed, so we rewind
+        // to the previous block height
+        uint32_t blocksRewound{0};
+        orchardWallet.Rewind(pindex->nHeight - 1, blocksRewound);
+        // TODO ORCHARD: Enable the following assertions.
+        //assert(orchardWallet.Rewind(pindex->nHeight - 1, blocksRewound));
+        //assert(blocksRewound == 1);
+        //if (consensus.NetworkUpgradeActive(pindex->nHeight - 1, Consensus::UPGRADE_NU5)) {
+        //    assert(pindex->pprev->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
+        //}
+    }
 
     // For performance reasons, we write out the witness cache in
     // CWallet::SetBestChain() (which also ensures that overall consistency
@@ -2674,21 +2718,21 @@ void CWallet::UpdateSaplingNullifierNoteMapForBlock(const CBlock *pblock) {
     }
 }
 
-bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb)
-{
+void CWallet::LoadWalletTx(const CWalletTx& wtxIn) {
     uint256 hash = wtxIn.GetHash();
+    mapWallet[hash] = wtxIn;
+    CWalletTx& wtx = mapWallet[hash];
+    wtx.BindWallet(this);
+    wtxOrdered.insert(make_pair(wtx.nOrderPos, &wtx));
+    UpdateNullifierNoteMapWithTx(mapWallet[hash]);
+    AddToSpends(hash);
+}
 
-    if (fFromLoadWallet)
-    {
-        mapWallet[hash] = wtxIn;
-        CWalletTx& wtx = mapWallet[hash];
-        wtx.BindWallet(this);
-        wtxOrdered.insert(make_pair(wtx.nOrderPos, &wtx));
-        UpdateNullifierNoteMapWithTx(mapWallet[hash]);
-        AddToSpends(hash);
-    }
-    else
-    {
+bool CWallet::AddToWallet(const CWalletTx& wtxIn, CWalletDB* pwalletdb)
+{
+    { // additional scope left in place for backport whitespace compatibility
+        uint256 hash = wtxIn.GetHash();
+
         LOCK(cs_wallet);
         // Inserts only if not already there, returns tx inserted or tx found
         pair<map<uint256, CWalletTx>::iterator, bool> ret = mapWallet.insert(make_pair(hash, wtxIn));
@@ -2790,7 +2834,6 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
             boost::replace_all(strCmd, "%s", wtxIn.GetHash().GetHex());
             boost::thread t(runCommand, strCmd); // thread runs free
         }
-
     }
     return true;
 }
@@ -2844,9 +2887,15 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  * updated; instead, the transaction being in the mempool or conflicted is determined on
  * the fly in CMerkleTx::GetDepthInMainChain().
  */
-bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, const int nHeight, bool fUpdate)
+bool CWallet::AddToWalletIfInvolvingMe(
+        const Consensus::Params& consensus,
+        const CTransaction& tx,
+        const CBlock* pblock,
+        const int nHeight,
+        bool fUpdate
+        )
 {
-    {
+    { // extra scope left in place for backport whitespace compatibility
         AssertLockHeld(cs_wallet);
 
         // Check whether the transaction is already known by the wallet.
@@ -2868,7 +2917,9 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         }
 
         // Orchard
-        orchardWallet.AddNotesIfInvolvingMe(tx);
+        if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
+            orchardWallet.AddNotesIfInvolvingMe(tx);
+        }
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0 || orchardWallet.TxContainsMyNotes(tx.GetHash()))
         {
@@ -2891,16 +2942,16 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
             // startup through our SetBestChain-mechanism
             CWalletDB walletdb(strWalletFile, "r+", false);
 
-            return AddToWallet(wtx, false, &walletdb);
+            return AddToWallet(wtx, &walletdb);
         }
+        return false;
     }
-    return false;
 }
 
 void CWallet::SyncTransaction(const CTransaction& tx, const CBlock* pblock, const int nHeight)
 {
     LOCK(cs_wallet);
-    if (!AddToWalletIfInvolvingMe(tx, pblock, nHeight, true))
+    if (!AddToWalletIfInvolvingMe(Params().GetConsensus(), tx, pblock, nHeight, true))
         return; // Not one of ours
 
     MarkAffectedTransactionsDirty(tx);
@@ -3881,11 +3932,15 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
  * from or to us. If fUpdate is true, found transactions that already
  * exist in the wallet will be updated.
  */
-int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
+int CWallet::ScanForWalletTransactions(
+        CBlockIndex* pindexStart,
+        bool fUpdate,
+        bool isInitScan)
 {
     int ret = 0;
     int64_t nNow = GetTime();
     const CChainParams& chainParams = Params();
+    const auto& consensus = chainParams.GetConsensus();
 
     CBlockIndex* pindex = pindexStart;
 
@@ -3900,6 +3955,42 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
             pindex = chainActive.Next(pindex);
         }
 
+        // Attempt to rewind the orchard wallet to the rescan point if the wallet has any
+        // checkpoints. Note data will be restored by the calls to AddToWalletIfInvolvingMe,
+        // and then the call to `ChainTipAdded` that later occurs for each block will restore
+        // the witness data that is being removed in the rewind here.
+        auto nu5_height = chainParams.GetConsensus().GetActivationHeight(Consensus::UPGRADE_NU5);
+        bool performOrchardWalletUpdates{false};
+        if (orchardWallet.IsCheckpointed()) {
+            // We have a checkpoint, so attempt to rewind the Orchard wallet at most as
+            // far as the NU5 activation block.
+            // If there's no activation height, we shouldn't have a checkpoint already,
+            // and this is a programming error.
+            assert(nu5_height.has_value());
+            // Only attempt to perform scans for Orchard during wallet initialization,
+            // since we do not support Orchard key import.
+            if (isInitScan) {
+                int rewindHeight = std::max(nu5_height.value(), pindex->nHeight);
+                uint32_t blocksRewound{0};
+                if (orchardWallet.Rewind(rewindHeight, blocksRewound)) {
+                    // rewind was successful or a no-op, so perform Orchard wallet updates
+                    LogPrintf("Rewound Orchard wallet by %d blocks.", blocksRewound);
+                    performOrchardWalletUpdates = true;
+                } else {
+                    // Orchard witnesses will not be able to be correctly updated, because we
+                    // can't rewind far enough. This is an unrecoverable failure; it means that we
+                    // can't get back to a valid wallet state without resetting the wallet all
+                    // the way back to NU5 activation.
+                    throw std::runtime_error("CWallet::ScanForWalletTransactions(): Orchard wallet is out of sync. Please restart your node with -rescan.");
+                }
+            }
+        } else if (isInitScan && pindex->nHeight < nu5_height) {
+            // If it's the initial scan and we're starting below the nu5 activation
+            // height, we're effectively rescanning from genesis and so it's safe
+            // to update the note commitment tree as we progress.
+            performOrchardWalletUpdates = true;
+        }
+
         ShowProgress(_("Rescanning..."), 0); // show rescan progress in GUI as dialog or on splashscreen, if -rescan on startup
         double dProgressStart = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), pindex, false);
         double dProgressTip = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip(), false);
@@ -3909,10 +4000,10 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
                 ShowProgress(_("Rescanning..."), std::max(1, std::min(99, (int)((Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), pindex, false) - dProgressStart) / (dProgressTip - dProgressStart) * 100))));
 
             CBlock block;
-            ReadBlockFromDisk(block, pindex, Params().GetConsensus());
+            ReadBlockFromDisk(block, pindex, consensus);
             for (CTransaction& tx : block.vtx)
             {
-                if (AddToWalletIfInvolvingMe(tx, &block, pindex->nHeight, fUpdate)) {
+                if (AddToWalletIfInvolvingMe(consensus, tx, &block, pindex->nHeight, fUpdate)) {
                     myTxHashes.push_back(tx.GetHash());
                     ret++;
                 }
@@ -3924,17 +4015,20 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
             // state on the path to the tip of our chain
             assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, sproutTree));
             if (pindex->pprev) {
-                if (Params().GetConsensus().NetworkUpgradeActive(pindex->pprev->nHeight,  Consensus::UPGRADE_SAPLING)) {
+                if (consensus.NetworkUpgradeActive(pindex->pprev->nHeight,  Consensus::UPGRADE_SAPLING)) {
                     assert(pcoinsTip->GetSaplingAnchorAt(pindex->pprev->hashFinalSaplingRoot, saplingTree));
                 }
             }
             // Increment note witness caches
-            ChainTipAdded(pindex, &block, sproutTree, saplingTree);
+            ChainTipAdded(pindex, &block, sproutTree, saplingTree, performOrchardWalletUpdates);
 
             pindex = chainActive.Next(pindex);
             if (GetTime() >= nNow + 60) {
                 nNow = GetTime();
-                LogPrintf("Still rescanning. At block %d. Progress=%f\n", pindex->nHeight, Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), pindex));
+                LogPrintf(
+                        "Still rescanning. At block %d. Progress=%f\n",
+                        pindex->nHeight,
+                        Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), pindex));
             }
         }
 
@@ -5055,7 +5149,7 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_
 
             // Add tx to wallet, because if it has change it's also ours,
             // otherwise just for transaction history.
-            AddToWallet(wtxNew, false, pwalletdb);
+            AddToWallet(wtxNew, pwalletdb);
 
             // Notify that old coins are spent
             set<CWalletTx*> setCoins;
@@ -5932,6 +6026,7 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
         if (walletdb.ReadBestBlock(locator))
             pindexRescan = FindForkInGlobalIndex(chainActive, locator);
     }
+
     if (chainActive.Tip() && chainActive.Tip() != pindexRescan)
     {
         // We can't rescan beyond non-pruned blocks, stop and throw an error.
@@ -5947,10 +6042,19 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
                 return UIError(_("Prune: last wallet synchronisation goes beyond pruned data. You need to -reindex (download the whole blockchain again in case of pruned node)"));
         }
 
+        // If a rescan would begin at a point before NU5 activation height, reset
+        // the Orchard wallet state to empty.
+        if (pindexRescan->nHeight <= Params().GetConsensus().GetActivationHeight(Consensus::UPGRADE_NU5)) {
+            walletInstance->orchardWallet.Reset();
+        }
+
         uiInterface.InitMessage(_("Rescanning..."));
-        LogPrintf("Rescanning last %i blocks (from block %i)...\n", chainActive.Height() - pindexRescan->nHeight, pindexRescan->nHeight);
+        LogPrintf(
+                "Rescanning last %i blocks (from block %i)...\n",
+                chainActive.Height() - pindexRescan->nHeight,
+                pindexRescan->nHeight);
         nStart = GetTimeMillis();
-        walletInstance->ScanForWalletTransactions(pindexRescan, true);
+        walletInstance->ScanForWalletTransactions(pindexRescan, true, true);
         LogPrintf(" rescan      %15dms\n", GetTimeMillis() - nStart);
         walletInstance->SetBestChain(chainActive.GetLocator());
         CWalletDB::IncrementUpdateCounter();
@@ -6340,7 +6444,6 @@ void CWallet::GetFilteredNotes(
                         orchardNotes,
                         ivk.value(),
                         ignoreSpent,
-                        ignoreLocked,
                         requireSpendingKey);
             }
         }
@@ -6350,11 +6453,14 @@ void CWallet::GetFilteredNotes(
                 orchardNotes,
                 std::nullopt,
                 ignoreSpent,
-                ignoreLocked,
                 requireSpendingKey);
     }
 
     for (auto& noteMeta : orchardNotes) {
+        if (ignoreSpent && IsOrchardSpent(noteMeta.GetOutPoint())) {
+            continue;
+        }
+
         auto wtx = GetWalletTx(noteMeta.GetOutPoint().hash);
         if (wtx) {
             if (wtx->GetDepthInMainChain() >= minDepth) {

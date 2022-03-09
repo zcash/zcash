@@ -1336,7 +1336,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
     mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
     CWalletTx wtx(pwalletMain, mtx);
-    pwalletMain->AddToWallet(wtx, true, NULL);
+    pwalletMain->LoadWalletTx(wtx);
 
     // Fake-mine the transaction
     BOOST_CHECK_EQUAL(0, chainActive.Height());
@@ -1352,7 +1352,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     BOOST_CHECK(chainActive.Contains(&fakeIndex));
     BOOST_CHECK_EQUAL(1, chainActive.Height());
     wtx.SetMerkleBranch(block);
-    pwalletMain->AddToWallet(wtx, true, NULL);
+    pwalletMain->LoadWalletTx(wtx);
 
     // Context that z_sendmany requires
     auto builder = TransactionBuilder(consensusParams, nextBlockHeight, std::nullopt, pwalletMain);
@@ -1990,7 +1990,7 @@ void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
         CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
         mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
         CWalletTx wtx(pwalletMain, mtx);
-        pwalletMain->AddToWallet(wtx, true, NULL);
+        pwalletMain->LoadWalletTx(wtx);
         return wtx;
     };
 
@@ -2011,7 +2011,7 @@ void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
 
         if (has_trx) {
             wtx.SetMerkleBranch(block);
-            pwalletMain->AddToWallet(wtx, true, NULL);
+            pwalletMain->LoadWalletTx(wtx);
         }
 
         hashes.push_back(blockHash);

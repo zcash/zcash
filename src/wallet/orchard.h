@@ -65,12 +65,42 @@ public:
     OrchardWallet(const OrchardWallet&) = delete;
     OrchardWallet& operator=(const OrchardWallet&) = delete;
 
-    void CheckpointNoteCommitmentTree() {
-        orchard_wallet_checkpoint(inner.get());
+    /**
+     * Reset the state of the wallet to be suitable for rescan from the NU5 activation
+     * height.  This removes all witness and spentness information from the wallet. The
+     * keystore is unmodified and decrypted note, nullifier, and conflict data are left
+     * in place with the expectation that they will be overwritten and/or updated in the
+     * rescan process.
+     */
+    bool Reset() {
+        return orchard_wallet_reset(inner.get());
     }
 
-    bool RewindToLastCheckpoint() {
-        return orchard_wallet_rewind(inner.get());
+    /**
+     * Checkpoint the note commitment tree. This returns `false` and leaves the note
+     * commitment tree unmodified if the block height specified is not the successor
+     * to the last block height checkpointed.
+     */
+    bool CheckpointNoteCommitmentTree(int nBlockHeight) {
+        assert(nBlockHeight >= 0);
+        return orchard_wallet_checkpoint(inner.get(), (uint32_t) nBlockHeight);
+    }
+
+    /**
+     * Return whether the orchard note commitment tree contains any checkpoints.
+     */
+    bool IsCheckpointed() const {
+        return orchard_wallet_is_checkpointed(inner.get());
+    }
+
+    /**
+     * Rewinds to the most recent checkpoint, and marks as unspent any notes
+     * previously identified as having been spent by transactions in the
+     * latest block.
+     */
+    bool Rewind(int nBlockHeight, uint32_t& blocksRewoundRet) {
+        assert(nBlockHeight >= 0);
+        return orchard_wallet_rewind(inner.get(), (uint32_t) nBlockHeight, &blocksRewoundRet);
     }
 
     /**
@@ -105,6 +135,12 @@ public:
         }
 
         return true;
+    }
+
+    uint256 GetLatestAnchor() const {
+        uint256 value;
+        orchard_wallet_commitment_tree_root(inner.get(), value.begin());
+        return value;
     }
 
     bool TxContainsMyNotes(const uint256& txid) {
@@ -158,19 +194,35 @@ public:
     void GetFilteredNotes(
         std::vector<OrchardNoteMetadata>& orchardNotesRet,
         const std::optional<libzcash::OrchardIncomingViewingKey>& ivk,
-        bool ignoreSpent,
-        bool ignoreLocked,
+        bool ignoreMined,
         bool requireSpendingKey) const {
 
         orchard_wallet_get_filtered_notes(
             inner.get(),
             ivk.has_value() ? ivk.value().inner.get() : nullptr,
-            ignoreSpent,
-            ignoreLocked,
+            ignoreMined,
             requireSpendingKey,
             &orchardNotesRet,
             PushOrchardNoteMeta
             );
+    }
+
+    static void PushTxId(void* txidsRet, unsigned char txid[32]) {
+        uint256 txid_out;
+        std::copy(txid, txid + 32, txid_out.begin());
+        reinterpret_cast<std::vector<uint256>*>(txidsRet)->push_back(txid_out);
+    }
+
+    std::vector<uint256> GetPotentialSpends(const OrchardOutPoint& outPoint) const {
+        std::vector<uint256> result;
+        orchard_wallet_get_potential_spends(
+            inner.get(),
+            outPoint.hash.begin(),
+            outPoint.n,
+            &result,
+            PushTxId
+            );
+        return result;
     }
 };
 
