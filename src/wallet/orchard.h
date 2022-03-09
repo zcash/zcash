@@ -133,6 +133,7 @@ public:
      * notes to the wallet.
      */
     bool RestoreDecryptedNotes(
+            const std::optional<int> nBlockHeight,
             const CTransaction& tx,
             std::map<uint32_t, libzcash::OrchardIncomingViewingKey> hints
             ) {
@@ -140,8 +141,10 @@ public:
         for (const auto& [action_idx, ivk] : hints) {
             rawHints.push_back({ action_idx, ivk.inner.get() });
         }
+        uint32_t blockHeight = nBlockHeight.has_value() ? (uint32_t) nBlockHeight.value() : 0;
         return orchard_wallet_restore_notes(
                 inner.get(),
+                nBlockHeight.has_value() ? &blockHeight : nullptr,
                 tx.GetHash().begin(),
                 tx.GetOrchardBundle().inner.get(),
                 rawHints.data(),
@@ -156,6 +159,7 @@ public:
      * Returns `false` if the caller attempts to insert a block out-of-order.
      */
     bool AppendNoteCommitments(const int nBlockHeight, const CBlock& block) {
+        assert(nBlockHeight >= 0);
         for (int txidx = 0; txidx < block.vtx.size(); txidx++) {
             const CTransaction& tx = block.vtx[txidx];
             if (!orchard_wallet_append_bundle_commitments(

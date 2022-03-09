@@ -947,7 +947,12 @@ bool CWallet::LoadUnifiedCaches()
     // Restore decrypted Orchard notes.
     for (const auto& [_, walletTx] : mapWallet) {
         if (!walletTx.mapOrchardActionData.empty()) {
-            if (!orchardWallet.RestoreDecryptedNotes(walletTx, walletTx.mapOrchardActionData)) {
+            const CBlockIndex* pTxIndex;
+            std::optional<int> blockHeight;
+            if (walletTx.GetDepthInMainChain(pTxIndex) > 0) {
+                blockHeight = pTxIndex->nHeight;
+            }
+            if (!orchardWallet.RestoreDecryptedNotes(blockHeight, walletTx, walletTx.mapOrchardActionData)) {
                 return false;
             }
         }

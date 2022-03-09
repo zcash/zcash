@@ -341,7 +341,15 @@ impl Wallet {
         let mut result = BTreeMap::new();
 
         for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_for_keys(&keys) {
-            assert!(self.add_decrypted_note(txid, action_idx, ivk.clone(), note, recipient, memo));
+            assert!(self.add_decrypted_note(
+                None,
+                txid,
+                action_idx,
+                ivk.clone(),
+                note,
+                recipient,
+                memo
+            ));
             result.insert(action_idx, ivk);
         }
 
@@ -353,13 +361,22 @@ impl Wallet {
     /// key to the vector of action indices that that key decrypts.
     pub fn add_notes_from_bundle_with_hints(
         &mut self,
+        tx_height: Option<BlockHeight>,
         txid: &TxId,
         bundle: &Bundle<Authorized, Amount>,
         hints: BTreeMap<usize, &IncomingViewingKey>,
     ) -> Result<(), BundleDecryptionError> {
         for (action_idx, ivk) in hints.into_iter() {
             if let Some((note, recipient, memo)) = bundle.decrypt_output_with_key(action_idx, ivk) {
-                if !self.add_decrypted_note(txid, action_idx, ivk.clone(), note, recipient, memo) {
+                if !self.add_decrypted_note(
+                    tx_height,
+                    txid,
+                    action_idx,
+                    ivk.clone(),
+                    note,
+                    recipient,
+                    memo,
+                ) {
                     return Err(BundleDecryptionError::FvkNotFound(ivk.clone()));
                 }
             } else {
@@ -369,8 +386,10 @@ impl Wallet {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn add_decrypted_note(
         &mut self,
+        tx_height: Option<BlockHeight>,
         txid: &TxId,
         action_idx: usize,
         ivk: IncomingViewingKey,
@@ -396,7 +415,7 @@ impl Wallet {
             self.wallet_received_notes
                 .entry(*txid)
                 .or_insert_with(|| TxNotes {
-                    tx_height: None,
+                    tx_height,
                     decrypted_notes: BTreeMap::new(),
                 })
                 .decrypted_notes
@@ -639,12 +658,14 @@ pub extern "C" fn orchard_wallet_add_notes_from_bundle(
 #[no_mangle]
 pub extern "C" fn orchard_wallet_restore_notes(
     wallet: *mut Wallet,
+    block_height: *const u32,
     txid: *const [c_uchar; 32],
     bundle: *const Bundle<Authorized, Amount>,
     hints: *const FFIActionIvk,
     hints_len: usize,
 ) -> bool {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
+    let block_height = unsafe { block_height.as_ref() }.map(|h| BlockHeight::from(*h));
     let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
     let bundle = unsafe { bundle.as_ref() }.expect("bundle pointer may not be null.");
 
@@ -658,7 +679,7 @@ pub extern "C" fn orchard_wallet_restore_notes(
         );
     }
 
-    match wallet.add_notes_from_bundle_with_hints(&txid, bundle, hints) {
+    match wallet.add_notes_from_bundle_with_hints(block_height, &txid, bundle, hints) {
         Ok(_) => true,
         Err(e) => {
             error!("Failed to restore decrypted notes to wallet: {:?}", e);
