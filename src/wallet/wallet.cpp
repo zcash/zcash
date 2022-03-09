@@ -2034,13 +2034,15 @@ SpendableInputs CWallet::FindSpendableInputs(
         std::vector<OrchardNoteMetadata> incomingNotes;
         orchardWallet.GetFilteredNotes(incomingNotes, ivk, true, true);
 
-        for (const auto& noteMeta : incomingNotes) {
+        for (auto& noteMeta : incomingNotes) {
             if (IsOrchardSpent(noteMeta.GetOutPoint())) {
                 continue;
             }
 
             auto mit = mapWallet.find(noteMeta.GetOutPoint().hash);
-            if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= minDepth) {
+            auto confirmations = mit->second.GetDepthInMainChain();
+            if (mit != mapWallet.end() && confirmations >= minDepth) {
+                noteMeta.SetConfirmations(confirmations);
                 unspent.orchardNoteMetadata.push_back(noteMeta);
             }
         }
@@ -6463,8 +6465,9 @@ void CWallet::GetFilteredNotes(
 
         auto wtx = GetWalletTx(noteMeta.GetOutPoint().hash);
         if (wtx) {
-            if (wtx->GetDepthInMainChain() >= minDepth) {
-                noteMeta.SetConfirmations(wtx->GetDepthInMainChain());
+            auto confirmations = wtx->GetDepthInMainChain();
+            if (confirmations >= minDepth && confirmations <= maxDepth) {
+                noteMeta.SetConfirmations(confirmations);
                 orchardNotesRet.push_back(noteMeta);
             }
         } else {
