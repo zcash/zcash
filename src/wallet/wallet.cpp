@@ -846,7 +846,7 @@ bool CWallet::LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &add
                 addrmeta.GetReceiverTypes());
 }
 
-bool CWallet::LoadUnifiedCaches()
+bool CWallet::LoadCaches()
 {
     AssertLockHeld(cs_wallet);
 
@@ -953,6 +953,8 @@ bool CWallet::LoadUnifiedCaches()
                 blockHeight = pTxIndex->nHeight;
             }
             if (!orchardWallet.RestoreDecryptedNotes(blockHeight, walletTx, walletTx.mapOrchardActionData)) {
+                LogPrintf("%s: Error: Failed to decrypt previously decrypted notes for txid %s.\n",
+                    __func__, walletTx.GetHash().GetHex());
                 return false;
             }
         }

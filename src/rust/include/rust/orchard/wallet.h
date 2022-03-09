@@ -75,7 +75,7 @@ bool orchard_wallet_rewind(
 
 /**
  * A C struct used to transfer action_idx/IVK pairs back from Rust across the FFI
- * boundary. This must have the same in-memory representation as the `NoteMetadata` type
+ * boundary. This must have the same in-memory representation as the `FFIActionIVK` type
  * in orchard_ffi/wallet.rs.
  *
  * Values of the `ivk` pointer must be freed manually; the best way to do this is to
@@ -201,7 +201,7 @@ OrchardIncomingViewingKeyPtr* orchard_wallet_get_ivk_for_address(
 
 /**
  * A C struct used to transfer note metadata information across the Rust FFI boundary.
- * This must have the same in-memory representation as the `NoteMetadata` type in
+ * This must have the same in-memory representation as the `FFINoteMetadata` type in
  * orchard_ffi/wallet.rs.
  */
 struct RawOrchardNoteMetadata {

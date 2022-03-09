@@ -1555,7 +1555,7 @@ public:
     //!
     //! Returns true if and only if there were no detected inconsistencies or
     //! failures in reconstructing the cache.
-    bool LoadUnifiedCaches();
+    bool LoadCaches();
 
     std::optional<libzcash::UFVKId> FindUnifiedFullViewingKey(const libzcash::UnifiedAddress& addr) const;
     std::optional<libzcash::AccountId> GetUnifiedAccountId(const libzcash::UFVKId& ufvkId) const;
