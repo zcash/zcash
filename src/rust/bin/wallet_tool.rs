@@ -324,14 +324,13 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
                 .unwrap_or(false)
         })
         .collect();
-    if phrase_line.len() != 1 || phrase_line[0].is_err() {
-        return Err(WalletToolError::RecoveryPhraseNotFound.into());
-    }
-    let phrase = phrase_line[0]
-        .as_ref()
-        .unwrap()
-        .trim_start_matches("# - recovery_phrase=\"")
-        .trim_end_matches('"');
+
+    let phrase = match &phrase_line[..] {
+        [Ok(line)] => line
+            .trim_start_matches("# - recovery_phrase=\"")
+            .trim_end_matches('"'),
+        _ => return Err(WalletToolError::RecoveryPhraseNotFound.into()),
+    };
 
     // This panic hook allows us to make a best effort to clear the screen (and then print
     // another reminder about secrets in the export file) even if a panic occurs.
