@@ -1293,7 +1293,7 @@ void komodo_args(char *argv0)
     {
         KOMODO_MININGTHREADS = GetArg("-genproclimit",-1);
     }
-    IS_MODE_EXCHANGEWALLET = GetArg("-exchange", 0);
+    IS_MODE_EXCHANGEWALLET = GetBoolArg("-exchange", false);
     DONATION_PUBKEY = GetArg("-donation", "");
     NOTARY_PUBKEY = GetArg("-pubkey", "");
     IS_KOMODO_DEALERNODE = GetArg("-dealer",0);
