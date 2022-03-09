@@ -83,9 +83,13 @@ bool orchard_wallet_rewind(
  * in the object destructor.
  */
 struct RawOrchardActionIVK {
-    uint32_t actionIdx;
+    uint64_t actionIdx;
     OrchardIncomingViewingKeyPtr* ivk;
 };
+static_assert(
+    sizeof(RawOrchardActionIVK) == 16,
+    "RawOrchardActionIVK struct should have exactly a 128-bit in-memory representation.");
+static_assert(alignof(RawOrchardActionIVK) == 8, "RawOrchardActionIVK struct alignment is not 64 bits.");
 
 typedef void (*push_action_ivk_callback_t)(void* resultCollection, const RawOrchardActionIVK actionIvk);
 

@@ -151,9 +151,25 @@ class WalletOrchardTest(BitcoinTestFramework):
         # un-mined and returned to the mempool
         assert_equal(set([rollback_tx]), set(self.nodes[2].getrawmempool()))
 
+        # our sole Sapling note is spent, so our confirmed balance is currently 0
+        assert_equal(
+                {'pools': {}, 'minimum_confirmations': 1}, 
+                self.nodes[2].z_getbalanceforaccount(acct2))
+
+        # our incoming change (unconfirmed, still in the mempool) is 9 zec
+        assert_equal(
+                {'pools': {'sapling': {'valueZat': Decimal('900000000')}}, 'minimum_confirmations': 0}, 
+                self.nodes[2].z_getbalanceforaccount(acct2, 0))
+
+        # the transaction was un-mined, so we have no confirmed balance
         assert_equal(
                 {'pools': {}, 'minimum_confirmations': 1}, 
                 self.nodes[3].z_getbalanceforaccount(acct3))
+
+        # our unconfirmed balance is 1 zec
+        assert_equal(
+                {'pools': {'orchard': {'valueZat': Decimal('100000000')}}, 'minimum_confirmations': 0}, 
+                self.nodes[3].z_getbalanceforaccount(acct3, 0))
 
 if __name__ == '__main__':
     WalletOrchardTest().main()

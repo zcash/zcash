@@ -306,8 +306,9 @@ impl Wallet {
     }
 
     /// Add note data for those notes that are decryptable with one of this wallet's
-    /// incoming viewing keys to the wallet, and return a map from incoming viewing
-    /// key to the vector of action indices that that key decrypts.
+    /// incoming viewing keys to the wallet, and return a map from each decrypted
+    /// action's index to the incoming vieing key that successfully decrypted that
+    /// action.
     pub fn add_notes_from_bundle(
         &mut self,
         txid: &TxId,
@@ -341,7 +342,7 @@ impl Wallet {
 
         for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_for_keys(&keys) {
             assert!(self.add_decrypted_note(txid, action_idx, ivk.clone(), note, recipient, memo));
-            result.entry(action_idx).or_insert(ivk);
+            result.insert(action_idx, ivk);
         }
 
         result
@@ -354,23 +355,15 @@ impl Wallet {
         &mut self,
         txid: &TxId,
         bundle: &Bundle<Authorized, Amount>,
-        hints: &BTreeMap<usize, &IncomingViewingKey>,
+        hints: BTreeMap<usize, &IncomingViewingKey>,
     ) -> Result<(), BundleDecryptionError> {
-        for (action_idx, ivk) in hints.iter() {
-            if let Some((note, recipient, memo)) = bundle.decrypt_output_with_key(*action_idx, ivk)
-            {
-                if !self.add_decrypted_note(
-                    txid,
-                    *action_idx,
-                    (*ivk).clone(),
-                    note,
-                    recipient,
-                    memo,
-                ) {
-                    return Err(BundleDecryptionError::FvkNotFound((*ivk).clone()));
+        for (action_idx, ivk) in hints.into_iter() {
+            if let Some((note, recipient, memo)) = bundle.decrypt_output_with_key(action_idx, ivk) {
+                if !self.add_decrypted_note(txid, action_idx, ivk.clone(), note, recipient, memo) {
+                    return Err(BundleDecryptionError::FvkNotFound(ivk.clone()));
                 }
             } else {
-                return Err(BundleDecryptionError::ActionDecryptionFailed(*action_idx));
+                return Err(BundleDecryptionError::ActionDecryptionFailed(action_idx));
             }
         }
         Ok(())
@@ -548,9 +541,9 @@ impl Wallet {
 // FFI
 //
 
-/// A type alias for a pointer to a C++ vector used for collecting
-/// return values across the FFI.
-pub type VecObj = std::ptr::NonNull<libc::c_void>;
+/// A type alias for a pointer to a C++ value that is the target of
+/// a mutating action by a callback across the FFI
+pub type FFICallbackReceiver = std::ptr::NonNull<libc::c_void>;
 
 #[no_mangle]
 pub extern "C" fn orchard_wallet_new() -> *mut Wallet {
@@ -609,23 +602,24 @@ pub extern "C" fn orchard_wallet_rewind(
 
 /// A type used to pass action decryption metadata across the FFI boundary.
 /// This must have the same representation as `struct RawOrchardActionIVK`
-/// in `rust/include/rust/orchard/wallet.h`.
+/// in `rust/include/rust/orchard/wallet.h`. action_idx is
 #[repr(C)]
 pub struct FFIActionIvk {
-    action_idx: u32,
+    action_idx: u64,
     ivk_ptr: *mut IncomingViewingKey,
 }
 
 /// A C++-allocated function pointer that can push a FFIActionIVK value
 /// onto a C++ vector.
-pub type ActionIvkPushCb = unsafe extern "C" fn(obj: Option<VecObj>, value: FFIActionIvk);
+pub type ActionIvkPushCb =
+    unsafe extern "C" fn(obj: Option<FFICallbackReceiver>, value: FFIActionIvk);
 
 #[no_mangle]
 pub extern "C" fn orchard_wallet_add_notes_from_bundle(
     wallet: *mut Wallet,
     txid: *const [c_uchar; 32],
     bundle: *const Bundle<Authorized, Amount>,
-    result: Option<VecObj>,
+    result: Option<FFICallbackReceiver>,
     push_cb: Option<ActionIvkPushCb>,
 ) {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
@@ -664,7 +658,7 @@ pub extern "C" fn orchard_wallet_restore_notes(
         );
     }
 
-    match wallet.add_notes_from_bundle_with_hints(&txid, bundle, &hints) {
+    match wallet.add_notes_from_bundle_with_hints(&txid, bundle, hints) {
         Ok(_) => true,
         Err(e) => {
             error!("Failed to restore decrypted notes to wallet: {:?}", e);
@@ -778,7 +772,7 @@ pub struct FFINoteMetadata {
 
 /// A C++-allocated function pointer that can push a FFINoteMetadata value
 /// onto a C++ vector.
-pub type NotePushCb = unsafe extern "C" fn(obj: Option<VecObj>, meta: FFINoteMetadata);
+pub type NotePushCb = unsafe extern "C" fn(obj: Option<FFICallbackReceiver>, meta: FFINoteMetadata);
 
 #[no_mangle]
 pub extern "C" fn orchard_wallet_get_filtered_notes(
@@ -786,7 +780,7 @@ pub extern "C" fn orchard_wallet_get_filtered_notes(
     ivk: *const IncomingViewingKey,
     ignore_mined: bool,
     require_spending_key: bool,
-    result: Option<VecObj>,
+    result: Option<FFICallbackReceiver>,
     push_cb: Option<NotePushCb>,
 ) {
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
@@ -804,14 +798,14 @@ pub extern "C" fn orchard_wallet_get_filtered_notes(
     }
 }
 
-pub type PushTxId = unsafe extern "C" fn(obj: Option<VecObj>, txid: *const [u8; 32]);
+pub type PushTxId = unsafe extern "C" fn(obj: Option<FFICallbackReceiver>, txid: *const [u8; 32]);
 
 #[no_mangle]
 pub extern "C" fn orchard_wallet_get_potential_spends(
     wallet: *const Wallet,
     txid: *const [c_uchar; 32],
     action_idx: u32,
-    result: Option<VecObj>,
+    result: Option<FFICallbackReceiver>,
     push_cb: Option<PushTxId>,
 ) {
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");

@@ -945,7 +945,7 @@ bool CWallet::LoadUnifiedCaches()
     }
 
     // Restore decrypted Orchard notes.
-    for (const auto& [txid, walletTx] : mapWallet) {
+    for (const auto& [_, walletTx] : mapWallet) {
         if (!walletTx.mapOrchardActionData.empty()) {
             if (!orchardWallet.RestoreDecryptedNotes(walletTx, walletTx.mapOrchardActionData)) {
                 return false;
@@ -2887,6 +2887,9 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
     }
 
     bool unchangedOrchardFlag = (wtxIn.mapOrchardActionData.empty() || wtxIn.mapOrchardActionData == wtx.mapOrchardActionData);
+    if (!unchangedOrchardFlag) {
+        wtx.mapOrchardActionData = wtxIn.mapOrchardActionData;
+    }
 
     return !unchangedSproutFlag || !unchangedSaplingFlag || !unchangedOrchardFlag;
 }

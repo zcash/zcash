@@ -114,11 +114,6 @@ public:
      * contains the full viewing key to the wallet, and return the
      * mapping from each decrypted Orchard action index to the IVK
      * that was used to decrypt that action's note.
-     *
-     * If hints are provided, this method will perform decryption of
-     * only the specified actions using the provided incoming viewing keys,
-     * rather than performing trial decryption on all the actions of the
-     * provided bundle.
      */
     std::map<uint32_t, libzcash::OrchardIncomingViewingKey> AddNotesIfInvolvingMe(const CTransaction& tx) {
         std::map<uint32_t, libzcash::OrchardIncomingViewingKey> result;
