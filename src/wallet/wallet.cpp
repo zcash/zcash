@@ -3795,6 +3795,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     else
         txNew.nLockTime = (uint32_t)chainActive.Tip()->GetMedianTimePast();
 
+    if (IS_MODE_EXCHANGEWALLET) txNew.nLockTime = 0;
+
     // Activates after Overwinter network upgrade
     if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
         if (txNew.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD){
