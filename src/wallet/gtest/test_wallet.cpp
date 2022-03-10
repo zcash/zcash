@@ -375,6 +375,8 @@ TEST(WalletTests, SetSproutNoteAddrsInCWalletTx) {
 }
 
 TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
+    LoadProofParameters();
+
     std::vector<libzcash::Zip212Enabled> zip_212_enabled = {libzcash::Zip212Enabled::BeforeZip212, libzcash::Zip212Enabled::AfterZip212};
     const Consensus::Params& (*activations [])() = {RegtestActivateSapling, RegtestActivateCanopy};
     void (*deactivations [])() = {RegtestDeactivateSapling, RegtestDeactivateCanopy};
@@ -524,6 +526,8 @@ TEST(WalletTests, GetSproutNoteNullifier) {
 }
 
 TEST(WalletTests, FindMySaplingNotes) {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
@@ -653,6 +657,8 @@ TEST(WalletTests, GetConflictedSproutNotes) {
 
 // Generate note A and spend to create note B, from which we spend to create two conflicting transactions
 TEST(WalletTests, GetConflictedSaplingNotes) {
+    LoadProofParameters();
+
     std::vector<libzcash::Zip212Enabled> zip_212_enabled = {libzcash::Zip212Enabled::BeforeZip212, libzcash::Zip212Enabled::AfterZip212};
     const Consensus::Params& (*activations [])() = {RegtestActivateSapling, RegtestActivateCanopy};
     void (*deactivations [])() = {RegtestDeactivateSapling, RegtestDeactivateCanopy};
@@ -820,6 +826,8 @@ TEST(WalletTests, SproutNullifierIsSpent) {
 }
 
 TEST(WalletTests, SaplingNullifierIsSpent) {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
     TestWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
@@ -905,6 +913,8 @@ TEST(WalletTests, NavigateFromSproutNullifierToNote) {
 }
 
 TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
     TestWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
@@ -1028,6 +1038,8 @@ TEST(WalletTests, SpentSproutNoteIsFromMe) {
 
 // Create note A, spend A to create note B, spend and verify note B is from me.
 TEST(WalletTests, SpentSaplingNoteIsFromMe) {
+    LoadProofParameters();
+
     std::vector<libzcash::Zip212Enabled> zip_212_enabled = {libzcash::Zip212Enabled::BeforeZip212, libzcash::Zip212Enabled::AfterZip212};
     const Consensus::Params& (*activations [])() = {RegtestActivateSapling, RegtestActivateCanopy};
     void (*deactivations [])() = {RegtestDeactivateSapling, RegtestDeactivateCanopy};
@@ -1840,6 +1852,8 @@ TEST(WalletTests, UpdatedSproutNoteData) {
 }
 
 TEST(WalletTests, UpdatedSaplingNoteData) {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
     TestWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);
@@ -1983,6 +1997,8 @@ TEST(WalletTests, MarkAffectedSproutTransactionsDirty) {
 }
 
 TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
     TestWallet wallet(Params());
     LOCK2(cs_main, wallet.cs_wallet);

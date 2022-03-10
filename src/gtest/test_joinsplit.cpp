@@ -11,6 +11,7 @@
 #include "primitives/transaction.h"
 #include "proof_verifier.h"
 #include "transaction_builder.h"
+#include "utiltest.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
@@ -309,6 +310,8 @@ void increment_note_witnesses(
 
 TEST(Joinsplit, FullApiTest)
 {
+    LoadProofParameters();
+
     {
         std::vector<SproutWitness> witnesses;
         SproutMerkleTree tree;
