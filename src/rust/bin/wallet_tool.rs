@@ -198,52 +198,73 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
         .lines()
         .map(|s| s.trim_end_matches('\r'))
         .collect();
+    if opts.debug {
+        eprintln!("DEBUG: stderr {:?}", cli_err);
+    }
 
-    if !cli_err.is_empty() && cli_err[0].starts_with("error: couldn't connect") {
-        println!(concat!(
-            "\nNo, we could not connect. zcashd might not be running; in that case\n",
-            "please start it. The '-exportdir' option should be set to the absolute\n",
-            "path of the directory you want to save the wallet export file to.\n\n",
-            "(Don't forget to restart zcashd without '-exportdir' after finishing\n",
-            "the backup, if running it long-term with that option is not desired\n",
-            "or would be a security hazard in your environment.)\n\n",
-            "If you believe zcashd is running, it might be using an unexpected port,\n",
-            "address, or authentication options for the RPC interface, for example.\n",
-            "In that case try to connect to it using zcash-cli, and if successful,\n",
-            "use the same connection options for zcashd-wallet-tool (see '--help' for\n",
-            "accepted options) as for zcash-cli.\n"
-        ));
-        return Err(WalletToolError::ZcashdConnection.into());
+    if !cli_err.is_empty() {
+        if cli_err[0].starts_with("Error reading configuration file") {
+            println!(concat!(
+                "\nNo, we could not read 'zcash.conf'. If this file is not in the default\n",
+                "location (~/.zcash/zcash.conf), please try again with the '-datadir='\n",
+                "option set to the directory containing this file. Also make sure that\n",
+                "the current user has permission to read that directory and 'zcash.conf'.\n",
+            ));
+            return Err(WalletToolError::ZcashdConnection.into());
+        }
+        if cli_err[0].starts_with("error: couldn't connect") {
+            println!(concat!(
+                "\nNo, we could not connect. zcashd might not be running; in that case\n",
+                "please start it. The '-exportdir' option should be set to the absolute\n",
+                "path of the directory you want to save the wallet export file to.\n\n",
+                "(Don't forget to restart zcashd without '-exportdir' after finishing\n",
+                "the backup, if running it long-term with that option is not desired\n",
+                "or would be a security hazard in your environment.)\n\n",
+                "If you believe zcashd is running, it might be using an unexpected port,\n",
+                "address, or authentication options for the RPC interface, for example.\n",
+                "In that case try to connect to it using zcash-cli, and if successful,\n",
+                "use the same connection options for zcashd-wallet-tool (see '--help' for\n",
+                "accepted options) as for zcash-cli.\n"
+            ));
+            return Err(WalletToolError::ZcashdConnection.into());
+        }
+        if cli_err[0] == "error code: -28" {
+            println!(concat!(
+                "\nNo, we could not connect. zcashd seems to be initializing; please try\n",
+                "again once it has finished.\n",
+            ));
+            return Err(WalletToolError::ZcashdConnection.into());
+        }
     }
-    if !cli_err.is_empty() && cli_err[0] == "error code: -28" {
-        println!(concat!(
-            "\nNo, we could not connect. zcashd seems to be initializing; please try\n",
-            "again once it has finished.\n",
-        ));
-        return Err(WalletToolError::ZcashdConnection.into());
-    }
-    if cli_err.len() < 3
-        || cli_err[0] != "error code: -4"
-        || !cli_err[2].starts_with("Filename is invalid")
+
+    const REMINDER_MSG: &str = concat!(
+        "\nPlease start or restart zcashd with '-exportdir' set to the absolute\n",
+        "path of the directory you want to save the wallet export file to.\n",
+        "(Don't forget to restart zcashd without '-exportdir' after finishing\n",
+        "the backup, if running it long-term with that option is not desired\n",
+        "or would be a security hazard in your environment.)\n",
+    );
+
+    if cli_err.len() >= 3
+        && cli_err[0] == "error code: -4"
+        && cli_err[2].contains("zcashd -exportdir")
     {
-        let e = if cli_err[2].contains("zcashd -exportdir") {
-            println!("\nIt looks like zcashd is running without the '-exportdir' option.");
-            WalletToolError::ExportDirNotSet
-        } else {
-            println!(
-                "\nThere was an unexpected response from zcashd:\n> {}",
-                cli_err.join("\n> ")
-            );
-            WalletToolError::UnexpectedResponse
-        };
-        println!(concat!(
-            "\nPlease start or restart zcashd with '-exportdir' set to the absolute\n",
-            "path of the directory you want to save the wallet export file to.\n",
-            "(Don't forget to restart zcashd without '-exportdir' after finishing\n",
-            "the backup, if running it long-term with that option is not desired\n",
-            "or would be a security hazard in your environment.)\n",
-        ));
-        return Err(e.into());
+        println!(
+            "\nIt looks like zcashd is running without the '-exportdir' option.{}",
+            REMINDER_MSG
+        );
+        return Err(WalletToolError::ExportDirNotSet.into());
+    }
+    if !(cli_err.len() >= 3
+        && cli_err[0] == "error code: -4"
+        && cli_err[2].starts_with("Filename is invalid"))
+    {
+        println!(
+            "\nThere was an unexpected response from zcash-cli or zcashd:\n> {}{}",
+            cli_err.join("\n> "),
+            REMINDER_MSG,
+        );
+        return Err(WalletToolError::UnexpectedResponse.into());
     }
     println!("Yes, and it is running with the '-exportdir' option as required.");
 
