@@ -334,6 +334,7 @@ public:
 
 typedef std::map<JSOutPoint, SproutNoteData> mapSproutNoteData_t;
 typedef std::map<SaplingOutPoint, SaplingNoteData> mapSaplingNoteData_t;
+typedef std::map<uint32_t, libzcash::OrchardIncomingViewingKey> mapOrchardActionData_t;
 
 /** Sprout note, its location in a transaction, and number of confirmations. */
 struct SproutNoteEntry
@@ -462,6 +463,7 @@ public:
     mapValue_t mapValue;
     mapSproutNoteData_t mapSproutNoteData;
     mapSaplingNoteData_t mapSaplingNoteData;
+    mapOrchardActionData_t mapOrchardActionData;
     // ORCHARD note data is not stored with the CMerkleTx directly, but is
     // accessible via pwallet->orchardWallet. Here we just store the indices
     // of the actions that belong to this wallet.
@@ -579,8 +581,7 @@ public:
         }
 
         if (fOverwintered && nVersion >= ZIP225_TX_VERSION) {
-            // ORCHARD TODO: serialize/deserialize orchard bits using a pointer
-            // to the Orchard wallet & the txid as referents
+            READWRITE(mapOrchardActionData);
         }
 
         if (ser_action.ForRead())
@@ -615,8 +616,9 @@ public:
         MarkDirty();
     }
 
-    void SetSproutNoteData(mapSproutNoteData_t &noteData);
-    void SetSaplingNoteData(mapSaplingNoteData_t &noteData);
+    void SetSproutNoteData(const mapSproutNoteData_t& noteData);
+    void SetSaplingNoteData(const mapSaplingNoteData_t& noteData);
+    void SetOrchardActionData(const mapOrchardActionData_t& actionData);
 
     std::pair<libzcash::SproutNotePlaintext, libzcash::SproutPaymentAddress> DecryptSproutNote(
         JSOutPoint jsop) const;
@@ -1553,7 +1555,7 @@ public:
     //!
     //! Returns true if and only if there were no detected inconsistencies or
     //! failures in reconstructing the cache.
-    bool LoadUnifiedCaches();
+    bool LoadCaches();
 
     std::optional<libzcash::UFVKId> FindUnifiedFullViewingKey(const libzcash::UnifiedAddress& addr) const;
     std::optional<libzcash::AccountId> GetUnifiedAccountId(const libzcash::UFVKId& ufvkId) const;

@@ -103,15 +103,53 @@ public:
         return orchard_wallet_rewind(inner.get(), (uint32_t) nBlockHeight, &blocksRewoundRet);
     }
 
+    static void PushOrchardActionIVK(void* orchardActionsIVKRet, RawOrchardActionIVK actionIVK) {
+        reinterpret_cast<std::map<uint32_t, libzcash::OrchardIncomingViewingKey>*>(orchardActionsIVKRet)->insert_or_assign(
+                actionIVK.actionIdx, libzcash::OrchardIncomingViewingKey(actionIVK.ivk)
+                );
+    }
+
     /**
      * Add notes that are decryptable with IVKs for which the wallet
-     * contains the full viewing key to the wallet.
+     * contains the full viewing key to the wallet, and return the
+     * mapping from each decrypted Orchard action index to the IVK
+     * that was used to decrypt that action's note.
      */
-    void AddNotesIfInvolvingMe(const CTransaction& tx) {
+    std::map<uint32_t, libzcash::OrchardIncomingViewingKey> AddNotesIfInvolvingMe(const CTransaction& tx) {
+        std::map<uint32_t, libzcash::OrchardIncomingViewingKey> result;
         orchard_wallet_add_notes_from_bundle(
                 inner.get(),
                 tx.GetHash().begin(),
-                tx.GetOrchardBundle().inner.get());
+                tx.GetOrchardBundle().inner.get(),
+                &result,
+                PushOrchardActionIVK
+                );
+        return result;
+    }
+
+    /**
+     * Decrypts a selection of notes from the specified transaction's
+     * Orchard bundle with provided incoming viewing keys, and adds those
+     * notes to the wallet.
+     */
+    bool RestoreDecryptedNotes(
+            const std::optional<int> nBlockHeight,
+            const CTransaction& tx,
+            std::map<uint32_t, libzcash::OrchardIncomingViewingKey> hints
+            ) {
+        std::vector<RawOrchardActionIVK> rawHints;
+        for (const auto& [action_idx, ivk] : hints) {
+            rawHints.push_back({ action_idx, ivk.inner.get() });
+        }
+        uint32_t blockHeight = nBlockHeight.has_value() ? (uint32_t) nBlockHeight.value() : 0;
+        return orchard_wallet_restore_notes(
+                inner.get(),
+                nBlockHeight.has_value() ? &blockHeight : nullptr,
+                tx.GetHash().begin(),
+                tx.GetOrchardBundle().inner.get(),
+                rawHints.data(),
+                rawHints.size()
+                );
     }
 
     /**
@@ -121,6 +159,7 @@ public:
      * Returns `false` if the caller attempts to insert a block out-of-order.
      */
     bool AppendNoteCommitments(const int nBlockHeight, const CBlock& block) {
+        assert(nBlockHeight >= 0);
         for (int txidx = 0; txidx < block.vtx.size(); txidx++) {
             const CTransaction& tx = block.vtx[txidx];
             if (!orchard_wallet_append_bundle_commitments(
@@ -186,7 +225,6 @@ public:
                 libzcash::OrchardRawAddress(rawNoteMeta.addr),
                 rawNoteMeta.noteValue,
                 memo);
-        // TODO: noteMeta.confirmations is only available from the C++ wallet
 
         reinterpret_cast<std::vector<OrchardNoteMetadata>*>(orchardNotesRet)->push_back(noteMeta);
     }

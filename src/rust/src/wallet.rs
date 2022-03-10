@@ -2,6 +2,7 @@ use incrementalmerkletree::{bridgetree::BridgeTree, Frontier, Tree};
 use libc::c_uchar;
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryInto;
+use std::slice;
 use tracing::error;
 
 use zcash_primitives::{
@@ -61,18 +62,6 @@ pub struct TxNotes {
     /// A map from the index of the Orchard action from which this note
     /// was decrypted to the decrypted note value.
     decrypted_notes: BTreeMap<usize, DecryptedNote>,
-}
-
-/// A type used to pass note metadata across the FFI boundary.
-/// This must have the same representation as `struct RawOrchardNoteMetadata`
-/// in `rust/include/rust/orchard/wallet.h`.
-#[repr(C)]
-pub struct NoteMetadata {
-    txid: [u8; 32],
-    action_idx: u32,
-    recipient: *mut Address,
-    note_value: i64,
-    memo: [u8; 512],
 }
 
 struct KeyStore {
@@ -172,6 +161,17 @@ pub enum RewindError {
     /// it is possible to rewind is returned as the payload of
     /// this error.
     InsufficientCheckpoints(usize),
+}
+
+#[derive(Debug, Clone)]
+pub enum BundleDecryptionError {
+    /// The action at the specified index failed to decrypt with
+    /// the provided IVK.
+    ActionDecryptionFailed(usize),
+    /// The wallet did not contain the full viewing key corresponding
+    /// to the incoming viewing key that successfullly decrypted a
+    /// note.
+    FvkNotFound(IncomingViewingKey),
 }
 
 impl Wallet {
@@ -306,18 +306,14 @@ impl Wallet {
     }
 
     /// Add note data for those notes that are decryptable with one of this wallet's
-    /// incoming viewing keys to the wallet, and return the indices of the actions that we
-    /// were able to decrypt.
+    /// incoming viewing keys to the wallet, and return a map from each decrypted
+    /// action's index to the incoming vieing key that successfully decrypted that
+    /// action.
     pub fn add_notes_from_bundle(
         &mut self,
         txid: &TxId,
         bundle: &Bundle<Authorized, Amount>,
-    ) -> Vec<usize> {
-        let mut tx_notes = TxNotes {
-            tx_height: None,
-            decrypted_notes: BTreeMap::new(),
-        };
-
+    ) -> BTreeMap<usize, IncomingViewingKey> {
         // Check for spends of our notes by matching against the nullifiers
         // we're tracking, and when we detect one, associate the current
         // txid and action as spending the note.
@@ -342,8 +338,68 @@ impl Wallet {
             .keys()
             .cloned()
             .collect::<Vec<_>>();
-        let mut result = vec![];
+        let mut result = BTreeMap::new();
+
         for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_for_keys(&keys) {
+            assert!(self.add_decrypted_note(
+                None,
+                txid,
+                action_idx,
+                ivk.clone(),
+                note,
+                recipient,
+                memo
+            ));
+            result.insert(action_idx, ivk);
+        }
+
+        result
+    }
+
+    /// Add note data to the wallet by attempting to
+    /// incoming viewing keys to the wallet, and return a map from incoming viewing
+    /// key to the vector of action indices that that key decrypts.
+    pub fn add_notes_from_bundle_with_hints(
+        &mut self,
+        tx_height: Option<BlockHeight>,
+        txid: &TxId,
+        bundle: &Bundle<Authorized, Amount>,
+        hints: BTreeMap<usize, &IncomingViewingKey>,
+    ) -> Result<(), BundleDecryptionError> {
+        for (action_idx, ivk) in hints.into_iter() {
+            if let Some((note, recipient, memo)) = bundle.decrypt_output_with_key(action_idx, ivk) {
+                if !self.add_decrypted_note(
+                    tx_height,
+                    txid,
+                    action_idx,
+                    ivk.clone(),
+                    note,
+                    recipient,
+                    memo,
+                ) {
+                    return Err(BundleDecryptionError::FvkNotFound(ivk.clone()));
+                }
+            } else {
+                return Err(BundleDecryptionError::ActionDecryptionFailed(action_idx));
+            }
+        }
+        Ok(())
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn add_decrypted_note(
+        &mut self,
+        tx_height: Option<BlockHeight>,
+        txid: &TxId,
+        action_idx: usize,
+        ivk: IncomingViewingKey,
+        note: Note,
+        recipient: Address,
+        memo: [u8; 512],
+    ) -> bool {
+        // Generate the nullifier for the received note and add it to the nullifiers map so
+        // that we can detect when the note is later spent.
+        if let Some(fvk) = self.key_store.viewing_keys.get(&ivk) {
             let outpoint = OutPoint {
                 txid: *txid,
                 action_idx,
@@ -351,26 +407,30 @@ impl Wallet {
 
             // Generate the nullifier for the received note and add it to the nullifiers map so
             // that we can detect when the note is later spent.
-            if let Some(fvk) = self.key_store.viewing_keys.get(&ivk) {
-                let nf = note.nullifier(fvk);
-                self.nullifiers.insert(nf, outpoint);
-            }
+            let nf = note.nullifier(fvk);
+            self.nullifiers.insert(nf, outpoint);
 
             // add the decrypted note data to the wallet
             let note_data = DecryptedNote { note, memo };
-            tx_notes.decrypted_notes.insert(action_idx, note_data);
+            self.wallet_received_notes
+                .entry(*txid)
+                .or_insert_with(|| TxNotes {
+                    tx_height,
+                    decrypted_notes: BTreeMap::new(),
+                })
+                .decrypted_notes
+                .insert(action_idx, note_data);
+
+            self.nullifiers.insert(nf, outpoint);
 
             // add the association between the address and the IVK used
             // to decrypt the note
-            self.key_store.add_raw_address(recipient, ivk);
-            result.push(action_idx);
-        }
+            self.key_store.add_raw_address(recipient, ivk.clone());
 
-        if !tx_notes.decrypted_notes.is_empty() {
-            self.wallet_received_notes.insert(*txid, tx_notes);
+            true
+        } else {
+            false
         }
-
-        result
     }
 
     /// Add note commitments for the Orchard components of a transaction to the note
@@ -496,6 +556,14 @@ impl Wallet {
     }
 }
 
+//
+// FFI
+//
+
+/// A type alias for a pointer to a C++ value that is the target of
+/// a mutating action by a callback across the FFI
+pub type FFICallbackReceiver = std::ptr::NonNull<libc::c_void>;
+
 #[no_mangle]
 pub extern "C" fn orchard_wallet_new() -> *mut Wallet {
     let empty_wallet = Wallet::empty();
@@ -551,16 +619,72 @@ pub extern "C" fn orchard_wallet_rewind(
     }
 }
 
+/// A type used to pass action decryption metadata across the FFI boundary.
+/// This must have the same representation as `struct RawOrchardActionIVK`
+/// in `rust/include/rust/orchard/wallet.h`. action_idx is
+#[repr(C)]
+pub struct FFIActionIvk {
+    action_idx: u64,
+    ivk_ptr: *mut IncomingViewingKey,
+}
+
+/// A C++-allocated function pointer that can push a FFIActionIVK value
+/// onto a C++ vector.
+pub type ActionIvkPushCb =
+    unsafe extern "C" fn(obj: Option<FFICallbackReceiver>, value: FFIActionIvk);
+
 #[no_mangle]
 pub extern "C" fn orchard_wallet_add_notes_from_bundle(
     wallet: *mut Wallet,
     txid: *const [c_uchar; 32],
     bundle: *const Bundle<Authorized, Amount>,
+    result: Option<FFICallbackReceiver>,
+    push_cb: Option<ActionIvkPushCb>,
 ) {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
     let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
     if let Some(bundle) = unsafe { bundle.as_ref() } {
-        wallet.add_notes_from_bundle(&txid, bundle);
+        let added = wallet.add_notes_from_bundle(&txid, bundle);
+        for (action_idx, ivk) in added.into_iter() {
+            let action_ivk = FFIActionIvk {
+                action_idx: action_idx.try_into().unwrap(),
+                ivk_ptr: Box::into_raw(Box::new(ivk.clone())),
+            };
+            unsafe { (push_cb.unwrap())(result, action_ivk) };
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_restore_notes(
+    wallet: *mut Wallet,
+    block_height: *const u32,
+    txid: *const [c_uchar; 32],
+    bundle: *const Bundle<Authorized, Amount>,
+    hints: *const FFIActionIvk,
+    hints_len: usize,
+) -> bool {
+    let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
+    let block_height = unsafe { block_height.as_ref() }.map(|h| BlockHeight::from(*h));
+    let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
+    let bundle = unsafe { bundle.as_ref() }.expect("bundle pointer may not be null.");
+
+    let hints_data = unsafe { slice::from_raw_parts(hints, hints_len) };
+
+    let mut hints = BTreeMap::new();
+    for action_ivk in hints_data {
+        hints.insert(
+            action_ivk.action_idx.try_into().unwrap(),
+            unsafe { action_ivk.ivk_ptr.as_ref() }.expect("ivk pointer may not be null"),
+        );
+    }
+
+    match wallet.add_notes_from_bundle_with_hints(block_height, &txid, bundle, hints) {
+        Ok(_) => true,
+        Err(e) => {
+            error!("Failed to restore decrypted notes to wallet: {:?}", e);
+            false
+        }
     }
 }
 
@@ -655,8 +779,21 @@ pub extern "C" fn orchard_wallet_tx_contains_my_notes(
     wallet.tx_contains_my_notes(&txid)
 }
 
-pub type VecObj = std::ptr::NonNull<libc::c_void>;
-pub type PushCb = unsafe extern "C" fn(obj: Option<VecObj>, meta: NoteMetadata);
+/// A type used to pass note metadata across the FFI boundary.
+/// This must have the same representation as `struct RawOrchardNoteMetadata`
+/// in `rust/include/rust/orchard/wallet.h`.
+#[repr(C)]
+pub struct FFINoteMetadata {
+    txid: [u8; 32],
+    action_idx: u32,
+    recipient: *mut Address,
+    note_value: i64,
+    memo: [u8; 512],
+}
+
+/// A C++-allocated function pointer that can push a FFINoteMetadata value
+/// onto a C++ vector.
+pub type NotePushCb = unsafe extern "C" fn(obj: Option<FFICallbackReceiver>, meta: FFINoteMetadata);
 
 #[no_mangle]
 pub extern "C" fn orchard_wallet_get_filtered_notes(
@@ -664,14 +801,14 @@ pub extern "C" fn orchard_wallet_get_filtered_notes(
     ivk: *const IncomingViewingKey,
     ignore_mined: bool,
     require_spending_key: bool,
-    result: Option<VecObj>,
-    push_cb: Option<PushCb>,
+    result: Option<FFICallbackReceiver>,
+    push_cb: Option<NotePushCb>,
 ) {
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
     let ivk = unsafe { ivk.as_ref() };
 
     for (outpoint, dnote) in wallet.get_filtered_notes(ivk, ignore_mined, require_spending_key) {
-        let metadata = NoteMetadata {
+        let metadata = FFINoteMetadata {
             txid: *outpoint.txid.as_ref(),
             action_idx: outpoint.action_idx as u32,
             recipient: Box::into_raw(Box::new(dnote.note.recipient())),
@@ -682,14 +819,14 @@ pub extern "C" fn orchard_wallet_get_filtered_notes(
     }
 }
 
-pub type PushTxId = unsafe extern "C" fn(obj: Option<VecObj>, txid: *const [u8; 32]);
+pub type PushTxId = unsafe extern "C" fn(obj: Option<FFICallbackReceiver>, txid: *const [u8; 32]);
 
 #[no_mangle]
 pub extern "C" fn orchard_wallet_get_potential_spends(
     wallet: *const Wallet,
     txid: *const [c_uchar; 32],
     action_idx: u32,
-    result: Option<VecObj>,
+    result: Option<FFICallbackReceiver>,
     push_cb: Option<PushTxId>,
 ) {
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");

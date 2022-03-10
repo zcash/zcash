@@ -964,7 +964,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
         pcursor->close();
 
         // Load unified address/account/key caches based on what was loaded
-        if (!pwallet->LoadUnifiedCaches()) {
+        if (!pwallet->LoadCaches()) {
             // We can be more permissive of certain kinds of failures during
             // loading; for now we'll interpret failure to reconstruct the
             // caches to be "as bad" as losing keys.
@@ -1291,11 +1291,11 @@ bool CWalletDB::Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKe
     ptxn->commit(0);
     pdbCopy->close(0);
 
-    // Try to load the unified caches, uncovering inconsistencies in wallet
+    // Try to load the wallet's caches, uncovering inconsistencies in wallet
     // records like missing viewing key records despite existing account
     // records.
-    if (!dummyWallet.LoadUnifiedCaches()) {
-        LogPrintf("WARNING: unified caches could not be reconstructed; salvaged wallet file may have omissions");
+    if (!dummyWallet.LoadCaches()) {
+        LogPrintf("WARNING: wallet caches could not be reconstructed; salvaged wallet file may have omissions");
     }
 
     return fSuccess;

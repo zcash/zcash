@@ -846,12 +846,13 @@ bool CWallet::LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &add
                 addrmeta.GetReceiverTypes());
 }
 
-bool CWallet::LoadUnifiedCaches()
+bool CWallet::LoadCaches()
 {
     AssertLockHeld(cs_wallet);
 
     auto seed = GetMnemonicSeed();
 
+    // Restore unified key metadata
     for (auto account = mapUnifiedAccountKeys.begin(); account != mapUnifiedAccountKeys.end(); ++account) {
         auto ufvkId = account->second;
         auto ufvk = GetUnifiedFullViewingKey(ufvkId);
@@ -940,6 +941,22 @@ bool CWallet::LoadUnifiedCaches()
             LogPrintf("%s: Error: Unified viewing key missing for an account.\n",
                 __func__);
             return false;
+        }
+    }
+
+    // Restore decrypted Orchard notes.
+    for (const auto& [_, walletTx] : mapWallet) {
+        if (!walletTx.mapOrchardActionData.empty()) {
+            const CBlockIndex* pTxIndex;
+            std::optional<int> blockHeight;
+            if (walletTx.GetDepthInMainChain(pTxIndex) > 0) {
+                blockHeight = pTxIndex->nHeight;
+            }
+            if (!orchardWallet.RestoreDecryptedNotes(blockHeight, walletTx, walletTx.mapOrchardActionData)) {
+                LogPrintf("%s: Error: Failed to decrypt previously decrypted notes for txid %s.\n",
+                    __func__, walletTx.GetHash().GetHex());
+                return false;
+            }
         }
     }
 
@@ -2408,7 +2425,11 @@ void CWallet::DecrementNoteWitnesses(const Consensus::Params& consensus, const C
         // pindex->nHeight is the height of the block being removed, so we rewind
         // to the previous block height
         uint32_t blocksRewound{0};
-        orchardWallet.Rewind(pindex->nHeight - 1, blocksRewound);
+        if (!orchardWallet.Rewind(pindex->nHeight - 1, blocksRewound)) {
+            LogPrintf(
+                    "DecrementNoteWitnesses: Orchard wallet rewind unsuccessful at height %d; rewound %d",
+                    pindex->nHeight - 1, blocksRewound);
+        }
         // TODO ORCHARD: Enable the following assertions.
         //assert(orchardWallet.Rewind(pindex->nHeight - 1, blocksRewound));
         //assert(blocksRewound == 1);
@@ -2874,7 +2895,12 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
         wtx.mapSaplingNoteData = tmp;
     }
 
-    return !unchangedSproutFlag || !unchangedSaplingFlag;
+    bool unchangedOrchardFlag = (wtxIn.mapOrchardActionData.empty() || wtxIn.mapOrchardActionData == wtx.mapOrchardActionData);
+    if (!unchangedOrchardFlag) {
+        wtx.mapOrchardActionData = wtxIn.mapOrchardActionData;
+    }
+
+    return !unchangedSproutFlag || !unchangedSaplingFlag || !unchangedOrchardFlag;
 }
 
 /**
@@ -2919,8 +2945,9 @@ bool CWallet::AddToWalletIfInvolvingMe(
         }
 
         // Orchard
+        mapOrchardActionData_t orchardActionData;
         if (consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
-            orchardWallet.AddNotesIfInvolvingMe(tx);
+            orchardActionData = orchardWallet.AddNotesIfInvolvingMe(tx);
         }
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0 || orchardWallet.TxContainsMyNotes(tx.GetHash()))
@@ -2933,6 +2960,10 @@ bool CWallet::AddToWalletIfInvolvingMe(
 
             if (saplingNoteData.size() > 0) {
                 wtx.SetSaplingNoteData(saplingNoteData);
+            }
+
+            if (orchardActionData.size() > 0) {
+                wtx.SetOrchardActionData(orchardActionData);
             }
 
             // Get merkle branch if transaction was found in a block
@@ -3497,7 +3528,7 @@ bool CWallet::LoadCryptedLegacyHDSeed(const uint256& seedFp, const std::vector<u
     return CCryptoKeyStore::SetCryptedLegacyHDSeed(seedFp, seed);
 }
 
-void CWalletTx::SetSproutNoteData(mapSproutNoteData_t &noteData)
+void CWalletTx::SetSproutNoteData(const mapSproutNoteData_t& noteData)
 {
     mapSproutNoteData.clear();
     for (const std::pair<JSOutPoint, SproutNoteData> nd : noteData) {
@@ -3513,7 +3544,7 @@ void CWalletTx::SetSproutNoteData(mapSproutNoteData_t &noteData)
     }
 }
 
-void CWalletTx::SetSaplingNoteData(mapSaplingNoteData_t &noteData)
+void CWalletTx::SetSaplingNoteData(const mapSaplingNoteData_t& noteData)
 {
     mapSaplingNoteData.clear();
     for (const std::pair<SaplingOutPoint, SaplingNoteData> nd : noteData) {
@@ -3521,6 +3552,18 @@ void CWalletTx::SetSaplingNoteData(mapSaplingNoteData_t &noteData)
             mapSaplingNoteData[nd.first] = nd.second;
         } else {
             throw std::logic_error("CWalletTx::SetSaplingNoteData(): Invalid note");
+        }
+    }
+}
+
+void CWalletTx::SetOrchardActionData(const mapOrchardActionData_t& actionData)
+{
+    mapOrchardActionData.clear();
+    for (const auto& [action_idx, ivk] : actionData) {
+        if (action_idx < GetOrchardBundle().GetNumActions()) {
+            mapOrchardActionData.insert_or_assign(action_idx, ivk);
+        } else {
+            throw std::logic_error("CWalletTx::SetOrchardActionData(): Invalid action index");
         }
     }
 }
@@ -3983,7 +4026,10 @@ int CWallet::ScanForWalletTransactions(
                     // can't rewind far enough. This is an unrecoverable failure; it means that we
                     // can't get back to a valid wallet state without resetting the wallet all
                     // the way back to NU5 activation.
-                    throw std::runtime_error("CWallet::ScanForWalletTransactions(): Orchard wallet is out of sync. Please restart your node with -rescan.");
+
+                    LogPrintf("Orchard wallet is out of sync: %d blockd rewound.", blocksRewound);
+                    // TODO ORCHARD: enable after wallet persistence
+                    // throw std::runtime_error("CWallet::ScanForWalletTransactions(): Orchard wallet is out of sync. Please restart your node with -rescan.");
                 }
             }
         } else if (isInitScan && pindex->nHeight < nu5_height) {
@@ -4034,12 +4080,12 @@ int CWallet::ScanForWalletTransactions(
             }
         }
 
-        // After rescanning, persist Sapling note data that might have changed, e.g. nullifiers.
-        // Do not flush the wallet here for performance reasons.
+        // After rescanning, persist Sapling & Orchard note data that might have changed,
+        // e.g. nullifiers. Do not flush the wallet here for performance reasons.
         CWalletDB walletdb(strWalletFile, "r+", false);
         for (auto hash : myTxHashes) {
             CWalletTx wtx = mapWallet[hash];
-            if (!wtx.mapSaplingNoteData.empty()) {
+            if (!wtx.mapSaplingNoteData.empty() || !wtx.mapOrchardActionData.empty()) {
                 if (!walletdb.WriteTx(wtx)) {
                     LogPrintf("Rescanning... WriteToDisk failed to update Sapling note data for: %s\n", hash.ToString());
                 }
