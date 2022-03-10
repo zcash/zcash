@@ -2,11 +2,11 @@ use std::cmp::min;
 use std::env::{self, consts::EXE_EXTENSION};
 use std::ffi::OsStr;
 use std::fs::File;
-use std::io::{self, BufRead, ErrorKind, Stdin};
+use std::io::{self, BufRead, Stdin, Write};
 use std::iter;
 use std::panic;
 use std::path::{Path, PathBuf};
-use std::process::{self, Command, Output};
+use std::process::{self, ChildStdin, Command, Output, Stdio};
 use std::str::from_utf8;
 use std::time::SystemTime;
 
@@ -14,6 +14,7 @@ use anyhow::{self, Context};
 use backtrace::Backtrace;
 use gumdrop::{Options, ParsingStyle};
 use rand::{thread_rng, Rng};
+use secrecy::{ExposeSecret, SecretString};
 use thiserror::Error;
 use time::macros::format_description;
 use time::OffsetDateTime;
@@ -122,6 +123,9 @@ enum WalletToolError {
 
     #[error("Could not parse a recovery phrase from the export file")]
     RecoveryPhraseNotFound,
+
+    #[error("Unexpected EOF in input")]
+    UnexpectedEof,
 }
 
 pub fn main() {
@@ -188,7 +192,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
     // option, or not running / cannot connect.
     let mut cli_args = cli_options.clone();
     cli_args.extend_from_slice(&["z_exportwallet".to_string(), "\x01".to_string()]);
-    let out = exec(&zcash_cli, &cli_args, opts.debug)?;
+    let out = exec(&zcash_cli, &cli_args, None, opts.debug)?;
     let cli_err: Vec<_> = from_utf8(&out.stderr)
         .with_context(|| "Output from zcash-cli was not UTF-8")?
         .lines()
@@ -260,8 +264,8 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
             ),
             default_filename
         );
-        let mut buf = String::new();
-        let response = prompt(&mut stdin, &mut buf)?;
+        let response = prompt(&mut stdin)?;
+        let response = strip(&response);
         let filename = if response.is_empty() {
             r = r.saturating_add(1);
             &default_filename
@@ -274,7 +278,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
 
         let mut cli_args = cli_options.clone();
         cli_args.extend_from_slice(&["z_exportwallet".to_string(), filename.to_string()]);
-        let out = exec(&zcash_cli, &cli_args, opts.debug)?;
+        let out = exec(&zcash_cli, &cli_args, None, opts.debug)?;
         let cli_err: Vec<_> = from_utf8(&out.stderr)
             .with_context(|| "Output from zcash-cli was not UTF-8")?
             .lines()
@@ -316,17 +320,21 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
 
     let export_file = File::open(export_path)
         .with_context(|| format!("Could not open {:?} for reading", export_path))?;
+
+    // TODO: ensure the buffer will be zeroized (#5650)
     let phrase_line: Vec<_> = io::BufReader::new(export_file)
         .lines()
+        .map(|line| line.map(SecretString::new))
         .filter(|s| {
             s.as_ref()
-                .map(|t| t.starts_with("# - recovery_phrase=\""))
+                .map(|t| t.expose_secret().starts_with("# - recovery_phrase=\""))
                 .unwrap_or(false)
         })
         .collect();
 
     let phrase = match &phrase_line[..] {
         [Ok(line)] => line
+            .expose_secret()
             .trim_start_matches("# - recovery_phrase=\"")
             .trim_end_matches('"'),
         _ => return Err(WalletToolError::RecoveryPhraseNotFound.into()),
@@ -372,8 +380,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
         ));
 
         let mut stdin = io::stdin();
-        let mut buf = String::new();
-        prompt(&mut stdin, &mut buf)?;
+        prompt(&mut stdin)?;
 
         // The only reliable and portable way to make sure the recovery phrase
         // is no longer displayed is to clear the whole terminal (including
@@ -396,10 +403,9 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
             unconfirmed.pop().expect("should be nonempty");
 
             loop {
-                let mut buf = String::new();
                 println!("\nPlease enter the {} word:", ordinal(n + 1));
-                let line = prompt(&mut stdin, &mut buf)?;
-                if words[n] == line {
+                let line = prompt(&mut stdin)?;
+                if words[n] == strip(&line) {
                     break;
                 }
                 println!("That's not correct, please try again.");
@@ -413,10 +419,8 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
     res?;
 
     let mut cli_args = cli_options;
-    cli_args.extend_from_slice(&["walletconfirmbackup".to_string(), phrase.to_string()]);
-
-    // Always pass false for debug to avoid printing the recovery phrase.
-    exec(&zcash_cli, &cli_args, false)
+    cli_args.extend_from_slice(&["-stdin".to_string(), "walletconfirmbackup".to_string()]);
+    exec(&zcash_cli, &cli_args, Some(phrase), opts.debug)
         .and_then(|out| {
             let cli_err: Vec<_> = from_utf8(&out.stderr)
                 .with_context(|| "Output from zcash-cli was not UTF-8")?
@@ -459,17 +463,26 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn prompt<'a>(input: &mut Stdin, buf: &'a mut String) -> anyhow::Result<&'a str> {
-    input
-        .read_line(buf)
-        .with_context(|| "Error reading from stdin")?;
+const MAX_USER_INPUT_LEN: usize = 100;
 
+fn prompt(input: &mut Stdin) -> anyhow::Result<SecretString> {
+    let mut buf = String::with_capacity(MAX_USER_INPUT_LEN);
+    let res = input
+        .read_line(&mut buf)
+        .with_context(|| "Error reading from stdin");
     if !buf.ends_with('\n') {
-        Err(io::Error::from(ErrorKind::UnexpectedEof))
-            .with_context(|| "End of file reading from stdin")
-    } else {
-        Ok(buf.trim_end_matches(|c| c == '\r' || c == '\n').trim())
+        return Err(WalletToolError::UnexpectedEof.into());
     }
+    // TODO: Ensure the buffer is zeroized even on error.
+    let line = SecretString::new(buf);
+    res.map(|_| line)
+}
+
+fn strip(input: &SecretString) -> &str {
+    input
+        .expose_secret()
+        .trim_end_matches(|c| c == '\r' || c == '\n')
+        .trim()
 }
 
 fn ordinal(num: usize) -> String {
@@ -522,11 +535,38 @@ fn zcash_cli_path(debug: bool) -> anyhow::Result<PathBuf> {
     Ok(exe)
 }
 
-fn exec(exe_path: &Path, args: &[String], debug: bool) -> anyhow::Result<Output> {
+fn exec(
+    exe_path: &Path,
+    args: &[String],
+    stdin: Option<&str>,
+    debug: bool,
+) -> anyhow::Result<Output> {
     if debug {
         eprintln!("DEBUG: Running {:?} {:?}", exe_path, args);
     }
-    Ok(Command::new(exe_path).args(args).output()?)
+    let mut cmd = Command::new(exe_path);
+    let cli = cmd.args(args);
+    match stdin {
+        None => Ok(cli.output()?),
+        Some(data) => {
+            let mut cli_process = cli
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()?;
+            cli_process
+                .stdin
+                .take()
+                .with_context(|| "Could not open pipe to zcash-cli's stdin")
+                .and_then(|mut pipe: ChildStdin| -> anyhow::Result<()> {
+                    pipe.write_all(data.as_bytes())?;
+                    pipe.write_all("\n".as_bytes())?;
+                    Ok(())
+                })
+                .with_context(|| "Could not write to zcash-cli's stdin")?;
+            Ok(cli_process.wait_with_output()?)
+        }
+    }
 }
 
 fn default_filename_base() -> String {

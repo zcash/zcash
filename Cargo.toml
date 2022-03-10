@@ -71,6 +71,7 @@ backtrace = "0.3"
 clearscreen = "1.0"
 gumdrop = "0.8"
 rand = "0.8"
+secrecy = "0.8"
 time = { version = "0.3", features = ["formatting", "macros"] }
 
 [dependencies.tracing-subscriber]

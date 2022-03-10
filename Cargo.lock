@@ -951,6 +951,7 @@ dependencies = [
  "rand 0.8.5",
  "rand_core 0.6.3",
  "secp256k1",
+ "secrecy",
  "subtle",
  "thiserror",
  "time",
@@ -1711,6 +1712,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "957da2573cde917463ece3570eab4a0b3f19de6f1646cde62e6fd3868f566036"
 dependencies = [
  "cc",
+]
+
+[[package]]
+name = "secrecy"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9bd1c54ea06cfd2f6b63219704de0b9b4f72dcc2b8fdef820be6cd799780e91e"
+dependencies = [
+ "zeroize",
 ]
 
 [[package]]
