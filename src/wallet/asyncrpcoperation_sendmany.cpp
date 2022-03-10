@@ -408,7 +408,12 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     // Add Sapling spends
     for (size_t i = 0; i < saplingNotes.size(); i++) {
         if (!witnesses[i]) {
-            throw JSONRPCError(RPC_WALLET_ERROR, "Missing witness for Sapling note");
+            throw JSONRPCError(
+                    RPC_WALLET_ERROR,
+                    strprintf(
+                        "Missing witness for Sapling note at outpoint %s",
+                        spendable.saplingNoteEntries[i].op.ToString())
+                    );
         }
 
         builder_.AddSaplingSpend(saplingKeys[i].expsk, saplingNotes[i], anchor, witnesses[i].value());
