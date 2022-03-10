@@ -849,6 +849,7 @@ bool CWallet::LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &add
 bool CWallet::LoadCaches()
 {
     AssertLockHeld(cs_wallet);
+    AssertLockHeld(cs_main);
 
     auto seed = GetMnemonicSeed();
 
@@ -2428,7 +2429,7 @@ void CWallet::DecrementNoteWitnesses(const Consensus::Params& consensus, const C
         // pindex->nHeight is the height of the block being removed, so we rewind
         // to the previous block height
         uint32_t blocksRewound{0};
-        if (!orchardWallet.Rewind(pindex->nHeight - 1, blocksRewound)) {
+        if (!orchardWallet.Rewind(pindex->nHeight - 1, blocksRewound) || blocksRewound != 1) {
             LogPrintf(
                     "DecrementNoteWitnesses: Orchard wallet rewind unsuccessful at height %d; rewound %d",
                     pindex->nHeight - 1, blocksRewound);
@@ -4104,7 +4105,9 @@ int CWallet::ScanForWalletTransactions(
             CWalletTx wtx = mapWallet[hash];
             if (!wtx.mapSaplingNoteData.empty() || !wtx.orchardTxMeta.empty()) {
                 if (!walletdb.WriteTx(wtx)) {
-                    LogPrintf("Rescanning... WriteToDisk failed to update Sapling note data for: %s\n", hash.ToString());
+                    LogPrintf(
+                            "Rescanning... WriteToDisk failed to update Sapling/Orchard note data for tx: %s\n",
+                            hash.ToString());
                 }
             }
         }

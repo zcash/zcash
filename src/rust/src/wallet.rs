@@ -334,7 +334,7 @@ impl Wallet {
 
     /// Add note data for those notes that are decryptable with one of this wallet's
     /// incoming viewing keys to the wallet, and return a map from each decrypted
-    /// action's index to the incoming vieing key that successfully decrypted that
+    /// action's index to the incoming viewing key that successfully decrypted that
     /// action.
     pub fn add_notes_from_bundle(
         &mut self,
@@ -369,9 +369,20 @@ impl Wallet {
         involvement
     }
 
-    /// Add note data to the wallet by attempting to
-    /// incoming viewing keys to the wallet, and return a map from incoming viewing
-    /// key to the vector of action indices that that key decrypts.
+    /// Restore note and potential spend data from a bundle using the provided
+    /// metadata.
+    ///
+    /// - `tx_height`: if the transaction containing the bundle has been mined, 
+    ///   this should contain the block height it was mined at
+    /// - `txid`: The ID for the transaction from which the provided bundle was 
+    ///   extracted.
+    /// - `bundle`: the bundle to decrypt notes from
+    /// - `hints`: a map from action index to the incoming viewing key that decrypts
+    ///   that action. If the IVK does not decrypt the action, or if it is not
+    ///   associated with a FVK in this wallet, `load_bundle` will return an error.
+    /// - `potential_spend_idxs`: a list of action indices that were previously
+    ///   detected as spending our notes. If an index is out of range, `load_bundle`
+    ///   will return an error.
     pub fn load_bundle(
         &mut self,
         tx_height: Option<BlockHeight>,
