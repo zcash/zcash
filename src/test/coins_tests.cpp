@@ -13,7 +13,9 @@
 #include "undo.h"
 #include "primitives/transaction.h"
 #include "pubkey.h"
+#include "transaction_builder.h"
 #include "zcash/Note.hpp"
+#include "zcash/address/mnemonic.h"
 
 #include <vector>
 #include <map>
@@ -267,6 +269,7 @@ public:
     CTransaction tx;
     uint256 sproutNullifier;
     uint256 saplingNullifier;
+    uint256 orchardNullifier;
 
     TxWithNullifiers()
     {
@@ -282,7 +285,13 @@ public:
         sd.nullifier = saplingNullifier;
         mutableTx.vShieldedSpend.push_back(sd);
 
-        // TODO: Orchard nullifier
+        // The Orchard bundle builder always pads to two Actions, so we can just
+        // use an empty builder to create a dummy Orchard bundle.
+        uint256 orchardAnchor;
+        uint256 dataToBeSigned;
+        auto builder = orchard::Builder(true, true, orchardAnchor);
+        mutableTx.orchardBundle = builder.Build().value().ProveAndSign(dataToBeSigned).value();
+        orchardNullifier = mutableTx.orchardBundle.GetNullifiers()[0];
 
         tx = CTransaction(mutableTx);
     }
@@ -302,21 +311,43 @@ uint256 appendRandomSproutCommitment(SproutMerkleTree &tree)
     return cm;
 }
 
+template<typename Tree> void AppendRandomLeaf(Tree &tree);
+template<> void AppendRandomLeaf(SproutMerkleTree &tree) { tree.append(GetRandHash()); }
+template<> void AppendRandomLeaf(SaplingMerkleTree &tree) { tree.append(GetRandHash()); }
+template<> void AppendRandomLeaf(OrchardMerkleFrontier &tree) {
+    // OrchardMerkleFrontier only has APIs to append entire bundles, but
+    // fortunately the tests only require that the tree root change.
+    // TODO: Remove the need to create proofs by having a testing-only way to
+    // append a random leaf to OrchardMerkleFrontier.
+    uint256 orchardAnchor;
+    uint256 dataToBeSigned;
+    auto builder = orchard::Builder(true, true, orchardAnchor);
+    auto bundle = builder.Build().value().ProveAndSign(dataToBeSigned).value();
+    tree.AppendBundle(bundle);
+}
+
 template<typename Tree> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, Tree &tree);
 template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SproutMerkleTree &tree) { return cache.GetSproutAnchorAt(rt, tree); }
 template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SaplingMerkleTree &tree) { return cache.GetSaplingAnchorAt(rt, tree); }
+template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, OrchardMerkleFrontier &tree) { return cache.GetOrchardAnchorAt(rt, tree); }
 
-BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
+BOOST_FIXTURE_TEST_SUITE(coins_tests, JoinSplitTestingSetup)
 
 void checkNullifierCache(const CCoinsViewCacheTest &cache, const TxWithNullifiers &txWithNullifiers, bool shouldBeInCache) {
     // Make sure the nullifiers have not gotten mixed up
     BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.sproutNullifier, SAPLING));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.sproutNullifier, ORCHARD));
     BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.saplingNullifier, SPROUT));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.saplingNullifier, ORCHARD));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.orchardNullifier, SPROUT));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.orchardNullifier, SAPLING));
     // Check if the nullifiers either are or are not in the cache
     bool containsSproutNullifier = cache.GetNullifier(txWithNullifiers.sproutNullifier, SPROUT);
     bool containsSaplingNullifier = cache.GetNullifier(txWithNullifiers.saplingNullifier, SAPLING);
+    bool containsOrchardNullifier = cache.GetNullifier(txWithNullifiers.orchardNullifier, ORCHARD);
     BOOST_CHECK(containsSproutNullifier == shouldBeInCache);
     BOOST_CHECK(containsSaplingNullifier == shouldBeInCache);
+    BOOST_CHECK(containsOrchardNullifier == shouldBeInCache);
 }
 
 BOOST_AUTO_TEST_CASE(nullifier_regression_test)
@@ -416,7 +447,7 @@ template<typename Tree> void anchorPopRegressionTestImpl(ShieldedType type)
 
         // Create dummy anchor/commitment
         Tree tree;
-        tree.append(GetRandHash());
+        AppendRandomLeaf(tree);
 
         // Add the anchor
         cache1.PushAnchor(tree);
@@ -445,7 +476,7 @@ template<typename Tree> void anchorPopRegressionTestImpl(ShieldedType type)
 
         // Create dummy anchor/commitment
         Tree tree;
-        tree.append(GetRandHash());
+        AppendRandomLeaf(tree);
 
         // Add the anchor and flush to disk
         cache1.PushAnchor(tree);
@@ -488,6 +519,9 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
     BOOST_TEST_CONTEXT("Sapling") {
         anchorPopRegressionTestImpl<SaplingMerkleTree>(SAPLING);
     }
+    BOOST_TEST_CONTEXT("Orchard") {
+        anchorPopRegressionTestImpl<OrchardMerkleFrontier>(ORCHARD);
+    }
 }
 
 template<typename Tree> void anchorRegressionTestImpl(ShieldedType type)
@@ -499,7 +533,7 @@ template<typename Tree> void anchorRegressionTestImpl(ShieldedType type)
 
         // Insert anchor into base.
         Tree tree;
-        tree.append(GetRandHash());
+        AppendRandomLeaf(tree);
 
         cache1.PushAnchor(tree);
         cache1.Flush();
@@ -516,7 +550,7 @@ template<typename Tree> void anchorRegressionTestImpl(ShieldedType type)
 
         // Insert anchor into base.
         Tree tree;
-        tree.append(GetRandHash());
+        AppendRandomLeaf(tree);
         cache1.PushAnchor(tree);
         cache1.Flush();
 
@@ -533,7 +567,7 @@ template<typename Tree> void anchorRegressionTestImpl(ShieldedType type)
 
         // Insert anchor into base.
         Tree tree;
-        tree.append(GetRandHash());
+        AppendRandomLeaf(tree);
         cache1.PushAnchor(tree);
         cache1.Flush();
 
@@ -556,7 +590,7 @@ template<typename Tree> void anchorRegressionTestImpl(ShieldedType type)
 
         // Insert anchor into base.
         Tree tree;
-        tree.append(GetRandHash());
+        AppendRandomLeaf(tree);
         cache1.PushAnchor(tree);
         cache1.Flush();
 
@@ -579,6 +613,9 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
     }
     BOOST_TEST_CONTEXT("Sapling") {
         anchorRegressionTestImpl<SaplingMerkleTree>(SAPLING);
+    }
+    BOOST_TEST_CONTEXT("Orchard") {
+        anchorRegressionTestImpl<OrchardMerkleFrontier>(ORCHARD);
     }
 }
 
@@ -613,7 +650,7 @@ template<typename Tree> void anchorsFlushImpl(ShieldedType type)
         CCoinsViewCacheTest cache(&base);
         Tree tree;
         BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
-        tree.append(GetRandHash());
+        AppendRandomLeaf(tree);
 
         newrt = tree.root();
 
@@ -642,6 +679,9 @@ BOOST_AUTO_TEST_CASE(anchors_flush_test)
     }
     BOOST_TEST_CONTEXT("Sapling") {
         anchorsFlushImpl<SaplingMerkleTree>(SAPLING);
+    }
+    BOOST_TEST_CONTEXT("Orchard") {
+        anchorsFlushImpl<OrchardMerkleFrontier>(ORCHARD);
     }
 }
 
@@ -738,13 +778,13 @@ template<typename Tree> void anchorsTestImpl(ShieldedType type)
 
         BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
         BOOST_CHECK(cache.GetBestAnchor(type) == tree.root());
-        tree.append(GetRandHash());
-        tree.append(GetRandHash());
-        tree.append(GetRandHash());
-        tree.append(GetRandHash());
-        tree.append(GetRandHash());
-        tree.append(GetRandHash());
-        tree.append(GetRandHash());
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
 
         Tree save_tree_for_later;
         save_tree_for_later = tree;
@@ -762,8 +802,8 @@ template<typename Tree> void anchorsTestImpl(ShieldedType type)
             BOOST_CHECK(confirm_same.root() == newrt);
         }
 
-        tree.append(GetRandHash());
-        tree.append(GetRandHash());
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
 
         newrt2 = tree.root();
 
@@ -800,6 +840,9 @@ BOOST_AUTO_TEST_CASE(anchors_test)
     }
     BOOST_TEST_CONTEXT("Sapling") {
         anchorsTestImpl<SaplingMerkleTree>(SAPLING);
+    }
+    BOOST_TEST_CONTEXT("Orchard") {
+        anchorsTestImpl<OrchardMerkleFrontier>(ORCHARD);
     }
 }
 
