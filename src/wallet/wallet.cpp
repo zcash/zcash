@@ -2055,6 +2055,9 @@ SpendableInputs CWallet::FindSpendableInputs(
             if (IsOrchardSpent(noteMeta.GetOutPoint())) {
                 continue;
             }
+            if (IsLockedNote(noteMeta.GetOutPoint())) {
+                continue;
+            }
 
             auto mit = mapWallet.find(noteMeta.GetOutPoint().hash);
             auto confirmations = mit->second.GetDepthInMainChain();
@@ -6537,6 +6540,9 @@ void CWallet::GetFilteredNotes(
 
     for (auto& noteMeta : orchardNotes) {
         if (ignoreSpent && IsOrchardSpent(noteMeta.GetOutPoint())) {
+            continue;
+        }
+        if (ignoreLocked && IsLockedNote(noteMeta.GetOutPoint())) {
             continue;
         }
 
