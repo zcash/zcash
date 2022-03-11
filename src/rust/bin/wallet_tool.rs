@@ -28,8 +28,8 @@ struct CliOptions {
 
     #[options(
         no_short,
-        help = "Specify configuration file (default: zcash.conf)",
-        meta = "PATH"
+        help = "Specify configuration filename, relative to the data directory (default: zcash.conf)",
+        meta = "FILENAME"
     )]
     conf: Option<String>,
 
@@ -209,11 +209,16 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
 
     if !cli_err.is_empty() {
         if cli_err[0].starts_with("Error reading configuration file") {
+            println!(
+                "\nNo, we could not read the zcashd configuration file, expected to be at\n{:?}.",
+                Path::new(opts.datadir.as_ref().map_or("~/.zcash", |s| &s[..])).join(Path::new(
+                    opts.conf.as_ref().map_or("zcash.conf", |s| &s[..])
+                )),
+            );
             println!(concat!(
-                "\nNo, we could not read 'zcash.conf'. If this file is not in the default\n",
-                "location (~/.zcash/zcash.conf), please try again with the '-datadir='\n",
-                "option set to the directory containing this file. Also make sure that\n",
-                "the current user has permission to read that directory and 'zcash.conf'.\n",
+                "If it is not at that path, please try again with the '-datadir' and/or\n",
+                "'-conf' options set correctly (see '--help' for details). Also make sure\n",
+                "that the current user has permission to read the configuration file.\n",
             ));
             return Err(WalletToolError::ZcashdConnection.into());
         }
@@ -243,7 +248,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
     }
 
     const REMINDER_MSG: &str = concat!(
-        "\nPlease start or restart zcashd with '-exportdir' set to the absolute\n",
+        "\n\nPlease start or restart zcashd with '-exportdir' set to the absolute\n",
         "path of the directory you want to save the wallet export file to.\n",
         "(Don't forget to restart zcashd without '-exportdir' after finishing\n",
         "the backup, if running it long-term with that option is not desired\n",
