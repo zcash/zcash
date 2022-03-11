@@ -9,13 +9,8 @@
 
 using namespace libzcash;
 
-MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, size_t entropyLen)
-{
-    assert(entropyLen >= 32);
-    while (true) { // loop until we find usable entropy
-        RawHDSeed entropy(entropyLen, 0);
-        GetRandBytes(entropy.data(), entropyLen);
-        const char* phrase = zip339_entropy_to_phrase(language, entropy.data(), entropyLen);
+std::optional<MnemonicSeed> MnemonicSeed::FromEntropy(const RawHDSeed& entropy, uint32_t bip44CoinType, Language language) {
+        const char* phrase = zip339_entropy_to_phrase(language, entropy.data(), entropy.size());
         SecureString mnemonic(phrase);
         zip339_free_phrase(phrase);
 
@@ -33,7 +28,41 @@ MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, siz
         if (ZcashdUnifiedSpendingKey::ForAccount(seed, bip44CoinType, 0).has_value() &&
             transparent::AccountKey::ForAccount(seed, bip44CoinType, ZCASH_LEGACY_ACCOUNT).has_value())  {
             return seed;
+        } else {
+            return std::nullopt;
+        }
+}
+
+MnemonicSeed MnemonicSeed::Random(uint32_t bip44CoinType, Language language, size_t entropyLen)
+{
+    assert(entropyLen >= 32);
+    while (true) { // loop until we find usable entropy
+        RawHDSeed entropy(entropyLen, 0);
+        GetRandBytes(entropy.data(), entropyLen);
+
+        auto seed = MnemonicSeed::FromEntropy(entropy, bip44CoinType, language);
+        if (seed.has_value()) {
+            return seed.value();
         }
     }
+}
+
+MnemonicSeed MnemonicSeed::FromLegacySeed(const HDSeed& legacySeed, uint32_t bip44CoinType, Language language)
+{
+    auto rawSeed = legacySeed.RawSeed();
+    if (rawSeed.size() != 32) {
+        throw std::runtime_error("Mnemonic seed derivation is only supported for 32-byte legacy seeds.");
+    }
+
+    for (int nonce = 0; nonce < 256; nonce++) {
+        auto seed = MnemonicSeed::FromEntropy(rawSeed, bip44CoinType, language);
+        if (seed.has_value()) {
+            return seed.value();
+        } else {
+            rawSeed[0]++;
+        }
+    }
+
+    throw std::runtime_error("Failed to find a valid mnemonic seed that could be derived from the legacy seed.");
 }
 
