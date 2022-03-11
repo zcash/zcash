@@ -100,7 +100,7 @@ typedef void (*push_spend_action_idx_callback_t)(void* rec, uint32_t actionIdx);
  * Searches the provided bundle for notes that are visible to the specified wallet's
  * incoming viewing keys, and adds those notes to the wallet.  For each note decryptable
  * by one of the wallet's keys, this method will insert a `RawOrchardActionIVK` value into
- * the provided `decryptedActionIVKs` referent using the `push_cb` callback. Note that
+ * the provided `callbackReceiver` referent using the `push_cb` callback. Note that
  * this callback can perform transformations on the provided RawOrchardActionIVK in this
  * process.  For each action spending one of the wallet's notes, this method will insert
  * a `uint32_t` action index into the `spendingActionIdxs` referent.

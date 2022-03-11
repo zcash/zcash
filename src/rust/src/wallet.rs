@@ -372,9 +372,9 @@ impl Wallet {
     /// Restore note and potential spend data from a bundle using the provided
     /// metadata.
     ///
-    /// - `tx_height`: if the transaction containing the bundle has been mined, 
+    /// - `tx_height`: if the transaction containing the bundle has been mined,
     ///   this should contain the block height it was mined at
-    /// - `txid`: The ID for the transaction from which the provided bundle was 
+    /// - `txid`: The ID for the transaction from which the provided bundle was
     ///   extracted.
     /// - `bundle`: the bundle to decrypt notes from
     /// - `hints`: a map from action index to the incoming viewing key that decrypts
@@ -773,18 +773,17 @@ pub extern "C" fn orchard_wallet_add_notes_from_bundle(
     let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
     if let Some(bundle) = unsafe { bundle.as_ref() } {
         let added = wallet.add_notes_from_bundle(&txid, bundle);
-        let mut involved = false;
+        let involved =
+            !(added.receive_action_metadata.is_empty() && added.spend_action_metadata.is_empty());
         for (action_idx, ivk) in added.receive_action_metadata.into_iter() {
             let action_ivk = FFIActionIvk {
                 action_idx: action_idx.try_into().unwrap(),
                 ivk_ptr: Box::into_raw(Box::new(ivk.clone())),
             };
             unsafe { (action_ivk_push_cb.unwrap())(cb_receiver, action_ivk) };
-            involved = true;
         }
         for action_idx in added.spend_action_metadata {
             unsafe { (spend_idx_push_cb.unwrap())(cb_receiver, action_idx.try_into().unwrap()) };
-            involved = true;
         }
         involved
     } else {
