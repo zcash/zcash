@@ -496,12 +496,16 @@ fn prompt(input: &mut Stdin) -> anyhow::Result<SecretString> {
     let res = input
         .read_line(&mut buf)
         .with_context(|| "Error reading from stdin");
-    if !buf.ends_with('\n') {
-        return Err(WalletToolError::UnexpectedEof.into());
-    }
-    // TODO: Ensure the buffer is zeroized even on error.
+
+    // Ensure the buffer is zeroized even on error.
     let line = SecretString::new(buf);
-    res.map(|_| line)
+    res.and_then(|_| {
+        if line.expose_secret().ends_with('\n') {
+            Ok(line)
+        } else {
+            Err(WalletToolError::UnexpectedEof.into())
+        }
+    })
 }
 
 fn strip(input: &SecretString) -> &str {
