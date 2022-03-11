@@ -33,7 +33,11 @@ struct CliOptions {
     )]
     conf: Option<String>,
 
-    #[options(no_short, help = "Specify data directory (this path cannot use '~')")]
+    #[options(
+        no_short,
+        help = "Specify data directory (this path cannot use '~')",
+        meta = "PATH"
+    )]
     datadir: Option<String>,
 
     #[options(no_short, help = "Use the test chain")]
