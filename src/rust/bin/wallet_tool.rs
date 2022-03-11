@@ -18,14 +18,13 @@ use secrecy::{ExposeSecret, SecretString};
 use thiserror::Error;
 use time::macros::format_description;
 use time::OffsetDateTime;
+use tracing::{event, Level};
+use tracing_subscriber::{fmt, EnvFilter};
 
 #[derive(Debug, Options)]
 struct CliOptions {
     #[options(no_short, help = "Print this help output")]
     help: bool,
-
-    #[options(no_short, help = "Display debugging output")]
-    debug: bool,
 
     #[options(
         no_short,
@@ -129,6 +128,12 @@ enum WalletToolError {
 }
 
 pub fn main() {
+    // Log to stderr, configured by the RUST_LOG environment variable.
+    fmt()
+        .with_writer(io::stderr)
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
+
     // Allow either Bitcoin-style or GNU-style arguments.
     let mut args = env::args();
     let command = args.next().expect("argv[0] should exist");
@@ -144,7 +149,9 @@ pub fn main() {
 
     const USAGE_NOTE: &str = concat!(
         "Options can be given in GNU style (`--conf=CONF` or `--conf CONF`),\n",
-        "or in Bitcoin style with a single hyphen (`-conf=CONF`).\n"
+        "or in Bitcoin style with a single hyphen (`-conf=CONF`).\n\n",
+        "The environment variable RUST_LOG controls debug output, e.g.\n",
+        "`RUST_LOG=debug`.\n",
     );
 
     let opts = CliOptions::parse_args(&args, ParsingStyle::default()).unwrap_or_else(|e| {
@@ -185,22 +192,20 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
     ));
 
     println!("Checking that we can connect to zcashd...");
-    let zcash_cli = zcash_cli_path(opts.debug)?;
+    let zcash_cli = zcash_cli_path()?;
 
     // Pass an invalid filename, "\x01", and use the error message to distinguish
     // whether zcashd is running with the -exportdir option, running without that
     // option, or not running / cannot connect.
     let mut cli_args = cli_options.clone();
     cli_args.extend_from_slice(&["z_exportwallet".to_string(), "\x01".to_string()]);
-    let out = exec(&zcash_cli, &cli_args, None, opts.debug)?;
+    let out = exec(&zcash_cli, &cli_args, None)?;
     let cli_err: Vec<_> = from_utf8(&out.stderr)
         .with_context(|| "Output from zcash-cli was not UTF-8")?
         .lines()
         .map(|s| s.trim_end_matches('\r'))
         .collect();
-    if opts.debug {
-        eprintln!("DEBUG: stderr {:?}", cli_err);
-    }
+    event!(Level::DEBUG, "stderr {:?}", cli_err);
 
     if !cli_err.is_empty() {
         if cli_err[0].starts_with("Error reading configuration file") {
@@ -293,21 +298,18 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
         } else {
             response
         };
-        if opts.debug {
-            eprintln!("DEBUG: Using filename {:?}", filename);
-        }
+        event!(Level::DEBUG, "Using filename {:?}", filename);
 
         let mut cli_args = cli_options.clone();
         cli_args.extend_from_slice(&["z_exportwallet".to_string(), filename.to_string()]);
-        let out = exec(&zcash_cli, &cli_args, None, opts.debug)?;
+        let out = exec(&zcash_cli, &cli_args, None)?;
         let cli_err: Vec<_> = from_utf8(&out.stderr)
             .with_context(|| "Output from zcash-cli was not UTF-8")?
             .lines()
             .map(|s| s.trim_end_matches('\r'))
             .collect();
-        if opts.debug {
-            eprintln!("DEBUG: stderr {:?}", cli_err);
-        }
+        event!(Level::DEBUG, "stderr {:?}", cli_err);
+
         if cli_err.len() >= 3
             && cli_err[0] == "error code: -8"
             && cli_err[1] == "error message:"
@@ -328,9 +330,8 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
         .lines()
         .map(|s| s.trim_end_matches('\r'))
         .collect();
-    if opts.debug {
-        eprintln!("DEBUG: stdout {:?}", cli_out);
-    }
+    event!(Level::DEBUG, "stdout {:?}", cli_out);
+
     if cli_out.is_empty() {
         return Err(WalletToolError::UnexpectedResponse.into());
     }
@@ -441,16 +442,15 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
 
     let mut cli_args = cli_options;
     cli_args.extend_from_slice(&["-stdin".to_string(), "walletconfirmbackup".to_string()]);
-    exec(&zcash_cli, &cli_args, Some(phrase), opts.debug)
+    exec(&zcash_cli, &cli_args, Some(phrase))
         .and_then(|out| {
             let cli_err: Vec<_> = from_utf8(&out.stderr)
                 .with_context(|| "Output from zcash-cli was not UTF-8")?
                 .lines()
                 .map(|s| s.trim_end_matches('\r'))
                 .collect();
-            if opts.debug {
-                eprintln!("DEBUG: stderr {:?}", cli_err);
-            }
+            event!(Level::DEBUG, "stderr {:?}", cli_err);
+
             if !cli_err.is_empty() {
                 if cli_err[0].starts_with("error: couldn't connect") {
                     println!("\nWe could not connect to zcashd; it may have exited.");
@@ -520,15 +520,14 @@ fn ordinal(num: usize) -> String {
     format!("{}{}", num, suffix)
 }
 
-fn zcash_cli_path(debug: bool) -> anyhow::Result<PathBuf> {
+fn zcash_cli_path() -> anyhow::Result<PathBuf> {
     // First look for `zcash_cli[.exe]` as a sibling of the executable.
     let mut exe = env::current_exe()
         .with_context(|| "Cannot determine the path of the running executable")?;
     exe.set_file_name("zcash-cli");
     exe.set_extension(EXE_EXTENSION);
-    if debug {
-        eprintln!("DEBUG: Testing for zcash-cli at {:?}", exe);
-    }
+
+    event!(Level::DEBUG, "Testing for zcash-cli at {:?}", exe);
     if exe.exists() {
         return Ok(exe);
     }
@@ -547,24 +546,16 @@ fn zcash_cli_path(debug: bool) -> anyhow::Result<PathBuf> {
     exe.set_file_name("src");
     exe.push("zcash-cli");
     exe.set_extension(EXE_EXTENSION);
-    if debug {
-        eprintln!("DEBUG: Testing for zcash-cli at {:?}", exe);
-    }
+
+    event!(Level::DEBUG, "Testing for zcash-cli at {:?}", exe);
     if !exe.exists() {
         return Err(WalletToolError::ZcashCliNotFound.into());
     }
     Ok(exe)
 }
 
-fn exec(
-    exe_path: &Path,
-    args: &[String],
-    stdin: Option<&str>,
-    debug: bool,
-) -> anyhow::Result<Output> {
-    if debug {
-        eprintln!("DEBUG: Running {:?} {:?}", exe_path, args);
-    }
+fn exec(exe_path: &Path, args: &[String], stdin: Option<&str>) -> anyhow::Result<Output> {
+    event!(Level::DEBUG, "Running {:?} {:?}", exe_path, args);
     let mut cmd = Command::new(exe_path);
     let cli = cmd.args(args);
     match stdin {

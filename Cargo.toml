@@ -65,7 +65,7 @@ thiserror = "1"
 tokio = { version = "1.0", features = ["rt", "net", "time", "macros"] }
 
 # Wallet tool
-# (also depends on thiserror)
+# (also depends on thiserror, tracing, and tracing-subscriber with "env-filter" and "fmt" features)
 anyhow = "1.0"
 backtrace = "0.3"
 clearscreen = "1.0"
@@ -77,7 +77,7 @@ time = { version = "0.3", features = ["formatting", "macros"] }
 [dependencies.tracing-subscriber]
 version = "0.3"
 default-features = false
-features = ["ansi", "env-filter", "time"]
+features = ["ansi", "env-filter", "fmt", "time"]
 
 [profile.release]
 lto = true
