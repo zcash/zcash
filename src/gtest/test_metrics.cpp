@@ -92,6 +92,12 @@ TEST(Metrics, GetLocalSolPS) {
     // Increment time
     SetMockTime(104);
     EXPECT_EQ(1, GetLocalSolPS());
+
+    miningTimer.stop();
+    miningTimer.zeroize();
+    solutionTargetChecks.decrement();
+    solutionTargetChecks.decrement();
+    solutionTargetChecks.decrement();
 }
 
 TEST(Metrics, EstimateNetHeight) {
