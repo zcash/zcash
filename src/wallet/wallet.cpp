@@ -5810,6 +5810,37 @@ std::vector<SaplingOutPoint> CWallet::ListLockedSaplingNotes()
     return vOutputs;
 }
 
+void CWallet::LockNote(const OrchardOutPoint& output)
+{
+    AssertLockHeld(cs_wallet);
+    setLockedOrchardNotes.insert(output);
+}
+
+void CWallet::UnlockNote(const OrchardOutPoint& output)
+{
+    AssertLockHeld(cs_wallet);
+    setLockedOrchardNotes.erase(output);
+}
+
+void CWallet::UnlockAllOrchardNotes()
+{
+    AssertLockHeld(cs_wallet);
+    setLockedOrchardNotes.clear();
+}
+
+bool CWallet::IsLockedNote(const OrchardOutPoint& output) const
+{
+    AssertLockHeld(cs_wallet);
+    return (setLockedOrchardNotes.count(output) > 0);
+}
+
+std::vector<OrchardOutPoint> CWallet::ListLockedOrchardNotes()
+{
+    AssertLockHeld(cs_wallet);
+    std::vector<OrchardOutPoint> vOutputs(setLockedOrchardNotes.begin(), setLockedOrchardNotes.end());
+    return vOutputs;
+}
+
 /** @} */ // end of Actions
 
 class CAffectedKeysVisitor {
