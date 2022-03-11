@@ -1515,6 +1515,7 @@ public:
     std::set<COutPoint> setLockedCoins;
     std::set<JSOutPoint> setLockedSproutNotes;
     std::set<SaplingOutPoint> setLockedSaplingNotes;
+    std::set<OrchardOutPoint> setLockedOrchardNotes;
 
     int64_t nTimeFirstKey;
 
@@ -1647,6 +1648,12 @@ public:
     void UnlockNote(const SaplingOutPoint& output);
     void UnlockAllSaplingNotes();
     std::vector<SaplingOutPoint> ListLockedSaplingNotes();
+
+    bool IsLockedNote(const OrchardOutPoint& output) const;
+    void LockNote(const OrchardOutPoint& output);
+    void UnlockNote(const OrchardOutPoint& output);
+    void UnlockAllOrchardNotes();
+    std::vector<OrchardOutPoint> ListLockedOrchardNotes();
 
     /**
      * keystore implementation
