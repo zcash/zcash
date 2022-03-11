@@ -204,6 +204,9 @@ public:
         orchard_wallet_add_full_viewing_key(inner.get(), fvk.inner.get());
     }
 
+    std::optional<libzcash::OrchardSpendingKey> GetSpendingKeyForAddress(
+            const libzcash::OrchardRawAddress& addr) const;
+
     std::optional<libzcash::OrchardIncomingViewingKey> GetIncomingViewingKeyForAddress(
             const libzcash::OrchardRawAddress& addr) const {
         auto ivkPtr = orchard_wallet_get_ivk_for_address(inner.get(), addr.inner.get());
@@ -271,7 +274,7 @@ public:
         return result;
     }
 
-    std::vector<orchard::SpendInfo> GetSpendInfo(
+    std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> GetSpendInfo(
         const std::vector<OrchardNoteMetadata>& noteMetadata) const;
 };
 

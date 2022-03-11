@@ -4,10 +4,18 @@
 
 #include "wallet/orchard.h"
 
-std::vector<orchard::SpendInfo> OrchardWallet::GetSpendInfo(
+std::optional<libzcash::OrchardSpendingKey> OrchardWallet::GetSpendingKeyForAddress(
+    const libzcash::OrchardRawAddress& addr) const
+{
+    auto skPtr = orchard_wallet_get_spending_key_for_address(inner.get(), addr.inner.get());
+    if (skPtr == nullptr) return std::nullopt;
+    return libzcash::OrchardSpendingKey(skPtr);
+}
+
+std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> OrchardWallet::GetSpendInfo(
     const std::vector<OrchardNoteMetadata>& noteMetadata) const
 {
-    std::vector<orchard::SpendInfo> result;
+    std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> result;
     for (const auto& note : noteMetadata) {
         auto pSpendInfo = orchard_wallet_get_spend_info(
             inner.get(),
@@ -21,7 +29,12 @@ std::vector<orchard::SpendInfo> OrchardWallet::GetSpendInfo(
                 note.GetAddress(),
                 note.GetNoteValue());
 
-            result.push_back(std::move(spendInfo));
+            auto sk = GetSpendingKeyForAddress(note.GetAddress());
+            if (sk.has_value()) {
+                result.push_back(std::pair(std::move(sk.value()), std::move(spendInfo)));
+            } else {
+                throw std::logic_error("Unknown spending key for given outpoint");
+            }
         }
     }
     return result;

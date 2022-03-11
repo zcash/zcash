@@ -190,6 +190,17 @@ bool orchard_wallet_add_raw_address(
         const OrchardIncomingViewingKeyPtr* ivk);
 
 /**
+ * Returns a pointer to the Orchard spending key corresponding to the specified raw
+ * address, if it is known to the wallet, or `nullptr` otherwise.
+ *
+ * Memory is allocated by Rust and must be manually freed using
+ * `orchard_spending_key_free`.
+ */
+OrchardSpendingKeyPtr* orchard_wallet_get_spending_key_for_address(
+        const OrchardWalletPtr* wallet,
+        const OrchardRawAddressPtr* addr);
+
+/**
  * Returns a pointer to the Orchard incoming viewing key corresponding to the specified
  * raw address, if it is known to the wallet, or `nullptr` otherwise.
  *

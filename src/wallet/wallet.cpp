@@ -3237,7 +3237,7 @@ void CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
     }
 }
 
-std::vector<orchard::SpendInfo> CWallet::GetOrchardSpendInfo(
+std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> CWallet::GetOrchardSpendInfo(
     const std::vector<OrchardNoteMetadata>& orchardNoteMetadata) const
 {
     AssertLockHeld(cs_wallet);

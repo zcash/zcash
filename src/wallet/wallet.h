@@ -1690,7 +1690,7 @@ public:
          const std::vector<SaplingOutPoint>& notes,
          std::vector<std::optional<SaplingWitness>>& witnesses,
          uint256 &final_anchor);
-    std::vector<orchard::SpendInfo> GetOrchardSpendInfo(
+    std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> GetOrchardSpendInfo(
         const std::vector<OrchardNoteMetadata>& orchardNoteMetadata) const;
 
     isminetype IsMine(const CTxIn& txin) const;

@@ -806,6 +806,22 @@ pub extern "C" fn orchard_wallet_add_raw_address(
 }
 
 #[no_mangle]
+pub extern "C" fn orchard_wallet_get_spending_key_for_address(
+    wallet: *const Wallet,
+    addr: *const Address,
+) -> *mut SpendingKey {
+    let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
+    let addr = unsafe { addr.as_ref() }.expect("Address may not be null.");
+
+    wallet
+        .key_store
+        .ivk_for_address(addr)
+        .and_then(|ivk| wallet.key_store.spending_key_for_ivk(ivk))
+        .map(|sk| Box::into_raw(Box::new(*sk)))
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
 pub extern "C" fn orchard_wallet_get_ivk_for_address(
     wallet: *const Wallet,
     addr: *const Address,

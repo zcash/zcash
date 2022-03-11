@@ -120,7 +120,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
 
     // Now we can get spend info for the note.
     auto spendInfo = wallet.GetSpendInfo(notes);
-    EXPECT_EQ(spendInfo[0].Value(), 40000);
+    EXPECT_EQ(spendInfo[0].second.Value(), 40000);
 
     // Get the root of the commitment tree.
     OrchardMerkleFrontier tree;
@@ -130,7 +130,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
     // Create an Orchard-only transaction
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, default fee, 0.00005 z-ZEC change
     auto builder = TransactionBuilder(consensusParams, 2, orchardAnchor);
-    EXPECT_TRUE(builder.AddOrchardSpend(sk, std::move(spendInfo[0])));
+    EXPECT_TRUE(builder.AddOrchardSpend(sk, std::move(spendInfo[0].second)));
     builder.AddOrchardOutput(std::nullopt, recipient, 25000, std::nullopt);
     auto maybeTx = builder.Build();
     EXPECT_TRUE(maybeTx.IsTx());
