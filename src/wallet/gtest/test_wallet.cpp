@@ -2184,6 +2184,41 @@ TEST(WalletTests, SaplingNoteLocking) {
     EXPECT_FALSE(wallet.IsLockedNote(sop2));
 }
 
+TEST(WalletTests, OrchardNoteLocking) {
+    SelectParams(CBaseChainParams::REGTEST);
+    TestWallet wallet(Params());
+    LOCK(wallet.cs_wallet);
+
+    OrchardOutPoint oop1 {uint256(), 1};
+    OrchardOutPoint oop2 {uint256(), 2};
+
+    // Test selective locking
+    wallet.LockNote(oop1);
+    EXPECT_TRUE(wallet.IsLockedNote(oop1));
+    EXPECT_FALSE(wallet.IsLockedNote(oop2));
+
+    // Test selective unlocking
+    wallet.UnlockNote(oop1);
+    EXPECT_FALSE(wallet.IsLockedNote(oop1));
+
+    // Test multiple locking
+    wallet.LockNote(oop1);
+    wallet.LockNote(oop2);
+    EXPECT_TRUE(wallet.IsLockedNote(oop1));
+    EXPECT_TRUE(wallet.IsLockedNote(oop2));
+
+    // Test list
+    auto v = wallet.ListLockedOrchardNotes();
+    EXPECT_EQ(v.size(), 2);
+    EXPECT_TRUE(std::find(v.begin(), v.end(), oop1) != v.end());
+    EXPECT_TRUE(std::find(v.begin(), v.end(), oop2) != v.end());
+
+    // Test unlock all
+    wallet.UnlockAllOrchardNotes();
+    EXPECT_FALSE(wallet.IsLockedNote(oop1));
+    EXPECT_FALSE(wallet.IsLockedNote(oop2));
+}
+
 TEST(WalletTests, GenerateUnifiedAddress) {
     (void) RegtestActivateSapling();
     TestWallet wallet(Params());
