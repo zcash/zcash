@@ -198,6 +198,24 @@ OrchardIncomingViewingKeyPtr* orchard_full_viewing_key_to_internal_incoming_view
     const OrchardFullViewingKeyPtr* key);
 
 /**
+ * Returns the external outgoing viewing key for the specified full viewing key.
+ *
+ * `ovk_ret` must be 32 bytes.
+ */
+OrchardIncomingViewingKeyPtr* orchard_full_viewing_key_to_external_outgoing_viewing_key(
+    const OrchardFullViewingKeyPtr* fvk,
+    uint8_t *ovk_ret);
+
+/**
+ * Returns the internal outgoing viewing key for the specified full viewing key.
+ *
+ * `ovk_ret` must be 32 bytes.
+ */
+OrchardIncomingViewingKeyPtr* orchard_full_viewing_key_to_internal_outgoing_viewing_key(
+    const OrchardFullViewingKeyPtr* fvk,
+    uint8_t *ovk_ret);
+
+/**
  * Implements equality testing between full viewing keys.
  */
 bool orchard_full_viewing_key_eq(

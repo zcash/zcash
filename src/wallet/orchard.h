@@ -8,6 +8,8 @@
 #include <array>
 
 #include "primitives/transaction.h"
+#include "transaction_builder.h"
+
 #include "rust/orchard/keys.h"
 #include "rust/orchard/wallet.h"
 #include "zcash/address/orchard.hpp"
@@ -32,6 +34,10 @@ public:
         return op;
     }
 
+    const libzcash::OrchardRawAddress& GetAddress() const {
+        return address;
+    }
+
     void SetConfirmations(int c) {
         confirmations = c;
     }
@@ -49,6 +55,8 @@ class OrchardWallet
 {
 private:
     std::unique_ptr<OrchardWalletPtr, decltype(&orchard_wallet_free)> inner;
+
+    friend class ::orchard::UnauthorizedBundle;
 
 public:
     OrchardWallet() : inner(orchard_wallet_new(), orchard_wallet_free) {}
@@ -196,6 +204,9 @@ public:
         orchard_wallet_add_full_viewing_key(inner.get(), fvk.inner.get());
     }
 
+    std::optional<libzcash::OrchardSpendingKey> GetSpendingKeyForAddress(
+            const libzcash::OrchardRawAddress& addr) const;
+
     std::optional<libzcash::OrchardIncomingViewingKey> GetIncomingViewingKeyForAddress(
             const libzcash::OrchardRawAddress& addr) const {
         auto ivkPtr = orchard_wallet_get_ivk_for_address(inner.get(), addr.inner.get());
@@ -262,6 +273,9 @@ public:
             );
         return result;
     }
+
+    std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> GetSpendInfo(
+        const std::vector<OrchardNoteMetadata>& noteMetadata) const;
 };
 
 #endif // ZCASH_ORCHARD_WALLET_H

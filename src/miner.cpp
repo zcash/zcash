@@ -233,7 +233,7 @@ public:
         }
 
         if (orchardBundle.has_value()) {
-            auto authorizedBundle = orchardBundle.value().ProveAndSign(dataToBeSigned);
+            auto authorizedBundle = orchardBundle.value().ProveAndSign({}, dataToBeSigned);
             if (authorizedBundle.has_value()) {
                 mtx.orchardBundle = authorizedBundle.value();
             } else {

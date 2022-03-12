@@ -12,7 +12,10 @@
 #include <optional>
 
 class OrchardWallet;
-namespace orchard { class Builder; }
+namespace orchard {
+    class Builder;
+    class UnauthorizedBundle;
+}
 
 namespace libzcash {
 
@@ -199,6 +202,10 @@ public:
 
     OrchardIncomingViewingKey ToInternalIncomingViewingKey() const;
 
+    uint256 ToExternalOutgoingViewingKey() const;
+
+    uint256 ToInternalOutgoingViewingKey() const;
+
     OrchardFullViewingKey& operator=(OrchardFullViewingKey&& key)
     {
         if (this != &key) {
@@ -256,6 +263,7 @@ private:
     OrchardSpendingKey(OrchardSpendingKeyPtr* ptr) :
         inner(ptr, orchard_spending_key_free) {}
 
+    friend class orchard::UnauthorizedBundle;
     friend class ::OrchardWallet;
 public:
     OrchardSpendingKey(OrchardSpendingKey&& key) : inner(std::move(key.inner)) {}

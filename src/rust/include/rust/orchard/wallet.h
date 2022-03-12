@@ -6,6 +6,7 @@
 #define ZCASH_RUST_INCLUDE_RUST_ORCHARD_WALLET_H
 
 #include "rust/orchard/keys.h"
+#include "rust/builder.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -189,6 +190,17 @@ bool orchard_wallet_add_raw_address(
         const OrchardIncomingViewingKeyPtr* ivk);
 
 /**
+ * Returns a pointer to the Orchard spending key corresponding to the specified raw
+ * address, if it is known to the wallet, or `nullptr` otherwise.
+ *
+ * Memory is allocated by Rust and must be manually freed using
+ * `orchard_spending_key_free`.
+ */
+OrchardSpendingKeyPtr* orchard_wallet_get_spending_key_for_address(
+        const OrchardWalletPtr* wallet,
+        const OrchardRawAddressPtr* addr);
+
+/**
  * Returns a pointer to the Orchard incoming viewing key corresponding to the specified
  * raw address, if it is known to the wallet, or `nullptr` otherwise.
  *
@@ -250,6 +262,20 @@ void orchard_wallet_get_potential_spends(
         void* resultVector,
         push_txid_callback_t push_cb
         );
+
+/**
+ * Fetches the information needed to spend the wallet note at the given outpoint,
+ * relative to the current root known to the wallet of the Orchard commitment
+ * tree.
+ *
+ * Returns `null` if the outpoint is not known to the wallet, or the Orchard
+ * bundle containing the note has not been passed to
+ * `orchard_wallet_append_bundle_commitments`.
+ */
+OrchardSpendInfoPtr* orchard_wallet_get_spend_info(
+        const OrchardWalletPtr* wallet,
+        const unsigned char txid[32],
+        uint32_t action_idx);
 
 #ifdef __cplusplus
 }
