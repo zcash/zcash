@@ -18,7 +18,7 @@ use secrecy::{ExposeSecret, SecretString};
 use thiserror::Error;
 use time::macros::format_description;
 use time::OffsetDateTime;
-use tracing::{event, Level};
+use tracing::debug;
 use tracing_subscriber::{fmt, EnvFilter};
 
 #[derive(Debug, Options)]
@@ -209,7 +209,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
         .lines()
         .map(|s| s.trim_end_matches('\r'))
         .collect();
-    event!(Level::DEBUG, "stderr {:?}", cli_err);
+    debug!("stderr {:?}", cli_err);
 
     if !cli_err.is_empty() {
         if cli_err[0].starts_with("Error reading configuration file") {
@@ -307,7 +307,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
         } else {
             response
         };
-        event!(Level::DEBUG, "Using filename {:?}", filename);
+        debug!("Using filename {:?}", filename);
 
         let mut cli_args = cli_options.clone();
         cli_args.extend_from_slice(&["z_exportwallet".to_string(), filename.to_string()]);
@@ -317,7 +317,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
             .lines()
             .map(|s| s.trim_end_matches('\r'))
             .collect();
-        event!(Level::DEBUG, "stderr {:?}", cli_err);
+        debug!("stderr {:?}", cli_err);
 
         if cli_err.len() >= 3
             && cli_err[0] == "error code: -8"
@@ -339,7 +339,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
         .lines()
         .map(|s| s.trim_end_matches('\r'))
         .collect();
-    event!(Level::DEBUG, "stdout {:?}", cli_out);
+    debug!("stdout {:?}", cli_out);
 
     if cli_out.is_empty() {
         return Err(WalletToolError::UnexpectedResponse.into());
@@ -458,7 +458,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
                 .lines()
                 .map(|s| s.trim_end_matches('\r'))
                 .collect();
-            event!(Level::DEBUG, "stderr {:?}", cli_err);
+            debug!("stderr {:?}", cli_err);
 
             if !cli_err.is_empty() {
                 if cli_err[0].starts_with("error: couldn't connect") {
@@ -540,7 +540,7 @@ fn zcash_cli_path() -> anyhow::Result<PathBuf> {
     exe.set_file_name("zcash-cli");
     exe.set_extension(EXE_EXTENSION);
 
-    event!(Level::DEBUG, "Testing for zcash-cli at {:?}", exe);
+    debug!("Testing for zcash-cli at {:?}", exe);
     if exe.exists() {
         return Ok(exe);
     }
@@ -560,7 +560,7 @@ fn zcash_cli_path() -> anyhow::Result<PathBuf> {
     exe.push("zcash-cli");
     exe.set_extension(EXE_EXTENSION);
 
-    event!(Level::DEBUG, "Testing for zcash-cli at {:?}", exe);
+    debug!("Testing for zcash-cli at {:?}", exe);
     if !exe.exists() {
         return Err(WalletToolError::ZcashCliNotFound.into());
     }
@@ -568,7 +568,7 @@ fn zcash_cli_path() -> anyhow::Result<PathBuf> {
 }
 
 fn exec(exe_path: &Path, args: &[String], stdin: Option<&str>) -> anyhow::Result<Output> {
-    event!(Level::DEBUG, "Running {:?} {:?}", exe_path, args);
+    debug!("Running {:?} {:?}", exe_path, args);
     let mut cmd = Command::new(exe_path);
     let cli = cmd.args(args);
     match stdin {
