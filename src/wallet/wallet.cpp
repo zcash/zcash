@@ -1881,20 +1881,36 @@ bool CWallet::SelectorMatchesAddress(
 
 std::optional<RecipientAddress> CWallet::GenerateChangeAddressForAccount(
         libzcash::AccountId accountId,
-        std::set<libzcash::ChangeType> changeOptions) {
+        std::set<OutputPool> changeOptions) {
     AssertLockHeld(cs_wallet);
 
-    // changeOptions is sorted in preference order, so return
-    // the first (and therefore most preferred) change address that
-    // we're able to generate.
-    for (libzcash::ChangeType t : changeOptions) {
-        if (t == libzcash::ChangeType::Transparent && accountId == ZCASH_LEGACY_ACCOUNT) {
-            return GenerateNewKey(false).GetID();
-        } else {
-            auto ufvk = this->GetUnifiedFullViewingKeyByAccount(accountId);
-            if (ufvk.has_value()) {
-                // Default to Sapling shielded change (TODO ORCHARD: update this)
-                auto changeAddr = ufvk.value().GetChangeAddress(SaplingChangeRequest());
+    if (accountId == ZCASH_LEGACY_ACCOUNT) {
+        // We only call this method with this account ID for legacy transparent addresses.
+        for (OutputPool t : changeOptions) {
+            if (t == OutputPool::Transparent) {
+                return GenerateNewKey(false).GetID();
+            }
+        }
+    } else {
+        auto ufvk = this->GetUnifiedFullViewingKeyByAccount(accountId);
+        if (ufvk.has_value()) {
+            // changeOptions is sorted in preference order, so return
+            // the first (and therefore most preferred) change address that
+            // we're able to generate.
+            for (OutputPool t : changeOptions) {
+                std::optional<RecipientAddress> changeAddr;
+                switch (t) {
+                case OutputPool::Sapling:
+                    changeAddr = ufvk.value().GetChangeAddress(SaplingChangeRequest());
+                    break;
+                case OutputPool::Transparent:
+                    // UFVKs must have a shielded component, so we would only
+                    // reach this point if changeOptions contained no shielded
+                    // options. But we prefer to opportunistically shield funds
+                    // where possible, so we don't produce transparent change
+                    // addresses for accounts.
+                    break;
+                }
                 if (changeAddr.has_value()) {
                     return changeAddr.value();
                 }

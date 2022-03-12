@@ -800,6 +800,16 @@ public:
     bool SelectsSapling() const;
 };
 
+/**
+ * An enumeration of the fund pools for which a transaction may produce outputs.
+ * It is sorted in descending preference order, so that when iterating over a
+ * set of output pools the most-preferred pool is selected first.
+ */
+enum class OutputPool {
+    Sapling,
+    Transparent,
+};
+
 class SpendableInputs {
 public:
     std::vector<COutput> utxos;
@@ -1345,11 +1355,11 @@ public:
      * and return the associated transparent change address.
      *
      * Returns `std::nullopt` if the account does not have an internal spending
-     * key matching the requested `ChangeType`.
+     * key matching the requested `OutputPool`.
      */
     std::optional<libzcash::RecipientAddress> GenerateChangeAddressForAccount(
             libzcash::AccountId accountId,
-            std::set<libzcash::ChangeType> changeOptions);
+            std::set<OutputPool> changeOptions);
 
     SpendableInputs FindSpendableInputs(
             ZTXOSelector paymentSource,

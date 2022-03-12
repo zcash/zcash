@@ -64,7 +64,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
 
     // we always allow shielded change when not sending from the legacy account
     if (sendFromAccount_ != ZCASH_LEGACY_ACCOUNT) {
-        allowedChangeTypes_.insert(libzcash::ChangeType::Sapling);
+        allowedChangeTypes_.insert(OutputPool::Sapling);
     }
 
     // calculate the target totals
@@ -73,12 +73,12 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
             [&](const CKeyID& addr) {
                 transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
-                allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+                allowedChangeTypes_.insert(OutputPool::Transparent);
             },
             [&](const CScriptID& addr) {
                 transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
-                allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+                allowedChangeTypes_.insert(OutputPool::Transparent);
             },
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 txOutputAmounts_.sapling_outputs_total += recipient.amount;
@@ -292,14 +292,14 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     auto ovks = this->SelectOVKs(spendable);
     std::visit(match {
         [&](const CKeyID& keyId) {
-            allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+            allowedChangeTypes_.insert(OutputPool::Transparent);
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
                     sendFromAccount_, allowedChangeTypes_);
             assert(changeAddr.has_value());
             builder_.SendChangeTo(changeAddr.value(), ovks.first);
         },
         [&](const CScriptID& scriptId) {
-            allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+            allowedChangeTypes_.insert(OutputPool::Transparent);
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
                     sendFromAccount_, allowedChangeTypes_);
             assert(changeAddr.has_value());
@@ -354,10 +354,10 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 switch (rtype) {
                     case ReceiverType::P2PKH:
                     case ReceiverType::P2SH:
-                        allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+                        allowedChangeTypes_.insert(OutputPool::Transparent);
                         break;
                     case ReceiverType::Sapling:
-                        allowedChangeTypes_.insert(libzcash::ChangeType::Sapling);
+                        allowedChangeTypes_.insert(OutputPool::Sapling);
                         break;
                     case ReceiverType::Orchard:
                         // TODO

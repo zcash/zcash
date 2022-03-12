@@ -46,16 +46,6 @@ typedef std::variant<
     libzcash::SaplingPaymentAddress,
     libzcash::OrchardRawAddress> RecipientAddress;
 
-/**
- * An enumeration of the types of change that a transaction may produce.  It is
- * sorted in descending preference order, so that when iterating over a set of
- * change types the most-preferred type is selected first.
- */
-enum class ChangeType {
-    Sapling,
-    Transparent,
-};
-
 class TransparentChangeRequest {
 private:
     const diversifier_index_t& index;
