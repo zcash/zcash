@@ -7,14 +7,10 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     NU5_BRANCH_ID,
     assert_equal,
-    connect_nodes_bi,
     get_coinbase_address,
     nuparams,
     start_nodes,
-    stop_nodes,
-    sync_blocks,
     wait_and_assert_operationid_status,
-    wait_bitcoinds,
 )
 
 from decimal import Decimal
@@ -130,17 +126,7 @@ class WalletOrchardTest(BitcoinTestFramework):
 
         # Reconnect the nodes; nodes 2 and 3 will re-org to node 0's chain.
         print("Re-joining the network so that nodes 2 and 3 reorg")
-        # We can't use `self.join_network()` because the the nodes's mempools fail to synchronize on restart
-        assert self.is_network_split
-        stop_nodes(self.nodes)
-        wait_bitcoinds()
-        self.nodes = self.setup_nodes()
-        connect_nodes_bi(self.nodes, 1, 2)
-        sync_blocks(self.nodes[1:3])
-        connect_nodes_bi(self.nodes, 0, 1)
-        connect_nodes_bi(self.nodes, 2, 3)
-        self.is_network_split = False
-        sync_blocks(self.nodes)
+        self.join_network()
 
         # split 0/1's chain should have won, so their wallet balance should be consistent
         assert_equal(
@@ -151,25 +137,43 @@ class WalletOrchardTest(BitcoinTestFramework):
         # un-mined and returned to the mempool
         assert_equal(set([rollback_tx]), set(self.nodes[2].getrawmempool()))
 
-        # our sole Sapling note is spent, so our confirmed balance is currently 0
+        # acct2's sole Sapling note is spent by a transaction in the mempool, so our 
+        # confirmed balance is currently 0
         assert_equal(
                 {'pools': {}, 'minimum_confirmations': 1}, 
                 self.nodes[2].z_getbalanceforaccount(acct2))
 
-        # our incoming change (unconfirmed, still in the mempool) is 9 zec
+        # acct2's incoming change (unconfirmed, still in the mempool) is 9 zec
         assert_equal(
                 {'pools': {'sapling': {'valueZat': Decimal('900000000')}}, 'minimum_confirmations': 0}, 
                 self.nodes[2].z_getbalanceforaccount(acct2, 0))
 
-        # the transaction was un-mined, so we have no confirmed balance
+        # The transaction was un-mined, so acct3 should have no confirmed balance
         assert_equal(
                 {'pools': {}, 'minimum_confirmations': 1}, 
                 self.nodes[3].z_getbalanceforaccount(acct3))
 
-        # our unconfirmed balance is 1 zec
+        # acct3's unconfirmed balance is 1 zec
         assert_equal(
                 {'pools': {'orchard': {'valueZat': Decimal('100000000')}}, 'minimum_confirmations': 0}, 
                 self.nodes[3].z_getbalanceforaccount(acct3, 0))
+
+        # Manually resend the transaction in node 2's mempool
+        self.nodes[2].resendwallettransactions()
+
+        # Sync the network
+        self.sync_all()
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        # The un-mined transaction should now have been re-mined
+        assert_equal(
+                {'pools': {'sapling': {'valueZat': Decimal('900000000')}}, 'minimum_confirmations': 1}, 
+                self.nodes[2].z_getbalanceforaccount(acct2))
+
+        assert_equal(
+                {'pools': {'orchard': {'valueZat': Decimal('100000000')}}, 'minimum_confirmations': 1}, 
+                self.nodes[3].z_getbalanceforaccount(acct3))
 
 if __name__ == '__main__':
     WalletOrchardTest().main()

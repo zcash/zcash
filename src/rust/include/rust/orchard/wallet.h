@@ -92,24 +92,34 @@ static_assert(
     "RawOrchardActionIVK struct should have exactly a 128-bit in-memory representation.");
 static_assert(alignof(RawOrchardActionIVK) == 8, "RawOrchardActionIVK struct alignment is not 64 bits.");
 
-typedef void (*push_action_ivk_callback_t)(void* resultCollection, const RawOrchardActionIVK actionIvk);
+typedef void (*push_action_ivk_callback_t)(void* rec, const RawOrchardActionIVK actionIvk);
+
+typedef void (*push_spend_action_idx_callback_t)(void* rec, uint32_t actionIdx);
 
 /**
  * Searches the provided bundle for notes that are visible to the specified wallet's
  * incoming viewing keys, and adds those notes to the wallet.  For each note decryptable
  * by one of the wallet's keys, this method will insert a `RawOrchardActionIVK` value into
- * the provided `resultCollection` using the `push_cb` callback. Note that this callback
- * can perform transformations on the provided RawOrchardActionIVK in this process.
+ * the provided `callbackReceiver` referent using the `push_cb` callback. Note that
+ * this callback can perform transformations on the provided RawOrchardActionIVK in this
+ * process.  For each action spending one of the wallet's notes, this method will pass
+ * a `uint32_t` action index corresponding to that action to the `callbackReceiver` referent; 
+ * using the specified callback; usually, this will push the value into a result vector owned 
+ * by the caller.
  *
  * The provided bundle must be a component of the transaction from which `txid` was
  * derived.
+ *
+ * Returns `true` if the bundle is involved with the wallet; i.e. if it contains
+ * notes spendable by the wallet, or spends any of the wallet's notes.
  */
-void orchard_wallet_add_notes_from_bundle(
+bool orchard_wallet_add_notes_from_bundle(
         OrchardWalletPtr* wallet,
         const unsigned char txid[32],
         const OrchardBundlePtr* bundle,
-        void* resultCollection,
-        push_action_ivk_callback_t push_cb
+        void* callbackReceiver,
+        push_action_ivk_callback_t push_cb,
+        push_spend_action_idx_callback_t spend_cb
         );
 
 /**
@@ -122,13 +132,15 @@ void orchard_wallet_add_notes_from_bundle(
  * The value the `blockHeight` pointer points to be set to the height at which the
  * transaction was mined, or `nullptr` if the transaction is not in the main chain.
  */
-bool orchard_wallet_restore_notes(
+bool orchard_wallet_load_bundle(
         OrchardWalletPtr* wallet,
         const uint32_t* blockHeight,
         const unsigned char txid[32],
         const OrchardBundlePtr* bundle,
         const RawOrchardActionIVK* actionIvks,
-        size_t actionIvksLen
+        size_t actionIvksLen,
+        const uint32_t* actionsSpendingWalletNotes,
+        size_t actionsSpendingWalletNotesLen
         );
 
 /**
@@ -157,10 +169,10 @@ void orchard_wallet_commitment_tree_root(
         unsigned char* root_ret);
 
 /**
- * Returns whether the specified transaction contains any Orchard notes that belong to
+ * Returns whether the specified transaction involves any Orchard notes that belong to
  * this wallet.
  */
-bool orchard_wallet_tx_contains_my_notes(
+bool orchard_wallet_tx_involves_my_notes(
         const OrchardWalletPtr* wallet,
         const unsigned char txid[32]);
 
