@@ -62,26 +62,22 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
 
     sendFromAccount_ = pwalletMain->FindAccountForSelector(ztxoSelector_).value_or(ZCASH_LEGACY_ACCOUNT);
 
-    // we always allow shielded change when not sending from the legacy account
-    if (sendFromAccount_ != ZCASH_LEGACY_ACCOUNT) {
-        allowedChangeTypes_.insert(OutputPool::Sapling);
-    }
-
-    // calculate the target totals
+    // Determine the target totals and recipient pools
     for (const SendManyRecipient& recipient : recipients_) {
         std::visit(match {
             [&](const CKeyID& addr) {
                 transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
-                allowedChangeTypes_.insert(OutputPool::Transparent);
+                recipientPools_.insert(OutputPool::Transparent);
             },
             [&](const CScriptID& addr) {
                 transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
-                allowedChangeTypes_.insert(OutputPool::Transparent);
+                recipientPools_.insert(OutputPool::Transparent);
             },
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 txOutputAmounts_.sapling_outputs_total += recipient.amount;
+                recipientPools_.insert(OutputPool::Sapling);
                 if (ztxoSelector_.SelectsSprout() && !allowRevealedAmounts_) {
                     throw JSONRPCError(
                             RPC_INVALID_PARAMETER,
@@ -93,6 +89,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
             },
             [&](const libzcash::OrchardRawAddress& addr) {
                 txOutputAmounts_.orchard_outputs_total += recipient.amount;
+                // TODO ORCHARD: Add to recipientPools_
                 if ((ztxoSelector_.SelectsSprout() || ztxoSelector_.SelectsSapling()) && !allowRevealedAmounts_) {
                     throw JSONRPCError(
                             RPC_INVALID_PARAMETER,
@@ -210,7 +207,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         LOCK2(cs_main, pwalletMain->cs_wallet);
         spendable = pwalletMain->FindSpendableInputs(ztxoSelector_, allowTransparentCoinbase, mindepth_);
     }
-    if (!spendable.LimitToAmount(targetAmount, dustThreshold)) {
+    if (!spendable.LimitToAmount(targetAmount, dustThreshold, recipientPools_)) {
         CAmount changeAmount{spendable.Total() - targetAmount};
         if (changeAmount > 0 && changeAmount < dustThreshold) {
             // TODO: we should provide the option for the caller to explicitly
@@ -289,19 +286,27 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     LogPrint("zrpcunsafe", "%s: total shielded Orchard output: %s\n", getId(), FormatMoney(txOutputAmounts_.orchard_outputs_total));
     LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(fee_));
 
+    // Allow change to go to any pool for which we have recipients.
+    std::set<OutputPool> allowedChangeTypes = recipientPools_;
+
+    // We always allow shielded change when not sending from the legacy account.
+    if (sendFromAccount_ != ZCASH_LEGACY_ACCOUNT) {
+        allowedChangeTypes.insert(OutputPool::Sapling);
+    }
+
     auto ovks = this->SelectOVKs(spendable);
     std::visit(match {
         [&](const CKeyID& keyId) {
-            allowedChangeTypes_.insert(OutputPool::Transparent);
+            allowedChangeTypes.insert(OutputPool::Transparent);
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                    sendFromAccount_, allowedChangeTypes_);
+                    sendFromAccount_, allowedChangeTypes);
             assert(changeAddr.has_value());
             builder_.SendChangeTo(changeAddr.value(), ovks.first);
         },
         [&](const CScriptID& scriptId) {
-            allowedChangeTypes_.insert(OutputPool::Transparent);
+            allowedChangeTypes.insert(OutputPool::Transparent);
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                    sendFromAccount_, allowedChangeTypes_);
+                    sendFromAccount_, allowedChangeTypes);
             assert(changeAddr.has_value());
             builder_.SendChangeTo(changeAddr.value(), ovks.first);
         },
@@ -321,7 +326,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 builder_.SendChangeTo(addr, ovks.first);
             } else {
                 auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                        sendFromAccount_, allowedChangeTypes_);
+                        sendFromAccount_, allowedChangeTypes);
                 assert(changeAddr.has_value());
                 builder_.SendChangeTo(changeAddr.value(), ovks.first);
             }
@@ -334,7 +339,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 builder_.SendChangeTo(fvk.DefaultAddress(), ovks.first);
             } else {
                 auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                        sendFromAccount_, allowedChangeTypes_);
+                        sendFromAccount_, allowedChangeTypes);
                 assert(changeAddr.has_value());
                 builder_.SendChangeTo(changeAddr.value(), ovks.first);
             }
@@ -354,10 +359,10 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 switch (rtype) {
                     case ReceiverType::P2PKH:
                     case ReceiverType::P2SH:
-                        allowedChangeTypes_.insert(OutputPool::Transparent);
+                        allowedChangeTypes.insert(OutputPool::Transparent);
                         break;
                     case ReceiverType::Sapling:
-                        allowedChangeTypes_.insert(OutputPool::Sapling);
+                        allowedChangeTypes.insert(OutputPool::Sapling);
                         break;
                     case ReceiverType::Orchard:
                         // TODO
@@ -367,7 +372,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
                         acct.GetAccountId(),
-                        allowedChangeTypes_);
+                        allowedChangeTypes);
 
             assert(changeAddr.has_value());
             builder_.SendChangeTo(changeAddr.value(), ovks.first);

@@ -7065,8 +7065,14 @@ bool ZTXOSelector::SelectsSapling() const {
     }, this->pattern);
 }
 
-bool SpendableInputs::LimitToAmount(const CAmount amountRequired, const CAmount dustThreshold) {
+bool SpendableInputs::LimitToAmount(
+    const CAmount amountRequired,
+    const CAmount dustThreshold,
+    std::set<OutputPool> recipientPools)
+{
     assert(amountRequired >= 0 && dustThreshold > 0);
+    // Calling this method twice is a programming error.
+    assert(!limited);
 
     CAmount totalSelected{0};
     auto haveSufficientFunds = [&]() {
@@ -7088,36 +7094,94 @@ bool SpendableInputs::LimitToAmount(const CAmount amountRequired, const CAmount 
     }
     sproutNoteEntries.erase(sproutIt, sproutNoteEntries.end());
 
-    // Next select transparent utxos. We preferentially spend transparent funds,
-    // with the intent that we'd like to opportunistically shield whatever is
-    // possible, and we will always shield change after the introduction of
-    // unified addresses.
-    std::sort(utxos.begin(), utxos.end(),
-        [](COutput i, COutput j) -> bool {
-            return i.Value() > j.Value();
-        });
-    auto utxoIt = utxos.begin();
-    while (utxoIt != utxos.end() && !haveSufficientFunds()) {
-        totalSelected += utxoIt->Value();
-        ++utxoIt;
+    // Check what input pools we have available.
+    bool haveTransparent = !utxos.empty();
+    bool haveSapling = !saplingNoteEntries.empty();
+    std::set<OutputPool> available;
+    if (haveTransparent) {
+        available.insert(OutputPool::Transparent);
     }
-    utxos.erase(utxoIt, utxos.end());
-
-    // Finally select Sapling outputs. After the introduction of Orchard to the
-    // wallet, the selection of Sapling and Orchard notes, and the
-    // determination of change amounts, should be done in a fashion that
-    // minimizes information leakage whenever possible.
-    std::sort(saplingNoteEntries.begin(), saplingNoteEntries.end(),
-        [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
-            return i.note.value() > j.note.value();
-        });
-    auto saplingIt = saplingNoteEntries.begin();
-    while (saplingIt != saplingNoteEntries.end() && !haveSufficientFunds()) {
-        totalSelected += saplingIt->note.value();
-        ++saplingIt;
+    if (haveSapling) {
+        available.insert(OutputPool::Sapling);
     }
-    saplingNoteEntries.erase(saplingIt, saplingNoteEntries.end());
 
+    // Now determine the order in which to select the remaining notes and coins.
+    // We do this in a way that minimizes information leakage while moving funds
+    // into the shielded pool where possible.
+    //
+    // In the following table:
+    // - T: transparent pool
+    // - S: Sapling pool
+    //
+    // Available | Recipients | Order | Rationale
+    // ----------|------------|-------|----------
+    //    T      |    T       |  T    | N/A
+    //    T      |     S      |  T    | N/A
+    //    T      |    TS      |  T    | N/A
+    //     S     |    T       |  S    | N/A
+    //     S     |     S      |  S    | N/A
+    //     S     |    TS      |  S    | N/A
+    //    TS     |    T       |  ST   | Hide sender if possible.
+    //    TS     |     S      |  TS   | Opportunistic shielding.
+    //    TS     |    TS      |  TS   | Opportunistic shielding.
+    std::vector<OutputPool> selectionOrder;
+    if (available.size() <= 1) {
+        // We have at most one input pool, so we don't need selection logic.
+        selectionOrder.assign(available.begin(), available.end());
+    } else if (recipientPools.size() == 1 && recipientPools.count(OutputPool::Transparent)) {
+        // Hide sender if possible.
+        selectionOrder = {
+            OutputPool::Sapling,
+            OutputPool::Transparent,
+        };
+    } else {
+        // Opportunistic shielding.
+        selectionOrder = {
+            OutputPool::Transparent,
+            OutputPool::Sapling,
+        };
+    }
+
+    // Ensure we provided a total selection order (so that all unselected notes
+    // and coins are erased).
+    assert(selectionOrder.size() == available.size());
+
+    // Finally, select the remaining notes and coins based on this order.
+    for (auto pool : selectionOrder) {
+        switch (pool) {
+            case OutputPool::Transparent:
+            {
+                std::sort(utxos.begin(), utxos.end(),
+                    [](COutput i, COutput j) -> bool {
+                        return i.Value() > j.Value();
+                    });
+                auto utxoIt = utxos.begin();
+                while (utxoIt != utxos.end() && !haveSufficientFunds()) {
+                    totalSelected += utxoIt->Value();
+                    ++utxoIt;
+                }
+                utxos.erase(utxoIt, utxos.end());
+                break;
+            }
+
+            case OutputPool::Sapling:
+            {
+                std::sort(saplingNoteEntries.begin(), saplingNoteEntries.end(),
+                    [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
+                        return i.note.value() > j.note.value();
+                    });
+                auto saplingIt = saplingNoteEntries.begin();
+                while (saplingIt != saplingNoteEntries.end() && !haveSufficientFunds()) {
+                    totalSelected += saplingIt->note.value();
+                    ++saplingIt;
+                }
+                saplingNoteEntries.erase(saplingIt, saplingNoteEntries.end());
+                break;
+            }
+        }
+    }
+
+    limited = true;
     return haveSufficientFunds();
 }
 

@@ -811,6 +811,9 @@ enum class OutputPool {
 };
 
 class SpendableInputs {
+private:
+    bool limited = false;
+
 public:
     std::vector<COutput> utxos;
     std::vector<SproutNoteEntry> sproutNoteEntries;
@@ -821,8 +824,17 @@ public:
      * Selectively discard notes that are not required to obtain the desired
      * amount. Returns `false` if the available inputs do not add up to the
      * desired amount.
+     *
+     * `recipientPools` is the set of `OutputPool`s to which the caller intends
+     * to send funds. This is used during note selection to minimise information
+     * leakage. The empty set is short-hand for "all pools".
+     *
+     * This method must only be called once.
      */
-    bool LimitToAmount(CAmount amount, CAmount dustThreshold);
+    bool LimitToAmount(
+        CAmount amount,
+        CAmount dustThreshold,
+        std::set<OutputPool> recipientPools);
 
     /**
      * Compute the total ZEC amount of spendable inputs.
