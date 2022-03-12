@@ -47,7 +47,7 @@ void orchard_builder_free(OrchardBuilderPtr* ptr);
 /// Returns `false` if the Merkle path in `spend_info` does not have the
 /// required anchor.
 ///
-/// `spend_info` is always freed by this method.
+/// `spend_info` is always freed by this method, whether or not it succeeds.
 bool orchard_builder_add_spend(
     OrchardBuilderPtr* ptr,
     OrchardSpendInfoPtr* spend_info);
