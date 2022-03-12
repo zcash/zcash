@@ -7077,52 +7077,46 @@ bool SpendableInputs::LimitToAmount(const CAmount amountRequired, const CAmount 
 
     // Select Sprout notes for spending first - if possible, we want users to
     // spend any notes that they still have in the Sprout pool.
-    if (!haveSufficientFunds()) {
-        std::sort(sproutNoteEntries.begin(), sproutNoteEntries.end(),
-            [](SproutNoteEntry i, SproutNoteEntry j) -> bool {
-                return i.note.value() > j.note.value();
-            });
-        auto sproutIt = sproutNoteEntries.begin();
-        while (sproutIt != sproutNoteEntries.end() && !haveSufficientFunds()) {
-            totalSelected += sproutIt->note.value();
-            ++sproutIt;
-        }
-        sproutNoteEntries.erase(sproutIt, sproutNoteEntries.end());
+    std::sort(sproutNoteEntries.begin(), sproutNoteEntries.end(),
+        [](SproutNoteEntry i, SproutNoteEntry j) -> bool {
+            return i.note.value() > j.note.value();
+        });
+    auto sproutIt = sproutNoteEntries.begin();
+    while (sproutIt != sproutNoteEntries.end() && !haveSufficientFunds()) {
+        totalSelected += sproutIt->note.value();
+        ++sproutIt;
     }
+    sproutNoteEntries.erase(sproutIt, sproutNoteEntries.end());
 
     // Next select transparent utxos. We preferentially spend transparent funds,
     // with the intent that we'd like to opportunistically shield whatever is
     // possible, and we will always shield change after the introduction of
     // unified addresses.
-    if (!haveSufficientFunds()) {
-        std::sort(utxos.begin(), utxos.end(),
-            [](COutput i, COutput j) -> bool {
-                return i.Value() > j.Value();
-            });
-        auto utxoIt = utxos.begin();
-        while (utxoIt != utxos.end() && !haveSufficientFunds()) {
-            totalSelected += utxoIt->Value();
-            ++utxoIt;
-        }
-        utxos.erase(utxoIt, utxos.end());
+    std::sort(utxos.begin(), utxos.end(),
+        [](COutput i, COutput j) -> bool {
+            return i.Value() > j.Value();
+        });
+    auto utxoIt = utxos.begin();
+    while (utxoIt != utxos.end() && !haveSufficientFunds()) {
+        totalSelected += utxoIt->Value();
+        ++utxoIt;
     }
+    utxos.erase(utxoIt, utxos.end());
 
     // Finally select Sapling outputs. After the introduction of Orchard to the
     // wallet, the selection of Sapling and Orchard notes, and the
     // determination of change amounts, should be done in a fashion that
     // minimizes information leakage whenever possible.
-    if (!haveSufficientFunds()) {
-        std::sort(saplingNoteEntries.begin(), saplingNoteEntries.end(),
-            [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
-                return i.note.value() > j.note.value();
-            });
-        auto saplingIt = saplingNoteEntries.begin();
-        while (saplingIt != saplingNoteEntries.end() && !haveSufficientFunds()) {
-            totalSelected += saplingIt->note.value();
-            ++saplingIt;
-        }
-        saplingNoteEntries.erase(saplingIt, saplingNoteEntries.end());
+    std::sort(saplingNoteEntries.begin(), saplingNoteEntries.end(),
+        [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
+            return i.note.value() > j.note.value();
+        });
+    auto saplingIt = saplingNoteEntries.begin();
+    while (saplingIt != saplingNoteEntries.end() && !haveSufficientFunds()) {
+        totalSelected += saplingIt->note.value();
+        ++saplingIt;
     }
+    saplingNoteEntries.erase(saplingIt, saplingNoteEntries.end());
 
     return haveSufficientFunds();
 }
