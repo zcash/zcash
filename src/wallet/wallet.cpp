@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include <assert.h>
+#include <numeric>
 #include <variant>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -7080,6 +7081,10 @@ bool SpendableInputs::LimitToAmount(
         // we do not yet have sufficient funds
         return totalSelected == amountRequired || totalSelected - amountRequired > dustThreshold;
     };
+    auto wouldSuffice = [&](CAmount extra) {
+        auto totalWithExtra = totalSelected + extra;
+        return totalWithExtra == amountRequired || totalWithExtra - amountRequired > dustThreshold;
+    };
 
     // Select Sprout notes for spending first - if possible, we want users to
     // spend any notes that they still have in the Sprout pool.
@@ -7095,8 +7100,21 @@ bool SpendableInputs::LimitToAmount(
     sproutNoteEntries.erase(sproutIt, sproutNoteEntries.end());
 
     // Check what input pools we have available.
-    bool haveTransparent = !utxos.empty();
-    bool haveSapling = !saplingNoteEntries.empty();
+    CAmount availableTransparent = std::accumulate(
+        utxos.begin(), utxos.end(), CAmount(0), [](CAmount acc, const COutput& utxo) {
+            return acc + utxo.Value();
+        });
+    CAmount availableSapling = std::accumulate(
+        saplingNoteEntries.begin(),
+        saplingNoteEntries.end(),
+        CAmount(0),
+        [](CAmount acc, const SaplingNoteEntry& entry) {
+            return acc + entry.note.value();
+        });
+    assert(availableTransparent >= 0);
+    assert(availableSapling >= 0);
+    bool haveTransparent = availableTransparent > 0;
+    bool haveSapling = availableSapling > 0;
     std::set<OutputPool> available;
     if (haveTransparent) {
         available.insert(OutputPool::Transparent);
@@ -7107,31 +7125,49 @@ bool SpendableInputs::LimitToAmount(
 
     // Now determine the order in which to select the remaining notes and coins.
     // We do this in a way that minimizes information leakage while moving funds
-    // into the shielded pool where possible.
+    // into the shielded pool where possible. The rules below follow several
+    // general principles:
+    //
+    // - If we have sufficient funds in a single shielded pool, we prefer to
+    //   select funds from that pool (especially if the pool matches a recipient
+    //   pool).
+    // - If we don't have sufficient funds in a single shielded pool, we prefer
+    //   to select funds from older shielded pools first, to generally migrate
+    //   funds towards newer shielded pools. We do not perform opportunistic
+    //   migration however (at this time).
+    // - If we have transparent recipients, we prefer to select funds across all
+    //   shielded pools before the transparent pool. The address and amount for
+    //   these recipients is necessarily revealed, but we can hide the sender.
+    // - If we don't have suffient funds in shielded pools and are required to
+    //   select transparent coins, we always select all transparent coins first.
+    //   Given that the transaction will necessarily reveal sender information,
+    //   we use it to opportunistically shield transparent coins.
     //
     // In the following table:
+    // - "Available" denotes the pools in which we have selectable notes.
+    // - "Recipients" lists the pools in which we are required to create outputs.
+    // - "Order" is a comma-separated list of pool selection orders. The order
+    //   used is the first order in the list that can select sufficient funds.
     // - T: transparent pool
     // - S: Sapling pool
     //
-    // Available | Recipients | Order | Rationale
-    // ----------|------------|-------|----------
-    //    T      |    T       |  T    | N/A
-    //    T      |     S      |  T    | N/A
-    //    T      |    TS      |  T    | N/A
-    //     S     |    T       |  S    | N/A
-    //     S     |     S      |  S    | N/A
-    //     S     |    TS      |  S    | N/A
-    //    TS     |    T       |  ST   | Hide sender if possible.
-    //    TS     |     S      |  TS   | Opportunistic shielding.
-    //    TS     |    TS      |  TS   | Opportunistic shielding.
+    // Available | Recipients | Order  | Rationale
+    // ----------|------------|--------|----------
+    //    T      |    **      |  T     | N/A
+    //     S     |    **      |  S     | N/A
+    //    TS     |    T       |  S, TS | Hide sender,    opportunistic shielding
+    //    TS     |     S      |  S, TS | Fully shielded, opportunistic shielding
+    //    TS     |    TS      |  S, TS | Hide sender,    opportunistic shielding
     std::vector<OutputPool> selectionOrder;
+    bool opportunisticShielding = false;
     if (available.size() <= 1) {
         // We have at most one input pool, so we don't need selection logic.
         selectionOrder.assign(available.begin(), available.end());
-    } else if (recipientPools.size() == 1 && recipientPools.count(OutputPool::Transparent)) {
-        // Hide sender if possible.
+    } else if (wouldSuffice(availableSapling)) {
+        // Either fully-shielded, or we hide the sender.
         selectionOrder = {
             OutputPool::Sapling,
+            // Pools below here are erased.
             OutputPool::Transparent,
         };
     } else {
@@ -7140,6 +7176,7 @@ bool SpendableInputs::LimitToAmount(
             OutputPool::Transparent,
             OutputPool::Sapling,
         };
+        opportunisticShielding = true;
     }
 
     // Ensure we provided a total selection order (so that all unselected notes
@@ -7155,12 +7192,18 @@ bool SpendableInputs::LimitToAmount(
                     [](COutput i, COutput j) -> bool {
                         return i.Value() > j.Value();
                     });
-                auto utxoIt = utxos.begin();
-                while (utxoIt != utxos.end() && !haveSufficientFunds()) {
-                    totalSelected += utxoIt->Value();
-                    ++utxoIt;
+                if (opportunisticShielding) {
+                    // Select all transparent coins.
+                    totalSelected += availableTransparent;
+                } else {
+                    // Only select as many as we need.
+                    auto utxoIt = utxos.begin();
+                    while (utxoIt != utxos.end() && !haveSufficientFunds()) {
+                        totalSelected += utxoIt->Value();
+                        ++utxoIt;
+                    }
+                    utxos.erase(utxoIt, utxos.end());
                 }
-                utxos.erase(utxoIt, utxos.end());
                 break;
             }
 
