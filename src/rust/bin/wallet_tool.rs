@@ -635,10 +635,12 @@ fn try_to_clear(error_blurb: &str) {
         eprintln!("Unable to clear screen: {}.", e);
 
         #[cfg(target_os = "windows")]
-        const CLEAR: &str = "cls";
-        #[cfg(not(target_os = "windows"))]
-        const CLEAR: &str = "clear";
+        const HOW_TO_CLEAR: &str = "using 'cls'";
+        #[cfg(target_os = "macos")]
+        const HOW_TO_CLEAR: &str = "by pressing Command + K";
+        #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+        const HOW_TO_CLEAR: &str = "using 'clear'";
 
-        println!("{} using '{}'.", error_blurb, CLEAR);
+        println!("{} {}.", error_blurb, HOW_TO_CLEAR);
     }
 }
