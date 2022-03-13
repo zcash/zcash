@@ -263,6 +263,56 @@ void orchard_wallet_get_filtered_notes(
         push_note_callback_t push_cb
         );
 
+/**
+ * A C struct used to transfer Orchard action spend information across the FFI boundary.
+ * This must have the same in-memory representation as the `FFIActionSpend` type in
+ * orchard_ffi/wallet.rs.
+ */
+struct RawOrchardActionSpend {
+    uint32_t spendActionIdx;
+    unsigned char outpointTxId[32];
+    uint32_t outpointActionIdx;
+    CAmount noteValue;
+};
+
+/**
+ * A C struct used to transfer Orchard action output information across the FFI boundary.
+ * This must have the same in-memory representation as the `FFIActionOutput` type in
+ * orchard_ffi/wallet.rs.
+ */
+struct RawOrchardActionOutput {
+    uint32_t outputActionIdx;
+    OrchardRawAddressPtr* addr;
+    CAmount noteValue;
+    unsigned char memo[512];
+    bool isOutgoing;
+};
+
+typedef void (*push_spend_t)(void* callbackReceiver, const RawOrchardActionSpend data);
+
+typedef void (*push_output_t)(void* callbackReceiver, const RawOrchardActionOutput data);
+
+/**
+ * Trial-decrypt the specfied Orchard bundle, and
+ * uses the provided callback to push RawOrchardActionData values corresponding to the
+ * actions of that bundle on to the provided result vector.  Note that the push_cb callback can perform any
+ * necessary conversion from a RawOrchardActionData value in addition to modifying the
+ * provided result vector.
+ *
+ * The following pointers must be freed by the caller:
+ * - `RawOrchardActionData::spend` must be freed using `orchard_action_spend_free`
+ * - `RawOrchardActionData::output` must be freed using `orchard_action_output_free`
+ * - `RawOrchardActionData::output::addr` must be freed using `orchard_address_free`
+ */
+bool orchard_wallet_get_txdata(
+        const OrchardWalletPtr* wallet,
+        const OrchardBundlePtr* bundle,
+        const unsigned char*,
+        size_t raw_ovks_len,
+        void* callbackReceiver,
+        push_spend_t push_spend_cb,
+        push_output_t push_output_cb
+        );
 
 typedef void (*push_txid_callback_t)(void* resultVector, unsigned char txid[32]);
 

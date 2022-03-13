@@ -4168,6 +4168,30 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         auto legacyAcctOVKs = legacyKey.GetOVKsForShielding();
         ovks.insert(legacyAcctOVKs.first);
         ovks.insert(legacyAcctOVKs.second);
+
+        // Generate the OVKs for shielding for all unified key components
+        for (const auto& [_, ufvkid] : pwalletMain->mapUnifiedAccountKeys) {
+            auto ufvk = pwalletMain->GetUnifiedFullViewingKey(ufvkid);
+            if (ufvk.has_value()) {
+                auto tkey = ufvk.value().GetTransparentKey();
+                if (tkey.has_value()) {
+                    auto tovks = tkey.value().GetOVKsForShielding();
+                    ovks.insert(tovks.first);
+                    ovks.insert(tovks.second);
+                }
+                auto skey = ufvk.value().GetSaplingKey();
+                if (skey.has_value()) {
+                    auto sovks = skey.value().GetOVKs();
+                    ovks.insert(sovks.first);
+                    ovks.insert(sovks.second);
+                }
+                auto okey = ufvk.value().GetOrchardKey();
+                if (okey.has_value()) {
+                    ovks.insert(okey.value().ToExternalOutgoingViewingKey());
+                    ovks.insert(okey.value().ToInternalOutgoingViewingKey());
+                }
+            }
+        }
     }
 
     // Sapling spends

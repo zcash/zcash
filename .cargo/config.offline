@@ -11,7 +11,7 @@ replace-with = "vendored-sources"
 
 [source."https://github.com/zcash/orchard.git"]
 git = "https://github.com/zcash/orchard.git"
-rev = "a5f701f3186fb619b40f2dee9939e64e4c9eb7cc"
+rev = "f4587f790d7317df85a9ee77ce693a06ed6d8d02"
 replace-with = "vendored-sources"
 
 [source."https://github.com/zcash/incrementalmerkletree.git"]

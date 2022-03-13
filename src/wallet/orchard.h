@@ -110,6 +110,73 @@ public:
     }
 };
 
+class OrchardActionSpend {
+private:
+    OrchardOutPoint outPoint;
+    CAmount noteValue;
+public:
+    OrchardActionSpend(OrchardOutPoint outPoint, CAmount noteValue): outPoint(outPoint), noteValue(noteValue) { }
+
+    OrchardOutPoint GetOutPoint() const {
+        return outPoint;
+    }
+
+    CAmount GetNoteValue() const {
+        return noteValue;
+    }
+};
+
+class OrchardActionOutput {
+private:
+    libzcash::OrchardRawAddress recipient;
+    CAmount noteValue;
+    std::array<unsigned char, 512> memo;
+    bool isOutgoing;
+public:
+    OrchardActionOutput(
+            libzcash::OrchardRawAddress recipient, CAmount noteValue, std::array<unsigned char, 512> memo, bool isOutgoing):
+            recipient(recipient), noteValue(noteValue), memo(memo), isOutgoing(isOutgoing) { }
+
+    const libzcash::OrchardRawAddress& GetRecipient() {
+        return recipient;
+    }
+
+    CAmount GetNoteValue() const {
+        return noteValue;
+    }
+
+    const std::array<unsigned char, 512>& GetMemo() const {
+        return memo;
+    }
+
+    bool IsOutgoing() const {
+        return isOutgoing;
+    }
+};
+
+class OrchardActions {
+private:
+    std::map<uint32_t, OrchardActionSpend> spends;
+    std::map<uint32_t, OrchardActionOutput> outputs;
+public:
+    OrchardActions() {}
+
+    void AddSpend(uint32_t actionIdx, OrchardActionSpend spend) {
+        spends.insert({actionIdx, spend});
+    }
+
+    void AddOutput(uint32_t actionIdx, OrchardActionOutput output) {
+        outputs.insert({actionIdx, output});
+    }
+
+    const std::map<uint32_t, OrchardActionSpend>& GetSpends() {
+        return spends;
+    }
+
+    const std::map<uint32_t, OrchardActionOutput>& GetOutputs() {
+        return outputs;
+    }
+};
 
 class OrchardWallet
 {
@@ -354,6 +421,40 @@ public:
 
     void GarbageCollect() {
         orchard_wallet_gc_note_commitment_tree(inner.get());
+    }
+
+    static void PushSpendAction(void* receiver, RawOrchardActionSpend rawSpend) {
+        uint256 txid;
+        std::move(std::begin(rawSpend.outpointTxId), std::end(rawSpend.outpointTxId), txid.begin());
+        auto spend = OrchardActionSpend(
+                OrchardOutPoint(txid, rawSpend.outpointActionIdx),
+                rawSpend.noteValue);
+        reinterpret_cast<OrchardActions*>(receiver)->AddSpend(rawSpend.spendActionIdx, spend);
+    }
+
+    static void PushOutputAction(void* receiver, RawOrchardActionOutput rawOutput) {
+        std::array<unsigned char, 512> memo;
+        std::move(std::begin(rawOutput.memo), std::end(rawOutput.memo), memo.begin());
+        auto output = OrchardActionOutput(
+                libzcash::OrchardRawAddress(rawOutput.addr),
+                rawOutput.noteValue,
+                memo,
+                rawOutput.isOutgoing);
+
+        reinterpret_cast<OrchardActions*>(receiver)->AddOutput(rawOutput.outputActionIdx, output);
+    }
+
+    OrchardActions GetTxActions(const CTransaction& tx, const std::vector<uint256>& ovks) const {
+        OrchardActions result;
+        orchard_wallet_get_txdata(
+                inner.get(),
+                tx.GetOrchardBundle().inner.get(),
+                reinterpret_cast<const unsigned char*>(ovks.data()),
+                ovks.size(),
+                &result,
+                PushSpendAction,
+                PushOutputAction);
+        return result;
     }
 };
 

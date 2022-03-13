@@ -16,7 +16,7 @@ use zcash_primitives::{
 
 use orchard::{
     bundle::Authorized,
-    keys::{FullViewingKey, IncomingViewingKey, SpendingKey},
+    keys::{FullViewingKey, IncomingViewingKey, OutgoingViewingKey, SpendingKey},
     note::Nullifier,
     tree::{MerkleHashOrchard, MerklePath},
     Address, Bundle, Note,
@@ -359,7 +359,7 @@ impl Wallet {
             .cloned()
             .collect::<Vec<_>>();
 
-        for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_for_keys(&keys) {
+        for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_with_keys(&keys) {
             assert!(self.add_decrypted_note(
                 None,
                 txid,
@@ -988,6 +988,116 @@ pub extern "C" fn orchard_wallet_get_filtered_notes(
             memo: dnote.memo,
         };
         unsafe { (push_cb.unwrap())(result, metadata) };
+    }
+}
+
+/// A type used to pass decrypted spend information across the FFI boundary.
+/// This must have the same representation as `struct RawOrchardSpendData`
+/// in `rust/include/rust/orchard/wallet.h`.
+#[repr(C)]
+pub struct FFIActionSpend {
+    spend_action_idx: u32,
+    outpoint_txid: [u8; 32],
+    outpoint_action_idx: u32,
+    value: i64,
+}
+
+/// A type used to pass decrypted output information across the FFI boundary.
+/// This must have the same representation as `struct RawOrchardOutputData`
+/// in `rust/include/rust/orchard/wallet.h`.
+#[repr(C)]
+pub struct FFIActionOutput {
+    action_idx: u32,
+    recipient: *mut Address,
+    value: i64,
+    memo: [u8; 512],
+    is_outgoing: bool,
+}
+
+/// A C++-allocated function pointer that can send a FFIActionSpend value
+/// to a receiver.
+pub type SpendPushCB = unsafe extern "C" fn(obj: Option<FFICallbackReceiver>, data: FFIActionSpend);
+
+/// A C++-allocated function pointer that can send a FFIActionOutput value
+/// to a receiver.
+pub type OutputPushCB =
+    unsafe extern "C" fn(obj: Option<FFICallbackReceiver>, data: FFIActionOutput);
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_get_txdata(
+    wallet: *const Wallet,
+    bundle: *const Bundle<Authorized, Amount>,
+    raw_ovks: *const [u8; 32],
+    raw_ovks_len: usize,
+    callback_receiver: Option<FFICallbackReceiver>,
+    spend_push_cb: Option<SpendPushCB>,
+    output_push_cb: Option<OutputPushCB>,
+) -> bool {
+    let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
+    let raw_ovks = unsafe { slice::from_raw_parts(raw_ovks, raw_ovks_len) };
+    let ovks: Vec<OutgoingViewingKey> = raw_ovks
+        .iter()
+        .map(|k| OutgoingViewingKey::from(*k))
+        .collect();
+    if let Some(bundle) = unsafe { bundle.as_ref() } {
+        let keys = wallet
+            .key_store
+            .viewing_keys
+            .keys()
+            .cloned()
+            .collect::<Vec<_>>();
+
+        let incoming: BTreeMap<usize, (Note, Address, [u8; 512])> = bundle
+            .decrypt_outputs_with_keys(&keys)
+            .into_iter()
+            .map(|(idx, _, note, addr, memo)| (idx, (note, addr, memo)))
+            .collect();
+
+        let outgoing: BTreeMap<usize, (Note, Address, [u8; 512])> = bundle
+            .recover_outputs_with_ovks(&ovks)
+            .into_iter()
+            .map(|(idx, _, note, addr, memo)| (idx, (note, addr, memo)))
+            .collect();
+
+        for (idx, action) in bundle.actions().iter().enumerate() {
+            let nf = action.nullifier();
+            if let Some(spend) = wallet.nullifiers.get(nf).and_then(|outpoint| {
+                wallet
+                    .wallet_received_notes
+                    .get(&outpoint.txid)
+                    .and_then(|txnotes| txnotes.decrypted_notes.get(&outpoint.action_idx))
+                    .map(|dnote| FFIActionSpend {
+                        spend_action_idx: idx as u32,
+                        outpoint_txid: *outpoint.txid.as_ref(),
+                        outpoint_action_idx: outpoint.action_idx as u32,
+                        value: dnote.note.value().inner() as i64,
+                    })
+            }) {
+                unsafe { (spend_push_cb.unwrap())(callback_receiver, spend) };
+            }
+            if let Some((note, addr, memo)) = incoming.get(&idx) {
+                let output = FFIActionOutput {
+                    action_idx: idx as u32,
+                    recipient: Box::into_raw(Box::new(*addr)),
+                    value: note.value().inner() as i64,
+                    memo: *memo,
+                    is_outgoing: false,
+                };
+                unsafe { (output_push_cb.unwrap())(callback_receiver, output) };
+            } else if let Some((note, addr, memo)) = outgoing.get(&idx) {
+                let output = FFIActionOutput {
+                    action_idx: idx as u32,
+                    recipient: Box::into_raw(Box::new(*addr)),
+                    value: note.value().inner() as i64,
+                    memo: *memo,
+                    is_outgoing: true,
+                };
+                unsafe { (output_push_cb.unwrap())(callback_receiver, output) };
+            }
+        }
+        true
+    } else {
+        false
     }
 }
 
