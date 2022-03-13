@@ -612,7 +612,7 @@ CTAES_DIST += crypto/ctaes/ctaes.h
 CTAES_DIST += crypto/ctaes/README.md
 CTAES_DIST += crypto/ctaes/test.c
 
-CLEANFILES = *.gcda *.gcno */*.gcno wallet/*/*.gcno
+CLEANFILES = *.gcda *.gcno */*.gcno wallet/*/*.gcno $(bin_SCRIPTS)
 
 DISTCLEANFILES = obj/build.h
 
@@ -636,16 +636,17 @@ clean-local:
 	$(AM_V_CXX) $(OBJCXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	  $(CPPFLAGS) $(AM_CXXFLAGS) $(AM_CXXFLAGS) $(PIE_FLAGS) $(CXXFLAGS) -c -o $@ $<
 
-check-symbols: $(bin_PROGRAMS)
+check-symbols: $(bin_PROGRAMS) $(bin_SCRIPTS)
 if GLIBC_BACK_COMPAT
-	@echo "Checking glibc back compat of [$(bin_PROGRAMS)]..."
-	$(AM_V_at) READELF=$(READELF) CPPFILT=$(CPPFILT) $(top_srcdir)/contrib/devtools/symbol-check.py $(bin_PROGRAMS)
+	@echo "Checking glibc back compat of [$(bin_PROGRAMS) $(bin_SCRIPTS)]..."
+	$(AM_V_at) READELF=$(READELF) CPPFILT=$(CPPFILT) $(top_srcdir)/contrib/devtools/symbol-check.py $(bin_PROGRAMS) $(bin_SCRIPTS)
 endif
 
-check-security: $(bin_PROGRAMS)
+check-security: $(bin_PROGRAMS) $(bin_SCRIPTS)
 if HARDEN
-	@echo "Checking binary security of [$(bin_PROGRAMS)]..."
+	@echo "Checking binary security of [$(bin_PROGRAMS) $(bin_SCRIPTS)]..."
 	$(AM_V_at) READELF=$(READELF) OBJDUMP=$(OBJDUMP) $(top_srcdir)/contrib/devtools/security-check.py $(bin_PROGRAMS)
+	$(AM_V_at) READELF=$(READELF) OBJDUMP=$(OBJDUMP) $(top_srcdir)/contrib/devtools/security-check.py --allow-no-canary $(bin_SCRIPTS)
 endif
 
 %.pb.cc %.pb.h: %.proto
