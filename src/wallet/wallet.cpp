@@ -1477,7 +1477,18 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
         }
     }
 
-    // TODO ORCHARD; see #5593
+    for (uint32_t i = 0; i < wtx.GetOrchardBundle().GetNumActions(); i++) {
+        OrchardOutPoint op(wtx.GetHash(), i);
+        auto potential_spends = pwalletMain->orchardWallet.GetPotentialSpends(op);
+
+        if (potential_spends.size() <= 1) {
+            continue;  // No conflict if zero or one spends
+        }
+        for (const uint256 txid : potential_spends) {
+            // TODO: Take into account transaction expiry; see #5585
+            result.insert(txid);
+        }
+    }
 
     return result;
 }
