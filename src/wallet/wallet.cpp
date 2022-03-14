@@ -1937,6 +1937,7 @@ SpendableInputs CWallet::FindSpendableInputs(
     bool selectTransparent{selector.SelectsTransparent()};
     bool selectSprout{selector.SelectsSprout()};
     bool selectSapling{selector.SelectsSapling()};
+    bool selectOrchard{selector.SelectsOrchard()};
 
     SpendableInputs unspent;
     for (auto const& [wtxid, wtx] : mapWallet) {
@@ -2063,42 +2064,44 @@ SpendableInputs CWallet::FindSpendableInputs(
         }
     }
 
-    // for Orchard, we select both the internal and external IVKs.
-    auto orchardIvks = std::visit(match {
-        [&](const libzcash::UnifiedFullViewingKey& ufvk) -> std::vector<OrchardIncomingViewingKey> {
-            auto fvk = ufvk.GetOrchardKey();
-            if (fvk.has_value()) {
-                return {fvk->ToIncomingViewingKey(), fvk->ToInternalIncomingViewingKey()};
-            }
-            return {};
-        },
-        [&](const AccountZTXOPattern& acct) -> std::vector<OrchardIncomingViewingKey> {
-            auto ufvk = GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
-            if (ufvk.has_value()) {
-                auto fvk = ufvk->GetOrchardKey();
+    if (selectOrchard) {
+        // for Orchard, we select both the internal and external IVKs.
+        auto orchardIvks = std::visit(match {
+            [&](const libzcash::UnifiedFullViewingKey& ufvk) -> std::vector<OrchardIncomingViewingKey> {
+                auto fvk = ufvk.GetOrchardKey();
                 if (fvk.has_value()) {
                     return {fvk->ToIncomingViewingKey(), fvk->ToInternalIncomingViewingKey()};
                 }
-            }
-            return {};
-        },
-        [&](const auto& addr) -> std::vector<OrchardIncomingViewingKey> { return {}; }
-    }, selector.GetPattern());
+                return {};
+            },
+            [&](const AccountZTXOPattern& acct) -> std::vector<OrchardIncomingViewingKey> {
+                auto ufvk = GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
+                if (ufvk.has_value()) {
+                    auto fvk = ufvk->GetOrchardKey();
+                    if (fvk.has_value()) {
+                        return {fvk->ToIncomingViewingKey(), fvk->ToInternalIncomingViewingKey()};
+                    }
+                }
+                return {};
+            },
+            [&](const auto& addr) -> std::vector<OrchardIncomingViewingKey> { return {}; }
+        }, selector.GetPattern());
 
-    for (const auto& ivk : orchardIvks) {
-        std::vector<OrchardNoteMetadata> incomingNotes;
-        orchardWallet.GetFilteredNotes(incomingNotes, ivk, true, true);
+        for (const auto& ivk : orchardIvks) {
+            std::vector<OrchardNoteMetadata> incomingNotes;
+            orchardWallet.GetFilteredNotes(incomingNotes, ivk, true, true);
 
-        for (auto& noteMeta : incomingNotes) {
-            if (IsOrchardSpent(noteMeta.GetOutPoint())) {
-                continue;
-            }
+            for (auto& noteMeta : incomingNotes) {
+                if (IsOrchardSpent(noteMeta.GetOutPoint())) {
+                    continue;
+                }
 
-            auto mit = mapWallet.find(noteMeta.GetOutPoint().hash);
-            auto confirmations = mit->second.GetDepthInMainChain();
-            if (mit != mapWallet.end() && confirmations >= minDepth) {
-                noteMeta.SetConfirmations(confirmations);
-                unspent.orchardNoteMetadata.push_back(noteMeta);
+                auto mit = mapWallet.find(noteMeta.GetOutPoint().hash);
+                auto confirmations = mit->second.GetDepthInMainChain();
+                if (mit != mapWallet.end() && confirmations >= minDepth) {
+                    noteMeta.SetConfirmations(confirmations);
+                    unspent.orchardNoteMetadata.push_back(noteMeta);
+                }
             }
         }
     }
@@ -6361,6 +6364,9 @@ NoteFilter NoteFilter::ForPaymentAddresses(const std::vector<libzcash::PaymentAd
             [&](const libzcash::UnifiedAddress& uaddr) {
                 for (auto& receiver : uaddr) {
                     std::visit(match {
+                        [&](const libzcash::OrchardRawAddress& addr) {
+                            addrs.orchardAddresses.insert(addr);
+                        },
                         [&](const libzcash::SaplingPaymentAddress& addr) {
                             addrs.saplingAddresses.insert(addr);
                         },
@@ -6385,6 +6391,13 @@ bool CWallet::HasSpendingKeys(const NoteFilter& addrSet) const {
             return false;
         }
     }
+
+    for (const auto& addr : addrSet.GetOrchardAddresses()) {
+        if (!orchardWallet.GetSpendingKeyForAddress(addr).has_value()) {
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -7065,6 +7078,13 @@ bool ZTXOSelector::SelectsSapling() const {
         [](const libzcash::SaplingExtendedSpendingKey& extfvk) { return true; },
         [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetSaplingKey().has_value(); },
         [](const AccountZTXOPattern& acct) { return acct.IncludesSapling(); },
+        [](const auto& addr) { return false; }
+    }, this->pattern);
+}
+bool ZTXOSelector::SelectsOrchard() const {
+    return std::visit(match {
+        [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetOrchardKey().has_value(); },
+        [](const AccountZTXOPattern& acct) { return acct.IncludesOrchard(); },
         [](const auto& addr) { return false; }
     }, this->pattern);
 }

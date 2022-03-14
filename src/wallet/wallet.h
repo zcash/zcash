@@ -758,6 +758,10 @@ public:
         return receiverTypes.empty() || receiverTypes.count(libzcash::ReceiverType::Sapling) > 0;
     }
 
+    bool IncludesOrchard() const {
+        return receiverTypes.empty() || receiverTypes.count(libzcash::ReceiverType::Orchard) > 0;
+    }
+
     friend bool operator==(const AccountZTXOPattern &a, const AccountZTXOPattern &b) {
         return a.accountId == b.accountId && a.receiverTypes == b.receiverTypes;
     }
@@ -798,6 +802,7 @@ public:
     bool SelectsTransparent() const;
     bool SelectsSprout() const;
     bool SelectsSapling() const;
+    bool SelectsOrchard() const;
 };
 
 /**
