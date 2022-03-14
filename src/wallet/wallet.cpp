@@ -1901,6 +1901,9 @@ std::optional<RecipientAddress> CWallet::GenerateChangeAddressForAccount(
             for (OutputPool t : changeOptions) {
                 std::optional<RecipientAddress> changeAddr;
                 switch (t) {
+                case OutputPool::Orchard:
+                    changeAddr = ufvk.value().GetChangeAddress(OrchardChangeRequest());
+                    break;
                 case OutputPool::Sapling:
                     changeAddr = ufvk.value().GetChangeAddress(SaplingChangeRequest());
                     break;

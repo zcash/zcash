@@ -58,10 +58,12 @@ public:
 };
 
 class SaplingChangeRequest {};
+class OrchardChangeRequest {};
 
 typedef std::variant<
     TransparentChangeRequest,
-    SaplingChangeRequest> ChangeRequest;
+    SaplingChangeRequest,
+    OrchardChangeRequest> ChangeRequest;
 
 /**
  * Test whether the specified list of receiver types contains a

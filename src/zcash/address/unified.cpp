@@ -175,9 +175,13 @@ std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(co
             }
         },
         [&](const SaplingChangeRequest& req) {
-            // currently true by construction, as a UFVK must have a supported shielded component
             if (saplingKey.has_value()) {
                 addr = saplingKey.value().GetChangeAddress();
+            }
+        },
+        [&](const OrchardChangeRequest& req) {
+            if (orchardKey.has_value()) {
+                addr = orchardKey.value().GetChangeAddress();
             }
         }
     }, req);
@@ -185,6 +189,9 @@ std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(co
 }
 
 std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress() const {
+    if (orchardKey.has_value()) {
+        return orchardKey.value().GetChangeAddress();
+    }
     if (saplingKey.has_value()) {
         return saplingKey.value().GetChangeAddress();
     }
