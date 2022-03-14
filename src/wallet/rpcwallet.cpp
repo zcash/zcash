@@ -3706,9 +3706,18 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
             nBalance = getBalanceZaddr(addr, nMinDepth, INT_MAX, false);
         },
         [&](const libzcash::UnifiedAddress& addr) {
-             throw JSONRPCError(
-                     RPC_INVALID_ADDRESS_OR_KEY,
-                     "Unified addresses are not yet supported for z_getbalance.");
+            auto selector = pwalletMain->ZTXOSelectorForAddress(addr, true);
+            auto spendableInputs = pwalletMain->FindSpendableInputs(selector.value(), true, nMinDepth);
+
+            for (const auto& t : spendableInputs.utxos) {
+                nBalance += t.Value();
+            }
+            for (const auto& t : spendableInputs.saplingNoteEntries) {
+                nBalance += t.note.value();
+            }
+            for (const auto& t : spendableInputs.orchardNoteMetadata) {
+                nBalance += t.GetNoteValue();
+            }
         },
     }, pa.value());
 
