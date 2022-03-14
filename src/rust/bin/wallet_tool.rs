@@ -404,8 +404,8 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
         }
 
         println!(concat!(
-            "\nPlease write down this phrase on something durable that you will keep\n",
-            "in a secure location.\n",
+            "\nPlease write down this phrase (including the numbering of words) on\n",
+            "something durable that you will keep in a secure location.\n",
             "Press Enter when finished; then the phrase will disappear and you'll be\n",
             "asked to re-enter a selection of words from it."
         ));
@@ -466,7 +466,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
                     return Err(WalletToolError::ZcashdConnection.into());
                 } else {
                     println!(
-                        "\nThere was an unexpected response from zcashd:\n> {}",
+                        "\nThere was an unexpected response from zcash-cli or zcashd:\n> {}",
                         cli_err.join("\n> "),
                     );
                     return Err(WalletToolError::UnexpectedResponse.into());
