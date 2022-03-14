@@ -7086,18 +7086,23 @@ bool SpendableInputs::LimitToAmount(
         return totalWithExtra == amountRequired || totalWithExtra - amountRequired > dustThreshold;
     };
 
-    // Select Sprout notes for spending first - if possible, we want users to
-    // spend any notes that they still have in the Sprout pool.
-    std::sort(sproutNoteEntries.begin(), sproutNoteEntries.end(),
-        [](SproutNoteEntry i, SproutNoteEntry j) -> bool {
-            return i.note.value() > j.note.value();
-        });
-    auto sproutIt = sproutNoteEntries.begin();
-    while (sproutIt != sproutNoteEntries.end() && !haveSufficientFunds()) {
-        totalSelected += sproutIt->note.value();
-        ++sproutIt;
+    if (recipientPools.count(OutputPool::Orchard)) {
+        // We cannot select Sprout notes with Orchard recipients.
+        sproutNoteEntries.clear();
+    } else {
+        // Select Sprout notes for spending first - if possible, we want users to
+        // spend any notes that they still have in the Sprout pool.
+        std::sort(sproutNoteEntries.begin(), sproutNoteEntries.end(),
+            [](SproutNoteEntry i, SproutNoteEntry j) -> bool {
+                return i.note.value() > j.note.value();
+            });
+        auto sproutIt = sproutNoteEntries.begin();
+        while (sproutIt != sproutNoteEntries.end() && !haveSufficientFunds()) {
+            totalSelected += sproutIt->note.value();
+            ++sproutIt;
+        }
+        sproutNoteEntries.erase(sproutIt, sproutNoteEntries.end());
     }
-    sproutNoteEntries.erase(sproutIt, sproutNoteEntries.end());
 
     // Check what input pools we have available.
     CAmount availableTransparent = std::accumulate(
@@ -7111,16 +7116,28 @@ bool SpendableInputs::LimitToAmount(
         [](CAmount acc, const SaplingNoteEntry& entry) {
             return acc + entry.note.value();
         });
+    CAmount availableOrchard = std::accumulate(
+        orchardNoteMetadata.begin(),
+        orchardNoteMetadata.end(),
+        CAmount(0),
+        [](CAmount acc, const OrchardNoteMetadata& entry) {
+            return acc + entry.GetNoteValue();
+        });
     assert(availableTransparent >= 0);
     assert(availableSapling >= 0);
+    assert(availableOrchard >= 0);
     bool haveTransparent = availableTransparent > 0;
     bool haveSapling = availableSapling > 0;
+    bool haveOrchard = availableOrchard > 0;
     std::set<OutputPool> available;
     if (haveTransparent) {
         available.insert(OutputPool::Transparent);
     }
     if (haveSapling) {
         available.insert(OutputPool::Sapling);
+    }
+    if (haveOrchard) {
+        available.insert(OutputPool::Orchard);
     }
 
     // Now determine the order in which to select the remaining notes and coins.
@@ -7150,23 +7167,77 @@ bool SpendableInputs::LimitToAmount(
     //   used is the first order in the list that can select sufficient funds.
     // - T: transparent pool
     // - S: Sapling pool
+    // - O: Orchard pool
     //
     // Available | Recipients | Order  | Rationale
     // ----------|------------|--------|----------
-    //    T      |    **      |  T     | N/A
-    //     S     |    **      |  S     | N/A
+    //    T      |    ***     |  T     | N/A
+    //     S     |    ***     |  S     | N/A
+    //      O    |    ***     |  O     | N/A
     //    TS     |    T       |  S, TS | Hide sender,    opportunistic shielding
     //    TS     |     S      |  S, TS | Fully shielded, opportunistic shielding
+    //    TS     |      O     |  S, TS | Hide sender,    opportunistic shielding
     //    TS     |    TS      |  S, TS | Hide sender,    opportunistic shielding
+    //    TS     |    T O     |  S, TS | Hide sender,    opportunistic shielding
+    //    TS     |     SO     |  S, TS | Hide sender,    opportunistic shielding
+    //    TS     |    TSO     |  S, TS | Hide sender,    opportunistic shielding
+    //    T O    |    T       |  O, TO | Hide sender,    opportunistic shielding
+    //    T O    |     S      |  O, TO | Hide sender,    opportunistic shielding
+    //    T O    |      O     |  O, TO | Fully shielded, opportunistic shielding
+    //    T O    |    TS      |  O, TO | Hide sender,    opportunistic shielding
+    //    T O    |    T O     |  O, TO | Hide sender,    opportunistic shielding
+    //    T O    |     SO     |  O, TO | Hide sender,    opportunistic shielding
+    //    T O    |    TSO     |  O, TO | Hide sender,    opportunistic shielding
+    //     SO    |    T       |  O, SO | Fewer pools,    opportunistic migration
+    //     SO    |     S      |  S, SO | Fully shielded
+    //     SO    |      O     |  O, SO | Fully shielded, opportunistic migration
+    //     SO    |    TS      |  S, SO | Fewer pools
+    //     SO    |    T O     |  O, SO | Fewer pools,    opportunistic migration
+    //     SO    |     SO     |  S, SO | Opportunistic migration
+    //     SO    |    TSO     |  S, SO | Opportunistic migration
+    //    TSO    |    T       |  O, SO, TSO | Fewer pools,             hide sender, opportunistic shielding
+    //    TSO    |     S      |  S, SO, TSO | Fully shielded,          hide sender, opportunistic shielding
+    //    TSO    |      O     |  O, SO, TSO | Fully shielded,          hide sender, opportunistic shielding
+    //    TSO    |    TS      |  S, SO, TSO | Fewer pools,             hide sender, opportunistic shielding
+    //    TSO    |    T O     |  O, SO, TSO | Fewer pools,             hide sender, opportunistic shielding
+    //    TSO    |     SO     |  S, SO, TSO | Opportunistic migration, hide sender, opportunistic shielding
+    //    TSO    |    TSO     |  S, SO, TSO | Opportunistic migration, hide sender, opportunistic shielding
     std::vector<OutputPool> selectionOrder;
     bool opportunisticShielding = false;
     if (available.size() <= 1) {
         // We have at most one input pool, so we don't need selection logic.
         selectionOrder.assign(available.begin(), available.end());
-    } else if (wouldSuffice(availableSapling)) {
-        // Either fully-shielded, or we hide the sender.
+    } else if (
+        recipientPools == std::set({OutputPool::Orchard}) &&
+        wouldSuffice(availableOrchard))
+    {
+        // Fully shielded.
+        selectionOrder = {
+            OutputPool::Orchard,
+            // Pools below here are erased.
+            OutputPool::Transparent,
+            OutputPool::Sapling,
+        };
+    } else if (
+        recipientPools.count(OutputPool::Transparent) &&
+        !recipientPools.count(OutputPool::Sapling) &&
+        wouldSuffice(availableOrchard))
+    {
+        // Fewer pools.
+        selectionOrder = {
+            OutputPool::Orchard,
+            // Pools below here are erased.
+            OutputPool::Transparent,
+            OutputPool::Sapling,
+        };
+    } else if (wouldSuffice(availableSapling + availableOrchard)) {
+        // Hide sender.
+        // This case also handles two other cases:
+        // - Fully shielded (recipientPools == S && wouldSuffice(S))
+        // - Fewer pools    (S in recipientPools && O not in recipientPools && wouldSuffice(S))
         selectionOrder = {
             OutputPool::Sapling,
+            OutputPool::Orchard,
             // Pools below here are erased.
             OutputPool::Transparent,
         };
@@ -7175,13 +7246,20 @@ bool SpendableInputs::LimitToAmount(
         selectionOrder = {
             OutputPool::Transparent,
             OutputPool::Sapling,
+            OutputPool::Orchard,
         };
         opportunisticShielding = true;
     }
 
     // Ensure we provided a total selection order (so that all unselected notes
     // and coins are erased).
-    assert(selectionOrder.size() == available.size());
+    for (auto pool : available) {
+        bool poolIsPresent = false;
+        for (auto entry : selectionOrder) {
+            poolIsPresent |= entry == pool;
+        }
+        assert(poolIsPresent);
+    }
 
     // Finally, select the remaining notes and coins based on this order.
     for (auto pool : selectionOrder) {
@@ -7219,6 +7297,21 @@ bool SpendableInputs::LimitToAmount(
                     ++saplingIt;
                 }
                 saplingNoteEntries.erase(saplingIt, saplingNoteEntries.end());
+                break;
+            }
+
+            case OutputPool::Orchard:
+            {
+                std::sort(orchardNoteMetadata.begin(), orchardNoteMetadata.end(),
+                    [](OrchardNoteMetadata i, OrchardNoteMetadata j) -> bool {
+                        return i.GetNoteValue() > j.GetNoteValue();
+                    });
+                auto orchardIt = orchardNoteMetadata.begin();
+                while (orchardIt != orchardNoteMetadata.end() && !haveSufficientFunds()) {
+                    totalSelected += orchardIt->GetNoteValue();
+                    ++orchardIt;
+                }
+                orchardNoteMetadata.erase(orchardIt, orchardNoteMetadata.end());
                 break;
             }
         }
@@ -7267,6 +7360,16 @@ void SpendableInputs::LogInputs(const AsyncRPCOperationId& id) const {
             entry.op.hash.ToString().substr(0, 10),
             entry.op.n,
             FormatMoney(entry.note.value()),
+            HexStr(data).substr(0, 10));
+    }
+
+    for (const auto& entry : orchardNoteMetadata) {
+        std::string data(entry.GetMemo().begin(), entry.GetMemo().end());
+        LogPrint("zrpcunsafe", "%s: found unspent Orchard note (txid=%s, vActionsOrchard=%d, amount=%s, memo=%s)\n",
+            id,
+            entry.GetOutPoint().hash.ToString().substr(0, 10),
+            entry.GetOutPoint().n,
+            FormatMoney(entry.GetNoteValue()),
             HexStr(data).substr(0, 10));
     }
 }

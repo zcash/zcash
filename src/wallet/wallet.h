@@ -806,6 +806,7 @@ public:
  * set of output pools the most-preferred pool is selected first.
  */
 enum class OutputPool {
+    Orchard,
     Sapling,
     Transparent,
 };

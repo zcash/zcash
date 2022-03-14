@@ -53,6 +53,10 @@ public:
     CAmount GetNoteValue() const {
         return noteValue;
     }
+
+    const std::array<uint8_t, ZC_MEMO_SIZE>& GetMemo() const {
+        return memo;
+    }
 };
 
 /**
