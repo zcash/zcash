@@ -295,7 +295,7 @@ OrchardSpendInfoPtr* orchard_wallet_get_spend_info(
  * Run the garbage collection operation on the wallet's note commitment
  * tree.
  */
-bool orchard_wallet_gc_note_commitment_tree(OrchardWalletPtr* wallet);
+void orchard_wallet_gc_note_commitment_tree(OrchardWalletPtr* wallet);
 
 /**
  * Write the wallet's note commitment tree to the provided stream.

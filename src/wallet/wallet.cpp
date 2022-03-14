@@ -2433,6 +2433,7 @@ void CWallet::DecrementNoteWitnesses(const Consensus::Params& consensus, const C
         // pindex->nHeight is the height of the block being removed, so we rewind
         // to the previous block height
         uint32_t blocksRewound{0};
+        assert(pindex->nHeight >= 1);
         assert(orchardWallet.Rewind(pindex->nHeight - 1, blocksRewound));
         assert(blocksRewound == 1);
         if (consensus.NetworkUpgradeActive(pindex->nHeight - 1, Consensus::UPGRADE_NU5)) {

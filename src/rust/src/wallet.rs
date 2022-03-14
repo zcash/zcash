@@ -253,8 +253,8 @@ impl Wallet {
         true
     }
 
-    /// Returns whether or not a checkpoint has been created. If no checkpoint exists,
-    /// the wallet has not yet observed any blocks.
+    /// Returns the last checkpoint if any. If no checkpoint exists, the wallet has not
+    /// yet observed any blocks.
     pub fn last_checkpoint(&self) -> Option<BlockHeight> {
         self.last_checkpoint
     }
@@ -339,9 +339,9 @@ impl Wallet {
     }
 
     /// Add note data for those notes that are decryptable with one of this wallet's
-    /// incoming viewing keys to the wallet, and return a map from each decrypted
-    /// action's index to the incoming viewing key that successfully decrypted that
-    /// action.
+    /// incoming viewing keys to the wallet, and return a a data structure that describes
+    /// the actions that are involved with this wallet, either spending notes belonging
+    /// to this wallet or creating new notes owned by this wallet.
     pub fn add_notes_from_bundle(
         &mut self,
         txid: &TxId,
