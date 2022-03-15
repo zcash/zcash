@@ -341,7 +341,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-daemon", _("Run in the background as a daemon and accept commands"));
 #endif
     }
-    strUsage += HelpMessageOpt("-datadir=<dir>", _("Specify data directory"));
+    strUsage += HelpMessageOpt("-datadir=<dir>", _("Specify data directory (this path cannot use '~')"));
     strUsage += HelpMessageOpt("-paramsdir=<dir>", _("Specify Zcash network parameters directory"));
     strUsage += HelpMessageOpt("-dbcache=<n>", strprintf(_("Set database cache size in megabytes (%d to %d, default: %d)"), nMinDbCache, nMaxDbCache, nDefaultDbCache));
     strUsage += HelpMessageOpt("-debuglogfile=<file>", strprintf(_("Specify location of debug log file: this can be an absolute path or a path relative to the data directory (default: %s)"), DEFAULT_DEBUGLOGFILE));
