@@ -33,6 +33,7 @@ public:
     MOCK_METHOD0(TxnAbort, bool());
 
     MOCK_METHOD1(WriteTx, bool(const CWalletTx& wtx));
+    MOCK_METHOD1(WriteOrchardWitnesses, bool(const OrchardWallet& wallet));
     MOCK_METHOD1(WriteWitnessCacheSize, bool(int64_t nWitnessCacheSize));
     MOCK_METHOD1(WriteBestBlock, bool(const CBlockLocator& loc));
 };
@@ -1648,6 +1649,22 @@ TEST(WalletTests, WriteWitnessCache) {
     EXPECT_CALL(walletdb, WriteTx(wtx))
         .WillRepeatedly(Return(true));
 
+    // WriteOrchardWitnesses fails
+    EXPECT_CALL(walletdb, WriteOrchardWitnesses)
+        .WillOnce(Return(false));
+    EXPECT_CALL(walletdb, TxnAbort())
+        .Times(1);
+    wallet.SetBestChain(walletdb, loc);
+
+    // WriteOrchardWitnesses throws
+    EXPECT_CALL(walletdb, WriteOrchardWitnesses)
+        .WillOnce(ThrowLogicError());
+    EXPECT_CALL(walletdb, TxnAbort())
+        .Times(1);
+    wallet.SetBestChain(walletdb, loc);
+    EXPECT_CALL(walletdb, WriteOrchardWitnesses)
+        .WillRepeatedly(Return(true));
+
     // WriteWitnessCacheSize fails
     EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
         .WillOnce(Return(false));
@@ -1765,6 +1782,8 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
         .Times(1).WillOnce(Return(true));
     EXPECT_CALL(walletdb, WriteTx(wtxSaplingTransparent))
         .Times(0);
+    EXPECT_CALL(walletdb, WriteOrchardWitnesses)
+        .WillOnce(Return(true));
     EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
         .WillOnce(Return(true));
     EXPECT_CALL(walletdb, WriteBestBlock(loc))

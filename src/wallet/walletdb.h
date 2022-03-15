@@ -466,6 +466,9 @@ public:
     bool WriteSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
     bool EraseSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
 
+    /// Orchard support.
+    bool WriteOrchardWitnesses(const OrchardWallet& wallet);
+
     /// Unified key support.
 
     bool WriteUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata& keymeta);

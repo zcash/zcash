@@ -1,12 +1,14 @@
-use std::convert::TryInto;
-use std::ptr;
-use std::slice;
-
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use incrementalmerkletree::{bridgetree::BridgeTree, Frontier, Position, Tree};
 use libc::c_uchar;
 use std::collections::{BTreeMap, BTreeSet};
+use std::convert::TryInto;
+use std::io;
+use std::ptr;
+use std::slice;
 use tracing::error;
 
+use zcash_encoding::Optional;
 use zcash_primitives::{
     consensus::BlockHeight,
     transaction::{components::Amount, TxId},
@@ -20,9 +22,13 @@ use orchard::{
     Address, Bundle, Note,
 };
 
-use crate::{builder_ffi::OrchardSpendInfo, zcashd_orchard::OrderedAddress};
-
-use super::incremental_merkle_tree_ffi::MERKLE_DEPTH;
+use crate::{
+    builder_ffi::OrchardSpendInfo,
+    incremental_merkle_tree::{read_tree, write_tree},
+    incremental_merkle_tree_ffi::MERKLE_DEPTH,
+    streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb},
+    zcashd_orchard::OrderedAddress,
+};
 
 pub const MAX_CHECKPOINTS: usize = 100;
 
@@ -247,10 +253,10 @@ impl Wallet {
         true
     }
 
-    /// Returns whether or not a checkpoint has been created. If no checkpoint exists,
-    /// the wallet has not yet observed any blocks.
-    pub fn is_checkpointed(&self) -> bool {
-        self.last_checkpoint.is_some()
+    /// Returns the last checkpoint if any. If no checkpoint exists, the wallet has not
+    /// yet observed any blocks.
+    pub fn last_checkpoint(&self) -> Option<BlockHeight> {
+        self.last_checkpoint
     }
 
     /// Rewinds the note commitment tree to the given height, removes notes and
@@ -333,9 +339,9 @@ impl Wallet {
     }
 
     /// Add note data for those notes that are decryptable with one of this wallet's
-    /// incoming viewing keys to the wallet, and return a map from each decrypted
-    /// action's index to the incoming viewing key that successfully decrypted that
-    /// action.
+    /// incoming viewing keys to the wallet, and return a a data structure that describes
+    /// the actions that are involved with this wallet, either spending notes belonging
+    /// to this wallet or creating new notes owned by this wallet.
     pub fn add_notes_from_bundle(
         &mut self,
         txid: &TxId,
@@ -713,9 +719,19 @@ pub extern "C" fn orchard_wallet_checkpoint(wallet: *mut Wallet, block_height: u
 }
 
 #[no_mangle]
-pub extern "C" fn orchard_wallet_is_checkpointed(wallet: *const Wallet) -> bool {
+pub extern "C" fn orchard_wallet_get_last_checkpoint(
+    wallet: *const Wallet,
+    block_height_ret: *mut u32,
+) -> bool {
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null");
-    wallet.is_checkpointed()
+    let block_height_ret =
+        unsafe { block_height_ret.as_mut() }.expect("Block height return pointer may not be null");
+    if let Some(height) = wallet.last_checkpoint() {
+        *block_height_ret = height.into();
+        true
+    } else {
+        false
+    }
 }
 
 #[no_mangle]
@@ -1021,5 +1037,68 @@ pub extern "C" fn orchard_wallet_get_spend_info(
             outpoint.txid
         );
         ptr::null_mut()
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_gc_note_commitment_tree(wallet: *mut Wallet) {
+    let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null.");
+    wallet.witness_tree.garbage_collect();
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_write_note_commitment_tree(
+    wallet: *const Wallet,
+    stream: Option<StreamObj>,
+    write_cb: Option<WriteCb>,
+) -> bool {
+    let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
+    let mut writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
+
+    let mut write_all = move || -> io::Result<()> {
+        Optional::write(&mut writer, wallet.last_checkpoint, |w, h| {
+            w.write_u32::<LittleEndian>(h.into())
+        })?;
+        write_tree(&mut writer, &wallet.witness_tree)
+    };
+
+    match write_all() {
+        Ok(()) => true,
+        Err(e) => {
+            error!("Failure in writing Orchard note commitment tree: {}", e);
+            false
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_load_note_commitment_tree(
+    wallet: *mut Wallet,
+    stream: Option<StreamObj>,
+    read_cb: Option<ReadCb>,
+) -> bool {
+    let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null.");
+    let mut reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
+
+    let mut read_all = move || -> io::Result<()> {
+        let last_checkpoint = Optional::read(&mut reader, |r| {
+            r.read_u32::<LittleEndian>().map(BlockHeight::from)
+        })?;
+        let witness_tree = read_tree(&mut reader)?;
+
+        wallet.last_checkpoint = last_checkpoint;
+        wallet.witness_tree = witness_tree;
+        Ok(())
+    };
+
+    match read_all() {
+        Ok(_) => true,
+        Err(e) => {
+            error!(
+                "Failed to read Orchard note commitment or last checkpoint height: {}",
+                e
+            );
+            false
+        }
     }
 }

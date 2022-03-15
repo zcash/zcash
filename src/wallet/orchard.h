@@ -15,6 +15,8 @@
 #include "zcash/address/orchard.hpp"
 
 class OrchardWallet;
+class OrchardWalletNoteCommitmentTreeWriter;
+class OrchardWalletNoteCommitmentTreeLoader;
 
 class OrchardNoteMetadata
 {
@@ -111,7 +113,8 @@ private:
     std::unique_ptr<OrchardWalletPtr, decltype(&orchard_wallet_free)> inner;
 
     friend class ::orchard::UnauthorizedBundle;
-
+    friend class OrchardWalletNoteCommitmentTreeWriter;
+    friend class OrchardWalletNoteCommitmentTreeLoader;
 public:
     OrchardWallet() : inner(orchard_wallet_new(), orchard_wallet_free) {}
     OrchardWallet(OrchardWallet&& wallet_data) : inner(std::move(wallet_data.inner)) {}
@@ -151,8 +154,13 @@ public:
     /**
      * Return whether the orchard note commitment tree contains any checkpoints.
      */
-    bool IsCheckpointed() const {
-        return orchard_wallet_is_checkpointed(inner.get());
+    std::optional<int> GetLastCheckpointHeight() const {
+        uint32_t lastHeight{0};
+        if (orchard_wallet_get_last_checkpoint(inner.get(), &lastHeight)) {
+            return (int) lastHeight;
+        } else {
+            return std::nullopt;
+        }
     }
 
     /**
@@ -339,6 +347,46 @@ public:
 
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> GetSpendInfo(
         const std::vector<OrchardNoteMetadata>& noteMetadata) const;
+
+    void GarbageCollect() {
+        orchard_wallet_gc_note_commitment_tree(inner.get());
+    }
+};
+
+class OrchardWalletNoteCommitmentTreeWriter
+{
+private:
+    const OrchardWallet& wallet;
+public:
+    OrchardWalletNoteCommitmentTreeWriter(const OrchardWallet& wallet): wallet(wallet) {}
+
+    template<typename Stream>
+    void Serialize(Stream& s) const {
+        RustStream rs(s);
+        if (!orchard_wallet_write_note_commitment_tree(
+                    wallet.inner.get(),
+                    &rs, RustStream<Stream>::write_callback)) {
+            throw std::ios_base::failure("Failed to serialize Orchard note commitment tree.");
+        }
+    }
+};
+
+class OrchardWalletNoteCommitmentTreeLoader
+{
+private:
+    OrchardWallet& wallet;
+public:
+    OrchardWalletNoteCommitmentTreeLoader(OrchardWallet& wallet): wallet(wallet) {}
+
+    template<typename Stream>
+    void Unserialize(Stream& s) {
+        RustStream rs(s);
+        if (!orchard_wallet_load_note_commitment_tree(
+                    wallet.inner.get(),
+                    &rs, RustStream<Stream>::read_callback)) {
+            throw std::ios_base::failure("Failed to load Orchard note commitment tree.");
+        }
+    }
 };
 
 #endif // ZCASH_ORCHARD_WALLET_H

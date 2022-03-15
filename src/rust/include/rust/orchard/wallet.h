@@ -52,8 +52,12 @@ bool orchard_wallet_checkpoint(
 
 /**
  * Returns whether or not the wallet has any checkpointed state to which it can rewind.
+ * If so, `blockHeightRet` will be modified to contain the last block height at which a
+ * checkpoint was created.
  */
-bool orchard_wallet_is_checkpointed(const OrchardWalletPtr* wallet);
+bool orchard_wallet_get_last_checkpoint(
+        const OrchardWalletPtr* wallet,
+        uint32_t* blockHeightRet);
 
 /**
  * Rewinds to the most recent checkpoint, and marks as unspent any notes previously
@@ -288,6 +292,29 @@ OrchardSpendInfoPtr* orchard_wallet_get_spend_info(
         const OrchardWalletPtr* wallet,
         const unsigned char txid[32],
         uint32_t action_idx);
+
+/**
+ * Run the garbage collection operation on the wallet's note commitment
+ * tree.
+ */
+void orchard_wallet_gc_note_commitment_tree(OrchardWalletPtr* wallet);
+
+/**
+ * Write the wallet's note commitment tree to the provided stream.
+ */
+bool orchard_wallet_write_note_commitment_tree(
+        const OrchardWalletPtr* wallet,
+        void* stream,
+        write_callback_t write_cb);
+
+/**
+ * Read a note commitment tree from the provided stream, and update the wallet's internal
+ * note commitment tree state to equal the value that was read.
+ */
+bool orchard_wallet_load_note_commitment_tree(
+        OrchardWalletPtr* wallet,
+        void* stream,
+        read_callback_t read_cb);
 
 #ifdef __cplusplus
 }
