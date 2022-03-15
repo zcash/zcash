@@ -2984,7 +2984,7 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "z_getnewaddress ( type )\n"
-            "\nDEPRECATED\n"
+            "\nDEPRECATED. Use z_getnewaccount and z_getaddressforaccount instead.\n"
             "\nReturns a new shielded address for receiving payments.\n"
             "\nWith no arguments, returns a Sapling address.\n"
             "Generating a Sprout address is not allowed after Canopy has activated.\n"
