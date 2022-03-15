@@ -21,7 +21,8 @@ class WalletShieldCoinbaseUASapling(WalletShieldCoinbaseTest):
         balances = node.z_getbalanceforaccount(self.account)
         assert('transparent' not in balances['pools'])
         assert('sprout' not in balances['pools'])
-        assert_equal(balances['pools']['sapling']['valueZat'], expected * COIN)
+        sapling_balance = balances['pools']['sapling']['valueZat']
+        assert_equal(sapling_balance, expected * COIN)
         assert('orchard' not in balances['pools'])
 
         # While we're at it, check that z_listunspent only shows outputs with
@@ -33,6 +34,8 @@ class WalletShieldCoinbaseUASapling(WalletShieldCoinbaseTest):
             [{'type': x['type'], 'address': x['address']} for x in unspent],
         )
 
+        total_balance = node.z_getbalance(self.addr) * COIN
+        assert(total_balance == sapling_balance)
 
 if __name__ == '__main__':
     print("Test shielding to a unified address with sapling activated (but not NU5)")
