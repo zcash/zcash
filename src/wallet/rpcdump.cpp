@@ -710,7 +710,8 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
             "z_importkey \"zkey\" ( rescan startHeight )\n"
-            "\nAdds a zkey (as returned by z_exportkey) to your wallet.\n"
+            "\nAdds a zkey (as returned by z_exportkey) to your wallet."
+            "\nImport of Orchard keys is not supported.\n"
             "\nArguments:\n"
             "1. \"zkey\"             (string, required) The zkey (see z_exportkey)\n"
             "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
