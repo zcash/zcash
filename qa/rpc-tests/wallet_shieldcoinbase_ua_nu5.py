@@ -37,7 +37,7 @@ class WalletShieldCoinbaseUANU5(WalletShieldCoinbaseTest):
         )
 
         total_balance = node.z_getbalance(self.addr) * COIN
-        assert(total_balance == sapling_balance)
+        assert_equal(total_balance, sapling_balance)
 
 if __name__ == '__main__':
     print("Test shielding to a unified address with NU5 activated")

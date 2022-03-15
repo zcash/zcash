@@ -44,8 +44,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         assert_equal(actual['minimum_confirmations'], minconf)
         return total_balance
 
-    def check_balance(self, node, account, address, expected, minconf=None):
-        minconf = 1 if minconf is None else minconf
+    def check_balance(self, node, account, address, expected, minconf=1):
         acct_balance = self._check_balance_for_rpc('z_getbalanceforaccount', node, account, expected, minconf)
         z_getbalance = self.nodes[node].z_getbalance(address, minconf)
         assert_equal(acct_balance, z_getbalance)
