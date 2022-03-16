@@ -239,7 +239,7 @@ struct GenerateAlertTestsFixture : public TestingSetup {
   ~GenerateAlertTestsFixture() {}
 };
 
-BOOST_FIXTURE_TEST_SUITE(Generate_Alert_Test_Data, GenerateAlertTestsFixture);
+BOOST_FIXTURE_TEST_SUITE(Generate_Alert_Test_Data, GenerateAlertTestsFixture); // DISABLED_TEST_SUITE
 BOOST_AUTO_TEST_CASE(GenerateTheAlertTests)
 {
     GenerateAlertTests();
