@@ -7089,6 +7089,33 @@ std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(co
     return std::nullopt;
 }
 
+std::optional<TransactionStrategy> TransactionStrategy::FromString(std::string privacyPolicy) {
+    TransactionStrategy strategy;
+
+    if (privacyPolicy == "FullPrivacy") {
+        strategy.privacy = PrivacyPolicy::FullPrivacy;
+    } else if (privacyPolicy == "AllowRevealedAmounts") {
+        strategy.privacy = PrivacyPolicy::AllowRevealedAmounts;
+    } else {
+        // Unknown privacy policy.
+        return std::nullopt;
+    }
+
+    return strategy;
+}
+
+bool TransactionStrategy::AllowRevealedAmounts() {
+    switch (privacy) {
+        case PrivacyPolicy::FullPrivacy:
+            return false;
+        case PrivacyPolicy::AllowRevealedAmounts:
+            return true;
+        default:
+            // Fail closed.
+            return false;
+    }
+}
+
 bool ZTXOSelector::SelectsTransparent() const {
     return std::visit(match {
         [](const CKeyID& keyId) { return true; },

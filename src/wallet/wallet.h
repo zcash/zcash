@@ -716,6 +716,27 @@ public:
 };
 
 /**
+ * A strategy to use for managing privacy when constructing a transaction.
+ */
+enum class PrivacyPolicy {
+    FullPrivacy,
+    AllowRevealedAmounts,
+};
+
+class TransactionStrategy {
+    PrivacyPolicy privacy;
+
+public:
+    TransactionStrategy() : privacy(PrivacyPolicy::FullPrivacy) {}
+    TransactionStrategy(const TransactionStrategy& strategy) : privacy(strategy.privacy) {}
+    TransactionStrategy(PrivacyPolicy privacyPolicy) : privacy(privacyPolicy) {}
+
+    static std::optional<TransactionStrategy> FromString(std::string privacyPolicy);
+
+    bool AllowRevealedAmounts();
+};
+
+/**
  * A class representing the ZIP 316 unified spending authority associated with
  * a ZIP 32 account and this wallet's mnemonic seed. This is intended to be
  * used as a ZTXOPattern value to choose prior Zcash transaction outputs,

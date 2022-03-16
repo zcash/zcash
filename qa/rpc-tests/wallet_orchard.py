@@ -105,7 +105,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         ua3 = addrRes3['unifiedaddress']
 
         recipients = [{"address": ua3, "amount": Decimal('1')}]
-        myopid = self.nodes[2].z_sendmany(ua2, recipients, 1, 0, True)
+        myopid = self.nodes[2].z_sendmany(ua2, recipients, 1, 0)
         rollback_tx = wait_and_assert_operationid_status(self.nodes[2], myopid)
 
         self.sync_all()

@@ -4467,7 +4467,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
-            "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf ) ( fee ) ( allowRevealedAmounts )\n"
+            "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf ) ( fee ) ( privacyPolicy )\n"
             "\nSend multiple times. Amounts are decimal numbers with at most 8 digits of precision."
             "\nChange generated from one or more transparent addresses flows to a new transparent"
             "\naddress, while change generated from a shielded address returns to itself."
@@ -4489,7 +4489,13 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "    }, ... ]\n"
             "3. minconf               (numeric, optional, default=1) Only use funds confirmed at least this many times.\n"
             "4. fee                   (numeric, optional, default=" + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
-            "5. allowRevealedAmounts  (bool, optional, default=false) Permit cross-shielded-pool transfers, which will publicly reveal the amount(s) crossing pool boundaries.\n"
+            "5. privacyPolicy         (string, optional, default=\"LegacyCompat\") Policy for what information leakage is acceptable.\n"
+            "                         One of the following strings:\n"
+            "                               - \"FullPrivacy\": Only allow fully-shielded transactions (involving a single shielded pool).\n"
+            "                               - \"LegacyCompat\": If the transaction involves any Unified Addressess, this is equivalent to\n"
+            "                                 \"FullPrivacy\". Otherwise, this is equivalent to \"AllowRevealedAmounts\".\n"
+            "                               - \"AllowRevealedAmounts\": Allow funds to cross between shielded pools, revealing the amount\n"
+            "                                 that crosses pools.\n"
             "\nResult:\n"
             "\"operationid\"          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
             "\nExamples:\n"
@@ -4510,6 +4516,28 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     }
 
     KeyIO keyIO(chainparams);
+
+    // We need to know the privacy policy before we construct the ZTXOSelector,
+    // but we can't determine the default privacy policy without knowing whether
+    // any UAs are involved. We break this cycle by parsing the privacy policy
+    // argument first, and then resolving it to the default after parsing the
+    // rest of the arguments. This works because all possible defaults for the
+    // privacy policy have the same effect on ZTXOSelector construction (in that
+    // they don't include AllowLinkingAccountAddresses).
+    std::optional<TransactionStrategy> maybeStrategy;
+    if (params.size() > 4) {
+        auto strategyName = params[4].get_str();
+        if (strategyName != "LegacyCompat") {
+            maybeStrategy = TransactionStrategy::FromString(strategyName);
+            if (!maybeStrategy.has_value()) {
+                throw JSONRPCError(
+                    RPC_INVALID_PARAMETER,
+                    strprintf("Unknown privacy policy name '%s'", strategyName));
+            }
+        }
+    }
+
+    bool involvesUnifiedAddress = false;
 
     // Check that the from address is valid.
     // Unified address (UA) allowed here (#5185)
@@ -4540,6 +4568,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                                 RPC_INVALID_ADDRESS_OR_KEY,
                                 "Invalid from address, UA does not correspond to a known account.");
                     }
+                    involvesUnifiedAddress = true;
                 },
                 [&](const auto& other) {
                     if (selectorAccount.has_value() && selectorAccount.value() != ZCASH_LEGACY_ACCOUNT) {
@@ -4624,6 +4653,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         std::optional<libzcash::UnifiedAddress> ua = std::nullopt;
         if (std::holds_alternative<libzcash::UnifiedAddress>(decoded.value())) {
             ua = std::get<libzcash::UnifiedAddress>(decoded.value());
+            involvesUnifiedAddress = true;
         }
 
         recipients.push_back(SendManyRecipient(ua, addr.value(), nAmount, memo));
@@ -4632,6 +4662,15 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     if (recipients.empty()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "No recipients");
     }
+
+    // Now that we've set involvesUnifiedAddress correctly, we can finish
+    // evaluating the strategy.
+    TransactionStrategy strategy = maybeStrategy.value_or(
+        // Default privacy policy is "LegacyCompat".
+        involvesUnifiedAddress ?
+            TransactionStrategy(PrivacyPolicy::FullPrivacy) :
+            TransactionStrategy(PrivacyPolicy::AllowRevealedAmounts)
+    );
 
     // Sanity check for transaction size
     // TODO: move this to the builder?
@@ -4679,11 +4718,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         }
     }
 
-    bool allowRevealedAmounts{false};
-    if (params.size() > 4) {
-        allowRevealedAmounts = params[4].get_bool();
-    }
-
     // Use input parameters as the optional context info to be returned by z_getoperationstatus and z_getoperationresult.
     UniValue o(UniValue::VOBJ);
     o.pushKV("fromaddress", params[0]);
@@ -4706,7 +4740,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation(
             new AsyncRPCOperation_sendmany(
-                std::move(builder), ztxoSelector, recipients, nMinDepth, nFee, allowRevealedAmounts, contextInfo)
+                std::move(builder), ztxoSelector, recipients, nMinDepth, strategy, nFee, contextInfo)
             );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();

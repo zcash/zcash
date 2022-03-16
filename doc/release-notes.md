@@ -81,11 +81,14 @@ Wallet
   pool boundaries, they must be explicitly enabled via a parameter to
   the 'z_sendmany' call.
 
-- A new boolean parameter, `allowRevealedAmounts`, has been added to the
-  list of arguments accepted by 'z_sendmany'. This parameter defaults to
-  `false` and is only required when the transaction being constructed 
-  would reveal transaction amounts as a consequence of ZEC value crossing
-  shielded pool boundaries via the turnstile.
+- A new string parameter, `privacyPolicy`, has been added to the list of
+  arguments accepted by `z_sendmany`. This parameter enables the caller to
+  control what kind of information they permit `zcashd` to reveal when creating
+  the transaction. If the transaction can only be created by revealing more
+  information than the given strategy permits, `z_sendmany` will return an
+  error. The parameter defaults to `LegacyCompat`, which applies the most
+  restrictive strategy `FullPrivacy` when a Unified Address is present as the
+  sender or a recipient, and otherwise preserves existing behaviour.
 
 - Since Sprout outputs are no longer created (with the exception of change)
   'z_sendmany' no longer generates payment disclosures (which were only 

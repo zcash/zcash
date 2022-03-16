@@ -48,8 +48,8 @@ public:
         ZTXOSelector ztxoSelector,
         std::vector<SendManyRecipient> recipients,
         int minDepth,
+        TransactionStrategy strategy,
         CAmount fee = DEFAULT_FEE,
-        bool allowRevealedAmounts = false,
         UniValue contextInfo = NullUniValue);
     virtual ~AsyncRPCOperation_sendmany();
 
@@ -77,7 +77,7 @@ private:
 
     bool isfromsprout_{false};
     bool isfromsapling_{false};
-    bool allowRevealedAmounts_{false};
+    TransactionStrategy strategy_;
     uint32_t transparentRecipients_{0};
     AccountId sendFromAccount_;
     std::set<OutputPool> recipientPools_;

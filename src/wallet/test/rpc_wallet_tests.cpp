@@ -1236,7 +1236,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         auto selector = pwalletMain->ZTXOSelectorForAddress(taddr1, true, false).value();
         TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, zaddr1, 100*COIN, "DEADBEEF") };
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1));
+        TransactionStrategy strategy;
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, strategy));
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
@@ -1248,7 +1249,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true, false).value();
         TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, taddr1, 100*COIN, "DEADBEEF") };
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1));
+        TransactionStrategy strategy;
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, strategy));
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
@@ -1260,7 +1262,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true, false).value();
         TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, zaddr1, 100*COIN, "DEADBEEF") };
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1));
+        TransactionStrategy strategy;
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, strategy));
         std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
         TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
 
@@ -1360,7 +1363,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 
     auto selector = pwalletMain->ZTXOSelectorForAddress(taddr, true, false).value();
     std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, pa, 1*COIN, "ABCD") };
-    std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 0));
+    TransactionStrategy strategy;
+    std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 0, strategy));
     std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
 
     // Enable test mode so tx is not sent
