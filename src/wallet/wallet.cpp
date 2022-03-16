@@ -1644,7 +1644,11 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAccount(
     }
 }
 
-std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(const libzcash::PaymentAddress& addr, bool requireSpendingKey) const {
+std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
+        const libzcash::PaymentAddress& addr,
+        bool requireSpendingKey,
+        bool allowAddressLinkability) const
+{
     auto self = this;
     std::optional<ZTXOPattern> pattern = std::nullopt;
     std::visit(match {
@@ -1678,8 +1682,14 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(const libzcash::Paym
                 // determine a local account.
                 auto accountId = this->GetUnifiedAccountId(ufvkId.value());
                 if (accountId.has_value()) {
-                    pattern = AccountZTXOPattern(accountId.value(), ua.GetKnownReceiverTypes());
+                    if (allowAddressLinkability) {
+                        pattern = AccountZTXOPattern(accountId.value(), ua.GetKnownReceiverTypes());
+                    } else {
+                        pattern = ua;
+                    }
                 }
+            } else {
+                pattern = ua;
             }
         }
     }, addr);
@@ -1762,6 +1772,27 @@ std::optional<libzcash::AccountId> CWallet::FindAccountForSelector(const ZTXOSel
                 result = self->GetUnifiedAccountId(ufvkid.value());
             }
         },
+        [&](const libzcash::UnifiedAddress& addr) {
+            std::optional<libzcash::AccountId> singleAccount;
+            for (const auto& receiver : addr) {
+                auto meta = GetUFVKMetadataForReceiver(receiver);
+                if (meta.has_value()) {
+                    auto tmp = self->GetUnifiedAccountId(meta.value().first);
+                    if (singleAccount.has_value()) {
+                        // If a UA corresponds to more than one account, we cannot return
+                        // a sensible result, so we report it as corresponding to no
+                        // account.
+                        if (tmp.has_value() && singleAccount.value() != tmp.value()) {
+                            singleAccount = std::nullopt;
+                            break;
+                        }
+                    } else {
+                        singleAccount = tmp;
+                    }
+                }
+            }
+            result = singleAccount;
+        },
         [&](const libzcash::UnifiedFullViewingKey& vk) {
             result = self->GetUnifiedAccountId(vk.GetKeyID(Params()));
         },
@@ -1796,6 +1827,27 @@ bool CWallet::SelectorMatchesAddress(
         [&](const libzcash::SproutViewingKey& vk) { return false; },
         [&](const libzcash::SaplingPaymentAddress& addr) { return false; },
         [&](const libzcash::SaplingExtendedFullViewingKey& extfvk) { return false; },
+        [&](const libzcash::UnifiedAddress& uaSelector) {
+            // for a UA selector when matching transparent addresses, we only match addresses
+            // that explicitly appear as receivers in the UA.
+            for (const auto& receiver : uaSelector) {
+                bool matches = std::visit(match {
+                    [&](const libzcash::OrchardRawAddress& orchardAddr) { return false; },
+                    [&](const libzcash::SaplingPaymentAddress& saplingAddr) { return false; },
+                    [&](const libzcash::UnknownReceiver& receiver) { return false; },
+                    [&](const CScriptID& scriptId) {
+                        CTxDestination scriptIdDest = scriptId;
+                        return address == scriptIdDest;
+                    },
+                    [&](const CKeyID& keyId) {
+                        CTxDestination keyIdDest = keyId;
+                        return address == keyIdDest;
+                    }
+                }, receiver);
+                if (matches) return true;
+            }
+            return false;
+        },
         [&](const libzcash::UnifiedFullViewingKey& ufvk) {
             std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>> meta;
             std::visit(match {
@@ -1853,6 +1905,19 @@ bool CWallet::SelectorMatchesAddress(
             auto j = extfvk.DecryptDiversifier(a0.d);
             auto addr = extfvk.Address(j);
             return addr.has_value() && addr.value() == a0;
+        },
+        [&](const libzcash::UnifiedAddress& ua) {
+            const auto a0Meta = self->GetUFVKMetadataForReceiver(a0);
+            auto saplingReceiver = ua.GetSaplingReceiver();
+            if (saplingReceiver.has_value()) {
+                const auto uaMeta = self->GetUFVKMetadataForReceiver(saplingReceiver.value());
+                // if the Sapling address is derived from any UFVK corresponding to
+                // the Sapling component of the unified address, we consider that a
+                // match
+                return  a0Meta.has_value() && uaMeta.has_value() &&
+                        a0Meta.value().first == uaMeta.value().first;
+            }
+            return false;
         },
         [&](const libzcash::UnifiedFullViewingKey& ufvk) {
             auto saplingKey = ufvk.GetSaplingKey();
@@ -2067,6 +2132,22 @@ SpendableInputs CWallet::FindSpendableInputs(
     if (selectOrchard) {
         // for Orchard, we select both the internal and external IVKs.
         auto orchardIvks = std::visit(match {
+            [&](const libzcash::UnifiedAddress& selectorUA) -> std::vector<OrchardIncomingViewingKey> {
+                auto orchardReceiver = selectorUA.GetOrchardReceiver();
+                if (orchardReceiver.has_value()) {
+                    auto meta = GetUFVKMetadataForReceiver(orchardReceiver.value());
+                    if (meta.has_value()) {
+                        auto ufvk = GetUnifiedFullViewingKey(meta.value().first);
+                        if (ufvk.has_value()) {
+                            auto fvk = ufvk->GetOrchardKey();
+                            if (fvk.has_value()) {
+                                return {fvk->ToIncomingViewingKey(), fvk->ToInternalIncomingViewingKey()};
+                            }
+                        }
+                    }
+                }
+                return {};
+            },
             [&](const libzcash::UnifiedFullViewingKey& ufvk) -> std::vector<OrchardIncomingViewingKey> {
                 auto fvk = ufvk.GetOrchardKey();
                 if (fvk.has_value()) {
@@ -7061,6 +7142,9 @@ bool ZTXOSelector::SelectsTransparent() const {
         [](const libzcash::SproutViewingKey& vk) { return false; },
         [](const libzcash::SaplingPaymentAddress& addr) { return false; },
         [](const libzcash::SaplingExtendedFullViewingKey& vk) { return false; },
+        [](const libzcash::UnifiedAddress& ua) {
+            return ua.GetP2PKHReceiver().has_value() || ua.GetP2SHReceiver().has_value();
+        },
         [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetTransparentKey().has_value(); },
         [](const AccountZTXOPattern& acct) { return acct.IncludesP2PKH() || acct.IncludesP2SH(); }
     }, this->pattern);
@@ -7076,6 +7160,7 @@ bool ZTXOSelector::SelectsSapling() const {
     return std::visit(match {
         [](const libzcash::SaplingPaymentAddress& addr) { return true; },
         [](const libzcash::SaplingExtendedSpendingKey& extfvk) { return true; },
+        [](const libzcash::UnifiedAddress& ua) { return ua.GetSaplingReceiver().has_value(); },
         [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetSaplingKey().has_value(); },
         [](const AccountZTXOPattern& acct) { return acct.IncludesSapling(); },
         [](const auto& addr) { return false; }
@@ -7083,6 +7168,7 @@ bool ZTXOSelector::SelectsSapling() const {
 }
 bool ZTXOSelector::SelectsOrchard() const {
     return std::visit(match {
+        [](const libzcash::UnifiedAddress& ua) { return ua.GetOrchardReceiver().has_value(); },
         [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetOrchardKey().has_value(); },
         [](const AccountZTXOPattern& acct) { return acct.IncludesOrchard(); },
         [](const auto& addr) { return false; }

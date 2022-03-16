@@ -27,6 +27,17 @@ enum class ReceiverType: uint32_t {
     Orchard = 0x03
 };
 
+/**
+ * An enumeration of the fund pools for which a transaction may produce outputs.
+ * It is sorted in descending preference order, so that when iterating over a
+ * set of output pools the most-preferred pool is selected first.
+ */
+enum class OutputPool {
+    Orchard,
+    Sapling,
+    Transparent,
+};
+
 enum class UnifiedAddressGenerationError {
     ShieldedReceiverNotFound,
     ReceiverTypeNotAvailable,
@@ -226,7 +237,7 @@ public:
      * *any* shielded pool) in which case the change address returned will be
      * associated with diversifier index 0.
      */
-    std::optional<RecipientAddress> GetChangeAddress() const;
+    std::optional<RecipientAddress> GetChangeAddress(const std::set<OutputPool>& allowedPools) const;
 
     UnifiedFullViewingKey ToFullViewingKey() const;
 

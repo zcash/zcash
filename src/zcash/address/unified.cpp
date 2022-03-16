@@ -188,14 +188,15 @@ std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(co
     return addr;
 }
 
-std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress() const {
-    if (orchardKey.has_value()) {
+std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(
+        const std::set<OutputPool>& allowedPools) const {
+    if (orchardKey.has_value() && allowedPools.count(OutputPool::Orchard) > 0) {
         return orchardKey.value().GetChangeAddress();
     }
-    if (saplingKey.has_value()) {
+    if (saplingKey.has_value() && allowedPools.count(OutputPool::Sapling) > 0) {
         return saplingKey.value().GetChangeAddress();
     }
-    if (transparentKey.has_value()) {
+    if (transparentKey.has_value() && allowedPools.count(OutputPool::Transparent) > 0) {
         auto changeAddr = transparentKey.value().GetChangeAddress(diversifier_index_t(0));
         if (changeAddr.has_value()) {
             return changeAddr.value();

@@ -3707,7 +3707,7 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
             nBalance = getBalanceZaddr(addr, nMinDepth, INT_MAX, false);
         },
         [&](const libzcash::UnifiedAddress& addr) {
-            auto selector = pwalletMain->ZTXOSelectorForAddress(addr, true);
+            auto selector = pwalletMain->ZTXOSelectorForAddress(addr, true, false);
             if (!selector.has_value()) {
                 throw JSONRPCError(
                     RPC_INVALID_ADDRESS_OR_KEY,
@@ -4525,7 +4525,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                         "Invalid from address: should be a taddr, zaddr, UA, or the string 'ANY_TADDR'.");
             }
 
-            auto ztxoSelectorOpt = pwalletMain->ZTXOSelectorForAddress(decoded.value(), true);
+            auto ztxoSelectorOpt = pwalletMain->ZTXOSelectorForAddress(decoded.value(), true, false);
             if (!ztxoSelectorOpt.has_value()) {
                 throw JSONRPCError(
                         RPC_INVALID_ADDRESS_OR_KEY,

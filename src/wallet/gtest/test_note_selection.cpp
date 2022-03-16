@@ -6,6 +6,8 @@
 #include "zcash/address/sapling.hpp"
 #include "zcash/address/sprout.hpp"
 
+using namespace libzcash;
+
 void PrintTo(const OutputPool& pool, std::ostream* os) {
     switch (pool) {
         case OutputPool::Orchard: *os << "Orchard"; break;

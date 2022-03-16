@@ -778,6 +778,7 @@ typedef std::variant<
     libzcash::SproutViewingKey,
     libzcash::SaplingPaymentAddress,
     libzcash::SaplingExtendedFullViewingKey,
+    libzcash::UnifiedAddress,
     libzcash::UnifiedFullViewingKey,
     AccountZTXOPattern> ZTXOPattern;
 
@@ -805,17 +806,6 @@ public:
     bool SelectsOrchard() const;
 };
 
-/**
- * An enumeration of the fund pools for which a transaction may produce outputs.
- * It is sorted in descending preference order, so that when iterating over a
- * set of output pools the most-preferred pool is selected first.
- */
-enum class OutputPool {
-    Orchard,
-    Sapling,
-    Transparent,
-};
-
 class SpendableInputs {
 private:
     bool limited = false;
@@ -840,7 +830,7 @@ public:
     bool LimitToAmount(
         CAmount amount,
         CAmount dustThreshold,
-        std::set<OutputPool> recipientPools);
+        std::set<libzcash::OutputPool> recipientPools);
 
     /**
      * Compute the total ZEC amount of spendable inputs.
@@ -1335,7 +1325,8 @@ public:
      */
     std::optional<ZTXOSelector> ZTXOSelectorForAddress(
             const libzcash::PaymentAddress& addr,
-            bool requireSpendingKey) const;
+            bool requireSpendingKey,
+            bool allowAddressLinkability) const;
 
     /**
      * Returns the ZTXO selector for the specified viewing key, if that key
@@ -1377,7 +1368,7 @@ public:
      */
     std::optional<libzcash::RecipientAddress> GenerateChangeAddressForAccount(
             libzcash::AccountId accountId,
-            std::set<OutputPool> changeOptions);
+            std::set<libzcash::OutputPool> changeOptions);
 
     SpendableInputs FindSpendableInputs(
             ZTXOSelector paymentSource,
