@@ -168,6 +168,15 @@ check-local:
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C secp256k1 check
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C univalue check
 
+
+SUITES = $(shell cat $(BITCOIN_TESTS) | grep "BOOST_FIXTURE_TEST_SUITE\|BOOST_AUTO_TEST_SUITE" | grep -v "DISABLED_TEST_SUITE" | cut -d '(' -f 2 | cut -d ',' -f 1 | cut -d ')' -f 1 | grep . | sed -e 's/^/testsuite./')
+
+testsuite.%: test/test_bitcoin
+	@echo $(SUITES)
+	$(TEST_BINARY) -t $* > $*.log 2>&1 || (cat $*.log && false)
+
+parallel_btests: $(SUITES)
+
 %.json.h: %.json
 	@$(MKDIR_P) $(@D)
 	@echo "namespace json_tests{" > $@
