@@ -287,6 +287,10 @@ void TransactionBuilder::SetExpiryHeight(uint32_t nExpiryHeight)
     mtx.nExpiryHeight = nExpiryHeight;
 }
 
+bool TransactionBuilder::SupportsOrchard() const {
+    return orchardBuilder.has_value();
+}
+
 bool TransactionBuilder::AddOrchardSpend(
     libzcash::OrchardSpendingKey sk,
     orchard::SpendInfo spendInfo)

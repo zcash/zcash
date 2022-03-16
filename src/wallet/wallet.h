@@ -79,7 +79,7 @@ static const unsigned int WITNESS_CACHE_SIZE = MAX_REORG_LENGTH + 1;
 //! Amount of entropy used in generation of the mnemonic seed, in bytes.
 static const size_t WALLET_MNEMONIC_ENTROPY_LENGTH = 32;
 //! -orchardanchorconfirmations default
-static const unsigned int DEFAULT_ORCHARD_ANCHOR_CONFIRMATIONS = 10;
+static const unsigned int DEFAULT_ORCHARD_ANCHOR_CONFIRMATIONS = 1;
 
 extern const char * DEFAULT_WALLET_DAT;
 
@@ -758,6 +758,10 @@ public:
         return receiverTypes.empty() || receiverTypes.count(libzcash::ReceiverType::Sapling) > 0;
     }
 
+    bool IncludesOrchard() const {
+        return receiverTypes.empty() || receiverTypes.count(libzcash::ReceiverType::Orchard) > 0;
+    }
+
     friend bool operator==(const AccountZTXOPattern &a, const AccountZTXOPattern &b) {
         return a.accountId == b.accountId && a.receiverTypes == b.receiverTypes;
     }
@@ -798,9 +802,24 @@ public:
     bool SelectsTransparent() const;
     bool SelectsSprout() const;
     bool SelectsSapling() const;
+    bool SelectsOrchard() const;
+};
+
+/**
+ * An enumeration of the fund pools for which a transaction may produce outputs.
+ * It is sorted in descending preference order, so that when iterating over a
+ * set of output pools the most-preferred pool is selected first.
+ */
+enum class OutputPool {
+    Orchard,
+    Sapling,
+    Transparent,
 };
 
 class SpendableInputs {
+private:
+    bool limited = false;
+
 public:
     std::vector<COutput> utxos;
     std::vector<SproutNoteEntry> sproutNoteEntries;
@@ -811,8 +830,17 @@ public:
      * Selectively discard notes that are not required to obtain the desired
      * amount. Returns `false` if the available inputs do not add up to the
      * desired amount.
+     *
+     * `recipientPools` is the set of `OutputPool`s to which the caller intends
+     * to send funds. This is used during note selection to minimise information
+     * leakage. The empty set is short-hand for "all pools".
+     *
+     * This method must only be called once.
      */
-    bool LimitToAmount(CAmount amount, CAmount dustThreshold);
+    bool LimitToAmount(
+        CAmount amount,
+        CAmount dustThreshold,
+        std::set<OutputPool> recipientPools);
 
     /**
      * Compute the total ZEC amount of spendable inputs.
@@ -1345,11 +1373,11 @@ public:
      * and return the associated transparent change address.
      *
      * Returns `std::nullopt` if the account does not have an internal spending
-     * key matching the requested `ChangeType`.
+     * key matching the requested `OutputPool`.
      */
     std::optional<libzcash::RecipientAddress> GenerateChangeAddressForAccount(
             libzcash::AccountId accountId,
-            std::set<libzcash::ChangeType> changeOptions);
+            std::set<OutputPool> changeOptions);
 
     SpendableInputs FindSpendableInputs(
             ZTXOSelector paymentSource,

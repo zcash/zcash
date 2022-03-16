@@ -80,7 +80,7 @@ private:
     bool allowRevealedAmounts_{false};
     uint32_t transparentRecipients_{0};
     AccountId sendFromAccount_;
-    std::set<libzcash::ChangeType> allowedChangeTypes_;
+    std::set<OutputPool> recipientPools_;
     TxOutputAmounts txOutputAmounts_;
 
     /**

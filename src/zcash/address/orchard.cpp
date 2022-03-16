@@ -43,6 +43,10 @@ uint256 OrchardFullViewingKey::ToInternalOutgoingViewingKey() const {
     return ovk;
 }
 
+OrchardRawAddress OrchardFullViewingKey::GetChangeAddress() const {
+    return ToInternalIncomingViewingKey().Address(0);
+}
+
 OrchardSpendingKey OrchardSpendingKey::ForAccount(
         const HDSeed& seed,
         uint32_t bip44CoinType,

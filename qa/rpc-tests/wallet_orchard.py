@@ -64,7 +64,7 @@ class WalletOrchardTest(BitcoinTestFramework):
 
         # Check the value sent to saplingAddr2 was received in node 2's account
         assert_equal(
-                {'pools': {'sapling': {'valueZat': Decimal('1000000000')}}, 'minimum_confirmations': 1}, 
+                {'pools': {'sapling': {'valueZat': Decimal('1000000000')}}, 'minimum_confirmations': 1},
                 self.nodes[2].z_getbalanceforaccount(acct2))
 
         # Node 0 shields some funds
@@ -78,7 +78,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(
-                {'pools': {'orchard': {'valueZat': Decimal('1000000000')}}, 'minimum_confirmations': 1}, 
+                {'pools': {'orchard': {'valueZat': Decimal('1000000000')}}, 'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         # Split the network
@@ -95,7 +95,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(
-                {'pools': {'orchard': {'valueZat': Decimal('2000000000')}}, 'minimum_confirmations': 1}, 
+                {'pools': {'orchard': {'valueZat': Decimal('2000000000')}}, 'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         # On the other side of the split, send some funds to node 3
@@ -112,12 +112,14 @@ class WalletOrchardTest(BitcoinTestFramework):
         self.nodes[2].generate(1)
         self.sync_all()
 
+        # The remaining change from ua2's Sapling note has been sent to the
+        # account's internal Orchard change address.
         assert_equal(
-                {'pools': {'sapling': {'valueZat': Decimal('900000000')}}, 'minimum_confirmations': 1}, 
+                {'pools': {'orchard': {'valueZat': Decimal('900000000')}}, 'minimum_confirmations': 1},
                 self.nodes[2].z_getbalanceforaccount(acct2))
 
         assert_equal(
-                {'pools': {'orchard': {'valueZat': Decimal('100000000')}}, 'minimum_confirmations': 1}, 
+                {'pools': {'orchard': {'valueZat': Decimal('100000000')}}, 'minimum_confirmations': 1},
                 self.nodes[3].z_getbalanceforaccount(acct3))
 
         # Check that the mempools are empty
@@ -130,32 +132,32 @@ class WalletOrchardTest(BitcoinTestFramework):
 
         # split 0/1's chain should have won, so their wallet balance should be consistent
         assert_equal(
-                {'pools': {'orchard': {'valueZat': Decimal('2000000000')}}, 'minimum_confirmations': 1}, 
+                {'pools': {'orchard': {'valueZat': Decimal('2000000000')}}, 'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         # split 2/3's chain should have been rolled back, so their txn should have been
         # un-mined and returned to the mempool
         assert_equal(set([rollback_tx]), set(self.nodes[2].getrawmempool()))
 
-        # acct2's sole Sapling note is spent by a transaction in the mempool, so our 
+        # acct2's sole Orchard note is spent by a transaction in the mempool, so our
         # confirmed balance is currently 0
         assert_equal(
-                {'pools': {}, 'minimum_confirmations': 1}, 
+                {'pools': {}, 'minimum_confirmations': 1},
                 self.nodes[2].z_getbalanceforaccount(acct2))
 
         # acct2's incoming change (unconfirmed, still in the mempool) is 9 zec
         assert_equal(
-                {'pools': {'sapling': {'valueZat': Decimal('900000000')}}, 'minimum_confirmations': 0}, 
+                {'pools': {'orchard': {'valueZat': Decimal('900000000')}}, 'minimum_confirmations': 0},
                 self.nodes[2].z_getbalanceforaccount(acct2, 0))
 
         # The transaction was un-mined, so acct3 should have no confirmed balance
         assert_equal(
-                {'pools': {}, 'minimum_confirmations': 1}, 
+                {'pools': {}, 'minimum_confirmations': 1},
                 self.nodes[3].z_getbalanceforaccount(acct3))
 
         # acct3's unconfirmed balance is 1 zec
         assert_equal(
-                {'pools': {'orchard': {'valueZat': Decimal('100000000')}}, 'minimum_confirmations': 0}, 
+                {'pools': {'orchard': {'valueZat': Decimal('100000000')}}, 'minimum_confirmations': 0},
                 self.nodes[3].z_getbalanceforaccount(acct3, 0))
 
         # Manually resend the transaction in node 2's mempool
@@ -168,11 +170,11 @@ class WalletOrchardTest(BitcoinTestFramework):
 
         # The un-mined transaction should now have been re-mined
         assert_equal(
-                {'pools': {'sapling': {'valueZat': Decimal('900000000')}}, 'minimum_confirmations': 1}, 
+                {'pools': {'orchard': {'valueZat': Decimal('900000000')}}, 'minimum_confirmations': 1},
                 self.nodes[2].z_getbalanceforaccount(acct2))
 
         assert_equal(
-                {'pools': {'orchard': {'valueZat': Decimal('100000000')}}, 'minimum_confirmations': 1}, 
+                {'pools': {'orchard': {'valueZat': Decimal('100000000')}}, 'minimum_confirmations': 1},
                 self.nodes[3].z_getbalanceforaccount(acct3))
 
 if __name__ == '__main__':

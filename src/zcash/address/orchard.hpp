@@ -206,6 +206,8 @@ public:
 
     uint256 ToInternalOutgoingViewingKey() const;
 
+    libzcash::OrchardRawAddress GetChangeAddress() const;
+
     OrchardFullViewingKey& operator=(OrchardFullViewingKey&& key)
     {
         if (this != &key) {

@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include <assert.h>
+#include <numeric>
 #include <variant>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -1881,20 +1882,39 @@ bool CWallet::SelectorMatchesAddress(
 
 std::optional<RecipientAddress> CWallet::GenerateChangeAddressForAccount(
         libzcash::AccountId accountId,
-        std::set<libzcash::ChangeType> changeOptions) {
+        std::set<OutputPool> changeOptions) {
     AssertLockHeld(cs_wallet);
 
-    // changeOptions is sorted in preference order, so return
-    // the first (and therefore most preferred) change address that
-    // we're able to generate.
-    for (libzcash::ChangeType t : changeOptions) {
-        if (t == libzcash::ChangeType::Transparent && accountId == ZCASH_LEGACY_ACCOUNT) {
-            return GenerateNewKey(false).GetID();
-        } else {
-            auto ufvk = this->GetUnifiedFullViewingKeyByAccount(accountId);
-            if (ufvk.has_value()) {
-                // Default to Sapling shielded change (TODO ORCHARD: update this)
-                auto changeAddr = ufvk.value().GetChangeAddress(SaplingChangeRequest());
+    if (accountId == ZCASH_LEGACY_ACCOUNT) {
+        // We only call this method with this account ID for legacy transparent addresses.
+        for (OutputPool t : changeOptions) {
+            if (t == OutputPool::Transparent) {
+                return GenerateNewKey(false).GetID();
+            }
+        }
+    } else {
+        auto ufvk = this->GetUnifiedFullViewingKeyByAccount(accountId);
+        if (ufvk.has_value()) {
+            // changeOptions is sorted in preference order, so return
+            // the first (and therefore most preferred) change address that
+            // we're able to generate.
+            for (OutputPool t : changeOptions) {
+                std::optional<RecipientAddress> changeAddr;
+                switch (t) {
+                case OutputPool::Orchard:
+                    changeAddr = ufvk.value().GetChangeAddress(OrchardChangeRequest());
+                    break;
+                case OutputPool::Sapling:
+                    changeAddr = ufvk.value().GetChangeAddress(SaplingChangeRequest());
+                    break;
+                case OutputPool::Transparent:
+                    // UFVKs must have a shielded component, so we would only
+                    // reach this point if changeOptions contained no shielded
+                    // options. But we prefer to opportunistically shield funds
+                    // where possible, so we don't produce transparent change
+                    // addresses for accounts.
+                    break;
+                }
                 if (changeAddr.has_value()) {
                     return changeAddr.value();
                 }
@@ -1917,6 +1937,7 @@ SpendableInputs CWallet::FindSpendableInputs(
     bool selectTransparent{selector.SelectsTransparent()};
     bool selectSprout{selector.SelectsSprout()};
     bool selectSapling{selector.SelectsSapling()};
+    bool selectOrchard{selector.SelectsOrchard()};
 
     SpendableInputs unspent;
     for (auto const& [wtxid, wtx] : mapWallet) {
@@ -2043,42 +2064,44 @@ SpendableInputs CWallet::FindSpendableInputs(
         }
     }
 
-    // for Orchard, we select both the internal and external IVKs.
-    auto orchardIvks = std::visit(match {
-        [&](const libzcash::UnifiedFullViewingKey& ufvk) -> std::vector<OrchardIncomingViewingKey> {
-            auto fvk = ufvk.GetOrchardKey();
-            if (fvk.has_value()) {
-                return {fvk->ToIncomingViewingKey(), fvk->ToInternalIncomingViewingKey()};
-            }
-            return {};
-        },
-        [&](const AccountZTXOPattern& acct) -> std::vector<OrchardIncomingViewingKey> {
-            auto ufvk = GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
-            if (ufvk.has_value()) {
-                auto fvk = ufvk->GetOrchardKey();
+    if (selectOrchard) {
+        // for Orchard, we select both the internal and external IVKs.
+        auto orchardIvks = std::visit(match {
+            [&](const libzcash::UnifiedFullViewingKey& ufvk) -> std::vector<OrchardIncomingViewingKey> {
+                auto fvk = ufvk.GetOrchardKey();
                 if (fvk.has_value()) {
                     return {fvk->ToIncomingViewingKey(), fvk->ToInternalIncomingViewingKey()};
                 }
-            }
-            return {};
-        },
-        [&](const auto& addr) -> std::vector<OrchardIncomingViewingKey> { return {}; }
-    }, selector.GetPattern());
+                return {};
+            },
+            [&](const AccountZTXOPattern& acct) -> std::vector<OrchardIncomingViewingKey> {
+                auto ufvk = GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
+                if (ufvk.has_value()) {
+                    auto fvk = ufvk->GetOrchardKey();
+                    if (fvk.has_value()) {
+                        return {fvk->ToIncomingViewingKey(), fvk->ToInternalIncomingViewingKey()};
+                    }
+                }
+                return {};
+            },
+            [&](const auto& addr) -> std::vector<OrchardIncomingViewingKey> { return {}; }
+        }, selector.GetPattern());
 
-    for (const auto& ivk : orchardIvks) {
-        std::vector<OrchardNoteMetadata> incomingNotes;
-        orchardWallet.GetFilteredNotes(incomingNotes, ivk, true, true);
+        for (const auto& ivk : orchardIvks) {
+            std::vector<OrchardNoteMetadata> incomingNotes;
+            orchardWallet.GetFilteredNotes(incomingNotes, ivk, true, true);
 
-        for (auto& noteMeta : incomingNotes) {
-            if (IsOrchardSpent(noteMeta.GetOutPoint())) {
-                continue;
-            }
+            for (auto& noteMeta : incomingNotes) {
+                if (IsOrchardSpent(noteMeta.GetOutPoint())) {
+                    continue;
+                }
 
-            auto mit = mapWallet.find(noteMeta.GetOutPoint().hash);
-            auto confirmations = mit->second.GetDepthInMainChain();
-            if (mit != mapWallet.end() && confirmations >= minDepth) {
-                noteMeta.SetConfirmations(confirmations);
-                unspent.orchardNoteMetadata.push_back(noteMeta);
+                auto mit = mapWallet.find(noteMeta.GetOutPoint().hash);
+                auto confirmations = mit->second.GetDepthInMainChain();
+                if (mit != mapWallet.end() && confirmations >= minDepth) {
+                    noteMeta.SetConfirmations(confirmations);
+                    unspent.orchardNoteMetadata.push_back(noteMeta);
+                }
             }
         }
     }
@@ -6368,6 +6391,13 @@ bool CWallet::HasSpendingKeys(const NoteFilter& addrSet) const {
             return false;
         }
     }
+
+    for (const auto& addr : addrSet.GetOrchardAddresses()) {
+        if (!orchardWallet.GetSpendingKeyForAddress(addr).has_value()) {
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -7051,9 +7081,22 @@ bool ZTXOSelector::SelectsSapling() const {
         [](const auto& addr) { return false; }
     }, this->pattern);
 }
+bool ZTXOSelector::SelectsOrchard() const {
+    return std::visit(match {
+        [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetOrchardKey().has_value(); },
+        [](const AccountZTXOPattern& acct) { return acct.IncludesOrchard(); },
+        [](const auto& addr) { return false; }
+    }, this->pattern);
+}
 
-bool SpendableInputs::LimitToAmount(const CAmount amountRequired, const CAmount dustThreshold) {
+bool SpendableInputs::LimitToAmount(
+    const CAmount amountRequired,
+    const CAmount dustThreshold,
+    std::set<OutputPool> recipientPools)
+{
     assert(amountRequired >= 0 && dustThreshold > 0);
+    // Calling this method twice is a programming error.
+    assert(!limited);
 
     CAmount totalSelected{0};
     auto haveSufficientFunds = [&]() {
@@ -7061,10 +7104,17 @@ bool SpendableInputs::LimitToAmount(const CAmount amountRequired, const CAmount 
         // we do not yet have sufficient funds
         return totalSelected == amountRequired || totalSelected - amountRequired > dustThreshold;
     };
+    auto wouldSuffice = [&](CAmount extra) {
+        auto totalWithExtra = totalSelected + extra;
+        return totalWithExtra == amountRequired || totalWithExtra - amountRequired > dustThreshold;
+    };
 
-    // Select Sprout notes for spending first - if possible, we want users to
-    // spend any notes that they still have in the Sprout pool.
-    if (!haveSufficientFunds()) {
+    if (recipientPools.count(OutputPool::Orchard)) {
+        // We cannot select Sprout notes with Orchard recipients.
+        sproutNoteEntries.clear();
+    } else {
+        // Select Sprout notes for spending first - if possible, we want users to
+        // spend any notes that they still have in the Sprout pool.
         std::sort(sproutNoteEntries.begin(), sproutNoteEntries.end(),
             [](SproutNoteEntry i, SproutNoteEntry j) -> bool {
                 return i.note.value() > j.note.value();
@@ -7077,40 +7127,220 @@ bool SpendableInputs::LimitToAmount(const CAmount amountRequired, const CAmount 
         sproutNoteEntries.erase(sproutIt, sproutNoteEntries.end());
     }
 
-    // Next select transparent utxos. We preferentially spend transparent funds,
-    // with the intent that we'd like to opportunistically shield whatever is
-    // possible, and we will always shield change after the introduction of
-    // unified addresses.
-    if (!haveSufficientFunds()) {
-        std::sort(utxos.begin(), utxos.end(),
-            [](COutput i, COutput j) -> bool {
-                return i.Value() > j.Value();
-            });
-        auto utxoIt = utxos.begin();
-        while (utxoIt != utxos.end() && !haveSufficientFunds()) {
-            totalSelected += utxoIt->Value();
-            ++utxoIt;
-        }
-        utxos.erase(utxoIt, utxos.end());
+    // Check what input pools we have available.
+    CAmount availableTransparent = std::accumulate(
+        utxos.begin(), utxos.end(), CAmount(0), [](CAmount acc, const COutput& utxo) {
+            return acc + utxo.Value();
+        });
+    CAmount availableSapling = std::accumulate(
+        saplingNoteEntries.begin(),
+        saplingNoteEntries.end(),
+        CAmount(0),
+        [](CAmount acc, const SaplingNoteEntry& entry) {
+            return acc + entry.note.value();
+        });
+    CAmount availableOrchard = std::accumulate(
+        orchardNoteMetadata.begin(),
+        orchardNoteMetadata.end(),
+        CAmount(0),
+        [](CAmount acc, const OrchardNoteMetadata& entry) {
+            return acc + entry.GetNoteValue();
+        });
+    assert(availableTransparent >= 0);
+    assert(availableSapling >= 0);
+    assert(availableOrchard >= 0);
+    bool haveTransparent = availableTransparent > 0;
+    bool haveSapling = availableSapling > 0;
+    bool haveOrchard = availableOrchard > 0;
+    std::set<OutputPool> available;
+    if (haveTransparent) {
+        available.insert(OutputPool::Transparent);
+    }
+    if (haveSapling) {
+        available.insert(OutputPool::Sapling);
+    }
+    if (haveOrchard) {
+        available.insert(OutputPool::Orchard);
     }
 
-    // Finally select Sapling outputs. After the introduction of Orchard to the
-    // wallet, the selection of Sapling and Orchard notes, and the
-    // determination of change amounts, should be done in a fashion that
-    // minimizes information leakage whenever possible.
-    if (!haveSufficientFunds()) {
-        std::sort(saplingNoteEntries.begin(), saplingNoteEntries.end(),
-            [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
-                return i.note.value() > j.note.value();
-            });
-        auto saplingIt = saplingNoteEntries.begin();
-        while (saplingIt != saplingNoteEntries.end() && !haveSufficientFunds()) {
-            totalSelected += saplingIt->note.value();
-            ++saplingIt;
-        }
-        saplingNoteEntries.erase(saplingIt, saplingNoteEntries.end());
+    // Now determine the order in which to select the remaining notes and coins.
+    // We do this in a way that minimizes information leakage while moving funds
+    // into the shielded pool where possible. The rules below follow several
+    // general principles:
+    //
+    // - If we have sufficient funds in a single shielded pool, we prefer to
+    //   select funds from that pool (especially if the pool matches a recipient
+    //   pool).
+    // - If we don't have sufficient funds in a single shielded pool, we prefer
+    //   to select funds from older shielded pools first, to generally migrate
+    //   funds towards newer shielded pools. We do not perform opportunistic
+    //   migration however (at this time).
+    // - If we have transparent recipients, we prefer to select funds across all
+    //   shielded pools before the transparent pool. The address and amount for
+    //   these recipients is necessarily revealed, but we can hide the sender.
+    // - If we don't have suffient funds in shielded pools and are required to
+    //   select transparent coins, we always select all transparent coins first.
+    //   Given that the transaction will necessarily reveal sender information,
+    //   we use it to opportunistically shield transparent coins.
+    //
+    // In the following table:
+    // - "Available" denotes the pools in which we have selectable notes.
+    // - "Recipients" lists the pools in which we are required to create outputs.
+    // - "Order" is a comma-separated list of pool selection orders. The order
+    //   used is the first order in the list that can select sufficient funds.
+    // - T: transparent pool
+    // - S: Sapling pool
+    // - O: Orchard pool
+    //
+    // Available | Recipients | Order  | Rationale
+    // ----------|------------|--------|----------
+    //    T      |    ***     |  T     | N/A
+    //     S     |    ***     |  S     | N/A
+    //      O    |    ***     |  O     | N/A
+    //    TS     |    T       |  S, TS | Hide sender,    opportunistic shielding
+    //    TS     |     S      |  S, TS | Fully shielded, opportunistic shielding
+    //    TS     |      O     |  S, TS | Hide sender,    opportunistic shielding
+    //    TS     |    TS      |  S, TS | Hide sender,    opportunistic shielding
+    //    TS     |    T O     |  S, TS | Hide sender,    opportunistic shielding
+    //    TS     |     SO     |  S, TS | Hide sender,    opportunistic shielding
+    //    TS     |    TSO     |  S, TS | Hide sender,    opportunistic shielding
+    //    T O    |    T       |  O, TO | Hide sender,    opportunistic shielding
+    //    T O    |     S      |  O, TO | Hide sender,    opportunistic shielding
+    //    T O    |      O     |  O, TO | Fully shielded, opportunistic shielding
+    //    T O    |    TS      |  O, TO | Hide sender,    opportunistic shielding
+    //    T O    |    T O     |  O, TO | Hide sender,    opportunistic shielding
+    //    T O    |     SO     |  O, TO | Hide sender,    opportunistic shielding
+    //    T O    |    TSO     |  O, TO | Hide sender,    opportunistic shielding
+    //     SO    |    T       |  O, SO | Fewer pools,    opportunistic migration
+    //     SO    |     S      |  S, SO | Fully shielded
+    //     SO    |      O     |  O, SO | Fully shielded, opportunistic migration
+    //     SO    |    TS      |  S, SO | Fewer pools
+    //     SO    |    T O     |  O, SO | Fewer pools,    opportunistic migration
+    //     SO    |     SO     |  S, SO | Opportunistic migration
+    //     SO    |    TSO     |  S, SO | Opportunistic migration
+    //    TSO    |    T       |  O, SO, TSO | Fewer pools,             hide sender, opportunistic shielding
+    //    TSO    |     S      |  S, SO, TSO | Fully shielded,          hide sender, opportunistic shielding
+    //    TSO    |      O     |  O, SO, TSO | Fully shielded,          hide sender, opportunistic shielding
+    //    TSO    |    TS      |  S, SO, TSO | Fewer pools,             hide sender, opportunistic shielding
+    //    TSO    |    T O     |  O, SO, TSO | Fewer pools,             hide sender, opportunistic shielding
+    //    TSO    |     SO     |  S, SO, TSO | Opportunistic migration, hide sender, opportunistic shielding
+    //    TSO    |    TSO     |  S, SO, TSO | Opportunistic migration, hide sender, opportunistic shielding
+    std::vector<OutputPool> selectionOrder;
+    bool opportunisticShielding = false;
+    if (available.size() <= 1) {
+        // We have at most one input pool, so we don't need selection logic.
+        selectionOrder.assign(available.begin(), available.end());
+    } else if (
+        recipientPools == std::set({OutputPool::Orchard}) &&
+        wouldSuffice(availableOrchard))
+    {
+        // Fully shielded.
+        selectionOrder = {
+            OutputPool::Orchard,
+            // Pools below here are erased.
+            OutputPool::Transparent,
+            OutputPool::Sapling,
+        };
+    } else if (
+        recipientPools.count(OutputPool::Transparent) &&
+        !recipientPools.count(OutputPool::Sapling) &&
+        wouldSuffice(availableOrchard))
+    {
+        // Fewer pools.
+        selectionOrder = {
+            OutputPool::Orchard,
+            // Pools below here are erased.
+            OutputPool::Transparent,
+            OutputPool::Sapling,
+        };
+    } else if (wouldSuffice(availableSapling + availableOrchard)) {
+        // Hide sender.
+        // This case also handles two other cases:
+        // - Fully shielded (recipientPools == S && wouldSuffice(S))
+        // - Fewer pools    (S in recipientPools && O not in recipientPools && wouldSuffice(S))
+        selectionOrder = {
+            OutputPool::Sapling,
+            OutputPool::Orchard,
+            // Pools below here are erased.
+            OutputPool::Transparent,
+        };
+    } else {
+        // Opportunistic shielding.
+        selectionOrder = {
+            OutputPool::Transparent,
+            OutputPool::Sapling,
+            OutputPool::Orchard,
+        };
+        opportunisticShielding = true;
     }
 
+    // Ensure we provided a total selection order (so that all unselected notes
+    // and coins are erased).
+    for (auto pool : available) {
+        bool poolIsPresent = false;
+        for (auto entry : selectionOrder) {
+            poolIsPresent |= entry == pool;
+        }
+        assert(poolIsPresent);
+    }
+
+    // Finally, select the remaining notes and coins based on this order.
+    for (auto pool : selectionOrder) {
+        switch (pool) {
+            case OutputPool::Transparent:
+            {
+                std::sort(utxos.begin(), utxos.end(),
+                    [](COutput i, COutput j) -> bool {
+                        return i.Value() > j.Value();
+                    });
+                if (opportunisticShielding) {
+                    // Select all transparent coins.
+                    totalSelected += availableTransparent;
+                } else {
+                    // Only select as many as we need.
+                    auto utxoIt = utxos.begin();
+                    while (utxoIt != utxos.end() && !haveSufficientFunds()) {
+                        totalSelected += utxoIt->Value();
+                        ++utxoIt;
+                    }
+                    utxos.erase(utxoIt, utxos.end());
+                }
+                break;
+            }
+
+            case OutputPool::Sapling:
+            {
+                std::sort(saplingNoteEntries.begin(), saplingNoteEntries.end(),
+                    [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
+                        return i.note.value() > j.note.value();
+                    });
+                auto saplingIt = saplingNoteEntries.begin();
+                while (saplingIt != saplingNoteEntries.end() && !haveSufficientFunds()) {
+                    totalSelected += saplingIt->note.value();
+                    ++saplingIt;
+                }
+                saplingNoteEntries.erase(saplingIt, saplingNoteEntries.end());
+                break;
+            }
+
+            case OutputPool::Orchard:
+            {
+                std::sort(orchardNoteMetadata.begin(), orchardNoteMetadata.end(),
+                    [](OrchardNoteMetadata i, OrchardNoteMetadata j) -> bool {
+                        return i.GetNoteValue() > j.GetNoteValue();
+                    });
+                auto orchardIt = orchardNoteMetadata.begin();
+                while (orchardIt != orchardNoteMetadata.end() && !haveSufficientFunds()) {
+                    totalSelected += orchardIt->GetNoteValue();
+                    ++orchardIt;
+                }
+                orchardNoteMetadata.erase(orchardIt, orchardNoteMetadata.end());
+                break;
+            }
+        }
+    }
+
+    limited = true;
     return haveSufficientFunds();
 }
 
@@ -7153,6 +7383,16 @@ void SpendableInputs::LogInputs(const AsyncRPCOperationId& id) const {
             entry.op.hash.ToString().substr(0, 10),
             entry.op.n,
             FormatMoney(entry.note.value()),
+            HexStr(data).substr(0, 10));
+    }
+
+    for (const auto& entry : orchardNoteMetadata) {
+        std::string data(entry.GetMemo().begin(), entry.GetMemo().end());
+        LogPrint("zrpcunsafe", "%s: found unspent Orchard note (txid=%s, vActionsOrchard=%d, amount=%s, memo=%s)\n",
+            id,
+            entry.GetOutPoint().hash.ToString().substr(0, 10),
+            entry.GetOutPoint().n,
+            FormatMoney(entry.GetNoteValue()),
             HexStr(data).substr(0, 10));
     }
 }

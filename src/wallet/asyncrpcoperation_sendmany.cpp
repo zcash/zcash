@@ -62,44 +62,62 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
 
     sendFromAccount_ = pwalletMain->FindAccountForSelector(ztxoSelector_).value_or(ZCASH_LEGACY_ACCOUNT);
 
-    // we always allow shielded change when not sending from the legacy account
-    if (sendFromAccount_ != ZCASH_LEGACY_ACCOUNT) {
-        allowedChangeTypes_.insert(libzcash::ChangeType::Sapling);
-    }
-
-    // calculate the target totals
+    // Determine the target totals and recipient pools
     for (const SendManyRecipient& recipient : recipients_) {
         std::visit(match {
             [&](const CKeyID& addr) {
                 transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
-                allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+                recipientPools_.insert(OutputPool::Transparent);
             },
             [&](const CScriptID& addr) {
                 transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
-                allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+                recipientPools_.insert(OutputPool::Transparent);
             },
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 txOutputAmounts_.sapling_outputs_total += recipient.amount;
-                if (ztxoSelector_.SelectsSprout() && !allowRevealedAmounts_) {
-                    throw JSONRPCError(
+                recipientPools_.insert(OutputPool::Sapling);
+                if (!(ztxoSelector_.SelectsSapling() || allowRevealedAmounts_)) {
+                    if (ztxoSelector_.SelectsSprout()) {
+                        throw JSONRPCError(
                             RPC_INVALID_PARAMETER,
-                            "Sending between shielded pools is not enabled by default because it will "
+                            "Sending from the Sprout shielded pool to the Sapling "
+                            "shielded pool is not enabled by default because it will "
                             "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
                             "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
                             "you wish to allow this transaction to proceed anyway.");
+                    }
+                    if (builder_.SupportsOrchard() && ztxoSelector_.SelectsOrchard()) {
+                        throw JSONRPCError(
+                            RPC_INVALID_PARAMETER,
+                            "Sending from the Orchard shielded pool to the Sapling "
+                            "shielded pool is not enabled by default because it will "
+                            "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
+                            "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
+                            "you wish to allow this transaction to proceed anyway.");
+                    }
+                    // If the source selects transparent then we don't show an
+                    // error because we are necessarily revealing information.
                 }
             },
             [&](const libzcash::OrchardRawAddress& addr) {
                 txOutputAmounts_.orchard_outputs_total += recipient.amount;
-                if ((ztxoSelector_.SelectsSprout() || ztxoSelector_.SelectsSapling()) && !allowRevealedAmounts_) {
-                    throw JSONRPCError(
+                recipientPools_.insert(OutputPool::Orchard);
+                // No transaction allows sends from Sprout to Orchard.
+                assert(!ztxoSelector_.SelectsSprout());
+                if (!((builder_.SupportsOrchard() && ztxoSelector_.SelectsOrchard()) || allowRevealedAmounts_)) {
+                    if (ztxoSelector_.SelectsSapling()) {
+                        throw JSONRPCError(
                             RPC_INVALID_PARAMETER,
-                            "Sending between shielded pools is not enabled by default because it will "
+                            "Sending from the Sapling shielded pool to the Orchard "
+                            "shielded pool is not enabled by default because it will "
                             "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
                             "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
                             "you wish to allow this transaction to proceed anyway.");
+                    }
+                    // If the source selects transparent then we don't show an
+                    // error because we are necessarily revealing information.
                 }
             }
         }, recipient.address);
@@ -210,7 +228,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         LOCK2(cs_main, pwalletMain->cs_wallet);
         spendable = pwalletMain->FindSpendableInputs(ztxoSelector_, allowTransparentCoinbase, mindepth_);
     }
-    if (!spendable.LimitToAmount(targetAmount, dustThreshold)) {
+    if (!spendable.LimitToAmount(targetAmount, dustThreshold, recipientPools_)) {
         CAmount changeAmount{spendable.Total() - targetAmount};
         if (changeAmount > 0 && changeAmount < dustThreshold) {
             // TODO: we should provide the option for the caller to explicitly
@@ -254,6 +272,9 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     for (const auto& t : spendable.saplingNoteEntries) {
         z_inputs_total += t.note.value();
     }
+    for (const auto& t : spendable.orchardNoteMetadata) {
+        z_inputs_total += t.GetNoteValue();
+    }
 
     if (z_inputs_total > 0 && mindepth_ == 0) {
         throw JSONRPCError(
@@ -289,19 +310,27 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     LogPrint("zrpcunsafe", "%s: total shielded Orchard output: %s\n", getId(), FormatMoney(txOutputAmounts_.orchard_outputs_total));
     LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(fee_));
 
+    // Allow change to go to any pool for which we have recipients.
+    std::set<OutputPool> allowedChangeTypes = recipientPools_;
+
+    // We always allow shielded change when not sending from the legacy account.
+    if (sendFromAccount_ != ZCASH_LEGACY_ACCOUNT) {
+        allowedChangeTypes.insert(OutputPool::Sapling);
+    }
+
     auto ovks = this->SelectOVKs(spendable);
     std::visit(match {
         [&](const CKeyID& keyId) {
-            allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+            allowedChangeTypes.insert(OutputPool::Transparent);
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                    sendFromAccount_, allowedChangeTypes_);
+                    sendFromAccount_, allowedChangeTypes);
             assert(changeAddr.has_value());
             builder_.SendChangeTo(changeAddr.value(), ovks.first);
         },
         [&](const CScriptID& scriptId) {
-            allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+            allowedChangeTypes.insert(OutputPool::Transparent);
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                    sendFromAccount_, allowedChangeTypes_);
+                    sendFromAccount_, allowedChangeTypes);
             assert(changeAddr.has_value());
             builder_.SendChangeTo(changeAddr.value(), ovks.first);
         },
@@ -321,7 +350,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 builder_.SendChangeTo(addr, ovks.first);
             } else {
                 auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                        sendFromAccount_, allowedChangeTypes_);
+                        sendFromAccount_, allowedChangeTypes);
                 assert(changeAddr.has_value());
                 builder_.SendChangeTo(changeAddr.value(), ovks.first);
             }
@@ -334,7 +363,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 builder_.SendChangeTo(fvk.DefaultAddress(), ovks.first);
             } else {
                 auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                        sendFromAccount_, allowedChangeTypes_);
+                        sendFromAccount_, allowedChangeTypes);
                 assert(changeAddr.has_value());
                 builder_.SendChangeTo(changeAddr.value(), ovks.first);
             }
@@ -354,20 +383,22 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 switch (rtype) {
                     case ReceiverType::P2PKH:
                     case ReceiverType::P2SH:
-                        allowedChangeTypes_.insert(libzcash::ChangeType::Transparent);
+                        allowedChangeTypes.insert(OutputPool::Transparent);
                         break;
                     case ReceiverType::Sapling:
-                        allowedChangeTypes_.insert(libzcash::ChangeType::Sapling);
+                        allowedChangeTypes.insert(OutputPool::Sapling);
                         break;
                     case ReceiverType::Orchard:
-                        // TODO
+                        if (builder_.SupportsOrchard()) {
+                            allowedChangeTypes.insert(OutputPool::Orchard);
+                        }
                         break;
                 }
             }
 
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
                         acct.GetAccountId(),
-                        allowedChangeTypes_);
+                        allowedChangeTypes);
 
             assert(changeAddr.has_value());
             builder_.SendChangeTo(changeAddr.value(), ovks.first);
@@ -397,12 +428,28 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         }
     }
 
-    // Fetch Sapling anchor and witnesses
+    // Fetch Sapling anchor and witnesses, and Orchard Merkle paths.
     uint256 anchor;
     std::vector<std::optional<SaplingWitness>> witnesses;
+    std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> orchardSpendInfo;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
         pwalletMain->GetSaplingNoteWitnesses(saplingOutPoints, witnesses, anchor);
+        orchardSpendInfo = pwalletMain->GetOrchardSpendInfo(spendable.orchardNoteMetadata);
+    }
+
+    // Add Orchard spends
+    for (size_t i = 0; i < orchardSpendInfo.size(); i++) {
+        auto spendInfo = std::move(orchardSpendInfo[i]);
+        if (!builder_.AddOrchardSpend(
+            std::move(spendInfo.first),
+            std::move(spendInfo.second)))
+        {
+            throw JSONRPCError(
+                RPC_WALLET_ERROR,
+                "Failed to add Orchard note to transaction (check debug.log for details)"
+            );
+        }
     }
 
     // Add Sapling spends
@@ -419,7 +466,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         builder_.AddSaplingSpend(saplingKeys[i].expsk, saplingNotes[i], anchor, witnesses[i].value());
     }
 
-    // Add Sapling and transparent outputs
+    // Add outputs
     for (const auto& r : recipients_) {
         std::visit(match {
             [&](const CKeyID& keyId) {
@@ -503,7 +550,25 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(const SpendableInputs& spendable) const {
     uint256 internalOVK;
     uint256 externalOVK;
-    if (!spendable.saplingNoteEntries.empty()) {
+    if (!spendable.orchardNoteMetadata.empty()) {
+        std::optional<OrchardFullViewingKey> fvk;
+        std::visit(match {
+            [&](const libzcash::UnifiedFullViewingKey& ufvk) {
+                fvk = ufvk.GetOrchardKey().value();
+            },
+            [&](const AccountZTXOPattern& acct) {
+                auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
+                fvk = ufvk.value().GetOrchardKey().value();
+            },
+            [&](const auto& other) {
+                throw std::runtime_error("unreachable");
+            }
+        }, this->ztxoSelector_.GetPattern());
+        assert(fvk.has_value());
+
+        internalOVK = fvk.value().ToInternalOutgoingViewingKey();
+        externalOVK = fvk.value().ToExternalOutgoingViewingKey();
+    } else if (!spendable.saplingNoteEntries.empty()) {
         std::optional<SaplingDiversifiableFullViewingKey> dfvk;
         std::visit(match {
             [&](const libzcash::SaplingPaymentAddress& addr) {

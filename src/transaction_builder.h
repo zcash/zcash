@@ -342,6 +342,8 @@ public:
 
     void SetFee(CAmount fee);
 
+    bool SupportsOrchard() const;
+
     bool AddOrchardSpend(
         libzcash::OrchardSpendingKey sk,
         orchard::SpendInfo spendInfo);
