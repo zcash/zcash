@@ -2412,6 +2412,8 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         results.push_back(obj);
     }
 
+    // TODO ORCHARD #5683
+
     return results;
 }
 
@@ -2982,7 +2984,7 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "z_getnewaddress ( type )\n"
-            "\nDEPRECATED\n"
+            "\nDEPRECATED. Use z_getnewaccount and z_getaddressforaccount instead.\n"
             "\nReturns a new shielded address for receiving payments.\n"
             "\nWith no arguments, returns a Sapling address.\n"
             "Generating a Sprout address is not allowed after Canopy has activated.\n"
@@ -5615,11 +5617,12 @@ UniValue z_getnotescount(const UniValue& params, bool fHelp)
             "z_getnotescount\n"
             "\nArguments:\n"
             "1. minconf      (numeric, optional, default=1) Only include notes in transactions confirmed at least this many times.\n"
-            "\nReturns the number of sprout and sapling notes available in the wallet.\n"
+            "\nReturns the number of shielded notes of each pool available in the wallet.\n"
             "\nResult:\n"
             "{\n"
-            "  \"sprout\"      (numeric) the number of sprout notes in the wallet\n"
-            "  \"sapling\"     (numeric) the number of sapling notes in the wallet\n"
+            "  \"sprout\"      (numeric) the number of Sprout notes in the wallet\n"
+            "  \"sapling\"     (numeric) the number of Sapling notes in the wallet\n"
+            "  \"orchard\"     (numeric) the number of Orchard notes in the wallet\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("z_getnotescount", "0")
@@ -5634,15 +5637,18 @@ UniValue z_getnotescount(const UniValue& params, bool fHelp)
 
     int sprout = 0;
     int sapling = 0;
+    int orchard = 0;
     for (auto& wtx : pwalletMain->mapWallet) {
         if (wtx.second.GetDepthInMainChain() >= nMinDepth) {
             sprout += wtx.second.mapSproutNoteData.size();
             sapling += wtx.second.mapSaplingNoteData.size();
+            orchard += wtx.second.orchardTxMeta.GetMyActionIVKs().size();
         }
     }
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("sprout", sprout);
     ret.pushKV("sapling", sapling);
+    ret.pushKV("orchard", orchard);
 
     return ret;
 }
