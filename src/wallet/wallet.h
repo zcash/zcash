@@ -1586,11 +1586,16 @@ public:
     //! failures in reconstructing the cache.
     bool LoadCaches();
 
-    std::optional<libzcash::UFVKId> FindUnifiedFullViewingKey(const libzcash::UnifiedAddress& addr) const;
     std::optional<libzcash::AccountId> GetUnifiedAccountId(const libzcash::UFVKId& ufvkId) const;
 
-    std::optional<libzcash::ZcashdUnifiedFullViewingKey> FindUFVKByReceiver(const libzcash::Receiver& receiver) const;
-    std::optional<libzcash::UnifiedAddress> FindUnifiedAddressByReceiver(const libzcash::Receiver& receiver) const;
+    /**
+     * Reconstructs a unified address by determining the UFVK that the receiver
+     * is associated with, combined with the set of receiver types that were
+     * associated with the diversifier index that the provided receiver
+     * corresponds to.
+     */
+    std::optional<libzcash::UnifiedAddress> FindUnifiedAddressByReceiver(
+            const libzcash::Receiver& receiver) const;
 
     /**
      * Increment the next transaction order id

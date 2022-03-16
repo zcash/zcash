@@ -396,27 +396,30 @@ CBasicKeyStore::GetUFVKMetadataForAddress(const libzcash::UnifiedAddress& addr) 
     std::optional<libzcash::diversifier_index_t> j;
     bool jConflict = false;
     for (const auto& receiver : addr) {
-        auto tmp = GetUFVKMetadataForReceiver(receiver);
-        if (ufvkId.has_value() && tmp.has_value()) {
-            // If the unified address contains receivers that are associated with
-            // different UFVKs, we cannot return a singular value.
-            if (tmp.value().first != ufvkId.value()) {
-                return std::nullopt;
-            }
-
-            if (tmp.value().second.has_value()) {
-                if (j.has_value()) {
-                    if (tmp.value().second.value() != j.value()) {
-                        jConflict = true;
-                        j = std::nullopt;
-                    }
-                } else if (!jConflict) {
-                    j = tmp.value().second.value();
+        // skip unknown receivers
+        if (libzcash::HasKnownReceiverType(receiver)) {
+            auto tmp = GetUFVKMetadataForReceiver(receiver);
+            if (ufvkId.has_value() && tmp.has_value()) {
+                // If the unified address contains receivers that are associated with
+                // different UFVKs, we cannot return a singular value.
+                if (tmp.value().first != ufvkId.value()) {
+                    return std::nullopt;
                 }
+
+                if (tmp.value().second.has_value()) {
+                    if (j.has_value()) {
+                        if (tmp.value().second.value() != j.value()) {
+                            jConflict = true;
+                            j = std::nullopt;
+                        }
+                    } else if (!jConflict) {
+                        j = tmp.value().second.value();
+                    }
+                }
+            } else if (tmp.has_value()) {
+                ufvkId = tmp.value().first;
+                j = tmp.value().second;
             }
-        } else if (tmp.has_value()) {
-            ufvkId = tmp.value().first;
-            j = tmp.value().second;
         }
     }
 
