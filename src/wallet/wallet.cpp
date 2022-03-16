@@ -6341,6 +6341,9 @@ NoteFilter NoteFilter::ForPaymentAddresses(const std::vector<libzcash::PaymentAd
             [&](const libzcash::UnifiedAddress& uaddr) {
                 for (auto& receiver : uaddr) {
                     std::visit(match {
+                        [&](const libzcash::OrchardRawAddress& addr) {
+                            addrs.orchardAddresses.insert(addr);
+                        },
                         [&](const libzcash::SaplingPaymentAddress& addr) {
                             addrs.saplingAddresses.insert(addr);
                         },

@@ -35,14 +35,19 @@ class WalletAccountsTest(BitcoinTestFramework):
     # Remember that empty pools are omitted from the output.
     def _check_balance_for_rpc(self, rpcmethod, node, account, expected, minconf):
         rpc = getattr(self.nodes[node], rpcmethod)
-        actual = rpc(account) if minconf is None else rpc(account, minconf)
+        actual = rpc(account, minconf)
         assert_equal(set(expected), set(actual['pools']))
+        total_balance = 0
         for pool in expected:
             assert_equal(expected[pool] * COIN, actual['pools'][pool]['valueZat'])
-        assert_equal(actual['minimum_confirmations'], 1 if minconf is None else minconf)
+            total_balance += expected[pool]
+        assert_equal(actual['minimum_confirmations'], minconf)
+        return total_balance
 
-    def check_balance(self, node, account, address, expected, minconf=None):
-        self._check_balance_for_rpc('z_getbalanceforaccount', node, account, expected, minconf)
+    def check_balance(self, node, account, address, expected, minconf=1):
+        acct_balance = self._check_balance_for_rpc('z_getbalanceforaccount', node, account, expected, minconf)
+        z_getbalance = self.nodes[node].z_getbalance(address, minconf)
+        assert_equal(acct_balance, z_getbalance)
         fvk = self.nodes[node].z_exportviewingkey(address)
         self._check_balance_for_rpc('z_getbalanceforviewingkey', node, fvk, expected, minconf)
 

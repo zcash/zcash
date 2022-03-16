@@ -3649,11 +3649,10 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
     if (fHelp || params.size() == 0 || params.size() > 3)
         throw runtime_error(
             "z_getbalance \"address\" ( minconf inZat )\n"
-            "\nDEPRECATED\n"
+            "\nDEPRECATED; please use z_getbalanceforviewingkey instead.`\n"
             "\nReturns the balance of a taddr or zaddr belonging to the node's wallet.\n"
             "\nCAUTION: If the wallet has only an incoming viewing key for this address, then spends cannot be"
             "\ndetected, and so the returned balance may be larger than the actual balance."
-            "\nThe argument address may not be a Unified Address; please use z_getbalanceforviewingkey instead.\n"
             "\nArguments:\n"
             "1. \"address\"        (string) The selected address. It may be a transparent or shielded address.\n"
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
@@ -3706,9 +3705,23 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
             nBalance = getBalanceZaddr(addr, nMinDepth, INT_MAX, false);
         },
         [&](const libzcash::UnifiedAddress& addr) {
-             throw JSONRPCError(
-                     RPC_INVALID_ADDRESS_OR_KEY,
-                     "Unified addresses are not yet supported for z_getbalance.");
+            auto selector = pwalletMain->ZTXOSelectorForAddress(addr, true);
+            if (!selector.has_value()) {
+                throw JSONRPCError(
+                    RPC_INVALID_ADDRESS_OR_KEY,
+                    "Unified address does not correspond to an account in the wallet");
+            }
+            auto spendableInputs = pwalletMain->FindSpendableInputs(selector.value(), true, nMinDepth);
+
+            for (const auto& t : spendableInputs.utxos) {
+                nBalance += t.Value();
+            }
+            for (const auto& t : spendableInputs.saplingNoteEntries) {
+                nBalance += t.note.value();
+            }
+            for (const auto& t : spendableInputs.orchardNoteMetadata) {
+                nBalance += t.GetNoteValue();
+            }
         },
     }, pa.value());
 
