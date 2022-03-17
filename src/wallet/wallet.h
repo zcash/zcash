@@ -1262,6 +1262,8 @@ public:
 
     std::map<uint256, CWalletTx> mapWallet;
 
+    std::map<uint256, std::vector<RecipientMapping>> sendRecipients;
+
     typedef std::multimap<int64_t, CWalletTx*> TxItems;
     TxItems wtxOrdered;
 
@@ -1578,6 +1580,9 @@ public:
     bool LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skmeta);
     bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
 
+    libzcash::PaymentAddress GetPaymentAddressForRecipient(const uint256& txid, const libzcash::RecipientAddress recipient) const;
+    void LoadRecipientMapping(const uint256& txid, const RecipientMapping& mapping);
+
     //! Reconstructs (in memory) caches and mappings for unified accounts,
     //! addresses and keying material. This should be called once, after the
     //! remainder of the on-disk wallet data has been loaded.
@@ -1665,12 +1670,13 @@ public:
 
         for (const auto& recipient : recipients)
         {
+            sendRecipients[txid].push_back(recipient);
             if (recipient.ua.has_value()) {
-                CWalletDB(strWalletFile).WriteRecipientMapping(
+                assert(CWalletDB(strWalletFile).WriteRecipientMapping(
                     txid,
                     recipient.address,
                     recipient.ua.value()
-                );
+                ));
             }
         }
 

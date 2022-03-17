@@ -892,6 +892,8 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 strErr = "Error in wallet database: recipientmapping UA does not contain recipient";
                 return false;
             }
+
+            pwallet->LoadRecipientMapping(txid, RecipientMapping(ua.value(), recipient));
         }
         else if (strType == "orchard_note_commitment_tree")
         {

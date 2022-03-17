@@ -853,6 +853,66 @@ bool CWallet::LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &add
                 addrmeta.GetReceiverTypes());
 }
 
+PaymentAddress CWallet::GetPaymentAddressForRecipient(const uint256& txid, const libzcash::RecipientAddress recipient) const {
+    // TODO: We should scrub change addresses from the results here.
+    auto defaultAddress = [&]() -> PaymentAddress {
+        return std::visit(match {
+            [&](const CKeyID& addr) {
+                auto ua = pwalletMain->FindUnifiedAddressByReceiver(addr);
+                if (ua.has_value()) {
+                    return libzcash::PaymentAddress{ua.value()};
+                } else {
+                    return libzcash::PaymentAddress{addr};
+                }
+            },
+            [&](const CScriptID& addr) {
+                auto ua = pwalletMain->FindUnifiedAddressByReceiver(addr);
+                if (ua.has_value()) {
+                    return libzcash::PaymentAddress{ua.value()};
+                } else {
+                    return libzcash::PaymentAddress{addr};
+                }
+            },
+            [&](const SaplingPaymentAddress& addr) {
+                auto ua = pwalletMain->FindUnifiedAddressByReceiver(addr);
+                if (ua.has_value()) {
+                    return libzcash::PaymentAddress{ua.value()};
+                } else {
+                    return libzcash::PaymentAddress{addr};
+                }
+            },
+            [&](const OrchardRawAddress& addr) {
+                auto ua = pwalletMain->FindUnifiedAddressByReceiver(addr);
+                if (ua.has_value()) {
+                    return libzcash::PaymentAddress{ua.value()};
+                } else {
+                    return libzcash::PaymentAddress{UnifiedAddress::ForSingleReceiver(addr)};
+                }
+            }
+        }, recipient);
+    };
+
+    auto recipientsPtr = sendRecipients.find(txid);
+    if (recipientsPtr == sendRecipients.end()) {
+        // we don't know the recipient, so we just return the simplest type
+        return defaultAddress();
+    } else {
+        // search the list of recipient mappings for one corresponding to
+        // our recipient, and return the known UA if it exists; otherwise
+        // just use the default.
+        for (const auto& mapping : recipientsPtr->second) {
+            if (mapping.address == recipient && mapping.ua.has_value()) {
+                return PaymentAddress{mapping.ua.value()};
+            }
+        }
+        return defaultAddress();
+    }
+}
+
+void CWallet::LoadRecipientMapping(const uint256& txid, const RecipientMapping& mapping) {
+    sendRecipients[txid].push_back(mapping);
+}
+
 bool CWallet::LoadCaches()
 {
     AssertLockHeld(cs_wallet);
