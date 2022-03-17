@@ -721,6 +721,11 @@ public:
 enum class PrivacyPolicy {
     FullPrivacy,
     AllowRevealedAmounts,
+    AllowRevealedRecipients,
+    AllowRevealedSenders,
+    AllowFullyTransparent,
+    AllowLinkingAccountAddresses,
+    NoPrivacy,
 };
 
 class TransactionStrategy {
@@ -734,6 +739,9 @@ public:
     static std::optional<TransactionStrategy> FromString(std::string privacyPolicy);
 
     bool AllowRevealedAmounts();
+    bool AllowRevealedRecipients();
+    bool AllowRevealedSenders();
+    bool AllowLinkingAccountAddresses();
 };
 
 /**

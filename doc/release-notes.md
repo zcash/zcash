@@ -88,7 +88,8 @@ Wallet
   information than the given strategy permits, `z_sendmany` will return an
   error. The parameter defaults to `LegacyCompat`, which applies the most
   restrictive strategy `FullPrivacy` when a Unified Address is present as the
-  sender or a recipient, and otherwise preserves existing behaviour.
+  sender or a recipient, and otherwise preserves existing behaviour (which
+  corresponds to the `AllowFullyTransparent` policy).
 
 - Since Sprout outputs are no longer created (with the exception of change)
   'z_sendmany' no longer generates payment disclosures (which were only 

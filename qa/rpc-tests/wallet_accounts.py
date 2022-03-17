@@ -118,7 +118,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         # Send coinbase funds to the UA.
         print('Sending coinbase funds to account')
         recipients = [{'address': ua0, 'amount': Decimal('10')}]
-        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
+        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
         txid = wait_and_assert_operationid_status(self.nodes[0], opid)
 
         # The wallet should detect the new note as belonging to the UA.
@@ -169,7 +169,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         # Send more coinbase funds to the UA.
         print('Sending coinbase funds to account')
         recipients = [{'address': ua0, 'amount': Decimal('10')}]
-        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
+        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
         txid = wait_and_assert_operationid_status(self.nodes[0], opid)
 
         # The wallet should detect the new note as belonging to the UA.

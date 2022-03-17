@@ -7096,6 +7096,16 @@ std::optional<TransactionStrategy> TransactionStrategy::FromString(std::string p
         strategy.privacy = PrivacyPolicy::FullPrivacy;
     } else if (privacyPolicy == "AllowRevealedAmounts") {
         strategy.privacy = PrivacyPolicy::AllowRevealedAmounts;
+    } else if (privacyPolicy == "AllowRevealedRecipients") {
+        strategy.privacy = PrivacyPolicy::AllowRevealedRecipients;
+    } else if (privacyPolicy == "AllowRevealedSenders") {
+        strategy.privacy = PrivacyPolicy::AllowRevealedSenders;
+    } else if (privacyPolicy == "AllowFullyTransparent") {
+        strategy.privacy = PrivacyPolicy::AllowFullyTransparent;
+    } else if (privacyPolicy == "AllowLinkingAccountAddresses") {
+        strategy.privacy = PrivacyPolicy::AllowLinkingAccountAddresses;
+    } else if (privacyPolicy == "NoPrivacy") {
+        strategy.privacy = PrivacyPolicy::NoPrivacy;
     } else {
         // Unknown privacy policy.
         return std::nullopt;
@@ -7109,6 +7119,62 @@ bool TransactionStrategy::AllowRevealedAmounts() {
         case PrivacyPolicy::FullPrivacy:
             return false;
         case PrivacyPolicy::AllowRevealedAmounts:
+        case PrivacyPolicy::AllowRevealedRecipients:
+        case PrivacyPolicy::AllowRevealedSenders:
+        case PrivacyPolicy::AllowFullyTransparent:
+        case PrivacyPolicy::AllowLinkingAccountAddresses:
+        case PrivacyPolicy::NoPrivacy:
+            return true;
+        default:
+            // Fail closed.
+            return false;
+    }
+}
+
+bool TransactionStrategy::AllowRevealedRecipients() {
+    switch (privacy) {
+        case PrivacyPolicy::FullPrivacy:
+        case PrivacyPolicy::AllowRevealedAmounts:
+        case PrivacyPolicy::AllowRevealedSenders:
+        case PrivacyPolicy::AllowLinkingAccountAddresses:
+            return false;
+        case PrivacyPolicy::AllowRevealedRecipients:
+        case PrivacyPolicy::AllowFullyTransparent:
+        case PrivacyPolicy::NoPrivacy:
+            return true;
+        default:
+            // Fail closed.
+            return false;
+    }
+}
+
+bool TransactionStrategy::AllowRevealedSenders() {
+    switch (privacy) {
+        case PrivacyPolicy::FullPrivacy:
+        case PrivacyPolicy::AllowRevealedAmounts:
+        case PrivacyPolicy::AllowRevealedRecipients:
+            return false;
+        case PrivacyPolicy::AllowRevealedSenders:
+        case PrivacyPolicy::AllowFullyTransparent:
+        case PrivacyPolicy::AllowLinkingAccountAddresses:
+        case PrivacyPolicy::NoPrivacy:
+            return true;
+        default:
+            // Fail closed.
+            return false;
+    }
+}
+
+bool TransactionStrategy::AllowLinkingAccountAddresses() {
+    switch (privacy) {
+        case PrivacyPolicy::FullPrivacy:
+        case PrivacyPolicy::AllowRevealedAmounts:
+        case PrivacyPolicy::AllowRevealedRecipients:
+        case PrivacyPolicy::AllowRevealedSenders:
+        case PrivacyPolicy::AllowFullyTransparent:
+            return false;
+        case PrivacyPolicy::AllowLinkingAccountAddresses:
+        case PrivacyPolicy::NoPrivacy:
             return true;
         default:
             // Fail closed.

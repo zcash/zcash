@@ -123,6 +123,16 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         }, recipient.address);
     }
 
+    if (recipientPools_.count(OutputPool::Transparent) && !strategy_.AllowRevealedRecipients()) {
+        throw JSONRPCError(
+            RPC_INVALID_PARAMETER,
+            "This transaction would have transparent recipients, which is not "
+            "enabled by default because it will publicly reveal transaction "
+            "recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
+            "with the `privacyPolicy` parameter set to `AllowRevealedRecipients` "
+            "or weaker if you wish to allow this transaction to proceed anyway.");
+    }
+
     // Log the context info i.e. the call parameters to z_sendmany
     if (LogAcceptCategory("zrpcunsafe")) {
         LogPrint("zrpcunsafe", "%s: z_sendmany initialized (params=%s)\n", getId(), contextInfo.write());
@@ -247,6 +257,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                         FormatMoney(changeAmount),
                         FormatMoney(dustThreshold)));
         } else {
+            bool isFromUa = std::holds_alternative<libzcash::UnifiedAddress>(ztxoSelector_.GetPattern());
             throw JSONRPCError(
                     RPC_WALLET_INSUFFICIENT_FUNDS,
                     strprintf(
@@ -255,8 +266,25 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                         + (allowTransparentCoinbase ? "" :
                             "; note that coinbase outputs will not be selected if you specify "
                             "ANY_TADDR or if any transparent recipients are included.")
+                        + ((!isFromUa || strategy_.AllowLinkingAccountAddresses()) ? "" :
+                            " (This transaction may require selecting transparent coins that were sent "
+                            "to multiple Unified Addresses, which is not enabled by default because "
+                            "it would create a public link between the transparent receivers of these "
+                            "addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
+                            "parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to "
+                            "allow this transaction to proceed anyway.)")
                     );
         }
+    }
+
+    if (!(spendable.utxos.empty() || strategy_.AllowRevealedSenders())) {
+        throw JSONRPCError(
+            RPC_INVALID_PARAMETER,
+            "This transaction requires selecting transparent coins, which is "
+            "not enabled by default because it will publicly reveal transaction "
+            "senders and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
+            "with the `privacyPolicy` parameter set to `AllowRevealedSenders` "
+            "or weaker if you wish to allow this transaction to proceed anyway.");
     }
 
     spendable.LogInputs(getId());

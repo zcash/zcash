@@ -4493,9 +4493,22 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "                         One of the following strings:\n"
             "                               - \"FullPrivacy\": Only allow fully-shielded transactions (involving a single shielded pool).\n"
             "                               - \"LegacyCompat\": If the transaction involves any Unified Addressess, this is equivalent to\n"
-            "                                 \"FullPrivacy\". Otherwise, this is equivalent to \"AllowRevealedAmounts\".\n"
+            "                                 \"FullPrivacy\". Otherwise, this is equivalent to \"AllowFullyTransparent\".\n"
             "                               - \"AllowRevealedAmounts\": Allow funds to cross between shielded pools, revealing the amount\n"
             "                                 that crosses pools.\n"
+            "                               - \"AllowRevealedRecipients\": Allow transparent recipients. This also implies revealing\n"
+            "                                 information described under \"AllowRevealedAmounts\".\n"
+            "                               - \"AllowRevealedSenders\": Allow transparent funds to be spent, revealing the sending\n"
+            "                                 addresses and amounts. This implies revealing information described under \"AllowRevealedAmounts\".\n"
+            "                               - \"AllowFullyTransparent\": Allow transaction to both spend transparent funds and have\n"
+            "                                 transparent recipients. This implies revealing information described under \"AllowRevealedSenders\"\n"
+            "                                 and \"AllowRevealedRecipients\".\n"
+            "                               - \"AllowLinkingAccountAddresses\": Allow selecting transparent coins from the full account,\n"
+            "                                 rather than just the funds sent to the transparent receiver in the provided Unified Address.\n"
+            "                                 This implies revealing information described under \"AllowRevealedSenders\".\n"
+            "                               - \"NoPrivacy\": Allow the transaction to reveal any information necessary to create it.\n"
+            "                                 This implies revealing information described under \"AllowFullyTransparent\" and\n"
+            "                                 \"AllowLinkingAccountAddresses\".\n"
             "\nResult:\n"
             "\"operationid\"          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
             "\nExamples:\n"
@@ -4553,7 +4566,11 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                         "Invalid from address: should be a taddr, zaddr, UA, or the string 'ANY_TADDR'.");
             }
 
-            auto ztxoSelectorOpt = pwalletMain->ZTXOSelectorForAddress(decoded.value(), true, false);
+            auto ztxoSelectorOpt = pwalletMain->ZTXOSelectorForAddress(
+                decoded.value(),
+                true,
+                // LegacyCompat does not include AllowLinkingAccountAddresses.
+                maybeStrategy.has_value() ? maybeStrategy.value().AllowLinkingAccountAddresses() : false);
             if (!ztxoSelectorOpt.has_value()) {
                 throw JSONRPCError(
                         RPC_INVALID_ADDRESS_OR_KEY,
@@ -4669,7 +4686,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         // Default privacy policy is "LegacyCompat".
         involvesUnifiedAddress ?
             TransactionStrategy(PrivacyPolicy::FullPrivacy) :
-            TransactionStrategy(PrivacyPolicy::AllowRevealedAmounts)
+            TransactionStrategy(PrivacyPolicy::AllowFullyTransparent)
     );
 
     // Sanity check for transaction size
