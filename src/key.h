@@ -166,7 +166,7 @@ struct CExtKey {
             a.key == b.key;
     }
 
-    static CExtKey Master(const unsigned char* seed, unsigned int nSeedLen);
+    static std::optional<CExtKey> Master(const unsigned char* seed, unsigned int nSeedLen);
 
     void Encode(unsigned char code[BIP32_EXTKEY_SIZE]) const;
     void Decode(const unsigned char code[BIP32_EXTKEY_SIZE]);

@@ -80,7 +80,7 @@ TestVector test2 =
 
 void RunTest(const TestVector &test) {
     std::vector<unsigned char> seed = ParseHex(test.strHexMaster);
-    CExtKey key = CExtKey::Master(&seed[0], seed.size());
+    CExtKey key = CExtKey::Master(&seed[0], seed.size()).value();
     CExtPubKey pubkey = key.Neuter();
     KeyIO keyIO(Params());
     for (const TestDerivation &derive : test.vDerive) {

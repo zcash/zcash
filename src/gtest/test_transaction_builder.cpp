@@ -19,6 +19,8 @@
 
 TEST(TransactionBuilder, TransparentToSapling)
 {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
 
     CBasicKeyStore keystore;
@@ -58,6 +60,8 @@ TEST(TransactionBuilder, TransparentToSapling)
 }
 
 TEST(TransactionBuilder, SaplingToSapling) {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
 
     auto sk = libzcash::SaplingSpendingKey::random();
@@ -95,6 +99,8 @@ TEST(TransactionBuilder, SaplingToSapling) {
 }
 
 TEST(TransactionBuilder, SaplingToSprout) {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
 
     auto sk = libzcash::SaplingSpendingKey::random();
@@ -133,6 +139,8 @@ TEST(TransactionBuilder, SaplingToSprout) {
 }
 
 TEST(TransactionBuilder, SproutToSproutAndSapling) {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
 
     auto sk = libzcash::SaplingSpendingKey::random();
@@ -263,6 +271,8 @@ TEST(TransactionBuilder, RejectsInvalidTransparentOutput)
 
 TEST(TransactionBuilder, FailsWithNegativeChange)
 {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
 
     // Generate dummy Sapling address
@@ -307,6 +317,8 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
 
 TEST(TransactionBuilder, ChangeOutput)
 {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
 
     // Generate dummy Sapling address
@@ -386,6 +398,8 @@ TEST(TransactionBuilder, ChangeOutput)
 
 TEST(TransactionBuilder, SetFee)
 {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
 
     // Generate dummy Sapling address
