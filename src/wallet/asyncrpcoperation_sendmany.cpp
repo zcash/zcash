@@ -319,6 +319,25 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     }
 
     auto ovks = this->SelectOVKs(spendable);
+    auto allowChangeTypes = [&](const std::set<ReceiverType>& receiverTypes) {
+        for (ReceiverType rtype : receiverTypes) {
+            switch (rtype) {
+                case ReceiverType::P2PKH:
+                case ReceiverType::P2SH:
+                    allowedChangeTypes.insert(OutputPool::Transparent);
+                    break;
+                case ReceiverType::Sapling:
+                    allowedChangeTypes.insert(OutputPool::Sapling);
+                    break;
+                case ReceiverType::Orchard:
+                    if (builder_.SupportsOrchard()) {
+                        allowedChangeTypes.insert(OutputPool::Orchard);
+                    }
+                    break;
+            }
+        }
+    };
+
     std::visit(match {
         [&](const CKeyID& keyId) {
             allowedChangeTypes.insert(OutputPool::Transparent);
@@ -368,34 +387,37 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 builder_.SendChangeTo(changeAddr.value(), ovks.first);
             }
         },
-        [&](const libzcash::UnifiedFullViewingKey& fvk) {
-            auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), fvk);
-            auto changeAddr = zufvk.GetChangeAddress();
+        [&](const libzcash::UnifiedAddress& ua) {
+            allowChangeTypes(ua.GetKnownReceiverTypes());
+
+            auto zufvk = pwalletMain->GetUFVKForAddress(ua);
+            if (!zufvk.has_value()) {
+                throw JSONRPCError(
+                        RPC_WALLET_ERROR,
+                        "Could not determine full viewing key for unified address.");
+            }
+
+            auto changeAddr = zufvk.value().GetChangeAddress(allowedChangeTypes);
             if (!changeAddr.has_value()) {
                 throw JSONRPCError(
                         RPC_WALLET_ERROR,
-                        "Could not generate a change address from the specified full viewing key ");
+                        "Could not generate a change address from the inferred full viewing key.");
+            }
+            builder_.SendChangeTo(changeAddr.value(), ovks.first);
+        },
+        [&](const libzcash::UnifiedFullViewingKey& fvk) {
+            allowChangeTypes(fvk.GetKnownReceiverTypes());
+            auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), fvk);
+            auto changeAddr = zufvk.GetChangeAddress(allowedChangeTypes);
+            if (!changeAddr.has_value()) {
+                throw JSONRPCError(
+                        RPC_WALLET_ERROR,
+                        "Could not generate a change address from the specified full viewing key.");
             }
             builder_.SendChangeTo(changeAddr.value(), ovks.first);
         },
         [&](const AccountZTXOPattern& acct) {
-            for (ReceiverType rtype : acct.GetReceiverTypes()) {
-                switch (rtype) {
-                    case ReceiverType::P2PKH:
-                    case ReceiverType::P2SH:
-                        allowedChangeTypes.insert(OutputPool::Transparent);
-                        break;
-                    case ReceiverType::Sapling:
-                        allowedChangeTypes.insert(OutputPool::Sapling);
-                        break;
-                    case ReceiverType::Orchard:
-                        if (builder_.SupportsOrchard()) {
-                            allowedChangeTypes.insert(OutputPool::Orchard);
-                        }
-                        break;
-                }
-            }
-
+            allowChangeTypes(acct.GetReceiverTypes());
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
                         acct.GetAccountId(),
                         allowedChangeTypes);
@@ -477,7 +499,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             },
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 auto value = r.amount;
-                auto memo = get_memo_from_hex_string(r.memo.has_value() ? r.memo.value() : "");
+                auto memo = get_memo_from_hex_string(r.memo.value_or(""));
 
                 builder_.AddSaplingOutput(ovks.second, addr, value, memo);
             },
@@ -553,15 +575,27 @@ std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(const Spendab
     if (!spendable.orchardNoteMetadata.empty()) {
         std::optional<OrchardFullViewingKey> fvk;
         std::visit(match {
-            [&](const libzcash::UnifiedFullViewingKey& ufvk) {
+            [&](const UnifiedAddress& addr) {
+                auto ufvk = pwalletMain->GetUFVKForAddress(addr);
+                // This is safe because spending key checks will have ensured that we
+                // have a UFVK corresponding to this address, and Orchard notes will
+                // not have been selected if the UFVK does not contain an Orchard key.
+                fvk = ufvk.value().GetOrchardKey().value();
+            },
+            [&](const UnifiedFullViewingKey& ufvk) {
+                // Orchard notes will not have been selected if the UFVK does not contain
+                // an Orchard key.
                 fvk = ufvk.GetOrchardKey().value();
             },
             [&](const AccountZTXOPattern& acct) {
+                // By definition, we have a UFVK for every known account.
                 auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
+                // Orchard notes will not have been selected if the UFVK does not contain
+                // an Orchard key.
                 fvk = ufvk.value().GetOrchardKey().value();
             },
             [&](const auto& other) {
-                throw std::runtime_error("unreachable");
+                throw std::runtime_error("SelectOVKs: Selector cannot select Orchard notes.");
             }
         }, this->ztxoSelector_.GetPattern());
         assert(fvk.has_value());
@@ -576,12 +610,27 @@ std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(const Spendab
                 assert(pwalletMain->GetSaplingExtendedSpendingKey(addr, extsk));
                 dfvk = extsk.ToXFVK();
             },
+            [&](const UnifiedAddress& addr) {
+                auto ufvk = pwalletMain->GetUFVKForAddress(addr);
+                // This is safe because spending key checks will have ensured that we
+                // have a UFVK corresponding to this address, and Sapling notes will
+                // not have been selected if the UFVK does not contain a Sapling key.
+                dfvk = ufvk.value().GetSaplingKey().value();
+            },
+            [&](const UnifiedFullViewingKey& ufvk) {
+                // Sapling notes will not have been selected if the UFVK does not contain
+                // a Sapling key.
+                dfvk = ufvk.GetSaplingKey().value();
+            },
             [&](const AccountZTXOPattern& acct) {
+                // By definition, we have a UFVK for every known account.
                 auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
+                // Sapling notes will not have been selected if the UFVK does not contain
+                // a Sapling key.
                 dfvk = ufvk.value().GetSaplingKey().value();
             },
             [&](const auto& other) {
-                throw std::runtime_error("unreachable");
+                throw std::runtime_error("SelectOVKs: Selector cannot select Sapling notes.");
             }
         }, this->ztxoSelector_.GetPattern());
         assert(dfvk.has_value());
@@ -598,16 +647,31 @@ std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(const Spendab
             [&](const CScriptID& keyId) {
                 tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
             },
+            [&](const UnifiedAddress& addr) {
+                // This is safe because spending key checks will have ensured that we
+                // have a UFVK corresponding to this address, and transparent UTXOs will
+                // not have been selected if the UFVK does not contain a transparent key.
+                auto ufvk = pwalletMain->GetUFVKForAddress(addr);
+                tfvk = ufvk.value().GetTransparentKey().value();
+            },
+            [&](const UnifiedFullViewingKey& ufvk) {
+                // Transparent UTXOs will not have been selected if the UFVK does not contain
+                // a transparent key.
+                tfvk = ufvk.GetTransparentKey().value();
+            },
             [&](const AccountZTXOPattern& acct) {
                 if (acct.GetAccountId() == ZCASH_LEGACY_ACCOUNT) {
                     tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
                 } else {
+                    // By definition, we have a UFVK for every known account.
                     auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId()).value();
+                    // Transparent UTXOs will not have been selected if the UFVK does not contain
+                    // a transparent key.
                     tfvk = ufvk.GetTransparentKey().value();
                 }
             },
             [&](const auto& other) {
-                throw std::runtime_error("unreachable");
+                throw std::runtime_error("SelectOVKs: Selector cannot select transparent UTXOs.");
             }
         }, this->ztxoSelector_.GetPattern());
         assert(tfvk.has_value());
