@@ -127,7 +127,7 @@ LIBZCASH_H = \
   zcash/Address.hpp \
   zcash/address/transparent.h \
   zcash/address/mnemonic.h \
-  zcash/address/orchard.h \
+  zcash/address/orchard.hpp \
   zcash/address/sapling.hpp \
   zcash/address/sprout.hpp \
   zcash/address/unified.h \
