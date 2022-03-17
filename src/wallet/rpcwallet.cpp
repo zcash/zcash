@@ -59,6 +59,7 @@ using namespace libzcash;
 
 const std::string ADDR_TYPE_SPROUT = "sprout";
 const std::string ADDR_TYPE_SAPLING = "sapling";
+const std::string ADDR_TYPE_ORCHARD = "orchard";
 
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 
@@ -4073,15 +4074,15 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    uint256 hash;
-    hash.SetHex(params[0].get_str());
+    uint256 txid;
+    txid.SetHex(params[0].get_str());
 
     UniValue entry(UniValue::VOBJ);
-    if (!pwalletMain->mapWallet.count(hash))
+    if (!pwalletMain->mapWallet.count(txid))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet transaction id");
-    const CWalletTx& wtx = pwalletMain->mapWallet[hash];
+    const CWalletTx& wtx = pwalletMain->mapWallet[txid];
 
-    entry.pushKV("txid", hash.GetHex());
+    entry.pushKV("txid", txid.GetHex());
 
     UniValue spends(UniValue::VARR);
     UniValue outputs(UniValue::VARR);
@@ -4220,16 +4221,11 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         assert(pwalletMain->GetSaplingFullViewingKey(wtxPrev.mapSaplingNoteData.at(op).ivk, extfvk));
         ovks.insert(extfvk.fvk.ovk);
 
-        // If the note belongs to a Sapling address that is part of an account in the
-        // wallet, show the corresponding Unified Address.
-        std::string address = keyIO.EncodePaymentAddress([&]() {
-            auto ua = pwalletMain->FindUnifiedAddressByReceiver(pa);
-            if (ua.has_value()) {
-                return libzcash::PaymentAddress{ua.value()};
-            } else {
-                return libzcash::PaymentAddress{pa};
-            }
-        }());
+        // Show the address that was cached at transaction construction as the
+        // recipient.
+        std::string address = keyIO.EncodePaymentAddress(
+            pwalletMain->GetPaymentAddressForRecipient(txid, pa)
+        );
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_SAPLING);
@@ -4244,7 +4240,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
     // Sapling outputs
     for (uint32_t i = 0; i < wtx.vShieldedOutput.size(); ++i) {
-        auto op = SaplingOutPoint(hash, i);
+        auto op = SaplingOutPoint(txid, i);
 
         SaplingNotePlaintext notePt;
         SaplingPaymentAddress pa;
@@ -4274,16 +4270,11 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         }
         auto memo = notePt.memo();
 
-        // If the note belongs to a Sapling address that is part of an account in the
-        // wallet, show the corresponding Unified Address.
-        std::string address = keyIO.EncodePaymentAddress([&]() {
-            auto ua = pwalletMain->FindUnifiedAddressByReceiver(pa);
-            if (ua.has_value()) {
-                return libzcash::PaymentAddress{ua.value()};
-            } else {
-                return libzcash::PaymentAddress{pa};
-            }
-        }());
+        // Show the address that was cached at transaction construction as the
+        // recipient.
+        std::string address = keyIO.EncodePaymentAddress(
+            pwalletMain->GetPaymentAddressForRecipient(txid, pa)
+        );
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_SAPLING);
@@ -4295,7 +4286,57 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         addMemo(entry, memo);
         outputs.push_back(entry);
     }
-    // TODO unified addresses, orchard, see #5186
+
+    std::vector<uint256> ovksVector(ovks.begin(), ovks.end());
+    OrchardActions orchardActions = pwalletMain->GetOrchardWallet().GetTxActions(wtx, ovksVector);
+
+    // Orchard spends
+    for (auto & pair  : orchardActions.GetSpends()) {
+        // TODO test with Orchard spends after rebased on feature/wallet-orchard
+        auto actionIdx = pair.first;
+        OrchardActionSpend orchardActionSpend = pair.second;
+        auto outpoint = orchardActionSpend.GetOutPoint();
+        auto receivedAt = orchardActionSpend.GetReceivedAt();
+        auto noteValue = orchardActionSpend.GetNoteValue();
+        // if mapWallet doesn't contain the spent outpoint's txid,
+        // the wallet is corrupt, so using `.at` here is fine.
+
+        UniValue entry(UniValue::VOBJ);
+        entry.pushKV("type", ADDR_TYPE_ORCHARD);
+        entry.pushKV("spend", (int) actionIdx);
+        entry.pushKV("txidPrev", outpoint.hash.GetHex());
+        entry.pushKV("outputPrev", (int) outpoint.n);
+        auto ua = pwalletMain->FindUnifiedAddressByReceiver(receivedAt);
+        assert(ua.has_value());
+        std::string addrStr = keyIO.EncodePaymentAddress(ua.value());
+        entry.pushKV("address", addrStr);
+        entry.pushKV("value", ValueFromAmount(noteValue));
+        entry.pushKV("valueZat", noteValue);
+        spends.push_back(entry);
+    }
+
+    // Orchard outputs
+    for (const auto& [actionIdx, orchardActionOutput]  : orchardActions.GetOutputs()) {
+        auto noteValue = orchardActionOutput.GetNoteValue();
+        auto recipient = orchardActionOutput.GetRecipient();
+        auto memo = orchardActionOutput.GetMemo();
+
+        // Show the address that was cached at transaction construction as the
+        // recipient.
+        std::string address = keyIO.EncodePaymentAddress(
+            pwalletMain->GetPaymentAddressForRecipient(txid, recipient)
+        );
+
+        UniValue entry(UniValue::VOBJ);
+        entry.pushKV("type", ADDR_TYPE_ORCHARD);
+        entry.pushKV("output", (int) actionIdx);
+        entry.pushKV("outgoing", orchardActionOutput.IsOutgoing());
+        entry.pushKV("address", address);
+        entry.pushKV("value", ValueFromAmount(noteValue));
+        entry.pushKV("valueZat", noteValue);
+        addMemo(entry, memo);
+        outputs.push_back(entry);
+    }
 
     entry.pushKV("spends", spends);
     entry.pushKV("outputs", outputs);
@@ -4625,7 +4666,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         }
 
         if (!recipientAddrs.insert(addr.value()).second) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated recipient from address: ") + addrStr);
+            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated recipient address: ") + addrStr);
         }
 
         UniValue memoValue = find_value(o, "memo");

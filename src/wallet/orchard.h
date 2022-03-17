@@ -113,12 +113,18 @@ public:
 class OrchardActionSpend {
 private:
     OrchardOutPoint outPoint;
+    libzcash::OrchardRawAddress receivedAt;
     CAmount noteValue;
 public:
-    OrchardActionSpend(OrchardOutPoint outPoint, CAmount noteValue): outPoint(outPoint), noteValue(noteValue) { }
+    OrchardActionSpend(OrchardOutPoint outPoint, libzcash::OrchardRawAddress receivedAt, CAmount noteValue):
+        outPoint(outPoint), receivedAt(receivedAt), noteValue(noteValue) { }
 
     OrchardOutPoint GetOutPoint() const {
         return outPoint;
+    }
+
+    const libzcash::OrchardRawAddress& GetReceivedAt() const {
+        return receivedAt;
     }
 
     CAmount GetNoteValue() const {
@@ -137,7 +143,7 @@ public:
             libzcash::OrchardRawAddress recipient, CAmount noteValue, std::array<unsigned char, 512> memo, bool isOutgoing):
             recipient(recipient), noteValue(noteValue), memo(memo), isOutgoing(isOutgoing) { }
 
-    const libzcash::OrchardRawAddress& GetRecipient() {
+    const libzcash::OrchardRawAddress& GetRecipient() const {
         return recipient;
     }
 
@@ -428,6 +434,7 @@ public:
         std::move(std::begin(rawSpend.outpointTxId), std::end(rawSpend.outpointTxId), txid.begin());
         auto spend = OrchardActionSpend(
                 OrchardOutPoint(txid, rawSpend.outpointActionIdx),
+                libzcash::OrchardRawAddress(rawSpend.receivedAt),
                 rawSpend.noteValue);
         reinterpret_cast<OrchardActions*>(receiver)->AddSpend(rawSpend.spendActionIdx, spend);
     }

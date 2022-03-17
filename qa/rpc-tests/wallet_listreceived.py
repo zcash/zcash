@@ -12,8 +12,10 @@ from test_framework.util import (
     assert_raises_message,
     connect_nodes_bi,
     get_coinbase_address,
+    nuparams,
     DEFAULT_FEE,
-    DEFAULT_FEE_ZATS
+    DEFAULT_FEE_ZATS,
+    NU5_BRANCH_ID,
 )
 from test_framework.util import wait_and_assert_operationid_status, start_nodes
 from decimal import Decimal
@@ -33,7 +35,12 @@ class ListReceivedTest (BitcoinTestFramework):
     def setup_network(self):
         self.nodes = start_nodes(
             self.num_nodes, self.options.tmpdir,
-            extra_args=[['-experimentalfeatures', '-orchardwallet']] * self.num_nodes)
+            extra_args=[[
+                '-experimentalfeatures',
+                '-orchardwallet',
+                nuparams(NU5_BRANCH_ID, 225),
+            ]] * self.num_nodes
+            )
         connect_nodes_bi(self.nodes, 0, 1)
         connect_nodes_bi(self.nodes, 1, 2)
         connect_nodes_bi(self.nodes, 0, 2)
@@ -422,7 +429,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(r[0]['blockheight'], height+5)
         assert_equal(r[0]['blockindex'], 1)
         assert 'blocktime' in r[0]
- 
+
         assert_equal(r[1]['pool'], 'transparent')
         assert_equal(r[1]['txid'], txid_taddr)
         assert_equal(r[1]['amount'], Decimal('0.2'))
@@ -435,9 +442,101 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(r[1]['blockindex'], -1) # not yet mined
         assert 'blocktime' in r[1]
 
+    def test_received_orchard(self, height):
+        self.generate_and_sync(height+1)
+        taddr = self.nodes[1].getnewaddress()
+        acct1 = self.nodes[1].z_getnewaccount()['account']
+        acct2 = self.nodes[1].z_getnewaccount()['account']
+
+        addrResO = self.nodes[1].z_getaddressforaccount(acct1, ['orchard'])
+        assert_equal(addrResO['pools'], ['orchard'])
+        uao = addrResO['unifiedaddress']
+
+        addrResSO = self.nodes[1].z_getaddressforaccount(acct2, ['sapling', 'orchard'])
+        assert_equal(addrResSO['pools'], ['sapling', 'orchard'])
+        uaso = addrResSO['unifiedaddress']
+
+        self.nodes[0].sendtoaddress(taddr, 4.0)
+        self.generate_and_sync(height+2)
+
+        opid = self.nodes[1].z_sendmany(taddr, [
+            {'address': uao, 'amount': 1, 'memo': my_memo},
+            {'address': uaso, 'amount': 2},
+        ])
+        txid0 = wait_and_assert_operationid_status(self.nodes[1], opid)
+        self.sync_all()
+
+        # Decrypted transaction details should be correct, even though
+        # the transaction is still just in the mempool
+        pt = self.nodes[1].z_viewtransaction(txid0)
+
+        assert_equal(pt['txid'], txid0)
+        assert_equal(len(pt['spends']), 0)
+        assert_equal(len(pt['outputs']), 2)
+
+        # Outputs are not returned in a defined order but the amounts are deterministic
+        outputs = sorted(pt['outputs'], key=lambda x: x['valueZat'])
+        assert_equal(outputs[0]['type'], 'orchard')
+        assert_equal(outputs[0]['address'], uao)
+        assert_equal(outputs[0]['value'], Decimal('1'))
+        assert_equal(outputs[0]['valueZat'], 100000000)
+        assert_equal(outputs[0]['output'], 0)
+        assert_equal(outputs[0]['outgoing'], False)
+        assert_equal(outputs[0]['memo'], my_memo)
+        assert_equal(outputs[0]['memoStr'], my_memo_str)
+
+        assert_equal(outputs[1]['type'], 'orchard')
+        assert_equal(outputs[1]['address'], uaso)
+        assert_equal(outputs[1]['value'], Decimal('2'))
+        assert_equal(outputs[1]['valueZat'], 200000000)
+        assert_equal(outputs[1]['output'], 1)
+        assert_equal(outputs[1]['outgoing'], False)
+        assert_equal(outputs[1]['memo'], no_memo)
+        assert 'memoStr' not in outputs[1]
+
+        self.generate_and_sync(height+3)
+
+        opid = self.nodes[1].z_sendmany(uao, [
+            {'address': uaso, 'amount': Decimal('0.4')}
+        ])
+        txid1 = wait_and_assert_operationid_status(self.nodes[1], opid)
+        self.sync_all()
+
+        pt = self.nodes[1].z_viewtransaction(txid1)
+
+        assert_equal(pt['txid'], txid1)
+        assert_equal(len(pt['spends']), 1) # one spend we can see
+        assert_equal(len(pt['outputs']), 2) # one output + one change output we can see
+
+        spends = pt['spends']
+        assert_equal(spends[0]['type'], 'orchard')
+        assert_equal(spends[0]['spend'], 0)
+        assert_equal(spends[0]['txidPrev'], txid0)
+        assert_equal(spends[0]['outputPrev'], 0)
+        assert_equal(spends[0]['address'], uao)
+        assert_equal(spends[0]['value'], Decimal('1.0'))
+        assert_equal(spends[0]['valueZat'], 100000000)
+
+        outputs = sorted(pt['outputs'], key=lambda x: x['valueZat'])
+        assert_equal(outputs[0]['type'], 'orchard')
+        assert_equal(outputs[0]['address'], uaso)
+        assert_equal(outputs[0]['value'], Decimal('0.4'))
+        assert_equal(outputs[0]['valueZat'], 40000000)
+        assert_equal(outputs[0]['outgoing'], False)
+        assert_equal(outputs[0]['memo'], no_memo)
+
+        assert_equal(outputs[1]['type'], 'orchard')
+        # TODO: scrub change addresses
+        #assert_equal(outputs[1]['address'], '<change>')
+        assert_equal(outputs[1]['value'], Decimal('0.59999'))
+        assert_equal(outputs[1]['valueZat'], 59999000)
+        assert_equal(outputs[1]['outgoing'], False)
+        assert_equal(outputs[1]['memo'], no_memo)
+
     def run_test(self):
         self.test_received_sprout(200)
         self.test_received_sapling(214)
+        self.test_received_orchard(230)
 
 
 if __name__ == '__main__':

@@ -999,6 +999,7 @@ pub struct FFIActionSpend {
     spend_action_idx: u32,
     outpoint_txid: [u8; 32],
     outpoint_action_idx: u32,
+    received_at: *mut Address,
     value: i64,
 }
 
@@ -1070,6 +1071,7 @@ pub extern "C" fn orchard_wallet_get_txdata(
                         spend_action_idx: idx as u32,
                         outpoint_txid: *outpoint.txid.as_ref(),
                         outpoint_action_idx: outpoint.action_idx as u32,
+                        received_at: Box::into_raw(Box::new(dnote.note.recipient())),
                         value: dnote.note.value().inner() as i64,
                     })
             }) {

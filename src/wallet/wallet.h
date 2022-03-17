@@ -1190,6 +1190,8 @@ public:
         pwalletdbEncryption = NULL;
     }
 
+    OrchardWallet& GetOrchardWallet() { return orchardWallet; }
+
     void SetNull(const CChainParams& params)
     {
         nWalletVersion = FEATURE_BASE;

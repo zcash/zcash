@@ -107,8 +107,8 @@ typedef void (*push_spend_action_idx_callback_t)(void* rec, uint32_t actionIdx);
  * the provided `callbackReceiver` referent using the `push_cb` callback. Note that
  * this callback can perform transformations on the provided RawOrchardActionIVK in this
  * process.  For each action spending one of the wallet's notes, this method will pass
- * a `uint32_t` action index corresponding to that action to the `callbackReceiver` referent; 
- * using the specified callback; usually, this will push the value into a result vector owned 
+ * a `uint32_t` action index corresponding to that action to the `callbackReceiver` referent;
+ * using the specified callback; usually, this will push the value into a result vector owned
  * by the caller.
  *
  * The provided bundle must be a component of the transaction from which `txid` was
@@ -272,6 +272,7 @@ struct RawOrchardActionSpend {
     uint32_t spendActionIdx;
     unsigned char outpointTxId[32];
     uint32_t outpointActionIdx;
+    OrchardRawAddressPtr* receivedAt;
     CAmount noteValue;
 };
 
