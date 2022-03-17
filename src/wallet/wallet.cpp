@@ -1773,25 +1773,10 @@ std::optional<libzcash::AccountId> CWallet::FindAccountForSelector(const ZTXOSel
             }
         },
         [&](const libzcash::UnifiedAddress& addr) {
-            std::optional<libzcash::AccountId> singleAccount;
-            for (const auto& receiver : addr) {
-                auto meta = GetUFVKMetadataForReceiver(receiver);
-                if (meta.has_value()) {
-                    auto tmp = self->GetUnifiedAccountId(meta.value().first);
-                    if (singleAccount.has_value()) {
-                        // If a UA corresponds to more than one account, we cannot return
-                        // a sensible result, so we report it as corresponding to no
-                        // account.
-                        if (tmp.has_value() && singleAccount.value() != tmp.value()) {
-                            singleAccount = std::nullopt;
-                            break;
-                        }
-                    } else {
-                        singleAccount = tmp;
-                    }
-                }
+            auto meta = GetUFVKMetadataForAddress(addr);
+            if (meta.has_value()) {
+                result = self->GetUnifiedAccountId(meta.value().first);
             }
-            result = singleAccount;
         },
         [&](const libzcash::UnifiedFullViewingKey& vk) {
             result = self->GetUnifiedAccountId(vk.GetKeyID(Params()));
