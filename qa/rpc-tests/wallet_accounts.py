@@ -10,6 +10,7 @@ from test_framework.util import (
     NU5_BRANCH_ID,
     assert_equal,
     assert_raises_message,
+    assert_true,
     get_coinbase_address,
     nuparams,
     start_nodes,
@@ -200,14 +201,19 @@ class WalletAccountsTest(BitcoinTestFramework):
         txid = wait_and_assert_operationid_status(self.nodes[0], opid)
 
         # The wallet should detect the spent note as belonging to the UA.
-        # TODO ORCHARD: Uncomment this once z_viewtransaction shows Orchard details (#5186).
-        # tx_details = self.nodes[0].z_viewtransaction(txid)
-        # assert_equal(len(tx_details['spends']), 1)
-        # assert_equal(tx_details['spends'][0]['type'], 'orchard')
-        # assert_equal(tx_details['spends'][0]['address'], ua0)
-        # assert_equal(len(tx_details['outputs']), 1)
-        # assert_equal(tx_details['outputs'][0]['type'], 'orchard')
-        # assert_equal(tx_details['outputs'][0]['address'], ua0)
+        tx_details = self.nodes[0].z_viewtransaction(txid)
+        assert_equal(len(tx_details['spends']), 1)
+        assert_equal(tx_details['spends'][0]['type'], 'orchard')
+        assert_equal(tx_details['spends'][0]['address'], ua0)
+
+        assert_equal(len(tx_details['outputs']), 2)
+        outputs = sorted(tx_details['outputs'], key=lambda x: x['valueZat'])
+        assert_equal(outputs[0]['type'], 'orchard')
+        assert_equal(outputs[0]['address'], node1orchard)
+        assert_equal(outputs[0]['valueZat'], 100000000)
+        # outputs[1] is change
+        assert_equal(outputs[1]['type'], 'orchard')
+        assert_true('address' not in outputs[1]) #
 
         # The balances of the account should reflect whether zero-conf transactions are
         # being considered. The Sapling balance should remain at 9, while the Orchard

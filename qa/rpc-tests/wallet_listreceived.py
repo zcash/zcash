@@ -539,7 +539,6 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(outputs[1]['memo'], no_memo)
 
         # Verify that we observe the change output
-        print("###", uao, "###")
         assert_equal(outputs[2]['type'], 'orchard')
         assert_equal(outputs[2]['value'], Decimal('0.49999'))
         assert_equal(outputs[2]['valueZat'], 49999000)
