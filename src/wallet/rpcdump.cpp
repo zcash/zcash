@@ -649,13 +649,20 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
         std::string strAddr = keyIO.EncodeDestination(keyid);
         CKey key;
         if (pwalletMain->GetKey(keyid, key)) {
+            CKeyMetadata keyMeta = pwalletMain->mapKeyMetadata[keyid];
+            file << strprintf("%s %s ", keyIO.EncodeSecret(key), strTime);
             if (pwalletMain->mapAddressBook.count(keyid)) {
-                file << strprintf("%s %s label=%s # addr=%s\n", keyIO.EncodeSecret(key), strTime, EncodeDumpString(pwalletMain->mapAddressBook[keyid].name), strAddr);
+                file << strprintf("label=%s", EncodeDumpString(pwalletMain->mapAddressBook[keyid].name));
             } else if (setKeyPool.count(keyid)) {
-                file << strprintf("%s %s reserve=1 # addr=%s\n", keyIO.EncodeSecret(key), strTime, strAddr);
+                file << "reserve=1";
             } else {
-                file << strprintf("%s %s change=1 # addr=%s\n", keyIO.EncodeSecret(key), strTime, strAddr);
+                file << "change=1";
             }
+            file << strprintf(" # addr=%s", strAddr);
+            if (!(keyMeta.hdKeypath.empty() || keyMeta.seedFp.IsNull())) {
+                file << strprintf(" hdkeypath=%s seedfp=%s", keyMeta.hdKeypath, keyMeta.seedFp.GetHex());
+            }
+            file << "\n";
         }
     }
     file << "\n";
@@ -684,12 +691,12 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
                 auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
                 CKeyMetadata keyMeta = pwalletMain->mapSaplingZKeyMetadata[ivk];
                 std::string strTime = EncodeDumpTime(keyMeta.nCreateTime);
+                file << strprintf("%s %s", keyIO.EncodeSpendingKey(extsk), strTime);
                 // Keys imported with z_importkey do not have zip32 metadata
-                if (keyMeta.hdKeypath.empty() || keyMeta.seedFp.IsNull()) {
-                    file << strprintf("%s %s # zaddr=%s\n", keyIO.EncodeSpendingKey(extsk), strTime, keyIO.EncodePaymentAddress(addr));
-                } else {
-                    file << strprintf("%s %s %s %s # zaddr=%s\n", keyIO.EncodeSpendingKey(extsk), strTime, keyMeta.hdKeypath, keyMeta.seedFp.GetHex(), keyIO.EncodePaymentAddress(addr));
+                if (!(keyMeta.hdKeypath.empty() || keyMeta.seedFp.IsNull())) {
+                    file << strprintf(" %s %s", keyMeta.hdKeypath, keyMeta.seedFp.GetHex());
                 }
+                file << strprintf(" # zaddr=%s\n", keyIO.EncodePaymentAddress(addr));
             }
         }
         file << "\n";
