@@ -61,6 +61,10 @@ const char * DEFAULT_WALLET_DAT = "wallet.dat";
  */
 CFeeRate CWallet::minTxFee = CFeeRate(DEFAULT_TRANSACTION_MINFEE);
 
+std::set<ReceiverType> CWallet::DefaultReceiverTypes() {
+    return {ReceiverType::P2PKH, ReceiverType::Sapling, ReceiverType::Orchard};
+}
+
 /** @defgroup mapWallet
  *
  * @{
@@ -853,6 +857,123 @@ bool CWallet::LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &add
                 addrmeta.GetReceiverTypes());
 }
 
+PaymentAddress CWallet::GetPaymentAddressForRecipient(
+        const uint256& txid,
+        const libzcash::RecipientAddress& recipient) const
+{
+    auto self = this;
+    auto defaultAddress = [&]() -> PaymentAddress {
+        auto ufvk = self->GetUFVKForReceiver(RecipientAddressToReceiver(recipient));
+        return std::visit(match {
+            [&](const CKeyID& addr) {
+                auto ua = self->FindUnifiedAddressByReceiver(addr);
+                if (ua.has_value()) {
+                    return libzcash::PaymentAddress{ua.value()};
+                } else {
+                    return libzcash::PaymentAddress{addr};
+                }
+            },
+            [&](const CScriptID& addr) {
+                auto ua = self->FindUnifiedAddressByReceiver(addr);
+                if (ua.has_value()) {
+                    return libzcash::PaymentAddress{ua.value()};
+                } else {
+                    return libzcash::PaymentAddress{addr};
+                }
+            },
+            [&](const SaplingPaymentAddress& addr) {
+                auto ua = self->FindUnifiedAddressByReceiver(addr);
+                if (ua.has_value()) {
+                    return libzcash::PaymentAddress{ua.value()};
+                } else if (ufvk.has_value() && ufvk->GetSaplingKey().has_value()) {
+                    auto saplingKey = ufvk->GetSaplingKey().value();
+                    auto j = saplingKey.DecryptDiversifier(addr.d);
+                    // std::get is safe here because we know we have a valid Sapling diversifier index
+                    auto defaultUA = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(
+                            ufvk->Address(j, CWallet::DefaultReceiverTypes()));
+                    return libzcash::PaymentAddress{defaultUA.first};
+                } else {
+                    return libzcash::PaymentAddress{addr};
+                }
+            },
+            [&](const OrchardRawAddress& addr) {
+                auto ua = self->FindUnifiedAddressByReceiver(addr);
+                if (ua.has_value()) {
+                    return libzcash::PaymentAddress{ua.value()};
+                } else if (ufvk.has_value() && ufvk->GetOrchardKey().has_value()) {
+                    auto orchardKey = ufvk->GetOrchardKey().value();
+                    auto j = orchardKey.ToIncomingViewingKey().DecryptDiversifier(addr);
+                    if (j.has_value()) {
+                        auto genResult = ufvk->Address(j.value(), CWallet::DefaultReceiverTypes());
+                        auto defaultUA = std::get_if<std::pair<UnifiedAddress, diversifier_index_t>>(&genResult);
+                        if (defaultUA != nullptr) {
+                            return libzcash::PaymentAddress{defaultUA->first};
+                        }
+                    }
+                }
+
+                return libzcash::PaymentAddress{UnifiedAddress::ForSingleReceiver(addr)};
+            }
+        }, recipient);
+    };
+
+    auto recipientsPtr = sendRecipients.find(txid);
+    if (recipientsPtr == sendRecipients.end()) {
+        // we don't know the recipient, so we just return the simplest type
+        return defaultAddress();
+    } else {
+        // search the list of recipient mappings for one corresponding to
+        // our recipient, and return the known UA if it exists; otherwise
+        // just use the default.
+        for (const auto& mapping : recipientsPtr->second) {
+            if (mapping.address == recipient && mapping.ua.has_value()) {
+                return PaymentAddress{mapping.ua.value()};
+            }
+        }
+        return defaultAddress();
+    }
+}
+
+bool CWallet::IsInternalRecipient(const libzcash::RecipientAddress& recipient) const
+{
+    auto self = this;
+    return std::visit(match {
+        [&](const CKeyID& addr) {
+            // we never send transparent change when sending to or from a
+            // unified address
+            return false;
+        },
+        [&](const CScriptID& addr) {
+            // we never use P2SH for change or shielding
+            return false;
+        },
+        [&](const SaplingPaymentAddress& addr) {
+            auto ufvk = self->GetUFVKForReceiver(addr);
+            if (ufvk.has_value()) {
+                auto changeAddr = ufvk->GetChangeAddress(SaplingChangeRequest());
+                if (changeAddr.has_value()) {
+                    return changeAddr.value() == recipient;
+                }
+            }
+            return false;
+        },
+        [&](const OrchardRawAddress& addr) {
+            auto ufvk = self->GetUFVKForReceiver(addr);
+            if (ufvk.has_value()) {
+                auto changeAddr = ufvk->GetChangeAddress(OrchardChangeRequest());
+                if (changeAddr.has_value()) {
+                    return changeAddr.value() == recipient;
+                }
+            }
+            return false;
+        }
+    }, recipient);
+}
+
+void CWallet::LoadRecipientMapping(const uint256& txid, const RecipientMapping& mapping) {
+    sendRecipients[txid].push_back(mapping);
+}
+
 bool CWallet::LoadCaches()
 {
     AssertLockHeld(cs_wallet);
@@ -1486,7 +1607,7 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
 
     for (uint32_t i = 0; i < wtx.GetOrchardBundle().GetNumActions(); i++) {
         OrchardOutPoint op(wtx.GetHash(), i);
-        auto potential_spends = pwalletMain->orchardWallet.GetPotentialSpends(op);
+        auto potential_spends = orchardWallet.GetPotentialSpends(op);
 
         if (potential_spends.size() <= 1) {
             continue;  // No conflict if zero or one spends
@@ -1673,14 +1794,14 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
             }
         },
         [&](const libzcash::UnifiedAddress& ua) {
-            auto ufvkMeta = this->GetUFVKMetadataForAddress(ua);
+            auto ufvkMeta = GetUFVKMetadataForAddress(ua);
             if (ufvkMeta.has_value()) {
                 // TODO: at present, the `false` value for the `requireSpendingKey` argument
                 // is not respected for unified addresses, because we have no notion of
                 // an account for which we do not control the spending key. An alternate
                 // approach would be to use the UFVK directly in the case that we cannot
                 // determine a local account.
-                auto accountId = this->GetUnifiedAccountId(ufvkMeta.value().first);
+                auto accountId = this->GetUnifiedAccountId(ufvkMeta.value().GetUFVKId());
                 if (accountId.has_value()) {
                     if (allowAddressLinkability) {
                         pattern = AccountZTXOPattern(accountId.value(), ua.GetKnownReceiverTypes());
@@ -1749,13 +1870,13 @@ std::optional<libzcash::AccountId> CWallet::FindAccountForSelector(const ZTXOSel
         [&](const CKeyID& addr) {
             auto meta = self->GetUFVKMetadataForReceiver(addr);
             if (meta.has_value()) {
-                result = self->GetUnifiedAccountId(meta.value().first);
+                result = self->GetUnifiedAccountId(meta.value().GetUFVKId());
             }
         },
         [&](const CScriptID& addr) {
             auto meta = self->GetUFVKMetadataForReceiver(addr);
             if (meta.has_value()) {
-                result = self->GetUnifiedAccountId(meta.value().first);
+                result = self->GetUnifiedAccountId(meta.value().GetUFVKId());
             }
         },
         [&](const libzcash::SproutPaymentAddress& addr) { },
@@ -1763,7 +1884,7 @@ std::optional<libzcash::AccountId> CWallet::FindAccountForSelector(const ZTXOSel
         [&](const libzcash::SaplingPaymentAddress& addr) {
             auto meta = GetUFVKMetadataForReceiver(addr);
             if (meta.has_value()) {
-                result = self->GetUnifiedAccountId(meta.value().first);
+                result = self->GetUnifiedAccountId(meta.value().GetUFVKId());
             }
         },
         [&](const libzcash::SaplingExtendedFullViewingKey& vk) {
@@ -1775,7 +1896,7 @@ std::optional<libzcash::AccountId> CWallet::FindAccountForSelector(const ZTXOSel
         [&](const libzcash::UnifiedAddress& addr) {
             auto meta = GetUFVKMetadataForAddress(addr);
             if (meta.has_value()) {
-                result = self->GetUnifiedAccountId(meta.value().first);
+                result = self->GetUnifiedAccountId(meta.value().GetUFVKId());
             }
         },
         [&](const libzcash::UnifiedFullViewingKey& vk) {
@@ -1834,16 +1955,16 @@ bool CWallet::SelectorMatchesAddress(
             return false;
         },
         [&](const libzcash::UnifiedFullViewingKey& ufvk) {
-            std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>> meta;
+            std::optional<AddressUFVKMetadata> meta;
             std::visit(match {
                 [&](const CNoDestination& none) { meta = std::nullopt; },
                 [&](const auto& addr) { meta = self->GetUFVKMetadataForReceiver(addr); }
             }, address);
-            return (meta.has_value() && meta.value().first == ufvk.GetKeyID(Params()));
+            return (meta.has_value() && meta.value().GetUFVKId() == ufvk.GetKeyID(Params()));
         },
         [&](const AccountZTXOPattern& acct) {
             if (acct.IncludesP2PKH() || acct.IncludesP2SH()) {
-                std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>> meta;
+                std::optional<AddressUFVKMetadata> meta;
                 std::visit(match {
                     [&](const CNoDestination& none) { meta = std::nullopt; },
                     [&](const auto& addr) { meta = self->GetUFVKMetadataForReceiver(addr); }
@@ -1851,7 +1972,7 @@ bool CWallet::SelectorMatchesAddress(
                 if (meta.has_value()) {
                     // use the coin if the account id corresponding to the UFVK is
                     // the payment source account.
-                    return self->GetUnifiedAccountId(meta.value().first) == std::optional(acct.GetAccountId());
+                    return self->GetUnifiedAccountId(meta.value().GetUFVKId()) == std::optional(acct.GetAccountId());
                 } else {
                     // The legacy account is treated as a single pool of
                     // transparent funds, reproducing wallet behavior prior to
@@ -1900,7 +2021,7 @@ bool CWallet::SelectorMatchesAddress(
                 // the Sapling component of the unified address, we consider that a
                 // match
                 return  a0Meta.has_value() && uaMeta.has_value() &&
-                        a0Meta.value().first == uaMeta.value().first;
+                        a0Meta.value().GetUFVKId() == uaMeta.value().GetUFVKId();
             }
             return false;
         },
@@ -1920,7 +2041,7 @@ bool CWallet::SelectorMatchesAddress(
                 if (meta.has_value()) {
                     // use the coin if the account id corresponding to the UFVK is
                     // the payment source account.
-                    return self->GetUnifiedAccountId(meta.value().first) == std::optional(acct.GetAccountId());
+                    return self->GetUnifiedAccountId(meta.value().GetUFVKId()) == std::optional(acct.GetAccountId());
                 } else {
                     return false;
                 }
@@ -2122,7 +2243,7 @@ SpendableInputs CWallet::FindSpendableInputs(
                 if (orchardReceiver.has_value()) {
                     auto meta = GetUFVKMetadataForReceiver(orchardReceiver.value());
                     if (meta.has_value()) {
-                        auto ufvk = GetUnifiedFullViewingKey(meta.value().first);
+                        auto ufvk = GetUnifiedFullViewingKey(meta.value().GetUFVKId());
                         if (ufvk.has_value()) {
                             auto fvk = ufvk->GetOrchardKey();
                             if (fvk.has_value()) {
@@ -3594,7 +3715,7 @@ bool CWallet::MnemonicVerified() {
 }
 
 HDSeed CWallet::GetHDSeedForRPC() const {
-    auto seed = pwalletMain->GetMnemonicSeed();
+    auto seed = GetMnemonicSeed();
     if (!seed.has_value()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "HD seed not found");
     }
@@ -3872,6 +3993,12 @@ std::optional<std::pair<
     // Couldn't recover with any of the provided OutgoingViewingKeys
     return std::nullopt;
 }
+
+OrchardActions CWalletTx::RecoverOrchardActions(const std::vector<uint256>& ovks) const
+{
+    return pwallet->orchardWallet.GetTxActions(*this, ovks);
+}
+
 
 int64_t CWalletTx::GetTxTime() const
 {
@@ -6706,7 +6833,7 @@ PaymentAddressSource GetSourceForPaymentAddress::GetUnifiedSource(const libzcash
     auto hdChain = m_wallet->GetMnemonicHDChain();
     auto ufvkMeta = m_wallet->GetUFVKMetadataForReceiver(receiver);
     if (ufvkMeta.has_value()) {
-        auto ufvkid = ufvkMeta.value().first;
+        auto ufvkid = ufvkMeta.value().GetUFVKId();
         // Look through the UFVKs that we have generated, and confirm that the
         // seed fingerprint for the key we find for the ufvkid corresponds to
         // the wallet's mnemonic seed.
@@ -6789,13 +6916,13 @@ PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::Sapl
 PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::UnifiedAddress &uaddr) const
 {
     auto hdChain = m_wallet->GetMnemonicHDChain();
-    auto ufvkid = m_wallet->GetUFVKMetadataForAddress(uaddr);
-    if (ufvkid.has_value()) {
+    auto ufvkMeta = m_wallet->GetUFVKMetadataForAddress(uaddr);
+    if (ufvkMeta.has_value()) {
         // Look through the UFVKs that we have generated, and confirm that the
-        // seed fingerprint for the key we find for the ufvkid corresponds to
+        // seed fingerprint for the key we find for the ufvkMeta corresponds to
         // the wallet's mnemonic seed.
         for (const auto& [k, v] : m_wallet->mapUnifiedAccountKeys) {
-            if (v == ufvkid.value().first && hdChain.has_value() && k.first == hdChain.value().GetSeedFingerprint()) {
+            if (v == ufvkMeta.value().GetUFVKId() && hdChain.has_value() && k.first == hdChain.value().GetSeedFingerprint()) {
                 return PaymentAddressSource::MnemonicHDSeed;
             }
         }
@@ -6945,9 +7072,9 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedS
 // UFVKForReceiver :: (CWallet&, Receiver) -> std::optional<ZcashdUnifiedFullViewingKey>
 
 std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const libzcash::OrchardRawAddress& orchardAddr) const {
-    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(orchardAddr);
-    if (ufvkPair.has_value()) {
-        auto ufvkid = ufvkPair.value().first;
+    auto ufvkMeta = wallet.GetUFVKMetadataForReceiver(orchardAddr);
+    if (ufvkMeta.has_value()) {
+        auto ufvkid = ufvkMeta.value().GetUFVKId();
         auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
         // If we have UFVK metadata, `GetUnifiedFullViewingKey` should always
         // return a non-nullopt value, and since we obtained that metadata by
@@ -6959,9 +7086,9 @@ std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()
     }
 }
 std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
-    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(saplingAddr);
-    if (ufvkPair.has_value()) {
-        auto ufvkid = ufvkPair.value().first;
+    auto ufvkMeta = wallet.GetUFVKMetadataForReceiver(saplingAddr);
+    if (ufvkMeta.has_value()) {
+        auto ufvkid = ufvkMeta.value().GetUFVKId();
         auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
         // If we have UFVK metadata, `GetUnifiedFullViewingKey` should always
         // return a non-nullopt value, and since we obtained that metadata by
@@ -6978,12 +7105,12 @@ std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()
     return std::nullopt;
 }
 std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()(const CKeyID& keyId) const {
-    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(keyId);
-    if (ufvkPair.has_value()) {
-        auto ufvkid = ufvkPair.value().first;
+    auto ufvkMeta = wallet.GetUFVKMetadataForReceiver(keyId);
+    if (ufvkMeta.has_value()) {
+        auto ufvkid = ufvkMeta.value().GetUFVKId();
         // transparent address UFVK metadata is always accompanied by the child
         // index at which the address was produced
-        assert(ufvkPair.value().second.has_value());
+        assert(ufvkMeta.value().GetDiversifierIndex().has_value());
         auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
         assert(ufvk.has_value() && ufvk.value().GetTransparentKey().has_value());
         return ufvk.value();
@@ -6999,9 +7126,9 @@ std::optional<libzcash::ZcashdUnifiedFullViewingKey> UFVKForReceiver::operator()
 
 std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(
         const libzcash::OrchardRawAddress& orchardAddr) const {
-    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(orchardAddr);
-    if (ufvkPair.has_value()) {
-        auto ufvkid = ufvkPair.value().first;
+    auto ufvkMeta = wallet.GetUFVKMetadataForReceiver(orchardAddr);
+    if (ufvkMeta.has_value()) {
+        auto ufvkid = ufvkMeta.value().GetUFVKId();
         auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
         assert(ufvk.has_value());
 
@@ -7027,9 +7154,9 @@ std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(
 }
 
 std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
-    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(saplingAddr);
-    if (ufvkPair.has_value()) {
-        auto ufvkid = ufvkPair.value().first;
+    auto ufvkMeta = wallet.GetUFVKMetadataForReceiver(saplingAddr);
+    if (ufvkMeta.has_value()) {
+        auto ufvkid = ufvkMeta.value().GetUFVKId();
         auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
         assert(ufvk.has_value());
 
@@ -7057,13 +7184,13 @@ std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(co
     return std::nullopt;
 }
 std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(const CKeyID& keyId) const {
-    auto ufvkPair = wallet.GetUFVKMetadataForReceiver(keyId);
-    if (ufvkPair.has_value()) {
-        auto ufvkid = ufvkPair.value().first;
+    auto ufvkMeta = wallet.GetUFVKMetadataForReceiver(keyId);
+    if (ufvkMeta.has_value()) {
+        auto ufvkid = ufvkMeta.value().GetUFVKId();
         // transparent address UFVK metadata is always accompanied by the child
         // index at which the address was produced
-        assert(ufvkPair.value().second.has_value());
-        diversifier_index_t j = ufvkPair.value().second.value();
+        assert(ufvkMeta.value().GetDiversifierIndex().has_value());
+        diversifier_index_t j = ufvkMeta.value().GetDiversifierIndex().value();
         auto ufvk = wallet.GetUnifiedFullViewingKey(ufvkid);
         if (!(ufvk.has_value() && ufvk.value().GetTransparentKey().has_value())) {
             throw std::runtime_error("CWallet::UnifiedAddressForReceiver(): UFVK has no P2PKH key part.");

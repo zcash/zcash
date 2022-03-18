@@ -107,8 +107,8 @@ typedef void (*push_spend_action_idx_callback_t)(void* rec, uint32_t actionIdx);
  * the provided `callbackReceiver` referent using the `push_cb` callback. Note that
  * this callback can perform transformations on the provided RawOrchardActionIVK in this
  * process.  For each action spending one of the wallet's notes, this method will pass
- * a `uint32_t` action index corresponding to that action to the `callbackReceiver` referent; 
- * using the specified callback; usually, this will push the value into a result vector owned 
+ * a `uint32_t` action index corresponding to that action to the `callbackReceiver` referent;
+ * using the specified callback; usually, this will push the value into a result vector owned
  * by the caller.
  *
  * The provided bundle must be a component of the transaction from which `txid` was
@@ -263,6 +263,59 @@ void orchard_wallet_get_filtered_notes(
         push_note_callback_t push_cb
         );
 
+/**
+ * A C struct used to transfer Orchard action spend information across the FFI boundary.
+ * This must have the same in-memory representation as the `FFIActionSpend` type in
+ * orchard_ffi/wallet.rs.
+ */
+struct RawOrchardActionSpend {
+    uint32_t spendActionIdx;
+    unsigned char outpointTxId[32];
+    uint32_t outpointActionIdx;
+    OrchardRawAddressPtr* receivedAt;
+    CAmount noteValue;
+};
+
+/**
+ * A C struct used to transfer Orchard action output information across the FFI boundary.
+ * This must have the same in-memory representation as the `FFIActionOutput` type in
+ * orchard_ffi/wallet.rs.
+ */
+struct RawOrchardActionOutput {
+    uint32_t outputActionIdx;
+    OrchardRawAddressPtr* addr;
+    CAmount noteValue;
+    unsigned char memo[512];
+    bool isOutgoing;
+};
+
+typedef void (*push_spend_t)(void* callbackReceiver, const RawOrchardActionSpend data);
+
+typedef void (*push_output_t)(void* callbackReceiver, const RawOrchardActionOutput data);
+
+/**
+ * Trial-decrypts the specfied Orchard bundle, and uses the provided callbacks to pass
+ * `RawOrchardActionSpend` and `RawOrchardActionOutput` values (corresponding to the
+ * actions of that bundle) to the provided result receiver.
+ *
+ * Note that the callbacks can perform any necessary conversion from a
+ * `RawOrchardActionSpend` or `RawOrchardActionOutput` value in addition to modifying the
+ * provided result receiver.
+ *
+ * `raw_ovks` must be a pointer to an array of `unsigned char[32]`.
+ *
+ * The `addr` pointer on each `RawOrchardActionOutput` value must be freed using
+ * `orchard_address_free`.
+ */
+bool orchard_wallet_get_txdata(
+        const OrchardWalletPtr* wallet,
+        const OrchardBundlePtr* bundle,
+        const unsigned char* raw_ovks,
+        size_t raw_ovks_len,
+        void* callbackReceiver,
+        push_spend_t push_spend_cb,
+        push_output_t push_output_cb
+        );
 
 typedef void (*push_txid_callback_t)(void* resultVector, unsigned char txid[32]);
 

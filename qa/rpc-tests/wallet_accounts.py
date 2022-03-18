@@ -173,11 +173,10 @@ class WalletAccountsTest(BitcoinTestFramework):
         txid = wait_and_assert_operationid_status(self.nodes[0], opid)
 
         # The wallet should detect the new note as belonging to the UA.
-        # TODO: Uncomment once z_viewtransaction shows Orchard details (#5186).
-        #tx_details = self.nodes[0].z_viewtransaction(txid)
-        #assert_equal(len(tx_details['outputs']), 1)
-        #assert_equal(tx_details['outputs'][0]['type'], 'orchard')
-        #assert_equal(tx_details['outputs'][0]['address'], ua0)
+        tx_details = self.nodes[0].z_viewtransaction(txid)
+        assert_equal(len(tx_details['outputs']), 1)
+        assert_equal(tx_details['outputs'][0]['type'], 'orchard')
+        assert_equal(tx_details['outputs'][0]['address'], ua0)
 
         # The new balance should not be visible with the default minconf, but should be
         # visible with minconf=0.

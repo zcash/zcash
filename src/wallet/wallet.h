@@ -632,6 +632,7 @@ public:
     std::optional<std::pair<
         libzcash::SaplingNotePlaintext,
         libzcash::SaplingPaymentAddress>> RecoverSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op, std::set<uint256>& ovks) const;
+    OrchardActions RecoverOrchardActions(const std::vector<uint256>& ovks) const;
 
     //! filter decides which addresses will count towards the debit
     CAmount GetDebit(const isminefilter& filter) const;
@@ -1005,6 +1006,8 @@ public:
 class CWallet : public CCryptoKeyStore, public CValidationInterface
 {
 private:
+    friend class CWalletTx;
+
     /**
      * Select a set of coins such that nValueRet >= nTargetValue and at least
      * all coins from coinControl are selected; Never select unconfirmed coins
@@ -1290,6 +1293,8 @@ public:
     std::map<uint256, SaplingOutPoint> mapSaplingNullifiersToNotes;
 
     std::map<uint256, CWalletTx> mapWallet;
+
+    std::map<uint256, std::vector<RecipientMapping>> sendRecipients;
 
     typedef std::multimap<int64_t, CWalletTx*> TxItems;
     TxItems wtxOrdered;
@@ -1607,6 +1612,14 @@ public:
     bool LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skmeta);
     bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
 
+    libzcash::PaymentAddress GetPaymentAddressForRecipient(
+            const uint256& txid,
+            const libzcash::RecipientAddress& recipient) const;
+    bool IsInternalRecipient(
+            const libzcash::RecipientAddress& recipient) const;
+
+    void LoadRecipientMapping(const uint256& txid, const RecipientMapping& mapping);
+
     //! Reconstructs (in memory) caches and mappings for unified accounts,
     //! addresses and keying material. This should be called once, after the
     //! remainder of the on-disk wallet data has been loaded.
@@ -1690,16 +1703,16 @@ public:
     bool SaveRecipientMappings(const uint256& txid, const std::vector<RecipientMapping>& recipients)
     {
         LOCK2(cs_main, cs_wallet);
-        LogPrintf("SaveRecipientMappings:\n%s", txid.ToString());
 
         for (const auto& recipient : recipients)
         {
+            sendRecipients[txid].push_back(recipient);
             if (recipient.ua.has_value()) {
-                CWalletDB(strWalletFile).WriteRecipientMapping(
+                assert(CWalletDB(strWalletFile).WriteRecipientMapping(
                     txid,
                     recipient.address,
                     recipient.ua.value()
-                );
+                ));
             }
         }
 
@@ -1719,6 +1732,12 @@ public:
      * floating relay fee and user set minimum transaction fee
      */
     static CAmount GetRequiredFee(unsigned int nTxBytes);
+
+    /**
+     * The current set of default receiver types used when the wallet generates
+     * unified addresses
+     */
+    static std::set<libzcash::ReceiverType> DefaultReceiverTypes();
 
 private:
     bool NewKeyPool();

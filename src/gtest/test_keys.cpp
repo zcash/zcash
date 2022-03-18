@@ -69,40 +69,8 @@ TEST(Keys, EncodeAndDecodeSapling)
 #define MAKE_STRING(x) std::string((x), (x) + sizeof(x))
 
 namespace libzcash {
-    class ReceiverToString {
-    public:
-        ReceiverToString() {}
-
-        std::string operator()(const OrchardRawAddress &zaddr) const {
-            CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-            ss << zaddr;
-            return tfm::format("Orchard(%s)", HexStr(ss.begin(), ss.end()));
-        }
-
-        std::string operator()(const SaplingPaymentAddress &zaddr) const {
-            CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-            ss << zaddr;
-            return tfm::format("Sapling(%s)", HexStr(ss.begin(), ss.end()));
-        }
-
-        std::string operator()(const CScriptID &p2sh) const {
-            return tfm::format("P2SH(%s)", p2sh.GetHex());
-        }
-
-        std::string operator()(const CKeyID &p2pkh) const {
-            return tfm::format("P2PKH(%s)", p2pkh.GetHex());
-        }
-
-        std::string operator()(const UnknownReceiver &unknown) const {
-            return tfm::format(
-                "Unknown(%x, %s)",
-                unknown.typecode,
-                HexStr(unknown.data.begin(), unknown.data.end()));
-        }
-    };
-
     void PrintTo(const Receiver& receiver, std::ostream* os) {
-        *os << std::visit(ReceiverToString(), receiver);
+        *os << DebugPrintReceiver(receiver);
     }
     void PrintTo(const UnifiedAddress& ua, std::ostream* os) {
         *os << "UnifiedAddress(" << testing::PrintToString(ua.GetReceiversAsParsed()) << ")";

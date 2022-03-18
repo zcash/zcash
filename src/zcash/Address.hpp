@@ -67,6 +67,12 @@ class UnifiedAddress {
 public:
     UnifiedAddress() {}
 
+    static UnifiedAddress ForSingleReceiver(Receiver receiver) {
+        UnifiedAddress ua;
+        ua.AddReceiver(receiver);
+        return ua;
+    }
+
     static std::optional<UnifiedAddress> Parse(const KeyConstants& keyConstants, const std::string& str);
 
     ADD_SERIALIZE_METHODS;

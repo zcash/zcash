@@ -18,6 +18,20 @@
 
 #include <boost/signals2/signal.hpp>
 
+class AddressUFVKMetadata {
+private:
+    libzcash::UFVKId ufvkId;
+    std::optional<libzcash::diversifier_index_t> j;
+    bool internalAddress;
+public:
+    AddressUFVKMetadata(libzcash::UFVKId ufvkId, std::optional<libzcash::diversifier_index_t> j, bool internalAddress)
+        : ufvkId(ufvkId), j(j), internalAddress(internalAddress) {}
+
+    libzcash::UFVKId GetUFVKId() const { return ufvkId; }
+    std::optional<libzcash::diversifier_index_t> GetDiversifierIndex() const { return j; }
+    bool IsInternalAddress() const { return internalAddress; }
+};
+
 /** A virtual base class for key stores */
 class CKeyStore
 {
@@ -127,8 +141,7 @@ public:
     virtual std::optional<libzcash::ZcashdUnifiedFullViewingKey> GetUnifiedFullViewingKey(
             const libzcash::UFVKId& keyId) const = 0;
 
-    virtual std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-        GetUFVKMetadataForReceiver(
+    virtual std::optional<AddressUFVKMetadata> GetUFVKMetadataForReceiver(
             const libzcash::Receiver& receiver) const = 0;
 
     /**
@@ -136,8 +149,7 @@ public:
      * UFVK, return that key's metadata. If all the receivers correspond to
      * the same diversifier index, that diversifier index is also returned.
      */
-    virtual std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-        GetUFVKMetadataForAddress(
+    virtual std::optional<AddressUFVKMetadata> GetUFVKMetadataForAddress(
             const libzcash::UnifiedAddress& addr) const = 0;
 
     virtual std::optional<libzcash::UFVKId> GetUFVKIdForViewingKey(
@@ -379,29 +391,27 @@ public:
     virtual std::optional<libzcash::ZcashdUnifiedFullViewingKey> GetUnifiedFullViewingKey(
             const libzcash::UFVKId& keyId) const;
 
-    virtual std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-        GetUFVKMetadataForReceiver(
+    virtual std::optional<AddressUFVKMetadata> GetUFVKMetadataForReceiver(
             const libzcash::Receiver& receiver) const;
 
     std::optional<libzcash::ZcashdUnifiedFullViewingKey> GetUFVKForReceiver(
             const libzcash::Receiver& receiver) const {
         auto ufvkMeta = GetUFVKMetadataForReceiver(receiver);
         if (ufvkMeta.has_value()) {
-            return GetUnifiedFullViewingKey(ufvkMeta.value().first);
+            return GetUnifiedFullViewingKey(ufvkMeta.value().GetUFVKId());
         } else {
             return std::nullopt;
         }
     }
 
-    virtual std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-        GetUFVKMetadataForAddress(
+    virtual std::optional<AddressUFVKMetadata> GetUFVKMetadataForAddress(
             const libzcash::UnifiedAddress& addr) const;
 
     std::optional<libzcash::ZcashdUnifiedFullViewingKey> GetUFVKForAddress(
             const libzcash::UnifiedAddress& addr) const {
         auto ufvkMeta = GetUFVKMetadataForAddress(addr);
         if (ufvkMeta.has_value()) {
-            return GetUnifiedFullViewingKey(ufvkMeta.value().first);
+            return GetUnifiedFullViewingKey(ufvkMeta.value().GetUFVKId());
         } else {
             return std::nullopt;
         }
@@ -425,16 +435,11 @@ private:
 public:
     FindUFVKId(const CBasicKeyStore& keystore): keystore(keystore) {}
 
-    std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-        operator()(const libzcash::OrchardRawAddress& orchardAddr) const;
-    std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-        operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const;
-    std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-        operator()(const CScriptID& scriptId) const;
-    std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-        operator()(const CKeyID& keyId) const;
-    std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-        operator()(const libzcash::UnknownReceiver& receiver) const;
+    std::optional<AddressUFVKMetadata> operator()(const libzcash::OrchardRawAddress& orchardAddr) const;
+    std::optional<AddressUFVKMetadata> operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const;
+    std::optional<AddressUFVKMetadata> operator()(const CScriptID& scriptId) const;
+    std::optional<AddressUFVKMetadata> operator()(const CKeyID& keyId) const;
+    std::optional<AddressUFVKMetadata> operator()(const libzcash::UnknownReceiver& receiver) const;
 };
 
 #endif // BITCOIN_KEYSTORE_H

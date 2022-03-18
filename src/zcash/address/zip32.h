@@ -178,6 +178,17 @@ public:
         return j;
     }
 
+    // Attempts to construct a valid internal payment address with diversifier
+    // index `j`; returns std::nullopt if `j` does not result in a valid diversifier
+    // given this xfvk.
+    std::optional<libzcash::SaplingPaymentAddress> InternalAddress(diversifier_index_t j) const {
+        return GetInternalDFVK().Address(j);
+    }
+
+    diversifier_index_t DecryptInternalDiversifier(const diversifier_t& d) const {
+        return GetInternalDFVK().DecryptDiversifier(d);
+    }
+
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>

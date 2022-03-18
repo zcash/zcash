@@ -59,6 +59,7 @@ using namespace libzcash;
 
 const std::string ADDR_TYPE_SPROUT = "sprout";
 const std::string ADDR_TYPE_SAPLING = "sapling";
+const std::string ADDR_TYPE_ORCHARD = "orchard";
 
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 
@@ -3135,7 +3136,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
     }
     if (receivers.empty()) {
         // Default is the best and second-best shielded pools, and the transparent pool.
-        receivers = {ReceiverType::P2PKH, ReceiverType::Sapling, ReceiverType::Orchard};
+        receivers = CWallet::DefaultReceiverTypes();
     }
 
     std::optional<libzcash::diversifier_index_t> j = std::nullopt;
@@ -4036,7 +4037,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "      \"js\" : n,                       (numeric, sprout) the index of the JSDescription within vJoinSplit\n"
             "      \"jsSpend\" : n,                  (numeric, sprout) the index of the spend within the JSDescription\n"
             "      \"spend\" : n,                    (numeric, sapling) the index of the spend within vShieldedSpend\n"
-            "      \"actionspend\" : n,              (numeric, orchard) the index of the action within orchard bundle\n"
+            "      \"action\" : n,                   (numeric, orchard) the index of the action within orchard bundle\n"
             "      \"txidPrev\" : \"transactionid\",   (string) The id for the transaction this note was created in\n"
             "      \"jsPrev\" : n,                   (numeric, sprout) the index of the JSDescription within vJoinSplit\n"
             "      \"jsOutputPrev\" : n,             (numeric, sprout) the index of the output within the JSDescription\n"
@@ -4054,9 +4055,10 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "      \"js\" : n,                       (numeric, sprout) the index of the JSDescription within vJoinSplit\n"
             "      \"jsOutput\" : n,                 (numeric, sprout) the index of the output within the JSDescription\n"
             "      \"output\" : n,                   (numeric, sapling) the index of the output within the vShieldedOutput\n"
-            "      \"actionoutput\" : n,             (numeric, orchard) the index of the action within the orchard bundle\n"
-            "      \"address\" : \"zcashaddress\",     (string) The Zcash address involved in the transaction\n"
-            "      \"outgoing\" : true|false         (boolean, sapling) True if the output is not for an address in the wallet\n"
+            "      \"action\" : n,                   (numeric, orchard) the index of the action within the orchard bundle\n"
+            "      \"address\" : \"zcashaddress\",     (string) The Zcash address involved in the transaction. Not included for change outputs.\n"
+            "      \"outgoing\" : true|false         (boolean) True if the output is not for an address in the wallet\n"
+            "      \"walletInternal\" : true|false   (boolean) True if this is a change output.\n"
             "      \"value\" : x.xxx                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
             "      \"valueZat\" : xxxx               (numeric) The amount in zatoshis\n"
             "      \"memo\" : \"hexmemo\",             (string) hexadecimal string representation of the memo field\n"
@@ -4073,15 +4075,15 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    uint256 hash;
-    hash.SetHex(params[0].get_str());
+    uint256 txid;
+    txid.SetHex(params[0].get_str());
 
     UniValue entry(UniValue::VOBJ);
-    if (!pwalletMain->mapWallet.count(hash))
+    if (!pwalletMain->mapWallet.count(txid))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet transaction id");
-    const CWalletTx& wtx = pwalletMain->mapWallet[hash];
+    const CWalletTx& wtx = pwalletMain->mapWallet[txid];
 
-    entry.pushKV("txid", hash.GetHex());
+    entry.pushKV("txid", txid.GetHex());
 
     UniValue spends(UniValue::VARR);
     UniValue outputs(UniValue::VARR);
@@ -4168,6 +4170,30 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         auto legacyAcctOVKs = legacyKey.GetOVKsForShielding();
         ovks.insert(legacyAcctOVKs.first);
         ovks.insert(legacyAcctOVKs.second);
+
+        // Generate the OVKs for shielding for all unified key components
+        for (const auto& [_, ufvkid] : pwalletMain->mapUnifiedAccountKeys) {
+            auto ufvk = pwalletMain->GetUnifiedFullViewingKey(ufvkid);
+            if (ufvk.has_value()) {
+                auto tkey = ufvk.value().GetTransparentKey();
+                if (tkey.has_value()) {
+                    auto tovks = tkey.value().GetOVKsForShielding();
+                    ovks.insert(tovks.first);
+                    ovks.insert(tovks.second);
+                }
+                auto skey = ufvk.value().GetSaplingKey();
+                if (skey.has_value()) {
+                    auto sovks = skey.value().GetOVKs();
+                    ovks.insert(sovks.first);
+                    ovks.insert(sovks.second);
+                }
+                auto okey = ufvk.value().GetOrchardKey();
+                if (okey.has_value()) {
+                    ovks.insert(okey.value().ToExternalOutgoingViewingKey());
+                    ovks.insert(okey.value().ToInternalOutgoingViewingKey());
+                }
+            }
+        }
     }
 
     // Sapling spends
@@ -4196,23 +4222,22 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         assert(pwalletMain->GetSaplingFullViewingKey(wtxPrev.mapSaplingNoteData.at(op).ivk, extfvk));
         ovks.insert(extfvk.fvk.ovk);
 
-        // If the note belongs to a Sapling address that is part of an account in the
-        // wallet, show the corresponding Unified Address.
-        std::string address = keyIO.EncodePaymentAddress([&]() {
-            auto ua = pwalletMain->FindUnifiedAddressByReceiver(pa);
-            if (ua.has_value()) {
-                return libzcash::PaymentAddress{ua.value()};
-            } else {
-                return libzcash::PaymentAddress{pa};
-            }
-        }());
+        // Show the address that was cached at transaction construction as the
+        // recipient.
+        std::optional<std::string> addrStr;
+        if (!pwalletMain->IsInternalRecipient(pa)) {
+            auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, pa);
+            addrStr = keyIO.EncodePaymentAddress(addr);
+        }
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_SAPLING);
         entry.pushKV("spend", (int)i);
         entry.pushKV("txidPrev", op.hash.GetHex());
         entry.pushKV("outputPrev", (int)op.n);
-        entry.pushKV("address", address);
+        if (addrStr.has_value()) {
+            entry.pushKV("address", addrStr.value());
+        }
         entry.pushKV("value", ValueFromAmount(notePt.value()));
         entry.pushKV("valueZat", notePt.value());
         spends.push_back(entry);
@@ -4220,7 +4245,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
     // Sapling outputs
     for (uint32_t i = 0; i < wtx.vShieldedOutput.size(); ++i) {
-        auto op = SaplingOutPoint(hash, i);
+        auto op = SaplingOutPoint(txid, i);
 
         SaplingNotePlaintext notePt;
         SaplingPaymentAddress pa;
@@ -4250,28 +4275,88 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         }
         auto memo = notePt.memo();
 
-        // If the note belongs to a Sapling address that is part of an account in the
-        // wallet, show the corresponding Unified Address.
-        std::string address = keyIO.EncodePaymentAddress([&]() {
-            auto ua = pwalletMain->FindUnifiedAddressByReceiver(pa);
-            if (ua.has_value()) {
-                return libzcash::PaymentAddress{ua.value()};
-            } else {
-                return libzcash::PaymentAddress{pa};
-            }
-        }());
+        // Show the address that was cached at transaction construction as the
+        // recipient.
+        std::optional<std::string> addrStr;
+        bool isInternal = pwalletMain->IsInternalRecipient(pa);
+        if (!isInternal) {
+            auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, pa);
+            addrStr = keyIO.EncodePaymentAddress(addr);
+        }
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_SAPLING);
         entry.pushKV("output", (int)op.n);
         entry.pushKV("outgoing", isOutgoing);
-        entry.pushKV("address", address);
+        entry.pushKV("walletInternal", isInternal);
+        if (addrStr.has_value()) {
+            entry.pushKV("address", addrStr.value());
+        }
         entry.pushKV("value", ValueFromAmount(notePt.value()));
         entry.pushKV("valueZat", notePt.value());
         addMemo(entry, memo);
         outputs.push_back(entry);
     }
-    // TODO unified addresses, orchard, see #5186
+
+    std::vector<uint256> ovksVector(ovks.begin(), ovks.end());
+    OrchardActions orchardActions = wtx.RecoverOrchardActions(ovksVector);
+
+    // Orchard spends
+    for (auto & pair  : orchardActions.GetSpends()) {
+        auto actionIdx = pair.first;
+        OrchardActionSpend orchardActionSpend = pair.second;
+        auto outpoint = orchardActionSpend.GetOutPoint();
+        auto receivedAt = orchardActionSpend.GetReceivedAt();
+        auto noteValue = orchardActionSpend.GetNoteValue();
+
+        std::optional<std::string> addrStr;
+        if (!pwalletMain->IsInternalRecipient(receivedAt)) {
+            auto ua = pwalletMain->FindUnifiedAddressByReceiver(receivedAt);
+            assert(ua.has_value());
+            addrStr = keyIO.EncodePaymentAddress(ua.value());
+        }
+
+        UniValue entry(UniValue::VOBJ);
+        entry.pushKV("type", ADDR_TYPE_ORCHARD);
+        entry.pushKV("action", (int) actionIdx);
+        entry.pushKV("txidPrev", outpoint.hash.GetHex());
+        entry.pushKV("actionPrev", (int) outpoint.n);
+        if (addrStr.has_value()) {
+            entry.pushKV("address", addrStr.value());
+        }
+        entry.pushKV("value", ValueFromAmount(noteValue));
+        entry.pushKV("valueZat", noteValue);
+        spends.push_back(entry);
+    }
+
+    // Orchard outputs
+    for (const auto& [actionIdx, orchardActionOutput]  : orchardActions.GetOutputs()) {
+        auto noteValue = orchardActionOutput.GetNoteValue();
+        auto recipient = orchardActionOutput.GetRecipient();
+        auto memo = orchardActionOutput.GetMemo();
+
+        // Show the address that was cached at transaction construction as the
+        // recipient.
+        std::optional<std::string> addrStr;
+        bool isInternal = pwalletMain->IsInternalRecipient(recipient);
+        if (!isInternal) {
+            auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, recipient);
+            addrStr = keyIO.EncodePaymentAddress(addr);
+        }
+
+        UniValue entry(UniValue::VOBJ);
+        entry.pushKV("type", ADDR_TYPE_ORCHARD);
+        entry.pushKV("action", (int) actionIdx);
+        entry.pushKV("outgoing", orchardActionOutput.IsOutgoing());
+        entry.pushKV("walletInternal", isInternal);
+        if (addrStr.has_value()) {
+            entry.pushKV("address", addrStr.value());
+        }
+        entry.pushKV("value", ValueFromAmount(noteValue));
+        entry.pushKV("valueZat", noteValue);
+        addMemo(entry, memo);
+        outputs.push_back(entry);
+    }
 
     entry.pushKV("spends", spends);
     entry.pushKV("outputs", outputs);
@@ -4647,7 +4732,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         }
 
         if (!recipientAddrs.insert(addr.value()).second) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated recipient from address: ") + addrStr);
+            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated recipient address: ") + addrStr);
         }
 
         UniValue memoValue = find_value(o, "memo");

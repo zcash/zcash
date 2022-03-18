@@ -383,13 +383,13 @@ std::optional<libzcash::ZcashdUnifiedFullViewingKey> CBasicKeyStore::GetUnifiedF
     }
 }
 
-std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+std::optional<AddressUFVKMetadata>
 CBasicKeyStore::GetUFVKMetadataForReceiver(const libzcash::Receiver& receiver) const
 {
     return std::visit(FindUFVKId(*this), receiver);
 }
 
-std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
+std::optional<AddressUFVKMetadata>
 CBasicKeyStore::GetUFVKMetadataForAddress(const libzcash::UnifiedAddress& addr) const
 {
     std::optional<libzcash::UFVKId> ufvkId;
@@ -398,33 +398,36 @@ CBasicKeyStore::GetUFVKMetadataForAddress(const libzcash::UnifiedAddress& addr) 
     for (const auto& receiver : addr) {
         // skip unknown receivers
         if (libzcash::HasKnownReceiverType(receiver)) {
-            auto tmp = GetUFVKMetadataForReceiver(receiver);
-            if (ufvkId.has_value() && tmp.has_value()) {
+            auto rmeta = GetUFVKMetadataForReceiver(receiver);
+            // We should never generate unified addresses with internal receivers
+            assert(!(rmeta.has_value() && rmeta.value().IsInternalAddress()));
+
+            if (ufvkId.has_value() && rmeta.has_value()) {
                 // If the unified address contains receivers that are associated with
                 // different UFVKs, we cannot return a singular value.
-                if (tmp.value().first != ufvkId.value()) {
+                if (rmeta.value().GetUFVKId() != ufvkId.value()) {
                     return std::nullopt;
                 }
 
-                if (tmp.value().second.has_value()) {
+                if (rmeta.value().GetDiversifierIndex().has_value()) {
                     if (j.has_value()) {
-                        if (tmp.value().second.value() != j.value()) {
+                        if (rmeta.value().GetDiversifierIndex().value() != j.value()) {
                             jConflict = true;
                             j = std::nullopt;
                         }
                     } else if (!jConflict) {
-                        j = tmp.value().second.value();
+                        j = rmeta.value().GetDiversifierIndex().value();
                     }
                 }
-            } else if (tmp.has_value()) {
-                ufvkId = tmp.value().first;
-                j = tmp.value().second;
+            } else if (rmeta.has_value()) {
+                ufvkId = rmeta.value().GetUFVKId();
+                j = rmeta.value().GetDiversifierIndex();
             }
         }
     }
 
     if (ufvkId.has_value()) {
-        return std::make_pair(ufvkId.value(), j);
+        return AddressUFVKMetadata(ufvkId.value(), j, false);
     } else {
         return std::nullopt;
     }
@@ -465,22 +468,27 @@ std::optional<libzcash::UFVKId> CBasicKeyStore::GetUFVKIdForViewingKey(const lib
     return result;
 }
 
-std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-FindUFVKId::operator()(const libzcash::OrchardRawAddress& orchardAddr) const {
+//
+// FindUFVKId :: (KeyStore, Receiver) -> std::optional<AddressUFVKMetadata>
+//
+
+std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const libzcash::OrchardRawAddress& orchardAddr) const {
     for (const auto& [k, v] : keystore.mapUnifiedFullViewingKeys) {
         auto fvk = v.GetOrchardKey();
         if (fvk.has_value()) {
             auto d_idx = fvk.value().ToIncomingViewingKey().DecryptDiversifier(orchardAddr);
             if (d_idx.has_value()) {
-                return std::make_pair(k, d_idx);
+                return AddressUFVKMetadata(k, d_idx, false);
+            }
+            auto internal_d_idx = fvk.value().ToInternalIncomingViewingKey().DecryptDiversifier(orchardAddr);
+            if (internal_d_idx.has_value()) {
+                return AddressUFVKMetadata(k, internal_d_idx, true);
             }
         }
     }
     return std::nullopt;
 }
-
-std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
+std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const {
     const auto saplingIvk = keystore.mapSaplingIncomingViewingKeys.find(saplingAddr);
     if (saplingIvk != keystore.mapSaplingIncomingViewingKeys.end()) {
         // We have either generated this as a receiver via `z_getaddressforaccount` or a
@@ -488,7 +496,7 @@ FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const
         // this via trial-decryption of a note.
         const auto ufvkId = keystore.mapSaplingKeyUnified.find(saplingIvk->second);
         if (ufvkId != keystore.mapSaplingKeyUnified.end()) {
-            return std::make_pair(ufvkId->second, std::nullopt);
+            return AddressUFVKMetadata(ufvkId->second, std::nullopt, false);
         } else {
             // If we have the addr -> ivk map entry but not the ivk -> UFVK map entry,
             // then this is definitely a legacy Sapling address.
@@ -506,7 +514,13 @@ FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const
             auto d_idx = dfvk.value().DecryptDiversifier(saplingAddr.d);
             auto derived_addr = dfvk.value().Address(d_idx);
             if (derived_addr.has_value() && derived_addr.value() == saplingAddr) {
-                return std::make_pair(k, d_idx);
+                return AddressUFVKMetadata(k, d_idx, false);
+            }
+
+            auto internal_d_idx = dfvk.value().DecryptInternalDiversifier(saplingAddr.d);
+            auto derived_internal_addr = dfvk.value().InternalAddress(internal_d_idx);
+            if (derived_internal_addr.has_value() && derived_internal_addr.value() == saplingAddr) {
+                return AddressUFVKMetadata(k, internal_d_idx, true);
             }
         }
     }
@@ -514,25 +528,26 @@ FindUFVKId::operator()(const libzcash::SaplingPaymentAddress& saplingAddr) const
     // We definitely don't know of any UFVK linked to this Sapling address.
     return std::nullopt;
 }
-std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-FindUFVKId::operator()(const CScriptID& scriptId) const {
+std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const CScriptID& scriptId) const {
     const auto metadata = keystore.mapP2SHUnified.find(scriptId);
     if (metadata != keystore.mapP2SHUnified.end()) {
-        return metadata->second;
+        // At present we never generate transparent internal addresses, so this
+        // must be an external address
+        return AddressUFVKMetadata(metadata->second.first, metadata->second.second, false);
     } else {
         return std::nullopt;
     }
 }
-std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-FindUFVKId::operator()(const CKeyID& keyId) const {
+std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const CKeyID& keyId) const {
     const auto metadata = keystore.mapP2PKHUnified.find(keyId);
     if (metadata != keystore.mapP2PKHUnified.end()) {
-        return metadata->second;
+        // At present we never generate transparent internal addresses, so this
+        // must be an external address
+        return AddressUFVKMetadata(metadata->second.first, metadata->second.second, false);
     } else {
         return std::nullopt;
     }
 }
-std::optional<std::pair<libzcash::UFVKId, std::optional<libzcash::diversifier_index_t>>>
-FindUFVKId::operator()(const libzcash::UnknownReceiver& receiver) const {
+std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const libzcash::UnknownReceiver& receiver) const {
     return std::nullopt;
 }

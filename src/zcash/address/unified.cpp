@@ -2,9 +2,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+#include "tinyformat.h"
 #include "zcash/Address.hpp"
 #include "unified.h"
 #include "util/match.h"
+#include "utilstrencodings.h"
 
 #include <rust/unified_keys.h>
 
@@ -37,6 +39,37 @@ Receiver libzcash::RecipientAddressToReceiver(const RecipientAddress& recipient)
         [](const libzcash::OrchardRawAddress& addr) { return Receiver(addr); },
         [](const libzcash::SaplingPaymentAddress& addr) { return Receiver(addr); }
     }, recipient);
+}
+
+std::string libzcash::DebugPrintReceiver(const Receiver& receiver) {
+    return std::visit(match {
+        [&](const OrchardRawAddress &zaddr) {
+            CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+            ss << zaddr;
+            return tfm::format("Orchard(%s)", HexStr(ss.begin(), ss.end()));
+        },
+        [&](const SaplingPaymentAddress &zaddr) {
+            CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+            ss << zaddr;
+            return tfm::format("Sapling(%s)", HexStr(ss.begin(), ss.end()));
+        },
+        [&](const CScriptID &p2sh) {
+            return tfm::format("P2SH(%s)", p2sh.GetHex());
+        },
+        [&](const CKeyID &p2pkh) {
+            return tfm::format("P2PKH(%s)", p2pkh.GetHex());
+        },
+        [&](const UnknownReceiver &unknown) {
+            return tfm::format(
+                "Unknown(%x, %s)",
+                unknown.typecode,
+                HexStr(unknown.data.begin(), unknown.data.end()));
+        }
+    }, receiver);
+};
+
+std::string libzcash::DebugPrintRecipientAddress(const RecipientAddress& addr) {
+    return DebugPrintReceiver(RecipientAddressToReceiver(addr));
 }
 
 std::optional<ZcashdUnifiedSpendingKey> ZcashdUnifiedSpendingKey::ForAccount(
