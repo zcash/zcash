@@ -483,7 +483,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(outputs[0]['address'], uao)
         assert_equal(outputs[0]['value'], Decimal('1'))
         assert_equal(outputs[0]['valueZat'], 100000000)
-        assert_equal(outputs[0]['output'], 0)
+        assert_equal(outputs[0]['action'], 0)
         assert_equal(outputs[0]['outgoing'], False)
         assert_equal(outputs[0]['memo'], my_memo)
         assert_equal(outputs[0]['memoStr'], my_memo_str)
@@ -492,7 +492,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(outputs[1]['address'], uaso)
         assert_equal(outputs[1]['value'], Decimal('2'))
         assert_equal(outputs[1]['valueZat'], 200000000)
-        assert_equal(outputs[1]['output'], 1)
+        assert_equal(outputs[1]['action'], 1)
         assert_equal(outputs[1]['outgoing'], False)
         assert_equal(outputs[1]['memo'], no_memo)
         assert 'memoStr' not in outputs[1]
@@ -500,7 +500,7 @@ class ListReceivedTest (BitcoinTestFramework):
         self.generate_and_sync(height+3)
 
         opid = self.nodes[1].z_sendmany(uao, [
-            {'address': uaso, 'amount': Decimal('0.4')},
+            {'address': uaso, 'amount': Decimal('0.3')},
             {'address': ua_node0, 'amount': Decimal('0.2')}
         ])
         txid1 = wait_and_assert_operationid_status(self.nodes[1], opid)
@@ -514,9 +514,9 @@ class ListReceivedTest (BitcoinTestFramework):
 
         spends = pt['spends']
         assert_equal(spends[0]['type'], 'orchard')
-        assert_equal(spends[0]['spend'], 0)
+        assert_equal(spends[0]['action'], 0)
         assert_equal(spends[0]['txidPrev'], txid0)
-        assert_equal(spends[0]['outputPrev'], 0)
+        assert_equal(spends[0]['actionPrev'], 0)
         assert_equal(spends[0]['address'], uao)
         assert_equal(spends[0]['value'], Decimal('1.0'))
         assert_equal(spends[0]['valueZat'], 100000000)
@@ -527,22 +527,27 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(outputs[0]['value'], Decimal('0.2'))
         assert_equal(outputs[0]['valueZat'], 20000000)
         assert_equal(outputs[0]['outgoing'], True)
+        assert_equal(outputs[0]['walletInternal'], False)
         assert_equal(outputs[0]['memo'], no_memo)
 
         assert_equal(outputs[1]['type'], 'orchard')
         assert_equal(outputs[1]['address'], uaso)
-        assert_equal(outputs[1]['value'], Decimal('0.4'))
-        assert_equal(outputs[1]['valueZat'], 40000000)
+        assert_equal(outputs[1]['value'], Decimal('0.3'))
+        assert_equal(outputs[1]['valueZat'], 30000000)
         assert_equal(outputs[1]['outgoing'], False)
+        assert_equal(outputs[1]['walletInternal'], False)
         assert_equal(outputs[1]['memo'], no_memo)
 
+        # Verify that we observe the change output
+        print("###", uao, "###")
         assert_equal(outputs[2]['type'], 'orchard')
-        # TODO: scrub change addresses
-        #assert_equal(outputs[2]['address'], '<change>')
-        assert_equal(outputs[2]['value'], Decimal('0.39998'))
-        assert_equal(outputs[2]['valueZat'], 39998000)
+        assert_equal(outputs[2]['value'], Decimal('0.49999'))
+        assert_equal(outputs[2]['valueZat'], 49999000)
         assert_equal(outputs[2]['outgoing'], False)
+        assert_equal(outputs[2]['walletInternal'], True)
         assert_equal(outputs[2]['memo'], no_memo)
+        # The change address should have been erased
+        assert_true('address' not in outputs[2])
 
     def run_test(self):
         self.test_received_sprout(200)

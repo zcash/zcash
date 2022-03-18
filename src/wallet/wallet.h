@@ -1669,7 +1669,6 @@ public:
     bool SaveRecipientMappings(const uint256& txid, const std::vector<RecipientMapping>& recipients)
     {
         LOCK2(cs_main, cs_wallet);
-        LogPrintf("SaveRecipientMappings:\n%s", txid.ToString());
 
         for (const auto& recipient : recipients)
         {
