@@ -564,8 +564,8 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     // we trial-decrypt diversifiers (which also means we learn the index).
     auto ufvkmetaUnadded = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
     EXPECT_TRUE(ufvkmetaUnadded.has_value());
-    EXPECT_EQ(ufvkmetaUnadded.value().first, ufvkid);
-    EXPECT_EQ(ufvkmetaUnadded.value().second.value(), addrPair.second);
+    EXPECT_EQ(ufvkmetaUnadded.value().GetUFVKId(), ufvkid);
+    EXPECT_EQ(ufvkmetaUnadded.value().GetDiversifierIndex().value(), addrPair.second);
 
     // Adding the Sapling addr -> ivk map entry causes us to find the same UFVK,
     // but as we're no longer trial-decrypting we don't learn the index.
@@ -574,8 +574,8 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
 
     auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
     EXPECT_TRUE(ufvkmeta.has_value());
-    EXPECT_EQ(ufvkmeta.value().first, ufvkid);
-    EXPECT_FALSE(ufvkmeta.value().second.has_value());
+    EXPECT_EQ(ufvkmeta.value().GetUFVKId(), ufvkid);
+    EXPECT_FALSE(ufvkmeta.value().GetDiversifierIndex().has_value());
 }
 
 TEST(KeystoreTests, StoreAndRetrieveUFVKByOrchard) {
@@ -603,8 +603,8 @@ TEST(KeystoreTests, StoreAndRetrieveUFVKByOrchard) {
     // we trial-decrypt diversifiers (which also means we learn the index).
     auto ufvkmetaUnadded = keyStore.GetUFVKMetadataForReceiver(orchardReceiver);
     EXPECT_TRUE(ufvkmetaUnadded.has_value());
-    EXPECT_EQ(ufvkmetaUnadded.value().first, ufvkid);
-    EXPECT_EQ(ufvkmetaUnadded.value().second.value(), addrPair.second);
+    EXPECT_EQ(ufvkmetaUnadded.value().GetUFVKId(), ufvkid);
+    EXPECT_EQ(ufvkmetaUnadded.value().GetDiversifierIndex().value(), addrPair.second);
 }
 
 TEST(KeystoreTests, AddTransparentReceiverForUnifiedAddress) {
@@ -627,7 +627,7 @@ TEST(KeystoreTests, AddTransparentReceiverForUnifiedAddress) {
 
     ufvkmeta = keyStore.GetUFVKMetadataForReceiver(addrPair.first.GetP2PKHReceiver().value());
     EXPECT_TRUE(ufvkmeta.has_value());
-    EXPECT_EQ(ufvkmeta.value().first, ufvkid);
+    EXPECT_EQ(ufvkmeta.value().GetUFVKId(), ufvkid);
 }
 
 

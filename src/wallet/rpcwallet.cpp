@@ -4224,16 +4224,20 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
         // Show the address that was cached at transaction construction as the
         // recipient.
-        std::string address = keyIO.EncodePaymentAddress(
-            pwalletMain->GetPaymentAddressForRecipient(txid, pa)
-        );
+        std::optional<std::string> addrStr;
+        if (!pwalletMain->IsInternalRecipient(pa)) {
+            auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, pa);
+            addrStr = keyIO.EncodePaymentAddress(addr);
+        }
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_SAPLING);
         entry.pushKV("spend", (int)i);
         entry.pushKV("txidPrev", op.hash.GetHex());
         entry.pushKV("outputPrev", (int)op.n);
-        entry.pushKV("address", address);
+        if (addrStr.has_value()) {
+            entry.pushKV("address", addrStr.value());
+        }
         entry.pushKV("value", ValueFromAmount(notePt.value()));
         entry.pushKV("valueZat", notePt.value());
         spends.push_back(entry);
@@ -4273,15 +4277,21 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
         // Show the address that was cached at transaction construction as the
         // recipient.
-        std::string address = keyIO.EncodePaymentAddress(
-            pwalletMain->GetPaymentAddressForRecipient(txid, pa)
-        );
+        std::optional<std::string> addrStr;
+        bool isInternal = pwalletMain->IsInternalRecipient(pa);
+        if (!isInternal) {
+            auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, pa);
+            addrStr = keyIO.EncodePaymentAddress(addr);
+        }
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_SAPLING);
         entry.pushKV("output", (int)op.n);
         entry.pushKV("outgoing", isOutgoing);
-        entry.pushKV("address", address);
+        entry.pushKV("walletInternal", isInternal);
+        if (addrStr.has_value()) {
+            entry.pushKV("address", addrStr.value());
+        }
         entry.pushKV("value", ValueFromAmount(notePt.value()));
         entry.pushKV("valueZat", notePt.value());
         addMemo(entry, memo);
@@ -4293,24 +4303,27 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
     // Orchard spends
     for (auto & pair  : orchardActions.GetSpends()) {
-        // TODO test with Orchard spends after rebased on feature/wallet-orchard
         auto actionIdx = pair.first;
         OrchardActionSpend orchardActionSpend = pair.second;
         auto outpoint = orchardActionSpend.GetOutPoint();
         auto receivedAt = orchardActionSpend.GetReceivedAt();
         auto noteValue = orchardActionSpend.GetNoteValue();
-        // if mapWallet doesn't contain the spent outpoint's txid,
-        // the wallet is corrupt, so using `.at` here is fine.
+
+        std::optional<std::string> addrStr;
+        if (!pwalletMain->IsInternalRecipient(receivedAt)) {
+            auto ua = pwalletMain->FindUnifiedAddressByReceiver(receivedAt);
+            assert(ua.has_value());
+            addrStr = keyIO.EncodePaymentAddress(ua.value());
+        }
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_ORCHARD);
         entry.pushKV("action", (int) actionIdx);
         entry.pushKV("txidPrev", outpoint.hash.GetHex());
         entry.pushKV("actionPrev", (int) outpoint.n);
-        auto ua = pwalletMain->FindUnifiedAddressByReceiver(receivedAt);
-        assert(ua.has_value());
-        std::string addrStr = keyIO.EncodePaymentAddress(ua.value());
-        entry.pushKV("address", addrStr);
+        if (addrStr.has_value()) {
+            entry.pushKV("address", addrStr.value());
+        }
         entry.pushKV("value", ValueFromAmount(noteValue));
         entry.pushKV("valueZat", noteValue);
         spends.push_back(entry);
@@ -4324,15 +4337,21 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
         // Show the address that was cached at transaction construction as the
         // recipient.
-        std::string address = keyIO.EncodePaymentAddress(
-            pwalletMain->GetPaymentAddressForRecipient(txid, recipient)
-        );
+        std::optional<std::string> addrStr;
+        bool isInternal = pwalletMain->IsInternalRecipient(recipient);
+        if (!isInternal) {
+            auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, recipient);
+            addrStr = keyIO.EncodePaymentAddress(addr);
+        }
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_ORCHARD);
         entry.pushKV("action", (int) actionIdx);
         entry.pushKV("outgoing", orchardActionOutput.IsOutgoing());
-        entry.pushKV("address", address);
+        entry.pushKV("walletInternal", isInternal);
+        if (addrStr.has_value()) {
+            entry.pushKV("address", addrStr.value());
+        }
         entry.pushKV("value", ValueFromAmount(noteValue));
         entry.pushKV("valueZat", noteValue);
         addMemo(entry, memo);

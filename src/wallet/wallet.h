@@ -1583,7 +1583,12 @@ public:
     bool LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skmeta);
     bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
 
-    libzcash::PaymentAddress GetPaymentAddressForRecipient(const uint256& txid, const libzcash::RecipientAddress recipient) const;
+    libzcash::PaymentAddress GetPaymentAddressForRecipient(
+            const uint256& txid,
+            const libzcash::RecipientAddress& recipient) const;
+    bool IsInternalRecipient(
+            const libzcash::RecipientAddress& recipient) const;
+
     void LoadRecipientMapping(const uint256& txid, const RecipientMapping& mapping);
 
     //! Reconstructs (in memory) caches and mappings for unified accounts,
