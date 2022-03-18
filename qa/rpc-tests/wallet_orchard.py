@@ -54,7 +54,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         saplingAddr2 = self.nodes[2].z_listunifiedreceivers(ua2)['sapling']
 
         recipients = [{"address": saplingAddr2, "amount": Decimal('10')}]
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Mine the tx & activate NU5
@@ -70,7 +70,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         # Node 0 shields some funds
         # t-coinbase -> Orchard
         recipients = [{"address": ua1, "amount": Decimal('10')}]
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
@@ -86,7 +86,7 @@ class WalletOrchardTest(BitcoinTestFramework):
 
         # Send another tx to ua1
         recipients = [{"address": ua1, "amount": Decimal('10')}]
-        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Mine the tx & generate a majority chain on the 0/1 side of the split
@@ -105,7 +105,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         ua3 = addrRes3['unifiedaddress']
 
         recipients = [{"address": ua3, "amount": Decimal('1')}]
-        myopid = self.nodes[2].z_sendmany(ua2, recipients, 1, 0, True)
+        myopid = self.nodes[2].z_sendmany(ua2, recipients, 1, 0)
         rollback_tx = wait_and_assert_operationid_status(self.nodes[2], myopid)
 
         self.sync_all()

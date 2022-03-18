@@ -48,11 +48,11 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         ZTXOSelector ztxoSelector,
         std::vector<SendManyRecipient> recipients,
         int minDepth,
+        TransactionStrategy strategy,
         CAmount fee,
-        bool allowRevealedAmounts,
         UniValue contextInfo) :
         builder_(std::move(builder)), ztxoSelector_(ztxoSelector), recipients_(recipients),
-        mindepth_(minDepth), fee_(fee), allowRevealedAmounts_(allowRevealedAmounts),
+        mindepth_(minDepth), strategy_(strategy), fee_(fee),
         contextinfo_(contextInfo)
 {
     assert(fee_ >= 0);
@@ -78,15 +78,15 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 txOutputAmounts_.sapling_outputs_total += recipient.amount;
                 recipientPools_.insert(OutputPool::Sapling);
-                if (!(ztxoSelector_.SelectsSapling() || allowRevealedAmounts_)) {
+                if (!(ztxoSelector_.SelectsSapling() || strategy_.AllowRevealedAmounts())) {
                     if (ztxoSelector_.SelectsSprout()) {
                         throw JSONRPCError(
                             RPC_INVALID_PARAMETER,
                             "Sending from the Sprout shielded pool to the Sapling "
                             "shielded pool is not enabled by default because it will "
                             "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
-                            "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
-                            "you wish to allow this transaction to proceed anyway.");
+                            "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
+                            "or weaker if you wish to allow this transaction to proceed anyway.");
                     }
                     if (builder_.SupportsOrchard() && ztxoSelector_.SelectsOrchard()) {
                         throw JSONRPCError(
@@ -94,8 +94,8 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
                             "Sending from the Orchard shielded pool to the Sapling "
                             "shielded pool is not enabled by default because it will "
                             "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
-                            "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
-                            "you wish to allow this transaction to proceed anyway.");
+                            "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
+                            "or weaker if you wish to allow this transaction to proceed anyway.");
                     }
                     // If the source selects transparent then we don't show an
                     // error because we are necessarily revealing information.
@@ -106,21 +106,31 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
                 recipientPools_.insert(OutputPool::Orchard);
                 // No transaction allows sends from Sprout to Orchard.
                 assert(!ztxoSelector_.SelectsSprout());
-                if (!((builder_.SupportsOrchard() && ztxoSelector_.SelectsOrchard()) || allowRevealedAmounts_)) {
+                if (!((builder_.SupportsOrchard() && ztxoSelector_.SelectsOrchard()) || strategy_.AllowRevealedAmounts())) {
                     if (ztxoSelector_.SelectsSapling()) {
                         throw JSONRPCError(
                             RPC_INVALID_PARAMETER,
                             "Sending from the Sapling shielded pool to the Orchard "
                             "shielded pool is not enabled by default because it will "
                             "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
-                            "Resubmit with the `allowRevealedAmounts` parameter set to `true` if "
-                            "you wish to allow this transaction to proceed anyway.");
+                            "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
+                            "or weaker if you wish to allow this transaction to proceed anyway.");
                     }
                     // If the source selects transparent then we don't show an
                     // error because we are necessarily revealing information.
                 }
             }
         }, recipient.address);
+    }
+
+    if (recipientPools_.count(OutputPool::Transparent) && !strategy_.AllowRevealedRecipients()) {
+        throw JSONRPCError(
+            RPC_INVALID_PARAMETER,
+            "This transaction would have transparent recipients, which is not "
+            "enabled by default because it will publicly reveal transaction "
+            "recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
+            "with the `privacyPolicy` parameter set to `AllowRevealedRecipients` "
+            "or weaker if you wish to allow this transaction to proceed anyway.");
     }
 
     // Log the context info i.e. the call parameters to z_sendmany
@@ -247,6 +257,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                         FormatMoney(changeAmount),
                         FormatMoney(dustThreshold)));
         } else {
+            bool isFromUa = std::holds_alternative<libzcash::UnifiedAddress>(ztxoSelector_.GetPattern());
             throw JSONRPCError(
                     RPC_WALLET_INSUFFICIENT_FUNDS,
                     strprintf(
@@ -255,8 +266,25 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                         + (allowTransparentCoinbase ? "" :
                             "; note that coinbase outputs will not be selected if you specify "
                             "ANY_TADDR or if any transparent recipients are included.")
+                        + ((!isFromUa || strategy_.AllowLinkingAccountAddresses()) ? "" :
+                            " (This transaction may require selecting transparent coins that were sent "
+                            "to multiple Unified Addresses, which is not enabled by default because "
+                            "it would create a public link between the transparent receivers of these "
+                            "addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
+                            "parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to "
+                            "allow this transaction to proceed anyway.)")
                     );
         }
+    }
+
+    if (!(spendable.utxos.empty() || strategy_.AllowRevealedSenders())) {
+        throw JSONRPCError(
+            RPC_INVALID_PARAMETER,
+            "This transaction requires selecting transparent coins, which is "
+            "not enabled by default because it will publicly reveal transaction "
+            "senders and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
+            "with the `privacyPolicy` parameter set to `AllowRevealedSenders` "
+            "or weaker if you wish to allow this transaction to proceed anyway.");
     }
 
     spendable.LogInputs(getId());

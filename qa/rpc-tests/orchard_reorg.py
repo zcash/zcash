@@ -70,7 +70,7 @@ class OrchardReorgTest(BitcoinTestFramework):
 
         # Create an Orchard note.
         recipients = [{'address': ua, 'amount': Decimal('12.5')}]
-        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
+        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         # After mining a block, finalorchardroot should have changed.
@@ -95,7 +95,7 @@ class OrchardReorgTest(BitcoinTestFramework):
 
         # Create another Orchard note on node 0.
         recipients = [{'address': ua, 'amount': Decimal('12.5')}]
-        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0)
+        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         # Mine two blocks on node 0.
