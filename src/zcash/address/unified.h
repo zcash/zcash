@@ -57,6 +57,8 @@ typedef std::variant<
     libzcash::SaplingPaymentAddress,
     libzcash::OrchardRawAddress> RecipientAddress;
 
+std::string DebugPrintRecipientAddress(const RecipientAddress& add);
+
 class TransparentChangeRequest {
 private:
     const diversifier_index_t& index;
@@ -125,6 +127,8 @@ typedef std::variant<
     UnknownReceiver> Receiver;
 
 Receiver RecipientAddressToReceiver(const RecipientAddress& recipient);
+
+std::string DebugPrintReceiver(const Receiver& receiver);
 
 /**
  * An internal identifier for a unified full viewing key, derived as a
