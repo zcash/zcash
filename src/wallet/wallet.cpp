@@ -61,6 +61,10 @@ const char * DEFAULT_WALLET_DAT = "wallet.dat";
  */
 CFeeRate CWallet::minTxFee = CFeeRate(DEFAULT_TRANSACTION_MINFEE);
 
+std::set<ReceiverType> CWallet::DefaultReceiverTypes() {
+    return {ReceiverType::P2PKH, ReceiverType::Sapling, ReceiverType::Orchard};
+}
+
 /** @defgroup mapWallet
  *
  * @{
@@ -857,10 +861,12 @@ PaymentAddress CWallet::GetPaymentAddressForRecipient(
         const uint256& txid,
         const libzcash::RecipientAddress& recipient) const
 {
+    auto self = this;
     auto defaultAddress = [&]() -> PaymentAddress {
+        auto ufvk = self->GetUFVKForReceiver(RecipientAddressToReceiver(recipient));
         return std::visit(match {
             [&](const CKeyID& addr) {
-                auto ua = pwalletMain->FindUnifiedAddressByReceiver(addr);
+                auto ua = self->FindUnifiedAddressByReceiver(addr);
                 if (ua.has_value()) {
                     return libzcash::PaymentAddress{ua.value()};
                 } else {
@@ -868,7 +874,7 @@ PaymentAddress CWallet::GetPaymentAddressForRecipient(
                 }
             },
             [&](const CScriptID& addr) {
-                auto ua = pwalletMain->FindUnifiedAddressByReceiver(addr);
+                auto ua = self->FindUnifiedAddressByReceiver(addr);
                 if (ua.has_value()) {
                     return libzcash::PaymentAddress{ua.value()};
                 } else {
@@ -876,20 +882,37 @@ PaymentAddress CWallet::GetPaymentAddressForRecipient(
                 }
             },
             [&](const SaplingPaymentAddress& addr) {
-                auto ua = pwalletMain->FindUnifiedAddressByReceiver(addr);
+                auto ua = self->FindUnifiedAddressByReceiver(addr);
                 if (ua.has_value()) {
                     return libzcash::PaymentAddress{ua.value()};
+                } else if (ufvk.has_value() && ufvk->GetSaplingKey().has_value()) {
+                    auto saplingKey = ufvk->GetSaplingKey().value();
+                    auto j = saplingKey.DecryptDiversifier(addr.d);
+                    // std::get is safe here because we know we have a valid Sapling diversifier index
+                    auto defaultUA = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(
+                            ufvk->Address(j, CWallet::DefaultReceiverTypes()));
+                    return libzcash::PaymentAddress{defaultUA.first};
                 } else {
                     return libzcash::PaymentAddress{addr};
                 }
             },
             [&](const OrchardRawAddress& addr) {
-                auto ua = pwalletMain->FindUnifiedAddressByReceiver(addr);
+                auto ua = self->FindUnifiedAddressByReceiver(addr);
                 if (ua.has_value()) {
                     return libzcash::PaymentAddress{ua.value()};
-                } else {
-                    return libzcash::PaymentAddress{UnifiedAddress::ForSingleReceiver(addr)};
+                } else if (ufvk.has_value() && ufvk->GetOrchardKey().has_value()) {
+                    auto orchardKey = ufvk->GetOrchardKey().value();
+                    auto j = orchardKey.ToIncomingViewingKey().DecryptDiversifier(addr);
+                    if (j.has_value()) {
+                        auto genResult = ufvk->Address(j.value(), CWallet::DefaultReceiverTypes());
+                        auto defaultUA = std::get_if<std::pair<UnifiedAddress, diversifier_index_t>>(&genResult);
+                        if (defaultUA != nullptr) {
+                            return libzcash::PaymentAddress{defaultUA->first};
+                        }
+                    }
                 }
+
+                return libzcash::PaymentAddress{UnifiedAddress::ForSingleReceiver(addr)};
             }
         }, recipient);
     };
@@ -913,6 +936,7 @@ PaymentAddress CWallet::GetPaymentAddressForRecipient(
 
 bool CWallet::IsInternalRecipient(const libzcash::RecipientAddress& recipient) const
 {
+    auto self = this;
     return std::visit(match {
         [&](const CKeyID& addr) {
             // we never send transparent change when sending to or from a
@@ -924,7 +948,7 @@ bool CWallet::IsInternalRecipient(const libzcash::RecipientAddress& recipient) c
             return false;
         },
         [&](const SaplingPaymentAddress& addr) {
-            auto ufvk = pwalletMain->GetUFVKForReceiver(addr);
+            auto ufvk = self->GetUFVKForReceiver(addr);
             if (ufvk.has_value()) {
                 auto changeAddr = ufvk->GetChangeAddress(SaplingChangeRequest());
                 if (changeAddr.has_value()) {
@@ -934,7 +958,7 @@ bool CWallet::IsInternalRecipient(const libzcash::RecipientAddress& recipient) c
             return false;
         },
         [&](const OrchardRawAddress& addr) {
-            auto ufvk = pwalletMain->GetUFVKForReceiver(addr);
+            auto ufvk = self->GetUFVKForReceiver(addr);
             if (ufvk.has_value()) {
                 auto changeAddr = ufvk->GetChangeAddress(OrchardChangeRequest());
                 if (changeAddr.has_value()) {
@@ -1583,7 +1607,7 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
 
     for (uint32_t i = 0; i < wtx.GetOrchardBundle().GetNumActions(); i++) {
         OrchardOutPoint op(wtx.GetHash(), i);
-        auto potential_spends = pwalletMain->orchardWallet.GetPotentialSpends(op);
+        auto potential_spends = orchardWallet.GetPotentialSpends(op);
 
         if (potential_spends.size() <= 1) {
             continue;  // No conflict if zero or one spends
@@ -3691,7 +3715,7 @@ bool CWallet::MnemonicVerified() {
 }
 
 HDSeed CWallet::GetHDSeedForRPC() const {
-    auto seed = pwalletMain->GetMnemonicSeed();
+    auto seed = GetMnemonicSeed();
     if (!seed.has_value()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "HD seed not found");
     }

@@ -1704,6 +1704,12 @@ public:
      */
     static CAmount GetRequiredFee(unsigned int nTxBytes);
 
+    /**
+     * The current set of default receiver types used when the wallet generates
+     * unified addresses
+     */
+    static std::set<libzcash::ReceiverType> DefaultReceiverTypes();
+
 private:
     bool NewKeyPool();
 public:

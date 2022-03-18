@@ -3136,7 +3136,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
     }
     if (receivers.empty()) {
         // Default is the best and second-best shielded pools, and the transparent pool.
-        receivers = {ReceiverType::P2PKH, ReceiverType::Sapling, ReceiverType::Orchard};
+        receivers = CWallet::DefaultReceiverTypes();
     }
 
     std::optional<libzcash::diversifier_index_t> j = std::nullopt;
