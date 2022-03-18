@@ -37,6 +37,10 @@ public:
      */
     static MnemonicSeed Random(uint32_t bip44CoinType, Language language = English, size_t entropyLen = 32);
 
+    static MnemonicSeed FromLegacySeed(const HDSeed& legacySeed, uint32_t bip44CoinType, Language language = English);
+
+    static std::optional<MnemonicSeed> FromEntropy(const RawHDSeed& entropy, uint32_t bip44CoinType, Language language = English);
+
     static std::string LanguageName(Language language) {
         switch (language) {
             case English:

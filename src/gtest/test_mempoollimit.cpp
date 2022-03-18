@@ -110,6 +110,8 @@ TEST(MempoolLimitTests, WeightedTxTreeCheckSizeAfterDropping)
 
 TEST(MempoolLimitTests, WeightedTxInfoFromTx)
 {
+    LoadProofParameters();
+
     // The transaction creation is based on the test:
     // test_transaction_builder.cpp/TEST(TransactionBuilder, SetFee)
     auto consensusParams = RegtestActivateSapling();

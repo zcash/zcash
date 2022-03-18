@@ -48,6 +48,12 @@ $(BITCOIND_BIN): FORCE
 $(BITCOIN_CLI_BIN): FORCE
 	$(MAKE) -C src $(@F)
 
+check-security: FORCE
+	$(MAKE) -C src check-security
+
+check-symbols: FORCE
+	$(MAKE) -C src check-symbols
+
 if USE_LCOV
 
 baseline.info:

@@ -74,10 +74,11 @@ std::optional<AccountKey> AccountKey::ForAccount(
         AccountId accountId) {
     auto rawSeed = seed.RawSeed();
     auto m = CExtKey::Master(rawSeed.data(), rawSeed.size());
+    if (!m.has_value()) return std::nullopt;
 
     // We use a fixed keypath scheme of m/44'/coin_type'/account'
     // Derive m/44'
-    auto m_44h = m.Derive(44 | HARDENED_KEY_LIMIT);
+    auto m_44h = m.value().Derive(44 | HARDENED_KEY_LIMIT);
     if (!m_44h.has_value()) return std::nullopt;
 
     // Derive m/44'/coin_type'

@@ -50,6 +50,8 @@ TEST(RecursiveDynamicUsageTests, TestTransactionJoinSplit)
 
 TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToSapling)
 {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
     
     auto sk = libzcash::SaplingSpendingKey::random();
@@ -69,6 +71,8 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToSapling)
 
 TEST(RecursiveDynamicUsageTests, TestTransactionTransparentToSapling)
 {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
     
     CBasicKeyStore keystore;
@@ -90,6 +94,8 @@ TEST(RecursiveDynamicUsageTests, TestTransactionTransparentToSapling)
 
 TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToTransparent)
 {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateSapling();
     
     CBasicKeyStore keystore;
