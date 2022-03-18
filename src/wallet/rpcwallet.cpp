@@ -4288,7 +4288,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
     }
 
     std::vector<uint256> ovksVector(ovks.begin(), ovks.end());
-    OrchardActions orchardActions = pwalletMain->GetOrchardWallet().GetTxActions(wtx, ovksVector);
+    OrchardActions orchardActions = wtx.RecoverOrchardActions(ovksVector);
 
     // Orchard spends
     for (auto & pair  : orchardActions.GetSpends()) {
@@ -4303,9 +4303,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_ORCHARD);
-        entry.pushKV("spend", (int) actionIdx);
+        entry.pushKV("action", (int) actionIdx);
         entry.pushKV("txidPrev", outpoint.hash.GetHex());
-        entry.pushKV("outputPrev", (int) outpoint.n);
+        entry.pushKV("actionPrev", (int) outpoint.n);
         auto ua = pwalletMain->FindUnifiedAddressByReceiver(receivedAt);
         assert(ua.has_value());
         std::string addrStr = keyIO.EncodePaymentAddress(ua.value());
@@ -4329,7 +4329,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_ORCHARD);
-        entry.pushKV("output", (int) actionIdx);
+        entry.pushKV("action", (int) actionIdx);
         entry.pushKV("outgoing", orchardActionOutput.IsOutgoing());
         entry.pushKV("address", address);
         entry.pushKV("value", ValueFromAmount(noteValue));

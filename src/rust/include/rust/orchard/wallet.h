@@ -294,21 +294,23 @@ typedef void (*push_spend_t)(void* callbackReceiver, const RawOrchardActionSpend
 typedef void (*push_output_t)(void* callbackReceiver, const RawOrchardActionOutput data);
 
 /**
- * Trial-decrypt the specfied Orchard bundle, and
- * uses the provided callback to push RawOrchardActionData values corresponding to the
- * actions of that bundle on to the provided result vector.  Note that the push_cb callback can perform any
- * necessary conversion from a RawOrchardActionData value in addition to modifying the
- * provided result vector.
+ * Trial-decrypts the specfied Orchard bundle, and uses the provided callbacks to pass
+ * `RawOrchardActionSpend` and `RawOrchardActionOutput` values (corresponding to the
+ * actions of that bundle) to the provided result receiver.
  *
- * The following pointers must be freed by the caller:
- * - `RawOrchardActionData::spend` must be freed using `orchard_action_spend_free`
- * - `RawOrchardActionData::output` must be freed using `orchard_action_output_free`
- * - `RawOrchardActionData::output::addr` must be freed using `orchard_address_free`
+ * Note that the callbacks can perform any necessary conversion from a
+ * `RawOrchardActionSpend` or `RawOrchardActionOutput` value in addition to modifying the
+ * provided result receiver.
+ *
+ * `raw_ovks` must be a pointer to an array of `unsigned char[32]`.
+ *
+ * The `addr` pointer on each `RawOrchardActionOutput` value must be freed using
+ * `orchard_address_free`.
  */
 bool orchard_wallet_get_txdata(
         const OrchardWalletPtr* wallet,
         const OrchardBundlePtr* bundle,
-        const unsigned char*,
+        const unsigned char* raw_ovks,
         size_t raw_ovks_len,
         void* callbackReceiver,
         push_spend_t push_spend_cb,

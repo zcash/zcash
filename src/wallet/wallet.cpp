@@ -3933,6 +3933,12 @@ std::optional<std::pair<
     return std::nullopt;
 }
 
+OrchardActions CWalletTx::RecoverOrchardActions(const std::vector<uint256>& ovks) const
+{
+    return pwallet->orchardWallet.GetTxActions(*this, ovks);
+}
+
+
 int64_t CWalletTx::GetTxTime() const
 {
     int64_t n = nTimeSmart;

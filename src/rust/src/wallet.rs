@@ -1041,7 +1041,7 @@ pub extern "C" fn orchard_wallet_get_txdata(
         .map(|k| OutgoingViewingKey::from(*k))
         .collect();
     if let Some(bundle) = unsafe { bundle.as_ref() } {
-        let keys = wallet
+        let ivks = wallet
             .key_store
             .viewing_keys
             .keys()
@@ -1049,7 +1049,7 @@ pub extern "C" fn orchard_wallet_get_txdata(
             .collect::<Vec<_>>();
 
         let incoming: BTreeMap<usize, (Note, Address, [u8; 512])> = bundle
-            .decrypt_outputs_with_keys(&keys)
+            .decrypt_outputs_with_keys(&ivks)
             .into_iter()
             .map(|(idx, _, note, addr, memo)| (idx, (note, addr, memo)))
             .collect();
@@ -1077,22 +1077,18 @@ pub extern "C" fn orchard_wallet_get_txdata(
             }) {
                 unsafe { (spend_push_cb.unwrap())(callback_receiver, spend) };
             }
-            if let Some((note, addr, memo)) = incoming.get(&idx) {
+
+            if let Some(((note, addr, memo), is_outgoing)) = incoming
+                .get(&idx)
+                .map(|n| (n, false))
+                .or_else(|| outgoing.get(&idx).map(|n| (n, true)))
+            {
                 let output = FFIActionOutput {
                     action_idx: idx as u32,
                     recipient: Box::into_raw(Box::new(*addr)),
                     value: note.value().inner() as i64,
                     memo: *memo,
-                    is_outgoing: false,
-                };
-                unsafe { (output_push_cb.unwrap())(callback_receiver, output) };
-            } else if let Some((note, addr, memo)) = outgoing.get(&idx) {
-                let output = FFIActionOutput {
-                    action_idx: idx as u32,
-                    recipient: Box::into_raw(Box::new(*addr)),
-                    value: note.value().inner() as i64,
-                    memo: *memo,
-                    is_outgoing: true,
+                    is_outgoing,
                 };
                 unsafe { (output_push_cb.unwrap())(callback_receiver, output) };
             }

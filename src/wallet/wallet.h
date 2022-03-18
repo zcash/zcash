@@ -632,6 +632,7 @@ public:
     std::optional<std::pair<
         libzcash::SaplingNotePlaintext,
         libzcash::SaplingPaymentAddress>> RecoverSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op, std::set<uint256>& ovks) const;
+    OrchardActions RecoverOrchardActions(const std::vector<uint256>& ovks) const;
 
     //! filter decides which addresses will count towards the debit
     CAmount GetDebit(const isminefilter& filter) const;
@@ -976,6 +977,8 @@ public:
 class CWallet : public CCryptoKeyStore, public CValidationInterface
 {
 private:
+    friend class CWalletTx;
+
     /**
      * Select a set of coins such that nValueRet >= nTargetValue and at least
      * all coins from coinControl are selected; Never select unconfirmed coins
@@ -1189,8 +1192,6 @@ public:
         delete pwalletdbEncryption;
         pwalletdbEncryption = NULL;
     }
-
-    OrchardWallet& GetOrchardWallet() { return orchardWallet; }
 
     void SetNull(const CChainParams& params)
     {

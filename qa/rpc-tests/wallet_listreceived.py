@@ -459,6 +459,9 @@ class ListReceivedTest (BitcoinTestFramework):
         self.nodes[0].sendtoaddress(taddr, 4.0)
         self.generate_and_sync(height+2)
 
+        acct_node0 = self.nodes[0].z_getnewaccount()['account']
+        ua_node0 = self.nodes[0].z_getaddressforaccount(acct_node0, ['sapling', 'orchard'])['unifiedaddress']
+
         opid = self.nodes[1].z_sendmany(taddr, [
             {'address': uao, 'amount': 1, 'memo': my_memo},
             {'address': uaso, 'amount': 2},
@@ -497,7 +500,8 @@ class ListReceivedTest (BitcoinTestFramework):
         self.generate_and_sync(height+3)
 
         opid = self.nodes[1].z_sendmany(uao, [
-            {'address': uaso, 'amount': Decimal('0.4')}
+            {'address': uaso, 'amount': Decimal('0.4')},
+            {'address': ua_node0, 'amount': Decimal('0.2')}
         ])
         txid1 = wait_and_assert_operationid_status(self.nodes[1], opid)
         self.sync_all()
@@ -506,7 +510,7 @@ class ListReceivedTest (BitcoinTestFramework):
 
         assert_equal(pt['txid'], txid1)
         assert_equal(len(pt['spends']), 1) # one spend we can see
-        assert_equal(len(pt['outputs']), 2) # one output + one change output we can see
+        assert_equal(len(pt['outputs']), 3) # one output + one change output we can see
 
         spends = pt['spends']
         assert_equal(spends[0]['type'], 'orchard')
@@ -519,19 +523,26 @@ class ListReceivedTest (BitcoinTestFramework):
 
         outputs = sorted(pt['outputs'], key=lambda x: x['valueZat'])
         assert_equal(outputs[0]['type'], 'orchard')
-        assert_equal(outputs[0]['address'], uaso)
-        assert_equal(outputs[0]['value'], Decimal('0.4'))
-        assert_equal(outputs[0]['valueZat'], 40000000)
-        assert_equal(outputs[0]['outgoing'], False)
+        assert_equal(outputs[0]['address'], ua_node0)
+        assert_equal(outputs[0]['value'], Decimal('0.2'))
+        assert_equal(outputs[0]['valueZat'], 20000000)
+        assert_equal(outputs[0]['outgoing'], True)
         assert_equal(outputs[0]['memo'], no_memo)
 
         assert_equal(outputs[1]['type'], 'orchard')
-        # TODO: scrub change addresses
-        #assert_equal(outputs[1]['address'], '<change>')
-        assert_equal(outputs[1]['value'], Decimal('0.59999'))
-        assert_equal(outputs[1]['valueZat'], 59999000)
+        assert_equal(outputs[1]['address'], uaso)
+        assert_equal(outputs[1]['value'], Decimal('0.4'))
+        assert_equal(outputs[1]['valueZat'], 40000000)
         assert_equal(outputs[1]['outgoing'], False)
         assert_equal(outputs[1]['memo'], no_memo)
+
+        assert_equal(outputs[2]['type'], 'orchard')
+        # TODO: scrub change addresses
+        #assert_equal(outputs[2]['address'], '<change>')
+        assert_equal(outputs[2]['value'], Decimal('0.39998'))
+        assert_equal(outputs[2]['valueZat'], 39998000)
+        assert_equal(outputs[2]['outgoing'], False)
+        assert_equal(outputs[2]['memo'], no_memo)
 
     def run_test(self):
         self.test_received_sprout(200)
