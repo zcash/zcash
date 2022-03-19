@@ -89,7 +89,7 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
     isUsingBuilder_ = false;
     if (builder) {
         isUsingBuilder_ = true;
-        builder_ = builder.value();
+        builder_ = std::move(builder.value());
     }
 
     KeyIO keyIO(Params());

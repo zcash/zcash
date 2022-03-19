@@ -339,6 +339,10 @@ class CSerializeRecipientAddress {
                 [&](const libzcash::SaplingPaymentAddress& saplingAddr) {
                     ReceiverTypeSer(libzcash::ReceiverType::Sapling).Serialize(s);
                     s << saplingAddr;
+                },
+                [&](const libzcash::OrchardRawAddress& orchardAddr) {
+                    ReceiverTypeSer(libzcash::ReceiverType::Orchard).Serialize(s);
+                    s << orchardAddr;
                 }
             }, recipient);
         }
@@ -365,6 +369,11 @@ class CSerializeRecipientAddress {
                     libzcash::SaplingPaymentAddress saplingAddr;
                     s >> saplingAddr;
                     recipient = saplingAddr;
+                    break;
+                }
+                case libzcash::ReceiverType::Orchard: {
+                    auto orchardAddr = libzcash::OrchardRawAddress::Read(s);
+                    recipient = orchardAddr;
                     break;
                 }
             }
@@ -456,6 +465,9 @@ public:
     bool EraseSproutViewingKey(const libzcash::SproutViewingKey &vk);
     bool WriteSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
     bool EraseSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
+
+    /// Orchard support.
+    bool WriteOrchardWitnesses(const OrchardWallet& wallet);
 
     /// Unified key support.
 

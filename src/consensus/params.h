@@ -226,6 +226,11 @@ static const unsigned int PRE_BLOSSOM_REGTEST_HALVING_INTERVAL = 144;
  */
 struct Params {
     /**
+     * Returns the activation height for the specified network upgrade, if any.
+     */
+    std::optional<int> GetActivationHeight(Consensus::UpgradeIndex idx) const;
+
+    /**
      * Returns true if the given network upgrade is active as of the given block
      * height. Caller must check that the height is >= 0 (and handle unknown
      * heights).

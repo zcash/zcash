@@ -295,4 +295,4 @@ bool IsInternalKeyPath(uint32_t purpose, uint32_t coinType, const std::string& k
     }
 }
 
-};
+} //namespace libzcash

@@ -219,6 +219,17 @@ bool CWalletDB::EraseSaplingExtendedFullViewingKey(
 }
 
 //
+// Orchard wallet persistence
+//
+
+bool CWalletDB::WriteOrchardWitnesses(const OrchardWallet& wallet) {
+    nWalletDBUpdateCounter++;
+    return Write(
+            std::string("orchard_note_commitment_tree"),
+            OrchardWalletNoteCommitmentTreeWriter(wallet));
+}
+
+//
 // Unified address & key storage
 //
 
@@ -413,7 +424,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             if (wtx.nOrderPos == -1)
                 wss.fAnyUnordered = true;
 
-            pwallet->AddToWallet(wtx, true, NULL);
+            pwallet->LoadWalletTx(wtx);
         }
         else if (strType == "watchs")
         {
@@ -881,6 +892,13 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 strErr = "Error in wallet database: recipientmapping UA does not contain recipient";
                 return false;
             }
+
+            pwallet->LoadRecipientMapping(txid, RecipientMapping(ua.value(), recipient));
+        }
+        else if (strType == "orchard_note_commitment_tree")
+        {
+            auto loader = pwallet->GetOrchardNoteCommitmentTreeLoader();
+            ssValue >> loader;
         }
     } catch (...)
     {
@@ -962,6 +980,14 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                 LogPrintf("%s\n", strErr);
         }
         pcursor->close();
+
+        // Load unified address/account/key caches based on what was loaded
+        if (!pwallet->LoadCaches()) {
+            // We can be more permissive of certain kinds of failures during
+            // loading; for now we'll interpret failure to reconstruct the
+            // caches to be "as bad" as losing keys.
+            result = DB_CORRUPT;
+        }
 
         // Run the Orchard batch validator; if it fails, treat it like a bad transaction record.
         if (!wss.orchardAuth.Validate()) {
@@ -1282,6 +1308,13 @@ bool CWalletDB::Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKe
     }
     ptxn->commit(0);
     pdbCopy->close(0);
+
+    // Try to load the wallet's caches, uncovering inconsistencies in wallet
+    // records like missing viewing key records despite existing account
+    // records.
+    if (!dummyWallet.LoadCaches()) {
+        LogPrintf("WARNING: wallet caches could not be reconstructed; salvaged wallet file may have omissions");
+    }
 
     return fSuccess;
 }

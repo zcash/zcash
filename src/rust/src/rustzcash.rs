@@ -70,14 +70,18 @@ mod ed25519;
 mod metrics_ffi;
 mod streams_ffi;
 mod tracing_ffi;
+mod zcashd_orchard;
 
 mod address_ffi;
+mod builder_ffi;
 mod history_ffi;
+mod incremental_merkle_tree;
 mod incremental_merkle_tree_ffi;
 mod orchard_ffi;
 mod orchard_keys_ffi;
 mod transaction_ffi;
 mod unified_keys_ffi;
+mod wallet;
 mod zip339_ffi;
 
 mod test_harness_ffi;

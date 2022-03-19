@@ -38,6 +38,7 @@ class TxOutputAmounts {
 public:
     CAmount t_outputs_total{0};
     CAmount sapling_outputs_total{0};
+    CAmount orchard_outputs_total{0};
 };
 
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
@@ -47,8 +48,8 @@ public:
         ZTXOSelector ztxoSelector,
         std::vector<SendManyRecipient> recipients,
         int minDepth,
+        TransactionStrategy strategy,
         CAmount fee = DEFAULT_FEE,
-        bool allowRevealedAmounts = false,
         UniValue contextInfo = NullUniValue);
     virtual ~AsyncRPCOperation_sendmany();
 
@@ -76,10 +77,10 @@ private:
 
     bool isfromsprout_{false};
     bool isfromsapling_{false};
-    bool allowRevealedAmounts_{false};
+    TransactionStrategy strategy_;
     uint32_t transparentRecipients_{0};
     AccountId sendFromAccount_;
-    std::set<libzcash::ChangeType> allowedChangeTypes_;
+    std::set<OutputPool> recipientPools_;
     TxOutputAmounts txOutputAmounts_;
 
     /**

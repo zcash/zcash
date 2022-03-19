@@ -4,8 +4,15 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_greater_than, connect_nodes_bi, \
-    DEFAULT_FEE, start_nodes, wait_and_assert_operationid_status
+from test_framework.util import (
+    assert_equal,
+    assert_greater_than,
+    assert_raises_message,
+    connect_nodes_bi,
+    DEFAULT_FEE,
+    start_nodes,
+    wait_and_assert_operationid_status,
+)
 from test_framework.authproxy import JSONRPCException
 from test_framework.mininode import COIN
 from decimal import Decimal
@@ -27,14 +34,19 @@ class WalletZSendmanyTest(BitcoinTestFramework):
     # Remember that empty pools are omitted from the output.
     def _check_balance_for_rpc(self, rpcmethod, node, account, expected, minconf):
         rpc = getattr(self.nodes[node], rpcmethod)
-        actual = rpc(account) if minconf is None else rpc(account, minconf)
+        actual = rpc(account, minconf)
         assert_equal(set(expected), set(actual['pools']))
+        total_balance = 0
         for pool in expected:
             assert_equal(expected[pool] * COIN, actual['pools'][pool]['valueZat'])
-        assert_equal(actual['minimum_confirmations'], 1 if minconf is None else minconf)
+            total_balance += expected[pool]
+        assert_equal(actual['minimum_confirmations'], minconf)
+        return total_balance
 
-    def check_balance(self, node, account, address, expected, minconf=None):
-        self._check_balance_for_rpc('z_getbalanceforaccount', node, account, expected, minconf)
+    def check_balance(self, node, account, address, expected, minconf=1):
+        acct_balance = self._check_balance_for_rpc('z_getbalanceforaccount', node, account, expected, minconf)
+        z_getbalance = self.nodes[node].z_getbalance(address, minconf)
+        assert_equal(acct_balance, z_getbalance)
         fvk = self.nodes[node].z_exportviewingkey(address)
         self._check_balance_for_rpc('z_getbalanceforviewingkey', node, fvk, expected, minconf)
 
@@ -159,9 +171,36 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         # Change went to a fresh address, so use `ANY_TADDR` which
         # should hold the rest of our transparent funds.
+        source = 'ANY_TADDR'
         recipients = []
         recipients.append({"address":n0ua0, "amount":10})
-        opid = self.nodes[2].z_sendmany('ANY_TADDR', recipients, 1, 0)
+
+        # If we attempt to spend with the default privacy policy, z_sendmany
+        # fails because it needs to spend transparent coins in a transaction
+        # involving a Unified Address.
+        revealed_senders_msg = 'This transaction requires selecting transparent coins, which is not enabled by default because it will publicly reveal transaction senders and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedSenders` or weaker if you wish to allow this transaction to proceed anyway.'
+        opid = self.nodes[2].z_sendmany(source, recipients, 1, 0)
+        wait_and_assert_operationid_status(self.nodes[2], opid, 'failed', revealed_senders_msg)
+
+        # We can't create a transaction with an unknown privacy policy.
+        assert_raises_message(
+            JSONRPCException,
+            'Unknown privacy policy name \'ZcashIsAwesome\'',
+            self.nodes[2].z_sendmany,
+            source, recipients, 1, 0, 'ZcashIsAwesome')
+
+        # If we set any policy that does not include AllowRevealedSenders,
+        # z_sendmany also fails.
+        for policy in [
+            'FullPrivacy',
+            'AllowRevealedAmounts',
+            'AllowRevealedRecipients',
+        ]:
+            opid = self.nodes[2].z_sendmany(source, recipients, 1, 0, policy)
+            wait_and_assert_operationid_status(self.nodes[2], opid, 'failed', revealed_senders_msg)
+
+        # By setting the correct policy, we can create the transaction.
+        opid = self.nodes[2].z_sendmany(source, recipients, 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[2], opid)
 
         self.nodes[2].generate(1)
@@ -176,7 +215,32 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # Send some funds to a specific legacy taddr that we can spend from
         recipients = []
         recipients.append({"address":mytaddr, "amount":5})
-        opid = self.nodes[0].z_sendmany(n0ua0, recipients, 1, 0)
+
+        # If we attempt to spend with the default privacy policy, z_sendmany
+        # returns an error because it needs to create a transparent recipient in
+        # a transaction involving a Unified Address.
+        assert_raises_message(
+            JSONRPCException,
+            'AllowRevealedRecipients',
+            self.nodes[0].z_sendmany,
+            n0ua0, recipients, 1, 0)
+
+        # If we set any policy that does not include AllowRevealedRecipients,
+        # z_sendmany also returns an error.
+        for policy in [
+            'FullPrivacy',
+            'AllowRevealedAmounts',
+            'AllowRevealedSenders',
+            'AllowLinkingAccountAddresses',
+        ]:
+            assert_raises_message(
+                JSONRPCException,
+                'AllowRevealedRecipients',
+                self.nodes[0].z_sendmany,
+                n0ua0, recipients, 1, 0, policy)
+
+        # By setting the correct policy, we can create the transaction.
+        opid = self.nodes[0].z_sendmany(n0ua0, recipients, 1, 0, 'AllowRevealedRecipients')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.nodes[0].generate(1)
@@ -199,10 +263,12 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         self.check_balance(0, 0, n0ua0, {'sapling': 2})
         assert_equal(Decimal(self.nodes[2].z_getbalance(myzaddr)), zbalance)
 
-        # Send funds back from the legacy taddr to the UA
+        # Send funds back from the legacy taddr to the UA. This requires
+        # AllowRevealedSenders, but we can also use any weaker policy that
+        # includes it.
         recipients = []
         recipients.append({"address":n0ua0, "amount":4})
-        opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, 0)
+        opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, 0, 'AllowFullyTransparent')
         wait_and_assert_operationid_status(self.nodes[2], opid)
 
         self.nodes[2].generate(1)
@@ -224,6 +290,100 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         zbalance -= Decimal('2.0')
         self.check_balance(0, 0, n0ua0, {'sapling': 8})
         assert_equal(Decimal(self.nodes[2].z_getbalance(myzaddr)), zbalance)
+
+        #
+        # Test that z_sendmany avoids UA linkability unless we allow it.
+        #
+
+        # Generate a new account with two new addresses.
+        n1account = self.nodes[1].z_getnewaccount()['account']
+        n1ua0 = self.nodes[1].z_getaddressforaccount(n1account)['unifiedaddress']
+        n1ua1 = self.nodes[1].z_getaddressforaccount(n1account)['unifiedaddress']
+
+        # Send funds to the transparent receivers of both addresses.
+        for ua in [n1ua0, n1ua1]:
+            taddr = self.nodes[1].z_listunifiedreceivers(ua)['transparent']
+            self.nodes[0].sendtoaddress(taddr, 2)
+
+        self.sync_all()
+        self.nodes[2].generate(1)
+        self.sync_all()
+
+        # The account should see all funds.
+        assert_equal(
+            self.nodes[1].z_getbalanceforaccount(n1account)['pools'],
+            {'transparent': {'valueZat': 4 * COIN}},
+        )
+
+        # The addresses should see only the transparent funds sent to them.
+        assert_equal(self.nodes[1].z_getbalance(n1ua0), 2)
+        assert_equal(self.nodes[1].z_getbalance(n1ua1), 2)
+
+        # If we try to send 3 ZEC from n1ua0, it will fail with too-few funds.
+        recipients = [{"address":n0ua0, "amount":3}]
+        linked_addrs_msg = 'Insufficient funds: have 2.00, need 3.00 (This transaction may require selecting transparent coins that were sent to multiple Unified Addresses, which is not enabled by default because it would create a public link between the transparent receivers of these addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to allow this transaction to proceed anyway.)'
+        opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0)
+        wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', linked_addrs_msg)
+
+        # If we try it again with any policy that is too strong, it also fails.
+        for policy in [
+            'FullPrivacy',
+            'AllowRevealedAmounts',
+            'AllowRevealedRecipients',
+            'AllowRevealedSenders',
+            'AllowFullyTransparent',
+        ]:
+            opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, policy)
+            wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', linked_addrs_msg)
+
+        # Once we provide a sufficiently-weak policy, the transaction succeeds.
+        opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, 'AllowLinkingAccountAddresses')
+        wait_and_assert_operationid_status(self.nodes[1], opid)
+
+        self.sync_all()
+        self.nodes[2].generate(1)
+        self.sync_all()
+
+        # The account should see the remaining funds, and they should have been
+        # sent to the Sapling change address (because NU5 is not active).
+        assert_equal(
+            self.nodes[1].z_getbalanceforaccount(n1account)['pools'],
+            {'sapling': {'valueZat': 1 * COIN}},
+        )
+
+        # The addresses should both show the same balance, as they both show the
+        # Sapling balance.
+        assert_equal(self.nodes[1].z_getbalance(n1ua0), 1)
+        assert_equal(self.nodes[1].z_getbalance(n1ua1), 1)
+
+        #
+        # Test NoPrivacy policy
+        #
+
+        # Send some legacy transparent funds to n1ua0, creating Sapling outputs.
+        recipients = [{"address":n1ua0, "amount":10}]
+        # This requires the AllowRevealedSenders policy...
+        opid = self.nodes[2].z_sendmany('ANY_TADDR', recipients, 1, 0)
+        wait_and_assert_operationid_status(self.nodes[2], opid, 'failed', revealed_senders_msg)
+        # ... which we can always override with the NoPrivacy policy.
+        opid = self.nodes[2].z_sendmany('ANY_TADDR', recipients, 1, 0, 'NoPrivacy')
+        wait_and_assert_operationid_status(self.nodes[2], opid)
+
+        self.sync_all()
+        self.nodes[2].generate(1)
+        self.sync_all()
+
+        # Send some funds from node 1's account to a transparent address.
+        recipients = [{"address":mytaddr, "amount":5}]
+        # This requires the AllowRevealedRecipients policy...
+        assert_raises_message(
+            JSONRPCException,
+            'AllowRevealedRecipients',
+            self.nodes[1].z_sendmany,
+            n1ua0, recipients, 1, 0)
+        # ... which we can always override with the NoPrivacy policy.
+        opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, 'NoPrivacy')
+        wait_and_assert_operationid_status(self.nodes[1], opid)
 
 if __name__ == '__main__':
     WalletZSendmanyTest().main()

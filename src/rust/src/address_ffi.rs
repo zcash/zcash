@@ -12,6 +12,8 @@ use zcash_address::{
 use zcash_primitives::sapling;
 
 pub type UnifiedAddressObj = NonNull<c_void>;
+pub type AddOrchardReceiverCb =
+    unsafe extern "C" fn(ua: Option<UnifiedAddressObj>, orchard: *const orchard::Address) -> bool;
 pub type AddReceiverCb =
     unsafe extern "C" fn(ua: Option<UnifiedAddressObj>, raw: *const u8) -> bool;
 pub type UnknownReceiverCb = unsafe extern "C" fn(
@@ -53,10 +55,12 @@ impl FromAddress for UnifiedAddressHelper {
 }
 
 impl UnifiedAddressHelper {
+    #[allow(clippy::too_many_arguments)]
     fn into_cpp(
         self,
         network: Network,
         ua_obj: Option<UnifiedAddressObj>,
+        orchard_cb: Option<AddOrchardReceiverCb>,
         sapling_cb: Option<AddReceiverCb>,
         p2sh_cb: Option<AddReceiverCb>,
         p2pkh_cb: Option<AddReceiverCb>,
@@ -79,16 +83,13 @@ impl UnifiedAddressHelper {
                     // ZIP 316: Consumers MUST reject Unified Addresses/Viewing Keys in
                     // which any constituent Item does not meet the validation
                     // requirements of its encoding.
-                    if orchard::Address::from_raw_address_bytes(&data)
-                        .is_none()
-                        .into()
-                    {
+                    let addr = orchard::Address::from_raw_address_bytes(&data);
+                    if addr.is_none().into() {
                         tracing::error!("Unified Address contains invalid Orchard receiver");
                         false
                     } else {
                         unsafe {
-                            // TODO: Replace with Orchard support.
-                            (unknown_cb.unwrap())(ua_obj, 0x03, data.as_ptr(), data.len())
+                            (orchard_cb.unwrap())(ua_obj, Box::into_raw(Box::new(addr.unwrap())))
                         }
                     }
                 }
@@ -122,6 +123,7 @@ pub extern "C" fn zcash_address_parse_unified(
     encoded: *const c_char,
     network: *const c_char,
     ua_obj: Option<UnifiedAddressObj>,
+    orchard_cb: Option<AddOrchardReceiverCb>,
     sapling_cb: Option<AddReceiverCb>,
     p2sh_cb: Option<AddReceiverCb>,
     p2pkh_cb: Option<AddReceiverCb>,
@@ -149,7 +151,9 @@ pub extern "C" fn zcash_address_parse_unified(
         }
     };
 
-    ua.into_cpp(network, ua_obj, sapling_cb, p2sh_cb, p2pkh_cb, unknown_cb)
+    ua.into_cpp(
+        network, ua_obj, orchard_cb, sapling_cb, p2sh_cb, p2pkh_cb, unknown_cb,
+    )
 }
 
 #[no_mangle]
@@ -171,14 +175,9 @@ pub extern "C" fn zcash_address_serialize_unified(
             Ok(
                 match unsafe { (typecode_cb.unwrap())(ua_obj, i) }.try_into()? {
                     unified::Typecode::Orchard => {
-                        // TODO: Replace with Orchard support.
-                        let data_len = unsafe { (receiver_len_cb.unwrap())(ua_obj, i) };
-                        let mut data = vec![0; data_len];
-                        unsafe { (receiver_cb.unwrap())(ua_obj, i, data.as_mut_ptr(), data_len) };
-                        unified::Receiver::Unknown {
-                            typecode: 0x03,
-                            data,
-                        }
+                        let mut data = [0; 43];
+                        unsafe { (receiver_cb.unwrap())(ua_obj, i, data.as_mut_ptr(), data.len()) };
+                        unified::Receiver::Orchard(data)
                     }
                     unified::Typecode::Sapling => {
                         let mut data = [0; 43];

@@ -81,6 +81,11 @@ std::string SaplingOutPoint::ToString() const
     return strprintf("SaplingOutPoint(%s, %u)", hash.ToString().substr(0, 10), n);
 }
 
+std::string OrchardOutPoint::ToString() const
+{
+    return strprintf("OrchardOutPoint(%s, %u)", hash.ToString().substr(0, 10), n);
+}
+
 CTxIn::CTxIn(COutPoint prevoutIn, CScript scriptSigIn, uint32_t nSequenceIn)
 {
     prevout = prevoutIn;

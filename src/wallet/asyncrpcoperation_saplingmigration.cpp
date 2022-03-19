@@ -80,12 +80,13 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
 
     std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
+    std::vector<OrchardNoteMetadata> orchardEntries;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
         // We set minDepth to 11 to avoid unconfirmed notes and in anticipation of specifying
         // an anchor at height N-10 for each Sprout JoinSplit description
         // Consider, should notes be sorted?
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, std::nullopt, 11);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 11);
     }
     CAmount availableFunds = 0;
     for (const SproutNoteEntry& sproutEntry : sproutEntries) {
@@ -111,7 +112,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     CCoinsViewCache coinsView(pcoinsTip);
     do {
         CAmount amountToSend = chooseAmount(availableFunds);
-        auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain, &coinsView, &cs_main);
+        auto builder = TransactionBuilder(consensusParams, targetHeight_, std::nullopt, pwalletMain, &coinsView, &cs_main);
         builder.SetExpiryHeight(targetHeight_ + MIGRATION_EXPIRY_DELTA);
         LogPrint("zrpcunsafe", "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), FormatMoney(amountToSend - DEFAULT_FEE));
         std::vector<SproutNoteEntry> fromNotes;
@@ -122,6 +123,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
             fromNoteAmount += sproutEntry.note.value();
         }
         availableFunds -= fromNoteAmount;
+        std::optional<libzcash::SproutPaymentAddress> changeAddr;
         for (const SproutNoteEntry& sproutEntry : fromNotes) {
             std::string data(sproutEntry.memo.begin(), sproutEntry.memo.end());
             LogPrint("zrpcunsafe", "%s: Adding Sprout note input (txid=%s, vJoinSplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
@@ -142,11 +144,17 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
             std::vector<std::optional<SproutWitness>> vInputWitnesses;
             pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
             builder.AddSproutInput(sproutSk, sproutEntry.note, vInputWitnesses[0].value());
+            // Send change to the address of the first input
+            if (!changeAddr.has_value()) {
+                changeAddr = sproutSk.address();
+            }
         }
+        assert(changeAddr.has_value());
         // The amount chosen *includes* the default fee for this transaction, i.e.
         // the value of the Sapling output will be 0.00001 ZEC less.
         builder.SetFee(DEFAULT_FEE);
         builder.AddSaplingOutput(ovkForShieldingFromTaddr(seed), migrationDestAddress, amountToSend - DEFAULT_FEE);
+        builder.SendChangeToSprout(changeAddr.value());
         CTransaction tx = builder.Build().GetTxOrThrow();
         if (isCancelled()) {
             LogPrint("zrpcunsafe", "%s: Canceled. Stopping.\n", getId());

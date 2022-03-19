@@ -56,6 +56,7 @@ class DataLenForReceiver {
 public:
     DataLenForReceiver() {}
 
+    size_t operator()(const libzcash::OrchardRawAddress &zaddr) const { return 43; }
     size_t operator()(const libzcash::SaplingPaymentAddress &zaddr) const { return 43; }
     size_t operator()(const CScriptID &p2sh) const { return 20; }
     size_t operator()(const CKeyID &p2pkh) const { return 20; }
@@ -75,6 +76,13 @@ class CopyDataForReceiver {
 
 public:
     CopyDataForReceiver(unsigned char* data, size_t length) : data(data), length(length) {}
+
+    void operator()(const libzcash::OrchardRawAddress &zaddr) const {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << zaddr;
+        assert(length == ss.size());
+        memcpy(data, ss.data(), ss.size());
+    }
 
     void operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);

@@ -56,8 +56,8 @@ pub extern "C" fn zcash_transaction_digests(
 }
 
 pub struct PrecomputedTxParts {
-    tx: Transaction,
-    txid_parts: TxDigests<Hash>,
+    pub(crate) tx: Transaction,
+    pub(crate) txid_parts: TxDigests<Hash>,
 }
 
 /// Precomputes the `TxDigest` struct for the given transaction.

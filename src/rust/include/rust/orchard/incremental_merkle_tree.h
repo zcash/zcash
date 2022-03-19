@@ -69,7 +69,7 @@ void orchard_merkle_frontier_root(
 // The total number of leaves that have been appended to obtain
 // the current state of the frontier. Subtract 1 from this value
 // to obtain the position of the most recently appended leaf.
-size_t orchard_merkle_frontier_num_leaves(
+uint64_t orchard_merkle_frontier_num_leaves(
         const OrchardMerkleFrontierPtr* tree_ptr);
 
 // Estimate the amount of memory consumed by the merkle frontier.

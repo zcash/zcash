@@ -59,6 +59,8 @@ zcash_gtest_SOURCES += \
 	gtest/test_zip32.cpp
 if ENABLE_WALLET
 zcash_gtest_SOURCES += \
+	wallet/gtest/test_note_selection.cpp \
+	wallet/gtest/test_orchard_wallet.cpp \
 	wallet/gtest/test_paymentdisclosure.cpp \
 	wallet/gtest/test_wallet.cpp
 endif

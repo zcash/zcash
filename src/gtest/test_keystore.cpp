@@ -557,20 +557,54 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     EXPECT_EQ(keyStore.GetUnifiedFullViewingKey(ufvkid).value(), zufvk);
 
     auto addrPair = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Sapling}));
-
-
     EXPECT_TRUE(addrPair.first.GetSaplingReceiver().has_value());
     auto saplingReceiver = addrPair.first.GetSaplingReceiver().value();
-    auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
-    EXPECT_FALSE(ufvkmeta.has_value());
 
+    // We detect this even though we haven't added the Sapling address, because
+    // we trial-decrypt diversifiers (which also means we learn the index).
+    auto ufvkmetaUnadded = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
+    EXPECT_TRUE(ufvkmetaUnadded.has_value());
+    EXPECT_EQ(ufvkmetaUnadded.value().GetUFVKId(), ufvkid);
+    EXPECT_EQ(ufvkmetaUnadded.value().GetDiversifierIndex().value(), addrPair.second);
+
+    // Adding the Sapling addr -> ivk map entry causes us to find the same UFVK,
+    // but as we're no longer trial-decrypting we don't learn the index.
     auto saplingIvk = zufvk.GetSaplingKey().value().ToIncomingViewingKey();
     keyStore.AddSaplingPaymentAddress(saplingIvk, saplingReceiver);
 
-    ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
+    auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
     EXPECT_TRUE(ufvkmeta.has_value());
-    EXPECT_EQ(ufvkmeta.value().first, ufvkid);
-    EXPECT_FALSE(ufvkmeta.value().second.has_value());
+    EXPECT_EQ(ufvkmeta.value().GetUFVKId(), ufvkid);
+    EXPECT_FALSE(ufvkmeta.value().GetDiversifierIndex().has_value());
+}
+
+TEST(KeystoreTests, StoreAndRetrieveUFVKByOrchard) {
+    SelectParams(CBaseChainParams::TESTNET);
+    CBasicKeyStore keyStore;
+
+    auto seed = MnemonicSeed::Random(SLIP44_TESTNET_TYPE);
+    auto usk = ZcashdUnifiedSpendingKey::ForAccount(seed, SLIP44_TESTNET_TYPE, 0);
+    EXPECT_TRUE(usk.has_value());
+
+    auto ufvk = usk.value().ToFullViewingKey();
+    auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
+    auto ufvkid = zufvk.GetKeyID();
+    EXPECT_FALSE(keyStore.GetUnifiedFullViewingKey(ufvkid).has_value());
+
+    EXPECT_TRUE(keyStore.AddUnifiedFullViewingKey(zufvk));
+    EXPECT_EQ(keyStore.GetUnifiedFullViewingKey(ufvkid).value(), zufvk);
+
+    auto addrPair = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(zufvk.FindAddress(diversifier_index_t(0), {ReceiverType::Orchard}));
+    EXPECT_TRUE(addrPair.first.GetOrchardReceiver().has_value());
+    auto orchardReceiver = addrPair.first.GetOrchardReceiver().value();
+
+    // We don't store Orchard addresses in CBasicKeyStore (the addr -> ivk
+    // mapping is stored in the Rust wallet), but we still detect this because
+    // we trial-decrypt diversifiers (which also means we learn the index).
+    auto ufvkmetaUnadded = keyStore.GetUFVKMetadataForReceiver(orchardReceiver);
+    EXPECT_TRUE(ufvkmetaUnadded.has_value());
+    EXPECT_EQ(ufvkmetaUnadded.value().GetUFVKId(), ufvkid);
+    EXPECT_EQ(ufvkmetaUnadded.value().GetDiversifierIndex().value(), addrPair.second);
 }
 
 TEST(KeystoreTests, AddTransparentReceiverForUnifiedAddress) {
@@ -593,7 +627,7 @@ TEST(KeystoreTests, AddTransparentReceiverForUnifiedAddress) {
 
     ufvkmeta = keyStore.GetUFVKMetadataForReceiver(addrPair.first.GetP2PKHReceiver().value());
     EXPECT_TRUE(ufvkmeta.has_value());
-    EXPECT_EQ(ufvkmeta.value().first, ufvkid);
+    EXPECT_EQ(ufvkmeta.value().GetUFVKId(), ufvkid);
 }
 
 

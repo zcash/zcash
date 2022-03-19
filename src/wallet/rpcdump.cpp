@@ -91,7 +91,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             "1. \"zcashprivkey\"   (string, required) The private key (see dumpprivkey)\n"
             "2. \"label\"            (string, optional, default=\"\") An optional label\n"
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
-            "\nNote: This call can take minutes to complete if rescan is true.\n"
+            "\nNote: This call can take a long time to complete if rescan is true.\n"
             "\nExamples:\n"
             "\nDump a private key\n"
             + HelpExampleCli("dumpprivkey", "\"myaddress\"") +
@@ -120,7 +120,8 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     if (params.size() > 2)
         fRescan = params[2].get_bool();
 
-    KeyIO keyIO(Params());
+    const auto& chainparams = Params();
+    KeyIO keyIO(chainparams);
 
     CKey key = keyIO.DecodeSecret(strSecret);
     if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
@@ -146,7 +147,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
         pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
 
         if (fRescan) {
-            pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
+            pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true, false);
         }
     }
 
@@ -201,7 +202,7 @@ UniValue importaddress(const UniValue& params, bool fHelp)
             "2. \"label\"            (string, optional, default=\"\") An optional label\n"
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
             "4. p2sh                 (boolean, optional, default=false) Add the P2SH version of the script as well\n"
-            "\nNote: This call can take minutes to complete if rescan is true.\n"
+            "\nNote: This call can take a long time to complete if rescan is true.\n"
             "If you have the full public key, you should call importpubkey instead of this.\n"
             "\nNote: If you import a non-standard raw script in hex form, outputs sending to it will be treated\n"
             "as change, and not show up in many RPCs.\n"
@@ -233,7 +234,8 @@ UniValue importaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    KeyIO keyIO(Params());
+    const auto& chainparams = Params();
+    KeyIO keyIO(chainparams);
     CTxDestination dest = keyIO.DecodeDestination(params[0].get_str());
     if (IsValidDestination(dest)) {
         if (fP2SH) {
@@ -249,7 +251,7 @@ UniValue importaddress(const UniValue& params, bool fHelp)
 
     if (fRescan)
     {
-        pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
+        pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true, false);
         pwalletMain->ReacceptWalletTransactions();
     }
 
@@ -269,7 +271,7 @@ UniValue importpubkey(const UniValue& params, bool fHelp)
             "1. \"pubkey\"           (string, required) The hex-encoded public key\n"
             "2. \"label\"            (string, optional, default=\"\") An optional label\n"
             "3. rescan               (boolean, optional, default=true) Rescan the wallet for transactions\n"
-            "\nNote: This call can take minutes to complete if rescan is true.\n"
+            "\nNote: This call can take a long time to complete if rescan is true.\n"
             "\nExamples:\n"
             "\nImport a public key with rescan\n"
             + HelpExampleCli("importpubkey", "\"mypubkey\"") +
@@ -305,7 +307,7 @@ UniValue importpubkey(const UniValue& params, bool fHelp)
 
     if (fRescan)
     {
-        pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true);
+        pwalletMain->ScanForWalletTransactions(chainActive.Genesis(), true, false);
         pwalletMain->ReacceptWalletTransactions();
     }
 
@@ -380,7 +382,8 @@ UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
     int64_t nFilesize = std::max((int64_t)1, (int64_t)file.tellg());
     file.seekg(0, file.beg);
 
-    KeyIO keyIO(Params());
+    const auto& chainparams = Params();
+    KeyIO keyIO(chainparams);
 
     pwalletMain->ShowProgress(_("Importing..."), 0); // show progress dialog in GUI
     while (file.good()) {
@@ -404,7 +407,7 @@ UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
             std::optional<std::string> seedFpStr = (vstr.size() > 3) ? std::optional<std::string>(vstr[3]) : std::nullopt;
             if (spendingkey.has_value()) {
                 auto addResult = std::visit(
-                    AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, hdKeypath, seedFpStr, true, true), spendingkey.value());
+                    AddSpendingKeyToWallet(pwalletMain, chainparams.GetConsensus(), nTime, hdKeypath, seedFpStr, true, true), spendingkey.value());
                 if (addResult == KeyAlreadyExists){
                     LogPrint("zrpc", "Skipping import of zaddr (key already present)\n");
                 } else if (addResult == KeyNotAdded) {
@@ -465,7 +468,7 @@ UniValue importwallet_impl(const UniValue& params, bool fImportZKeys)
         pwalletMain->nTimeFirstKey = nTimeBegin;
 
     LogPrintf("Rescanning last %i blocks\n", chainActive.Height() - pindex->nHeight + 1);
-    pwalletMain->ScanForWalletTransactions(pindex);
+    pwalletMain->ScanForWalletTransactions(pindex, false, false);
     pwalletMain->MarkDirty();
 
     if (!fGood)
@@ -646,13 +649,20 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
         std::string strAddr = keyIO.EncodeDestination(keyid);
         CKey key;
         if (pwalletMain->GetKey(keyid, key)) {
+            CKeyMetadata keyMeta = pwalletMain->mapKeyMetadata[keyid];
+            file << strprintf("%s %s ", keyIO.EncodeSecret(key), strTime);
             if (pwalletMain->mapAddressBook.count(keyid)) {
-                file << strprintf("%s %s label=%s # addr=%s\n", keyIO.EncodeSecret(key), strTime, EncodeDumpString(pwalletMain->mapAddressBook[keyid].name), strAddr);
+                file << strprintf("label=%s", EncodeDumpString(pwalletMain->mapAddressBook[keyid].name));
             } else if (setKeyPool.count(keyid)) {
-                file << strprintf("%s %s reserve=1 # addr=%s\n", keyIO.EncodeSecret(key), strTime, strAddr);
+                file << "reserve=1";
             } else {
-                file << strprintf("%s %s change=1 # addr=%s\n", keyIO.EncodeSecret(key), strTime, strAddr);
+                file << "change=1";
             }
+            file << strprintf(" # addr=%s", strAddr);
+            if (!(keyMeta.hdKeypath.empty() || keyMeta.seedFp.IsNull())) {
+                file << strprintf(" hdkeypath=%s seedfp=%s", keyMeta.hdKeypath, keyMeta.seedFp.GetHex());
+            }
+            file << "\n";
         }
     }
     file << "\n";
@@ -681,12 +691,12 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
                 auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
                 CKeyMetadata keyMeta = pwalletMain->mapSaplingZKeyMetadata[ivk];
                 std::string strTime = EncodeDumpTime(keyMeta.nCreateTime);
+                file << strprintf("%s %s", keyIO.EncodeSpendingKey(extsk), strTime);
                 // Keys imported with z_importkey do not have zip32 metadata
-                if (keyMeta.hdKeypath.empty() || keyMeta.seedFp.IsNull()) {
-                    file << strprintf("%s %s # zaddr=%s\n", keyIO.EncodeSpendingKey(extsk), strTime, keyIO.EncodePaymentAddress(addr));
-                } else {
-                    file << strprintf("%s %s %s %s # zaddr=%s\n", keyIO.EncodeSpendingKey(extsk), strTime, keyMeta.hdKeypath, keyMeta.seedFp.GetHex(), keyIO.EncodePaymentAddress(addr));
+                if (!(keyMeta.hdKeypath.empty() || keyMeta.seedFp.IsNull())) {
+                    file << strprintf(" %s %s", keyMeta.hdKeypath, keyMeta.seedFp.GetHex());
                 }
+                file << strprintf(" # zaddr=%s\n", keyIO.EncodePaymentAddress(addr));
             }
         }
         file << "\n";
@@ -707,12 +717,13 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
             "z_importkey \"zkey\" ( rescan startHeight )\n"
-            "\nAdds a zkey (as returned by z_exportkey) to your wallet.\n"
+            "\nAdds a zkey (as returned by z_exportkey) to your wallet."
+            "\nImport of Orchard keys is not supported.\n"
             "\nArguments:\n"
             "1. \"zkey\"             (string, required) The zkey (see z_exportkey)\n"
             "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
             "3. startHeight        (numeric, optional, default=0) Block height to start rescan from\n"
-            "\nNote: This call can take minutes to complete if rescan is true.\n"
+            "\nNote: This call can take a long time to complete if rescan is true.\n"
             "\nResult:\n"
             "{\n"
             "  \"type\" : \"xxxx\",                         (string) \"sprout\" or \"sapling\"\n"
@@ -771,7 +782,8 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     }
 
-    KeyIO keyIO(Params());
+    const auto& chainparams = Params();
+    KeyIO keyIO(chainparams);
     string strSecret = params[0].get_str();
     auto spendingkey = keyIO.DecodeSpendingKey(strSecret);
     if (!spendingkey.has_value()) {
@@ -784,7 +796,7 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     result.pushKV("address", keyIO.EncodePaymentAddress(addrInfo.second));
 
     // Sapling support
-    auto addResult = std::visit(AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus()), spendingkey.value());
+    auto addResult = std::visit(AddSpendingKeyToWallet(pwalletMain, chainparams.GetConsensus()), spendingkey.value());
     if (addResult == KeyAlreadyExists && fIgnoreExistingKey) {
         return result;
     }
@@ -798,7 +810,7 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
 
     // We want to scan for transactions and notes
     if (fRescan) {
-        pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
+        pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true, false);
     }
 
     return result;
@@ -817,7 +829,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
             "1. \"vkey\"             (string, required) The viewing key (see z_exportviewingkey)\n"
             "2. rescan             (string, optional, default=\"whenkeyisnew\") Rescan the wallet for transactions - can be \"yes\", \"no\" or \"whenkeyisnew\"\n"
             "3. startHeight        (numeric, optional, default=0) Block height to start rescan from\n"
-            "\nNote: This call can take minutes to complete if rescan is true.\n"
+            "\nNote: This call can take a long time to complete if rescan is true. Import of Unified viewing keys is not yet supported.\n"
             "\nResult:\n"
             "{\n"
             "  \"type\" : \"xxxx\",                         (string) \"sprout\" or \"sapling\"\n"
@@ -866,14 +878,15 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     }
 
-    KeyIO keyIO(Params());
+    const auto& chainparams = Params();
+    KeyIO keyIO(chainparams);
     string strVKey = params[0].get_str();
     auto viewingkey = keyIO.DecodeViewingKey(strVKey);
     if (!viewingkey.has_value()) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
     }
 
-    auto addrInfo = std::visit(libzcash::AddressInfoFromViewingKey(Params()), viewingkey.value());
+    auto addrInfo = std::visit(libzcash::AddressInfoFromViewingKey(chainparams), viewingkey.value());
     UniValue result(UniValue::VOBJ);
     const string strAddress = keyIO.EncodePaymentAddress(addrInfo.second);
     result.pushKV("type", addrInfo.first);
@@ -894,7 +907,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
 
     // We want to scan for transactions and notes
     if (fRescan) {
-        pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
+        pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true, false);
     }
 
     return result;
@@ -984,8 +997,10 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "z_exportviewingkey \"zaddr\"\n"
-            "\nReveals the viewing key corresponding to 'zaddr'.\n"
-            "Then the z_importviewingkey can be used with this output\n"
+            "\nReturns the full viewing key corresponding to 'zaddr' in the format specified by\n"
+            "https://zips.z.cash/protocol/protocol.pdf#addressandkeyencoding.\n"
+            "z_importviewingkey can be used to import Sprout and Sapling exported in this format;\n"
+            "import of unified viewing keys is not yet supported.\n"
             "\nArguments:\n"
             "1. \"zaddr\"   (string, required) The zaddr for the viewing key\n"
             "\nResult:\n"

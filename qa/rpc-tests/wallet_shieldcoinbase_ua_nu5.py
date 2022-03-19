@@ -23,7 +23,8 @@ class WalletShieldCoinbaseUANU5(WalletShieldCoinbaseTest):
         assert('transparent' not in balances['pools'])
         assert('sprout' not in balances['pools'])
         # assert('sapling' not in balances['pools'])
-        assert_equal(balances['pools']['sapling']['valueZat'], expected * COIN)
+        sapling_balance = balances['pools']['sapling']['valueZat']
+        assert_equal(sapling_balance, expected * COIN)
         # assert_equal(balances['pools']['orchard']['valueZat'], expected * COIN)
 
         # While we're at it, check that z_listunspent only shows outputs with
@@ -35,6 +36,8 @@ class WalletShieldCoinbaseUANU5(WalletShieldCoinbaseTest):
             [{'type': x['type'], 'address': x['address']} for x in unspent],
         )
 
+        total_balance = node.z_getbalance(self.addr) * COIN
+        assert_equal(total_balance, sapling_balance)
 
 if __name__ == '__main__':
     print("Test shielding to a unified address with NU5 activated")
