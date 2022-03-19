@@ -465,7 +465,7 @@ class ListReceivedTest (BitcoinTestFramework):
         opid = self.nodes[1].z_sendmany(taddr, [
             {'address': uao, 'amount': 1, 'memo': my_memo},
             {'address': uaso, 'amount': 2},
-        ])
+        ], 1, 0, 'AllowRevealedSenders')
         txid0 = wait_and_assert_operationid_status(self.nodes[1], opid)
         self.sync_all()
 
