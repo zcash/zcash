@@ -443,7 +443,7 @@ public:
         std::array<unsigned char, 512> memo;
         std::move(std::begin(rawOutput.memo), std::end(rawOutput.memo), memo.begin());
         auto output = OrchardActionOutput(
-                libzcash::OrchardRawAddress(rawOutput.addr),
+                libzcash::OrchardRawAddress(rawOutput.recipient),
                 rawOutput.noteValue,
                 memo,
                 rawOutput.isOutgoing);

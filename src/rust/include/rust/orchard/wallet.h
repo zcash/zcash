@@ -283,7 +283,7 @@ struct RawOrchardActionSpend {
  */
 struct RawOrchardActionOutput {
     uint32_t outputActionIdx;
-    OrchardRawAddressPtr* addr;
+    OrchardRawAddressPtr* recipient;
     CAmount noteValue;
     unsigned char memo[512];
     bool isOutgoing;
@@ -304,7 +304,8 @@ typedef void (*push_output_t)(void* callbackReceiver, const RawOrchardActionOutp
  *
  * `raw_ovks` must be a pointer to an array of `unsigned char[32]`.
  *
- * The `addr` pointer on each `RawOrchardActionOutput` value must be freed using
+ * The `recipient` pointer for each `RawOrchardActionOutput` value, and the `receivedAt`
+ * pointer for each `RawOrchardActionSpend` value, must be freed using
  * `orchard_address_free`.
  */
 bool orchard_wallet_get_txdata(
