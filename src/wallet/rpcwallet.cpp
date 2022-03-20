@@ -4225,9 +4225,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         // Show the address that was cached at transaction construction as the
         // recipient.
         std::optional<std::string> addrStr;
-        if (!pwalletMain->IsInternalRecipient(pa)) {
-            auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, pa);
-            addrStr = keyIO.EncodePaymentAddress(addr);
+        auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, pa);
+        if (addr.second != RecipientType::WalletInternalAddress) {
+            addrStr = keyIO.EncodePaymentAddress(addr.first);
         }
 
         UniValue entry(UniValue::VOBJ);
@@ -4278,17 +4278,16 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         // Show the address that was cached at transaction construction as the
         // recipient.
         std::optional<std::string> addrStr;
-        bool isInternal = pwalletMain->IsInternalRecipient(pa);
-        if (!isInternal) {
-            auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, pa);
-            addrStr = keyIO.EncodePaymentAddress(addr);
+        auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, pa);
+        if (addr.second != RecipientType::WalletInternalAddress) {
+            addrStr = keyIO.EncodePaymentAddress(addr.first);
         }
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_SAPLING);
         entry.pushKV("output", (int)op.n);
         entry.pushKV("outgoing", isOutgoing);
-        entry.pushKV("walletInternal", isInternal);
+        entry.pushKV("walletInternal", addr.second == RecipientType::WalletInternalAddress);
         if (addrStr.has_value()) {
             entry.pushKV("address", addrStr.value());
         }
@@ -4338,17 +4337,16 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         // Show the address that was cached at transaction construction as the
         // recipient.
         std::optional<std::string> addrStr;
-        bool isInternal = pwalletMain->IsInternalRecipient(recipient);
-        if (!isInternal) {
-            auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, recipient);
-            addrStr = keyIO.EncodePaymentAddress(addr);
+        auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, recipient);
+        if (addr.second != RecipientType::WalletInternalAddress) {
+            addrStr = keyIO.EncodePaymentAddress(addr.first);
         }
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("type", ADDR_TYPE_ORCHARD);
         entry.pushKV("action", (int) actionIdx);
         entry.pushKV("outgoing", orchardActionOutput.IsOutgoing());
-        entry.pushKV("walletInternal", isInternal);
+        entry.pushKV("walletInternal", addr.second == RecipientType::WalletInternalAddress);
         if (addrStr.has_value()) {
             entry.pushKV("address", addrStr.value());
         }

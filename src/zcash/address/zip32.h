@@ -135,6 +135,11 @@ class SaplingDiversifiableFullViewingKey {
 protected:
     SaplingDiversifiableFullViewingKey GetInternalDFVK() const;
 
+    diversifier_index_t DecryptDiversifier(const diversifier_t& d) const {
+        diversifier_index_t j;
+        librustzcash_sapling_diversifier_index(dk.begin(), d.begin(), j.begin());
+        return j;
+    }
 public:
     libzcash::SaplingFullViewingKey fvk;
     uint256 dk;
@@ -172,12 +177,6 @@ public:
      */
     std::pair<uint256, uint256> GetOVKs() const;
 
-    diversifier_index_t DecryptDiversifier(const diversifier_t& d) const {
-        diversifier_index_t j;
-        librustzcash_sapling_diversifier_index(dk.begin(), d.begin(), j.begin());
-        return j;
-    }
-
     // Attempts to construct a valid internal payment address with diversifier
     // index `j`; returns std::nullopt if `j` does not result in a valid diversifier
     // given this xfvk.
@@ -185,8 +184,30 @@ public:
         return GetInternalDFVK().Address(j);
     }
 
-    diversifier_index_t DecryptInternalDiversifier(const diversifier_t& d) const {
-        return GetInternalDFVK().DecryptDiversifier(d);
+    /**
+     * Extracts the diversifier from the specified address and decrypts it as
+     * a diversifier index, then verifies that this diversifier index produces
+     * the same address. This method attempts decrypion using both the internal
+     * and external parts of the full viewing key.
+     *
+     * Returns a pair consisting of the diversifier index and a flag indicating
+     * whether the address is external (set to true in the case this is an external
+     * address), or std::nullopt if the address was not generated from this key.
+     */
+    std::optional<std::pair<diversifier_index_t, bool>> DecryptDiversifier(const SaplingPaymentAddress& addr) const {
+        auto j_external = DecryptDiversifier(addr.d);
+        auto addr_external = Address(j_external);
+        if (addr_external.has_value() && addr_external.value() == addr) {
+            return std::make_pair(j_external, true);
+        }
+
+        auto dfvk_internal = GetInternalDFVK();
+        auto j_internal = dfvk_internal.DecryptDiversifier(addr.d);
+        auto addr_internal = dfvk_internal.Address(j_internal);
+        if (addr_internal.has_value() && addr_internal.value() == addr) {
+            return std::make_pair(j_internal, false);
+        }
+        return std::nullopt;
     }
 
     ADD_SERIALIZE_METHODS;

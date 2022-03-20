@@ -208,6 +208,28 @@ public:
 
     libzcash::OrchardRawAddress GetChangeAddress() const;
 
+    /**
+     * Extracts the diversifier from the specified address and decrypts it as
+     * a diversifier index, then verifies that this diversifier index produces
+     * the same address. This method attempts decrypion using both the internal
+     * and external parts of the full viewing key.
+     *
+     * Returns a pair consisting of the diversifier index and a flag indicating
+     * whether the address is external (set to true in the case this is an external
+     * address), or std::nullopt if the address was not generated from this key.
+     */
+    std::optional<std::pair<diversifier_index_t, bool>> DecryptDiversifier(const OrchardRawAddress& addr) const {
+        auto j_external = ToIncomingViewingKey().DecryptDiversifier(addr);
+        if (j_external.has_value()) {
+            return std::make_pair(j_external.value(), true);
+        }
+        auto j_internal = ToInternalIncomingViewingKey().DecryptDiversifier(addr);
+        if (j_internal.has_value()) {
+            return std::make_pair(j_internal.value(), false);
+        }
+        return std::nullopt;
+    }
+
     OrchardFullViewingKey& operator=(OrchardFullViewingKey&& key)
     {
         if (this != &key) {

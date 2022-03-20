@@ -836,6 +836,12 @@ public:
     bool SelectsOrchard() const;
 };
 
+enum class RecipientType {
+    WalletExternalAddress,
+    WalletInternalAddress,
+    CounterpartyAddress
+};
+
 class SpendableInputs {
 private:
     bool limited = false;
@@ -1612,9 +1618,10 @@ public:
     bool LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skmeta);
     bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
 
-    libzcash::PaymentAddress GetPaymentAddressForRecipient(
+    std::pair<libzcash::PaymentAddress, RecipientType> GetPaymentAddressForRecipient(
             const uint256& txid,
             const libzcash::RecipientAddress& recipient) const;
+
     bool IsInternalRecipient(
             const libzcash::RecipientAddress& recipient) const;
 
@@ -2019,7 +2026,7 @@ enum class PaymentAddressSource {
     MnemonicHDSeed,
     Imported,
     ImportedWatchOnly,
-    AddressNotFound,
+    AddressNotFound
 };
 
 // GetSourceForPaymentAddress visitor :: (CWallet&, PaymentAddress) -> PaymentAddressSource
