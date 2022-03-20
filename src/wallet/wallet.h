@@ -1715,11 +1715,14 @@ public:
         {
             sendRecipients[txid].push_back(recipient);
             if (recipient.ua.has_value()) {
-                assert(CWalletDB(strWalletFile).WriteRecipientMapping(
+                if (!CWalletDB(strWalletFile).WriteRecipientMapping(
                     txid,
                     recipient.address,
                     recipient.ua.value()
-                ));
+                )) {
+                    LogPrintf("SaveRecipientMappings: Failed to write recipient mappings to the wallet database.");
+                    return false;
+                };
             }
         }
 
