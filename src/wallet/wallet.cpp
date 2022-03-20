@@ -61,7 +61,9 @@ const char * DEFAULT_WALLET_DAT = "wallet.dat";
  */
 CFeeRate CWallet::minTxFee = CFeeRate(DEFAULT_TRANSACTION_MINFEE);
 
-std::set<ReceiverType> CWallet::DefaultReceiverTypes() {
+std::set<ReceiverType> CWallet::DefaultReceiverTypes(int nHeight) {
+    // For now, just ignore the height information because the default
+    // is always the same.
     return {ReceiverType::P2PKH, ReceiverType::Sapling, ReceiverType::Orchard};
 }
 
@@ -860,7 +862,16 @@ std::pair<PaymentAddress, RecipientType> CWallet::GetPaymentAddressForRecipient(
         const uint256& txid,
         const libzcash::RecipientAddress& recipient) const
 {
+    AssertLockHeld(cs_wallet);
+
     auto self = this;
+
+    auto nHeight = chainActive.Height();
+    auto wtxPtr = mapWallet.find(txid);
+    if (wtxPtr != mapWallet.end()) {
+        nHeight = wtxPtr->second.GetDepthInMainChain();
+    }
+
     auto ufvk = self->GetUFVKForReceiver(RecipientAddressToReceiver(recipient));
     std::pair<PaymentAddress, RecipientType> defaultAddress = std::visit(match {
         [&](const CKeyID& addr) {
@@ -909,7 +920,7 @@ std::pair<PaymentAddress, RecipientType> CWallet::GetPaymentAddressForRecipient(
                     if (j.value().second) {
                         // std::get is safe here because we know we have a valid Sapling diversifier index
                         auto defaultUA = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(
-                                ufvk->Address(j.value().first, CWallet::DefaultReceiverTypes()));
+                                ufvk->Address(j.value().first, CWallet::DefaultReceiverTypes(nHeight)));
                         return std::make_pair(PaymentAddress{defaultUA.first}, RecipientType::WalletExternalAddress);
                     } else {
                         return std::make_pair(PaymentAddress{addr}, RecipientType::WalletInternalAddress);
@@ -932,7 +943,7 @@ std::pair<PaymentAddress, RecipientType> CWallet::GetPaymentAddressForRecipient(
                 if (j.has_value()) {
                     if (j.value().second) {
                         // Attempt to reproduce the original unified address
-                        auto genResult = ufvk->Address(j.value().first, CWallet::DefaultReceiverTypes());
+                        auto genResult = ufvk->Address(j.value().first, CWallet::DefaultReceiverTypes(nHeight));
                         auto defaultUA = std::get_if<std::pair<UnifiedAddress, diversifier_index_t>>(&genResult);
                         if (defaultUA != nullptr) {
                             return std::make_pair(PaymentAddress{defaultUA->first}, RecipientType::WalletExternalAddress);

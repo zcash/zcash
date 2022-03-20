@@ -3110,7 +3110,9 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
     }
 
-    LOCK(pwalletMain->cs_wallet);
+    // cs_main is required for obtaining the current height, for
+    // CWallet::DefaultReceiverTypes
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     int64_t accountInt = params[0].get_int64();
     if (accountInt < 0 || accountInt >= ZCASH_LEGACY_ACCOUNT) {
@@ -3136,7 +3138,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
     }
     if (receivers.empty()) {
         // Default is the best and second-best shielded pools, and the transparent pool.
-        receivers = CWallet::DefaultReceiverTypes();
+        receivers = CWallet::DefaultReceiverTypes(chainActive.Height());
     }
 
     std::optional<libzcash::diversifier_index_t> j = std::nullopt;
