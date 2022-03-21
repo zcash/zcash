@@ -449,11 +449,11 @@ class ListReceivedTest (BitcoinTestFramework):
         acct2 = self.nodes[1].z_getnewaccount()['account']
 
         addrResO = self.nodes[1].z_getaddressforaccount(acct1, ['orchard'])
-        assert_equal(addrResO['pools'], ['orchard'])
+        assert_equal(addrResO['receiver_types'], ['orchard'])
         uao = addrResO['address']
 
         addrResSO = self.nodes[1].z_getaddressforaccount(acct2, ['sapling', 'orchard'])
-        assert_equal(addrResSO['pools'], ['sapling', 'orchard'])
+        assert_equal(addrResSO['receiver_types'], ['sapling', 'orchard'])
         uaso = addrResSO['address']
 
         self.nodes[0].sendtoaddress(taddr, 4.0)

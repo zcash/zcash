@@ -169,7 +169,7 @@ class WalletSaplingTest(BitcoinTestFramework):
             )
             raise AssertionError("Should have thrown an exception")
         except JSONRPCException as e:
-            assert_equal("Sending funds into the Sprout pool is not supported by z_sendmany", e.error['message'])
+            assert_equal("Sending funds into the Sprout value pool is not supported by z_sendmany", e.error['message'])
 
 if __name__ == '__main__':
     WalletSaplingTest().main()

@@ -64,7 +64,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         # Generate the first address for account 0.
         addr0 = self.nodes[0].z_getaddressforaccount(0)
         assert_equal(addr0['account'], 0)
-        assert_equal(set(addr0['pools']), set(['transparent', 'sapling', 'orchard']))
+        assert_equal(set(addr0['receiver_types']), set(['p2pkh', 'sapling', 'orchard']))
         ua0 = addr0['address']
 
         # We pick mnemonic phrases to ensure that we can always generate the default
@@ -82,26 +82,26 @@ class WalletAccountsTest(BitcoinTestFramework):
         # The second address for account 0 is different to the first address.
         addr0_2 = self.nodes[0].z_getaddressforaccount(0)
         assert_equal(addr0_2['account'], 0)
-        assert_equal(set(addr0_2['pools']), set(['transparent', 'sapling', 'orchard']))
+        assert_equal(set(addr0_2['receiver_types']), set(['p2pkh', 'sapling', 'orchard']))
         ua0_2 = addr0_2['address']
         assert(ua0 != ua0_2)
 
         # We can generate a fully-shielded address.
         addr0_3 = self.nodes[0].z_getaddressforaccount(0, ['sapling', 'orchard'])
         assert_equal(addr0_3['account'], 0)
-        assert_equal(set(addr0_3['pools']), set(['sapling', 'orchard']))
+        assert_equal(set(addr0_3['receiver_types']), set(['sapling', 'orchard']))
         ua0_3 = addr0_3['address']
 
         # We can generate an address without a Sapling receiver.
-        addr0_4 = self.nodes[0].z_getaddressforaccount(0, ['transparent', 'orchard'])
+        addr0_4 = self.nodes[0].z_getaddressforaccount(0, ['p2pkh', 'orchard'])
         assert_equal(addr0_4['account'], 0)
-        assert_equal(set(addr0_4['pools']), set(['transparent', 'orchard']))
+        assert_equal(set(addr0_4['receiver_types']), set(['p2pkh', 'orchard']))
         ua0_4 = addr0_4['address']
 
         # The first address for account 1 is different to account 0.
         addr1 = self.nodes[0].z_getaddressforaccount(1)
         assert_equal(addr1['account'], 1)
-        assert_equal(set(addr1['pools']), set(['transparent', 'sapling', 'orchard']))
+        assert_equal(set(addr1['receiver_types']), set(['p2pkh', 'sapling', 'orchard']))
         ua1 = addr1['address']
         assert(ua0 != ua1)
 

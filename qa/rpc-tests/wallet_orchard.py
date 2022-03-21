@@ -36,7 +36,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         acct1 = self.nodes[1].z_getnewaccount()['account']
         addrRes1 = self.nodes[1].z_getaddressforaccount(acct1, ['orchard'])
         assert_equal(acct1, addrRes1['account'])
-        assert_equal(addrRes1['pools'], ['orchard'])
+        assert_equal(addrRes1['receiver_types'], ['orchard'])
         ua1 = addrRes1['address']
 
         # Verify that we have only an Orchard component

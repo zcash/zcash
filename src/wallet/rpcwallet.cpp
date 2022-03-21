@@ -386,7 +386,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
             "  },\n"
             "  ...\n"
             "]"
-            "\nIn the case that a source does not have addresses for a pool, the key\n"
+            "\nIn the case that a source does not have addresses for a value pool, the key\n"
             "associated with that pool will be absent.\n"
             "\nExamples:\n"
             + HelpExampleCli("listaddresses", "")
@@ -2432,9 +2432,10 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "\nReturns array of unspent shielded notes with between minconf and maxconf (inclusive) confirmations.\n"
             "Optionally filter to only include notes sent to specified addresses.\n"
             "When minconf is 0, unspent notes with zero confirmations are returned, even though they are not immediately spendable.\n"
+            "Orchard notes are not yet returned (the documentation below shows what the results will be when this is fixed).\n"
             "Results are an array of Objects, each of which has:\n"
-            "{txid, type, jsindex, jsoutindex, confirmations, address, amount, memo} (Sprout)\n"
-            "{txid, type, outindex, confirmations, address, amount, memo} (Sapling)\n"
+            "{txid, pool, jsindex, jsoutindex, confirmations, address, amount, memo} (Sprout)\n"
+            "{txid, pool, outindex, confirmations, address, amount, memo} (Sapling)\n"
             "\nArguments:\n"
             "1. minconf          (numeric, optional, default=1) The minimum confirmations to filter\n"
             "2. maxconf          (numeric, optional, default=9999999) The maximum confirmations to filter\n"
@@ -2444,14 +2445,15 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "      \"address\"     (string) Sprout, Sapling, or Unified address\n"
             "      ,...\n"
             "    ]\n"
-            "\nResult (output indices for only one pool will be present):\n"
+            "\nResult (output indices for only one value pool will be present):\n"
             "[                             (array of json object)\n"
             "  {\n"
             "    \"txid\" : \"txid\",          (string) the transaction id \n"
-            "    \"type\" : \"sprout|sapling|orchard\", (string) The shielded pool\n"
+            "    \"pool\" : \"sprout|sapling|orchard\", (string) The shielded value pool\n"
+            "    \"type\" : \"sprout|sapling|orchard\", (string) The shielded value pool (DEPRECATED legacy attribute)\n"
             "    \"jsindex\" (sprout) : n,       (numeric) the joinsplit index\n"
             "    \"jsoutindex\" (sprout) : n,       (numeric) the output index of the joinsplit\n"
-            "    \"outindex\" (transparent, sapling, orchard) : n,       (numeric) the output index\n"
+            "    \"outindex\" (transparent, sapling, orchard) : n,       (numeric) the Output or Action index\n"
             "    \"confirmations\" : n,       (numeric) the number of confirmations\n"
             "    \"spendable\" : true|false,  (boolean) true if note can be spent by wallet, false if address is watchonly\n"
             "    \"address\" : \"address\",    (string) the shielded address\n"
@@ -2551,7 +2553,8 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
     for (auto & entry : sproutEntries) {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("txid", entry.jsop.hash.ToString());
-        obj.pushKV("type", ADDR_TYPE_SPROUT);
+        obj.pushKV("pool", ADDR_TYPE_SPROUT);
+        obj.pushKV("type", ADDR_TYPE_SPROUT); //deprecated
         obj.pushKV("jsindex", (int)entry.jsop.js );
         obj.pushKV("jsoutindex", (int)entry.jsop.n);
         obj.pushKV("confirmations", entry.confirmations);
@@ -2570,7 +2573,8 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
     for (auto & entry : saplingEntries) {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("txid", entry.op.hash.ToString());
-        obj.pushKV("type", ADDR_TYPE_SAPLING);
+        obj.pushKV("pool", ADDR_TYPE_SAPLING);
+        obj.pushKV("type", ADDR_TYPE_SAPLING); //deprecated
         obj.pushKV("outindex", (int)entry.op.n);
         obj.pushKV("confirmations", entry.confirmations);
         bool hasSaplingSpendingKey = pwalletMain->HaveSaplingSpendingKeyForAddress(entry.address);
@@ -2699,7 +2703,7 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
         throw runtime_error(
             "zcbenchmark benchmarktype samplecount\n"
             "\n"
-            "Runs a benchmark of the selected type samplecount times,\n"
+            "Runs a benchmark of the selected benchmark type samplecount times,\n"
             "returning the running times of each sample.\n"
             "\n"
             "Output: [\n"
@@ -3253,25 +3257,27 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
         return NullUniValue;
     if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
-            "z_getaddressforaccount account ( [\"pool\", ...] diversifier_index )\n"
+            "z_getaddressforaccount account ( [\"receiver_type\", ...] diversifier_index )\n"
             "\nFor the given account number, derives a Unified Address in accordance"
             "\nwith the remaining arguments:\n"
-            "\n- If no list of pools is given (or the empty list \"[]\"), the best and"
-            "\n  second-best shielded pools, along with the transparent pool, will be used."
+            "\n- If no list of receiver types is given (or the empty list \"[]\"), the best"
+            "\n  and second-best shielded receiver types, along with the \"p2pkh\" (i.e. transparent) receiver"
+            "\n  type, will be used."
             "\n- If no diversifier index is given, the next unused index (that is valid"
-            "\n  for the list of pools) will be selected.\n"
+            "\n  for the list of receiver types) will be selected.\n"
             "\nThe account number must have been previously generated by a call to the"
             "\nz_getnewaccount RPC method.\n"
             "\nOnce a Unified Address has been derived at a specific diversifier index,"
             "\nre-deriving it (via a subsequent call to z_getaddressforaccount with the"
             "\nsame account and index) will produce the same address with the same list"
-            "\nof pools. An error will be returned if a different list of pools is given.\n"
+            "\nof receiver types. An error will be returned if a different list of receiver"
+            "\ntypes is requested.\n"
             "\nResult:\n"
             "{\n"
-            "  \"account\": n,                    (numeric) the specified account number\n"
-            "  \"diversifier_index\": n,          (numeric) the index specified or chosen\n"
-            "  \"pools\": [\"pool\",...]\",         (json array of string) the pools (e.g. \"transparent\", \"orchard\") for which the UA contains receivers\n"
-            "  \"address\"                        (string) The corresponding address\n"
+            "  \"account\": n,                          (numeric) the specified account number\n"
+            "  \"diversifier_index\": n,                (numeric) the index specified or chosen\n"
+            "  \"receiver_types\": [\"orchard\",...]\",   (json array of string) the receiver types that the UA contains (valid values are \"p2pkh\", \"sapling\", \"orchard\")\n"
+            "  \"address\"                              (string) The corresponding address\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("z_getaddressforaccount", "4")
@@ -3294,25 +3300,25 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
     }
     libzcash::AccountId account = accountInt;
 
-    std::set<libzcash::ReceiverType> receivers;
+    std::set<libzcash::ReceiverType> receiverTypes;
     if (params.size() >= 2) {
-        const auto& pools = params[1].get_array();
-        for (unsigned int i = 0; i < pools.size(); i++) {
-            const std::string& p = pools[i].get_str();
-            if (p == "transparent") {
-                receivers.insert(ReceiverType::P2PKH);
+        const auto& parsed = params[1].get_array();
+        for (size_t i = 0; i < parsed.size(); i++) {
+            const std::string& p = parsed[i].get_str();
+            if (p == "p2pkh") {
+                receiverTypes.insert(ReceiverType::P2PKH);
             } else if (p == "sapling") {
-                receivers.insert(ReceiverType::Sapling);
+                receiverTypes.insert(ReceiverType::Sapling);
             } else if (p == "orchard") {
-                receivers.insert(ReceiverType::Orchard);
+                receiverTypes.insert(ReceiverType::Orchard);
             } else {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "pool arguments must be \"transparent\", \"sapling\", or \"orchard\"");
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "receiver type arguments must be \"p2pkh\", \"sapling\", or \"orchard\"");
             }
         }
     }
-    if (receivers.empty()) {
-        // Default is the best and second-best shielded pools, and the transparent pool.
-        receivers = CWallet::DefaultReceiverTypes(chainActive.Height());
+    if (receiverTypes.empty()) {
+        // Default is the best and second-best shielded receiver types, and the transparent (P2PKH) receiver type.
+        receiverTypes = CWallet::DefaultReceiverTypes(chainActive.Height());
     }
 
     std::optional<libzcash::diversifier_index_t> j = std::nullopt;
@@ -3335,9 +3341,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
 
     EnsureWalletIsUnlocked();
 
-    // Generate the first UA for this account, using the best and next-best shielded pools
-    // and the transparent pool.
-    auto res = pwalletMain->GenerateUnifiedAddress(account, receivers, j);
+    auto res = pwalletMain->GenerateUnifiedAddress(account, receiverTypes, j);
 
     UniValue result(UniValue::VOBJ);
     result.pushKV("account", (uint64_t)account);
@@ -3397,24 +3401,24 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
         },
     }, res);
 
-    UniValue pools(UniValue::VARR);
-    for (const auto& receiver : receivers) {
-        switch (receiver) {
+    UniValue receiver_types(UniValue::VARR);
+    for (const auto& receiverType : receiverTypes) {
+        switch (receiverType) {
             case ReceiverType::P2PKH:
-                pools.push_back("transparent");
+                receiver_types.push_back("p2pkh");
                 break;
             case ReceiverType::Sapling:
-                pools.push_back("sapling");
+                receiver_types.push_back("sapling");
                 break;
             case ReceiverType::Orchard:
-                pools.push_back("orchard");
+                receiver_types.push_back("orchard");
                 break;
             default:
                 // Unreachable
                 assert(false);
         }
     }
-    result.pushKV("pools", pools);
+    result.pushKV("receiver_types", receiver_types);
 
     return result;
 }
@@ -3485,8 +3489,9 @@ UniValue z_listunifiedreceivers(const UniValue& params, bool fHelp)
     if (fHelp || params.size() < 1 || params.size() > 1)
         throw runtime_error(
             "z_listunifiedreceivers unified_address\n"
-            "\nReturns the (per-pool) receivers contained within the provided UA;"
-            "\nthe UA may not have receivers for some pools.\n"
+            "\nReturns a record of the individual receivers contained within the provided UA,"
+            "\nkeyed by receiver type. The UA may not have receivers for some receiver types,"
+            "\nin which case those keys will be absent.\n"
             "\nTransactions that send funds to any of the receivers returned by this RPC"
             "\nmethod will be detected by the wallet as having been sent to the unified"
             "\naddress.\n"
@@ -3494,9 +3499,9 @@ UniValue z_listunifiedreceivers(const UniValue& params, bool fHelp)
             "1. unified_address (string) The unified address\n"
             "\nResult:\n"
             "{\n"
-            "  \"transparent\": \"address\",   (string) The legacy transparent address (P2PKH or P2SH)\n"
-            "  \"sapling\": \"address\",       (string) The legacy Sapling address\n"
-            "  \"orchard\": \"address\"        (string) The single-receiver Unified Address for the Orchard receiver\n"
+            "  \"TRANSPARENT_TYPE\": \"address\", (string) The legacy transparent address (\"p2pkh\" or \"p2sh\", never both)\n"
+            "  \"sapling\": \"address\",          (string) The legacy Sapling address\n"
+            "  \"orchard\": \"address\"           (string) A single-receiver Unified Address containing the Orchard receiver\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("z_listunifiedreceivers", "")
@@ -3629,7 +3634,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"address\"      (string) The shielded address.\n"
             "2. minconf        (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
-            "\nResult (output indices for only one pool will be present):\n"
+            "\nResult (output indices for only one value pool will be present):\n"
             "{\n"
             "  \"pool\": \"pool\"                (string) one of (\"transparent\", \"sprout\", \"sapling\", \"orchard\")\n"
             "  \"txid\": \"txid\",               (string) the transaction id\n"
@@ -3924,8 +3929,9 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
             "z_getbalanceforviewingkey \"fvk\" ( minconf )\n"
-            "\nReturns the per-pool balances viewable by a full viewing key known to the node's wallet."
-            "\nSprout viewing keys may be used only if the wallet controls the corresponding spending key."
+            "\nReturns the balance viewable by a full viewing key known to the node's wallet"
+            "\nfor each value pool. Sprout viewing keys may be used only if the wallet controls"
+            "\nthe corresponding spending key."
             "\nArguments:\n"
             "1. \"fvk\"        (string) The selected full viewing key.\n"
             "2. minconf      (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
@@ -3933,16 +3939,16 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
             "{\n"
             "  \"pools\": {\n"
             "    \"transparent\": {\n"
-            "        \"valueZat\": amount   (numeric) The amount held in the transparent pool viewable by this fvk\n"
+            "        \"valueZat\": amount   (numeric) The amount viewable by this FVK held in the transparent value pool\n"
             "    \"},\n"
             "    \"sprout\": {\n"
-            "        \"valueZat\": amount   (numeric) The amount held in the sprout pool viewable by this fvk\n"
+            "        \"valueZat\": amount   (numeric) The amount viewable by this FVK held in the Sprout value pool\n"
             "    \"},\n"
             "    \"sapling\": {\n"
-            "        \"valueZat\": amount   (numeric) The amount held in the sapling pool viewable by this fvk\n"
+            "        \"valueZat\": amount   (numeric) The amount viewable by this FVK held in the Sapling value pool\n"
             "    \"},\n"
             "    \"orchard\": {\n"
-            "        \"valueZat\": amount   (numeric) The amount held in the orchard pool viewable by this fvk\n"
+            "        \"valueZat\": amount   (numeric) The amount viewable by this FVK held in the Orchard value pool\n"
             "    \"}\n"
             "  \"},\n"
             "  \"minimum_confirmations\": n (numeric) The given minconf argument\n"
@@ -4039,7 +4045,7 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
             "z_getbalanceforaccount account ( minconf )\n"
-            "\nReturns the spendable pool balances of the given account."
+            "\nReturns the account's spendable balance for each value pool (\"transparent\", \"sapling\", and \"orchard\")."
             "\nArguments:\n"
             "1. account      (numeric) The account number.\n"
             "2. minconf      (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
@@ -4047,13 +4053,13 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
             "{\n"
             "  \"pools\": {\n"
             "    \"transparent\": {\n"
-            "        \"valueZat\": amount   (numeric) The amount held in the transparent pool by this account\n"
+            "        \"valueZat\": amount   (numeric) The amount held by this account in the transparent value pool\n"
             "    \"},\n"
             "    \"sapling\": {\n"
-            "        \"valueZat\": amount   (numeric) The amount held in the sapling pool by this account\n"
+            "        \"valueZat\": amount   (numeric) The amount held by this account in the Sapling value pool\n"
             "    \"},\n"
             "    \"orchard\": {\n"
-            "        \"valueZat\": amount   (numeric) The amount held in the orchard pool by this account\n"
+            "        \"valueZat\": amount   (numeric) The amount held by this account in the Orchard value pool\n"
             "    \"}\n"
             "  \"},\n"
             "  \"minimum_confirmations\": n (numeric) The given minconf argument\n"
@@ -4209,7 +4215,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "  \"txid\" : \"transactionid\",   (string) The transaction id\n"
             "  \"spends\" : [\n"
             "    {\n"
-            "      \"type\" : \"sprout|sapling|orchard\",      (string) The shielded pool\n"
+            "      \"pool\" : \"sprout|sapling|orchard\",      (string) The shielded value pool\n"
+            "      \"type\" : \"sprout|sapling|orchard\",      (string) The shielded value pool (DEPRECATED legacy attribute)"
             "      \"js\" : n,                       (numeric, sprout) the index of the JSDescription within vJoinSplit\n"
             "      \"jsSpend\" : n,                  (numeric, sprout) the index of the spend within the JSDescription\n"
             "      \"spend\" : n,                    (numeric, sapling) the index of the spend within vShieldedSpend\n"
@@ -4227,7 +4234,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "  ],\n"
             "  \"outputs\" : [\n"
             "    {\n"
-            "      \"type\" : \"sprout|sapling|orchard\",      (string) The shielded pool\n"
+            "      \"pool\" : \"sprout|sapling|orchard\",      (string) The shielded value pool\n"
+            "      \"type\" : \"sprout|sapling|orchard\",      (string) The shielded value pool (DEPRECATED legacy attribute)\n"
             "      \"js\" : n,                       (numeric, sprout) the index of the JSDescription within vJoinSplit\n"
             "      \"jsOutput\" : n,                 (numeric, sprout) the index of the output within the JSDescription\n"
             "      \"output\" : n,                   (numeric, sapling) the index of the output within the vShieldedOutput\n"
@@ -4301,7 +4309,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             auto pa = decrypted.second;
 
             UniValue entry(UniValue::VOBJ);
-            entry.pushKV("type", ADDR_TYPE_SPROUT);
+            entry.pushKV("pool", ADDR_TYPE_SPROUT);
+            entry.pushKV("type", ADDR_TYPE_SPROUT); //deprecated
             entry.pushKV("js", (int)i);
             entry.pushKV("jsSpend", (int)j);
             entry.pushKV("txidPrev", jsop.hash.GetHex());
@@ -4324,7 +4333,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         auto memo = notePt.memo();
 
         UniValue entry(UniValue::VOBJ);
-        entry.pushKV("type", ADDR_TYPE_SPROUT);
+        entry.pushKV("pool", ADDR_TYPE_SPROUT);
+        entry.pushKV("type", ADDR_TYPE_SPROUT); //deprecated
         entry.pushKV("js", (int)jsop.js);
         entry.pushKV("jsOutput", (int)jsop.n);
         entry.pushKV("address", keyIO.EncodePaymentAddress(pa));
@@ -4407,7 +4417,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         }
 
         UniValue entry(UniValue::VOBJ);
-        entry.pushKV("type", ADDR_TYPE_SAPLING);
+        entry.pushKV("pool", ADDR_TYPE_SAPLING);
+        entry.pushKV("type", ADDR_TYPE_SAPLING); //deprecated
         entry.pushKV("spend", (int)i);
         entry.pushKV("txidPrev", op.hash.GetHex());
         entry.pushKV("outputPrev", (int)op.n);
@@ -4460,7 +4471,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         }
 
         UniValue entry(UniValue::VOBJ);
-        entry.pushKV("type", ADDR_TYPE_SAPLING);
+        entry.pushKV("pool", ADDR_TYPE_SAPLING);
+        entry.pushKV("type", ADDR_TYPE_SAPLING); //deprecated
         entry.pushKV("output", (int)op.n);
         entry.pushKV("outgoing", isOutgoing);
         entry.pushKV("walletInternal", addr.second == RecipientType::WalletInternalAddress);
@@ -4492,7 +4504,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         }
 
         UniValue entry(UniValue::VOBJ);
-        entry.pushKV("type", ADDR_TYPE_ORCHARD);
+        entry.pushKV("pool", ADDR_TYPE_ORCHARD);
+        entry.pushKV("type", ADDR_TYPE_ORCHARD); //deprecated
         entry.pushKV("action", (int) actionIdx);
         entry.pushKV("txidPrev", outpoint.hash.GetHex());
         entry.pushKV("actionPrev", (int) outpoint.n);
@@ -4519,7 +4532,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         }
 
         UniValue entry(UniValue::VOBJ);
-        entry.pushKV("type", ADDR_TYPE_ORCHARD);
+        entry.pushKV("pool", ADDR_TYPE_ORCHARD);
+        entry.pushKV("type", ADDR_TYPE_ORCHARD); //deprecated
         entry.pushKV("action", (int) actionIdx);
         entry.pushKV("outgoing", orchardActionOutput.IsOutgoing());
         entry.pushKV("walletInternal", addr.second == RecipientType::WalletInternalAddress);
@@ -4743,7 +4757,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "                           The following special strings are also accepted:\n"
             "                               - \"ANY_TADDR\": Select non-coinbase UTXOs from any transparent addresses belonging to the wallet.\n"
             "                                              Use z_shieldcoinbase to shield coinbase UTXOs from multiple transparent addresses.\n"
-            "                           If the address is a UA, transfer from the most recent pool with sufficient funds\n"
+            "                           If the address is a UA, transfer from the most recent value pool with sufficient funds\n"
             "2. \"amounts\"             (array, required) An array of json objects representing the amounts to send.\n"
             "    [{\n"
             "      \"address\":address  (string, required) The address is a taddr, zaddr, or Unified Address\n"
@@ -4754,10 +4768,10 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "4. fee                   (numeric, optional, default=" + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
             "5. privacyPolicy         (string, optional, default=\"LegacyCompat\") Policy for what information leakage is acceptable.\n"
             "                         One of the following strings:\n"
-            "                               - \"FullPrivacy\": Only allow fully-shielded transactions (involving a single shielded pool).\n"
+            "                               - \"FullPrivacy\": Only allow fully-shielded transactions (involving a single shielded value pool).\n"
             "                               - \"LegacyCompat\": If the transaction involves any Unified Addressess, this is equivalent to\n"
             "                                 \"FullPrivacy\". Otherwise, this is equivalent to \"AllowFullyTransparent\".\n"
-            "                               - \"AllowRevealedAmounts\": Allow funds to cross between shielded pools, revealing the amount\n"
+            "                               - \"AllowRevealedAmounts\": Allow funds to cross between shielded value pools, revealing the amount\n"
             "                                 that crosses pools.\n"
             "                               - \"AllowRevealedRecipients\": Allow transparent recipients. This also implies revealing\n"
             "                                 information described under \"AllowRevealedAmounts\".\n"
@@ -4897,7 +4911,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             if (toSprout) {
                 throw JSONRPCError(
                     RPC_INVALID_PARAMETER,
-                    "Sending funds into the Sprout pool is not supported by z_sendmany");
+                    "Sending funds into the Sprout value pool is not supported by z_sendmany");
             } else {
                 throw JSONRPCError(
                     RPC_INVALID_PARAMETER,
@@ -5430,7 +5444,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             "                             - \"ANY_SAPLING\": Merge notes from any Sapling zaddrs belonging to the wallet.\n"
             "                         While it is possible to use a variety of different combinations of addresses and the above values,\n"
             "                         it is not possible to send funds from both sprout and sapling addresses simultaneously. If a special\n"
-            "                         string is given, any given addresses of that type will be counted as duplicates and cause an error.\n"
+            "                         string is given, any given addresses of that address type will be counted as duplicates and cause an error.\n"
             "    [\n"
             "      \"address\"          (string) Can be a taddr or a zaddr\n"
             "      ,...\n"
@@ -5722,7 +5736,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 RPC_INVALID_PARAMETER,
                 "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress");
         }
-        // If sending between shielded addresses, they must be the same type
+        // If sending between shielded addresses, they must be within the same value pool
         if ((saplingEntries.size() > 0 && isToSproutZaddr) || (sproutEntries.size() > 0 && isToSaplingZaddr)) {
             throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
@@ -5931,7 +5945,7 @@ UniValue z_getnotescount(const UniValue& params, bool fHelp)
             "z_getnotescount\n"
             "\nArguments:\n"
             "1. minconf      (numeric, optional, default=1) Only include notes in transactions confirmed at least this many times.\n"
-            "\nReturns the number of shielded notes of each pool available in the wallet.\n"
+            "\nReturns the number of notes available in the wallet for each shielded value pool.\n"
             "\nResult:\n"
             "{\n"
             "  \"sprout\"      (numeric) the number of Sprout notes in the wallet\n"
