@@ -862,14 +862,18 @@ std::pair<PaymentAddress, RecipientType> CWallet::GetPaymentAddressForRecipient(
         const uint256& txid,
         const libzcash::RecipientAddress& recipient) const
 {
+    AssertLockHeld(cs_main);
     AssertLockHeld(cs_wallet);
 
     auto self = this;
 
-    auto nHeight = chainActive.Height();
+    int nHeight = chainActive.Height();
     auto wtxPtr = mapWallet.find(txid);
     if (wtxPtr != mapWallet.end()) {
-        nHeight = wtxPtr->second.GetDepthInMainChain();
+        const CBlockIndex* pTxIndex{nullptr};
+        if (wtxPtr->second.GetDepthInMainChain(pTxIndex) > 0) {
+            nHeight = pTxIndex->nHeight;
+        }
     }
 
     auto ufvk = self->GetUFVKForReceiver(RecipientAddressToReceiver(recipient));
