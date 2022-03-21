@@ -12,6 +12,7 @@ use std::time::SystemTime;
 
 use anyhow::{self, Context};
 use backtrace::Backtrace;
+use blake2b_simd::Params as Blake2bParams;
 use gumdrop::{Options, ParsingStyle};
 use rand::{thread_rng, Rng};
 use secrecy::{ExposeSecret, SecretString};
@@ -20,6 +21,7 @@ use time::macros::format_description;
 use time::OffsetDateTime;
 use tracing::debug;
 use tracing_subscriber::{fmt, EnvFilter};
+use zcash_primitives::zip339::{Language, Mnemonic};
 
 #[derive(Debug, Options)]
 struct CliOptions {
@@ -353,8 +355,10 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
         .with_context(|| format!("Could not open {:?} for reading", export_path))?;
 
     let mut has_non_mnemonic = false;
-    let mut fingerprint: Option<String> = None;
+    let mut fingerprint: Option<Vec<u8>> = None;
+    let mut language: Option<Language> = None;
     let mut phrase: Option<SecretString> = None;
+    let mut legacy_seedfp: Option<Vec<u8>> = None;
 
     // TODO: ensure the buffer will be zeroized (#5650)
     for t in io::BufReader::new(export_file)
@@ -376,26 +380,53 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
                         .trim_end_matches('"'),
                 )?);
             }
+            if comment.starts_with(" - language=") {
+                if language.is_some() {
+                    debug!(
+                        "Multiple languages, so we cannot convert the passphrase to a legacy seed."
+                    );
+                    has_non_mnemonic = true;
+                } else {
+                    language = language_from_name(comment.trim_start_matches(" - language="));
+                    debug!("language = {:?}", language);
+                }
+            }
             if comment.starts_with(" - fingerprint=") {
                 if fingerprint.is_some() {
                     debug!("Multiple fingerprints, so we cannot tell whether keys match the right one.");
                     has_non_mnemonic = true;
                 } else {
-                    fingerprint = Some(comment.trim_start_matches(" - fingerprint=").to_string());
+                    fingerprint = hex::decode(comment.trim_start_matches(" - fingerprint=")).ok();
+                    debug!("fingerprint = {:?}", fingerprint.as_ref().map(hex::encode));
                 }
             }
         } else {
             // We have a key.
-            if let Some(fp) = fingerprint.as_ref() {
-                // Set `has_non_mnemonic` if either the exported key doesn't have a `seedfp`
-                // field, or it's not the same as the wallet's fingerprint.
-                has_non_mnemonic |= parse_seedfp(key, comment).map_or(true, |s| s != fp);
-            } else {
-                // This shouldn't happen because zcashd exports the fingerprint before any keys,
-                // but if it does then we just assume there might be non-mnemonic-derived keys.
-                debug!("Found key before wallet fingerprint, so we can't check the key's seedfp.");
-                has_non_mnemonic = true;
+
+            // Compute the legacy seedfp if we can, and haven't done so yet.
+            if let Some(language) = language {
+                if let Some(phrase) = phrase.as_ref() {
+                    if legacy_seedfp.is_none() {
+                        legacy_seedfp = legacy_seedfp_from_phrase(language, phrase);
+                        debug!(
+                            "legacy_seedfp = {:?}",
+                            legacy_seedfp.as_ref().map(hex::encode)
+                        );
+                    }
+                }
             }
+
+            // Set `has_non_mnemonic` if either the exported key doesn't have a
+            // `seedfp` field, or it differs from both the wallet fingerprint and
+            // the legacy seed fingerprint.
+            //
+            // Note that an export file written by zcashd will always have the
+            // `recovery_phrase`, `language`, and `fingerprint` fields before any
+            // keys. But if they were not present before the first key, we would
+            // safely set `has_non_mnemonic` to true.
+            has_non_mnemonic |= seedfp_from_export_line(key, comment).map_or(true, |fp| {
+                Some(&fp) != fingerprint.as_ref() && Some(&fp) != legacy_seedfp.as_ref()
+            });
         }
     }
 
@@ -545,6 +576,39 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
     Ok(())
 }
 
+fn language_from_name(name: &str) -> Option<Language> {
+    match name {
+        "English" => Some(Language::English),
+        "SimplifiedChinese" => Some(Language::SimplifiedChinese),
+        "TraditionalChinese" => Some(Language::TraditionalChinese),
+        "Czech" => Some(Language::Czech),
+        "French" => Some(Language::French),
+        "Italian" => Some(Language::Italian),
+        "Japanese" => Some(Language::Japanese),
+        "Korean" => Some(Language::Korean),
+        "Portuguese" => Some(Language::Portuguese),
+        "Spanish" => Some(Language::Spanish),
+        _ => None,
+    }
+}
+
+const ZCASH_HD_SEED_FP_PERSONAL: &[u8; 16] = b"Zcash_HD_Seed_FP";
+
+fn legacy_seedfp_from_phrase(language: Language, phrase: &SecretString) -> Option<Vec<u8>> {
+    if let Ok(mnemonic) = Mnemonic::from_phrase_in(language, phrase.expose_secret()) {
+        let mut h = Blake2bParams::new()
+            .hash_length(32)
+            .personal(ZCASH_HD_SEED_FP_PERSONAL)
+            .to_state();
+        // Use the empty passphrase.
+        h.update(&mnemonic.to_seed(""));
+        Some(h.finalize().as_bytes().to_vec())
+    } else {
+        debug!("Could not obtain legacy seed from recovery phrase.");
+        None
+    }
+}
+
 // A variant of `split_once` that always succeeds (returning the
 // whole string on the left if the separator is not found).
 fn split<'a>(s: &'a str, sep: &str) -> (&'a str, &'a str) {
@@ -556,15 +620,15 @@ fn split<'a>(s: &'a str, sep: &str) -> (&'a str, &'a str) {
 }
 
 // Parse a line of the export file for its seed fingerprint, if any.
-fn parse_seedfp<'a>(key: &'a str, comment: &'a str) -> Option<&'a str> {
+fn seedfp_from_export_line(key: &str, comment: &str) -> Option<Vec<u8>> {
     if let Some((_, suffix)) = key.split_once(" m/") {
         if let Some((_, suffix)) = suffix.split_once(' ') {
-            return Some(split(suffix, " ").0);
+            return hex::decode(split(suffix, " ").0).ok();
         }
     }
     if comment.contains(" hdkeypath=") {
         if let Some((_, suffix)) = comment.split_once(" seedfp=") {
-            return Some(split(suffix, " ").0);
+            return hex::decode(split(suffix, " ").0).ok();
         }
     }
     None

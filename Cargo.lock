@@ -938,6 +938,7 @@ dependencies = [
  "ed25519-zebra",
  "group",
  "gumdrop",
+ "hex",
  "hyper",
  "incrementalmerkletree",
  "ipnet",

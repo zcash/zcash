@@ -65,10 +65,11 @@ thiserror = "1"
 tokio = { version = "1.0", features = ["rt", "net", "time", "macros"] }
 
 # Wallet tool
-# (also depends on thiserror, tracing, and tracing-subscriber with "env-filter" and "fmt" features)
+# Also depends on zcash_primitives (for bip0039), blake2b_simd, thiserror, tracing, and tracing-subscriber with "env-filter" and "fmt" features.
 anyhow = "1.0"
 backtrace = "0.3"
 clearscreen = "1.0"
+hex = "0.4"
 gumdrop = "0.8"
 rand = "0.8"
 secrecy = "0.8"
