@@ -167,7 +167,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         # Get a new unified account on node 2 & generate a UA
         n0account0 = self.nodes[0].z_getnewaccount()['account']
-        n0ua0 = self.nodes[0].z_getaddressforaccount(n0account0)['unifiedaddress']
+        n0ua0 = self.nodes[0].z_getaddressforaccount(n0account0)['address']
 
         # Change went to a fresh address, so use `ANY_TADDR` which
         # should hold the rest of our transparent funds.
@@ -297,8 +297,8 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         # Generate a new account with two new addresses.
         n1account = self.nodes[1].z_getnewaccount()['account']
-        n1ua0 = self.nodes[1].z_getaddressforaccount(n1account)['unifiedaddress']
-        n1ua1 = self.nodes[1].z_getaddressforaccount(n1account)['unifiedaddress']
+        n1ua0 = self.nodes[1].z_getaddressforaccount(n1account)['address']
+        n1ua1 = self.nodes[1].z_getaddressforaccount(n1account)['address']
 
         # Send funds to the transparent receivers of both addresses.
         for ua in [n1ua0, n1ua1]:

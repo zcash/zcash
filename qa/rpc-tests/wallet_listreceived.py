@@ -375,7 +375,7 @@ class ListReceivedTest (BitcoinTestFramework):
         # Create a unified address on one node, try z_listreceivedbyaddress on another node
         account = self.nodes[0].z_getnewaccount()['account']
         r = self.nodes[0].z_getaddressforaccount(account)
-        unified_addr = r['unifiedaddress']
+        unified_addr = r['address']
         # this address isn't in node1's wallet
         assert_raises_message(
             JSONRPCException,
@@ -386,7 +386,7 @@ class ListReceivedTest (BitcoinTestFramework):
         r = node.z_getnewaccount()
         account = r['account']
         r = node.z_getaddressforaccount(account)
-        unified_addr = r['unifiedaddress']
+        unified_addr = r['address']
         receivers = node.z_listunifiedreceivers(unified_addr)
         assert_equal(len(receivers), 3)
         assert 'transparent' in receivers
@@ -450,17 +450,17 @@ class ListReceivedTest (BitcoinTestFramework):
 
         addrResO = self.nodes[1].z_getaddressforaccount(acct1, ['orchard'])
         assert_equal(addrResO['pools'], ['orchard'])
-        uao = addrResO['unifiedaddress']
+        uao = addrResO['address']
 
         addrResSO = self.nodes[1].z_getaddressforaccount(acct2, ['sapling', 'orchard'])
         assert_equal(addrResSO['pools'], ['sapling', 'orchard'])
-        uaso = addrResSO['unifiedaddress']
+        uaso = addrResSO['address']
 
         self.nodes[0].sendtoaddress(taddr, 4.0)
         self.generate_and_sync(height+2)
 
         acct_node0 = self.nodes[0].z_getnewaccount()['account']
-        ua_node0 = self.nodes[0].z_getaddressforaccount(acct_node0, ['sapling', 'orchard'])['unifiedaddress']
+        ua_node0 = self.nodes[0].z_getaddressforaccount(acct_node0, ['sapling', 'orchard'])['address']
 
         opid = self.nodes[1].z_sendmany(taddr, [
             {'address': uao, 'amount': 1, 'memo': my_memo},

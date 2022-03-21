@@ -52,7 +52,7 @@ class OrchardReorgTest(BitcoinTestFramework):
         addr = self.nodes[0].z_getaddressforaccount(account, ['orchard'])
         assert_equal(addr['account'], account)
         assert_equal(set(addr['pools']), set(['orchard']))
-        ua = addr['unifiedaddress']
+        ua = addr['address']
 
         # Before mining any Orchard notes, finalorchardroot should be the empty Orchard root.
         assert_equal(

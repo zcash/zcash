@@ -37,7 +37,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         addrRes1 = self.nodes[1].z_getaddressforaccount(acct1, ['orchard'])
         assert_equal(acct1, addrRes1['account'])
         assert_equal(addrRes1['pools'], ['orchard'])
-        ua1 = addrRes1['unifiedaddress']
+        ua1 = addrRes1['address']
 
         # Verify that we have only an Orchard component
         receiver_types = self.nodes[0].z_listunifiedreceivers(ua1)
@@ -50,7 +50,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         acct2 = self.nodes[2].z_getnewaccount()['account']
         addrRes2 = self.nodes[2].z_getaddressforaccount(acct2, ['sapling', 'orchard'])
         assert_equal(acct2, addrRes2['account'])
-        ua2 = addrRes2['unifiedaddress']
+        ua2 = addrRes2['address']
         saplingAddr2 = self.nodes[2].z_listunifiedreceivers(ua2)['sapling']
 
         recipients = [{"address": saplingAddr2, "amount": Decimal('10')}]
@@ -102,7 +102,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         acct3 = self.nodes[3].z_getnewaccount()['account']
         addrRes3 = self.nodes[3].z_getaddressforaccount(acct3, ['sapling', 'orchard'])
         assert_equal(acct3, addrRes3['account'])
-        ua3 = addrRes3['unifiedaddress']
+        ua3 = addrRes3['address']
 
         recipients = [{"address": ua3, "amount": Decimal('1')}]
         myopid = self.nodes[2].z_sendmany(ua2, recipients, 1, 0)

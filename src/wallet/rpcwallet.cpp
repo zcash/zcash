@@ -3271,7 +3271,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
             "  \"account\": n,                    (numeric) the specified account number\n"
             "  \"diversifier_index\": n,          (numeric) the index specified or chosen\n"
             "  \"pools\": [\"pool\",...]\",         (json array of string) the pools (e.g. \"transparent\", \"orchard\") for which the UA contains receivers\n"
-            "  \"unifiedaddress\"                 (string) The corresponding address\n"
+            "  \"address\"                        (string) The corresponding address\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("z_getaddressforaccount", "4")
@@ -3344,7 +3344,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
 
     std::visit(match {
         [&](std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t> addr) {
-            result.pushKV("unifiedaddress", KeyIO(Params()).EncodePaymentAddress(addr.first));
+            result.pushKV("address", KeyIO(Params()).EncodePaymentAddress(addr.first));
             UniValue j;
             j.setNumStr(ArbitraryIntStr(std::vector(addr.second.begin(), addr.second.end())));
             result.pushKV("diversifier_index", j);

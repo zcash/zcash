@@ -65,7 +65,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         addr0 = self.nodes[0].z_getaddressforaccount(0)
         assert_equal(addr0['account'], 0)
         assert_equal(set(addr0['pools']), set(['transparent', 'sapling', 'orchard']))
-        ua0 = addr0['unifiedaddress']
+        ua0 = addr0['address']
 
         # We pick mnemonic phrases to ensure that we can always generate the default
         # address in account 0; this is however not necessarily at diversifier index 0.
@@ -83,26 +83,26 @@ class WalletAccountsTest(BitcoinTestFramework):
         addr0_2 = self.nodes[0].z_getaddressforaccount(0)
         assert_equal(addr0_2['account'], 0)
         assert_equal(set(addr0_2['pools']), set(['transparent', 'sapling', 'orchard']))
-        ua0_2 = addr0_2['unifiedaddress']
+        ua0_2 = addr0_2['address']
         assert(ua0 != ua0_2)
 
         # We can generate a fully-shielded address.
         addr0_3 = self.nodes[0].z_getaddressforaccount(0, ['sapling', 'orchard'])
         assert_equal(addr0_3['account'], 0)
         assert_equal(set(addr0_3['pools']), set(['sapling', 'orchard']))
-        ua0_3 = addr0_3['unifiedaddress']
+        ua0_3 = addr0_3['address']
 
         # We can generate an address without a Sapling receiver.
         addr0_4 = self.nodes[0].z_getaddressforaccount(0, ['transparent', 'orchard'])
         assert_equal(addr0_4['account'], 0)
         assert_equal(set(addr0_4['pools']), set(['transparent', 'orchard']))
-        ua0_4 = addr0_4['unifiedaddress']
+        ua0_4 = addr0_4['address']
 
         # The first address for account 1 is different to account 0.
         addr1 = self.nodes[0].z_getaddressforaccount(1)
         assert_equal(addr1['account'], 1)
         assert_equal(set(addr1['pools']), set(['transparent', 'sapling', 'orchard']))
-        ua1 = addr1['unifiedaddress']
+        ua1 = addr1['address']
         assert(ua0 != ua1)
 
         # The UA contains the expected receiver kinds.
@@ -195,7 +195,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         # Send Orchard funds from the UA.
         print('Sending account funds to Orchard-only UA')
         node1account = self.nodes[1].z_getnewaccount()['account']
-        node1orchard = self.nodes[1].z_getaddressforaccount(node1account, ['orchard'])['unifiedaddress']
+        node1orchard = self.nodes[1].z_getaddressforaccount(node1account, ['orchard'])['address']
         recipients = [{'address': node1orchard, 'amount': Decimal('1')}]
         opid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0)
         txid = wait_and_assert_operationid_status(self.nodes[0], opid)
