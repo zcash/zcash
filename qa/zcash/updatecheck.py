@@ -328,7 +328,9 @@ def main():
         # packages.mk is not a dependency, it just specifies the list of them all.
         "packages",
         # This package doesn't have conventional version numbers
-        "native_cctools"
+        "native_cctools",
+        # This package is pinned specifically for Arch.
+        "native_libtinfo",
     ]
 
     print_row("NAME", "STATUS", "CURRENT VERSION", "NEWER VERSIONS")
