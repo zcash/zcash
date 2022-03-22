@@ -6,6 +6,7 @@ SRCDIR=${SRCDIR:-$TOPDIR/src}
 MANDIR=${MANDIR:-$TOPDIR/doc/man}
 
 ZCASHD=${ZCASHD:-$SRCDIR/zcashd}
+ZCASHD_WALLET_TOOL=${ZCASHD_WALLET_TOOL:-$SRCDIR/zcashd-wallet-tool}
 ZCASHCLI=${ZCASHCLI:-$SRCDIR/zcash-cli}
 ZCASHTX=${ZCASHTX:-$SRCDIR/zcash-tx}
 
@@ -22,7 +23,7 @@ read -r -a ZECCOMMIT <<< "$(echo $ZECVERSTR | awk -F- '{ print $NF }')"
 echo "[COPYRIGHT]" > footer.h2m
 $ZCASHD --version | sed -n '1!p' >> footer.h2m
 
-for cmd in $ZCASHD $ZCASHCLI $ZCASHTX; do
+for cmd in $ZCASHD $ZCASHD_WALLET_TOOL $ZCASHCLI $ZCASHTX; do
   cmdname="${cmd##*/}"
   help2man -N --version-string=$ZECVER --include=footer.h2m -o ${MANDIR}/${cmdname}.1 ${cmd}
   sed -i "s/\\\-$ZECCOMMIT//g" ${MANDIR}/${cmdname}.1
