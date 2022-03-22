@@ -555,8 +555,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
                 SaplingIncomingViewingKey ivkRet;
                 if (pwalletMain->GetSaplingIncomingViewingKey(addr, ivkRet)) {
                     // Do not include any address that is associated with a unified key.
-                    auto ua = pwalletMain->FindUnifiedAddressByReceiver(addr);
-                    if (!ua.has_value()) {
+                    if (!pwalletMain->GetUFVKMetadataForReceiver(addr).has_value()) {
                         ivkAddrs[ivkRet].push_back(addr);
                     }
                 }
