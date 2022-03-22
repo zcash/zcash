@@ -211,7 +211,7 @@ public:
     /**
      * Extracts the diversifier from the specified address and decrypts it as
      * a diversifier index, then verifies that this diversifier index produces
-     * the same address. This method attempts decrypion using both the internal
+     * the same address. This method attempts decryption using both the internal
      * and external parts of the full viewing key.
      *
      * Returns a pair consisting of the diversifier index and a flag indicating

@@ -2117,6 +2117,11 @@ public:
 };
 
 // UnifiedAddressForReceiver :: (CWallet&, Receiver) -> std::optional<UnifiedAddress>
+//
+// When this visitor returns `std::nullopt` it means that either the receiver is not
+// recognized as belonging to any key known to the wallet, or that the receiver
+// is an internal change receiver for which it is not permitted to generate a
+// unified address per ZIP 315.
 class UnifiedAddressForReceiver {
 private:
     const CWallet& wallet;
