@@ -179,7 +179,7 @@ pub enum BundleLoadError {
     /// the provided IVK.
     ActionDecryptionFailed(usize),
     /// The wallet did not contain the full viewing key corresponding
-    /// to the incoming viewing key that successfullly decrypted a
+    /// to the incoming viewing key that successfully decrypted a
     /// note.
     FvkNotFound(IncomingViewingKey),
     /// An action index identified as potentially spending one of our
