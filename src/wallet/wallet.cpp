@@ -885,20 +885,26 @@ std::pair<PaymentAddress, RecipientType> CWallet::GetPaymentAddressForRecipient(
                 return std::make_pair(PaymentAddress{ua.value()}, RecipientType::WalletExternalAddress);
             }
 
-            // not associated with an UA, so we check legacy key metadata; if we don't
-            // have any metadata, it's a counterparty address
-            auto keyMeta = mapKeyMetadata.find(addr);
-            if (keyMeta == mapKeyMetadata.end()) {
-                return std::make_pair(PaymentAddress{addr}, RecipientType::CounterpartyAddress);
-            }
-
-            // for legacy change keys, we can check the keypath to determine
-            // whether this is an internal or external address.
-            if (IsInternalKeyPath(44, BIP44CoinType(), keyMeta->second.hdKeypath)) {
-                return std::make_pair(PaymentAddress{addr}, RecipientType::WalletInternalAddress);
-            } else {
+            // If it's in the address book, it's a legacy external address
+            if (mapAddressBook.count(addr)) {
                 return std::make_pair(PaymentAddress{addr}, RecipientType::WalletExternalAddress);
             }
+
+            if (::IsMine(*this, addr)) {
+                // For keys that are ours, check if they are legacy change keys. Anything that has an
+                // internal BIP-44 keypath is a post-mnemonic internal address.
+                auto keyMeta = mapKeyMetadata.find(addr);
+                if (keyMeta == mapKeyMetadata.end() || keyMeta->second.hdKeypath == "") {
+                    return std::make_pair(PaymentAddress{addr}, RecipientType::LegacyChangeAddress);
+                } else if (IsInternalKeyPath(44, BIP44CoinType(), keyMeta->second.hdKeypath)) {
+                    return std::make_pair(PaymentAddress{addr}, RecipientType::WalletInternalAddress);
+                } else {
+                    return std::make_pair(PaymentAddress{addr}, RecipientType::WalletExternalAddress);
+                }
+            }
+
+            // It really doesn't appear to be ours, so treat it as a counterparty address.
+            return std::make_pair(PaymentAddress{addr}, RecipientType::CounterpartyAddress);
         },
         [&](const CScriptID& addr) {
             auto ua = self->FindUnifiedAddressByReceiver(addr);
@@ -916,7 +922,9 @@ std::pair<PaymentAddress, RecipientType> CWallet::GetPaymentAddressForRecipient(
             if (ua.has_value()) {
                 // UAs are always external addresses
                 return std::make_pair(PaymentAddress{ua.value()}, RecipientType::WalletExternalAddress);
-            } else if (ufvk.has_value() && ufvk->GetSaplingKey().has_value()) {
+            }
+
+            if (ufvk.has_value() && ufvk->GetSaplingKey().has_value()) {
                 auto saplingKey = ufvk->GetSaplingKey().value();
                 auto j = saplingKey.DecryptDiversifier(addr);
                 if (j.has_value()) {
@@ -930,6 +938,12 @@ std::pair<PaymentAddress, RecipientType> CWallet::GetPaymentAddressForRecipient(
                         return std::make_pair(PaymentAddress{addr}, RecipientType::WalletInternalAddress);
                     }
                 }
+            }
+
+            // legacy Sapling keys that we recognize are all external addresses
+            libzcash::SaplingIncomingViewingKey ivk;
+            if (GetSaplingIncomingViewingKey(addr, ivk)) {
+                return std::make_pair(PaymentAddress{addr}, RecipientType::WalletExternalAddress);
             }
 
             // We don't produce internal change addresses for legacy Sapling

@@ -839,6 +839,7 @@ public:
 enum class RecipientType {
     WalletExternalAddress,
     WalletInternalAddress,
+    LegacyChangeAddress,
     CounterpartyAddress
 };
 
