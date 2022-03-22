@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
         bool notFound = true;
         for (auto a : arr.getValues()) {
             auto source = find_value(a.get_obj(), "source");
-            if (source.get_str() == "legacy_random") {
+            if (source.get_str() == "mnemonic_seed") {
                 auto t_obj = find_value(a.get_obj(), "transparent");
                 auto addrs = find_value(t_obj, "addresses").get_array();
                 BOOST_CHECK_EQUAL(2, addrs.size());
@@ -847,7 +847,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
                 auto sproutAddrs = find_value(sproutObj, "addresses").get_array();
                 sproutCountMatch = (sproutAddrs.size() == 1);
             }
-            if (source.get_str() == "legacy_hdseed") {
+            if (source.get_str() == "mnemonic_seed") {
                 auto sapling_addr_sets = find_value(a.get_obj(), "sapling").get_array();
                 saplingExtfvksMatch = (sapling_addr_sets.size() == 2);
 

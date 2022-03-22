@@ -6913,12 +6913,14 @@ PaymentAddressSource GetSourceForPaymentAddress::operator()(const CKeyID &addr) 
 {
     auto ufvkSource = this->GetUnifiedSource(addr);
     if (ufvkSource == PaymentAddressSource::AddressNotFound) {
-        if (m_wallet->HaveKey(addr)) {
+        auto keyMeta = pwalletMain->mapKeyMetadata[addr];
+        auto account = libzcash::ParseHDKeypathAccount(44, Params().BIP44CoinType(), keyMeta.hdKeypath);
+        if (account.has_value() && account.value() == ZCASH_LEGACY_ACCOUNT) {
+            return PaymentAddressSource::MnemonicHDSeed;
+        } else if (m_wallet->HaveKey(addr)) {
             return PaymentAddressSource::Random;
-        } else {
-            if (m_wallet->HaveWatchOnly(GetScriptForDestination(addr))) {
-                return PaymentAddressSource::ImportedWatchOnly;
-            }
+        } else if (m_wallet->HaveWatchOnly(GetScriptForDestination(addr))) {
+            return PaymentAddressSource::ImportedWatchOnly;
         }
     }
 
@@ -6957,10 +6959,28 @@ PaymentAddressSource GetSourceForPaymentAddress::operator()(const libzcash::Sapl
         // also have the corresponding SaplingExtendedFullViewingKey.
         if (m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk)) {
             if (m_wallet->HaveSaplingFullViewingKey(ivk)) {
-                // If we have the HD keypath, it's related to the legacy seed
+                // If we have the HD keypath, it's related to a seed.
                 if (m_wallet->mapSaplingZKeyMetadata.count(ivk) > 0 &&
                         m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath != "") {
-                    return PaymentAddressSource::LegacyHDSeed;
+                    // The following keypaths have been used in zcashd:
+                    // - Legacy seed:     m/32'/coin_type'/account_counter'
+                    // - Mnemonic phrase: m/32'/coin_type'/ZCASH_LEGACY_ACCOUNT'/account_counter'
+                    //
+                    // Thus if the keypath uses account ZCASH_LEGACY_ACCOUNT and
+                    // is longer than "m/32'/coin_type'/ZCASH_LEGACY_ACCOUNT'",
+                    // it is derived from the mnemonic.
+                    auto account = libzcash::ParseHDKeypathAccount(
+                        32, Params().BIP44CoinType(), m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath);
+                    if (account.has_value() &&
+                        account.value() == ZCASH_LEGACY_ACCOUNT && (
+                            libzcash::Zip32AccountKeyPath(Params().BIP44CoinType(), ZCASH_LEGACY_ACCOUNT).size()
+                            < m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath.size()
+                        ))
+                    {
+                        return PaymentAddressSource::MnemonicHDSeed;
+                    } else {
+                        return PaymentAddressSource::LegacyHDSeed;
+                    }
                 } else if (m_wallet->HaveSaplingSpendingKeyForAddress(zaddr)) {
                     return PaymentAddressSource::Imported;
                 } else {
