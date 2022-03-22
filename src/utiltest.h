@@ -76,6 +76,4 @@ CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
                                  const libzcash::SaplingExtendedSpendingKey &sk,
                                  CAmount value);
 
-void LoadProofParameters();
-
 #endif // ZCASH_UTILTEST_H

@@ -5,6 +5,7 @@
 #include "primitives/transaction.h"
 #include "consensus/validation.h"
 #include "transaction_builder.h"
+#include "gtest/utils.h"
 #include "utiltest.h"
 #include "zcash/JoinSplit.hpp"
 

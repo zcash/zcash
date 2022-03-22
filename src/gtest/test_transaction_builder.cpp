@@ -8,6 +8,7 @@
 #include "rpc/protocol.h"
 #include "transaction_builder.h"
 #include "gtest/test_transaction_builder.h"
+#include "gtest/utils.h"
 #include "utiltest.h"
 #include "zcash/Address.hpp"
 #include "zcash/address/mnemonic.h"

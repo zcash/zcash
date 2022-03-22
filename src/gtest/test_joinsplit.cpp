@@ -11,6 +11,7 @@
 #include "primitives/transaction.h"
 #include "proof_verifier.h"
 #include "transaction_builder.h"
+#include "gtest/utils.h"
 #include "utiltest.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
