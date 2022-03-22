@@ -568,14 +568,15 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     EXPECT_EQ(ufvkmetaUnadded.value().GetDiversifierIndex().value(), addrPair.second);
 
     // Adding the Sapling addr -> ivk map entry causes us to find the same UFVK,
-    // but as we're no longer trial-decrypting we don't learn the index.
+    // and since we trial-decrypt with both external and internal IVKs to
+    // verify whether it's an internal address, we learn the index.
     auto saplingIvk = zufvk.GetSaplingKey().value().ToIncomingViewingKey();
     keyStore.AddSaplingPaymentAddress(saplingIvk, saplingReceiver);
 
     auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
     EXPECT_TRUE(ufvkmeta.has_value());
     EXPECT_EQ(ufvkmeta.value().GetUFVKId(), ufvkid);
-    EXPECT_FALSE(ufvkmeta.value().GetDiversifierIndex().has_value());
+    EXPECT_TRUE(ufvkmeta.value().GetDiversifierIndex().has_value());
 }
 
 TEST(KeystoreTests, StoreAndRetrieveUFVKByOrchard) {

@@ -396,13 +396,12 @@ CBasicKeyStore::GetUFVKMetadataForAddress(const libzcash::UnifiedAddress& addr) 
     std::optional<libzcash::diversifier_index_t> j;
     bool jConflict = false;
     for (const auto& receiver : addr) {
-        // skip unknown receivers
-        if (libzcash::HasKnownReceiverType(receiver)) {
-            auto rmeta = GetUFVKMetadataForReceiver(receiver);
+        auto rmeta = GetUFVKMetadataForReceiver(receiver);
+        if (rmeta.has_value()) {
             // We should never generate unified addresses with internal receivers
-            assert(!(rmeta.has_value() && rmeta.value().IsInternalAddress()));
+            assert(rmeta.value().IsExternalAddress());
 
-            if (ufvkId.has_value() && rmeta.has_value()) {
+            if (ufvkId.has_value()) {
                 // If the unified address contains receivers that are associated with
                 // different UFVKs, we cannot return a singular value.
                 if (rmeta.value().GetUFVKId() != ufvkId.value()) {
@@ -419,7 +418,7 @@ CBasicKeyStore::GetUFVKMetadataForAddress(const libzcash::UnifiedAddress& addr) 
                         j = rmeta.value().GetDiversifierIndex().value();
                     }
                 }
-            } else if (rmeta.has_value()) {
+            } else {
                 ufvkId = rmeta.value().GetUFVKId();
                 j = rmeta.value().GetDiversifierIndex();
             }
@@ -427,7 +426,7 @@ CBasicKeyStore::GetUFVKMetadataForAddress(const libzcash::UnifiedAddress& addr) 
     }
 
     if (ufvkId.has_value()) {
-        return AddressUFVKMetadata(ufvkId.value(), j, false);
+        return AddressUFVKMetadata(ufvkId.value(), j, true);
     } else {
         return std::nullopt;
     }
@@ -476,13 +475,9 @@ std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const libzcash::Orchar
     for (const auto& [k, v] : keystore.mapUnifiedFullViewingKeys) {
         auto fvk = v.GetOrchardKey();
         if (fvk.has_value()) {
-            auto d_idx = fvk.value().ToIncomingViewingKey().DecryptDiversifier(orchardAddr);
+            auto d_idx = fvk.value().DecryptDiversifier(orchardAddr);
             if (d_idx.has_value()) {
-                return AddressUFVKMetadata(k, d_idx, false);
-            }
-            auto internal_d_idx = fvk.value().ToInternalIncomingViewingKey().DecryptDiversifier(orchardAddr);
-            if (internal_d_idx.has_value()) {
-                return AddressUFVKMetadata(k, internal_d_idx, true);
+                return AddressUFVKMetadata(k, d_idx->first, d_idx->second);
             }
         }
     }
@@ -496,12 +491,18 @@ std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const libzcash::Saplin
         // this via trial-decryption of a note.
         const auto ufvkId = keystore.mapSaplingKeyUnified.find(saplingIvk->second);
         if (ufvkId != keystore.mapSaplingKeyUnified.end()) {
-            return AddressUFVKMetadata(ufvkId->second, std::nullopt, false);
-        } else {
-            // If we have the addr -> ivk map entry but not the ivk -> UFVK map entry,
-            // then this is definitely a legacy Sapling address.
-            return std::nullopt;
+            // We know that we have a UFVK, and that it has a Sapling key that
+            // produced this address, so decrypt the diversifier to determine
+            // whether it was an internal or external address
+            auto ufvk = keystore.GetUnifiedFullViewingKey(ufvkId->second).value();
+            auto saplingKey = ufvk.GetSaplingKey().value();
+            auto d_idx = saplingKey.DecryptDiversifier(saplingAddr).value();
+            return AddressUFVKMetadata(ufvkId->second, d_idx.first, d_idx.second);
         }
+
+        // If we have the addr -> ivk map entry but not the ivk -> UFVK map entry,
+        // then this is definitely a legacy Sapling address.
+        return std::nullopt;
     }
 
     // We haven't generated this receiver via `z_getaddressforaccount` (or this is a
@@ -511,16 +512,9 @@ std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const libzcash::Saplin
     for (const auto& [k, v] : keystore.mapUnifiedFullViewingKeys) {
         auto dfvk = v.GetSaplingKey();
         if (dfvk.has_value()) {
-            auto d_idx = dfvk.value().DecryptDiversifier(saplingAddr.d);
-            auto derived_addr = dfvk.value().Address(d_idx);
-            if (derived_addr.has_value() && derived_addr.value() == saplingAddr) {
-                return AddressUFVKMetadata(k, d_idx, false);
-            }
-
-            auto internal_d_idx = dfvk.value().DecryptInternalDiversifier(saplingAddr.d);
-            auto derived_internal_addr = dfvk.value().InternalAddress(internal_d_idx);
-            if (derived_internal_addr.has_value() && derived_internal_addr.value() == saplingAddr) {
-                return AddressUFVKMetadata(k, internal_d_idx, true);
+            auto d_idx = dfvk.value().DecryptDiversifier(saplingAddr);
+            if (d_idx.has_value()) {
+                return AddressUFVKMetadata(k, d_idx->first, d_idx->second);
             }
         }
     }
@@ -533,7 +527,7 @@ std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const CScriptID& scrip
     if (metadata != keystore.mapP2SHUnified.end()) {
         // At present we never generate transparent internal addresses, so this
         // must be an external address
-        return AddressUFVKMetadata(metadata->second.first, metadata->second.second, false);
+        return AddressUFVKMetadata(metadata->second.first, metadata->second.second, true);
     } else {
         return std::nullopt;
     }
@@ -543,7 +537,7 @@ std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const CKeyID& keyId) c
     if (metadata != keystore.mapP2PKHUnified.end()) {
         // At present we never generate transparent internal addresses, so this
         // must be an external address
-        return AddressUFVKMetadata(metadata->second.first, metadata->second.second, false);
+        return AddressUFVKMetadata(metadata->second.first, metadata->second.second, true);
     } else {
         return std::nullopt;
     }

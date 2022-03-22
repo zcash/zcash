@@ -836,6 +836,13 @@ public:
     bool SelectsOrchard() const;
 };
 
+enum class RecipientType {
+    WalletExternalAddress,
+    WalletInternalAddress,
+    LegacyChangeAddress,
+    CounterpartyAddress
+};
+
 class SpendableInputs {
 private:
     bool limited = false;
@@ -1612,9 +1619,10 @@ public:
     bool LoadUnifiedAccountMetadata(const ZcashdUnifiedAccountMetadata &skmeta);
     bool LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &addrmeta);
 
-    libzcash::PaymentAddress GetPaymentAddressForRecipient(
+    std::pair<libzcash::PaymentAddress, RecipientType> GetPaymentAddressForRecipient(
             const uint256& txid,
             const libzcash::RecipientAddress& recipient) const;
+
     bool IsInternalRecipient(
             const libzcash::RecipientAddress& recipient) const;
 
@@ -1708,11 +1716,14 @@ public:
         {
             sendRecipients[txid].push_back(recipient);
             if (recipient.ua.has_value()) {
-                assert(CWalletDB(strWalletFile).WriteRecipientMapping(
+                if (!CWalletDB(strWalletFile).WriteRecipientMapping(
                     txid,
                     recipient.address,
                     recipient.ua.value()
-                ));
+                )) {
+                    LogPrintf("SaveRecipientMappings: Failed to write recipient mappings to the wallet database.");
+                    return false;
+                };
             }
         }
 
@@ -1734,10 +1745,10 @@ public:
     static CAmount GetRequiredFee(unsigned int nTxBytes);
 
     /**
-     * The current set of default receiver types used when the wallet generates
-     * unified addresses
+     * The set of default receiver types used when the wallet generates
+     * unified addresses, as of the specified chain height.
      */
-    static std::set<libzcash::ReceiverType> DefaultReceiverTypes();
+    static std::set<libzcash::ReceiverType> DefaultReceiverTypes(int nHeight);
 
 private:
     bool NewKeyPool();
@@ -2019,7 +2030,7 @@ enum class PaymentAddressSource {
     MnemonicHDSeed,
     Imported,
     ImportedWatchOnly,
-    AddressNotFound,
+    AddressNotFound
 };
 
 // GetSourceForPaymentAddress visitor :: (CWallet&, PaymentAddress) -> PaymentAddressSource
@@ -2106,6 +2117,11 @@ public:
 };
 
 // UnifiedAddressForReceiver :: (CWallet&, Receiver) -> std::optional<UnifiedAddress>
+//
+// When this visitor returns `std::nullopt` it means that either the receiver is not
+// recognized as belonging to any key known to the wallet, or that the receiver
+// is an internal change receiver for which it is not permitted to generate a
+// unified address per ZIP 315.
 class UnifiedAddressForReceiver {
 private:
     const CWallet& wallet;

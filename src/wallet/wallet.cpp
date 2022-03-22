@@ -61,7 +61,9 @@ const char * DEFAULT_WALLET_DAT = "wallet.dat";
  */
 CFeeRate CWallet::minTxFee = CFeeRate(DEFAULT_TRANSACTION_MINFEE);
 
-std::set<ReceiverType> CWallet::DefaultReceiverTypes() {
+std::set<ReceiverType> CWallet::DefaultReceiverTypes(int nHeight) {
+    // For now, just ignore the height information because the default
+    // is always the same.
     return {ReceiverType::P2PKH, ReceiverType::Sapling, ReceiverType::Orchard};
 }
 
@@ -723,7 +725,6 @@ WalletUAGenerationResult CWallet::GenerateUnifiedAddress(
         auto metadata = mapUfvkAddressMetadata.find(ufvkid);
         if (metadata != mapUfvkAddressMetadata.end()) {
             if (j.has_value()) {
-
                 auto receivers = metadata->second.GetReceivers(j.value());
                 if (receivers.has_value()) {
                     // Ensure that the set of receiver types being requested is
@@ -857,80 +858,142 @@ bool CWallet::LoadUnifiedAddressMetadata(const ZcashdUnifiedAddressMetadata &add
                 addrmeta.GetReceiverTypes());
 }
 
-PaymentAddress CWallet::GetPaymentAddressForRecipient(
+std::pair<PaymentAddress, RecipientType> CWallet::GetPaymentAddressForRecipient(
         const uint256& txid,
         const libzcash::RecipientAddress& recipient) const
 {
+    AssertLockHeld(cs_main);
+    AssertLockHeld(cs_wallet);
+
     auto self = this;
-    auto defaultAddress = [&]() -> PaymentAddress {
-        auto ufvk = self->GetUFVKForReceiver(RecipientAddressToReceiver(recipient));
-        return std::visit(match {
-            [&](const CKeyID& addr) {
-                auto ua = self->FindUnifiedAddressByReceiver(addr);
-                if (ua.has_value()) {
-                    return libzcash::PaymentAddress{ua.value()};
+
+    int nHeight = chainActive.Height();
+    auto wtxPtr = mapWallet.find(txid);
+    if (wtxPtr != mapWallet.end()) {
+        const CBlockIndex* pTxIndex{nullptr};
+        if (wtxPtr->second.GetDepthInMainChain(pTxIndex) > 0) {
+            nHeight = pTxIndex->nHeight;
+        }
+    }
+
+    auto ufvk = self->GetUFVKForReceiver(RecipientAddressToReceiver(recipient));
+    std::pair<PaymentAddress, RecipientType> defaultAddress = std::visit(match {
+        [&](const CKeyID& addr) {
+            auto ua = self->FindUnifiedAddressByReceiver(addr);
+            if (ua.has_value()) {
+                // we do not generate unified addresses for change keys
+                return std::make_pair(PaymentAddress{ua.value()}, RecipientType::WalletExternalAddress);
+            }
+
+            // If it's in the address book, it's a legacy external address
+            if (mapAddressBook.count(addr)) {
+                return std::make_pair(PaymentAddress{addr}, RecipientType::WalletExternalAddress);
+            }
+
+            if (::IsMine(*this, addr)) {
+                // For keys that are ours, check if they are legacy change keys. Anything that has an
+                // internal BIP-44 keypath is a post-mnemonic internal address.
+                auto keyMeta = mapKeyMetadata.find(addr);
+                if (keyMeta == mapKeyMetadata.end() || keyMeta->second.hdKeypath == "") {
+                    return std::make_pair(PaymentAddress{addr}, RecipientType::LegacyChangeAddress);
+                } else if (IsInternalKeyPath(44, BIP44CoinType(), keyMeta->second.hdKeypath)) {
+                    return std::make_pair(PaymentAddress{addr}, RecipientType::WalletInternalAddress);
                 } else {
-                    return libzcash::PaymentAddress{addr};
+                    return std::make_pair(PaymentAddress{addr}, RecipientType::WalletExternalAddress);
                 }
-            },
-            [&](const CScriptID& addr) {
-                auto ua = self->FindUnifiedAddressByReceiver(addr);
-                if (ua.has_value()) {
-                    return libzcash::PaymentAddress{ua.value()};
-                } else {
-                    return libzcash::PaymentAddress{addr};
-                }
-            },
-            [&](const SaplingPaymentAddress& addr) {
-                auto ua = self->FindUnifiedAddressByReceiver(addr);
-                if (ua.has_value()) {
-                    return libzcash::PaymentAddress{ua.value()};
-                } else if (ufvk.has_value() && ufvk->GetSaplingKey().has_value()) {
-                    auto saplingKey = ufvk->GetSaplingKey().value();
-                    auto j = saplingKey.DecryptDiversifier(addr.d);
-                    // std::get is safe here because we know we have a valid Sapling diversifier index
-                    auto defaultUA = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(
-                            ufvk->Address(j, CWallet::DefaultReceiverTypes()));
-                    return libzcash::PaymentAddress{defaultUA.first};
-                } else {
-                    return libzcash::PaymentAddress{addr};
-                }
-            },
-            [&](const OrchardRawAddress& addr) {
-                auto ua = self->FindUnifiedAddressByReceiver(addr);
-                if (ua.has_value()) {
-                    return libzcash::PaymentAddress{ua.value()};
-                } else if (ufvk.has_value() && ufvk->GetOrchardKey().has_value()) {
-                    auto orchardKey = ufvk->GetOrchardKey().value();
-                    auto j = orchardKey.ToIncomingViewingKey().DecryptDiversifier(addr);
-                    if (j.has_value()) {
-                        auto genResult = ufvk->Address(j.value(), CWallet::DefaultReceiverTypes());
-                        auto defaultUA = std::get_if<std::pair<UnifiedAddress, diversifier_index_t>>(&genResult);
-                        if (defaultUA != nullptr) {
-                            return libzcash::PaymentAddress{defaultUA->first};
-                        }
+            }
+
+            // It really doesn't appear to be ours, so treat it as a counterparty address.
+            return std::make_pair(PaymentAddress{addr}, RecipientType::CounterpartyAddress);
+        },
+        [&](const CScriptID& addr) {
+            auto ua = self->FindUnifiedAddressByReceiver(addr);
+            if (ua.has_value()) {
+                return std::make_pair(PaymentAddress{ua.value()}, RecipientType::WalletExternalAddress);
+            } else if (HaveCScript(addr)) {
+                // we never generate internal p2sh addresses, so all are wallet external
+                return std::make_pair(PaymentAddress{addr}, RecipientType::WalletExternalAddress);
+            }
+
+            return std::make_pair(PaymentAddress{addr}, RecipientType::CounterpartyAddress);
+        },
+        [&](const SaplingPaymentAddress& addr) {
+            auto ua = self->FindUnifiedAddressByReceiver(addr);
+            if (ua.has_value()) {
+                // UAs are always external addresses
+                return std::make_pair(PaymentAddress{ua.value()}, RecipientType::WalletExternalAddress);
+            }
+
+            if (ufvk.has_value() && ufvk->GetSaplingKey().has_value()) {
+                auto saplingKey = ufvk->GetSaplingKey().value();
+                auto j = saplingKey.DecryptDiversifier(addr);
+                if (j.has_value()) {
+                    // external addresses correspond to UAs.
+                    if (j.value().second) {
+                        // std::get is safe here because we know we have a valid Sapling diversifier index
+                        auto defaultUA = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(
+                                ufvk->Address(j.value().first, CWallet::DefaultReceiverTypes(nHeight)));
+                        return std::make_pair(PaymentAddress{defaultUA.first}, RecipientType::WalletExternalAddress);
+                    } else {
+                        return std::make_pair(PaymentAddress{addr}, RecipientType::WalletInternalAddress);
                     }
                 }
-
-                return libzcash::PaymentAddress{UnifiedAddress::ForSingleReceiver(addr)};
             }
-        }, recipient);
-    };
+
+            // legacy Sapling keys that we recognize are all external addresses
+            libzcash::SaplingIncomingViewingKey ivk;
+            if (GetSaplingIncomingViewingKey(addr, ivk)) {
+                return std::make_pair(PaymentAddress{addr}, RecipientType::WalletExternalAddress);
+            }
+
+            // We don't produce internal change addresses for legacy Sapling
+            // addresses, so this must be a counterparty address
+            return std::make_pair(PaymentAddress{addr}, RecipientType::CounterpartyAddress);
+        },
+        [&](const OrchardRawAddress& addr) {
+            auto ua = self->FindUnifiedAddressByReceiver(addr);
+            if (ua.has_value()) {
+                // UAs are always external addresses
+                return std::make_pair(PaymentAddress{ua.value()}, RecipientType::WalletExternalAddress);
+            } else if (ufvk.has_value() && ufvk->GetOrchardKey().has_value()) {
+                auto orchardKey = ufvk->GetOrchardKey().value();
+                auto j = orchardKey.DecryptDiversifier(addr);
+                if (j.has_value()) {
+                    if (j.value().second) {
+                        // Attempt to reproduce the original unified address
+                        auto genResult = ufvk->Address(j.value().first, CWallet::DefaultReceiverTypes(nHeight));
+                        auto defaultUA = std::get_if<std::pair<UnifiedAddress, diversifier_index_t>>(&genResult);
+                        if (defaultUA != nullptr) {
+                            return std::make_pair(PaymentAddress{defaultUA->first}, RecipientType::WalletExternalAddress);
+                        }
+                    } else {
+                        return std::make_pair(PaymentAddress{UnifiedAddress::ForSingleReceiver(addr)}, RecipientType::WalletInternalAddress);
+                    }
+                }
+            }
+
+            return std::make_pair(PaymentAddress{UnifiedAddress::ForSingleReceiver(addr)}, RecipientType::CounterpartyAddress);
+        }
+    }, recipient);
 
     auto recipientsPtr = sendRecipients.find(txid);
     if (recipientsPtr == sendRecipients.end()) {
-        // we don't know the recipient, so we just return the simplest type
-        return defaultAddress();
+        // we haven't sent to this address, so look up internally what kind
+        // it is & attempt to reproduce the address as the user originally
+        // saw it.
+        return defaultAddress;
     } else {
         // search the list of recipient mappings for one corresponding to
         // our recipient, and return the known UA if it exists; otherwise
         // just use the default.
         for (const auto& mapping : recipientsPtr->second) {
             if (mapping.address == recipient && mapping.ua.has_value()) {
-                return PaymentAddress{mapping.ua.value()};
+                // use the recipient type from the default address, but ensure that we use
+                // the cached address value to which we actually sent the funds
+                return std::make_pair(PaymentAddress{mapping.ua.value()}, defaultAddress.second);
             }
         }
-        return defaultAddress();
+        return defaultAddress;
     }
 }
 
@@ -2008,9 +2071,8 @@ bool CWallet::SelectorMatchesAddress(
             return a0 == a1;
         },
         [&](const libzcash::SaplingExtendedFullViewingKey& extfvk) {
-            auto j = extfvk.DecryptDiversifier(a0.d);
-            auto addr = extfvk.Address(j);
-            return addr.has_value() && addr.value() == a0;
+            auto j = extfvk.DecryptDiversifier(a0);
+            return j.has_value();
         },
         [&](const libzcash::UnifiedAddress& ua) {
             const auto a0Meta = self->GetUFVKMetadataForReceiver(a0);
@@ -2028,9 +2090,8 @@ bool CWallet::SelectorMatchesAddress(
         [&](const libzcash::UnifiedFullViewingKey& ufvk) {
             auto saplingKey = ufvk.GetSaplingKey();
             if (saplingKey.has_value()) {
-                auto j = saplingKey.value().DecryptDiversifier(a0.d);
-                auto addr = saplingKey.value().Address(j);
-                return addr.has_value() && addr.value() == a0;
+                auto j = saplingKey.value().DecryptDiversifier(a0);
+                return j.has_value();
             } else {
                 return false;
             }
@@ -7165,13 +7226,16 @@ std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(co
         const auto& metadata = wallet.mapUfvkAddressMetadata.at(ufvkid);
         auto saplingKey = ufvk.value().GetSaplingKey();
         if (saplingKey.has_value()) {
-            diversifier_index_t j = saplingKey.value().DecryptDiversifier(saplingAddr.d);
-            auto receivers = metadata.GetReceivers(j);
-            if (receivers.has_value()) {
-                auto addr = ufvk.value().Address(j, receivers.value());
-                auto addrPtr = std::get_if<std::pair<UnifiedAddress, diversifier_index_t>>(&addr);
-                if (addrPtr != nullptr) {
-                    return addrPtr->first;
+            auto j = saplingKey.value().DecryptDiversifier(saplingAddr);
+            if (j.has_value()) {
+                auto receivers = metadata.GetReceivers(j.value().first);
+                // Only return a unified address for external addresses
+                if (receivers.has_value() && j.value().second) {
+                    auto addr = ufvk.value().Address(j.value().first, receivers.value());
+                    auto addrPtr = std::get_if<std::pair<UnifiedAddress, diversifier_index_t>>(&addr);
+                    if (addrPtr != nullptr) {
+                        return addrPtr->first;
+                    }
                 }
             }
         }

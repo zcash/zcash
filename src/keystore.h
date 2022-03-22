@@ -22,14 +22,14 @@ class AddressUFVKMetadata {
 private:
     libzcash::UFVKId ufvkId;
     std::optional<libzcash::diversifier_index_t> j;
-    bool internalAddress;
+    bool externalAddress;
 public:
-    AddressUFVKMetadata(libzcash::UFVKId ufvkId, std::optional<libzcash::diversifier_index_t> j, bool internalAddress)
-        : ufvkId(ufvkId), j(j), internalAddress(internalAddress) {}
+    AddressUFVKMetadata(libzcash::UFVKId ufvkId, std::optional<libzcash::diversifier_index_t> j, bool externalAddress)
+        : ufvkId(ufvkId), j(j), externalAddress(externalAddress) {}
 
     libzcash::UFVKId GetUFVKId() const { return ufvkId; }
     std::optional<libzcash::diversifier_index_t> GetDiversifierIndex() const { return j; }
-    bool IsInternalAddress() const { return internalAddress; }
+    bool IsExternalAddress() const { return externalAddress; }
 };
 
 /** A virtual base class for key stores */
