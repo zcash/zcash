@@ -23,28 +23,56 @@ class WalletAddressesTest(BitcoinTestFramework):
         self.is_network_split = False
         self.sync_all()
 
+    def list_addresses(self, node, expected_sources):
+        addrs = self.nodes[node].listaddresses()
+        sources = [s['source'] for s in addrs]
+        # Sources should be unique.
+        assert_equal(len(set(sources)), len(sources))
+        assert_equal(set(sources), set(expected_sources))
+
+        # Extract a list of all addresses from the output.
+        all_addrs = [
+            source.get('transparent', {}).get('addresses', []) +
+            source.get('transparent', {}).get('changeAddresses', []) +
+            source.get('sprout', {}).get('addresses', []) +
+            [s['addresses'] for s in source.get('sapling', [])] +
+            [[a['address'] for a in s['addresses']] for s in source.get('unified', [])]
+        for source in addrs]
+        all_addrs = [a for s in all_addrs for a in s]
+        all_addrs = [a if type(a) == list else [a] for a in all_addrs]
+        all_addrs = [a for s in all_addrs for a in s]
+
+        assert_equal(len(set(all_addrs)), len(all_addrs), "Duplicates in listaddresses output: %s" % addrs)
+        return addrs
+
     def run_test(self):
+        def get_source(listed_addresses, source):
+            return next(src for src in listed_addresses if src['source'] == source)
+
         print("Testing height 1 (Sapling)")
         self.nodes[0].generate(1)
         self.sync_all()
         assert_equal(self.nodes[0].getblockcount(), 1)
-        listed_addresses = self.nodes[0].listaddresses()
-        # There should be a single address from the coinbase
-        assert len(listed_addresses) > 0
-        assert_equal(listed_addresses[0]['source'], 'legacy_random')
-        assert 'transparent' in listed_addresses[0]
+        listed_addresses = self.list_addresses(0, ['mnemonic_seed'])
+        # There should be a single address from the coinbase, which was derived
+        # from the mnemonic seed.
+        assert 'transparent' in get_source(listed_addresses, 'mnemonic_seed')
 
+        # If we import a t-address, we should see imported_watchonly as a source.
         taddr_import = self.nodes[1].getnewaddress()
         self.nodes[0].importaddress(taddr_import)
-        listed_addresses = self.nodes[0].listaddresses()
-        imported_watchonly_src = next(src for src in listed_addresses if src['source'] == 'imported_watchonly')
+        listed_addresses = self.list_addresses(0, ['imported_watchonly', 'mnemonic_seed'])
+        imported_watchonly_src = get_source(listed_addresses, 'imported_watchonly')
         assert_equal(imported_watchonly_src['transparent']['addresses'][0], taddr_import)
 
         account = self.nodes[0].z_getnewaccount()['account']
+        sprout_1 = self.nodes[0].z_getnewaddress('sprout')
+        sapling_1 = self.nodes[0].z_getnewaddress('sapling')
+        unified_1 = self.nodes[0].z_getaddressforaccount(account)['unifiedaddress']
         types_and_addresses = [
-            ('sprout', self.nodes[0].z_getnewaddress('sprout')),
-            ('sapling', self.nodes[0].z_getnewaddress('sapling')),
-            ('unified', self.nodes[0].z_getaddressforaccount(account)['unifiedaddress']),
+            ('sprout', sprout_1),
+            ('sapling', sapling_1),
+            ('unified', unified_1),
         ]
 
         for addr_type, addr in types_and_addresses:
@@ -53,31 +81,40 @@ class WalletAddressesTest(BitcoinTestFramework):
             # assert res['ismine'] # this isn't present for unified addresses
             assert_equal(res['type'], addr_type)
 
-        listed_addresses = self.nodes[0].listaddresses()
-        legacy_random_src = next(src for src in listed_addresses if src['source'] == 'legacy_random')
-        legacy_hdseed_src = next(src for src in listed_addresses if src['source'] == 'legacy_hdseed')
-        mnemonic_seed_src = next(src for src in listed_addresses if src['source'] == 'mnemonic_seed')
-        for addr_type, addr in types_and_addresses:
-            if addr_type == 'sprout':
-                assert addr in legacy_random_src['sprout']['addresses']
-            if addr_type == 'sapling':
-                assert addr in [x for obj in legacy_hdseed_src['sapling'] for x in obj['addresses']]
-                assert_equal(legacy_hdseed_src['sapling'][0]['zip32KeyPath'], "m/32'/1'/2147483647'/0'")
-            if addr_type == 'unified':
-                unified_obj = mnemonic_seed_src['unified']
-                assert_equal(unified_obj[0]['account'], 0)
-                assert_equal(unified_obj[0]['addresses'][0]['address'], addr)
-                assert 'diversifier_index' in unified_obj[0]['addresses'][0]
-                assert_equal(unified_obj[0]['addresses'][0]['receiver_types'], ['p2pkh', 'sapling', 'orchard'])
+        # We should see the following sources:
+        # - imported_watchonly (for the previously-imported t-addr)
+        # - legacy_random (for the new Sprout address)
+        # - mnemonic_seed (for the previous t-addrs and the new Sapling and Unified addrs)
+        listed_addresses = self.list_addresses(0, ['imported_watchonly', 'legacy_random', 'mnemonic_seed'])
+        legacy_random_src = get_source(listed_addresses, 'legacy_random')
+        mnemonic_seed_src = get_source(listed_addresses, 'mnemonic_seed')
+
+        # Check Sprout addrs
+        assert_equal(legacy_random_src['sprout']['addresses'], [sprout_1])
+
+        # Check Sapling addrs
+        assert_equal(
+            set([(obj['zip32KeyPath'], x) for obj in mnemonic_seed_src['sapling'] for x in obj['addresses']]),
+            set([("m/32'/1'/2147483647'/0'", sapling_1)]),
+        )
+
+        # Check Unified addrs
+        unified_obj = mnemonic_seed_src['unified']
+        assert_equal(unified_obj[0]['account'], 0)
+        assert_equal(unified_obj[0]['addresses'][0]['address'], unified_1)
+        assert 'diversifier_index' in unified_obj[0]['addresses'][0]
+        assert_equal(unified_obj[0]['addresses'][0]['receiver_types'], ['p2pkh', 'sapling', 'orchard'])
 
         print("Testing height 2 (NU5)")
         self.nodes[0].generate(1)
         self.sync_all()
         assert_equal(self.nodes[0].getblockcount(), 2)
         # Sprout address generation is no longer allowed
+        sapling_2 = self.nodes[0].z_getnewaddress('sapling')
+        unified_2 = self.nodes[0].z_getaddressforaccount(account)['unifiedaddress']
         types_and_addresses = [
-            ('sapling', self.nodes[0].z_getnewaddress('sapling')),
-            ('unified', self.nodes[0].z_getaddressforaccount(account)['unifiedaddress']),
+            ('sapling', sapling_2),
+            ('unified', unified_2),
         ]
 
         for addr_type, addr in types_and_addresses:
@@ -86,20 +123,42 @@ class WalletAddressesTest(BitcoinTestFramework):
             # assert res['ismine'] # this isn't present for unified addresses
             assert_equal(res['type'], addr_type)
 
-        listed_addresses = self.nodes[0].listaddresses()
-        legacy_random_src = next(src for src in listed_addresses if src['source'] == 'legacy_random')
-        legacy_hdseed_src = next(src for src in listed_addresses if src['source'] == 'legacy_hdseed')
-        for addr_type, addr in types_and_addresses:
-            if addr_type == 'sapling':
-                assert addr in [x for obj in legacy_hdseed_src['sapling'] for x in obj['addresses']]
+        # We should see the same sources (address generation does not change across the NU5 boundary).
+        listed_addresses = self.list_addresses(0, ['imported_watchonly', 'legacy_random', 'mnemonic_seed'])
+        legacy_random_src = get_source(listed_addresses, 'legacy_random')
+        mnemonic_seed_src = get_source(listed_addresses, 'mnemonic_seed')
+
+        # Check Sprout addrs
+        assert_equal(legacy_random_src['sprout']['addresses'], [sprout_1])
+
+        # Check Sapling addrs
+        assert_equal(
+            set([(obj['zip32KeyPath'], x) for obj in mnemonic_seed_src['sapling'] for x in obj['addresses']]),
+            set([
+                ("m/32'/1'/2147483647'/0'", sapling_1),
+                ("m/32'/1'/2147483647'/1'", sapling_2),
+            ]),
+        )
+
+        # Check Unified addrs
+        unified_obj = mnemonic_seed_src['unified']
+        assert_equal(unified_obj[0]['account'], 0)
+        assert_equal(
+            set([addr['address'] for addr in unified_obj[0]['addresses']]),
+            set([unified_1, unified_2]),
+        )
+        assert 'diversifier_index' in unified_obj[0]['addresses'][0]
+        assert 'diversifier_index' in unified_obj[0]['addresses'][1]
+        assert_equal(unified_obj[0]['addresses'][0]['receiver_types'], ['p2pkh', 'sapling', 'orchard'])
+        assert_equal(unified_obj[0]['addresses'][1]['receiver_types'], ['p2pkh', 'sapling', 'orchard'])
 
         print("Generate mature coinbase, spend to create and detect change")
         self.nodes[0].generate(100)
         self.sync_all()
         self.nodes[0].sendmany('', {taddr_import: 1})
-        listed_addresses = self.nodes[0].listaddresses()
-        legacy_random_src = next(src for src in listed_addresses if src['source'] == 'legacy_random')
-        assert len(legacy_random_src['transparent']['changeAddresses']) > 0
+        listed_addresses = self.list_addresses(0, ['imported_watchonly', 'legacy_random', 'mnemonic_seed'])
+        mnemonic_seed_src = get_source(listed_addresses, 'mnemonic_seed')
+        assert len(mnemonic_seed_src['transparent']['changeAddresses']) > 0
 
 
 if __name__ == '__main__':
