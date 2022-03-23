@@ -60,7 +60,7 @@ pub extern "C" fn zcash_transaction_digests(
 }
 
 #[derive(Clone, Debug)]
-struct TransparentAuth {
+pub(crate) struct TransparentAuth {
     all_prev_outputs: Vec<transparent::TxOut>,
 }
 
@@ -140,7 +140,7 @@ impl orchard_serialization::MapAuth<orchard::bundle::Authorized, orchard::bundle
     }
 }
 
-struct PrecomputedAuth;
+pub(crate) struct PrecomputedAuth;
 
 impl Authorization for PrecomputedAuth {
     type TransparentAuth = TransparentAuth;
@@ -149,8 +149,8 @@ impl Authorization for PrecomputedAuth {
 }
 
 pub struct PrecomputedTxParts {
-    tx: TransactionData<PrecomputedAuth>,
-    txid_parts: TxDigests<Hash>,
+    pub(crate) tx: TransactionData<PrecomputedAuth>,
+    pub(crate) txid_parts: TxDigests<Hash>,
 }
 
 /// Precomputes the `TxDigest` struct for the given transaction.

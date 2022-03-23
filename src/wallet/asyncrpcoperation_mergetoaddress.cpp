@@ -89,7 +89,7 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
     isUsingBuilder_ = false;
     if (builder) {
         isUsingBuilder_ = true;
-        builder_ = builder.value();
+        builder_ = std::move(builder.value());
     }
 
     KeyIO keyIO(Params());
@@ -364,7 +364,9 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         // Build the transaction
         tx_ = builder_.Build().GetTxOrThrow();
 
-        UniValue sendResult = SendTransaction(tx_, std::nullopt, testmode);
+        // TODO: update this when unified address support is added
+        std::vector<RecipientMapping> recipientMappings;
+        UniValue sendResult = SendTransaction(tx_, recipientMappings, std::nullopt, testmode);
         set_result(sendResult);
 
         return true;

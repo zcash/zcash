@@ -1,19 +1,12 @@
-[source.crates-io]
-replace-with = "vendored-sources"
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
 
-[source."https://github.com/zcash/incrementalmerkletree.git"]
-git = "https://github.com/zcash/incrementalmerkletree.git"
-rev = "dd57b430dee7c0b163f4035fef2280cd1935036c"
+[source.crates-io]
 replace-with = "vendored-sources"
 
 [source."https://github.com/zcash/librustzcash.git"]
 git = "https://github.com/zcash/librustzcash.git"
-rev = "c423167b30f7b7afeeabe09ae5abceb49ce7d06e"
-replace-with = "vendored-sources"
-
-[source."https://github.com/zcash/orchard.git"]
-git = "https://github.com/zcash/orchard.git"
-rev = "3ddf6c49f7484ed1295bd5351317bbfe49e14472"
+rev = "9c1ed86c5aa8ae3b6d6dcc1478f2d6ba1264488f"
 replace-with = "vendored-sources"
 
 [source."https://github.com/nuttycom/hdwallet.git"]

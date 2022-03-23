@@ -1159,6 +1159,8 @@ TEST(ChecktransactionTests, InvalidShieldedCoinbase) {
 }
 
 TEST(ChecktransactionTests, HeartwoodAcceptsShieldedCoinbase) {
+    LoadProofParameters();
+
     RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     auto chainparams = Params();
 
@@ -1239,6 +1241,8 @@ TEST(ChecktransactionTests, HeartwoodAcceptsShieldedCoinbase) {
 // bindingSig from https://zips.z.cash/protocol/protocol.pdf#txnencoding are
 // applied to coinbase transactions.
 TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
+    LoadProofParameters();
+
     RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     auto chainparams = Params();
 

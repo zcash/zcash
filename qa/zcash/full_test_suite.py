@@ -46,6 +46,17 @@ RE_RPATH_RUNPATH = re.compile('No RPATH.*No RUNPATH')
 RE_FORTIFY_AVAILABLE = re.compile('FORTIFY_SOURCE support available.*Yes')
 RE_FORTIFY_USED = re.compile('Binary compiled with FORTIFY_SOURCE support.*Yes')
 
+CXX_BINARIES = [
+    'src/zcashd',
+    'src/zcash-cli',
+    'src/zcash-gtest',
+    'src/zcash-tx',
+    'src/test/test_bitcoin',
+]
+RUST_BINARIES = [
+    'src/zcashd-wallet-tool',
+]
+
 def test_rpath_runpath(filename):
     output = subprocess.check_output(
         [repofile('qa/zcash/checksec.sh'), '--file=' + repofile(filename)]
@@ -86,21 +97,14 @@ def check_security_hardening():
         if not magic.startswith(b'\x7fELF'):
             return ret
 
-    ret &= test_rpath_runpath('src/zcashd')
-    ret &= test_rpath_runpath('src/zcash-cli')
-    ret &= test_rpath_runpath('src/zcash-gtest')
-    ret &= test_rpath_runpath('src/zcash-tx')
-    ret &= test_rpath_runpath('src/test/test_bitcoin')
+    for bin in CXX_BINARIES + RUST_BINARIES:
+        ret &= test_rpath_runpath(bin)
 
     # NOTE: checksec.sh does not reliably determine whether FORTIFY_SOURCE
     # is enabled for the entire binary. See issue #915.
-    # FORTIFY_SOURCE does mostly nothing for Clang before 10, which we don't
-    # pin yet, so we disable these tests.
-    # ret &= test_fortify_source('src/zcashd')
-    # ret &= test_fortify_source('src/zcash-cli')
-    # ret &= test_fortify_source('src/zcash-gtest')
-    # ret &= test_fortify_source('src/zcash-tx')
-    # ret &= test_fortify_source('src/test/test_bitcoin')
+    # FORTIFY_SOURCE is not applicable to Rust binaries.
+    for bin in CXX_BINARIES:
+        ret &= test_fortify_source(bin)
 
     return ret
 

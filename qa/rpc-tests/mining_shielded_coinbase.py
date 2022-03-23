@@ -6,10 +6,12 @@
 from decimal import Decimal
 from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.mininode import nuparams
+from test_framework.mininode import COIN, nuparams
 from test_framework.util import (
     BLOSSOM_BRANCH_ID,
     HEARTWOOD_BRANCH_ID,
+    CANOPY_BRANCH_ID,
+    NU5_BRANCH_ID,
     assert_equal,
     assert_raises,
     bitcoind_processes,
@@ -28,8 +30,12 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
 
     def start_node_with(self, index, extra_args=[]):
         args = [
+            '-experimentalfeatures',
+            '-orchardwallet',
             nuparams(BLOSSOM_BRANCH_ID, 1),
             nuparams(HEARTWOOD_BRANCH_ID, 10),
+            nuparams(CANOPY_BRANCH_ID, 20),
+            nuparams(NU5_BRANCH_ID, 20),
             "-nurejectoldversions=false",
         ]
         return start_node(index, self.options.tmpdir, args + extra_args)
@@ -116,6 +122,51 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
         assert_equal(self.nodes[0].z_getbalance(node0_zaddr), 2)
         assert_equal(self.nodes[0].z_getbalance(node0_taddr), 2)
         assert_equal(self.nodes[1].z_getbalance(node1_zaddr), 1)
+
+        # Generate a Unified Address for node 1
+        self.nodes[1].z_getnewaccount()
+        node1_addr0 = self.nodes[1].z_getaddressforaccount(0)
+        assert_equal(node1_addr0['account'], 0)
+        assert_equal(set(node1_addr0['pools']), set(['transparent', 'sapling', 'orchard']))
+        node1_ua = node1_addr0['unifiedaddress']
+
+        # Set node 1's miner address to the UA
+        self.nodes[1].stop()
+        bitcoind_processes[1].wait()
+        self.nodes[1] = self.start_node_with(1, [
+            "-mineraddress=%s" % node1_ua,
+        ])
+        connect_nodes(self.nodes[1], 0)
+
+        # The UA starts with zero balance.
+        assert_equal(self.nodes[1].z_getbalanceforaccount(0)['pools'], {})
+
+        # Node 1 can mine blocks because the miner selects the Sapling receiver
+        # of its UA.
+        print("Mining block with node 1")
+        self.nodes[1].generate(1)
+        self.sync_all()
+
+        # The UA balance should show that Sapling funds were received.
+        assert_equal(self.nodes[1].z_getbalanceforaccount(0)['pools'], {
+            'sapling': {'valueZat': 5 * COIN },
+        })
+
+        # Activate NU5
+        print("Activating NU5")
+        self.nodes[0].generate(7)
+        self.sync_all()
+
+        # Now any block mined by node 1 should use the Orchard receiver of its UA.
+        print("Mining block with node 1")
+        self.nodes[1].generate(1)
+        self.sync_all()
+        assert_equal(self.nodes[1].z_getbalanceforaccount(0)['pools'], {
+            'sapling': {'valueZat': 5 * COIN },
+            # 6.25 ZEC because the FR always ends when Canopy activates, and
+            # regtest has no defined funding streams.
+            'orchard': {'valueZat': 6.25 * COIN },
+        })
 
 if __name__ == '__main__':
     ShieldCoinbaseTest().main()

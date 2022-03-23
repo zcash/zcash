@@ -68,7 +68,7 @@ class WalletListNotes(BitcoinTestFramework):
         change_amount_2 = receive_amount_1 - receive_amount_2 - DEFAULT_FEE
         assert_equal('sapling', self.nodes[0].z_validateaddress(saplingzaddr)['type'])
         recipients = [{"address": saplingzaddr, "amount":receive_amount_2}]
-        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, DEFAULT_FEE, True)
+        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, DEFAULT_FEE)
         txid_2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
 
@@ -107,7 +107,7 @@ class WalletListNotes(BitcoinTestFramework):
         receive_amount_3 = Decimal('2.0')
         change_amount_3 = change_amount_2 - receive_amount_3 - DEFAULT_FEE
         recipients = [{"address": saplingzaddr2, "amount":receive_amount_3}]
-        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, DEFAULT_FEE, True)
+        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, DEFAULT_FEE)
         txid_3 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         unspent_tx = self.nodes[0].z_listunspent(0)

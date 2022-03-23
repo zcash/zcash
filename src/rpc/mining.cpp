@@ -186,19 +186,25 @@ UniValue generate(const UniValue& params, bool fHelp)
     int nHeight = 0;
     int nGenerate = params[0].get_int();
 
-    MinerAddress minerAddress;
-    GetMainSignals().AddressForMining(minerAddress);
-
-    // If the keypool is exhausted, no script is returned at all.  Catch this.
-    auto resv = std::get_if<boost::shared_ptr<CReserveScript>>(&minerAddress);
-    if (resv && !resv->get()) {
-        throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
-    }
+    std::optional<MinerAddress> maybeMinerAddress;
+    GetMainSignals().AddressForMining(maybeMinerAddress);
 
     // Throw an error if no address valid for mining was provided.
-    if (!std::visit(IsValidMinerAddress(), minerAddress)) {
+    if (!maybeMinerAddress.has_value()) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
+    } else {
+        // Detect and handle keypool exhaustion separately from IsValidMinerAddress().
+        auto resv = std::get_if<boost::shared_ptr<CReserveScript>>(&maybeMinerAddress.value());
+        if (resv && !resv->get()) {
+            throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
+        }
+
+        // Catch any other invalid miner address issues.
+        if (!std::visit(IsValidMinerAddress(), maybeMinerAddress.value())) {
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Miner address is invalid");
+        }
     }
+    auto minerAddress = maybeMinerAddress.value();
 
     {   // Don't keep cs_main locked
         LOCK(cs_main);
@@ -569,9 +575,14 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     if (IsInitialBlockDownload(Params().GetConsensus()))
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zcash is downloading blocks...");
 
+    std::optional<MinerAddress> maybeMinerAddress;
+    GetMainSignals().AddressForMining(maybeMinerAddress);
 
-    MinerAddress minerAddress;
-    GetMainSignals().AddressForMining(minerAddress);
+    // Throw an error if no address valid for mining was provided.
+    if (!(maybeMinerAddress.has_value() && std::visit(IsValidMinerAddress(), maybeMinerAddress.value()))) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (getblocktemplate requires a wallet or -mineraddress)");
+    }
+    auto minerAddress = maybeMinerAddress.value();
 
     static unsigned int nTransactionsUpdatedLast;
     static std::optional<CMutableTransaction> cached_next_cb_mtx;
@@ -607,15 +618,15 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             nTransactionsUpdatedLastLP = nTransactionsUpdatedLast;
         }
 
+        // Release the main lock while waiting
+        // Don't call chainActive->Tip() without holding cs_main
+        LEAVE_CRITICAL_SECTION(cs_main);
         {
             checktxtime = boost::get_system_time() + boost::posix_time::seconds(10);
 
-            boost::unique_lock<boost::mutex> lock(csBestBlock);
-            while (chainActive.Tip()->GetBlockHash() == hashWatchedChain && IsRPCRunning())
+            boost::unique_lock<boost::mutex> lock(g_best_block_mutex);
+            while (g_best_block == hashWatchedChain && IsRPCRunning())
             {
-                // Release the main lock while waiting
-                LEAVE_CRITICAL_SECTION(cs_main);
-
                 // Before waiting, generate the coinbase for the block following the next
                 // block (since this is cpu-intensive), so that when next block arrives,
                 // we can quickly respond with a template for following block.
@@ -628,12 +639,11 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                         Params(), CAmount{0}, minerAddress, cached_next_cb_height);
                     next_cb_mtx = cached_next_cb_mtx;
                 }
-                bool timedout = !cvBlockChange.timed_wait(lock, checktxtime);
-                ENTER_CRITICAL_SECTION(cs_main);
+                bool timedout = !g_best_block_cv.timed_wait(lock, checktxtime);
 
                 // Optimization: even if timed out, a new block may have arrived
                 // while waiting for cs_main; if so, don't discard next_cb_mtx.
-                if (chainActive.Tip()->GetBlockHash() != hashWatchedChain) break;
+                if (g_best_block != hashWatchedChain) break;
 
                 // Timeout: Check transactions for update
                 if (timedout && mempool.GetTransactionsUpdated() != nTransactionsUpdatedLastLP) {
@@ -643,11 +653,12 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 }
                 checktxtime += boost::posix_time::seconds(10);
             }
-            if (chainActive.Tip()->nHeight != nHeight + 1) {
+            if (g_best_block_height != nHeight + 1) {
                 // Unexpected height (reorg or >1 blocks arrived while waiting) invalidates coinbase tx.
                 next_cb_mtx = nullopt;
             }
         }
+        ENTER_CRITICAL_SECTION(cs_main);
 
         if (!IsRPCRunning())
             throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Shutting down");

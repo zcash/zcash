@@ -52,7 +52,7 @@ class BitcoinTestFramework(object):
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir)
 
-    def setup_network(self, split = False):
+    def setup_network(self, split = False, do_mempool_sync = True):
         self.nodes = self.setup_nodes()
 
         # Connect the nodes as a "chain".  This allows us
@@ -64,12 +64,13 @@ class BitcoinTestFramework(object):
         if not split:
             connect_nodes_bi(self.nodes, 1, 2)
             sync_blocks(self.nodes[1:3])
-            sync_mempools(self.nodes[1:3])
+            if do_mempool_sync:
+                sync_mempools(self.nodes[1:3])
 
         connect_nodes_bi(self.nodes, 0, 1)
         connect_nodes_bi(self.nodes, 2, 3)
         self.is_network_split = split
-        self.sync_all()
+        self.sync_all(do_mempool_sync)
 
     def split_network(self):
         """
@@ -80,15 +81,17 @@ class BitcoinTestFramework(object):
         wait_bitcoinds()
         self.setup_network(True)
 
-    def sync_all(self):
+    def sync_all(self, do_mempool_sync = True):
         if self.is_network_split:
             sync_blocks(self.nodes[:2])
             sync_blocks(self.nodes[2:])
-            sync_mempools(self.nodes[:2])
-            sync_mempools(self.nodes[2:])
+            if do_mempool_sync:
+                sync_mempools(self.nodes[:2])
+                sync_mempools(self.nodes[2:])
         else:
             sync_blocks(self.nodes)
-            sync_mempools(self.nodes)
+            if do_mempool_sync:
+                sync_mempools(self.nodes)
 
     def join_network(self):
         """
@@ -97,7 +100,7 @@ class BitcoinTestFramework(object):
         assert self.is_network_split
         stop_nodes(self.nodes)
         wait_bitcoinds()
-        self.setup_network(False)
+        self.setup_network(False, False)
 
     def main(self):
 

@@ -140,12 +140,32 @@ pub extern "C" fn unified_full_viewing_key_read_sapling(
 }
 
 #[no_mangle]
+pub extern "C" fn unified_full_viewing_key_read_orchard(
+    key: *const Ufvk,
+    out: *mut [u8; 96],
+) -> bool {
+    let key = unsafe { key.as_ref() }.expect("Unified full viewing key pointer may not be null.");
+    let out = unsafe { &mut *out };
+
+    for r in &key.items() {
+        if let Fvk::Orchard(data) = r {
+            *out = *data;
+            return true;
+        }
+    }
+
+    false
+}
+
+#[no_mangle]
 pub extern "C" fn unified_full_viewing_key_from_components(
     t_key: *const [u8; 65],
     sapling_key: *const [u8; 128],
+    orchard_key: *const [u8; 96],
 ) -> *mut Ufvk {
     let t_key = unsafe { t_key.as_ref() };
     let sapling_key = unsafe { sapling_key.as_ref() };
+    let orchard_key = unsafe { orchard_key.as_ref() };
 
     let mut items = vec![];
     if let Some(t_bytes) = t_key {
@@ -153,6 +173,9 @@ pub extern "C" fn unified_full_viewing_key_from_components(
     }
     if let Some(sapling_bytes) = sapling_key {
         items.push(Fvk::Sapling(*sapling_bytes));
+    }
+    if let Some(orchard_bytes) = orchard_key {
+        items.push(Fvk::Orchard(*orchard_bytes));
     }
 
     match Ufvk::try_from_items(items) {

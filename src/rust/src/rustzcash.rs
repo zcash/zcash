@@ -29,6 +29,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::slice;
+use std::sync::Once;
 use subtle::CtOption;
 use tracing::{error, info};
 
@@ -69,14 +70,18 @@ mod ed25519;
 mod metrics_ffi;
 mod streams_ffi;
 mod tracing_ffi;
+mod zcashd_orchard;
 
 mod address_ffi;
+mod builder_ffi;
 mod history_ffi;
+mod incremental_merkle_tree;
 mod incremental_merkle_tree_ffi;
 mod orchard_ffi;
 mod orchard_keys_ffi;
 mod transaction_ffi;
 mod unified_keys_ffi;
+mod wallet;
 mod zip339_ffi;
 
 mod test_harness_ffi;
@@ -84,6 +89,7 @@ mod test_harness_ffi;
 #[cfg(test)]
 mod tests;
 
+static PROOF_PARAMETERS_LOADED: Once = Once::new();
 static mut SAPLING_SPEND_VK: Option<PreparedVerifyingKey<Bls12>> = None;
 static mut SAPLING_OUTPUT_VK: Option<PreparedVerifyingKey<Bls12>> = None;
 static mut SPROUT_GROTH16_VK: Option<PreparedVerifyingKey<Bls12>> = None;
@@ -127,64 +133,66 @@ pub extern "C" fn librustzcash_init_zksnark_params(
     #[cfg(target_os = "windows")] sprout_path: *const u16,
     sprout_path_len: usize,
 ) {
-    #[cfg(not(target_os = "windows"))]
-    let (spend_path, output_path, sprout_path) = {
-        (
-            OsStr::from_bytes(unsafe { slice::from_raw_parts(spend_path, spend_path_len) }),
-            OsStr::from_bytes(unsafe { slice::from_raw_parts(output_path, output_path_len) }),
-            if sprout_path.is_null() {
-                None
-            } else {
-                Some(OsStr::from_bytes(unsafe {
-                    slice::from_raw_parts(sprout_path, sprout_path_len)
-                }))
-            },
-        )
-    };
+    PROOF_PARAMETERS_LOADED.call_once(|| {
+        #[cfg(not(target_os = "windows"))]
+        let (spend_path, output_path, sprout_path) = {
+            (
+                OsStr::from_bytes(unsafe { slice::from_raw_parts(spend_path, spend_path_len) }),
+                OsStr::from_bytes(unsafe { slice::from_raw_parts(output_path, output_path_len) }),
+                if sprout_path.is_null() {
+                    None
+                } else {
+                    Some(OsStr::from_bytes(unsafe {
+                        slice::from_raw_parts(sprout_path, sprout_path_len)
+                    }))
+                },
+            )
+        };
 
-    #[cfg(target_os = "windows")]
-    let (spend_path, output_path, sprout_path) = {
-        (
-            OsString::from_wide(unsafe { slice::from_raw_parts(spend_path, spend_path_len) }),
-            OsString::from_wide(unsafe { slice::from_raw_parts(output_path, output_path_len) }),
-            if sprout_path.is_null() {
-                None
-            } else {
-                Some(OsString::from_wide(unsafe {
-                    slice::from_raw_parts(sprout_path, sprout_path_len)
-                }))
-            },
-        )
-    };
+        #[cfg(target_os = "windows")]
+        let (spend_path, output_path, sprout_path) = {
+            (
+                OsString::from_wide(unsafe { slice::from_raw_parts(spend_path, spend_path_len) }),
+                OsString::from_wide(unsafe { slice::from_raw_parts(output_path, output_path_len) }),
+                if sprout_path.is_null() {
+                    None
+                } else {
+                    Some(OsString::from_wide(unsafe {
+                        slice::from_raw_parts(sprout_path, sprout_path_len)
+                    }))
+                },
+            )
+        };
 
-    let (spend_path, output_path, sprout_path) = (
-        Path::new(&spend_path),
-        Path::new(&output_path),
-        sprout_path.as_ref().map(|p| Path::new(p)),
-    );
+        let (spend_path, output_path, sprout_path) = (
+            Path::new(&spend_path),
+            Path::new(&output_path),
+            sprout_path.as_ref().map(Path::new),
+        );
 
-    // Load params
-    let params = load_parameters(spend_path, output_path, sprout_path);
+        // Load params
+        let params = load_parameters(spend_path, output_path, sprout_path);
 
-    // Generate Orchard parameters.
-    info!(target: "main", "Loading Orchard parameters");
-    let orchard_pk = orchard::circuit::ProvingKey::build();
-    let orchard_vk = orchard::circuit::VerifyingKey::build();
+        // Generate Orchard parameters.
+        info!(target: "main", "Loading Orchard parameters");
+        let orchard_pk = orchard::circuit::ProvingKey::build();
+        let orchard_vk = orchard::circuit::VerifyingKey::build();
 
-    // Caller is responsible for calling this function once, so
-    // these global mutations are safe.
-    unsafe {
-        SAPLING_SPEND_PARAMS = Some(params.spend_params);
-        SAPLING_OUTPUT_PARAMS = Some(params.output_params);
-        SPROUT_GROTH16_PARAMS_PATH = sprout_path.map(|p| p.to_owned());
+        // Caller is responsible for calling this function once, so
+        // these global mutations are safe.
+        unsafe {
+            SAPLING_SPEND_PARAMS = Some(params.spend_params);
+            SAPLING_OUTPUT_PARAMS = Some(params.output_params);
+            SPROUT_GROTH16_PARAMS_PATH = sprout_path.map(|p| p.to_owned());
 
-        SAPLING_SPEND_VK = Some(params.spend_vk);
-        SAPLING_OUTPUT_VK = Some(params.output_vk);
-        SPROUT_GROTH16_VK = params.sprout_vk;
+            SAPLING_SPEND_VK = Some(params.spend_vk);
+            SAPLING_OUTPUT_VK = Some(params.output_vk);
+            SPROUT_GROTH16_VK = params.sprout_vk;
 
-        ORCHARD_PK = Some(orchard_pk);
-        ORCHARD_VK = Some(orchard_vk);
-    }
+            ORCHARD_PK = Some(orchard_pk);
+            ORCHARD_VK = Some(orchard_vk);
+        }
+    });
 }
 
 /// Writes the "uncommitted" note value for empty leaves of the Merkle tree.
