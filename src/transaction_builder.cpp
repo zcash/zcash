@@ -17,10 +17,11 @@
 
 uint256 ProduceZip244SignatureHash(
     const CTransaction& tx,
+    const std::vector<CTxOut>& allPrevOutputs,
     const orchard::UnauthorizedBundle& orchardBundle)
 {
     uint256 dataToBeSigned;
-    PrecomputedTransactionData local(tx);
+    PrecomputedTransactionData local(tx, allPrevOutputs);
     if (!zcash_builder_zip244_shielded_signature_digest(
         local.preTx.release(),
         orchardBundle.inner.get(),
@@ -634,7 +635,7 @@ TransactionBuilderResult TransactionBuilder::Build()
     try {
         if (orchardBundle.has_value()) {
             // Orchard is only usable with v5+ transactions.
-            dataToBeSigned = ProduceZip244SignatureHash(mtx, orchardBundle.value());
+            dataToBeSigned = ProduceZip244SignatureHash(mtx, tIns, orchardBundle.value());
         } else {
             CScript scriptCode;
             dataToBeSigned = SignatureHash(scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);

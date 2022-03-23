@@ -220,7 +220,7 @@ public:
         try {
             if (orchardBundle.has_value()) {
                 // Orchard is only usable with v5+ transactions.
-                dataToBeSigned = ProduceZip244SignatureHash(mtx, orchardBundle.value());
+                dataToBeSigned = ProduceZip244SignatureHash(mtx, {}, orchardBundle.value());
             } else {
                 CScript scriptCode;
                 PrecomputedTransactionData txdata(mtx, {});

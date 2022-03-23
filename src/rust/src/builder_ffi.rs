@@ -16,14 +16,17 @@ use orchard::{
 use rand_core::OsRng;
 use tracing::error;
 use zcash_primitives::transaction::{
-    components::{sapling, transparent, Amount},
-    sighash::{SignableInput, SIGHASH_ALL},
+    components::{sapling, Amount},
+    sighash::SignableInput,
     sighash_v5::v5_signature_hash,
     txid::TxIdDigester,
     Authorization, TransactionData, TxVersion,
 };
 
-use crate::{transaction_ffi::PrecomputedTxParts, ORCHARD_PK};
+use crate::{
+    transaction_ffi::{PrecomputedTxParts, TransparentAuth},
+    ORCHARD_PK,
+};
 
 pub struct OrchardSpendInfo {
     fvk: FullViewingKey,
@@ -165,9 +168,10 @@ pub extern "C" fn orchard_unauthorized_bundle_prove_and_sign(
         })
         .collect::<Vec<_>>();
 
+    let mut rng = OsRng;
     let res = bundle
-        .create_proof(pk)
-        .and_then(|b| b.apply_signatures(OsRng, *sighash, &signing_keys));
+        .create_proof(pk, &mut rng)
+        .and_then(|b| b.apply_signatures(&mut rng, *sighash, &signing_keys));
 
     match res {
         Ok(signed) => Box::into_raw(Box::new(signed)),
@@ -209,7 +213,7 @@ pub extern "C" fn zcash_builder_zip244_shielded_signature_digest(
 
     struct Signable {}
     impl Authorization for Signable {
-        type TransparentAuth = transparent::Authorized;
+        type TransparentAuth = TransparentAuth;
         type SaplingAuth = sapling::Authorized;
         type OrchardAuth = InProgress<Unproven, Unauthorized>;
     }
@@ -217,11 +221,10 @@ pub extern "C" fn zcash_builder_zip244_shielded_signature_digest(
     let txdata: TransactionData<Signable> =
         precomputed_tx
             .tx
-            .into_data()
             .map_bundles(|b| b, |b| b, |_| Some(bundle.clone()));
     let txid_parts = txdata.digest(TxIdDigester);
 
-    let sighash = v5_signature_hash(&txdata, SIGHASH_ALL, &SignableInput::Shielded, &txid_parts);
+    let sighash = v5_signature_hash(&txdata, &SignableInput::Shielded, &txid_parts);
 
     // `v5_signature_hash` output is always 32 bytes.
     *unsafe { &mut *sighash_ret } = sighash.as_ref().try_into().unwrap();

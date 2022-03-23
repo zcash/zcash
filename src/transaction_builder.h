@@ -30,6 +30,7 @@ namespace orchard { class UnauthorizedBundle; }
 
 uint256 ProduceZip244SignatureHash(
     const CTransaction& tx,
+    const std::vector<CTxOut>& allPrevOutputs,
     const orchard::UnauthorizedBundle& orchardBundle);
 
 namespace orchard {
@@ -147,6 +148,7 @@ private:
     //             ~~~~~~           ^
     friend uint256 (::ProduceZip244SignatureHash(
         const CTransaction& tx,
+        const std::vector<CTxOut>& allPrevOutputs,
         const UnauthorizedBundle& orchardBundle));
 
 public:
