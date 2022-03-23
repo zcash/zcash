@@ -1,10 +1,10 @@
 ---
-name: "zcash-4.6.0-1"
+name: "zcash-4.7.0-rc1"
 enable_cache: true
 distro: "debian"
 suites:
-- "stretch"
 - "buster"
+- "bullseye"
 architectures:
 - "amd64"
 packages:

@@ -18,12 +18,16 @@ repository = "https://github.com/zcash/zcash"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 edition = "2018"
-rust-version = "1.56"
+rust-version = "1.59"
 
 [lib]
 name = "rustzcash"
 path = "src/rust/src/rustzcash.rs"
 crate-type = ["staticlib"]
+
+[[bin]]
+name = "zcashd-wallet-tool"
+path = "src/rust/bin/wallet_tool.rs"
 
 [dependencies]
 bellman = "0.11"
@@ -61,10 +65,20 @@ metrics-exporter-prometheus = "0.6"
 thiserror = "1"
 tokio = { version = "1.0", features = ["rt", "net", "time", "macros"] }
 
+# Wallet tool
+# (also depends on thiserror, tracing, and tracing-subscriber with "env-filter" and "fmt" features)
+anyhow = "1.0"
+backtrace = "0.3"
+clearscreen = "1.0"
+gumdrop = "0.8"
+rand = "0.8"
+secrecy = "0.8"
+time = { version = "0.3", features = ["formatting", "macros"] }
+
 [dependencies.tracing-subscriber]
 version = "0.3"
 default-features = false
-features = ["ansi", "env-filter", "time"]
+features = ["ansi", "env-filter", "fmt", "time"]
 
 [profile.release]
 lto = true

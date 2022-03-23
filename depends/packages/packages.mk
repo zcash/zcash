@@ -2,6 +2,10 @@ zcash_packages := libsodium utfcpp
 packages := boost libevent zeromq $(zcash_packages) googletest
 native_packages := native_clang native_ccache native_rust
 
+ifneq (,$(wildcard /etc/arch-release))
+native_packages += native_libtinfo
+endif
+
 wallet_packages=bdb
 
 $(host_arch)_$(host_os)_native_packages += native_b2

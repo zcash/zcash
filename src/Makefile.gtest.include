@@ -54,12 +54,15 @@ zcash_gtest_SOURCES += \
 	gtest/test_timedata.cpp \
 	gtest/test_transaction.cpp \
 	gtest/test_transaction_builder.cpp \
+	gtest/test_transaction_builder.h \
 	gtest/test_txid.cpp \
 	gtest/test_upgrades.cpp \
 	gtest/test_validation.cpp \
 	gtest/test_zip32.cpp
 if ENABLE_WALLET
 zcash_gtest_SOURCES += \
+	wallet/gtest/test_note_selection.cpp \
+	wallet/gtest/test_orchard_wallet.cpp \
 	wallet/gtest/test_paymentdisclosure.cpp \
 	wallet/gtest/test_wallet.cpp
 endif

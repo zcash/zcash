@@ -173,7 +173,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
 
     // Create a transparent transaction that spends the coin, targeting
     // a height during the Overwinter epoch.
-    auto builder = TransactionBuilder(consensusParams, 15, &keystore);
+    auto builder = TransactionBuilder(consensusParams, 15, std::nullopt, &keystore);
     builder.AddTransparentInput(utxo, scriptPubKey, coinValue);
     builder.AddTransparentOutput(destination, 40000);
     auto tx = builder.Build().GetTxOrThrow();

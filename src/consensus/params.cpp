@@ -12,6 +12,15 @@
 #include "util/match.h"
 
 namespace Consensus {
+    std::optional<int> Params::GetActivationHeight(Consensus::UpgradeIndex idx) const {
+        auto nActivationHeight = vUpgrades[idx].nActivationHeight;
+        if (nActivationHeight == Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT) {
+            return std::nullopt;
+        } else {
+            return nActivationHeight;
+        }
+    }
+
     bool Params::NetworkUpgradeActive(int nHeight, Consensus::UpgradeIndex idx) const {
         return NetworkUpgradeState(nHeight, *this, idx) == UPGRADE_ACTIVE;
     }

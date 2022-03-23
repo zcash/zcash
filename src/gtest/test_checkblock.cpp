@@ -34,6 +34,9 @@ TEST(CheckBlock, VersionTooLow) {
     block.nVersion = 1;
 
     MockCValidationState state;
+
+    SelectParams(CBaseChainParams::MAIN);
+
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "version-too-low", false, "")).Times(1);
     EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, false, false, true));
 }
@@ -89,7 +92,7 @@ protected:
 
     void TearDown() override {
         // Revert to test default. No-op on mainnet params.
-        RegtestDeactivateSapling();
+        RegtestDeactivateBlossom();
     }
 
     // Returns a valid but empty mutable transaction at block height 1.

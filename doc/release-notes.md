@@ -13,23 +13,23 @@ be generated on load of the wallet, or the first time the wallet is unlocked,
 and is available via the `z_exportwallet` RPC call. All new addresses produced
 by the wallet are now derived from this seed using the HD wallet functionality
 described in ZIP 32 and ZIP 316. For users upgrading an existing Zcashd wallet,
-it is recommended that the wallet be backed up prior to upgrading to the 4.5.2
+it is recommended that the wallet be backed up prior to upgrading to the 4.7.0
 Zcashd release.
 
-Following the upgrade to 4.5.2, Zcashd will require that the user confirm that
+Following the upgrade to 4.7.0, Zcashd will require that the user confirm that
 they have backed up their new emergency recovery phrase, which may be obtained
 from the output of the `z_exportwallet` RPC call. This confirmation can be
-performed manually using the `zcashd-wallet-tool` utility that is supplied with
-this release.  The wallet will not allow the generation of new addresses until
-this confirmation has been performed. It is recommended that after this
-upgrade, that funds tied to preexisting addresses be migrated to newly
-generated addresses so that all wallet funds are recoverable using the
-emergency recovery phrase going forward.  If you choose not to migrate funds in
-this fashion, you will continue to need to securely back up the entire
-`wallet.dat` file to ensure that you do not lose access to existing funds;
-EXISTING FUNDS WILL NOT BE RECOVERABLE USING THE EMERGENCY RECOVERY PHRASE
-UNLESS THEY HAVE BEEN MOVED TO A NEWLY GENERATED ADDRESS FOLLOWING THE 4.5.2
-UPGRADE.
+performed manually using the `zcashd-wallet-tool` utility that is supplied
+with this release (built or installed in the same directory as `zcashd`).
+The wallet will not allow the generation of new addresses until this
+confirmation has been performed. It is recommended that after this upgrade,
+that funds tied to preexisting addresses be migrated to newly generated
+addresses so that all wallet funds are recoverable using the emergency
+recovery phrase going forward. If you choose not to migrate funds in this
+fashion, you will continue to need to securely back up the entire `wallet.dat`
+file to ensure that you do not lose access to existing funds; EXISTING FUNDS
+WILL NOT BE RECOVERABLE USING THE EMERGENCY RECOVERY PHRASE UNLESS THEY HAVE
+BEEN MOVED TO A NEWLY GENERATED ADDRESS FOLLOWING THE 4.7.0 UPGRADE.
 
 New RPC Methods
 ---------------
@@ -81,11 +81,15 @@ Wallet
   pool boundaries, they must be explicitly enabled via a parameter to
   the 'z_sendmany' call.
 
-- A new boolean parameter, `allowRevealedAmounts`, has been added to the
-  list of arguments accepted by 'z_sendmany'. This parameter defaults to
-  `false` and is only required when the transaction being constructed 
-  would reveal transaction amounts as a consequence of ZEC value crossing
-  shielded pool boundaries via the turnstile.
+- A new string parameter, `privacyPolicy`, has been added to the list of
+  arguments accepted by `z_sendmany`. This parameter enables the caller to
+  control what kind of information they permit `zcashd` to reveal when creating
+  the transaction. If the transaction can only be created by revealing more
+  information than the given strategy permits, `z_sendmany` will return an
+  error. The parameter defaults to `LegacyCompat`, which applies the most
+  restrictive strategy `FullPrivacy` when a Unified Address is present as the
+  sender or a recipient, and otherwise preserves existing behaviour (which
+  corresponds to the `AllowFullyTransparent` policy).
 
 - Since Sprout outputs are no longer created (with the exception of change)
   'z_sendmany' no longer generates payment disclosures (which were only 

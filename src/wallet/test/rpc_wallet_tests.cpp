@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
         bool notFound = true;
         for (auto a : arr.getValues()) {
             auto source = find_value(a.get_obj(), "source");
-            if (source.get_str() == "legacy_random") {
+            if (source.get_str() == "mnemonic_seed") {
                 auto t_obj = find_value(a.get_obj(), "transparent");
                 auto addrs = find_value(t_obj, "addresses").get_array();
                 BOOST_CHECK_EQUAL(2, addrs.size());
@@ -799,7 +799,7 @@ void CheckHaveAddr(const std::optional<libzcash::PaymentAddress>& addr) {
     auto addr_of_type = std::get_if<ADDR_TYPE>(&(addr.value()));
     BOOST_ASSERT(addr_of_type != nullptr);
 
-    BOOST_CHECK(pwalletMain->ZTXOSelectorForAddress(*addr_of_type, true).has_value());
+    BOOST_CHECK(pwalletMain->ZTXOSelectorForAddress(*addr_of_type, true, false).has_value());
 }
 
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
@@ -847,7 +847,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
                 auto sproutAddrs = find_value(sproutObj, "addresses").get_array();
                 sproutCountMatch = (sproutAddrs.size() == 1);
             }
-            if (source.get_str() == "legacy_hdseed") {
+            if (source.get_str() == "mnemonic_seed") {
                 auto sapling_addr_sets = find_value(a.get_obj(), "sapling").get_array();
                 saplingExtfvksMatch = (sapling_addr_sets.size() == 2);
 
@@ -1191,7 +1191,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");
     int nHeight = retValue.get_int();
-    TransactionBuilder builder(Params().GetConsensus(), nHeight + 1, pwalletMain);
+    TransactionBuilder builder(Params().GetConsensus(), nHeight + 1, std::nullopt, pwalletMain);
 }
 
 BOOST_AUTO_TEST_CASE(asyncrpcoperation_sign_send_raw_transaction) {
@@ -1233,10 +1233,11 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // there are no utxos to spend
     {
-        auto selector = pwalletMain->ZTXOSelectorForAddress(taddr1, true).value();
-        TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 100*COIN, "DEADBEEF") };
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, selector, recipients, 1));
+        auto selector = pwalletMain->ZTXOSelectorForAddress(taddr1, true, false).value();
+        TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, zaddr1, 100*COIN, "DEADBEEF") };
+        TransactionStrategy strategy;
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, strategy));
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
@@ -1245,10 +1246,11 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // there are no unspent notes to spend
     {
-        auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true).value();
-        TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient(taddr1, 100*COIN, "DEADBEEF") };
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, selector, recipients, 1));
+        auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true, false).value();
+        TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, taddr1, 100*COIN, "DEADBEEF") };
+        TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, strategy));
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
@@ -1257,10 +1259,11 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // get_memo_from_hex_string())
     {
-        auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true).value();
-        TransactionBuilder builder(consensusParams, nHeight + 1, pwalletMain);
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 100*COIN, "DEADBEEF") };
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, selector, recipients, 1));
+        auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true, false).value();
+        TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
+        std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, zaddr1, 100*COIN, "DEADBEEF") };
+        TransactionStrategy strategy;
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, strategy));
         std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
         TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
 
@@ -1336,7 +1339,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
     mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
     CWalletTx wtx(pwalletMain, mtx);
-    pwalletMain->AddToWallet(wtx, true, NULL);
+    pwalletMain->LoadWalletTx(wtx);
 
     // Fake-mine the transaction
     BOOST_CHECK_EQUAL(0, chainActive.Height());
@@ -1352,15 +1355,16 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     BOOST_CHECK(chainActive.Contains(&fakeIndex));
     BOOST_CHECK_EQUAL(1, chainActive.Height());
     wtx.SetMerkleBranch(block);
-    pwalletMain->AddToWallet(wtx, true, NULL);
+    pwalletMain->LoadWalletTx(wtx);
 
     // Context that z_sendmany requires
-    auto builder = TransactionBuilder(consensusParams, nextBlockHeight, pwalletMain);
+    auto builder = TransactionBuilder(consensusParams, nextBlockHeight, std::nullopt, pwalletMain);
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
 
-    auto selector = pwalletMain->ZTXOSelectorForAddress(taddr, true).value();
-    std::vector<SendManyRecipient> recipients = { SendManyRecipient(pa, 1*COIN, "ABCD") };
-    std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(builder, selector, recipients, 0));
+    auto selector = pwalletMain->ZTXOSelectorForAddress(taddr, true, false).value();
+    std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, pa, 1*COIN, "ABCD") };
+    TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
+    std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 0, strategy));
     std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
 
     // Enable test mode so tx is not sent
@@ -1368,7 +1372,9 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 
     // Generate the Sapling shielding transaction
     operation->main();
-    BOOST_CHECK(operation->isSuccess());
+    if (!operation->isSuccess()) {
+        BOOST_FAIL(operation->getErrorMessage());
+    }
 
     // Get the transaction
     auto result = operation->getResult();
@@ -1990,7 +1996,7 @@ void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
         CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
         mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
         CWalletTx wtx(pwalletMain, mtx);
-        pwalletMain->AddToWallet(wtx, true, NULL);
+        pwalletMain->LoadWalletTx(wtx);
         return wtx;
     };
 
@@ -2011,7 +2017,7 @@ void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
 
         if (has_trx) {
             wtx.SetMerkleBranch(block);
-            pwalletMain->AddToWallet(wtx, true, NULL);
+            pwalletMain->LoadWalletTx(wtx);
         }
 
         hashes.push_back(blockHash);

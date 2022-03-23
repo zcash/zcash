@@ -8,6 +8,7 @@
 #include "transparent.h"
 #include "key_constants.h"
 #include "script/script.h"
+#include "zcash/address/orchard.hpp"
 #include "zip32.h"
 
 #include <variant>
@@ -23,7 +24,18 @@ enum class ReceiverType: uint32_t {
     P2PKH = 0x00,
     P2SH = 0x01,
     Sapling = 0x02,
-    //Orchard = 0x03
+    Orchard = 0x03
+};
+
+/**
+ * An enumeration of the fund pools for which a transaction may produce outputs.
+ * It is sorted in descending preference order, so that when iterating over a
+ * set of output pools the most-preferred pool is selected first.
+ */
+enum class OutputPool {
+    Orchard,
+    Sapling,
+    Transparent,
 };
 
 enum class UnifiedAddressGenerationError {
@@ -42,17 +54,10 @@ typedef std::variant<
 typedef std::variant<
     CKeyID,
     CScriptID,
-    libzcash::SaplingPaymentAddress> RecipientAddress;
+    libzcash::SaplingPaymentAddress,
+    libzcash::OrchardRawAddress> RecipientAddress;
 
-/**
- * An enumeration of the types of change that a transaction may produce.  It is
- * sorted in descending preference order, so that when iterating over a set of
- * change types the most-preferred type is selected first.
- */
-enum class ChangeType {
-    Sapling,
-    Transparent,
-};
+std::string DebugPrintRecipientAddress(const RecipientAddress& add);
 
 class TransparentChangeRequest {
 private:
@@ -66,10 +71,12 @@ public:
 };
 
 class SaplingChangeRequest {};
+class OrchardChangeRequest {};
 
 typedef std::variant<
     TransparentChangeRequest,
-    SaplingChangeRequest> ChangeRequest;
+    SaplingChangeRequest,
+    OrchardChangeRequest> ChangeRequest;
 
 /**
  * Test whether the specified list of receiver types contains a
@@ -113,10 +120,15 @@ public:
  * variants by `operator<` is equivalent to sorting by preference.
  */
 typedef std::variant<
+    OrchardRawAddress,
     SaplingPaymentAddress,
     CScriptID,
     CKeyID,
     UnknownReceiver> Receiver;
+
+Receiver RecipientAddressToReceiver(const RecipientAddress& recipient);
+
+std::string DebugPrintReceiver(const Receiver& receiver);
 
 /**
  * An internal identifier for a unified full viewing key, derived as a
@@ -139,6 +151,7 @@ private:
     UFVKId keyId;
     std::optional<transparent::AccountPubKey> transparentKey;
     std::optional<SaplingDiversifiableFullViewingKey> saplingKey;
+    std::optional<OrchardFullViewingKey> orchardKey;
 
     ZcashdUnifiedFullViewingKey() {}
 
@@ -165,6 +178,10 @@ public:
 
     const std::optional<SaplingDiversifiableFullViewingKey>& GetSaplingKey() const {
         return saplingKey;
+    }
+
+    const std::optional<OrchardFullViewingKey>& GetOrchardKey() const {
+        return orchardKey;
     }
 
     /**
@@ -224,7 +241,7 @@ public:
      * *any* shielded pool) in which case the change address returned will be
      * associated with diversifier index 0.
      */
-    std::optional<RecipientAddress> GetChangeAddress() const;
+    std::optional<RecipientAddress> GetChangeAddress(const std::set<OutputPool>& allowedPools) const;
 
     UnifiedFullViewingKey ToFullViewingKey() const;
 
@@ -241,10 +258,12 @@ class ZcashdUnifiedSpendingKey {
 private:
     transparent::AccountKey transparentKey;
     SaplingExtendedSpendingKey saplingKey;
+    OrchardSpendingKey orchardKey;
 
     ZcashdUnifiedSpendingKey(
             transparent::AccountKey tkey,
-            SaplingExtendedSpendingKey skey): transparentKey(tkey), saplingKey(skey) {}
+            SaplingExtendedSpendingKey skey,
+            OrchardSpendingKey okey): transparentKey(tkey), saplingKey(skey), orchardKey(okey) {}
 public:
     static std::optional<ZcashdUnifiedSpendingKey> ForAccount(
             const HDSeed& seed,
@@ -255,8 +274,12 @@ public:
         return transparentKey;
     }
 
-    const SaplingExtendedSpendingKey& GetSaplingExtendedSpendingKey() const {
+    const SaplingExtendedSpendingKey& GetSaplingKey() const {
         return saplingKey;
+    }
+
+    const OrchardSpendingKey& GetOrchardKey() const {
+        return orchardKey;
     }
 
     UnifiedFullViewingKey ToFullViewingKey() const;

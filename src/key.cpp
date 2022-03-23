@@ -290,7 +290,7 @@ std::optional<CExtKey> CExtKey::Derive(unsigned int _nChild) const {
     }
 }
 
-CExtKey CExtKey::Master(const unsigned char *seed, unsigned int nSeedLen) {
+std::optional<CExtKey> CExtKey::Master(const unsigned char *seed, unsigned int nSeedLen) {
     CExtKey xk;
     static const unsigned char hashkey[] = {'B','i','t','c','o','i','n',' ','s','e','e','d'};
     std::vector<unsigned char, secure_allocator<unsigned char>> vout(64);
@@ -301,7 +301,11 @@ CExtKey CExtKey::Master(const unsigned char *seed, unsigned int nSeedLen) {
     xk.nChild = 0;
     memset(xk.vchFingerprint, 0, sizeof(xk.vchFingerprint));
 
-    return xk;
+    if (xk.key.IsValid()) {
+        return xk;
+    } else {
+        return std::nullopt;
+    }
 }
 
 CExtPubKey CExtKey::Neuter() const {

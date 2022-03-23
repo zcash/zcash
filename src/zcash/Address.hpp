@@ -1,6 +1,7 @@
 #ifndef ZC_ADDRESS_H_
 #define ZC_ADDRESS_H_
 
+#include "consensus/params.h"
 #include "key_constants.h"
 #include "pubkey.h"
 #include "key_constants.h"
@@ -66,6 +67,21 @@ class UnifiedAddress {
 public:
     UnifiedAddress() {}
 
+    static UnifiedAddress ForSingleReceiver(Receiver receiver) {
+        UnifiedAddress ua;
+        ua.AddReceiver(receiver);
+        return ua;
+    }
+
+    static std::optional<UnifiedAddress> Parse(const KeyConstants& keyConstants, const std::string& str);
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(receivers);
+    }
+
     /**
      * Adds the given receiver to this unified address.
      *
@@ -78,12 +94,17 @@ public:
      */
     bool AddReceiver(Receiver receiver);
 
+    bool ContainsReceiver(const Receiver& receiver) const;
+
     const std::vector<Receiver>& GetReceiversAsParsed() const { return receivers; }
 
     std::set<ReceiverType> GetKnownReceiverTypes() const {
         std::set<ReceiverType> result;
         for (const auto& receiver : receivers) {
             std::visit(match {
+                [&](const libzcash::OrchardRawAddress &zaddr) {
+                    result.insert(ReceiverType::Orchard);
+                },
                 [&](const libzcash::SaplingPaymentAddress &zaddr) {
                     result.insert(ReceiverType::Sapling);
                 },
@@ -116,11 +137,14 @@ public:
 
     std::optional<SaplingPaymentAddress> GetSaplingReceiver() const;
 
+    std::optional<OrchardRawAddress> GetOrchardReceiver() const;
+
     /**
      * Return the most-preferred receiver from among the receiver types
-     * that we recognize.
+     * that we recognize and can use at the given block height.
      */
-    std::optional<RecipientAddress> GetPreferredRecipientAddress() const;
+    std::optional<RecipientAddress> GetPreferredRecipientAddress(
+        const Consensus::Params& consensus, int height) const;
 
     friend inline bool operator==(const UnifiedAddress& a, const UnifiedAddress& b) {
         return a.receivers == b.receivers;
@@ -171,6 +195,8 @@ public:
 
     std::string Encode(const KeyConstants& keyConstants) const;
 
+    std::optional<OrchardFullViewingKey> GetOrchardKey() const;
+
     std::optional<SaplingDiversifiableFullViewingKey> GetSaplingKey() const;
 
     std::optional<transparent::AccountPubKey> GetTransparentKey() const;
@@ -184,6 +210,9 @@ public:
         }
         if (GetSaplingKey().has_value()) {
             result.insert(ReceiverType::Sapling);
+        }
+        if (GetOrchardKey().has_value()) {
+            result.insert(ReceiverType::Orchard);
         }
         return result;
     }
@@ -209,11 +238,16 @@ class UnifiedFullViewingKeyBuilder {
 private:
     std::optional<std::vector<uint8_t>> t_bytes;
     std::optional<std::vector<uint8_t>> sapling_bytes;
+    std::optional<std::vector<uint8_t>> orchard_bytes;
 public:
-    UnifiedFullViewingKeyBuilder(): t_bytes(std::nullopt), sapling_bytes(std::nullopt) {}
+    UnifiedFullViewingKeyBuilder():
+        t_bytes(std::nullopt),
+        sapling_bytes(std::nullopt),
+        orchard_bytes(std::nullopt) {}
 
     bool AddTransparentKey(const transparent::AccountPubKey&);
     bool AddSaplingKey(const SaplingDiversifiableFullViewingKey&);
+    bool AddOrchardKey(const OrchardFullViewingKey&);
 
     std::optional<UnifiedFullViewingKey> build() const;
 };
@@ -235,25 +269,29 @@ typedef std::variant<
     SproutSpendingKey,
     SaplingExtendedSpendingKey> SpendingKey;
 
-class HasShieldedRecipient {
+class IsShieldedRecipient {
 public:
     bool operator()(const CKeyID& p2pkh) { return false; }
     bool operator()(const CScriptID& p2sh) { return false; }
     bool operator()(const SproutPaymentAddress& addr) { return true; }
     bool operator()(const SaplingPaymentAddress& addr) { return true; }
-    // unified addresses must contain a shielded receiver, so we
-    // consider this to be safe by construction
-    bool operator()(const UnifiedAddress& addr) { return true; }
+    bool operator()(const OrchardRawAddress& addr) { return true; }
 };
 
 class SelectRecipientAddress {
+    const Consensus::Params& consensus;
+    int height;
+
 public:
+    SelectRecipientAddress(const Consensus::Params& consensus, int height) :
+        consensus(consensus), height(height) {}
+
     std::optional<RecipientAddress> operator()(const CKeyID& p2pkh) { return p2pkh; }
     std::optional<RecipientAddress> operator()(const CScriptID& p2sh) { return p2sh; }
     std::optional<RecipientAddress> operator()(const SproutPaymentAddress& addr) { return std::nullopt; }
     std::optional<RecipientAddress> operator()(const SaplingPaymentAddress& addr) { return addr; }
     std::optional<RecipientAddress> operator()(const UnifiedAddress& addr) {
-        return addr.GetPreferredRecipientAddress();
+        return addr.GetPreferredRecipientAddress(consensus, height);
     }
 };
 
@@ -283,6 +321,7 @@ class TypecodeForReceiver {
 public:
     TypecodeForReceiver() {}
 
+    uint32_t operator()(const libzcash::OrchardRawAddress &zaddr) const;
     uint32_t operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
     uint32_t operator()(const CScriptID &p2sh) const;
     uint32_t operator()(const CKeyID &p2pkh) const;

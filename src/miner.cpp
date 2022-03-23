@@ -214,35 +214,85 @@ public:
         return miner_reward + nFees;
     }
 
-    void ComputeBindingSig(void* ctx) const {
+    void ComputeBindingSig(void* saplingCtx, std::optional<orchard::UnauthorizedBundle> orchardBundle) const {
         // Empty output script.
         uint256 dataToBeSigned;
-        CScript scriptCode;
         try {
-            // This is a shielded coinbase transaction, so the sighash is either pre-v5
-            // and doesn't use the allPrevOutputs field of PrecomputedTransactionData), or
-            // v5+ and S.2 of ZIP 244 defers to T.2, causing allPrevOutputs to be ignored.
-            // We therefore can set it to the empty list here.
-            PrecomputedTransactionData txdata(mtx, {});
-            dataToBeSigned = SignatureHash(
-                scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0,
-                CurrentEpochBranchId(nHeight, chainparams.GetConsensus()),
-                txdata);
+            if (orchardBundle.has_value()) {
+                // Orchard is only usable with v5+ transactions.
+                dataToBeSigned = ProduceZip244SignatureHash(mtx, orchardBundle.value());
+            } else {
+                CScript scriptCode;
+                PrecomputedTransactionData txdata(mtx, {});
+                dataToBeSigned = SignatureHash(
+                    scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0,
+                    CurrentEpochBranchId(nHeight, chainparams.GetConsensus()),
+                    txdata);
+            }
         } catch (std::logic_error ex) {
-            librustzcash_sapling_proving_ctx_free(ctx);
+            librustzcash_sapling_proving_ctx_free(saplingCtx);
             throw ex;
         }
 
+        if (orchardBundle.has_value()) {
+            auto authorizedBundle = orchardBundle.value().ProveAndSign({}, dataToBeSigned);
+            if (authorizedBundle.has_value()) {
+                mtx.orchardBundle = authorizedBundle.value();
+            } else {
+                librustzcash_sapling_proving_ctx_free(saplingCtx);
+                throw new std::runtime_error("Failed to create Orchard proof or signatures");
+            }
+        }
+
         bool success = librustzcash_sapling_binding_sig(
-            ctx,
+            saplingCtx,
             mtx.valueBalanceSapling,
             dataToBeSigned.begin(),
             mtx.bindingSig.data());
 
         if (!success) {
-            librustzcash_sapling_proving_ctx_free(ctx);
+            librustzcash_sapling_proving_ctx_free(saplingCtx);
             throw new std::runtime_error("An error occurred computing the binding signature.");
         }
+    }
+
+    // Create Orchard output
+    void operator()(const libzcash::OrchardRawAddress &to) const {
+        auto ctx = librustzcash_sapling_proving_ctx_init();
+
+        // `enableSpends` must be set to `false` for coinbase transactions. This
+        // means the Orchard anchor is unconstrained, so we set it to the empty
+        // tree root via a null (all zeroes) uint256.
+        uint256 orchardAnchor;
+        auto builder = orchard::Builder(false, true, orchardAnchor);
+
+        // Shielded coinbase outputs must be recoverable with an all-zeroes ovk.
+        uint256 ovk;
+        auto miner_reward = SetFoundersRewardAndGetMinerValue(ctx);
+        builder.AddOutput(ovk, to, miner_reward, std::nullopt);
+
+        // orchard::Builder pads to two Actions, but does so using a "no OVK" policy for
+        // dummy outputs, which violates coinbase rules requiring all shielded outputs to
+        // be recoverable. We manually add a dummy output to sidestep this issue.
+        // TODO: If/when we have funding streams going to Orchard recipients, this dummy
+        // output can be removed.
+        RawHDSeed rawSeed(32, 0);
+        GetRandBytes(rawSeed.data(), 32);
+        auto dummyTo = libzcash::OrchardSpendingKey::ForAccount(HDSeed(rawSeed), Params().BIP44CoinType(), 0)
+            .ToFullViewingKey()
+            .ToIncomingViewingKey()
+            .Address(0);
+        builder.AddOutput(ovk, dummyTo, 0, std::nullopt);
+
+        auto bundle = builder.Build();
+        if (!bundle.has_value()) {
+            librustzcash_sapling_proving_ctx_free(ctx);
+            throw new std::runtime_error("Failed to create shielded output for miner");
+        }
+
+        ComputeBindingSig(ctx, std::move(bundle));
+
+        librustzcash_sapling_proving_ctx_free(ctx);
     }
 
     // Create shielded output
@@ -264,7 +314,7 @@ public:
         }
         mtx.vShieldedOutput.push_back(odesc.value());
 
-        ComputeBindingSig(ctx);
+        ComputeBindingSig(ctx, std::nullopt);
 
         librustzcash_sapling_proving_ctx_free(ctx);
     }
@@ -283,7 +333,7 @@ public:
         mtx.vout[0] = CTxOut(value, coinbaseScript->reserveScript);
 
         if (mtx.vShieldedOutput.size() > 0) {
-            ComputeBindingSig(ctx);
+            ComputeBindingSig(ctx, std::nullopt);
         }
 
         librustzcash_sapling_proving_ctx_free(ctx);
@@ -728,23 +778,38 @@ std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::Sapl
     return addr;
 }
 std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::UnifiedAddress &addr) const {
-    for (const auto& receiver: addr) {
-        if (std::holds_alternative<libzcash::SaplingPaymentAddress>(receiver)) {
-            return std::get<libzcash::SaplingPaymentAddress>(receiver);
-        }
+    auto preferred = addr.GetPreferredRecipientAddress(consensus, height);
+    if (preferred.has_value()) {
+        std::optional<MinerAddress> ret;
+        std::visit(match {
+            [&](const libzcash::OrchardRawAddress addr) { ret = MinerAddress(addr); },
+            [&](const libzcash::SaplingPaymentAddress addr) { ret = MinerAddress(addr); },
+            [&](const CKeyID keyID) { ret = operator()(keyID); },
+            [&](const auto other) { ret = std::nullopt; }
+        }, preferred.value());
+        return ret;
+    } else {
+        return std::nullopt;
     }
-    return std::nullopt;
 }
 
 
-void GetMinerAddress(MinerAddress &minerAddress)
+void GetMinerAddress(std::optional<MinerAddress> &minerAddress)
 {
     KeyIO keyIO(Params());
+
+    // If the user sets a UA miner address with an Orchard component, we want to ensure we
+    // start using it once we reach that height.
+    int height;
+    {
+        LOCK(cs_main);
+        height = chainActive.Height() + 1;
+    }
 
     auto mAddrArg = GetArg("-mineraddress", "");
     auto zaddr0 = keyIO.DecodePaymentAddress(mAddrArg);
     if (zaddr0.has_value()) {
-        auto zaddr = std::visit(ExtractMinerAddress(), zaddr0.value());
+        auto zaddr = std::visit(ExtractMinerAddress(Params().GetConsensus(), height), zaddr0.value());
         if (zaddr.has_value()) {
             minerAddress = zaddr.value();
         }
@@ -815,8 +880,8 @@ void static BitcoinMiner(const CChainParams& chainparams)
     // Each thread has its own counter
     unsigned int nExtraNonce = 0;
 
-    MinerAddress minerAddress;
-    GetMainSignals().AddressForMining(minerAddress);
+    std::optional<MinerAddress> maybeMinerAddress;
+    GetMainSignals().AddressForMining(maybeMinerAddress);
 
     unsigned int n = chainparams.GetConsensus().nEquihashN;
     unsigned int k = chainparams.GetConsensus().nEquihashK;
@@ -837,9 +902,10 @@ void static BitcoinMiner(const CChainParams& chainparams)
 
     try {
         // Throw an error if no address valid for mining was provided.
-        if (!std::visit(IsValidMinerAddress(), minerAddress)) {
+        if (!(maybeMinerAddress.has_value() && std::visit(IsValidMinerAddress(), maybeMinerAddress.value()))) {
             throw std::runtime_error("No miner address available (mining requires a wallet or -mineraddress)");
         }
+        auto minerAddress = maybeMinerAddress.value();
 
         while (true) {
             if (chainparams.MiningRequiresPeers()) {

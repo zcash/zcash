@@ -32,6 +32,43 @@ OrchardRawAddressPtr* orchard_address_clone(
  */
 void orchard_address_free(OrchardRawAddressPtr* ptr);
 
+/**
+ * Parses Orchard raw address bytes from the given stream.
+ *
+ * - If the key does not parse correctly, the returned pointer will be null.
+ */
+OrchardRawAddressPtr* orchard_raw_address_parse(
+    void* stream,
+    read_callback_t read_cb);
+
+
+/**
+ * Serializes Orchard raw address bytes to the given stream.
+ *
+ * This will return `false` and leave the stream unmodified if
+ * `raw_address == nullptr`;
+ */
+bool orchard_raw_address_serialize(
+    const OrchardRawAddressPtr* raw_address,
+    void* stream,
+    write_callback_t write_cb);
+
+/**
+ * Implements the "equal" operation for comparing two Orchard addresses.
+ */
+bool orchard_address_eq(
+    const OrchardRawAddressPtr* k0,
+    const OrchardRawAddressPtr* k1);
+
+/**
+ * Implements the "less than" operation `k0 < k1` for comparing two Orchard
+ * addresses.  This is a comparison of the raw bytes, only useful for cases
+ * where a semantically irrelevant ordering is needed (such as for map keys).
+ */
+bool orchard_address_lt(
+    const OrchardRawAddressPtr* k0,
+    const OrchardRawAddressPtr* k1);
+
 //
 // Incoming Viewing Keys
 //
@@ -61,6 +98,18 @@ OrchardRawAddressPtr* orchard_incoming_viewing_key_to_address(
     const unsigned char* j);
 
 /**
+ * Decrypts the diversifier component of an Orchard raw address with the
+ * specified IVK, and verifies that the address was derived from that IVK.
+ *
+ * Returns `false` and leaves the `j_ret` parameter unmodified if the address
+ * was not derived from the specified IVK.
+ */
+bool orchard_incoming_viewing_key_decrypt_diversifier(
+    const OrchardIncomingViewingKeyPtr* incoming_viewing_key,
+    const OrchardRawAddressPtr* addr,
+    uint8_t *j_ret);
+
+/**
  * Parses an Orchard incoming viewing key from the given stream.
  *
  * - If the key does not parse correctly, the returned pointer will be null.
@@ -69,8 +118,12 @@ OrchardIncomingViewingKeyPtr* orchard_incoming_viewing_key_parse(
     void* stream,
     read_callback_t read_cb);
 
+
 /**
  * Serializes an Orchard incoming viewing key to the given stream.
+ *
+ * This will return `false` and leave the stream unmodified if
+ * `incoming_viewing_key == nullptr`.
  */
 bool orchard_incoming_viewing_key_serialize(
     const OrchardIncomingViewingKeyPtr* incoming_viewing_key,
@@ -123,6 +176,9 @@ OrchardFullViewingKeyPtr* orchard_full_viewing_key_parse(
 
 /**
  * Serializes an Orchard full viewing key to the given stream.
+ *
+ * This will return `false` and leave the stream unmodified if
+ * `full_viewing_key == nullptr`.
  */
 bool orchard_full_viewing_key_serialize(
     const OrchardFullViewingKeyPtr* full_viewing_key,
@@ -134,6 +190,30 @@ bool orchard_full_viewing_key_serialize(
  */
 OrchardIncomingViewingKeyPtr* orchard_full_viewing_key_to_incoming_viewing_key(
     const OrchardFullViewingKeyPtr* key);
+
+/**
+ * Returns the internal incoming viewing key for the specified full viewing key.
+ */
+OrchardIncomingViewingKeyPtr* orchard_full_viewing_key_to_internal_incoming_viewing_key(
+    const OrchardFullViewingKeyPtr* key);
+
+/**
+ * Returns the external outgoing viewing key for the specified full viewing key.
+ *
+ * `ovk_ret` must be 32 bytes.
+ */
+OrchardIncomingViewingKeyPtr* orchard_full_viewing_key_to_external_outgoing_viewing_key(
+    const OrchardFullViewingKeyPtr* fvk,
+    uint8_t *ovk_ret);
+
+/**
+ * Returns the internal outgoing viewing key for the specified full viewing key.
+ *
+ * `ovk_ret` must be 32 bytes.
+ */
+OrchardIncomingViewingKeyPtr* orchard_full_viewing_key_to_internal_outgoing_viewing_key(
+    const OrchardFullViewingKeyPtr* fvk,
+    uint8_t *ovk_ret);
 
 /**
  * Implements equality testing between full viewing keys.
@@ -174,24 +254,10 @@ OrchardSpendingKeyPtr* orchard_spending_key_clone(
 void orchard_spending_key_free(OrchardSpendingKeyPtr* ptr);
 
 /**
- * Parses an Orchard spending key from the given stream.
- *
- * - If the key does not parse correctly, the returned pointer will be null.
- */
-OrchardSpendingKeyPtr* orchard_spending_key_parse(
-    void* stream,
-    read_callback_t read_cb);
-
-/**
- * Serializes an Orchard spending key to the given stream.
- */
-bool orchard_spending_key_serialize(
-    const OrchardSpendingKeyPtr* spending_key,
-    void* stream,
-    write_callback_t write_cb);
-
-/**
  * Returns the full viewing key for the specified spending key.
+ *
+ * The resulting pointer must be ultimately freed by the caller
+ * using `orchard_full_viewing_key_free`.
  */
 OrchardFullViewingKeyPtr* orchard_spending_key_to_full_viewing_key(
     const OrchardSpendingKeyPtr* key);

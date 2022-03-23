@@ -16,6 +16,81 @@ namespace libzcash {
 // Unified Addresses
 //
 
+static bool AddOrchardReceiver(void* ua, OrchardRawAddressPtr* ptr)
+{
+    return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(
+        libzcash::OrchardRawAddress::KeyIoOnlyFromReceiver(ptr));
+}
+
+/**
+ * `raw` MUST be 43 bytes.
+ */
+static bool AddSaplingReceiver(void* ua, const unsigned char* raw)
+{
+    CDataStream ss(
+        reinterpret_cast<const char*>(raw),
+        reinterpret_cast<const char*>(raw + 43),
+        SER_NETWORK,
+        PROTOCOL_VERSION);
+    libzcash::SaplingPaymentAddress receiver;
+    ss >> receiver;
+    return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
+}
+
+/**
+ * `raw` MUST be 20 bytes.
+ */
+static bool AddP2SHReceiver(void* ua, const unsigned char* raw)
+{
+    CDataStream ss(
+        reinterpret_cast<const char*>(raw),
+        reinterpret_cast<const char*>(raw + 20),
+        SER_NETWORK,
+        PROTOCOL_VERSION);
+    CScriptID receiver;
+    ss >> receiver;
+    return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
+}
+
+/**
+ * `raw` MUST be 20 bytes.
+ */
+static bool AddP2PKHReceiver(void* ua, const unsigned char* raw)
+{
+    CDataStream ss(
+        reinterpret_cast<const char*>(raw),
+        reinterpret_cast<const char*>(raw + 20),
+        SER_NETWORK,
+        PROTOCOL_VERSION);
+    CKeyID receiver;
+    ss >> receiver;
+    return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
+}
+
+static bool AddUnknownReceiver(void* ua, uint32_t typecode, const unsigned char* data, size_t len)
+{
+    libzcash::UnknownReceiver receiver(typecode, std::vector(data, data + len));
+    return reinterpret_cast<libzcash::UnifiedAddress*>(ua)->AddReceiver(receiver);
+}
+
+std::optional<UnifiedAddress> UnifiedAddress::Parse(const KeyConstants& keyConstants, const std::string& str) {
+    libzcash::UnifiedAddress ua;
+    if (zcash_address_parse_unified(
+        str.c_str(),
+        keyConstants.NetworkIDString().c_str(),
+        &ua,
+        AddOrchardReceiver,
+        AddSaplingReceiver,
+        AddP2SHReceiver,
+        AddP2PKHReceiver,
+        AddUnknownReceiver)
+    ) {
+        return ua;
+    } else {
+        return std::nullopt;
+    }
+}
+
 std::vector<const Receiver*> UnifiedAddress::GetSorted() const {
     std::vector<const libzcash::Receiver*> sorted;
     for (const auto& receiver : receivers) {
@@ -41,6 +116,15 @@ bool UnifiedAddress::AddReceiver(Receiver receiver) {
 
     receivers.push_back(receiver);
     return true;
+}
+
+bool UnifiedAddress::ContainsReceiver(const Receiver& receiver) const {
+    for (const auto& r : GetReceiversAsParsed()) {
+        if (r == receiver) {
+            return true;
+        }
+    }
+    return false;
 }
 
 std::optional<CKeyID> UnifiedAddress::GetP2PKHReceiver() const {
@@ -73,12 +157,27 @@ std::optional<SaplingPaymentAddress> UnifiedAddress::GetSaplingReceiver() const 
     return std::nullopt;
 }
 
-std::optional<RecipientAddress> UnifiedAddress::GetPreferredRecipientAddress() const {
+std::optional<OrchardRawAddress> UnifiedAddress::GetOrchardReceiver() const {
+    for (const auto& r : receivers) {
+        if (std::holds_alternative<OrchardRawAddress>(r)) {
+            return std::get<OrchardRawAddress>(r);
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<RecipientAddress> UnifiedAddress::GetPreferredRecipientAddress(
+    const Consensus::Params& consensus, int height) const
+{
+    bool nu5Active = consensus.NetworkUpgradeActive(height, Consensus::UPGRADE_NU5);
+
     // Return the first receiver type we recognize; receivers are sorted in
     // order from most-preferred to least.
     std::optional<RecipientAddress> result;
     for (const auto& receiver : *this) {
         std::visit(match {
+            [&](const OrchardRawAddress& addr) { if (nu5Active) result = addr; },
             [&](const SaplingPaymentAddress& addr) { result = addr; },
             [&](const CScriptID& addr) { result = addr; },
             [&](const CKeyID& addr) { result = addr; },
@@ -94,6 +193,7 @@ std::optional<RecipientAddress> UnifiedAddress::GetPreferredRecipientAddress() c
 
 bool HasKnownReceiverType(const Receiver& receiver) {
     return std::visit(match {
+        [](const OrchardRawAddress& addr) { return true; },
         [](const SaplingPaymentAddress& addr) { return true; },
         [](const CScriptID& addr) { return true; },
         [](const CKeyID& addr) { return true; },
@@ -124,6 +224,12 @@ std::pair<std::string, PaymentAddress> AddressInfoFromViewingKey::operator()(con
 }
 
 } // namespace libzcash
+
+uint32_t TypecodeForReceiver::operator()(
+    const libzcash::OrchardRawAddress &zaddr) const
+{
+    return static_cast<uint32_t>(libzcash::ReceiverType::Orchard);
+}
 
 uint32_t TypecodeForReceiver::operator()(
     const libzcash::SaplingPaymentAddress &zaddr) const
@@ -174,6 +280,16 @@ std::string libzcash::UnifiedFullViewingKey::Encode(const KeyConstants& keyConst
     return res;
 }
 
+std::optional<libzcash::OrchardFullViewingKey> libzcash::UnifiedFullViewingKey::GetOrchardKey() const {
+    std::vector<uint8_t> buffer(96);
+    if (unified_full_viewing_key_read_orchard(inner.get(), buffer.data())) {
+        CDataStream ss(buffer, SER_NETWORK, PROTOCOL_VERSION);
+        return OrchardFullViewingKey::Read(ss);
+    } else {
+        return std::nullopt;
+    }
+}
+
 std::optional<libzcash::SaplingDiversifiableFullViewingKey> libzcash::UnifiedFullViewingKey::GetSaplingKey() const {
     std::vector<uint8_t> buffer(128);
     if (unified_full_viewing_key_read_sapling(inner.get(), buffer.data())) {
@@ -214,10 +330,21 @@ bool libzcash::UnifiedFullViewingKeyBuilder::AddSaplingKey(const SaplingDiversif
     return true;
 }
 
+bool libzcash::UnifiedFullViewingKeyBuilder::AddOrchardKey(const OrchardFullViewingKey& key) {
+    if (orchard_bytes.has_value()) return false;
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << key;
+    assert(ss.size() == 96);
+    std::vector<uint8_t> ss_bytes(ss.begin(), ss.end());
+    orchard_bytes = ss_bytes;
+    return true;
+}
+
 std::optional<libzcash::UnifiedFullViewingKey> libzcash::UnifiedFullViewingKeyBuilder::build() const {
     UnifiedFullViewingKeyPtr* ptr = unified_full_viewing_key_from_components(
             t_bytes.has_value() ? t_bytes.value().data() : nullptr,
-            sapling_bytes.has_value() ? sapling_bytes.value().data() : nullptr);
+            sapling_bytes.has_value() ? sapling_bytes.value().data() : nullptr,
+            orchard_bytes.has_value() ? orchard_bytes.value().data() : nullptr);
 
     if (ptr == nullptr) {
         return std::nullopt;
@@ -233,6 +360,9 @@ libzcash::UnifiedFullViewingKey libzcash::UnifiedFullViewingKey::FromZcashdUFVK(
     }
     if (key.GetSaplingKey().has_value()) {
         builder.AddSaplingKey(key.GetSaplingKey().value());
+    }
+    if (key.GetOrchardKey().has_value()) {
+        builder.AddOrchardKey(key.GetOrchardKey().value());
     }
 
     auto result = builder.build();

@@ -50,6 +50,17 @@ void AtomicTimer::stop()
     }
 }
 
+
+void AtomicTimer::zeroize()
+{
+    std::unique_lock<std::mutex> lock(mtx);
+    // only zeroize it if there's no more threads (same semantics as start())
+    if (threads < 1) {
+        start_time = 0;
+        total_time = 0;
+    }
+}
+
 bool AtomicTimer::running()
 {
     std::unique_lock<std::mutex> lock(mtx);

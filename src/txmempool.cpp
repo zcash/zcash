@@ -387,6 +387,14 @@ void CTxMemPool::removeWithAnchor(const uint256 &invalidRoot, ShieldedType type)
                     }
                 }
             break;
+            case ORCHARD:
+            {
+                auto anchor = tx.GetOrchardBundle().GetAnchor();
+                if (anchor == invalidRoot) {
+                    transactionsToRemove.push_back(tx);
+                }
+                break;
+            }
             default:
                 throw runtime_error("Unknown shielded type");
             break;

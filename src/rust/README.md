@@ -6,6 +6,11 @@ the `zcashd` full node.
 The FFI API does not have any stability guarantees, and will change as required
 by `zcashd`.
 
+# zcashd-wallet-tool
+
+`zcashd-wallet-tool` is a command-line tool that allows confirming to a `zcashd`
+node that the emergency recovery phrase of the node's wallet has been backed up.
+
 ## License
 
 Licensed under either of

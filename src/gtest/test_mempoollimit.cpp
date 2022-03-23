@@ -110,6 +110,8 @@ TEST(MempoolLimitTests, WeightedTxTreeCheckSizeAfterDropping)
 
 TEST(MempoolLimitTests, WeightedTxInfoFromTx)
 {
+    LoadProofParameters();
+
     // The transaction creation is based on the test:
     // test_transaction_builder.cpp/TEST(TransactionBuilder, SetFee)
     auto consensusParams = RegtestActivateSapling();
@@ -119,7 +121,7 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
 
     // Default fee
     {
-        auto builder = TransactionBuilder(consensusParams, 1);
+        auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
         builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
         builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 25000, {});
 
@@ -130,7 +132,7 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
 
     // Lower than standard fee
     {
-        auto builder = TransactionBuilder(consensusParams, 1);
+        auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
         builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
         builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 25000, {});
         static_assert(DEFAULT_FEE == 1000);
@@ -143,7 +145,7 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
 
     // Larger Tx
     {
-        auto builder = TransactionBuilder(consensusParams, 1);
+        auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
         builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
         builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 5000, {});
         builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 5000, {});

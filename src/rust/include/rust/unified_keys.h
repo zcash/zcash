@@ -85,6 +85,22 @@ bool unified_full_viewing_key_read_sapling(
     unsigned char* skeyout);
 
 /**
+ * Reads the Orchard component of a unified full viewing key.
+ *
+ * `skeyout` must be of length 96.
+ *
+ * Returns `true` if the UFVK contained an Orchard component, `false` otherwise.
+ * The bytes of the Orchard Raw Full Viewing Key, in the encoding given in
+ * section 5.6.4.4 of the Zcash Protocol Specification, will be copied to
+ * `skeyout` if `true` is returned.
+ *
+ * If `false` is returned then `skeyout` will be unchanged.
+ */
+bool unified_full_viewing_key_read_orchard(
+    const UnifiedFullViewingKeyPtr* full_viewing_key,
+    unsigned char* skeyout);
+
+/**
  * Constructs a unified full viewing key from the binary encodings
  * of its constituent parts.
  *
@@ -101,7 +117,8 @@ bool unified_full_viewing_key_read_sapling(
  */
 UnifiedFullViewingKeyPtr* unified_full_viewing_key_from_components(
     const unsigned char* t_key,
-    const unsigned char* sapling_key);
+    const unsigned char* sapling_key,
+    const unsigned char* orchard_key);
 
 /**
  * Derive the internal and external OVKs for the binary encoding

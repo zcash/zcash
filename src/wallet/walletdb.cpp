@@ -12,6 +12,7 @@
 #include "proof_verifier.h"
 #include "protocol.h"
 #include "serialize.h"
+#include "script/standard.h"
 #include "sync.h"
 #include "util.h"
 #include "utiltime.h"
@@ -216,6 +217,17 @@ bool CWalletDB::EraseSaplingExtendedFullViewingKey(
 }
 
 //
+// Orchard wallet persistence
+//
+
+bool CWalletDB::WriteOrchardWitnesses(const OrchardWallet& wallet) {
+    nWalletDBUpdateCounter++;
+    return Write(
+            std::string("orchard_note_commitment_tree"),
+            OrchardWalletNoteCommitmentTreeWriter(wallet));
+}
+
+//
 // Unified address & key storage
 //
 
@@ -311,6 +323,19 @@ bool CWalletDB::WriteMinVersion(int nVersion)
     return Write(std::string("minversion"), nVersion);
 }
 
+bool CWalletDB::WriteRecipientMapping(const uint256& txid, const libzcash::RecipientAddress& address, const libzcash::UnifiedAddress& ua)
+{
+    auto recipientReceiver = libzcash::RecipientAddressToReceiver(address);
+    // Check that recipient address exists in given UA.
+    if (!ua.ContainsReceiver(recipientReceiver)) {
+        return false;
+    }
+
+    std::pair<uint256, CSerializeRecipientAddress> key = std::make_pair(txid, CSerializeRecipientAddress(address));
+    std::string uaString = KeyIO(Params()).EncodePaymentAddress(ua);
+    return Write(std::make_pair(std::string("recipientmapping"), key), uaString);
+}
+
 class CWalletScanState {
 public:
     unsigned int nKeys;
@@ -396,7 +421,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             if (wtx.nOrderPos == -1)
                 wss.fAnyUnordered = true;
 
-            pwallet->AddToWallet(wtx, true, NULL);
+            pwallet->LoadWalletTx(wtx);
         }
         else if (strType == "watchs")
         {
@@ -844,6 +869,34 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 return false;
             }
         }
+        else if (strType == "recipientmapping")
+        {
+            uint256 txid;
+            std::string rawUa;
+            ssKey >> txid;
+            auto recipient = CSerializeRecipientAddress::Read(ssKey);
+            ssValue >> rawUa;
+
+            auto ua = libzcash::UnifiedAddress::Parse(Params(), rawUa);
+            if (!ua.has_value()) {
+                strErr = "Error in wallet database: non-UnifiedAddress in recipientmapping";
+                return false;
+            }
+
+            auto recipientReceiver = libzcash::RecipientAddressToReceiver(recipient);
+
+            if (!ua.value().ContainsReceiver(recipientReceiver)) {
+                strErr = "Error in wallet database: recipientmapping UA does not contain recipient";
+                return false;
+            }
+
+            pwallet->LoadRecipientMapping(txid, RecipientMapping(ua.value(), recipient));
+        }
+        else if (strType == "orchard_note_commitment_tree")
+        {
+            auto loader = pwallet->GetOrchardNoteCommitmentTreeLoader();
+            ssValue >> loader;
+        }
     } catch (...)
     {
         return false;
@@ -924,6 +977,14 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                 LogPrintf("%s\n", strErr);
         }
         pcursor->close();
+
+        // Load unified address/account/key caches based on what was loaded
+        if (!pwallet->LoadCaches()) {
+            // We can be more permissive of certain kinds of failures during
+            // loading; for now we'll interpret failure to reconstruct the
+            // caches to be "as bad" as losing keys.
+            result = DB_CORRUPT;
+        }
     }
     catch (const boost::thread_interrupted&) {
         throw;
@@ -1238,6 +1299,13 @@ bool CWalletDB::Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKe
     }
     ptxn->commit(0);
     pdbCopy->close(0);
+
+    // Try to load the wallet's caches, uncovering inconsistencies in wallet
+    // records like missing viewing key records despite existing account
+    // records.
+    if (!dummyWallet.LoadCaches()) {
+        LogPrintf("WARNING: wallet caches could not be reconstructed; salvaged wallet file may have omissions");
+    }
 
     return fSuccess;
 }

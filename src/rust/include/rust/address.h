@@ -5,10 +5,13 @@
 #ifndef ZCASH_RUST_INCLUDE_RUST_ADDRESS_H
 #define ZCASH_RUST_INCLUDE_RUST_ADDRESS_H
 
+#include "rust/orchard/keys.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+typedef bool (*orchard_receiver_t)(void* ua, OrchardRawAddressPtr* addr);
 typedef bool (*raw_to_receiver_t)(void* ua, const unsigned char* raw);
 typedef bool (*unknown_receiver_t)(
     void* ua,
@@ -24,6 +27,7 @@ bool zcash_address_parse_unified(
     const char* str,
     const char* network,
     void* ua,
+    orchard_receiver_t orchard_cb,
     raw_to_receiver_t sapling_cb,
     raw_to_receiver_t p2sh_cb,
     raw_to_receiver_t p2pkh_cb,

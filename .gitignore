@@ -3,6 +3,7 @@
 *.exe
 src/bitcoin
 src/zcashd
+src/zcashd-wallet-tool
 src/zcash-cli
 src/zcash-gtest
 src/zcash-tx

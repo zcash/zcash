@@ -314,6 +314,78 @@ public:
     }
 };
 
+// Serialization wrapper for reading and writing RecipientAddress
+// as a pair of typecode and address bytes, similar to how unified address
+// receivers are written (but excluding the unknown receiver case)
+class CSerializeRecipientAddress {
+    libzcash::RecipientAddress recipient;
+    libzcash::ReceiverType typecode;
+    CSerializeRecipientAddress() {} // for serialization only
+
+    public:
+        CSerializeRecipientAddress(libzcash::RecipientAddress recipient): recipient(recipient) {}
+
+        template<typename Stream>
+        void Serialize(Stream& s) const {
+            std::visit(match {
+                [&](const CKeyID& keyId) {
+                    ReceiverTypeSer(libzcash::ReceiverType::P2PKH).Serialize(s);
+                    s << keyId;
+                },
+                [&](const CScriptID& scriptId) {
+                    ReceiverTypeSer(libzcash::ReceiverType::P2SH).Serialize(s);
+                    s << scriptId;
+                },
+                [&](const libzcash::SaplingPaymentAddress& saplingAddr) {
+                    ReceiverTypeSer(libzcash::ReceiverType::Sapling).Serialize(s);
+                    s << saplingAddr;
+                },
+                [&](const libzcash::OrchardRawAddress& orchardAddr) {
+                    ReceiverTypeSer(libzcash::ReceiverType::Orchard).Serialize(s);
+                    s << orchardAddr;
+                }
+            }, recipient);
+        }
+
+        template<typename Stream>
+        void Unserialize(Stream& s) {
+            // This cast is fine because ZIP 316 uses CompactSize serialization including the
+            // size limit, which means it is at most a uint32_t.
+            typecode = (libzcash::ReceiverType) ReadCompactSize(s);
+            switch (typecode) {
+                case libzcash::ReceiverType::P2PKH: {
+                    CKeyID key;
+                    s >> key;
+                    recipient = key;
+                    break;
+                }
+                case libzcash::ReceiverType::P2SH: {
+                    CScriptID script;
+                    s >> script;
+                    recipient = script;
+                    break;
+                }
+                case libzcash::ReceiverType::Sapling: {
+                    libzcash::SaplingPaymentAddress saplingAddr;
+                    s >> saplingAddr;
+                    recipient = saplingAddr;
+                    break;
+                }
+                case libzcash::ReceiverType::Orchard: {
+                    auto orchardAddr = libzcash::OrchardRawAddress::Read(s);
+                    recipient = orchardAddr;
+                    break;
+                }
+            }
+        }
+
+        template <typename Stream>
+        static libzcash::RecipientAddress Read(Stream& stream) {
+            CSerializeRecipientAddress csr;
+            stream >> csr;
+            return csr.recipient;
+        }
+};
 
 /** Access to the wallet database */
 class CWalletDB : public CDB
@@ -356,6 +428,8 @@ public:
 
     bool WriteMinVersion(int nVersion);
 
+    bool WriteRecipientMapping(const uint256& txid, const libzcash::RecipientAddress& address, const libzcash::UnifiedAddress& ua);
+
     /// Write destination data key,value tuple to database
     bool WriteDestData(const std::string &address, const std::string &key, const std::string &value);
     /// Erase destination data tuple from wallet database
@@ -391,6 +465,9 @@ public:
     bool EraseSproutViewingKey(const libzcash::SproutViewingKey &vk);
     bool WriteSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
     bool EraseSaplingExtendedFullViewingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk);
+
+    /// Orchard support.
+    bool WriteOrchardWitnesses(const OrchardWallet& wallet);
 
     /// Unified key support.
 

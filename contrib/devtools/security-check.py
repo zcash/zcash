@@ -189,8 +189,12 @@ def identify_executable(executable):
     return None
 
 if __name__ == '__main__':
+    args = sys.argv[1:]
+    allow_no_canary = "--allow-no-canary" in args
+    files = [arg for arg in args if not arg.startswith("--")]
+
     retval = 0
-    for filename in sys.argv[1:]:
+    for filename in files:
         try:
             etype = identify_executable(filename)
             if etype is None:
@@ -201,6 +205,8 @@ if __name__ == '__main__':
             failed = []
             warning = []
             for (name, func) in CHECKS[etype]:
+                if name == "Canary" and allow_no_canary:
+                    continue
                 if not func(filename):
                     if name in NONFATAL:
                         warning.append(name)

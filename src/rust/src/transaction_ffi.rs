@@ -149,8 +149,8 @@ impl Authorization for PrecomputedAuth {
 }
 
 pub struct PrecomputedTxParts {
-    tx: TransactionData<PrecomputedAuth>,
-    txid_parts: TxDigests<Hash>,
+    pub(crate) tx: TransactionData<PrecomputedAuth>,
+    pub(crate) txid_parts: TxDigests<Hash>,
 }
 
 /// Precomputes the `TxDigest` struct for the given transaction.

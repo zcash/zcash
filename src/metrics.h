@@ -52,6 +52,8 @@ public:
      */
     void stop();
 
+    void zeroize();
+
     bool running();
 
     uint64_t threadCount();
