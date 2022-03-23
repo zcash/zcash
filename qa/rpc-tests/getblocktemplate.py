@@ -12,6 +12,7 @@ from test_framework.util import (
     NU5_BRANCH_ID,
     hex_str_to_bytes,
     nuparams,
+    nustr,
     start_nodes,
     wait_and_assert_operationid_status,
 )
@@ -133,7 +134,7 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         node.generate(15)
 
         # at height 120, NU5 is not active
-        assert_equal(node.getblockchaininfo()['upgrades']['37519621']['status'], 'pending')
+        assert_equal(node.getblockchaininfo()['upgrades'][nustr(NU5_BRANCH_ID)]['status'], 'pending')
 
         print("Testing getblocktemplate for pre-NU5")
 
@@ -155,7 +156,7 @@ class GetBlockTemplateTest(BitcoinTestFramework):
 
         # Activate NU5, repeat the above cases
         node.generate(7)
-        assert_equal(node.getblockchaininfo()['upgrades']['37519621']['status'], 'active')
+        assert_equal(node.getblockchaininfo()['upgrades'][nustr(NU5_BRANCH_ID)]['status'], 'active')
 
         print("Testing getblocktemplate for post-NU5")
 
