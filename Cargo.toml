@@ -32,12 +32,12 @@ blake2s_simd = "1"
 bls12_381 = "0.6"
 byteorder = "1"
 group = "0.11"
-incrementalmerkletree = "0.2"
+incrementalmerkletree = "=0.3.0-beta.1"
 libc = "0.2"
 jubjub = "0.8"
 memuse = "0.2"
 nonempty = "0.7"
-orchard = "=0.1.0-beta.1"
+orchard = "=0.1.0-beta.2"
 secp256k1 = "0.20"
 subtle = "2.2"
 rand_core = "0.6"
@@ -73,11 +73,9 @@ codegen-units = 1
 
 [patch.crates-io]
 hdwallet = { git = "https://github.com/nuttycom/hdwallet", rev = "576683b9f2865f1118c309017ff36e01f84420c9" }
-incrementalmerkletree = { git = "https://github.com/zcash/incrementalmerkletree.git", rev = "dd57b430dee7c0b163f4035fef2280cd1935036c" }
-orchard = { git = "https://github.com/zcash/orchard.git", rev = "3ddf6c49f7484ed1295bd5351317bbfe49e14472" }
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "c423167b30f7b7afeeabe09ae5abceb49ce7d06e" }
-zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "c423167b30f7b7afeeabe09ae5abceb49ce7d06e" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "c423167b30f7b7afeeabe09ae5abceb49ce7d06e" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "c423167b30f7b7afeeabe09ae5abceb49ce7d06e" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "c423167b30f7b7afeeabe09ae5abceb49ce7d06e" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "c423167b30f7b7afeeabe09ae5abceb49ce7d06e" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "9c1ed86c5aa8ae3b6d6dcc1478f2d6ba1264488f" }
+zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "9c1ed86c5aa8ae3b6d6dcc1478f2d6ba1264488f" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "9c1ed86c5aa8ae3b6d6dcc1478f2d6ba1264488f" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "9c1ed86c5aa8ae3b6d6dcc1478f2d6ba1264488f" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "9c1ed86c5aa8ae3b6d6dcc1478f2d6ba1264488f" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "9c1ed86c5aa8ae3b6d6dcc1478f2d6ba1264488f" }
