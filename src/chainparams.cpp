@@ -664,7 +664,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nProtocolVersion = 170012;
         consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
-        consensus.vUpgrades[Consensus::UPGRADE_NU5].nProtocolVersion = 170050;
+        consensus.vUpgrades[Consensus::UPGRADE_NU5].nProtocolVersion = 170040;
         consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
