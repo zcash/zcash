@@ -628,7 +628,6 @@ TransactionBuilderResult TransactionBuilder::Build()
     //
 
     auto consensusBranchId = CurrentEpochBranchId(nHeight, consensusParams);
-    const PrecomputedTransactionData txdata(mtx, tIns);
 
     // Empty output script.
     uint256 dataToBeSigned;
@@ -638,6 +637,7 @@ TransactionBuilderResult TransactionBuilder::Build()
             dataToBeSigned = ProduceZip244SignatureHash(mtx, tIns, orchardBundle.value());
         } else {
             CScript scriptCode;
+            const PrecomputedTransactionData txdata(mtx, tIns);
             dataToBeSigned = SignatureHash(scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
         }
     } catch (std::logic_error ex) {
@@ -691,6 +691,7 @@ TransactionBuilderResult TransactionBuilder::Build()
 
     // Transparent signatures
     CTransaction txNewConst(mtx);
+    const PrecomputedTransactionData txdata(txNewConst, tIns);
     for (int nIn = 0; nIn < mtx.vin.size(); nIn++) {
         auto tIn = tIns[nIn];
         SignatureData sigdata;
