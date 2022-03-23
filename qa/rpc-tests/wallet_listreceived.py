@@ -483,16 +483,15 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(outputs[0]['address'], uao)
         assert_equal(outputs[0]['value'], Decimal('1'))
         assert_equal(outputs[0]['valueZat'], 100000000)
-        assert_equal(outputs[0]['action'], 0)
         assert_equal(outputs[0]['outgoing'], False)
         assert_equal(outputs[0]['memo'], my_memo)
         assert_equal(outputs[0]['memoStr'], my_memo_str)
+        actionToSpend = outputs[0]['action']
 
         assert_equal(outputs[1]['type'], 'orchard')
         assert_equal(outputs[1]['address'], uaso)
         assert_equal(outputs[1]['value'], Decimal('2'))
         assert_equal(outputs[1]['valueZat'], 200000000)
-        assert_equal(outputs[1]['action'], 1)
         assert_equal(outputs[1]['outgoing'], False)
         assert_equal(outputs[1]['memo'], no_memo)
         assert 'memoStr' not in outputs[1]
@@ -514,9 +513,8 @@ class ListReceivedTest (BitcoinTestFramework):
 
         spends = pt['spends']
         assert_equal(spends[0]['type'], 'orchard')
-        assert_equal(spends[0]['action'], 0)
         assert_equal(spends[0]['txidPrev'], txid0)
-        assert_equal(spends[0]['actionPrev'], 0)
+        assert_equal(spends[0]['actionPrev'], actionToSpend)
         assert_equal(spends[0]['address'], uao)
         assert_equal(spends[0]['value'], Decimal('1.0'))
         assert_equal(spends[0]['valueZat'], 100000000)
