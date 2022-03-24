@@ -124,7 +124,7 @@ enum WalletToolError {
     #[error("zcashd -exportdir option not set")]
     ExportDirNotSet,
 
-    #[error("Could not parse a recovery phrase from the export file")]
+    #[error("Could not parse a unique recovery phrase from the export file")]
     RecoveryPhraseNotFound,
 
     #[error("Unexpected EOF in input")]
@@ -475,9 +475,20 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
             println!(concat!(
                 "\nThe backup of the emergency recovery phrase for the zcashd\n",
                 "wallet has been successfully confirmed 🙂. You can now use the\n",
-                "zcashd RPC methods that create keys and addresses in that wallet.\n\n",
-                "If you use other wallets, their recovery information will need\n",
-                "to be backed up separately.\n"
+                "zcashd RPC methods that create keys and addresses in that wallet.\n",
+                "\n",
+                "The zcashd wallet might also contain keys that are *not* derived\n",
+                "from the emergency recovery phrase. If you lose the 'wallet.dat'\n",
+                "file then any funds associated with these keys would be lost. To\n",
+                "minimize this risk, it is recommended to send all funds from this\n",
+                "wallet into new addresses and discontinue the use of legacy addresses.\n",
+                "Note that even after doing so, there is the possibility that\n",
+                "additional funds could be sent to legacy addresses (if any exist)\n",
+                "and so it is necessary to keep backing up the 'wallet.dat' file\n",
+                "in any case.\n",
+                "\n",
+                "If you use other wallets, their recovery information will need to\n",
+                "be backed up separately.\n"
             ));
             Ok(())
         })
