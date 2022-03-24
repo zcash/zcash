@@ -22,11 +22,19 @@ read -r -a ZECCOMMIT <<< "$(echo $ZECVERSTR | awk -F- '{ print $NF }')"
 # but has different outcomes for zcash-cli.
 echo "[COPYRIGHT]" > footer.h2m
 $ZCASHD --version | sed -n '1!p' >> footer.h2m
+grep -v "Bitcoin Core Developers" footer.h2m >footer-no-bitcoin-copyright.h2m
 
-for cmd in $ZCASHD $ZCASHD_WALLET_TOOL $ZCASHCLI $ZCASHTX; do
+for cmd in $ZCASHD $ZCASHCLI $ZCASHTX; do
   cmdname="${cmd##*/}"
   help2man -N --version-string=$ZECVER --include=footer.h2m -o ${MANDIR}/${cmdname}.1 ${cmd}
   sed -i "s/\\\-$ZECCOMMIT//g" ${MANDIR}/${cmdname}.1
 done
 
+for cmd in $ZCASHD_WALLET_TOOL; do
+  cmdname="${cmd##*/}"
+  help2man -N --version-string=$ZECVER --include=footer-no-bitcoin-copyright.h2m -o ${MANDIR}/${cmdname}.1 ${cmd}
+  sed -i "s/\\\-$ZECCOMMIT//g" ${MANDIR}/${cmdname}.1
+done
+
 rm -f footer.h2m
+rm -f footer-no-bitcoin-copyright.h2m
