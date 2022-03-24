@@ -7,7 +7,7 @@ use std::iter;
 use std::panic;
 use std::path::{Path, PathBuf};
 use std::process::{self, ChildStdin, Command, Output, Stdio};
-use std::str::from_utf8;
+use std::str::{from_utf8, FromStr};
 use std::time::SystemTime;
 
 use anyhow::{self, Context};
@@ -352,24 +352,55 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
     let export_file = File::open(export_path)
         .with_context(|| format!("Could not open {:?} for reading", export_path))?;
 
+    let mut has_non_mnemonic = false;
+    let mut fingerprint: Option<String> = None;
+    let mut phrase: Option<SecretString> = None;
+
     // TODO: ensure the buffer will be zeroized (#5650)
-    let phrase_line: Vec<_> = io::BufReader::new(export_file)
+    for t in io::BufReader::new(export_file)
         .lines()
         .map(|line| line.map(SecretString::new))
-        .filter(|s| {
-            s.as_ref()
-                .map(|t| t.expose_secret().starts_with("# - recovery_phrase=\""))
-                .unwrap_or(false)
-        })
-        .collect();
+    {
+        let t = t.with_context(|| "Export file was not UTF-8")?;
+        let (key, comment) = split(t.expose_secret(), "#");
+        let key = key.trim();
+        if key.is_empty() {
+            // No key, so this could be the phrase or fingerprint.
+            if comment.starts_with(" - recovery_phrase=\"") {
+                if fingerprint.is_some() {
+                    return Err(WalletToolError::RecoveryPhraseNotFound.into());
+                }
+                phrase = Some(SecretString::from_str(
+                    comment
+                        .trim_start_matches(" - recovery_phrase=\"")
+                        .trim_end_matches('"'),
+                )?);
+            }
+            if comment.starts_with(" - fingerprint=") {
+                if fingerprint.is_some() {
+                    debug!("Multiple fingerprints, so we cannot tell whether keys match the right one.");
+                    has_non_mnemonic = true;
+                } else {
+                    fingerprint = Some(comment.trim_start_matches(" - fingerprint=").to_string());
+                }
+            }
+        } else {
+            // We have a key.
+            if let Some(fp) = fingerprint.as_ref() {
+                // Set `has_non_mnemonic` if either the exported key doesn't have a `seedfp`
+                // field, or it's not the same as the wallet's fingerprint.
+                has_non_mnemonic |= parse_seedfp(key, comment).map_or(true, |s| s != fp);
+            } else {
+                // This shouldn't happen because zcashd exports the fingerprint before any keys,
+                // but if it does then we just assume there might be non-mnemonic-derived keys.
+                debug!("Found key before wallet fingerprint, so we can't check the key's seedfp.");
+                has_non_mnemonic = true;
+            }
+        }
+    }
 
-    let phrase = match &phrase_line[..] {
-        [Ok(line)] => line
-            .expose_secret()
-            .trim_start_matches("# - recovery_phrase=\"")
-            .trim_end_matches('"'),
-        _ => return Err(WalletToolError::RecoveryPhraseNotFound.into()),
-    };
+    let phrase =
+        phrase.ok_or_else(|| anyhow::Error::from(WalletToolError::RecoveryPhraseNotFound))?;
 
     // This panic hook allows us to make a best effort to clear the screen (and then print
     // another reminder about secrets in the export file) even if a panic occurs.
@@ -390,7 +421,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
 
         const WORDS_PER_LINE: usize = 3;
 
-        let words: Vec<_> = phrase.split(' ').collect();
+        let words: Vec<&str> = phrase.expose_secret().split(' ').collect();
         let max_len = words.iter().map(|w| w.len()).max().unwrap_or(0);
 
         for (i, word) in words.iter().enumerate() {
@@ -451,7 +482,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
 
     let mut cli_args = cli_options;
     cli_args.extend_from_slice(&["-stdin".to_string(), "walletconfirmbackup".to_string()]);
-    exec(&zcash_cli, &cli_args, Some(phrase))
+    exec(&zcash_cli, &cli_args, Some(phrase.expose_secret()))
         .and_then(|out| {
             let cli_err: Vec<_> = from_utf8(&out.stderr)
                 .with_context(|| "Output from zcash-cli was not UTF-8")?
@@ -476,17 +507,27 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
                 "\nThe backup of the emergency recovery phrase for the zcashd\n",
                 "wallet has been successfully confirmed 🙂. You can now use the\n",
                 "zcashd RPC methods that create keys and addresses in that wallet.\n",
-                "\n",
-                "The zcashd wallet might also contain keys that are *not* derived\n",
-                "from the emergency recovery phrase. If you lose the 'wallet.dat'\n",
-                "file then any funds associated with these keys would be lost. To\n",
-                "minimize this risk, it is recommended to send all funds from this\n",
-                "wallet into new addresses and discontinue the use of legacy addresses.\n",
-                "Note that even after doing so, there is the possibility that\n",
-                "additional funds could be sent to legacy addresses (if any exist)\n",
-                "and so it is necessary to keep backing up the 'wallet.dat' file\n",
-                "in any case.\n",
-                "\n",
+            ));
+            if has_non_mnemonic {
+                println!(concat!(
+                    "The zcashd wallet also contains keys that are *not* derived from\n",
+                    "the emergency recovery phrase. If you lose the 'wallet.dat' file\n",
+                    "then any funds associated with these keys will be lost. To minimize\n",
+                    "this risk, it is recommended to send all funds from this wallet\n",
+                    "into new addresses and discontinue the use of legacy addresses.\n",
+                    "Note that even after doing so, there is the possibility that\n",
+                    "additional funds could be sent to those legacy addresses, and so\n",
+                    "it is recommended to retain either the 'wallet.dat' file or the\n",
+                    "export file in any case.\n",
+                ));
+            } else {
+                println!(concat!(
+                    "The zcashd wallet contains only keys that are derived from the\n",
+                    "emergency recovery phrase, and so it is sufficient to back up that\n",
+                    "phrase (provided that no other keys are imported).\n",
+                ));
+            }
+            println!(concat!(
                 "If you use other wallets, their recovery information will need to\n",
                 "be backed up separately.\n"
             ));
@@ -502,6 +543,31 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
             e
         })?;
     Ok(())
+}
+
+// A variant of `split_once` that always succeeds (returning the
+// whole string on the left if the separator is not found).
+fn split<'a>(s: &'a str, sep: &str) -> (&'a str, &'a str) {
+    if let Some((prefix, suffix)) = s.split_once(sep) {
+        (prefix, suffix)
+    } else {
+        (s, "")
+    }
+}
+
+// Parse a line of the export file for its seed fingerprint, if any.
+fn parse_seedfp<'a>(key: &'a str, comment: &'a str) -> Option<&'a str> {
+    if let Some((_, suffix)) = key.split_once(" m/") {
+        if let Some((_, suffix)) = suffix.split_once(' ') {
+            return Some(split(suffix, " ").0);
+        }
+    }
+    if comment.contains(" hdkeypath=") {
+        if let Some((_, suffix)) = comment.split_once(" seedfp=") {
+            return Some(split(suffix, " ").0);
+        }
+    }
+    None
 }
 
 const MAX_USER_INPUT_LEN: usize = 100;
