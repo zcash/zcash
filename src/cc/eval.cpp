@@ -187,7 +187,7 @@ bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data)
     CTransaction notarisationTx;
     CBlockIndex block;
     if (!GetTxConfirmed(notaryHash, notarisationTx, block)) return false;
-    if (!CheckNotaryInputs(notarisationTx, block.GetHeight(), block.nTime)) return false;
+    if (!CheckNotaryInputs(notarisationTx, block.nHeight, block.nTime)) return false;
     if (!ParseNotarisationOpReturn(notarisationTx, data)) return false;
     return true;
 }

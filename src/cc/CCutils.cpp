@@ -529,20 +529,20 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
         //fprintf(stderr,"CCduration no hashBlock for txid %s\n",uint256_str(str,txid));
         return(0);
     }
-    else if ( (pindex= komodo_getblockindex(hashBlock)) == 0 || (txtime= pindex->nTime) == 0 || (txheight= pindex->GetHeight()) <= 0 )
+    else if ( (pindex= komodo_getblockindex(hashBlock)) == 0 || (txtime= pindex->nTime) == 0 || (txheight= pindex->nHeight) <= 0 )
     {
         fprintf(stderr,"CCduration no txtime %u or txheight.%d %p for txid %s\n",txtime,txheight,pindex,uint256_str(str,txid));
         return(0);
     }
-    else if ( (pindex= chainActive.LastTip()) == 0 || pindex->nTime < txtime || pindex->GetHeight() <= txheight )
+    else if ( (pindex= chainActive.LastTip()) == 0 || pindex->nTime < txtime || pindex->nHeight <= txheight )
     {
         if ( pindex->nTime < txtime )
-            fprintf(stderr,"CCduration backwards timestamps %u %u for txid %s hts.(%d %d)\n",(uint32_t)pindex->nTime,txtime,uint256_str(str,txid),txheight,(int32_t)pindex->GetHeight());
+            fprintf(stderr,"CCduration backwards timestamps %u %u for txid %s hts.(%d %d)\n",(uint32_t)pindex->nTime,txtime,uint256_str(str,txid),txheight,(int32_t)pindex->nHeight);
         return(0);
     }
-    numblocks = (pindex->GetHeight() - txheight);
+    numblocks = (pindex->nHeight - txheight);
     duration = (pindex->nTime - txtime);
-    //fprintf(stderr,"duration %d (%u - %u) numblocks %d (%d - %d)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime,numblocks,pindex->GetHeight(),txheight);
+    //fprintf(stderr,"duration %d (%u - %u) numblocks %d (%d - %d)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime,numblocks,pindex->nHeight,txheight);
     return(duration);
 }
 
@@ -672,7 +672,7 @@ int32_t komodo_get_current_height()
     {
         return (NSPV_inforesult.height);
     }
-    else return chainActive.LastTip()->GetHeight();
+    else return chainActive.LastTip()->nHeight;
 }
 
 bool komodo_txnotarizedconfirmed(uint256 txid)
@@ -715,17 +715,17 @@ bool komodo_txnotarizedconfirmed(uint256 txid)
             fprintf(stderr,"komodo_txnotarizedconfirmed no hashBlock for txid %s\n",txid.ToString().c_str());
             return(0);
         }
-        else if ( (pindex= komodo_blockindex(hashBlock)) == 0 || (txheight= pindex->GetHeight()) <= 0 )
+        else if ( (pindex= komodo_blockindex(hashBlock)) == 0 || (txheight= pindex->nHeight) <= 0 )
         {
             fprintf(stderr,"komodo_txnotarizedconfirmed no txheight.%d %p for txid %s\n",txheight,pindex,txid.ToString().c_str());
             return(0);
         }
-        else if ( (pindex= chainActive.LastTip()) == 0 || pindex->GetHeight() < txheight )
+        else if ( (pindex= chainActive.LastTip()) == 0 || pindex->nHeight < txheight )
         {
-            fprintf(stderr,"komodo_txnotarizedconfirmed backwards heights for txid %s hts.(%d %d)\n",txid.ToString().c_str(),txheight,(int32_t)pindex->GetHeight());
+            fprintf(stderr,"komodo_txnotarizedconfirmed backwards heights for txid %s hts.(%d %d)\n",txid.ToString().c_str(),txheight,(int32_t)pindex->nHeight);
             return(0);
         }    
-        confirms=1 + pindex->GetHeight() - txheight;
+        confirms=1 + pindex->nHeight - txheight;
     }
 
     if ((sp= komodo_stateptr(symbol,dest)) != 0 && (notarized=sp->LastNotarizedHeight()) > 0 && txheight > sp->LastNotarizedHeight())  notarized=0;            

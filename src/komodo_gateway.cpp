@@ -1546,7 +1546,7 @@ void komodo_passport_iteration()
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
-                buf[0] = (uint32_t)chainActive.LastTip()->GetHeight();
+                buf[0] = (uint32_t)chainActive.LastTip()->nHeight;
                 buf[1] = (uint32_t)komodo_longestchain();
                 if ( buf[0] != 0 && buf[0] == buf[1] )
                 {

@@ -1069,8 +1069,8 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
 {
     LOCK(cs_wallet);
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-       ::CopyPreviousWitnesses(wtxItem.second.mapSproutNoteData, pindex->GetHeight(), nWitnessCacheSize);
-       ::CopyPreviousWitnesses(wtxItem.second.mapSaplingNoteData, pindex->GetHeight(), nWitnessCacheSize);
+       ::CopyPreviousWitnesses(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize);
+       ::CopyPreviousWitnesses(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize);
     }
 
     if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
@@ -1096,13 +1096,13 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
 
                 // Increment existing witnesses
                 for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-                    ::AppendNoteCommitment(wtxItem.second.mapSproutNoteData, pindex->GetHeight(), nWitnessCacheSize, note_commitment);
+                    ::AppendNoteCommitment(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize, note_commitment);
                 }
 
                 // If this is our note, witness it
                 if (txIsOurs) {
                     JSOutPoint jsoutpt {hash, i, j};
-                    ::WitnessNoteIfMine(mapWallet[hash].mapSproutNoteData, pindex->GetHeight(), nWitnessCacheSize, jsoutpt, sproutTree.witness());
+                    ::WitnessNoteIfMine(mapWallet[hash].mapSproutNoteData, pindex->nHeight, nWitnessCacheSize, jsoutpt, sproutTree.witness());
                 }
             }
         }
@@ -1113,21 +1113,21 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
 
             // Increment existing witnesses
             for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-                ::AppendNoteCommitment(wtxItem.second.mapSaplingNoteData, pindex->GetHeight(), nWitnessCacheSize, note_commitment);
+                ::AppendNoteCommitment(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize, note_commitment);
             }
 
             // If this is our note, witness it
             if (txIsOurs) {
                 SaplingOutPoint outPoint {hash, i};
-                ::WitnessNoteIfMine(mapWallet[hash].mapSaplingNoteData, pindex->GetHeight(), nWitnessCacheSize, outPoint, saplingTree.witness());
+                ::WitnessNoteIfMine(mapWallet[hash].mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize, outPoint, saplingTree.witness());
             }
         }
     }
 
     // Update witness heights
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-        ::UpdateWitnessHeights(wtxItem.second.mapSproutNoteData, pindex->GetHeight(), nWitnessCacheSize);
-        ::UpdateWitnessHeights(wtxItem.second.mapSaplingNoteData, pindex->GetHeight(), nWitnessCacheSize);
+        ::UpdateWitnessHeights(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize);
+        ::UpdateWitnessHeights(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize);
     }
 
     // For performance reasons, we write out the witness cache in
@@ -1188,9 +1188,9 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
 {
     LOCK(cs_wallet);
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-        if (!::DecrementNoteWitnesses(wtxItem.second.mapSproutNoteData, pindex->GetHeight(), nWitnessCacheSize))
+        if (!::DecrementNoteWitnesses(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize))
             needsRescan = true;
-        if (!::DecrementNoteWitnesses(wtxItem.second.mapSaplingNoteData, pindex->GetHeight(), nWitnessCacheSize))
+        if (!::DecrementNoteWitnesses(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize))
             needsRescan = true;
     }
     if ( WITNESS_CACHE_SIZE == _COINBASE_MATURITY+10 )
@@ -1336,121 +1336,6 @@ CWallet::TxItems CWallet::OrderedTxItems(std::list<CAccountingEntry>& acentries,
     }
 
     return txOrdered;
-}
-
-// looks through all wallet UTXOs and checks to see if any qualify to stake the block at the current height. it always returns the qualified
-// UTXO with the smallest coin age if there is more than one, as larger coin age will win more often and is worth saving
-// each attempt consists of taking a VerusHash of the following values:
-//  ASSETCHAINS_MAGIC, nHeight, txid, voutNum
-bool CWallet::VerusSelectStakeOutput(CBlock *pBlock, arith_uint256 &hashResult, CTransaction &stakeSource, int32_t &voutNum, int32_t nHeight, uint32_t &bnTarget) const
-{
-    arith_uint256 target;
-    arith_uint256 curHash;
-    vector<COutput> vecOutputs;
-    COutput *pwinner = NULL;
-    CBlockIndex *pastBlockIndex;
-    txnouttype whichType;
-    std:vector<std::vector<unsigned char>> vSolutions;
-
-    pBlock->nNonce.SetPOSTarget(bnTarget);
-    target.SetCompact(bnTarget);
-
-    pwalletMain->AvailableCoins(vecOutputs, true, NULL, false, false);
-
-    if (pastBlockIndex = komodo_chainactive(nHeight - 100))
-    {
-        CBlockHeader bh = pastBlockIndex->GetBlockHeader();
-        uint256 pastHash = bh.GetVerusEntropyHash(nHeight - 100);
-        CPOSNonce curNonce;
-
-        BOOST_FOREACH(COutput &txout, vecOutputs)
-        {
-            if (txout.fSpendable && (UintToArith256(txout.tx->GetVerusPOSHash(&(pBlock->nNonce), txout.i, nHeight, pastHash)) <= target) && (txout.nDepth >= VERUS_MIN_STAKEAGE))
-            {
-                if ((!pwinner || UintToArith256(curNonce) > UintToArith256(pBlock->nNonce)) &&
-                    (Solver(txout.tx->vout[txout.i].scriptPubKey, whichType, vSolutions) && (whichType == TX_PUBKEY || whichType == TX_PUBKEYHASH)))
-                {
-                    //printf("Found PoS block\nnNonce:    %s\n", pBlock->nNonce.GetHex().c_str());
-                    pwinner = &txout;
-                    curNonce = pBlock->nNonce;
-                }
-            }
-        }
-        if (pwinner)
-        {
-            stakeSource = *(pwinner->tx);
-            voutNum = pwinner->i;
-            pBlock->nNonce = curNonce;
-            return true;
-        }
-    }
-    return false;
-}
-
-int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig, CPubKey pk) const
-{
-    CTransaction stakeSource;
-    int32_t voutNum, siglen = 0;
-    int64_t nValue;
-    txnouttype whichType;
-    std::vector<std::vector<unsigned char>> vSolutions;
-
-    CBlockIndex *tipindex = chainActive.LastTip();
-    uint32_t stakeHeight = tipindex->GetHeight() + 1;
-
-    pk = CPubKey();
-
-    bnTarget = lwmaGetNextPOSRequired(tipindex, Params().GetConsensus());
-
-    if (!VerusSelectStakeOutput(pBlock, hashResult, stakeSource, voutNum, tipindex->GetHeight() + 1, bnTarget) ||
-        !Solver(stakeSource.vout[voutNum].scriptPubKey, whichType, vSolutions))
-    {
-        LogPrintf("Searched for eligible staking transactions, no winners found\n");
-        return 0;
-    }
-
-    bool signSuccess;
-    SignatureData sigdata;
-    uint64_t txfee;
-    auto consensusBranchId = CurrentEpochBranchId(stakeHeight, Params().GetConsensus());
-
-    const CKeyStore& keystore = *pwalletMain;
-    txNew.vin.resize(1);
-    txNew.vout.resize(1);
-    txfee = 0;
-    txNew.vin[0].prevout.hash = stakeSource.GetHash();
-    txNew.vin[0].prevout.n = voutNum;
-
-    if (whichType == TX_PUBKEY)
-    {
-        txNew.vout[0].scriptPubKey << ToByteVector(vSolutions[0]) << OP_CHECKSIG;
-        if (!pk.IsValid())
-            pk = CPubKey(vSolutions[0]);
-    }
-    else if (whichType == TX_PUBKEYHASH)
-    {
-        txNew.vout[0].scriptPubKey << OP_DUP << OP_HASH160 << ToByteVector(vSolutions[0]) << OP_EQUALVERIFY << OP_CHECKSIG;
-    }
-    else
-        return 0;
-
-    nValue = txNew.vout[0].nValue = stakeSource.vout[voutNum].nValue - txfee;
-
-    txNew.nLockTime = 0;
-    CTransaction txNewConst(txNew);
-    signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, nValue, SIGHASH_ALL), stakeSource.vout[voutNum].scriptPubKey, sigdata, consensusBranchId);
-    if (!signSuccess)
-        fprintf(stderr,"failed to create signature\n");
-    else
-    {
-        uint8_t *ptr;
-        UpdateTransaction(txNew,0,sigdata);
-        ptr = (uint8_t *)&sigdata.scriptSig[0];
-        siglen = sigdata.scriptSig.size();
-        for (int i=0; i<siglen; i++)
-            utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
-    }
-    return(siglen);
 }
 
 void CWallet::MarkDirty()
@@ -2208,8 +2093,18 @@ bool CWallet::IsMine(const CTransaction& tx)
     return false;
 }
 
+/*
+    Before Verus changes CWallet::IsMine(const CTransaction& tx) called other version
+    of IsMine for each vout: CWallet::IsMine(const CTxOut& txout), so now we have two
+    similar functions:
+        - isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum) (wallet.cpp)
+        - isminetype IsMineInner(const CKeyStore& keystore, const CScript& _scriptPubKey, IsMineSigVersion sigversion) (wallet_ismine.cpp)
+    TODO: sort this out (!)
+*/
+
 // special case handling for non-standard/Verus OP_RETURN script outputs, which need the transaction
 // to determine ownership
+
 isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
 {
     vector<valtype> vSolutions;
@@ -2321,6 +2216,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
 
     return ISMINE_NO;
 }
+
 
 bool CWallet::IsFromMe(const CTransaction& tx) const
 {
@@ -2895,7 +2791,7 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
         double dProgressTip = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.LastTip(), false);
         while (pindex)
         {
-            if (pindex->GetHeight() % 100 == 0 && dProgressTip - dProgressStart > 0.0)
+            if (pindex->nHeight % 100 == 0 && dProgressTip - dProgressStart > 0.0)
                 ShowProgress(_("Rescanning..."), std::max(1, std::min(99, (int)((Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), pindex, false) - dProgressStart) / (dProgressTip - dProgressStart) * 100))));
 
             CBlock block;
@@ -2914,7 +2810,7 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
             // state on the path to the tip of our chain
             assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, sproutTree));
             if (pindex->pprev) {
-                if (NetworkUpgradeActive(pindex->pprev->GetHeight(), Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+                if (NetworkUpgradeActive(pindex->pprev->nHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
                     assert(pcoinsTip->GetSaplingAnchorAt(pindex->pprev->hashFinalSaplingRoot, saplingTree));
                 }
             }
@@ -2924,7 +2820,7 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
             pindex = chainActive.Next(pindex);
             if (GetTime() >= nNow + 60) {
                 nNow = GetTime();
-                LogPrintf("Still rescanning. At block %d. Progress=%f\n", pindex->GetHeight(), Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), pindex));
+                LogPrintf("Still rescanning. At block %d. Progress=%f\n", pindex->nHeight, Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), pindex));
             }
         }
 
@@ -3426,20 +3322,20 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                     if ( !IS_MODE_EXCHANGEWALLET )
                     {
                         uint32_t locktime; int32_t txheight; CBlockIndex *tipindex;
-                        if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.LastTip() != 0 && chainActive.LastTip()->GetHeight() >= 60000 )
+                        if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.LastTip() != 0 && chainActive.LastTip()->nHeight >= 60000 )
                         {
                             if ( pcoin->vout[i].nValue >= 10*COIN )
                             {
                                 if ( (tipindex= chainActive.LastTip()) != 0 )
                                 {
-                                    komodo_accrued_interest(&txheight,&locktime,wtxid,i,0,pcoin->vout[i].nValue,(int32_t)tipindex->GetHeight());
+                                    komodo_accrued_interest(&txheight,&locktime,wtxid,i,0,pcoin->vout[i].nValue,(int32_t)tipindex->nHeight);
                                     interest = komodo_interestnew(txheight,pcoin->vout[i].nValue,locktime,tipindex->nTime);
                                 } else interest = 0;
-                                //interest = komodo_interestnew(chainActive.LastTip()->GetHeight()+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.LastTip()->nTime);
+                                //interest = komodo_interestnew(chainActive.LastTip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.LastTip()->nTime);
                                 if ( interest != 0 )
                                 {
                                     //printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u/%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,txheight,locktime,pcoin->nLockTime,tipindex->nTime);
-                                    //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.LastTip()->GetHeight()+1,pcoin->nLockTime,chainActive.LastTip()->nTime);
+                                    //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.LastTip()->nHeight+1,pcoin->nLockTime,chainActive.LastTip()->nTime);
                                     //ptr = (uint64_t *)&pcoin->vout[i].nValue;
                                     //(*ptr) += interest;
                                     ptr = (uint64_t *)&pcoin->vout[i].interest;
@@ -4836,14 +4732,14 @@ void CWallet::GetKeyBirthTimes(std::map<CKeyID, int64_t> &mapKeyBirth) const {
         BlockMap::const_iterator blit = mapBlockIndex.find(wtx.hashBlock);
         if (blit != mapBlockIndex.end() && chainActive.Contains(blit->second)) {
             // ... which are already in a block
-            int nHeight = blit->second->GetHeight();
+            int nHeight = blit->second->nHeight;
             BOOST_FOREACH(const CTxOut &txout, wtx.vout) {
                 // iterate over all their outputs
                 CAffectedKeysVisitor(*this, vAffected).Process(txout.scriptPubKey);
                 BOOST_FOREACH(const CKeyID &keyid, vAffected) {
                     // ... and all their affected keys
                     std::map<CKeyID, CBlockIndex*>::iterator rit = mapKeyFirstBlock.find(keyid);
-                    if (rit != mapKeyFirstBlock.end() && nHeight < rit->second->GetHeight())
+                    if (rit != mapKeyFirstBlock.end() && nHeight < rit->second->nHeight)
                         rit->second = blit->second;
                 }
                 vAffected.clear();
@@ -4960,7 +4856,7 @@ int CMerkleTx::GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet) const
     }
 
     pindexRet = pindex;
-    return chainActive.Height() - pindex->GetHeight() + 1;
+    return chainActive.Height() - pindex->nHeight + 1;
 }
 
 int CMerkleTx::GetDepthInMainChain(const CBlockIndex* &pindexRet) const

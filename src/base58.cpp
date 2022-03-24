@@ -323,14 +323,6 @@ bool CBitcoinAddress::GetKeyID(CKeyID& keyID) const
     return true;
 }
 
-bool CBitcoinAddress::GetKeyID_NoCheck(CKeyID& keyID) const
-{
-    uint160 id;
-    memcpy(&id, &vchData[0], 20);
-    keyID = CKeyID(id);
-    return true;
-}
-
 bool CBitcoinAddress::IsScript() const
 {
     return IsValid() && vchVersion == Params().Base58Prefix(CChainParams::SCRIPT_ADDRESS);

@@ -32,8 +32,6 @@
 #define portable_mutex_lock pthread_mutex_lock
 #define portable_mutex_unlock pthread_mutex_unlock
 
-extern void verus_hash(void *result, const void *data, size_t len);
-
 struct allocitem { uint32_t allocsize,type; };
 struct queueitem { struct queueitem *next,*prev; uint32_t allocsize,type;  };
 

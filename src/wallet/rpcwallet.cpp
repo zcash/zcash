@@ -87,7 +87,7 @@ UniValue z_getoperationstatus_IMPL(const UniValue&, bool);
 
 #define PLAN_NAME_MAX   8
 #define VALID_PLAN_NAME(x)  (strlen(x) <= PLAN_NAME_MAX)
-#define THROW_IF_SYNCING(INSYNC)  if (INSYNC == 0) { throw runtime_error(strprintf("%s: Chain still syncing at height %d, aborting to prevent linkability analysis!",__FUNCTION__,chainActive.Tip()->GetHeight())); }
+#define THROW_IF_SYNCING(INSYNC)  if (INSYNC == 0) { throw runtime_error(strprintf("%s: Chain still syncing at height %d, aborting to prevent linkability analysis!",__FUNCTION__,chainActive.Tip()->nHeight)); }
 
 int tx_height( const uint256 &hash );
 
@@ -658,7 +658,7 @@ UniValue kvupdate(const UniValue& params, bool fHelp, const CPubKey& mypk)
             valuesize = (int32_t)strlen(params[1].get_str().c_str());
         }
         memcpy(keyvalue,key,keylen);
-        if ( (refvaluesize= komodo_kvsearch(&refpubkey,chainActive.LastTip()->GetHeight(),&tmpflags,&height,&keyvalue[keylen],key,keylen)) >= 0 )
+        if ( (refvaluesize= komodo_kvsearch(&refpubkey,chainActive.LastTip()->nHeight,&tmpflags,&height,&keyvalue[keylen],key,keylen)) >= 0 )
         {
             if ( (tmpflags & KOMODO_KVPROTECTED) != 0 )
             {
@@ -683,7 +683,7 @@ UniValue kvupdate(const UniValue& params, bool fHelp, const CPubKey& mypk)
         //    printf("%02x",((uint8_t *)&sig)[i]);
         //printf(" sig for keylen.%d + valuesize.%d\n",keylen,refvaluesize);
         ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
-        height = chainActive.LastTip()->GetHeight();
+        height = chainActive.LastTip()->nHeight;
         if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
             ret.push_back(Pair("owner",refpubkey.GetHex()));
         ret.push_back(Pair("height", (int64_t)height));
@@ -755,7 +755,7 @@ UniValue paxdeposit(const UniValue& params, bool fHelp, const CPubKey& mypk)
     int64_t fiatoshis = atof(params[1].get_str().c_str()) * COIN;
     std::string base = params[2].get_str();
     std::string dest;
-    height = chainActive.LastTip()->GetHeight();
+    height = chainActive.LastTip()->nHeight;
     if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,(char *)base.c_str()) != 0 || available < fiatoshis )
     {
         fprintf(stderr,"available %llu vs fiatoshis %llu\n",(long long)available,(long long)fiatoshis);
@@ -2206,7 +2206,7 @@ UniValue listsinceblock(const UniValue& params, bool fHelp, const CPubKey& mypk)
         if(params[2].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
 
-    int depth = pindex ? (1 + chainActive.Height() - pindex->GetHeight()) : -1;
+    int depth = pindex ? (1 + chainActive.Height() - pindex->nHeight) : -1;
 
     UniValue transactions(UniValue::VARR);
 
@@ -2977,14 +2977,14 @@ UniValue listunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
             uint64_t interest; uint32_t locktime;
             if ( pindex != 0 && (tipindex= chainActive.LastTip()) != 0 )
             {
-                interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->GetHeight());
+                interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
                 //interest = komodo_interest(txheight,nValue,out.tx->nLockTime,tipindex->nTime);
                 entry.push_back(Pair("interest",ValueFromAmount(interest)));
             }
-            //fprintf(stderr,"nValue %.8f pindex.%p tipindex.%p locktime.%u txheight.%d pindexht.%d\n",(double)nValue/COIN,pindex,chainActive.LastTip(),locktime,txheight,pindex->GetHeight());
+            //fprintf(stderr,"nValue %.8f pindex.%p tipindex.%p locktime.%u txheight.%d pindexht.%d\n",(double)nValue/COIN,pindex,chainActive.LastTip(),locktime,txheight,pindex->nHeight);
         }
         else if ( chainActive.LastTip() != 0 )
-            txheight = (chainActive.LastTip()->GetHeight() - out.nDepth - 1);
+            txheight = (chainActive.LastTip()->nHeight - out.nDepth - 1);
         entry.push_back(Pair("scriptPubKey", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
         entry.push_back(Pair("rawconfirmations",out.nDepth));
         entry.push_back(Pair("confirmations",komodo_dpowconfs(txheight,out.nDepth)));
@@ -3013,8 +3013,8 @@ uint64_t komodo_interestsum()
                 CBlockIndex *tipindex,*pindex = it->second;
                 if ( pindex != 0 && (tipindex= chainActive.LastTip()) != 0 )
                 {
-                    interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->GetHeight());
-                    //interest = komodo_interest(pindex->GetHeight(),nValue,out.tx->nLockTime,tipindex->nTime);
+                    interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
+                    //interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,tipindex->nTime);
                     sum += interest;
                 }
             }
@@ -3744,7 +3744,7 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp, const CPubKey& mypk
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    bool allowSapling = (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight <= chainActive.LastTip()->GetHeight());
+    bool allowSapling = (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight <= chainActive.LastTip()->nHeight);
 
     std::string defaultType;
     if ( GetTime() < KOMODO_SAPLING_ACTIVATION )
@@ -4977,12 +4977,12 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp, const CPubKey& myp
         Params().GetConsensus(), nextBlockHeight, pwalletMain);
 
     // Contextual transaction we will build on
-    int blockHeight = chainActive.LastTip()->GetHeight();
+    int blockHeight = chainActive.LastTip()->nHeight;
     nextBlockHeight = blockHeight + 1;
     // (used if no Sapling addresses are involved)
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
-    contextualTx.nLockTime = chainActive.LastTip()->GetHeight();
+    contextualTx.nLockTime = chainActive.LastTip()->nHeight;
 
     if (contextualTx.nVersion == 1) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplits
@@ -5576,12 +5576,6 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33, void *
     }
     return(siglen);
 }
-
-int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig, CPubKey &pk)
-{
-    return pwalletMain->VerusStakeTransaction(pBlock, txNew, nBits, hashResult, utxosig, pk);
-}
-
 
 #include "../cc/CCfaucet.h"
 #include "../cc/CCassets.h"

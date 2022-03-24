@@ -673,7 +673,7 @@ int32_t games_playersalive(int32_t &openslots,int32_t &numplayers,uint256 gametx
                     {
                         if ( (pindex= komodo_blockindex(hashBlock)) != 0 )
                         {
-                            if ( pindex->GetHeight() <= gameht+GAMES_MAXKEYSTROKESGAP )
+                            if ( pindex->nHeight <= gameht+GAMES_MAXKEYSTROKESGAP )
                                 alive++;
                         }
                     }
@@ -856,7 +856,7 @@ uint64_t games_gamefields(UniValue &obj,int64_t maxplayers,int64_t buyin,uint256
     CBlockIndex *pindex; int32_t ht,openslots,delay,numplayers; uint256 hashBlock; uint64_t seed=0; char cmd[512]; CTransaction tx;
     if ( myGetTransaction(gametxid,tx,hashBlock) != 0 && (pindex= komodo_blockindex(hashBlock)) != 0 )
     {
-        ht = pindex->GetHeight();
+        ht = pindex->nHeight;
         delay = GAMES_REGISTRATION * (maxplayers > 1);
         obj.push_back(Pair("height",ht));
         obj.push_back(Pair("start",ht+delay));
@@ -1065,7 +1065,7 @@ int32_t games_findbaton(struct CCcontract_info *cp,uint256 &playertxid,gameseven
                         batonht = komodo_nextheight();
                     else if ( (pindex= komodo_blockindex(hashBlock)) == 0 )
                         return(-4);
-                    else batonht = pindex->GetHeight();
+                    else batonht = pindex->nHeight;
                     batonvalue = batontx.vout[0].nValue;
                     //printf("batonht.%d keystrokes[%d]\n",batonht,numkeys);
                     return(0);

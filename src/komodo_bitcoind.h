@@ -17,7 +17,6 @@
 
 #include <curl/curl.h>
 #include <curl/easy.h>
-#include "primitives/nonce.h"
 #include "consensus/params.h"
 #include "komodo_defs.h"
 #include "script/standard.h"
@@ -209,7 +208,6 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
 int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_uint256 bnTarget,arith_uint256 bhash);
 
 // for now, we will ignore slowFlag in the interest of keeping success/fail simpler for security purposes
-bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height);
 
 uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount);
 

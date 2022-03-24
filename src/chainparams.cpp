@@ -104,7 +104,7 @@ public:
         strNetworkID = "main";
         strCurrencyUnits = "KMD";
         bip44CoinType = 141; // As registered in https://github.com/satoshilabs/slips/blob/master/slip-0044.md 
-        consensus.fCoinbaseMustBeProtected = false; // true this is only true wuth Verus and enforced after block 12800
+        consensus.fCoinbaseMustBeProtected = false;
         consensus.nSubsidySlowStartInterval = 20000;
         consensus.nSubsidyHalvingInterval = 840000;
         consensus.nMajorityEnforceBlockUpgrade = 750;
@@ -589,77 +589,19 @@ void *chainparams_commandline()
         pCurrentParams->pchMessageStart[2] = (ASSETCHAINS_MAGIC >> 16) & 0xff;
         pCurrentParams->pchMessageStart[3] = (ASSETCHAINS_MAGIC >> 24) & 0xff;
         fprintf(stderr,">>>>>>>>>> %s: p2p.%u rpc.%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
-        if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH)
-        {
-            // this is only good for 60 second blocks with an averaging window of 45. for other parameters, use:
-            // nLwmaAjustedWeight = (N+1)/2 * (0.9989^(500/nPowAveragingWindow)) * nPowTargetSpacing
-            pCurrentParams->consensus.nLwmaAjustedWeight = 1350;
-            pCurrentParams->consensus.nPowAveragingWindow = 45;
-            pCurrentParams->consensus.powAlternate = uint256S("00000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
-        }
-        else if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASHV1_1)
-        {
-            // this is only good for 60 second blocks with an averaging window of 45. for other parameters, use:
-            // nLwmaAjustedWeight = (N+1)/2 * (0.9989^(500/nPowAveragingWindow)) * nPowTargetSpacing
-            pCurrentParams->consensus.nLwmaAjustedWeight = 1350;
-            pCurrentParams->consensus.nPowAveragingWindow = 45;
-            pCurrentParams->consensus.powAlternate = uint256S("0000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
-        }
 
-        if (ASSETCHAINS_LWMAPOS != 0)
-        {
-            pCurrentParams->consensus.posLimit = uint256S("000000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
-            pCurrentParams->consensus.nPOSAveragingWindow = 45;
-            // spacing is 1000 units per block to get better resolution, POS is 50% hard coded for now, we can vary it later
-            // when we get reliable integer math on nLwmaPOSAjustedWeight
-            pCurrentParams->consensus.nPOSTargetSpacing = VERUS_BLOCK_POSUNITS * 2;
-            // nLwmaPOSAjustedWeight = (N+1)/2 * (0.9989^(500/nPOSAveragingWindow)) * nPOSTargetSpacing
-            // this needs to be recalculated if VERUS_BLOCK_POSUNITS is changed
-            pCurrentParams->consensus.nLwmaPOSAjustedWeight = 46531;
-        }
+        pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = ASSETCHAINS_SAPLING;
+        pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = ASSETCHAINS_OVERWINTER;
+        checkpointData = //(Checkpoints::CCheckpointData)
+                {
+                        boost::assign::map_list_of
+                                (0, pCurrentParams->consensus.hashGenesisBlock),
+                        (int64_t)1231006505,
+                        (int64_t)1,
+                        (double)2777            // * estimated number of transactions per day after checkpoint
+                        //   total number of tx / (checkpoint block height / (24 * 24))
+                };
 
-        // only require coinbase protection on Verus from the Komodo family of coins
-        if (strcmp(ASSETCHAINS_SYMBOL,"VRSC") == 0)
-        {
-            pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 227520;
-            pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 227520;
-            pCurrentParams->consensus.fCoinbaseMustBeProtected = true;
-            checkpointData = //(Checkpoints::CCheckpointData)
-                    {
-                            boost::assign::map_list_of
-                                    (0, pCurrentParams->consensus.hashGenesisBlock)
-                                    (10000, uint256S("0xac2cd7d37177140ea4991cf630c0b9c7f94d707b84fb0351bf3a44856d2ae5dc"))
-                                    (20000, uint256S("0xb0e8cb9f77aaa7ff5bd90d6c08d06f4c4bf03e00c2b8a35a042e760845590c8a"))
-                                    (30000, uint256S("0xf2112ca577338ad7104bf905fa6a63d36b17a86f914c97b73cd31d43fcd7557c"))
-                                    (40000, uint256S("0x00000000008f83378dab727864b763ce91a4ea5f75d55939c0c1390cfb8c38f1"))
-                                    (49170, uint256S("0x2add646c0089871ec2379f02f7cd60b3af6efd9c152a6f16fc10925458c270cc")),
-                            (int64_t)1529910234,    // * UNIX timestamp of last checkpoint block
-                            (int64_t)63661,         // * total number of transactions between genesis and last checkpoint
-                            //   (the tx=... number in the SetBestChain debug.log lines)
-                            (double)2777            // * estimated number of transactions per day after checkpoint
-                            //   total number of tx / (checkpoint block height / (24 * 24))
-                    };
-
-            pCurrentParams->consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000001a8f4f23f8b2d1f7e");
-        }
-        else
-        {
-            if (strcmp(ASSETCHAINS_SYMBOL,"VRSCTEST") == 0 || strcmp(ASSETCHAINS_SYMBOL,"VERUSTEST") == 0)
-            {
-                pCurrentParams->consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000001f7e");
-            }
-            pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = ASSETCHAINS_SAPLING;
-            pCurrentParams->consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = ASSETCHAINS_OVERWINTER;
-            checkpointData = //(Checkpoints::CCheckpointData)
-                    {
-                            boost::assign::map_list_of
-                                    (0, pCurrentParams->consensus.hashGenesisBlock),
-                            (int64_t)1231006505,
-                            (int64_t)1,
-                            (double)2777            // * estimated number of transactions per day after checkpoint
-                            //   total number of tx / (checkpoint block height / (24 * 24))
-                    };
-        }
     }
     else
     {
