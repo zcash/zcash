@@ -21,8 +21,6 @@ from decimal import Decimal
 class WalletZSendmanyTest(BitcoinTestFramework):
     def setup_network(self, split=False):
         self.nodes = start_nodes(3, self.options.tmpdir, [[
-            '-experimentalfeatures',
-            '-orchardwallet',
         ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
