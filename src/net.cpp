@@ -1912,17 +1912,23 @@ void StartNode(boost::thread_group& threadGroup, CScheduler& scheduler)
     uiInterface.InitMessage(_("Loading banlist..."));
     // Load addresses from banlist.dat
     nStart = GetTimeMillis();
-    CBanDB bandb;
-    banmap_t banmap;
-    if (bandb.Read(banmap)) {
-        CNode::SetBanned(banmap); // thread save setter
-        CNode::SetBannedSetDirty(false); // no need to write down, just read data
-        CNode::SweepBanned(); // sweep out unused entries
+    if (!GetBoolArg("-reindex", false)) {
+        CBanDB bandb;
+        banmap_t banmap;
+        if (bandb.Read(banmap)) {
+            CNode::SetBanned(banmap); // thread save setter
+            CNode::SetBannedSetDirty(false); // no need to write down, just read data
+            CNode::SweepBanned(); // sweep out unused entries
 
-        LogPrint("net", "Loaded %d banned node ips/subnets from banlist.dat  %dms\n",
-            banmap.size(), GetTimeMillis() - nStart);
+            LogPrint("net", "Loaded %d banned node ips/subnets from banlist.dat  %dms\n",
+                banmap.size(), GetTimeMillis() - nStart);
+        } else {
+            LogPrintf("Invalid or missing banlist.dat; recreating\n");
+            CNode::SetBannedSetDirty(true); // force write
+            DumpBanlist();
+        }
     } else {
-        LogPrintf("Invalid or missing banlist.dat; recreating\n");
+        LogPrintf("Clearing banlist.dat for reindex\n");
         CNode::SetBannedSetDirty(true); // force write
         DumpBanlist();
     }
