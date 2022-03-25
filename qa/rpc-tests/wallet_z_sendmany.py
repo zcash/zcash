@@ -302,7 +302,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         # Send funds to the transparent receivers of both addresses.
         for ua in [n1ua0, n1ua1]:
-            taddr = self.nodes[1].z_listunifiedreceivers(ua)['transparent']
+            taddr = self.nodes[1].z_listunifiedreceivers(ua)['p2pkh']
             self.nodes[0].sendtoaddress(taddr, 2)
 
         self.sync_all()

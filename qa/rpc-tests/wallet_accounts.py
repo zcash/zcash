@@ -106,11 +106,11 @@ class WalletAccountsTest(BitcoinTestFramework):
         assert(ua0 != ua1)
 
         # The UA contains the expected receiver kinds.
-        self.check_receiver_types(ua0,   ['transparent', 'sapling', 'orchard'])
-        self.check_receiver_types(ua0_2, ['transparent', 'sapling', 'orchard'])
+        self.check_receiver_types(ua0,   ['p2pkh', 'sapling', 'orchard'])
+        self.check_receiver_types(ua0_2, ['p2pkh', 'sapling', 'orchard'])
         self.check_receiver_types(ua0_3, [               'sapling', 'orchard'])
-        self.check_receiver_types(ua0_4, ['transparent',            'orchard'])
-        self.check_receiver_types(ua1,   ['transparent', 'sapling', 'orchard'])
+        self.check_receiver_types(ua0_4, ['p2pkh',            'orchard'])
+        self.check_receiver_types(ua1,   ['p2pkh', 'sapling', 'orchard'])
 
         # The balances of the accounts are all zero.
         self.check_balance(0, 0, ua0, {})

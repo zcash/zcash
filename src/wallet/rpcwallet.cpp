@@ -3535,10 +3535,10 @@ UniValue z_listunifiedreceivers(const UniValue& params, bool fHelp)
                 result.pushKV("sapling", keyIO.EncodePaymentAddress(addr));
             },
             [&](const CScriptID& addr) {
-                result.pushKV("transparent", keyIO.EncodePaymentAddress(addr));
+                result.pushKV("p2sh", keyIO.EncodePaymentAddress(addr));
             },
             [&](const CKeyID& addr) {
-                result.pushKV("transparent", keyIO.EncodePaymentAddress(addr));
+                result.pushKV("p2pkh", keyIO.EncodePaymentAddress(addr));
             },
             [](auto rest) {},
         }, receiver);

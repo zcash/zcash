@@ -389,13 +389,13 @@ class ListReceivedTest (BitcoinTestFramework):
         unified_addr = r['address']
         receivers = node.z_listunifiedreceivers(unified_addr)
         assert_equal(len(receivers), 3)
-        assert 'transparent' in receivers
+        assert 'p2pkh' in receivers
         assert 'sapling' in receivers
         assert 'orchard' in receivers
         assert_raises_message(
             JSONRPCException,
             "The provided address is a bare receiver from a Unified Address in this wallet.",
-            node.z_listreceivedbyaddress, receivers['transparent'], 0)
+            node.z_listreceivedbyaddress, receivers['p2pkh'], 0)
         assert_raises_message(
             JSONRPCException,
             "The provided address is a bare receiver from a Unified Address in this wallet.",
@@ -411,7 +411,7 @@ class ListReceivedTest (BitcoinTestFramework):
         self.generate_and_sync(height+5)
 
         # Create a UTXO that unified_address's transparent component references, on node1
-        outputs = {receivers['transparent']: 0.2}
+        outputs = {receivers['p2pkh']: 0.2}
         txid_taddr = node.sendmany("", outputs)
 
         r = node.z_listreceivedbyaddress(unified_addr, 0)
