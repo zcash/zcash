@@ -6386,6 +6386,17 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             return false;
         }
 
+        if (chainparams.NetworkIDString() == "test" &&
+            pfrom->nVersion < MIN_TESTNET_PEER_PROTO_VERSION)
+        {
+            // disconnect from testnet peers older than this proto version
+            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
+            pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
+                               strprintf("Version must be %d or greater", MIN_TESTNET_PEER_PROTO_VERSION));
+            pfrom->fDisconnect = true;
+            return false;
+        }
+
         // Reject incoming connections from nodes that don't know about the current epoch
         const Consensus::Params& consensusParams = chainparams.GetConsensus();
         auto currentEpoch = CurrentEpoch(GetHeight(), consensusParams);
