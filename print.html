@@ -76,7 +76,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">zcashd</a></li><li class="chapter-item expanded "><a href="user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="user/metrics.html"><strong aria-hidden="true">1.1.</strong> Metrics</a></li></ol></li><li class="chapter-item expanded "><a href="dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="dev/rust.html"><strong aria-hidden="true">2.1.</strong> Rust in zcashd</a></li></ol></li><li class="chapter-item expanded "><a href="design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain state</a></li><li class="chapter-item expanded "><a href="design/coins-view.html"><strong aria-hidden="true">3.2.</strong> &quot;Coins&quot; view</a></li><li class="chapter-item expanded "><a href="design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P data propagation</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">zcashd</a></li><li class="chapter-item expanded "><a href="user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="user/metrics.html"><strong aria-hidden="true">1.1.</strong> Metrics</a></li></ol></li><li class="chapter-item expanded "><a href="dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="dev/rust.html"><strong aria-hidden="true">2.1.</strong> Rust in zcashd</a></li><li class="chapter-item expanded "><a href="dev/regtest.html"><strong aria-hidden="true">2.2.</strong> Regtest tips and hints</a></li></ol></li><li class="chapter-item expanded "><a href="design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain state</a></li><li class="chapter-item expanded "><a href="design/coins-view.html"><strong aria-hidden="true">3.2.</strong> &quot;Coins&quot; view</a></li><li class="chapter-item expanded "><a href="design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P data propagation</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -308,6 +308,147 @@ orchard = { path = &quot;../relative/path/to/orchard&quot; }
 <p>Usually you can apply a patch to use a locally checked out dependency without
 needing to build <code>zcashd</code> in online-Rust mode. However, if your local changes
 include a new dependency, you will need to ensure you are in online-Rust mode.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="regtest"><a class="header" href="#regtest">Regtest</a></h1>
+<p><em>Regtest</em> (&quot;regression test&quot;) is one of the three <em>network types</em>
+supported by Zcash, the others being <code>testnet</code> and <code>mainnet</code>.
+Regtest is an entirely local, self-contained mode -- your node or nodes
+do not talk with peers out in the world. It gives you complete
+control of the state of the blockchain and the sequence of events.
+You start with an empty blockchain (just the genesis block, block 0).
+Blocks can be mined instantly, and must be created explicitly. </p>
+<p>You can run one or more regtest nodes on the same system.
+The <a href="https://github.com/zcash/zcash/tree/master/qa/rpc-tests">RPC tests</a>
+use <code>regtest</code> mode (usually starting multiple nodes), but you may use it
+manually and interactively to learn, test, and experiment. Most often
+just one node is used in this case.</p>
+<h2 id="example-session"><a class="header" href="#example-session">Example session</a></h2>
+<p>Here's a sample session (after you've built <code>zcashd</code> and <code>zcash-cli</code>):</p>
+<pre><code>$ mkdir /tmp/regtest-datadir
+$ cat &lt;&lt;EOF &gt;/tmp/regtest-datadir/zcash.conf
+regtest=1
+rpcuser=u
+rpcpassword=p
+rpcport=18132
+EOF
+$ src/zcashd -daemon -datadir=/tmp/regtest-datadir
+</code></pre>
+<p>Watch <code>tmp/regtest-datadir/regtest/debug.log</code> to see what <code>zcashd</code> is doing.
+It may also be useful to start <code>zcashd</code> with <code>-debug</code> to generate much
+more logging. Now we can send RPCs to the node:</p>
+<pre><code>$ src/zcash-cli -datadir=/tmp/regtest-datadir getblockchaininfo
+{
+  &quot;chain&quot;: &quot;regtest&quot;,
+  &quot;blocks&quot;: 0,
+  &quot;initial_block_download_complete&quot;: false,
+  &quot;headers&quot;: 0,
+  (...)
+}
+# Generate (mine) three blocks:
+$ src/zcash-cli -datadir=/tmp/regtest-datadir generate 3
+[
+  &quot;05040271f43f78e3870a88697eba201aa361ea5802c69eadaf920ff376787242&quot;,
+  &quot;0469f2df43dda69d521c482679b2db3c637b1721222511302584ac75e057c859&quot;,
+  &quot;0ab7a26e7b3b5dfca077728de90da0cfd1c49e1edbc130a52de4062b1aecac75&quot;
+]
+$ src/zcash-cli -datadir=/tmp/regtest-datadir getblockchaininfo
+{
+  &quot;chain&quot;: &quot;regtest&quot;,
+  &quot;blocks&quot;: 3,
+  &quot;initial_block_download_complete&quot;: true,
+  &quot;headers&quot;: 3,
+  (...)
+}
+$ src/zcash-cli -datadir=/tmp/regtest-datadir stop
+Zcash server stopping
+$ 
+</code></pre>
+<h2 id="network-upgrades"><a class="header" href="#network-upgrades">Network upgrades</a></h2>
+<p>Zcash has adopted a series of
+<a href="https://github.com/zcash/zcash/blob/master/src/consensus/upgrades.cpp">network upgrades</a>.
+On <code>mainnet</code> and <code>testnet</code>, these activate at
+fixed, known block heights (<a href="https://github.com/zcash/zcash/blob/master/src/chainparams.cpp#L117">example</a>).
+In <code>regtest</code> mode, you determine the activation heights. Upgrades may occur at
+any height greater than 0, and multiple upgrades can occur at the same height. The upgrades
+have a strict ordering (as shown in the upgrades source file); for example, Canopy can't
+be activated before Blossom. </p>
+<p>You specify the upgrade heights using multiple <code>-nuparams=</code><em>&lt;branch-id&gt;</em> arguments.
+(The branch IDs are available in the
+<a href="https://github.com/zcash/zcash/blob/master/src/consensus/upgrades.cpp">upgrades.cpp file</a>)
+It's convenient to add these to the configuration file, for example:</p>
+<pre><code>$ cat &lt;&lt;EOF &gt;&gt;/tmp/regtest-datadir/zcash.conf
+nuparams=76b809bb:1
+nuparams=f5b9230b:5
+EOF
+</code></pre>
+<p>(Alternatively, you can specify these on the <code>zcashd</code> command line.)
+You need not activate every upgrade explicitly. The example activates Sapling
+(branchID 76b809bb) at height 1; activating Sapling implies activating Overwinter, so this
+is done automatically. Similarly, activating Heartwood at height 5
+also simultaneously activates Blossom. Since no later upgrades are specified, none
+of them will activate, regardless of height reached.</p>
+<p><strong>IMPORTANT</strong>: if you change the network upgrade heights from one
+test run to the next, it's almost always necessary to start fresh
+by removing the data directory, otherwise you'll encounter strange errors.</p>
+<p>You can see which network upgrades are currently active and which are pending
+(using the above <code>nuparams</code> settings as an example):</p>
+<pre><code>$ src/zcash-cli -datadir=/tmp/regtest-datadir generate 2
+$ src/zcash-cli -datadir=/tmp/regtest-datadir getblockchaininfo
+{
+  &quot;blocks&quot;: 2,
+  (...)
+    &quot;upgrades&quot;: {
+    &quot;5ba81b19&quot;: {
+      &quot;name&quot;: &quot;Overwinter&quot;,
+      &quot;activationheight&quot;: 1,
+      &quot;status&quot;: &quot;active&quot;,
+      &quot;info&quot;: &quot;See https://z.cash/upgrade/overwinter/ for details.&quot;
+    },
+    &quot;76b809bb&quot;: {
+      &quot;name&quot;: &quot;Sapling&quot;,
+      &quot;activationheight&quot;: 1,
+      &quot;status&quot;: &quot;active&quot;,
+      &quot;info&quot;: &quot;See https://z.cash/upgrade/sapling/ for details.&quot;
+    },
+    &quot;2bb40e60&quot;: {
+      &quot;name&quot;: &quot;Blossom&quot;,
+      &quot;activationheight&quot;: 5,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;info&quot;: &quot;See https://z.cash/upgrade/blossom/ for details.&quot;
+    },
+    &quot;f5b9230b&quot;: {
+      &quot;name&quot;: &quot;Heartwood&quot;,
+      &quot;activationheight&quot;: 5,
+      &quot;status&quot;: &quot;pending&quot;,
+      &quot;info&quot;: &quot;See https://z.cash/upgrade/heartwood/ for details.&quot;
+    }
+  },
+  (...)
+}
+</code></pre>
+<h2 id="manual-testing-within-an-rpc-python-test-run"><a class="header" href="#manual-testing-within-an-rpc-python-test-run">Manual testing within an RPC (Python) test run</a></h2>
+<p>It is often useful, either when debugging an issue or simply when you want to put
+the node into a certain state, to use the RPC test framework to produce the desired
+state and then be able to manually interrogate and modify that state using <code>zcash-cli</code> 
+to execute RPC calls. An easy way to do that is as follows:</p>
+<p>Add the line <code>import time; time.sleep(999999)</code> (the units are seconds) somewhere
+within an RPC test to pause its execution at that point. Start the test, and then:</p>
+<pre><code>$ ps alx | grep zcashd
+0  1000   96247   96246  20   0 1426304 123952 futex_ SLl+ pts/12   0:18 /g/zcash/src/zcashd -datadir=/tmp/test9d907s8a/96246/node0 -keypool=1 -discover=0 -rest -nuparams=5ba81b19:1 -nuparams=76b809bb:1 -debug=mempool -mempooltxcostlimit=8000
+0  1000   96274   96246  20   0 744092 85568 -      RLl+ pts/12     0:05 /g/zcash/src/zcashd -datadir=/tmp/test9d907s8a/96246/node1 -keypool=1 -discover=0 -rest -nuparams=5ba81b19:1 -nuparams=76b809bb:1 -debug=mempool -mempooltxcostlimit=8000
+$ 
+</code></pre>
+<p>Now you can interact with the running test node by copy-and-pasting its
+<code>-datadir</code> argument, for example:</p>
+<pre><code>$ src/zcash-cli -datadir=/tmp/test9d907s8a/96246/node0 getblockchaininfo
+</code></pre>
+<p>(The other <code>zcashd</code> command-line arguments are generally not needed by
+<code>zcash-cli</code>.) You can see the running node's debug log file:</p>
+<pre><code>$ cat /tmp/test9d907s8a/96246/node0/regtest/debug.log
+</code></pre>
+<p>or look at its configuration file.</p>
+<pre><code>$ cat /tmp/test9d907s8a/96246/node0/zcash.conf
+</code></pre>
+<p>In this way, the RPC test framework can teach us more about running <code>regtest</code> nodes.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="design"><a class="header" href="#design">Design</a></h1>
 <p>Zcash was originally a fork of Bitcoin 0.11.2, and as such the <code>zcashd</code> node architecture
 is very similar to <code>bitcoind</code>. There are however several differences, most notably the
