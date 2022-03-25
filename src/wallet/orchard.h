@@ -414,7 +414,7 @@ public:
         std::vector<uint256> result;
         orchard_wallet_get_potential_spends_from_nullifier(
             inner.get(),
-            nullifier,
+            nullifier.begin(),
             &result,
             PushTxId
             );

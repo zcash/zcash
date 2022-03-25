@@ -340,7 +340,7 @@ void orchard_wallet_get_potential_spends(
  */
 void orchard_wallet_get_potential_spends_from_nullifier(
         const OrchardWalletPtr* wallet,
-        const uint256& nullifier,
+        const unsigned char *nullifier,
         void* resultVector,
         push_txid_callback_t push_cb
         );
