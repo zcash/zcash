@@ -4315,6 +4315,7 @@ int CWallet::ScanForWalletTransactions(
         bool fUpdate,
         bool isInitScan)
 {
+    assert(pindexStart != nullptr);
     int ret = 0;
     int64_t nNow = GetTime();
     const CChainParams& chainParams = Params();
