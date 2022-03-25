@@ -1126,6 +1126,24 @@ pub extern "C" fn orchard_wallet_get_potential_spends(
 }
 
 #[no_mangle]
+pub extern "C" fn orchard_wallet_get_potential_spends_from_nullifier(
+    wallet: *const Wallet,
+    nullifier: *const [c_uchar; 32],
+    result: Option<FFICallbackReceiver>,
+    push_cb: Option<PushTxId>,
+) {
+    let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
+    let nullifier =
+        Nullifier::from_bytes(&*unsafe { nullifier.as_ref() }.expect("nullifier may not be null."));
+
+    if let Some(inpoints) = wallet.potential_spends.get(&nullifier.unwrap()) {
+        for inpoint in inpoints {
+            unsafe { (push_cb.unwrap())(result, inpoint.txid.as_ref()) };
+        }
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn orchard_wallet_get_spend_info(
     wallet: *const Wallet,
     txid: *const [c_uchar; 32],

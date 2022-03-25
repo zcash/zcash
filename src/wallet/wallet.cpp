@@ -1668,9 +1668,8 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
         }
     }
 
-    for (uint32_t i = 0; i < wtx.GetOrchardBundle().GetNumActions(); i++) {
-        OrchardOutPoint op(wtx.GetHash(), i);
-        auto potential_spends = orchardWallet.GetPotentialSpends(op);
+    for (const uint256& nullifier : wtx.GetOrchardBundle().GetNullifiers()) {
+        auto potential_spends = orchardWallet.GetPotentialSpendsFromNullifier(nullifier);
 
         if (potential_spends.size() <= 1) {
             continue;  // No conflict if zero or one spends

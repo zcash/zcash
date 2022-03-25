@@ -410,6 +410,17 @@ public:
         reinterpret_cast<std::vector<uint256>*>(txidsRet)->push_back(txid_out);
     }
 
+    std::vector<uint256> GetPotentialSpendsFromNullifier(const uint256& nullifier) const {
+        std::vector<uint256> result;
+        orchard_wallet_get_potential_spends_from_nullifier(
+            inner.get(),
+            nullifier,
+            &result,
+            PushTxId
+            );
+        return result;
+    }
+
     std::vector<uint256> GetPotentialSpends(const OrchardOutPoint& outPoint) const {
         std::vector<uint256> result;
         orchard_wallet_get_potential_spends(

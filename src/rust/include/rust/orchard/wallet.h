@@ -334,6 +334,18 @@ void orchard_wallet_get_potential_spends(
         );
 
 /**
+ * Returns a vector of transaction IDs for transactions that have been observed as
+ * spending the given nullifier by using the `push_cb` callback to push transaction
+ * IDs onto the provided result vector.
+ */
+void orchard_wallet_get_potential_spends_from_nullifier(
+        const OrchardWalletPtr* wallet,
+        const uint256& nullifier,
+        void* resultVector,
+        push_txid_callback_t push_cb
+        );
+
+/**
  * Fetches the information needed to spend the wallet note at the given outpoint,
  * relative to the current root known to the wallet of the Orchard commitment
  * tree.
