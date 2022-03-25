@@ -68,7 +68,7 @@ class WalletAddressesTest(BitcoinTestFramework):
         account = self.nodes[0].z_getnewaccount()['account']
         sprout_1 = self.nodes[0].z_getnewaddress('sprout')
         sapling_1 = self.nodes[0].z_getnewaddress('sapling')
-        unified_1 = self.nodes[0].z_getaddressforaccount(account)['unifiedaddress']
+        unified_1 = self.nodes[0].z_getaddressforaccount(account)['address']
         types_and_addresses = [
             ('sprout', sprout_1),
             ('sapling', sapling_1),
@@ -111,7 +111,7 @@ class WalletAddressesTest(BitcoinTestFramework):
         assert_equal(self.nodes[0].getblockcount(), 2)
         # Sprout address generation is no longer allowed
         sapling_2 = self.nodes[0].z_getnewaddress('sapling')
-        unified_2 = self.nodes[0].z_getaddressforaccount(account)['unifiedaddress']
+        unified_2 = self.nodes[0].z_getaddressforaccount(account)['address']
         types_and_addresses = [
             ('sapling', sapling_2),
             ('unified', unified_2),

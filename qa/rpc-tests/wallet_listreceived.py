@@ -375,7 +375,7 @@ class ListReceivedTest (BitcoinTestFramework):
         # Create a unified address on one node, try z_listreceivedbyaddress on another node
         account = self.nodes[0].z_getnewaccount()['account']
         r = self.nodes[0].z_getaddressforaccount(account)
-        unified_addr = r['unifiedaddress']
+        unified_addr = r['address']
         # this address isn't in node1's wallet
         assert_raises_message(
             JSONRPCException,
@@ -386,16 +386,16 @@ class ListReceivedTest (BitcoinTestFramework):
         r = node.z_getnewaccount()
         account = r['account']
         r = node.z_getaddressforaccount(account)
-        unified_addr = r['unifiedaddress']
+        unified_addr = r['address']
         receivers = node.z_listunifiedreceivers(unified_addr)
         assert_equal(len(receivers), 3)
-        assert 'transparent' in receivers
+        assert 'p2pkh' in receivers
         assert 'sapling' in receivers
         assert 'orchard' in receivers
         assert_raises_message(
             JSONRPCException,
             "The provided address is a bare receiver from a Unified Address in this wallet.",
-            node.z_listreceivedbyaddress, receivers['transparent'], 0)
+            node.z_listreceivedbyaddress, receivers['p2pkh'], 0)
         assert_raises_message(
             JSONRPCException,
             "The provided address is a bare receiver from a Unified Address in this wallet.",
@@ -411,7 +411,7 @@ class ListReceivedTest (BitcoinTestFramework):
         self.generate_and_sync(height+5)
 
         # Create a UTXO that unified_address's transparent component references, on node1
-        outputs = {receivers['transparent']: 0.2}
+        outputs = {receivers['p2pkh']: 0.2}
         txid_taddr = node.sendmany("", outputs)
 
         r = node.z_listreceivedbyaddress(unified_addr, 0)
@@ -449,18 +449,18 @@ class ListReceivedTest (BitcoinTestFramework):
         acct2 = self.nodes[1].z_getnewaccount()['account']
 
         addrResO = self.nodes[1].z_getaddressforaccount(acct1, ['orchard'])
-        assert_equal(addrResO['pools'], ['orchard'])
-        uao = addrResO['unifiedaddress']
+        assert_equal(addrResO['receiver_types'], ['orchard'])
+        uao = addrResO['address']
 
         addrResSO = self.nodes[1].z_getaddressforaccount(acct2, ['sapling', 'orchard'])
-        assert_equal(addrResSO['pools'], ['sapling', 'orchard'])
-        uaso = addrResSO['unifiedaddress']
+        assert_equal(addrResSO['receiver_types'], ['sapling', 'orchard'])
+        uaso = addrResSO['address']
 
         self.nodes[0].sendtoaddress(taddr, 4.0)
         self.generate_and_sync(height+2)
 
         acct_node0 = self.nodes[0].z_getnewaccount()['account']
-        ua_node0 = self.nodes[0].z_getaddressforaccount(acct_node0, ['sapling', 'orchard'])['unifiedaddress']
+        ua_node0 = self.nodes[0].z_getaddressforaccount(acct_node0, ['sapling', 'orchard'])['address']
 
         opid = self.nodes[1].z_sendmany(taddr, [
             {'address': uao, 'amount': 1, 'memo': my_memo},
