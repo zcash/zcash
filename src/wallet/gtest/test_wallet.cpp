@@ -866,7 +866,6 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
 
     // Simulate receiving new block and ChainTip signal
     wallet.IncrementNoteWitnesses(Params().GetConsensus(),&fakeIndex, &block, sproutTree, saplingTree, true);
-    wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
 
     // Fetch the Orchard note so we can spend it.
     std::vector<SproutNoteEntry> sproutEntries;
@@ -895,12 +894,12 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     auto tx3 = builder3.Build().GetTxOrThrow();
     CWalletTx wtx3 {&wallet, tx3};
 
-    auto hash = wtx.GetHash();
     auto hash2 = wtx2.GetHash();
     auto hash3 = wtx3.GetHash();
 
     // No conflicts for no spends (wtx is currently the only transaction in the wallet)
-    EXPECT_EQ(0, wallet.GetConflicts(hash).size());
+    EXPECT_EQ(0, wallet.GetConflicts(hash2).size());
+    EXPECT_EQ(0, wallet.GetConflicts(hash3).size());
 
     // No conflicts for one spend
     auto orchardTxMeta2 = wallet.GetOrchardWallet().AddNotesIfInvolvingMe(wtx2);
@@ -908,7 +907,8 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     EXPECT_FALSE(orchardTxMeta2.value().empty());
     wtx2.SetOrchardTxMeta(orchardTxMeta2.value());
     wallet.LoadWalletTx(wtx2);
-    EXPECT_EQ(0, wallet.GetConflicts(hash).size());
+    EXPECT_EQ(0, wallet.GetConflicts(hash2).size());
+    EXPECT_EQ(0, wallet.GetConflicts(hash3).size());
 
     // Conflicts for two spends
     auto orchardTxMeta3 = wallet.GetOrchardWallet().AddNotesIfInvolvingMe(wtx3);
@@ -916,7 +916,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     EXPECT_FALSE(orchardTxMeta3.value().empty());
     wtx3.SetOrchardTxMeta(orchardTxMeta3.value());
     wallet.LoadWalletTx(wtx3);
-    auto c3 = wallet.GetConflicts(hash);
+    auto c3 = wallet.GetConflicts(hash2);
     EXPECT_EQ(2, c3.size());
     EXPECT_EQ(std::set<uint256>({hash2, hash3}), c3);
 
