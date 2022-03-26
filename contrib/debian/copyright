@@ -78,6 +78,27 @@ Copyright: 2008, Steven G. Johnson <stevenj@alum.mit.edu>
  2011, Daniel Richard G. <skunk@iSKUNK.ORG>
 License: GPL-3+ with Autoconf exception
 
+Files: build-aux/m4/libtool.m4
+Copyright: 1996-2001, 2003-2015 Free Software Foundation, Inc.
+ Written by Gordon Matzigkeit, 1996
+License: GNU-All-permissive-License or GPL-2+ with Libtool exception
+
+Files: build-aux/m4/lt~obsolete.m4
+Copyright: 2004-2005, 2007, 2009, 2011-2015 Free Software Foundation, Inc.
+ Written by Scott James Remnant, 2004.
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ltoptions.m4
+ build-aux/m4/ltsugar.m4
+Copyright: 2004-2005, 2007-2009, 2011-2015 Free Software Foundation, Inc.
+ Written by Gary V. Vaughan, 2004
+License: GNU-All-permissive-License
+
+Files: build-aux/m4/ltversion.m4
+Copyright: 2004, 2011-2015 Free Software Foundation, Inc.
+ Written by Scott James Remnant, 2004
+License: GNU-All-permissive-License
+
 Files: qa/zcash/checksec.sh
 Copyright: 2014-2015, Brian Davis
  2013, Robin David
@@ -1176,6 +1197,28 @@ License: GPL-3+ with Autoconf exception
 Comment:
  The "special exception" is extended to the versions of files covered by
  this license that are distributed with this software.
+
+License: GPL-2+ with Libtool exception
+ This is free software; see the source for copying conditions.  There is NO
+ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ .
+ GNU Libtool is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of of the License, or
+ (at your option) any later version.
+ .
+ As a special exception to the GNU General Public License, if you
+ distribute this file as part of a program or library that is built
+ using GNU Libtool, you may include this file under the  same
+ distribution terms that you use for the rest of that program.
+ .
+ GNU Libtool is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 License: Expat-with-advertising-clause
  Permission is hereby granted, free of charge, to any person
