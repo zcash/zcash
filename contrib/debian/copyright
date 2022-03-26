@@ -106,7 +106,7 @@ Copyright: 2014-2015, Brian Davis
 License: BSD-3-clause-Tobias-Klein
 
 Files: depends/sources/libsodium-*.tar.gz
-Copyright: 2013-2016 Frank Denis
+Copyright: 2013-2022 Frank Denis
 License: ISC
 
 Files: depends/sources/boost_*.tar.gz
@@ -139,8 +139,7 @@ Copyright: 2000-2007 Niels Provos <provos@citi.umich.edu>
 License: BSD-3-clause
 
 Files: depends/sources/zeromq-*.tar.gz
-Copyright:
- 1994, 1995, 1996, 1999, 2000, 2001, 2002, 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
+Copyright: 1994, 1995, 1996, 1999, 2000, 2001, 2002, 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
  2007-2014 iMatix Corporation
  2009-2011 250bpm s.r.o.
  2010-2011 Miru Limited
@@ -161,28 +160,30 @@ License: Boost-Software-License-1.0
 
 Files: depends/*/vendored-sources/halo2/*
  depends/*/vendored-sources/orchard/*
-Copyright: 2020-2021 The Electric Coin Company
+Copyright: 2020-2022 The Electric Coin Company
 License: BOSL-1+ with Zcash exception
 
 Files: src/crypto/ctaes/*
-Copyright: Copyright (c) 2016 Pieter Wuille
+Copyright: 2016 Pieter Wuille
 License: Expat
 
 Files: src/rust/include/rust/map.h
-Copyright: Copyright (c) 2012 William Swanson
+Copyright: 2012 William Swanson
+ 2020 The Zcash developers
 License: Expat-with-advertising-clause
 
 Files: src/rust/include/rust/VA_OPT.hpp
-Copyright: Copyright (c) 2019 Will Wray
+Copyright: 2019 Will Wray
+ 2020 The Zcash developers
 License: Boost-Software-License-1.0
 
 Files: src/rust/include/tracing.h
  src/rust/src/tracing_ffi.rs
-Copyright: Copyright (c) 2020 Jack Grigg
+Copyright: 2020 Jack Grigg
 License: Expat
 
 Files: src/secp256k1/*
-Copyright: Copyright (c) 2013 Pieter Wuille
+Copyright: 2013 Pieter Wuille
 License: Expat
 Comment: This copyright entry excludes files explicitly listed below.
 
@@ -194,8 +195,8 @@ Files: src/secp256k1/build-aux/m4/ax_prog_cc_for_build.m4
 Copyright: 2008 Paolo Bonzini <bonzini@gnu.org>
 License: GNU-All-permissive-License
 
-Files src/leveldb/*
-Copyright: 2011, The LevelDB Authors
+Files: src/leveldb/*
+Copyright: 2011 The LevelDB Authors
 License: BSD-3-clause-Google
 Comment: The LevelDB Authors are listed in src/leveldb/AUTHORS.
 
