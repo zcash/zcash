@@ -1136,6 +1136,32 @@ bool CWallet::LoadCaches()
         }
     }
 
+    // Sapling legacy addresses were not directly added to the keystore; instead,
+    // the default address for each key was automatically added to the in-memory
+    // keystore, but not persisted. Following the addition of unified addresses,
+    // all addresses must be written to the wallet database explicitly.
+    auto legacySeed = GetLegacyHDSeed();
+    if (legacySeed.has_value()) {
+        for (const auto& [saplingIvk, keyMeta] : mapSaplingZKeyMetadata) {
+            // This condition only applies for keys derived from the legacy seed
+            if (keyMeta.seedFp == legacySeed.value().Fingerprint()) {
+                SaplingExtendedFullViewingKey extfvk;
+                if (GetSaplingFullViewingKey(saplingIvk, extfvk)) {
+                    auto defaultAddress = extfvk.DefaultAddress();
+                    if (!HaveSaplingIncomingViewingKey(defaultAddress)) {
+                        // restore the address to the keystore and persist it so that
+                        // the database state is consistent.
+                        if (!AddSaplingPaymentAddress(saplingIvk, defaultAddress)) {
+                            LogPrintf("%s: Error: Failed to write legacy Sapling payment address to the wallet database.\n",
+                                __func__);
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Restore decrypted Orchard notes.
     for (const auto& [_, walletTx] : mapWallet) {
         if (!walletTx.orchardTxMeta.empty()) {
@@ -1668,9 +1694,8 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
         }
     }
 
-    for (uint32_t i = 0; i < wtx.GetOrchardBundle().GetNumActions(); i++) {
-        OrchardOutPoint op(wtx.GetHash(), i);
-        auto potential_spends = orchardWallet.GetPotentialSpends(op);
+    for (const uint256& nullifier : wtx.GetOrchardBundle().GetNullifiers()) {
+        auto potential_spends = orchardWallet.GetPotentialSpendsFromNullifier(nullifier);
 
         if (potential_spends.size() <= 1) {
             continue;  // No conflict if zero or one spends
@@ -4289,6 +4314,7 @@ int CWallet::ScanForWalletTransactions(
         bool fUpdate,
         bool isInitScan)
 {
+    assert(pindexStart != nullptr);
     int ret = 0;
     int64_t nNow = GetTime();
     const CChainParams& chainParams = Params();
@@ -4303,7 +4329,7 @@ int CWallet::ScanForWalletTransactions(
 
         // no need to read and scan block, if block was created before
         // our wallet birthday (as adjusted for block time variability)
-        while (pindex && nTimeFirstKey && pindex->GetBlockTime() < nTimeFirstKey - TIMESTAMP_WINDOW) {
+        while (chainActive.Next(pindex) != NULL && nTimeFirstKey && pindex->GetBlockTime() < nTimeFirstKey - TIMESTAMP_WINDOW) {
             pindex = chainActive.Next(pindex);
         }
 

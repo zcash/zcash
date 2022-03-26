@@ -259,6 +259,7 @@ BITCOIN_CORE_H = \
   wallet/asyncrpcoperation_shieldcoinbase.h \
   wallet/crypter.h \
   wallet/db.h \
+  wallet/orchard.h \
   wallet/paymentdisclosure.h \
   wallet/paymentdisclosuredb.h \
   wallet/rpcwallet.h \

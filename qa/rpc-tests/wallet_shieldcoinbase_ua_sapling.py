@@ -14,7 +14,7 @@ class WalletShieldCoinbaseUASapling(WalletShieldCoinbaseTest):
         # this function may be called no more than once
         assert(self.account is None)
         self.account = node.z_getnewaccount()['account']
-        self.addr = node.z_getaddressforaccount(self.account)['unifiedaddress']
+        self.addr = node.z_getaddressforaccount(self.account)['address']
         return self.addr
 
     def test_check_balance_zaddr(self, node, expected):

@@ -806,6 +806,126 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
     }
 }
 
+TEST(WalletTests, GetConflictedOrchardNotes) {
+    LoadProofParameters();
+
+    auto consensusParams = RegtestActivateNU5();
+    TestWallet wallet(Params());
+    wallet.GenerateNewSeed();
+
+    LOCK2(cs_main, wallet.cs_wallet);
+
+    // Create an account.
+    auto ufvk = wallet.GenerateNewUnifiedSpendingKey().first;
+    auto fvk = ufvk.GetOrchardKey().value();
+    auto ivk = fvk.ToIncomingViewingKey();
+    libzcash::diversifier_index_t j(0);
+    auto recipient = ivk.Address(j);
+
+    uint256 orchardAnchor;
+
+    // Generate transparent funds
+    CBasicKeyStore keystore;
+    CKey tsk = AddTestCKeyToKeyStore(keystore);
+    auto tkeyid = tsk.GetPubKey().GetID();
+    auto scriptPubKey = GetScriptForDestination(tkeyid);
+
+    // Generate a bundle containing output note A.
+    auto builder = TransactionBuilder(consensusParams, 1, orchardAnchor, &keystore);
+    builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
+    builder.AddOrchardOutput(std::nullopt, recipient, 40000, {});
+    auto tx = builder.Build().GetTxOrThrow();
+    CWalletTx wtx {&wallet, tx};
+
+    // Fake-mine the transaction
+    SproutMerkleTree sproutTree;
+    SaplingMerkleTree saplingTree;
+    OrchardMerkleFrontier orchardTree;
+    orchardTree.AppendBundle(wtx.GetOrchardBundle());
+
+    EXPECT_EQ(-1, chainActive.Height());
+    CBlock block;
+    block.vtx.push_back(wtx);
+    block.hashMerkleRoot = block.BuildMerkleTree();
+    auto blockHash = block.GetHash();
+    CBlockIndex fakeIndex {block};
+    fakeIndex.hashFinalOrchardRoot = orchardTree.root();
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+    EXPECT_TRUE(chainActive.Contains(&fakeIndex));
+    EXPECT_EQ(0, chainActive.Height());
+
+    // Simulate SyncTransaction which calls AddToWalletIfInvolvingMe
+    auto orchardTxMeta = wallet.GetOrchardWallet().AddNotesIfInvolvingMe(wtx);
+    ASSERT_TRUE(orchardTxMeta.has_value());
+    EXPECT_FALSE(orchardTxMeta.value().empty());
+    wtx.SetOrchardTxMeta(orchardTxMeta.value());
+    wtx.SetMerkleBranch(block);
+    wallet.LoadWalletTx(wtx);
+
+    // Simulate receiving new block and ChainTip signal
+    wallet.IncrementNoteWitnesses(Params().GetConsensus(),&fakeIndex, &block, sproutTree, saplingTree, true);
+
+    // Fetch the Orchard note so we can spend it.
+    std::vector<SproutNoteEntry> sproutEntries;
+    std::vector<SaplingNoteEntry> saplingEntries;
+    std::vector<OrchardNoteMetadata> orchardEntries;
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, -1);
+    EXPECT_EQ(0, sproutEntries.size());
+    EXPECT_EQ(0, saplingEntries.size());
+    EXPECT_EQ(1, orchardEntries.size());
+
+    // Generate another recipient
+    libzcash::diversifier_index_t j2(1);
+    auto recipient2 = ivk.Address(j2);
+
+    // Generate tx to spend note A
+    auto noteToSpend = std::move(wallet.GetOrchardSpendInfo(orchardEntries)[0]);
+    auto builder2 = TransactionBuilder(consensusParams, 2, orchardTree.root());
+    builder2.AddOrchardSpend(std::move(noteToSpend.first), std::move(noteToSpend.second));
+    auto tx2 = builder2.Build().GetTxOrThrow();
+    CWalletTx wtx2 {&wallet, tx2};
+
+    // Generate conflicting tx to spend note A
+    auto noteToSpend2 = std::move(wallet.GetOrchardSpendInfo(orchardEntries)[0]);
+    auto builder3 = TransactionBuilder(consensusParams, 2, orchardTree.root());
+    builder3.AddOrchardSpend(std::move(noteToSpend2.first), std::move(noteToSpend2.second));
+    auto tx3 = builder3.Build().GetTxOrThrow();
+    CWalletTx wtx3 {&wallet, tx3};
+
+    auto hash2 = wtx2.GetHash();
+    auto hash3 = wtx3.GetHash();
+
+    // No conflicts for no spends (wtx is currently the only transaction in the wallet)
+    EXPECT_EQ(0, wallet.GetConflicts(hash2).size());
+    EXPECT_EQ(0, wallet.GetConflicts(hash3).size());
+
+    // No conflicts for one spend
+    auto orchardTxMeta2 = wallet.GetOrchardWallet().AddNotesIfInvolvingMe(wtx2);
+    ASSERT_TRUE(orchardTxMeta2.has_value());
+    EXPECT_FALSE(orchardTxMeta2.value().empty());
+    wtx2.SetOrchardTxMeta(orchardTxMeta2.value());
+    wallet.LoadWalletTx(wtx2);
+    EXPECT_EQ(0, wallet.GetConflicts(hash2).size());
+    EXPECT_EQ(0, wallet.GetConflicts(hash3).size());
+
+    // Conflicts for two spends
+    auto orchardTxMeta3 = wallet.GetOrchardWallet().AddNotesIfInvolvingMe(wtx3);
+    ASSERT_TRUE(orchardTxMeta3.has_value());
+    EXPECT_FALSE(orchardTxMeta3.value().empty());
+    wtx3.SetOrchardTxMeta(orchardTxMeta3.value());
+    wallet.LoadWalletTx(wtx3);
+    auto c3 = wallet.GetConflicts(hash2);
+    EXPECT_EQ(2, c3.size());
+    EXPECT_EQ(std::set<uint256>({hash2, hash3}), c3);
+
+    // Tear down
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
+
+    RegtestDeactivateNU5();
+}
+
 TEST(WalletTests, SproutNullifierIsSpent) {
     SelectParams(CBaseChainParams::REGTEST);
     CWallet wallet(Params());

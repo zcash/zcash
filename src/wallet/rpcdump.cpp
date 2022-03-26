@@ -726,7 +726,8 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
             "\nNote: This call can take a long time to complete if rescan is true.\n"
             "\nResult:\n"
             "{\n"
-            "  \"type\" : \"xxxx\",                         (string) \"sprout\" or \"sapling\"\n"
+            "  \"address_type\" : \"xxxx\",                 (string) \"sprout\" or \"sapling\"\n"
+            "  \"type\" : \"xxxx\",                         (string) \"sprout\" or \"sapling\" (DEPRECATED, legacy attribute)\n"
             "  \"address\" : \"address|DefaultAddress\",    (string) The address corresponding to the spending key (for Sapling, this is the default address).\n"
             "}\n"
             "\nExamples:\n"
@@ -792,7 +793,8 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
 
     auto addrInfo = std::visit(libzcash::AddressInfoFromSpendingKey{}, spendingkey.value());
     UniValue result(UniValue::VOBJ);
-    result.pushKV("type", addrInfo.first);
+    result.pushKV("address_type", addrInfo.first);
+    result.pushKV("type", addrInfo.first); //deprecated
     result.pushKV("address", keyIO.EncodePaymentAddress(addrInfo.second));
 
     // Sapling support
@@ -832,7 +834,8 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
             "\nNote: This call can take a long time to complete if rescan is true. Import of Unified viewing keys is not yet supported.\n"
             "\nResult:\n"
             "{\n"
-            "  \"type\" : \"xxxx\",                         (string) \"sprout\" or \"sapling\"\n"
+            "  \"address_type\" : \"xxxx\",                 (string) \"sprout\" or \"sapling\"\n"
+            "  \"type\" : \"xxxx\",                         (string) \"sprout\" or \"sapling\" (DEPRECATED, legacy attribute)\n"
             "  \"address\" : \"address|DefaultAddress\",    (string) The address corresponding to the viewing key (for Sapling, this is the default address).\n"
             "}\n"
             "\nExamples:\n"
@@ -889,7 +892,8 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     auto addrInfo = std::visit(libzcash::AddressInfoFromViewingKey(chainparams), viewingkey.value());
     UniValue result(UniValue::VOBJ);
     const string strAddress = keyIO.EncodePaymentAddress(addrInfo.second);
-    result.pushKV("type", addrInfo.first);
+    result.pushKV("address_type", addrInfo.first);
+    result.pushKV("type", addrInfo.first); //deprecated
     result.pushKV("address", strAddress);
 
     auto addResult = std::visit(AddViewingKeyToWallet(pwalletMain, true), viewingkey.value());

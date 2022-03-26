@@ -1109,7 +1109,7 @@ TEST(ChecktransactionTests, BadTxReceivedOverNetwork)
     }
 }
 
-TEST(ChecktransactionTests, InvalidShieldedCoinbase) {
+TEST(ChecktransactionTests, InvalidSaplingShieldedCoinbase) {
     RegtestActivateSapling();
 
     CMutableTransaction mtx = GetValidTransaction();
@@ -1140,7 +1140,7 @@ TEST(ChecktransactionTests, InvalidShieldedCoinbase) {
     RegtestDeactivateHeartwood();
 }
 
-TEST(ChecktransactionTests, HeartwoodAcceptsShieldedCoinbase) {
+TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
     LoadProofParameters();
 
     RegtestActivateHeartwood(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
@@ -1357,4 +1357,267 @@ TEST(ChecktransactionTests, CanopyAcceptsZeroVPubOld) {
 
     RegtestDeactivateCanopy();
 
+}
+
+TEST(ChecktransactionTests, InvalidOrchardShieldedCoinbase) {
+    LoadProofParameters();
+    RegtestActivateCanopy();
+
+    CMutableTransaction mtx;
+    mtx.fOverwintered = true;
+    mtx.nVersionGroupId = ZIP225_VERSION_GROUP_ID;
+    mtx.nVersion = ZIP225_TX_VERSION;
+    mtx.nConsensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_NU5].nBranchId;
+
+    // Make it an invalid shielded coinbase, by creating an all-dummy Orchard bundle.
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    mtx.orchardBundle = orchard::Builder(false, true, uint256())
+        .Build().value()
+        .ProveAndSign({}, uint256()).value();
+
+    CTransaction tx(mtx);
+    EXPECT_TRUE(tx.IsCoinBase());
+
+    // Before NU5, v5 transactions are rejected.
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-sapling-tx-version-group-id", false, "")).Times(1);
+    ContextualCheckTransaction(tx, state, Params(), 10, 57);
+
+    RegtestActivateNU5();
+
+    // From NU5, the Orchard actions are allowed but invalid (undecryptable).
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", false, "")).Times(1);
+    ContextualCheckTransaction(tx, state, Params(), 10, 57);
+
+    RegtestDeactivateNU5();
+}
+
+TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
+    LoadProofParameters();
+    RegtestActivateNU5();
+    auto chainparams = Params();
+
+    uint256 orchardAnchor;
+    auto builder = orchard::Builder(false, true, orchardAnchor);
+
+    // Shielded coinbase outputs must be recoverable with an all-zeroes ovk.
+    RawHDSeed rawSeed(32, 0);
+    GetRandBytes(rawSeed.data(), 32);
+    auto to = libzcash::OrchardSpendingKey::ForAccount(HDSeed(rawSeed), Params().BIP44CoinType(), 0)
+        .ToFullViewingKey()
+        .ToIncomingViewingKey()
+        .Address(0);
+    uint256 ovk;
+    builder.AddOutput(ovk, to, CAmount(123456), std::nullopt);
+
+    // orchard::Builder pads to two Actions, but does so using a "no OVK" policy for
+    // dummy outputs, which violates coinbase rules requiring all shielded outputs to
+    // be recoverable. We manually add a dummy output to sidestep this issue.
+    // TODO: If/when we have funding streams going to Orchard recipients, this dummy
+    // output can be removed.
+    builder.AddOutput(ovk, to, 0, std::nullopt);
+
+    auto bundle = builder
+        .Build().value()
+        .ProveAndSign({}, uint256()).value();
+
+    CMutableTransaction mtx;
+    mtx.fOverwintered = true;
+    mtx.nVersionGroupId = ZIP225_VERSION_GROUP_ID;
+    mtx.nVersion = ZIP225_TX_VERSION;
+    mtx.nConsensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_NU5].nBranchId;
+
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    mtx.orchardBundle = bundle;
+
+    CTransaction tx(mtx);
+    EXPECT_TRUE(tx.IsCoinBase());
+
+    // Write the transaction bytes out so we can modify them to test failure cases.
+    CDataStream ss(SER_DISK, PROTOCOL_VERSION);
+    ss << tx;
+
+    // Define some constants to use when calculating offsets to modify below.
+    const size_t HEADER_SIZE = 4 + 4 + 4 + 4 + 4;
+    const size_t TRANSPARENT_BUNDLE_SIZE = 1 + 32 + 4 + 1 + 4 + 1;
+    const size_t SAPLING_BUNDLE_SIZE = 1 + 1;
+    const size_t ORCHARD_BUNDLE_START = (HEADER_SIZE + TRANSPARENT_BUNDLE_SIZE + SAPLING_BUNDLE_SIZE);
+    const size_t ORCHARD_BUNDLE_CMX_OFFSET = (ORCHARD_BUNDLE_START + ZC_ZIP225_ORCHARD_NUM_ACTIONS_SIZE + 32 + 32 + 32);
+    const size_t ORCHARD_CMX_SIZE = 32;
+
+    // Verify the transaction is the expected size.
+    size_t txsize = ORCHARD_BUNDLE_START + ZC_ZIP225_ORCHARD_BASE_SIZE + ZC_ZIP225_ORCHARD_MARGINAL_SIZE * 2;
+    EXPECT_EQ(ss.size(), txsize);
+
+    // Transaction should fail with a bad public cmx.
+    {
+        auto cmxBad = uint256S("1234");
+        std::vector<char> txBytes(ss.begin(), ss.end());
+        std::copy(cmxBad.begin(), cmxBad.end(), txBytes.data() + ORCHARD_BUNDLE_CMX_OFFSET);
+
+        CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
+        CTransaction tx;
+        ssBad >> tx;
+        EXPECT_TRUE(tx.IsCoinBase());
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", false, "")).Times(1);
+        ContextualCheckTransaction(tx, state, chainparams, 10, 57);
+    }
+
+    // Transaction should fail with a bad encCiphertext.
+    {
+        std::vector<char> txBytes(ss.begin(), ss.end());
+        for (int i = 0; i < ZC_SAPLING_ENCCIPHERTEXT_SIZE; i++) {
+            txBytes[ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + i] = 0;
+        }
+
+        CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
+        CTransaction tx;
+        ssBad >> tx;
+        EXPECT_TRUE(tx.IsCoinBase());
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", false, "")).Times(1);
+        ContextualCheckTransaction(tx, state, chainparams, 10, 57);
+    }
+
+    // Transaction should fail with a bad outCiphertext.
+    {
+        std::vector<char> txBytes(ss.begin(), ss.end());
+        for (int i = 0; i < ZC_SAPLING_OUTCIPHERTEXT_SIZE; i++) {
+            txBytes[ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + ZC_SAPLING_ENCCIPHERTEXT_SIZE + i] = 0;
+        }
+
+        CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
+        CTransaction tx;
+        ssBad >> tx;
+        EXPECT_TRUE(tx.IsCoinBase());
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", false, "")).Times(1);
+        ContextualCheckTransaction(tx, state, chainparams, 10, 57);
+    }
+
+    // Test the success case.
+    {
+        MockCValidationState state;
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, chainparams, 10, 57));
+    }
+
+    RegtestDeactivateNU5();
+}
+
+// Check that the consensus rules relevant to valueBalanceOrchard, and
+// vOrchardActions from https://zips.z.cash/protocol/protocol.pdf#txnencoding
+// are applied to coinbase transactions.
+TEST(ChecktransactionTests, NU5EnforcesOrchardRulesOnShieldedCoinbase) {
+    LoadProofParameters();
+    RegtestActivateNU5();
+    auto chainparams = Params();
+
+    uint256 orchardAnchor;
+    auto builder = orchard::Builder(false, true, orchardAnchor);
+
+    // Shielded coinbase outputs must be recoverable with an all-zeroes ovk.
+    RawHDSeed rawSeed(32, 0);
+    GetRandBytes(rawSeed.data(), 32);
+    auto to = libzcash::OrchardSpendingKey::ForAccount(HDSeed(rawSeed), Params().BIP44CoinType(), 0)
+        .ToFullViewingKey()
+        .ToIncomingViewingKey()
+        .Address(0);
+    uint256 ovk;
+    builder.AddOutput(ovk, to, CAmount(1000), std::nullopt);
+
+    // orchard::Builder pads to two Actions, but does so using a "no OVK" policy for
+    // dummy outputs, which violates coinbase rules requiring all shielded outputs to
+    // be recoverable. We manually add a dummy output to sidestep this issue.
+    // TODO: If/when we have funding streams going to Orchard recipients, this dummy
+    // output can be removed.
+    builder.AddOutput(ovk, to, 0, std::nullopt);
+
+    auto bundle = builder
+        .Build().value()
+        .ProveAndSign({}, uint256()).value();
+
+    CMutableTransaction mtx;
+    mtx.fOverwintered = true;
+    mtx.nVersionGroupId = ZIP225_VERSION_GROUP_ID;
+    mtx.nVersion = ZIP225_TX_VERSION;
+    mtx.nConsensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_NU5].nBranchId;
+
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    mtx.vin[0].scriptSig << 123;
+    mtx.orchardBundle = bundle;
+
+    CTransaction tx(mtx);
+    EXPECT_TRUE(tx.IsCoinBase());
+
+    // Write the transaction bytes out so we can modify them to test failure cases.
+    CDataStream ss(SER_DISK, PROTOCOL_VERSION);
+    ss << tx;
+
+    // Define some constants to use when calculating offsets to modify below.
+    const size_t HEADER_SIZE = 4 + 4 + 4 + 4 + 4;
+    const size_t TRANSPARENT_BUNDLE_SIZE = 1 + 32 + 4 + 1 + 2 + 4 + 1;
+    const size_t SAPLING_BUNDLE_SIZE = 1 + 1;
+    const size_t ORCHARD_BUNDLE_START = (HEADER_SIZE + TRANSPARENT_BUNDLE_SIZE + SAPLING_BUNDLE_SIZE);
+    const size_t ORCHARD_BUNDLE_VALUEBALANCE_OFFSET = (
+        ORCHARD_BUNDLE_START +
+        ZC_ZIP225_ORCHARD_NUM_ACTIONS_SIZE +
+        ZC_ZIP225_ORCHARD_ACTION_SIZE * 2 +
+        ZC_ZIP225_ORCHARD_FLAGS_SIZE);
+
+    // Verify the transaction is the expected size.
+    size_t txsize = ORCHARD_BUNDLE_START + ZC_ZIP225_ORCHARD_BASE_SIZE + ZC_ZIP225_ORCHARD_MARGINAL_SIZE * 2;
+    EXPECT_EQ(ss.size(), txsize);
+
+    // Coinbase transaction should fail non-contextual checks with valueBalanceSapling
+    // out of range.
+    {
+        std::vector<char> txBytes(ss.begin(), ss.end());
+        uint64_t valueBalanceBad = htole64(MAX_MONEY + 1);
+        std::copy((char*)&valueBalanceBad, (char*)&valueBalanceBad + 8, txBytes.data() + ORCHARD_BUNDLE_VALUEBALANCE_OFFSET);
+
+        CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
+        CTransaction tx;
+        EXPECT_THROW((ssBad >> tx), std::ios_base::failure);
+
+        // We can't actually reach the CheckTransactionWithoutProofVerification
+        // consensus rule, because Rust is doing this validation at parse time.
+        // MockCValidationState state;
+        // EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false, "")).Times(1);
+        // EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+    {
+        std::vector<char> txBytes(ss.begin(), ss.end());
+        uint64_t valueBalanceBad = htole64(-MAX_MONEY - 1);
+        std::copy((char*)&valueBalanceBad, (char*)&valueBalanceBad + 8, txBytes.data() + ORCHARD_BUNDLE_VALUEBALANCE_OFFSET);
+
+        CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
+        CTransaction tx;
+        EXPECT_THROW((ssBad >> tx), std::ios_base::failure);
+
+        // We can't actually reach the CheckTransactionWithoutProofVerification
+        // consensus rule, because Rust is doing this validation at parse time.
+        // MockCValidationState state;
+        // EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false, "")).Times(1);
+        // EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+
+    // Test the success case.
+    {
+        // The unmodified coinbase transaction should pass non-contextual checks.
+        MockCValidationState state;
+        EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+
+        // Coinbase transaction should pass contextual checks, as bindingSigOrchard
+        // consensus rule is not enforced here.
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, chainparams, 10, 57));
+    }
+
+    RegtestDeactivateNU5();
 }
