@@ -823,7 +823,6 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     auto recipient = ivk.Address(j);
 
     uint256 orchardAnchor;
-    orchard::Builder(true, true, orchardAnchor);
 
     // Generate transparent funds
     CBasicKeyStore keystore;

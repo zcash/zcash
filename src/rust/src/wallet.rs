@@ -1134,7 +1134,7 @@ pub extern "C" fn orchard_wallet_get_potential_spends_from_nullifier(
 ) {
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
     let nullifier =
-        Nullifier::from_bytes(&*unsafe { nullifier.as_ref() }.expect("nullifier may not be null."));
+        Nullifier::from_bytes(unsafe { nullifier.as_ref() }.expect("nullifier may not be null."));
 
     if let Some(inpoints) = wallet.potential_spends.get(&nullifier.unwrap()) {
         for inpoint in inpoints {
