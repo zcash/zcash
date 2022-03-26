@@ -234,11 +234,6 @@ Copyright: 2019 Will Wray
  2020 The Zcash developers
 License: Boost-Software-License-1.0
 
-Files: src/rust/include/tracing.h
- src/rust/src/tracing_ffi.rs
-Copyright: 2020 Jack Grigg
-License: Expat
-
 Files: src/secp256k1/*
 Copyright: 2013 Pieter Wuille
 License: Expat
