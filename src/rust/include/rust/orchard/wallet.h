@@ -294,7 +294,7 @@ typedef void (*push_spend_t)(void* callbackReceiver, const RawOrchardActionSpend
 typedef void (*push_output_t)(void* callbackReceiver, const RawOrchardActionOutput data);
 
 /**
- * Trial-decrypts the specfied Orchard bundle, and uses the provided callbacks to pass
+ * Trial-decrypts the specified Orchard bundle, and uses the provided callbacks to pass
  * `RawOrchardActionSpend` and `RawOrchardActionOutput` values (corresponding to the
  * actions of that bundle) to the provided result receiver.
  *

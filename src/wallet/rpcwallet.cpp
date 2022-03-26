@@ -4769,7 +4769,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "5. privacyPolicy         (string, optional, default=\"LegacyCompat\") Policy for what information leakage is acceptable.\n"
             "                         One of the following strings:\n"
             "                               - \"FullPrivacy\": Only allow fully-shielded transactions (involving a single shielded value pool).\n"
-            "                               - \"LegacyCompat\": If the transaction involves any Unified Addressess, this is equivalent to\n"
+            "                               - \"LegacyCompat\": If the transaction involves any Unified Addresses, this is equivalent to\n"
             "                                 \"FullPrivacy\". Otherwise, this is equivalent to \"AllowFullyTransparent\".\n"
             "                               - \"AllowRevealedAmounts\": Allow funds to cross between shielded value pools, revealing the amount\n"
             "                                 that crosses pools.\n"
