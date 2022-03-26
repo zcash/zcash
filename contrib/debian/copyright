@@ -257,6 +257,10 @@ Copyright: 2011 The LevelDB Authors
 License: BSD-3-clause-Google
 Comment: The LevelDB Authors are listed in src/leveldb/AUTHORS.
 
+License: Apache-2.0
+ On Debian systems, the full text of the Apache License v2.0 can be found in the
+ file `/usr/share/common-licenses/Apache-2.0`.
+
 License: Apache-2 with LLVM exception
  ==============================================================================
  The LLVM Project is under the Apache License v2.0 with LLVM Exceptions:
