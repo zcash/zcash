@@ -21,8 +21,6 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         args = [
             '-regtestprotectcoinbase',
             '-debug=zrpcunsafe',
-            '-experimentalfeatures',
-            '-orchardwallet',
             nuparams(NU5_BRANCH_ID, self.nu5_activation),
         ]
         self.nodes = []

@@ -30,8 +30,6 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
 
     def start_node_with(self, index, extra_args=[]):
         args = [
-            '-experimentalfeatures',
-            '-orchardwallet',
             nuparams(BLOSSOM_BRANCH_ID, 1),
             nuparams(HEARTWOOD_BRANCH_ID, 10),
             nuparams(CANOPY_BRANCH_ID, 20),

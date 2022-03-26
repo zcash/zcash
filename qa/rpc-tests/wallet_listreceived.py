@@ -36,8 +36,6 @@ class ListReceivedTest (BitcoinTestFramework):
         self.nodes = start_nodes(
             self.num_nodes, self.options.tmpdir,
             extra_args=[[
-                '-experimentalfeatures',
-                '-orchardwallet',
                 nuparams(NU5_BRANCH_ID, 225),
             ]] * self.num_nodes
             )

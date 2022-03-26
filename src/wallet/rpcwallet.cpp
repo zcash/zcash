@@ -3235,10 +3235,6 @@ UniValue z_getnewaccount(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_getnewaccount", "")
         );
 
-    if (!fExperimentalOrchardWallet) {
-        throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
-    }
-
     LOCK(pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
@@ -3284,10 +3280,6 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
             + HelpExampleCli("z_getaddressforaccount", "4 '[\"transparent\",\"sapling\",\"orchard\"]' 1")
             + HelpExampleRpc("z_getaddressforaccount", "4")
         );
-
-    if (!fExperimentalOrchardWallet) {
-        throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
-    }
 
     // cs_main is required for obtaining the current height, for
     // CWallet::DefaultReceiverTypes
@@ -3507,10 +3499,6 @@ UniValue z_listunifiedreceivers(const UniValue& params, bool fHelp)
             + HelpExampleCli("z_listunifiedreceivers", "")
             + HelpExampleRpc("z_listunifiedreceivers", "")
         );
-
-    if (!fExperimentalOrchardWallet) {
-        throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
-    }
 
     KeyIO keyIO(Params());
     auto decoded = keyIO.DecodePaymentAddress(params[0].get_str());
@@ -3963,10 +3951,6 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_getbalanceforviewingkey", "\"myfvk\", 5")
         );
 
-    if (!fExperimentalOrchardWallet) {
-        throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
-    }
-
     KeyIO keyIO(Params());
     auto decoded = keyIO.DecodeViewingKey(params[0].get_str());
     if (!decoded.has_value()) {
@@ -4073,10 +4057,6 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
             "\nAs a JSON RPC call\n"
             + HelpExampleRpc("z_getbalanceforaccount", "4 5")
         );
-
-    if (!fExperimentalOrchardWallet) {
-        throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
-    }
 
     int64_t accountInt = params[0].get_int64();
     if (accountInt < 0 || accountInt >= ZCASH_LEGACY_ACCOUNT) {

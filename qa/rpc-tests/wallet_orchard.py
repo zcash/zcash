@@ -23,8 +23,6 @@ class WalletOrchardTest(BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, [[
-            '-experimentalfeatures',
-            '-orchardwallet',
             nuparams(NU5_BRANCH_ID, 210),
         ]] * self.num_nodes)
 

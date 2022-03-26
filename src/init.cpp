@@ -947,12 +947,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return InitError(err.value());
     }
 
-    // Just temporarily (until fully functional), don't allow the Orchard wallet
-    // extensions if we're on mainnet
-    if (fExperimentalOrchardWallet && chainparams.NetworkIDString() == "main") {
-        return InitError(_("The -orchardwallet setting is not yet available on mainnet."));
-    }
-
     // if using block pruning, then disable txindex
     if (GetArg("-prune", 0)) {
         if (GetBoolArg("-txindex", DEFAULT_TXINDEX))
