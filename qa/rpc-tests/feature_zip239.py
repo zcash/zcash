@@ -32,7 +32,7 @@ from test_framework.util import (
 )
 from tx_expiry_helper import TestNode
 
-import tempfile
+import os.path
 import time
 
 # Test ZIP 239 behaviour before and after NU5.
@@ -46,14 +46,8 @@ class Zip239Test(BitcoinTestFramework):
             nuparams(NU5_BRANCH_ID, 210),
         ]
 
-        # We log the stderr of node 0, which the test nodes connect to. This
-        # enables us to check that we see the expected error logged, and also
-        # ensures that the test itself passes (as otherwise the stderr output
-        # would be interpreted as an error from the test itself).
-        self.log_stderr = tempfile.SpooledTemporaryFile(max_size=2**16)
-
         nodes = []
-        nodes.append(start_node(0, self.options.tmpdir, extra_args, stderr=self.log_stderr))
+        nodes.append(start_node(0, self.options.tmpdir, extra_args))
         nodes.append(start_node(1, self.options.tmpdir, extra_args))
         nodes.append(start_node(2, self.options.tmpdir, extra_args))
         nodes.append(start_node(3, self.options.tmpdir, extra_args))
@@ -138,12 +132,13 @@ class Zip239Test(BitcoinTestFramework):
         expected.reason = b"error parsing message"
         assert_equal(conn.rejectMessage, expected)
 
-        # Verify that we see the expected error on stderr
-        self.log_stderr.seek(0)
-        stderr = self.log_stderr.read().decode('utf-8')
-        self.log_stderr.truncate(0)
-        if expected_msg not in stderr:
-            raise AssertionError("Expected error \"" + expected_msg + "\" not found in:\n" + stderr)
+        # Verify that we see the expected error in the debug log of node 0
+        log_path = os.path.join(self.options.tmpdir, 'node0', 'regtest', 'debug.log')
+        with open(log_path, 'r', encoding='utf-8') as log_file:
+            log_content = log_file.read()
+
+        if expected_msg not in log_content:
+            raise AssertionError("Expected error \"" + expected_msg + "\" not found in:\n" + log_content)
 
     def verify_disconnected(self, testnode, timeout=30):
         sleep_time = 0.05
@@ -266,7 +261,6 @@ class Zip239Test(BitcoinTestFramework):
             test_nodes[0], connections[0], 0xffff, "Unknown CInv message type")
 
         [c.disconnect_node() for c in connections]
-        self.log_stderr.close()
 
 if __name__ == '__main__':
     Zip239Test().main()
