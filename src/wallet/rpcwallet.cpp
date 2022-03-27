@@ -4915,7 +4915,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             } else {
                 throw JSONRPCError(
                     RPC_INVALID_PARAMETER,
-                    "Unified address contained no recognized receiver types.");
+                    "Unified address contained only receiver types that are unrecognized or for which the required consensus feature is not yet active.");
             }
         }
 
