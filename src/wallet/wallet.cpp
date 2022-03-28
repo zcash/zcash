@@ -2364,8 +2364,14 @@ SpendableInputs CWallet::FindSpendableInputs(
                 }
 
                 auto mit = mapWallet.find(noteMeta.GetOutPoint().hash);
-                auto confirmations = mit->second.GetDepthInMainChain();
-                if (mit != mapWallet.end() && confirmations >= minDepth) {
+
+                // We should never get an outpoint from the Orchard wallet where
+                // the transaction does not exist in the main wallet.
+                assert(mit != mapWallet.end());
+
+                int confirmations = mit->second.GetDepthInMainChain();
+                if (confirmations < 0) continue;
+                if (confirmations >= minDepth) {
                     noteMeta.SetConfirmations(confirmations);
                     unspent.orchardNoteMetadata.push_back(noteMeta);
                 }
