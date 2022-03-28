@@ -208,7 +208,7 @@ TEST(TransactionBuilder, DuplicateOrchardNullifier)
     RegtestActivateNU5();
 
     CDataStream ssin(
-        ParseHex(txdata),
+        ParseHex(txdataOrchardDuplicateNullifiersTestVector),
         SER_NETWORK,
         PROTOCOL_VERSION
     );
