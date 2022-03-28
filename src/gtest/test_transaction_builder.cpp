@@ -205,6 +205,8 @@ TEST(TransactionBuilder, DuplicateOrchardNullifier)
 {
     #include "data/tx-orchard-duplicate-nullifiers.h"
 
+    RegtestActivateNU5();
+
     CDataStream ssin(
         ParseHex(txdata),
         SER_NETWORK,
