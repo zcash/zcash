@@ -42,10 +42,6 @@ OrchardBuilderPtr* orchard_builder_new(
 /// Frees an Orchard builder returned from `orchard_builder_new`.
 void orchard_builder_free(OrchardBuilderPtr* ptr);
 
-bool orchard_builder_duplicate_nullifier_spend(
-    OrchardBuilderPtr* ptr
-);
-
 /// Adds a note to be spent in this bundle.
 ///
 /// Returns `false` if the Merkle path in `spend_info` does not have the

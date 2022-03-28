@@ -101,8 +101,6 @@ public:
         return *this;
     }
 
-    void AddBogusSpends();
-
     /// Adds a note to be spent in this bundle.
     ///
     /// Returns `false` if the given Merkle path does not have the required anchor
@@ -338,8 +336,6 @@ public:
     void SetFee(CAmount fee);
 
     bool SupportsOrchard() const;
-
-    void AddBogusOrchardSpends();
 
     bool AddOrchardSpend(
         libzcash::OrchardSpendingKey sk,
