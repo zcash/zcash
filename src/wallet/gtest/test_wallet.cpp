@@ -834,7 +834,13 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     auto builder = TransactionBuilder(consensusParams, 1, orchardAnchor, &keystore);
     builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
     builder.AddOrchardOutput(std::nullopt, recipient, 40000, {});
-    auto tx = builder.Build().GetTxOrThrow();
+    auto maybeTx = builder.Build();
+    EXPECT_TRUE(maybeTx.IsTx());
+    if (maybeTx.IsError()) {
+        std::cerr << "Failed to build transaction: " << maybeTx.GetError() << std::endl;
+        GTEST_FAIL();
+    }
+    auto tx = maybeTx.GetTxOrThrow();
     CWalletTx wtx {&wallet, tx};
 
     // Fake-mine the transaction
@@ -883,14 +889,26 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     auto noteToSpend = std::move(wallet.GetOrchardSpendInfo(orchardEntries)[0]);
     auto builder2 = TransactionBuilder(consensusParams, 2, orchardTree.root());
     builder2.AddOrchardSpend(std::move(noteToSpend.first), std::move(noteToSpend.second));
-    auto tx2 = builder2.Build().GetTxOrThrow();
+    auto maybeTx2 = builder2.Build();
+    EXPECT_TRUE(maybeTx2.IsTx());
+    if (maybeTx2.IsError()) {
+        std::cerr << "Failed to build transaction: " << maybeTx2.GetError() << std::endl;
+        GTEST_FAIL();
+    }
+    auto tx2 = maybeTx2.GetTxOrThrow();
     CWalletTx wtx2 {&wallet, tx2};
 
     // Generate conflicting tx to spend note A
     auto noteToSpend2 = std::move(wallet.GetOrchardSpendInfo(orchardEntries)[0]);
     auto builder3 = TransactionBuilder(consensusParams, 2, orchardTree.root());
     builder3.AddOrchardSpend(std::move(noteToSpend2.first), std::move(noteToSpend2.second));
-    auto tx3 = builder3.Build().GetTxOrThrow();
+    auto maybeTx3 = builder3.Build();
+    EXPECT_TRUE(maybeTx3.IsTx());
+    if (maybeTx3.IsError()) {
+        std::cerr << "Failed to build transaction: " << maybeTx3.GetError() << std::endl;
+        GTEST_FAIL();
+    }
+    auto tx3 = maybeTx3.GetTxOrThrow();
     CWalletTx wtx3 {&wallet, tx3};
 
     auto hash2 = wtx2.GetHash();
