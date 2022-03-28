@@ -203,26 +203,16 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
 
 TEST(TransactionBuilder, DuplicateOrchardNullifier)
 {
-    LoadProofParameters();
-    auto consensusParams = RegtestActivateNU5();
+    #include "data/tx-orchard-duplicate-nullifiers.h"
 
-    CBasicKeyStore keystore;
-    CKey tsk = AddTestCKeyToKeyStore(keystore);
-    auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
+    CDataStream ssin(
+        ParseHex(txdata),
+        SER_NETWORK,
+        PROTOCOL_VERSION
+    );
 
-    TransactionBuilderCoinsViewDB fakeDB;
-    auto orchardAnchor = fakeDB.GetBestAnchor(ShieldedType::ORCHARD);
-
-    auto builder = TransactionBuilder(consensusParams, 1, orchardAnchor, &keystore);
-    builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 10000);
-    builder.AddBogusOrchardSpends();
-    auto maybeTx = builder.Build();
-    EXPECT_TRUE(maybeTx.IsTx());
-    if (maybeTx.IsError()) {
-        std::cerr << "Failed to build transaction: " << maybeTx.GetError() << std::endl;
-        GTEST_FAIL();
-    }
-    auto tx = maybeTx.GetTxOrThrow();
+    CTransaction tx;
+    ssin >> tx;
 
     CValidationState state;
     EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
