@@ -125,8 +125,8 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
         self.nodes[1].z_getnewaccount()
         node1_addr0 = self.nodes[1].z_getaddressforaccount(0)
         assert_equal(node1_addr0['account'], 0)
-        assert_equal(set(node1_addr0['pools']), set(['transparent', 'sapling', 'orchard']))
-        node1_ua = node1_addr0['unifiedaddress']
+        assert_equal(set(node1_addr0['receiver_types']), set(['p2pkh', 'sapling', 'orchard']))
+        node1_ua = node1_addr0['address']
 
         # Set node 1's miner address to the UA
         self.nodes[1].stop()

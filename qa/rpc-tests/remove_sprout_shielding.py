@@ -85,7 +85,7 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         sprout_addr = self.nodes[1].z_getnewaddress('sprout')
         assert_raises_message(
             JSONRPCException,
-            "Sending funds into the Sprout pool is not supported by z_sendmany",
+            "Sending funds into the Sprout value pool is not supported by z_sendmany",
             self.nodes[0].z_sendmany,
             taddr_0, [{"address": sprout_addr, "amount": 1}])
         print("taddr -> Sprout z_sendmany tx rejected at Canopy activation on node 0")

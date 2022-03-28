@@ -34,8 +34,8 @@ class WalletOrchardTest(BitcoinTestFramework):
         acct1 = self.nodes[1].z_getnewaccount()['account']
         addrRes1 = self.nodes[1].z_getaddressforaccount(acct1, ['orchard'])
         assert_equal(acct1, addrRes1['account'])
-        assert_equal(addrRes1['pools'], ['orchard'])
-        ua1 = addrRes1['unifiedaddress']
+        assert_equal(addrRes1['receiver_types'], ['orchard'])
+        ua1 = addrRes1['address']
 
         # Verify that we have only an Orchard component
         receiver_types = self.nodes[0].z_listunifiedreceivers(ua1)
@@ -48,7 +48,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         acct2 = self.nodes[2].z_getnewaccount()['account']
         addrRes2 = self.nodes[2].z_getaddressforaccount(acct2, ['sapling', 'orchard'])
         assert_equal(acct2, addrRes2['account'])
-        ua2 = addrRes2['unifiedaddress']
+        ua2 = addrRes2['address']
         saplingAddr2 = self.nodes[2].z_listunifiedreceivers(ua2)['sapling']
 
         recipients = [{"address": saplingAddr2, "amount": Decimal('10')}]
@@ -100,7 +100,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         acct3 = self.nodes[3].z_getnewaccount()['account']
         addrRes3 = self.nodes[3].z_getaddressforaccount(acct3, ['sapling', 'orchard'])
         assert_equal(acct3, addrRes3['account'])
-        ua3 = addrRes3['unifiedaddress']
+        ua3 = addrRes3['address']
 
         recipients = [{"address": ua3, "amount": Decimal('1')}]
         myopid = self.nodes[2].z_sendmany(ua2, recipients, 1, 0)
@@ -174,6 +174,55 @@ class WalletOrchardTest(BitcoinTestFramework):
         assert_equal(
                 {'pools': {'orchard': {'valueZat': Decimal('100000000')}}, 'minimum_confirmations': 1},
                 self.nodes[3].z_getbalanceforaccount(acct3))
+
+        # Split the network again
+        self.split_network()
+
+        # Spend some of acct3's funds on the 2/3 side of the split
+        recipients = [{"address": ua2, "amount": Decimal('0.5')}]
+        myopid = self.nodes[3].z_sendmany(ua3, recipients, 1, 0)
+        rollback_tx = wait_and_assert_operationid_status(self.nodes[3], myopid)
+
+        self.sync_all()
+        self.nodes[2].generate(1)
+        self.sync_all()
+
+        assert_equal(
+                {'pools': {'orchard': {'valueZat': Decimal('950000000')}}, 'minimum_confirmations': 1},
+                self.nodes[2].z_getbalanceforaccount(acct2))
+
+        # Generate a majority chain on the 0/1 side of the split, then 
+        # re-join the network.
+        self.nodes[1].generate(10)
+        self.join_network()
+
+        # split 2/3's chain should have been rolled back, so their txn should have been
+        # un-mined and returned to the mempool
+        assert_equal(set([rollback_tx]), set(self.nodes[3].getrawmempool()))
+
+        # acct2's balance is back to not contain the Orchard->Orchard value
+        assert_equal(
+                {'pools': {'orchard': {'valueZat': Decimal('900000000')}}, 'minimum_confirmations': 1},
+                self.nodes[2].z_getbalanceforaccount(acct2))
+
+        # acct3's sole Orchard note is spent by a transaction in the mempool, so our
+        # confirmed balance is currently 0
+        assert_equal(
+                {'pools': {}, 'minimum_confirmations': 1},
+                self.nodes[3].z_getbalanceforaccount(acct3))
+
+        # Manually resend the transaction in node 3's mempool
+        self.nodes[2].resendwallettransactions()
+
+        # Sync the network
+        self.sync_all()
+        self.nodes[0].generate(1)
+        self.sync_all()
+
+        # The un-mined transaction should now have been re-mined
+        assert_equal(
+                {'pools': {'orchard': {'valueZat': Decimal('950000000')}}, 'minimum_confirmations': 1},
+                self.nodes[2].z_getbalanceforaccount(acct2))
 
 if __name__ == '__main__':
     WalletOrchardTest().main()

@@ -294,7 +294,7 @@ typedef void (*push_spend_t)(void* callbackReceiver, const RawOrchardActionSpend
 typedef void (*push_output_t)(void* callbackReceiver, const RawOrchardActionOutput data);
 
 /**
- * Trial-decrypts the specfied Orchard bundle, and uses the provided callbacks to pass
+ * Trial-decrypts the specified Orchard bundle, and uses the provided callbacks to pass
  * `RawOrchardActionSpend` and `RawOrchardActionOutput` values (corresponding to the
  * actions of that bundle) to the provided result receiver.
  *
@@ -329,6 +329,18 @@ void orchard_wallet_get_potential_spends(
         const OrchardWalletPtr* wallet,
         const unsigned char txid[32],
         const uint32_t action_idx,
+        void* resultVector,
+        push_txid_callback_t push_cb
+        );
+
+/**
+ * Returns a vector of transaction IDs for transactions that have been observed as
+ * spending the given nullifier by using the `push_cb` callback to push transaction
+ * IDs onto the provided result vector.
+ */
+void orchard_wallet_get_potential_spends_from_nullifier(
+        const OrchardWalletPtr* wallet,
+        const unsigned char *nullifier,
         void* resultVector,
         push_txid_callback_t push_cb
         );

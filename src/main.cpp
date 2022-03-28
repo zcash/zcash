@@ -6916,11 +6916,12 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             for (uint256 hash : vEraseQueue)
                 EraseOrphanTx(hash);
         }
-        // TODO: currently, prohibit joinsplits and shielded spends/outputs from entering mapOrphans
+        // TODO: currently, prohibit joinsplits and shielded spends/outputs/actions from entering mapOrphans
         else if (fMissingInputs &&
                  tx.vJoinSplit.empty() &&
                  tx.vShieldedSpend.empty() &&
-                 tx.vShieldedOutput.empty())
+                 tx.vShieldedOutput.empty() &&
+                 !tx.GetOrchardBundle().IsPresent())
         {
             AddOrphanTx(tx, pfrom->GetId());
 

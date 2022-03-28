@@ -15,23 +15,28 @@ class WalletShieldCoinbaseUANU5(WalletShieldCoinbaseTest):
         # this function may be called no more than once
         assert(self.account is None)
         self.account = node.z_getnewaccount()['account']
-        self.addr = node.z_getaddressforaccount(self.account)['unifiedaddress']
+        self.addr = node.z_getaddressforaccount(self.account)['address']
         return self.addr
 
     def test_check_balance_zaddr(self, node, expected):
         balances = node.z_getbalanceforaccount(self.account)
         assert('transparent' not in balances['pools'])
         assert('sprout' not in balances['pools'])
-        # assert('sapling' not in balances['pools'])
+        # Remove the following after Orchard support is added to z_shieldcoinbase
         sapling_balance = balances['pools']['sapling']['valueZat']
         assert_equal(sapling_balance, expected * COIN)
-        # assert_equal(balances['pools']['orchard']['valueZat'], expected * COIN)
+        # TODO: Uncomment after Orchard support is added to z_shieldcoinbase
+        #assert('sapling' not in balances['pools'])
+        #orchard_balance = balances['pools']['orchard']['valueZat']
+        #assert_equal(orchard_balance, expected * COIN)
 
         # While we're at it, check that z_listunspent only shows outputs with
         # the Unified Address (not the Orchard receiver), and of the expected
         # type.
         unspent = node.z_listunspent(1, 999999, False, [self.addr])
         assert_equal(
+            # TODO: Fix after Orchard support is added to z_shieldcoinbase
+            #[{'type': 'orchard', 'address': self.addr} for _ in unspent],
             [{'type': 'sapling', 'address': self.addr} for _ in unspent],
             [{'type': x['type'], 'address': x['address']} for x in unspent],
         )
