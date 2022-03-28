@@ -640,6 +640,9 @@ TransactionBuilderResult TransactionBuilder::Build()
             const PrecomputedTransactionData txdata(mtx, tIns);
             dataToBeSigned = SignatureHash(scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
         }
+    } catch (std::ios_base::failure ex) {
+        librustzcash_sapling_proving_ctx_free(ctx);
+        return TransactionBuilderResult("Could not construct signature hash: " + std::string(ex.what()));
     } catch (std::logic_error ex) {
         librustzcash_sapling_proving_ctx_free(ctx);
         return TransactionBuilderResult("Could not construct signature hash: " + std::string(ex.what()));
