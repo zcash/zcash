@@ -201,6 +201,37 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     RegtestDeactivateSapling();
 }
 
+TEST(TransactionBuilder, DuplicateOrchardNullifier)
+{
+    LoadProofParameters();
+    auto consensusParams = RegtestActivateNU5();
+
+    CBasicKeyStore keystore;
+    CKey tsk = AddTestCKeyToKeyStore(keystore);
+    auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
+
+    TransactionBuilderCoinsViewDB fakeDB;
+    auto orchardAnchor = fakeDB.GetBestAnchor(ShieldedType::ORCHARD);
+
+    auto builder = TransactionBuilder(consensusParams, 1, orchardAnchor, &keystore);
+    builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 10000);
+    builder.AddBogusOrchardSpends();
+    auto maybeTx = builder.Build();
+    EXPECT_TRUE(maybeTx.IsTx());
+    if (maybeTx.IsError()) {
+        std::cerr << "Failed to build transaction: " << maybeTx.GetError() << std::endl;
+        GTEST_FAIL();
+    }
+    auto tx = maybeTx.GetTxOrThrow();
+
+    CValidationState state;
+    EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_EQ(state.GetRejectReason(), "bad-orchard-nullifiers-duplicate");
+
+    // Revert to default
+    RegtestDeactivateNU5();
+}
+
 TEST(TransactionBuilder, TransparentToOrchard)
 {
     auto consensusParams = RegtestActivateNU5();
