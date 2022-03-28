@@ -1100,13 +1100,7 @@ bool CWallet::LoadCaches()
                             auto orchardFvk = ufvk.value().GetOrchardKey();
                             auto orchardReceiver = addr.first.GetOrchardReceiver();
 
-                            if (orchardFvk.has_value() != orchardReceiver.has_value()) {
-                                LogPrintf("%s: Error: Orchard receiver in unified address is inconsistent with the unified viewing key.\n",
-                                    __func__);
-                                return false;
-                            }
-
-                            if (orchardFvk.has_value()) {
+                            if (orchardFvk.has_value() && orchardReceiver.has_value()) {
                                 if (!AddOrchardRawAddress(orchardFvk.value().ToIncomingViewingKey(), orchardReceiver.value())) {
                                     LogPrintf("%s: Error: Unable to add Orchard address -> IVK mapping.\n",
                                         __func__);
