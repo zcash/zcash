@@ -67,6 +67,17 @@ pub extern "C" fn orchard_builder_new(
 }
 
 #[no_mangle]
+pub extern "C" fn orchard_builder_duplicate_nullifier_spend(
+    builder: *mut Builder
+) -> bool {
+    let builder = unsafe { builder.as_mut() }.expect("Builder may not be null.");
+
+    builder.add_duplicate_nullifier_spend(OsRng);
+
+    true
+}
+
+#[no_mangle]
 pub extern "C" fn orchard_builder_add_spend(
     builder: *mut Builder,
     orchard_spend_info: *mut OrchardSpendInfo,

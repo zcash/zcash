@@ -42,6 +42,16 @@ Builder::Builder(
     inner.reset(orchard_builder_new(spendsEnabled, outputsEnabled, anchor.IsNull() ? nullptr : anchor.begin()));
 }
 
+void Builder::AddBogusSpends()
+{
+    if (!inner) {
+        throw std::logic_error("orchard::Builder has already been used");
+    }
+
+    orchard_builder_duplicate_nullifier_spend(inner.get());
+    hasActions = true;
+}
+
 bool Builder::AddSpend(orchard::SpendInfo spendInfo)
 {
     if (!inner) {
@@ -290,6 +300,15 @@ void TransactionBuilder::SetExpiryHeight(uint32_t nExpiryHeight)
 
 bool TransactionBuilder::SupportsOrchard() const {
     return orchardBuilder.has_value();
+}
+
+void TransactionBuilder::AddBogusOrchardSpends()
+{
+    if (!orchardBuilder.has_value()) {
+        throw std::runtime_error("TransactionBuilder orchardBuilder not setup");
+    }
+
+    orchardBuilder.value().AddBogusSpends();
 }
 
 bool TransactionBuilder::AddOrchardSpend(

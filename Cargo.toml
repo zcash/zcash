@@ -87,6 +87,7 @@ codegen-units = 1
 
 [patch.crates-io]
 hdwallet = { git = "https://github.com/nuttycom/hdwallet", rev = "576683b9f2865f1118c309017ff36e01f84420c9" }
+orchard = { path = "../orchard/" }
 zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "9c1ed86c5aa8ae3b6d6dcc1478f2d6ba1264488f" }
 zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "9c1ed86c5aa8ae3b6d6dcc1478f2d6ba1264488f" }
 zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "9c1ed86c5aa8ae3b6d6dcc1478f2d6ba1264488f" }
