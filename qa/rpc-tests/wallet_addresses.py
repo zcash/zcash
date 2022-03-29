@@ -4,7 +4,14 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, start_nodes, connect_nodes_bi, NU5_BRANCH_ID
+from test_framework.util import (
+    assert_equal,
+    connect_nodes_bi,
+    start_nodes,
+    stop_nodes,
+    wait_bitcoinds,
+    NU5_BRANCH_ID,
+)
 from test_framework.mininode import nuparams
 
 # Test wallet address behaviour across network upgrades
@@ -104,6 +111,25 @@ class WalletAddressesTest(BitcoinTestFramework):
         assert_equal(unified_obj[0]['addresses'][0]['address'], unified_1)
         assert 'diversifier_index' in unified_obj[0]['addresses'][0]
         assert_equal(unified_obj[0]['addresses'][0]['receiver_types'], ['p2pkh', 'sapling', 'orchard'])
+
+        # import the key for sapling_1 into node 1
+        sapling_1_key = self.nodes[0].z_exportkey(sapling_1)
+        self.nodes[1].z_importkey(sapling_1_key)
+
+        # verify that we see the imported source
+        listed_addresses = self.list_addresses(1, ['imported', 'mnemonic_seed'])
+        imported_src = get_source(listed_addresses, 'imported')
+        assert_equal(imported_src['sapling'][0]['addresses'], [sapling_1])
+
+        # stop the nodes & restart to ensure that the imported address
+        # still shows up in listaddresses output
+        stop_nodes(self.nodes)
+        wait_bitcoinds()
+        self.setup_network()
+
+        listed_addresses = self.list_addresses(1, ['imported', 'mnemonic_seed'])
+        imported_src = get_source(listed_addresses, 'imported')
+        assert_equal(imported_src['sapling'][0]['addresses'], [sapling_1])
 
         print("Testing height 2 (NU5)")
         self.nodes[0].generate(1)
