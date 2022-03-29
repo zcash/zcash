@@ -201,6 +201,29 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     RegtestDeactivateSapling();
 }
 
+TEST(TransactionBuilder, DuplicateOrchardNullifier)
+{
+    #include "data/tx-orchard-duplicate-nullifiers.h"
+
+    RegtestActivateNU5();
+
+    CDataStream ssin(
+        ParseHex(txdataOrchardDuplicateNullifiersTestVector),
+        SER_NETWORK,
+        PROTOCOL_VERSION
+    );
+
+    CTransaction tx;
+    ssin >> tx;
+
+    CValidationState state;
+    EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_EQ(state.GetRejectReason(), "bad-orchard-nullifiers-duplicate");
+
+    // Revert to default
+    RegtestDeactivateNU5();
+}
+
 TEST(TransactionBuilder, TransparentToOrchard)
 {
     auto consensusParams = RegtestActivateNU5();
