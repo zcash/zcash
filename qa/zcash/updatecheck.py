@@ -199,6 +199,8 @@ class GithubTagReleaseLister:
         url = "https://api.github.com/repos/" + safe(self.org) + "/" + safe(self.repo) + "/git/refs/tags"
         r = requests.get(url, auth=requests.auth.HTTPBasicAuth(self.token.user(), self.token.password()))
         if r.status_code != 200:
+            print("API request failed (error %d)" % (r.status_code,), file=sys.stderr)
+            print(r.text, file=sys.stderr)
             raise RuntimeError("Request to GitHub tag API failed.")
         json = r.json()
         return list(map(lambda t: t["ref"].split("/")[-1], json))
@@ -208,6 +210,8 @@ class BerkeleyDbReleaseLister:
         url = "https://www.oracle.com/database/technologies/related/berkeleydb-downloads.html"
         r = requests.get(url)
         if r.status_code != 200:
+            print("API request failed (error %d)" % (r.status_code,), file=sys.stderr)
+            print(r.text, file=sys.stderr)
             raise RuntimeError("Request to Berkeley DB download directory failed.")
         page = r.text
 
