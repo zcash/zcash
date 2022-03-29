@@ -1134,22 +1134,23 @@ bool CWallet::LoadCaches()
     // the default address for each key was automatically added to the in-memory
     // keystore, but not persisted. Following the addition of unified addresses,
     // all addresses must be written to the wallet database explicitly.
-    auto legacySeed = GetLegacyHDSeed();
-    if (legacySeed.has_value()) {
-        for (const auto& [saplingIvk, keyMeta] : mapSaplingZKeyMetadata) {
-            // This condition only applies for keys derived from the legacy seed
-            if (keyMeta.seedFp == legacySeed.value().Fingerprint()) {
-                SaplingExtendedFullViewingKey extfvk;
-                if (GetSaplingFullViewingKey(saplingIvk, extfvk)) {
-                    auto defaultAddress = extfvk.DefaultAddress();
-                    if (!HaveSaplingIncomingViewingKey(defaultAddress)) {
-                        // restore the address to the keystore and persist it so that
-                        // the database state is consistent.
-                        if (!AddSaplingPaymentAddress(saplingIvk, defaultAddress)) {
-                            LogPrintf("%s: Error: Failed to write legacy Sapling payment address to the wallet database.\n",
-                                __func__);
-                            return false;
-                        }
+    auto mnemonicSeed = GetMnemonicSeed();
+    for (const auto& [saplingIvk, keyMeta] : mapSaplingZKeyMetadata) {
+        // This condition only applies for keys derived from the legacy seed
+        // or from imported keys.
+        if (!mnemonicSeed.has_value() || keyMeta.seedFp != mnemonicSeed.value().Fingerprint()) {
+            SaplingExtendedFullViewingKey extfvk;
+            if (GetSaplingFullViewingKey(saplingIvk, extfvk)) {
+                // only add the association with the default address if it
+                // does not already exist
+                auto defaultAddress = extfvk.DefaultAddress();
+                if (!HaveSaplingIncomingViewingKey(defaultAddress)) {
+                    // restore the address to the keystore and persist it so that
+                    // the database state is consistent.
+                    if (!AddSaplingPaymentAddress(saplingIvk, defaultAddress)) {
+                        LogPrintf("%s: Error: Failed to write legacy Sapling payment address to the wallet database.\n",
+                            __func__);
+                        return false;
                     }
                 }
             }
@@ -2493,7 +2494,7 @@ void CWallet::AddToSpends(const uint256& wtxid)
     }
 
     // for Orchard, the effects of this operation are performed by
-    // AddNotesIfInvolvingMe and LoadUnifiedCaches
+    // AddNotesIfInvolvingMe and LoadCaches
 }
 
 void CWallet::ClearNoteWitnessCache()
