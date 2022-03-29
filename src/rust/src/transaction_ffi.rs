@@ -207,21 +207,32 @@ pub extern "C" fn zcash_transaction_precomputed_init(
                     return ptr::null_mut();
                 }
                 Ok(all_prev_outputs)
-                    if !tx
+                    if tx.transparent_bundle().map_or(false, |t| {
+                        // Coinbase txs have one fake input.
+                        t.is_coinbase() && !all_prev_outputs.is_empty()
+                    }) =>
+                {
+                    error!(
+                        "all_prev_outputs should be empty for a coinbase tx but has length {}",
+                        all_prev_outputs.len()
+                    );
+                    return ptr::null_mut();
+                }
+                Ok(all_prev_outputs)
+                    if tx
                         .transparent_bundle()
                         .map(|t| {
-                            if t.is_coinbase() {
-                                // Coinbase txs have one fake input.
-                                all_prev_outputs.is_empty()
-                            } else {
-                                // For non-coinbase txs, every input is real.
-                                t.vin.len() == all_prev_outputs.len()
-                            }
+                            // For non-coinbase txs, every input is real.
+                            !t.is_coinbase() && t.vin.len() != all_prev_outputs.len()
                         })
                         // If we have no transparent part, we should have no prev outputs.
-                        .unwrap_or_else(|| all_prev_outputs.is_empty()) =>
+                        .unwrap_or_else(|| !all_prev_outputs.is_empty()) =>
                 {
-                    error!("all_prev_outputs is incorrect length");
+                    error!(
+                        "all_prev_outputs is incorrect length {} (should be {})",
+                        all_prev_outputs.len(),
+                        tx.transparent_bundle().map(|t| t.vin.len()).unwrap_or(0),
+                    );
                     return ptr::null_mut();
                 }
                 Ok(all_prev_outputs) => MapTransparent {
