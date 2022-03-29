@@ -18,8 +18,6 @@ from test_framework.util import (
     wait_and_assert_operationid_status,
 )
 
-from decimal import Decimal
-
 # Test wallet behaviour with the Orchard protocol
 class WalletDoubleSpendTest(BitcoinTestFramework):
     def __init__(self):
@@ -44,8 +42,8 @@ class WalletDoubleSpendTest(BitcoinTestFramework):
         addrRes1 = self.nodes[1].z_getaddressforaccount(acct1, [recipient_type])
         ua1 = addrRes1['address']
 
-        # Create an Orchard note on node 1
-        recipients = [{"address": ua1, "amount": Decimal('10')}]
+        # Create a note matching recipient_type on node 1
+        recipients = [{"address": ua1, "amount": 10}]
         myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
@@ -55,7 +53,7 @@ class WalletDoubleSpendTest(BitcoinTestFramework):
 
         # Check the value sent to ua1 was received
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': Decimal('1000000000')}}, 'minimum_confirmations': 1},
+                {'pools': {recipient_type: {'valueZat': 1000000000}}, 'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         # Shut down the nodes
@@ -73,21 +71,21 @@ class WalletDoubleSpendTest(BitcoinTestFramework):
 
         # Verify the balance on node 1
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': Decimal('1000000000')}}, 'minimum_confirmations': 1},
+                {'pools': {recipient_type: {'valueZat': 1000000000}}, 'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         # Verify the balance on node 2, on the other side of the split
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': Decimal('1000000000')}}, 'minimum_confirmations': 1},
+                {'pools': {recipient_type: {'valueZat': 1000000000}}, 'minimum_confirmations': 1},
                 self.nodes[2].z_getbalanceforaccount(acct1))
 
         # Spend the note from node 1
-        recipients = [{"address": ua0a, "amount": Decimal('1')}]
+        recipients = [{"address": ua0a, "amount": 1}]
         myopid = self.nodes[1].z_sendmany(ua1, recipients, 1, 0)
         txa_id = wait_and_assert_operationid_status(self.nodes[1], myopid)
 
         # Spend the note from node 2
-        recipients = [{"address": ua0b, "amount": Decimal('2')}]
+        recipients = [{"address": ua0b, "amount": 2}]
         myopid = self.nodes[2].z_sendmany(ua1, recipients, 1, 0)
         txb_id = wait_and_assert_operationid_status(self.nodes[2], myopid)
 
@@ -99,11 +97,11 @@ class WalletDoubleSpendTest(BitcoinTestFramework):
 
         # the remaining balance is visible on both sides of the split
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': Decimal('900000000')}}, 'minimum_confirmations': 1},
+                {'pools': {recipient_type: {'valueZat': 900000000}}, 'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': Decimal('800000000')}}, 'minimum_confirmations': 1},
+                {'pools': {recipient_type: {'valueZat': 800000000}}, 'minimum_confirmations': 1},
                 self.nodes[2].z_getbalanceforaccount(acct1))
 
         # before re-joining the network, there is no recognition of the conflict
@@ -116,7 +114,7 @@ class WalletDoubleSpendTest(BitcoinTestFramework):
 
         # acct0a will have received the transaction; it can't see node 2's send
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': Decimal('100000000')}}, 'minimum_confirmations': 1},
+                {'pools': {recipient_type: {'valueZat': 100000000}}, 'minimum_confirmations': 1},
                 self.nodes[0].z_getbalanceforaccount(acct0a))
 
         self.join_network()
@@ -132,16 +130,16 @@ class WalletDoubleSpendTest(BitcoinTestFramework):
         # After the reorg, node 2 wins, so its balance is the consensus for 
         # both wallets
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': Decimal('800000000')}}, 'minimum_confirmations': 1},
+                {'pools': {recipient_type: {'valueZat': 800000000}}, 'minimum_confirmations': 1},
                 self.nodes[1].z_getbalanceforaccount(acct1))
 
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': Decimal('800000000')}}, 'minimum_confirmations': 1},
+                {'pools': {recipient_type: {'valueZat': 800000000}}, 'minimum_confirmations': 1},
                 self.nodes[2].z_getbalanceforaccount(acct1))
 
         # acct0b will have received the transaction
         assert_equal(
-                {'pools': {recipient_type: {'valueZat': Decimal('200000000')}}, 'minimum_confirmations': 1},
+                {'pools': {recipient_type: {'valueZat': 200000000}}, 'minimum_confirmations': 1},
                 self.nodes[0].z_getbalanceforaccount(acct0b))
 
         # acct0a's note was un-mined
