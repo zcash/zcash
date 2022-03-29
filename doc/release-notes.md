@@ -116,8 +116,7 @@ RPC Changes
 - The result value for `z_importviewingkey` now includes an `address_type` field
   that replaces the now-deprecated `type` key.
 
-'z_sendmany'
-------------
+### 'z_sendmany'
 
 - The `z_sendmany` RPC call no longer permits Sprout recipients in the
   list of recipient addresses. Transactions spending Sprout funds will
@@ -145,8 +144,8 @@ RPC Changes
   available for Sprout outputs) when the `-paymentdisclosure` experimental
   feature flag is set.
 
-Deprecated
-----------
+RPC Deprecations
+----------------
 
 - `z_getnewaddress` has been deprecated in favor of `z_getnewaccount` and
   `z_getaddressforaccount`.
@@ -157,3 +156,7 @@ Deprecated
 - `z_gettotalbalance` has been deprecated. Use `z_getbalanceforaccount` instead.
 - `dumpwallet` has been deprecated. Use `z_exportwallet` instead.
 
+Platform Support
+----------------
+
+- Debian 9 has been removed from the list of supported platforms.
