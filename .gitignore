@@ -38,6 +38,9 @@ src/config/bitcoin-config.h
 src/config/bitcoin-config.h.in
 src/config/stamp-h1
 share/setup.nsi
+confdefs.h
+conftest.cpp
+conftest.err
 
 cache/
 venv-mnf/
