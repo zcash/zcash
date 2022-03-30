@@ -7,7 +7,6 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     NU5_BRANCH_ID,
     assert_equal,
-    connect_nodes_bi,
     get_coinbase_address,
     nuparams,
     start_nodes,
@@ -19,7 +18,7 @@ from test_framework.util import (
 from decimal import Decimal
 
 # Test wallet behaviour with the Orchard protocol
-class WalletOrchardTest(BitcoinTestFramework):
+class WalletOrchardPersistenceTest(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 4
@@ -33,7 +32,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         # Sanity-check the test harness
         assert_equal(self.nodes[0].getblockcount(), 200)
 
-        # Send some sapling funds to node 2 for later spending after we split the network
+        # Send some Orchard funds to node 2 for later spending after we split the network
         acct0 = self.nodes[0].z_getnewaccount()['account']
         ua0 = self.nodes[0].z_getaddressforaccount(acct0, ['sapling', 'orchard'])['address']
 
@@ -43,7 +42,7 @@ class WalletOrchardTest(BitcoinTestFramework):
 
         # Mine the tx & activate NU5
         self.sync_all()
-        self.nodes[0].generate(5)
+        self.nodes[0].generate(1)
         self.sync_all()
 
         assert_equal(
@@ -56,7 +55,7 @@ class WalletOrchardTest(BitcoinTestFramework):
 
         recipients = [{"address": ua1, "amount": 1}]
         myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0)
-        source_tx = wait_and_assert_operationid_status(self.nodes[0], myopid)
+        wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
         self.nodes[0].generate(1)
@@ -73,7 +72,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         # note commitment tree gets advanced.
         recipients = [{"address": ua0, "amount": 1}]
         myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0)
-        source_tx = wait_and_assert_operationid_status(self.nodes[0], myopid)
+        wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
         self.nodes[0].generate(1)
@@ -90,7 +89,7 @@ class WalletOrchardTest(BitcoinTestFramework):
 
         recipients = [{"address": ua0, "amount": Decimal('0.5')}]
         myopid = self.nodes[1].z_sendmany(ua1, recipients, 1, 0)
-        txid = wait_and_assert_operationid_status(self.nodes[1], myopid)
+        wait_and_assert_operationid_status(self.nodes[1], myopid)
 
         self.sync_all()
         self.nodes[0].generate(1)
@@ -101,4 +100,4 @@ class WalletOrchardTest(BitcoinTestFramework):
                 self.nodes[0].z_getbalanceforaccount(acct0))
 
 if __name__ == '__main__':
-    WalletOrchardTest().main()
+    WalletOrchardPersistenceTest().main()
