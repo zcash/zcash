@@ -16,7 +16,7 @@ use zcash_primitives::{
 
 use orchard::{
     bundle::Authorized,
-    keys::{FullViewingKey, IncomingViewingKey, OutgoingViewingKey, SpendingKey},
+    keys::{FullViewingKey, IncomingViewingKey, OutgoingViewingKey, Scope, SpendingKey},
     note::Nullifier,
     tree::{MerkleHashOrchard, MerklePath},
     Address, Bundle, Note,
@@ -92,8 +92,8 @@ impl KeyStore {
     pub fn add_full_viewing_key(&mut self, fvk: FullViewingKey) {
         // When we add a full viewing key, we need to add both the internal and external
         // incoming viewing keys.
-        let external_ivk = IncomingViewingKey::from(&fvk);
-        let internal_ivk = IncomingViewingKey::from(&fvk.derive_internal());
+        let external_ivk = fvk.to_ivk(Scope::External);
+        let internal_ivk = fvk.to_ivk(Scope::Internal);
         self.viewing_keys.insert(external_ivk, fvk.clone());
         self.viewing_keys.insert(internal_ivk, fvk);
     }

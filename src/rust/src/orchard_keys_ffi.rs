@@ -3,7 +3,7 @@ use std::slice;
 use tracing::error;
 
 use orchard::{
-    keys::{DiversifierIndex, FullViewingKey, IncomingViewingKey, OutgoingViewingKey, SpendingKey},
+    keys::{DiversifierIndex, FullViewingKey, IncomingViewingKey, Scope, SpendingKey},
     Address,
 };
 
@@ -268,7 +268,7 @@ pub extern "C" fn orchard_full_viewing_key_to_incoming_viewing_key(
     key: *const FullViewingKey,
 ) -> *mut IncomingViewingKey {
     unsafe { key.as_ref() }
-        .map(|key| Box::into_raw(Box::new(IncomingViewingKey::from(key))))
+        .map(|key| Box::into_raw(Box::new(key.to_ivk(Scope::External))))
         .unwrap_or(std::ptr::null_mut())
 }
 
@@ -277,10 +277,7 @@ pub extern "C" fn orchard_full_viewing_key_to_internal_incoming_viewing_key(
     fvk: *const FullViewingKey,
 ) -> *mut IncomingViewingKey {
     unsafe { fvk.as_ref() }
-        .map(|fvk| {
-            let internal_fvk = fvk.derive_internal();
-            Box::into_raw(Box::new(IncomingViewingKey::from(&internal_fvk)))
-        })
+        .map(|fvk| Box::into_raw(Box::new(fvk.to_ivk(Scope::Internal))))
         .unwrap_or(std::ptr::null_mut())
 }
 
@@ -292,7 +289,7 @@ pub extern "C" fn orchard_full_viewing_key_to_external_outgoing_viewing_key(
     let fvk = unsafe { fvk.as_ref() }.expect("fvk must not be null");
     let ovk_ret = unsafe { ovk_ret.as_mut() }.expect("ovk_ret must not be null");
 
-    let ovk = OutgoingViewingKey::from(fvk);
+    let ovk = fvk.to_ovk(Scope::External);
     *ovk_ret = *ovk.as_ref();
 }
 
@@ -304,8 +301,7 @@ pub extern "C" fn orchard_full_viewing_key_to_internal_outgoing_viewing_key(
     let fvk = unsafe { fvk.as_ref() }.expect("fvk must not be null");
     let ovk_ret = unsafe { ovk_ret.as_mut() }.expect("ovk_ret must not be null");
 
-    let internal_fvk = fvk.derive_internal();
-    let ovk = OutgoingViewingKey::from(&internal_fvk);
+    let ovk = fvk.to_ovk(Scope::Internal);
     *ovk_ret = *ovk.as_ref();
 }
 

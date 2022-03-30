@@ -93,3 +93,4 @@ zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "9c1e
 zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "9c1ed86c5aa8ae3b6d6dcc1478f2d6ba1264488f" }
 zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "9c1ed86c5aa8ae3b6d6dcc1478f2d6ba1264488f" }
 zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "9c1ed86c5aa8ae3b6d6dcc1478f2d6ba1264488f" }
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "eaa0cfdbf6a52a023752ac8e29d10308318424a0" }
