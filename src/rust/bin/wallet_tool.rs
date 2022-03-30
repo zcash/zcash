@@ -7,11 +7,12 @@ use std::iter;
 use std::panic;
 use std::path::{Path, PathBuf};
 use std::process::{self, ChildStdin, Command, Output, Stdio};
-use std::str::from_utf8;
+use std::str::{from_utf8, FromStr};
 use std::time::SystemTime;
 
 use anyhow::{self, Context};
 use backtrace::Backtrace;
+use blake2b_simd::Params as Blake2bParams;
 use gumdrop::{Options, ParsingStyle};
 use rand::{thread_rng, Rng};
 use secrecy::{ExposeSecret, SecretString};
@@ -20,6 +21,7 @@ use time::macros::format_description;
 use time::OffsetDateTime;
 use tracing::debug;
 use tracing_subscriber::{fmt, EnvFilter};
+use zcash_primitives::zip339::{Language, Mnemonic};
 
 #[derive(Debug, Options)]
 struct CliOptions {
@@ -352,24 +354,84 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
     let export_file = File::open(export_path)
         .with_context(|| format!("Could not open {:?} for reading", export_path))?;
 
+    let mut has_non_mnemonic = false;
+    let mut fingerprint: Option<Vec<u8>> = None;
+    let mut language: Option<Language> = None;
+    let mut phrase: Option<SecretString> = None;
+    let mut legacy_seedfp: Option<Vec<u8>> = None;
+
     // TODO: ensure the buffer will be zeroized (#5650)
-    let phrase_line: Vec<_> = io::BufReader::new(export_file)
+    for t in io::BufReader::new(export_file)
         .lines()
         .map(|line| line.map(SecretString::new))
-        .filter(|s| {
-            s.as_ref()
-                .map(|t| t.expose_secret().starts_with("# - recovery_phrase=\""))
-                .unwrap_or(false)
-        })
-        .collect();
+    {
+        let t = t.with_context(|| "Export file was not UTF-8")?;
+        let (key, comment) = split(t.expose_secret(), "#");
+        let key = key.trim();
+        if key.is_empty() {
+            // No key, so this could be the phrase or fingerprint.
+            if comment.starts_with(" - recovery_phrase=\"") {
+                if fingerprint.is_some() {
+                    return Err(WalletToolError::RecoveryPhraseNotFound.into());
+                }
+                phrase = Some(SecretString::from_str(
+                    comment
+                        .trim_start_matches(" - recovery_phrase=\"")
+                        .trim_end_matches('"'),
+                )?);
+            }
+            if comment.starts_with(" - language=") {
+                if language.is_some() {
+                    debug!(
+                        "Multiple languages, so we cannot convert the passphrase to a legacy seed."
+                    );
+                    has_non_mnemonic = true;
+                } else {
+                    language = language_from_name(comment.trim_start_matches(" - language="));
+                    debug!("language = {:?}", language);
+                }
+            }
+            if comment.starts_with(" - fingerprint=") {
+                if fingerprint.is_some() {
+                    debug!("Multiple fingerprints, so we cannot tell whether keys match the right one.");
+                    has_non_mnemonic = true;
+                } else {
+                    fingerprint = hex::decode(comment.trim_start_matches(" - fingerprint=")).ok();
+                    debug!("fingerprint = {:?}", fingerprint.as_ref().map(hex::encode));
+                }
+            }
+        } else {
+            // We have a key.
 
-    let phrase = match &phrase_line[..] {
-        [Ok(line)] => line
-            .expose_secret()
-            .trim_start_matches("# - recovery_phrase=\"")
-            .trim_end_matches('"'),
-        _ => return Err(WalletToolError::RecoveryPhraseNotFound.into()),
-    };
+            // Compute the legacy seedfp if we can, and haven't done so yet.
+            if let Some(language) = language {
+                if let Some(phrase) = phrase.as_ref() {
+                    if legacy_seedfp.is_none() {
+                        legacy_seedfp = legacy_seedfp_from_phrase(language, phrase);
+                        debug!(
+                            "legacy_seedfp = {:?}",
+                            legacy_seedfp.as_ref().map(hex::encode)
+                        );
+                    }
+                }
+            }
+
+            // Set `has_non_mnemonic` if either the exported key doesn't have a
+            // `seedfp` field, or it differs from both the wallet fingerprint and
+            // the legacy seed fingerprint.
+            //
+            // Note that an export file written by zcashd will always have the
+            // `recovery_phrase`, `language`, and `fingerprint` fields before any
+            // keys. But if they were not present before the first key, we would
+            // safely set `has_non_mnemonic` to true.
+            has_non_mnemonic |= seedfp_from_export_line(key, comment).map_or(true, |fp| {
+                Some(&fp) != fingerprint.as_ref() && Some(&fp) != legacy_seedfp.as_ref()
+            });
+        }
+    }
+
+    let phrase =
+        phrase.ok_or_else(|| anyhow::Error::from(WalletToolError::RecoveryPhraseNotFound))?;
 
     // This panic hook allows us to make a best effort to clear the screen (and then print
     // another reminder about secrets in the export file) even if a panic occurs.
@@ -390,7 +452,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
 
         const WORDS_PER_LINE: usize = 3;
 
-        let words: Vec<_> = phrase.split(' ').collect();
+        let words: Vec<&str> = phrase.expose_secret().split(' ').collect();
         let max_len = words.iter().map(|w| w.len()).max().unwrap_or(0);
 
         for (i, word) in words.iter().enumerate() {
@@ -451,7 +513,7 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
 
     let mut cli_args = cli_options;
     cli_args.extend_from_slice(&["-stdin".to_string(), "walletconfirmbackup".to_string()]);
-    exec(&zcash_cli, &cli_args, Some(phrase))
+    exec(&zcash_cli, &cli_args, Some(phrase.expose_secret()))
         .and_then(|out| {
             let cli_err: Vec<_> = from_utf8(&out.stderr)
                 .with_context(|| "Output from zcash-cli was not UTF-8")?
@@ -476,17 +538,27 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
                 "\nThe backup of the emergency recovery phrase for the zcashd\n",
                 "wallet has been successfully confirmed 🙂. You can now use the\n",
                 "zcashd RPC methods that create keys and addresses in that wallet.\n",
-                "\n",
-                "The zcashd wallet might also contain keys that are *not* derived\n",
-                "from the emergency recovery phrase. If you lose the 'wallet.dat'\n",
-                "file then any funds associated with these keys would be lost. To\n",
-                "minimize this risk, it is recommended to send all funds from this\n",
-                "wallet into new addresses and discontinue the use of legacy addresses.\n",
-                "Note that even after doing so, there is the possibility that\n",
-                "additional funds could be sent to legacy addresses (if any exist)\n",
-                "and so it is necessary to keep backing up the 'wallet.dat' file\n",
-                "in any case.\n",
-                "\n",
+            ));
+            if has_non_mnemonic {
+                println!(concat!(
+                    "The zcashd wallet also contains keys that are *not* derived from\n",
+                    "the emergency recovery phrase. If you lose the 'wallet.dat' file\n",
+                    "then any funds associated with these keys will be lost. To minimize\n",
+                    "this risk, it is recommended to send all funds from this wallet\n",
+                    "into new addresses and discontinue the use of legacy addresses.\n",
+                    "Note that even after doing so, there is the possibility that\n",
+                    "additional funds could be sent to those legacy addresses, and so\n",
+                    "it is recommended to retain either the 'wallet.dat' file or the\n",
+                    "export file in any case.\n",
+                ));
+            } else {
+                println!(concat!(
+                    "The zcashd wallet contains only keys that are derived from the\n",
+                    "emergency recovery phrase, and so it is sufficient to back up that\n",
+                    "phrase (provided that no other keys are imported).\n",
+                ));
+            }
+            println!(concat!(
                 "If you use other wallets, their recovery information will need to\n",
                 "be backed up separately.\n"
             ));
@@ -502,6 +574,64 @@ fn run(opts: &CliOptions) -> anyhow::Result<()> {
             e
         })?;
     Ok(())
+}
+
+fn language_from_name(name: &str) -> Option<Language> {
+    match name {
+        "English" => Some(Language::English),
+        "SimplifiedChinese" => Some(Language::SimplifiedChinese),
+        "TraditionalChinese" => Some(Language::TraditionalChinese),
+        "Czech" => Some(Language::Czech),
+        "French" => Some(Language::French),
+        "Italian" => Some(Language::Italian),
+        "Japanese" => Some(Language::Japanese),
+        "Korean" => Some(Language::Korean),
+        "Portuguese" => Some(Language::Portuguese),
+        "Spanish" => Some(Language::Spanish),
+        _ => None,
+    }
+}
+
+const ZCASH_HD_SEED_FP_PERSONAL: &[u8; 16] = b"Zcash_HD_Seed_FP";
+
+fn legacy_seedfp_from_phrase(language: Language, phrase: &SecretString) -> Option<Vec<u8>> {
+    if let Ok(mnemonic) = Mnemonic::from_phrase_in(language, phrase.expose_secret()) {
+        let mut h = Blake2bParams::new()
+            .hash_length(32)
+            .personal(ZCASH_HD_SEED_FP_PERSONAL)
+            .to_state();
+        // Use the empty passphrase.
+        h.update(&mnemonic.to_seed(""));
+        Some(h.finalize().as_bytes().to_vec())
+    } else {
+        debug!("Could not obtain legacy seed from recovery phrase.");
+        None
+    }
+}
+
+// A variant of `split_once` that always succeeds (returning the
+// whole string on the left if the separator is not found).
+fn split<'a>(s: &'a str, sep: &str) -> (&'a str, &'a str) {
+    if let Some((prefix, suffix)) = s.split_once(sep) {
+        (prefix, suffix)
+    } else {
+        (s, "")
+    }
+}
+
+// Parse a line of the export file for its seed fingerprint, if any.
+fn seedfp_from_export_line(key: &str, comment: &str) -> Option<Vec<u8>> {
+    if let Some((_, suffix)) = key.split_once(" m/") {
+        if let Some((_, suffix)) = suffix.split_once(' ') {
+            return hex::decode(split(suffix, " ").0).ok();
+        }
+    }
+    if comment.contains(" hdkeypath=") {
+        if let Some((_, suffix)) = comment.split_once(" seedfp=") {
+            return hex::decode(split(suffix, " ").0).ok();
+        }
+    }
+    None
 }
 
 const MAX_USER_INPUT_LEN: usize = 100;
