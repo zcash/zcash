@@ -58,20 +58,24 @@ pub struct InPoint {
 pub struct DecryptedNote {
     note: Note,
     memo: [u8; 512],
-    /// The position of the note's commitment within the global Merkle tree.
-    position: Option<Position>,
 }
 
-/// A data structure tracking the note data that was decrypted from a single transaction,
-/// along with the height at which that transaction was discovered in the chain.
+/// A data structure tracking the note data that was decrypted from a single transaction.
 #[derive(Debug, Clone)]
 pub struct TxNotes {
-    /// The block height containing the transaction from which these
-    /// notes were decrypted.
-    tx_height: Option<BlockHeight>,
     /// A map from the index of the Orchard action from which this note
     /// was decrypted to the decrypted note value.
     decrypted_notes: BTreeMap<usize, DecryptedNote>,
+}
+
+/// A data structure chain position information for a single transaction.
+#[derive(Clone, Debug, Default)]
+struct NotePositions {
+    /// The block height containing the transaction (if mined).
+    tx_height: Option<BlockHeight>,
+    /// A map from the index of an Orchard action tracked by this wallet, to the position
+    /// of the note's commitment within the global Merkle tree.
+    note_positions: BTreeMap<usize, Position>,
 }
 
 struct KeyStore {
@@ -136,6 +140,9 @@ pub struct Wallet {
     /// The in-memory index from txid to notes from the associated transaction that have
     /// been decrypted with the IVKs known to this wallet.
     wallet_received_notes: BTreeMap<TxId, TxNotes>,
+    /// The in-memory index from txid to note positions from the associated transaction.
+    /// This map should always be a subset of `wallet_received_notes`.
+    wallet_note_positions: BTreeMap<TxId, NotePositions>,
     /// The in-memory index from nullifier to the outpoint of the note from which that
     /// nullifier was derived.
     nullifiers: BTreeMap<Nullifier, OutPoint>,
@@ -209,6 +216,7 @@ impl Wallet {
         Wallet {
             key_store: KeyStore::empty(),
             wallet_received_notes: BTreeMap::new(),
+            wallet_note_positions: BTreeMap::new(),
             nullifiers: BTreeMap::new(),
             witness_tree: BridgeTree::new(MAX_CHECKPOINTS),
             last_checkpoint: None,
@@ -224,8 +232,9 @@ impl Wallet {
     /// in place with the expectation that they will be overwritten and/or updated in
     /// the rescan process.
     pub fn reset(&mut self) {
-        for tx_notes in self.wallet_received_notes.values_mut() {
+        for tx_notes in self.wallet_note_positions.values_mut() {
             tx_notes.tx_height = None;
+            tx_notes.note_positions.clear();
         }
         self.witness_tree = BridgeTree::new(MAX_CHECKPOINTS);
         self.last_checkpoint = None;
@@ -296,7 +305,7 @@ impl Wallet {
             // retain notes that correspond to transactions that are not "un-mined" after
             // the rewind
             let to_retain: BTreeSet<_> = self
-                .wallet_received_notes
+                .wallet_note_positions
                 .iter()
                 .filter_map(|(txid, n)| {
                     if n.tx_height
@@ -314,14 +323,12 @@ impl Wallet {
             // once we've observed a note for the first time. The block height at which we
             // observed the note is set to `None` as the transaction will no longer have been
             // observed as having been mined.
-            for (txid, n) in self.wallet_received_notes.iter_mut() {
+            for (txid, n) in self.wallet_note_positions.iter_mut() {
                 // Erase block height and commitment tree information for any received
                 // notes that have been un-mined by the rewind.
                 if !to_retain.contains(txid) {
                     n.tx_height = None;
-                    for dnote in n.decrypted_notes.values_mut() {
-                        dnote.position = None;
-                    }
+                    n.note_positions.clear();
                 }
             }
             self.last_observed = Some(last_observed);
@@ -360,15 +367,7 @@ impl Wallet {
             .collect::<Vec<_>>();
 
         for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_with_keys(&keys) {
-            assert!(self.add_decrypted_note(
-                None,
-                txid,
-                action_idx,
-                ivk.clone(),
-                note,
-                recipient,
-                memo
-            ));
+            assert!(self.add_decrypted_note(txid, action_idx, ivk.clone(), note, recipient, memo));
             involvement.receive_action_metadata.insert(action_idx, ivk);
         }
 
@@ -414,21 +413,20 @@ impl Wallet {
 
         for (action_idx, ivk) in hints.into_iter() {
             if let Some((note, recipient, memo)) = bundle.decrypt_output_with_key(action_idx, ivk) {
-                if !self.add_decrypted_note(
-                    tx_height,
-                    txid,
-                    action_idx,
-                    ivk.clone(),
-                    note,
-                    recipient,
-                    memo,
-                ) {
+                if !self.add_decrypted_note(txid, action_idx, ivk.clone(), note, recipient, memo) {
                     return Err(BundleLoadError::FvkNotFound(ivk.clone()));
                 }
             } else {
                 return Err(BundleLoadError::ActionDecryptionFailed(action_idx));
             }
         }
+
+        // Set the transaction's height.
+        self.wallet_note_positions
+            .entry(*txid)
+            .or_default()
+            .tx_height = tx_height;
+
         Ok(())
     }
 
@@ -436,7 +434,6 @@ impl Wallet {
     #[allow(clippy::too_many_arguments)]
     fn add_decrypted_note(
         &mut self,
-        tx_height: Option<BlockHeight>,
         txid: &TxId,
         action_idx: usize,
         ivk: IncomingViewingKey,
@@ -458,15 +455,10 @@ impl Wallet {
             self.nullifiers.insert(nf, outpoint);
 
             // add the decrypted note data to the wallet
-            let note_data = DecryptedNote {
-                note,
-                memo,
-                position: None,
-            };
+            let note_data = DecryptedNote { note, memo };
             self.wallet_received_notes
                 .entry(*txid)
                 .or_insert_with(|| TxNotes {
-                    tx_height,
                     decrypted_notes: BTreeMap::new(),
                 })
                 .decrypted_notes
@@ -560,11 +552,14 @@ impl Wallet {
         });
 
         // update the block height recorded for the transaction
-        if let Some(tx_notes) = self.wallet_received_notes.get_mut(txid) {
-            tx_notes.tx_height = Some(block_height);
+        let mut my_notes_for_tx = self.wallet_received_notes.get_mut(txid);
+        if my_notes_for_tx.is_some() {
+            self.wallet_note_positions
+                .entry(*txid)
+                .or_default()
+                .tx_height = Some(block_height);
         }
 
-        let mut my_notes_for_tx = self.wallet_received_notes.get_mut(txid);
         for (action_idx, action) in bundle.actions().iter().enumerate() {
             // append the note commitment for each action to the witness tree
             if !self
@@ -575,13 +570,18 @@ impl Wallet {
             }
 
             // for notes that are ours, witness the current state of the tree
-            if let Some(dnote) = my_notes_for_tx
+            if my_notes_for_tx
                 .as_mut()
                 .and_then(|n| n.decrypted_notes.get_mut(&action_idx))
+                .is_some()
             {
                 let (pos, cmx) = self.witness_tree.witness().expect("tree is not empty");
                 assert_eq!(cmx, MerkleHashOrchard::from_cmx(action.cmx()));
-                dnote.position = Some(pos);
+                self.wallet_note_positions
+                    .entry(*txid)
+                    .or_default()
+                    .note_positions
+                    .insert(action_idx, pos);
             }
 
             // For nullifiers that are ours that we detect as spent by this action,
@@ -663,12 +663,16 @@ impl Wallet {
                 self.key_store
                     .ivk_for_address(&dnote.note.recipient())
                     .and_then(|ivk| self.key_store.viewing_keys.get(ivk))
-                    .zip(dnote.position)
+                    .zip(
+                        self.wallet_note_positions
+                            .get(&outpoint.txid)
+                            .and_then(|tx_notes| tx_notes.note_positions.get(&outpoint.action_idx)),
+                    )
                     .map(|(fvk, position)| {
                         let path = self
                             .witness_tree
                             .authentication_path(
-                                position,
+                                *position,
                                 &MerkleHashOrchard::from_cmx(&dnote.note.commitment().into()),
                             )
                             .expect("wallet always has paths to positioned notes");
@@ -676,7 +680,7 @@ impl Wallet {
                             fvk.clone(),
                             dnote.note,
                             MerklePath::from_parts(
-                                u64::from(position).try_into().unwrap(),
+                                u64::from(*position).try_into().unwrap(),
                                 path.try_into().unwrap(),
                             ),
                         )
