@@ -8,9 +8,10 @@ use std::ptr;
 use std::slice;
 use tracing::error;
 
-use zcash_encoding::Optional;
+use zcash_encoding::{Optional, Vector};
 use zcash_primitives::{
     consensus::BlockHeight,
+    merkle_tree::incremental::{read_position, write_position},
     transaction::{components::Amount, TxId},
 };
 
@@ -1189,7 +1190,26 @@ pub extern "C" fn orchard_wallet_write_note_commitment_tree(
         Optional::write(&mut writer, wallet.last_checkpoint, |w, h| {
             w.write_u32::<LittleEndian>(h.into())
         })?;
-        write_tree(&mut writer, &wallet.witness_tree)
+        write_tree(&mut writer, &wallet.witness_tree)?;
+
+        // Write note positions.
+        Vector::write_sized(
+            &mut writer,
+            wallet.wallet_note_positions.iter(),
+            |mut w, (txid, tx_notes)| {
+                txid.write(&mut w)?;
+                Vector::write_sized(
+                    w,
+                    tx_notes.note_positions.iter(),
+                    |w, (action_idx, position)| {
+                        w.write_u32::<LittleEndian>(*action_idx as u32)?;
+                        write_position(w, *position)
+                    },
+                )
+            },
+        )?;
+
+        Ok(())
     };
 
     match write_all() {
@@ -1215,6 +1235,22 @@ pub extern "C" fn orchard_wallet_load_note_commitment_tree(
             r.read_u32::<LittleEndian>().map(BlockHeight::from)
         })?;
         let witness_tree = read_tree(&mut reader)?;
+
+        // Read note positions.
+        wallet.wallet_note_positions = Vector::read_collected(&mut reader, |mut r| {
+            Ok((
+                TxId::read(&mut r)?,
+                NotePositions {
+                    tx_height: None,
+                    note_positions: Vector::read_collected(r, |r| {
+                        Ok((
+                            r.read_u32::<LittleEndian>().map(|idx| idx as usize)?,
+                            read_position(r)?,
+                        ))
+                    })?,
+                },
+            ))
+        })?;
 
         wallet.last_checkpoint = last_checkpoint;
         wallet.witness_tree = witness_tree;
