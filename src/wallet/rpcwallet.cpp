@@ -2577,23 +2577,49 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         obj.pushKV("confirmations", entry.confirmations);
         bool hasSaplingSpendingKey = pwalletMain->HaveSaplingSpendingKeyForAddress(entry.address);
         obj.pushKV("spendable", hasSaplingSpendingKey);
-        obj.pushKV("address", keyIO.EncodePaymentAddress([&]() {
-            auto ua = pwalletMain->FindUnifiedAddressByReceiver(entry.address);
-            if (ua.has_value()) {
-                return libzcash::PaymentAddress{ua.value()};
-            } else {
-                return libzcash::PaymentAddress{entry.address};
-            }
-        }()));
+        auto addr = pwalletMain->GetPaymentAddressForRecipient(entry.op.hash, entry.address);
+        if (addr.second != RecipientType::WalletInternalAddress) {
+            obj.pushKV("address", keyIO.EncodePaymentAddress(addr.first));
+        }
         obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value()))); // note.value() is equivalent to plaintext.value()
         obj.pushKV("memo", HexStr(entry.memo));
         if (hasSaplingSpendingKey) {
-            obj.pushKV("change", pwalletMain->IsNoteSaplingChange(saplingNullifiers, entry.address, entry.op));
+            obj.pushKV(
+                    "change",
+                    pwalletMain->IsInternalRecipient(entry.address) ||
+                    pwalletMain->IsNoteSaplingChange(saplingNullifiers, entry.address, entry.op));
         }
         results.push_back(obj);
     }
 
-    // TODO ORCHARD #5683
+    for (auto & entry : orchardEntries) {
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("txid", entry.GetOutPoint().hash.ToString());
+        obj.pushKV("pool", ADDR_TYPE_ORCHARD);
+        obj.pushKV("outindex", (int)entry.GetOutPoint().n);
+        obj.pushKV("confirmations", entry.GetConfirmations());
+
+        // TODO: add a better mechanism for checking whether we have the
+        // spending key for an Orchard receiver.
+        auto ufvkMeta = pwalletMain->GetUFVKMetadataForReceiver(entry.GetAddress());
+        bool haveSpendingKey =
+            ufvkMeta.has_value() &&
+            pwalletMain->GetUnifiedAccountId(ufvkMeta.value().GetUFVKId()).has_value();
+        bool isInternal = pwalletMain->IsInternalRecipient(entry.GetAddress());
+        std::optional<std::string> addrStr;
+        obj.pushKV("spendable", haveSpendingKey);
+        if (!isInternal) {
+            auto ua = pwalletMain->FindUnifiedAddressByReceiver(entry.GetAddress());
+            assert(ua.has_value());
+            obj.pushKV("address", keyIO.EncodePaymentAddress(ua.value()));
+        }
+        obj.pushKV("amount", ValueFromAmount(entry.GetNoteValue()));
+        obj.pushKV("memo", HexStr(entry.GetMemo()));
+        if (haveSpendingKey) {
+            obj.pushKV("change", isInternal);
+        }
+        results.push_back(obj);
+    }
 
     return results;
 }
