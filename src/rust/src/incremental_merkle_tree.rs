@@ -5,7 +5,7 @@ use incrementalmerkletree::{
     bridgetree::{BridgeTree, Checkpoint},
     Hashable,
 };
-use zcash_encoding::Vector;
+use zcash_encoding::{Optional, Vector};
 use zcash_primitives::merkle_tree::{
     incremental::{
         read_bridge_v1, read_leu64_usize, read_position, write_bridge_v1, write_position,
@@ -50,7 +50,12 @@ pub fn write_tree_v1<H: Hashable + HashSer + Ord, W: Write>(
     mut writer: W,
     tree: &BridgeTree<H, 32>,
 ) -> io::Result<()> {
-    Vector::write(&mut writer, tree.bridges(), |w, b| write_bridge_v1(w, b))?;
+    Vector::write(&mut writer, tree.prior_bridges(), |w, b| {
+        write_bridge_v1(w, b)
+    })?;
+    Optional::write(&mut writer, tree.current_bridge().as_ref(), |w, b| {
+        write_bridge_v1(w, b)
+    })?;
     Vector::write_sized(
         &mut writer,
         tree.witnessed_indices().iter(),
@@ -74,6 +79,7 @@ pub fn read_tree_v1<H: Hashable + HashSer + Ord + Clone, R: Read>(
 ) -> io::Result<BridgeTree<H, 32>> {
     BridgeTree::from_parts(
         Vector::read(&mut reader, |r| read_bridge_v1(r))?,
+        Optional::read(&mut reader, |r| read_bridge_v1(r))?,
         Vector::read_collected(&mut reader, |mut r| {
             Ok((
                 (read_position(&mut r)?, H::read(&mut r)?),
