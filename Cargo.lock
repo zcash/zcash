@@ -855,8 +855,7 @@ dependencies = [
 [[package]]
 name = "incrementalmerkletree"
 version = "0.3.0-beta.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cad6be282c89afc05aebe4801b0d5f9d6b7c556a8f398e447f4b26ea56a6b45e"
+source = "git+https://github.com/nuttycom/incrementalmerkletree?rev=027a98e53ad59699662d258ac22cd2095ae02aea#027a98e53ad59699662d258ac22cd2095ae02aea"
 dependencies = [
  "serde",
 ]

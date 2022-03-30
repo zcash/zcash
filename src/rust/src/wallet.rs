@@ -559,8 +559,7 @@ impl Wallet {
                 .and_then(|n| n.decrypted_notes.get(&action_idx))
                 .is_some()
             {
-                let (pos, cmx) = self.witness_tree.witness().expect("tree is not empty");
-                assert_eq!(cmx, MerkleHashOrchard::from_cmx(action.cmx()));
+                let pos = self.witness_tree.witness().expect("tree is not empty");
                 self.wallet_note_positions
                     .get_mut(txid)
                     .expect("We created this above")
@@ -653,12 +652,15 @@ impl Wallet {
                             .and_then(|tx_notes| tx_notes.note_positions.get(&outpoint.action_idx)),
                     )
                     .map(|(fvk, position)| {
+                        assert_eq!(
+                            self.witness_tree
+                                .get_witnessed_leaf(*position)
+                                .expect("tree has witnessed the leaf for this note."),
+                            &MerkleHashOrchard::from_cmx(&dnote.note.commitment().into()),
+                        );
                         let path = self
                             .witness_tree
-                            .authentication_path(
-                                *position,
-                                &MerkleHashOrchard::from_cmx(&dnote.note.commitment().into()),
-                            )
+                            .authentication_path(*position)
                             .expect("wallet always has paths to positioned notes");
                         OrchardSpendInfo::from_parts(
                             fvk.clone(),
