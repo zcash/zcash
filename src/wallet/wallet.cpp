@@ -1402,8 +1402,9 @@ void CWallet::ChainTipAdded(const CBlockIndex *pindex,
                             SaplingMerkleTree saplingTree,
                             bool performOrchardWalletUpdates)
 {
+    const auto chainParams = Params();
     IncrementNoteWitnesses(
-            Params().GetConsensus(),
+            chainParams.GetConsensus(),
             pindex, pblock,
             sproutTree, saplingTree, performOrchardWalletUpdates);
     UpdateSaplingNullifierNoteMapForBlock(pblock);
@@ -1417,7 +1418,9 @@ void CWallet::ChainTipAdded(const CBlockIndex *pindex,
         nLastSetChain = nNow;
     }
     if (++nSetChainUpdates >= WITNESS_WRITE_UPDATES ||
-            nLastSetChain + (int64_t)WITNESS_WRITE_INTERVAL * 1000000 < nNow) {
+        nLastSetChain + (int64_t)WITNESS_WRITE_INTERVAL * 1000000 < nNow ||
+        (chainParams.NetworkIDString() == CBaseChainParams::REGTEST && mapArgs.count("-regtestwalletsetbestchaineveryblock")))
+    {
         nLastSetChain = nNow;
         nSetChainUpdates = 0;
         CBlockLocator loc;
