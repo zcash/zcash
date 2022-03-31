@@ -132,13 +132,9 @@ bool orchard_wallet_add_notes_from_bundle(
  *
  * The provided bundle must be a component of the transaction from which
  * `txid` was derived.
- *
- * The value the `blockHeight` pointer points to be set to the height at which the
- * transaction was mined, or `nullptr` if the transaction is not in the main chain.
  */
 bool orchard_wallet_load_bundle(
         OrchardWalletPtr* wallet,
-        const uint32_t* blockHeight,
         const unsigned char txid[32],
         const OrchardBundlePtr* bundle,
         const RawOrchardActionIVK* actionIvks,

@@ -1040,7 +1040,6 @@ void CWallet::LoadRecipientMapping(const uint256& txid, const RecipientMapping& 
 bool CWallet::LoadCaches()
 {
     AssertLockHeld(cs_wallet);
-    AssertLockHeld(cs_main);
 
     auto seed = GetMnemonicSeed();
 
@@ -1160,12 +1159,7 @@ bool CWallet::LoadCaches()
     // Restore decrypted Orchard notes.
     for (const auto& [_, walletTx] : mapWallet) {
         if (!walletTx.orchardTxMeta.empty()) {
-            const CBlockIndex* pTxIndex;
-            std::optional<int> blockHeight;
-            if (walletTx.GetDepthInMainChain(pTxIndex) > 0) {
-                blockHeight = pTxIndex->nHeight;
-            }
-            if (!orchardWallet.LoadWalletTx(blockHeight, walletTx, walletTx.orchardTxMeta)) {
+            if (!orchardWallet.LoadWalletTx(walletTx, walletTx.orchardTxMeta)) {
                 LogPrintf("%s: Error: Failed to decrypt previously decrypted notes for txid %s.\n",
                     __func__, walletTx.GetHash().GetHex());
                 return false;
@@ -1402,8 +1396,9 @@ void CWallet::ChainTipAdded(const CBlockIndex *pindex,
                             SaplingMerkleTree saplingTree,
                             bool performOrchardWalletUpdates)
 {
+    const auto chainParams = Params();
     IncrementNoteWitnesses(
-            Params().GetConsensus(),
+            chainParams.GetConsensus(),
             pindex, pblock,
             sproutTree, saplingTree, performOrchardWalletUpdates);
     UpdateSaplingNullifierNoteMapForBlock(pblock);
@@ -1417,7 +1412,9 @@ void CWallet::ChainTipAdded(const CBlockIndex *pindex,
         nLastSetChain = nNow;
     }
     if (++nSetChainUpdates >= WITNESS_WRITE_UPDATES ||
-            nLastSetChain + (int64_t)WITNESS_WRITE_INTERVAL * 1000000 < nNow) {
+        nLastSetChain + (int64_t)WITNESS_WRITE_INTERVAL * 1000000 < nNow ||
+        (chainParams.NetworkIDString() == CBaseChainParams::REGTEST && mapArgs.count("-regtestwalletsetbestchaineveryblock")))
+    {
         nLastSetChain = nNow;
         nSetChainUpdates = 0;
         CBlockLocator loc;

@@ -8,9 +8,10 @@ use std::ptr;
 use std::slice;
 use tracing::error;
 
-use zcash_encoding::Optional;
+use zcash_encoding::{Optional, Vector};
 use zcash_primitives::{
     consensus::BlockHeight,
+    merkle_tree::incremental::{read_position, write_position},
     transaction::{components::Amount, TxId},
 };
 
@@ -58,20 +59,24 @@ pub struct InPoint {
 pub struct DecryptedNote {
     note: Note,
     memo: [u8; 512],
-    /// The position of the note's commitment within the global Merkle tree.
-    position: Option<Position>,
 }
 
-/// A data structure tracking the note data that was decrypted from a single transaction,
-/// along with the height at which that transaction was discovered in the chain.
+/// A data structure tracking the note data that was decrypted from a single transaction.
 #[derive(Debug, Clone)]
 pub struct TxNotes {
-    /// The block height containing the transaction from which these
-    /// notes were decrypted.
-    tx_height: Option<BlockHeight>,
     /// A map from the index of the Orchard action from which this note
     /// was decrypted to the decrypted note value.
     decrypted_notes: BTreeMap<usize, DecryptedNote>,
+}
+
+/// A data structure holding chain position information for a single transaction.
+#[derive(Clone, Debug)]
+struct NotePositions {
+    /// The height of the block containing the transaction.
+    tx_height: BlockHeight,
+    /// A map from the index of an Orchard action tracked by this wallet, to the position
+    /// of the output note's commitment within the global Merkle tree.
+    note_positions: BTreeMap<usize, Position>,
 }
 
 struct KeyStore {
@@ -136,6 +141,9 @@ pub struct Wallet {
     /// The in-memory index from txid to notes from the associated transaction that have
     /// been decrypted with the IVKs known to this wallet.
     wallet_received_notes: BTreeMap<TxId, TxNotes>,
+    /// The in-memory index from txid to note positions from the associated transaction.
+    /// This map should always have a subset of the keys in `wallet_received_notes`.
+    wallet_note_positions: BTreeMap<TxId, NotePositions>,
     /// The in-memory index from nullifier to the outpoint of the note from which that
     /// nullifier was derived.
     nullifiers: BTreeMap<Nullifier, OutPoint>,
@@ -209,6 +217,7 @@ impl Wallet {
         Wallet {
             key_store: KeyStore::empty(),
             wallet_received_notes: BTreeMap::new(),
+            wallet_note_positions: BTreeMap::new(),
             nullifiers: BTreeMap::new(),
             witness_tree: BridgeTree::new(MAX_CHECKPOINTS),
             last_checkpoint: None,
@@ -224,9 +233,7 @@ impl Wallet {
     /// in place with the expectation that they will be overwritten and/or updated in
     /// the rescan process.
     pub fn reset(&mut self) {
-        for tx_notes in self.wallet_received_notes.values_mut() {
-            tx_notes.tx_height = None;
-        }
+        self.wallet_note_positions.clear();
         self.witness_tree = BridgeTree::new(MAX_CHECKPOINTS);
         self.last_checkpoint = None;
         self.last_observed = None;
@@ -296,12 +303,10 @@ impl Wallet {
             // retain notes that correspond to transactions that are not "un-mined" after
             // the rewind
             let to_retain: BTreeSet<_> = self
-                .wallet_received_notes
+                .wallet_note_positions
                 .iter()
                 .filter_map(|(txid, n)| {
-                    if n.tx_height
-                        .map_or(true, |h| h <= last_observed.block_height)
-                    {
+                    if n.tx_height <= last_observed.block_height {
                         Some(*txid)
                     } else {
                         None
@@ -312,18 +317,10 @@ impl Wallet {
             self.mined_notes.retain(|_, v| to_retain.contains(&v.txid));
             // nullifier and received note data are retained, because these values are stable
             // once we've observed a note for the first time. The block height at which we
-            // observed the note is set to `None` as the transaction will no longer have been
-            // observed as having been mined.
-            for (txid, n) in self.wallet_received_notes.iter_mut() {
-                // Erase block height and commitment tree information for any received
-                // notes that have been un-mined by the rewind.
-                if !to_retain.contains(txid) {
-                    n.tx_height = None;
-                    for dnote in n.decrypted_notes.values_mut() {
-                        dnote.position = None;
-                    }
-                }
-            }
+            // observed the note is removed along with the note positions, because the
+            // transaction will no longer have been observed as having been mined.
+            self.wallet_note_positions
+                .retain(|txid, _| to_retain.contains(txid));
             self.last_observed = Some(last_observed);
             self.last_checkpoint = if checkpoint_count > blocks_to_rewind as usize {
                 Some(checkpoint_height - blocks_to_rewind)
@@ -360,15 +357,7 @@ impl Wallet {
             .collect::<Vec<_>>();
 
         for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_with_keys(&keys) {
-            assert!(self.add_decrypted_note(
-                None,
-                txid,
-                action_idx,
-                ivk.clone(),
-                note,
-                recipient,
-                memo
-            ));
+            assert!(self.add_decrypted_note(txid, action_idx, ivk.clone(), note, recipient, memo));
             involvement.receive_action_metadata.insert(action_idx, ivk);
         }
 
@@ -378,8 +367,6 @@ impl Wallet {
     /// Restore note and potential spend data from a bundle using the provided
     /// metadata.
     ///
-    /// - `tx_height`: if the transaction containing the bundle has been mined,
-    ///   this should contain the block height it was mined at
     /// - `txid`: The ID for the transaction from which the provided bundle was
     ///   extracted.
     /// - `bundle`: the bundle to decrypt notes from
@@ -391,7 +378,6 @@ impl Wallet {
     ///   will return an error.
     pub fn load_bundle(
         &mut self,
-        tx_height: Option<BlockHeight>,
         txid: &TxId,
         bundle: &Bundle<Authorized, Amount>,
         hints: BTreeMap<usize, &IncomingViewingKey>,
@@ -414,21 +400,14 @@ impl Wallet {
 
         for (action_idx, ivk) in hints.into_iter() {
             if let Some((note, recipient, memo)) = bundle.decrypt_output_with_key(action_idx, ivk) {
-                if !self.add_decrypted_note(
-                    tx_height,
-                    txid,
-                    action_idx,
-                    ivk.clone(),
-                    note,
-                    recipient,
-                    memo,
-                ) {
+                if !self.add_decrypted_note(txid, action_idx, ivk.clone(), note, recipient, memo) {
                     return Err(BundleLoadError::FvkNotFound(ivk.clone()));
                 }
             } else {
                 return Err(BundleLoadError::ActionDecryptionFailed(action_idx));
             }
         }
+
         Ok(())
     }
 
@@ -436,7 +415,6 @@ impl Wallet {
     #[allow(clippy::too_many_arguments)]
     fn add_decrypted_note(
         &mut self,
-        tx_height: Option<BlockHeight>,
         txid: &TxId,
         action_idx: usize,
         ivk: IncomingViewingKey,
@@ -458,15 +436,10 @@ impl Wallet {
             self.nullifiers.insert(nf, outpoint);
 
             // add the decrypted note data to the wallet
-            let note_data = DecryptedNote {
-                note,
-                memo,
-                position: None,
-            };
+            let note_data = DecryptedNote { note, memo };
             self.wallet_received_notes
                 .entry(*txid)
                 .or_insert_with(|| TxNotes {
-                    tx_height,
                     decrypted_notes: BTreeMap::new(),
                 })
                 .decrypted_notes
@@ -560,11 +533,17 @@ impl Wallet {
         });
 
         // update the block height recorded for the transaction
-        if let Some(tx_notes) = self.wallet_received_notes.get_mut(txid) {
-            tx_notes.tx_height = Some(block_height);
+        let my_notes_for_tx = self.wallet_received_notes.get(txid);
+        if my_notes_for_tx.is_some() {
+            self.wallet_note_positions.insert(
+                *txid,
+                NotePositions {
+                    tx_height: block_height,
+                    note_positions: BTreeMap::default(),
+                },
+            );
         }
 
-        let mut my_notes_for_tx = self.wallet_received_notes.get_mut(txid);
         for (action_idx, action) in bundle.actions().iter().enumerate() {
             // append the note commitment for each action to the witness tree
             if !self
@@ -575,13 +554,18 @@ impl Wallet {
             }
 
             // for notes that are ours, witness the current state of the tree
-            if let Some(dnote) = my_notes_for_tx
-                .as_mut()
-                .and_then(|n| n.decrypted_notes.get_mut(&action_idx))
+            if my_notes_for_tx
+                .as_ref()
+                .and_then(|n| n.decrypted_notes.get(&action_idx))
+                .is_some()
             {
                 let (pos, cmx) = self.witness_tree.witness().expect("tree is not empty");
                 assert_eq!(cmx, MerkleHashOrchard::from_cmx(action.cmx()));
-                dnote.position = Some(pos);
+                self.wallet_note_positions
+                    .get_mut(txid)
+                    .expect("We created this above")
+                    .note_positions
+                    .insert(action_idx, pos);
             }
 
             // For nullifiers that are ours that we detect as spent by this action,
@@ -663,12 +647,16 @@ impl Wallet {
                 self.key_store
                     .ivk_for_address(&dnote.note.recipient())
                     .and_then(|ivk| self.key_store.viewing_keys.get(ivk))
-                    .zip(dnote.position)
+                    .zip(
+                        self.wallet_note_positions
+                            .get(&outpoint.txid)
+                            .and_then(|tx_notes| tx_notes.note_positions.get(&outpoint.action_idx)),
+                    )
                     .map(|(fvk, position)| {
                         let path = self
                             .witness_tree
                             .authentication_path(
-                                position,
+                                *position,
                                 &MerkleHashOrchard::from_cmx(&dnote.note.commitment().into()),
                             )
                             .expect("wallet always has paths to positioned notes");
@@ -676,7 +664,7 @@ impl Wallet {
                             fvk.clone(),
                             dnote.note,
                             MerklePath::from_parts(
-                                u64::from(position).try_into().unwrap(),
+                                u64::from(*position).try_into().unwrap(),
                                 path.try_into().unwrap(),
                             ),
                         )
@@ -810,7 +798,6 @@ pub extern "C" fn orchard_wallet_add_notes_from_bundle(
 #[no_mangle]
 pub extern "C" fn orchard_wallet_load_bundle(
     wallet: *mut Wallet,
-    block_height: *const u32,
     txid: *const [c_uchar; 32],
     bundle: *const Bundle<Authorized, Amount>,
     hints: *const FFIActionIvk,
@@ -819,7 +806,6 @@ pub extern "C" fn orchard_wallet_load_bundle(
     potential_spend_idxs_len: usize,
 ) -> bool {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
-    let block_height = unsafe { block_height.as_ref() }.map(|h| BlockHeight::from(*h));
     let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
     let bundle = unsafe { bundle.as_ref() }.expect("bundle pointer may not be null.");
 
@@ -835,7 +821,7 @@ pub extern "C" fn orchard_wallet_load_bundle(
         );
     }
 
-    match wallet.load_bundle(block_height, &txid, bundle, hints, potential_spend_idxs) {
+    match wallet.load_bundle(&txid, bundle, hints, potential_spend_idxs) {
         Ok(_) => true,
         Err(e) => {
             error!("Failed to restore decrypted notes to wallet: {:?}", e);
@@ -1172,6 +1158,8 @@ pub extern "C" fn orchard_wallet_gc_note_commitment_tree(wallet: *mut Wallet) {
     wallet.witness_tree.garbage_collect();
 }
 
+const NOTE_STATE_V1: u8 = 1;
+
 #[no_mangle]
 pub extern "C" fn orchard_wallet_write_note_commitment_tree(
     wallet: *const Wallet,
@@ -1181,14 +1169,37 @@ pub extern "C" fn orchard_wallet_write_note_commitment_tree(
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
     let mut writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
 
-    let mut write_all = move || -> io::Result<()> {
+    let write_v1 = move |mut writer: CppStreamWriter| -> io::Result<()> {
         Optional::write(&mut writer, wallet.last_checkpoint, |w, h| {
             w.write_u32::<LittleEndian>(h.into())
         })?;
-        write_tree(&mut writer, &wallet.witness_tree)
+        write_tree(&mut writer, &wallet.witness_tree)?;
+
+        // Write note positions.
+        Vector::write_sized(
+            &mut writer,
+            wallet.wallet_note_positions.iter(),
+            |mut w, (txid, tx_notes)| {
+                txid.write(&mut w)?;
+                w.write_u32::<LittleEndian>(tx_notes.tx_height.into())?;
+                Vector::write_sized(
+                    w,
+                    tx_notes.note_positions.iter(),
+                    |w, (action_idx, position)| {
+                        w.write_u32::<LittleEndian>(*action_idx as u32)?;
+                        write_position(w, *position)
+                    },
+                )
+            },
+        )?;
+
+        Ok(())
     };
 
-    match write_all() {
+    match writer
+        .write_u8(NOTE_STATE_V1)
+        .and_then(|()| write_v1(writer))
+    {
         Ok(()) => true,
         Err(e) => {
             error!("Failure in writing Orchard note commitment tree: {}", e);
@@ -1206,23 +1217,55 @@ pub extern "C" fn orchard_wallet_load_note_commitment_tree(
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null.");
     let mut reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
 
-    let mut read_all = move || -> io::Result<()> {
+    let mut read_v1 = move |mut reader: CppStreamReader| -> io::Result<()> {
         let last_checkpoint = Optional::read(&mut reader, |r| {
             r.read_u32::<LittleEndian>().map(BlockHeight::from)
         })?;
         let witness_tree = read_tree(&mut reader)?;
+
+        // Read note positions.
+        wallet.wallet_note_positions = Vector::read_collected(&mut reader, |mut r| {
+            Ok((
+                TxId::read(&mut r)?,
+                NotePositions {
+                    tx_height: r.read_u32::<LittleEndian>().map(BlockHeight::from)?,
+                    note_positions: Vector::read_collected(r, |r| {
+                        Ok((
+                            r.read_u32::<LittleEndian>().map(|idx| idx as usize)?,
+                            read_position(r)?,
+                        ))
+                    })?,
+                },
+            ))
+        })?;
 
         wallet.last_checkpoint = last_checkpoint;
         wallet.witness_tree = witness_tree;
         Ok(())
     };
 
-    match read_all() {
-        Ok(_) => true,
+    match reader.read_u8() {
         Err(e) => {
             error!(
-                "Failed to read Orchard note commitment or last checkpoint height: {}",
+                "Failed to read Orchard note position serialization flag: {}",
                 e
+            );
+            false
+        }
+        Ok(NOTE_STATE_V1) => match read_v1(reader) {
+            Ok(_) => true,
+            Err(e) => {
+                error!(
+                    "Failed to read Orchard note commitment or last checkpoint height: {}",
+                    e
+                );
+                false
+            }
+        },
+        Ok(flag) => {
+            error!(
+                "Unrecognized Orchard note position serialization version: {}",
+                flag
             );
             false
         }
