@@ -1086,8 +1086,7 @@ protected:
             const Consensus::Params& consensus,
             const CBlockIndex* pindex,
             const CBlock* pblock,
-            SproutMerkleTree& sproutTree,
-            SaplingMerkleTree& saplingTree,
+            MerkleFrontiers& frontiers,
             bool performOrchardWalletUpdates
             );
     /**
@@ -1158,8 +1157,7 @@ private:
     void ChainTipAdded(
             const CBlockIndex *pindex,
             const CBlock *pblock,
-            SproutMerkleTree sproutTree,
-            SaplingMerkleTree saplingTree,
+            MerkleFrontiers frontiers,
             bool performOrchardWalletUpdates);
 
     /* Add a transparent secret key to the wallet. Internal use only. */
@@ -1806,7 +1804,7 @@ public:
     void ChainTip(
         const CBlockIndex *pindex,
         const CBlock *pblock,
-        std::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added);
+        std::optional<MerkleFrontiers> added);
     void RunSaplingMigration(int blockHeight);
     void AddPendingSaplingMigrationTx(const CTransaction& tx);
     /** Saves witness caches and best block locator to disk. */

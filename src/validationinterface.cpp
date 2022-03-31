@@ -70,12 +70,12 @@ void SyncWithWallets(const CTransaction &tx, const CBlock *pblock, const int nHe
 
 struct CachedBlockData {
     CBlockIndex *pindex;
-    std::pair<SproutMerkleTree, SaplingMerkleTree> oldTrees;
+    MerkleFrontiers oldTrees;
     std::list<CTransaction> txConflicted;
 
     CachedBlockData(
         CBlockIndex *pindex,
-        std::pair<SproutMerkleTree, SaplingMerkleTree> oldTrees,
+        MerkleFrontiers oldTrees,
         std::list<CTransaction> txConflicted):
         pindex(pindex), oldTrees(oldTrees), txConflicted(txConflicted) {}
 };
@@ -135,27 +135,28 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 
             // Iterate backwards over the connected blocks we need to notify.
             while (pindex && pindex != pindexFork) {
+                MerkleFrontiers oldFrontiers;
                 // Get the Sprout commitment tree as of the start of this block.
-                SproutMerkleTree oldSproutTree;
-                assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, oldSproutTree));
+                assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, oldFrontiers.sprout));
 
                 // Get the Sapling commitment tree as of the start of this block.
                 // We can get this from the `hashFinalSaplingRoot` of the last block
                 // However, this is only reliable if the last block was on or after
                 // the Sapling activation height. Otherwise, the last anchor was the
                 // empty root.
-                SaplingMerkleTree oldSaplingTree;
                 if (chainParams.GetConsensus().NetworkUpgradeActive(
                     pindex->pprev->nHeight, Consensus::UPGRADE_SAPLING)) {
                     assert(pcoinsTip->GetSaplingAnchorAt(
-                        pindex->pprev->hashFinalSaplingRoot, oldSaplingTree));
+                        pindex->pprev->hashFinalSaplingRoot, oldFrontiers.sapling));
                 } else {
-                    assert(pcoinsTip->GetSaplingAnchorAt(SaplingMerkleTree::empty_root(), oldSaplingTree));
+                    assert(pcoinsTip->GetSaplingAnchorAt(SaplingMerkleTree::empty_root(), oldFrontiers.sapling));
                 }
+
+                // TODO: Add the Orchard frontier to oldFrontiers
 
                 blockStack.emplace_back(
                     pindex,
-                    std::make_pair(oldSproutTree, oldSaplingTree),
+                    oldFrontiers,
                     recentlyConflicted.first.at(pindex));
 
                 pindex = pindex->pprev;

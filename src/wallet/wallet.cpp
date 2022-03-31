@@ -1392,15 +1392,14 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
 
 void CWallet::ChainTipAdded(const CBlockIndex *pindex,
                             const CBlock *pblock,
-                            SproutMerkleTree sproutTree,
-                            SaplingMerkleTree saplingTree,
+                            MerkleFrontiers frontiers,
                             bool performOrchardWalletUpdates)
 {
     const auto chainParams = Params();
     IncrementNoteWitnesses(
             chainParams.GetConsensus(),
             pindex, pblock,
-            sproutTree, saplingTree, performOrchardWalletUpdates);
+            frontiers, performOrchardWalletUpdates);
     UpdateSaplingNullifierNoteMapForBlock(pblock);
 
     // SetBestChain() can be expensive for large wallets, so do only
@@ -1432,11 +1431,11 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
                        const CBlock *pblock,
                        // If this is None, it indicates a rollback and we will decrement the
                        // witnesses / rewind the tree
-                       std::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added)
+                       std::optional<MerkleFrontiers> added)
 {
     const auto& consensus = Params().GetConsensus();
     if (added.has_value()) {
-        ChainTipAdded(pindex, pblock, added->first, added->second, true);
+        ChainTipAdded(pindex, pblock, added.value(), true);
         // Prevent migration transactions from being created when node is syncing after launch,
         // and also when node wakes up from suspension/hibernation and incoming blocks are old.
         if (!IsInitialBlockDownload(consensus) &&
@@ -2600,8 +2599,7 @@ void CWallet::IncrementNoteWitnesses(
         const Consensus::Params& consensus,
         const CBlockIndex* pindex,
         const CBlock* pblockIn,
-        SproutMerkleTree& sproutTree,
-        SaplingMerkleTree& saplingTree,
+        MerkleFrontiers& frontiers,
         bool performOrchardWalletUpdates)
 {
     LOCK(cs_wallet);
@@ -2633,7 +2631,7 @@ void CWallet::IncrementNoteWitnesses(
             const JSDescription& jsdesc = tx.vJoinSplit[i];
             for (uint8_t j = 0; j < jsdesc.commitments.size(); j++) {
                 const uint256& note_commitment = jsdesc.commitments[j];
-                sproutTree.append(note_commitment);
+                frontiers.sprout.append(note_commitment);
 
                 // Increment existing witnesses
                 for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -2643,14 +2641,14 @@ void CWallet::IncrementNoteWitnesses(
                 // If this is our note, witness it
                 if (txIsOurs) {
                     JSOutPoint jsoutpt {hash, i, j};
-                    ::WitnessNoteIfMine(mapWallet[hash].mapSproutNoteData, pindex->nHeight, nWitnessCacheSize, jsoutpt, sproutTree.witness());
+                    ::WitnessNoteIfMine(mapWallet[hash].mapSproutNoteData, pindex->nHeight, nWitnessCacheSize, jsoutpt, frontiers.sprout.witness());
                 }
             }
         }
         // Sapling
         for (uint32_t i = 0; i < tx.vShieldedOutput.size(); i++) {
             const uint256& note_commitment = tx.vShieldedOutput[i].cmu;
-            saplingTree.append(note_commitment);
+            frontiers.sapling.append(note_commitment);
 
             // Increment existing witnesses
             for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -2660,13 +2658,14 @@ void CWallet::IncrementNoteWitnesses(
             // If this is our note, witness it
             if (txIsOurs) {
                 SaplingOutPoint outPoint {hash, i};
-                ::WitnessNoteIfMine(mapWallet[hash].mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize, outPoint, saplingTree.witness());
+                ::WitnessNoteIfMine(mapWallet[hash].mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize, outPoint, frontiers.sapling.witness());
             }
         }
     }
 
     // If we're at or beyond NU5 activation, update the Orchard note commitment tree.
     if (performOrchardWalletUpdates && consensus.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+
         assert(orchardWallet.AppendNoteCommitments(pindex->nHeight, *pblock));
         assert(pindex->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
     }
@@ -4389,18 +4388,17 @@ int CWallet::ScanForWalletTransactions(
                 }
             }
 
-            SproutMerkleTree sproutTree;
-            SaplingMerkleTree saplingTree;
+            MerkleFrontiers frontiers;
             // This should never fail: we should always be able to get the tree
             // state on the path to the tip of our chain
-            assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, sproutTree));
+            assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, frontiers.sprout));
             if (pindex->pprev) {
                 if (consensus.NetworkUpgradeActive(pindex->pprev->nHeight,  Consensus::UPGRADE_SAPLING)) {
-                    assert(pcoinsTip->GetSaplingAnchorAt(pindex->pprev->hashFinalSaplingRoot, saplingTree));
+                    assert(pcoinsTip->GetSaplingAnchorAt(pindex->pprev->hashFinalSaplingRoot, frontiers.sapling));
                 }
             }
             // Increment note witness caches
-            ChainTipAdded(pindex, &block, sproutTree, saplingTree, performOrchardWalletUpdates);
+            ChainTipAdded(pindex, &block, frontiers, performOrchardWalletUpdates);
 
             pindex = chainActive.Next(pindex);
             if (GetTime() >= nNow + 60) {

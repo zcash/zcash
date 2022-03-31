@@ -60,11 +60,10 @@ public:
     void IncrementNoteWitnesses(const Consensus::Params& consensus,
                                 const CBlockIndex* pindex,
                                 const CBlock* pblock,
-                                SproutMerkleTree& sproutTree,
-                                SaplingMerkleTree& saplingTree,
+                                MerkleFrontiers& frontiers,
                                 bool performOrchardWalletUpdates) {
         CWallet::IncrementNoteWitnesses(
-                consensus, pindex, pblock, sproutTree, saplingTree, performOrchardWalletUpdates);
+                consensus, pindex, pblock, frontiers, performOrchardWalletUpdates);
     }
 
 
@@ -96,8 +95,7 @@ std::pair<JSOutPoint, SaplingOutPoint> CreateValidBlock(TestWallet& wallet,
                             const libzcash::SproutSpendingKey& sk,
                             const CBlockIndex& index,
                             CBlock& block,
-                            SproutMerkleTree& sproutTree,
-                            SaplingMerkleTree& saplingTree) {
+                            MerkleFrontiers& frontiers) {
     auto wtx = GetValidSproutReceive(sk, 50, true);
     auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
@@ -111,7 +109,7 @@ std::pair<JSOutPoint, SaplingOutPoint> CreateValidBlock(TestWallet& wallet,
     wallet.LoadWalletTx(wtx);
 
     block.vtx.push_back(wtx);
-    wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index, &block, sproutTree, saplingTree, true);
+    wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index, &block, frontiers, true);
 
     return std::make_pair(jsoutpt, saplingNotes[0]);
 }
@@ -705,10 +703,11 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
         // Generate note A
         libzcash::SaplingNote note(pk, 50000, zip_212_enabled[ver]);
         auto cm = note.cmu().value();
-        SaplingMerkleTree saplingTree;
-        saplingTree.append(cm);
-        auto anchor = saplingTree.root();
-        auto witness = saplingTree.witness();
+
+        MerkleFrontiers frontiers;
+        frontiers.sapling.append(cm);
+        auto anchor = frontiers.sapling.root();
+        auto witness = frontiers.sapling.witness();
 
         // Generate tx to create output note B
         auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
@@ -719,7 +718,6 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
 
         // Fake-mine the transaction
         EXPECT_EQ(-1, chainActive.Height());
-        SproutMerkleTree sproutTree;
         CBlock block;
         block.vtx.push_back(wtx);
         block.hashMerkleRoot = block.BuildMerkleTree();
@@ -738,7 +736,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
         wallet.LoadWalletTx(wtx);
 
         // Simulate receiving new block and ChainTip signal
-        wallet.IncrementNoteWitnesses(Params().GetConsensus(),&fakeIndex, &block, sproutTree, saplingTree, true);
+        wallet.IncrementNoteWitnesses(Params().GetConsensus(),&fakeIndex, &block, frontiers, true);
         wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
 
         // Retrieve the updated wtx from wallet
@@ -764,7 +762,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
         ASSERT_EQ(static_cast<bool>(maybe_nf), true);
         auto nullifier2 = maybe_nf.value();
 
-        anchor = saplingTree.root();
+        anchor = frontiers.sapling.root();
 
         // Create transaction to spend note B
         auto builder2 = TransactionBuilder(consensusParams, 2, std::nullopt);
@@ -844,8 +842,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     CWalletTx wtx {&wallet, tx};
 
     // Fake-mine the transaction
-    SproutMerkleTree sproutTree;
-    SaplingMerkleTree saplingTree;
+    MerkleFrontiers frontiers;
     OrchardMerkleFrontier orchardTree;
     orchardTree.AppendBundle(wtx.GetOrchardBundle());
 
@@ -870,7 +867,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     wallet.LoadWalletTx(wtx);
 
     // Simulate receiving new block and ChainTip signal
-    wallet.IncrementNoteWitnesses(Params().GetConsensus(),&fakeIndex, &block, sproutTree, saplingTree, true);
+    wallet.IncrementNoteWitnesses(Params().GetConsensus(),&fakeIndex, &block, frontiers, true);
 
     // Fetch the Orchard note so we can spend it.
     std::vector<SproutNoteEntry> sproutEntries;
@@ -1103,12 +1100,13 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     ASSERT_TRUE(nf);
     uint256 nullifier = nf.value();
 
+    MerkleFrontiers frontiers = { .sapling = testNote.tree };
+
     // Verify dummy note is unspent
     EXPECT_FALSE(wallet.IsSaplingSpent(nullifier));
 
     // Fake-mine the transaction
     EXPECT_EQ(-1, chainActive.Height());
-    SproutMerkleTree sproutTree;
     CBlock block;
     block.vtx.push_back(wtx);
     block.hashMerkleRoot = block.BuildMerkleTree();
@@ -1138,7 +1136,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     }
 
     // Simulate receiving new block and ChainTip signal
-    wallet.IncrementNoteWitnesses(Params().GetConsensus(), &fakeIndex, &block, sproutTree, testNote.tree, true);
+    wallet.IncrementNoteWitnesses(Params().GetConsensus(), &fakeIndex, &block, frontiers, true);
     wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
 
     // Retrieve the updated wtx from wallet
@@ -1221,10 +1219,10 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         // Generate Sapling note A
         libzcash::SaplingNote note(pk, 50000, zip_212_enabled[ver]);
         auto cm = note.cmu().value();
-        SaplingMerkleTree saplingTree;
-        saplingTree.append(cm);
-        auto anchor = saplingTree.root();
-        auto witness = saplingTree.witness();
+        MerkleFrontiers frontiers;
+        frontiers.sapling.append(cm);
+        auto anchor = frontiers.sapling.root();
+        auto witness = frontiers.sapling.witness();
 
         // Generate transaction, which sends funds to note B
         auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
@@ -1238,7 +1236,6 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
 
         // Fake-mine the transaction
         EXPECT_EQ(-1, chainActive.Height());
-        SproutMerkleTree sproutTree;
         CBlock block;
         block.vtx.push_back(wtx);
         block.hashMerkleRoot = block.BuildMerkleTree();
@@ -1258,7 +1255,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         // Simulate receiving new block and ChainTip signal.
         // This triggers calculation of nullifiers for notes belonging to this wallet
         // in the output descriptions of wtx.
-        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &fakeIndex, &block, sproutTree, saplingTree, true);
+        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &fakeIndex, &block, frontiers, true);
         wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
 
         // Retrieve the updated wtx from wallet
@@ -1296,7 +1293,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
 
         // NOTE: Not updating the anchor results in a core dump.  Shouldn't builder just return error?
         // *** Error in `./zcash-gtest': double free or corruption (out): 0x00007ffd8755d990 ***
-        anchor = saplingTree.root();
+        anchor = frontiers.sapling.root();
 
         // Create transaction to spend note B
         auto builder2 = TransactionBuilder(consensusParams, 2, std::nullopt);
@@ -1393,9 +1390,8 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
     CBlock block;
     block.vtx.push_back(wtx);
     CBlockIndex index(block);
-    SproutMerkleTree sproutTree;
-    SaplingMerkleTree saplingTree;
-    wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index, &block, sproutTree, saplingTree, true);
+    MerkleFrontiers frontiers;
+    wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index, &block, frontiers, true);
 
     ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
 
@@ -1415,8 +1411,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
 
     std::pair<uint256, uint256> anchors1;
     CBlock block1;
-    SproutMerkleTree sproutTree;
-    SaplingMerkleTree saplingTree;
+    MerkleFrontiers frontiers;
 
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
@@ -1425,7 +1420,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
         // First block (case tested in _empty_chain)
         CBlockIndex index1(block1);
         index1.nHeight = 1;
-        auto outpts = CreateValidBlock(wallet, sk, index1, block1, sproutTree, saplingTree);
+        auto outpts = CreateValidBlock(wallet, sk, index1, block1, frontiers);
 
         // Called to fetch anchor
         std::vector<JSOutPoint> sproutNotes {outpts.first};
@@ -1466,9 +1461,8 @@ TEST(WalletTests, CachedWitnessesChainTip) {
         block2.vtx.push_back(wtx);
         CBlockIndex index2(block2);
         index2.nHeight = 2;
-        SproutMerkleTree sproutTree2 {sproutTree};
-        SaplingMerkleTree saplingTree2 {saplingTree};
-        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, sproutTree2, saplingTree2, true);
+        MerkleFrontiers frontiers2 = { .sprout = frontiers.sprout, .sapling = frontiers.sapling };
+        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers2, true);
 
         auto anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
         EXPECT_NE(anchors2.first, anchors2.second);
@@ -1489,7 +1483,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
         EXPECT_NE(anchors1.second, anchors3.second);
 
         // Re-incrementing with the same block should give the same result
-        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, sproutTree, saplingTree, true);
+        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers, true);
         auto anchors4 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
         EXPECT_NE(anchors4.first, anchors4.second);
 
@@ -1499,7 +1493,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
         EXPECT_EQ(anchors2.second, anchors4.second);
 
         // Incrementing with the same block again should not change the cache
-        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, sproutTree, saplingTree, true);
+        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers, true);
         std::vector<std::optional<SproutWitness>> sproutWitnesses5;
         std::vector<std::optional<SaplingWitness>> saplingWitnesses5;
 
@@ -1518,8 +1512,7 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
     TestWallet wallet(Params());
     LOCK(wallet.cs_wallet);
 
-    SproutMerkleTree sproutTree;
-    SaplingMerkleTree saplingTree;
+    MerkleFrontiers frontiers;
 
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
@@ -1529,7 +1522,7 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
         CBlock block1;
         CBlockIndex index1(block1);
         index1.nHeight = 1;
-        CreateValidBlock(wallet, sk, index1, block1, sproutTree, saplingTree);
+        CreateValidBlock(wallet, sk, index1, block1, frontiers);
     }
 
     std::pair<uint256, uint256> anchors2;
@@ -1539,7 +1532,7 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
     {
         // Second block (case tested in _chain_tip)
         index2.nHeight = 2;
-        auto outpts = CreateValidBlock(wallet, sk, index2, block2, sproutTree, saplingTree);
+        auto outpts = CreateValidBlock(wallet, sk, index2, block2, frontiers);
 
         // Called to fetch anchor
         std::vector<JSOutPoint> sproutNotes {outpts.first};
@@ -1585,7 +1578,7 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
         EXPECT_NE(anchors2.second, anchors4.second);
 
         // Re-incrementing with the same block should give the same result
-        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, sproutTree, saplingTree, true);
+        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers, true);
 
         auto anchors5 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
 
@@ -1607,10 +1600,8 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
     std::vector<SaplingOutPoint> saplingNotes;
     std::vector<uint256> sproutAnchors;
     std::vector<uint256> saplingAnchors;
-    SproutMerkleTree sproutTree;
-    SproutMerkleTree sproutRiTree = sproutTree;
-    SaplingMerkleTree saplingTree;
-    SaplingMerkleTree saplingRiTree = saplingTree;
+    MerkleFrontiers frontiers;
+    MerkleFrontiers riFrontiers = { .sprout = frontiers.sprout, .sapling = frontiers.sapling };
     std::vector<std::optional<SproutWitness>> sproutWitnesses;
     std::vector<std::optional<SaplingWitness>> saplingWitnesses;
 
@@ -1623,11 +1614,11 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
     indices.resize(numBlocks);
     for (size_t i = 0; i < numBlocks; i++) {
         indices[i].nHeight = i;
-        auto oldSproutRoot = sproutTree.root();
-        auto oldSaplingRoot = saplingTree.root();
-        auto outpts = CreateValidBlock(wallet, sk, indices[i], blocks[i], sproutTree, saplingTree);
-        EXPECT_NE(oldSproutRoot, sproutTree.root());
-        EXPECT_NE(oldSaplingRoot, saplingTree.root());
+        auto oldSproutRoot = frontiers.sprout.root();
+        auto oldSaplingRoot = frontiers.sapling.root();
+        auto outpts = CreateValidBlock(wallet, sk, indices[i], blocks[i], frontiers);
+        EXPECT_NE(oldSproutRoot, frontiers.sprout.root());
+        EXPECT_NE(oldSaplingRoot, frontiers.sapling.root());
         sproutNotes.push_back(outpts.first);
         saplingNotes.push_back(outpts.second);
 
@@ -1643,9 +1634,8 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
     // Now pretend we are reindexing: the chain is cleared, and each block is
     // used to increment witnesses again.
     for (size_t i = 0; i < numBlocks; i++) {
-        SproutMerkleTree sproutRiPrevTree {sproutRiTree};
-        SaplingMerkleTree saplingRiPrevTree {saplingRiTree};
-        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &(indices[i]), &(blocks[i]), sproutRiTree, saplingRiTree, true);
+        MerkleFrontiers riPrevFrontiers{riFrontiers};
+        wallet.IncrementNoteWitnesses(Params().GetConsensus(), &(indices[i]), &(blocks[i]), riFrontiers, true);
 
         auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
         for (size_t j = 0; j < numBlocks; j++) {
@@ -1672,7 +1662,7 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
             }
 
             {
-                wallet.IncrementNoteWitnesses(Params().GetConsensus(), &(indices[i]), &(blocks[i]), sproutRiPrevTree, saplingRiPrevTree, true);
+                wallet.IncrementNoteWitnesses(Params().GetConsensus(), &(indices[i]), &(blocks[i]), riPrevFrontiers, true);
                 auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
                 for (size_t j = 0; j < numBlocks; j++) {
                     EXPECT_TRUE((bool) sproutWitnesses[j]);
@@ -2059,6 +2049,8 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     builder.AddSaplingOutput(extfvk.fvk.ovk, pa2, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
+    MerkleFrontiers frontiers =  { .sapling = testNote.tree };
+
     // Wallet contains extfvk1 but not extfvk2
     CWalletTx wtx {&wallet, tx};
     ASSERT_TRUE(wallet.AddSaplingZKey(sk));
@@ -2067,7 +2059,6 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
 
     // Fake-mine the transaction
     EXPECT_EQ(-1, chainActive.Height());
-    SproutMerkleTree sproutTree;
     CBlock block;
     block.vtx.push_back(wtx);
     block.hashMerkleRoot = block.BuildMerkleTree();
@@ -2086,7 +2077,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     wallet.LoadWalletTx(wtx);
 
     // Simulate receiving new block and ChainTip signal
-    wallet.IncrementNoteWitnesses(Params().GetConsensus(), &fakeIndex, &block, sproutTree, testNote.tree, true);
+    wallet.IncrementNoteWitnesses(Params().GetConsensus(), &fakeIndex, &block, frontiers, true);
     wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
 
     // Retrieve the updated wtx from wallet
@@ -2104,7 +2095,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     // The payment note has not been witnessed yet, so let's fake the witness.
     SaplingOutPoint sop0(wtx2.GetHash(), 0);
     SaplingOutPoint sop1(wtx2.GetHash(), 1);
-    wtx2.mapSaplingNoteData[sop0].witnesses.push_front(testNote.tree.witness());
+    wtx2.mapSaplingNoteData[sop0].witnesses.push_front(frontiers.sapling.witness());
     wtx2.mapSaplingNoteData[sop0].witnessHeight = 0;
 
     // The txs are different as wtx is aware of just the change output,
@@ -2132,7 +2123,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     EXPECT_EQ(wtx.mapSaplingNoteData[sop0].witnesses.front(), wtx2.mapSaplingNoteData[sop0].witnesses.front());
     // wtx2 never had its change output witnessed even though it has been in wtx
     EXPECT_EQ(0, wtx2.mapSaplingNoteData[sop1].witnesses.size());
-    EXPECT_EQ(wtx.mapSaplingNoteData[sop1].witnesses.front(), testNote.tree.witness());
+    EXPECT_EQ(wtx.mapSaplingNoteData[sop1].witnesses.front(), frontiers.sapling.witness());
 
     // Tear down
     chainActive.SetTip(NULL);
@@ -2215,7 +2206,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
 
     // Fake-mine the transaction
     EXPECT_EQ(-1, chainActive.Height());
-    SaplingMerkleTree saplingTree;
+    MerkleFrontiers frontiers;
     SproutMerkleTree sproutTree;
     CBlock block;
     block.vtx.push_back(wtx);
@@ -2235,7 +2226,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     wallet.LoadWalletTx(wtx);
 
     // Simulate receiving new block and ChainTip signal
-    wallet.IncrementNoteWitnesses(Params().GetConsensus(), &fakeIndex, &block, sproutTree, saplingTree, true);
+    wallet.IncrementNoteWitnesses(Params().GetConsensus(), &fakeIndex, &block, frontiers, true);
     wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
 
     // Retrieve the updated wtx from wallet
@@ -2248,8 +2239,8 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     auto maybe_note = maybe_pt.value().note(ivk);
     ASSERT_EQ(static_cast<bool>(maybe_note), true);
     auto note = maybe_note.value();
-    auto anchor = saplingTree.root();
-    auto witness = saplingTree.witness();
+    auto anchor = frontiers.sapling.root();
+    auto witness = frontiers.sapling.witness();
 
     // Create a Sapling-only transaction
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, default fee, 0.00005 z-ZEC change

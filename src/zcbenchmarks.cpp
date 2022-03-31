@@ -335,8 +335,7 @@ double benchmark_increment_sprout_note_witnesses(size_t nTxs)
     const Consensus::Params& consensusParams = Params().GetConsensus();
 
     CWallet wallet(Params());
-    SproutMerkleTree sproutTree;
-    SaplingMerkleTree saplingTree;
+    MerkleFrontiers frontiers;
 
     auto sproutSpendingKey = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sproutSpendingKey);
@@ -353,7 +352,7 @@ double benchmark_increment_sprout_note_witnesses(size_t nTxs)
     index1.nHeight = 1;
 
     // Increment to get transactions witnessed
-    wallet.ChainTip(&index1, &block1, std::make_pair(sproutTree, saplingTree));
+    wallet.ChainTip(&index1, &block1, frontiers);
 
     // Second block
     CBlock block2;
@@ -369,7 +368,7 @@ double benchmark_increment_sprout_note_witnesses(size_t nTxs)
 
     struct timeval tv_start;
     timer_start(tv_start);
-    wallet.ChainTip(&index2, &block2, std::make_pair(sproutTree, saplingTree));
+    wallet.ChainTip(&index2, &block2, frontiers);
     return timer_stop(tv_start);
 }
 
@@ -397,8 +396,7 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
     const Consensus::Params& consensusParams = Params().GetConsensus();
 
     CWallet wallet(Params());
-    SproutMerkleTree sproutTree;
-    SaplingMerkleTree saplingTree;
+    MerkleFrontiers frontiers;
 
     auto saplingSpendingKey = GetTestMasterSaplingSpendingKey();
     wallet.AddSaplingSpendingKey(saplingSpendingKey);
@@ -415,7 +413,7 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
     index1.nHeight = 1;
 
     // Increment to get transactions witnessed
-    wallet.ChainTip(&index1, &block1, std::make_pair(sproutTree, saplingTree));
+    wallet.ChainTip(&index1, &block1, frontiers);
 
     // Second block
     CBlock block2;
@@ -431,7 +429,7 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
 
     struct timeval tv_start;
     timer_start(tv_start);
-    wallet.ChainTip(&index2, &block2, std::make_pair(sproutTree, saplingTree));
+    wallet.ChainTip(&index2, &block2, frontiers);
     return timer_stop(tv_start);
 }
 
