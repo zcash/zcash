@@ -288,7 +288,6 @@ public:
      * notes to the wallet.
      */
     bool LoadWalletTx(
-            const std::optional<int> nBlockHeight,
             const CTransaction& tx,
             const OrchardWalletTxMeta& txMeta
             ) {
@@ -296,10 +295,8 @@ public:
         for (const auto& [action_idx, ivk] : txMeta.mapOrchardActionData) {
             rawHints.push_back({ action_idx, ivk.inner.get() });
         }
-        uint32_t blockHeight = nBlockHeight.has_value() ? (uint32_t) nBlockHeight.value() : 0;
         return orchard_wallet_load_bundle(
                 inner.get(),
-                nBlockHeight.has_value() ? &blockHeight : nullptr,
                 tx.GetHash().begin(),
                 tx.GetOrchardBundle().inner.get(),
                 rawHints.data(),
