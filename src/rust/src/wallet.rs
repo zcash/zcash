@@ -69,13 +69,13 @@ pub struct TxNotes {
     decrypted_notes: BTreeMap<usize, DecryptedNote>,
 }
 
-/// A data structure chain position information for a single transaction.
+/// A data structure holding chain position information for a single transaction.
 #[derive(Clone, Debug)]
 struct NotePositions {
     /// The height of the block containing the transaction.
     tx_height: BlockHeight,
     /// A map from the index of an Orchard action tracked by this wallet, to the position
-    /// of the note's commitment within the global Merkle tree.
+    /// of the output note's commitment within the global Merkle tree.
     note_positions: BTreeMap<usize, Position>,
 }
 
@@ -142,7 +142,7 @@ pub struct Wallet {
     /// been decrypted with the IVKs known to this wallet.
     wallet_received_notes: BTreeMap<TxId, TxNotes>,
     /// The in-memory index from txid to note positions from the associated transaction.
-    /// This map should always be a subset of `wallet_received_notes`.
+    /// This map should always have a subset of the keys in `wallet_received_notes`.
     wallet_note_positions: BTreeMap<TxId, NotePositions>,
     /// The in-memory index from nullifier to the outpoint of the note from which that
     /// nullifier was derived.
@@ -533,7 +533,7 @@ impl Wallet {
         });
 
         // update the block height recorded for the transaction
-        let mut my_notes_for_tx = self.wallet_received_notes.get_mut(txid);
+        let my_notes_for_tx = self.wallet_received_notes.get(txid);
         if my_notes_for_tx.is_some() {
             self.wallet_note_positions.insert(
                 *txid,
@@ -555,8 +555,8 @@ impl Wallet {
 
             // for notes that are ours, witness the current state of the tree
             if my_notes_for_tx
-                .as_mut()
-                .and_then(|n| n.decrypted_notes.get_mut(&action_idx))
+                .as_ref()
+                .and_then(|n| n.decrypted_notes.get(&action_idx))
                 .is_some()
             {
                 let (pos, cmx) = self.witness_tree.witness().expect("tree is not empty");

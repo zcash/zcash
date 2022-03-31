@@ -96,7 +96,7 @@ class WalletOrchardChangeTest(BitcoinTestFramework):
         wait_bitcoinds()
         self.setup_network()
 
-        # The node have unaltered balances.
+        # The nodes have unaltered balances.
         assert_equal(
             {'pools': {'orchard': {'valueZat': 9_0000_0000}}, 'minimum_confirmations': 1},
             self.nodes[0].z_getbalanceforaccount(acct0),
