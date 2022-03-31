@@ -5,7 +5,7 @@ use incrementalmerkletree::{
     bridgetree::{BridgeTree, Checkpoint},
     Hashable,
 };
-use zcash_encoding::Vector;
+use zcash_encoding::{Optional, Vector};
 use zcash_primitives::merkle_tree::{
     incremental::{
         read_bridge_v1, read_leu64_usize, read_position, write_bridge_v1, write_position,
@@ -14,18 +14,14 @@ use zcash_primitives::merkle_tree::{
     HashSer,
 };
 
-pub fn write_checkpoint_v1<H: HashSer + Ord, W: Write>(
-    mut writer: W,
-    checkpoint: &Checkpoint<H>,
-) -> io::Result<()> {
+pub fn write_checkpoint_v1<W: Write>(mut writer: W, checkpoint: &Checkpoint) -> io::Result<()> {
     write_usize_leu64(&mut writer, checkpoint.bridges_len())?;
     writer.write_u8(if checkpoint.is_witnessed() { 1 } else { 0 })?;
     Vector::write_sized(
         &mut writer,
         checkpoint.forgotten().iter(),
-        |mut w, ((pos, leaf_value), idx)| {
+        |mut w, (pos, idx)| {
             write_position(&mut w, *pos)?;
-            leaf_value.write(&mut w)?;
             write_usize_leu64(&mut w, *idx)
         },
     )?;
@@ -33,15 +29,12 @@ pub fn write_checkpoint_v1<H: HashSer + Ord, W: Write>(
     Ok(())
 }
 
-pub fn read_checkpoint_v1<H: HashSer + Ord, R: Read>(mut reader: R) -> io::Result<Checkpoint<H>> {
+pub fn read_checkpoint_v1<R: Read>(mut reader: R) -> io::Result<Checkpoint> {
     Ok(Checkpoint::from_parts(
         read_leu64_usize(&mut reader)?,
         reader.read_u8()? == 1,
         Vector::read_collected(&mut reader, |mut r| {
-            Ok((
-                (read_position(&mut r)?, H::read(&mut r)?),
-                read_leu64_usize(&mut r)?,
-            ))
+            Ok((read_position(&mut r)?, read_leu64_usize(&mut r)?))
         })?,
     ))
 }
@@ -50,13 +43,17 @@ pub fn write_tree_v1<H: Hashable + HashSer + Ord, W: Write>(
     mut writer: W,
     tree: &BridgeTree<H, 32>,
 ) -> io::Result<()> {
-    Vector::write(&mut writer, tree.bridges(), |w, b| write_bridge_v1(w, b))?;
+    Vector::write(&mut writer, tree.prior_bridges(), |w, b| {
+        write_bridge_v1(w, b)
+    })?;
+    Optional::write(&mut writer, tree.current_bridge().as_ref(), |w, b| {
+        write_bridge_v1(w, b)
+    })?;
     Vector::write_sized(
         &mut writer,
         tree.witnessed_indices().iter(),
-        |mut w, ((pos, a), i)| {
+        |mut w, (pos, i)| {
             write_position(&mut w, *pos)?;
-            a.write(&mut w)?;
             write_usize_leu64(&mut w, *i)
         },
     )?;
@@ -74,11 +71,9 @@ pub fn read_tree_v1<H: Hashable + HashSer + Ord + Clone, R: Read>(
 ) -> io::Result<BridgeTree<H, 32>> {
     BridgeTree::from_parts(
         Vector::read(&mut reader, |r| read_bridge_v1(r))?,
+        Optional::read(&mut reader, |r| read_bridge_v1(r))?,
         Vector::read_collected(&mut reader, |mut r| {
-            Ok((
-                (read_position(&mut r)?, H::read(&mut r)?),
-                read_leu64_usize(&mut r)?,
-            ))
+            Ok((read_position(&mut r)?, read_leu64_usize(&mut r)?))
         })?,
         Vector::read(&mut reader, |r| read_checkpoint_v1(r))?,
         read_leu64_usize(&mut reader)?,
