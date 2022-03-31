@@ -67,9 +67,9 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     EXPECT_EQ(1, addrs.count(address));
 
     // Find a diversified address that does not use the same diversifier as the default address.
-    // By starting our search at `10` we ensure there's no more than a 2^-10 chance that we
+    // By starting our search at `128` we ensure there's no more than a 2^-128 chance that we
     // collide with the default diversifier.
-    libzcash::diversifier_index_t j(10);
+    libzcash::diversifier_index_t j(128);
     auto dpa = sk.ToXFVK().FindAddress(j).first;
 
     // add the default address
@@ -461,11 +461,12 @@ TEST(WalletZkeysTest, WriteCryptedSaplingZkeyDirectToDb) {
     wallet.GetSaplingPaymentAddresses(addrs);
     ASSERT_EQ(1, addrs.size());
 
-    // Generate a diversified address different to the default
-    // If we can't get an early diversified address, we are very unlucky
+    // Find a diversified address that does not use the same diversifier as the default address.
+    // By starting our search at `128` we ensure there's no more than a 2^-128 chance that we
+    // collide with the default diversifier.
     libzcash::SaplingExtendedSpendingKey extsk;
     EXPECT_TRUE(wallet.GetSaplingExtendedSpendingKey(address, extsk));
-    libzcash::diversifier_index_t j(10);
+    libzcash::diversifier_index_t j(128);
     auto dpa = extsk.ToXFVK().FindAddress(j).first;
 
     // Add diversified address to the wallet
