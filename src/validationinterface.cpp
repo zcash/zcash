@@ -152,7 +152,19 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
                     assert(pcoinsTip->GetSaplingAnchorAt(SaplingMerkleTree::empty_root(), oldFrontiers.sapling));
                 }
 
-                // TODO: Add the Orchard frontier to oldFrontiers
+                // Get the Orchard Merkle frontier as of the start of this block.
+                // We can get this from the `hashFinalOrchardRoot` of the last block
+                // However, this is only reliable if the last block was on or after
+                // the Orchard activation height. Otherwise, the last anchor was the
+                // empty root.
+                if (chainParams.GetConsensus().NetworkUpgradeActive(
+                    pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
+                    assert(pcoinsTip->GetOrchardAnchorAt(
+                        pindex->pprev->hashFinalOrchardRoot, oldFrontiers.orchard));
+                } else {
+                    assert(pcoinsTip->GetOrchardAnchorAt(
+                        OrchardMerkleFrontier::empty_root(), oldFrontiers.orchard));
+                }
 
                 blockStack.emplace_back(
                     pindex,

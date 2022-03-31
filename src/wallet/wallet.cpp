@@ -2609,6 +2609,9 @@ void CWallet::IncrementNoteWitnesses(
     }
 
     if (performOrchardWalletUpdates && consensus.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+        if (!orchardWallet.GetLastCheckpointHeight().has_value()) {
+            orchardWallet.InitNoteCommitmentTree(frontiers.orchard);
+        }
         assert(orchardWallet.CheckpointNoteCommitmentTree(pindex->nHeight));
     }
 
@@ -2665,7 +2668,6 @@ void CWallet::IncrementNoteWitnesses(
 
     // If we're at or beyond NU5 activation, update the Orchard note commitment tree.
     if (performOrchardWalletUpdates && consensus.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
-
         assert(orchardWallet.AppendNoteCommitments(pindex->nHeight, *pblock));
         assert(pindex->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
     }
@@ -2736,10 +2738,10 @@ void CWallet::DecrementNoteWitnesses(const Consensus::Params& consensus, const C
     if (consensus.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
         // pindex->nHeight is the height of the block being removed, so we rewind
         // to the previous block height
-        uint32_t blocksRewound{0};
+        uint32_t uResultHeight{0};
         assert(pindex->nHeight >= 1);
-        assert(orchardWallet.Rewind(pindex->nHeight - 1, blocksRewound));
-        assert(blocksRewound == 1);
+        assert(orchardWallet.Rewind(pindex->nHeight - 1, uResultHeight));
+        assert(uResultHeight == pindex->nHeight - 1);
         if (consensus.NetworkUpgradeActive(pindex->nHeight - 1, Consensus::UPGRADE_NU5)) {
             assert(pindex->pprev->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
         }
@@ -4346,13 +4348,14 @@ int CWallet::ScanForWalletTransactions(
             // since we do not support Orchard key import.
             if (isInitScan) {
                 int rewindHeight = std::max(nu5_height.value(), pindex->nHeight - 1);
-                uint32_t blocksRewound{0};
                 LogPrintf(
                         "CWallet::ScanForWalletTransactions(): Rewinding Orchard wallet to height %d; current is %d",
                         rewindHeight,
                         orchardWallet.GetLastCheckpointHeight().value());
-                if (orchardWallet.Rewind(rewindHeight, blocksRewound)) {
+                uint32_t uResultHeight{0};
+                if (orchardWallet.Rewind(rewindHeight, uResultHeight)) {
                     // rewind was successful or a no-op, so perform Orchard wallet updates
+                    assert(uResultHeight == rewindHeight);
                     performOrchardWalletUpdates = true;
                 } else {
                     // Orchard witnesses will not be able to be correctly updated, because we
@@ -4395,6 +4398,9 @@ int CWallet::ScanForWalletTransactions(
             if (pindex->pprev) {
                 if (consensus.NetworkUpgradeActive(pindex->pprev->nHeight,  Consensus::UPGRADE_SAPLING)) {
                     assert(pcoinsTip->GetSaplingAnchorAt(pindex->pprev->hashFinalSaplingRoot, frontiers.sapling));
+                }
+                if (consensus.NetworkUpgradeActive(pindex->pprev->nHeight,  Consensus::UPGRADE_NU5)) {
+                    assert(pcoinsTip->GetOrchardAnchorAt(pindex->pprev->hashFinalOrchardRoot, frontiers.orchard));
                 }
             }
             // Increment note witness caches

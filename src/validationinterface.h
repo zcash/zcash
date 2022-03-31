@@ -26,6 +26,7 @@ class uint256;
 struct MerkleFrontiers {
     SproutMerkleTree sprout;
     SaplingMerkleTree sapling;
+    OrchardMerkleFrontier orchard;
 };
 
 // These functions dispatch to one or all registered wallets
