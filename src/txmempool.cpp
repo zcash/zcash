@@ -652,6 +652,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 
     checkNullifiers(SPROUT);
     checkNullifiers(SAPLING);
+    checkNullifiers(ORCHARD);
 
     assert(totalTxSize == checkTotal);
     assert(innerUsage == cachedInnerUsage);
