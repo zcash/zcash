@@ -485,6 +485,10 @@ public:
 
     template<typename Stream>
     void Serialize(Stream& s) const {
+        int nVersion = s.GetVersion();
+        if (!(s.GetType() & SER_GETHASH)) {
+            ::Serialize(s, nVersion);
+        }
         RustStream rs(s);
         if (!orchard_wallet_write_note_commitment_tree(
                     wallet.inner.get(),
@@ -503,6 +507,10 @@ public:
 
     template<typename Stream>
     void Unserialize(Stream& s) {
+        int nVersion = s.GetVersion();
+        if (!(s.GetType() & SER_GETHASH)) {
+            ::Unserialize(s, nVersion);
+        }
         RustStream rs(s);
         if (!orchard_wallet_load_note_commitment_tree(
                     wallet.inner.get(),

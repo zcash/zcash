@@ -1177,6 +1177,8 @@ pub extern "C" fn orchard_wallet_gc_note_commitment_tree(wallet: *mut Wallet) {
     wallet.witness_tree.garbage_collect();
 }
 
+const NOTE_STATE_V1: u8 = 1;
+
 #[no_mangle]
 pub extern "C" fn orchard_wallet_write_note_commitment_tree(
     wallet: *const Wallet,
@@ -1186,7 +1188,7 @@ pub extern "C" fn orchard_wallet_write_note_commitment_tree(
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
     let mut writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
 
-    let mut write_all = move || -> io::Result<()> {
+    let write_v1 = move |mut writer: CppStreamWriter| -> io::Result<()> {
         Optional::write(&mut writer, wallet.last_checkpoint, |w, h| {
             w.write_u32::<LittleEndian>(h.into())
         })?;
@@ -1212,7 +1214,10 @@ pub extern "C" fn orchard_wallet_write_note_commitment_tree(
         Ok(())
     };
 
-    match write_all() {
+    match writer
+        .write_u8(NOTE_STATE_V1)
+        .and_then(|()| write_v1(writer))
+    {
         Ok(()) => true,
         Err(e) => {
             error!("Failure in writing Orchard note commitment tree: {}", e);
@@ -1230,7 +1235,7 @@ pub extern "C" fn orchard_wallet_load_note_commitment_tree(
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null.");
     let mut reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
 
-    let mut read_all = move || -> io::Result<()> {
+    let mut read_v1 = move |mut reader: CppStreamReader| -> io::Result<()> {
         let last_checkpoint = Optional::read(&mut reader, |r| {
             r.read_u32::<LittleEndian>().map(BlockHeight::from)
         })?;
@@ -1257,12 +1262,28 @@ pub extern "C" fn orchard_wallet_load_note_commitment_tree(
         Ok(())
     };
 
-    match read_all() {
-        Ok(_) => true,
+    match reader.read_u8() {
         Err(e) => {
             error!(
-                "Failed to read Orchard note commitment or last checkpoint height: {}",
+                "Failed to read Orchard note position serialization flag: {}",
                 e
+            );
+            false
+        }
+        Ok(NOTE_STATE_V1) => match read_v1(reader) {
+            Ok(_) => true,
+            Err(e) => {
+                error!(
+                    "Failed to read Orchard note commitment or last checkpoint height: {}",
+                    e
+                );
+                false
+            }
+        },
+        Ok(flag) => {
+            error!(
+                "Unrecognized Orchard note position serialization version: {}",
+                flag
             );
             false
         }
