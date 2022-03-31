@@ -42,14 +42,14 @@ pub struct LastObserved {
 }
 
 /// A pointer to a particular action in an Orchard transaction output.
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OutPoint {
     txid: TxId,
     action_idx: usize,
 }
 
 /// A pointer to a previous output being spent in an Orchard action.
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InPoint {
     txid: TxId,
     action_idx: usize,
@@ -193,6 +193,14 @@ pub enum BundleLoadError {
     /// An action index identified as potentially spending one of our
     /// notes is not a valid action index for the bundle.
     InvalidActionIndex(usize),
+}
+
+#[derive(Debug, Clone)]
+pub enum SpendRetrievalError {
+    DecryptedNoteNotFound(OutPoint),
+    NoIvkForRecipient(Address),
+    FvkNotFound(IncomingViewingKey),
+    NoteNotPositioned(OutPoint),
 }
 
 /// A struct used to return metadata about how a bundle was determined
@@ -652,42 +660,55 @@ impl Wallet {
     ///
     /// Returns `None` if the `OutPoint` is not known to the wallet, or the Orchard bundle
     /// containing the note has not been passed to `Wallet::append_bundle_commitments`.
-    pub fn get_spend_info(&self, outpoint: OutPoint) -> Option<OrchardSpendInfo> {
+    pub fn get_spend_info(
+        &self,
+        outpoint: OutPoint,
+    ) -> Result<OrchardSpendInfo, SpendRetrievalError> {
         // TODO: Take `confirmations` parameter and obtain the Merkle path to the root at
         // that checkpoint, not the latest root.
-        self.wallet_received_notes
+        let dnote = self
+            .wallet_received_notes
             .get(&outpoint.txid)
             .and_then(|tx_notes| tx_notes.decrypted_notes.get(&outpoint.action_idx))
-            .and_then(|dnote| {
+            .ok_or(SpendRetrievalError::DecryptedNoteNotFound(outpoint))?;
+
+        let fvk = self
+            .key_store
+            .ivk_for_address(&dnote.note.recipient())
+            .ok_or_else(|| SpendRetrievalError::NoIvkForRecipient(dnote.note.recipient()))
+            .and_then(|ivk| {
                 self.key_store
-                    .ivk_for_address(&dnote.note.recipient())
-                    .and_then(|ivk| self.key_store.viewing_keys.get(ivk))
-                    .zip(
-                        self.wallet_note_positions
-                            .get(&outpoint.txid)
-                            .and_then(|tx_notes| tx_notes.note_positions.get(&outpoint.action_idx)),
-                    )
-                    .map(|(fvk, position)| {
-                        assert_eq!(
-                            self.witness_tree
-                                .get_witnessed_leaf(*position)
-                                .expect("tree has witnessed the leaf for this note."),
-                            &MerkleHashOrchard::from_cmx(&dnote.note.commitment().into()),
-                        );
-                        let path = self
-                            .witness_tree
-                            .authentication_path(*position)
-                            .expect("wallet always has paths to positioned notes");
-                        OrchardSpendInfo::from_parts(
-                            fvk.clone(),
-                            dnote.note,
-                            MerklePath::from_parts(
-                                u64::from(*position).try_into().unwrap(),
-                                path.try_into().unwrap(),
-                            ),
-                        )
-                    })
-            })
+                    .viewing_keys
+                    .get(ivk)
+                    .ok_or_else(|| SpendRetrievalError::FvkNotFound(ivk.clone()))
+            })?;
+
+        let position = self
+            .wallet_note_positions
+            .get(&outpoint.txid)
+            .and_then(|tx_notes| tx_notes.note_positions.get(&outpoint.action_idx))
+            .ok_or(SpendRetrievalError::NoteNotPositioned(outpoint))?;
+
+        assert_eq!(
+            self.witness_tree
+                .get_witnessed_leaf(*position)
+                .expect("tree has witnessed the leaf for this note."),
+            &MerkleHashOrchard::from_cmx(&dnote.note.commitment().into()),
+        );
+
+        let path = self
+            .witness_tree
+            .authentication_path(*position)
+            .expect("wallet always has paths to positioned notes");
+
+        Ok(OrchardSpendInfo::from_parts(
+            fvk.clone(),
+            dnote.note,
+            MerklePath::from_parts(
+                u64::from(*position).try_into().unwrap(),
+                path.try_into().unwrap(),
+            ),
+        ))
     }
 }
 
@@ -1158,15 +1179,16 @@ pub extern "C" fn orchard_wallet_get_spend_info(
 
     let outpoint = OutPoint { txid, action_idx };
 
-    if let Some(ret) = wallet.get_spend_info(outpoint) {
-        Box::into_raw(Box::new(ret))
-    } else {
-        tracing::error!(
-            "Requested note in action {} of transaction {} wasn't in the wallet",
-            outpoint.action_idx,
-            outpoint.txid
-        );
-        ptr::null_mut()
+    match wallet.get_spend_info(outpoint) {
+        Ok(ret) => Box::into_raw(Box::new(ret)),
+        Err(e) => {
+            tracing::error!(
+                "Error obtaining spend info for outpoint {:?}: {:?}",
+                outpoint,
+                e
+            );
+            ptr::null_mut()
+        }
     }
 }
 
