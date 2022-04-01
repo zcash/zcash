@@ -1892,6 +1892,7 @@ bool AcceptToMemoryPool(
 
         nValueIn = view.GetValueIn(tx);
 
+        // we have all inputs cached now, so switch back to dummy
         view.SetBackend(dummy);
 
         // Check for non-standard pay-to-script-hash in inputs
