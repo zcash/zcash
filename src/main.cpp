@@ -1823,7 +1823,13 @@ bool AcceptToMemoryPool(
     if (pool.exists(hash))
         return state.Invalid(false, REJECT_ALREADY_KNOWN, "txn-already-in-mempool");
 
-    // Check for conflicts with in-memory transactions
+    // Check for conflicts with in-memory transactions.
+    // This is redundant with the call to HaveInputs (for non-coinbase transactions)
+    // below, but we do it here for consistency with Bitcoin and because this check
+    // doesn't require loading the coins view.
+    // We don't do the corresponding check for nullifiers, because that would also
+    // be redundant, and we have no need to avoid semantic conflicts with Bitcoin
+    // backports in the case of the shielded protocol.
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
         COutPoint outpoint = tx.vin[i].prevout;
@@ -1831,18 +1837,6 @@ bool AcceptToMemoryPool(
         {
             // Disable replacement feature for now
             return state.Invalid(false, REJECT_CONFLICT, "txn-mempool-conflict");
-        }
-    }
-    for (const JSDescription &joinsplit : tx.vJoinSplit) {
-        for (const uint256 &nf : joinsplit.nullifiers) {
-            if (pool.nullifierExists(nf, SPROUT)) {
-                return false;
-            }
-        }
-    }
-    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-        if (pool.nullifierExists(spendDescription.nullifier, SAPLING)) {
-            return false;
         }
     }
 
