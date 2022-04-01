@@ -583,36 +583,6 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             i++;
         }
 
-        // The SaltedTxidHasher is fine to use here; it salts the map keys automatically
-        // with randomness generated on construction.
-        boost::unordered_map<uint256, SproutMerkleTree, SaltedTxidHasher> intermediates;
-
-        for (const JSDescription &joinsplit : tx.vJoinSplit) {
-            for (const uint256 &nf : joinsplit.nullifiers) {
-                assert(!pcoins->GetNullifier(nf, SPROUT));
-            }
-
-            SproutMerkleTree tree;
-            auto it = intermediates.find(joinsplit.anchor);
-            if (it != intermediates.end()) {
-                tree = it->second;
-            } else {
-                assert(pcoins->GetSproutAnchorAt(joinsplit.anchor, tree));
-            }
-
-            for (const uint256& commitment : joinsplit.commitments)
-            {
-                tree.append(commitment);
-            }
-
-            intermediates.insert(std::make_pair(tree.root(), tree));
-        }
-        for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-            SaplingMerkleTree tree;
-
-            assert(pcoins->GetSaplingAnchorAt(spendDescription.anchor, tree));
-            assert(!pcoins->GetNullifier(spendDescription.nullifier, SAPLING));
-        }
         if (fDependsWait)
             waitingOnDependants.push_back(&(*it));
         else {
