@@ -909,6 +909,7 @@ static bool IsKeyType(string strType)
     return (strType== "key" || strType == "wkey" ||
             strType == "hdseed" || strType == "chdseed" ||
             strType == "mnemonicphrase" || strType == "cmnemonicphrase" ||
+            strType == "mnemonichdchain" ||
             strType == "zkey" || strType == "czkey" ||
             strType == "sapzkey" || strType == "csapzkey" ||
             strType == "vkey" || strType == "sapextfvk" ||
