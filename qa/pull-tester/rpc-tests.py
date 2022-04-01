@@ -82,6 +82,7 @@ BASE_SCRIPTS= [
     'wallet_sapling.py',
     'wallet_sendmany_any_taddr.py',
     'wallet_treestate.py',
+    'wallet_unified_change.py',
     'listtransactions.py',
     'mempool_resurrect_test.py',
     'txn_doublespend.py',
