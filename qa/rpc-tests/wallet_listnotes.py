@@ -5,7 +5,11 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
+    NU5_BRANCH_ID,
     assert_equal,
+    get_coinbase_address,
+    nuparams,
+    start_nodes,
     wait_and_assert_operationid_status,
     DEFAULT_FEE
 )
@@ -14,9 +18,13 @@ from decimal import Decimal
 
 # Test wallet z_listunspent behaviour across network upgrades
 class WalletListNotes(BitcoinTestFramework):
+    def setup_nodes(self):
+        return start_nodes(4, self.options.tmpdir, [[
+            nuparams(NU5_BRANCH_ID, 215),
+        ]] * 4)
 
     def run_test(self):
-        # Current height = 200
+        # Current height = 200 -> Sapling
         assert_equal(200, self.nodes[0].getblockcount())
         sproutzaddr = self.nodes[0].z_getnewaddress('sprout')
 
@@ -156,6 +164,53 @@ class WalletListNotes(BitcoinTestFramework):
 
         # TODO: use z_exportviewingkey, z_importviewingkey to test includeWatchonly
         # but this requires Sapling support for those RPCs
+
+        # Set current height to 215 -> NU5
+        self.nodes[0].generate(12)
+        self.sync_all()
+        assert_equal(215, self.nodes[0].getblockcount())
+
+        # Create an Orchard note.
+        account0 = self.nodes[0].z_getnewaccount()['account']
+        ua0 = self.nodes[0].z_getaddressforaccount(account0)['address']
+        receive_amount_4 = Decimal('10.0')
+        recipients = [{"address": ua0, "amount": receive_amount_4}]
+        myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
+        txid_4 = wait_and_assert_operationid_status(self.nodes[0], myopid)
+        self.sync_all()
+
+        unspent_tx = self.nodes[0].z_listunspent(0)
+        assert_equal(4, len(unspent_tx))
+        # low-to-high in amount
+        unspent_tx = sorted(unspent_tx, key=lambda k: k['amount'])
+
+        assert_equal(False,             unspent_tx[0]['change'])
+        assert_equal(txid_2,            unspent_tx[0]['txid'])
+        assert_equal('sapling',         unspent_tx[0]['pool'])
+        assert_equal(True,              unspent_tx[0]['spendable'])
+        assert_equal(saplingzaddr,      unspent_tx[0]['address'])
+        assert_equal(receive_amount_2,  unspent_tx[0]['amount'])
+
+        assert_equal(False,             unspent_tx[1]['change'])
+        assert_equal(txid_3,            unspent_tx[1]['txid'])
+        assert_equal('sapling',         unspent_tx[1]['pool'])
+        assert_equal(True,              unspent_tx[1]['spendable'])
+        assert_equal(saplingzaddr2,     unspent_tx[1]['address'])
+        assert_equal(receive_amount_3,  unspent_tx[1]['amount'])
+
+        assert_equal(True,              unspent_tx[2]['change'])
+        assert_equal(txid_3,            unspent_tx[2]['txid'])
+        assert_equal('sprout',          unspent_tx[2]['pool'])
+        assert_equal(True,              unspent_tx[2]['spendable'])
+        assert_equal(sproutzaddr,       unspent_tx[2]['address'])
+        assert_equal(change_amount_3,   unspent_tx[2]['amount'])
+
+        assert_equal(False,             unspent_tx[3]['change'])
+        assert_equal(txid_4,            unspent_tx[3]['txid'])
+        assert_equal('orchard',         unspent_tx[3]['pool'])
+        assert_equal(True,              unspent_tx[3]['spendable'])
+        assert_equal(ua0,               unspent_tx[3]['address'])
+        assert_equal(receive_amount_4,  unspent_tx[3]['amount'])
 
 if __name__ == '__main__':
     WalletListNotes().main()
