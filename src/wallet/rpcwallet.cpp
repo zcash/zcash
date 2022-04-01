@@ -3491,7 +3491,8 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
         pwalletMain->GetSaplingPaymentAddresses(addresses);
         for (auto addr : addresses) {
             // Don't show Sapling receivers that are part of an account in the wallet.
-            if (pwalletMain->FindUnifiedAddressByReceiver(addr).has_value()) {
+            if (pwalletMain->FindUnifiedAddressByReceiver(addr).has_value()
+                    || pwalletMain->IsInternalRecipient(addr)) {
                 continue;
             }
             if (fIncludeWatchonly || pwalletMain->HaveSaplingSpendingKeyForAddress(addr)) {

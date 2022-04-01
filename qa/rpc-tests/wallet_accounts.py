@@ -55,6 +55,10 @@ class WalletAccountsTest(BitcoinTestFramework):
         account0 = self.nodes[0].z_getnewaccount()
         assert_equal(account0['account'], 0)
 
+        # Verify that just creating the account does not generate any visible addresses
+        addresses = self.nodes[0].z_listaddresses()
+        assert_equal([], addresses)
+
         # The next account will be 1.
         account1 = self.nodes[0].z_getnewaccount()
         assert_equal(account1['account'], 1)
