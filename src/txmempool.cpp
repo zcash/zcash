@@ -619,6 +619,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             CValidationState state;
             bool fCheckResult = tx.IsCoinBase() ||
                 Consensus::CheckTxInputs(tx, state, mempoolDuplicate, nSpendHeight, Params().GetConsensus());
+            fCheckResult &= Consensus::CheckTxShieldedInputs(tx, state, mempoolDuplicate, 0);
             assert(fCheckResult);
             UpdateCoins(tx, mempoolDuplicate, 1000000);
         }
@@ -635,6 +636,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         } else {
             bool fCheckResult = entry->GetTx().IsCoinBase() ||
                 Consensus::CheckTxInputs(entry->GetTx(), state, mempoolDuplicate, nSpendHeight, Params().GetConsensus());
+            fCheckResult &= Consensus::CheckTxShieldedInputs(entry->GetTx(), state, mempoolDuplicate, 0);
             assert(fCheckResult);
             UpdateCoins(entry->GetTx(), mempoolDuplicate, 1000000);
             stepsSinceLastRemove = 0;
