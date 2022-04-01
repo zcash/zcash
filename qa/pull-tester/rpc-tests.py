@@ -88,7 +88,8 @@ BASE_SCRIPTS= [
     'rest.py',
     'mempool_spendcoinbase.py',
     'mempool_reorg.py',
-    'mempool_nu_activation.py',
+    # disabled due to unreliability:
+    #'mempool_nu_activation.py',
     'httpbasics.py',
     'multi_rpc.py',
     'zapwallettxes.py',
