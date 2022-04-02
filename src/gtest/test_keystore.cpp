@@ -359,15 +359,14 @@ TEST(KeystoreTests, StoreAndRetrieveMnemonicSeedInEncryptedStore) {
     seedOut = keyStore.GetMnemonicSeed();
     EXPECT_FALSE(seedOut.has_value());
 
-    // Unlocking with a random key should fail
-    CKeyingMaterial vRandomKey(32, 0);
-    GetRandBytes(vRandomKey.data(), 32);
-    EXPECT_FALSE(keyStore.Unlock(vRandomKey));
+    // Unlocking with a random key causes sporadic failures, since we currently
+    // don't use an authenticated encryption scheme for CCryptoKeyStore.
 
-    // Unlocking with a slightly-modified vMasterKey should fail
-    CKeyingMaterial vModifiedKey(vMasterKey);
-    vModifiedKey[0] += 1;
-    EXPECT_FALSE(keyStore.Unlock(vModifiedKey));
+    // Currently, DecryptMnemonicSeed tests if a key is invalid by looking at
+    // the return value of CBCDecrypt. If keyStore.Unlock is called with an
+    // invalid key, there's roughly a 257/65536 chance that the padding check
+    // in CBCDecrypt will pass, in which case DecryptMnemonicSeed then calls
+    // the deserialization code in mnemonic.h with random data.
 
     // Unlocking with vMasterKey should succeed
     ASSERT_TRUE(keyStore.Unlock(vMasterKey));
