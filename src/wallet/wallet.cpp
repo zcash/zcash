@@ -1501,6 +1501,27 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
     SetBestChainINTERNAL(walletdb, loc);
 }
 
+CBlockIndex* CWallet::GetBestBlock()
+{
+    AssertLockHeld(cs_main);
+    AssertLockHeld(cs_wallet);
+
+    CWalletDB walletdb(strWalletFile);
+    CBlockLocator locator;
+    if (walletdb.ReadBestBlock(locator)) {
+        if (!locator.vHave.empty()) {
+            BlockMap::iterator mi = mapBlockIndex.find(locator.vHave[0]);
+            if (mi != mapBlockIndex.end()) {
+                return (*mi).second;
+            }
+        }
+    }
+
+    // The wallet's best block is not known to the node. This can occur when a
+    // wallet file is transplanted between disparate nodes.
+    return nullptr;
+}
+
 std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> CWallet::GetSproutNullifiers(
         const std::set<libzcash::SproutPaymentAddress>& addresses) {
     std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> nullifierSet;
