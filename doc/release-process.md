@@ -14,15 +14,9 @@ is a common reason.)
 
 ### Pre-release checklist:
 
-Check that dependencies are properly hosted by looking at the `check-depends` builder:
+Check that dependencies are properly hosted.
 
-  https://ci.z.cash/#/builders/1
-
-Check that there are no surprising performance regressions:
-
-  https://speed.z.cash
-
-Ensure that new performance metrics appear on that site.
+Check that there are no surprising performance regressions.
 
 Update `src/chainparams.cpp` nMinimumChainWork with information from the getblockchaininfo rpc.
 
@@ -70,7 +64,7 @@ progress bar displayed during the build process.
 ## Release process
 
 In the commands below, <RELEASE> and <RELEASE_PREV> are prefixed with a v, ie.
-v1.0.9 (not 1.0.9).
+v1.1.0 (not 1.1.0).
 
 ### Create the release branch
 
@@ -82,8 +76,8 @@ changes to that branch locally:
 
 Examples:
 
-    $ ./zcutil/make-release.py v1.0.9 v1.0.8-1 v1.0.8-1 120000
-    $ ./zcutil/make-release.py v1.0.13 v1.0.13-rc1 v1.0.12 222900
+    $ ./zcutil/make-release.py v1.1.0 v1.0.0 v1.0.0 120000
+    $ ./zcutil/make-release.py v1.1.0 v1.1.0-rc1 v1.0.0 222900
 
 ### Create, Review, and Merge the release branch pull request
 
@@ -121,8 +115,8 @@ Then create the git tag. The `-s` means the release tag will be signed.
 Enter "Release <version>." and save when prompted for a commit message.
 **CAUTION:** Remember the `v` at the beginning here:
 
-    $ git tag -s v1.0.9
-    $ git push origin v1.0.9
+    $ git tag -s v1.1.0
+    $ git push origin v1.1.0
 
 ## Make and deploy deterministic builds
 

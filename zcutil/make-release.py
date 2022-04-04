@@ -55,7 +55,7 @@ def parse_args(args):
     p.add_argument(
         'RELEASE_VERSION',
         type=Version.parse_arg,
-        help='The release version: vX.Y.Z-N',
+        help='The release version: vX.Y.Z',
     )
     p.add_argument(
         'RELEASE_PREV',
@@ -196,9 +196,8 @@ def verify_version(release, releaseprev, hotfix):
     expected = Version(
         releaseprev.major,
         releaseprev.minor,
-        releaseprev.patch,
+        releaseprev.patch + 1,
         releaseprev.betarc,
-        releaseprev.hotfix + 1 if releaseprev.hotfix else 1,
     )
     if release != expected:
         raise SystemExit(
@@ -498,39 +497,39 @@ class Version (object):
                 ),
             )
         else:
-            [major, minor, patch, _, betarc, hotfix] = m.groups()
+            [major, minor, patch, _, betarc, hyphen] = m.groups()
             return Version(
                 int(major),
                 int(minor),
                 int(patch),
                 betarc,
-                int(hotfix) if hotfix is not None else None,
+                int(hyphen) if hyphen is not None else None,
             )
 
-    def __init__(self, major, minor, patch, betarc, hotfix):
+    def __init__(self, major, minor, patch, betarc, hyphen):
         for i in [major, minor, patch]:
             assert type(i) is int, i
         assert betarc in {None, 'rc', 'beta'}, betarc
-        assert hotfix is None or type(hotfix) is int, hotfix
+        assert hyphen is None or type(hyphen) is int, hyphen
         if betarc is not None:
-            assert hotfix is not None, (betarc, hotfix)
+            assert hyphen is not None, (betarc, hyphen)
 
         self.major = major
         self.minor = minor
         self.patch = patch
         self.betarc = betarc
-        self.hotfix = hotfix
+        self.hyphen = hyphen
 
-        if hotfix is None:
+        if hyphen is None:
             self.build = 50
         else:
-            assert hotfix > 0, hotfix
+            assert hyphen > 0, hyphen
             if betarc is None:
-                assert hotfix < 50, hotfix
-                self.build = 50 + hotfix
+                assert hyphen < 50, hyphen
+                self.build = 50 + hyphen
             else:
-                assert hotfix < 26, hotfix
-                self.build = {'beta': 0, 'rc': 25}[betarc] + hotfix - 1
+                assert hyphen < 26, hyphen
+                self.build = {'beta': 0, 'rc': 25}[betarc] + hyphen - 1
 
     @property
     def novtext(self):
@@ -547,29 +546,29 @@ class Version (object):
     def _novtext(self, debian):
         novtext = '{}.{}.{}'.format(self.major, self.minor, self.patch)
 
-        if self.hotfix is None:
+        if self.hyphen is None:
             return novtext
         else:
-            assert self.hotfix > 0, self.hotfix
+            assert self.hyphen > 0, self.hyphen
             if self.betarc is None:
-                assert self.hotfix < 50, self.hotfix
+                assert self.hyphen < 50, self.hyphen
                 sep = '+' if debian else '-'
-                return '{}{}{}'.format(novtext, sep, self.hotfix)
+                return '{}{}{}'.format(novtext, sep, self.hyphen)
             else:
-                assert self.hotfix < 26, self.hotfix
+                assert self.hyphen < 26, self.hyphen
                 sep = '~' if debian else '-'
                 return '{}{}{}{}'.format(
                     novtext,
                     sep,
                     self.betarc,
-                    self.hotfix,
+                    self.hyphen,
                 )
 
     def __repr__(self):
         return '<Version {}>'.format(self.vtext)
 
     def _sort_tup(self):
-        if self.hotfix is None:
+        if self.hyphen is None:
             prio = 2
         else:
             prio = {'beta': 0, 'rc': 1, None: 3}[self.betarc]
@@ -579,7 +578,7 @@ class Version (object):
             self.minor,
             self.patch,
             prio,
-            self.hotfix,
+            self.hyphen,
         )
 
     def __lt__(self, other):
@@ -646,7 +645,7 @@ class TestVersion (unittest.TestCase):
         cases = [
             'v07.0.0',
             'v1.0.03',
-            'v1.2.3-0',  # Hotfix numbers must begin w/ 1
+            'v1.2.3-0',
             'v1.2.3~0',
             'v1.2.3+0',
             '1.2.3',
