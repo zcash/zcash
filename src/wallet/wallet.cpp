@@ -4364,7 +4364,7 @@ int CWallet::ScanForWalletTransactions(
                     throw std::runtime_error("CWallet::ScanForWalletTransactions(): Orchard wallet is out of sync. Please restart your node with -rescan.");
                 }
             }
-        } else if (isInitScan && pindex->nHeight < nu5_height) {
+        } else if (isInitScan && pindexStart->nHeight < nu5_height) {
             // If it's the initial scan and we're starting below the nu5 activation
             // height, we're effectively rescanning from genesis and so it's safe
             // to update the note commitment tree as we progress.
