@@ -6332,7 +6332,7 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
         CWallet *tempWallet = new CWallet(params, walletFile);
         DBErrors nZapWalletRet = tempWallet->ZapWalletTx(vWtx);
         if (nZapWalletRet != DB_LOAD_OK) {
-            return UIError(strprintf(_("Error loading %s: Wallet corrupted"), walletFile));
+            return UIError(strprintf(_("Error loading %s with -zapwallettxes: Wallet corrupted"), walletFile));
         }
 
         delete tempWallet;
