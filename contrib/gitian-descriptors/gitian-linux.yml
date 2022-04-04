@@ -3,8 +3,8 @@ name: "zcash-4.6.0-1"
 enable_cache: true
 distro: "debian"
 suites:
-- "stretch"
 - "buster"
+- "bullseye"
 architectures:
 - "amd64"
 packages:

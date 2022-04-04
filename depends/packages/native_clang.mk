@@ -1,22 +1,26 @@
 package=native_clang
 $(package)_major_version=13
-$(package)_version=13.0.0
+$(package)_version=13.0.1
 $(package)_download_path=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
 $(package)_download_path_linux=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
-$(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-16.04.tar.xz
-$(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-16.04.tar.xz
-$(package)_sha256_hash_linux=76d0bf002ede7a893f69d9ad2c4e101d15a8f4186fbfe24e74856c8449acd7c1
-$(package)_download_path_darwin=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_major_version).0.0
-$(package)_download_file_darwin=clang+llvm-$($(package)_major_version).0.0-x86_64-apple-darwin.tar.xz
-$(package)_file_name_darwin=clang-llvm-$($(package)_major_version).0.0-x86_64-apple-darwin.tar.xz
-$(package)_sha256_hash_darwin=d051234eca1db1f5e4bc08c64937c879c7098900f7a0370f3ceb7544816a8b09
+$(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+$(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+$(package)_sha256_hash_linux=84a54c69781ad90615d1b0276a83ff87daaeded99fbc64457c350679df7b4ff0
+$(package)_download_path_darwin=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
+$(package)_download_file_darwin=clang+llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
+$(package)_file_name_darwin=clang-llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
+$(package)_sha256_hash_darwin=dec02d17698514d0fc7ace8869c38937851c542b02adf102c4e898f027145a4d
 $(package)_download_path_freebsd=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
 $(package)_download_file_freebsd=clang+llvm-$($(package)_version)-amd64-unknown-freebsd12.tar.xz
 $(package)_file_name_freebsd=clang-llvm-$($(package)_version)-amd64-unknown-freebsd12.tar.xz
-$(package)_sha256_hash_freebsd=e579747a36ff78aa0a5533fe43bc1ed1f8ed449c9bfec43c358d953ffbbdcf76
+$(package)_sha256_hash_freebsd=8101c8d3a920bf930b33987ada5373f43537c5de8c194be0ea10530fd0ad5617
 $(package)_download_file_aarch64_linux=clang+llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
 $(package)_file_name_aarch64_linux=clang-llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
-$(package)_sha256_hash_aarch64_linux=968d65d2593850ee9b37fcda074fb7641529bd45d2f976af6c8197de3c22612f
+$(package)_sha256_hash_aarch64_linux=15ff2db12683e69e552b6668f7ca49edaa01ce32cb1cbc8f8ed2e887ab291069
+
+ifneq (,$(wildcard /etc/arch-release))
+$(package)_dependencies=native_libtinfo
+endif
 
 # Ensure we have clang native to the builder, not the target host
 ifneq ($(canonical_host),$(build))

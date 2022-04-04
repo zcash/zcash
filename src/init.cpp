@@ -305,7 +305,7 @@ bool static Bind(const CService &addr, unsigned int flags) {
 
 void OnRPCStopped()
 {
-    cvBlockChange.notify_all();
+    g_best_block_cv.notify_all();
     LogPrint("rpc", "RPC stopped.\n");
 }
 
