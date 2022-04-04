@@ -8,10 +8,10 @@ ifneq ($(host_os),mingw32)
 $(package)_download_path=$(native_clang_download_path)
 $(package)_download_file_aarch64_linux=clang+llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
 $(package)_file_name_aarch64_linux=clang-llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz
-$(package)_sha256_hash_aarch64_linux=968d65d2593850ee9b37fcda074fb7641529bd45d2f976af6c8197de3c22612f
-$(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-16.04.tar.xz
-$(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-16.04.tar.xz
-$(package)_sha256_hash_linux=76d0bf002ede7a893f69d9ad2c4e101d15a8f4186fbfe24e74856c8449acd7c1
+$(package)_sha256_hash_aarch64_linux=15ff2db12683e69e552b6668f7ca49edaa01ce32cb1cbc8f8ed2e887ab291069
+$(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+$(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+$(package)_sha256_hash_linux=84a54c69781ad90615d1b0276a83ff87daaeded99fbc64457c350679df7b4ff0
 
 define $(package)_stage_cmds
   mkdir -p $($(package)_staging_prefix_dir)/lib && \
@@ -21,6 +21,7 @@ endef
 
 else
 # For Windows cross-compilation, use the MSYS2 binaries.
+# Using 13.0.0-3 because 13.0.1-1 has missing `new` and `delete` symbols.
 $(package)_download_path=https://repo.msys2.org/mingw/x86_64
 $(package)_download_file=mingw-w64-x86_64-libc++-13.0.0-3-any.pkg.tar.zst
 $(package)_file_name=mingw-w64-x86_64-libcxx-13.0.0-3-any.pkg.tar.zst
