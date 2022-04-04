@@ -2726,13 +2726,21 @@ void DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t n
 void CWallet::DecrementNoteWitnesses(const Consensus::Params& consensus, const CBlockIndex* pindex)
 {
     LOCK(cs_wallet);
+    bool hasSprout = false;
+    bool hasSapling = false;
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+        hasSprout |= !wtxItem.second.mapSproutNoteData.empty();
         ::DecrementNoteWitnesses(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize);
+        hasSapling |= !wtxItem.second.mapSaplingNoteData.empty();
         ::DecrementNoteWitnesses(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize);
     }
-    nWitnessCacheSize -= 1;
-    // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
-    assert(nWitnessCacheSize > 0);
+    if (nWitnessCacheSize > 0) {
+        nWitnessCacheSize -= 1;
+    }
+    // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302);
+    // however, if we have never observed Sprout or Sapling notes, this is okay
+    // because then the witness cache size can remain at 0.
+    assert(!(hasSprout || hasSapling) || nWitnessCacheSize > 0);
 
     // ORCHARD: rewind to the last checkpoint.
     if (consensus.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
