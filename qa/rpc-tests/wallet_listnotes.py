@@ -7,6 +7,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     NU5_BRANCH_ID,
     assert_equal,
+    assert_true,
     get_coinbase_address,
     nuparams,
     start_nodes,
@@ -188,6 +189,7 @@ class WalletListNotes(BitcoinTestFramework):
         assert_equal(txid_2,            unspent_tx[0]['txid'])
         assert_equal('sapling',         unspent_tx[0]['pool'])
         assert_equal(True,              unspent_tx[0]['spendable'])
+        assert_true('account'    not in unspent_tx[0])
         assert_equal(saplingzaddr,      unspent_tx[0]['address'])
         assert_equal(receive_amount_2,  unspent_tx[0]['amount'])
 
@@ -195,6 +197,7 @@ class WalletListNotes(BitcoinTestFramework):
         assert_equal(txid_3,            unspent_tx[1]['txid'])
         assert_equal('sapling',         unspent_tx[1]['pool'])
         assert_equal(True,              unspent_tx[1]['spendable'])
+        assert_true('account'    not in unspent_tx[1])
         assert_equal(saplingzaddr2,     unspent_tx[1]['address'])
         assert_equal(receive_amount_3,  unspent_tx[1]['amount'])
 
@@ -202,6 +205,7 @@ class WalletListNotes(BitcoinTestFramework):
         assert_equal(txid_3,            unspent_tx[2]['txid'])
         assert_equal('sprout',          unspent_tx[2]['pool'])
         assert_equal(True,              unspent_tx[2]['spendable'])
+        assert_true('account'    not in unspent_tx[2])
         assert_equal(sproutzaddr,       unspent_tx[2]['address'])
         assert_equal(change_amount_3,   unspent_tx[2]['amount'])
 
@@ -209,6 +213,7 @@ class WalletListNotes(BitcoinTestFramework):
         assert_equal(txid_4,            unspent_tx[3]['txid'])
         assert_equal('orchard',         unspent_tx[3]['pool'])
         assert_equal(True,              unspent_tx[3]['spendable'])
+        assert_equal(account0,          unspent_tx[3]['account'])
         assert_equal(ua0,               unspent_tx[3]['address'])
         assert_equal(receive_amount_4,  unspent_tx[3]['amount'])
 

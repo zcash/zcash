@@ -2432,10 +2432,6 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "\nReturns array of unspent shielded notes with between minconf and maxconf (inclusive) confirmations.\n"
             "Optionally filter to only include notes sent to specified addresses.\n"
             "When minconf is 0, unspent notes with zero confirmations are returned, even though they are not immediately spendable.\n"
-            "Orchard notes are not yet returned (the documentation below shows what the results will be when this is fixed).\n"
-            "Results are an array of Objects, each of which has:\n"
-            "{txid, pool, jsindex, jsoutindex, confirmations, address, amount, memo} (Sprout)\n"
-            "{txid, pool, outindex, confirmations, address, amount, memo} (Sapling)\n"
             "\nArguments:\n"
             "1. minconf          (numeric, optional, default=1) The minimum confirmations to filter\n"
             "2. maxconf          (numeric, optional, default=9999999) The maximum confirmations to filter\n"
@@ -2455,7 +2451,8 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "    \"outindex\" (sapling, orchard) : n, (numeric) the Sapling output or Orchard action index\n"
             "    \"confirmations\" : n,               (numeric) the number of confirmations\n"
             "    \"spendable\" : true|false,          (boolean) true if note can be spent by wallet, false if address is watchonly\n"
-            "    \"address\" : \"address\",             (string) the shielded address\n"
+            "    \"account\" : n,                     (numeric, optional) the unified account ID, if applicable\n"
+            "    \"address\" : \"address\",             (string, optional) the shielded address, omitted if this note was sent to an internal receiver\n"
             "    \"amount\": xxxxx,                   (numeric) the amount of value in the note\n"
             "    \"memo\": xxxxx,                     (string) hexadecimal string representation of memo field\n"
             "    \"change\": true|false,              (boolean) true if the address that received the note is also one of the sending addresses\n"
@@ -2577,6 +2574,10 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         obj.pushKV("confirmations", entry.confirmations);
         bool hasSaplingSpendingKey = pwalletMain->HaveSaplingSpendingKeyForAddress(entry.address);
         obj.pushKV("spendable", hasSaplingSpendingKey);
+        auto account = pwalletMain->FindUnifiedAccountByReceiver(entry.address);
+        if (account.has_value()) {
+            obj.pushKV("account", (uint64_t) account.value());
+        }
         auto addr = pwalletMain->GetPaymentAddressForRecipient(entry.op.hash, entry.address);
         if (addr.second != RecipientType::WalletInternalAddress) {
             obj.pushKV("address", keyIO.EncodePaymentAddress(addr.first));
@@ -2602,12 +2603,15 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         // TODO: add a better mechanism for checking whether we have the
         // spending key for an Orchard receiver.
         auto ufvkMeta = pwalletMain->GetUFVKMetadataForReceiver(entry.GetAddress());
-        bool haveSpendingKey =
-            ufvkMeta.has_value() &&
-            pwalletMain->GetUnifiedAccountId(ufvkMeta.value().GetUFVKId()).has_value();
+        auto account = pwalletMain->GetUnifiedAccountId(ufvkMeta.value().GetUFVKId());
+        bool haveSpendingKey = ufvkMeta.has_value() && account.has_value();
         bool isInternal = pwalletMain->IsInternalRecipient(entry.GetAddress());
+
         std::optional<std::string> addrStr;
         obj.pushKV("spendable", haveSpendingKey);
+        if (account.has_value()) {
+            obj.pushKV("account", (uint64_t) account.value());
+        }
         if (!isInternal) {
             auto ua = pwalletMain->FindUnifiedAddressByReceiver(entry.GetAddress());
             assert(ua.has_value());

@@ -6884,6 +6884,15 @@ std::optional<UnifiedAddress> CWallet::FindUnifiedAddressByReceiver(const Receiv
     return std::visit(UnifiedAddressForReceiver(*this), receiver);
 }
 
+std::optional<libzcash::AccountId> CWallet::FindUnifiedAccountByReceiver(const Receiver& receiver) const {
+    auto ufvkMeta = GetUFVKMetadataForReceiver(receiver);
+    if (ufvkMeta.has_value()) {
+        return GetUnifiedAccountId(ufvkMeta.value().GetUFVKId());
+    } else {
+        return std::nullopt;
+    }
+}
+
 //
 // Payment address operations
 //

@@ -1648,6 +1648,12 @@ public:
             const libzcash::Receiver& receiver) const;
 
     /**
+     * Finds a unified account ID for a given receiver.
+     */
+    std::optional<libzcash::AccountId> FindUnifiedAccountByReceiver(
+            const libzcash::Receiver& receiver) const;
+
+    /**
      * Increment the next transaction order id
      * @return next transaction order id
      */
