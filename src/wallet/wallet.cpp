@@ -2742,7 +2742,11 @@ void CWallet::DecrementNoteWitnesses(const Consensus::Params& consensus, const C
         assert(pindex->nHeight >= 1);
         assert(orchardWallet.Rewind(pindex->nHeight - 1, uResultHeight));
         assert(uResultHeight == pindex->nHeight - 1);
-        if (consensus.NetworkUpgradeActive(pindex->nHeight - 1, Consensus::UPGRADE_NU5)) {
+        // If we have no checkpoints after the rewind, then the latest anchor of the
+        // wallet's Orchard note commitment tree will be in an indeterminate state and it
+        // will be overwritten in the next `IncrementNoteWitnesses` call, so we can skip
+        // the check against `hashFinalOrchardRoot`.
+        if (orchardWallet.GetLastCheckpointHeight().has_value()) {
             assert(pindex->pprev->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
         }
     }
