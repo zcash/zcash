@@ -1,3 +1,12 @@
+This is a bugfix release that also bumps the End-of-Support height to May 16th.
+It backports bugfixes from v4.7.0-rc1, including a `getblocktemplate` deadlock
+fix, and several portability fixes.
+
+Debian 9 "Stretch" is no longer supported from v4.6.0-2, due to its
+[end-of-life](https://wiki.debian.org/LTS/Stretch) on June 30th, 2022. This will
+allow us to direct more resources to supporting Debian 11 Bullseye, other Linux
+distributions, and other platforms such as Windows and macOS.
+
 Changelog
 =========
 
