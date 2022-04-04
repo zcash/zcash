@@ -1727,7 +1727,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (pwalletMain)
         {
             LOCK2(cs_main, pwalletMain->cs_wallet);
-            const auto walletBestBlock = pwalletMain->GetBestBlock();
+            const auto walletBestBlock = pwalletMain->GetPersistedBestBlock();
             if (walletBestBlock != nullptr) {
                 pindexLastTip = walletBestBlock;
             }

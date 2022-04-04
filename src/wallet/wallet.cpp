@@ -1501,7 +1501,7 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
     SetBestChainINTERNAL(walletdb, loc);
 }
 
-CBlockIndex* CWallet::GetBestBlock()
+CBlockIndex* CWallet::GetPersistedBestBlock()
 {
     AssertLockHeld(cs_main);
     AssertLockHeld(cs_wallet);
