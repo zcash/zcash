@@ -1233,6 +1233,7 @@ bool ContextualCheckShieldedInputs(
         const CTransaction& tx,
         const PrecomputedTransactionData& txdata,
         CValidationState &state,
+        const CCoinsViewCache &view,
         orchard::AuthValidator& orchardAuth,
         const Consensus::Params& consensus,
         uint32_t consensusBranchId,
@@ -1240,6 +1241,12 @@ bool ContextualCheckShieldedInputs(
         bool isMined,
         bool (*isInitBlockDownload)(const Consensus::Params&))
 {
+    // This doesn't trigger the DoS code on purpose; if it did, it would make it easier
+    // for an attacker to attempt to split the network.
+    if (!Consensus::CheckTxShieldedInputs(tx, state, view, 0)) {
+        return false;
+    }
+
     const int DOS_LEVEL_BLOCK = 100;
     // DoS level set to 10 to be more forgiving.
     const int DOS_LEVEL_MEMPOOL = 10;
@@ -1868,16 +1875,10 @@ bool AcceptToMemoryPool(
             return state.Invalid(false, REJECT_DUPLICATE, "bad-txns-inputs-spent");
 
         // Are the shielded spends' requirements met?
-        auto unmetShieldedReq = view.HaveShieldedRequirements(tx);
-        if (unmetShieldedReq) {
-            auto txid = tx.GetHash().ToString();
-            auto rejectCode = ShieldedReqRejectCode(*unmetShieldedReq);
-            auto rejectReason = ShieldedReqRejectReason(*unmetShieldedReq);
-            TracingError(
-                "main", "AcceptToMemoryPool(): shielded requirements not met",
-                "txid", txid.c_str(),
-                "reason", rejectReason.c_str());
-            return state.Invalid(false, rejectCode, rejectReason);
+        // This doesn't trigger the DoS code on purpose; if it did, it would make it easier
+        // for an attacker to attempt to split the network.
+        if (!Consensus::CheckTxShieldedInputs(tx, state, view, 0)) {
+            return false;
         }
 
         // Bring the best block into scope
@@ -1885,6 +1886,7 @@ bool AcceptToMemoryPool(
 
         nValueIn = view.GetValueIn(tx);
 
+        // we have all inputs cached now, so switch back to dummy
         view.SetBackend(dummy);
 
         // Check for non-standard pay-to-script-hash in inputs
@@ -2004,6 +2006,7 @@ bool AcceptToMemoryPool(
             tx,
             txdata,
             state,
+            view,
             orchardAuth,
             chainparams.GetConsensus(),
             consensusBranchId,
@@ -2551,25 +2554,38 @@ int GetSpendHeight(const CCoinsViewCache& inputs)
 }
 
 namespace Consensus {
+bool CheckTxShieldedInputs(
+    const CTransaction& tx,
+    CValidationState& state,
+    const CCoinsViewCache& view,
+    int dosLevel)
+{
+    // Are the shielded spends' requirements met?
+    auto unmetShieldedReq = view.HaveShieldedRequirements(tx);
+    if (unmetShieldedReq) {
+        auto txid = tx.GetHash().ToString();
+        auto rejectCode = ShieldedReqRejectCode(*unmetShieldedReq);
+        auto rejectReason = ShieldedReqRejectReason(*unmetShieldedReq);
+        TracingError(
+            "main", "CheckTxShieldedInputs(): shielded requirements not met",
+            "txid", txid.c_str(),
+            "reason", rejectReason.c_str());
+        return state.DoS(dosLevel, false, rejectCode, rejectReason);
+    }
+
+    return true;
+}
+
 bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoinsViewCache& inputs, int nSpendHeight, const Consensus::Params& consensusParams)
 {
+    assert(!tx.IsCoinBase());
+
+    // Indented to reduce conflicts with upstream.
+    {
         // This doesn't trigger the DoS code on purpose; if it did, it would make it easier
         // for an attacker to attempt to split the network.
         if (!inputs.HaveInputs(tx))
             return state.Invalid(false, 0, "", "Inputs unavailable");
-
-        // Are the shielded spends' requirements met?
-        auto unmetShieldedReq = inputs.HaveShieldedRequirements(tx);
-        if (unmetShieldedReq) {
-            auto txid = tx.GetHash().ToString();
-            auto rejectCode = ShieldedReqRejectCode(*unmetShieldedReq);
-            auto rejectReason = ShieldedReqRejectReason(*unmetShieldedReq);
-            TracingError(
-                "main", "CheckInputs(): shielded requirements not met",
-                "txid", txid.c_str(),
-                "reason", rejectReason.c_str());
-            return state.Invalid(false, rejectCode, rejectReason);
-        }
 
         CAmount nValueIn = 0;
         CAmount nFees = 0;
@@ -2621,6 +2637,7 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
         nFees += nTxFee;
         if (!MoneyRange(nFees))
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-fee-outofrange");
+    }
     return true;
 }
 }// namespace Consensus
@@ -3220,24 +3237,16 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // txid.
         std::vector<CTxOut> allPrevOutputs;
 
+        // Are the shielded spends' requirements met?
+        if (!Consensus::CheckTxShieldedInputs(tx, state, view, 100)) {
+            return false;
+        }
+
         if (!tx.IsCoinBase())
         {
             if (!view.HaveInputs(tx))
                 return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
-
-            // Are the shielded spends' requirements met?
-            auto unmetShieldedReq = view.HaveShieldedRequirements(tx);
-            if (unmetShieldedReq) {
-                auto txid = tx.GetHash().ToString();
-                auto rejectCode = ShieldedReqRejectCode(*unmetShieldedReq);
-                auto rejectReason = ShieldedReqRejectReason(*unmetShieldedReq);
-                TracingError(
-                    "main", "ConnectBlock(): shielded requirements not met",
-                    "txid", txid.c_str(),
-                    "reason", rejectReason.c_str());
-                return state.DoS(100, false, rejectCode, rejectReason);
-            }
 
             for (const auto& input : tx.vin) {
                 allPrevOutputs.push_back(view.GetOutputFor(input));
@@ -3303,6 +3312,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             tx,
             txdata.back(),
             state,
+            view,
             orchardAuth,
             chainparams.GetConsensus(),
             consensusBranchId,

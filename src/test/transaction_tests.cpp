@@ -24,6 +24,7 @@
 #include "test/test_util.h"
 #include "primitives/transaction.h"
 #include "transaction_builder.h"
+#include "utiltest.h"
 
 #include <array>
 #include <map>
@@ -436,6 +437,8 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         // joinsplits.
         CMutableTransaction newTx(tx);
         CValidationState state;
+        AssumeShieldedInputsExistAndAreSpendable baseView;
+        CCoinsViewCache view(&baseView);
 
         Ed25519SigningKey joinSplitPrivKey;
         ed25519_generate_keypair(&joinSplitPrivKey, &newTx.joinSplitPubKey);
@@ -462,7 +465,7 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
 
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(ContextualCheckTransaction(newTx, state, Params(), 0, true));
-        BOOST_CHECK(!ContextualCheckShieldedInputs(newTx, txdata, state, orchardAuth, Params().GetConsensus(), consensusBranchId, false, true));
+        BOOST_CHECK(!ContextualCheckShieldedInputs(newTx, txdata, state, view, orchardAuth, Params().GetConsensus(), consensusBranchId, false, true));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-invalid-joinsplit-signature");
 
         // Empty output script.
@@ -478,7 +481,7 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         state = CValidationState();
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(ContextualCheckTransaction(newTx, state, Params(), 0, true));
-        BOOST_CHECK(ContextualCheckShieldedInputs(newTx, txdata, state, orchardAuth, Params().GetConsensus(), consensusBranchId, false, true));
+        BOOST_CHECK(ContextualCheckShieldedInputs(newTx, txdata, state, view, orchardAuth, Params().GetConsensus(), consensusBranchId, false, true));
         BOOST_CHECK_EQUAL(state.GetRejectReason(), "");
     }
     {

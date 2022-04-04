@@ -545,18 +545,20 @@ TEST(ContextualCheckShieldedInputsTest, BadTxnsInvalidJoinsplitSignature) {
     const PrecomputedTransactionData txdata(tx, allPrevOutputs);
 
     MockCValidationState state;
+    AssumeShieldedInputsExistAndAreSpendable baseView;
+    CCoinsViewCache view(&baseView);
     // during initial block download, for transactions being accepted into the
     // mempool (and thus not mined), DoS ban score should be zero, else 10
     EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
-    ContextualCheckShieldedInputs(tx, txdata, state, orchardAuth, consensus, 0, false, false, [](const Consensus::Params&) { return true; });
+    ContextualCheckShieldedInputs(tx, txdata, state, view, orchardAuth, consensus, 0, false, false, [](const Consensus::Params&) { return true; });
     EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
-    ContextualCheckShieldedInputs(tx, txdata, state, orchardAuth, consensus, 0, false, false, [](const Consensus::Params&) { return false; });
+    ContextualCheckShieldedInputs(tx, txdata, state, view, orchardAuth, consensus, 0, false, false, [](const Consensus::Params&) { return false; });
     // for transactions that have been mined in a block, DoS ban score should
     // always be 100.
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
-    ContextualCheckShieldedInputs(tx, txdata, state, orchardAuth, consensus, 0, false, true, [](const Consensus::Params&) { return true; });
+    ContextualCheckShieldedInputs(tx, txdata, state, view, orchardAuth, consensus, 0, false, true, [](const Consensus::Params&) { return true; });
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
-    ContextualCheckShieldedInputs(tx, txdata, state, orchardAuth, consensus, 0, false, true, [](const Consensus::Params&) { return false; });
+    ContextualCheckShieldedInputs(tx, txdata, state, view, orchardAuth, consensus, 0, false, true, [](const Consensus::Params&) { return false; });
 }
 
 TEST(ContextualCheckShieldedInputsTest, JoinsplitSignatureDetectsOldBranchId) {
@@ -578,9 +580,11 @@ TEST(ContextualCheckShieldedInputsTest, JoinsplitSignatureDetectsOldBranchId) {
     const PrecomputedTransactionData txdata(tx, allPrevOutputs);
 
     MockCValidationState state;
+    AssumeShieldedInputsExistAndAreSpendable baseView;
+    CCoinsViewCache view(&baseView);
     // Ensure that the transaction validates against Sapling.
     EXPECT_TRUE(ContextualCheckShieldedInputs(
-        tx, txdata, state, orchardAuth, consensus, saplingBranchId, false, false,
+        tx, txdata, state, view, orchardAuth, consensus, saplingBranchId, false, false,
         [](const Consensus::Params&) { return false; }));
 
     // Attempt to validate the inputs against Blossom. We should be notified
@@ -592,7 +596,7 @@ TEST(ContextualCheckShieldedInputsTest, JoinsplitSignatureDetectsOldBranchId) {
             HexInt(saplingBranchId)),
         false, "")).Times(1);
     EXPECT_FALSE(ContextualCheckShieldedInputs(
-        tx, txdata, state, orchardAuth, consensus, blossomBranchId, false, false,
+        tx, txdata, state, view, orchardAuth, consensus, blossomBranchId, false, false,
         [](const Consensus::Params&) { return false; }));
 
     // Attempt to validate the inputs against Heartwood. All we should learn is
@@ -602,7 +606,7 @@ TEST(ContextualCheckShieldedInputsTest, JoinsplitSignatureDetectsOldBranchId) {
         10, false, REJECT_INVALID,
         "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
     EXPECT_FALSE(ContextualCheckShieldedInputs(
-        tx, txdata, state, orchardAuth, consensus, heartwoodBranchId, false, false,
+        tx, txdata, state, view, orchardAuth, consensus, heartwoodBranchId, false, false,
         [](const Consensus::Params&) { return false; }));
 }
 
@@ -610,6 +614,9 @@ TEST(ContextualCheckShieldedInputsTest, NonCanonicalEd25519Signature) {
     SelectParams(CBaseChainParams::REGTEST);
     auto consensus = Params().GetConsensus();
     auto orchardAuth = orchard::AuthValidator::Disabled();
+
+    AssumeShieldedInputsExistAndAreSpendable baseView;
+    CCoinsViewCache view(&baseView);
 
     auto saplingBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
     CMutableTransaction mtx = GetValidTransaction(saplingBranchId);
@@ -623,7 +630,7 @@ TEST(ContextualCheckShieldedInputsTest, NonCanonicalEd25519Signature) {
         CTransaction tx(mtx);
         const PrecomputedTransactionData txdata(tx, allPrevOutputs);
         MockCValidationState state;
-        EXPECT_TRUE(ContextualCheckShieldedInputs(tx, txdata, state, orchardAuth, consensus, saplingBranchId, false, true));
+        EXPECT_TRUE(ContextualCheckShieldedInputs(tx, txdata, state, view, orchardAuth, consensus, saplingBranchId, false, true));
     }
 
     // Copied from libsodium/crypto_sign/ed25519/ref10/open.c
@@ -647,15 +654,15 @@ TEST(ContextualCheckShieldedInputsTest, NonCanonicalEd25519Signature) {
     // during initial block download, for transactions being accepted into the
     // mempool (and thus not mined), DoS ban score should be zero, else 10
     EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
-    ContextualCheckShieldedInputs(tx, txdata, state, orchardAuth, consensus, saplingBranchId, false, false, [](const Consensus::Params&) { return true; });
+    ContextualCheckShieldedInputs(tx, txdata, state, view, orchardAuth, consensus, saplingBranchId, false, false, [](const Consensus::Params&) { return true; });
     EXPECT_CALL(state, DoS(10, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
-    ContextualCheckShieldedInputs(tx, txdata, state, orchardAuth, consensus, saplingBranchId, false, false, [](const Consensus::Params&) { return false; });
+    ContextualCheckShieldedInputs(tx, txdata, state, view, orchardAuth, consensus, saplingBranchId, false, false, [](const Consensus::Params&) { return false; });
     // for transactions that have been mined in a block, DoS ban score should
     // always be 100.
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
-    ContextualCheckShieldedInputs(tx, txdata, state, orchardAuth, consensus, saplingBranchId, false, true, [](const Consensus::Params&) { return true; });
+    ContextualCheckShieldedInputs(tx, txdata, state, view, orchardAuth, consensus, saplingBranchId, false, true, [](const Consensus::Params&) { return true; });
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false, "")).Times(1);
-    ContextualCheckShieldedInputs(tx, txdata, state, orchardAuth, consensus, saplingBranchId, false, true, [](const Consensus::Params&) { return false; });
+    ContextualCheckShieldedInputs(tx, txdata, state, view, orchardAuth, consensus, saplingBranchId, false, true, [](const Consensus::Params&) { return false; });
 }
 
 TEST(ChecktransactionTests, OverwinterConstructors) {
@@ -1322,9 +1329,11 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     //   their transparent input; ZIP 244 handles this by making the coinbase
     //   sighash the txid.
     PrecomputedTransactionData txdata(tx, {});
+    AssumeShieldedInputsExistAndAreSpendable baseView;
+    CCoinsViewCache view(&baseView);
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid", false, "")).Times(1);
     EXPECT_FALSE(ContextualCheckShieldedInputs(
-        tx, txdata, state, orchardAuth, chainparams.GetConsensus(), heartwoodBranchId, false, true));
+        tx, txdata, state, view, orchardAuth, chainparams.GetConsensus(), heartwoodBranchId, false, true));
 
     RegtestDeactivateHeartwood();
 }
