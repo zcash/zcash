@@ -584,13 +584,16 @@ impl Wallet {
         let my_notes_for_tx = self.wallet_received_notes.get(txid);
         if my_notes_for_tx.is_some() {
             tracing::trace!("Tx is ours, marking as mined");
-            self.wallet_note_positions.insert(
-                *txid,
-                NotePositions {
-                    tx_height: block_height,
-                    note_positions: BTreeMap::default(),
-                },
-            );
+            assert!(self
+                .wallet_note_positions
+                .insert(
+                    *txid,
+                    NotePositions {
+                        tx_height: block_height,
+                        note_positions: BTreeMap::default(),
+                    },
+                )
+                .is_none());
         }
 
         for (action_idx, action) in bundle.actions().iter().enumerate() {
@@ -610,23 +613,28 @@ impl Wallet {
             {
                 tracing::trace!("Witnessing Orchard note ({}, {})", txid, action_idx);
                 let pos = self.witness_tree.witness().expect("tree is not empty");
-                self.wallet_note_positions
+                assert!(self
+                    .wallet_note_positions
                     .get_mut(txid)
                     .expect("We created this above")
                     .note_positions
-                    .insert(action_idx, pos);
+                    .insert(action_idx, pos)
+                    .is_none());
             }
 
             // For nullifiers that are ours that we detect as spent by this action,
             // we will record that input as being mined.
             if let Some(outpoint) = self.nullifiers.get(action.nullifier()) {
-                self.mined_notes.insert(
-                    *outpoint,
-                    InPoint {
-                        txid: *txid,
-                        action_idx,
-                    },
-                );
+                assert!(self
+                    .mined_notes
+                    .insert(
+                        *outpoint,
+                        InPoint {
+                            txid: *txid,
+                            action_idx,
+                        },
+                    )
+                    .is_none());
             }
         }
 
