@@ -122,9 +122,9 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
         assert_equal(self.nodes[1].z_getbalance(node1_zaddr), 1)
 
         # Generate a Unified Address for node 1
-        self.nodes[1].z_getnewaccount()
-        node1_addr0 = self.nodes[1].z_getaddressforaccount(0)
-        assert_equal(node1_addr0['account'], 0)
+        acct1 = self.nodes[1].z_getnewaccount()['account']
+        node1_addr0 = self.nodes[1].z_getaddressforaccount(acct1)
+        assert_equal(node1_addr0['account'], acct1)
         assert_equal(set(node1_addr0['receiver_types']), set(['p2pkh', 'sapling', 'orchard']))
         node1_ua = node1_addr0['address']
 
@@ -137,7 +137,7 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
         connect_nodes(self.nodes[1], 0)
 
         # The UA starts with zero balance.
-        assert_equal(self.nodes[1].z_getbalanceforaccount(0)['pools'], {})
+        assert_equal(self.nodes[1].z_getbalanceforaccount(acct1)['pools'], {})
 
         # Node 1 can mine blocks because the miner selects the Sapling receiver
         # of its UA.
@@ -146,7 +146,7 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
 
         # The UA balance should show that Sapling funds were received.
-        assert_equal(self.nodes[1].z_getbalanceforaccount(0)['pools'], {
+        assert_equal(self.nodes[1].z_getbalanceforaccount(acct1)['pools'], {
             'sapling': {'valueZat': 5 * COIN },
         })
 
@@ -159,12 +159,30 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
         print("Mining block with node 1")
         self.nodes[1].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[1].z_getbalanceforaccount(0)['pools'], {
+        assert_equal(self.nodes[1].z_getbalanceforaccount(acct1)['pools'], {
             'sapling': {'valueZat': 5 * COIN },
             # 6.25 ZEC because the FR always ends when Canopy activates, and
             # regtest has no defined funding streams.
             'orchard': {'valueZat': 6.25 * COIN },
         })
+
+        self.nodes[1].generate(50)
+        self.sync_all()
+
+        acct1a = self.nodes[1].z_getnewaccount()['account']
+        node1_ua1a = self.nodes[1].z_getaddressforaccount(acct1a)['address']
+
+        recipients = [{"address": node1_ua1a, "amount": Decimal('125')}]
+        myopid = self.nodes[1].z_sendmany(node1_ua, recipients, 1, 0)
+        wait_and_assert_operationid_status(self.nodes[1], myopid)
+
+        self.sync_all()
+        self.nodes[1].generate(1)
+        self.sync_all()
+
+        assert_equal(
+                {'pools': {'orchard': {'valueZat': Decimal('12500000000')}}, 'minimum_confirmations': 1},
+                self.nodes[1].z_getbalanceforaccount(acct1a))
 
 if __name__ == '__main__':
     ShieldCoinbaseTest().main()
