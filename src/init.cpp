@@ -1707,15 +1707,33 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // Start the thread that notifies listeners of transactions that have been
     // recently added to the mempool, or have been added to or removed from the
     // chain. We perform this before step 10 (import blocks) so that the
-    // original value of chainActive.Tip(), which corresponds with the wallet's
-    // view of the chaintip, is passed to ThreadNotifyWallets before the chain
-    // tip changes again.
+    // original value of chainActive.Tip() can be passed to ThreadNotifyWallets
+    // before the chain tip changes again.
     {
         CBlockIndex *pindexLastTip;
         {
             LOCK(cs_main);
             pindexLastTip = chainActive.Tip();
         }
+
+        // However, if a wallet is enabled, we actually want to start notifying
+        // from the block which corresponds with the wallet's view of the chain
+        // tip. In particular, we want to handle the case where the node shuts
+        // down uncleanly, and on restart the chain's tip is potentially up to
+        // an hour of chain sync older than the wallet's tip. We assume here
+        // that there is only a single wallet connected to the validation
+        // interface, which is currently true.
+#ifdef ENABLE_WALLET
+        if (pwalletMain)
+        {
+            LOCK2(cs_main, pwalletMain->cs_wallet);
+            const auto walletBestBlock = pwalletMain->GetPersistedBestBlock();
+            if (walletBestBlock != nullptr) {
+                pindexLastTip = walletBestBlock;
+            }
+        }
+#endif
+
         boost::function<void()> threadnotifywallets = boost::bind(&ThreadNotifyWallets, pindexLastTip);
         threadGroup.create_thread(
             boost::bind(&TraceThread<boost::function<void()>>, "txnotify", threadnotifywallets)
