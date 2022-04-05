@@ -485,8 +485,6 @@ impl Wallet {
                 .decrypted_notes
                 .insert(action_idx, note_data);
 
-            self.nullifiers.insert(nf, outpoint);
-
             // add the association between the address and the IVK used
             // to decrypt the note
             self.key_store.add_raw_address(recipient, ivk.clone());
