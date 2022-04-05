@@ -490,6 +490,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
     // Add Orchard spends
     for (size_t i = 0; i < orchardSpendInfo.size(); i++) {
+        std::cout << "Adding orchard spend " << i << std::endl;
         auto spendInfo = std::move(orchardSpendInfo[i]);
         if (!builder_.AddOrchardSpend(
             std::move(spendInfo.first),
@@ -588,6 +589,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     }
 
     // Build the transaction
+    std::cout << "About to build the transaction" << std::endl;
     auto buildResult = builder_.Build();
     auto tx = buildResult.GetTxOrThrow();
 
