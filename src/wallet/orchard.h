@@ -13,6 +13,7 @@
 #include "rust/orchard/keys.h"
 #include "rust/orchard/wallet.h"
 #include "zcash/address/orchard.hpp"
+#include "zcash/IncrementalMerkleTree.hpp"
 
 class OrchardWallet;
 class OrchardWalletNoteCommitmentTreeWriter;
@@ -219,6 +220,16 @@ public:
     }
 
     /**
+     * Overwrite the first bridge of the Orchard note commitment tree to have the
+     * provided frontier as its latest state. This will fail with an assertion error
+     * if any checkpoints exist in the tree.
+     */
+    void InitNoteCommitmentTree(const OrchardMerkleFrontier& frontier) {
+        assert(!GetLastCheckpointHeight().has_value());
+        assert(orchard_wallet_init_from_frontier(inner.get(), frontier.inner.get()));
+    }
+
+    /**
      * Checkpoint the note commitment tree. This returns `false` and leaves the note
      * commitment tree unmodified if the block height specified is not the successor
      * to the last block height checkpointed.
@@ -245,9 +256,9 @@ public:
      * previously identified as having been spent by transactions in the
      * latest block.
      */
-    bool Rewind(int nBlockHeight, uint32_t& blocksRewoundRet) {
+    bool Rewind(int nBlockHeight, uint32_t& uResultHeight) {
         assert(nBlockHeight >= 0);
-        return orchard_wallet_rewind(inner.get(), (uint32_t) nBlockHeight, &blocksRewoundRet);
+        return orchard_wallet_rewind(inner.get(), (uint32_t) nBlockHeight, &uResultHeight);
     }
 
     static void PushOrchardActionIVK(void* rec, RawOrchardActionIVK actionIVK) {

@@ -259,12 +259,16 @@ typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, l
 typedef libzcash::IncrementalWitness<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::PedersenHash> SaplingWitness;
 typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::PedersenHash> SaplingTestingWitness;
 
+class OrchardWallet;
+
 class OrchardMerkleFrontier
 {
 private:
     /// An incremental Sinsemilla tree; this pointer may never be null.
     /// Memory is allocated by Rust.
     std::unique_ptr<OrchardMerkleFrontierPtr, decltype(&orchard_merkle_frontier_free)> inner;
+
+    friend class OrchardWallet;
 public:
     OrchardMerkleFrontier() : inner(orchard_merkle_frontier_empty(), orchard_merkle_frontier_free) {}
 

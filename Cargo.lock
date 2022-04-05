@@ -855,7 +855,7 @@ dependencies = [
 [[package]]
 name = "incrementalmerkletree"
 version = "0.3.0-beta.1"
-source = "git+https://github.com/nuttycom/incrementalmerkletree?rev=027a98e53ad59699662d258ac22cd2095ae02aea#027a98e53ad59699662d258ac22cd2095ae02aea"
+source = "git+https://github.com/nuttycom/incrementalmerkletree?rev=f19cf9c381d70547d170216f844b62c86befb6c3#f19cf9c381d70547d170216f844b62c86befb6c3"
 dependencies = [
  "serde",
 ]

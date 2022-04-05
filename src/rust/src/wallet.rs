@@ -1,5 +1,5 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use incrementalmerkletree::{bridgetree::BridgeTree, Frontier, Position, Tree};
+use incrementalmerkletree::{bridgetree, bridgetree::BridgeTree, Frontier, Position, Tree};
 use libc::c_uchar;
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryInto;
@@ -42,14 +42,14 @@ pub struct LastObserved {
 }
 
 /// A pointer to a particular action in an Orchard transaction output.
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OutPoint {
     txid: TxId,
     action_idx: usize,
 }
 
 /// A pointer to a previous output being spent in an Orchard action.
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InPoint {
     txid: TxId,
     action_idx: usize,
@@ -195,6 +195,14 @@ pub enum BundleLoadError {
     InvalidActionIndex(usize),
 }
 
+#[derive(Debug, Clone)]
+pub enum SpendRetrievalError {
+    DecryptedNoteNotFound(OutPoint),
+    NoIvkForRecipient(Address),
+    FvkNotFound(IncomingViewingKey),
+    NoteNotPositioned(OutPoint),
+}
+
 /// A struct used to return metadata about how a bundle was determined
 /// to be involved with the wallet.
 #[derive(Debug, Clone)]
@@ -266,39 +274,37 @@ impl Wallet {
         self.last_checkpoint
     }
 
-    /// Rewinds the note commitment tree to the given height, removes notes and
-    /// spentness information for transactions mined in the removed blocks, and returns
-    /// the number of blocks by which the tree has been rewound if successful. Returns  
-    /// `RewindError` if not enough checkpoints exist to execute the full rewind
-    /// requested. If the requested height is greater than or equal to the height of the
-    /// latest checkpoint, this returns `Ok(0)` and leaves the wallet unmodified.
-    pub fn rewind(&mut self, to_height: BlockHeight) -> Result<u32, RewindError> {
+    /// Rewinds the note commitment tree to the given height, removes notes and spentness
+    /// information for transactions mined in the removed blocks, and returns the height to which
+    /// the tree has been rewound if successful. Returns  `RewindError` if not enough checkpoints
+    /// exist to execute the full rewind requested and the wallet has witness information that
+    /// would be invalidated by the rewind. If the requested height is greater than or equal to the
+    /// height of the latest checkpoint, this returns a successful result containing the height of
+    /// the last checkpoint.
+    ///
+    /// In the case that no checkpoints exist but the note commitment tree also records no witness
+    /// information, we allow the wallet to continue to rewind, under the assumption that the state
+    /// of the note commitment tree will be overwritten prior to the next append.
+    pub fn rewind(&mut self, to_height: BlockHeight) -> Result<BlockHeight, RewindError> {
         if let Some(checkpoint_height) = self.last_checkpoint {
             if to_height >= checkpoint_height {
-                return Ok(0);
+                return Ok(checkpoint_height);
             }
 
             let blocks_to_rewind = <u32>::from(checkpoint_height) - <u32>::from(to_height);
-
-            // if the rewind length exceeds the number of checkpoints we have stored,
-            // return failure.
             let checkpoint_count = self.witness_tree.checkpoints().len();
-            if blocks_to_rewind as usize > checkpoint_count {
-                return Err(RewindError::InsufficientCheckpoints(checkpoint_count));
-            }
-
             for _ in 0..blocks_to_rewind {
-                // we've already checked that we have enough checkpoints to fully
-                // rewind by the requested amount.
-                assert!(self.witness_tree.rewind());
+                // If the rewind fails, we have no more checkpoints. This is fine in the
+                // case that we have a recently-initialized tree, so long as we have no
+                // witnessed indices. In the case that we have any witnessed notes, we
+                // have hit the maximum rewind limit, and this is an error.
+                if !self.witness_tree.rewind() {
+                    assert!(self.witness_tree.checkpoints().is_empty());
+                    if !self.witness_tree.witnessed_indices().is_empty() {
+                        return Err(RewindError::InsufficientCheckpoints(checkpoint_count));
+                    }
+                }
             }
-
-            // reset our last observed height to ensure that notes added in the future are
-            // from a new block
-            let last_observed = LastObserved {
-                block_height: checkpoint_height - blocks_to_rewind,
-                block_tx_idx: None,
-            };
 
             // retain notes that correspond to transactions that are not "un-mined" after
             // the rewind
@@ -306,7 +312,7 @@ impl Wallet {
                 .wallet_note_positions
                 .iter()
                 .filter_map(|(txid, n)| {
-                    if n.tx_height <= last_observed.block_height {
+                    if n.tx_height <= to_height {
                         Some(*txid)
                     } else {
                         None
@@ -315,21 +321,39 @@ impl Wallet {
                 .collect();
 
             self.mined_notes.retain(|_, v| to_retain.contains(&v.txid));
+
             // nullifier and received note data are retained, because these values are stable
             // once we've observed a note for the first time. The block height at which we
             // observed the note is removed along with the note positions, because the
             // transaction will no longer have been observed as having been mined.
             self.wallet_note_positions
                 .retain(|txid, _| to_retain.contains(txid));
-            self.last_observed = Some(last_observed);
+
+            // reset our last observed height to ensure that notes added in the future are
+            // from a new block
+            self.last_observed = Some(LastObserved {
+                block_height: to_height,
+                block_tx_idx: None,
+            });
+
             self.last_checkpoint = if checkpoint_count > blocks_to_rewind as usize {
-                Some(checkpoint_height - blocks_to_rewind)
+                Some(to_height)
             } else {
-                // checkpoint_count == blocks_to_rewind
+                // checkpoint_count <= blocks_to_rewind
                 None
             };
 
-            Ok(blocks_to_rewind)
+            Ok(to_height)
+        } else if self.witness_tree.witnessed_indices().is_empty() {
+            // If we have no witnessed notes, it's okay to keep "rewinding" even though
+            // we have no checkpoints. We then allow last_observed to assume the height
+            // to which we have reset the tree state.
+            self.last_observed = Some(LastObserved {
+                block_height: to_height,
+                block_tx_idx: None,
+            });
+
+            Ok(to_height)
         } else {
             Err(RewindError::InsufficientCheckpoints(0))
         }
@@ -636,42 +660,55 @@ impl Wallet {
     ///
     /// Returns `None` if the `OutPoint` is not known to the wallet, or the Orchard bundle
     /// containing the note has not been passed to `Wallet::append_bundle_commitments`.
-    pub fn get_spend_info(&self, outpoint: OutPoint) -> Option<OrchardSpendInfo> {
+    pub fn get_spend_info(
+        &self,
+        outpoint: OutPoint,
+    ) -> Result<OrchardSpendInfo, SpendRetrievalError> {
         // TODO: Take `confirmations` parameter and obtain the Merkle path to the root at
         // that checkpoint, not the latest root.
-        self.wallet_received_notes
+        let dnote = self
+            .wallet_received_notes
             .get(&outpoint.txid)
             .and_then(|tx_notes| tx_notes.decrypted_notes.get(&outpoint.action_idx))
-            .and_then(|dnote| {
+            .ok_or(SpendRetrievalError::DecryptedNoteNotFound(outpoint))?;
+
+        let fvk = self
+            .key_store
+            .ivk_for_address(&dnote.note.recipient())
+            .ok_or_else(|| SpendRetrievalError::NoIvkForRecipient(dnote.note.recipient()))
+            .and_then(|ivk| {
                 self.key_store
-                    .ivk_for_address(&dnote.note.recipient())
-                    .and_then(|ivk| self.key_store.viewing_keys.get(ivk))
-                    .zip(
-                        self.wallet_note_positions
-                            .get(&outpoint.txid)
-                            .and_then(|tx_notes| tx_notes.note_positions.get(&outpoint.action_idx)),
-                    )
-                    .map(|(fvk, position)| {
-                        assert_eq!(
-                            self.witness_tree
-                                .get_witnessed_leaf(*position)
-                                .expect("tree has witnessed the leaf for this note."),
-                            &MerkleHashOrchard::from_cmx(&dnote.note.commitment().into()),
-                        );
-                        let path = self
-                            .witness_tree
-                            .authentication_path(*position)
-                            .expect("wallet always has paths to positioned notes");
-                        OrchardSpendInfo::from_parts(
-                            fvk.clone(),
-                            dnote.note,
-                            MerklePath::from_parts(
-                                u64::from(*position).try_into().unwrap(),
-                                path.try_into().unwrap(),
-                            ),
-                        )
-                    })
-            })
+                    .viewing_keys
+                    .get(ivk)
+                    .ok_or_else(|| SpendRetrievalError::FvkNotFound(ivk.clone()))
+            })?;
+
+        let position = self
+            .wallet_note_positions
+            .get(&outpoint.txid)
+            .and_then(|tx_notes| tx_notes.note_positions.get(&outpoint.action_idx))
+            .ok_or(SpendRetrievalError::NoteNotPositioned(outpoint))?;
+
+        assert_eq!(
+            self.witness_tree
+                .get_witnessed_leaf(*position)
+                .expect("tree has witnessed the leaf for this note."),
+            &MerkleHashOrchard::from_cmx(&dnote.note.commitment().into()),
+        );
+
+        let path = self
+            .witness_tree
+            .authentication_path(*position)
+            .expect("wallet always has paths to positioned notes");
+
+        Ok(OrchardSpendInfo::from_parts(
+            fvk.clone(),
+            dnote.note,
+            MerklePath::from_parts(
+                u64::from(*position).try_into().unwrap(),
+                path.try_into().unwrap(),
+            ),
+        ))
     }
 }
 
@@ -728,14 +765,14 @@ pub extern "C" fn orchard_wallet_get_last_checkpoint(
 pub extern "C" fn orchard_wallet_rewind(
     wallet: *mut Wallet,
     to_height: BlockHeight,
-    blocks_rewound: *mut u32,
+    result_height: *mut BlockHeight,
 ) -> bool {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
-    let blocks_rewound =
-        unsafe { blocks_rewound.as_mut() }.expect("Return value pointer may not be null.");
+    let result_height =
+        unsafe { result_height.as_mut() }.expect("Return value pointer may not be null.");
     match wallet.rewind(to_height) {
-        Ok(rewound) => {
-            *blocks_rewound = rewound;
+        Ok(result) => {
+            *result_height = result;
             true
         }
         Err(e) => {
@@ -1142,15 +1179,16 @@ pub extern "C" fn orchard_wallet_get_spend_info(
 
     let outpoint = OutPoint { txid, action_idx };
 
-    if let Some(ret) = wallet.get_spend_info(outpoint) {
-        Box::into_raw(Box::new(ret))
-    } else {
-        tracing::error!(
-            "Requested note in action {} of transaction {} wasn't in the wallet",
-            outpoint.action_idx,
-            outpoint.txid
-        );
-        ptr::null_mut()
+    match wallet.get_spend_info(outpoint) {
+        Ok(ret) => Box::into_raw(Box::new(ret)),
+        Err(e) => {
+            tracing::error!(
+                "Error obtaining spend info for outpoint {:?}: {:?}",
+                outpoint,
+                e
+            );
+            ptr::null_mut()
+        }
     }
 }
 
@@ -1271,5 +1309,34 @@ pub extern "C" fn orchard_wallet_load_note_commitment_tree(
             );
             false
         }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_init_from_frontier(
+    wallet: *mut Wallet,
+    frontier: *const bridgetree::Frontier<MerkleHashOrchard, MERKLE_DEPTH>,
+) -> bool {
+    let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null.");
+    let frontier = unsafe { frontier.as_ref() }.expect("Wallet pointer may not be null.");
+
+    if wallet.witness_tree.checkpoints().is_empty()
+        && wallet.witness_tree.witnessed_indices().is_empty()
+    {
+        wallet.witness_tree = frontier.value().map_or_else(
+            || BridgeTree::new(MAX_CHECKPOINTS),
+            |nonempty_frontier| {
+                BridgeTree::from_frontier(MAX_CHECKPOINTS, nonempty_frontier.clone())
+            },
+        );
+        true
+    } else {
+        // if we have any checkpoints in the tree, or if we have any witnessed notes,
+        // don't allow reinitialization
+        error!(
+            "Invalid attempt to reinitialize note commitment tree: {} checkpoints present.",
+            wallet.witness_tree.checkpoints().len()
+        );
+        false
     }
 }
