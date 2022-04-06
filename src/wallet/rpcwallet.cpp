@@ -2612,10 +2612,9 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         if (account.has_value()) {
             obj.pushKV("account", (uint64_t) account.value());
         }
-        if (!isInternal) {
-            auto ua = pwalletMain->FindUnifiedAddressByReceiver(entry.GetAddress());
-            assert(ua.has_value());
-            obj.pushKV("address", keyIO.EncodePaymentAddress(ua.value()));
+        auto addr = pwalletMain->GetPaymentAddressForRecipient(entry.GetOutPoint().hash, entry.GetAddress());
+        if (addr.second != RecipientType::WalletInternalAddress) {
+            obj.pushKV("address", keyIO.EncodePaymentAddress(addr.first));
         }
         obj.pushKV("amount", ValueFromAmount(entry.GetNoteValue()));
         obj.pushKV("memo", HexStr(entry.GetMemo()));
@@ -4514,10 +4513,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         auto noteValue = orchardActionSpend.GetNoteValue();
 
         std::optional<std::string> addrStr;
-        if (!pwalletMain->IsInternalRecipient(receivedAt)) {
-            auto ua = pwalletMain->FindUnifiedAddressByReceiver(receivedAt);
-            assert(ua.has_value());
-            addrStr = keyIO.EncodePaymentAddress(ua.value());
+        auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, receivedAt);
+        if (addr.second != RecipientType::WalletInternalAddress) {
+            addrStr = keyIO.EncodePaymentAddress(addr.first);
         }
 
         UniValue entry(UniValue::VOBJ);
