@@ -352,13 +352,18 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             switch (rtype) {
                 case ReceiverType::P2PKH:
                 case ReceiverType::P2SH:
-                    allowedChangeTypes.insert(OutputPool::Transparent);
+                    if (!spendable.utxos.empty() || strategy_.AllowRevealedRecipients()) {
+                        allowedChangeTypes.insert(OutputPool::Transparent);
+                    }
                     break;
                 case ReceiverType::Sapling:
-                    allowedChangeTypes.insert(OutputPool::Sapling);
+                    if (!spendable.saplingNoteEntries.empty() || strategy_.AllowRevealedAmounts()) {
+                        allowedChangeTypes.insert(OutputPool::Sapling);
+                    }
                     break;
                 case ReceiverType::Orchard:
-                    if (builder_.SupportsOrchard()) {
+                    if (builder_.SupportsOrchard() &&
+                            (!spendable.orchardNoteMetadata.empty() || strategy_.AllowRevealedAmounts())) {
                         allowedChangeTypes.insert(OutputPool::Orchard);
                     }
                     break;
