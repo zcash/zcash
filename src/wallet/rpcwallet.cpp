@@ -3796,6 +3796,35 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         }
     };
 
+    auto push_orchard_result = [&](const libzcash::OrchardRawAddress &addr) -> void {
+        bool hasSpendingKey = pwalletMain->HaveOrchardSpendingKeyForAddress(addr);
+
+        for (const OrchardNoteMetadata& entry: orchardEntries) {
+            auto op = entry.GetOutPoint();
+
+            UniValue obj(UniValue::VOBJ);
+            obj.pushKV("pool", "orchard");
+            obj.pushKV("txid", op.hash.ToString());
+            obj.pushKV("amount", ValueFromAmount(entry.GetNoteValue()));
+            obj.pushKV("amountZat", CAmount(entry.GetNoteValue()));
+            obj.pushKV("memo", HexStr(entry.GetMemo()));
+            obj.pushKV("outindex", (int)op.n);
+            obj.pushKV("confirmations", entry.GetConfirmations());
+
+            txblock BlockData(op.hash);
+            obj.pushKV("blockheight", BlockData.height);
+            obj.pushKV("blockindex", BlockData.index);
+            obj.pushKV("blocktime", BlockData.time);
+
+            if (hasSpendingKey) {
+                bool isInternal = pwalletMain->IsInternalRecipient(addr);
+                obj.pushKV("change", isInternal);
+            }
+
+            result.push_back(obj);
+        }
+    };
+
     std::visit(match {
         [&](const CKeyID& addr) { push_transparent_result(addr); },
         [&](const CScriptID& addr) { push_transparent_result(addr); },
@@ -3845,7 +3874,10 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                         CTxDestination dest = addr;
                         push_transparent_result(dest);
                     },
-                    [&](const auto& other) { } // TODO orchard
+                    [&](const libzcash::OrchardRawAddress& addr) {
+                        push_orchard_result(addr);
+                    },
+                    [&](const UnknownReceiver& unknown) {}
 
                 }, receiver);
             }
