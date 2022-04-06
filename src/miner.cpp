@@ -444,6 +444,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
                     // Read prev transaction
                     if (!view.HaveCoins(txin.prevout.hash))
                     {
+                        LogPrintf("INFO: missing coins for %s", txin.prevout.hash.GetHex());
                         // This should never happen; all transactions in the memory
                         // pool should connect to either transactions in the chain
                         // or other transactions in the memory pool.
@@ -539,33 +540,40 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
             }
         }
 
+        LogPrintf("%s: Evaluating %u transactions for inclusion in block.", __func__, vecPriority.size());
         while (!vecPriority.empty())
         {
             // Take highest priority transaction off the priority queue:
             double dPriority = vecPriority.front().get<0>();
             CFeeRate feeRate = vecPriority.front().get<1>();
             const CTransaction& tx = *(vecPriority.front().get<2>());
+            const uint256& hash = tx.GetHash();
 
             std::pop_heap(vecPriority.begin(), vecPriority.end(), comparer);
             vecPriority.pop_back();
 
             // Size limits
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
-            if (nBlockSize + nTxSize >= nBlockMaxSize)
+            if (nBlockSize + nTxSize >= nBlockMaxSize) {
+                LogPrintf("%s: skipping tx %s: exceeded maximum block size %u.", __func__, hash.GetHex(), nBlockMaxSize);
                 continue;
+            }
 
             // Legacy limits on sigOps:
             unsigned int nTxSigOps = GetLegacySigOpCount(tx);
-            if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
+            if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS) {
+                LogPrintf("%s: skipping tx %s: exceeds legacy max sigops %u.", __func__, hash.GetHex(), MAX_BLOCK_SIGOPS);
                 continue;
+            }
 
             // Skip free transactions if we're past the minimum block size:
-            const uint256& hash = tx.GetHash();
             double dPriorityDelta = 0;
             CAmount nFeeDelta = 0;
             mempool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
-            if (fSortedByFee && (dPriorityDelta <= 0) && (nFeeDelta <= 0) && (feeRate < ::minRelayTxFee) && (nBlockSize + nTxSize >= nBlockMinSize))
+            if (fSortedByFee && (dPriorityDelta <= 0) && (nFeeDelta <= 0) && (feeRate < ::minRelayTxFee) && (nBlockSize + nTxSize >= nBlockMinSize)) {
+                LogPrintf("%s: skipping free tx %s; already have minimum block size.", __func__, hash.GetHex());
                 continue;
+            }
 
             // Prioritise by fee once past the priority size or we run out of high-priority
             // transactions:
@@ -577,14 +585,18 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
                 std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
             }
 
-            if (!view.HaveInputs(tx))
+            if (!view.HaveInputs(tx)) {
+                LogPrintf("%s: not including tx %s; missing inputs.", __func__, hash.GetHex());
                 continue;
+            }
 
             CAmount nTxFees = view.GetValueIn(tx)-tx.GetValueOut();
 
             nTxSigOps += GetP2SHSigOpCount(tx, view);
-            if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
+            if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS) {
+                LogPrintf("%s: skipping tx %s: exceeds p2sh max sigops %u.", __func__, hash.GetHex(), MAX_BLOCK_SIGOPS);
                 continue;
+            }
 
             std::vector<CTxOut> allPrevOutputs;
             for (const auto& input : tx.vin) {
@@ -596,8 +608,10 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
             // create only contains transactions that are valid in new blocks.
             CValidationState state;
             PrecomputedTransactionData txdata(tx, allPrevOutputs);
-            if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId))
+            if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId)) {
+                LogPrintf("%s: skipping tx %s: Failed contextual inputs check.", __func__, hash.GetHex());
                 continue;
+            }
 
             if (chainparams.ZIP209Enabled() && monitoring_pool_balances) {
                 // Does this transaction lead to a turnstile violation?
@@ -615,15 +629,15 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
                 }
 
                 if (sproutValueDummy < 0) {
-                    LogPrintf("CreateNewBlock(): tx %s appears to violate Sprout turnstile\n", tx.GetHash().ToString());
+                    LogPrintf("%s: tx %s appears to violate Sprout turnstile\n", __func__, hash.GetHex());
                     continue;
                 }
                 if (saplingValueDummy < 0) {
-                    LogPrintf("CreateNewBlock(): tx %s appears to violate Sapling turnstile\n", tx.GetHash().ToString());
+                    LogPrintf("%s: tx %s appears to violate Sapling turnstile\n", __func__, hash.GetHex());
                     continue;
                 }
                 if (orchardValueDummy < 0) {
-                    LogPrintf("CreateNewBlock(): tx %s appears to violate Orchard turnstile\n", tx.GetHash().ToString());
+                    LogPrintf("%s: tx %s appears to violate Orchard turnstile\n", __func__, hash.GetHex());
                     continue;
                 }
 
@@ -645,8 +659,8 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
 
             if (fPrintPriority)
             {
-                LogPrintf("priority %.1f fee %s txid %s\n",
-                    dPriority, feeRate.ToString(), tx.GetHash().ToString());
+                LogPrintf("%s: priority %.1f fee %s txid %s\n",
+                    __func__, dPriority, feeRate.ToString(), hash.GetHex());
             }
 
             // Add transactions that depend on this one to the priority queue
@@ -669,7 +683,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
 
         last_block_num_txs = nBlockTx;
         last_block_size = nBlockSize;
-        LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
+        LogPrintf("%s: total tx: %u; total size: %u (excluding coinbase)", __func__, nBlockTx, nBlockSize);
 
         // Create coinbase tx
         if (next_cb_mtx) {

@@ -139,7 +139,7 @@ class TurnstileTest (BitcoinTestFramework):
         assert_equal(block["height"], count + 1)
 
         # Stop node 0 and check logs to verify the miner excluded the transaction from the block
-        string_to_find = "CreateNewBlock(): tx " + mytxid + " appears to violate " + POOL_NAME.capitalize() + " turnstile"
+        string_to_find = "CreateNewBlock: tx " + mytxid + " appears to violate " + POOL_NAME.capitalize() + " turnstile"
         check_node_log(self, 0, string_to_find)
 
         # Launch node 0 with in-memory size of value pools set to zero.
