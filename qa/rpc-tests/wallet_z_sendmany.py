@@ -5,11 +5,13 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
+    DEFAULT_FEE,
+    NU5_BRANCH_ID,
     assert_equal,
     assert_greater_than,
     assert_raises_message,
     connect_nodes_bi,
-    DEFAULT_FEE,
+    nuparams,
     start_nodes,
     wait_and_assert_operationid_status,
 )
@@ -21,6 +23,7 @@ from decimal import Decimal
 class WalletZSendmanyTest(BitcoinTestFramework):
     def setup_network(self, split=False):
         self.nodes = start_nodes(3, self.options.tmpdir, [[
+            nuparams(NU5_BRANCH_ID, 220),
         ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
@@ -217,11 +220,9 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # If we attempt to spend with the default privacy policy, z_sendmany
         # returns an error because it needs to create a transparent recipient in
         # a transaction involving a Unified Address.
-        assert_raises_message(
-            JSONRPCException,
-            'AllowRevealedRecipients',
-            self.nodes[0].z_sendmany,
-            n0ua0, recipients, 1, 0)
+        revealed_recipients_msg = "This transaction would have transparent recipients, which is not enabled by default because it will publicly reveal transaction recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedRecipients` or weaker if you wish to allow this transaction to proceed anyway."
+        opid = self.nodes[0].z_sendmany(n0ua0, recipients, 1, 0)
+        wait_and_assert_operationid_status(self.nodes[0], opid, 'failed', revealed_recipients_msg)
 
         # If we set any policy that does not include AllowRevealedRecipients,
         # z_sendmany also returns an error.
@@ -231,11 +232,8 @@ class WalletZSendmanyTest(BitcoinTestFramework):
             'AllowRevealedSenders',
             'AllowLinkingAccountAddresses',
         ]:
-            assert_raises_message(
-                JSONRPCException,
-                'AllowRevealedRecipients',
-                self.nodes[0].z_sendmany,
-                n0ua0, recipients, 1, 0, policy)
+            opid = self.nodes[0].z_sendmany(n0ua0, recipients, 1, 0, policy)
+            wait_and_assert_operationid_status(self.nodes[0], opid, 'failed', revealed_recipients_msg)
 
         # By setting the correct policy, we can create the transaction.
         opid = self.nodes[0].z_sendmany(n0ua0, recipients, 1, 0, 'AllowRevealedRecipients')
@@ -374,14 +372,77 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # Send some funds from node 1's account to a transparent address.
         recipients = [{"address":mytaddr, "amount":5}]
         # This requires the AllowRevealedRecipients policy...
-        assert_raises_message(
-            JSONRPCException,
-            'AllowRevealedRecipients',
-            self.nodes[1].z_sendmany,
-            n1ua0, recipients, 1, 0)
+        opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0)
+        wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', revealed_recipients_msg)
         # ... which we can always override with the NoPrivacy policy.
         opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, 'NoPrivacy')
         wait_and_assert_operationid_status(self.nodes[1], opid)
+
+        # Activate NU5
+
+        self.sync_all()
+        self.nodes[1].generate(10)
+        self.sync_all()
+
+        #
+        # Test AllowRevealedAmounts policy
+        #
+
+        assert_equal(
+                {'pools': {'sapling': {'valueZat': 600000000}}, 'minimum_confirmations': 1},
+                self.nodes[1].z_getbalanceforaccount(n1account))
+
+        # Sending some funds to the Orchard pool in n0account0 ...
+        n0ua1 = self.nodes[0].z_getaddressforaccount(n0account0, ["orchard"])['address']
+        recipients = [{"address":n0ua1, "amount": 6}]
+
+        # Should fail under default and 'FullPrivacy' policies ... 
+        revealed_amounts_msg = 'Sending from the Sapling shielded pool to the Orchard shielded pool is not enabled by default because it will publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` or weaker if you wish to allow this transaction to proceed anyway.'
+        opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0)
+        wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', revealed_amounts_msg)
+
+        opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, 'FullPrivacy')
+        wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', revealed_amounts_msg)
+
+        # Should succeed under 'AllowRevealedAmounts'
+        opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, 'AllowRevealedAmounts')
+        wait_and_assert_operationid_status(self.nodes[1], opid)
+
+        self.sync_all()
+        self.nodes[1].generate(1)
+        self.sync_all()
+
+        assert_equal(
+                {'pools': {'sapling': {'valueZat': 1100000000}, 'orchard': {'valueZat': 600000000}}, 'minimum_confirmations': 1},
+                self.nodes[0].z_getbalanceforaccount(n0account0))
+
+        # A total that requires selecting from both pools should fail under default and
+        # FullPrivacy policies...
+
+        recipients = [{"address":n1ua0, "amount": 15}]
+        opid = self.nodes[0].z_sendmany(n0ua0, recipients, 1, 0)
+        wait_and_assert_operationid_status(self.nodes[0], opid, 'failed', revealed_amounts_msg)
+
+        opid = self.nodes[0].z_sendmany(n0ua0, recipients, 1, 0, 'FullPrivacy')
+        wait_and_assert_operationid_status(self.nodes[0], opid, 'failed', revealed_amounts_msg)
+
+        # Should succeed under 'AllowRevealedAmounts'
+        opid = self.nodes[0].z_sendmany(n0ua0, recipients, 1, 0, 'AllowRevealedAmounts')
+        wait_and_assert_operationid_status(self.nodes[0], opid)
+
+        self.sync_all()
+        self.nodes[1].generate(1)
+        self.sync_all()
+
+        # All funds should be received to the Orchard pool
+        assert_equal(
+                {'pools': {'orchard': {'valueZat': 1500000000}}, 'minimum_confirmations': 1},
+                self.nodes[1].z_getbalanceforaccount(n1account))
+
+        # And all change should be optimistically shielded
+        assert_equal(
+                {'pools': {'orchard': {'valueZat': 200000000}}, 'minimum_confirmations': 1},
+                self.nodes[0].z_getbalanceforaccount(n0account0))
 
 if __name__ == '__main__':
     WalletZSendmanyTest().main()

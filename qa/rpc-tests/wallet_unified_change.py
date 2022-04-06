@@ -57,7 +57,7 @@ class WalletUnifiedChangeTest(BitcoinTestFramework):
                 self.nodes[0].z_getbalanceforaccount(account0))
 
         # Send both amounts to ua1 in fully-shielded transactions. This will result
-        # in account1 having both a Sapling and an Orchard balances.
+        # in account1 having both Sapling and Orchard balances.
 
         recipients = [{'address': ua1_sapling, 'amount': 5}]
         opid = self.nodes[0].z_sendmany(ua0_sapling, recipients, 1, Decimal('0.00001'))
