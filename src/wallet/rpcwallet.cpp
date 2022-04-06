@@ -2587,7 +2587,6 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         if (hasSaplingSpendingKey) {
             obj.pushKV(
                     "change",
-                    pwalletMain->IsInternalRecipient(entry.address) ||
                     pwalletMain->IsNoteSaplingChange(saplingNullifiers, entry.address, entry.op));
         }
         results.push_back(obj);
