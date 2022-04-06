@@ -6716,7 +6716,7 @@ bool CWallet::HasSpendingKeys(const NoteFilter& addrSet) const {
     }
 
     for (const auto& addr : addrSet.GetOrchardAddresses()) {
-        if (!orchardWallet.GetSpendingKeyForAddress(addr).has_value()) {
+        if (!HaveOrchardSpendingKeyForAddress(addr)) {
             return false;
         }
     }
@@ -6724,6 +6724,10 @@ bool CWallet::HasSpendingKeys(const NoteFilter& addrSet) const {
     return true;
 }
 
+bool CWallet::HaveOrchardSpendingKeyForAddress(
+        const OrchardRawAddress &addr) const {
+    return orchardWallet.GetSpendingKeyForAddress(addr).has_value();
+}
 
 /**
  * Find notes in the wallet filtered by payment addresses, min depth, max depth,
