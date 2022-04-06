@@ -25,6 +25,15 @@ namespace Consensus {
         return NetworkUpgradeState(nHeight, *this, idx) == UPGRADE_ACTIVE;
     }
 
+    int Params::HeightOfLatestSettledUpgrade() const {
+        for (auto idxInt = Consensus::MAX_NETWORK_UPGRADES - 1; idxInt >= Consensus::BASE_SPROUT; idxInt--) {
+            if (vUpgrades[idxInt].hashActivationBlock.has_value()) {
+                return vUpgrades[idxInt].nActivationHeight;
+            }
+        }
+        return 0;
+    }
+
     bool Params::FeatureRequired(const Consensus::ConsensusFeature feature) const {
         return vRequiredFeatures.count(feature) > 0;
     }
