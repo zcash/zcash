@@ -26,7 +26,7 @@ namespace Consensus {
     }
 
     int Params::HeightOfLatestSettledUpgrade() const {
-        for (auto idxInt = Consensus::MAX_NETWORK_UPGRADES - 1; idxInt >= Consensus::BASE_SPROUT; idxInt--) {
+        for (auto idxInt = Consensus::MAX_NETWORK_UPGRADES - 1; idxInt > Consensus::BASE_SPROUT; idxInt--) {
             if (vUpgrades[idxInt].hashActivationBlock.has_value()) {
                 return vUpgrades[idxInt].nActivationHeight;
             }
