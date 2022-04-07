@@ -217,7 +217,7 @@ pub extern "C" fn orchard_batch_add_bundle(
 
 /// Validates this batch.
 ///
-/// - Returns `true` if `batch` is null.
+/// - Returns `true` if `batch` is null or all items in the batch are valid.
 /// - Returns `false` if any item in the batch is invalid.
 ///
 /// The batch validation context is freed by this function.
@@ -233,6 +233,7 @@ pub extern "C" fn orchard_batch_add_bundle(
 /// - `bindingSigOrchard` validity is enforced here.
 #[no_mangle]
 pub extern "C" fn orchard_batch_validate(batch: *mut BatchValidator) -> bool {
+    // *TCR:bad-txns-orchard-binding-signature-invalid
     if !batch.is_null() {
         let batch = unsafe { Box::from_raw(batch) };
         let vk =

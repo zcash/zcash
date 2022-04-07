@@ -286,6 +286,9 @@ public:
 
         bool hasSapling = !(vSpendsSapling.empty() && vOutputsSapling.empty());
 
+        // *TCR:bad-txns-valuebalance-nonzero
+        // We rely on the default constructor initializing valueBalanceSapling to 
+        // zero if there are no spends or outputs.
         if (hasSapling) {
             READWRITE(valueBalanceSapling);
         }
@@ -828,11 +831,15 @@ public:
             nVersionGroupId == ZFUTURE_VERSION_GROUP_ID &&
             nVersion == ZFUTURE_TX_VERSION;
 
+        // *TCR:bad-nu5-tx-version-or-group-id
         if (fOverwintered && !(isOverwinterV3 || isSaplingV4 || isZip225V5 || isFuture)) {
             throw std::ios_base::failure("Unknown transaction format");
         }
 
         if (isZip225V5) {
+            // *TCR:bad-txns-no-source-of-funds -- we don't read JoinSplits for v5
+            // *TCR:bad-txns-no-sink-of-funds -- we don't read JoinSplits for v5
+
             // Common Transaction Fields (plus version bytes above)
             if (ser_action.ForRead()) {
                 uint32_t consensusBranchId;
@@ -1104,6 +1111,7 @@ struct CMutableTransaction
             READWRITE(vin);
             READWRITE(vout);
             READWRITE(nLockTime);
+            // *TCR:bad-tx-expiry-height-too-high-prenu5
             if (isOverwinterV3 || isSaplingV4 || isFuture) {
                 READWRITE(nExpiryHeight);
             }
