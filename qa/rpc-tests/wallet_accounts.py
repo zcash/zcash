@@ -30,6 +30,11 @@ class WalletAccountsTest(BitcoinTestFramework):
         actual = self.nodes[0].z_listunifiedreceivers(ua)
         assert_equal(set(expected), set(actual))
 
+    def check_z_listaccounts(self, node, acct_id, addr_id, ua):
+        accounts = self.nodes[node].z_listaccounts()
+        assert_equal(accounts[acct_id]['addresses'][addr_id]['ua'], ua['address'])
+        assert_equal(accounts[acct_id]['addresses'][addr_id]['diversifier_index'], ua['diversifier_index'])
+
     # Check we only have balances in the expected pools.
     # Remember that empty pools are omitted from the output.
     def _check_balance_for_rpc(self, rpcmethod, node, account, expected, minconf):
@@ -58,16 +63,21 @@ class WalletAccountsTest(BitcoinTestFramework):
         # Verify that just creating the account does not generate any visible addresses
         addresses = self.nodes[0].z_listaddresses()
         assert_equal([], addresses)
+        accounts = self.nodes[0].z_listaccounts()
+        assert_equal(accounts[0]['account'], 0)
 
         # The next account will be 1.
         account1 = self.nodes[0].z_getnewaccount()
         assert_equal(account1['account'], 1)
+        accounts = self.nodes[0].z_listaccounts()
+        assert_equal(accounts[1]['account'], 1)
 
         # Generate the first address for account 0.
         addr0 = self.nodes[0].z_getaddressforaccount(0)
         assert_equal(addr0['account'], 0)
         assert_equal(set(addr0['receiver_types']), set(['p2pkh', 'sapling', 'orchard']))
         ua0 = addr0['address']
+        self.check_z_listaccounts(0, 0, 0, addr0)
 
         # We pick mnemonic phrases to ensure that we can always generate the default
         # address in account 0; this is however not necessarily at diversifier index 0.
@@ -87,18 +97,21 @@ class WalletAccountsTest(BitcoinTestFramework):
         assert_equal(set(addr0_2['receiver_types']), set(['p2pkh', 'sapling', 'orchard']))
         ua0_2 = addr0_2['address']
         assert(ua0 != ua0_2)
+        self.check_z_listaccounts(0, 0, 1, addr0_2)
 
         # We can generate a fully-shielded address.
         addr0_3 = self.nodes[0].z_getaddressforaccount(0, ['sapling', 'orchard'])
         assert_equal(addr0_3['account'], 0)
         assert_equal(set(addr0_3['receiver_types']), set(['sapling', 'orchard']))
         ua0_3 = addr0_3['address']
+        self.check_z_listaccounts(0, 0, 2, addr0_3)
 
         # We can generate an address without a Sapling receiver.
         addr0_4 = self.nodes[0].z_getaddressforaccount(0, ['p2pkh', 'orchard'])
         assert_equal(addr0_4['account'], 0)
         assert_equal(set(addr0_4['receiver_types']), set(['p2pkh', 'orchard']))
         ua0_4 = addr0_4['address']
+        self.check_z_listaccounts(0, 0, 3, addr0_4)
 
         # The first address for account 1 is different to account 0.
         addr1 = self.nodes[0].z_getaddressforaccount(1)
@@ -106,6 +119,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         assert_equal(set(addr1['receiver_types']), set(['p2pkh', 'sapling', 'orchard']))
         ua1 = addr1['address']
         assert(ua0 != ua1)
+        self.check_z_listaccounts(0, 1, 0, addr1)
 
         # The UA contains the expected receiver kinds.
         self.check_receiver_types(ua0,   ['p2pkh', 'sapling', 'orchard'])
@@ -145,6 +159,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         # Send Sapling funds from the UA.
         print('Sending account funds to Sapling address')
         node1sapling = self.nodes[1].z_getnewaddress('sapling')
+
         recipients = [{'address': node1sapling, 'amount': Decimal('1')}]
         opid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0)
         txid = wait_and_assert_operationid_status(self.nodes[0], opid)
@@ -197,7 +212,10 @@ class WalletAccountsTest(BitcoinTestFramework):
         # Send Orchard funds from the UA.
         print('Sending account funds to Orchard-only UA')
         node1account = self.nodes[1].z_getnewaccount()['account']
-        node1orchard = self.nodes[1].z_getaddressforaccount(node1account, ['orchard'])['address']
+        node1orchard = self.nodes[1].z_getaddressforaccount(node1account, ['orchard'])
+        self.check_z_listaccounts(1, 0, 0, node1orchard)
+        node1orchard = node1orchard['address']
+
         recipients = [{'address': node1orchard, 'amount': Decimal('1')}]
         opid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0)
         txid = wait_and_assert_operationid_status(self.nodes[0], opid)
