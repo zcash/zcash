@@ -813,6 +813,8 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
  *    nHeight can become valid at a later height), we make the bans conditional on not
  *    being in Initial Block Download mode.
  * 4. The isInitBlockDownload argument is a function parameter to assist with testing.
+ * 5. Some consensus rules are labeled with TCR:* where * is their anchor in the
+ *    Zcash Protocol Spec in the Transaction Consensus Rule section.
  */
 bool ContextualCheckTransaction(
         const CTransaction& tx,
@@ -855,6 +857,7 @@ bool ContextualCheckTransaction(
     // Rules that apply only to Sprout
     if (beforeOverwinter) {
         // Reject transactions which are intended for Overwinter and beyond
+        // TCR:tx-overwinter-not-active
         if (tx.fOverwintered) {
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
@@ -866,6 +869,7 @@ bool ContextualCheckTransaction(
     // Rules that apply to Overwinter and later:
     if (overwinterActive) {
         // Reject transactions intended for Sprout
+        // TCR:tx-overwintered-flag-not-set
         if (!tx.fOverwintered) {
             return state.DoS(
                 dosLevelConstricting,
@@ -878,6 +882,7 @@ bool ContextualCheckTransaction(
         // noncontextual checks in CheckTransactionWithoutProofVerification
 
         // Check that all transactions are unexpired
+        // TCR:tx-overwinter-expired
         if (IsExpiredTx(tx, nHeight)) {
             // Don't increase banscore if the transaction only just expired
             int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? dosLevelConstricting : 0;
@@ -891,6 +896,7 @@ bool ContextualCheckTransaction(
         if (!saplingActive) {
             // Reject transactions with invalid version
             // OVERWINTER_MIN_TX_VERSION is checked against as a non-contextual check.
+            // *TCR:bad-overwinter-tx-version-or-group-id
             if (tx.nVersion > OVERWINTER_MAX_TX_VERSION) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -899,6 +905,7 @@ bool ContextualCheckTransaction(
             }
 
             // Reject transactions with non-Overwinter version group ID
+            // *TCR:bad-overwinter-tx-version-or-group-id
             if (tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -912,6 +919,7 @@ bool ContextualCheckTransaction(
     if (saplingActive) {
         // Reject transactions with invalid version
         if (tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
+            // *TCR:bad-sapling-tx-version-or-group-id
             if (tx.nVersion < SAPLING_MIN_TX_VERSION) {
                 return state.DoS(
                     dosLevelConstricting,
@@ -919,6 +927,7 @@ bool ContextualCheckTransaction(
                     REJECT_INVALID, "bad-tx-sapling-version-too-low");
             }
 
+            // *TCR:bad-sapling-tx-version-or-group-id
             if (tx.nVersion > SAPLING_MAX_TX_VERSION) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -928,6 +937,7 @@ bool ContextualCheckTransaction(
         }
 
         // Rules that became inactive after NU5 activation.
+        // *TCR:bad-sapling-tx-version-or-group-id
         if (!nu5Active) {
             // Reject transactions with invalid version group id
             if (tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
@@ -1073,6 +1083,8 @@ bool ContextualCheckTransaction(
     if (nu5Active) {
         // Reject transactions with invalid version group id
         if (!futureActive) {
+            // *TCR:bad-tx-version-group-id
+            // *TCR:bad-nu5-tx-version-or-group-id
             if (!(tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID || tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID)) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -1096,7 +1108,9 @@ bool ContextualCheckTransaction(
         }
 
         // Reject transactions with invalid version
+        // *TCR:bad-tx-version-group-id
         if (tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID) {
+            // *TCR:bad-nu5-tx-version-or-group-id
             if (tx.nVersion < ZIP225_MIN_TX_VERSION) {
                 return state.DoS(
                     dosLevelConstricting,
@@ -1104,6 +1118,7 @@ bool ContextualCheckTransaction(
                     REJECT_INVALID, "bad-tx-zip225-version-too-low");
             }
 
+            // *TCR:bad-nu5-tx-version-or-group-id
             if (tx.nVersion > ZIP225_MAX_TX_VERSION) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -1445,15 +1460,19 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
      *        0 <= tx.nVersion < OVERWINTER_MIN_TX_VERSION
      *        OVERWINTER_MAX_TX_VERSION < tx.nVersion <= INT32_MAX
      */
+    // *TCR:tx-version-too-low
     if (!tx.fOverwintered && tx.nVersion < SPROUT_MIN_TX_VERSION) {
         return state.DoS(100, error("CheckTransaction(): version too low"),
                          REJECT_INVALID, "bad-txns-version-too-low");
     }
     else if (tx.fOverwintered) {
+        // *TCR:bad-overwinter-tx-version-or-group-id
+        // *TCR:tx-version-too-low
         if (tx.nVersion < OVERWINTER_MIN_TX_VERSION) {
             return state.DoS(100, error("CheckTransaction(): overwinter version too low"),
                 REJECT_INVALID, "bad-tx-overwinter-version-too-low");
         }
+        // *TCR:bad-group-id
         if (tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID &&
                 tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID &&
                 tx.nVersionGroupId != ZIP225_VERSION_GROUP_ID &&
