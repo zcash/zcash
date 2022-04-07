@@ -65,7 +65,7 @@ class WalletOrchardChangeTest(BitcoinTestFramework):
         ua1 = self.nodes[1].z_getaddressforaccount(acct1, ['orchard'])['address']
 
         recipients = [{"address": ua1, "amount": 1}]
-        myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(ua0, recipients, 1, 0, 'AllowRevealedAmounts')
         source_tx = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
