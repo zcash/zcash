@@ -64,9 +64,10 @@ public:
     const CTransaction* ptx;
     set<uint256> setDependsOn;
     CFeeRate feeRate;
+    CAmount feePaid;
     double dPriority;
 
-    COrphan(const CTransaction* ptxIn) : ptx(ptxIn), feeRate(0), dPriority(0)
+    COrphan(const CTransaction* ptxIn) : ptx(ptxIn), feeRate(0), feePaid(0), dPriority(0)
     {
     }
 };
@@ -75,7 +76,7 @@ std::optional<uint64_t> last_block_num_txs;
 std::optional<uint64_t> last_block_size;
 
 // We want to sort transactions by priority and fee rate, so:
-typedef boost::tuple<double, CFeeRate, const CTransaction*> TxPriority;
+typedef boost::tuple<double, CFeeRate, CAmount, const CTransaction*> TxPriority;
 class TxPriorityCompare
 {
     bool byFee;
@@ -491,15 +492,17 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
                 uint256 hash = tx.GetHash();
                 mempool.ApplyDeltas(hash, dPriority, nTotalIn);
 
-                CFeeRate feeRate(nTotalIn-tx.GetValueOut(), nTxSize);
+                CAmount feePaid = nTotalIn - tx.GetValueOut();
+                CFeeRate feeRate(feePaid, nTxSize);
 
                 if (porphan)
                 {
                     porphan->dPriority = dPriority;
                     porphan->feeRate = feeRate;
+                    porphan->feePaid = feePaid;
                 }
                 else
-                    vecPriority.push_back(TxPriority(dPriority, feeRate, &(mi->GetTx())));
+                    vecPriority.push_back(TxPriority(dPriority, feeRate, feePaid, &(mi->GetTx())));
             }
         }
 
@@ -546,7 +549,8 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
             // Take highest priority transaction off the priority queue:
             double dPriority = vecPriority.front().get<0>();
             CFeeRate feeRate = vecPriority.front().get<1>();
-            const CTransaction& tx = *(vecPriority.front().get<2>());
+            CAmount feePaid = vecPriority.front().get<2>();
+            const CTransaction& tx = *(vecPriority.front().get<3>());
             const uint256& hash = tx.GetHash();
 
             std::pop_heap(vecPriority.begin(), vecPriority.end(), comparer);
@@ -570,8 +574,17 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
             double dPriorityDelta = 0;
             CAmount nFeeDelta = 0;
             mempool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
-            if (fSortedByFee && (dPriorityDelta <= 0) && (nFeeDelta <= 0) && (feeRate < ::minRelayTxFee) && (nBlockSize + nTxSize >= nBlockMinSize)) {
-                LogPrintf("%s: skipping free tx %s; already have minimum block size.", __func__, hash.GetHex());
+            if (fSortedByFee &&
+                (dPriorityDelta <= 0) &&
+                (nFeeDelta <= 0) &&
+                (feeRate < ::minRelayTxFee) &&
+                (feePaid < DEFAULT_FEE) &&
+                (nBlockSize + nTxSize >= nBlockMinSize))
+            {
+                LogPrintf(
+                        "%s: skipping free tx %s (fee is %i; %s) with size %u, current block size is %u & already have minimum block size %u.",
+                        __func__, hash.GetHex(),
+                        feePaid, feeRate.ToString(), nTxSize, nBlockSize, nBlockMinSize);
                 continue;
             }
 
@@ -673,7 +686,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
                         porphan->setDependsOn.erase(hash);
                         if (porphan->setDependsOn.empty())
                         {
-                            vecPriority.push_back(TxPriority(porphan->dPriority, porphan->feeRate, porphan->ptx));
+                            vecPriority.push_back(TxPriority(porphan->dPriority, porphan->feeRate, porphan->feePaid, porphan->ptx));
                             std::push_heap(vecPriority.begin(), vecPriority.end(), comparer);
                         }
                     }

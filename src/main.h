@@ -66,7 +66,7 @@ static const unsigned int MAX_REORG_LENGTH = COINBASE_MATURITY - 1;
 static const bool DEFAULT_WHITELISTRELAY = true;
 /** Default for DEFAULT_WHITELISTFORCERELAY. */
 static const bool DEFAULT_WHITELISTFORCERELAY = true;
-/** Default for -minrelaytxfee, minimum relay fee for transactions */
+/** Default for -minrelaytxfee, minimum relay fee for transactions in zatoshis/kB */
 static const unsigned int DEFAULT_MIN_RELAY_TX_FEE = 100;
 //! -maxtxfee default
 static const CAmount DEFAULT_TRANSACTION_MAXFEE = 0.1 * COIN;
