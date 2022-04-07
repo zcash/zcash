@@ -827,6 +827,7 @@ public:
             nVersionGroupId == ZFUTURE_VERSION_GROUP_ID &&
             nVersion == ZFUTURE_TX_VERSION;
 
+        // *TCR:bad-nu5-tx-version-or-group-id
         if (fOverwintered && !(isOverwinterV3 || isSaplingV4 || isZip225V5 || isFuture)) {
             throw std::ios_base::failure("Unknown transaction format");
         }
