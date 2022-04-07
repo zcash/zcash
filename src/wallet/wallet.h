@@ -1810,15 +1810,16 @@ public:
     /** Saves witness caches and best block locator to disk. */
     void SetBestChain(const CBlockLocator& loc);
     /**
-     * Returns the block index corresponding to the wallet's most recently
+     * Returns the block hash corresponding to the wallet's most recently
      * persisted best block. This is the state to which the wallet will revert
      * if restarted immediately, and does not necessarily match the current
      * in-memory state.
      *
-     * Returns nullptr if the wallet's best block is not known to this node
-     * (e.g. if the wallet was transplanted from another node).
+     * Returns std::nullopt if the wallet has never written a best block,
+     * i.e. this is a brand new wallet, or the node was shut down before
+     * SetBestChain was ever called to persist wallet state.
      */
-    CBlockIndex* GetPersistedBestBlock();
+    std::optional<uint256> GetPersistedBestBlock();
 
     std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> GetSproutNullifiers(
             const std::set<libzcash::SproutPaymentAddress>& addresses);

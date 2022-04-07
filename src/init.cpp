@@ -80,6 +80,9 @@ static const bool DEFAULT_REST_ENABLE = false;
 static const bool DEFAULT_DISABLE_SAFEMODE = false;
 static const bool DEFAULT_STOPAFTERBLOCKIMPORT = false;
 
+// The time that the wallet will wait for the block index to load
+// during startup before timing out.
+static const int64_t WALLET_INITIAL_SYNC_TIMEOUT = 1000 * 60 * 5;
 
 #if ENABLE_ZMQ
 static CZMQNotificationInterface* pzmqNotificationInterface = NULL;
@@ -597,6 +600,108 @@ void CleanupBlockRevFiles()
         }
         remove(item.second);
     }
+}
+
+void ThreadStartWalletNotifier()
+{
+    CBlockIndex *pindexLastTip;
+
+    // However, if a wallet is enabled, we actually want to start notifying
+    // from the block which corresponds with the wallet's view of the chain
+    // tip. In particular, we want to handle the case where the node shuts
+    // down uncleanly, and on restart the chain's tip is potentially up to
+    // an hour of chain sync older than the wallet's tip. We assume here
+    // that there is only a single wallet connected to the validation
+    // interface, which is currently true.
+#ifdef ENABLE_WALLET
+    if (pwalletMain)
+    {
+        std::optional<uint256> walletBestBlockHash;
+        {
+            LOCK(pwalletMain->cs_wallet);
+            walletBestBlockHash = pwalletMain->GetPersistedBestBlock();
+        }
+
+        if (walletBestBlockHash.has_value()) {
+            int64_t slept;
+            auto timedOut = [&]() -> bool {
+                MilliSleep(50);
+                slept += 50;
+                if (slept > WALLET_INITIAL_SYNC_TIMEOUT) {
+                    auto errmsg = strprintf(
+                            "The wallet's best block hash %s was not detected in restored chain state. "
+                            "Giving up; please restart with `-rescan`.",
+                            walletBestBlockHash.value().GetHex());
+
+                    LogPrintf("*** %s: %s", __func__, errmsg);
+                    uiInterface.ThreadSafeMessageBox(
+                        _("Error: A fatal wallet synchronization error occurred, see debug.log for details"),
+                        "", CClientUIInterface::MSG_ERROR);
+                    StartShutdown();
+                    return true;
+                }
+
+                return false;
+            };
+
+            // Wait until we've found the block that the wallet identifies as its
+            // best block.
+            while (true) {
+                boost::this_thread::interruption_point();
+
+                {
+                    LOCK(cs_main);
+                    BlockMap::iterator mi = mapBlockIndex.find(walletBestBlockHash.value());
+                    if (mi != mapBlockIndex.end()) {
+                        pindexLastTip = (*mi).second;
+                        assert(pindexLastTip != nullptr);
+                        break;
+                    }
+                }
+
+                if (timedOut()) {
+                    return;
+                }
+            }
+
+            // We cannot progress with wallet notification until the chain tip is no
+            // more than 100 blocks behind pindexLastTip. This can occur if the node
+            // shuts down abruptly without being able to write out chainActive; the
+            // node writes chain data out roughly hourly, while the wallet writes it
+            // every 10 minutes. We need to wait for ThreadImport to catch up.
+            while (true) {
+                boost::this_thread::interruption_point();
+
+                const CBlockIndex *pindexFork = chainActive.FindFork(pindexLastTip);
+                // We know we have the genesis block.
+                assert(pindexFork != nullptr);
+
+                if (pindexLastTip->nHeight < pindexFork->nHeight ||
+                    pindexLastTip->nHeight - pindexFork->nHeight < 100)
+                {
+                    break;
+                }
+
+                if (timedOut()) {
+                    return;
+                }
+            }
+        }
+    } else {
+        LOCK(cs_main);
+        pindexLastTip = chainActive.Tip();
+    }
+#else
+    {
+        LOCK(cs_main);
+        pindexLastTip = chainActive.Tip();
+    }
+#endif
+
+    // Become the thread that notifies listeners of transactions that have been
+    // recently added to the mempool, or have been added to or removed from the
+    // chain.
+    ThreadNotifyWallets(pindexLastTip);
 }
 
 void ThreadImport(std::vector<fs::path> vImportFiles, const CChainParams& chainparams)
@@ -1704,41 +1809,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 #endif // ENABLE_MINING
 
-    // Start the thread that notifies listeners of transactions that have been
-    // recently added to the mempool, or have been added to or removed from the
-    // chain. We perform this before step 10 (import blocks) so that the
-    // original value of chainActive.Tip() can be passed to ThreadNotifyWallets
-    // before the chain tip changes again.
-    {
-        CBlockIndex *pindexLastTip;
-        {
-            LOCK(cs_main);
-            pindexLastTip = chainActive.Tip();
-        }
-
-        // However, if a wallet is enabled, we actually want to start notifying
-        // from the block which corresponds with the wallet's view of the chain
-        // tip. In particular, we want to handle the case where the node shuts
-        // down uncleanly, and on restart the chain's tip is potentially up to
-        // an hour of chain sync older than the wallet's tip. We assume here
-        // that there is only a single wallet connected to the validation
-        // interface, which is currently true.
-#ifdef ENABLE_WALLET
-        if (pwalletMain)
-        {
-            LOCK2(cs_main, pwalletMain->cs_wallet);
-            const auto walletBestBlock = pwalletMain->GetPersistedBestBlock();
-            if (walletBestBlock != nullptr) {
-                pindexLastTip = walletBestBlock;
-            }
-        }
-#endif
-
-        boost::function<void()> threadnotifywallets = boost::bind(&ThreadNotifyWallets, pindexLastTip);
-        threadGroup.create_thread(
-            boost::bind(&TraceThread<boost::function<void()>>, "txnotify", threadnotifywallets)
-        );
-    }
+    // Spawn a thread that will wait for the chain state needed for
+    // ThreadNotifyWallets to become available.
+    threadGroup.create_thread(
+        boost::bind(&TraceThread<void (*)()>, "txnotify", &ThreadStartWalletNotifier)
+    );
 
     // ********************************************************* Step 9: data directory maintenance
 
