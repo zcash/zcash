@@ -6,6 +6,7 @@
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
+    DEFAULT_FEE,
     NU5_BRANCH_ID,
     assert_equal,
     get_coinbase_address,
@@ -40,12 +41,12 @@ class WalletUnifiedChangeTest(BitcoinTestFramework):
         ua1 = self.nodes[1].z_getaddressforaccount(account1)['address']
 
         # Fund both of ua0_sapling and ua0_orchard
-        recipients = [{'address': ua0_sapling, 'amount': 10}]
-        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
+        recipients = [{'address': ua0_sapling, 'amount': Decimal('9.99999000')}]
+        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
-        recipients = [{'address': ua0_orchard, 'amount': 10}]
-        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
+        recipients = [{'address': ua0_orchard, 'amount': Decimal('9.99999000')}]
+        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.sync_all()
@@ -53,18 +54,18 @@ class WalletUnifiedChangeTest(BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(
-                {'pools': {'sapling': {'valueZat': 1000000000}, 'orchard': {'valueZat': 1000000000}}, 'minimum_confirmations': 1},
+                {'pools': {'sapling': {'valueZat': 999999000}, 'orchard': {'valueZat': 999999000}}, 'minimum_confirmations': 1},
                 self.nodes[0].z_getbalanceforaccount(account0))
 
         # Send both amounts to ua1 in fully-shielded transactions. This will result
-        # in account1 having both a Sapling and an Orchard balances.
+        # in account1 having both Sapling and Orchard balances.
 
         recipients = [{'address': ua1_sapling, 'amount': 5}]
-        opid = self.nodes[0].z_sendmany(ua0_sapling, recipients, 1, Decimal('0.00001'))
+        opid = self.nodes[0].z_sendmany(ua0_sapling, recipients, 1, DEFAULT_FEE)
         txid_sapling = wait_and_assert_operationid_status(self.nodes[0], opid)
 
         recipients = [{'address': ua1, 'amount': 5}]
-        opid = self.nodes[0].z_sendmany(ua0_orchard, recipients, 1, Decimal('0.00001'))
+        opid = self.nodes[0].z_sendmany(ua0_orchard, recipients, 1, DEFAULT_FEE)
         txid_orchard = wait_and_assert_operationid_status(self.nodes[0], opid)
 
         assert_equal(set([txid_sapling, txid_orchard]), set(self.nodes[0].getrawmempool()))

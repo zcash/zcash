@@ -27,6 +27,10 @@ class CAutoFile;
 
 inline double AllowFreeThreshold()
 {
+    // 144 is the number of Bitcoin blocks per day. This has not been updated for Zcash,
+    // as it would make it harder to get shielded transactions into blocks by lowering the
+    // threshold at which we switch from priority-based selection of transactions into
+    // blocks to fee-based selection.
     return COIN * 144 / 250;
 }
 
