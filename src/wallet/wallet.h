@@ -1958,6 +1958,8 @@ public:
      */
     bool HasSpendingKeys(const NoteFilter& noteFilter) const;
 
+    bool HaveOrchardSpendingKeyForAddress(const libzcash::OrchardRawAddress &addr) const;
+
     /* Find notes filtered by payment addresses, min depth, max depth, if they are spent,
        if a spending key is required, and if they are locked */
     void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntriesRet,

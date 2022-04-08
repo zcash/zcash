@@ -1594,6 +1594,11 @@ bool CWallet::IsNoteSaplingChange(
         const libzcash::SaplingPaymentAddress& address,
         const SaplingOutPoint & op)
 {
+    // Check against the wallet's change address for the associated unified account.
+    if (this->IsInternalRecipient(address)) {
+        return true;
+    }
+
     // A Note is marked as "change" if the address that received it
     // also spent Notes in the same transaction. This will catch,
     // for instance:
@@ -1602,8 +1607,6 @@ bool CWallet::IsNoteSaplingChange(
     // - Notes created by consolidation transactions (e.g. using
     //   z_mergetoaddress).
     // - Notes sent from one address to itself.
-    // FIXME: This also needs to check against the wallet's change address
-    // for the associated unified account when we add UA support
     for (const SpendDescription &spend : mapWallet[op.hash].vShieldedSpend) {
         if (nullifierSet.count(std::make_pair(address, spend.nullifier))) {
             return true;
@@ -6711,7 +6714,7 @@ bool CWallet::HasSpendingKeys(const NoteFilter& addrSet) const {
     }
 
     for (const auto& addr : addrSet.GetOrchardAddresses()) {
-        if (!orchardWallet.GetSpendingKeyForAddress(addr).has_value()) {
+        if (!HaveOrchardSpendingKeyForAddress(addr)) {
             return false;
         }
     }
@@ -6719,6 +6722,10 @@ bool CWallet::HasSpendingKeys(const NoteFilter& addrSet) const {
     return true;
 }
 
+bool CWallet::HaveOrchardSpendingKeyForAddress(
+        const OrchardRawAddress &addr) const {
+    return orchardWallet.GetSpendingKeyForAddress(addr).has_value();
+}
 
 /**
  * Find notes in the wallet filtered by payment addresses, min depth, max depth,
