@@ -260,7 +260,7 @@ impl Wallet {
         if let Some(last_height) = self.last_checkpoint {
             let expected_height = last_height + 1;
             if block_height != expected_height {
-                tracing::trace!(
+                tracing::error!(
                     "Expected checkpoint height {}, given {}",
                     expected_height,
                     block_height
