@@ -93,31 +93,6 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
         MilliSleep(50);
     }
 
-    // We cannot progress with wallet notification until the chain tip is no
-    // more than 100 blocks behind pindexLastTip. This can occur if the node
-    // shuts down abruptly without being able to write out chainActive; the
-    // node writes chain data out roughly hourly, while the wallet writes it
-    // every 10 minutes. We need to wait for ThreadImport to catch up.
-    while (true) {
-        boost::this_thread::interruption_point();
-
-        {
-            LOCK(cs_main);
-
-            const CBlockIndex *pindexFork = chainActive.FindFork(pindexLastTip);
-            // We know we have the genesis block.
-            assert(pindexFork != nullptr);
-
-            if (pindexLastTip->nHeight < pindexFork->nHeight ||
-                pindexLastTip->nHeight - pindexFork->nHeight < 100)
-            {
-                break;
-            }
-        }
-
-        MilliSleep(50);
-    }
-
     while (true) {
         // Run the notifier on an integer second in the steady clock.
         auto now = std::chrono::steady_clock::now().time_since_epoch();
@@ -214,11 +189,14 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             // Read block from disk.
             CBlock block;
             if (!ReadBlockFromDisk(block, pindexLastTip, chainParams.GetConsensus())) {
-                LogPrintf("*** %s\n", "Failed to read block while notifying wallets of block disconnects");
+                LogPrintf(
+                        "*** %s: Failed to read block %s while notifying wallets of block disconnects",
+                        __func__, pindexLastTip->GetBlockHash().GetHex());
                 uiInterface.ThreadSafeMessageBox(
                     _("Error: A fatal internal error occurred, see debug.log for details"),
                     "", CClientUIInterface::MSG_ERROR);
                 StartShutdown();
+                return;
             }
 
             // Let wallets know transactions went from 1-confirmed to
@@ -245,11 +223,14 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             // Read block from disk.
             CBlock block;
             if (!ReadBlockFromDisk(block, blockData.pindex, chainParams.GetConsensus())) {
-                LogPrintf("*** %s\n", "Failed to read block while notifying wallets of block connects");
+                LogPrintf(
+                        "*** %s: Failed to read block %s while notifying wallets of block connects",
+                        __func__, blockData.pindex->GetBlockHash().GetHex());
                 uiInterface.ThreadSafeMessageBox(
                     _("Error: A fatal internal error occurred, see debug.log for details"),
                     "", CClientUIInterface::MSG_ERROR);
                 StartShutdown();
+                return;
             }
 
             // Tell wallet about transactions that went from mempool
