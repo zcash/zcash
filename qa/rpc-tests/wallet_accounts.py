@@ -64,12 +64,14 @@ class WalletAccountsTest(BitcoinTestFramework):
         addresses = self.nodes[0].z_listaddresses()
         assert_equal([], addresses)
         accounts = self.nodes[0].z_listaccounts()
+        assert_equal(len(accounts), 1)
         assert_equal(accounts[0]['account'], 0)
 
         # The next account will be 1.
         account1 = self.nodes[0].z_getnewaccount()
         assert_equal(account1['account'], 1)
         accounts = self.nodes[0].z_listaccounts()
+        assert_equal(len(accounts), 2)
         assert_equal(accounts[1]['account'], 1)
 
         # Generate the first address for account 0.
