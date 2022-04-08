@@ -3446,6 +3446,71 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
     return result;
 }
 
+UniValue z_listaccounts(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_listaccounts\n"
+            "\nReturns the list of accounts created through z_getnewaccount.\n"
+            "\nResult:\n"
+            "[\n"
+            "   {\n"
+            "     \"account\": \"uint\",           (uint) The account id\n"
+            "     \"addresses\": [\n"
+            "        {\n"
+            "           \"diversifier\":  \"uint\",        (string) A diversifier used in the account\n"
+            "           \"ua\":  \"address\",              (string) The unified address corresponding to the diversifier.\n"
+            "        }\n"
+            "     ]\n"
+            "   }\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_listaccounts", "")
+        );
+
+    LOCK(pwalletMain->cs_wallet);
+
+    KeyIO keyIO(Params());
+    UniValue ret(UniValue::VARR);
+
+    auto hdChain = pwalletMain->GetMnemonicHDChain();
+
+    for (const auto& [acctKey, ufvkId] : pwalletMain->mapUnifiedAccountKeys) {
+        UniValue account(UniValue::VOBJ);
+
+        account.pushKV("account", (int)acctKey.second);
+
+        // Get the receivers for this account.
+        auto ufvkMetadataPair = pwalletMain->mapUfvkAddressMetadata.find(ufvkId);
+        auto ufvkMetadata = ufvkMetadataPair->second;
+        auto diversifiersMap = ufvkMetadata.GetKnownReceiverSetsByDiversifierIndex();
+
+        auto ufvk = pwalletMain->GetUnifiedFullViewingKey(ufvkId).value();
+
+        UniValue addresses(UniValue::VARR);
+        for (const auto& [j, receiverTypes] : diversifiersMap) {
+            UniValue addrEntry(UniValue::VOBJ);
+
+            UniValue jVal;
+            jVal.setNumStr(ArbitraryIntStr(std::vector(j.begin(), j.end())));
+            addrEntry.pushKV("diversifier_index", jVal);
+
+            auto uaPair = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(ufvk.Address(j, receiverTypes));
+            auto ua = uaPair.first;
+            addrEntry.pushKV("ua", keyIO.EncodePaymentAddress(ua));
+
+            addresses.push_back(addrEntry);
+        }
+        account.pushKV("addresses", addresses);
+
+        ret.push_back(account);
+    }
+
+    return ret;
+}
 
 UniValue z_listaddresses(const UniValue& params, bool fHelp)
 {
@@ -6102,6 +6167,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_listoperationids",       &z_listoperationids,       true  },
     { "wallet",             "z_getnewaddress",          &z_getnewaddress,          true  },
     { "wallet",             "z_getnewaccount",          &z_getnewaccount,          true  },
+    { "wallet",             "z_listaccounts",           &z_listaccounts,           true  },
     { "wallet",             "z_listaddresses",          &z_listaddresses,          true  },
     { "wallet",             "z_listunifiedreceivers",   &z_listunifiedreceivers,   true  },
     { "wallet",             "z_getaddressforaccount",   &z_getaddressforaccount,   true  },
