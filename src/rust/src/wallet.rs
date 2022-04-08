@@ -253,14 +253,20 @@ impl Wallet {
     /// the last checkpointed block height (unless the note commitment tree is empty,
     /// in which case it unconditionally succeeds). This must be called exactly once
     /// per block.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn checkpoint(&mut self, block_height: BlockHeight) -> bool {
         // checkpoints must be in order of sequential block height and every
         // block must be checkpointed
-        if self
-            .last_checkpoint
-            .map_or(false, |last_height| block_height != last_height + 1)
-        {
-            return false;
+        if let Some(last_height) = self.last_checkpoint {
+            let expected_height = last_height + 1;
+            if block_height != expected_height {
+                tracing::error!(
+                    "Expected checkpoint height {}, given {}",
+                    expected_height,
+                    block_height
+                );
+                return false;
+            }
         }
 
         self.witness_tree.checkpoint();
@@ -285,12 +291,15 @@ impl Wallet {
     /// In the case that no checkpoints exist but the note commitment tree also records no witness
     /// information, we allow the wallet to continue to rewind, under the assumption that the state
     /// of the note commitment tree will be overwritten prior to the next append.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn rewind(&mut self, to_height: BlockHeight) -> Result<BlockHeight, RewindError> {
         if let Some(checkpoint_height) = self.last_checkpoint {
             if to_height >= checkpoint_height {
+                tracing::trace!("Last checkpoint is before the rewind height, nothing to do.");
                 return Ok(checkpoint_height);
             }
 
+            tracing::trace!("Rewinding witness tree");
             let blocks_to_rewind = <u32>::from(checkpoint_height) - <u32>::from(to_height);
             let checkpoint_count = self.witness_tree.checkpoints().len();
             for _ in 0..blocks_to_rewind {
@@ -319,6 +328,7 @@ impl Wallet {
                     }
                 })
                 .collect();
+            tracing::trace!("Retaining notes in transactions {:?}", to_retain);
 
             self.mined_notes.retain(|_, v| to_retain.contains(&v.txid));
 
@@ -345,6 +355,8 @@ impl Wallet {
 
             Ok(to_height)
         } else if self.witness_tree.witnessed_indices().is_empty() {
+            tracing::trace!("No witnessed notes in tree, allowing rewind without checkpoints");
+
             // If we have no witnessed notes, it's okay to keep "rewinding" even though
             // we have no checkpoints. We then allow last_observed to assume the height
             // to which we have reset the tree state.
@@ -363,6 +375,7 @@ impl Wallet {
     /// incoming viewing keys to the wallet, and return a a data structure that describes
     /// the actions that are involved with this wallet, either spending notes belonging
     /// to this wallet or creating new notes owned by this wallet.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn add_notes_from_bundle(
         &mut self,
         txid: &TxId,
@@ -400,6 +413,7 @@ impl Wallet {
     /// - `potential_spend_idxs`: a list of action indices that were previously
     ///   detected as spending our notes. If an index is out of range, `load_bundle`
     ///   will return an error.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn load_bundle(
         &mut self,
         txid: &TxId,
@@ -437,6 +451,7 @@ impl Wallet {
 
     // Common functionality for add_notes_from_bundle and load_bundle
     #[allow(clippy::too_many_arguments)]
+    #[tracing::instrument(level = "trace", skip(self))]
     fn add_decrypted_note(
         &mut self,
         txid: &TxId,
@@ -449,6 +464,7 @@ impl Wallet {
         // Generate the nullifier for the received note and add it to the nullifiers map so
         // that we can detect when the note is later spent.
         if let Some(fvk) = self.key_store.viewing_keys.get(&ivk) {
+            tracing::trace!("Adding decrypted note to the wallet");
             let outpoint = OutPoint {
                 txid: *txid,
                 action_idx,
@@ -469,14 +485,13 @@ impl Wallet {
                 .decrypted_notes
                 .insert(action_idx, note_data);
 
-            self.nullifiers.insert(nf, outpoint);
-
             // add the association between the address and the IVK used
             // to decrypt the note
             self.key_store.add_raw_address(recipient, ivk.clone());
 
             true
         } else {
+            tracing::trace!("Can't add decrypted note to the wallet, missing FVK");
             false
         }
     }
@@ -484,6 +499,7 @@ impl Wallet {
     /// For each Orchard action in the provided bundle, if the wallet
     /// is tracking a note corresponding to the action's revealed nullifer,
     /// mark that note as potentially spent.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn add_potential_spends(
         &mut self,
         txid: &TxId,
@@ -512,6 +528,11 @@ impl Wallet {
     }
 
     fn add_potential_spend(&mut self, nf: &Nullifier, inpoint: InPoint) {
+        tracing::trace!(
+            "Adding potential spend of nullifier {:?} in {:?}",
+            nf,
+            inpoint
+        );
         self.potential_spends
             .entry(*nf)
             .or_insert_with(BTreeSet::new)
@@ -527,6 +548,7 @@ impl Wallet {
     /// * `block_tx_idx` - Index of the transaction within the block
     /// * `txid` - Identifier of the transaction.
     /// * `bundle` - Orchard component of the transaction.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn append_bundle_commitments(
         &mut self,
         block_height: BlockHeight,
@@ -559,13 +581,17 @@ impl Wallet {
         // update the block height recorded for the transaction
         let my_notes_for_tx = self.wallet_received_notes.get(txid);
         if my_notes_for_tx.is_some() {
-            self.wallet_note_positions.insert(
-                *txid,
-                NotePositions {
-                    tx_height: block_height,
-                    note_positions: BTreeMap::default(),
-                },
-            );
+            tracing::trace!("Tx is ours, marking as mined");
+            assert!(self
+                .wallet_note_positions
+                .insert(
+                    *txid,
+                    NotePositions {
+                        tx_height: block_height,
+                        note_positions: BTreeMap::default(),
+                    },
+                )
+                .is_none());
         }
 
         for (action_idx, action) in bundle.actions().iter().enumerate() {
@@ -583,24 +609,30 @@ impl Wallet {
                 .and_then(|n| n.decrypted_notes.get(&action_idx))
                 .is_some()
             {
+                tracing::trace!("Witnessing Orchard note ({}, {})", txid, action_idx);
                 let pos = self.witness_tree.witness().expect("tree is not empty");
-                self.wallet_note_positions
+                assert!(self
+                    .wallet_note_positions
                     .get_mut(txid)
                     .expect("We created this above")
                     .note_positions
-                    .insert(action_idx, pos);
+                    .insert(action_idx, pos)
+                    .is_none());
             }
 
             // For nullifiers that are ours that we detect as spent by this action,
             // we will record that input as being mined.
             if let Some(outpoint) = self.nullifiers.get(action.nullifier()) {
-                self.mined_notes.insert(
-                    *outpoint,
-                    InPoint {
-                        txid: *txid,
-                        action_idx,
-                    },
-                );
+                assert!(self
+                    .mined_notes
+                    .insert(
+                        *outpoint,
+                        InPoint {
+                            txid: *txid,
+                            action_idx,
+                        },
+                    )
+                    .is_none());
             }
         }
 
@@ -614,12 +646,14 @@ impl Wallet {
             || self.nullifiers.values().any(|v| v.txid == *txid)
     }
 
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn get_filtered_notes(
         &self,
         ivk: Option<&IncomingViewingKey>,
         ignore_mined: bool,
         require_spending_key: bool,
     ) -> Vec<(OutPoint, DecryptedNote)> {
+        tracing::trace!("Filtering notes");
         self.wallet_received_notes
             .iter()
             .flat_map(|(txid, tx_notes)| {
@@ -643,6 +677,7 @@ impl Wallet {
                                 {
                                     None
                                 } else {
+                                    tracing::trace!("Selected note at {:?}", outpoint);
                                     Some((outpoint, (*dnote).clone()))
                                 }
                             })
@@ -660,17 +695,20 @@ impl Wallet {
     ///
     /// Returns `None` if the `OutPoint` is not known to the wallet, or the Orchard bundle
     /// containing the note has not been passed to `Wallet::append_bundle_commitments`.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn get_spend_info(
         &self,
         outpoint: OutPoint,
     ) -> Result<OrchardSpendInfo, SpendRetrievalError> {
         // TODO: Take `confirmations` parameter and obtain the Merkle path to the root at
         // that checkpoint, not the latest root.
+        tracing::trace!("Searching for {:?}", outpoint);
         let dnote = self
             .wallet_received_notes
             .get(&outpoint.txid)
             .and_then(|tx_notes| tx_notes.decrypted_notes.get(&outpoint.action_idx))
             .ok_or(SpendRetrievalError::DecryptedNoteNotFound(outpoint))?;
+        tracing::trace!("Found decrypted note for outpoint: {:?}", dnote);
 
         let fvk = self
             .key_store
@@ -682,12 +720,14 @@ impl Wallet {
                     .get(ivk)
                     .ok_or_else(|| SpendRetrievalError::FvkNotFound(ivk.clone()))
             })?;
+        tracing::trace!("Found FVK for note");
 
         let position = self
             .wallet_note_positions
             .get(&outpoint.txid)
             .and_then(|tx_notes| tx_notes.note_positions.get(&outpoint.action_idx))
             .ok_or(SpendRetrievalError::NoteNotPositioned(outpoint))?;
+        tracing::trace!("Found position for note: {:?}", position);
 
         assert_eq!(
             self.witness_tree
