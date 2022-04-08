@@ -52,6 +52,15 @@ bool orchard_merkle_frontier_serialize(
         void* stream,
         write_callback_t write_cb);
 
+// Serializes an Orchard Merkle frontier to a stream using the
+// zcash_primitives::merkle_tree::CommitmentTree sparse encoding.
+//
+// Returns `false` if an error occurs while writing to the stream.
+bool orchard_merkle_frontier_serialize_legacy(
+        const OrchardMerkleFrontierPtr* tree_ptr,
+        void* stream,
+        write_callback_t write_cb);
+
 // For each action in the provided bundle, append its
 // commitment to the frontier.
 //
