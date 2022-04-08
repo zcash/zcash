@@ -606,7 +606,7 @@ void ThreadStartWalletNotifier()
 {
     CBlockIndex *pindexLastTip;
 
-    // However, if a wallet is enabled, we actually want to start notifying
+    // If the wallet is compiled in and enabled, we want to start notifying
     // from the block which corresponds with the wallet's view of the chain
     // tip. In particular, we want to handle the case where the node shuts
     // down uncleanly, and on restart the chain's tip is potentially up to
@@ -668,18 +668,22 @@ void ThreadStartWalletNotifier()
             // more than 100 blocks behind pindexLastTip. This can occur if the node
             // shuts down abruptly without being able to write out chainActive; the
             // node writes chain data out roughly hourly, while the wallet writes it
-            // every 10 minutes. We need to wait for ThreadImport to catch up.
+            // every 10 minutes. We need to wait for ThreadImport to catch up, or any
+            // missing blocks to be fetched from peers.
             while (true) {
                 boost::this_thread::interruption_point();
 
-                const CBlockIndex *pindexFork = chainActive.FindFork(pindexLastTip);
-                // We know we have the genesis block.
-                assert(pindexFork != nullptr);
-
-                if (pindexLastTip->nHeight < pindexFork->nHeight ||
-                    pindexLastTip->nHeight - pindexFork->nHeight < 100)
                 {
-                    break;
+                    LOCK(cs_main);
+                    const CBlockIndex *pindexFork = chainActive.FindFork(pindexLastTip);
+                    // We know we have the genesis block.
+                    assert(pindexFork != nullptr);
+
+                    if (pindexLastTip->nHeight < pindexFork->nHeight ||
+                        pindexLastTip->nHeight - pindexFork->nHeight < 100)
+                    {
+                        break;
+                    }
                 }
 
                 if (timedOut()) {
