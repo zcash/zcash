@@ -522,7 +522,11 @@ std::pair<UnifiedFullViewingKey, libzcash::AccountId> CWallet::GenerateNewUnifie
     while (true) {
         auto accountId = hdChain.GetAccountCounter();
         auto generated = GenerateUnifiedSpendingKeyForAccount(accountId);
-        hdChain.IncrementAccountCounter();
+        auto account = hdChain.IncrementAccountCounter();
+        if (!account.has_value()) {
+            throw std::runtime_error(
+                    "CWallet::GenerateNewUnifiedSpendingKey(): Account counter overflowed (2^31 - 1).");
+        }
 
         if (generated.has_value()) {
             // Update the persisted chain information

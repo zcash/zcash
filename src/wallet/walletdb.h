@@ -11,6 +11,7 @@
 #include "key.h"
 #include "keystore.h"
 #include "zcash/Address.hpp"
+#include "zcash/address/zip32.h"
 
 #include <list>
 #include <stdint.h>
@@ -103,9 +104,16 @@ public:
         return accountCounter;
     }
 
-    void IncrementAccountCounter() {
-        // TODO: We should check for overflow somewhere and handle it.
-        accountCounter += 1;
+    /** Increments the account counter by 1 and returns it. Returns std::nullopt
+     *  if the increment operation would cause an overflow. */
+    std::optional<uint32_t> IncrementAccountCounter() {
+        auto newAccountCounter = accountCounter + 1;
+        if (newAccountCounter > (HARDENED_KEY_LIMIT - 1)) {
+            return std::nullopt;
+        } else {
+            accountCounter = newAccountCounter;
+            return newAccountCounter;
+        }
     }
 
     uint32_t GetLegacyTKeyCounter(bool external) {
