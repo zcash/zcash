@@ -108,7 +108,7 @@ public:
      *  if the increment operation would cause an overflow. */
     std::optional<uint32_t> IncrementAccountCounter() {
         auto newAccountCounter = accountCounter + 1;
-        if (newAccountCounter > (HARDENED_KEY_LIMIT - 1)) {
+        if (newAccountCounter >= libzcash::ZCASH_LEGACY_ACCOUNT) {
             return std::nullopt;
         } else {
             accountCounter = newAccountCounter;
