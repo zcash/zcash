@@ -5,7 +5,10 @@ use std::ptr;
 use orchard::{bundle::Authorized, tree::MerkleHashOrchard};
 use tracing::error;
 use zcash_primitives::{
-    merkle_tree::incremental::{read_frontier_v1, write_frontier_v1},
+    merkle_tree::{
+        incremental::{read_frontier_v1, write_frontier_v1},
+        CommitmentTree,
+    },
     transaction::components::Amount,
 };
 
@@ -72,6 +75,29 @@ pub extern "C" fn orchard_merkle_frontier_serialize(
 
     let writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
     match write_frontier_v1(writer, frontier) {
+        Ok(()) => true,
+        Err(e) => {
+            error!("{}", e);
+            false
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_merkle_frontier_serialize_legacy(
+    frontier: *const bridgetree::Frontier<MerkleHashOrchard, MERKLE_DEPTH>,
+    stream: Option<StreamObj>,
+    write_cb: Option<WriteCb>,
+) -> bool {
+    let frontier = unsafe {
+        frontier
+            .as_ref()
+            .expect("Orchard note commitment tree pointer may not be null.")
+    };
+
+    let writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
+    let commitment_tree = CommitmentTree::from_frontier(frontier);
+    match commitment_tree.write(writer) {
         Ok(()) => true,
         Err(e) => {
             error!("{}", e);

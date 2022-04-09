@@ -224,7 +224,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
 
         assert "skipHash" not in treestate["orchard"]
         assert_equal(new_treestate["orchard"]["commitments"]["finalRoot"], ORCHARD_TREE_EMPTY_ROOT)
-        assert_equal(new_treestate["orchard"]["commitments"]["finalState"], "00")
+        assert_equal(new_treestate["orchard"]["commitments"]["finalState"], "000000")
         pass
 
 
