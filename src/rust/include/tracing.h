@@ -176,6 +176,7 @@ private:
     friend class Span;
     std::unique_ptr<TracingSpanGuard, decltype(&tracing_span_exit)> inner;
 
+    Entered() : inner(nullptr, tracing_span_exit) {}
     Entered(const TracingSpanHandle* span) : inner(tracing_span_enter(span), tracing_span_exit) {}
 };
 
@@ -237,7 +238,11 @@ public:
     /// nothing.
     Entered Enter()
     {
-        return Entered(inner.get());
+        if (inner.get() == nullptr) {
+            return Entered();
+        } else {
+            return Entered(inner.get());
+        }
     }
 };
 } // namespace tracing
