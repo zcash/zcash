@@ -58,7 +58,6 @@ ed25519-zebra = "3"
 zeroize = "1.4.2"
 
 # Metrics
-hyper = { version = "=0.14.2", default-features = false, features = ["server", "tcp", "http1"] }
 ipnet = "2"
 metrics = "0.17"
 metrics-exporter-prometheus = "0.6"
