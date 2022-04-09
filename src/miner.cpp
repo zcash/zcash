@@ -956,7 +956,17 @@ void static BitcoinMiner(const CChainParams& chainparams)
             // Create new block
             //
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
-            CBlockIndex* pindexPrev = chainActive.Tip();
+            CBlockIndex* pindexPrev;
+            {
+                LOCK(cs_main);
+                pindexPrev = chainActive.Tip();
+            }
+
+            // If we don't have a valid chain tip to work from, wait and try again.
+            if (pindexPrev == nullptr) {
+                MilliSleep(1000);
+                continue;
+            }
 
             unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(chainparams, minerAddress));
             if (!pblocktemplate.get())

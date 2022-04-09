@@ -79,7 +79,7 @@ public:
             READWRITE(mnemonic);
             language = (Language) language0;
             if (!SetSeedFromMnemonic()) {
-                throw std::ios_base::failure("Could not interpret the mnemonic phrase as a valid UTF-8 string.");
+                throw std::ios_base::failure("Invalid mnemonic phrase or language code.");
             }
         } else {
             uint32_t language0 = (uint32_t) language;
