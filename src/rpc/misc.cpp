@@ -825,7 +825,7 @@ static void getHeightRange(const UniValue& params, int& start, int& end)
             }
             if (end < start) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-                    "End value is expected to be greater than start");
+                    "End value is expected to be greater than or equal to start");
             }
         }
     }

@@ -366,7 +366,7 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
     CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":0,\"end\":0,\"chainInfo\":true}",
         "Start and end are expected to be greater than zero");
     CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":3,\"end\":2,\"chainInfo\":true}",
-        "End value is expected to be greater than start");
+        "End value is expected to be greater than or equal to start");
     // in this test environment, only the genesis block (0) exists
     CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":2,\"end\":3,\"chainInfo\":true}",
         "Start or end is outside chain range");
@@ -377,7 +377,7 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
     CheckRPCThrows("getaddresstxids {\"addresses\":[],\"start\":0,\"end\":0,\"chainInfo\":true}",
         "Start and end are expected to be greater than zero");
     CheckRPCThrows("getaddresstxids {\"addresses\":[],\"start\":3,\"end\":2,\"chainInfo\":true}",
-        "End value is expected to be greater than start");
+        "End value is expected to be greater than or equal to start");
     // in this test environment, only the genesis block (0) exists
     CheckRPCThrows("getaddresstxids {\"addresses\":[],\"start\":2,\"end\":3,\"chainInfo\":true}",
         "Start or end is outside chain range");
