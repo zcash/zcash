@@ -604,7 +604,7 @@ void CleanupBlockRevFiles()
 
 void ThreadStartWalletNotifier()
 {
-    CBlockIndex *pindexLastTip;
+    CBlockIndex *pindexLastTip{nullptr};
 
     // If the wallet is compiled in and enabled, we want to start notifying
     // from the block which corresponds with the wallet's view of the chain
@@ -623,7 +623,7 @@ void ThreadStartWalletNotifier()
         }
 
         if (walletBestBlockHash.has_value()) {
-            int64_t slept;
+            int64_t slept{0};
             auto timedOut = [&]() -> bool {
                 MilliSleep(50);
                 slept += 50;
