@@ -583,6 +583,7 @@ class ZcashNode(object):
             '-showmetrics=0',
             '-experimentalfeatures',
             '-zmergetoaddress',
+            '-walletrequirebackup=false'
         ]
         if self.__testnet:
             args.append('-testnet=1')
