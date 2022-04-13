@@ -23,7 +23,7 @@ Changes to Testnet NU5 Consensus Rules
 - There have been changes to the Halo2 proving system to improve consistency between the
   specification and the implementation, and these may break compatibility. See for example
   <https://github.com/zcash/halo2/commit/247cd620eeb434e7f86dc8579774b30384ae02b2>.
-- There have been numerous changes to the Orchard circuit impementation since `v4.6.0`.
+- There have been numerous changes to the Orchard circuit implementation since `v4.6.0`.
   See <https://github.com/zcash/orchard/issues?q=label%3AM-consensus-change-since-0.1.0-beta-1>
   for a complete list.
 - A potential Faerie Gold vulnerability affecting the previous activation of NU5 on
@@ -47,12 +47,14 @@ Mnemonic Recovery Phrases
 -------------------------
 
 The zcashd wallet has been modified to support BIP 39, which describes how to derive the
-wallet's HD seed from a mnemonic phrase.  The mnemonic phrase will be generated on load of
-the wallet, or the first time the wallet is unlocked, and is available via the
-`z_exportwallet` RPC call. All new addresses produced by the wallet are now derived from
-this seed using the HD wallet functionality described in ZIP 32 and ZIP 316. For users
-upgrading an existing Zcashd wallet, it is recommended that the wallet be backed up prior
-to upgrading to the 4.7.0 Zcashd release.
+wallet's HD seed from a mnemonic phrase, hereafter known as the wallet's "emergency
+recovery phrase". The emergency recovery phrase will be generated on load of the wallet,
+or the first time the wallet is unlocked, and is available via the `z_exportwallet` RPC
+call. All new addresses produced by the wallet are now derived from this seed using the HD
+wallet functionality described in ZIP 32 and ZIP 316. For users upgrading an existing
+Zcashd wallet, it is recommended that the wallet be backed up prior to upgrading to the
+4.7.0 Zcashd release. In the remainder of this document, the HD seed derived from the 
+emergency recovery phrase will be termed the wallet's "mnemonic seed".
 
 Following the upgrade to 4.7.0, Zcashd will require that the user confirm that they have
 backed up their new emergency recovery phrase, which may be obtained from the output of
@@ -60,21 +62,22 @@ the `z_exportwallet` RPC call. This confirmation can be performed manually using
 `zcashd-wallet-tool` utility that is supplied with this release (built or installed in the
 same directory as `zcashd`).  The wallet will not allow the generation of new addresses
 until this confirmation has been performed. It is recommended that after this upgrade,
-that funds tied to preexisting addresses be migrated to newly generated addresses so that
-all wallet funds are recoverable using the emergency recovery phrase going forward. If you
+funds tied to preexisting addresses be migrated to newly generated addresses so that all
+wallet funds are recoverable using the emergency recovery phrase going forward. If you
 choose not to migrate funds in this fashion, you will continue to need to securely back up
 the entire `wallet.dat` file to ensure that you do not lose access to existing funds;
 EXISTING FUNDS WILL NOT BE RECOVERABLE USING THE EMERGENCY RECOVERY PHRASE UNLESS THEY
 HAVE BEEN MOVED TO A NEWLY GENERATED ADDRESS FOLLOWING THE 4.7.0 UPGRADE.
 
-In the case that your wallet previously contained a Sapling HD seed, the mnemonic phrase
-is constructed using the bytes of that seed, such that it is possible to reconstruct 
-keys generated using that legacy seed if you know the mnemonic phrase. HOWEVER, THIS 
-RECONSTRUCTION DOES NOT FOLLOW THE NORMAL PROCESS OF DERIVATION FROM THE MNEMONIC PHRASE.
-Instead, to recover a legacy Sapling key from the mnemonic seed, it is necessary to 
-reconstruct the bytes of the legacy seed by conversion of the mnemonic phrase back to
-its source randomness instead of by hashing as is specified in BIP 39. Only keys and
-addresses produced after the upgrade can be obtained by normal ZIP 32 or BIP 39 derivation.
+In the case that your wallet previously contained a Sapling HD seed, the emergency
+recovery phrase is constructed using the bytes of that seed, such that it is possible to
+reconstruct keys generated using that legacy seed if you know the emergency recovery
+phrase. HOWEVER, THIS RECONSTRUCTION DOES NOT FOLLOW THE NORMAL PROCESS OF DERIVATION FROM
+THE EMERGENCY RECOVERY PHRASE. Instead, to recover a legacy Sapling key from the emergency
+recovery phrase, it is necessary to reconstruct the bytes of the legacy seed by conversion
+of the phrase back to its source randomness instead of by hashing as is specified in BIP
+39. Only keys and addresses produced after the upgrade can be obtained by normal
+derivation of a ZIP 32 or BIP 32 master seed using BIP 39.
 
 Wallet Updates
 --------------
@@ -97,26 +100,26 @@ New RPC Methods
 - `walletconfirmbackup` This newly created API checks a provided emergency recovery phrase 
   against the wallet's emergency recovery phrase; if the phrases match then it updates the
   wallet state to allow the generation of new addresses.  This backup confirmation
-  workflow can be disabled by starting zcashd with `-requirewalletbackup=false` but this
+  workflow can be disabled by starting zcashd with `-walletrequirebackup=false` but this
   is not recommended unless you know what you're doing (and have otherwise backed up the
-  wallet's recovery phrase anyway).  For security reasons, this RPC method is not intended
-  for use via zcash-cli but is provided to enable `zcashd-wallet-tool` and other
-  third-party wallet interfaces to satisfy the backup confirmation requirement. Use of the
-  `walletconfirmbackup` API via zcash-cli would risk that the recovery phrase being
-  confirmed might be leaked via the user's shell history or the system process table;
-  `zcashd-wallet-tool` is specifically provided to avoid this problem.
+  wallet's emergency recovery phrase anyway).  For security reasons, this RPC method is
+  not intended for use via `zcash-cli` but is provided to enable `zcashd-wallet-tool` and
+  other third-party wallet interfaces to satisfy the backup confirmation requirement. Use
+  of the `walletconfirmbackup` API via `zcash-cli` would risk that the emergency recovery
+  phrase being confirmed might be leaked via the user's shell history or the system
+  process table; `zcashd-wallet-tool` is provided specifically to avoid this problem.
 - `z_getnewaccount` This API allows for creation of new BIP 44 / ZIP 32 accounts using HD
   derivation from the wallet's mnemonic seed. Each account represents a separate spending
   authority and source of funds. A single account may contain funds in the Sapling and
   Orchard shielded pools, as well as funds held in transparent addresses.
 - `z_getaddressforaccount` This API allows for creation of diversified unified addresses 
   under a single account. Each call to this API will, by default, create a new diversified
-  unified address containing p2pkh, Sapling, and Orchard receivers.  Additional arguments
-  to this API may be provided to request the address to be created with a user-specified
-  set of receiver types and diversifier index.
+  unified address containing transparent p2pkh, Sapling, and Orchard receivers. Additional
+  arguments to this API may be provided to request the address to be created with a
+  user-specified set of receiver types and diversifier index.
 - `z_getbalanceforaccount` This API makes it possible to obtain balance information on a 
   per-account basis.
-- `z_getbalanceforviewingkey` This newly created API allows a user to obtain balance
+- `z_getbalanceforviewingkey` This API allows a user to obtain balance
   information for funds visible to a Sapling or Unified full viewing key; if a Sprout
   viewing key is provided, this method allows retrieval of the balance only in the case
   that the wallet controls the corresponding spending key.  This API has been added to
@@ -128,17 +131,17 @@ New RPC Methods
   diversified addresses and to wallet-internal change addresses.
 - `z_listunifiedreceivers` This API allows the caller to extract the individual component
   receivers from a unified address. This is useful if one needs to provide a bare Sapling
-  or p2pkh address to a service that does not yet support unified addresses.
+  or transparent p2pkh address to a service that does not yet support unified addresses.
 
 RPC Changes
 -----------
 
 - The result type for the `listaddresses` endpoint has been modified:
   - The `keypool` source type has been removed; it was reserved but not used.
-  - In the `sapling` address results, the `zip32AccountId` attribute has been
-    removed in favor of `zip32KeyPath`. This is to allow distinct key paths to
-    be reported for addresses derived from the legacy account under different
-    child spending authorities, as are produced by `z_getnewaddress`.
+  - In the `sapling` address results, the `zip32AccountId` attribute has been removed in
+    favor of `zip32KeyPath`. This is to allow distinct key paths to be reported for
+    addresses derived from the legacy account under different child spending authorities,
+    as are produced by `z_getnewaddress`.
   - Addresses derived from the wallet's mnemonic seed are now included in
     `listaddresses` output.
 - The results of the `dumpwallet` and `z_exportwallet` RPC methods have been modified
@@ -148,8 +151,8 @@ RPC Changes
 - The results of the `getwalletinfo` RPC have been modified to return two new fields:
   `mnemonic_seedfp` and `legacy_seedfp`, the latter of which replaces the field that
   was previously named `seedfp`.
-- A new `pool` attribute has been added to each element returned by `z_listunspent`
-  to indicate which value pool the unspent note controls funds in.
+- A new `pool` attribute has been added to each element returned by `z_listunspent` to
+  indicate which value pool the unspent note controls funds in.
 - `z_listreceivedbyaddress` 
   - A `pool` attribute has been added to each result to indicate what pool the received
     funds are held in. 
@@ -157,22 +160,23 @@ RPC Changes
     change.
   - Block metadata attributes `blockheight`, `blockindex`, and `blocktime` have been
     added to the result.
-- `z_viewtransaction` has been updated to include attributes that provide
-  information about Orchard components of the transaction. Also, the `type`
-  attribute for spend and output values has been deprecated and replaced
-  by the `pool` attribute.
+- `z_viewtransaction` has been updated to include attributes that provide information
+  about Orchard components of the transaction. Also, the `type` attribute for spend and
+  output values has been deprecated and replaced by the `pool` attribute.
 - `z_getnotescount` now also returns information for Orchard notes.
-- The output format of `z_exportwallet` has been changed. The exported file now
-  includes the mnemonic seed for the wallet, and HD keypaths are now exported for
-  transparent addresses when available.
-- The result value for `z_importviewingkey` now includes an `address_type` field
-  that replaces the now-deprecated `type` key.
+- The output format of `z_exportwallet` has been changed. The exported file now includes
+  the mnemonic seed for the wallet, and HD keypaths are now exported for transparent
+  addresses when available.
+- The result value for `z_importviewingkey` now includes an `address_type` field that
+  replaces the now-deprecated `type` key.
 - `z_listunspent` has been updated to render unified addresses for Sapling and 
-  Orchard outputs when those outputs are controlled by unified spending keys.
-  Outputs received by unified internal addresses do not include the `address` field.
-- Legacy transparent address generation using `getnewaddress` no longer uses a 
-  preallocated keypool, but instead performs HD derivation from the wallet's mnemonic
-  seed according to BIP 39 and BIP 44 under account ID `0x7FFFFFFF`.
+  Orchard outputs when those outputs are controlled by unified spending keys.  Outputs
+  received by unified internal addresses do not include the `address` field.
+- Legacy transparent address generation using `getnewaddress` no longer uses a
+  preallocated keypool, but instead performs HD derivation from the wallet's mnemonic seed
+  according to BIP 39 and BIP 44 under account ID `0x7FFFFFFF`.
+- `z_gettreestate` has been updated to include information about the orchard note
+  commitment tree.
 
 ### 'z_sendmany'
 
@@ -185,7 +189,7 @@ RPC Changes
   explicitly enabled via a parameter to the `z_sendmany` call.
 - A new string parameter, `privacyPolicy`, has been added to the list of arguments
   accepted by `z_sendmany`. This parameter enables the caller to control what kind of
-  information they permit `zcashd` to reveal when creating the transaction. If the
+  information they permit `zcashd` to reveal on-chain when creating the transaction. If the
   transaction can only be created by revealing more information than the given strategy
   permits, `z_sendmany` will return an error. The parameter defaults to `LegacyCompat`,
   which applies the most restrictive strategy `FullPrivacy` when a Unified Address is
@@ -225,15 +229,17 @@ Build System
 ------------
 
 - Clang has been updated to use LLVM 13.0.1.
-- libcxx has been updated to use LLVM 13.0.1, except on Windows where it uses 13.0.0-3.
+- libc++ has been updated to use LLVM 13.0.1, except on Windows where it uses 13.0.0-3.
 - The Rust toolchain dependency has been updated to version 1.59.0.
 
 Platform Support
 ----------------
 
 - Debian 9 has been removed from the list of supported platforms.
+- Debian 11 (Bullseye) has been added to the list of supported platforms.
 - A build issue (a missing header file) has been fixed for macOS targets.
-- On Arch Linux only, use Debian's libtinfo5_6.0 to fix a build regression.
+- On Arch Linux only, a copy of Debian's libtinfo5_6.0 is used to fix a build
+  regression.
 
 Mining
 ------
