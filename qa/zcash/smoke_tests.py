@@ -421,6 +421,7 @@ def transaction_chain(zcash):
         ])
         sapling_balance -= DEFAULT_FEE
         taddr_balance -= DEFAULT_FEE
+        taddr_2_balance = taddr_balance
 
         #
         # Inter-pool tests
@@ -455,7 +456,7 @@ def transaction_chain(zcash):
         taddr_balance -= (starting_balance / Decimal('10')) * Decimal('2')
 
         # multiple Sapling -> taddr
-        check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2, sapling_zaddr_3], taddr_2, sapling_balance - DEFAULT_FEE)
+        check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2, sapling_zaddr_3], taddr_2, taddr_2_balance + sapling_balance - DEFAULT_FEE)
         taddr_balance += sapling_balance - DEFAULT_FEE
         sapling_balance = Decimal('0')
 
