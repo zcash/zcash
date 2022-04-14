@@ -24,10 +24,6 @@ libcxx 14.0.0 2022-05-01
 libcxx 14.0.1 2022-05-01
 native_rust 1.60.0 2022-05-01
 
-# Postponed until after 4.7.0 release
-boost 1.79.0 2022-05-01
-native_b2 1.79.0 2022-05-01
-
 # We're never updating to this version
 bdb 18.1.40 2024-02-01
 
