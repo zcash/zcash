@@ -26,6 +26,7 @@ zcash_gtest_SOURCES += \
 endif
 zcash_gtest_SOURCES += \
 	test/data/merkle_roots_orchard.h \
+	gtest/data/tx-orchard-duplicate-nullifiers.h \
 	gtest/test_tautology.cpp \
 	gtest/test_allocator.cpp \
 	gtest/test_checkblock.cpp \
