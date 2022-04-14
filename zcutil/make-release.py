@@ -24,6 +24,7 @@ def main(args=sys.argv[1:]):
 
     try:
         main_logged(
+            opts.REVISION,
             opts.RELEASE_VERSION,
             opts.RELEASE_PREV,
             opts.RELEASE_FROM,
@@ -53,6 +54,11 @@ def parse_args(args):
         help='Use if this is a hotfix release from a non-master branch.',
     )
     p.add_argument(
+        'REVISION',
+        type=GitHash.parse_arg,
+        help='The git commit hash from which to construct the release.',
+    )
+    p.add_argument(
         'RELEASE_VERSION',
         type=Version.parse_arg,
         help='The release version: vX.Y.Z',
@@ -76,16 +82,16 @@ def parse_args(args):
 
 
 # Top-level flow:
-def main_logged(release, releaseprev, releasefrom, releaseheight, hotfix):
+def main_logged(revision, release, releaseprev, releasefrom, releaseheight, hotfix):
     verify_dependencies([
         ('help2man', None),
         ('debchange', 'devscripts'),
     ])
 
-    verify_tags(releaseprev, releasefrom)
+    verify_tags(revision, releaseprev, releasefrom)
     verify_version(release, releaseprev, hotfix)
     verify_dependency_updates()
-    initialize_git(release, hotfix)
+    initialize_git(revision, release, hotfix)
     patch_version_in_files(release, releaseprev)
     patch_release_height(releaseheight)
     commit('Versioning changes for {}.'.format(release.novtext))
@@ -131,10 +137,10 @@ def verify_dependency_updates():
     try:
         sh_log('./qa/zcash/updatecheck.py')
     except SystemExit:
-        raise SystemExit("Dependency update check found updates that have not been correctly postponed.")
+        raise SystemExit("Dependency update check failed. Either some updates not been correctly postponed, or the .updatecheck-token file is missing.")
 
 @phase('Checking tags.')
-def verify_tags(releaseprev, releasefrom):
+def verify_tags(revision, releaseprev, releasefrom):
     candidates = []
 
     # Any tag beginning with a 'v' followed by [1-9] must be a version
@@ -143,7 +149,7 @@ def verify_tags(releaseprev, releasefrom):
     # ignored. Any other tag is silently ignored.
     candidatergx = re.compile('^v[1-9].*$')
 
-    for tag in sh_out('git', 'tag', '--list').splitlines():
+    for tag in sh_out('git', 'tag', '--list', '--merged', revision.value).splitlines():
         if candidatergx.match(tag):
             v = Version.parse(tag)
             if v is not None:
@@ -153,12 +159,18 @@ def verify_tags(releaseprev, releasefrom):
     try:
         latest = candidates[-1]
     except IndexError:
-        raise SystemExit('No previous releases found by `git tag --list`.')
+        raise SystemExit(
+            'No previous releases found by `git tag --list --merged {}`.'
+            .format(
+                revision.value
+            ),
+        )
 
     if releaseprev != latest:
         raise SystemExit(
-            'The latest candidate in `git tag --list` is {} not {}'
+            'The latest candidate in `git tag --list --merged {} is {} not {}'
             .format(
+                revision.value,
                 latest.vtext,
                 releaseprev.vtext,
             ),
@@ -173,9 +185,10 @@ def verify_tags(releaseprev, releasefrom):
             prev_tags.append(candidate)
     else:
         raise SystemExit(
-            '{} does not appear in `git tag --list`'
+            '{} does not appear in `git tag --list --merged {}`'
             .format(
                 releasefrom.vtext,
+                revision.value,
             ),
         )
 
@@ -211,29 +224,20 @@ def verify_version(release, releaseprev, hotfix):
 
 
 @phase('Initializing git.')
-def initialize_git(release, hotfix):
+def initialize_git(revision, release, hotfix):
     junk = sh_out('git', 'status', '--porcelain')
     if junk.strip():
         raise SystemExit('There are uncommitted changes:\n' + junk)
 
-    branch = sh_out('git', 'rev-parse', '--abbrev-ref', 'HEAD').strip()
-    if hotfix:
-        expected = 'hotfix-' + release.vtext
-    else:
-        expected = 'master'
-    if branch != expected:
-        raise SystemExit(
-            "Expected branch {!r}, found branch {!r}".format(
-                expected, branch,
-            ),
-        )
-
-    logging.info('Ensuring we are up to date with the branch to be released...')
-    sh_log('git', 'pull', '--ff-only')
-
     branch = 'release-' + release.vtext
-    logging.info('Creating release branch: %r', branch)
-    sh_log('git', 'checkout', '-b', branch)
+    logging.info(
+        'Creating release branch {} from revision {}.'
+        .format(
+            branch,
+            revision.value
+        )
+    )
+    sh_log('git', 'checkout', '-b', branch, revision.value)
     return branch
 
 
@@ -481,6 +485,30 @@ def sh_progress(markers, *args):
     if status != 0:
         raise SystemExit('Nonzero exit status: {!r}'.format(status))
 
+class GitHash (object):
+    '''A git commit hash.'''
+    RGX = re.compile(
+        r'^([0-9a-f]{8,40})$',
+    )
+
+    @staticmethod
+    def parse_arg(text):
+        m = GitHash.RGX.match(text)
+        if m is None:
+            raise argparse.ArgumentTypeError(
+                'Could not parse revision {!r} against regex {}'.format(
+                    text,
+                    GitHash.RGX.pattern,
+                ),
+            )
+        else:
+            assert len(m.groups()) == 1
+            [value] = m.groups()
+            return GitHash(value)
+
+    def __init__(self, value):
+        assert GitHash.RGX.match(value) is not None
+        self.value = value
 
 class Version (object):
     '''A release version.'''
@@ -652,6 +680,11 @@ class TestVersion (unittest.TestCase):
             v = Version.parse_arg(case)
             self.assertEqual(v.vtext, case)
 
+    def test_rev_parse(self):
+        sample = '958bcf2dac6d81d17797c0f58f176262a496cfd4'
+        rev = GitHash.parse_arg(sample)
+        self.assertEqual(rev.value, sample)
+
     def test_arg_parse_negatives(self):
         cases = [
             'v07.0.0',
@@ -697,7 +730,7 @@ if __name__ == '__main__':
 
         print('=== Self Test ===')
         try:
-            unittest.main()
+            unittest.main(verbosity=2)
         except SystemExit as e:
             if e.args[0] != 0:
                 raise
