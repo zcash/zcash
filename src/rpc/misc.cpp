@@ -997,7 +997,7 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
             + disabledMsg +
             "\nArguments:\n"
             "{\n"
-            "  \"addresses:\"\n"
+            "  \"addresses\":\n"
             "    [\n"
             "      \"address\"  (string) The base58check encoded address\n"
             "      ,...\n"
