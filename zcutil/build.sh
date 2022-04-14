@@ -84,6 +84,7 @@ then
     exit 0
 fi
 
+./zcutil/clean.sh
 ./autogen.sh
 CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure $CONFIGURE_FLAGS
 "$MAKE" "$@"
