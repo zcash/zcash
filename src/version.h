@@ -9,7 +9,7 @@
  * network protocol versioning
  */
 
-static const int PROTOCOL_VERSION = 170015;
+static const int PROTOCOL_VERSION = 170050;
 
 //! initial proto version, to be increased after version/verack negotiation
 static const int INIT_PROTO_VERSION = 209;
@@ -36,5 +36,8 @@ static const int NO_BLOOM_VERSION = 170004;
 //! Changes to CInv parsing, starting with this version:
 //! - MSG_WTX type defined, which contains two 32-byte hashes.
 static const int CINV_WTX_VERSION = 170014;
+
+//! disconnect from testnet peers older than this proto version
+static const int MIN_TESTNET_PEER_PROTO_VERSION = 170040;
 
 #endif // BITCOIN_VERSION_H

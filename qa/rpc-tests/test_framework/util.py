@@ -40,7 +40,7 @@ SAPLING_BRANCH_ID = 0x76B809BB
 BLOSSOM_BRANCH_ID = 0x2BB40E60
 HEARTWOOD_BRANCH_ID = 0xF5B9230B
 CANOPY_BRANCH_ID = 0xE9FF75A6
-NU5_BRANCH_ID = 0x37519621
+NU5_BRANCH_ID = 0xC2D6D0B4
 
 # The maximum number of nodes a single test can spawn
 MAX_NODES = 8
@@ -666,5 +666,8 @@ def check_node_log(self, node_number, line_to_check, stop_node = True):
             return n
     raise AssertionError(repr(line_to_check) + " not found")
 
+def nustr(branch_id):
+    return '%08x' % branch_id
+
 def nuparams(branch_id, height):
-    return '-nuparams=%x:%d' % (branch_id, height)
+    return '-nuparams=%s:%d' % (nustr(branch_id), height)

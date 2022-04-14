@@ -237,6 +237,12 @@ struct Params {
      */
     bool NetworkUpgradeActive(int nHeight, Consensus::UpgradeIndex idx) const;
 
+    /**
+     * Returns the activation height of the latest settled upgrade, as defined
+     * in <https://zips.z.cash/protocol/protocol.pdf#blockchain>.
+     */
+    int HeightOfLatestSettledUpgrade() const;
+
     bool FutureTimestampSoftForkActive(int nHeight) const;
 
     bool FeatureActive(int nHeight, Consensus::ConsensusFeature feature) const;

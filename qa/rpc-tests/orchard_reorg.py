@@ -37,9 +37,6 @@ class OrchardReorgTest(BitcoinTestFramework):
             nuparams(CANOPY_BRANCH_ID, 5),
             nuparams(NU5_BRANCH_ID, 10),
             '-nurejectoldversions=false',
-            '-experimentalfeatures',
-            '-orchardwallet',
-            # '-debug',
         ]] * self.num_nodes)
 
     def run_test(self):

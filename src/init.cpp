@@ -80,6 +80,9 @@ static const bool DEFAULT_REST_ENABLE = false;
 static const bool DEFAULT_DISABLE_SAFEMODE = false;
 static const bool DEFAULT_STOPAFTERBLOCKIMPORT = false;
 
+// The time that the wallet will wait for the block index to load
+// during startup before timing out.
+static const int64_t WALLET_INITIAL_SYNC_TIMEOUT = 1000 * 60 * 5;
 
 #if ENABLE_ZMQ
 static CZMQNotificationInterface* pzmqNotificationInterface = NULL;
@@ -599,6 +602,123 @@ void CleanupBlockRevFiles()
     }
 }
 
+void ThreadStartWalletNotifier()
+{
+    CBlockIndex *pindexLastTip{nullptr};
+
+    // If the wallet is compiled in and enabled, we want to start notifying
+    // from the block which corresponds with the wallet's view of the chain
+    // tip. In particular, we want to handle the case where the node shuts
+    // down uncleanly, and on restart the chain's tip is potentially up to
+    // an hour of chain sync older than the wallet's tip. We assume here
+    // that there is only a single wallet connected to the validation
+    // interface, which is currently true.
+#ifdef ENABLE_WALLET
+    if (pwalletMain)
+    {
+        std::optional<uint256> walletBestBlockHash;
+        {
+            LOCK(pwalletMain->cs_wallet);
+            walletBestBlockHash = pwalletMain->GetPersistedBestBlock();
+        }
+
+        if (walletBestBlockHash.has_value()) {
+            int64_t slept{0};
+            bool isReindexing{true};
+            auto timedOut = [&]() -> bool {
+                MilliSleep(500);
+                // re-check whether we're reindexing
+                if (isReindexing) {
+                    LOCK(cs_main);
+                    pblocktree->ReadReindexing(isReindexing);
+                }
+
+                // once we're out of reindexing, we can start incrementing the slept counter
+                if (!isReindexing) {
+                    slept += 500;
+                }
+
+                if (slept > WALLET_INITIAL_SYNC_TIMEOUT) {
+                    auto errmsg = strprintf(
+                            "The wallet's best block hash %s was not detected in restored chain state. "
+                            "Giving up; please restart with `-rescan`.",
+                            walletBestBlockHash.value().GetHex());
+
+                    LogPrintf("*** %s: %s", __func__, errmsg);
+                    uiInterface.ThreadSafeMessageBox(
+                        _("Error: A fatal wallet synchronization error occurred, see debug.log for details"),
+                        "", CClientUIInterface::MSG_ERROR);
+                    StartShutdown();
+                    return true;
+                }
+
+                return false;
+            };
+
+            // Wait until we've found the block that the wallet identifies as its
+            // best block.
+            while (true) {
+                boost::this_thread::interruption_point();
+
+                {
+                    LOCK(cs_main);
+                    BlockMap::iterator mi = mapBlockIndex.find(walletBestBlockHash.value());
+                    if (mi != mapBlockIndex.end()) {
+                        pindexLastTip = (*mi).second;
+                        assert(pindexLastTip != nullptr);
+                        break;
+                    }
+                }
+
+                if (timedOut()) {
+                    return;
+                }
+            }
+
+            // We cannot progress with wallet notification until the chain tip is no
+            // more than 100 blocks behind pindexLastTip. This can occur if the node
+            // shuts down abruptly without being able to write out chainActive; the
+            // node writes chain data out roughly hourly, while the wallet writes it
+            // every 10 minutes. We need to wait for ThreadImport to catch up, or any
+            // missing blocks to be fetched from peers.
+            while (true) {
+                boost::this_thread::interruption_point();
+
+                {
+                    LOCK(cs_main);
+                    const CBlockIndex *pindexFork = chainActive.FindFork(pindexLastTip);
+                    // We know we have the genesis block.
+                    assert(pindexFork != nullptr);
+
+                    if (pindexLastTip->nHeight < pindexFork->nHeight ||
+                        pindexLastTip->nHeight - pindexFork->nHeight < 100)
+                    {
+                        break;
+                    }
+                }
+
+                if (timedOut()) {
+                    return;
+                }
+            }
+        }
+    } else {
+        LOCK(cs_main);
+        pindexLastTip = chainActive.Tip();
+    }
+#else
+    {
+        LOCK(cs_main);
+        pindexLastTip = chainActive.Tip();
+    }
+#endif
+
+    // Become the thread that notifies listeners of transactions that have been
+    // recently added to the mempool, or have been added to or removed from the
+    // chain.
+    ThreadNotifyWallets(pindexLastTip);
+}
+
 void ThreadImport(std::vector<fs::path> vImportFiles, const CChainParams& chainparams)
 {
     RenameThread("zcash-loadblk");
@@ -947,12 +1067,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         return InitError(err.value());
     }
 
-    // Just temporarily (until fully functional), don't allow the Orchard wallet
-    // extensions if we're on mainnet
-    if (fExperimentalOrchardWallet && chainparams.NetworkIDString() == "main") {
-        return InitError(_("The -orchardwallet setting is not yet available on mainnet."));
-    }
-
     // if using block pruning, then disable txindex
     if (GetArg("-prune", 0)) {
         if (GetBoolArg("-txindex", DEFAULT_TXINDEX))
@@ -1105,9 +1219,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #ifdef ENABLE_MINING
     if (mapArgs.count("-mineraddress")) {
         auto addr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
-        if (!(addr.has_value() && std::visit(ExtractMinerAddress(chainparams.GetConsensus(), 0), addr.value()).has_value())) {
+        auto consensus = chainparams.GetConsensus();
+        int height = consensus.HeightOfLatestSettledUpgrade();
+        if (!(addr.has_value() && std::visit(ExtractMinerAddress(consensus, height), addr.value()).has_value())) {
             return InitError(strprintf(
-                _("Invalid address for -mineraddress=<addr>: '%s' (must be a Sapling or transparent P2PKH address)"),
+                _("Invalid address for -mineraddress=<addr>: '%s' (must be a Sapling or transparent P2PKH address, or a Unified Address containing a valid receiver for the most recent settled network upgrade.)"),
                 mapArgs["-mineraddress"]));
         }
     }
@@ -1710,23 +1826,11 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 #endif // ENABLE_MINING
 
-    // Start the thread that notifies listeners of transactions that have been
-    // recently added to the mempool, or have been added to or removed from the
-    // chain. We perform this before step 10 (import blocks) so that the
-    // original value of chainActive.Tip(), which corresponds with the wallet's
-    // view of the chaintip, is passed to ThreadNotifyWallets before the chain
-    // tip changes again.
-    {
-        CBlockIndex *pindexLastTip;
-        {
-            LOCK(cs_main);
-            pindexLastTip = chainActive.Tip();
-        }
-        boost::function<void()> threadnotifywallets = boost::bind(&ThreadNotifyWallets, pindexLastTip);
-        threadGroup.create_thread(
-            boost::bind(&TraceThread<boost::function<void()>>, "txnotify", threadnotifywallets)
-        );
-    }
+    // Spawn a thread that will wait for the chain state needed for
+    // ThreadNotifyWallets to become available.
+    threadGroup.create_thread(
+        boost::bind(&TraceThread<void (*)()>, "txnotify", &ThreadStartWalletNotifier)
+    );
 
     // ********************************************************* Step 9: data directory maintenance
 

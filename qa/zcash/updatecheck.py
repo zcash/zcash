@@ -217,7 +217,7 @@ class BerkeleyDbReleaseLister:
 
         # We use a set because the search will result in duplicates.
         release_versions = set()
-        for match in re.findall("Berkeley DB (\d+)\.(\d+)\.(\d+)\.tar.gz", page):
+        for match in re.findall("berkeleydb/html/changelog_(\d+)_(\d+)_(\d+).html", page):
             release_versions.add(Version(match))
 
         if len(release_versions) == 0:

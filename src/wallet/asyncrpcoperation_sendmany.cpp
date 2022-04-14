@@ -78,59 +78,14 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 txOutputAmounts_.sapling_outputs_total += recipient.amount;
                 recipientPools_.insert(OutputPool::Sapling);
-                if (!(ztxoSelector_.SelectsSapling() || strategy_.AllowRevealedAmounts())) {
-                    if (ztxoSelector_.SelectsSprout()) {
-                        throw JSONRPCError(
-                            RPC_INVALID_PARAMETER,
-                            "Sending from the Sprout shielded pool to the Sapling "
-                            "shielded pool is not enabled by default because it will "
-                            "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
-                            "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
-                            "or weaker if you wish to allow this transaction to proceed anyway.");
-                    }
-                    if (builder_.SupportsOrchard() && ztxoSelector_.SelectsOrchard()) {
-                        throw JSONRPCError(
-                            RPC_INVALID_PARAMETER,
-                            "Sending from the Orchard shielded pool to the Sapling "
-                            "shielded pool is not enabled by default because it will "
-                            "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
-                            "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
-                            "or weaker if you wish to allow this transaction to proceed anyway.");
-                    }
-                    // If the source selects transparent then we don't show an
-                    // error because we are necessarily revealing information.
-                }
             },
             [&](const libzcash::OrchardRawAddress& addr) {
                 txOutputAmounts_.orchard_outputs_total += recipient.amount;
                 recipientPools_.insert(OutputPool::Orchard);
                 // No transaction allows sends from Sprout to Orchard.
                 assert(!ztxoSelector_.SelectsSprout());
-                if (!((builder_.SupportsOrchard() && ztxoSelector_.SelectsOrchard()) || strategy_.AllowRevealedAmounts())) {
-                    if (ztxoSelector_.SelectsSapling()) {
-                        throw JSONRPCError(
-                            RPC_INVALID_PARAMETER,
-                            "Sending from the Sapling shielded pool to the Orchard "
-                            "shielded pool is not enabled by default because it will "
-                            "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
-                            "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
-                            "or weaker if you wish to allow this transaction to proceed anyway.");
-                    }
-                    // If the source selects transparent then we don't show an
-                    // error because we are necessarily revealing information.
-                }
             }
         }, recipient.address);
-    }
-
-    if (recipientPools_.count(OutputPool::Transparent) && !strategy_.AllowRevealedRecipients()) {
-        throw JSONRPCError(
-            RPC_INVALID_PARAMETER,
-            "This transaction would have transparent recipients, which is not "
-            "enabled by default because it will publicly reveal transaction "
-            "recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
-            "with the `privacyPolicy` parameter set to `AllowRevealedRecipients` "
-            "or weaker if you wish to allow this transaction to proceed anyway.");
     }
 
     // Log the context info i.e. the call parameters to z_sendmany
@@ -287,6 +242,58 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             "or weaker if you wish to allow this transaction to proceed anyway.");
     }
 
+    if (recipientPools_.count(OutputPool::Transparent) && !strategy_.AllowRevealedRecipients()) {
+        throw JSONRPCError(
+            RPC_INVALID_PARAMETER,
+            "This transaction would have transparent recipients, which is not "
+            "enabled by default because it will publicly reveal transaction "
+            "recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
+            "with the `privacyPolicy` parameter set to `AllowRevealedRecipients` "
+            "or weaker if you wish to allow this transaction to proceed anyway.");
+    }
+
+    if (!spendable.sproutNoteEntries.empty()) {
+        if (recipientPools_.count(OutputPool::Sapling) && !strategy_.AllowRevealedAmounts()) {
+            throw JSONRPCError(
+                RPC_INVALID_PARAMETER,
+                "Sending from the Sprout shielded pool to the Sapling "
+                "shielded pool is not enabled by default because it will "
+                "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
+                "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
+                "or weaker if you wish to allow this transaction to proceed anyway.");
+        }
+    }
+
+    if (!spendable.saplingNoteEntries.empty()) {
+        if (recipientPools_.count(OutputPool::Orchard) && !strategy_.AllowRevealedAmounts()) {
+            throw JSONRPCError(
+                RPC_INVALID_PARAMETER,
+                "Sending from the Sapling shielded pool to the Orchard "
+                "shielded pool is not enabled by default because it will "
+                "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
+                "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
+                "or weaker if you wish to allow this transaction to proceed anyway.");
+        }
+        // Sending from Sapling to transparent will be caught above in the
+        // AllowRevealedRecipients check; sending to Sprout is disallowed
+        // entirely.
+    }
+
+    if (!spendable.orchardNoteMetadata.empty()) {
+        if (recipientPools_.count(OutputPool::Sapling) && !strategy_.AllowRevealedAmounts()) {
+            throw JSONRPCError(
+                RPC_INVALID_PARAMETER,
+                "Sending from the Orchard shielded pool to the Sapling "
+                "shielded pool is not enabled by default because it will "
+                "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
+                "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
+                "or weaker if you wish to allow this transaction to proceed anyway.");
+        }
+        // Sending from Orchard to transparent will be caught above in the
+        // AllowRevealedRecipients check; sending to Sprout is disallowed
+        // entirely.
+    }
+
     spendable.LogInputs(getId());
 
     CAmount t_inputs_total{0};
@@ -352,13 +359,18 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             switch (rtype) {
                 case ReceiverType::P2PKH:
                 case ReceiverType::P2SH:
-                    allowedChangeTypes.insert(OutputPool::Transparent);
+                    if (!spendable.utxos.empty() || strategy_.AllowRevealedRecipients()) {
+                        allowedChangeTypes.insert(OutputPool::Transparent);
+                    }
                     break;
                 case ReceiverType::Sapling:
-                    allowedChangeTypes.insert(OutputPool::Sapling);
+                    if (!spendable.saplingNoteEntries.empty() || strategy_.AllowRevealedAmounts()) {
+                        allowedChangeTypes.insert(OutputPool::Sapling);
+                    }
                     break;
                 case ReceiverType::Orchard:
-                    if (builder_.SupportsOrchard()) {
+                    if (builder_.SupportsOrchard() &&
+                            (!spendable.orchardNoteMetadata.empty() || strategy_.AllowRevealedAmounts())) {
                         allowedChangeTypes.insert(OutputPool::Orchard);
                     }
                     break;

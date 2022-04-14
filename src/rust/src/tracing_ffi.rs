@@ -1,9 +1,14 @@
 use libc::c_char;
 use std::ffi::CStr;
+use std::fs::File;
 use std::path::Path;
 use std::slice;
 use std::str;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Mutex,
+};
+
 use tracing::{
     callsite::{Callsite, Identifier},
     field::{FieldSet, Value},
@@ -139,6 +144,46 @@ pub extern "C" fn tracing_init(
 
     Box::into_raw(Box::new(TracingHandle {
         _file_guard: file_guard,
+        reload_handle: Box::new(reload_handle),
+    }))
+}
+
+#[no_mangle]
+pub extern "C" fn tracing_init_test(
+    #[cfg(not(target_os = "windows"))] log_path: *const u8,
+    #[cfg(target_os = "windows")] log_path: *const u16,
+    log_path_len: usize,
+    initial_filter: *const c_char,
+) -> *mut TracingHandle {
+    let initial_filter = unsafe { CStr::from_ptr(initial_filter) }
+        .to_str()
+        .expect("initial filter should be a valid string");
+
+    let log_path = unsafe { slice::from_raw_parts(log_path, log_path_len) };
+
+    #[cfg(not(target_os = "windows"))]
+    let log_path = OsStr::from_bytes(log_path);
+
+    #[cfg(target_os = "windows")]
+    let log_path = OsString::from_wide(log_path);
+
+    let log_path = Path::new(&log_path);
+
+    let file = File::create(log_path).expect("can create log file for test");
+
+    let file_logger = tracing_subscriber::fmt::layer()
+        .with_writer(Mutex::new(file))
+        .without_time();
+
+    let (filter, reload_handle) = reload::Layer::new(EnvFilter::from(initial_filter));
+
+    tracing_subscriber::registry()
+        .with(file_logger)
+        .with(filter)
+        .init();
+
+    Box::into_raw(Box::new(TracingHandle {
+        _file_guard: None,
         reload_handle: Box::new(reload_handle),
     }))
 }

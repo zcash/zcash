@@ -1,5 +1,5 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use incrementalmerkletree::{bridgetree::BridgeTree, Frontier, Position, Tree};
+use incrementalmerkletree::{bridgetree, bridgetree::BridgeTree, Frontier, Position, Tree};
 use libc::c_uchar;
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryInto;
@@ -8,15 +8,16 @@ use std::ptr;
 use std::slice;
 use tracing::error;
 
-use zcash_encoding::Optional;
+use zcash_encoding::{Optional, Vector};
 use zcash_primitives::{
     consensus::BlockHeight,
+    merkle_tree::incremental::{read_position, write_position},
     transaction::{components::Amount, TxId},
 };
 
 use orchard::{
     bundle::Authorized,
-    keys::{FullViewingKey, IncomingViewingKey, OutgoingViewingKey, SpendingKey},
+    keys::{FullViewingKey, IncomingViewingKey, OutgoingViewingKey, Scope, SpendingKey},
     note::Nullifier,
     tree::{MerkleHashOrchard, MerklePath},
     Address, Bundle, Note,
@@ -41,14 +42,14 @@ pub struct LastObserved {
 }
 
 /// A pointer to a particular action in an Orchard transaction output.
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OutPoint {
     txid: TxId,
     action_idx: usize,
 }
 
 /// A pointer to a previous output being spent in an Orchard action.
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InPoint {
     txid: TxId,
     action_idx: usize,
@@ -58,20 +59,24 @@ pub struct InPoint {
 pub struct DecryptedNote {
     note: Note,
     memo: [u8; 512],
-    /// The position of the note's commitment within the global Merkle tree.
-    position: Option<Position>,
 }
 
-/// A data structure tracking the note data that was decrypted from a single transaction,
-/// along with the height at which that transaction was discovered in the chain.
+/// A data structure tracking the note data that was decrypted from a single transaction.
 #[derive(Debug, Clone)]
 pub struct TxNotes {
-    /// The block height containing the transaction from which these
-    /// notes were decrypted.
-    tx_height: Option<BlockHeight>,
     /// A map from the index of the Orchard action from which this note
     /// was decrypted to the decrypted note value.
     decrypted_notes: BTreeMap<usize, DecryptedNote>,
+}
+
+/// A data structure holding chain position information for a single transaction.
+#[derive(Clone, Debug)]
+struct NotePositions {
+    /// The height of the block containing the transaction.
+    tx_height: BlockHeight,
+    /// A map from the index of an Orchard action tracked by this wallet, to the position
+    /// of the output note's commitment within the global Merkle tree.
+    note_positions: BTreeMap<usize, Position>,
 }
 
 struct KeyStore {
@@ -92,8 +97,8 @@ impl KeyStore {
     pub fn add_full_viewing_key(&mut self, fvk: FullViewingKey) {
         // When we add a full viewing key, we need to add both the internal and external
         // incoming viewing keys.
-        let external_ivk = IncomingViewingKey::from(&fvk);
-        let internal_ivk = IncomingViewingKey::from(&fvk.derive_internal());
+        let external_ivk = fvk.to_ivk(Scope::External);
+        let internal_ivk = fvk.to_ivk(Scope::Internal);
         self.viewing_keys.insert(external_ivk, fvk.clone());
         self.viewing_keys.insert(internal_ivk, fvk);
     }
@@ -136,6 +141,9 @@ pub struct Wallet {
     /// The in-memory index from txid to notes from the associated transaction that have
     /// been decrypted with the IVKs known to this wallet.
     wallet_received_notes: BTreeMap<TxId, TxNotes>,
+    /// The in-memory index from txid to note positions from the associated transaction.
+    /// This map should always have a subset of the keys in `wallet_received_notes`.
+    wallet_note_positions: BTreeMap<TxId, NotePositions>,
     /// The in-memory index from nullifier to the outpoint of the note from which that
     /// nullifier was derived.
     nullifiers: BTreeMap<Nullifier, OutPoint>,
@@ -187,6 +195,14 @@ pub enum BundleLoadError {
     InvalidActionIndex(usize),
 }
 
+#[derive(Debug, Clone)]
+pub enum SpendRetrievalError {
+    DecryptedNoteNotFound(OutPoint),
+    NoIvkForRecipient(Address),
+    FvkNotFound(IncomingViewingKey),
+    NoteNotPositioned(OutPoint),
+}
+
 /// A struct used to return metadata about how a bundle was determined
 /// to be involved with the wallet.
 #[derive(Debug, Clone)]
@@ -209,6 +225,7 @@ impl Wallet {
         Wallet {
             key_store: KeyStore::empty(),
             wallet_received_notes: BTreeMap::new(),
+            wallet_note_positions: BTreeMap::new(),
             nullifiers: BTreeMap::new(),
             witness_tree: BridgeTree::new(MAX_CHECKPOINTS),
             last_checkpoint: None,
@@ -224,9 +241,7 @@ impl Wallet {
     /// in place with the expectation that they will be overwritten and/or updated in
     /// the rescan process.
     pub fn reset(&mut self) {
-        for tx_notes in self.wallet_received_notes.values_mut() {
-            tx_notes.tx_height = None;
-        }
+        self.wallet_note_positions.clear();
         self.witness_tree = BridgeTree::new(MAX_CHECKPOINTS);
         self.last_checkpoint = None;
         self.last_observed = None;
@@ -238,14 +253,20 @@ impl Wallet {
     /// the last checkpointed block height (unless the note commitment tree is empty,
     /// in which case it unconditionally succeeds). This must be called exactly once
     /// per block.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn checkpoint(&mut self, block_height: BlockHeight) -> bool {
         // checkpoints must be in order of sequential block height and every
         // block must be checkpointed
-        if self
-            .last_checkpoint
-            .map_or(false, |last_height| block_height != last_height + 1)
-        {
-            return false;
+        if let Some(last_height) = self.last_checkpoint {
+            let expected_height = last_height + 1;
+            if block_height != expected_height {
+                tracing::error!(
+                    "Expected checkpoint height {}, given {}",
+                    expected_height,
+                    block_height
+                );
+                return false;
+            }
         }
 
         self.witness_tree.checkpoint();
@@ -259,80 +280,92 @@ impl Wallet {
         self.last_checkpoint
     }
 
-    /// Rewinds the note commitment tree to the given height, removes notes and
-    /// spentness information for transactions mined in the removed blocks, and returns
-    /// the number of blocks by which the tree has been rewound if successful. Returns  
-    /// `RewindError` if not enough checkpoints exist to execute the full rewind
-    /// requested. If the requested height is greater than or equal to the height of the
-    /// latest checkpoint, this returns `Ok(0)` and leaves the wallet unmodified.
-    pub fn rewind(&mut self, to_height: BlockHeight) -> Result<u32, RewindError> {
+    /// Rewinds the note commitment tree to the given height, removes notes and spentness
+    /// information for transactions mined in the removed blocks, and returns the height to which
+    /// the tree has been rewound if successful. Returns  `RewindError` if not enough checkpoints
+    /// exist to execute the full rewind requested and the wallet has witness information that
+    /// would be invalidated by the rewind. If the requested height is greater than or equal to the
+    /// height of the latest checkpoint, this returns a successful result containing the height of
+    /// the last checkpoint.
+    ///
+    /// In the case that no checkpoints exist but the note commitment tree also records no witness
+    /// information, we allow the wallet to continue to rewind, under the assumption that the state
+    /// of the note commitment tree will be overwritten prior to the next append.
+    #[tracing::instrument(level = "trace", skip(self))]
+    pub fn rewind(&mut self, to_height: BlockHeight) -> Result<BlockHeight, RewindError> {
         if let Some(checkpoint_height) = self.last_checkpoint {
             if to_height >= checkpoint_height {
-                return Ok(0);
+                tracing::trace!("Last checkpoint is before the rewind height, nothing to do.");
+                return Ok(checkpoint_height);
             }
 
+            tracing::trace!("Rewinding witness tree");
             let blocks_to_rewind = <u32>::from(checkpoint_height) - <u32>::from(to_height);
-
-            // if the rewind length exceeds the number of checkpoints we have stored,
-            // return failure.
             let checkpoint_count = self.witness_tree.checkpoints().len();
-            if blocks_to_rewind as usize > checkpoint_count {
-                return Err(RewindError::InsufficientCheckpoints(checkpoint_count));
-            }
-
             for _ in 0..blocks_to_rewind {
-                // we've already checked that we have enough checkpoints to fully
-                // rewind by the requested amount.
-                assert!(self.witness_tree.rewind());
+                // If the rewind fails, we have no more checkpoints. This is fine in the
+                // case that we have a recently-initialized tree, so long as we have no
+                // witnessed indices. In the case that we have any witnessed notes, we
+                // have hit the maximum rewind limit, and this is an error.
+                if !self.witness_tree.rewind() {
+                    assert!(self.witness_tree.checkpoints().is_empty());
+                    if !self.witness_tree.witnessed_indices().is_empty() {
+                        return Err(RewindError::InsufficientCheckpoints(checkpoint_count));
+                    }
+                }
             }
-
-            // reset our last observed height to ensure that notes added in the future are
-            // from a new block
-            let last_observed = LastObserved {
-                block_height: checkpoint_height - blocks_to_rewind,
-                block_tx_idx: None,
-            };
 
             // retain notes that correspond to transactions that are not "un-mined" after
             // the rewind
             let to_retain: BTreeSet<_> = self
-                .wallet_received_notes
+                .wallet_note_positions
                 .iter()
                 .filter_map(|(txid, n)| {
-                    if n.tx_height
-                        .map_or(true, |h| h <= last_observed.block_height)
-                    {
+                    if n.tx_height <= to_height {
                         Some(*txid)
                     } else {
                         None
                     }
                 })
                 .collect();
+            tracing::trace!("Retaining notes in transactions {:?}", to_retain);
 
             self.mined_notes.retain(|_, v| to_retain.contains(&v.txid));
+
             // nullifier and received note data are retained, because these values are stable
             // once we've observed a note for the first time. The block height at which we
-            // observed the note is set to `None` as the transaction will no longer have been
-            // observed as having been mined.
-            for (txid, n) in self.wallet_received_notes.iter_mut() {
-                // Erase block height and commitment tree information for any received
-                // notes that have been un-mined by the rewind.
-                if !to_retain.contains(txid) {
-                    n.tx_height = None;
-                    for dnote in n.decrypted_notes.values_mut() {
-                        dnote.position = None;
-                    }
-                }
-            }
-            self.last_observed = Some(last_observed);
+            // observed the note is removed along with the note positions, because the
+            // transaction will no longer have been observed as having been mined.
+            self.wallet_note_positions
+                .retain(|txid, _| to_retain.contains(txid));
+
+            // reset our last observed height to ensure that notes added in the future are
+            // from a new block
+            self.last_observed = Some(LastObserved {
+                block_height: to_height,
+                block_tx_idx: None,
+            });
+
             self.last_checkpoint = if checkpoint_count > blocks_to_rewind as usize {
-                Some(checkpoint_height - blocks_to_rewind)
+                Some(to_height)
             } else {
-                // checkpoint_count == blocks_to_rewind
+                // checkpoint_count <= blocks_to_rewind
                 None
             };
 
-            Ok(blocks_to_rewind)
+            Ok(to_height)
+        } else if self.witness_tree.witnessed_indices().is_empty() {
+            tracing::trace!("No witnessed notes in tree, allowing rewind without checkpoints");
+
+            // If we have no witnessed notes, it's okay to keep "rewinding" even though
+            // we have no checkpoints. We then allow last_observed to assume the height
+            // to which we have reset the tree state.
+            self.last_observed = Some(LastObserved {
+                block_height: to_height,
+                block_tx_idx: None,
+            });
+
+            Ok(to_height)
         } else {
             Err(RewindError::InsufficientCheckpoints(0))
         }
@@ -342,6 +375,7 @@ impl Wallet {
     /// incoming viewing keys to the wallet, and return a a data structure that describes
     /// the actions that are involved with this wallet, either spending notes belonging
     /// to this wallet or creating new notes owned by this wallet.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn add_notes_from_bundle(
         &mut self,
         txid: &TxId,
@@ -360,15 +394,7 @@ impl Wallet {
             .collect::<Vec<_>>();
 
         for (action_idx, ivk, note, recipient, memo) in bundle.decrypt_outputs_with_keys(&keys) {
-            assert!(self.add_decrypted_note(
-                None,
-                txid,
-                action_idx,
-                ivk.clone(),
-                note,
-                recipient,
-                memo
-            ));
+            assert!(self.add_decrypted_note(txid, action_idx, ivk.clone(), note, recipient, memo));
             involvement.receive_action_metadata.insert(action_idx, ivk);
         }
 
@@ -378,8 +404,6 @@ impl Wallet {
     /// Restore note and potential spend data from a bundle using the provided
     /// metadata.
     ///
-    /// - `tx_height`: if the transaction containing the bundle has been mined,
-    ///   this should contain the block height it was mined at
     /// - `txid`: The ID for the transaction from which the provided bundle was
     ///   extracted.
     /// - `bundle`: the bundle to decrypt notes from
@@ -389,9 +413,9 @@ impl Wallet {
     /// - `potential_spend_idxs`: a list of action indices that were previously
     ///   detected as spending our notes. If an index is out of range, `load_bundle`
     ///   will return an error.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn load_bundle(
         &mut self,
-        tx_height: Option<BlockHeight>,
         txid: &TxId,
         bundle: &Bundle<Authorized, Amount>,
         hints: BTreeMap<usize, &IncomingViewingKey>,
@@ -414,29 +438,22 @@ impl Wallet {
 
         for (action_idx, ivk) in hints.into_iter() {
             if let Some((note, recipient, memo)) = bundle.decrypt_output_with_key(action_idx, ivk) {
-                if !self.add_decrypted_note(
-                    tx_height,
-                    txid,
-                    action_idx,
-                    ivk.clone(),
-                    note,
-                    recipient,
-                    memo,
-                ) {
+                if !self.add_decrypted_note(txid, action_idx, ivk.clone(), note, recipient, memo) {
                     return Err(BundleLoadError::FvkNotFound(ivk.clone()));
                 }
             } else {
                 return Err(BundleLoadError::ActionDecryptionFailed(action_idx));
             }
         }
+
         Ok(())
     }
 
     // Common functionality for add_notes_from_bundle and load_bundle
     #[allow(clippy::too_many_arguments)]
+    #[tracing::instrument(level = "trace", skip(self))]
     fn add_decrypted_note(
         &mut self,
-        tx_height: Option<BlockHeight>,
         txid: &TxId,
         action_idx: usize,
         ivk: IncomingViewingKey,
@@ -447,6 +464,7 @@ impl Wallet {
         // Generate the nullifier for the received note and add it to the nullifiers map so
         // that we can detect when the note is later spent.
         if let Some(fvk) = self.key_store.viewing_keys.get(&ivk) {
+            tracing::trace!("Adding decrypted note to the wallet");
             let outpoint = OutPoint {
                 txid: *txid,
                 action_idx,
@@ -458,21 +476,14 @@ impl Wallet {
             self.nullifiers.insert(nf, outpoint);
 
             // add the decrypted note data to the wallet
-            let note_data = DecryptedNote {
-                note,
-                memo,
-                position: None,
-            };
+            let note_data = DecryptedNote { note, memo };
             self.wallet_received_notes
                 .entry(*txid)
                 .or_insert_with(|| TxNotes {
-                    tx_height,
                     decrypted_notes: BTreeMap::new(),
                 })
                 .decrypted_notes
                 .insert(action_idx, note_data);
-
-            self.nullifiers.insert(nf, outpoint);
 
             // add the association between the address and the IVK used
             // to decrypt the note
@@ -480,6 +491,7 @@ impl Wallet {
 
             true
         } else {
+            tracing::trace!("Can't add decrypted note to the wallet, missing FVK");
             false
         }
     }
@@ -487,6 +499,7 @@ impl Wallet {
     /// For each Orchard action in the provided bundle, if the wallet
     /// is tracking a note corresponding to the action's revealed nullifer,
     /// mark that note as potentially spent.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn add_potential_spends(
         &mut self,
         txid: &TxId,
@@ -515,6 +528,11 @@ impl Wallet {
     }
 
     fn add_potential_spend(&mut self, nf: &Nullifier, inpoint: InPoint) {
+        tracing::trace!(
+            "Adding potential spend of nullifier {:?} in {:?}",
+            nf,
+            inpoint
+        );
         self.potential_spends
             .entry(*nf)
             .or_insert_with(BTreeSet::new)
@@ -530,6 +548,7 @@ impl Wallet {
     /// * `block_tx_idx` - Index of the transaction within the block
     /// * `txid` - Identifier of the transaction.
     /// * `bundle` - Orchard component of the transaction.
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn append_bundle_commitments(
         &mut self,
         block_height: BlockHeight,
@@ -560,11 +579,21 @@ impl Wallet {
         });
 
         // update the block height recorded for the transaction
-        if let Some(tx_notes) = self.wallet_received_notes.get_mut(txid) {
-            tx_notes.tx_height = Some(block_height);
+        let my_notes_for_tx = self.wallet_received_notes.get(txid);
+        if my_notes_for_tx.is_some() {
+            tracing::trace!("Tx is ours, marking as mined");
+            assert!(self
+                .wallet_note_positions
+                .insert(
+                    *txid,
+                    NotePositions {
+                        tx_height: block_height,
+                        note_positions: BTreeMap::default(),
+                    },
+                )
+                .is_none());
         }
 
-        let mut my_notes_for_tx = self.wallet_received_notes.get_mut(txid);
         for (action_idx, action) in bundle.actions().iter().enumerate() {
             // append the note commitment for each action to the witness tree
             if !self
@@ -575,25 +604,35 @@ impl Wallet {
             }
 
             // for notes that are ours, witness the current state of the tree
-            if let Some(dnote) = my_notes_for_tx
-                .as_mut()
-                .and_then(|n| n.decrypted_notes.get_mut(&action_idx))
+            if my_notes_for_tx
+                .as_ref()
+                .and_then(|n| n.decrypted_notes.get(&action_idx))
+                .is_some()
             {
-                let (pos, cmx) = self.witness_tree.witness().expect("tree is not empty");
-                assert_eq!(cmx, MerkleHashOrchard::from_cmx(action.cmx()));
-                dnote.position = Some(pos);
+                tracing::trace!("Witnessing Orchard note ({}, {})", txid, action_idx);
+                let pos = self.witness_tree.witness().expect("tree is not empty");
+                assert!(self
+                    .wallet_note_positions
+                    .get_mut(txid)
+                    .expect("We created this above")
+                    .note_positions
+                    .insert(action_idx, pos)
+                    .is_none());
             }
 
             // For nullifiers that are ours that we detect as spent by this action,
             // we will record that input as being mined.
             if let Some(outpoint) = self.nullifiers.get(action.nullifier()) {
-                self.mined_notes.insert(
-                    *outpoint,
-                    InPoint {
-                        txid: *txid,
-                        action_idx,
-                    },
-                );
+                assert!(self
+                    .mined_notes
+                    .insert(
+                        *outpoint,
+                        InPoint {
+                            txid: *txid,
+                            action_idx,
+                        },
+                    )
+                    .is_none());
             }
         }
 
@@ -607,12 +646,14 @@ impl Wallet {
             || self.nullifiers.values().any(|v| v.txid == *txid)
     }
 
+    #[tracing::instrument(level = "trace", skip(self))]
     pub fn get_filtered_notes(
         &self,
         ivk: Option<&IncomingViewingKey>,
         ignore_mined: bool,
         require_spending_key: bool,
     ) -> Vec<(OutPoint, DecryptedNote)> {
+        tracing::trace!("Filtering notes");
         self.wallet_received_notes
             .iter()
             .flat_map(|(txid, tx_notes)| {
@@ -636,6 +677,7 @@ impl Wallet {
                                 {
                                     None
                                 } else {
+                                    tracing::trace!("Selected note at {:?}", outpoint);
                                     Some((outpoint, (*dnote).clone()))
                                 }
                             })
@@ -653,35 +695,60 @@ impl Wallet {
     ///
     /// Returns `None` if the `OutPoint` is not known to the wallet, or the Orchard bundle
     /// containing the note has not been passed to `Wallet::append_bundle_commitments`.
-    pub fn get_spend_info(&self, outpoint: OutPoint) -> Option<OrchardSpendInfo> {
+    #[tracing::instrument(level = "trace", skip(self))]
+    pub fn get_spend_info(
+        &self,
+        outpoint: OutPoint,
+    ) -> Result<OrchardSpendInfo, SpendRetrievalError> {
         // TODO: Take `confirmations` parameter and obtain the Merkle path to the root at
         // that checkpoint, not the latest root.
-        self.wallet_received_notes
+        tracing::trace!("Searching for {:?}", outpoint);
+        let dnote = self
+            .wallet_received_notes
             .get(&outpoint.txid)
             .and_then(|tx_notes| tx_notes.decrypted_notes.get(&outpoint.action_idx))
-            .and_then(|dnote| {
+            .ok_or(SpendRetrievalError::DecryptedNoteNotFound(outpoint))?;
+        tracing::trace!("Found decrypted note for outpoint: {:?}", dnote);
+
+        let fvk = self
+            .key_store
+            .ivk_for_address(&dnote.note.recipient())
+            .ok_or_else(|| SpendRetrievalError::NoIvkForRecipient(dnote.note.recipient()))
+            .and_then(|ivk| {
                 self.key_store
-                    .ivk_for_address(&dnote.note.recipient())
-                    .and_then(|ivk| self.key_store.viewing_keys.get(ivk))
-                    .zip(dnote.position)
-                    .map(|(fvk, position)| {
-                        let path = self
-                            .witness_tree
-                            .authentication_path(
-                                position,
-                                &MerkleHashOrchard::from_cmx(&dnote.note.commitment().into()),
-                            )
-                            .expect("wallet always has paths to positioned notes");
-                        OrchardSpendInfo::from_parts(
-                            fvk.clone(),
-                            dnote.note,
-                            MerklePath::from_parts(
-                                u64::from(position).try_into().unwrap(),
-                                path.try_into().unwrap(),
-                            ),
-                        )
-                    })
-            })
+                    .viewing_keys
+                    .get(ivk)
+                    .ok_or_else(|| SpendRetrievalError::FvkNotFound(ivk.clone()))
+            })?;
+        tracing::trace!("Found FVK for note");
+
+        let position = self
+            .wallet_note_positions
+            .get(&outpoint.txid)
+            .and_then(|tx_notes| tx_notes.note_positions.get(&outpoint.action_idx))
+            .ok_or(SpendRetrievalError::NoteNotPositioned(outpoint))?;
+        tracing::trace!("Found position for note: {:?}", position);
+
+        assert_eq!(
+            self.witness_tree
+                .get_witnessed_leaf(*position)
+                .expect("tree has witnessed the leaf for this note."),
+            &MerkleHashOrchard::from_cmx(&dnote.note.commitment().into()),
+        );
+
+        let path = self
+            .witness_tree
+            .authentication_path(*position)
+            .expect("wallet always has paths to positioned notes");
+
+        Ok(OrchardSpendInfo::from_parts(
+            fvk.clone(),
+            dnote.note,
+            MerklePath::from_parts(
+                u64::from(*position).try_into().unwrap(),
+                path.try_into().unwrap(),
+            ),
+        ))
     }
 }
 
@@ -738,14 +805,14 @@ pub extern "C" fn orchard_wallet_get_last_checkpoint(
 pub extern "C" fn orchard_wallet_rewind(
     wallet: *mut Wallet,
     to_height: BlockHeight,
-    blocks_rewound: *mut u32,
+    result_height: *mut BlockHeight,
 ) -> bool {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
-    let blocks_rewound =
-        unsafe { blocks_rewound.as_mut() }.expect("Return value pointer may not be null.");
+    let result_height =
+        unsafe { result_height.as_mut() }.expect("Return value pointer may not be null.");
     match wallet.rewind(to_height) {
-        Ok(rewound) => {
-            *blocks_rewound = rewound;
+        Ok(result) => {
+            *result_height = result;
             true
         }
         Err(e) => {
@@ -810,7 +877,6 @@ pub extern "C" fn orchard_wallet_add_notes_from_bundle(
 #[no_mangle]
 pub extern "C" fn orchard_wallet_load_bundle(
     wallet: *mut Wallet,
-    block_height: *const u32,
     txid: *const [c_uchar; 32],
     bundle: *const Bundle<Authorized, Amount>,
     hints: *const FFIActionIvk,
@@ -819,7 +885,6 @@ pub extern "C" fn orchard_wallet_load_bundle(
     potential_spend_idxs_len: usize,
 ) -> bool {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null");
-    let block_height = unsafe { block_height.as_ref() }.map(|h| BlockHeight::from(*h));
     let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
     let bundle = unsafe { bundle.as_ref() }.expect("bundle pointer may not be null.");
 
@@ -835,7 +900,7 @@ pub extern "C" fn orchard_wallet_load_bundle(
         );
     }
 
-    match wallet.load_bundle(block_height, &txid, bundle, hints, potential_spend_idxs) {
+    match wallet.load_bundle(&txid, bundle, hints, potential_spend_idxs) {
         Ok(_) => true,
         Err(e) => {
             error!("Failed to restore decrypted notes to wallet: {:?}", e);
@@ -1154,15 +1219,16 @@ pub extern "C" fn orchard_wallet_get_spend_info(
 
     let outpoint = OutPoint { txid, action_idx };
 
-    if let Some(ret) = wallet.get_spend_info(outpoint) {
-        Box::into_raw(Box::new(ret))
-    } else {
-        tracing::error!(
-            "Requested note in action {} of transaction {} wasn't in the wallet",
-            outpoint.action_idx,
-            outpoint.txid
-        );
-        ptr::null_mut()
+    match wallet.get_spend_info(outpoint) {
+        Ok(ret) => Box::into_raw(Box::new(ret)),
+        Err(e) => {
+            tracing::error!(
+                "Error obtaining spend info for outpoint {:?}: {:?}",
+                outpoint,
+                e
+            );
+            ptr::null_mut()
+        }
     }
 }
 
@@ -1171,6 +1237,8 @@ pub extern "C" fn orchard_wallet_gc_note_commitment_tree(wallet: *mut Wallet) {
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null.");
     wallet.witness_tree.garbage_collect();
 }
+
+const NOTE_STATE_V1: u8 = 1;
 
 #[no_mangle]
 pub extern "C" fn orchard_wallet_write_note_commitment_tree(
@@ -1181,14 +1249,37 @@ pub extern "C" fn orchard_wallet_write_note_commitment_tree(
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
     let mut writer = CppStreamWriter::from_raw_parts(stream, write_cb.unwrap());
 
-    let mut write_all = move || -> io::Result<()> {
+    let write_v1 = move |mut writer: CppStreamWriter| -> io::Result<()> {
         Optional::write(&mut writer, wallet.last_checkpoint, |w, h| {
             w.write_u32::<LittleEndian>(h.into())
         })?;
-        write_tree(&mut writer, &wallet.witness_tree)
+        write_tree(&mut writer, &wallet.witness_tree)?;
+
+        // Write note positions.
+        Vector::write_sized(
+            &mut writer,
+            wallet.wallet_note_positions.iter(),
+            |mut w, (txid, tx_notes)| {
+                txid.write(&mut w)?;
+                w.write_u32::<LittleEndian>(tx_notes.tx_height.into())?;
+                Vector::write_sized(
+                    w,
+                    tx_notes.note_positions.iter(),
+                    |w, (action_idx, position)| {
+                        w.write_u32::<LittleEndian>(*action_idx as u32)?;
+                        write_position(w, *position)
+                    },
+                )
+            },
+        )?;
+
+        Ok(())
     };
 
-    match write_all() {
+    match writer
+        .write_u8(NOTE_STATE_V1)
+        .and_then(|()| write_v1(writer))
+    {
         Ok(()) => true,
         Err(e) => {
             error!("Failure in writing Orchard note commitment tree: {}", e);
@@ -1206,25 +1297,86 @@ pub extern "C" fn orchard_wallet_load_note_commitment_tree(
     let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null.");
     let mut reader = CppStreamReader::from_raw_parts(stream, read_cb.unwrap());
 
-    let mut read_all = move || -> io::Result<()> {
+    let mut read_v1 = move |mut reader: CppStreamReader| -> io::Result<()> {
         let last_checkpoint = Optional::read(&mut reader, |r| {
             r.read_u32::<LittleEndian>().map(BlockHeight::from)
         })?;
         let witness_tree = read_tree(&mut reader)?;
+
+        // Read note positions.
+        wallet.wallet_note_positions = Vector::read_collected(&mut reader, |mut r| {
+            Ok((
+                TxId::read(&mut r)?,
+                NotePositions {
+                    tx_height: r.read_u32::<LittleEndian>().map(BlockHeight::from)?,
+                    note_positions: Vector::read_collected(r, |r| {
+                        Ok((
+                            r.read_u32::<LittleEndian>().map(|idx| idx as usize)?,
+                            read_position(r)?,
+                        ))
+                    })?,
+                },
+            ))
+        })?;
 
         wallet.last_checkpoint = last_checkpoint;
         wallet.witness_tree = witness_tree;
         Ok(())
     };
 
-    match read_all() {
-        Ok(_) => true,
+    match reader.read_u8() {
         Err(e) => {
             error!(
-                "Failed to read Orchard note commitment or last checkpoint height: {}",
+                "Failed to read Orchard note position serialization flag: {}",
                 e
             );
             false
         }
+        Ok(NOTE_STATE_V1) => match read_v1(reader) {
+            Ok(_) => true,
+            Err(e) => {
+                error!(
+                    "Failed to read Orchard note commitment or last checkpoint height: {}",
+                    e
+                );
+                false
+            }
+        },
+        Ok(flag) => {
+            error!(
+                "Unrecognized Orchard note position serialization version: {}",
+                flag
+            );
+            false
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_init_from_frontier(
+    wallet: *mut Wallet,
+    frontier: *const bridgetree::Frontier<MerkleHashOrchard, MERKLE_DEPTH>,
+) -> bool {
+    let wallet = unsafe { wallet.as_mut() }.expect("Wallet pointer may not be null.");
+    let frontier = unsafe { frontier.as_ref() }.expect("Wallet pointer may not be null.");
+
+    if wallet.witness_tree.checkpoints().is_empty()
+        && wallet.witness_tree.witnessed_indices().is_empty()
+    {
+        wallet.witness_tree = frontier.value().map_or_else(
+            || BridgeTree::new(MAX_CHECKPOINTS),
+            |nonempty_frontier| {
+                BridgeTree::from_frontier(MAX_CHECKPOINTS, nonempty_frontier.clone())
+            },
+        );
+        true
+    } else {
+        // if we have any checkpoints in the tree, or if we have any witnessed notes,
+        // don't allow reinitialization
+        error!(
+            "Invalid attempt to reinitialize note commitment tree: {} checkpoints present.",
+            wallet.witness_tree.checkpoints().len()
+        );
+        false
     }
 }

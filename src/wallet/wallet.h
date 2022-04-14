@@ -1086,8 +1086,7 @@ protected:
             const Consensus::Params& consensus,
             const CBlockIndex* pindex,
             const CBlock* pblock,
-            SproutMerkleTree& sproutTree,
-            SaplingMerkleTree& saplingTree,
+            MerkleFrontiers& frontiers,
             bool performOrchardWalletUpdates
             );
     /**
@@ -1158,8 +1157,7 @@ private:
     void ChainTipAdded(
             const CBlockIndex *pindex,
             const CBlock *pblock,
-            SproutMerkleTree sproutTree,
-            SaplingMerkleTree saplingTree,
+            MerkleFrontiers frontiers,
             bool performOrchardWalletUpdates);
 
     /* Add a transparent secret key to the wallet. Internal use only. */
@@ -1648,6 +1646,12 @@ public:
             const libzcash::Receiver& receiver) const;
 
     /**
+     * Finds a unified account ID for a given receiver.
+     */
+    std::optional<libzcash::AccountId> FindUnifiedAccountByReceiver(
+            const libzcash::Receiver& receiver) const;
+
+    /**
      * Increment the next transaction order id
      * @return next transaction order id
      */
@@ -1800,11 +1804,22 @@ public:
     void ChainTip(
         const CBlockIndex *pindex,
         const CBlock *pblock,
-        std::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added);
+        std::optional<MerkleFrontiers> added);
     void RunSaplingMigration(int blockHeight);
     void AddPendingSaplingMigrationTx(const CTransaction& tx);
     /** Saves witness caches and best block locator to disk. */
     void SetBestChain(const CBlockLocator& loc);
+    /**
+     * Returns the block hash corresponding to the wallet's most recently
+     * persisted best block. This is the state to which the wallet will revert
+     * if restarted immediately, and does not necessarily match the current
+     * in-memory state.
+     *
+     * Returns std::nullopt if the wallet has never written a best block,
+     * i.e. this is a brand new wallet, or the node was shut down before
+     * SetBestChain was ever called to persist wallet state.
+     */
+    std::optional<uint256> GetPersistedBestBlock();
 
     std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> GetSproutNullifiers(
             const std::set<libzcash::SproutPaymentAddress>& addresses);
@@ -1942,6 +1957,8 @@ public:
      * contained in the given address set.
      */
     bool HasSpendingKeys(const NoteFilter& noteFilter) const;
+
+    bool HaveOrchardSpendingKeyForAddress(const libzcash::OrchardRawAddress &addr) const;
 
     /* Find notes filtered by payment addresses, min depth, max depth, if they are spent,
        if a spending key is required, and if they are locked */

@@ -19,8 +19,6 @@
 #include "wallet/wallet.h"
 #include "zcash/Proof.hpp"
 
-#include <rust/orchard.h>
-
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 #include <atomic>
@@ -351,9 +349,8 @@ public:
     bool fAnyUnordered;
     int nFileVersion;
     vector<uint256> vWalletUpgrade;
-    orchard::AuthValidator orchardAuth;
 
-    CWalletScanState(): orchardAuth(orchard::AuthValidator::Batch()) {
+    CWalletScanState() {
         nKeys = nCKeys = nKeyMeta = nZKeys = nCZKeys = nZKeyMeta = nSapZAddrs = 0;
         fIsEncrypted = false;
         fAnyUnordered = false;
@@ -393,7 +390,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             CValidationState state;
             auto verifier = ProofVerifier::Strict();
             if (!(
-                CheckTransaction(wtx, state, verifier, wss.orchardAuth) &&
+                CheckTransaction(wtx, state, verifier) &&
                 (wtx.GetHash() == hash) &&
                 state.IsValid())
             ) {
@@ -912,6 +909,7 @@ static bool IsKeyType(string strType)
     return (strType== "key" || strType == "wkey" ||
             strType == "hdseed" || strType == "chdseed" ||
             strType == "mnemonicphrase" || strType == "cmnemonicphrase" ||
+            strType == "mnemonichdchain" ||
             strType == "zkey" || strType == "czkey" ||
             strType == "sapzkey" || strType == "csapzkey" ||
             strType == "vkey" || strType == "sapextfvk" ||
@@ -939,7 +937,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
         Dbc* pcursor = GetCursor();
         if (!pcursor)
         {
-            LogPrintf("Error getting wallet database cursor\n");
+            LogPrintf("LoadWallet: Error getting wallet database cursor.");
             return DB_CORRUPT;
         }
 
@@ -953,7 +951,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                 break;
             else if (ret != 0)
             {
-                LogPrintf("Error reading next record from wallet database\n");
+                LogPrintf("LoadWallet: Error reading next record from wallet database.");
                 return DB_CORRUPT;
             }
 
@@ -966,6 +964,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                     result = DB_WRONG_NETWORK;
                 } else if (result != DB_WRONG_NETWORK && IsKeyType(strType)) {
                     // losing keys is considered a catastrophic error
+                    LogPrintf("LoadWallet: Unable to read key/value for key type %s (%d)", strType, result);
                     result = DB_CORRUPT;
                 } else {
                     // Leave other errors alone, if we try to fix them we might make things worse.
@@ -977,7 +976,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                 }
             }
             if (!strErr.empty())
-                LogPrintf("%s\n", strErr);
+                LogPrintf("LoadWallet: %s", strErr);
         }
         pcursor->close();
 
@@ -986,21 +985,22 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
             // We can be more permissive of certain kinds of failures during
             // loading; for now we'll interpret failure to reconstruct the
             // caches to be "as bad" as losing keys.
+            LogPrintf("LoadWallet: Failed to restore cached wallet data from chain state.");
             result = DB_CORRUPT;
-        }
-
-        // Run the Orchard batch validator; if it fails, treat it like a bad transaction record.
-        if (!wss.orchardAuth.Validate()) {
-            fNoncriticalErrors = true;
-            SoftSetBoolArg("-rescan", true);
         }
     }
     catch (const boost::thread_interrupted&) {
         throw;
     }
-    catch (...) {
+    catch (const std::exception& e) {
+        LogPrintf("LoadWallet: Caught exception: %s", e.what());
         result = DB_CORRUPT;
     }
+    catch (...) {
+        LogPrintf("LoadWallet: Caught something that wasn't a std::exception.");
+        result = DB_CORRUPT;
+    }
+
 
     if (fNoncriticalErrors && result == DB_LOAD_OK)
         result = DB_NONCRITICAL_ERROR;

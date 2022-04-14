@@ -233,15 +233,19 @@ double benchmark_large_tx(size_t nInputs)
     spending_tx.nVersion = SAPLING_TX_VERSION;
 
     auto input_hash = orig_tx.GetHash();
+    std::vector<CTxOut> allPrevOutputs;
     // Add nInputs inputs
     for (size_t i = 0; i < nInputs; i++) {
         spending_tx.vin.emplace_back(input_hash, 0);
+        allPrevOutputs.push_back(orig_tx.vout[0]);
     }
+
+    PrecomputedTransactionData txdata(spending_tx, allPrevOutputs);
 
     // Sign for all the inputs
     auto consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
     for (size_t i = 0; i < nInputs; i++) {
-        SignSignature(tempKeystore, prevPubKey, spending_tx, i, 1000000, SIGHASH_ALL, consensusBranchId);
+        SignSignature(tempKeystore, prevPubKey, spending_tx, txdata, i, 1000000, SIGHASH_ALL, consensusBranchId);
     }
 
     // Spending tx has all its inputs signed and does not need to be mutated anymore
@@ -250,13 +254,12 @@ double benchmark_large_tx(size_t nInputs)
     // Benchmark signature verification costs:
     struct timeval tv_start;
     timer_start(tv_start);
-    PrecomputedTransactionData txdata(final_spending_tx);
     for (size_t i = 0; i < nInputs; i++) {
         ScriptError serror = SCRIPT_ERR_OK;
         assert(VerifyScript(final_spending_tx.vin[i].scriptSig,
                             prevPubKey,
                             STANDARD_SCRIPT_VERIFY_FLAGS,
-                            TransactionSignatureChecker(&final_spending_tx, i, 1000000, txdata),
+                            TransactionSignatureChecker(&final_spending_tx, txdata, i, 1000000),
                             consensusBranchId,
                             &serror));
     }
@@ -332,8 +335,7 @@ double benchmark_increment_sprout_note_witnesses(size_t nTxs)
     const Consensus::Params& consensusParams = Params().GetConsensus();
 
     CWallet wallet(Params());
-    SproutMerkleTree sproutTree;
-    SaplingMerkleTree saplingTree;
+    MerkleFrontiers frontiers;
 
     auto sproutSpendingKey = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sproutSpendingKey);
@@ -350,7 +352,7 @@ double benchmark_increment_sprout_note_witnesses(size_t nTxs)
     index1.nHeight = 1;
 
     // Increment to get transactions witnessed
-    wallet.ChainTip(&index1, &block1, std::make_pair(sproutTree, saplingTree));
+    wallet.ChainTip(&index1, &block1, frontiers);
 
     // Second block
     CBlock block2;
@@ -366,7 +368,7 @@ double benchmark_increment_sprout_note_witnesses(size_t nTxs)
 
     struct timeval tv_start;
     timer_start(tv_start);
-    wallet.ChainTip(&index2, &block2, std::make_pair(sproutTree, saplingTree));
+    wallet.ChainTip(&index2, &block2, frontiers);
     return timer_stop(tv_start);
 }
 
@@ -394,8 +396,7 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
     const Consensus::Params& consensusParams = Params().GetConsensus();
 
     CWallet wallet(Params());
-    SproutMerkleTree sproutTree;
-    SaplingMerkleTree saplingTree;
+    MerkleFrontiers frontiers;
 
     auto saplingSpendingKey = GetTestMasterSaplingSpendingKey();
     wallet.AddSaplingSpendingKey(saplingSpendingKey);
@@ -412,7 +413,7 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
     index1.nHeight = 1;
 
     // Increment to get transactions witnessed
-    wallet.ChainTip(&index1, &block1, std::make_pair(sproutTree, saplingTree));
+    wallet.ChainTip(&index1, &block1, frontiers);
 
     // Second block
     CBlock block2;
@@ -428,7 +429,7 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
 
     struct timeval tv_start;
     timer_start(tv_start);
-    wallet.ChainTip(&index2, &block2, std::make_pair(sproutTree, saplingTree));
+    wallet.ChainTip(&index2, &block2, frontiers);
     return timer_stop(tv_start);
 }
 

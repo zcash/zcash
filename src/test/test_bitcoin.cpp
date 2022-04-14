@@ -27,6 +27,7 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/thread.hpp>
 #include <sodium.h>
+#include <tracing.h>
 
 #include "librustzcash.h"
 
@@ -74,7 +75,18 @@ BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
     ECC_Start();
     SetupEnvironment();
     SetupNetworking();
-    fPrintToDebugLog = false; // don't want to write to debug.log file
+
+    // Uncomment this to log all errors to stdout so we see them in test output.
+    // We don't enable this by default because several tests intentionally cause
+    // verbose error output (while exercising failure cases).
+    // if (pTracingHandle == nullptr) {
+    //     std::string initialFilter = "error";
+    //     pTracingHandle = tracing_init(
+    //         nullptr, 0,
+    //         initialFilter.c_str(),
+    //         false);
+    // }
+
     fCheckBlockIndex = true;
     SelectParams(chainName);
     noui_connect();

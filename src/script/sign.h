@@ -33,13 +33,14 @@ public:
 /** A signature creator for transactions. */
 class TransactionSignatureCreator : public BaseSignatureCreator {
     const CTransaction* txTo;
+    const PrecomputedTransactionData& txToData;
     unsigned int nIn;
     int nHashType;
     CAmount amount;
     const TransactionSignatureChecker checker;
 
 public:
-    TransactionSignatureCreator(const CKeyStore* keystoreIn, const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn=SIGHASH_ALL);
+    TransactionSignatureCreator(const CKeyStore* keystoreIn, const CTransaction* txToIn, const PrecomputedTransactionData& txToDataIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn=SIGHASH_ALL);
     const BaseSignatureChecker& Checker() const { return checker; }
     bool CreateSig(std::vector<unsigned char>& vchSig, const CKeyID& keyid, const CScript& scriptCode, uint32_t consensusBranchId) const;
 };
@@ -48,7 +49,7 @@ class MutableTransactionSignatureCreator : public TransactionSignatureCreator {
     CTransaction tx;
 
 public:
-    MutableTransactionSignatureCreator(const CKeyStore* keystoreIn, const CMutableTransaction* txToIn, unsigned int nInIn, const CAmount& amount, int nHashTypeIn) : TransactionSignatureCreator(keystoreIn, &tx, nInIn, amount, nHashTypeIn), tx(*txToIn) {}
+    MutableTransactionSignatureCreator(const CKeyStore* keystoreIn, const CMutableTransaction* txToIn, const PrecomputedTransactionData& txdataIn, unsigned int nInIn, const CAmount& amount, int nHashTypeIn) : TransactionSignatureCreator(keystoreIn, &tx, txdataIn, nInIn, amount, nHashTypeIn), tx(*txToIn) {}
 };
 
 /** A signature creator that just produces 72-byte empty signatures. */
@@ -74,6 +75,7 @@ bool SignSignature(
     const CKeyStore &keystore,
     const CScript& fromPubKey,
     CMutableTransaction& txTo,
+    const PrecomputedTransactionData& txToData,
     unsigned int nIn,
     const CAmount& amount,
     int nHashType,
@@ -82,6 +84,7 @@ bool SignSignature(
     const CKeyStore& keystore,
     const CTransaction& txFrom,
     CMutableTransaction& txTo,
+    const PrecomputedTransactionData& txToData,
     unsigned int nIn,
     int nHashType,
     uint32_t consensusBranchId);

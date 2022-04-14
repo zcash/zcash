@@ -30,6 +30,16 @@ TracingHandle* tracing_init(
     const char* initial_filter,
     bool log_timestamps);
 
+/// Initializes the tracing crate for use in tests, returning a handle for the
+/// logging component. The handle must be freed to close the logging component.
+///
+/// `log_path` is the path to a file that logs will be written to, and must not
+/// be NULL. Logs are written synchronously to avoid non-determinism in tests.
+TracingHandle* tracing_init_test(
+    const codeunit* log_path,
+    size_t log_path_len,
+    const char* initial_filter);
+
 /// Frees a tracing handle returned from `tracing_init`;
 void tracing_free(TracingHandle* handle);
 

@@ -17,10 +17,11 @@
 
 uint256 ProduceZip244SignatureHash(
     const CTransaction& tx,
+    const std::vector<CTxOut>& allPrevOutputs,
     const orchard::UnauthorizedBundle& orchardBundle)
 {
     uint256 dataToBeSigned;
-    PrecomputedTransactionData local(tx);
+    PrecomputedTransactionData local(tx, allPrevOutputs);
     if (!zcash_builder_zip244_shielded_signature_digest(
         local.preTx.release(),
         orchardBundle.inner.get(),
@@ -418,7 +419,7 @@ void TransactionBuilder::AddTransparentInput(COutPoint utxo, CScript scriptPubKe
     }
 
     mtx.vin.emplace_back(utxo);
-    tIns.emplace_back(scriptPubKey, value);
+    tIns.emplace_back(value, scriptPubKey);
 }
 
 void TransactionBuilder::AddTransparentOutput(const CTxDestination& to, CAmount value)
@@ -484,7 +485,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         change -= jsOutput.value;
     }
     for (auto tIn : tIns) {
-        change += tIn.value;
+        change += tIn.nValue;
     }
     for (auto tOut : mtx.vout) {
         change -= tOut.nValue;
@@ -633,11 +634,15 @@ TransactionBuilderResult TransactionBuilder::Build()
     try {
         if (orchardBundle.has_value()) {
             // Orchard is only usable with v5+ transactions.
-            dataToBeSigned = ProduceZip244SignatureHash(mtx, orchardBundle.value());
+            dataToBeSigned = ProduceZip244SignatureHash(mtx, tIns, orchardBundle.value());
         } else {
             CScript scriptCode;
-            dataToBeSigned = SignatureHash(scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
+            const PrecomputedTransactionData txdata(mtx, tIns);
+            dataToBeSigned = SignatureHash(scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
         }
+    } catch (std::ios_base::failure ex) {
+        librustzcash_sapling_proving_ctx_free(ctx);
+        return TransactionBuilderResult("Could not construct signature hash: " + std::string(ex.what()));
     } catch (std::logic_error ex) {
         librustzcash_sapling_proving_ctx_free(ctx);
         return TransactionBuilderResult("Could not construct signature hash: " + std::string(ex.what()));
@@ -689,12 +694,13 @@ TransactionBuilderResult TransactionBuilder::Build()
 
     // Transparent signatures
     CTransaction txNewConst(mtx);
+    const PrecomputedTransactionData txdata(txNewConst, tIns);
     for (int nIn = 0; nIn < mtx.vin.size(); nIn++) {
         auto tIn = tIns[nIn];
         SignatureData sigdata;
         bool signSuccess = ProduceSignature(
             TransactionSignatureCreator(
-                keystore, &txNewConst, nIn, tIn.value, SIGHASH_ALL),
+                keystore, &txNewConst, txdata, nIn, tIn.nValue, SIGHASH_ALL),
             tIn.scriptPubKey, sigdata, consensusBranchId);
 
         if (!signSuccess) {

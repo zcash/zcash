@@ -30,6 +30,7 @@ namespace orchard { class UnauthorizedBundle; }
 
 uint256 ProduceZip244SignatureHash(
     const CTransaction& tx,
+    const std::vector<CTxOut>& allPrevOutputs,
     const orchard::UnauthorizedBundle& orchardBundle);
 
 namespace orchard {
@@ -147,6 +148,7 @@ private:
     //             ~~~~~~           ^
     friend uint256 (::ProduceZip244SignatureHash(
         const CTransaction& tx,
+        const std::vector<CTxOut>& allPrevOutputs,
         const UnauthorizedBundle& orchardBundle));
 
 public:
@@ -234,15 +236,6 @@ struct JSDescriptionInfo {
     );
 };
 
-struct TransparentInputInfo {
-    CScript scriptPubKey;
-    CAmount value;
-
-    TransparentInputInfo(
-        CScript scriptPubKey,
-        CAmount value) : scriptPubKey(scriptPubKey), value(value) {}
-};
-
 class TransactionBuilderResult {
 private:
     std::optional<CTransaction> maybeTx;
@@ -276,7 +269,7 @@ private:
     std::vector<OutputDescriptionInfo> outputs;
     std::vector<libzcash::JSInput> jsInputs;
     std::vector<libzcash::JSOutput> jsOutputs;
-    std::vector<TransparentInputInfo> tIns;
+    std::vector<CTxOut> tIns;
 
     std::optional<std::pair<uint256, libzcash::SaplingPaymentAddress>> saplingChangeAddr;
     std::optional<std::pair<uint256, libzcash::OrchardRawAddress>> orchardChangeAddr;

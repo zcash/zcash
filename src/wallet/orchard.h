@@ -13,6 +13,7 @@
 #include "rust/orchard/keys.h"
 #include "rust/orchard/wallet.h"
 #include "zcash/address/orchard.hpp"
+#include "zcash/IncrementalMerkleTree.hpp"
 
 class OrchardWallet;
 class OrchardWalletNoteCommitmentTreeWriter;
@@ -219,6 +220,16 @@ public:
     }
 
     /**
+     * Overwrite the first bridge of the Orchard note commitment tree to have the
+     * provided frontier as its latest state. This will fail with an assertion error
+     * if any checkpoints exist in the tree.
+     */
+    void InitNoteCommitmentTree(const OrchardMerkleFrontier& frontier) {
+        assert(!GetLastCheckpointHeight().has_value());
+        assert(orchard_wallet_init_from_frontier(inner.get(), frontier.inner.get()));
+    }
+
+    /**
      * Checkpoint the note commitment tree. This returns `false` and leaves the note
      * commitment tree unmodified if the block height specified is not the successor
      * to the last block height checkpointed.
@@ -245,9 +256,9 @@ public:
      * previously identified as having been spent by transactions in the
      * latest block.
      */
-    bool Rewind(int nBlockHeight, uint32_t& blocksRewoundRet) {
+    bool Rewind(int nBlockHeight, uint32_t& uResultHeight) {
         assert(nBlockHeight >= 0);
-        return orchard_wallet_rewind(inner.get(), (uint32_t) nBlockHeight, &blocksRewoundRet);
+        return orchard_wallet_rewind(inner.get(), (uint32_t) nBlockHeight, &uResultHeight);
     }
 
     static void PushOrchardActionIVK(void* rec, RawOrchardActionIVK actionIVK) {
@@ -288,7 +299,6 @@ public:
      * notes to the wallet.
      */
     bool LoadWalletTx(
-            const std::optional<int> nBlockHeight,
             const CTransaction& tx,
             const OrchardWalletTxMeta& txMeta
             ) {
@@ -296,10 +306,8 @@ public:
         for (const auto& [action_idx, ivk] : txMeta.mapOrchardActionData) {
             rawHints.push_back({ action_idx, ivk.inner.get() });
         }
-        uint32_t blockHeight = nBlockHeight.has_value() ? (uint32_t) nBlockHeight.value() : 0;
         return orchard_wallet_load_bundle(
                 inner.get(),
-                nBlockHeight.has_value() ? &blockHeight : nullptr,
                 tx.GetHash().begin(),
                 tx.GetOrchardBundle().inner.get(),
                 rawHints.data(),
@@ -485,6 +493,10 @@ public:
 
     template<typename Stream>
     void Serialize(Stream& s) const {
+        int nVersion = s.GetVersion();
+        if (!(s.GetType() & SER_GETHASH)) {
+            ::Serialize(s, nVersion);
+        }
         RustStream rs(s);
         if (!orchard_wallet_write_note_commitment_tree(
                     wallet.inner.get(),
@@ -503,6 +515,10 @@ public:
 
     template<typename Stream>
     void Unserialize(Stream& s) {
+        int nVersion = s.GetVersion();
+        if (!(s.GetType() & SER_GETHASH)) {
+            ::Unserialize(s, nVersion);
+        }
         RustStream rs(s);
         if (!orchard_wallet_load_note_commitment_tree(
                     wallet.inner.get(),

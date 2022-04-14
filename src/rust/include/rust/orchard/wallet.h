@@ -5,6 +5,7 @@
 #ifndef ZCASH_RUST_INCLUDE_RUST_ORCHARD_WALLET_H
 #define ZCASH_RUST_INCLUDE_RUST_ORCHARD_WALLET_H
 
+#include "rust/orchard/incremental_merkle_tree.h"
 #include "rust/orchard/keys.h"
 #include "rust/builder.h"
 
@@ -65,18 +66,26 @@ bool orchard_wallet_get_last_checkpoint(
  *
  * The `blockHeight` argument provides the height to which the witness tree should be
  * rewound, such that after the rewind this height corresponds to the latest block
- * appended to the tree. The number of blocks that were removed from the witness
- * tree in the rewind process is returned via `blocksRewoundRet`.
+ * appended to the tree.
  *
- * Returns `true` if the rewind is successful, in which case the number of blocks that were
- * removed from the witness tree in the rewind process is returned via `blocksRewoundRet`;
- * this returns `false` and leaves `blocksRewoundRet` unmodified.
+ * Returns `true` if the rewind is successful, in which case `resultHeight` will contain
+ * the height to which the tree has been rewound; otherwise, this returns `false` and
+ * leaves `resultHeight` unmodified.
  */
 bool orchard_wallet_rewind(
         OrchardWalletPtr* wallet,
         uint32_t blockHeight,
-        uint32_t* blocksRewoundRet
+        uint32_t* resultHeight
         );
+
+/**
+ * Initialize the wallet's note commitment tree to the empty tree starting from the
+ * specified Merkle frontier. This will return `false` and leave the wallet unmodified if
+ * it would cause any checkpoint or witness state to be invalidated.
+ */
+bool orchard_wallet_init_from_frontier(
+        OrchardWalletPtr* wallet,
+        const OrchardMerkleFrontierPtr* frontier);
 
 /**
  * A C struct used to transfer action_idx/IVK pairs back from Rust across the FFI
@@ -132,13 +141,9 @@ bool orchard_wallet_add_notes_from_bundle(
  *
  * The provided bundle must be a component of the transaction from which
  * `txid` was derived.
- *
- * The value the `blockHeight` pointer points to be set to the height at which the
- * transaction was mined, or `nullptr` if the transaction is not in the main chain.
  */
 bool orchard_wallet_load_bundle(
         OrchardWalletPtr* wallet,
-        const uint32_t* blockHeight,
         const unsigned char txid[32],
         const OrchardBundlePtr* bundle,
         const RawOrchardActionIVK* actionIvks,

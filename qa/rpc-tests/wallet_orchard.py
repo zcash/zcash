@@ -23,8 +23,6 @@ class WalletOrchardTest(BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, [[
-            '-experimentalfeatures',
-            '-orchardwallet',
             nuparams(NU5_BRANCH_ID, 210),
         ]] * self.num_nodes)
 
@@ -105,7 +103,7 @@ class WalletOrchardTest(BitcoinTestFramework):
         ua3 = addrRes3['address']
 
         recipients = [{"address": ua3, "amount": Decimal('1')}]
-        myopid = self.nodes[2].z_sendmany(ua2, recipients, 1, 0)
+        myopid = self.nodes[2].z_sendmany(ua2, recipients, 1, 0, 'AllowRevealedAmounts')
         rollback_tx = wait_and_assert_operationid_status(self.nodes[2], myopid)
 
         self.sync_all()

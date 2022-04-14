@@ -259,12 +259,18 @@ typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, l
 typedef libzcash::IncrementalWitness<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::PedersenHash> SaplingWitness;
 typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::PedersenHash> SaplingTestingWitness;
 
+class OrchardWallet;
+class OrchardMerkleFrontierLegacySer;
+
 class OrchardMerkleFrontier
 {
 private:
     /// An incremental Sinsemilla tree; this pointer may never be null.
     /// Memory is allocated by Rust.
     std::unique_ptr<OrchardMerkleFrontierPtr, decltype(&orchard_merkle_frontier_free)> inner;
+
+    friend class OrchardWallet;
+    friend class OrchardMerkleFrontierLegacySer;
 public:
     OrchardMerkleFrontier() : inner(orchard_merkle_frontier_empty(), orchard_merkle_frontier_free) {}
 
@@ -325,6 +331,21 @@ public:
         uint256 value;
         orchard_merkle_tree_empty_root(value.begin());
         return value;
+    }
+};
+
+class OrchardMerkleFrontierLegacySer {
+private:
+    const OrchardMerkleFrontier& frontier;
+public:
+    OrchardMerkleFrontierLegacySer(const OrchardMerkleFrontier& frontier): frontier(frontier) {}
+
+    template<typename Stream>
+    void Serialize(Stream& s) const {
+        RustStream rs(s);
+        if (!orchard_merkle_frontier_serialize_legacy(frontier.inner.get(), &rs, RustStream<Stream>::write_callback)) {
+            throw std::ios_base::failure("Failed to serialize Orchard merkle frontier in legacy format.");
+        }
     }
 };
 

@@ -36,13 +36,13 @@ blake2s_simd = "1"
 bls12_381 = "0.6"
 byteorder = "1"
 group = "0.11"
-incrementalmerkletree = "0.2"
+incrementalmerkletree = "=0.3.0-beta.2"
 libc = "0.2"
 jubjub = "0.8"
 memuse = "0.2"
 nonempty = "0.7"
-orchard = "=0.1.0-beta.1"
-secp256k1 = "0.20"
+orchard = "=0.1.0-beta.3"
+secp256k1 = "0.21"
 subtle = "2.2"
 rand_core = "0.6"
 tracing = "0.1"
@@ -58,21 +58,19 @@ ed25519-zebra = "3"
 zeroize = "1.4.2"
 
 # Metrics
-hyper = { version = "=0.14.2", default-features = false, features = ["server", "tcp", "http1"] }
 ipnet = "2"
 metrics = "0.17"
 metrics-exporter-prometheus = "0.6"
-thiserror = "1"
-tokio = { version = "1.0", features = ["rt", "net", "time", "macros"] }
 
 # Wallet tool
-# (also depends on thiserror, tracing, and tracing-subscriber with "env-filter" and "fmt" features)
+# (also depends on tracing, and tracing-subscriber with "env-filter" and "fmt" features)
 anyhow = "1.0"
 backtrace = "0.3"
 clearscreen = "1.0"
 gumdrop = "0.8"
 rand = "0.8"
 secrecy = "0.8"
+thiserror = "1"
 time = { version = "0.3", features = ["formatting", "macros"] }
 
 [dependencies.tracing-subscriber]
@@ -86,12 +84,10 @@ panic = 'abort'
 codegen-units = 1
 
 [patch.crates-io]
-hdwallet = { git = "https://github.com/nuttycom/hdwallet", rev = "576683b9f2865f1118c309017ff36e01f84420c9" }
-incrementalmerkletree = { git = "https://github.com/zcash/incrementalmerkletree.git", rev = "62c33e4480a71170b02b9eb7d4b0160194f414ee" }
-orchard = { git = "https://github.com/zcash/orchard.git", rev = "f4587f790d7317df85a9ee77ce693a06ed6d8d02" }
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "67cb63a5a6b1f2c4cf5a061dbe80e9a71477e289" }
-zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "67cb63a5a6b1f2c4cf5a061dbe80e9a71477e289" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "67cb63a5a6b1f2c4cf5a061dbe80e9a71477e289" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "67cb63a5a6b1f2c4cf5a061dbe80e9a71477e289" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "67cb63a5a6b1f2c4cf5a061dbe80e9a71477e289" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "67cb63a5a6b1f2c4cf5a061dbe80e9a71477e289" }
+hdwallet = { git = "https://github.com/nuttycom/hdwallet", rev = "9b4c1bdbe0517e3a7a8f285d6048a37d472ba3bc" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "d14e7a707ce01cefcbc82651dad48f002185dded" }
+zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "d14e7a707ce01cefcbc82651dad48f002185dded" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "d14e7a707ce01cefcbc82651dad48f002185dded" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "d14e7a707ce01cefcbc82651dad48f002185dded" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "d14e7a707ce01cefcbc82651dad48f002185dded" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "d14e7a707ce01cefcbc82651dad48f002185dded" }

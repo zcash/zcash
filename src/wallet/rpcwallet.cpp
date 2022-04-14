@@ -340,7 +340,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
             "generated from the legacy HD seed, imported watchonly transparent \n"
             "addresses, shielded addresses tracked using imported viewing keys, \n"
             "and addresses derived from the wallet's mnemonic seed for releases \n"
-            "version 4.5.2 and above. \n"
+            "version 4.7.0 and above. \n"
             "\nREMINDER: It is recommended that you back up your wallet.dat file \n"
             "regularly!\n"
             "\nResult:\n"
@@ -2432,10 +2432,6 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "\nReturns array of unspent shielded notes with between minconf and maxconf (inclusive) confirmations.\n"
             "Optionally filter to only include notes sent to specified addresses.\n"
             "When minconf is 0, unspent notes with zero confirmations are returned, even though they are not immediately spendable.\n"
-            "Orchard notes are not yet returned (the documentation below shows what the results will be when this is fixed).\n"
-            "Results are an array of Objects, each of which has:\n"
-            "{txid, pool, jsindex, jsoutindex, confirmations, address, amount, memo} (Sprout)\n"
-            "{txid, pool, outindex, confirmations, address, amount, memo} (Sapling)\n"
             "\nArguments:\n"
             "1. minconf          (numeric, optional, default=1) The minimum confirmations to filter\n"
             "2. maxconf          (numeric, optional, default=9999999) The maximum confirmations to filter\n"
@@ -2448,18 +2444,18 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "\nResult (output indices for only one value pool will be present):\n"
             "[                             (array of json object)\n"
             "  {\n"
-            "    \"txid\" : \"txid\",          (string) the transaction id \n"
-            "    \"pool\" : \"sprout|sapling|orchard\", (string) The shielded value pool\n"
-            "    \"type\" : \"sprout|sapling|orchard\", (string) The shielded value pool (DEPRECATED legacy attribute)\n"
-            "    \"jsindex\" (sprout) : n,       (numeric) the joinsplit index\n"
-            "    \"jsoutindex\" (sprout) : n,       (numeric) the output index of the joinsplit\n"
-            "    \"outindex\" (transparent, sapling, orchard) : n,       (numeric) the Output or Action index\n"
-            "    \"confirmations\" : n,       (numeric) the number of confirmations\n"
-            "    \"spendable\" : true|false,  (boolean) true if note can be spent by wallet, false if address is watchonly\n"
-            "    \"address\" : \"address\",    (string) the shielded address\n"
-            "    \"amount\": xxxxx,          (numeric) the amount of value in the note\n"
-            "    \"memo\": xxxxx,            (string) hexadecimal string representation of memo field\n"
-            "    \"change\": true|false,     (boolean) true if the address that received the note is also one of the sending addresses\n"
+            "    \"txid\" : \"txid\",                   (string) the transaction id \n"
+            "    \"pool\" : \"sprout|sapling|orchard\",   (string) The shielded value pool\n"
+            "    \"jsindex\" (sprout) : n,            (numeric) the joinsplit index\n"
+            "    \"jsoutindex\" (sprout) : n,         (numeric) the output index of the joinsplit\n"
+            "    \"outindex\" (sapling, orchard) : n, (numeric) the Sapling output or Orchard action index\n"
+            "    \"confirmations\" : n,               (numeric) the number of confirmations\n"
+            "    \"spendable\" : true|false,          (boolean) true if note can be spent by wallet, false if address is watchonly\n"
+            "    \"account\" : n,                     (numeric, optional) the unified account ID, if applicable\n"
+            "    \"address\" : \"address\",             (string, optional) the shielded address, omitted if this note was sent to an internal receiver\n"
+            "    \"amount\": xxxxx,                   (numeric) the amount of value in the note\n"
+            "    \"memo\": xxxxx,                     (string) hexadecimal string representation of memo field\n"
+            "    \"change\": true|false,              (boolean) true if the address that received the note is also one of the sending addresses\n"
             "  }\n"
             "  ,...\n"
             "]\n"
@@ -2554,7 +2550,6 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("txid", entry.jsop.hash.ToString());
         obj.pushKV("pool", ADDR_TYPE_SPROUT);
-        obj.pushKV("type", ADDR_TYPE_SPROUT); //deprecated
         obj.pushKV("jsindex", (int)entry.jsop.js );
         obj.pushKV("jsoutindex", (int)entry.jsop.n);
         obj.pushKV("confirmations", entry.confirmations);
@@ -2579,23 +2574,54 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         obj.pushKV("confirmations", entry.confirmations);
         bool hasSaplingSpendingKey = pwalletMain->HaveSaplingSpendingKeyForAddress(entry.address);
         obj.pushKV("spendable", hasSaplingSpendingKey);
-        obj.pushKV("address", keyIO.EncodePaymentAddress([&]() {
-            auto ua = pwalletMain->FindUnifiedAddressByReceiver(entry.address);
-            if (ua.has_value()) {
-                return libzcash::PaymentAddress{ua.value()};
-            } else {
-                return libzcash::PaymentAddress{entry.address};
-            }
-        }()));
+        auto account = pwalletMain->FindUnifiedAccountByReceiver(entry.address);
+        if (account.has_value()) {
+            obj.pushKV("account", (uint64_t) account.value());
+        }
+        auto addr = pwalletMain->GetPaymentAddressForRecipient(entry.op.hash, entry.address);
+        if (addr.second != RecipientType::WalletInternalAddress) {
+            obj.pushKV("address", keyIO.EncodePaymentAddress(addr.first));
+        }
         obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value()))); // note.value() is equivalent to plaintext.value()
         obj.pushKV("memo", HexStr(entry.memo));
         if (hasSaplingSpendingKey) {
-            obj.pushKV("change", pwalletMain->IsNoteSaplingChange(saplingNullifiers, entry.address, entry.op));
+            obj.pushKV(
+                    "change",
+                    pwalletMain->IsNoteSaplingChange(saplingNullifiers, entry.address, entry.op));
         }
         results.push_back(obj);
     }
 
-    // TODO ORCHARD #5683
+    for (auto & entry : orchardEntries) {
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("txid", entry.GetOutPoint().hash.ToString());
+        obj.pushKV("pool", ADDR_TYPE_ORCHARD);
+        obj.pushKV("outindex", (int)entry.GetOutPoint().n);
+        obj.pushKV("confirmations", entry.GetConfirmations());
+
+        // TODO: add a better mechanism for checking whether we have the
+        // spending key for an Orchard receiver.
+        auto ufvkMeta = pwalletMain->GetUFVKMetadataForReceiver(entry.GetAddress());
+        auto account = pwalletMain->GetUnifiedAccountId(ufvkMeta.value().GetUFVKId());
+        bool haveSpendingKey = ufvkMeta.has_value() && account.has_value();
+        bool isInternal = pwalletMain->IsInternalRecipient(entry.GetAddress());
+
+        std::optional<std::string> addrStr;
+        obj.pushKV("spendable", haveSpendingKey);
+        if (account.has_value()) {
+            obj.pushKV("account", (uint64_t) account.value());
+        }
+        auto addr = pwalletMain->GetPaymentAddressForRecipient(entry.GetOutPoint().hash, entry.GetAddress());
+        if (addr.second != RecipientType::WalletInternalAddress) {
+            obj.pushKV("address", keyIO.EncodePaymentAddress(addr.first));
+        }
+        obj.pushKV("amount", ValueFromAmount(entry.GetNoteValue()));
+        obj.pushKV("memo", HexStr(entry.GetMemo()));
+        if (haveSpendingKey) {
+            obj.pushKV("change", isInternal);
+        }
+        results.push_back(obj);
+    }
 
     return results;
 }
@@ -2948,6 +2974,9 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     CTransaction tx;
     if (!DecodeHexTx(tx, params[0].get_str()))
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+    if (tx.nVersion >= ZIP225_TX_VERSION) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "v5+ transactions do not support Sprout");
+    }
 
     UniValue inputs = params[1].get_obj();
     UniValue outputs = params[2].get_obj();
@@ -3076,8 +3105,10 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     // Empty output script.
     CScript scriptCode;
     CTransaction signTx(mtx);
+    // This API will never support v5+ transactions, and can ignore ZIP 244.
+    PrecomputedTransactionData txdata(signTx, {});
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
+    uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
 
     // Add the signature
     assert(ed25519_sign(
@@ -3234,10 +3265,6 @@ UniValue z_getnewaccount(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_getnewaccount", "")
         );
 
-    if (!fExperimentalOrchardWallet) {
-        throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
-    }
-
     LOCK(pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
@@ -3285,10 +3312,6 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
             + HelpExampleCli("z_getaddressforaccount", "4 '[\"transparent\",\"sapling\",\"orchard\"]' 1")
             + HelpExampleRpc("z_getaddressforaccount", "4")
         );
-
-    if (!fExperimentalOrchardWallet) {
-        throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
-    }
 
     // cs_main is required for obtaining the current height, for
     // CWallet::DefaultReceiverTypes
@@ -3423,6 +3446,71 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
     return result;
 }
 
+UniValue z_listaccounts(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "z_listaccounts\n"
+            "\nReturns the list of accounts created through z_getnewaccount.\n"
+            "\nResult:\n"
+            "[\n"
+            "   {\n"
+            "     \"account\": \"uint\",           (uint) The account id\n"
+            "     \"addresses\": [\n"
+            "        {\n"
+            "           \"diversifier\":  \"uint\",        (string) A diversifier used in the account\n"
+            "           \"ua\":  \"address\",              (string) The unified address corresponding to the diversifier.\n"
+            "        }\n"
+            "     ]\n"
+            "   }\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("z_listaccounts", "")
+        );
+
+    LOCK(pwalletMain->cs_wallet);
+
+    KeyIO keyIO(Params());
+    UniValue ret(UniValue::VARR);
+
+    auto hdChain = pwalletMain->GetMnemonicHDChain();
+
+    for (const auto& [acctKey, ufvkId] : pwalletMain->mapUnifiedAccountKeys) {
+        UniValue account(UniValue::VOBJ);
+
+        account.pushKV("account", (int)acctKey.second);
+
+        // Get the receivers for this account.
+        auto ufvkMetadataPair = pwalletMain->mapUfvkAddressMetadata.find(ufvkId);
+        auto ufvkMetadata = ufvkMetadataPair->second;
+        auto diversifiersMap = ufvkMetadata.GetKnownReceiverSetsByDiversifierIndex();
+
+        auto ufvk = pwalletMain->GetUnifiedFullViewingKey(ufvkId).value();
+
+        UniValue addresses(UniValue::VARR);
+        for (const auto& [j, receiverTypes] : diversifiersMap) {
+            UniValue addrEntry(UniValue::VOBJ);
+
+            UniValue jVal;
+            jVal.setNumStr(ArbitraryIntStr(std::vector(j.begin(), j.end())));
+            addrEntry.pushKV("diversifier_index", jVal);
+
+            auto uaPair = std::get<std::pair<UnifiedAddress, diversifier_index_t>>(ufvk.Address(j, receiverTypes));
+            auto ua = uaPair.first;
+            addrEntry.pushKV("ua", keyIO.EncodePaymentAddress(ua));
+
+            addresses.push_back(addrEntry);
+        }
+        account.pushKV("addresses", addresses);
+
+        ret.push_back(account);
+    }
+
+    return ret;
+}
 
 UniValue z_listaddresses(const UniValue& params, bool fHelp)
 {
@@ -3470,7 +3558,8 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
         pwalletMain->GetSaplingPaymentAddresses(addresses);
         for (auto addr : addresses) {
             // Don't show Sapling receivers that are part of an account in the wallet.
-            if (pwalletMain->FindUnifiedAddressByReceiver(addr).has_value()) {
+            if (pwalletMain->FindUnifiedAddressByReceiver(addr).has_value()
+                    || pwalletMain->IsInternalRecipient(addr)) {
                 continue;
             }
             if (fIncludeWatchonly || pwalletMain->HaveSaplingSpendingKeyForAddress(addr)) {
@@ -3507,10 +3596,6 @@ UniValue z_listunifiedreceivers(const UniValue& params, bool fHelp)
             + HelpExampleCli("z_listunifiedreceivers", "")
             + HelpExampleRpc("z_listunifiedreceivers", "")
         );
-
-    if (!fExperimentalOrchardWallet) {
-        throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
-    }
 
     KeyIO keyIO(Params());
     auto decoded = keyIO.DecodePaymentAddress(params[0].get_str());
@@ -3635,21 +3720,24 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "1. \"address\"      (string) The shielded address.\n"
             "2. minconf        (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "\nResult (output indices for only one value pool will be present):\n"
-            "{\n"
-            "  \"pool\": \"pool\"                (string) one of (\"transparent\", \"sprout\", \"sapling\", \"orchard\")\n"
-            "  \"txid\": \"txid\",               (string) the transaction id\n"
-            "  \"amount\": xxxxx,              (numeric) the amount of value in the note\n"
-            "  \"amountZat\" : xxxx            (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
-            "  \"memo\": xxxxx,                (string) hexadecimal string representation of memo field\n"
-            "  \"confirmations\" : n,          (numeric) the number of confirmations\n"
-            "  \"blockheight\": n,             (numeric) The block height containing the transaction\n"
-            "  \"blockindex\": n,              (numeric) The block index containing the transaction.\n"
-            "  \"blocktime\": xxx,             (numeric) The transaction time in seconds since epoch (midnight Jan 1 1970 GMT).\n"
-            "  \"jsindex\" (sprout) : n,       (numeric) the joinsplit index\n"
-            "  \"jsoutindex\" (sprout) : n,    (numeric) the output index of the joinsplit\n"
-            "  \"outindex\" (transparent, sapling, orchard) : n, (numeric) the output index for transparent and Sapling outputs, or the action index for Orchard\n"
-            "  \"change\": true|false,         (boolean) true if the output was received to a change address\n"
-            "}\n"
+            "[\n"
+            "  {\n"
+            "    \"pool\": \"pool\"                (string) one of (\"transparent\", \"sprout\", \"sapling\", \"orchard\")\n"
+            "    \"txid\": \"txid\",               (string) the transaction id\n"
+            "    \"amount\": xxxxx,              (numeric) the amount of value in the note\n"
+            "    \"amountZat\" : xxxx            (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
+            "    \"memo\": xxxxx,                (string) hexadecimal string representation of memo field\n"
+            "    \"confirmations\" : n,          (numeric) the number of confirmations\n"
+            "    \"blockheight\": n,             (numeric) The block height containing the transaction\n"
+            "    \"blockindex\": n,              (numeric) The block index containing the transaction.\n"
+            "    \"blocktime\": xxx,             (numeric) The transaction time in seconds since epoch (midnight Jan 1 1970 GMT).\n"
+            "    \"jsindex\" (sprout) : n,       (numeric) the joinsplit index\n"
+            "    \"jsoutindex\" (sprout) : n,    (numeric) the output index of the joinsplit\n"
+            "    \"outindex\" (sapling, orchard) : n, (numeric) the Sapling output index, or the Orchard action index\n"
+            "    \"change\": true|false,         (boolean) true if the output was received to a change address\n"
+            "  },\n"
+            "...\n"
+            "]\n"
             "\nExamples:\n"
             + HelpExampleCli("z_listreceivedbyaddress", "\"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
             + HelpExampleRpc("z_listreceivedbyaddress", "\"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
@@ -3771,6 +3859,35 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         }
     };
 
+    auto push_orchard_result = [&](const libzcash::OrchardRawAddress &addr) -> void {
+        bool hasSpendingKey = pwalletMain->HaveOrchardSpendingKeyForAddress(addr);
+
+        for (const OrchardNoteMetadata& entry: orchardEntries) {
+            auto op = entry.GetOutPoint();
+
+            UniValue obj(UniValue::VOBJ);
+            obj.pushKV("pool", "orchard");
+            obj.pushKV("txid", op.hash.ToString());
+            obj.pushKV("amount", ValueFromAmount(entry.GetNoteValue()));
+            obj.pushKV("amountZat", CAmount(entry.GetNoteValue()));
+            obj.pushKV("memo", HexStr(entry.GetMemo()));
+            obj.pushKV("outindex", (int)op.n);
+            obj.pushKV("confirmations", entry.GetConfirmations());
+
+            txblock BlockData(op.hash);
+            obj.pushKV("blockheight", BlockData.height);
+            obj.pushKV("blockindex", BlockData.index);
+            obj.pushKV("blocktime", BlockData.time);
+
+            if (hasSpendingKey) {
+                bool isInternal = pwalletMain->IsInternalRecipient(addr);
+                obj.pushKV("change", isInternal);
+            }
+
+            result.push_back(obj);
+        }
+    };
+
     std::visit(match {
         [&](const CKeyID& addr) { push_transparent_result(addr); },
         [&](const CScriptID& addr) { push_transparent_result(addr); },
@@ -3820,7 +3937,10 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                         CTxDestination dest = addr;
                         push_transparent_result(dest);
                     },
-                    [&](const auto& other) { } // TODO orchard
+                    [&](const libzcash::OrchardRawAddress& addr) {
+                        push_orchard_result(addr);
+                    },
+                    [&](const UnknownReceiver& unknown) {}
 
                 }, receiver);
             }
@@ -3964,10 +4084,6 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_getbalanceforviewingkey", "\"myfvk\", 5")
         );
 
-    if (!fExperimentalOrchardWallet) {
-        throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
-    }
-
     KeyIO keyIO(Params());
     auto decoded = keyIO.DecodeViewingKey(params[0].get_str());
     if (!decoded.has_value()) {
@@ -4074,10 +4190,6 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
             "\nAs a JSON RPC call\n"
             + HelpExampleRpc("z_getbalanceforaccount", "4 5")
         );
-
-    if (!fExperimentalOrchardWallet) {
-        throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Error: the Orchard wallet experimental extensions are disabled.");
-    }
 
     int64_t accountInt = params[0].get_int64();
     if (accountInt < 0 || accountInt >= ZCASH_LEGACY_ACCOUNT) {
@@ -4497,10 +4609,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         auto noteValue = orchardActionSpend.GetNoteValue();
 
         std::optional<std::string> addrStr;
-        if (!pwalletMain->IsInternalRecipient(receivedAt)) {
-            auto ua = pwalletMain->FindUnifiedAddressByReceiver(receivedAt);
-            assert(ua.has_value());
-            addrStr = keyIO.EncodePaymentAddress(ua.value());
+        auto addr = pwalletMain->GetPaymentAddressForRecipient(txid, receivedAt);
+        if (addr.second != RecipientType::WalletInternalAddress) {
+            addrStr = keyIO.EncodePaymentAddress(addr.first);
         }
 
         UniValue entry(UniValue::VOBJ);
@@ -6056,6 +6167,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_listoperationids",       &z_listoperationids,       true  },
     { "wallet",             "z_getnewaddress",          &z_getnewaddress,          true  },
     { "wallet",             "z_getnewaccount",          &z_getnewaccount,          true  },
+    { "wallet",             "z_listaccounts",           &z_listaccounts,           true  },
     { "wallet",             "z_listaddresses",          &z_listaddresses,          true  },
     { "wallet",             "z_listunifiedreceivers",   &z_listunifiedreceivers,   true  },
     { "wallet",             "z_getaddressforaccount",   &z_getaddressforaccount,   true  },

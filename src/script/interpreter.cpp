@@ -1128,8 +1128,32 @@ uint256 GetShieldedOutputsHash(const CTransaction& txTo) {
 
 } // anon namespace
 
-PrecomputedTransactionData::PrecomputedTransactionData(const CTransaction& txTo) :
+PrecomputedTransactionData::PrecomputedTransactionData(
+    const CTransaction& txTo,
+    const std::vector<CTxOut>& allPrevOutputs) :
     preTx(nullptr, zcash_transaction_precomputed_free)
+{
+    CDataStream sAllPrevOutputs(SER_NETWORK, PROTOCOL_VERSION);
+    sAllPrevOutputs << allPrevOutputs;
+    SetPrecomputed(
+        txTo,
+        reinterpret_cast<const unsigned char*>(sAllPrevOutputs.data()),
+        sAllPrevOutputs.size());
+}
+
+PrecomputedTransactionData::PrecomputedTransactionData(
+    const CTransaction& txTo,
+    const unsigned char* allPrevOutputs,
+    size_t allPrevOutputsLen) :
+    preTx(nullptr, zcash_transaction_precomputed_free)
+{
+    SetPrecomputed(txTo, allPrevOutputs, allPrevOutputsLen);
+}
+
+void PrecomputedTransactionData::SetPrecomputed(
+    const CTransaction& txTo,
+    const unsigned char* allPrevOutputs,
+    size_t allPrevOutputsLen)
 {
     bool isOverwinterV3 =
         txTo.fOverwintered &&
@@ -1153,7 +1177,10 @@ PrecomputedTransactionData::PrecomputedTransactionData(const CTransaction& txTo)
         ss << txTo;
         preTx.reset(zcash_transaction_precomputed_init(
             reinterpret_cast<const unsigned char*>(ss.data()),
-            ss.size()));
+            ss.size(), allPrevOutputs, allPrevOutputsLen));
+        if (preTx == nullptr) {
+            throw std::ios_base::failure("Invalid arguments to PrecomputedTransactionData");
+        }
     }
 }
 
@@ -1179,7 +1206,7 @@ uint256 SignatureHash(
     int nHashType,
     const CAmount& amount,
     uint32_t consensusBranchId,
-    const PrecomputedTransactionData* cache)
+    const PrecomputedTransactionData& txdata)
 {
     if (nIn >= txTo.vin.size() && nIn != NOT_AN_INPUT) {
         //  nIn out of range
@@ -1189,39 +1216,61 @@ uint256 SignatureHash(
     auto sigversion = SignatureHashVersion(txTo);
 
     if (sigversion == SIGVERSION_ZIP244) {
-        // The consensusBranchId parameter is ignored; we use the value stored
-        // in the transaction itself.
-        if (nIn == NOT_AN_INPUT) {
+        // ZIP 244, S.2: transparent_sig_digest
+        //
+        // If we are producing a hash for either a coinbase transaction, or a
+        // non-coinbase transaction that has no transparent inputs, the value of
+        // transparent_sig_digest is identical to the value specified in section
+        // T.2.
+        //
+        // https://zips.z.cash/zip-0244#s-2-transparent-sig-digest
+        if (txTo.IsCoinBase() || txTo.vin.empty()) {
+            // This situation only applies to shielded signatures.
+            assert(nIn == NOT_AN_INPUT);
+            assert(nHashType == SIGHASH_ALL);
             // The signature digest is just the txid! No need to cross the FFI.
             return txTo.GetHash();
         } else {
-            CDataStream sScriptCode(SER_NETWORK, PROTOCOL_VERSION);
-            sScriptCode << *(CScriptBase*)(&scriptCode);
-
-            if (cache) {
-                uint256 hash;
-                zcash_transaction_transparent_signature_digest(
-                    cache->preTx.get(),
-                    nHashType,
-                    nIn,
-                    reinterpret_cast<const unsigned char*>(sScriptCode.data()),
-                    sScriptCode.size(),
-                    amount,
-                    hash.begin());
-                return hash;
-            } else {
-                PrecomputedTransactionData local(txTo);
-                uint256 hash;
-                zcash_transaction_transparent_signature_digest(
-                    local.preTx.get(),
-                    nHashType,
-                    nIn,
-                    reinterpret_cast<const unsigned char*>(sScriptCode.data()),
-                    sScriptCode.size(),
-                    amount,
-                    hash.begin());
-                return hash;
+            // S.2a: hash_type
+            //
+            // The following restrictions apply, which cause validation failure
+            // if violated:
+            // - Using any undefined hash_type (not 0x01, 0x02, 0x03, 0x81,
+            //   0x82, or 0x83).
+            // - Using SIGHASH_SINGLE without a "corresponding output" (an
+            //   output with the same index as the input being verified).
+            switch (nHashType) {
+            case SIGHASH_SINGLE:
+            case SIGHASH_ANYONECANPAY | SIGHASH_SINGLE:
+                if (nIn >= txTo.vout.size()) {
+                    throw std::logic_error(
+                        "ZIP 244: Used SIGHASH_SINGLE without a corresponding output");
+                }
+            case SIGHASH_ALL:
+            case SIGHASH_NONE:
+            case SIGHASH_ANYONECANPAY | SIGHASH_ALL:
+            case SIGHASH_ANYONECANPAY | SIGHASH_NONE:
+                break;
+            default:
+                throw std::logic_error("ZIP 244: Used undefined hash_type");
             }
+
+            // The amount parameter is ignored; we extract it from allPrevOutputs.
+            // - Note to future developers: if we ever replace the C++ logic for
+            //   pre-v5 transactions with Rust logic, make sure signrawtransaction
+            //   is updated to know about it!
+            // The consensusBranchId parameter is ignored; we use the value stored
+            // in the transaction itself.
+            uint256 hash;
+            if (!zcash_transaction_zip244_signature_digest(
+                txdata.preTx.get(),
+                nHashType,
+                nIn,
+                hash.begin()))
+            {
+                throw std::logic_error("We should not reach here.");
+            }
+            return hash;
         }
     } else if (sigversion == SIGVERSION_OVERWINTER || sigversion == SIGVERSION_SAPLING) {
         uint256 hashPrevouts;
@@ -1232,15 +1281,15 @@ uint256 SignatureHash(
         uint256 hashShieldedOutputs;
 
         if (!(nHashType & SIGHASH_ANYONECANPAY)) {
-            hashPrevouts = cache ? cache->hashPrevouts : GetPrevoutHash(txTo);
+            hashPrevouts = txdata.hashPrevouts;
         }
 
         if (!(nHashType & SIGHASH_ANYONECANPAY) && (nHashType & 0x1f) != SIGHASH_SINGLE && (nHashType & 0x1f) != SIGHASH_NONE) {
-            hashSequence = cache ? cache->hashSequence : GetSequenceHash(txTo);
+            hashSequence = txdata.hashSequence;
         }
 
         if ((nHashType & 0x1f) != SIGHASH_SINGLE && (nHashType & 0x1f) != SIGHASH_NONE) {
-            hashOutputs = cache ? cache->hashOutputs : GetOutputsHash(txTo);
+            hashOutputs = txdata.hashOutputs;
         } else if ((nHashType & 0x1f) == SIGHASH_SINGLE && nIn < txTo.vout.size()) {
             CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_OUTPUTS_HASH_PERSONALIZATION);
             ss << txTo.vout[nIn];
@@ -1248,15 +1297,15 @@ uint256 SignatureHash(
         }
 
         if (!txTo.vJoinSplit.empty()) {
-            hashJoinSplits = cache ? cache->hashJoinSplits : GetJoinSplitsHash(txTo);
+            hashJoinSplits = txdata.hashJoinSplits;
         }
 
         if (!txTo.vShieldedSpend.empty()) {
-            hashShieldedSpends = cache ? cache->hashShieldedSpends : GetShieldedSpendsHash(txTo);
+            hashShieldedSpends = txdata.hashShieldedSpends;
         }
 
         if (!txTo.vShieldedOutput.empty()) {
-            hashShieldedOutputs = cache ? cache->hashShieldedOutputs : GetShieldedOutputsHash(txTo);
+            hashShieldedOutputs = txdata.hashShieldedOutputs;
         }
 
         uint32_t leConsensusBranchId = htole32(consensusBranchId);

@@ -66,7 +66,7 @@ static const unsigned int MAX_REORG_LENGTH = COINBASE_MATURITY - 1;
 static const bool DEFAULT_WHITELISTRELAY = true;
 /** Default for DEFAULT_WHITELISTFORCERELAY. */
 static const bool DEFAULT_WHITELISTFORCERELAY = true;
-/** Default for -minrelaytxfee, minimum relay fee for transactions */
+/** Default for -minrelaytxfee, minimum relay fee for transactions in zatoshis/kB */
 static const unsigned int DEFAULT_MIN_RELAY_TX_FEE = 100;
 //! -maxtxfee default
 static const CAmount DEFAULT_TRANSACTION_MAXFEE = 0.1 * COIN;
@@ -372,6 +372,37 @@ bool ContextualCheckInputs(const CTransaction& tx, CValidationState &state, cons
                            const Consensus::Params& consensusParams, uint32_t consensusBranchId,
                            std::vector<CScriptCheck> *pvChecks = NULL);
 
+/**
+ * Check whether all shielded inputs of this transaction are valid.
+ *
+ * This checks that:
+ * - The anchors in the transaction exist in the given view.
+ * - The nullifiers in the transaction do not exist in the given view.
+ * - The signatures for the transaction's shielded components are valid.
+ *
+ * This also currently checks the Sapling proofs, due to the way the Rust verification
+ * code is written. Sprout and Orchard proofs are currently checked in CheckTransaction().
+ * Once we have batch proof validation implemented, these will all be accumulated in
+ * CheckTransaction().
+ *
+ * To skip checking signatures, use `Consensus::CheckTxShieldedInputs` instead.
+ *
+ * This does not modify the view to add the nullifiers to the spent set.
+ *
+ * The `isInitBlockDownload` argument is a function parameter to assist with testing.
+ */
+bool ContextualCheckShieldedInputs(
+        const CTransaction& tx,
+        const PrecomputedTransactionData& txdata,
+        CValidationState &state,
+        const CCoinsViewCache &view,
+        orchard::AuthValidator& orchardAuth,
+        const Consensus::Params& consensus,
+        uint32_t consensusBranchId,
+        bool nu5Active,
+        bool isMined,
+        bool (*isInitBlockDownload)(const Consensus::Params&) = IsInitialBlockDownload);
+
 /** Check a transaction contextually against a set of consensus rules */
 bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
                                 const CChainParams& chainparams, int nHeight, bool isMined,
@@ -384,10 +415,26 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);
 
 /** Context-independent validity checks */
 bool CheckTransaction(const CTransaction& tx, CValidationState& state,
-                      ProofVerifier& verifier, orchard::AuthValidator& orchardAuth);
+                      ProofVerifier& verifier);
 bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidationState &state);
 
 namespace Consensus {
+
+/**
+ * Check whether all shielded inputs of this transaction are valid.
+ *
+ * This checks that:
+ * - The anchors in the transaction exist in the given view.
+ * - The nullifiers in the transaction do not exist in the given view.
+ *
+ * This does not modify the view to add the nullifiers to the spent set.
+ * This does not check proofs or signatures.
+ */
+bool CheckTxShieldedInputs(
+    const CTransaction& tx,
+    CValidationState& state,
+    const CCoinsViewCache& view,
+    int dosLevel);
 
 /**
  * Check whether all inputs of this transaction are valid (no double spends and amounts)
@@ -440,6 +487,8 @@ private:
     bool cacheStore;
     uint32_t consensusBranchId;
     ScriptError error;
+    // We store a pointer instead of a reference here, to allow it to be null for
+    // performance reasons (enabling fast swaps in CCheckQueue::Loop).
     PrecomputedTransactionData *txdata;
 
 public:
@@ -490,7 +539,6 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state,
 bool CheckBlock(const CBlock& block, CValidationState& state,
                 const CChainParams& chainparams,
                 ProofVerifier& verifier,
-                orchard::AuthValidator& orchardAuth,
                 bool fCheckPOW,
                 bool fCheckMerkleRoot,
                 bool fCheckTransactions);

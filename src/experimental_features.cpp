@@ -11,7 +11,6 @@ bool fExperimentalDeveloperSetPoolSizeZero = false;
 bool fExperimentalPaymentDisclosure = false;
 bool fExperimentalInsightExplorer = false;
 bool fExperimentalLightWalletd = false;
-bool fExperimentalOrchardWallet = false;
 
 std::optional<std::string> InitExperimentalMode()
 {
@@ -21,7 +20,6 @@ std::optional<std::string> InitExperimentalMode()
     fExperimentalPaymentDisclosure = GetBoolArg("-paymentdisclosure", false);
     fExperimentalInsightExplorer = GetBoolArg("-insightexplorer", false);
     fExperimentalLightWalletd  = GetBoolArg("-lightwalletd", false);
-    fExperimentalOrchardWallet = GetBoolArg("-orchardwallet", false);
 
     // Fail if user has set experimental options without the global flag
     if (!fExperimentalMode) {
@@ -35,8 +33,6 @@ std::optional<std::string> InitExperimentalMode()
             return _("Insight explorer requires -experimentalfeatures.");
         } else if (fExperimentalLightWalletd) {
             return _("Light Walletd requires -experimentalfeatures.");
-        } else if (fExperimentalOrchardWallet) {
-            return _("Orchard-enabled wallet requires -experimentalfeatures.");
         }
     }
     return std::nullopt;
@@ -55,8 +51,6 @@ std::vector<std::string> GetExperimentalFeatures()
         experimentalfeatures.push_back("insightexplorer");
     if (fExperimentalLightWalletd)
         experimentalfeatures.push_back("lightwalletd");
-    if (fExperimentalOrchardWallet)
-        experimentalfeatures.push_back("orchardwallet");
 
     return experimentalfeatures;
 }

@@ -1044,7 +1044,6 @@ void CWallet::LoadRecipientMapping(const uint256& txid, const RecipientMapping& 
 bool CWallet::LoadCaches()
 {
     AssertLockHeld(cs_wallet);
-    AssertLockHeld(cs_main);
 
     auto seed = GetMnemonicSeed();
 
@@ -1104,13 +1103,7 @@ bool CWallet::LoadCaches()
                             auto orchardFvk = ufvk.value().GetOrchardKey();
                             auto orchardReceiver = addr.first.GetOrchardReceiver();
 
-                            if (orchardFvk.has_value() != orchardReceiver.has_value()) {
-                                LogPrintf("%s: Error: Orchard receiver in unified address is inconsistent with the unified viewing key.\n",
-                                    __func__);
-                                return false;
-                            }
-
-                            if (orchardFvk.has_value()) {
+                            if (orchardFvk.has_value() && orchardReceiver.has_value()) {
                                 if (!AddOrchardRawAddress(orchardFvk.value().ToIncomingViewingKey(), orchardReceiver.value())) {
                                     LogPrintf("%s: Error: Unable to add Orchard address -> IVK mapping.\n",
                                         __func__);
@@ -1144,22 +1137,23 @@ bool CWallet::LoadCaches()
     // the default address for each key was automatically added to the in-memory
     // keystore, but not persisted. Following the addition of unified addresses,
     // all addresses must be written to the wallet database explicitly.
-    auto legacySeed = GetLegacyHDSeed();
-    if (legacySeed.has_value()) {
-        for (const auto& [saplingIvk, keyMeta] : mapSaplingZKeyMetadata) {
-            // This condition only applies for keys derived from the legacy seed
-            if (keyMeta.seedFp == legacySeed.value().Fingerprint()) {
-                SaplingExtendedFullViewingKey extfvk;
-                if (GetSaplingFullViewingKey(saplingIvk, extfvk)) {
-                    auto defaultAddress = extfvk.DefaultAddress();
-                    if (!HaveSaplingIncomingViewingKey(defaultAddress)) {
-                        // restore the address to the keystore and persist it so that
-                        // the database state is consistent.
-                        if (!AddSaplingPaymentAddress(saplingIvk, defaultAddress)) {
-                            LogPrintf("%s: Error: Failed to write legacy Sapling payment address to the wallet database.\n",
-                                __func__);
-                            return false;
-                        }
+    auto mnemonicSeed = GetMnemonicSeed();
+    for (const auto& [saplingIvk, keyMeta] : mapSaplingZKeyMetadata) {
+        // This condition only applies for keys derived from the legacy seed
+        // or from imported keys.
+        if (!mnemonicSeed.has_value() || keyMeta.seedFp != mnemonicSeed.value().Fingerprint()) {
+            SaplingExtendedFullViewingKey extfvk;
+            if (GetSaplingFullViewingKey(saplingIvk, extfvk)) {
+                // only add the association with the default address if it
+                // does not already exist
+                auto defaultAddress = extfvk.DefaultAddress();
+                if (!HaveSaplingIncomingViewingKey(defaultAddress)) {
+                    // restore the address to the keystore and persist it so that
+                    // the database state is consistent.
+                    if (!AddSaplingPaymentAddress(saplingIvk, defaultAddress)) {
+                        LogPrintf("%s: Error: Failed to write legacy Sapling payment address to the wallet database.\n",
+                            __func__);
+                        return false;
                     }
                 }
             }
@@ -1169,12 +1163,7 @@ bool CWallet::LoadCaches()
     // Restore decrypted Orchard notes.
     for (const auto& [_, walletTx] : mapWallet) {
         if (!walletTx.orchardTxMeta.empty()) {
-            const CBlockIndex* pTxIndex;
-            std::optional<int> blockHeight;
-            if (walletTx.GetDepthInMainChain(pTxIndex) > 0) {
-                blockHeight = pTxIndex->nHeight;
-            }
-            if (!orchardWallet.LoadWalletTx(blockHeight, walletTx, walletTx.orchardTxMeta)) {
+            if (!orchardWallet.LoadWalletTx(walletTx, walletTx.orchardTxMeta)) {
                 LogPrintf("%s: Error: Failed to decrypt previously decrypted notes for txid %s.\n",
                     __func__, walletTx.GetHash().GetHex());
                 return false;
@@ -1407,14 +1396,14 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
 
 void CWallet::ChainTipAdded(const CBlockIndex *pindex,
                             const CBlock *pblock,
-                            SproutMerkleTree sproutTree,
-                            SaplingMerkleTree saplingTree,
+                            MerkleFrontiers frontiers,
                             bool performOrchardWalletUpdates)
 {
+    const auto chainParams = Params();
     IncrementNoteWitnesses(
-            Params().GetConsensus(),
+            chainParams.GetConsensus(),
             pindex, pblock,
-            sproutTree, saplingTree, performOrchardWalletUpdates);
+            frontiers, performOrchardWalletUpdates);
     UpdateSaplingNullifierNoteMapForBlock(pblock);
 
     // SetBestChain() can be expensive for large wallets, so do only
@@ -1426,7 +1415,9 @@ void CWallet::ChainTipAdded(const CBlockIndex *pindex,
         nLastSetChain = nNow;
     }
     if (++nSetChainUpdates >= WITNESS_WRITE_UPDATES ||
-            nLastSetChain + (int64_t)WITNESS_WRITE_INTERVAL * 1000000 < nNow) {
+        nLastSetChain + (int64_t)WITNESS_WRITE_INTERVAL * 1000000 < nNow ||
+        (chainParams.NetworkIDString() == CBaseChainParams::REGTEST && mapArgs.count("-regtestwalletsetbestchaineveryblock")))
+    {
         nLastSetChain = nNow;
         nSetChainUpdates = 0;
         CBlockLocator loc;
@@ -1444,11 +1435,11 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
                        const CBlock *pblock,
                        // If this is None, it indicates a rollback and we will decrement the
                        // witnesses / rewind the tree
-                       std::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added)
+                       std::optional<MerkleFrontiers> added)
 {
     const auto& consensus = Params().GetConsensus();
     if (added.has_value()) {
-        ChainTipAdded(pindex, pblock, added->first, added->second, true);
+        ChainTipAdded(pindex, pblock, added.value(), true);
         // Prevent migration transactions from being created when node is syncing after launch,
         // and also when node wakes up from suspension/hibernation and incoming blocks are old.
         if (!IsInitialBlockDownload(consensus) &&
@@ -1511,6 +1502,22 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
 {
     CWalletDB walletdb(strWalletFile);
     SetBestChainINTERNAL(walletdb, loc);
+}
+
+std::optional<uint256> CWallet::GetPersistedBestBlock()
+{
+    AssertLockHeld(cs_wallet);
+
+    CWalletDB walletdb(strWalletFile);
+    CBlockLocator locator;
+    if (walletdb.ReadBestBlock(locator)) {
+        if (!locator.vHave.empty()) {
+            return locator.vHave[0];
+        }
+    }
+
+    // The wallet has never persisted a best block to disk.
+    return std::nullopt;
 }
 
 std::set<std::pair<libzcash::SproutPaymentAddress, uint256>> CWallet::GetSproutNullifiers(
@@ -1591,6 +1598,11 @@ bool CWallet::IsNoteSaplingChange(
         const libzcash::SaplingPaymentAddress& address,
         const SaplingOutPoint & op)
 {
+    // Check against the wallet's change address for the associated unified account.
+    if (this->IsInternalRecipient(address)) {
+        return true;
+    }
+
     // A Note is marked as "change" if the address that received it
     // also spent Notes in the same transaction. This will catch,
     // for instance:
@@ -1599,8 +1611,6 @@ bool CWallet::IsNoteSaplingChange(
     // - Notes created by consolidation transactions (e.g. using
     //   z_mergetoaddress).
     // - Notes sent from one address to itself.
-    // FIXME: This also needs to check against the wallet's change address
-    // for the associated unified account when we add UA support
     for (const SpendDescription &spend : mapWallet[op.hash].vShieldedSpend) {
         if (nullifierSet.count(std::make_pair(address, spend.nullifier))) {
             return true;
@@ -2374,8 +2384,14 @@ SpendableInputs CWallet::FindSpendableInputs(
                 }
 
                 auto mit = mapWallet.find(noteMeta.GetOutPoint().hash);
-                auto confirmations = mit->second.GetDepthInMainChain();
-                if (mit != mapWallet.end() && confirmations >= minDepth) {
+
+                // We should never get an outpoint from the Orchard wallet where
+                // the transaction does not exist in the main wallet.
+                assert(mit != mapWallet.end());
+
+                int confirmations = mit->second.GetDepthInMainChain();
+                if (confirmations < 0) continue;
+                if (confirmations >= minDepth) {
                     noteMeta.SetConfirmations(confirmations);
                     unspent.orchardNoteMetadata.push_back(noteMeta);
                 }
@@ -2497,7 +2513,7 @@ void CWallet::AddToSpends(const uint256& wtxid)
     }
 
     // for Orchard, the effects of this operation are performed by
-    // AddNotesIfInvolvingMe and LoadUnifiedCaches
+    // AddNotesIfInvolvingMe and LoadCaches
 }
 
 void CWallet::ClearNoteWitnessCache()
@@ -2606,8 +2622,7 @@ void CWallet::IncrementNoteWitnesses(
         const Consensus::Params& consensus,
         const CBlockIndex* pindex,
         const CBlock* pblockIn,
-        SproutMerkleTree& sproutTree,
-        SaplingMerkleTree& saplingTree,
+        MerkleFrontiers& frontiers,
         bool performOrchardWalletUpdates)
 {
     LOCK(cs_wallet);
@@ -2617,6 +2632,9 @@ void CWallet::IncrementNoteWitnesses(
     }
 
     if (performOrchardWalletUpdates && consensus.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+        if (!orchardWallet.GetLastCheckpointHeight().has_value()) {
+            orchardWallet.InitNoteCommitmentTree(frontiers.orchard);
+        }
         assert(orchardWallet.CheckpointNoteCommitmentTree(pindex->nHeight));
     }
 
@@ -2639,7 +2657,7 @@ void CWallet::IncrementNoteWitnesses(
             const JSDescription& jsdesc = tx.vJoinSplit[i];
             for (uint8_t j = 0; j < jsdesc.commitments.size(); j++) {
                 const uint256& note_commitment = jsdesc.commitments[j];
-                sproutTree.append(note_commitment);
+                frontiers.sprout.append(note_commitment);
 
                 // Increment existing witnesses
                 for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -2649,14 +2667,14 @@ void CWallet::IncrementNoteWitnesses(
                 // If this is our note, witness it
                 if (txIsOurs) {
                     JSOutPoint jsoutpt {hash, i, j};
-                    ::WitnessNoteIfMine(mapWallet[hash].mapSproutNoteData, pindex->nHeight, nWitnessCacheSize, jsoutpt, sproutTree.witness());
+                    ::WitnessNoteIfMine(mapWallet[hash].mapSproutNoteData, pindex->nHeight, nWitnessCacheSize, jsoutpt, frontiers.sprout.witness());
                 }
             }
         }
         // Sapling
         for (uint32_t i = 0; i < tx.vShieldedOutput.size(); i++) {
             const uint256& note_commitment = tx.vShieldedOutput[i].cmu;
-            saplingTree.append(note_commitment);
+            frontiers.sapling.append(note_commitment);
 
             // Increment existing witnesses
             for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -2666,7 +2684,7 @@ void CWallet::IncrementNoteWitnesses(
             // If this is our note, witness it
             if (txIsOurs) {
                 SaplingOutPoint outPoint {hash, i};
-                ::WitnessNoteIfMine(mapWallet[hash].mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize, outPoint, saplingTree.witness());
+                ::WitnessNoteIfMine(mapWallet[hash].mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize, outPoint, frontiers.sapling.witness());
             }
         }
     }
@@ -2731,23 +2749,35 @@ void DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t n
 void CWallet::DecrementNoteWitnesses(const Consensus::Params& consensus, const CBlockIndex* pindex)
 {
     LOCK(cs_wallet);
+    bool hasSprout = false;
+    bool hasSapling = false;
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+        hasSprout |= !wtxItem.second.mapSproutNoteData.empty();
         ::DecrementNoteWitnesses(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize);
+        hasSapling |= !wtxItem.second.mapSaplingNoteData.empty();
         ::DecrementNoteWitnesses(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize);
     }
-    nWitnessCacheSize -= 1;
-    // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
-    assert(nWitnessCacheSize > 0);
+    if (nWitnessCacheSize > 0) {
+        nWitnessCacheSize -= 1;
+    }
+    // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302);
+    // however, if we have never observed Sprout or Sapling notes, this is okay
+    // because then the witness cache size can remain at 0.
+    assert(!(hasSprout || hasSapling) || nWitnessCacheSize > 0);
 
     // ORCHARD: rewind to the last checkpoint.
     if (consensus.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
         // pindex->nHeight is the height of the block being removed, so we rewind
         // to the previous block height
-        uint32_t blocksRewound{0};
+        uint32_t uResultHeight{0};
         assert(pindex->nHeight >= 1);
-        assert(orchardWallet.Rewind(pindex->nHeight - 1, blocksRewound));
-        assert(blocksRewound == 1);
-        if (consensus.NetworkUpgradeActive(pindex->nHeight - 1, Consensus::UPGRADE_NU5)) {
+        assert(orchardWallet.Rewind(pindex->nHeight - 1, uResultHeight));
+        assert(uResultHeight == pindex->nHeight - 1);
+        // If we have no checkpoints after the rewind, then the latest anchor of the
+        // wallet's Orchard note commitment tree will be in an indeterminate state and it
+        // will be overwritten in the next `IncrementNoteWitnesses` call, so we can skip
+        // the check against `hashFinalOrchardRoot`.
+        if (orchardWallet.GetLastCheckpointHeight().has_value()) {
             assert(pindex->pprev->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
         }
     }
@@ -4353,13 +4383,14 @@ int CWallet::ScanForWalletTransactions(
             // since we do not support Orchard key import.
             if (isInitScan) {
                 int rewindHeight = std::max(nu5_height.value(), pindex->nHeight - 1);
-                uint32_t blocksRewound{0};
                 LogPrintf(
                         "CWallet::ScanForWalletTransactions(): Rewinding Orchard wallet to height %d; current is %d",
                         rewindHeight,
                         orchardWallet.GetLastCheckpointHeight().value());
-                if (orchardWallet.Rewind(rewindHeight, blocksRewound)) {
+                uint32_t uResultHeight{0};
+                if (orchardWallet.Rewind(rewindHeight, uResultHeight)) {
                     // rewind was successful or a no-op, so perform Orchard wallet updates
+                    assert(uResultHeight == rewindHeight);
                     performOrchardWalletUpdates = true;
                 } else {
                     // Orchard witnesses will not be able to be correctly updated, because we
@@ -4370,7 +4401,7 @@ int CWallet::ScanForWalletTransactions(
                     throw std::runtime_error("CWallet::ScanForWalletTransactions(): Orchard wallet is out of sync. Please restart your node with -rescan.");
                 }
             }
-        } else if (isInitScan && pindex->nHeight < nu5_height) {
+        } else if (isInitScan && pindexStart->nHeight < nu5_height) {
             // If it's the initial scan and we're starting below the nu5 activation
             // height, we're effectively rescanning from genesis and so it's safe
             // to update the note commitment tree as we progress.
@@ -4395,18 +4426,20 @@ int CWallet::ScanForWalletTransactions(
                 }
             }
 
-            SproutMerkleTree sproutTree;
-            SaplingMerkleTree saplingTree;
+            MerkleFrontiers frontiers;
             // This should never fail: we should always be able to get the tree
             // state on the path to the tip of our chain
-            assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, sproutTree));
+            assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, frontiers.sprout));
             if (pindex->pprev) {
                 if (consensus.NetworkUpgradeActive(pindex->pprev->nHeight,  Consensus::UPGRADE_SAPLING)) {
-                    assert(pcoinsTip->GetSaplingAnchorAt(pindex->pprev->hashFinalSaplingRoot, saplingTree));
+                    assert(pcoinsTip->GetSaplingAnchorAt(pindex->pprev->hashFinalSaplingRoot, frontiers.sapling));
+                }
+                if (consensus.NetworkUpgradeActive(pindex->pprev->nHeight,  Consensus::UPGRADE_NU5)) {
+                    assert(pcoinsTip->GetOrchardAnchorAt(pindex->pprev->hashFinalOrchardRoot, frontiers.orchard));
                 }
             }
             // Increment note witness caches
-            ChainTipAdded(pindex, &block, sproutTree, saplingTree, performOrchardWalletUpdates);
+            ChainTipAdded(pindex, &block, frontiers, performOrchardWalletUpdates);
 
             pindex = chainActive.Next(pindex);
             if (GetTime() >= nNow + 60) {
@@ -5438,13 +5471,18 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 // Sign
                 int nIn = 0;
                 CTransaction txNewConst(txNew);
+                std::vector<CTxOut> allPrevOutputs;
+                for (const std::pair<const CWalletTx*, unsigned int>& coin : setCoins) {
+                    allPrevOutputs.push_back(coin.first->vout[coin.second]);
+                }
+                const PrecomputedTransactionData txdata(txNewConst, allPrevOutputs);
                 for (const std::pair<const CWalletTx*, unsigned int>& coin : setCoins)
                 {
                     bool signSuccess;
                     const CScript& scriptPubKey = coin.first->vout[coin.second].scriptPubKey;
                     SignatureData sigdata;
                     if (sign)
-                        signSuccess = ProduceSignature(TransactionSignatureCreator(this, &txNewConst, nIn, coin.first->vout[coin.second].nValue, SIGHASH_ALL), scriptPubKey, sigdata, consensusBranchId);
+                        signSuccess = ProduceSignature(TransactionSignatureCreator(this, &txNewConst, txdata, nIn, coin.first->vout[coin.second].nValue, SIGHASH_ALL), scriptPubKey, sigdata, consensusBranchId);
                     else
                         signSuccess = ProduceSignature(DummySignatureCreator(this), scriptPubKey, sigdata, consensusBranchId);
 
@@ -6680,7 +6718,7 @@ bool CWallet::HasSpendingKeys(const NoteFilter& addrSet) const {
     }
 
     for (const auto& addr : addrSet.GetOrchardAddresses()) {
-        if (!orchardWallet.GetSpendingKeyForAddress(addr).has_value()) {
+        if (!HaveOrchardSpendingKeyForAddress(addr)) {
             return false;
         }
     }
@@ -6688,6 +6726,10 @@ bool CWallet::HasSpendingKeys(const NoteFilter& addrSet) const {
     return true;
 }
 
+bool CWallet::HaveOrchardSpendingKeyForAddress(
+        const OrchardRawAddress &addr) const {
+    return orchardWallet.GetSpendingKeyForAddress(addr).has_value();
+}
 
 /**
  * Find notes in the wallet filtered by payment addresses, min depth, max depth,
@@ -6883,6 +6925,15 @@ std::optional<libzcash::AccountId> CWallet::GetUnifiedAccountId(const libzcash::
 
 std::optional<UnifiedAddress> CWallet::FindUnifiedAddressByReceiver(const Receiver& receiver) const {
     return std::visit(UnifiedAddressForReceiver(*this), receiver);
+}
+
+std::optional<libzcash::AccountId> CWallet::FindUnifiedAccountByReceiver(const Receiver& receiver) const {
+    auto ufvkMeta = GetUFVKMetadataForReceiver(receiver);
+    if (ufvkMeta.has_value()) {
+        return GetUnifiedAccountId(ufvkMeta.value().GetUFVKId());
+    } else {
+        return std::nullopt;
+    }
 }
 
 //

@@ -1343,7 +1343,7 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
         OrchardMerkleFrontier tree;
         if (pcoinsTip->GetOrchardAnchorAt(pindex->hashFinalOrchardRoot, tree)) {
             CDataStream s(SER_NETWORK, PROTOCOL_VERSION);
-            s << tree;
+            s << OrchardMerkleFrontierLegacySer(tree);
             orchard_commitments.pushKV("finalState", HexStr(s.begin(), s.end()));
         } else {
             // Set skipHash to the most recent block that has a finalState.

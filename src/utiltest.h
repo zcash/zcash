@@ -5,11 +5,35 @@
 #ifndef ZCASH_UTILTEST_H
 #define ZCASH_UTILTEST_H
 
+#include "coins.h"
 #include "key_io.h"
 #include "wallet/wallet.h"
 #include "zcash/Address.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
+
+// A fake chain state view where anchors and nullifiers are assumed to exist.
+class AssumeShieldedInputsExistAndAreSpendable : public CCoinsView {
+public:
+    AssumeShieldedInputsExistAndAreSpendable() {}
+
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
+        return true;
+    }
+
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
+        return true;
+    }
+
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
+        return true;
+    }
+
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
+        // Always return false so we treat every nullifier as being unspent.
+        return false;
+    }
+};
 
 // Sprout
 CWalletTx GetValidSproutReceive(const libzcash::SproutSpendingKey& sk,

@@ -70,12 +70,12 @@ void SyncWithWallets(const CTransaction &tx, const CBlock *pblock, const int nHe
 
 struct CachedBlockData {
     CBlockIndex *pindex;
-    std::pair<SproutMerkleTree, SaplingMerkleTree> oldTrees;
+    MerkleFrontiers oldTrees;
     std::list<CTransaction> txConflicted;
 
     CachedBlockData(
         CBlockIndex *pindex,
-        std::pair<SproutMerkleTree, SaplingMerkleTree> oldTrees,
+        MerkleFrontiers oldTrees,
         std::list<CTransaction> txConflicted):
         pindex(pindex), oldTrees(oldTrees), txConflicted(txConflicted) {}
 };
@@ -135,27 +135,40 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 
             // Iterate backwards over the connected blocks we need to notify.
             while (pindex && pindex != pindexFork) {
+                MerkleFrontiers oldFrontiers;
                 // Get the Sprout commitment tree as of the start of this block.
-                SproutMerkleTree oldSproutTree;
-                assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, oldSproutTree));
+                assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, oldFrontiers.sprout));
 
                 // Get the Sapling commitment tree as of the start of this block.
                 // We can get this from the `hashFinalSaplingRoot` of the last block
                 // However, this is only reliable if the last block was on or after
                 // the Sapling activation height. Otherwise, the last anchor was the
                 // empty root.
-                SaplingMerkleTree oldSaplingTree;
                 if (chainParams.GetConsensus().NetworkUpgradeActive(
                     pindex->pprev->nHeight, Consensus::UPGRADE_SAPLING)) {
                     assert(pcoinsTip->GetSaplingAnchorAt(
-                        pindex->pprev->hashFinalSaplingRoot, oldSaplingTree));
+                        pindex->pprev->hashFinalSaplingRoot, oldFrontiers.sapling));
                 } else {
-                    assert(pcoinsTip->GetSaplingAnchorAt(SaplingMerkleTree::empty_root(), oldSaplingTree));
+                    assert(pcoinsTip->GetSaplingAnchorAt(SaplingMerkleTree::empty_root(), oldFrontiers.sapling));
+                }
+
+                // Get the Orchard Merkle frontier as of the start of this block.
+                // We can get this from the `hashFinalOrchardRoot` of the last block
+                // However, this is only reliable if the last block was on or after
+                // the Orchard activation height. Otherwise, the last anchor was the
+                // empty root.
+                if (chainParams.GetConsensus().NetworkUpgradeActive(
+                    pindex->pprev->nHeight, Consensus::UPGRADE_NU5)) {
+                    assert(pcoinsTip->GetOrchardAnchorAt(
+                        pindex->pprev->hashFinalOrchardRoot, oldFrontiers.orchard));
+                } else {
+                    assert(pcoinsTip->GetOrchardAnchorAt(
+                        OrchardMerkleFrontier::empty_root(), oldFrontiers.orchard));
                 }
 
                 blockStack.emplace_back(
                     pindex,
-                    std::make_pair(oldSproutTree, oldSaplingTree),
+                    oldFrontiers,
                     recentlyConflicted.first.at(pindex));
 
                 pindex = pindex->pprev;
@@ -176,11 +189,14 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             // Read block from disk.
             CBlock block;
             if (!ReadBlockFromDisk(block, pindexLastTip, chainParams.GetConsensus())) {
-                LogPrintf("*** %s\n", "Failed to read block while notifying wallets of block disconnects");
+                LogPrintf(
+                        "*** %s: Failed to read block %s while notifying wallets of block disconnects",
+                        __func__, pindexLastTip->GetBlockHash().GetHex());
                 uiInterface.ThreadSafeMessageBox(
                     _("Error: A fatal internal error occurred, see debug.log for details"),
                     "", CClientUIInterface::MSG_ERROR);
                 StartShutdown();
+                return;
             }
 
             // Let wallets know transactions went from 1-confirmed to
@@ -207,11 +223,14 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             // Read block from disk.
             CBlock block;
             if (!ReadBlockFromDisk(block, blockData.pindex, chainParams.GetConsensus())) {
-                LogPrintf("*** %s\n", "Failed to read block while notifying wallets of block connects");
+                LogPrintf(
+                        "*** %s: Failed to read block %s while notifying wallets of block connects",
+                        __func__, blockData.pindex->GetBlockHash().GetHex());
                 uiInterface.ThreadSafeMessageBox(
                     _("Error: A fatal internal error occurred, see debug.log for details"),
                     "", CClientUIInterface::MSG_ERROR);
                 StartShutdown();
+                return;
             }
 
             // Tell wallet about transactions that went from mempool
