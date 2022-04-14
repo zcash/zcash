@@ -4,6 +4,9 @@ Notable changes
 Changes to Testnet NU5 Consensus Rules
 --------------------------------------
 
+NOTE: All testnet nodes that have been running on testnet above height 1,599,200 will need
+to upgrade to `v4.7.0` and then run with `-reindex` and `-rescan`.
+
 - In order to better support hardware wallets, transparent signature hash construction as
   defined in [ZIP 244](https://zips.z.cash/zip-0244) has been modified to include a hash
   of the serialization of the amounts of all outputs being spent, along with a hash of all
@@ -36,9 +39,8 @@ To support the aforementioned testnet consensus changes, the following changes a
 - The protocol version indicating NU5-aware testnet nodes is set to `170050`.
 - The testnet reactivation height for NU5 is set to **1,842,420**.
 
-Testnet nodes that upgrade to `zcashd v4.7.0` prior to block height `1,842,420` will follow
-the new testnet network upgrade. Testnet nodes that are running `zcashd v4.6.0-2` at that
-height will need to upgrade to `v4.7.0` and then run with `-reindex` and `-rescan`.
+As mentioned above, all testnet nodes that have been running on testnet above height
+1,599,200 will need to upgrade to `v4.7.0` and then run with `-reindex` and `-rescan`.
 
 Emergency Recovery Phrases
 --------------------------
