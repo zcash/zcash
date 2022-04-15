@@ -9,6 +9,7 @@
 #include "init.h"
 #include "key.h"
 #include "transaction_builder.h"
+#include "gtest/utils.h"
 #include "utiltest.h"
 
 #include <optional>

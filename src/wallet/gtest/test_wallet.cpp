@@ -9,6 +9,7 @@
 #include "primitives/block.h"
 #include "random.h"
 #include "transaction_builder.h"
+#include "gtest/utils.h"
 #include "utiltest.h"
 #include "wallet/wallet.h"
 #include "zcash/JoinSplit.hpp"
