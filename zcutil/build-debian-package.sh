@@ -40,6 +40,7 @@ chmod 0755 -R $BUILD_DIR/*
 #cp $SRC_DEB/prerm $BUILD_DIR/DEBIAN
 # Copy binaries
 cp $SRC_PATH/src/zcashd $DEB_BIN
+cp $SRC_PATH/src/zcashd-wallet-tool $DEB_BIN
 cp $SRC_PATH/src/zcash-cli $DEB_BIN
 cp $SRC_PATH/zcutil/fetch-params.sh $DEB_BIN/zcash-fetch-params
 # Copy docs
@@ -49,6 +50,7 @@ cp $SRC_DEB/copyright $DEB_DOC
 cp -r $SRC_DEB/examples $DEB_DOC
 # Copy manpages
 cp $SRC_DOC/man/zcashd.1 $DEB_MAN
+cp $SRC_DOC/man/zcashd-wallet-tool.1 $DEB_MAN
 cp $SRC_DOC/man/zcash-cli.1 $DEB_MAN
 cp $SRC_DOC/man/zcash-fetch-params.1 $DEB_MAN
 # Copy bash completion files
@@ -58,6 +60,7 @@ cp $SRC_PATH/contrib/zcash-cli.bash-completion $DEB_CMP/zcash-cli
 gzip --best -n $DEB_DOC/changelog
 gzip --best -n $DEB_DOC/changelog.Debian
 gzip --best -n $DEB_MAN/zcashd.1
+gzip --best -n $DEB_MAN/zcashd-wallet-tool.1
 gzip --best -n $DEB_MAN/zcash-cli.1
 gzip --best -n $DEB_MAN/zcash-fetch-params.1
 
