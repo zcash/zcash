@@ -135,7 +135,9 @@ pub fn main() {
     // Log to stderr, configured by the RUST_LOG environment variable.
     fmt()
         .with_writer(io::stderr)
-        .with_env_filter(EnvFilter::from_default_env())
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|err| EnvFilter::new("error")),
+        )
         .init();
 
     // Allow either Bitcoin-style or GNU-style arguments.
