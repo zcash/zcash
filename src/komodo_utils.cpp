@@ -1061,7 +1061,7 @@ uint32_t komodo_assetmagic(char *symbol,uint64_t supply,uint8_t *extraptr,int32_
 uint16_t komodo_assetport(uint32_t magic,int32_t extralen)
 {
     if ( magic == 0x8de4eef9 )
-        return(7770);
+        return(8880);
     else if ( extralen == 0 )
         return(8000 + (magic % 7777));
     else return(16000 + (magic % 49500));
@@ -1072,7 +1072,7 @@ uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp,uint8_t *extr
     if ( symbol == 0 || symbol[0] == 0 || strcmp("KMD",symbol) == 0 )
     {
         *magicp = 0x8de4eef9;
-        return(7770);
+        return(8880);
     }
     *magicp = komodo_assetmagic(symbol,supply,extraptr,extralen);
     return(komodo_assetport(*magicp,extralen));
@@ -1854,7 +1854,7 @@ void komodo_args(char *argv0)
     else
     {
         char fname[512],username[512],password[4096]; int32_t iter; FILE *fp;
-        ASSETCHAINS_P2PPORT = 7770;
+        ASSETCHAINS_P2PPORT = 8880;
         ASSETCHAINS_RPCPORT = 7771;
         for (iter=0; iter<2; iter++)
         {
