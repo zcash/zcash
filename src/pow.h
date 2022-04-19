@@ -40,6 +40,25 @@ unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
 /** Check whether the Equihash solution in a block header is valid */
 bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams&);
 
+/**
+ * @brief Check if given notaryid is allowed to mine a mindiff block in case of GAP
+ *
+ * @param notaryid  - notaryid to check
+ * @param blocktime - nTime field of upcoming (new) block
+ * @param threshold - tiptime + nMaxGAPAllowed (nTime of prev. block + Params().GetConsensus().nMaxFutureBlockTime + 1),
+ *                    i.e. minimum allowed time for the "gap fill" block
+ * @param delta     - time offset
+ *                    if blocktime >=
+ *                     - threshold + 0 * delta - [0] allowed
+ *                     - threshold + 1 * delta - [0][1] allowed
+ *                     - threshold + 2 * delta - [0][1][2] allowed
+ *                    etc.
+ * @param vPriorityList - priority list of notaries
+ * @return true  - notaryid is allowed to mine a block
+ * @return false - notaryid is NOT allowed to mine a block
+ */
+bool isSecondBlockAllowed(int32_t notaryid, uint32_t blocktime, uint32_t threshold, uint32_t delta, const std::vector<int32_t> &vPriorityList);
+
 /** Check whether a block hash satisfies the proof-of-work requirement specified by nBits */
 bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t height, const Consensus::Params& params);
 arith_uint256 GetBlockProof(const CBlockIndex& block);
