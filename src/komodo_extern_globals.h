@@ -49,7 +49,6 @@ extern int32_t NUM_PRICES;
 extern int32_t KOMODO_MININGTHREADS;
 extern int32_t STAKED_NOTARY_ID;
 extern int32_t USE_EXTERNAL_PUBKEY;
-extern int32_t KOMODO_CHOSEN_ONE;
 extern int32_t ASSETCHAINS_SEED;
 extern int32_t KOMODO_ON_DEMAND;
 extern int32_t KOMODO_EXTERNAL_NOTARIES;
