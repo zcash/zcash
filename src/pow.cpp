@@ -663,7 +663,6 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
 
                 const uint32_t nHeightAfterGAPSecondBlockAllowed = params.nAllowNotariesMineExtraBlockAfterStaleHeight.get();
                 const uint32_t nMaxGAPAllowed = params.nMaxFutureBlockTime + 1;
-                const uint32_t nPriorityRotateDelta = 20;
 
                 /*  in KMD chain after nHeightAfterGAPSecondBlockAllowed height we should allow
                     notary nodes to mine a second block if nMaxGAPAllowed since last block passed
@@ -709,7 +708,7 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
 
                         /* reconsider special2 if allowed */
                         if ((-1 == special2 || 1 == special2) &&
-                            isSecondBlockAllowed(notaryid, blocktime, tiptime + nMaxGAPAllowed, nPriorityRotateDelta, vPriorityList))
+                            isSecondBlockAllowed(notaryid, blocktime, tiptime + nMaxGAPAllowed, params.nHF22NotariesPriorityRotateDelta, vPriorityList))
                         {
                             special2 = 2;
                             LogPrint("hfnet", "%s[%d]: special2.%ld, notaryid.%ld, ht.%ld, hash.%s\n", __func__, __LINE__, special2, notaryid, height, blkHeader.GetHash().ToString());
@@ -717,7 +716,7 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
 
                         LogPrint("hfnet","%s[%d]: Allowed to mine: \n    [ ", __func__, __LINE__);
                         for (int i = 0; i < 64; i++) {
-                            if (isSecondBlockAllowed(i, blocktime, tiptime + nMaxGAPAllowed, nPriorityRotateDelta, vPriorityList))
+                            if (isSecondBlockAllowed(i, blocktime, tiptime + nMaxGAPAllowed, params.nHF22NotariesPriorityRotateDelta, vPriorityList))
                                 LogPrint("hfnet", "%d ", i);
                         }
                         LogPrint("hfnet", "]\n");

@@ -1399,7 +1399,6 @@ void static BitcoinMiner()
                     {
                         const uint32_t nHeightAfterGAPSecondBlockAllowed = params.nAllowNotariesMineExtraBlockAfterStaleHeight.get();
                         const uint32_t nMaxGAPAllowed = params.nMaxFutureBlockTime + 1;
-                        const uint32_t nPriorityRotateDelta = 20;
                         const uint32_t tiptime = pindexPrev->GetBlockTime();
 
                         if (Mining_height > nHeightAfterGAPSecondBlockAllowed)
@@ -1429,7 +1428,7 @@ void static BitcoinMiner()
                                     }
                                 }
 
-                                if (isSecondBlockAllowed(notaryid, blocktime, tiptime + nMaxGAPAllowed, nPriorityRotateDelta, vPriorityList))
+                                if (isSecondBlockAllowed(notaryid, blocktime, tiptime + nMaxGAPAllowed, params.nHF22NotariesPriorityRotateDelta, vPriorityList))
                                 {
                                     HASHTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                                     LogPrint("hfnet", "%s[%d]: notaryid.%ld, ht.%ld\n allowed to mine mindiff", __func__, __LINE__, notaryid, Mining_height);
