@@ -688,7 +688,8 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
                         /* build priority list */
                         std::vector<int32_t> vPriorityList(64);
                         // fill the priority list by notaries numbers, 0..63
-                        std::generate(vPriorityList.begin(), vPriorityList.end(), []{ static int id; return id++; });
+                        int id = 0;
+                        std::generate(vPriorityList.begin(), vPriorityList.end(), [&id] { return id++; }); // std::iota
                         // move the notaries participated in last 65 to the end of priority list
                         std::vector<int32_t>::iterator it;
                         for (size_t i = sizeof(mids)/sizeof(mids[0]) - 1; i > 0; --i) { // ! mids[0] is not included
