@@ -662,14 +662,13 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
             if (params.nAllowNotariesMineExtraBlockAfterStaleHeight != boost::none) {
 
                 const uint32_t nHeightAfterGAPSecondBlockAllowed = params.nAllowNotariesMineExtraBlockAfterStaleHeight.get();
-                const uint32_t nMaxGAPAllowed = Params().GetConsensus().nMaxFutureBlockTime + 1;
+                const uint32_t nMaxGAPAllowed = params.nMaxFutureBlockTime + 1;
                 const uint32_t nPriorityRotateDelta = 20;
 
                 /*  in KMD chain after nHeightAfterGAPSecondBlockAllowed height we should allow
                     notary nodes to mine a second block if nMaxGAPAllowed since last block passed
                 */
-                if (ASSETCHAINS_SYMBOL[0] == 0 && Params().NetworkIDString() == "main" &&
-                    height > nHeightAfterGAPSecondBlockAllowed)
+                if (ASSETCHAINS_SYMBOL[0] == 0 && height > nHeightAfterGAPSecondBlockAllowed)
                 {
                     const uint32_t &blocktime = blkHeader.nTime;
                     if (blocktime /* upcoming block time */ >= tiptime /* last block in chain time */ + nMaxGAPAllowed &&
