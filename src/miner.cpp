@@ -1392,7 +1392,54 @@ void static BitcoinMiner()
                         HASHTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                         fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
                     } else fprintf(stderr,"duplicate at j.%d\n",j);
-                } else Mining_start = 0;
+
+                    /* check if hf22 rule can be applied */
+                    const Consensus::Params &params = chainparams.GetConsensus();
+                    if (params.nAllowNotariesMineExtraBlockAfterStaleHeight != boost::none)
+                    {
+                        const uint32_t nHeightAfterGAPSecondBlockAllowed = params.nAllowNotariesMineExtraBlockAfterStaleHeight.get();
+                        const uint32_t nMaxGAPAllowed = params.nMaxFutureBlockTime + 1;
+                        const uint32_t nPriorityRotateDelta = 20;
+                        const uint32_t tiptime = pindexPrev->GetBlockTime();
+
+                        if (Mining_height > nHeightAfterGAPSecondBlockAllowed)
+                        {
+                            const uint32_t &blocktime = pblock->nTime;
+                            if (blocktime >= tiptime + nMaxGAPAllowed && tiptime == blocktimes[1])
+                            {
+                                // already assumed notaryid >= 0 and chain is KMD
+                                LogPrint("hfnet", "%s[%d]: time.(%lu >= %lu), notaryid.%ld, ht.%ld\n", __func__, __LINE__, blocktime, tiptime, notaryid, Mining_height);
+
+                                /* build priority list */
+                                std::vector<int32_t> vPriorityList(64);
+                                // fill the priority list by notaries numbers, 0..63
+                                std::generate(vPriorityList.begin(), vPriorityList.end(), []
+                                              { static int id; return id++; });
+                                // move the notaries participated in last 65 to the end of priority list
+                                std::vector<int32_t>::iterator it;
+                                for (size_t i = sizeof(mids) / sizeof(mids[0]) - 1; i > 0; --i)
+                                { // ! mids[0] is not included
+                                    if (mids[i] != -1)
+                                    {
+                                        it = std::find(vPriorityList.begin(), vPriorityList.end(), mids[i]);
+                                        if (it != vPriorityList.end() && std::next(it) != vPriorityList.end())
+                                        {
+                                            std::rotate(it, std::next(it), vPriorityList.end());
+                                        }
+                                    }
+                                }
+
+                                if (isSecondBlockAllowed(notaryid, blocktime, tiptime + nMaxGAPAllowed, nPriorityRotateDelta, vPriorityList))
+                                {
+                                    HASHTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
+                                    LogPrint("hfnet", "%s[%d]: notaryid.%ld, ht.%ld\n allowed to mine mindiff", __func__, __LINE__, notaryid, Mining_height);
+                                }
+                            }
+                        }
+                    } // hf22 rule check
+                }
+                else
+                    Mining_start = 0;
             } else Mining_start = 0;
 
             if ( ASSETCHAINS_STAKED > 0 )
