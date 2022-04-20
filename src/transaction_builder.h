@@ -82,7 +82,7 @@ private:
     /// `Builder::Build` has been called, and all subsequent operations will throw an
     /// exception.
     std::unique_ptr<OrchardBuilderPtr, decltype(&orchard_builder_free)> inner;
-    bool hasActions;
+    bool hasActions{false};
 
     Builder() : inner(nullptr, orchard_builder_free), hasActions(false) { }
 
