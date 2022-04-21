@@ -20,16 +20,10 @@ struct BasicTestingSetup {
     ~BasicTestingSetup();
 };
 
-// Setup w.r.t. zk-SNARK API
-struct JoinSplitTestingSetup: public BasicTestingSetup {
-    JoinSplitTestingSetup(const std::string& chainName = CBaseChainParams::MAIN);
-    ~JoinSplitTestingSetup();
-};
-
 /** Testing setup that configures a complete environment.
  * Included are data directory, coins database, script check threads setup.
  */
-struct TestingSetup: public JoinSplitTestingSetup {
+struct TestingSetup: public BasicTestingSetup {
     CCoinsViewDB *pcoinsdbview;
     fs::path orig_current_path;
     fs::path pathTemp;
