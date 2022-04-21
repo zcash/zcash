@@ -130,6 +130,18 @@ int64_t GetArg(const std::string& strArg, int64_t nDefault);
 bool GetBoolArg(const std::string& strArg, bool fDefault);
 
 /**
+ * Return the values provided for a multiargument parameter.
+ * Multiargument parameters are provided via repetition of
+ * single-argument parameters, e.g. "-foo=value1 -foo=value2"
+ * will result in the vector `{"value1", "value2"}` returned
+ * for `GetMultiArg("-foo")`.
+ *
+ * @param strArg Argument to get values for (e.g. "-foo")
+ * @return each value provided for the parameter.
+ */
+std::vector<std::string> GetMultiArg(const std::string& strArg);
+
+/**
  * Set an argument if it doesn't already have a value
  *
  * @param strArg Argument to set (e.g. "-foo")

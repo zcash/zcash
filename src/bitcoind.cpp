@@ -4,6 +4,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "clientversion.h"
+#include "deprecation.h"
 #include "fs.h"
 #include "rpc/server.h"
 #include "init.h"
@@ -90,6 +91,14 @@ bool AppInit(int argc, char* argv[])
 
         fprintf(stdout, "%s", strUsage.c_str());
         return true;
+    }
+
+    // Handle setting of allowed-deprecated features as early as possible
+    // so that it's possible for other initialization steps to respect them.
+    auto deprecationError = SetAllowedDeprecatedFeaturesFromCLIArgs();
+    if (deprecationError.has_value()) {
+        fprintf(stderr, "%s", deprecationError.value().c_str());
+        return false;
     }
 
     try

@@ -20,6 +20,34 @@ static const int DEPRECATION_HEIGHT = APPROX_RELEASE_HEIGHT + ACTIVATION_TO_DEPR
 // Number of blocks before deprecation to warn users
 static const int DEPRECATION_WARN_LIMIT = 14 * 24 * EXPECTED_BLOCKS_PER_HOUR;
 
+//! Defaults for -allowdeprecated
+static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
+#ifdef ENABLE_WALLET
+    "legacy_privacy",
+    "getnewaddress",
+    "z_getnewaddress",
+    "zcrawreceive",
+    "zcrawjoinsplit",
+    "zcrawkeygen",
+    "addrtype"
+#endif
+}};
+static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
+#ifdef ENABLE_WALLET
+#endif
+}};
+
+// Flags that enable deprecated functionality.
+#ifdef ENABLE_WALLET
+extern bool fEnableGetNewAddress;
+extern bool fEnableZGetNewAddress;
+extern bool fEnableLegacyPrivacyStrategy;
+extern bool fEnableZCRawReceive;
+extern bool fEnableZCRawJoinSplit;
+extern bool fEnableZCRawKeygen;
+extern bool fEnableAddrTypeField;
+#endif
+
 /**
  * Checks whether the node is deprecated based on the current block height, and
  * shuts down the node with an error if so (and deprecation is not disabled for
@@ -29,5 +57,20 @@ static const int DEPRECATION_WARN_LIMIT = 14 * 24 * EXPECTED_BLOCKS_PER_HOUR;
  * fThread means run -alertnotify in a free-running thread.
  */
 void EnforceNodeDeprecation(int nHeight, bool forceLogging=false, bool fThread=true);
+
+/**
+ * Checks command-line arguments for enabling and/or disabling of deprecated
+ * features and sets flags that enable deprecated features accordingly.
+ *
+ * @return std::nullopt if successful, or an error message indicating what
+ * values are permitted for `-allowdeprecated`.
+ */
+std::optional<std::string> SetAllowedDeprecatedFeaturesFromCLIArgs();
+
+/**
+ * Returns a comma-separated list of the valid arguments to the -allowdeprecated
+ * CLI option.
+ */
+std::string GetAllowableDeprecatedFeatures();
 
 #endif // ZCASH_DEPRECATION_H

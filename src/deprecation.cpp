@@ -11,6 +11,17 @@
 #include "util.h"
 #include "chainparams.h"
 
+// Flags that enable deprecated functionality.
+#ifdef ENABLE_WALLET
+bool fEnableGetNewAddress = true;
+bool fEnableZGetNewAddress = true;
+bool fEnableLegacyPrivacyStrategy = true;
+bool fEnableZCRawReceive = true;
+bool fEnableZCRawJoinSplit = true;
+bool fEnableZCRawKeygen = true;
+bool fEnableAddrTypeField = true;
+#endif
+
 static const std::string CLIENT_VERSION_STR = FormatVersion(CLIENT_VERSION);
 
 void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
@@ -46,3 +57,68 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
         uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_WARNING);
     }
 }
+
+std::optional<std::string> SetAllowedDeprecatedFeaturesFromCLIArgs() {
+    auto args = GetMultiArg("-allowdeprecated");
+    std::set<std::string> allowdeprecated(args.begin(), args.end());
+    if (allowdeprecated.empty()) {
+        allowdeprecated = DEFAULT_ALLOW_DEPRECATED;
+    }
+
+    if (allowdeprecated.count("all") > 0) {
+        if (allowdeprecated.size() > 1)
+            return "When using -allowdeprecated=all no other values may be provided for -allowdeprecated.";
+        allowdeprecated = {};
+        allowdeprecated.insert(DEFAULT_ALLOW_DEPRECATED.begin(), DEFAULT_ALLOW_DEPRECATED.end());
+        allowdeprecated.insert(DEFAULT_DENY_DEPRECATED.begin(), DEFAULT_DENY_DEPRECATED.end());
+    }
+
+    if (allowdeprecated.count("none") > 0) {
+        if (allowdeprecated.size() > 1)
+            return "When using -allowdeprecated=none no other values may be provided for -allowdeprecated.";
+        allowdeprecated = {};
+    }
+
+    std::set<std::string> unrecognized;
+    for (const auto& flag : allowdeprecated) {
+        if (DEFAULT_ALLOW_DEPRECATED.count(flag) == 0 && DEFAULT_DENY_DEPRECATED.count(flag) == 0)
+            unrecognized.insert(flag);
+    }
+
+    if (unrecognized.size() > 0) {
+        std::string unrecMsg;
+        for (const auto& value : unrecognized) {
+            if (unrecMsg.size() > 0) unrecMsg += ", ";
+            unrecMsg += "\"" + value + "\"";
+        }
+
+        return strprintf(
+                "Unrecognized argument(s) to -allowdeprecated: %s;\n"
+                "Please select from the following values: %s",
+                unrecMsg, GetAllowableDeprecatedFeatures());
+    }
+
+#ifdef ENABLE_WALLET
+    fEnableLegacyPrivacyStrategy = allowdeprecated.count("legacy_privacy") > 0;
+    fEnableGetNewAddress = allowdeprecated.count("getnewaddress") > 0;
+    fEnableZGetNewAddress = allowdeprecated.count("z_getnewaddress") > 0;
+    fEnableZCRawReceive = allowdeprecated.count("zcrawreceive") > 0;
+    fEnableZCRawJoinSplit = allowdeprecated.count("zcrawjoinsplit") > 0;
+    fEnableZCRawKeygen = allowdeprecated.count("zcrawkeygen") > 0;
+    fEnableAddrTypeField = allowdeprecated.count("addrtype") > 0;
+#endif
+
+    return std::nullopt;
+}
+
+std::string GetAllowableDeprecatedFeatures() {
+    std::string result = "\"all\", \"none\"";
+    for (const auto& value : DEFAULT_ALLOW_DEPRECATED) {
+        result += ", \"" + value + "\"";
+    }
+    for (const auto& value : DEFAULT_DENY_DEPRECATED) {
+        result += ", \"" + value + "\"";
+    }
+    return result;
+}
+

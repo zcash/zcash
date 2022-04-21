@@ -7,6 +7,7 @@
 #include "consensus/upgrades.h"
 #include "consensus/params.h"
 #include "core_io.h"
+#include "deprecation.h"
 #include "experimental_features.h"
 #include "init.h"
 #include "key_io.h"
@@ -156,6 +157,12 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
+    if (!fEnableGetNewAddress)
+        throw runtime_error(
+            "getnewaddress is DEPRECATED and will be removed in a future release\n"
+            "\nUse z_getnewaccount and z_getaddressforaccount instead, or restart \n"
+            "with `-allowdeprecated=getnewaddress` if you require backward compatibility.");
+
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "getnewaddress ( \"\" )\n"
@@ -172,7 +179,6 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
             + HelpExampleCli("getnewaddress", "")
             + HelpExampleRpc("getnewaddress", "")
         );
-
 
     const UniValue& dummy_value = params[0];
     if (!dummy_value.isNull() && dummy_value.get_str() != "") {
@@ -2569,7 +2575,9 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("txid", entry.op.hash.ToString());
         obj.pushKV("pool", ADDR_TYPE_SAPLING);
-        obj.pushKV("type", ADDR_TYPE_SAPLING); //deprecated
+        if (fEnableAddrTypeField) {
+            obj.pushKV("type", ADDR_TYPE_SAPLING); //deprecated
+        }
         obj.pushKV("outindex", (int)entry.op.n);
         obj.pushKV("confirmations", entry.confirmations);
         bool hasSaplingSpendingKey = pwalletMain->HaveSaplingSpendingKeyForAddress(entry.address);
@@ -2857,6 +2865,11 @@ UniValue zc_raw_receive(const UniValue& params, bool fHelp)
         return NullUniValue;
     }
 
+    if (!fEnableZCRawReceive)
+        throw runtime_error(
+            "zcrawreceive is DEPRECATED and will be removed in a future release\n"
+            "\nrestart with `-allowdeprecated=zcrawreceive` if you require backward compatibility.");
+
     if (fHelp || params.size() != 2) {
         throw runtime_error(
             "zcrawreceive zcsecretkey encryptednote\n"
@@ -2944,6 +2957,11 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp)) {
         return NullUniValue;
     }
+
+    if (!fEnableZCRawJoinSplit)
+        throw runtime_error(
+            "zcrawjoinsplit is DEPRECATED and will be removed in a future release\n"
+            "\nrestart with `-allowdeprecated=zcrawjoinsplit` if you require backward compatibility.");
 
     if (fHelp || params.size() != 5) {
         throw runtime_error(
@@ -3161,6 +3179,11 @@ UniValue zc_raw_keygen(const UniValue& params, bool fHelp)
         return NullUniValue;
     }
 
+    if (!fEnableZCRawKeygen)
+        throw runtime_error(
+            "zcrawkeygen is DEPRECATED and will be removed in a future release\n"
+            "\nrestart with `-allowdeprecated=zcrawkeygen` if you require backward compatibility.");
+
     if (fHelp || params.size() != 0) {
         throw runtime_error(
             "zcrawkeygen\n"
@@ -3192,6 +3215,12 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
+
+    if (!fEnableZGetNewAddress)
+        throw runtime_error(
+            "z_getnewaddress is DEPRECATED and will be removed in a future release\n"
+            "\nUse z_getnewaccount and z_getaddressforaccount instead, or restart \n"
+            "with `-allowdeprecated=z_getnewaddress` if you require backward compatibility.");
 
     std::string defaultType = ADDR_TYPE_SAPLING;
 
@@ -4422,7 +4451,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
             UniValue entry(UniValue::VOBJ);
             entry.pushKV("pool", ADDR_TYPE_SPROUT);
-            entry.pushKV("type", ADDR_TYPE_SPROUT); //deprecated
+            if (fEnableAddrTypeField) {
+                entry.pushKV("type", ADDR_TYPE_SPROUT); //deprecated
+            }
             entry.pushKV("js", (int)i);
             entry.pushKV("jsSpend", (int)j);
             entry.pushKV("txidPrev", jsop.hash.GetHex());
@@ -4446,7 +4477,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("pool", ADDR_TYPE_SPROUT);
-        entry.pushKV("type", ADDR_TYPE_SPROUT); //deprecated
+        if (fEnableAddrTypeField) {
+            entry.pushKV("type", ADDR_TYPE_SPROUT); //deprecated
+        }
         entry.pushKV("js", (int)jsop.js);
         entry.pushKV("jsOutput", (int)jsop.n);
         entry.pushKV("address", keyIO.EncodePaymentAddress(pa));
@@ -4530,7 +4563,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("pool", ADDR_TYPE_SAPLING);
-        entry.pushKV("type", ADDR_TYPE_SAPLING); //deprecated
+        if (fEnableAddrTypeField) {
+            entry.pushKV("type", ADDR_TYPE_SAPLING); //deprecated
+        }
         entry.pushKV("spend", (int)i);
         entry.pushKV("txidPrev", op.hash.GetHex());
         entry.pushKV("outputPrev", (int)op.n);
@@ -4584,7 +4619,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("pool", ADDR_TYPE_SAPLING);
-        entry.pushKV("type", ADDR_TYPE_SAPLING); //deprecated
+        if (fEnableAddrTypeField) {
+            entry.pushKV("type", ADDR_TYPE_SAPLING); //deprecated
+        }
         entry.pushKV("output", (int)op.n);
         entry.pushKV("outgoing", isOutgoing);
         entry.pushKV("walletInternal", addr.second == RecipientType::WalletInternalAddress);
@@ -4616,7 +4653,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("pool", ADDR_TYPE_ORCHARD);
-        entry.pushKV("type", ADDR_TYPE_ORCHARD); //deprecated
+        if (fEnableAddrTypeField) {
+            entry.pushKV("type", ADDR_TYPE_ORCHARD); //deprecated
+        }
         entry.pushKV("action", (int) actionIdx);
         entry.pushKV("txidPrev", outpoint.hash.GetHex());
         entry.pushKV("actionPrev", (int) outpoint.n);
@@ -4644,7 +4683,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("pool", ADDR_TYPE_ORCHARD);
-        entry.pushKV("type", ADDR_TYPE_ORCHARD); //deprecated
+        if (fEnableAddrTypeField) {
+            entry.pushKV("type", ADDR_TYPE_ORCHARD); //deprecated
+        }
         entry.pushKV("action", (int) actionIdx);
         entry.pushKV("outgoing", orchardActionOutput.IsOutgoing());
         entry.pushKV("walletInternal", addr.second == RecipientType::WalletInternalAddress);
@@ -5072,7 +5113,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     // evaluating the strategy.
     TransactionStrategy strategy = maybeStrategy.value_or(
         // Default privacy policy is "LegacyCompat".
-        involvesUnifiedAddress ?
+        (involvesUnifiedAddress || !fEnableLegacyPrivacyStrategy) ?
             TransactionStrategy(PrivacyPolicy::FullPrivacy) :
             TransactionStrategy(PrivacyPolicy::AllowFullyTransparent)
     );
