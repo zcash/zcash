@@ -31,8 +31,13 @@ class WalletDeprecationTest(BitcoinTestFramework):
         # z_getnewaddress is deprecated, but enabled by default so it should succeed
         self.nodes[0].z_getnewaddress()
 
-        # zcrawkeygen is enabled by default so should succeed.
-        self.nodes[0].zcrawkeygen()
+        # zcrawkeygen is deprecated, and not enabled by default so it should fail
+        errorString = ''
+        try:
+            self.nodes[0].zcrawkeygen()
+        except JSONRPCException as e:
+            errorString = e.error['message']
+        assert "DEPRECATED" in errorString
 
         # restart with a specific selection of deprecated methods enabled
         stop_nodes(self.nodes)

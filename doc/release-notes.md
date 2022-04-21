@@ -41,6 +41,13 @@ Option handling
     is returned in addition to `pool` or `address_type` (which contain the
     same information) in the results of RPC methods that return address metadata.
 
+RPC Changes
+-----------
+
+- The deprecated `zcrawkeygen`, `zcrawreceive`, and `zcrawjoinsplit` RPC
+  methods are now disabled by default. Start with `-allowdeprecated=all`
+  or select individual features if you wish to continue using these APIs.
+
 Build system
 ------------
 

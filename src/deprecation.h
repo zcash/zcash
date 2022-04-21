@@ -26,14 +26,14 @@ static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
     "legacy_privacy",
     "getnewaddress",
     "z_getnewaddress",
-    "zcrawreceive",
-    "zcrawjoinsplit",
-    "zcrawkeygen",
     "addrtype"
 #endif
 }};
 static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
 #ifdef ENABLE_WALLET
+    "zcrawreceive",
+    "zcrawjoinsplit",
+    "zcrawkeygen",
 #endif
 }};
 
