@@ -7,5 +7,7 @@
 int GenZero(int n);
 int GenMax(int n);
 void LoadProofParameters();
+void LoadGlobalWallet();
+void UnloadGlobalWallet();
 
 #endif
