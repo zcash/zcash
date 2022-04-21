@@ -525,7 +525,7 @@ std::pair<UnifiedFullViewingKey, libzcash::AccountId> CWallet::GenerateNewUnifie
         auto account = hdChain.IncrementAccountCounter();
         if (!account.has_value()) {
             throw std::runtime_error(
-                    "CWallet::GenerateNewUnifiedSpendingKey(): Already generated the maxiumum number of accounts (2^31 - 2) for this wallet's mnemonic phrase. Congratulations, you need to create a new wallet!");
+                    "CWallet::GenerateNewUnifiedSpendingKey(): Already generated the maximum number of accounts (2^31 - 2) for this wallet's mnemonic phrase. Congratulations, you need to create a new wallet!");
         }
 
         if (generated.has_value()) {
