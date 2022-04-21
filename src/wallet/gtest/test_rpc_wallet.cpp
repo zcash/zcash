@@ -6,6 +6,7 @@
 #include "consensus/validation.h"
 #include "transaction_builder.h"
 #include "utiltest.h"
+#include "gtest/utils.h"
 #include "wallet/asyncrpcoperation_mergetoaddress.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
@@ -230,5 +231,125 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
         }
     }
     }
+    UnloadGlobalWallet();
+}
+
+TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
+{
+    LoadProofParameters();
+    SelectParams(CBaseChainParams::TESTNET);
+
+    LoadGlobalWallet();
+
+    RegtestActivateSapling();
+    {
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    if (!pwalletMain->HaveMnemonicSeed()) {
+        pwalletMain->GenerateNewSeed();
+    }
+
+    UniValue retValue;
+
+    KeyIO keyIO(Params());
+    // add keys manually
+    auto taddr = pwalletMain->GenerateNewKey(true).GetID();
+    auto pa = pwalletMain->GenerateNewLegacySaplingZKey();
+
+    const Consensus::Params& consensusParams = Params().GetConsensus();
+
+    int nextBlockHeight = chainActive.Height() + 1;
+
+    // Add a fake transaction to the wallet
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
+    CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
+    mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
+    CWalletTx wtx(pwalletMain, mtx);
+    pwalletMain->LoadWalletTx(wtx);
+
+    // Fake-mine the transaction
+    EXPECT_EQ(-1, chainActive.Height());
+    CBlock block;
+    block.vtx.push_back(wtx);
+    block.hashMerkleRoot = block.BuildMerkleTree();
+    auto blockHash = block.GetHash();
+    CBlockIndex fakeIndex {block};
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+    EXPECT_TRUE(chainActive.Contains(&fakeIndex));
+    EXPECT_EQ(0, chainActive.Height());
+    wtx.SetMerkleBranch(block);
+    pwalletMain->LoadWalletTx(wtx);
+
+    // Context that z_sendmany requires
+    auto builder = TransactionBuilder(consensusParams, nextBlockHeight, std::nullopt, pwalletMain);
+    mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
+
+    auto selector = pwalletMain->ZTXOSelectorForAddress(taddr, true, false).value();
+    std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, pa, 1*COIN, "ABCD") };
+    TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
+    std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 0, strategy));
+    std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
+
+    // Enable test mode so tx is not sent
+    static_cast<AsyncRPCOperation_sendmany *>(operation.get())->testmode = true;
+
+    // Generate the Sapling shielding transaction
+    operation->main();
+    if (!operation->isSuccess()) {
+        FAIL() << operation->getErrorMessage();
+    }
+
+    // Get the transaction
+    auto result = operation->getResult();
+    ASSERT_TRUE(result.isObject());
+    auto hexTx = result["hex"].getValStr();
+    CDataStream ss(ParseHex(hexTx), SER_NETWORK, PROTOCOL_VERSION);
+    CTransaction tx;
+    ss >> tx;
+    ASSERT_FALSE(tx.vShieldedOutput.empty());
+
+    // We shouldn't be able to decrypt with the empty ovk
+    EXPECT_FALSE(AttemptSaplingOutDecryption(
+        tx.vShieldedOutput[0].outCiphertext,
+        uint256(),
+        tx.vShieldedOutput[0].cv,
+        tx.vShieldedOutput[0].cmu,
+        tx.vShieldedOutput[0].ephemeralKey));
+
+    // We shouldn't be able to decrypt with a random ovk
+    EXPECT_FALSE(AttemptSaplingOutDecryption(
+        tx.vShieldedOutput[0].outCiphertext,
+        random_uint256(),
+        tx.vShieldedOutput[0].cv,
+        tx.vShieldedOutput[0].cmu,
+        tx.vShieldedOutput[0].ephemeralKey));
+
+    auto accountKey = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+    auto ovks = accountKey.GetOVKsForShielding();
+    // We should not be able to decrypt with the internal change OVK for shielding
+    EXPECT_FALSE(AttemptSaplingOutDecryption(
+        tx.vShieldedOutput[0].outCiphertext,
+        ovks.first,
+        tx.vShieldedOutput[0].cv,
+        tx.vShieldedOutput[0].cmu,
+        tx.vShieldedOutput[0].ephemeralKey));
+    // We should be able to decrypt with the external OVK for shielding
+    EXPECT_TRUE(AttemptSaplingOutDecryption(
+        tx.vShieldedOutput[0].outCiphertext,
+        ovks.second,
+        tx.vShieldedOutput[0].cv,
+        tx.vShieldedOutput[0].cmu,
+        tx.vShieldedOutput[0].ephemeralKey));
+
+    // Tear down
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
+    mapArgs.erase("-developersapling");
+    mapArgs.erase("-experimentalfeatures");
+
+    }
+    // Revert to default
+    RegtestDeactivateSapling();
     UnloadGlobalWallet();
 }
