@@ -133,9 +133,16 @@ enum WalletToolError {
 
 pub fn main() {
     // Log to stderr, configured by the RUST_LOG environment variable.
+    let directive = env::var("RUST_LOG").unwrap_or_else(|_| "".to_string());
     fmt()
         .with_writer(io::stderr)
-        .with_env_filter(EnvFilter::from_default_env())
+        .with_env_filter(EnvFilter::try_new(&directive).unwrap_or_else(|_| {
+            eprintln!(
+                "Warning: could not parse filter directive '{}'\nfrom the RUST_LOG environment variable; using 'error' instead.\n",
+                &directive
+            );
+            EnvFilter::new("error")
+        }))
         .init();
 
     // Allow either Bitcoin-style or GNU-style arguments.
