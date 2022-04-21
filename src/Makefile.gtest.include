@@ -16,15 +16,7 @@ zcash_gtest_SOURCES = \
 	gtest/test_consensus.cpp \
 	gtest/json_test_vectors.cpp \
 	gtest/json_test_vectors.h \
-	gtest/test_foundersreward.cpp
-# These tests are order-dependent, because they
-# depend on global state (see #1539)
-if ENABLE_WALLET
-zcash_gtest_SOURCES += \
-	wallet/gtest/test_wallet_zkeys.cpp \
-	wallet/gtest/test_orchard_zkeys.cpp
-endif
-zcash_gtest_SOURCES += \
+	gtest/test_foundersreward.cpp \
 	test/data/merkle_roots_orchard.h \
 	gtest/data/tx-orchard-duplicate-nullifiers.h \
 	gtest/test_tautology.cpp \
@@ -62,6 +54,8 @@ zcash_gtest_SOURCES += \
 	gtest/test_zip32.cpp
 if ENABLE_WALLET
 zcash_gtest_SOURCES += \
+	wallet/gtest/test_wallet_zkeys.cpp \
+	wallet/gtest/test_orchard_zkeys.cpp \
 	wallet/gtest/test_note_selection.cpp \
 	wallet/gtest/test_orchard_wallet.cpp \
 	wallet/gtest/test_paymentdisclosure.cpp \
