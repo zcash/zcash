@@ -1661,62 +1661,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
     }
 }
 
-
-BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
-{
-    SelectParams(CBaseChainParams::TESTNET);
-    const Consensus::Params& consensusParams = Params().GetConsensus();
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    // Mutable tx containing contextual information we need to build tx
-    // We removed the ability to create pre-Sapling Sprout proofs, so we can
-    // only create Sapling-onwards transactions.
-    int nHeight = consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight + 1);
-
-    // Add keys manually
-    auto pa = pwalletMain->GenerateNewSproutZKey();
-
-    // Insufficient funds
-    {
-        std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,0} };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, inputs, pa) );
-        operation->main();
-        BOOST_CHECK(operation->isFailed());
-        std::string msg = operation->getErrorMessage();
-        BOOST_CHECK( msg.find("Insufficient coinbase funds") != string::npos);
-    }
-
-    // Test the perform_joinsplit methods.
-    {
-        // Dummy input so the operation object can be instantiated.
-        std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,100000} };
-        std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, inputs, pa) );
-        std::shared_ptr<AsyncRPCOperation_shieldcoinbase> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_shieldcoinbase> (operation);
-        TEST_FRIEND_AsyncRPCOperation_shieldcoinbase proxy(ptr);
-        static_cast<AsyncRPCOperation_shieldcoinbase *>(operation.get())->testmode = true;
-
-        ShieldCoinbaseJSInfo info;
-        info.vjsin.push_back(JSInput());
-        info.vjsin.push_back(JSInput());
-        info.vjsin.push_back(JSInput());
-        try {
-            proxy.perform_joinsplit(info);
-        } catch (const std::runtime_error & e) {
-            BOOST_CHECK( string(e.what()).find("unsupported joinsplit input")!= string::npos);
-        }
-
-        info.vjsin.clear();
-        try {
-            proxy.perform_joinsplit(info);
-        } catch (const std::runtime_error & e) {
-            BOOST_CHECK( string(e.what()).find("error verifying joinsplit")!= string::npos);
-        }
-    }
-
-}
-
 BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
 {
     SelectParams(CBaseChainParams::TESTNET);
