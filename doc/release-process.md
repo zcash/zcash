@@ -65,7 +65,7 @@ progress bar displayed during the build process.
 
 ## Release process
 
-Identify the commit from which the release will be made. This is frequently the current
+Identify the commit from which the release will be made. This could be the current
 `HEAD` of `master`, but it's also often useful to instead use a release stabilization
 branch based upon a previous release candidate when producing a release, so that
 development can proceed unblocked on the `master` branch during the release candidate
@@ -160,20 +160,16 @@ Notify the Zcash DevOps engineer/sysadmin that the release has been tagged. They
 some variables in the company's automation code and then run an Ansible playbook, which:
 
 * builds Zcash based on the specified branch
-* deploys it as a public service (e.g. betatestnet.z.cash, mainnet.z.cash)
+* deploys it as a public service (e.g. testnet.z.cash, mainnet.z.cash)
 * often the same server can be re-used, and the role idempotently handles upgrades, but if
   not then they also need to update DNS records
 * possible manual steps: blowing away the `testnet3` dir, deleting old parameters,
-  restarting DNS seeder
+  restarting DNS seeder.
 
-Then, verify that nodes can connect to the testnet server, and update the guide on the
-wiki to ensure the correct hostname is listed in the recommended zcash.conf.
+Verify that nodes can connect to the mainnet and testnet servers.
 
-### Update the 1.0 User Guide
-
-This also means updating [the translations](https://github.com/zcash/zcash-docs).
-Coordinate with the translation team for now. Suggestions for improving this
-part of the process should be added to #2596.
+Update the [Zcashd Full Node and CLI](https://zcash.readthedocs.io/en/latest/rtd_pages/zcashd.html)
+documentation on ReadTheDocs to give the new version number.
 
 ### Publish the release announcement (blog, github, zcash-dev, slack)
 

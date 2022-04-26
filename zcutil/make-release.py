@@ -137,7 +137,7 @@ def verify_dependency_updates():
     try:
         sh_log('./qa/zcash/updatecheck.py')
     except SystemExit:
-        raise SystemExit("Dependency update check failed. Either some updates not been correctly postponed, or the .updatecheck-token file is missing.")
+        raise SystemExit("Dependency update check failed. Either some updates have not been correctly postponed, or the .updatecheck-token file is missing.")
 
 @phase('Checking tags.')
 def verify_tags(revision, releaseprev, releasefrom):
