@@ -1,14 +1,14 @@
 Hotfix Release Process
 ======================
 
-Hotfix releases are versioned by incrementing the build number of the latest
+Hotfix releases are versioned by incrementing the patch number of the latest
 release. For example:
 
-    First hotfix:  v1.0.11   -> v1.0.11-1
-    Second hotfix: v1.0.11-1 -> v1.0.11-2
+    First hotfix:  v1.0.0 -> v1.0.1
+    Second hotfix: v1.0.1 -> v1.0.2
 
 In the commands below, <RELEASE> and <RELEASE_PREV> are prefixed with a v, ie.
-v1.0.11 (not 1.0.11).
+v1.0.2 (not 1.0.2).
 
 ## Create a hotfix branch
 
