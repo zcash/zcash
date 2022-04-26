@@ -761,7 +761,7 @@ dependencies = [
 [[package]]
 name = "hdwallet"
 version = "0.3.0"
-source = "git+https://github.com/nuttycom/hdwallet?rev=9b4c1bdbe0517e3a7a8f285d6048a37d472ba3bc#9b4c1bdbe0517e3a7a8f285d6048a37d472ba3bc"
+source = "git+https://github.com/nuttycom/hdwallet.git?rev=9b4c1bdbe0517e3a7a8f285d6048a37d472ba3bc#9b4c1bdbe0517e3a7a8f285d6048a37d472ba3bc"
 dependencies = [
  "lazy_static",
  "rand_core 0.6.3",
