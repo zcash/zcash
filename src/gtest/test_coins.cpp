@@ -445,3 +445,97 @@ TEST(CoinsTests, NullifierRegression)
         checkNullifierCache(cache1, txWithNullifiers, false);
     }
 }
+
+template<typename Tree> void anchorPopRegressionTestImpl(ShieldedType type)
+{
+    // Correct behavior:
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Create dummy anchor/commitment
+        Tree tree;
+        AppendRandomLeaf(tree);
+
+        // Add the anchor
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        // Remove the anchor
+        cache1.PopAnchor(Tree::empty_root(), type);
+        cache1.Flush();
+
+        // Add the anchor back
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        // The base contains the anchor, of course!
+        {
+            Tree checkTree;
+            EXPECT_TRUE(GetAnchorAt(cache1, tree.root(), checkTree));
+            EXPECT_TRUE(checkTree.root() == tree.root());
+        }
+    }
+
+    // Previously incorrect behavior
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Create dummy anchor/commitment
+        Tree tree;
+        AppendRandomLeaf(tree);
+
+        // Add the anchor and flush to disk
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        // Remove the anchor, but don't flush yet!
+        cache1.PopAnchor(Tree::empty_root(), type);
+
+        {
+            CCoinsViewCacheTest cache2(&cache1); // Build cache on top
+            cache2.PushAnchor(tree); // Put the same anchor back!
+            cache2.Flush(); // Flush to cache1
+        }
+
+        // cache2's flush kinda worked, i.e. cache1 thinks the
+        // tree is there, but it didn't bring down the correct
+        // treestate...
+        {
+            Tree checktree;
+            EXPECT_TRUE(GetAnchorAt(cache1, tree.root(), checktree));
+            EXPECT_TRUE(checktree.root() == tree.root()); // Oh, shucks.
+        }
+
+        // Flushing cache won't help either, just makes the inconsistency
+        // permanent.
+        cache1.Flush();
+        {
+            Tree checktree;
+            EXPECT_TRUE(GetAnchorAt(cache1, tree.root(), checktree));
+            EXPECT_TRUE(checktree.root() == tree.root()); // Oh, shucks.
+        }
+    }
+}
+
+
+TEST(CoinsTests, AnchorPopRegression)
+{
+    LoadProofParameters();
+
+    {
+    SCOPED_TRACE("Sprout");
+        anchorPopRegressionTestImpl<SproutMerkleTree>(SPROUT);
+    }
+
+    {
+    SCOPED_TRACE("Sapling");
+        anchorPopRegressionTestImpl<SaplingMerkleTree>(SAPLING);
+    }
+
+    {
+    SCOPED_TRACE("Orchard");
+        anchorPopRegressionTestImpl<OrchardMerkleFrontier>(ORCHARD);
+    }
+}
