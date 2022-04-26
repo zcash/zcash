@@ -145,7 +145,9 @@ def verify_tags(releaseprev, releasefrom):
 
     for tag in sh_out('git', 'tag', '--list').splitlines():
         if candidatergx.match(tag):
-            candidates.append(Version.parse_arg(tag))
+            v = Version.parse(tag)
+            if v is not None:
+                candidates.append(v)
 
     candidates.sort()
     try:
@@ -198,6 +200,7 @@ def verify_version(release, releaseprev, hotfix):
         releaseprev.minor,
         releaseprev.patch + 1,
         releaseprev.betarc,
+        None
     )
     if release != expected:
         raise SystemExit(
@@ -225,7 +228,7 @@ def initialize_git(release, hotfix):
             ),
         )
 
-    logging.info('Pulling to latest master.')
+    logging.info('Ensuring we are up to date with the branch to be released...')
     sh_log('git', 'pull', '--ff-only')
 
     branch = 'release-' + release.vtext
@@ -487,15 +490,10 @@ class Version (object):
     )
 
     @staticmethod
-    def parse_arg(text):
+    def parse(text):
         m = Version.RGX.match(text)
         if m is None:
-            raise argparse.ArgumentTypeError(
-                'Could not parse version {!r} against regex {}'.format(
-                    text,
-                    Version.RGX.pattern,
-                ),
-            )
+            return None
         else:
             [major, minor, patch, _, betarc, hyphen] = m.groups()
             return Version(
@@ -505,6 +503,19 @@ class Version (object):
                 betarc,
                 int(hyphen) if hyphen is not None else None,
             )
+
+    @staticmethod
+    def parse_arg(text):
+        v = Version.parse(text)
+        if v is None:
+            raise argparse.ArgumentTypeError(
+                'Could not parse version {!r} against regex {}'.format(
+                    text,
+                    Version.RGX.pattern,
+                ),
+            )
+        else:
+            return v
 
     def __init__(self, major, minor, patch, betarc, hyphen):
         for i in [major, minor, patch]:
@@ -646,6 +657,7 @@ class TestVersion (unittest.TestCase):
             'v07.0.0',
             'v1.0.03',
             'v1.2.3-0',
+            'v1.2.3-foobar',
             'v1.2.3~0',
             'v1.2.3+0',
             '1.2.3',
