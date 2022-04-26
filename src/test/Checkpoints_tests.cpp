@@ -16,7 +16,7 @@
 
 using namespace std;
 
-BOOST_FIXTURE_TEST_SUITE(Checkpoints_tests, BasicTestingSetup)
+BOOST_FIXTURE_TEST_SUITE(Checkpoints_tests, BasicTestingSetup) // DISABLED_TEST_SUITE
 
 // TODO: checkpoints have been removed for now.
 /*
