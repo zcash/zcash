@@ -667,3 +667,54 @@ TEST(CoinsTests, NullifiersTest)
 
     checkNullifierCache(cache3, txWithNullifiers, false);
 }
+
+
+template<typename Tree> void anchorsFlushImpl(ShieldedType type)
+{
+    CCoinsViewTest base;
+    uint256 newrt;
+    {
+        CCoinsViewCacheTest cache(&base);
+        Tree tree;
+        EXPECT_TRUE(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
+        AppendRandomLeaf(tree);
+
+        newrt = tree.root();
+
+        cache.PushAnchor(tree);
+        cache.Flush();
+    }
+    
+    {
+        CCoinsViewCacheTest cache(&base);
+        Tree tree;
+        EXPECT_TRUE(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
+
+        // Get the cached entry.
+        EXPECT_TRUE(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
+
+        uint256 check_rt = tree.root();
+
+        EXPECT_TRUE(check_rt == newrt);
+    }
+}
+
+
+TEST(CoinsTests,AnchorsFlushTest)
+{
+    LoadProofParameters();
+    {
+    SCOPED_TRACE("Sprout");
+        anchorsFlushImpl<SproutMerkleTree>(SPROUT);
+    }
+
+    {
+    SCOPED_TRACE("Sapling");
+        anchorsFlushImpl<SaplingMerkleTree>(SAPLING);
+    }
+
+    {
+    SCOPED_TRACE("Orchard");
+        anchorsFlushImpl<OrchardMerkleFrontier>(ORCHARD);
+    }
+}

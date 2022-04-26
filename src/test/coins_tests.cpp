@@ -350,49 +350,6 @@ void checkNullifierCache(const CCoinsViewCacheTest &cache, const TxWithNullifier
     BOOST_CHECK(containsOrchardNullifier == shouldBeInCache);
 }
 
-template<typename Tree> void anchorsFlushImpl(ShieldedType type)
-{
-    CCoinsViewTest base;
-    uint256 newrt;
-    {
-        CCoinsViewCacheTest cache(&base);
-        Tree tree;
-        BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
-        AppendRandomLeaf(tree);
-
-        newrt = tree.root();
-
-        cache.PushAnchor(tree);
-        cache.Flush();
-    }
-    
-    {
-        CCoinsViewCacheTest cache(&base);
-        Tree tree;
-        BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
-
-        // Get the cached entry.
-        BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
-
-        uint256 check_rt = tree.root();
-
-        BOOST_CHECK(check_rt == newrt);
-    }
-}
-
-BOOST_AUTO_TEST_CASE(anchors_flush_test)
-{
-    BOOST_TEST_CONTEXT("Sprout") {
-        anchorsFlushImpl<SproutMerkleTree>(SPROUT);
-    }
-    BOOST_TEST_CONTEXT("Sapling") {
-        anchorsFlushImpl<SaplingMerkleTree>(SAPLING);
-    }
-    BOOST_TEST_CONTEXT("Orchard") {
-        anchorsFlushImpl<OrchardMerkleFrontier>(ORCHARD);
-    }
-}
-
 BOOST_AUTO_TEST_CASE(chained_joinsplits)
 {
     // TODO update this or add a similar test when the SaplingNote class exist
