@@ -300,3 +300,148 @@ public:
 };
 
 }
+
+uint256 appendRandomSproutCommitment(SproutMerkleTree &tree)
+{
+    libzcash::SproutSpendingKey k = libzcash::SproutSpendingKey::random();
+    libzcash::SproutPaymentAddress addr = k.address();
+
+    libzcash::SproutNote note(addr.a_pk, 0, uint256(), uint256());
+
+    auto cm = note.cm();
+    tree.append(cm);
+    return cm;
+}
+
+template<typename Tree> void AppendRandomLeaf(Tree &tree);
+template<> void AppendRandomLeaf(SproutMerkleTree &tree) { tree.append(GetRandHash()); }
+template<> void AppendRandomLeaf(SaplingMerkleTree &tree) { tree.append(GetRandHash()); }
+template<> void AppendRandomLeaf(OrchardMerkleFrontier &tree) {
+    // OrchardMerkleFrontier only has APIs to append entire bundles, but
+    // fortunately the tests only require that the tree root change.
+    // TODO: Remove the need to create proofs by having a testing-only way to
+    // append a random leaf to OrchardMerkleFrontier.
+    uint256 orchardAnchor;
+    uint256 dataToBeSigned;
+    auto builder = orchard::Builder(true, true, orchardAnchor);
+    auto bundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
+    tree.AppendBundle(bundle);
+}
+
+template<typename Tree> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, Tree &tree);
+template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SproutMerkleTree &tree) { return cache.GetSproutAnchorAt(rt, tree); }
+template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SaplingMerkleTree &tree) { return cache.GetSaplingAnchorAt(rt, tree); }
+template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, OrchardMerkleFrontier &tree) { return cache.GetOrchardAnchorAt(rt, tree); }
+
+
+
+void checkNullifierCache(const CCoinsViewCacheTest &cache, const TxWithNullifiers &txWithNullifiers, bool shouldBeInCache) {
+    // Make sure the nullifiers have not gotten mixed up
+    EXPECT_TRUE(!cache.GetNullifier(txWithNullifiers.sproutNullifier, SAPLING));
+    EXPECT_TRUE(!cache.GetNullifier(txWithNullifiers.sproutNullifier, ORCHARD));
+    EXPECT_TRUE(!cache.GetNullifier(txWithNullifiers.saplingNullifier, SPROUT));
+    EXPECT_TRUE(!cache.GetNullifier(txWithNullifiers.saplingNullifier, ORCHARD));
+    EXPECT_TRUE(!cache.GetNullifier(txWithNullifiers.orchardNullifier, SPROUT));
+    EXPECT_TRUE(!cache.GetNullifier(txWithNullifiers.orchardNullifier, SAPLING));
+    // Check if the nullifiers either are or are not in the cache
+    bool containsSproutNullifier = cache.GetNullifier(txWithNullifiers.sproutNullifier, SPROUT);
+    bool containsSaplingNullifier = cache.GetNullifier(txWithNullifiers.saplingNullifier, SAPLING);
+    bool containsOrchardNullifier = cache.GetNullifier(txWithNullifiers.orchardNullifier, ORCHARD);
+    EXPECT_TRUE(containsSproutNullifier == shouldBeInCache);
+    EXPECT_TRUE(containsSaplingNullifier == shouldBeInCache);
+    EXPECT_TRUE(containsOrchardNullifier == shouldBeInCache);
+}
+
+
+TEST(CoinsTests, NullifierRegression)
+{
+    LoadProofParameters();
+    // Correct behavior:
+    {
+    SCOPED_TRACE("add-remove without flush");
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        TxWithNullifiers txWithNullifiers;
+
+        // Insert a nullifier into the base.
+        cache1.SetNullifiers(txWithNullifiers.tx, true);
+        checkNullifierCache(cache1, txWithNullifiers, true);
+        cache1.Flush(); // Flush to base.
+
+        // Remove the nullifier from cache
+        cache1.SetNullifiers(txWithNullifiers.tx, false);
+
+        // The nullifier now should be `false`.
+        checkNullifierCache(cache1, txWithNullifiers, false);
+    }
+
+    // Also correct behavior:
+    {
+    SCOPED_TRACE("add-remove with flush");
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        TxWithNullifiers txWithNullifiers;
+
+        // Insert a nullifier into the base.
+        cache1.SetNullifiers(txWithNullifiers.tx, true);
+        checkNullifierCache(cache1, txWithNullifiers, true);
+        cache1.Flush(); // Flush to base.
+
+        // Remove the nullifier from cache
+        cache1.SetNullifiers(txWithNullifiers.tx, false);
+        cache1.Flush(); // Flush to base.
+
+        // The nullifier now should be `false`.
+        checkNullifierCache(cache1, txWithNullifiers, false);
+    }
+
+    // Works because we bring it from the parent cache:
+    {
+    SCOPED_TRACE("remove from parent");
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert a nullifier into the base.
+        TxWithNullifiers txWithNullifiers;
+        cache1.SetNullifiers(txWithNullifiers.tx, true);
+        checkNullifierCache(cache1, txWithNullifiers, true);
+        cache1.Flush(); // Empties cache.
+
+        // Create cache on top.
+        {
+            // Remove the nullifier.
+            CCoinsViewCacheTest cache2(&cache1);
+            checkNullifierCache(cache2, txWithNullifiers, true);
+            cache1.SetNullifiers(txWithNullifiers.tx, false);
+            cache2.Flush(); // Empties cache, flushes to cache1.
+        }
+
+        // The nullifier now should be `false`.
+        checkNullifierCache(cache1, txWithNullifiers, false);
+    }
+
+    // Was broken:
+    {
+    SCOPED_TRACE("remove from child");
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert a nullifier into the base.
+        TxWithNullifiers txWithNullifiers;
+        cache1.SetNullifiers(txWithNullifiers.tx, true);
+        cache1.Flush(); // Empties cache.
+
+        // Create cache on top.
+        {
+            // Remove the nullifier.
+            CCoinsViewCacheTest cache2(&cache1);
+            cache2.SetNullifiers(txWithNullifiers.tx, false);
+            cache2.Flush(); // Empties cache, flushes to cache1.
+        }
+
+        // The nullifier now should be `false`.
+        checkNullifierCache(cache1, txWithNullifiers, false);
+    }
+}
