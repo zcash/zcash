@@ -539,3 +539,107 @@ TEST(CoinsTests, AnchorPopRegression)
         anchorPopRegressionTestImpl<OrchardMerkleFrontier>(ORCHARD);
     }
 }
+
+
+template<typename Tree> void anchorRegressionTestImpl(ShieldedType type)
+{
+    // Correct behavior:
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert anchor into base.
+        Tree tree;
+        AppendRandomLeaf(tree);
+
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        cache1.PopAnchor(Tree::empty_root(), type);
+        EXPECT_TRUE(cache1.GetBestAnchor(type) == Tree::empty_root());
+        EXPECT_TRUE(!GetAnchorAt(cache1, tree.root(), tree));
+    }
+
+    // Also correct behavior:
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert anchor into base.
+        Tree tree;
+        AppendRandomLeaf(tree);
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        cache1.PopAnchor(Tree::empty_root(), type);
+        cache1.Flush();
+        EXPECT_TRUE(cache1.GetBestAnchor(type) == Tree::empty_root());
+        EXPECT_TRUE(!GetAnchorAt(cache1, tree.root(), tree));
+    }
+
+    // Works because we bring the anchor in from parent cache.
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert anchor into base.
+        Tree tree;
+        AppendRandomLeaf(tree);
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        {
+            // Pop anchor.
+            CCoinsViewCacheTest cache2(&cache1);
+            EXPECT_TRUE(GetAnchorAt(cache2, tree.root(), tree));
+            cache2.PopAnchor(Tree::empty_root(), type);
+            cache2.Flush();
+        }
+
+        EXPECT_TRUE(cache1.GetBestAnchor(type) == Tree::empty_root());
+        EXPECT_TRUE(!GetAnchorAt(cache1, tree.root(), tree));
+    }
+
+    // Was broken:
+    {
+        CCoinsViewTest base;
+        CCoinsViewCacheTest cache1(&base);
+
+        // Insert anchor into base.
+        Tree tree;
+        AppendRandomLeaf(tree);
+        cache1.PushAnchor(tree);
+        cache1.Flush();
+
+        {
+            // Pop anchor.
+            CCoinsViewCacheTest cache2(&cache1);
+            cache2.PopAnchor(Tree::empty_root(), type);
+            cache2.Flush();
+        }
+
+        EXPECT_TRUE(cache1.GetBestAnchor(type) == Tree::empty_root());
+        EXPECT_TRUE(!GetAnchorAt(cache1, tree.root(), tree));
+    }
+}
+
+
+TEST(CoinsTests, AnchorRegression)
+{
+    LoadProofParameters();
+
+    {
+    SCOPED_TRACE("Sprout");
+        anchorRegressionTestImpl<SproutMerkleTree>(SPROUT);
+    }
+
+    {
+    SCOPED_TRACE("Sapling");
+        anchorRegressionTestImpl<SaplingMerkleTree>(SAPLING);
+    }
+
+    {
+    SCOPED_TRACE("Orchard");
+        anchorRegressionTestImpl<OrchardMerkleFrontier>(ORCHARD);
+    }
+}
