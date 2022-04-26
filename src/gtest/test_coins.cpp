@@ -718,3 +718,92 @@ TEST(CoinsTests,AnchorsFlushTest)
         anchorsFlushImpl<OrchardMerkleFrontier>(ORCHARD);
     }
 }
+
+
+template<typename Tree> void anchorsTestImpl(ShieldedType type)
+{
+    // TODO: These tests should be more methodical.
+    //       Or, integrate with Bitcoin's tests later.
+
+    CCoinsViewTest base;
+    CCoinsViewCacheTest cache(&base);
+
+    EXPECT_TRUE(cache.GetBestAnchor(type) == Tree::empty_root());
+
+    {
+        Tree tree;
+
+        EXPECT_TRUE(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
+        EXPECT_TRUE(cache.GetBestAnchor(type) == tree.root());
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
+
+        Tree save_tree_for_later;
+        save_tree_for_later = tree;
+
+        uint256 newrt = tree.root();
+        uint256 newrt2;
+
+        cache.PushAnchor(tree);
+        EXPECT_TRUE(cache.GetBestAnchor(type) == newrt);
+
+        {
+            Tree confirm_same;
+            EXPECT_TRUE(GetAnchorAt(cache, cache.GetBestAnchor(type), confirm_same));
+
+            EXPECT_TRUE(confirm_same.root() == newrt);
+        }
+
+        AppendRandomLeaf(tree);
+        AppendRandomLeaf(tree);
+
+        newrt2 = tree.root();
+
+        cache.PushAnchor(tree);
+        EXPECT_TRUE(cache.GetBestAnchor(type) == newrt2);
+
+        Tree test_tree;
+        EXPECT_TRUE(GetAnchorAt(cache, cache.GetBestAnchor(type), test_tree));
+
+        EXPECT_TRUE(tree.root() == test_tree.root());
+
+        {
+            Tree test_tree2;
+            GetAnchorAt(cache, newrt, test_tree2);
+            
+            EXPECT_TRUE(test_tree2.root() == newrt);
+        }
+
+        {
+            cache.PopAnchor(newrt, type);
+            Tree obtain_tree;
+            assert(!GetAnchorAt(cache, newrt2, obtain_tree)); // should have been popped off
+            assert(GetAnchorAt(cache, newrt, obtain_tree));
+
+            assert(obtain_tree.root() == newrt);
+        }
+    }
+}
+
+TEST(CoinsTests, AnchorsTest)
+{
+    {
+    SCOPED_TRACE("Sprout");
+    anchorsTestImpl<SproutMerkleTree>(SPROUT);
+    }
+
+    {
+    SCOPED_TRACE("Sapling");
+    anchorsTestImpl<SaplingMerkleTree>(SAPLING);
+    }
+
+    {
+    SCOPED_TRACE("Orchard");
+    anchorsTestImpl<OrchardMerkleFrontier>(ORCHARD);
+    }
+}
