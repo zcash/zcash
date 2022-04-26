@@ -350,29 +350,6 @@ void checkNullifierCache(const CCoinsViewCacheTest &cache, const TxWithNullifier
     BOOST_CHECK(containsOrchardNullifier == shouldBeInCache);
 }
 
-BOOST_AUTO_TEST_CASE(nullifiers_test)
-{
-    CCoinsViewTest base;
-    CCoinsViewCacheTest cache(&base);
-
-    TxWithNullifiers txWithNullifiers;
-    checkNullifierCache(cache, txWithNullifiers, false);
-    cache.SetNullifiers(txWithNullifiers.tx, true);
-    checkNullifierCache(cache, txWithNullifiers, true);
-    cache.Flush();
-
-    CCoinsViewCacheTest cache2(&base);
-
-    checkNullifierCache(cache2, txWithNullifiers, true);
-    cache2.SetNullifiers(txWithNullifiers.tx, false);
-    checkNullifierCache(cache2, txWithNullifiers, false);
-    cache2.Flush();
-
-    CCoinsViewCacheTest cache3(&base);
-
-    checkNullifierCache(cache3, txWithNullifiers, false);
-}
-
 template<typename Tree> void anchorsFlushImpl(ShieldedType type)
 {
     CCoinsViewTest base;
