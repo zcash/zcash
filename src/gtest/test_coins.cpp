@@ -24,3 +24,279 @@
 #include <gtest/gtest.h>
 
 #include "zcash/IncrementalMerkleTree.hpp"
+
+namespace
+{
+class CCoinsViewTest : public CCoinsView
+{
+    uint256 hashBestBlock_;
+    uint256 hashBestSproutAnchor_;
+    uint256 hashBestSaplingAnchor_;
+    uint256 hashBestOrchardAnchor_;
+    std::map<uint256, CCoins> map_;
+    std::map<uint256, SproutMerkleTree> mapSproutAnchors_;
+    std::map<uint256, SaplingMerkleTree> mapSaplingAnchors_;
+    std::map<uint256, OrchardMerkleFrontier> mapOrchardAnchors_;
+    std::map<uint256, bool> mapSproutNullifiers_;
+    std::map<uint256, bool> mapSaplingNullifiers_;
+    std::map<uint256, bool> mapOrchardNullifiers_;
+
+public:
+    CCoinsViewTest() {
+        hashBestSproutAnchor_ = SproutMerkleTree::empty_root();
+        hashBestSaplingAnchor_ = SaplingMerkleTree::empty_root();
+        hashBestOrchardAnchor_ = OrchardMerkleFrontier::empty_root();
+    }
+
+    bool GetSproutAnchorAt(const uint256& rt, SproutMerkleTree &tree) const {
+        if (rt == SproutMerkleTree::empty_root()) {
+            SproutMerkleTree new_tree;
+            tree = new_tree;
+            return true;
+        }
+
+        std::map<uint256, SproutMerkleTree>::const_iterator it = mapSproutAnchors_.find(rt);
+        if (it == mapSproutAnchors_.end()) {
+            return false;
+        } else {
+            tree = it->second;
+            return true;
+        }
+    }
+
+    bool GetSaplingAnchorAt(const uint256& rt, SaplingMerkleTree &tree) const {
+        if (rt == SaplingMerkleTree::empty_root()) {
+            SaplingMerkleTree new_tree;
+            tree = new_tree;
+            return true;
+        }
+
+        std::map<uint256, SaplingMerkleTree>::const_iterator it = mapSaplingAnchors_.find(rt);
+        if (it == mapSaplingAnchors_.end()) {
+            return false;
+        } else {
+            tree = it->second;
+            return true;
+        }
+    }
+
+    bool GetOrchardAnchorAt(const uint256& rt, OrchardMerkleFrontier &tree) const {
+        if (rt == OrchardMerkleFrontier::empty_root()) {
+            OrchardMerkleFrontier new_tree;
+            tree = new_tree;
+            return true;
+        }
+
+        std::map<uint256, OrchardMerkleFrontier>::const_iterator it = mapOrchardAnchors_.find(rt);
+        if (it == mapOrchardAnchors_.end()) {
+            return false;
+        } else {
+            tree = it->second;
+            return true;
+        }
+    }
+
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const
+    {
+        const std::map<uint256, bool>* mapToUse;
+        switch (type) {
+            case SPROUT:
+                mapToUse = &mapSproutNullifiers_;
+                break;
+            case SAPLING:
+                mapToUse = &mapSaplingNullifiers_;
+                break;
+            case ORCHARD:
+                mapToUse = &mapOrchardNullifiers_;
+                break;
+            default:
+                throw std::runtime_error("Unknown shielded type");
+        }
+        std::map<uint256, bool>::const_iterator it = mapToUse->find(nf);
+        if (it == mapToUse->end()) {
+            return false;
+        } else {
+            // The map shouldn't contain any false entries.
+            assert(it->second);
+            return true;
+        }
+    }
+
+    uint256 GetBestAnchor(ShieldedType type) const {
+        switch (type) {
+            case SPROUT:
+                return hashBestSproutAnchor_;
+                break;
+            case SAPLING:
+                return hashBestSaplingAnchor_;
+                break;
+            case ORCHARD:
+                return hashBestOrchardAnchor_;
+                break;
+            default:
+                throw std::runtime_error("Unknown shielded type");
+        }
+    }
+
+    bool GetCoins(const uint256& txid, CCoins& coins) const
+    {
+        std::map<uint256, CCoins>::const_iterator it = map_.find(txid);
+        if (it == map_.end()) {
+            return false;
+        }
+        coins = it->second;
+        if (coins.IsPruned() && insecure_rand() % 2 == 0) {
+            // Randomly return false in case of an empty entry.
+            return false;
+        }
+        return true;
+    }
+
+    bool HaveCoins(const uint256& txid) const
+    {
+        CCoins coins;
+        return GetCoins(txid, coins);
+    }
+
+    uint256 GetBestBlock() const { return hashBestBlock_; }
+
+    void BatchWriteNullifiers(CNullifiersMap& mapNullifiers, std::map<uint256, bool>& cacheNullifiers)
+    {
+        for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end(); ) {
+            if (it->second.flags & CNullifiersCacheEntry::DIRTY) {
+                // Same optimization used in CCoinsViewDB is to only write dirty entries.
+                if (it->second.entered) {
+                    cacheNullifiers[it->first] = true;
+                } else {
+                    cacheNullifiers.erase(it->first);
+                }
+            }
+            it = mapNullifiers.erase(it);
+        }
+    }
+
+    template<typename Tree, typename Map, typename MapEntry>
+    void BatchWriteAnchors(Map& mapAnchors, std::map<uint256, Tree>& cacheAnchors)
+    {
+        for (auto it = mapAnchors.begin(); it != mapAnchors.end(); ) {
+            if (it->second.flags & MapEntry::DIRTY) {
+                // Same optimization used in CCoinsViewDB is to only write dirty entries.
+                if (it->second.entered) {
+                    if (it->first != Tree::empty_root()) {
+                        auto ret = cacheAnchors.insert(std::make_pair(it->first, Tree())).first;
+                        ret->second = it->second.tree;
+                    }
+                } else {
+                    cacheAnchors.erase(it->first);
+                }
+            }
+            it = mapAnchors.erase(it);
+        }
+    }
+
+    bool BatchWrite(CCoinsMap& mapCoins,
+                    const uint256& hashBlock,
+                    const uint256& hashSproutAnchor,
+                    const uint256& hashSaplingAnchor,
+                    const uint256& hashOrchardAnchor,
+                    CAnchorsSproutMap& mapSproutAnchors,
+                    CAnchorsSaplingMap& mapSaplingAnchors,
+                    CAnchorsOrchardMap& mapOrchardAnchors,
+                    CNullifiersMap& mapSproutNullifiers,
+                    CNullifiersMap& mapSaplingNullifiers,
+                    CNullifiersMap& mapOrchardNullifiers,
+                    CHistoryCacheMap &historyCacheMap)
+    {
+        for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
+            if (it->second.flags & CCoinsCacheEntry::DIRTY) {
+                // Same optimization used in CCoinsViewDB is to only write dirty entries.
+                map_[it->first] = it->second.coins;
+                if (it->second.coins.IsPruned() && insecure_rand() % 3 == 0) {
+                    // Randomly delete empty entries on write.
+                    map_.erase(it->first);
+                }
+            }
+            it = mapCoins.erase(it);
+        }
+
+        BatchWriteAnchors<SproutMerkleTree, CAnchorsSproutMap, CAnchorsSproutCacheEntry>(mapSproutAnchors, mapSproutAnchors_);
+        BatchWriteAnchors<SaplingMerkleTree, CAnchorsSaplingMap, CAnchorsSaplingCacheEntry>(mapSaplingAnchors, mapSaplingAnchors_);
+        BatchWriteAnchors<OrchardMerkleFrontier, CAnchorsOrchardMap, CAnchorsOrchardCacheEntry>(mapOrchardAnchors, mapOrchardAnchors_);
+
+        BatchWriteNullifiers(mapSproutNullifiers, mapSproutNullifiers_);
+        BatchWriteNullifiers(mapSaplingNullifiers, mapSaplingNullifiers_);
+        BatchWriteNullifiers(mapOrchardNullifiers, mapOrchardNullifiers_);
+
+        if (!hashBlock.IsNull())
+            hashBestBlock_ = hashBlock;
+        if (!hashSproutAnchor.IsNull())
+            hashBestSproutAnchor_ = hashSproutAnchor;
+        if (!hashSaplingAnchor.IsNull())
+            hashBestSaplingAnchor_ = hashSaplingAnchor;
+        if (!hashOrchardAnchor.IsNull())
+            hashBestOrchardAnchor_ = hashOrchardAnchor;
+        return true;
+    }
+
+    bool GetStats(CCoinsStats& stats) const { return false; }
+};
+
+class CCoinsViewCacheTest : public CCoinsViewCache
+{
+public:
+    CCoinsViewCacheTest(CCoinsView* base) : CCoinsViewCache(base) {}
+
+    void SelfTest() const
+    {
+        // Manually recompute the dynamic usage of the whole data, and compare it.
+        size_t ret = memusage::DynamicUsage(cacheCoins) +
+                     memusage::DynamicUsage(cacheSproutAnchors) +
+                     memusage::DynamicUsage(cacheSaplingAnchors) +
+                     memusage::DynamicUsage(cacheOrchardAnchors) +
+                     memusage::DynamicUsage(cacheSproutNullifiers) +
+                     memusage::DynamicUsage(cacheSaplingNullifiers) +
+                     memusage::DynamicUsage(cacheOrchardNullifiers) +
+                     memusage::DynamicUsage(historyCacheMap);
+        for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
+            ret += it->second.coins.DynamicMemoryUsage();
+        }
+        EXPECT_EQ(DynamicMemoryUsage(), ret);
+    }
+
+};
+
+class TxWithNullifiers
+{
+public:
+    CTransaction tx;
+    uint256 sproutNullifier;
+    uint256 saplingNullifier;
+    uint256 orchardNullifier;
+
+    TxWithNullifiers()
+    {
+        CMutableTransaction mutableTx;
+
+        sproutNullifier = GetRandHash();
+        JSDescription jsd;
+        jsd.nullifiers[0] = sproutNullifier;
+        mutableTx.vJoinSplit.emplace_back(jsd);
+        
+        saplingNullifier = GetRandHash();
+        SpendDescription sd;
+        sd.nullifier = saplingNullifier;
+        mutableTx.vShieldedSpend.push_back(sd);
+
+        // The Orchard bundle builder always pads to two Actions, so we can just
+        // use an empty builder to create a dummy Orchard bundle.
+        uint256 orchardAnchor;
+        uint256 dataToBeSigned;
+        auto builder = orchard::Builder(true, true, orchardAnchor);
+        mutableTx.orchardBundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
+        orchardNullifier = mutableTx.orchardBundle.GetNullifiers()[0];
+
+        tx = CTransaction(mutableTx);
+    }
+};
+
+}
