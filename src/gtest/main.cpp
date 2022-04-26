@@ -2,6 +2,7 @@
 #include "init.h"
 #include "key.h"
 #include "pubkey.h"
+#include "random.h"
 #include "util.h"
 #include "utiltest.h"
 
@@ -12,6 +13,9 @@
 #include <boost/filesystem.hpp>
 
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
+
+uint256 insecure_rand_seed = GetRandHash();
+FastRandomContext insecure_rand_ctx(insecure_rand_seed);
 
 struct ECCryptoClosure
 {
