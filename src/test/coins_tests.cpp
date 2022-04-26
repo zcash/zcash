@@ -331,7 +331,7 @@ template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt,
 template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SaplingMerkleTree &tree) { return cache.GetSaplingAnchorAt(rt, tree); }
 template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, OrchardMerkleFrontier &tree) { return cache.GetOrchardAnchorAt(rt, tree); }
 
-BOOST_FIXTURE_TEST_SUITE(coins_tests, JoinSplitTestingSetup)
+BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
 
 void checkNullifierCache(const CCoinsViewCacheTest &cache, const TxWithNullifiers &txWithNullifiers, bool shouldBeInCache) {
     // Make sure the nullifiers have not gotten mixed up
