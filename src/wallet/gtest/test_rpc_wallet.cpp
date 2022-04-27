@@ -345,8 +345,6 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     // Tear down
     chainActive.SetTip(NULL);
     mapBlockIndex.erase(blockHash);
-    mapArgs.erase("-developersapling");
-    mapArgs.erase("-experimentalfeatures");
 
     }
     // Revert to default
