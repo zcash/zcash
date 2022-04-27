@@ -587,3 +587,74 @@ TEST(Joinsplit, NoteClass)
     ASSERT_EQ(note.r, clone.r);
     ASSERT_EQ(note.a_pk, clone.a_pk);
 }
+
+TEST(Joinsplit, BasicJoinsplitVerification)
+{
+    LoadProofParameters();
+
+    // We only check that joinsplits are constructed properly
+    // and verify them here. It's generally libzcash's job
+    // to ensure the integrity of the Sprout protocol
+    // implementation through its own tests.
+
+    // construct a merkle tree
+    SproutMerkleTree merkleTree;
+
+    auto k = libzcash::SproutSpendingKey::random();
+    auto addr = k.address();
+
+    libzcash::SproutNote note(addr.a_pk, 100, uint256(), uint256());
+
+    // commitment from note
+    uint256 commitment = note.cm();
+
+    // insert commitment into the merkle tree
+    merkleTree.append(commitment);
+
+    // compute the merkle root we will be working with
+    uint256 rt = merkleTree.root();
+
+    auto witness = merkleTree.witness();
+
+    // create JSDescription
+    Ed25519VerificationKey joinSplitPubKey;
+    std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
+        libzcash::JSInput(witness, note, k),
+        libzcash::JSInput() // dummy input of zero value
+    };
+    std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs = {
+        libzcash::JSOutput(addr, 50),
+        libzcash::JSOutput(addr, 50)
+    };
+
+    auto verifier = ProofVerifier::Strict();
+
+    {
+        auto jsdesc = JSDescriptionInfo(joinSplitPubKey, rt, inputs, outputs, 0, 0).BuildDeterministic();
+        EXPECT_TRUE(verifier.VerifySprout(jsdesc, joinSplitPubKey));
+
+        CDataStream ss(SER_DISK, CLIENT_VERSION);
+        auto os = WithVersion(&ss, SAPLING_TX_VERSION | 1 << 31);
+        os << jsdesc;
+
+        JSDescription jsdesc_deserialized;
+        os >> jsdesc_deserialized;
+
+        EXPECT_TRUE(jsdesc_deserialized == jsdesc);
+        EXPECT_TRUE(verifier.VerifySprout(jsdesc_deserialized, joinSplitPubKey));
+    }
+
+    {
+        // Ensure that the balance equation is working.
+        EXPECT_THROW(JSDescriptionInfo(joinSplitPubKey, rt, inputs, outputs, 10, 0).BuildDeterministic(), std::invalid_argument);
+        EXPECT_THROW(JSDescriptionInfo(joinSplitPubKey, rt, inputs, outputs, 0, 10).BuildDeterministic(), std::invalid_argument);
+    }
+
+    {
+        // Ensure that it won't verify if the root is changed.
+        auto test = JSDescriptionInfo(joinSplitPubKey, rt, inputs, outputs, 0, 0).BuildDeterministic();
+        test.anchor = GetRandHash();
+        EXPECT_FALSE(verifier.VerifySprout(test, joinSplitPubKey));
+    }
+
+}

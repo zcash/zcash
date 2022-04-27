@@ -51,7 +51,8 @@ zcash_gtest_SOURCES = \
 	gtest/test_txid.cpp \
 	gtest/test_upgrades.cpp \
 	gtest/test_validation.cpp \
-	gtest/test_zip32.cpp
+	gtest/test_zip32.cpp \
+	gtest/test_coins.cpp
 if ENABLE_WALLET
 zcash_gtest_SOURCES += \
 	wallet/gtest/test_wallet_zkeys.cpp \
@@ -59,7 +60,8 @@ zcash_gtest_SOURCES += \
 	wallet/gtest/test_note_selection.cpp \
 	wallet/gtest/test_orchard_wallet.cpp \
 	wallet/gtest/test_paymentdisclosure.cpp \
-	wallet/gtest/test_wallet.cpp
+	wallet/gtest/test_wallet.cpp \
+	wallet/gtest/test_rpc_wallet.cpp
 endif
 
 zcash_gtest_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)

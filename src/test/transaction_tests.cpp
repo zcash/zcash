@@ -53,7 +53,7 @@ class UNSAFE_CTransaction : public CTransaction {
         UNSAFE_CTransaction(const CMutableTransaction &tx) : CTransaction(tx, true) {}
 };
 
-BOOST_FIXTURE_TEST_SUITE(transaction_tests, JoinSplitTestingSetup)
+BOOST_FIXTURE_TEST_SUITE(transaction_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(tx_valid)
 {
@@ -292,82 +292,6 @@ SetupDummyInputs(CBasicKeyStore& keystoreRet, CCoinsViewCache& coinsRet)
     coinsRet.ModifyCoins(dummyTransactions[1].GetHash())->FromTx(dummyTransactions[1], 0);
 
     return dummyTransactions;
-}
-
-BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
-{
-    // We only check that joinsplits are constructed properly
-    // and verify them here.
-    //
-    // See #471, #520, #459 and probably others.
-    //
-    // There may be ways to use boost tests to catch failing
-    // threads or processes (?) but they appear to not work
-    // on all platforms and would gently push us down an ugly
-    // path. We should just fix the assertions.
-    //
-    // Also, it's generally libzcash's job to ensure the
-    // integrity of the scheme through its own tests.
-
-    // construct a merkle tree
-    SproutMerkleTree merkleTree;
-
-    auto k = libzcash::SproutSpendingKey::random();
-    auto addr = k.address();
-
-    libzcash::SproutNote note(addr.a_pk, 100, uint256(), uint256());
-
-    // commitment from coin
-    uint256 commitment = note.cm();
-
-    // insert commitment into the merkle tree
-    merkleTree.append(commitment);
-
-    // compute the merkle root we will be working with
-    uint256 rt = merkleTree.root();
-
-    auto witness = merkleTree.witness();
-
-    // create JSDescription
-    Ed25519VerificationKey joinSplitPubKey;
-    std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
-        libzcash::JSInput(witness, note, k),
-        libzcash::JSInput() // dummy input of zero value
-    };
-    std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs = {
-        libzcash::JSOutput(addr, 50),
-        libzcash::JSOutput(addr, 50)
-    };
-
-    auto verifier = ProofVerifier::Strict();
-
-    {
-        auto jsdesc = JSDescriptionInfo(joinSplitPubKey, rt, inputs, outputs, 0, 0).BuildDeterministic();
-        BOOST_CHECK(verifier.VerifySprout(jsdesc, joinSplitPubKey));
-
-        CDataStream ss(SER_DISK, CLIENT_VERSION);
-        auto os = WithVersion(&ss, SAPLING_TX_VERSION | 1 << 31);
-        os << jsdesc;
-
-        JSDescription jsdesc_deserialized;
-        os >> jsdesc_deserialized;
-
-        BOOST_CHECK(jsdesc_deserialized == jsdesc);
-        BOOST_CHECK(verifier.VerifySprout(jsdesc_deserialized, joinSplitPubKey));
-    }
-
-    {
-        // Ensure that the balance equation is working.
-        BOOST_CHECK_THROW(JSDescriptionInfo(joinSplitPubKey, rt, inputs, outputs, 10, 0).BuildDeterministic(), std::invalid_argument);
-        BOOST_CHECK_THROW(JSDescriptionInfo(joinSplitPubKey, rt, inputs, outputs, 0, 10).BuildDeterministic(), std::invalid_argument);
-    }
-
-    {
-        // Ensure that it won't verify if the root is changed.
-        auto test = JSDescriptionInfo(joinSplitPubKey, rt, inputs, outputs, 0, 0).BuildDeterministic();
-        test.anchor = GetRandHash();
-        BOOST_CHECK(!verifier.VerifySprout(test, joinSplitPubKey));
-    }
 }
 
 void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransaction tx)

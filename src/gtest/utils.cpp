@@ -1,4 +1,6 @@
 #include "gtest/utils.h"
+#include "rpc/server.h"
+#include "wallet/wallet.h"
 
 int GenZero(int n)
 {
@@ -30,4 +32,37 @@ void LoadProofParameters() {
         reinterpret_cast<const codeunit*>(sprout_groth16_str.c_str()),
         sprout_groth16_str.length()
     );
+}
+
+void LoadGlobalWallet() {
+    CCoinsViewDB *pcoinsdbview;
+    bool fFirstRun;
+
+    // someone else might have initialized the bitdb, and we need fDbEnvInit to be false for MakeMock
+    bitdb.Flush(true);
+    bitdb.Reset();
+
+    bitdb.MakeMock();
+
+    pwalletMain = new CWallet(Params());
+    pwalletMain->LoadWallet(fFirstRun);
+    if (!pwalletMain->HaveMnemonicSeed()) {
+        pwalletMain->GenerateNewSeed();
+        pwalletMain->VerifyMnemonicSeed(pwalletMain->GetMnemonicSeed().value().GetMnemonic());
+    }
+
+    RegisterValidationInterface(pwalletMain);
+    RegisterWalletRPCCommands(tableRPC);
+
+    pcoinsdbview = new CCoinsViewDB(1 << 23, true);
+    pcoinsTip = new CCoinsViewCache(pcoinsdbview);
+}
+
+void UnloadGlobalWallet() {
+    UnregisterValidationInterface(pwalletMain);
+    delete pwalletMain;
+    pwalletMain = NULL;
+
+    bitdb.Flush(true);
+    bitdb.Reset();
 }
