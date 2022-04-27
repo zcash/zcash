@@ -187,7 +187,7 @@ def main():
     parser.add_argument('--force', '-f', action='store_true', help='run tests even on platforms where they are disabled by default (e.g. windows).')
     parser.add_argument('--help', '-h', '-?', action='store_true', help='print help text and exit')
     parser.add_argument('--jobs', '-j', type=int, default=4, help='how many test scripts to run in parallel. Default=4.')
-    parser.add_argument('--machines', '-m', type=int, default=4, help='how many machines run in parallel. Default=4.')
+    parser.add_argument('--machines', '-m', type=int, default=-1, help='how many machines run in parallel. Default=4.')
     parser.add_argument('--rpcgroup', '-r', type=int, default=4, help='how many test on each machine to run in parallel. Default=4.')
     parser.add_argument('--nozmq', action='store_true', help='do not run the zmq tests')
     args, unknown_args = parser.parse_known_args()
@@ -265,7 +265,7 @@ def main():
         subprocess.check_call((config["environment"]["SRCDIR"] + '/qa/rpc-tests/' + test_list[0]).split() + ['-h'])
         sys.exit(0)
 
-    if args.machines:
+    if args.machines != -1:
         #check if we have evenly divisble groups of test to ensure all tests are included
         if len(test_list) % args.machines !=0:
             n = int(len(test_list) // args.machines + 1)
