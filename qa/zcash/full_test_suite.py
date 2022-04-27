@@ -175,6 +175,10 @@ STAGES = [
     'secp256k1',
     'univalue',
     'rpc',
+    'rpc_group0',
+    'rpc_group1',
+    'rpc_group2',
+    'rpc_group3',
 ]
 
 STAGE_COMMANDS = {
@@ -187,6 +191,10 @@ STAGE_COMMANDS = {
     'secp256k1': ['make', '-C', repofile('src/secp256k1'), 'check'],
     'univalue': ['make', '-C', repofile('src/univalue'), 'check'],
     'rpc': [repofile('qa/pull-tester/rpc-tests.py')],
+    'rpc_group0': [repofile('qa/pull-tester/rpc-tests.py'), '-m4', '-r0'],
+    'rpc_group1': [repofile('qa/pull-tester/rpc-tests.py'), '-m4', '-r1'],
+    'rpc_group2': [repofile('qa/pull-tester/rpc-tests.py'), '-m4', '-r2'],
+    'rpc_group3': [repofile('qa/pull-tester/rpc-tests.py'), '-m4', '-r3'],
 }
 
 
