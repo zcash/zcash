@@ -724,7 +724,6 @@ TEST(CoinsTests,AnchorsFlushTest)
 template<typename Tree> void anchorsTestImpl(ShieldedType type)
 {
     // TODO: These tests should be more methodical.
-    //       Or, integrate with Bitcoin's tests later.
 
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);

@@ -593,17 +593,9 @@ TEST(Joinsplit, BasicJoinsplitVerification)
     LoadProofParameters();
 
     // We only check that joinsplits are constructed properly
-    // and verify them here.
-    //
-    // See #471, #520, #459 and probably others.
-    //
-    // There may be ways to use boost tests to catch failing
-    // threads or processes (?) but they appear to not work
-    // on all platforms and would gently push us down an ugly
-    // path. We should just fix the assertions.
-    //
-    // Also, it's generally libzcash's job to ensure the
-    // integrity of the scheme through its own tests.
+    // and verify them here. It's generally libzcash's job
+    // to ensure the integrity of the Sprout protocol
+    // implementation through its own tests.
 
     // construct a merkle tree
     SproutMerkleTree merkleTree;
@@ -613,7 +605,7 @@ TEST(Joinsplit, BasicJoinsplitVerification)
 
     libzcash::SproutNote note(addr.a_pk, 100, uint256(), uint256());
 
-    // commitment from coin
+    // commitment from note
     uint256 commitment = note.cm();
 
     // insert commitment into the merkle tree
