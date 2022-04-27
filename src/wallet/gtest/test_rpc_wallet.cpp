@@ -66,14 +66,14 @@ TEST(WalletRPCTests,ZShieldCoinbaseInternals)
         try {
             proxy.perform_joinsplit(info);
         } catch (const std::runtime_error & e) {
-            EXPECT_TRUE(string(e.what()).find("unsupported joinsplit input")!= string::npos);
+            EXPECT_TRUE(string(e.what()).find("unsupported joinsplit input") != string::npos);
         }
 
         info.vjsin.clear();
         try {
             proxy.perform_joinsplit(info);
         } catch (const std::runtime_error & e) {
-            EXPECT_TRUE(string(e.what()).find("error verifying joinsplit")!= string::npos);
+            EXPECT_TRUE(string(e.what()).find("error verifying joinsplit") != string::npos);
         }
     }
 
@@ -140,7 +140,7 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
 
         // memo is longer than allowed
         std::vector<char> v (2 * (ZC_MEMO_SIZE+1));
-        std::fill(v.begin(),v.end(), 'A');
+        std::fill(v.begin(), v.end(), 'A');
         std::string bigmemo(v.begin(), v.end());
 
         try {
@@ -151,7 +151,7 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
         }
 
         // invalid hexadecimal string
-        std::fill(v.begin(),v.end(), '@'); // not a hex character
+        std::fill(v.begin(), v.end(), '@'); // not a hex character
         std::string badmemo(v.begin(), v.end());
 
         try {
@@ -162,9 +162,9 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
         }
 
         // odd length hexadecimal string
-        std::fill(v.begin(),v.end(), 'A');
+        std::fill(v.begin(), v.end(), 'A');
         v.resize(v.size() - 1);
-        assert(v.size() %2 == 1); // odd length
+        assert(v.size() % 2 == 1); // odd length
         std::string oddmemo(v.begin(), v.end());
         try {
             proxy.get_memo_from_hex_string(oddmemo);
@@ -192,7 +192,7 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
             proxy.perform_joinsplit(info, witnesses, anchor);
             FAIL() << "Should have caused an error";
         } catch (const std::runtime_error & e) {
-            EXPECT_TRUE(string(e.what()).find("anchor is null")!= string::npos);
+            EXPECT_TRUE(string(e.what()).find("anchor is null") != string::npos);
         }
 
         try {
@@ -200,7 +200,7 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
             proxy.perform_joinsplit(info, v);
             FAIL() << "Should have caused an error";
         } catch (const std::runtime_error & e) {
-            EXPECT_TRUE(string(e.what()).find("anchor is null")!= string::npos);
+            EXPECT_TRUE(string(e.what()).find("anchor is null") != string::npos);
         }
 
         info.notes.push_back(SproutNote());
@@ -208,7 +208,7 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
             proxy.perform_joinsplit(info);
             FAIL() << "Should have caused an error";
         } catch (const std::runtime_error & e) {
-            EXPECT_TRUE(string(e.what()).find("number of notes")!= string::npos);
+            EXPECT_TRUE(string(e.what()).find("number of notes") != string::npos);
         }
 
         info.notes.clear();
@@ -219,7 +219,7 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
             proxy.perform_joinsplit(info);
             FAIL() << "Should have caused an error";
         } catch (const std::runtime_error & e) {
-            EXPECT_TRUE(string(e.what()).find("unsupported joinsplit input")!= string::npos);
+            EXPECT_TRUE(string(e.what()).find("unsupported joinsplit input") != string::npos);
         }
 
         info.vjsin.clear();
@@ -227,7 +227,7 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
             proxy.perform_joinsplit(info);
             FAIL() << "Should have caused an error";
         } catch (const std::runtime_error & e) {
-            EXPECT_TRUE(string(e.what()).find("error verifying joinsplit")!= string::npos);
+            EXPECT_TRUE(string(e.what()).find("error verifying joinsplit") != string::npos);
         }
     }
     }
