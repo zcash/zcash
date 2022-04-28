@@ -659,9 +659,9 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
             }
 
             /* hf22 rule applied to stale blocks */
-            if (params.nAllowNotariesMineExtraBlockAfterStaleHeight != boost::none) {
+            if (params.nHF22Height != boost::none) {
 
-                const uint32_t nHeightAfterGAPSecondBlockAllowed = params.nAllowNotariesMineExtraBlockAfterStaleHeight.get();
+                const uint32_t nHeightAfterGAPSecondBlockAllowed = params.nHF22Height.get();
                 const uint32_t nMaxGAPAllowed = params.nMaxFutureBlockTime + 1;
 
                 /*  in KMD chain after nHeightAfterGAPSecondBlockAllowed height we should allow

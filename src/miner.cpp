@@ -1395,9 +1395,9 @@ void static BitcoinMiner()
 
                     /* check if hf22 rule can be applied */
                     const Consensus::Params &params = chainparams.GetConsensus();
-                    if (params.nAllowNotariesMineExtraBlockAfterStaleHeight != boost::none)
+                    if (params.nHF22Height != boost::none)
                     {
-                        const uint32_t nHeightAfterGAPSecondBlockAllowed = params.nAllowNotariesMineExtraBlockAfterStaleHeight.get();
+                        const uint32_t nHeightAfterGAPSecondBlockAllowed = params.nHF22Height.get();
                         const uint32_t nMaxGAPAllowed = params.nMaxFutureBlockTime + 1;
                         const uint32_t tiptime = pindexPrev->GetBlockTime();
 
