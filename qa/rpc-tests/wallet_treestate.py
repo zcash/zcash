@@ -75,7 +75,7 @@ class WalletTreeStateTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address": self.nodes[2].z_getnewaddress(), "amount": Decimal('18.0')})
         recipients.append({"address": self.nodes[2].z_getnewaddress(), "amount": Decimal('12.0') - 4*DEFAULT_FEE})
-        myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1)
 
         # Wait for Tx 2 to begin executing...
         for x in range(1, 60):

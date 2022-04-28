@@ -79,7 +79,7 @@ static const unsigned int WITNESS_CACHE_SIZE = MAX_REORG_LENGTH + 1;
 //! Amount of entropy used in generation of the mnemonic seed, in bytes.
 static const size_t WALLET_MNEMONIC_ENTROPY_LENGTH = 32;
 //! -orchardanchorconfirmations default
-static const unsigned int DEFAULT_ORCHARD_ANCHOR_CONFIRMATIONS = 1;
+static const unsigned int DEFAULT_ORCHARD_ANCHOR_CONFIRMATIONS = 10;
 
 extern const char * DEFAULT_WALLET_DAT;
 
@@ -1787,7 +1787,8 @@ public:
          std::vector<std::optional<SaplingWitness>>& witnesses,
          uint256 &final_anchor);
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> GetOrchardSpendInfo(
-        const std::vector<OrchardNoteMetadata>& orchardNoteMetadata) const;
+        const std::vector<OrchardNoteMetadata>& orchardNoteMetadata,
+        uint256 anchor) const;
 
     isminetype IsMine(const CTxIn& txin) const;
     CAmount GetDebit(const CTxIn& txin, const isminefilter& filter) const;

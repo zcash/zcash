@@ -260,6 +260,7 @@ private:
     CCriticalSection* cs_coinsView;
     CMutableTransaction mtx;
     CAmount fee = 10000;
+    std::optional<uint256> orchardAnchor;
     std::optional<orchard::Builder> orchardBuilder;
     CAmount valueBalanceOrchard = 0;
 
@@ -297,6 +298,7 @@ public:
         cs_coinsView(std::move(builder.cs_coinsView)),
         mtx(std::move(builder.mtx)),
         fee(std::move(builder.fee)),
+        orchardAnchor(std::move(builder.orchardAnchor)),
         orchardBuilder(std::move(builder.orchardBuilder)),
         valueBalanceOrchard(std::move(builder.valueBalanceOrchard)),
         spends(std::move(builder.spends)),
@@ -336,6 +338,8 @@ public:
     void SetFee(CAmount fee);
 
     bool SupportsOrchard() const;
+
+    std::optional<uint256> GetOrchardAnchor() const;
 
     bool AddOrchardSpend(
         libzcash::OrchardSpendingKey sk,

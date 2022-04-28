@@ -93,7 +93,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         zsendamount = Decimal('1.0') - DEFAULT_FEE
         recipients = []
         recipients.append({"address": z_bob, "amount": zsendamount})
-        myopid = self.nodes[0].z_sendmany(z_alice, recipients)
+        myopid = self.nodes[0].z_sendmany(z_alice, recipients, 1)
         persist_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
         persist_transparent = self.nodes[0].sendtoaddress(bob, 0.01)
         # Verify transparent transaction is version 4 intended for Sapling branch
@@ -157,7 +157,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         self.split_network()
 
         print("\nBlockheight advances to equal expiry block height. After reorg, txs should persist in mempool")
-        myopid = self.nodes[0].z_sendmany(z_alice, recipients)
+        myopid = self.nodes[0].z_sendmany(z_alice, recipients, 1)
         persist_shielded_2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         persist_transparent_2 = self.nodes[0].sendtoaddress(bob, 0.01)
         rawtx_trans = self.nodes[0].getrawtransaction(persist_transparent_2, 1)
@@ -192,7 +192,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
 
         print("\nBlockheight advances to greater than expiry block height. After reorg, txs should expire from mempool")
         print("Balance before expire_shielded is sent: ", self.nodes[0].z_gettotalbalance())
-        myopid = self.nodes[0].z_sendmany(z_alice, recipients)
+        myopid = self.nodes[0].z_sendmany(z_alice, recipients, 1)
         expire_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
         expire_transparent = self.nodes[0].sendtoaddress(bob, 0.01)
         print("Blockheight node 0 at expire_transparent creation:", self.nodes[0].getblockchaininfo()['blocks'])
@@ -223,7 +223,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
 
         print("\nBlockheight advances to just before expiring soon threshold.  Txs should be rejected from entering mempool.")
         print("Balance before expire_shielded is sent: ", self.nodes[0].z_gettotalbalance())
-        myopid = self.nodes[0].z_sendmany(z_alice, recipients)
+        myopid = self.nodes[0].z_sendmany(z_alice, recipients, 1)
         expire_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
         expire_transparent = self.nodes[0].sendtoaddress(bob, 0.01)
         print("Blockheight node 0 at expire_transparent creation:", self.nodes[0].getblockchaininfo()['blocks'])

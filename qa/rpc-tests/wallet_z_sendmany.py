@@ -23,7 +23,7 @@ from decimal import Decimal
 class WalletZSendmanyTest(BitcoinTestFramework):
     def setup_network(self, split=False):
         self.nodes = start_nodes(3, self.options.tmpdir, [[
-            nuparams(NU5_BRANCH_ID, 220),
+            nuparams(NU5_BRANCH_ID, 240),
         ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
@@ -91,7 +91,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # send from node 0 to node 2 taddr
         mytxid = self.nodes[0].sendtoaddress(mytaddr, 10.0)
         self.sync_all()
-        self.nodes[0].generate(1)
+        self.nodes[0].generate(10)
         self.sync_all()
 
         # send node 2 taddr to zaddr
@@ -112,7 +112,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         assert_equal(Decimal(wallet_info["shielded_unconfirmed_balance"]), zsendmanynotevalue)
         assert_equal(Decimal(wallet_info["shielded_balance"]), Decimal('0.0'))
 
-        self.nodes[2].generate(1)
+        self.nodes[2].generate(10)
         self.sync_all()
 
         assert_equal(self.nodes[2].getbalance(), node2utxobalance)

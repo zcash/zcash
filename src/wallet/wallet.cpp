@@ -3584,10 +3584,11 @@ void CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
 }
 
 std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> CWallet::GetOrchardSpendInfo(
-    const std::vector<OrchardNoteMetadata>& orchardNoteMetadata) const
+    const std::vector<OrchardNoteMetadata>& orchardNoteMetadata,
+    uint256 anchor) const
 {
     AssertLockHeld(cs_wallet);
-    return orchardWallet.GetSpendInfo(orchardNoteMetadata);
+    return orchardWallet.GetSpendInfo(orchardNoteMetadata, anchor);
 }
 
 isminetype CWallet::IsMine(const CTxIn &txin) const

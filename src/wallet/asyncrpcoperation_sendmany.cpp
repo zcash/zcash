@@ -497,7 +497,9 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
         pwalletMain->GetSaplingNoteWitnesses(saplingOutPoints, witnesses, anchor);
-        orchardSpendInfo = pwalletMain->GetOrchardSpendInfo(spendable.orchardNoteMetadata);
+        if (builder_.GetOrchardAnchor().has_value()) {
+            orchardSpendInfo = pwalletMain->GetOrchardSpendInfo(spendable.orchardNoteMetadata, builder_.GetOrchardAnchor().value());
+        }
     }
 
     // Add Orchard spends

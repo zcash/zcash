@@ -259,7 +259,8 @@ TransactionBuilder::TransactionBuilder(
     nHeight(nHeight),
     keystore(keystore),
     coinsView(coinsView),
-    cs_coinsView(cs_coinsView)
+    cs_coinsView(cs_coinsView),
+    orchardAnchor(orchardAnchor)
 {
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
 
@@ -291,6 +292,11 @@ void TransactionBuilder::SetExpiryHeight(uint32_t nExpiryHeight)
 bool TransactionBuilder::SupportsOrchard() const {
     return orchardBuilder.has_value();
 }
+
+std::optional<uint256> TransactionBuilder::GetOrchardAnchor() const {
+    return orchardAnchor;
+}
+
 
 bool TransactionBuilder::AddOrchardSpend(
     libzcash::OrchardSpendingKey sk,

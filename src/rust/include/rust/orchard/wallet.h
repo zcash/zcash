@@ -362,7 +362,8 @@ void orchard_wallet_get_potential_spends_from_nullifier(
 OrchardSpendInfoPtr* orchard_wallet_get_spend_info(
         const OrchardWalletPtr* wallet,
         const unsigned char txid[32],
-        uint32_t action_idx);
+        uint32_t action_idx,
+        const unsigned char as_of_root[32]);
 
 /**
  * Run the garbage collection operation on the wallet's note commitment
