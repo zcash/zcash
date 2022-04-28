@@ -1234,7 +1234,7 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
             "{\n"
             "  \"hash\": \"hash\",         (string) hex block hash\n"
             "  \"height\": n,              (numeric) block height\n"
-            "  \"time\": n,                (numeric) block time\n"
+            "  \"time\": n,                (numeric) block time: UTC seconds since the Unix 1970-01-01 epoch\n"
             "  \"sprout\": {\n"
             "    \"skipHash\": \"hash\",   (string) hash of most recent block with more information\n"
             "    \"commitments\": {\n"
