@@ -1810,8 +1810,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     auto verifier = libzcash::ProofVerifier::Strict();
     if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx,chainActive.LastTip()->nHeight+1,chainActive.LastTip()->GetMedianTimePast() + 777,0) < 0 )
     {
-        fprintf(stderr,"AcceptToMemoryPool komodo_validate_interest failure\n");
-        return error("AcceptToMemoryPool: komodo_validate_interest failed");
+        return error("%s: komodo_validate_interest failed txid.%s", __func__, tx.GetHash().ToString());
     }
     
     if (!CheckTransaction(tiptime,tx, state, verifier, 0, 0))
@@ -5405,6 +5404,7 @@ bool ContextualCheckBlock(int32_t slowflag,const CBlock& block, CValidationState
     uint32_t cmptime = block.nTime;
     const int32_t txheight = nHeight == 0 ? komodo_block2height((CBlock *)&block) : nHeight;
 
+    /* HF22 - check interest validation against pindexPrev->GetMedianTimePast() + 777 */
     if (ASSETCHAINS_SYMBOL[0] == 0 &&
         consensusParams.nHF22Height != boost::none && txheight > consensusParams.nHF22Height.get()
     ) {
