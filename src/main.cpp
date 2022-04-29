@@ -5258,11 +5258,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     for (uint32_t i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction& tx = block.vtx[i];
-        if ( komodo_validate_interest(tx,height == 0 ? komodo_block2height((CBlock *)&block) : height,block.nTime,0) < 0 )
-        {
-            fprintf(stderr, "validate intrest failed for txnum.%i tx.%s\n", i, tx.ToString().c_str());
-            return error("CheckBlock: komodo_validate_interest failed");
-        }
+
         if (!CheckTransaction(tiptime,tx, state, verifier, i, (int32_t)block.vtx.size()))
             return error("CheckBlock: CheckTransaction failed");
     }
@@ -5406,9 +5402,19 @@ bool ContextualCheckBlock(int32_t slowflag,const CBlock& block, CValidationState
     const Consensus::Params& consensusParams = Params().GetConsensus();
     bool sapling = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING);
 
-    // Check that all transactions are finalized
+    uint32_t cmptime = block.nTime;
+    const int32_t txheight = nHeight == 0 ? komodo_block2height((CBlock *)&block) : nHeight;
+
+    // Check that all transactions are finalized, also validate interest in each tx
     for (uint32_t i = 0; i < block.vtx.size(); i++) {
         const CTransaction& tx = block.vtx[i];
+
+        // Interest validation
+        if (komodo_validate_interest(tx, txheight, cmptime, 0) < 0)
+        {
+            fprintf(stderr, "validate intrest failed for txnum.%i tx.%s\n", i, tx.ToString().c_str());
+            return error("%s: komodo_validate_interest failed", __func__);
+        }
 
         // Check transaction contextually against consensus rules at block height
         if (!ContextualCheckTransaction(slowflag,&block,pindexPrev,tx, state, nHeight, 100)) {
