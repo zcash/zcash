@@ -488,7 +488,7 @@ def sh_progress(markers, *args):
 class GitHash (object):
     '''A git commit hash.'''
     RGX = re.compile(
-        r'^([0-9a-f]{8,40})$',
+        r'^([0-9a-f]{10,40})$',
     )
 
     @staticmethod
