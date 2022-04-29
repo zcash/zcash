@@ -318,20 +318,19 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
 
             /* HF22 - check interest validation against pindexPrev->GetMedianTimePast() + 777 */
             uint32_t cmptime = (uint32_t)pblock->nTime;
-            const Consensus::Params &params = chainparams.GetConsensus();
 
             if (ASSETCHAINS_SYMBOL[0] == 0 &&
-                params.nHF22Height != boost::none && nHeight > params.nHF22Height.get()
+                consensusParams.nHF22Height != boost::none && nHeight > consensusParams.nHF22Height.get()
             ) {
                 uint32_t cmptime_old = cmptime;
-                cmptime = pindexPrev->GetMedianTimePast() + 777;
+                cmptime = nMedianTimePast + 777;
                 LogPrint("hfnet","%s[%d]: cmptime.%lu -> %lu\n", __func__, __LINE__, cmptime_old, cmptime);
                 LogPrint("hfnet","%s[%d]: ht.%ld\n", __func__, __LINE__, nHeight);
             }
 
             if (ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx, nHeight, cmptime, 0) < 0)
             {
-                fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure txid.%s nHeight.%d nTime.%u vs locktime.%u\n",tx.GetHash().ToString().c_str(),nHeight,(uint32_t)pblock->nTime,(uint32_t)tx.nLockTime);
+                LogPrintf("%s: komodo_validate_interest failure txid.%s nHeight.%d nTime.%u vs locktime.%u (cmptime.%lu)\n", __func__, tx.GetHash().ToString(), nHeight, (uint32_t)pblock->nTime, (uint32_t)tx.nLockTime, cmptime);
                 continue;
             }
 
