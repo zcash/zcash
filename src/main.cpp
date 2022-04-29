@@ -5405,6 +5405,18 @@ bool ContextualCheckBlock(int32_t slowflag,const CBlock& block, CValidationState
     uint32_t cmptime = block.nTime;
     const int32_t txheight = nHeight == 0 ? komodo_block2height((CBlock *)&block) : nHeight;
 
+    if (ASSETCHAINS_SYMBOL[0] == 0 &&
+        consensusParams.nHF22Height != boost::none && txheight > consensusParams.nHF22Height.get()
+    ) {
+        if (pindexPrev) {
+            uint32_t cmptime_old = cmptime;
+            cmptime = pindexPrev->GetMedianTimePast() + 777;
+            LogPrint("hfnet","%s[%d]: cmptime.%lu -> %lu\n", __func__, __LINE__, cmptime_old, cmptime);
+            LogPrint("hfnet","%s[%d]: ht.%ld, hash.%s\n", __func__, __LINE__, txheight, block.GetHash().ToString());
+        } else
+            LogPrint("hfnet","%s[%d]: STRANGE! pindexPrev == nullptr, ht.%ld, hash.%s!\n", __func__, __LINE__, txheight, block.GetHash().ToString());
+    }
+
     // Check that all transactions are finalized, also validate interest in each tx
     for (uint32_t i = 0; i < block.vtx.size(); i++) {
         const CTransaction& tx = block.vtx[i];
