@@ -5492,7 +5492,17 @@ UniValue z_listoperationids(const UniValue& params, bool fHelp, const CPubKey& m
 #include "script/sign.h"
 extern std::string NOTARY_PUBKEY;
 
-int32_t komodo_notaryvin(CMutableTransaction &txNew, uint8_t *notarypub33, void *pTr)
+/**
+ * @brief Search for 10k sat. P2PK notary utxos and make proof tx (txNew) from it for further include in block.
+ * opretIn should be empty script before december hardfork, and contains prepared opret script after.
+ *
+ * @param txNew - out: signed notary proof tx
+ * @param notarypub33 - notary node compressed pubkey to search 10k sat. P2PK utxos in the wallet (wallet should be unlocked)
+ * @param opretIn - after nDecemberHardforkHeight, prepared in advance opret script, before nDecemberHardforkHeight should be empty script
+ * @param nLockTimeIn - nLockTime that will be set for notary proof tx in-case of after nDecemberHardforkHeight
+ * @return int32_t - signature length of vin[0] in resulted notary proof tx, actually > 0 if txNew is correct, and 0 in-case of any error
+ */
+int32_t komodo_notaryvin(CMutableTransaction &txNew, uint8_t *notarypub33, const CScript &opretIn, uint32_t nLockTimeIn)
 {
     int32_t siglen = 0;
 
@@ -5505,6 +5515,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew, uint8_t *notarypub33, void 
     */
 
     const int nMinDepth = 1, nMaxDepth = 9999999;
+    bool fAfterDecemberHardfork = opretIn.size() > 0;
     if (!(notarypub33[0] == 0x02 || notarypub33[0] == 0x03)) return 0; // invalid compressed public key
 
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
@@ -5533,19 +5544,18 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew, uint8_t *notarypub33, void 
             continue;
 
         txNew.vin.resize(1);
-        txNew.vout.resize((pTr != 0) + 1);
+        txNew.vout.resize(static_cast<size_t>(fAfterDecemberHardfork) + 1);
 
         txNew.vin[0].prevout.hash = out.tx->GetHash();
         txNew.vin[0].prevout.n = out.i;
         txNew.vout[0].nValue = nValue / 2; // 5000 sat. goes to this proof tx, and 5000 sat. will be a fee
         txNew.vout[0].scriptPubKey = CScript() << ParseHex(CRYPTO777_PUBSECPSTR) << OP_CHECKSIG;
 
-        if (pTr != 0)
+        if (fAfterDecemberHardfork)
         {
-            void **p = (void **)pTr;
             txNew.vout[1].nValue = 0;
-            txNew.vout[1].scriptPubKey = *(CScript *)p[0];
-            txNew.nLockTime = (uint32_t)(unsigned long long)p[1];
+            txNew.vout[1].scriptPubKey = opretIn;
+            txNew.nLockTime = nLockTimeIn;
         }
         CTransaction txNewConst(txNew);
         signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, nValue, SIGHASH_ALL), pk, sigdata, consensusBranchId);
