@@ -3774,6 +3774,14 @@ struct PoolMetrics {
         PoolMetrics stats;
         stats.value = pindex->nChainOrchardValue;
 
+        // Before NU5 activation, the Orchard commitment set is empty.
+        OrchardMerkleFrontier orchardTree;
+        if (view->GetOrchardAnchorAt(pindex->hashFinalOrchardRoot, orchardTree)) {
+            stats.created = orchardTree.size();
+        } else {
+            stats.created = 0;
+        }
+
         return stats;
     }
 
@@ -3845,11 +3853,13 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
 
     auto sproutPool = PoolMetrics::Sprout(pindexNew, pcoinsTip);
     auto saplingPool = PoolMetrics::Sapling(pindexNew, pcoinsTip);
+    auto orchardPool = PoolMetrics::Orchard(pindexNew, pcoinsTip);
     auto transparentPool = PoolMetrics::Transparent(pindexNew, pcoinsTip);
 
     MetricsGauge("zcash.chain.verified.block.height", pindexNew->nHeight);
     RenderPoolMetrics("sprout", sproutPool);
     RenderPoolMetrics("sapling", saplingPool);
+    RenderPoolMetrics("orchard", orchardPool);
     RenderPoolMetrics("transparent", transparentPool);
 
     {
