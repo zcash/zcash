@@ -290,9 +290,23 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
                 "or weaker if you wish to allow this transaction to proceed anyway.");
         }
+
         // Sending from Orchard to transparent will be caught above in the
         // AllowRevealedRecipients check; sending to Sprout is disallowed
         // entirely.
+
+        if (spendable.orchardNoteMetadata.size() > nOrchardActionLimit) {
+            throw JSONRPCError(
+                RPC_INVALID_PARAMETER,
+                strprintf(
+                    "Attempting to spend %u Orchard notes would exceed the current limit "
+                    "of %u notes, which exists to prevent memory exhaustion. Restart with "
+                    "`-orchardactionlimit=N` where N >= %u to allow the wallet to attempt "
+                    "to construct this transaction.",
+                    spendable.orchardNoteMetadata.size(),
+                    nOrchardActionLimit,
+                    spendable.orchardNoteMetadata.size()));
+        }
     }
 
     spendable.LogInputs(getId());
@@ -553,7 +567,6 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             [&](const libzcash::OrchardRawAddress& addr) {
                 auto value = r.amount;
                 auto memo = r.memo.has_value() ? std::optional(get_memo_from_hex_string(r.memo.value())) : std::nullopt;
-
                 builder_.AddOrchardOutput(ovks.second, addr, value, memo);
             }
         }, r.address);

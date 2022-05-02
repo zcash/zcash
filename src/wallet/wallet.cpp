@@ -52,6 +52,7 @@ bool bSpendZeroConfChange = DEFAULT_SPEND_ZEROCONF_CHANGE;
 bool fSendFreeTransactions = DEFAULT_SEND_FREE_TRANSACTIONS;
 bool fPayAtLeastCustomFee = true;
 unsigned int nAnchorConfirmations = DEFAULT_ANCHOR_CONFIRMATIONS;
+unsigned int nOrchardActionLimit = DEFAULT_ORCHARD_ACTION_LIMIT;
 
 const char * DEFAULT_WALLET_DAT = "wallet.dat";
 
@@ -6602,6 +6603,13 @@ bool CWallet::ParameterInteraction(const CChainParams& params)
             return UIError(strprintf(_("Invalid value for -anchorconfirmations='%u' (must be at most 100)"), confirmations));
         }
         nAnchorConfirmations = confirmations;
+    }
+    if (mapArgs.count("-orchardactionlimit")) {
+        int64_t limit = atoi64(mapArgs["-orchardactionlimit"]);
+        if (limit < 1) {
+            return UIError(strprintf(_("Invalid value for -orchardactionlimit='%u' (must be least 1)"), limit));
+        }
+        nOrchardActionLimit = limit;
     }
 
     return true;
