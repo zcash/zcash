@@ -629,17 +629,10 @@ void ThreadStartWalletNotifier()
 
         if (walletBestBlockHash.has_value()) {
             int64_t slept{0};
-            bool isReindexing{true};
             auto timedOut = [&]() -> bool {
                 MilliSleep(500);
-                // re-check whether we're reindexing
-                if (isReindexing) {
-                    LOCK(cs_main);
-                    pblocktree->ReadReindexing(isReindexing);
-                }
-
                 // once we're out of reindexing, we can start incrementing the slept counter
-                if (!isReindexing) {
+                if (!IsInitialBlockDownload(Params().GetConsensus())) {
                     slept += 500;
                 }
 
