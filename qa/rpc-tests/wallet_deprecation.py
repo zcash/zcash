@@ -44,13 +44,8 @@ class WalletDeprecationTest(BitcoinTestFramework):
         wait_bitcoinds()
         self.setup_network_internal(["getnewaddress","zcrawkeygen"])
 
-        # z_getnewaddress is not specifically enabled, so it should fail
-        errorString = ''
-        try:
-            self.nodes[0].z_getnewaddress()
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert "DEPRECATED" in errorString
+        # z_getnewaddress is enabled by default, so it should succeed
+        self.nodes[0].z_getnewaddress()
 
         # getnewaddress and zcrawkeygen are enabled so they should succeed.
         self.nodes[0].getnewaddress()
@@ -74,17 +69,6 @@ class WalletDeprecationTest(BitcoinTestFramework):
         except JSONRPCException as e:
             errorString = e.error['message']
         assert "DEPRECATED" in errorString
-
-        # restart with all deprecated methods enabled
-        stop_nodes(self.nodes)
-        wait_bitcoinds()
-        self.setup_network_internal(["all"])
-
-        # everything should succeed.
-        self.nodes[0].z_getnewaddress()
-        self.nodes[0].getnewaddress()
-        self.nodes[0].zcrawkeygen()
-
 
 if __name__ == '__main__':
     WalletDeprecationTest().main()

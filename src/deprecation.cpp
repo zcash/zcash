@@ -61,22 +61,13 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
 std::optional<std::string> SetAllowedDeprecatedFeaturesFromCLIArgs() {
     auto args = GetMultiArg("-allowdeprecated");
     std::set<std::string> allowdeprecated(args.begin(), args.end());
-    if (allowdeprecated.empty()) {
-        allowdeprecated = DEFAULT_ALLOW_DEPRECATED;
-    }
-
-    if (allowdeprecated.count("all") > 0) {
-        if (allowdeprecated.size() > 1)
-            return "When using -allowdeprecated=all no other values may be provided for -allowdeprecated.";
-        allowdeprecated = {};
-        allowdeprecated.insert(DEFAULT_ALLOW_DEPRECATED.begin(), DEFAULT_ALLOW_DEPRECATED.end());
-        allowdeprecated.insert(DEFAULT_DENY_DEPRECATED.begin(), DEFAULT_DENY_DEPRECATED.end());
-    }
 
     if (allowdeprecated.count("none") > 0) {
         if (allowdeprecated.size() > 1)
             return "When using -allowdeprecated=none no other values may be provided for -allowdeprecated.";
         allowdeprecated = {};
+    } else {
+        allowdeprecated.insert(DEFAULT_ALLOW_DEPRECATED.begin(), DEFAULT_ALLOW_DEPRECATED.end());
     }
 
     std::set<std::string> unrecognized;
@@ -112,7 +103,7 @@ std::optional<std::string> SetAllowedDeprecatedFeaturesFromCLIArgs() {
 }
 
 std::string GetAllowableDeprecatedFeatures() {
-    std::string result = "\"all\", \"none\"";
+    std::string result = "\"none\"";
     for (const auto& value : DEFAULT_ALLOW_DEPRECATED) {
         result += ", \"" + value + "\"";
     }
