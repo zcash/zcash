@@ -150,7 +150,7 @@ namespace {
     bool AbortNode(const std::string& strMessage, const std::string& userMessage="")
     {
         SetMiscWarning(strMessage, GetTime());
-        LogPrintf("*** %s\n", strMessage);
+        LogError("main", "*** %s\n", strMessage);
         uiInterface.ThreadSafeMessageBox(
             userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details") : userMessage,
             "", CClientUIInterface::MSG_ERROR);
@@ -4131,7 +4131,7 @@ static bool ActivateBestChainStep(CValidationState& state, const CChainParams& c
             "- " + strprintf(_("Fork point:  %s, height %d"),
                 pindexFork->phashBlock->GetHex(), pindexFork->nHeight) + "\n\n" +
             _("Please help, human!");
-        LogPrintf("*** %s\n", msg);
+        LogError("main", "*** %s\n", msg);
         uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
         StartShutdown();
         return false;
@@ -5638,7 +5638,7 @@ bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches)
                 "- " + strprintf(_("Rewinding to:  %s, height %d"),
                     pindexRewind->phashBlock->GetHex(), pindexRewind->nHeight) + "\n\n" +
                 _("Please help, human!");
-            LogPrintf("*** %s\n", msg);
+            LogError("main", "*** %s\n", msg);
             uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
             StartShutdown();
             return false;
