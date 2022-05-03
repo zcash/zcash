@@ -1,7 +1,7 @@
 Deprecated Features
 ===================
 
-In order to support the continuous improvement of zcashd, features are
+In order to support the continuous improvement of `zcashd`, features are
 periodically deprecated and removed when they have been superseded or are no
 longer useful.  Deprecation follows a 3-stage process:
 
@@ -12,18 +12,18 @@ longer useful.  Deprecation follows a 3-stage process:
    specifying `-allowdeprecated=none` on the command line when starting the
    node, or by including `allowdeprecated=none` as a line in the `zcash.conf`
    file. 
-2. In the stage of deprecation, the feature will be disabled by default.
+2. In the next stage of deprecation, the feature will be disabled by default.
    Disabled features may be reenabled via use of the `-allowdeprecated` flag.
 3. In the third stage, the feature is fully removed and is no longer available.
 
 Features that enter Stage 1 in a particular release will be disabled by default
-after no less than than a single major-version release, or 3 minor-version
-releases, and features are only fully removed after two major-version releases.
-For example, a feature entering Stage 1 in release 5.0.0:
-
-  - Will be disabled by default in either release 5.3.0 or release 6.0.0,
-    whichever comes first.
-  - Will be fully removed in release 7.0.0 
+after no fewer than 3 releases that update `zcashd`'s minor-version, and
+features will only be fully removed after a total of at least 6 minor-version updates.
+`zcashd`'s release schedule intends to produce a release that updates the minor
+version every 6 weeks, so deprecated features remain accessible by default for
+approximately 18 weeks, and then can be expected to be removed no less than 36
+weeks after their initial deprecation. Deprecation and removal timelines might
+be extended beyond this on a case-by-case basis to satisfy user requirements. 
 
 Currently Deprecated
 ====================
@@ -38,7 +38,7 @@ the node, or if an `allowdeprecated=none` line is added to `zcash.conf`.
 ### Deprecated in 5.0.0
 
 The following features are deprecated as of release 5.0.0 and will be disabled by
-default as of either release 5.3.0 or release 6.0.0, whichever comes first.
+default as of release 5.3.0.
 
   - `legacy_privacy` - The default "legacy" privacy policy for z_sendmany is
     deprecated. Use `-allowdeprecated=none` to require the default behavior to
@@ -60,7 +60,7 @@ line to `zcash.conf`.
 
 ### Disabled in 5.0.0
 
-The following features are disabled by default, and will be removed in release 6.0.0.
+The following features are disabled by default, and will be removed in release 5.3.0.
 
   - `zcrawreceive` - The `zcrawreceive` RPC method is disabled.
   - `zcrawjoinsplit` - The `zcrawjoinsplit` RPC method is disabled.

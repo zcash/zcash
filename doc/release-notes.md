@@ -4,42 +4,59 @@ release-notes at release time)
 Notable changes
 ===============
 
+Feature Deprecation and removal
+-------------------------------
+
+`zcashd` now has a [process](https://zcash.github.io/zcash/user/deprecation.html)
+for how features of the public API may be deprecated and removed. Feature
+deprecation follows a series of steps whereby, over a series of releases,
+features first remain enabled by default (but may be explicitly disabled), then
+switch to being disabled by default, and eventually are removed entirely.
+
+A new string-valued option, `-allowdeprecated` has been introduced to allow a
+user to explicitly manage the availability of deprecated `zcashd` features.  This
+flag makes it possible for users to reenable deprecated methods and features
+api that are currently disabled by default, or alternately to explicitly
+disable all deprecated features if they so choose. Multiple instances of this
+argument may be provided. A user may disable deprecated features entirely
+by providing the string `none` as the argument to this parameter. In the case
+that `none` is specified, multiple invocations of `-allowdeprecated` are not
+permitted.
+
+Deprecated
+----------
+
+As of this release, the following features are deprecated, but remain 
+available by default. These features may be disabled by setting 
+`-allowdeprecated=none`. After release 5.3.0, these features will be
+disabled by default and the following flags to `-allowdeprecated` will
+be required to permit their continued use:
+
+  - `legacy_privacy` - the default "legacy" privacy policy for z_sendmany
+    is deprecated. When disabled, the default behavior of z_sendmany will
+    conform to the `FullPrivacy` directive (introduced in 4.7.0) in all cases
+    instead of just for transactions involving unified addresses.
+  - `getnewaddress` - controls availability of the `getnewaddress` RPC method.
+  - `z_getnewaddress` - controls availability of the `z_getnewaddress` RPC method.
+  - `addrtype` - controls availability of the deprecated `type` attribute
+    returned by RPC methods that return address metadata. 
+
+As of this release, the following previously deprecated features are disabled
+by default, but may be be reenabled using `-allowdeprecated=<feature>`.
+
+  - The `zcrawreceive` RPC method is disabled. It may be reenabled with
+    `allowdeprecated=zcrawreceive`
+  - The `zcrawjoinsplit` RPC method is disabled. It may be reenabled with
+    `allowdeprecated=zcrawjoinsplit`
+  - The `zcrawkeygen` RPC method is disabled. It may be reenabled with
+    `allowdeprecated=zcrawkeygen`
+
 Option handling
 ---------------
 
 - The `-reindex` and `-reindex-chainstate` options now imply `-rescan`
   (provided that the wallet is enabled and pruning is disabled, and unless
   `-rescan=0` is specified explicitly).
-- A new string-valued option, `-allowdeprecated` has been introduced to allow
-  a user to explicitly manage the availability of deprecated zcashd features.
-  This flag makes it possible for users to reenable deprecated methods and
-  features api that are currently disabled by default, or alternately to
-  explicitly disable all deprecated features if they so choose. Multiple
-  instances of this argument may be provided. In the case that no values are
-  provided for this parameter, all currently deprecated RPC methods that are
-  not slated for removal in the next release remain enabled. A user may
-  disable all deprecated features entirely by providing the string "none" as
-  the argument to this parameter. In the case that "none" is specified,
-  multiple invocations of `-allowdeprecated` are not permitted.
-
-  Specific user-oriented documentation of the deprecation process may be 
-  found in `doc/book/src/user/deprecation.md`.
-
-  The following flags are recognized:
-
-  - `none` - disables all deprecated features.
-  - `legacy_privacy` - enables the use of the deprecated "legacy" privacy
-    policy for z_sendmany. This causes the default behavior to conform to the
-    `FullPrivacy` directive in all cases instead of just for transactions
-    involving unified addresses.
-  - `getnewaddress` - enables the `getnewaddress` RPC method.
-  - `z_getnewaddress` - enables the `z_getnewaddress` RPC method.
-  - `zcrawreceive` - enables the `zcrawreceive` RPC method.
-  - `zcrawjoinsplit` - enables the `zcrawjoinsplit` RPC method.
-  - `zcrawkeygen` - enables the `zcrawkeygen` RPC method.
-  - `addrtype` - when this option is set, the deprecated `type` attribute
-    is returned in addition to `pool` or `address_type` (which contain the same
-    information) in the results of RPC methods that return address metadata.
 
 RPC Changes
 -----------
