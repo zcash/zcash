@@ -332,6 +332,10 @@ public:
         orchard_merkle_tree_empty_root(value.begin());
         return value;
     }
+
+    size_t size() const {
+        return orchard_merkle_frontier_num_leaves(inner.get());
+    }
 };
 
 class OrchardMerkleFrontierLegacySer {
