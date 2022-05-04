@@ -642,7 +642,7 @@ void ThreadStartWalletNotifier()
                             "Giving up; please restart with `-rescan`.",
                             walletBestBlockHash.value().GetHex());
 
-                    LogPrintf("*** %s: %s", __func__, errmsg);
+                    LogError("main", "*** %s: %s", __func__, errmsg);
                     uiInterface.ThreadSafeMessageBox(
                         _("Error: A fatal wallet synchronization error occurred, see debug.log for details"),
                         "", CClientUIInterface::MSG_ERROR);
