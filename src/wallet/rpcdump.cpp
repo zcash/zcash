@@ -4,6 +4,7 @@
 
 #include "chain.h"
 #include "core_io.h"
+#include "deprecation.h"
 #include "key_io.h"
 #include "rpc/server.h"
 #include "init.h"
@@ -794,7 +795,9 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     auto addrInfo = std::visit(libzcash::AddressInfoFromSpendingKey{}, spendingkey.value());
     UniValue result(UniValue::VOBJ);
     result.pushKV("address_type", addrInfo.first);
-    result.pushKV("type", addrInfo.first); //deprecated
+    if (fEnableAddrTypeField) {
+        result.pushKV("type", addrInfo.first); //deprecated
+    }
     result.pushKV("address", keyIO.EncodePaymentAddress(addrInfo.second));
 
     // Sapling support
@@ -893,7 +896,9 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ);
     const string strAddress = keyIO.EncodePaymentAddress(addrInfo.second);
     result.pushKV("address_type", addrInfo.first);
-    result.pushKV("type", addrInfo.first); //deprecated
+    if (fEnableAddrTypeField) {
+        result.pushKV("type", addrInfo.first); //deprecated
+    }
     result.pushKV("address", strAddress);
 
     auto addResult = std::visit(AddViewingKeyToWallet(pwalletMain, true), viewingkey.value());

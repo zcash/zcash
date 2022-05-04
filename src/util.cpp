@@ -78,7 +78,7 @@ const char * const BITCOIN_PID_FILENAME = "zcashd.pid";
 
 CCriticalSection cs_args;
 map<string, string> mapArgs;
-map<string, vector<string> > mapMultiArgs;
+map<string, vector<string>> mapMultiArgs;
 bool fDebug = false;
 bool fDaemon = false;
 bool fServer = false;
@@ -159,6 +159,15 @@ bool GetBoolArg(const std::string& strArg, bool fDefault)
     if (mapArgs.count(strArg))
         return InterpretBool(mapArgs[strArg]);
     return fDefault;
+}
+
+std::vector<std::string> GetMultiArg(const std::string& strArg)
+{
+    if (mapMultiArgs.count(strArg)) {
+        return mapMultiArgs[strArg];
+    } else {
+        return {};
+    }
 }
 
 bool SoftSetArg(const std::string& strArg, const std::string& strValue)
@@ -378,6 +387,7 @@ void ReadConfigFile(const std::string& confPath,
 
     const vector<string> allowed_duplicates = {
         "addnode",
+        "allowdeprecated",
         "bind",
         "connect",
         "debug",
