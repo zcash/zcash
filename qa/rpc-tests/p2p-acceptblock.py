@@ -8,7 +8,7 @@ from test_framework.mininode import CBlockHeader, CInv, NodeConn, NodeConnCB, \
     mininode_lock
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, \
-    start_node, p2p_port
+    start_node, p2p_port, ZCASHD_BINARY
 from test_framework.blocktools import create_block, create_coinbase
 
 import os
@@ -114,8 +114,8 @@ class TestNode(NodeConnCB):
 class AcceptBlockTest(BitcoinTestFramework):
     def add_options(self, parser):
         parser.add_option("--testbinary", dest="testbinary",
-                          default=os.getenv("BITCOIND", "bitcoind"),
-                          help="bitcoind binary to test")
+                          default=os.getenv("ZCASHD", ZCASHD_BINARY),
+                          help="zcashd binary to test")
 
     def __init__(self):
         super().__init__()

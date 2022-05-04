@@ -27,6 +27,8 @@ import errno
 from . import coverage
 from .authproxy import AuthServiceProxy, JSONRPCException
 
+ZCASHD_BINARY = os.path.join('src', 'zcashd')
+
 DEFAULT_FEE = Decimal('0.00001')
 DEFAULT_FEE_ZATS = 1000
 
@@ -261,7 +263,7 @@ def initialize_chain(test_dir, num_nodes, cachedir):
         # Create cache directories, run bitcoinds:
         for i in range(MAX_NODES):
             datadir=initialize_datadir(cachedir, i)
-            args = [ os.getenv("BITCOIND", "bitcoind"), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
+            args = [ os.getenv("ZCASHD", ZCASHD_BINARY), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
             args.extend([
                 '-nuparams=5ba81b19:1', # Overwinter
                 '-nuparams=76b809bb:1', # Sapling
@@ -353,7 +355,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     """
     datadir = os.path.join(dirname, "node"+str(i))
     if binary is None:
-        binary = os.getenv("BITCOIND", "bitcoind")
+        binary = os.getenv("ZCASHD", ZCASHD_BINARY)
     args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest" ]
     args.extend([
         '-nuparams=5ba81b19:1', # Overwinter
@@ -562,13 +564,13 @@ def random_transaction(nodes, amount, min_fee, fee_increment, fee_variants):
 def assert_equal(expected, actual, message=""):
     if expected != actual:
         if message:
-            message = "; %s" % message 
+            message = "; %s" % message
         raise AssertionError("(left == right)%s\n  left: <%s>\n right: <%s>" % (message, str(expected), str(actual)))
 
 def assert_true(condition, message = ""):
     if not condition:
         raise AssertionError(message)
-        
+
 def assert_false(condition, message = ""):
     assert_true(not condition, message)
 
