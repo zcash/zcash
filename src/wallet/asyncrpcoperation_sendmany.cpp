@@ -48,11 +48,12 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         ZTXOSelector ztxoSelector,
         std::vector<SendManyRecipient> recipients,
         int minDepth,
+        unsigned int anchorDepth,
         TransactionStrategy strategy,
         CAmount fee,
         UniValue contextInfo) :
         builder_(std::move(builder)), ztxoSelector_(ztxoSelector), recipients_(recipients),
-        mindepth_(minDepth), strategy_(strategy), fee_(fee),
+        mindepth_(minDepth), anchordepth_(anchorDepth), strategy_(strategy), fee_(fee),
         contextinfo_(contextInfo)
 {
     assert(fee_ >= 0);
@@ -496,7 +497,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> orchardSpendInfo;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
-        pwalletMain->GetSaplingNoteWitnesses(saplingOutPoints, witnesses, anchor);
+        pwalletMain->GetSaplingNoteWitnesses(saplingOutPoints, anchordepth_, witnesses, anchor);
         if (builder_.GetOrchardAnchor().has_value()) {
             orchardSpendInfo = pwalletMain->GetOrchardSpendInfo(spendable.orchardNoteMetadata, builder_.GetOrchardAnchor().value());
         }
@@ -584,7 +585,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
         // inputAnchor is not needed by builder_.AddSproutInput as it is for Sapling.
         uint256 inputAnchor;
-        pwalletMain->GetSproutNoteWitnesses(vOutPoints, vSproutWitnesses, inputAnchor);
+        pwalletMain->GetSproutNoteWitnesses(vOutPoints, anchordepth_, vSproutWitnesses, inputAnchor);
     }
 
     // Add Sprout spends

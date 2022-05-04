@@ -327,7 +327,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         std::vector<std::optional<SaplingWitness>> witnesses;
         {
             LOCK2(cs_main, pwalletMain->cs_wallet);
-            pwalletMain->GetSaplingNoteWitnesses(saplingOPs, witnesses, anchor);
+            pwalletMain->GetSaplingNoteWitnesses(saplingOPs, nAnchorConfirmations, witnesses, anchor);
         }
 
         // Add Sapling spends
@@ -447,7 +447,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             std::vector<JSOutPoint> vOutPoints = {jso};
             uint256 inputAnchor;
             std::vector<std::optional<SproutWitness>> vInputWitnesses;
-            pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
+            pwalletMain->GetSproutNoteWitnesses(vOutPoints, nAnchorConfirmations, vInputWitnesses, inputAnchor);
             jsopWitnessAnchorMap[jso.ToString()] = MergeToAddressWitnessAnchorData{vInputWitnesses[0], inputAnchor};
         }
     }
@@ -752,7 +752,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(MergeToAddressJSInf
     uint256 anchor;
     {
         LOCK(cs_main);
-        pwalletMain->GetSproutNoteWitnesses(outPoints, witnesses, anchor);
+        pwalletMain->GetSproutNoteWitnesses(outPoints, nAnchorConfirmations, witnesses, anchor);
     }
     return perform_joinsplit(info, witnesses, anchor);
 }

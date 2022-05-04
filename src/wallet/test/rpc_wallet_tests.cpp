@@ -1237,7 +1237,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, zaddr1, 100*COIN, "DEADBEEF") };
         TransactionStrategy strategy;
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, strategy));
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
@@ -1250,7 +1250,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, taddr1, 100*COIN, "DEADBEEF") };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, strategy));
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
@@ -1263,7 +1263,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
         std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, zaddr1, 100*COIN, "DEADBEEF") };
         TransactionStrategy strategy;
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, strategy));
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
         std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
         TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
 

@@ -1780,12 +1780,14 @@ public:
 
     void GetSproutNoteWitnesses(
          const std::vector<JSOutPoint>& notes,
+         unsigned int confirmations,
          std::vector<std::optional<SproutWitness>>& witnesses,
-         uint256 &final_anchor);
+         uint256 &final_anchor) const;
     void GetSaplingNoteWitnesses(
          const std::vector<SaplingOutPoint>& notes,
+         unsigned int confirmations,
          std::vector<std::optional<SaplingWitness>>& witnesses,
-         uint256 &final_anchor);
+         uint256 &final_anchor) const;
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> GetOrchardSpendInfo(
         const std::vector<OrchardNoteMetadata>& orchardNoteMetadata,
         uint256 anchor) const;

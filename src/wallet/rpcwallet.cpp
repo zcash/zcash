@@ -5135,11 +5135,12 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     UniValue contextInfo = o;
 
     std::optional<uint256> orchardAnchor;
-    if (!ztxoSelector.SelectsSprout() && nMinDepth > 0) {
+    auto nAnchorDepth = std::min((unsigned int) nMinDepth, nAnchorConfirmations);
+    if (!ztxoSelector.SelectsSprout() && nAnchorDepth > 0) {
         // Allow Orchard recipients by setting an Orchard anchor.
         // TODO: Add an orchardAnchorHeight field to ZTXOSelector so we can ensure the
         // same anchor is used for witnesses of any selected Orchard note.
-        auto orchardAnchorHeight = nextBlockHeight - std::min((unsigned int) nMinDepth, nAnchorConfirmations);
+        auto orchardAnchorHeight = nextBlockHeight - nAnchorDepth;
         orchardAnchor = chainActive[orchardAnchorHeight]->hashFinalOrchardRoot;
     }
     TransactionBuilder builder(chainparams.GetConsensus(), nextBlockHeight, orchardAnchor, pwalletMain);
@@ -5148,7 +5149,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation(
             new AsyncRPCOperation_sendmany(
-                std::move(builder), ztxoSelector, recipients, nMinDepth, strategy, nFee, contextInfo)
+                std::move(builder), ztxoSelector, recipients, nMinDepth, nAnchorDepth, strategy, nFee, contextInfo)
             );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();

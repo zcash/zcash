@@ -142,7 +142,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
             // TODO: the above functionality (in comment) is not implemented in zcashd
             uint256 inputAnchor;
             std::vector<std::optional<SproutWitness>> vInputWitnesses;
-            pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
+            pwalletMain->GetSproutNoteWitnesses(vOutPoints, nAnchorConfirmations, vInputWitnesses, inputAnchor);
             builder.AddSproutInput(sproutSk, sproutEntry.note, vInputWitnesses[0].value());
             // Send change to the address of the first input
             if (!changeAddr.has_value()) {

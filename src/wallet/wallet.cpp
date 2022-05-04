@@ -3530,8 +3530,9 @@ bool CWallet::IsSaplingNullifierFromMe(const uint256& nullifier) const
 }
 
 void CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
+                                     unsigned int confirmations,
                                      std::vector<std::optional<SproutWitness>>& witnesses,
-                                     uint256 &final_anchor)
+                                     uint256 &final_anchor) const
 {
     LOCK(cs_wallet);
     witnesses.resize(notes.size());
@@ -3539,11 +3540,11 @@ void CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
     int i = 0;
     for (JSOutPoint note : notes) {
         if (mapWallet.count(note.hash) &&
-                mapWallet[note.hash].mapSproutNoteData.count(note) &&
-                mapWallet[note.hash].mapSproutNoteData[note].witnesses.size() > 0) {
-            auto noteWitnesses = mapWallet[note.hash].mapSproutNoteData[note].witnesses;
+                mapWallet.at(note.hash).mapSproutNoteData.count(note) &&
+                mapWallet.at(note.hash).mapSproutNoteData.at(note).witnesses.size() > 0) {
+            auto noteWitnesses = mapWallet.at(note.hash).mapSproutNoteData.at(note).witnesses;
             auto it = noteWitnesses.cbegin(), end = noteWitnesses.cend();
-            for (int i = 1; i < nAnchorConfirmations; i++) {
+            for (int i = 1; i < confirmations; i++) {
                 assert(it != end);
                 ++it;
             }
@@ -3564,8 +3565,9 @@ void CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
 }
 
 void CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
+                                      unsigned int confirmations,
                                       std::vector<std::optional<SaplingWitness>>& witnesses,
-                                      uint256 &final_anchor)
+                                      uint256 &final_anchor) const
 {
     LOCK(cs_wallet);
     witnesses.resize(notes.size());
@@ -3573,11 +3575,11 @@ void CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
     int i = 0;
     for (SaplingOutPoint note : notes) {
         if (mapWallet.count(note.hash) &&
-                mapWallet[note.hash].mapSaplingNoteData.count(note) &&
-                mapWallet[note.hash].mapSaplingNoteData[note].witnesses.size() > 0) {
-            auto noteWitnesses = mapWallet[note.hash].mapSaplingNoteData[note].witnesses;
+                mapWallet.at(note.hash).mapSaplingNoteData.count(note) &&
+                mapWallet.at(note.hash).mapSaplingNoteData.at(note).witnesses.size() > 0) {
+            auto noteWitnesses = mapWallet.at(note.hash).mapSaplingNoteData.at(note).witnesses;
             auto it = noteWitnesses.cbegin(), end = noteWitnesses.cend();
-            for (int i = 1; i < nAnchorConfirmations; i++) {
+            for (int i = 1; i < confirmations; i++) {
                 assert(it != end);
                 ++it;
             }

@@ -288,7 +288,7 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     auto selector = pwalletMain->ZTXOSelectorForAddress(taddr, true, false).value();
     std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, pa, 1*COIN, "ABCD") };
     TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
-    std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 0, strategy));
+    std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 0, 0, strategy));
     std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
 
     // Enable test mode so tx is not sent
