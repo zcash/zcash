@@ -76,7 +76,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">zcashd</a></li><li class="chapter-item expanded "><a href="user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="user/metrics.html"><strong aria-hidden="true">1.1.</strong> Metrics</a></li></ol></li><li class="chapter-item expanded "><a href="dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="dev/rust.html"><strong aria-hidden="true">2.1.</strong> Rust in zcashd</a></li><li class="chapter-item expanded "><a href="dev/regtest.html"><strong aria-hidden="true">2.2.</strong> Regtest tips and hints</a></li></ol></li><li class="chapter-item expanded "><a href="design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain state</a></li><li class="chapter-item expanded "><a href="design/coins-view.html"><strong aria-hidden="true">3.2.</strong> "Coins" view</a></li><li class="chapter-item expanded "><a href="design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P data propagation</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">zcashd</a></li><li class="chapter-item expanded "><a href="user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="user/metrics.html"><strong aria-hidden="true">1.1.</strong> Metrics</a></li><li class="chapter-item expanded "><a href="user/deprecation.html"><strong aria-hidden="true">1.2.</strong> Deprecated Features</a></li></ol></li><li class="chapter-item expanded "><a href="dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="dev/rust.html"><strong aria-hidden="true">2.1.</strong> Rust in zcashd</a></li><li class="chapter-item expanded "><a href="dev/regtest.html"><strong aria-hidden="true">2.2.</strong> Regtest tips and hints</a></li><li class="chapter-item expanded "><a href="dev/deprecation.html"><strong aria-hidden="true">2.3.</strong> Deprecation Procedure</a></li></ol></li><li class="chapter-item expanded "><a href="design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain state</a></li><li class="chapter-item expanded "><a href="design/coins-view.html"><strong aria-hidden="true">3.2.</strong> "Coins" view</a></li><li class="chapter-item expanded "><a href="design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P data propagation</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -263,6 +263,61 @@ docker run --detach -p 9090:9090 --volume prometheus-storage:/prometheus --volum
 # Run Grafana
 docker run --detach -p 3030:3030 --env GF_SERVER_HTTP_PORT=3030 --volume grafana-storage:/var/lib/grafana grafana/grafana
 </code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="deprecated-features"><a class="header" href="#deprecated-features">Deprecated Features</a></h1>
+<p>In order to support the continuous improvement of <code>zcashd</code>, features are
+periodically deprecated and removed when they have been superseded or are no
+longer useful.  Deprecation follows a 3-stage process:</p>
+<ol>
+<li>Initially, a feature will be marked as DEPRECATED in the release notes and
+user-facing documentation, but no other changes are made; the feature
+continues to be available and function as normal. While features at this
+stage remain enabled by default, they may be explicitly disabled by
+specifying <code>-allowdeprecated=none</code> on the command line when starting the
+node, or by including <code>allowdeprecated=none</code> as a line in the <code>zcash.conf</code>
+file. </li>
+<li>In the next stage of deprecation, the feature will be disabled by default.
+Disabled features may be reenabled via use of the <code>-allowdeprecated</code> flag.</li>
+<li>In the third stage, the feature is fully removed and is no longer available.</li>
+</ol>
+<p>Features that enter Stage 1 in a particular release will be disabled by default
+after no fewer than 3 releases that update <code>zcashd</code>'s minor-version, and
+features will only be fully removed after a total of at least 6 minor-version updates.
+<code>zcashd</code>'s release schedule intends to produce a release that updates the minor
+version every 6 weeks, so deprecated features remain accessible by default for
+approximately 18 weeks, and then can be expected to be removed no less than 36
+weeks after their initial deprecation. Deprecation and removal timelines might
+be extended beyond this on a case-by-case basis to satisfy user requirements. </p>
+<h1 id="currently-deprecated"><a class="header" href="#currently-deprecated">Currently Deprecated</a></h1>
+<h2 id="stage-1"><a class="header" href="#stage-1">Stage 1</a></h2>
+<p>The following features are deprecated, but remain enabled by default. These features
+will be disabled if <code>-allowdeprecated=none</code> is added to the CLI arguments when starting
+the node, or if an <code>allowdeprecated=none</code> line is added to <code>zcash.conf</code>.</p>
+<h3 id="deprecated-in-500"><a class="header" href="#deprecated-in-500">Deprecated in 5.0.0</a></h3>
+<p>The following features are deprecated as of release 5.0.0 and will be disabled by
+default as of release 5.3.0.</p>
+<ul>
+<li><code>legacy_privacy</code> - The default &quot;legacy&quot; privacy policy for z_sendmany is
+deprecated. Use <code>-allowdeprecated=none</code> to require the default behavior to
+conform to the <code>FullPrivacy</code> directive in all cases instead of just for
+transactions involving unified addresses. </li>
+<li><code>getnewaddress</code> - The <code>getnewaddress</code> RPC method is deprecated.</li>
+<li><code>z_getnewaddress</code> - The <code>z_getnewaddress</code> RPC method is deprecated.</li>
+<li><code>addrtype</code> - The <code>type</code> attribute is deprecated in the results of RPC
+methods that return address metadata. It is recommended that applications
+using this metadata be updated to use the <code>pool</code> or <code>address_type</code>
+attributes, which have replaced the <code>type</code> attribute, as appropriate.</li>
+</ul>
+<h2 id="stage-2"><a class="header" href="#stage-2">Stage 2</a></h2>
+<p>Each feature in the lists below may be enabled by adding <code>-allowdeprecated=&lt;feature&gt;</code>
+to the CLI arguments when starting the node, or by adding an <code>allowdeprecated=&lt;feature&gt;</code>
+line to <code>zcash.conf</code>.</p>
+<h3 id="disabled-in-500"><a class="header" href="#disabled-in-500">Disabled in 5.0.0</a></h3>
+<p>The following features are disabled by default, and will be removed in release 5.3.0.</p>
+<ul>
+<li><code>zcrawreceive</code> - The <code>zcrawreceive</code> RPC method is disabled.</li>
+<li><code>zcrawjoinsplit</code> - The <code>zcrawjoinsplit</code> RPC method is disabled.</li>
+<li><code>zcrawkeygen</code> - The <code>zcrawkeygen</code> RPC method is disabled.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="developer-documentation"><a class="header" href="#developer-documentation">Developer Documentation</a></h1>
 <p>This section contains documentation aimed at contributors to the <code>zcashd</code> codebase.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="rust-in-zcashd"><a class="header" href="#rust-in-zcashd">Rust in <code>zcashd</code></a></h1>
@@ -449,6 +504,41 @@ $
 <pre><code>$ cat /tmp/test9d907s8a/96246/node0/zcash.conf
 </code></pre>
 <p>In this way, the RPC test framework can teach us more about running <code>regtest</code> nodes.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="deprecation-procedure"><a class="header" href="#deprecation-procedure">Deprecation Procedure</a></h1>
+<p>From time to time, features of <code>zcashd</code> and its associated wallet and RPC API are
+deprecated to allow eventual removal of functionality that has been superseded
+by more recent improvements. Deprecation follows a process whereby deprecate
+features can be explicitly turned on or off using the
+<code>-allowdeprecated=&lt;feature&gt;</code> CLI argument.</p>
+<p><code>zcashd</code> internally supports two sets of deprecated feature flags in
+<code>src/deprecation.h</code>:</p>
+<ul>
+<li><code>DEFAULT_ALLOW_DEPRECATED</code> contains the set of features that remain available
+for use without having to be specifically enabled using <code>-allowdeprecated</code>.</li>
+<li><code>DEFAULT_DENY_DEPRECATED</code> contains the set of features that are not enabled
+by default, and must be explicitly enabled using <code>-allowdeprecated</code>.</li>
+</ul>
+<p>Deprecation of a feature occurs as a 3-step process:</p>
+<ol>
+<li>A deprecation flag is selected for the feature, and added to
+<code>DEFAULT_ALLOW_DEPRECATED</code>. The fact of its deprecation is announced, and
+any functionality that supersedes the deprecated feature (if any) is
+documented, in the release notes. The string <code>DEPRECATED</code> is added to
+user-facing API documentation and CLI help text.</li>
+<li>The deprecation flag is removed from <code>DEFAULT_ALLOW_DEPRECATED</code> and added to
+<code>DEFAULT_DENY_DEPRECATED</code>.</li>
+<li>The deprecated feature is removed entirely, and its deprecation flag is
+removed.</li>
+</ol>
+<p>Features that enter Stage 1 in a particular release should be disabled by
+default after no fewer than 3 releases that update <code>zcashd</code>'s
+minor-version, and features should only be fully removed after a total of 6 minor-version
+updates. <code>zcashd</code>'s release schedule intends to produce a release that updates
+the minor version every 6 weeks, so deprecated features remain accessible by
+default for approximately 18 weeks, and then can be expected to be removed no
+less than 36 weeks from their initial deprecation. The deprecation timeline for
+each newly deprecated feature should be documented in
+<a href="dev/../user/deprecation.html">../user/deprecation.md</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="design"><a class="header" href="#design">Design</a></h1>
 <p>Zcash was originally a fork of Bitcoin 0.11.2, and as such the <code>zcashd</code> node architecture
 is very similar to <code>bitcoind</code>. There are however several differences, most notably the
