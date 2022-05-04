@@ -6596,6 +6596,9 @@ bool CWallet::ParameterInteraction(const CChainParams& params)
         if (confirmations < 1) {
             return UIError(strprintf(_("Invalid value for -anchorconfirmations='%u' (must be least 1)"), confirmations));
         }
+        if (confirmations > 100) {
+            return UIError(strprintf(_("Invalid value for -anchorconfirmations='%u' (must be at most 100)"), confirmations));
+        }
         nAnchorConfirmations = confirmations;
     }
 
