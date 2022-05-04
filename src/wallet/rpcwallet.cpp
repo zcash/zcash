@@ -3268,6 +3268,7 @@ UniValue z_getnewaccount(const UniValue& params, bool fHelp)
     LOCK(pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
+    EnsureWalletIsBackedUp(Params());
 
     // Generate the new account.
     auto ufvkNew = pwalletMain->GenerateNewUnifiedSpendingKey();
@@ -3363,6 +3364,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
     }
 
     EnsureWalletIsUnlocked();
+    EnsureWalletIsBackedUp(Params());
 
     auto res = pwalletMain->GenerateUnifiedAddress(account, receiverTypes, j);
 
