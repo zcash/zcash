@@ -6,6 +6,8 @@
   - [Deprecated Features](user/deprecation.md)
 - [Developer Documentation](dev.md)
   - [Coding Standards](dev/coding_standards.md)
+  - [Dependencies](dev/dependencies.md)
+  - [Multithreading](dev/multithreading.md)
   - [Rust in `zcashd`](dev/rust.md)
   - [Regtest tips and hints](dev/regtest.md)
   - [Deprecation Procedure](dev/deprecation.md)
