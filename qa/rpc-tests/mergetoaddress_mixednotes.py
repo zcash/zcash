@@ -12,7 +12,8 @@ from mergetoaddress_helper import assert_mergetoaddress_exception
 
 class MergeToAddressMixedNotes(BitcoinTestFramework):
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir)
+        self.num_nodes = 4
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[['-anchorconfirmations=1']] * self.num_nodes)
 
     def setup_chain(self):
         print("Initializing test directory " + self.options.tmpdir)
