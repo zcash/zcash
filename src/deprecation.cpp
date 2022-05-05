@@ -15,6 +15,8 @@
 #ifdef ENABLE_WALLET
 bool fEnableGetNewAddress = true;
 bool fEnableZGetNewAddress = true;
+bool fEnableZGetBalance = true;
+bool fEnableZGetTotalBalance = true;
 bool fEnableLegacyPrivacyStrategy = true;
 bool fEnableZCRawReceive = true;
 bool fEnableZCRawJoinSplit = true;
@@ -93,6 +95,8 @@ std::optional<std::string> SetAllowedDeprecatedFeaturesFromCLIArgs() {
     fEnableLegacyPrivacyStrategy = allowdeprecated.count("legacy_privacy") > 0;
     fEnableGetNewAddress = allowdeprecated.count("getnewaddress") > 0;
     fEnableZGetNewAddress = allowdeprecated.count("z_getnewaddress") > 0;
+    fEnableZGetBalance = allowdeprecated.count("z_getbalance") > 0;
+    fEnableZGetTotalBalance = allowdeprecated.count("z_gettotalbalance") > 0;
     fEnableZCRawReceive = allowdeprecated.count("zcrawreceive") > 0;
     fEnableZCRawJoinSplit = allowdeprecated.count("zcrawjoinsplit") > 0;
     fEnableZCRawKeygen = allowdeprecated.count("zcrawkeygen") > 0;

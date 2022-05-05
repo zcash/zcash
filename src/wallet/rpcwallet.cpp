@@ -3990,10 +3990,17 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
+    if (!fEnableZGetBalance)
+        throw runtime_error(
+            "z_getbalance is DEPRECATED and will be removed in a future release\n\n"
+            "Use z_getbalanceforaccount instead, or restart with `-allowdeprecated=z_getbalance`\n"
+            "if you require backward compatibility.\n"
+            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
+
     if (fHelp || params.size() == 0 || params.size() > 3)
         throw runtime_error(
             "z_getbalance \"address\" ( minconf inZat )\n"
-            "\nDEPRECATED; please use z_getbalanceforviewingkey instead.`\n"
+            "\nDEPRECATED; please use z_getbalanceforviewingkey or z_getbalanceforaccount instead.`\n"
             "\nReturns the balance of a taddr or zaddr belonging to the node's wallet.\n"
             "\nCAUTION: If the wallet has only an incoming viewing key for this address, then spends cannot be"
             "\ndetected, and so the returned balance may be larger than the actual balance."
@@ -4291,6 +4298,13 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
+
+    if (!fEnableZGetTotalBalance)
+        throw runtime_error(
+            "z_gettotalbalance is DEPRECATED and will be removed in a future release\n\n"
+            "Use z_getbalanceforaccount instead, or restart with `-allowdeprecated=z_gettotalbalance`\n"
+            "if you require backward compatibility.\n"
+            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
 
     if (fHelp || params.size() > 2)
         throw runtime_error(
