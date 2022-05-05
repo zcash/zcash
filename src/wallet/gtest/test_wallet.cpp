@@ -126,8 +126,8 @@ std::pair<uint256, uint256> GetWitnessesAndAnchors(
     saplingWitnesses.clear();
     uint256 sproutAnchor;
     uint256 saplingAnchor;
-    wallet.GetSproutNoteWitnesses(sproutNotes, anchorDepth, sproutWitnesses, sproutAnchor);
-    wallet.GetSaplingNoteWitnesses(saplingNotes, anchorDepth, saplingWitnesses, saplingAnchor);
+    assert(wallet.GetSproutNoteWitnesses(sproutNotes, anchorDepth, sproutWitnesses, sproutAnchor));
+    assert(wallet.GetSaplingNoteWitnesses(saplingNotes, anchorDepth, saplingWitnesses, saplingAnchor));
     return std::make_pair(sproutAnchor, saplingAnchor);
 }
 
@@ -1398,7 +1398,7 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
     wallet.IncrementNoteWitnesses(params, &index, &block, frontiers, true);
 
     EXPECT_DEATH(::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, nAnchorConfirmations, sproutWitnesses, saplingWitnesses),
-                 ".*it != end.*");
+                 "GetSproutNoteWitnesses");
 
     for (int i = 1; i <= 8; i++) {
         CBlock another_block;
@@ -1408,7 +1408,7 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
     }
 
     EXPECT_DEATH(::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, nAnchorConfirmations, sproutWitnesses, saplingWitnesses),
-                 ".*it != end.*");
+                 "GetSproutNoteWitnesses");
 
     CBlock last_block;
     CBlockIndex last_index(last_block);

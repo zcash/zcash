@@ -1778,12 +1778,12 @@ public:
     bool IsSproutNullifierFromMe(const uint256& nullifier) const;
     bool IsSaplingNullifierFromMe(const uint256& nullifier) const;
 
-    void GetSproutNoteWitnesses(
+    bool GetSproutNoteWitnesses(
          const std::vector<JSOutPoint>& notes,
          unsigned int confirmations,
          std::vector<std::optional<SproutWitness>>& witnesses,
          uint256 &final_anchor) const;
-    void GetSaplingNoteWitnesses(
+    bool GetSaplingNoteWitnesses(
          const std::vector<SaplingOutPoint>& notes,
          unsigned int confirmations,
          std::vector<std::optional<SaplingWitness>>& witnesses,

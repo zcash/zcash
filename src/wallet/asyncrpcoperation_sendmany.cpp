@@ -497,7 +497,11 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> orchardSpendInfo;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
-        pwalletMain->GetSaplingNoteWitnesses(saplingOutPoints, anchordepth_, witnesses, anchor);
+        if (!pwalletMain->GetSaplingNoteWitnesses(saplingOutPoints, anchordepth_, witnesses, anchor)) {
+            // This error should not appear once we're nAnchorConfirmations blocks past
+            // Sapling activation.
+            throw JSONRPCError(RPC_WALLET_ERROR, "Insufficient Sapling witnesses.");
+        }
         if (builder_.GetOrchardAnchor().has_value()) {
             orchardSpendInfo = pwalletMain->GetOrchardSpendInfo(spendable.orchardNoteMetadata, builder_.GetOrchardAnchor().value());
         }
@@ -585,7 +589,11 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
         // inputAnchor is not needed by builder_.AddSproutInput as it is for Sapling.
         uint256 inputAnchor;
-        pwalletMain->GetSproutNoteWitnesses(vOutPoints, anchordepth_, vSproutWitnesses, inputAnchor);
+        if (!pwalletMain->GetSproutNoteWitnesses(vOutPoints, anchordepth_, vSproutWitnesses, inputAnchor)) {
+            // This error should not appear once we're nAnchorConfirmations blocks past
+            // Sprout activation.
+            throw JSONRPCError(RPC_WALLET_ERROR, "Insufficient Sprout witnesses.");
+        }
     }
 
     // Add Sprout spends

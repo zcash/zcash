@@ -3529,7 +3529,7 @@ bool CWallet::IsSaplingNullifierFromMe(const uint256& nullifier) const
     return false;
 }
 
-void CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
+bool CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
                                      unsigned int confirmations,
                                      std::vector<std::optional<SproutWitness>>& witnesses,
                                      uint256 &final_anchor) const
@@ -3545,10 +3545,10 @@ void CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
             auto noteWitnesses = mapWallet.at(note.hash).mapSproutNoteData.at(note).witnesses;
             auto it = noteWitnesses.cbegin(), end = noteWitnesses.cend();
             for (int i = 1; i < confirmations; i++) {
-                assert(it != end);
+                if (it == end) return false;
                 ++it;
             }
-            assert(it != end);
+            if (it == end) return false;
             witnesses[i] = *it;
             if (!rt) {
                 rt = witnesses[i]->root();
@@ -3562,9 +3562,10 @@ void CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
     if (rt) {
         final_anchor = *rt;
     }
+    return true;
 }
 
-void CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
+bool CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
                                       unsigned int confirmations,
                                       std::vector<std::optional<SaplingWitness>>& witnesses,
                                       uint256 &final_anchor) const
@@ -3580,10 +3581,10 @@ void CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
             auto noteWitnesses = mapWallet.at(note.hash).mapSaplingNoteData.at(note).witnesses;
             auto it = noteWitnesses.cbegin(), end = noteWitnesses.cend();
             for (int i = 1; i < confirmations; i++) {
-                assert(it != end);
+                if (it == end) return false;
                 ++it;
             }
-            assert(it != end);
+            if (it == end) return false;
             witnesses[i] = *it;
             if (!rt) {
                 rt = witnesses[i]->root();
@@ -3597,6 +3598,7 @@ void CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
     if (rt) {
         final_anchor = *rt;
     }
+    return true;
 }
 
 std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> CWallet::GetOrchardSpendInfo(

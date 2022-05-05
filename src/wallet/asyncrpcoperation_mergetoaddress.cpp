@@ -327,7 +327,11 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         std::vector<std::optional<SaplingWitness>> witnesses;
         {
             LOCK2(cs_main, pwalletMain->cs_wallet);
-            pwalletMain->GetSaplingNoteWitnesses(saplingOPs, nAnchorConfirmations, witnesses, anchor);
+            if (!pwalletMain->GetSaplingNoteWitnesses(saplingOPs, nAnchorConfirmations, witnesses, anchor)) {
+                // This error should not appear once we're nAnchorConfirmations blocks past
+                // Sapling activation.
+                throw JSONRPCError(RPC_WALLET_ERROR, "Insufficient Sapling witnesses.");
+            };
         }
 
         // Add Sapling spends
@@ -447,7 +451,11 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             std::vector<JSOutPoint> vOutPoints = {jso};
             uint256 inputAnchor;
             std::vector<std::optional<SproutWitness>> vInputWitnesses;
-            pwalletMain->GetSproutNoteWitnesses(vOutPoints, nAnchorConfirmations, vInputWitnesses, inputAnchor);
+            if (!pwalletMain->GetSproutNoteWitnesses(vOutPoints, nAnchorConfirmations, vInputWitnesses, inputAnchor)) {
+                // This error should not appear once we're nAnchorConfirmations blocks past
+                // Sprout activation.
+                throw JSONRPCError(RPC_WALLET_ERROR, "Insufficient Sprout witnesses.");
+            };
             jsopWitnessAnchorMap[jso.ToString()] = MergeToAddressWitnessAnchorData{vInputWitnesses[0], inputAnchor};
         }
     }
@@ -752,7 +760,11 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(MergeToAddressJSInf
     uint256 anchor;
     {
         LOCK(cs_main);
-        pwalletMain->GetSproutNoteWitnesses(outPoints, nAnchorConfirmations, witnesses, anchor);
+        if (!pwalletMain->GetSproutNoteWitnesses(outPoints, nAnchorConfirmations, witnesses, anchor)) {
+            // This error should not appear once we're nAnchorConfirmations blocks past
+            // Sprout activation.
+            throw JSONRPCError(RPC_WALLET_ERROR, "Insufficient Sprout witnesses.");
+        }
     }
     return perform_joinsplit(info, witnesses, anchor);
 }
