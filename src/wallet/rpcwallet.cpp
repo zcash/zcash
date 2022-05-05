@@ -1043,7 +1043,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
             "      \"address\":amount   (numeric) The Zcash address is the key, the numeric amount in " + CURRENCY_UNIT + " is the value\n"
             "      ,...\n"
             "    }\n"
-            "3. minconf                 (numeric, optional, default=10) Only use the balance confirmed at least this many times.\n"
+            "3. minconf                 (numeric, optional, default=1) Only use the balance confirmed at least this many times.\n"
             "4. \"comment\"             (string, optional) A comment\n"
             "5. subtractfeefromamount   (string, optional) A json array with addresses.\n"
             "                           The fee will be equally deducted from the amount of each selected address.\n"
@@ -5137,9 +5137,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     std::optional<uint256> orchardAnchor;
     auto nAnchorDepth = std::min((unsigned int) nMinDepth, nAnchorConfirmations);
     if (!ztxoSelector.SelectsSprout() && nAnchorDepth > 0) {
-        // Allow Orchard recipients by setting an Orchard anchor.
-        // TODO: Add an orchardAnchorHeight field to ZTXOSelector so we can ensure the
-        // same anchor is used for witnesses of any selected Orchard note.
         auto orchardAnchorHeight = nextBlockHeight - nAnchorDepth;
         orchardAnchor = chainActive[orchardAnchorHeight]->hashFinalOrchardRoot;
     }

@@ -13,7 +13,7 @@ Option handling
 - A new `-anchorconfirmations` argument has been added to allow the user
   to specify the number of blocks back from the chain tip that anchors 
   will be selected from when spending notes. By default, anchors will
-  now be selected at a depth of 10 blocks from the chain tip. Values
+  now be selected to have 10 confirmations. Values
   greater than 100 are not supported.
 
 RPC Interface
@@ -25,7 +25,9 @@ RPC Interface
   when starting the node. If `minconf` is explicitly supplied, it will override
   the default value provided by `-anchorconfirmations` if `minconf` specifies
   a smaller value than the default (it is not possible to spend notes that
-  are more recent than the anchor).
+  are more recent than the anchor). Selecting `minconf` values less than the default
+  is not recommended, as it allows the transaction to be distinguished from transactions 
+  using the default for `-anchorconfirmations`.
 
 Build system
 ------------

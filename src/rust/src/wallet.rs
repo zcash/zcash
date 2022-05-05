@@ -696,7 +696,8 @@ impl Wallet {
     /// relative to the specified root of the Orchard note commitment tree.
     ///
     /// Returns `None` if the `OutPoint` is not known to the wallet, or the Orchard bundle
-    /// containing the note has not been passed to `Wallet::append_bundle_commitments`.
+    /// containing the note had not been passed to `Wallet::append_bundle_commitments` at
+    /// the specified checkpoint depth.
     #[tracing::instrument(level = "trace", skip(self))]
     pub fn get_spend_info(
         &self,
