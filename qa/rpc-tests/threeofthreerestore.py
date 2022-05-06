@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014-2016 The Bitcoin Core developers
+# Copyright (c) 2022 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, assert_greater_than, \
-    start_nodes, connect_nodes_bi, stop_nodes, wait_and_assert_operationid_status, \
-    wait_bitcoinds
-
-from decimal import Decimal
+from test_framework.util import start_nodes, connect_nodes_bi 
 
 class ThreeOfThreeRestoreTest(BitcoinTestFramework):
 
@@ -43,22 +38,22 @@ class ThreeOfThreeRestoreTest(BitcoinTestFramework):
         key2 = self.nodes[2].dumpprivkey(addr2)
         key3 = self.nodes[2].dumpprivkey(addr3)
 
-        self.nodes[3].importprivkey(key1, "", True) # TODO
+        self.nodes[3].importprivkey(key1, "", True)
         self.nodes[3].importprivkey(key2, "", True)
         self.nodes[3].importprivkey(key3, "", True)
 
-
         mSigObj = self.nodes[3].addmultisigaddress(3, [addr1Obj['pubkey'], addr2Obj['pubkey'], addr3Obj['pubkey']])
         validateObj = self.nodes[3].validateaddress(mSigObj)
-
-        print(validateObj)
-
-        # Causes the node to crash
-        obj = self.nodes[3].listaddresses()
-        print(obj)
-
         assert(validateObj["isvalid"])
         assert(validateObj["ismine"])
+
+        # Ensure that the multisig address is returned
+        list_result = self.nodes[3].listaddresses()
+
+        assert('imported' in obj['source'] for obj in list_result)
+        for obj in list_result:
+            if obj['source'] == 'imported':
+                assert(validateObj['address'] in obj['transparent']['addresses'])
 
 if __name__ == '__main__':
     ThreeOfThreeRestoreTest().main()
