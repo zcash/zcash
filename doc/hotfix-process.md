@@ -30,45 +30,20 @@ except that the branches are based on the hotfix branch instead of master:
 ## Merge hotfix PRs
 
 Hotfix PRs are created like regular PRs, except using the hotfix branch as the
-base instead of master. Each PR should be reviewed as normal, and then the
-following process should be used to merge:
-
-- A CI merge build is manually run by logging into the CI server, going to the
-  pr-merge builder, clicking the "force" button, and entering the following
-  values:
-
-  - Repository: https://github.com/<DevUser>/zcash
-    - <DevUser> must be in the set of "safe" users as-specified in the CI
-      config.
-  - Branch: name of the hotfix PR branch (not the hotfix release branch).
-
-- A link to the build and its result is manually added to the PR as a comment.
-
-- If the build was successful, the PR is merged via the GitHub button.
+base instead of `master`. Each PR should be reviewed and merged as normal.
 
 ## Release process
 
 The majority of this process is identical to the standard release process.
-However, there are a few notable differences:
+Release candidates for hotfixes should be created and tested as normal, using
+the `hotfix-<RELEASE>` branch in place of the release stabilization branch,
+with a couple of minor differences:
 
-- When running the release script, use the `--hotfix` flag:
+- When running the release script, use the `--hotfix` flag. Provide the hash of 
+  the commit to be released as the first argument:
 
-    $ ./zcutil/make-release.py --hotfix <RELEASE> <RELEASE_PREV> <APPROX_RELEASE_HEIGHT>
+    $ ./zcutil/make-release.py --hotfix <COMMIT_ID> <RELEASE> <RELEASE_PREV> <APPROX_RELEASE_HEIGHT>
 
 - To review the automated changes in git:
 
     $ git log hotfix-<RELEASE>..HEAD
-
-- After the standard review process, use the hotfix merge process outlined above
-  instead of the regular merge process.
-
-- When making the tag, check out the hotfix branch instead of master.
-
-## Post-release
-
-Once the hotfix release has been created, a new PR should be opened for merging
-the hotfix release branch into master. This may require fixing merge conflicts
-(e.g. changing the version number in the hotfix branch to match master, if
-master is ahead). Such conflicts **MUST** be addressed with additional commits
-to the hotfix branch; specifically, the branch **MUST NOT** be rebased on
-master.
