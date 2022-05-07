@@ -1397,18 +1397,28 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
     const auto& params = Params().GetConsensus();
     wallet.IncrementNoteWitnesses(params, &index, &block, frontiers, true);
 
+    // this death will occur because there will not be sufficient Sprout witnesses to reach the
+    // default anchor depth
     EXPECT_DEATH(::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, nAnchorConfirmations, sproutWitnesses, saplingWitnesses),
                  "GetSproutNoteWitnesses");
 
-    for (int i = 1; i <= 8; i++) {
+    // add another block; we still don't have enough witnesses
+    {
         CBlock another_block;
         CBlockIndex another_index(another_block);
-        another_index.nHeight = i;
+        another_index.nHeight = 1;
         wallet.IncrementNoteWitnesses(params, &another_index, &another_block, frontiers, true);
     }
 
     EXPECT_DEATH(::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, nAnchorConfirmations, sproutWitnesses, saplingWitnesses),
                  "GetSproutNoteWitnesses");
+
+    for (int i = 2; i <= 8; i++) {
+        CBlock another_block;
+        CBlockIndex another_index(another_block);
+        another_index.nHeight = i;
+        wallet.IncrementNoteWitnesses(params, &another_index, &another_block, frontiers, true);
+    }
 
     CBlock last_block;
     CBlockIndex last_index(last_block);

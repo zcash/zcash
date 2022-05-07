@@ -4878,7 +4878,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "      \"amount\":amount    (numeric, required) The numeric amount in " + CURRENCY_UNIT + " is the value\n"
             "      \"memo\":memo        (string, optional) If the address is a zaddr, raw data represented in hexadecimal string format\n"
             "    }, ... ]\n"
-            "3. minconf               (numeric, optional, default=" + strprintf("%u", nAnchorConfirmations) + ") Only use funds confirmed at least this many times.\n"
+            "3. minconf               (numeric, optional, default=" + strprintf("%u", DEFAULT_NOTE_CONFIRMATIONS) + ") Only use funds confirmed at least this many times.\n"
             "4. fee                   (numeric, optional, default=" + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
             "5. privacyPolicy         (string, optional, default=\"LegacyCompat\") Policy for what information leakage is acceptable.\n"
             "                         One of the following strings:\n"
@@ -5090,7 +5090,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     }
 
     // Minimum confirmations
-    int nMinDepth = nAnchorConfirmations;
+    int nMinDepth = DEFAULT_NOTE_CONFIRMATIONS;
     if (params.size() > 2) {
         nMinDepth = params[2].get_int();
     }
@@ -5829,7 +5829,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             useAnySprout || useAnySapling ?
                 std::nullopt :
                 std::optional(NoteFilter::ForPaymentAddresses(zaddrs));
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, noteFilter, nAnchorConfirmations);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, noteFilter, DEFAULT_NOTE_CONFIRMATIONS);
 
         // If Sapling is not active, do not allow sending from a sapling addresses.
         if (!saplingActive && saplingEntries.size() > 0) {

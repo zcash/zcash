@@ -688,6 +688,8 @@ impl Wallet {
             .collect()
     }
 
+    /// Returns the note of the Orchard note commitment tree, as of the specified checkpoint
+    /// depth. A depth of 0 corresponds to the chain tip.
     pub fn note_commitment_tree_root(&self, checkpoint_depth: usize) -> Option<MerkleHashOrchard> {
         self.witness_tree.root(checkpoint_depth)
     }

@@ -79,7 +79,9 @@ static const unsigned int WITNESS_CACHE_SIZE = MAX_REORG_LENGTH + 1;
 //! Amount of entropy used in generation of the mnemonic seed, in bytes.
 static const size_t WALLET_MNEMONIC_ENTROPY_LENGTH = 32;
 //! -anchorconfirmations default
-static const unsigned int DEFAULT_ANCHOR_CONFIRMATIONS = 10;
+static const unsigned int DEFAULT_ANCHOR_CONFIRMATIONS = 3;
+// Default minimum number of confirmations for note selection
+static const unsigned int DEFAULT_NOTE_CONFIRMATIONS = 10;
 
 extern const char * DEFAULT_WALLET_DAT;
 
