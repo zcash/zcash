@@ -23,7 +23,7 @@ from decimal import Decimal
 class WalletZSendmanyTest(BitcoinTestFramework):
     def setup_network(self, split=False):
         self.nodes = start_nodes(3, self.options.tmpdir, [[
-            nuparams(NU5_BRANCH_ID, 240),
+            nuparams(NU5_BRANCH_ID, 238),
         ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
