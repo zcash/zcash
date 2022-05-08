@@ -55,7 +55,7 @@ extern bool fSendFreeTransactions;
 extern bool fPayAtLeastCustomFee;
 extern unsigned int nAnchorConfirmations;
 // The maximum number of Orchard actions permitted within a single transaction.
-// This can be overridden with the -orchardactionlimit CLI flag.
+// This can be overridden with the -orchardactionlimit config option
 extern unsigned int nOrchardActionLimit;
 
 static const unsigned int DEFAULT_KEYPOOL_SIZE = 100;
