@@ -74,7 +74,7 @@ RPC Interface
 -------------
 
 - The default `minconf` value for `z_sendmany` is now 10 confirmations instead
-  of 1. If `minconf` and specifies a value less than that provided for
+  of 1. If `minconf` specifies a value less than that provided for
   `-anchorconfirmations`, it will also override that value as it is not
   possible to spend notes that are more recent than the anchor. Selecting
   `minconf` values less than 3 is not recommended, as it allows the transaction
