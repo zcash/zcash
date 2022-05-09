@@ -5064,6 +5064,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     std::set<RecipientAddress> recipientAddrs;
     std::vector<SendManyRecipient> recipients;
     CAmount nTotalOut = 0;
+    size_t nOrchardOutputs = 0;
     for (const UniValue& o : outputs.getValues()) {
         if (!o.isObject())
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected object");
@@ -5127,6 +5128,22 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         if (std::holds_alternative<libzcash::UnifiedAddress>(decoded.value())) {
             ua = std::get<libzcash::UnifiedAddress>(decoded.value());
             involvesUnifiedAddress = true;
+        }
+
+        if (std::holds_alternative<libzcash::OrchardRawAddress>(addr.value())) {
+            nOrchardOutputs += 1;
+            if (nOrchardOutputs > nOrchardActionLimit) {
+                throw JSONRPCError(
+                    RPC_INVALID_PARAMETER,
+                    strprintf(
+                        "Attempting to create %u Orchard outputs would exceed the current limit "
+                        "of %u notes, which exists to prevent memory exhaustion. Restart with "
+                        "`-orchardactionlimit=N` where N >= %u to allow the wallet to attempt "
+                        "to construct this transaction.",
+                        nOrchardOutputs,
+                        nOrchardActionLimit,
+                        nOrchardOutputs));
+            }
         }
 
         recipients.push_back(SendManyRecipient(ua, addr.value(), nAmount, memo));

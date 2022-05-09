@@ -54,6 +54,9 @@ extern bool bSpendZeroConfChange;
 extern bool fSendFreeTransactions;
 extern bool fPayAtLeastCustomFee;
 extern unsigned int nAnchorConfirmations;
+// The maximum number of Orchard actions permitted within a single transaction.
+// This can be overridden with the -orchardactionlimit config option
+extern unsigned int nOrchardActionLimit;
 
 static const unsigned int DEFAULT_KEYPOOL_SIZE = 100;
 //! -paytxfee default
@@ -82,6 +85,8 @@ static const size_t WALLET_MNEMONIC_ENTROPY_LENGTH = 32;
 static const unsigned int DEFAULT_ANCHOR_CONFIRMATIONS = 3;
 // Default minimum number of confirmations for note selection
 static const unsigned int DEFAULT_NOTE_CONFIRMATIONS = 10;
+//! -orchardactionlimit default
+static const unsigned int DEFAULT_ORCHARD_ACTION_LIMIT = 50;
 
 extern const char * DEFAULT_WALLET_DAT;
 

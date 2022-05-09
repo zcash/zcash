@@ -61,6 +61,12 @@ Option handling
   to specify the number of blocks back from the chain tip that anchors will be
   selected from when spending notes. By default, anchors will now be selected
   to have 3 confirmations. Values greater than 100 are not supported.
+- A new `-orchardactionlimit` option has been added to allow the user to
+  override the default maximum of 50 Orchard actions per transaction. 
+  Transactions that contain large numbers of Orchard actions can use 
+  large amounts of memory for proving, so the 50-action default limit is
+  imposed to guard against memory exhaustion. Systems with more than 16G
+  of memory can safely set this parameter to allow 200 actions or more.
 
 RPC Interface
 -------------
