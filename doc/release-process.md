@@ -97,7 +97,7 @@ Having identified the commit from which the release will be made, the release
 manager constructs the release stabilization branch as follows:
 
     $ git checkout -b version-X.Y.0 <COMMIT_ID>
-    $ git push 'git@github.com:zcash/zcash' $(git rev-parse --abrev-ref HEAD)
+    $ git push 'git@github.com:zcash/zcash' $(git rev-parse --abbrev-ref HEAD)
 
 ### Create the release candidate branch
 
