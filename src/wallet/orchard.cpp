@@ -13,14 +13,16 @@ std::optional<libzcash::OrchardSpendingKey> OrchardWallet::GetSpendingKeyForAddr
 }
 
 std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> OrchardWallet::GetSpendInfo(
-    const std::vector<OrchardNoteMetadata>& noteMetadata) const
+    const std::vector<OrchardNoteMetadata>& noteMetadata,
+    uint256 anchor) const
 {
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> result;
     for (const auto& note : noteMetadata) {
         auto pSpendInfo = orchard_wallet_get_spend_info(
             inner.get(),
             note.GetOutPoint().hash.begin(),
-            note.GetOutPoint().n);
+            note.GetOutPoint().n,
+            anchor.begin());
         if (pSpendInfo == nullptr) {
             throw std::logic_error("Called OrchardWallet::GetSpendInfo with unknown outpoint");
         } else {

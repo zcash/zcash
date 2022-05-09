@@ -142,7 +142,7 @@ class ListReceivedTest (BitcoinTestFramework):
 
         taddr = self.nodes[1].getnewaddress()
         # Generate some change by sending part of zaddr1 back to taddr
-        opid = self.nodes[1].z_sendmany(zaddr1, [{'address': taddr, 'amount': 0.6}])
+        opid = self.nodes[1].z_sendmany(zaddr1, [{'address': taddr, 'amount': 0.6}], 1)
         txid = wait_and_assert_operationid_status(self.nodes[1], opid)
 
         self.generate_and_sync(height+4)
@@ -220,7 +220,7 @@ class ListReceivedTest (BitcoinTestFramework):
         opid = self.nodes[1].z_sendmany(taddr, [
             {'address': zaddr1, 'amount': 1, 'memo': my_memo},
             {'address': zaddrExt, 'amount': 2},
-        ])
+        ], 1)
         txid = wait_and_assert_operationid_status(self.nodes[1], opid)
         self.sync_all()
 
@@ -287,8 +287,7 @@ class ListReceivedTest (BitcoinTestFramework):
         # Generate some change by sending part of zaddr1 to zaddr2
         txidPrev = txid
         zaddr2 = self.nodes[1].z_getnewaddress('sapling')
-        opid = self.nodes[1].z_sendmany(zaddr1,
-            [{'address': zaddr2, 'amount': 0.6}])
+        opid = self.nodes[1].z_sendmany(zaddr1, [{'address': zaddr2, 'amount': 0.6}], 1)
         txid = wait_and_assert_operationid_status(self.nodes[1], opid)
         self.sync_all()
         self.generate_and_sync(height+4)
@@ -404,7 +403,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(len(r), 0, "unified_addr should have received zero notes")
 
         # Create a note in this UA on node1
-        opid = node.z_sendmany(zaddr1, [{'address': unified_addr, 'amount': 0.1}])
+        opid = node.z_sendmany(zaddr1, [{'address': unified_addr, 'amount': 0.1}], 1)
         txid_sapling = wait_and_assert_operationid_status(node, opid)
         self.generate_and_sync(height+5)
 
@@ -499,7 +498,7 @@ class ListReceivedTest (BitcoinTestFramework):
         opid = self.nodes[1].z_sendmany(uao, [
             {'address': uaso, 'amount': Decimal('0.3')},
             {'address': ua_node0, 'amount': Decimal('0.2')}
-        ])
+        ], 1)
         txid1 = wait_and_assert_operationid_status(self.nodes[1], opid)
         self.sync_all()
 

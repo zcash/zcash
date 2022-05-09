@@ -442,7 +442,8 @@ public:
     }
 
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> GetSpendInfo(
-        const std::vector<OrchardNoteMetadata>& noteMetadata) const;
+        const std::vector<OrchardNoteMetadata>& noteMetadata,
+        uint256 anchor) const;
 
     void GarbageCollect() {
         orchard_wallet_gc_note_commitment_tree(inner.get());

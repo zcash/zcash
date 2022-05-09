@@ -51,7 +51,7 @@ unsigned int nTxConfirmTarget = DEFAULT_TX_CONFIRM_TARGET;
 bool bSpendZeroConfChange = DEFAULT_SPEND_ZEROCONF_CHANGE;
 bool fSendFreeTransactions = DEFAULT_SEND_FREE_TRANSACTIONS;
 bool fPayAtLeastCustomFee = true;
-unsigned int nOrchardAnchorConfirmations = DEFAULT_ORCHARD_ANCHOR_CONFIRMATIONS;
+unsigned int nAnchorConfirmations = DEFAULT_ANCHOR_CONFIRMATIONS;
 
 const char * DEFAULT_WALLET_DAT = "wallet.dat";
 
@@ -3529,9 +3529,10 @@ bool CWallet::IsSaplingNullifierFromMe(const uint256& nullifier) const
     return false;
 }
 
-void CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
+bool CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
+                                     unsigned int confirmations,
                                      std::vector<std::optional<SproutWitness>>& witnesses,
-                                     uint256 &final_anchor)
+                                     uint256 &final_anchor) const
 {
     LOCK(cs_wallet);
     witnesses.resize(notes.size());
@@ -3539,9 +3540,16 @@ void CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
     int i = 0;
     for (JSOutPoint note : notes) {
         if (mapWallet.count(note.hash) &&
-                mapWallet[note.hash].mapSproutNoteData.count(note) &&
-                mapWallet[note.hash].mapSproutNoteData[note].witnesses.size() > 0) {
-            witnesses[i] = mapWallet[note.hash].mapSproutNoteData[note].witnesses.front();
+                mapWallet.at(note.hash).mapSproutNoteData.count(note) &&
+                mapWallet.at(note.hash).mapSproutNoteData.at(note).witnesses.size() > 0) {
+            auto noteWitnesses = mapWallet.at(note.hash).mapSproutNoteData.at(note).witnesses;
+            auto it = noteWitnesses.cbegin(), end = noteWitnesses.cend();
+            for (int i = 1; i < confirmations; i++) {
+                if (it == end) return false;
+                ++it;
+            }
+            if (it == end) return false;
+            witnesses[i] = *it;
             if (!rt) {
                 rt = witnesses[i]->root();
             } else {
@@ -3554,11 +3562,13 @@ void CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
     if (rt) {
         final_anchor = *rt;
     }
+    return true;
 }
 
-void CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
+bool CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
+                                      unsigned int confirmations,
                                       std::vector<std::optional<SaplingWitness>>& witnesses,
-                                      uint256 &final_anchor)
+                                      uint256 &final_anchor) const
 {
     LOCK(cs_wallet);
     witnesses.resize(notes.size());
@@ -3566,9 +3576,16 @@ void CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
     int i = 0;
     for (SaplingOutPoint note : notes) {
         if (mapWallet.count(note.hash) &&
-                mapWallet[note.hash].mapSaplingNoteData.count(note) &&
-                mapWallet[note.hash].mapSaplingNoteData[note].witnesses.size() > 0) {
-            witnesses[i] = mapWallet[note.hash].mapSaplingNoteData[note].witnesses.front();
+                mapWallet.at(note.hash).mapSaplingNoteData.count(note) &&
+                mapWallet.at(note.hash).mapSaplingNoteData.at(note).witnesses.size() > 0) {
+            auto noteWitnesses = mapWallet.at(note.hash).mapSaplingNoteData.at(note).witnesses;
+            auto it = noteWitnesses.cbegin(), end = noteWitnesses.cend();
+            for (int i = 1; i < confirmations; i++) {
+                if (it == end) return false;
+                ++it;
+            }
+            if (it == end) return false;
+            witnesses[i] = *it;
             if (!rt) {
                 rt = witnesses[i]->root();
             } else {
@@ -3581,13 +3598,15 @@ void CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
     if (rt) {
         final_anchor = *rt;
     }
+    return true;
 }
 
 std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> CWallet::GetOrchardSpendInfo(
-    const std::vector<OrchardNoteMetadata>& orchardNoteMetadata) const
+    const std::vector<OrchardNoteMetadata>& orchardNoteMetadata,
+    uint256 anchor) const
 {
     AssertLockHeld(cs_wallet);
-    return orchardWallet.GetSpendInfo(orchardNoteMetadata);
+    return orchardWallet.GetSpendInfo(orchardNoteMetadata, anchor);
 }
 
 isminetype CWallet::IsMine(const CTxIn &txin) const
@@ -6574,12 +6593,15 @@ bool CWallet::ParameterInteraction(const CChainParams& params)
             return UIError(_("-migrationdestaddress must be a valid Sapling address."));
         }
     }
-    if (mapArgs.count("-orchardanchorconfirmations")) {
-        int64_t confirmations = atoi64(mapArgs["-orchardanchorconfirmations"]);
+    if (mapArgs.count("-anchorconfirmations")) {
+        int64_t confirmations = atoi64(mapArgs["-anchorconfirmations"]);
         if (confirmations < 1) {
-            return UIError(strprintf(_("Invalid value for -orchardanchorconfirmations='%u' (must be least 1)"), confirmations));
+            return UIError(strprintf(_("Invalid value for -anchorconfirmations='%u' (must be least 1)"), confirmations));
         }
-        nOrchardAnchorConfirmations = confirmations;
+        if (confirmations > 100) {
+            return UIError(strprintf(_("Invalid value for -anchorconfirmations='%u' (must be at most 100)"), confirmations));
+        }
+        nAnchorConfirmations = confirmations;
     }
 
     return true;

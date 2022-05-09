@@ -107,7 +107,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         assert_equal(error_result["method"], "z_sendmany")
         params = error_result["params"]
         assert_equal(params["fee"], DEFAULT_FEE) # default
-        assert_equal(params["minconf"], Decimal('1')) # default
+        assert_equal(params["minconf"], Decimal('10')) # default
         assert_equal(params["fromaddress"], mytaddr)
         assert_equal(params["amounts"][0]["address"], myzaddr)
         assert_equal(params["amounts"][0]["amount"], Decimal('1.23456789'))
@@ -198,7 +198,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         unshieldvalue = Decimal('10.0')
         recipients = []
         recipients.append({"address":mytaddr, "amount": unshieldvalue})
-        myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1)
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert(mytxid is not None)
         self.sync_all()
@@ -224,7 +224,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         recipients = []
         amount = Decimal('10.0') - DEFAULT_FEE - Decimal('0.00000001')    # this leaves change at 1 zatoshi less than dust threshold
         recipients.append({"address":self.nodes[0].getnewaddress(), "amount":amount })
-        myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
+        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 1)
         wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 10.00, need 0.00000053 more to avoid creating invalid change output 0.00000001 (dust threshold is 0.00000054)")
 
         # Send will fail because send amount is too big, even when including coinbase utxos
@@ -238,9 +238,9 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         # z_sendmany will fail because of insufficient funds
         recipients = []
         recipients.append({"address":self.nodes[1].getnewaddress(), "amount":Decimal('10000.0')})
-        myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
+        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 1)
         wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 10.00, need 10000.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR or if any transparent recipients are included.")
-        myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1)
         wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 9.99998, need 10000.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR or if any transparent recipients are included.")
 
         # Send will fail because of insufficient funds unless sender uses coinbase utxos
@@ -276,7 +276,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         self.nodes[0].getinfo()
         # Issue #2263 Workaround END
 
-        myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1)
         try:
             wait_and_assert_operationid_status(self.nodes[0], myopid)
         except JSONRPCException as e:

@@ -48,6 +48,7 @@
 
 #include <univalue.h>
 
+#include <algorithm>
 #include <numeric>
 #include <optional>
 #include <variant>
@@ -4942,7 +4943,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "      \"amount\":amount    (numeric, required) The numeric amount in " + CURRENCY_UNIT + " is the value\n"
             "      \"memo\":memo        (string, optional) If the address is a zaddr, raw data represented in hexadecimal string format\n"
             "    }, ... ]\n"
-            "3. minconf               (numeric, optional, default=1) Only use funds confirmed at least this many times.\n"
+            "3. minconf               (numeric, optional, default=" + strprintf("%u", DEFAULT_NOTE_CONFIRMATIONS) + ") Only use funds confirmed at least this many times.\n"
             "4. fee                   (numeric, optional, default=" + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
             "5. privacyPolicy         (string, optional, default=\"LegacyCompat\") Policy for what information leakage is acceptable.\n"
             "                         One of the following strings:\n"
@@ -5154,7 +5155,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     }
 
     // Minimum confirmations
-    int nMinDepth = 1;
+    int nMinDepth = DEFAULT_NOTE_CONFIRMATIONS;
     if (params.size() > 2) {
         nMinDepth = params[2].get_int();
     }
@@ -5199,12 +5200,12 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     UniValue contextInfo = o;
 
     std::optional<uint256> orchardAnchor;
-    if (!ztxoSelector.SelectsSprout()) {
-        // Allow Orchard recipients by setting an Orchard anchor.
-        // TODO: Add an orchardAnchorHeight field to ZTXOSelector so we can ensure the
-        // same anchor is used for witnesses of any selected Orchard note.
-        auto orchardAnchorHeight = nextBlockHeight - nOrchardAnchorConfirmations;
-        orchardAnchor = chainActive[orchardAnchorHeight]->hashFinalOrchardRoot;
+    auto nAnchorDepth = std::min((unsigned int) nMinDepth, nAnchorConfirmations);
+    if (!ztxoSelector.SelectsSprout() && nAnchorDepth > 0) {
+        auto orchardAnchorHeight = nextBlockHeight - nAnchorDepth;
+        if (chainparams.GetConsensus().NetworkUpgradeActive(orchardAnchorHeight, Consensus::UPGRADE_NU5)) {
+            orchardAnchor = chainActive[orchardAnchorHeight]->hashFinalOrchardRoot;
+        }
     }
     TransactionBuilder builder(chainparams.GetConsensus(), nextBlockHeight, orchardAnchor, pwalletMain);
 
@@ -5212,7 +5213,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation(
             new AsyncRPCOperation_sendmany(
-                std::move(builder), ztxoSelector, recipients, nMinDepth, strategy, nFee, contextInfo)
+                std::move(builder), ztxoSelector, recipients, nMinDepth, nAnchorDepth, strategy, nFee, contextInfo)
             );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
@@ -5560,8 +5561,10 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     std::optional<uint256> orchardAnchor;
     if (canopyActive) {
         // Allow Orchard recipients by setting an Orchard anchor.
-        auto orchardAnchorHeight = nextBlockHeight - nOrchardAnchorConfirmations;
-        orchardAnchor = chainActive[orchardAnchorHeight]->hashFinalOrchardRoot;
+        auto orchardAnchorHeight = nextBlockHeight - nAnchorConfirmations;
+        if (Params().GetConsensus().NetworkUpgradeActive(orchardAnchorHeight, Consensus::UPGRADE_NU5)) {
+            orchardAnchor = chainActive[orchardAnchorHeight]->hashFinalOrchardRoot;
+        }
     }
     TransactionBuilder builder = TransactionBuilder(
         Params().GetConsensus(), nextBlockHeight, orchardAnchor, pwalletMain);
@@ -5895,7 +5898,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             useAnySprout || useAnySapling ?
                 std::nullopt :
                 std::optional(NoteFilter::ForPaymentAddresses(zaddrs));
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, noteFilter);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, noteFilter, nAnchorConfirmations);
 
         // If Sapling is not active, do not allow sending from a sapling addresses.
         if (!saplingActive && saplingEntries.size() > 0) {
@@ -6037,8 +6040,10 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             // Allow Orchard recipients by setting an Orchard anchor.
             // TODO: Add an orchardAnchorHeight field to ZTXOSelector so we can ensure the
             // same anchor is used for witnesses of any selected Orchard note.
-            auto orchardAnchorHeight = nextBlockHeight - nOrchardAnchorConfirmations;
-            orchardAnchor = chainActive[orchardAnchorHeight]->hashFinalOrchardRoot;
+            auto orchardAnchorHeight = nextBlockHeight - nAnchorConfirmations;
+            if (Params().GetConsensus().NetworkUpgradeActive(orchardAnchorHeight, Consensus::UPGRADE_NU5)) {
+                orchardAnchor = chainActive[orchardAnchorHeight]->hashFinalOrchardRoot;
+            }
         }
         builder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, orchardAnchor, pwalletMain);
     }

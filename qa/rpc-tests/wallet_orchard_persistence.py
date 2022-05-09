@@ -32,6 +32,10 @@ class WalletOrchardPersistenceTest(BitcoinTestFramework):
         # Sanity-check the test harness
         assert_equal(self.nodes[0].getblockcount(), 200)
 
+        # activate NU5
+        self.nodes[0].generate(1)
+        self.sync_all()
+
         # Send some Orchard funds to node 2 for later spending after we split the network
         acct0 = self.nodes[0].z_getnewaccount()['account']
         ua0 = self.nodes[0].z_getaddressforaccount(acct0, ['sapling', 'orchard'])['address']
@@ -40,7 +44,7 @@ class WalletOrchardPersistenceTest(BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
-        # Mine the tx & activate NU5
+        # Mine the tx 
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()

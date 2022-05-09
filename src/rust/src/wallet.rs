@@ -1,5 +1,5 @@
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use incrementalmerkletree::{bridgetree, bridgetree::BridgeTree, Frontier, Position, Tree};
+use incrementalmerkletree::{bridgetree, bridgetree::BridgeTree, Position, Tree};
 use libc::c_uchar;
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryInto;
@@ -201,6 +201,8 @@ pub enum SpendRetrievalError {
     NoIvkForRecipient(Address),
     FvkNotFound(IncomingViewingKey),
     NoteNotPositioned(OutPoint),
+    InvalidMerkleRoot,
+    WitnessNotAvailableAtRoot(MerkleHashOrchard),
 }
 
 /// A struct used to return metadata about how a bundle was determined
@@ -686,19 +688,23 @@ impl Wallet {
             .collect()
     }
 
-    pub fn note_commitment_tree_root(&self) -> MerkleHashOrchard {
-        self.witness_tree.root()
+    /// Returns the note of the Orchard note commitment tree, as of the specified checkpoint
+    /// depth. A depth of 0 corresponds to the chain tip.
+    pub fn note_commitment_tree_root(&self, checkpoint_depth: usize) -> Option<MerkleHashOrchard> {
+        self.witness_tree.root(checkpoint_depth)
     }
 
     /// Fetches the information necessary to spend the note at the given `OutPoint`,
-    /// relative to the current root known to the wallet of the Orchard commitment tree.
+    /// relative to the specified root of the Orchard note commitment tree.
     ///
     /// Returns `None` if the `OutPoint` is not known to the wallet, or the Orchard bundle
-    /// containing the note has not been passed to `Wallet::append_bundle_commitments`.
+    /// containing the note had not been passed to `Wallet::append_bundle_commitments` at
+    /// the specified checkpoint depth.
     #[tracing::instrument(level = "trace", skip(self))]
     pub fn get_spend_info(
         &self,
         outpoint: OutPoint,
+        as_of_root: MerkleHashOrchard,
     ) -> Result<OrchardSpendInfo, SpendRetrievalError> {
         // TODO: Take `confirmations` parameter and obtain the Merkle path to the root at
         // that checkpoint, not the latest root.
@@ -738,8 +744,8 @@ impl Wallet {
 
         let path = self
             .witness_tree
-            .authentication_path(*position)
-            .expect("wallet always has paths to positioned notes");
+            .authentication_path(*position, &as_of_root)
+            .ok_or(SpendRetrievalError::WitnessNotAvailableAtRoot(as_of_root))?;
 
         Ok(OrchardSpendInfo::from_parts(
             fvk.clone(),
@@ -939,7 +945,9 @@ pub extern "C" fn orchard_wallet_commitment_tree_root(
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null");
     let root_ret = unsafe { root_ret.as_mut() }.expect("Cannot return to the null pointer.");
 
-    *root_ret = wallet.note_commitment_tree_root().to_bytes();
+    // there is always a valid note commitment tree root at depth 0
+    // (it may be the empty root)
+    *root_ret = wallet.note_commitment_tree_root(0).unwrap().to_bytes();
 }
 
 #[no_mangle]
@@ -1213,13 +1221,23 @@ pub extern "C" fn orchard_wallet_get_spend_info(
     wallet: *const Wallet,
     txid: *const [c_uchar; 32],
     action_idx: usize,
+    as_of_root: *const [c_uchar; 32],
 ) -> *mut OrchardSpendInfo {
     let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
     let txid = TxId::from_bytes(*unsafe { txid.as_ref() }.expect("txid may not be null."));
+    let as_of_root = MerkleHashOrchard::from_bytes(
+        unsafe { as_of_root.as_ref() }.expect("note commitment tree root may not be null."),
+    );
 
     let outpoint = OutPoint { txid, action_idx };
 
-    match wallet.get_spend_info(outpoint) {
+    let as_of_root = if as_of_root.is_some().into() {
+        Ok(as_of_root.unwrap())
+    } else {
+        Err(SpendRetrievalError::InvalidMerkleRoot)
+    };
+
+    match as_of_root.and_then(|root| wallet.get_spend_info(outpoint, root)) {
         Ok(ret) => Box::into_raw(Box::new(ret)),
         Err(e) => {
             tracing::error!(

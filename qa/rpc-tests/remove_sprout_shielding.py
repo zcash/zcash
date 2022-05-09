@@ -20,7 +20,9 @@ from test_framework.util import (
 
 import logging
 
-HAS_CANOPY = ['-nurejectoldversions=false',
+HAS_CANOPY = [
+    '-nurejectoldversions=false', 
+    '-anchorconfirmations=1',
     nuparams(BLOSSOM_BRANCH_ID, 205),
     nuparams(HEARTWOOD_BRANCH_ID, 210),
     nuparams(CANOPY_BRANCH_ID, 220),

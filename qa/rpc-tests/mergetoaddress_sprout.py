@@ -16,7 +16,7 @@ class MergeToAddressSprout (BitcoinTestFramework):
         self.helper.setup_chain(self)
 
     def setup_network(self, split=False):
-        self.helper.setup_network(self)
+        self.helper.setup_network(self, ['-anchorconfirmations=1'])
 
     def run_test(self):
         self.helper.run_test(self)

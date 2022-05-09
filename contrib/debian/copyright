@@ -188,6 +188,14 @@ Files: depends/*/vendored-sources/instant/*
 Copyright: 2019 Sébastien Crozet
 License: BSD-3-clause
 
+Files: depends/*/vendored-sources/parity-scale-codec/*
+Copyright: 2018-2022 Parity Technologies
+License: Apache-2.0
+
+Files: depends/*/vendored-sources/parity-scale-codec-derive/*
+Copyright: 2018-2022 Parity Technologies
+License: Apache-2.0
+
 Files: depends/*/vendored-sources/subtle/*
 Copyright: 2016-2017 isis agora lovecruft, Henry de Valence
 License: BSD-3-clause

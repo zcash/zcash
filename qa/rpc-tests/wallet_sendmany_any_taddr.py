@@ -53,6 +53,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
                     {'address': node3taddr1, 'amount': 60},
                     {'address': node3taddr2, 'amount': 75},
                 ],
+                1
             ),
         )
         self.sync_all()
@@ -67,7 +68,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
         # We should be able to spend multiple UTXOs at once
         wait_and_assert_operationid_status(
             self.nodes[3],
-            self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 100}]),
+            self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 100}], 1),
         )
 
         self.sync_all()
@@ -84,7 +85,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
         # Send from a change t-address.
         wait_and_assert_operationid_status(
             self.nodes[3],
-            self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 20}]),
+            self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 20}], 1),
         )
 
         self.sync_all()
@@ -95,7 +96,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
         assert_equal(self.nodes[1].z_getbalance(recipient), 120)
 
         # Check that ANY_TADDR note selection doesn't attempt a double-spend
-        myopid = self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 20}])
+        myopid = self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 20}], 1)
         wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "Insufficient funds: have 14.99998, need 20.00001")
 
         # Create an expired transaction on node 3.
