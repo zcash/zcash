@@ -37,6 +37,8 @@ be required to permit their continued use:
     conform to the `FullPrivacy` directive (introduced in 4.7.0) in all cases
     instead of just for transactions involving unified addresses.
   - `getnewaddress` - controls availability of the `getnewaddress` RPC method.
+  - `z_getbalance` - controls availability of the `z_getbalance` RPC method.
+  - `z_gettotalbalance` - controls availability of the `z_gettotalbalance` RPC method.
   - `z_getnewaddress` - controls availability of the `z_getnewaddress` RPC method.
   - `addrtype` - controls availability of the deprecated `type` attribute
     returned by RPC methods that return address metadata. 

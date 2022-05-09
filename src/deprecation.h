@@ -29,6 +29,8 @@ static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
     "legacy_privacy",
     "getnewaddress",
     "z_getnewaddress",
+    "z_getbalance",
+    "z_gettotalbalance",
     "addrtype"
 #endif
 }};
@@ -44,6 +46,8 @@ static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
 #ifdef ENABLE_WALLET
 extern bool fEnableGetNewAddress;
 extern bool fEnableZGetNewAddress;
+extern bool fEnableZGetBalance;
+extern bool fEnableZGetTotalBalance;
 extern bool fEnableLegacyPrivacyStrategy;
 extern bool fEnableZCRawReceive;
 extern bool fEnableZCRawJoinSplit;

@@ -45,6 +45,8 @@ default as of release 5.3.0.
     conform to the `FullPrivacy` directive in all cases instead of just for
     transactions involving unified addresses. 
   - `getnewaddress` - The `getnewaddress` RPC method is deprecated.
+  - `z_getbalance` - The `z_getbalance` RPC method is deprecated.
+  - `z_gettotalbalance` - The `z_gettotalbalance` RPC method is deprecated.
   - `z_getnewaddress` - The `z_getnewaddress` RPC method is deprecated.
   - `addrtype` - The `type` attribute is deprecated in the results of RPC
     methods that return address metadata. It is recommended that applications
