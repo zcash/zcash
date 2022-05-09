@@ -379,8 +379,8 @@ class JSDescription
 public:
     // These values 'enter from' and 'exit to' the value
     // pool, respectively.
-    CAmount vpub_old;
-    CAmount vpub_new;
+    CAmount vpub_old{0};
+    CAmount vpub_new{0};
 
     // JoinSplits are always anchored to a root in the note
     // commitment tree at some point in the blockchain
@@ -761,13 +761,13 @@ public:
     // actually immutable; deserialization and assignment are implemented,
     // and bypass the constness. This is safe, as they update the entire
     // structure, including the hash.
-    const bool fOverwintered;
-    const int32_t nVersion;
-    const uint32_t nVersionGroupId;
+    const bool fOverwintered{false};
+    const int32_t nVersion{0};
+    const uint32_t nVersionGroupId{0};
     const std::vector<CTxIn> vin;
     const std::vector<CTxOut> vout;
-    const uint32_t nLockTime;
-    const uint32_t nExpiryHeight;
+    const uint32_t nLockTime{0};
+    const uint32_t nExpiryHeight{0};
     const std::vector<SpendDescription> vShieldedSpend;
     const std::vector<OutputDescription> vShieldedOutput;
     const std::vector<JSDescription> vJoinSplit;
@@ -997,17 +997,17 @@ public:
 /** A mutable version of CTransaction. */
 struct CMutableTransaction
 {
-    bool fOverwintered;
-    int32_t nVersion;
-    uint32_t nVersionGroupId;
+    bool fOverwintered{false};
+    int32_t nVersion{0};
+    uint32_t nVersionGroupId{0};
     /// The consensus branch ID that this transaction commits to.
     /// Serialized from v5 onwards.
     std::optional<uint32_t> nConsensusBranchId;
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
-    uint32_t nLockTime;
-    uint32_t nExpiryHeight;
-    CAmount valueBalanceSapling;
+    uint32_t nLockTime{0};
+    uint32_t nExpiryHeight{0};
+    CAmount valueBalanceSapling{0};
     std::vector<SpendDescription> vShieldedSpend;
     std::vector<OutputDescription> vShieldedOutput;
     OrchardBundle orchardBundle;
@@ -1023,7 +1023,7 @@ struct CMutableTransaction
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        uint32_t header;
+        uint32_t header{0};
         if (ser_action.ForRead()) {
             // When deserializing, unpack the 4 byte header to extract fOverwintered and nVersion.
             READWRITE(header);
