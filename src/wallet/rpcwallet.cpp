@@ -210,6 +210,14 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
+    if (!fEnableGetRawChangeAddress)
+        throw runtime_error(
+            "getrawchangeaddress is DEPRECATED and will be removed in a future release\n"
+            "\nChange addresses are a wallet-internal feature. Use a unified address for\n"
+            "a dedicated change account instead, or restart with `-allowdeprecated=getrawchangeaddress` \n"
+            "if you require backward compatibility.\n"
+            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
+
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "getrawchangeaddress\n"
@@ -3573,10 +3581,17 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
+    if (!fEnableZListAddresses)
+        throw runtime_error(
+            "z_listaddresses is DEPRECATED and will be removed in a future release\n"
+            "\nUse listaddresses or restart with `-allowdeprecated=z_listaddresses`\n"
+            "if you require backward compatibility.\n"
+            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
+
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "z_listaddresses ( includeWatchonly )\n"
-            "\nDEPRECATED\n"
+            "\nDEPRECATED. Use `listaddresses` instead.\n"
             "\nReturns the list of shielded addresses belonging to the wallet.\n"
             "\nThis never returns Unified Addresses; see 'listaddresses' for them.\n"
             "\nArguments:\n"
