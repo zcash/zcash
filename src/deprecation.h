@@ -28,9 +28,11 @@ static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
 #ifdef ENABLE_WALLET
     "legacy_privacy",
     "getnewaddress",
+    "getrawchangeaddress",
     "z_getnewaddress",
     "z_getbalance",
     "z_gettotalbalance",
+    "z_listaddresses",
     "addrtype"
 #endif
 }};
@@ -45,9 +47,11 @@ static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
 // Flags that enable deprecated functionality.
 #ifdef ENABLE_WALLET
 extern bool fEnableGetNewAddress;
+extern bool fEnableGetRawChangeAddress;
 extern bool fEnableZGetNewAddress;
 extern bool fEnableZGetBalance;
 extern bool fEnableZGetTotalBalance;
+extern bool fEnableZListAddresses;
 extern bool fEnableLegacyPrivacyStrategy;
 extern bool fEnableZCRawReceive;
 extern bool fEnableZCRawJoinSplit;
