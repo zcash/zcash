@@ -8,20 +8,20 @@ release, in order to follow the NU5 network upgrade.
 
 The following ZIPs are being deployed, or have been updated, as part of this upgrade:
 
-* [ZIP 32 : Shielded Hierarchical Deterministic Wallets (updated)](https://zips.z.cash/zip_0032)
-* [ZIP 203: Transaction Expiry (updated)](https://zips.z.cash/zip_0203)
-* [ZIP 209: Prohibit Negative Shielded Chain Value Pool Balances (updated)](https://zips.z.cash/zip_0209)
-* [ZIP 212: Allow Recipient to Derive Ephemeral Secret from Note Plaintext (updated)](https://zips.z.cash/zip_0212)
-* [ZIP 213: Shielded Coinbase (updated)](https://zips.z.cash/zip_0213)
-* [ZIP 216: Require Canonical Jubjub Point Encodings](https://zips.z.cash/zip_0216)
-* [ZIP 221: FlyClient - Consensus-Layer Changes (updated)](https://zips.z.cash/zip_0221)
-* [ZIP 224: Orchard Shielded Protocol](https://zips.z.cash/zip_0224)
-* [ZIP 225: Version 5 Transaction Format](https://zips.z.cash/zip_0225)
-* [ZIP 239: Relay of Version 5 Transactions](https://zips.z.cash/zip_0239)
-* [ZIP 244: Transaction Identifier Non-Malleability](https://zips.z.cash/zip_0244)
-* [ZIP 252: Deployment of the NU5 Network Upgrade](https://zips.z.cash/zip_0252)
-* [ZIP 316: Unified Addresses and Unified Viewing Keys](https://zips.z.cash/zip_0316)
-* [ZIP 401: Addressing Mempool Denial-of-Service (clarified)](https://zips.z.cash/zip_0401)
+* [ZIP 32 : Shielded Hierarchical Deterministic Wallets (updated)](https://zips.z.cash/zip-0032)
+* [ZIP 203: Transaction Expiry (updated)](https://zips.z.cash/zip-0203)
+* [ZIP 209: Prohibit Negative Shielded Chain Value Pool Balances (updated)](https://zips.z.cash/zip-0209)
+* [ZIP 212: Allow Recipient to Derive Ephemeral Secret from Note Plaintext (updated)](https://zips.z.cash/zip-0212)
+* [ZIP 213: Shielded Coinbase (updated)](https://zips.z.cash/zip-0213)
+* [ZIP 216: Require Canonical Jubjub Point Encodings](https://zips.z.cash/zip-0216)
+* [ZIP 221: FlyClient - Consensus-Layer Changes (updated)](https://zips.z.cash/zip-0221)
+* [ZIP 224: Orchard Shielded Protocol](https://zips.z.cash/zip-0224)
+* [ZIP 225: Version 5 Transaction Format](https://zips.z.cash/zip-0225)
+* [ZIP 239: Relay of Version 5 Transactions](https://zips.z.cash/zip-0239)
+* [ZIP 244: Transaction Identifier Non-Malleability](https://zips.z.cash/zip-0244)
+* [ZIP 252: Deployment of the NU5 Network Upgrade](https://zips.z.cash/zip-0252)
+* [ZIP 316: Unified Addresses and Unified Viewing Keys](https://zips.z.cash/zip-0316)
+* [ZIP 401: Addressing Mempool Denial-of-Service (clarified)](https://zips.z.cash/zip-0401)
 
 Feature Deprecation and removal
 -------------------------------
