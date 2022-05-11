@@ -1701,7 +1701,9 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
             "gettransaction \"txid\" ( includeWatchonly )\n"
-            "\nReturns detailed information about in-wallet transaction <txid>.\n"
+            "\nReturns detailed information about in-wallet transaction <txid>. This does not\n"
+            "include complete information about shielded components of the transaction; to obtain\n"
+            "details about shielded components of the transaction use `z_viewtransaction`.\n"
             "\nArguments:\n"
             "1. \"txid\"    (string, required) The transaction id\n"
             "2. \"includeWatchonly\"    (bool, optional, default=false) Whether to include watchonly addresses in balance calculation and details[]\n"
