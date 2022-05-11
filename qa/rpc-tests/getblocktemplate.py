@@ -10,6 +10,7 @@ from test_framework.util import (
     assert_equal,
     CANOPY_BRANCH_ID,
     NU5_BRANCH_ID,
+    get_coinbase_address,
     hex_str_to_bytes,
     nuparams,
     nustr,
@@ -18,7 +19,6 @@ from test_framework.util import (
 )
 from test_framework.mininode import (
     CTransaction,
-    uint256_from_str,
 )
 from test_framework.blocktools import (
     create_block
@@ -49,7 +49,13 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         node = self.node
         # sprout to transparent (v4)
         recipients = [{"address": self.transparent_addr, "amount": Decimal('0.1')}]
-        myopid = node.z_sendmany(self.sprout_addr, recipients)
+        myopid = node.z_sendmany(self.sprout_addr, recipients, 1)
+        wait_and_assert_operationid_status(node, myopid)
+
+    def add_nu5_v5_tx_to_mempool(self):
+        node = self.node
+        recipients = [{"address": self.unified_addr, "amount": Decimal('9.99999')}]
+        myopid = node.z_sendmany(get_coinbase_address(node), recipients, 1, Decimal('0.00001'), 'AllowRevealedSenders')
         wait_and_assert_operationid_status(node, myopid)
 
     def add_transparent_tx_to_mempool(self):
@@ -97,6 +103,7 @@ class GetBlockTemplateTest(BitcoinTestFramework):
             tx = CTransaction()
             tx.deserialize(f)
             tx.calc_sha256()
+            assert_equal(tx.hash, gbt_tx['hash'])
             assert_equal(tx.auth_digest_hex, node.getrawtransaction(tx.hash, 1)['authdigest'])
             block.vtx.append(tx)
         block.hashMerkleRoot = int(gbt['defaultroots']['merkleroot'], 16)
@@ -104,7 +111,8 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         assert_equal(len(block.vtx), len(gbt['transactions']) + 1, "number of transactions")
         assert_equal(block.hashPrevBlock, int(gbt['previousblockhash'], 16), "prevhash")
         if nu5_active:
-            assert_equal(uint256_from_str(block.calc_auth_data_root()), int(gbt['defaultroots']['authdataroot'], 16))
+            block.hashAuthDataRoot = int(gbt['defaultroots']['authdataroot'], 16)
+            assert_equal(block.hashAuthDataRoot, block.calc_auth_data_root(), "authdataroot")
         else:
             assert 'authdataroot' not in gbt['defaultroots']
         block.solve()
@@ -131,6 +139,8 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         wait_and_assert_operationid_status(node, myopid)
 
         self.transparent_addr = node.getnewaddress()
+        account = node.z_getnewaccount()['account']
+        self.unified_addr = node.z_getaddressforaccount(account)['address']
         node.generate(15)
 
         # at height 120, NU5 is not active
@@ -176,13 +186,29 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         self.add_transparent_tx_to_mempool()
         self.gbt_submitblock(True)
 
-        # Adding both v4 and v5 to cover legacy auth digest.
+        # Adding both v4 and v5 to cover legacy auth digest (without full auth digest subtree).
+        print("- both v4 and v5 transactions (plus coinbase)")
+        self.add_nu5_v4_tx_to_mempool()
+        self.add_transparent_tx_to_mempool()
+        self.gbt_submitblock(True)
+
+        # Adding both v4 and v5 to cover legacy auth digest (with full auth digest subtree).
         print("- both v4 and v5 transactions (plus coinbase)")
         self.add_nu5_v4_tx_to_mempool()
         self.add_transparent_tx_to_mempool()
         self.add_transparent_tx_to_mempool()
         self.gbt_submitblock(True)
 
+        print("- block with 6 Orchard transactions (plus coinbase)")
+        for i in range(0, 6):
+            print(str(node.z_getbalance(self.transparent_addr)))
+            self.add_nu5_v5_tx_to_mempool()
+        self.gbt_submitblock(True)
+
+        print("- block with 7 Orchard transactions (plus coinbase)")
+        for i in range(0, 7):
+            self.add_nu5_v5_tx_to_mempool()
+        self.gbt_submitblock(True)
 
 if __name__ == '__main__':
     GetBlockTemplateTest().main()

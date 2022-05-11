@@ -174,19 +174,23 @@ def deser_vector(f, c):
     return r
 
 
-def ser_vector(l):
+def ser_vector(elems):
     r = b""
-    if len(l) < 253:
-        r = struct.pack("B", len(l))
-    elif len(l) < 0x10000:
-        r = struct.pack("<BH", 253, len(l))
-    elif len(l) < 0x100000000:
-        r = struct.pack("<BI", 254, len(l))
-    else:
-        r = struct.pack("<BQ", 255, len(l))
-    for i in l:
-        r += i.serialize()
+    r += ser_compact_size(len(elems))
+    for elem in elems:
+        r += elem.serialize()
     return r
+
+
+def ser_compact_size(l):
+    if l < 253:
+        return struct.pack("B", l)
+    elif l < 0x10000:
+        return struct.pack("<BH", 253, l)
+    elif l < 0x100000000:
+        return struct.pack("<BI", 254, l)
+    else:
+        return struct.pack("<BQ", 255, l)
 
 
 def deser_uint256_vector(f):
@@ -473,7 +477,7 @@ class OrchardBundle(object):
     def deserialize(self, f):
         self.actions = deser_vector(f, OrchardAction)
         if len(self.actions) > 0:
-            flags = f.read(1)
+            flags = struct.unpack("B", f.read(1))[0]
             self.enableSpends = (flags & ORCHARD_FLAGS_ENABLE_SPENDS) != 0
             self.enableOutputs = (flags & ORCHARD_FLAGS_ENABLE_OUTPUTS) != 0
             self.valueBalance = struct.unpack("<q", f.read(8))[0]
@@ -489,19 +493,22 @@ class OrchardBundle(object):
         r = b""
         r += ser_vector(self.actions)
         if len(self.actions) > 0:
-            flags = 0 ^ (
-                ORCHARD_FLAGS_ENABLE_SPENDS if self.enableSpends else 0
-            ) ^ (
-                ORCHARD_FLAGS_ENABLE_OUTPUTS if self.enableOutputs else 0
-            )
-            r += struct.pack("B", flags)
+            r += struct.pack("B", self.flags())
             r += struct.pack("<q", self.valueBalance)
             r += ser_uint256(self.anchor)
-            r += ser_vector(self.proofs)
+            r += ser_compact_size(len(self.proofs))
+            r += bytes(self.proofs)
             for i in range(len(self.actions)):
                 r += self.actions[i].spendAuthSig.serialize()
             r += self.bindingSig.serialize()
         return r
+
+    def flags(self):
+        return 0 ^ (
+            ORCHARD_FLAGS_ENABLE_SPENDS if self.enableSpends else 0
+        ) ^ (
+            ORCHARD_FLAGS_ENABLE_OUTPUTS if self.enableOutputs else 0
+        )
 
     def __repr__(self):
         return "OrchardBundle(actions=%r, enableSpends=%s, enableOutputs=%s, valueBalance=%i, proofs=%r, spendAuthSigs=%r, bindingSig=%r)" \
@@ -1285,7 +1292,7 @@ class CBlock(CBlockHeader):
                 digest.update(hashes[i+1])
                 newhashes.append(digest.digest())
             hashes = newhashes
-        return hashes[0]
+        return uint256_from_str(hashes[0])
 
     def is_valid(self, n=48, k=5):
         # H(I||...
