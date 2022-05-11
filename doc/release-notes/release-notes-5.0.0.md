@@ -1,6 +1,28 @@
 Notable changes
 ===============
 
+The mainnet activation of the NU5 network upgrade is supported by the 5.0.0
+release, with an activation height of 1687104, which should occur on
+approximately May 31, 2022. Please upgrade to this release, or any subsequent
+release, in order to follow the NU5 network upgrade.
+
+The following ZIPs are being deployed, or have been updated, as part of this upgrade:
+
+* [ZIP 32 : Shielded Hierarchical Deterministic Wallets (updated)](https://zips.z.cash/zip_0032)
+* [ZIP 203: Transaction Expiry (updated)](https://zips.z.cash/zip_0203)
+* [ZIP 209: Prohibit Negative Shielded Chain Value Pool Balances (updated)](https://zips.z.cash/zip_0209)
+* [ZIP 212: Allow Recipient to Derive Ephemeral Secret from Note Plaintext (updated)](https://zips.z.cash/zip_0212)
+* [ZIP 213: Shielded Coinbase (updated)](https://zips.z.cash/zip_0213)
+* [ZIP 216: Require Canonical Jubjub Point Encodings](https://zips.z.cash/zip_0216)
+* [ZIP 221: FlyClient - Consensus-Layer Changes (updated)](https://zips.z.cash/zip_0221)
+* [ZIP 224: Orchard Shielded Protocol](https://zips.z.cash/zip_0224)
+* [ZIP 225: Version 5 Transaction Format](https://zips.z.cash/zip_0225)
+* [ZIP 239: Relay of Version 5 Transactions](https://zips.z.cash/zip_0239)
+* [ZIP 244: Transaction Identifier Non-Malleability](https://zips.z.cash/zip_0244)
+* [ZIP 252: Deployment of the NU5 Network Upgrade](https://zips.z.cash/zip_0252)
+* [ZIP 316: Unified Addresses and Unified Viewing Keys](https://zips.z.cash/zip_0316)
+* [ZIP 401: Addressing Mempool Denial-of-Service (clarified)](https://zips.z.cash/zip_0401)
+
 Feature Deprecation and removal
 -------------------------------
 
@@ -23,8 +45,8 @@ permitted.
 Deprecated
 ----------
 
-As of this release, the following features are deprecated, but remain 
-available by default. These features may be disabled by setting 
+As of this release, the following features are deprecated, but remain
+available by default. These features may be disabled by setting
 `-allowdeprecated=none`. After release 5.3.0, these features will be
 disabled by default and the following flags to `-allowdeprecated` will
 be required to permit their continued use:
@@ -40,7 +62,7 @@ be required to permit their continued use:
   - `z_getnewaddress` - controls availability of the `z_getnewaddress` RPC method.
   - `z_listaddresses` - controls availability of the `z_listaddresses` RPC method.
   - `addrtype` - controls availability of the deprecated `type` attribute
-    returned by RPC methods that return address metadata. 
+    returned by RPC methods that return address metadata.
 
 As of this release, the following previously deprecated features are disabled
 by default, but may be be reenabled using `-allowdeprecated=<feature>`.
@@ -63,8 +85,8 @@ Option handling
   selected from when spending notes. By default, anchors will now be selected
   to have 3 confirmations. Values greater than 100 are not supported.
 - A new `-orchardactionlimit` option has been added to allow the user to
-  override the default maximum of 50 Orchard actions per transaction. 
-  Transactions that contain large numbers of Orchard actions can use 
+  override the default maximum of 50 Orchard actions per transaction.
+  Transactions that contain large numbers of Orchard actions can use
   large amounts of memory for proving, so the 50-action default limit is
   imposed to guard against memory exhaustion. Systems with more than 16G
   of memory can safely set this parameter to allow 200 actions or more.
