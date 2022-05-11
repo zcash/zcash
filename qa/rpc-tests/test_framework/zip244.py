@@ -138,9 +138,9 @@ def orchard_digest(orchardBundle):
         digest.update(orchard_actions_compact_digest(orchardBundle))
         digest.update(orchard_actions_memos_digest(orchardBundle))
         digest.update(orchard_actions_noncompact_digest(orchardBundle))
-        digest.update(struct.pack('<B', orchardBundle.flags()))
+        digest.update(struct.pack('B', orchardBundle.flags()))
         digest.update(struct.pack('<q', orchardBundle.valueBalance))
-        digest.update(bytes(orchardBundle.anchor))
+        digest.update(ser_uint256(orchardBundle.anchor))
 
     return digest.digest()
 
@@ -148,7 +148,7 @@ def orchard_auth_digest(orchardBundle):
     digest = blake2b(digest_size=32, person=b'ZTxAuthOrchaHash')
 
     if len(orchardBundle.actions) > 0:
-        digest.update(orchardBundle.proofs)
+        digest.update(bytes(orchardBundle.proofs))
         for desc in orchardBundle.actions:
             digest.update(desc.spendAuthSig.serialize())
         digest.update(orchardBundle.bindingSig.serialize())

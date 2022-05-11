@@ -28,6 +28,7 @@ def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoo
         block.nBits = nBits
     block.vtx.append(coinbase)
     block.hashMerkleRoot = block.calc_merkle_root()
+    block.hashAuthDataRoot = block.calc_auth_data_root()
     block.calc_sha256()
     return block
 
