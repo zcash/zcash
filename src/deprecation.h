@@ -33,7 +33,8 @@ static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
     "z_getbalance",
     "z_gettotalbalance",
     "z_listaddresses",
-    "addrtype"
+    "addrtype",
+    "wallettxvjoinsplit"
 #endif
 }};
 static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
@@ -59,6 +60,7 @@ extern bool fEnableZCRawJoinSplit;
 extern bool fEnableZCRawKeygen;
 extern bool fEnableAddrTypeField;
 extern bool fEnableDumpWallet;
+extern bool fEnableWalletTxVJoinSplit;
 #endif
 
 /**

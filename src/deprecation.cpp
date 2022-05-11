@@ -25,6 +25,7 @@ bool fEnableZCRawJoinSplit = true;
 bool fEnableZCRawKeygen = true;
 bool fEnableAddrTypeField = true;
 bool fEnableDumpWallet = true;
+bool fEnableWalletTxVJoinSplit = true;
 #endif
 
 static const std::string CLIENT_VERSION_STR = FormatVersion(CLIENT_VERSION);
@@ -107,6 +108,7 @@ std::optional<std::string> SetAllowedDeprecatedFeaturesFromCLIArgs() {
     fEnableZCRawKeygen = allowdeprecated.count("zcrawkeygen") > 0;
     fEnableAddrTypeField = allowdeprecated.count("addrtype") > 0;
     fEnableDumpWallet = allowdeprecated.count("dumpwallet") > 0;
+    fEnableWalletTxVJoinSplit = allowdeprecated.count("wallettxvjoinsplit") > 0;
 #endif
 
     return std::nullopt;

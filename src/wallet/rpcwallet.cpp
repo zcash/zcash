@@ -151,7 +151,9 @@ void WalletTxToJSON(const CWalletTx& wtx, UniValue& entry)
     for (const std::pair<string, string>& item : wtx.mapValue)
         entry.pushKV(item.first, item.second);
 
-    entry.pushKV("vjoinsplit", TxJoinSplitToJSON(wtx));
+    if (fEnableWalletTxVJoinSplit) {
+        entry.pushKV("vjoinsplit", TxJoinSplitToJSON(wtx));
+    }
 }
 
 UniValue getnewaddress(const UniValue& params, bool fHelp)
@@ -1729,7 +1731,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
             "    }\n"
             "    ,...\n"
             "  ],\n"
-            "  \"vjoinsplit\" : [\n"
+            "  \"vjoinsplit\" : (DEPRECATED) [\n"
             "    {\n"
             "      \"anchor\" : \"treestateref\",          (string) Merkle root of note commitment tree\n"
             "      \"nullifiers\" : [ string, ... ]      (string) Nullifiers of input notes\n"
