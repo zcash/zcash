@@ -1,5 +1,5 @@
 Security Warnings
-====================
+=================
 
 Security Audit
 --------------
@@ -9,12 +9,12 @@ announcements, audit results and other general security information, see
 https://z.cash/support/security.html
 
 x86-64 Linux Only
------------------------
+-----------------
 
-There are [known bugs](https://github.com/scipr-lab/libsnark/issues/26) which
-make proving keys generated on 64-bit systems unusable on 32-bit and big-endian
-systems. It's unclear if a warning will be issued in this case, or if the
-proving system will be silently compromised.
+There are [known bugs](https://github.com/scipr-lab/libsnark/issues/26/)
+which make proving keys generated on 64-bit systems unusable on 32-bit and
+big-endian systems. It's unclear if a warning will be issued in this case, or
+if the proving system will be silently compromised.
 
 Wallet Encryption
 -----------------
@@ -50,8 +50,8 @@ Side-Channel Attacks
 
 This implementation of Zcash is not resistant to side-channel attacks. You
 should assume (even unprivileged) users who are running on the hardware, or who
-are physically near the hardware, that your `zcashd` process is running on will
-be able to:
+are physically near the hardware, that your `zcashd` process is running on
+will be able to:
 
 - Determine the values of your secret spending keys, as well as which notes you
   are spending, by observing cache side-channels as you perform a JoinSplit
@@ -75,9 +75,6 @@ The REST interface is a feature inherited from upstream Bitcoin.  By default,
 it is disabled. We do not recommend you enable it until it has undergone a
 security review.
 
-RPC Interface
----------------
-
 Users should choose a strong RPC password. If no RPC username and password are
 set, zcashd will not start and will print an error message with a suggestion
 for a strong random password. If the client knows the RPC password, they have
@@ -96,7 +93,7 @@ users should be controlled to prevent confused-deputy attacks which could spend
 from any keys held by that zcashd.
 
 Block Chain Reorganization: Major Differences
--------------------------------------------------
+---------------------------------------------
 
 Users should be aware of new behavior in Zcash that differs significantly from
 Bitcoin: in the case of a block chain reorganization, Bitcoin's coinbase
