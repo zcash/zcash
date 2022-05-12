@@ -14,6 +14,10 @@ CONFIG_FILE="$REPOBASE/.cargo/config.offline"
 
 CARGO_TOML_PATCH_PREFIX="[patch.crates-io]"
 let CARGO_TOML_PATCH_START=$(grep -Fn "$CARGO_TOML_PATCH_PREFIX" $CARGO_TOML | cut -d: -f1)+1
+if [ "$CARGO_TOML_PATCH_START" -eq 1 ]; then
+    # We have no patched dependencies to lint.
+    exit
+fi
 
 REPLACE_LINE="replace-with = \"vendored-sources\""
 
