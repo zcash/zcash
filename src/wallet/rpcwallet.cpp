@@ -5527,7 +5527,12 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
                 }
             },
             [&](const libzcash::UnifiedAddress& ua) {
-                // OK
+                if (!ua.GetSaplingReceiver().has_value()) {
+                    throw JSONRPCError(
+                            RPC_VERIFY_REJECTED,
+                            "Only Sapling shielding is currently supported by z_shieldcoinbase. "
+                            "Use z_sendmany with a transaction amount that results in no change for Orchard shielding.");
+                }
             }
         }, destaddress.value());
     } else {
