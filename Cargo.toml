@@ -57,6 +57,9 @@ zcash_proofs = "0.6"
 ed25519-zebra = "3"
 zeroize = "1.4.2"
 
+# Rust threading
+rayon = "1.5"
+
 # Metrics
 ipnet = "2"
 metrics = "0.17"

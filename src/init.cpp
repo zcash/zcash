@@ -66,6 +66,7 @@
 #include "zmq/zmqnotificationinterface.h"
 #endif
 
+#include <rust/init.h>
 #include <rust/metrics.h>
 
 #include "librustzcash.h"
@@ -1070,6 +1071,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #endif
 
     std::set_new_handler(new_handler_terminate);
+
+    // Set up global Rayon threadpool.
+    zcashd_init_rayon_threadpool();
 
     // ********************************************************* Step 2: parameter interactions
     const CChainParams& chainparams = Params();

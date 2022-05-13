@@ -982,6 +982,7 @@ dependencies = [
  "orchard",
  "rand 0.8.5",
  "rand_core 0.6.3",
+ "rayon",
  "secp256k1",
  "secrecy",
  "subtle",
