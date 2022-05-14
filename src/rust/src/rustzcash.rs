@@ -77,6 +77,7 @@ mod builder_ffi;
 mod history_ffi;
 mod incremental_merkle_tree;
 mod incremental_merkle_tree_ffi;
+mod init_ffi;
 mod orchard_ffi;
 mod orchard_keys_ffi;
 mod transaction_ffi;

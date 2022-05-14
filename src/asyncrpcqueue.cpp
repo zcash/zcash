@@ -3,6 +3,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "asyncrpcqueue.h"
+#include "util.h"
 
 static std::atomic<size_t> workerCounter(0);
 
@@ -26,6 +27,8 @@ AsyncRPCQueue::~AsyncRPCQueue() {
  * A worker will execute this method on a new thread
  */
 void AsyncRPCQueue::run(size_t workerId) {
+    std::string s = strprintf("zc-asyncrpc-%s", workerId);
+    RenameThread(s.c_str());
 
     while (true) {
         AsyncRPCOperationId key;
