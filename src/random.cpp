@@ -10,13 +10,13 @@
 #ifdef WIN32
 #include "compat.h" // for Windows API
 #endif
-#include "serialize.h"        // for begin_ptr(vec)
-#include "util.h"             // for LogPrint()
-#include "utilstrencodings.h" // for GetTime()
+#include "logging.h"  // for LogPrint()
+#include "utiltime.h" // for GetTime()
 
 #include <limits>
 
 #ifndef WIN32
+#include <fcntl.h>
 #include <sys/time.h>
 #endif
 

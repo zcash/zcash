@@ -60,14 +60,24 @@ using namespace std;
  * Global state
  */
 
-CCriticalSection cs_main;
+/**
+ * Mutex to guard access to validation specific variables, such as reading
+ * or changing the chainstate.
+ *
+ * This may also need to be locked when updating the transaction pool, e.g. on
+ * AcceptToMemoryPool. See CTxMemPool::cs comment for details.
+ *
+ * The transaction pool has a separate lock to allow reading from it and the
+ * chainstate at the same time.
+ */
+RecursiveMutex cs_main;
 
 BlockMap mapBlockIndex;
 CChain chainActive;
 CBlockIndex *pindexBestHeader = NULL;
 static std::atomic<int64_t> nTimeBestReceived(0); // Used only to inform the wallet of when we last received a block
-CWaitableCriticalSection g_best_block_mutex;
-CConditionVariable g_best_block_cv;
+Mutex g_best_block_mutex;
+std::condition_variable g_best_block_cv;
 uint256 g_best_block;
 int g_best_block_height;
 int nScriptCheckThreads = 0;
@@ -3863,7 +3873,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     RenderPoolMetrics("transparent", transparentPool);
 
     {
-        boost::unique_lock<boost::mutex> lock(g_best_block_mutex);
+        WAIT_LOCK(g_best_block_mutex, lock);
         g_best_block = pindexNew->GetBlockHash();
         g_best_block_height = pindexNew->nHeight;
         g_best_block_cv.notify_all();
@@ -5818,8 +5828,11 @@ bool InitBlockIndex(const CChainParams& chainparams)
             CBlockIndex *pindex = AddToBlockIndex(block, chainparams.GetConsensus());
             if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos))
                 return error("LoadBlockIndex(): genesis block not accepted");
-            if (!ActivateBestChain(state, chainparams, &block))
-                return error("LoadBlockIndex(): genesis block cannot be activated");
+            // Before the genesis block, there was an empty tree. We set its root here so
+            // that the block import thread doesn't race other methods that need to query
+            // the Sprout tree (namely CWallet::ScanForWalletTransactions).
+            SproutMerkleTree tree;
+            pindex->hashSproutAnchor = tree.root();
             // Force a chainstate write so that when we VerifyDB in a moment, it doesn't check stale data
             return FlushStateToDisk(chainparams, state, FLUSH_STATE_ALWAYS);
         } catch (const std::runtime_error& e) {

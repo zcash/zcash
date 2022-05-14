@@ -555,6 +555,21 @@ static void TxExpiryNotifyCallback(const uint256& txid)
     boost::thread t(runCommand, strCmd); // thread runs free
 }
 
+static bool fHaveGenesis = false;
+static Mutex g_genesis_wait_mutex;
+static std::condition_variable g_genesis_wait_cv;
+
+static void BlockNotifyGenesisWait(bool, const CBlockIndex *pBlockIndex)
+{
+    if (pBlockIndex != NULL) {
+        {
+            LOCK(g_genesis_wait_mutex);
+            fHaveGenesis = true;
+        }
+        g_genesis_wait_cv.notify_all();
+    }
+}
+
 struct CImportingNow
 {
     CImportingNow() {
@@ -1711,7 +1726,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     break;
                 }
 
-                if (!fReindex) {
+                if (!fReindex && chainActive.Tip() != NULL) {
                     uiInterface.InitMessage(_("Rewinding blocks if needed..."));
                     if (!RewindBlockIndex(chainparams, clearWitnessCaches)) {
                         strLoadError = _("Unable to rewind the database to a pre-upgrade state. You will need to redownload the blockchain");
@@ -1868,6 +1883,17 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // ********************************************************* Step 10: import blocks
 
+    if (!CheckDiskSpace())
+        return false;
+
+    // Either install a handler to notify us when genesis activates, or set fHaveGenesis directly.
+    // No locking, as this happens before any background thread is started.
+    if (chainActive.Tip() == NULL) {
+        uiInterface.NotifyBlockTip.connect(BlockNotifyGenesisWait);
+    } else {
+        fHaveGenesis = true;
+    }
+
     if (mapArgs.count("-blocknotify"))
         uiInterface.NotifyBlockTip.connect(BlockNotifyCallback);
 
@@ -1880,28 +1906,29 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         for (const std::string& strFile : mapMultiArgs["-loadblock"])
             vImportFiles.push_back(strFile);
     }
+
     threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles, chainparams));
 
     // Wait for genesis block to be processed
-    bool fHaveGenesis = false;
-    while (!fHaveGenesis && !fRequestShutdown) {
-        {
-            LOCK(cs_main);
-            fHaveGenesis = (chainActive.Tip() != NULL);
+    {
+        WAIT_LOCK(g_genesis_wait_mutex, lock);
+        // We previously could hang here if StartShutdown() is called prior to
+        // ThreadImport getting started, so instead we just wait on a timer to
+        // check ShutdownRequested() regularly.
+        while (!fHaveGenesis && !ShutdownRequested()) {
+            g_genesis_wait_cv.wait_for(lock, std::chrono::milliseconds(500));
         }
-
-        if (!fHaveGenesis) {
-            MilliSleep(10);
-        }
+        uiInterface.NotifyBlockTip.disconnect(BlockNotifyGenesisWait);
     }
     if (!fHaveGenesis) {
         return false;
     }
 
-    // ********************************************************* Step 11: start node
-
-    if (!CheckDiskSpace())
+    if (ShutdownRequested()) {
         return false;
+    }
+
+    // ********************************************************* Step 11: start node
 
     if (!strErrors.str().empty())
         return InitError(strErrors.str());
