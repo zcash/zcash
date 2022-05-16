@@ -1316,20 +1316,22 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
         UniValue sapling_result(UniValue::VOBJ);
         UniValue sapling_commitments(UniValue::VOBJ);
         sapling_commitments.pushKV("finalRoot", pindex->hashFinalSaplingRoot.GetHex());
-        bool need_skiphash = false;
-        SaplingMerkleTree tree;
-        if (pcoinsTip->GetSaplingAnchorAt(pindex->hashFinalSaplingRoot, tree)) {
-            CDataStream s(SER_NETWORK, PROTOCOL_VERSION);
-            s << tree;
-            sapling_commitments.pushKV("finalState", HexStr(s.begin(), s.end()));
-        } else {
-            // Set skipHash to the most recent block that has a finalState.
-            const CBlockIndex* pindex_skip = pindex->pprev;
-            while (pindex_skip && !pcoinsTip->GetSaplingAnchorAt(pindex_skip->hashFinalSaplingRoot, tree)) {
-                pindex_skip = pindex_skip->pprev;
-            }
-            if (pindex_skip) {
-                sapling_result.pushKV("skipHash", pindex_skip->GetBlockHash().GetHex());
+        if (Params().GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_SAPLING)) {
+            bool need_skiphash = false;
+            SaplingMerkleTree tree;
+            if (pcoinsTip->GetSaplingAnchorAt(pindex->hashFinalSaplingRoot, tree)) {
+                CDataStream s(SER_NETWORK, PROTOCOL_VERSION);
+                s << tree;
+                sapling_commitments.pushKV("finalState", HexStr(s.begin(), s.end()));
+            } else {
+                // Set skipHash to the most recent block that has a finalState.
+                const CBlockIndex* pindex_skip = pindex->pprev;
+                while (pindex_skip && !pcoinsTip->GetSaplingAnchorAt(pindex_skip->hashFinalSaplingRoot, tree)) {
+                    pindex_skip = pindex_skip->pprev;
+                }
+                if (pindex_skip) {
+                    sapling_result.pushKV("skipHash", pindex_skip->GetBlockHash().GetHex());
+                }
             }
         }
         sapling_result.pushKV("commitments", sapling_commitments);
@@ -1341,20 +1343,22 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
         UniValue orchard_result(UniValue::VOBJ);
         UniValue orchard_commitments(UniValue::VOBJ);
         orchard_commitments.pushKV("finalRoot", pindex->hashFinalOrchardRoot.GetHex());
-        bool need_skiphash = false;
-        OrchardMerkleFrontier tree;
-        if (pcoinsTip->GetOrchardAnchorAt(pindex->hashFinalOrchardRoot, tree)) {
-            CDataStream s(SER_NETWORK, PROTOCOL_VERSION);
-            s << OrchardMerkleFrontierLegacySer(tree);
-            orchard_commitments.pushKV("finalState", HexStr(s.begin(), s.end()));
-        } else {
-            // Set skipHash to the most recent block that has a finalState.
-            const CBlockIndex* pindex_skip = pindex->pprev;
-            while (pindex_skip && !pcoinsTip->GetOrchardAnchorAt(pindex_skip->hashFinalOrchardRoot, tree)) {
-                pindex_skip = pindex_skip->pprev;
-            }
-            if (pindex_skip) {
-                orchard_result.pushKV("skipHash", pindex_skip->GetBlockHash().GetHex());
+        if (Params().GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
+            bool need_skiphash = false;
+            OrchardMerkleFrontier tree;
+            if (pcoinsTip->GetOrchardAnchorAt(pindex->hashFinalOrchardRoot, tree)) {
+                CDataStream s(SER_NETWORK, PROTOCOL_VERSION);
+                s << OrchardMerkleFrontierLegacySer(tree);
+                orchard_commitments.pushKV("finalState", HexStr(s.begin(), s.end()));
+            } else {
+                // Set skipHash to the most recent block that has a finalState.
+                const CBlockIndex* pindex_skip = pindex->pprev;
+                while (pindex_skip && !pcoinsTip->GetOrchardAnchorAt(pindex_skip->hashFinalOrchardRoot, tree)) {
+                    pindex_skip = pindex_skip->pprev;
+                }
+                if (pindex_skip) {
+                    orchard_result.pushKV("skipHash", pindex_skip->GetBlockHash().GetHex());
+                }
             }
         }
         orchard_result.pushKV("commitments", orchard_commitments);
