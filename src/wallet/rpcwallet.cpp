@@ -3406,7 +3406,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
             "\nExamples:\n"
             + HelpExampleCli("z_getaddressforaccount", "4")
             + HelpExampleCli("z_getaddressforaccount", "4 '[]' 1")
-            + HelpExampleCli("z_getaddressforaccount", "4 '[\"transparent\",\"sapling\",\"orchard\"]' 1")
+            + HelpExampleCli("z_getaddressforaccount", "4 '[\"p2pkh\",\"sapling\",\"orchard\"]' 1")
             + HelpExampleRpc("z_getaddressforaccount", "4")
         );
 
