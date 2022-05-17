@@ -1312,7 +1312,8 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
     }
 
     // sapling
-    {
+    auto sapling_activation_height = Params().GetConsensus().GetActivationHeight(Consensus::UPGRADE_SAPLING);
+    if (sapling_activation_height.has_value()) {
         UniValue sapling_result(UniValue::VOBJ);
         UniValue sapling_commitments(UniValue::VOBJ);
         sapling_commitments.pushKV("finalRoot", pindex->hashFinalSaplingRoot.GetHex());
@@ -1325,10 +1326,13 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
         } else {
             // Set skipHash to the most recent block that has a finalState.
             const CBlockIndex* pindex_skip = pindex->pprev;
-            while (pindex_skip && !pcoinsTip->GetSaplingAnchorAt(pindex_skip->hashFinalSaplingRoot, tree)) {
+            auto saplingActive = [&](const CBlockIndex* pindex_cur) -> bool {
+                return pindex_cur && pindex_cur->nHeight >= sapling_activation_height.value();
+            };
+            while (saplingActive(pindex_skip) && !pcoinsTip->GetSaplingAnchorAt(pindex_skip->hashFinalSaplingRoot, tree)) {
                 pindex_skip = pindex_skip->pprev;
             }
-            if (pindex_skip) {
+            if (saplingActive(pindex_skip)) {
                 sapling_result.pushKV("skipHash", pindex_skip->GetBlockHash().GetHex());
             }
         }
@@ -1337,7 +1341,8 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
     }
 
     // orchard
-    {
+    auto nu5_activation_height = Params().GetConsensus().GetActivationHeight(Consensus::UPGRADE_NU5);
+    if (nu5_activation_height.has_value()) {
         UniValue orchard_result(UniValue::VOBJ);
         UniValue orchard_commitments(UniValue::VOBJ);
         orchard_commitments.pushKV("finalRoot", pindex->hashFinalOrchardRoot.GetHex());
@@ -1350,10 +1355,13 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
         } else {
             // Set skipHash to the most recent block that has a finalState.
             const CBlockIndex* pindex_skip = pindex->pprev;
-            while (pindex_skip && !pcoinsTip->GetOrchardAnchorAt(pindex_skip->hashFinalOrchardRoot, tree)) {
+            auto orchardActive = [&](const CBlockIndex* pindex_cur) -> bool {
+                return pindex_cur && pindex_cur->nHeight >= nu5_activation_height.value();
+            };
+            while (orchardActive(pindex_skip) && !pcoinsTip->GetOrchardAnchorAt(pindex_skip->hashFinalOrchardRoot, tree)) {
                 pindex_skip = pindex_skip->pprev;
             }
-            if (pindex_skip) {
+            if (orchardActive(pindex_skip)) {
                 orchard_result.pushKV("skipHash", pindex_skip->GetBlockHash().GetHex());
             }
         }
