@@ -6,6 +6,7 @@
 
 # Base class for RPC testing
 
+import inspect
 import logging
 import optparse
 import os
@@ -41,9 +42,16 @@ class BitcoinTestFramework(object):
     def run_test(self):
         raise NotImplementedError
 
+    def setup_logging(self, sensitivity=logging.DEBUG):
+        # This means that the log file name is a pointer to the producing test's filename.
+        stem = os.path.basename(inspect.getfile(self.__class__).rstrip(".py")) 
+        filename = stem + "_test.log"
+        log_file = os.path.join(self.options.tmpdir, filename)
+        logging.basicConfig(filename=log_file, filemode='w', level=sensitivity)
+    
     def add_options(self, parser):
         pass
-
+    
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
         if self.setup_clean_chain:
@@ -143,6 +151,7 @@ class BitcoinTestFramework(object):
         success = False
         try:
             os.makedirs(self.options.tmpdir, exist_ok=False)
+            self.setup_logging()
             self.setup_chain()
             self.setup_network()
             self.run_test()
