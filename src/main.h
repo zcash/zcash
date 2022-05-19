@@ -228,6 +228,11 @@ static const unsigned int MIN_BLOCKS_TO_KEEP = 288;
 static const signed int DEFAULT_CHECKBLOCKS = MIN_BLOCKS_TO_KEEP;
 static const unsigned int DEFAULT_CHECKLEVEL = 3;
 
+/** Prefer to create v4 transactions. */
+static const int32_t DEFAULT_PREFERRED_TX_VERSION = SAPLING_TX_VERSION;
+static const std::set<int32_t> SUPPORTED_TX_VERSIONS = { SAPLING_TX_VERSION, ZIP225_TX_VERSION };
+extern int32_t nPreferredTxVersion;
+
 // Require that user allocate at least 550MB for block & undo files (blk???.dat and rev???.dat)
 // At 1MB per block, 288 blocks = 288MB.
 // Add 15% for Undo data = 331MB
@@ -632,7 +637,7 @@ uint64_t CalculateCurrentUsage();
 CMutableTransaction CreateNewContextualCMutableTransaction(
     const Consensus::Params& consensusParams,
     int nHeight,
-    bool requireSprout = false);
+    bool requireV4);
 
 std::pair<std::map<CBlockIndex*, std::list<CTransaction>>, uint64_t> DrainRecentlyConflicted();
 void SetChainNotifiedSequence(const CChainParams& chainparams, uint64_t recentlyConflictedSequence);

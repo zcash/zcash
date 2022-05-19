@@ -5072,6 +5072,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     }
 
     bool involvesUnifiedAddress = false;
+    bool involvesOrchard = false;
 
     // Check that the from address is valid.
     // Unified address (UA) allowed here (#5185)
@@ -5107,6 +5108,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                                 "Invalid from address, UA does not correspond to a known account.");
                     }
                     involvesUnifiedAddress = true;
+                    involvesOrchard = ua.GetOrchardReceiver().has_value();
                 },
                 [&](const auto& other) {
                     if (selectorAccount.has_value() && selectorAccount.value() != ZCASH_LEGACY_ACCOUNT) {
@@ -5193,6 +5195,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         if (std::holds_alternative<libzcash::UnifiedAddress>(decoded.value())) {
             ua = std::get<libzcash::UnifiedAddress>(decoded.value());
             involvesUnifiedAddress = true;
+            involvesOrchard = involvesOrchard || ua.value().GetOrchardReceiver().has_value();
         }
 
         if (std::holds_alternative<libzcash::OrchardRawAddress>(addr.value())) {
@@ -5286,7 +5289,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     if ((ztxoSelector.SelectsOrchard() || nOrchardOutputs > 0) && nAnchorDepth == 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot select Orchard notes or send to Orchard recipients when minconf=0.");
     }
-    if (!ztxoSelector.SelectsSprout() && nAnchorDepth > 0) {
+    if (!ztxoSelector.SelectsSprout() && (involvesOrchard || nPreferredTxVersion >= ZIP225_MIN_TX_VERSION) && nAnchorDepth > 0) {
         auto orchardAnchorHeight = nextBlockHeight - nAnchorDepth;
         if (chainparams.GetConsensus().NetworkUpgradeActive(orchardAnchorHeight, Consensus::UPGRADE_NU5)) {
             auto anchorBlockIndex = chainActive[orchardAnchorHeight];
@@ -5491,6 +5494,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     // Validate the from address
     auto fromaddress = params[0].get_str();
     bool isFromWildcard = fromaddress == "*";
+    bool involvesOrchard{false};
     KeyIO keyIO(Params());
 
     // Set of source addresses to filter utxos by
@@ -5533,6 +5537,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
                             "Only Sapling shielding is currently supported by z_shieldcoinbase. "
                             "Use z_sendmany with a transaction amount that results in no change for Orchard shielding.");
                 }
+                involvesOrchard = ua.GetOrchardReceiver().has_value();
             }
         }, destaddress.value());
     } else {
@@ -5651,7 +5656,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     // Builder (used if Sapling addresses are involved)
     std::optional<uint256> orchardAnchor;
-    if (nAnchorConfirmations > 0) {
+    if (nAnchorConfirmations > 0 && (involvesOrchard || nPreferredTxVersion >= ZIP225_MIN_TX_VERSION)) {
         // Allow Orchard recipients by setting an Orchard anchor.
         auto orchardAnchorHeight = nextBlockHeight - nAnchorConfirmations;
         if (Params().GetConsensus().NetworkUpgradeActive(orchardAnchorHeight, Consensus::UPGRADE_NU5)) {
@@ -5666,7 +5671,8 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     // Contextual transaction we will build on
     // (used if no Sapling addresses are involved)
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
-        Params().GetConsensus(), nextBlockHeight);
+        Params().GetConsensus(), nextBlockHeight,
+        nPreferredTxVersion < ZIP225_MIN_TX_VERSION);
     if (contextualTx.nVersion == 1) {
         contextualTx.nVersion = 2; // Tx format should support vJoinSplit
     }
@@ -6121,7 +6127,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(),
         nextBlockHeight,
-        isSproutShielded);
+        isSproutShielded || nPreferredTxVersion < ZIP225_MIN_TX_VERSION);
     if (contextualTx.nVersion == 1 && isSproutShielded) {
         contextualTx.nVersion = 2; // Tx format should support vJoinSplit
     }
@@ -6130,7 +6136,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     std::optional<TransactionBuilder> builder;
     if (isToSaplingZaddr || saplingNoteInputs.size() > 0) {
         std::optional<uint256> orchardAnchor;
-        if (!isSproutShielded && nAnchorConfirmations > 0) {
+        if (!isSproutShielded && nPreferredTxVersion >= ZIP225_MIN_TX_VERSION && nAnchorConfirmations > 0) {
             // Allow Orchard recipients by setting an Orchard anchor.
             auto orchardAnchorHeight = nextBlockHeight - nAnchorConfirmations;
             if (Params().GetConsensus().NetworkUpgradeActive(orchardAnchorHeight, Consensus::UPGRADE_NU5)) {

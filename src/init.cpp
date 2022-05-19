@@ -533,6 +533,11 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-metricsrefreshtime", strprintf(_("Number of seconds between metrics refreshes (default: %u if running in a console, %u otherwise)"), 1, 600));
     }
 
+    strUsage += HelpMessageGroup(_("Compatibility options:"));
+    strUsage += HelpMessageOpt(
+            "-preferredtxversion",
+            strprintf(_("Preferentially create transactions having the specified version when possible (default: %d)"), DEFAULT_PREFERRED_TX_VERSION));
+
     return strUsage;
 }
 
@@ -1234,6 +1239,13 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (!CWallet::ParameterInteraction(chainparams))
         return false;
 #endif // ENABLE_WALLET
+
+    nPreferredTxVersion = GetArg("-preferredtxversion", DEFAULT_PREFERRED_TX_VERSION);
+    if (SUPPORTED_TX_VERSIONS.count(nPreferredTxVersion) == 0) {
+        return InitError(strprintf(
+                _("Invalid value for -preferredtxversion=<version>: %d"),
+                nPreferredTxVersion));
+    }
 
     fIsBareMultisigStd = GetBoolArg("-permitbaremultisig", DEFAULT_PERMIT_BAREMULTISIG);
     fAcceptDatacarrier = GetBoolArg("-datacarrier", DEFAULT_ACCEPT_DATACARRIER);

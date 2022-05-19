@@ -262,7 +262,9 @@ TransactionBuilder::TransactionBuilder(
     cs_coinsView(cs_coinsView),
     orchardAnchor(orchardAnchor)
 {
-    mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
+    mtx = CreateNewContextualCMutableTransaction(
+            consensusParams, nHeight,
+            !orchardAnchor.has_value() && nPreferredTxVersion < ZIP225_MIN_TX_VERSION);
 
     // Ignore the Orchard anchor if we can't use it yet.
     if (orchardAnchor.has_value() && mtx.nVersion >= ZIP225_MIN_TX_VERSION) {

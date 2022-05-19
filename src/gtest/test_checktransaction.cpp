@@ -816,9 +816,9 @@ TEST(ChecktransactionTests, OverwinterExpiryHeight) {
 
 TEST(checktransaction_tests, BlossomExpiryHeight) {
     const Consensus::Params& params = RegtestActivateBlossom(false, 100).GetConsensus();
-    CMutableTransaction preBlossomMtx = CreateNewContextualCMutableTransaction(params, 99);
+    CMutableTransaction preBlossomMtx = CreateNewContextualCMutableTransaction(params, 99, false);
     EXPECT_EQ(preBlossomMtx.nExpiryHeight, 100 - 1);
-    CMutableTransaction blossomMtx = CreateNewContextualCMutableTransaction(params, 100);
+    CMutableTransaction blossomMtx = CreateNewContextualCMutableTransaction(params, 100, false);
     EXPECT_EQ(blossomMtx.nExpiryHeight, 100 + 40);
     RegtestDeactivateBlossom();
 }
@@ -1021,7 +1021,7 @@ TEST(ChecktransactionTests, OverwinterInvalidSoftForkVersion) {
 static void ContextualCreateTxCheck(const Consensus::Params& params, int nHeight,
     int expectedVersion, bool expectedOverwintered, int expectedVersionGroupId, int expectedExpiryHeight)
 {
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(params, nHeight);
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(params, nHeight, false);
     EXPECT_EQ(mtx.nVersion, expectedVersion);
     EXPECT_EQ(mtx.fOverwintered, expectedOverwintered);
     EXPECT_EQ(mtx.nVersionGroupId, expectedVersionGroupId);

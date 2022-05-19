@@ -589,7 +589,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
         nextBlockHeight = chainActive.Height() + 1;
     }
     CMutableTransaction rawTx = CreateNewContextualCMutableTransaction(
-        Params().GetConsensus(), nextBlockHeight);
+        Params().GetConsensus(), nextBlockHeight, nPreferredTxVersion < ZIP225_MIN_TX_VERSION);
 
     if (params.size() > 2 && !params[2].isNull()) {
         int64_t nLockTime = params[2].get_int64();
