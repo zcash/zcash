@@ -764,19 +764,33 @@ enum class PrivacyPolicy {
 };
 
 class TransactionStrategy {
-    PrivacyPolicy privacy;
+    PrivacyPolicy requestedLevel;
 
 public:
-    TransactionStrategy() : privacy(PrivacyPolicy::FullPrivacy) {}
-    TransactionStrategy(const TransactionStrategy& strategy) : privacy(strategy.privacy) {}
-    TransactionStrategy(PrivacyPolicy privacyPolicy) : privacy(privacyPolicy) {}
+    TransactionStrategy() : requestedLevel(PrivacyPolicy::FullPrivacy) {}
+    TransactionStrategy(const TransactionStrategy& strategy) : requestedLevel(strategy.requestedLevel) {}
+    TransactionStrategy(PrivacyPolicy privacyPolicy) : requestedLevel(privacyPolicy) {}
 
     static std::optional<TransactionStrategy> FromString(std::string privacyPolicy);
+    static std::string ToString(PrivacyPolicy policy);
 
-    bool AllowRevealedAmounts();
-    bool AllowRevealedRecipients();
-    bool AllowRevealedSenders();
-    bool AllowLinkingAccountAddresses();
+    std::string PolicyName() const {
+        return ToString(requestedLevel);
+    }
+
+    bool AllowRevealedAmounts() const;
+    bool AllowRevealedRecipients() const;
+    bool AllowRevealedSenders() const;
+    bool AllowFullyTransparent() const;
+    bool AllowLinkingAccountAddresses() const;
+
+    // A strategy is compatible with a given required level if
+    // it is as strong as, or weaker than, the required level.
+    // So, for example, if a transaction only requires FullPrivacy
+    // (the most restrictive policy) then that transaction can
+    // safely be constructed if the user specifies AllowRevealedRecipients,
+    // because the transaction will not reveal any recipients anyway.
+    bool IsCompatibleWith(PrivacyPolicy requiredLevel) const;
 };
 
 /**
