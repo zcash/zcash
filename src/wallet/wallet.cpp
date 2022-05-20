@@ -7727,19 +7727,19 @@ std::optional<TransactionStrategy> TransactionStrategy::FromString(std::string p
     TransactionStrategy strategy;
 
     if (privacyPolicy == "FullPrivacy") {
-        strategy.privacy = PrivacyPolicy::FullPrivacy;
+        strategy.requestedLevel = PrivacyPolicy::FullPrivacy;
     } else if (privacyPolicy == "AllowRevealedAmounts") {
-        strategy.privacy = PrivacyPolicy::AllowRevealedAmounts;
+        strategy.requestedLevel = PrivacyPolicy::AllowRevealedAmounts;
     } else if (privacyPolicy == "AllowRevealedRecipients") {
-        strategy.privacy = PrivacyPolicy::AllowRevealedRecipients;
+        strategy.requestedLevel = PrivacyPolicy::AllowRevealedRecipients;
     } else if (privacyPolicy == "AllowRevealedSenders") {
-        strategy.privacy = PrivacyPolicy::AllowRevealedSenders;
+        strategy.requestedLevel = PrivacyPolicy::AllowRevealedSenders;
     } else if (privacyPolicy == "AllowFullyTransparent") {
-        strategy.privacy = PrivacyPolicy::AllowFullyTransparent;
+        strategy.requestedLevel = PrivacyPolicy::AllowFullyTransparent;
     } else if (privacyPolicy == "AllowLinkingAccountAddresses") {
-        strategy.privacy = PrivacyPolicy::AllowLinkingAccountAddresses;
+        strategy.requestedLevel = PrivacyPolicy::AllowLinkingAccountAddresses;
     } else if (privacyPolicy == "NoPrivacy") {
-        strategy.privacy = PrivacyPolicy::NoPrivacy;
+        strategy.requestedLevel = PrivacyPolicy::NoPrivacy;
     } else {
         // Unknown privacy policy.
         return std::nullopt;
@@ -7748,8 +7748,29 @@ std::optional<TransactionStrategy> TransactionStrategy::FromString(std::string p
     return strategy;
 }
 
+std::string TransactionStrategy::ToString(PrivacyPolicy policy) {
+    switch (policy) {
+        case PrivacyPolicy::FullPrivacy:
+            return "FullPrivacy";
+        case PrivacyPolicy::AllowRevealedAmounts:
+            return "AllowRevealedAmounts";
+        case PrivacyPolicy::AllowRevealedRecipients:
+            return "AllowRevealedRecipients";
+        case PrivacyPolicy::AllowRevealedSenders:
+            return "AllowRevealedSenders";
+        case PrivacyPolicy::AllowFullyTransparent:
+            return "AllowFullyTransparent";
+        case PrivacyPolicy::AllowLinkingAccountAddresses:
+            return "AllowLinkingAccountAddresses";
+        case PrivacyPolicy::NoPrivacy:
+            return "NoPrivacy";
+        default:
+            assert(false);
+    }
+}
+
 bool TransactionStrategy::AllowRevealedAmounts() {
-    switch (privacy) {
+    switch (requestedLevel) {
         case PrivacyPolicy::FullPrivacy:
             return false;
         case PrivacyPolicy::AllowRevealedAmounts:
@@ -7766,7 +7787,7 @@ bool TransactionStrategy::AllowRevealedAmounts() {
 }
 
 bool TransactionStrategy::AllowRevealedRecipients() {
-    switch (privacy) {
+    switch (requestedLevel) {
         case PrivacyPolicy::FullPrivacy:
         case PrivacyPolicy::AllowRevealedAmounts:
         case PrivacyPolicy::AllowRevealedSenders:
@@ -7783,7 +7804,7 @@ bool TransactionStrategy::AllowRevealedRecipients() {
 }
 
 bool TransactionStrategy::AllowRevealedSenders() {
-    switch (privacy) {
+    switch (requestedLevel) {
         case PrivacyPolicy::FullPrivacy:
         case PrivacyPolicy::AllowRevealedAmounts:
         case PrivacyPolicy::AllowRevealedRecipients:
@@ -7800,7 +7821,7 @@ bool TransactionStrategy::AllowRevealedSenders() {
 }
 
 bool TransactionStrategy::AllowLinkingAccountAddresses() {
-    switch (privacy) {
+    switch (requestedLevel) {
         case PrivacyPolicy::FullPrivacy:
         case PrivacyPolicy::AllowRevealedAmounts:
         case PrivacyPolicy::AllowRevealedRecipients:
@@ -7812,6 +7833,74 @@ bool TransactionStrategy::AllowLinkingAccountAddresses() {
             return true;
         default:
             // Fail closed.
+            return false;
+    }
+}
+
+bool TransactionStrategy::IsCompatibleWith(PrivacyPolicy requiredLevel) {
+    switch (requiredLevel) {
+        case PrivacyPolicy::FullPrivacy:
+            // FullPrivacy is most restrictive (it needs no privicy-violating
+            // capabilities), so any strategy the user chooses is fine.
+            return true;
+        case PrivacyPolicy::AllowRevealedAmounts:
+            switch (requestedLevel) {
+                case PrivacyPolicy::AllowRevealedAmounts:
+                case PrivacyPolicy::AllowRevealedRecipients:
+                case PrivacyPolicy::AllowRevealedSenders:
+                case PrivacyPolicy::AllowFullyTransparent:
+                case PrivacyPolicy::AllowLinkingAccountAddresses:
+                case PrivacyPolicy::NoPrivacy:
+                    return true;
+                default:
+                    return false;
+            }
+        case PrivacyPolicy::AllowRevealedRecipients:
+            switch (requestedLevel) {
+                case PrivacyPolicy::AllowRevealedRecipients:
+                case PrivacyPolicy::AllowRevealedSenders:
+                case PrivacyPolicy::AllowFullyTransparent:
+                case PrivacyPolicy::AllowLinkingAccountAddresses:
+                case PrivacyPolicy::NoPrivacy:
+                    return true;
+                default:
+                    return false;
+            }
+        case PrivacyPolicy::AllowRevealedSenders:
+            switch (requestedLevel) {
+                case PrivacyPolicy::AllowRevealedSenders:
+                case PrivacyPolicy::AllowFullyTransparent:
+                case PrivacyPolicy::AllowLinkingAccountAddresses:
+                case PrivacyPolicy::NoPrivacy:
+                    return true;
+                default:
+                    return false;
+            }
+        case PrivacyPolicy::AllowFullyTransparent:
+            switch (requestedLevel) {
+                case PrivacyPolicy::AllowFullyTransparent:
+                case PrivacyPolicy::AllowLinkingAccountAddresses:
+                case PrivacyPolicy::NoPrivacy:
+                    return true;
+                default:
+                    return false;
+            }
+        case PrivacyPolicy::AllowLinkingAccountAddresses:
+            switch (requestedLevel) {
+                case PrivacyPolicy::AllowLinkingAccountAddresses:
+                case PrivacyPolicy::NoPrivacy:
+                    return true;
+                default:
+                    return false;
+            }
+        case PrivacyPolicy::NoPrivacy:
+            switch (requestedLevel) {
+                case PrivacyPolicy::NoPrivacy:
+                    return true;
+                default:
+                    return false;
+            }
+        default:
             return false;
     }
 }
