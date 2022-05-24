@@ -47,10 +47,10 @@ platform that has been part of a stable release. The promotion or demotion of a 
 will not generally affect existing stable releases, only current development and future
 releases.
 
-In this policy, the words "must" and "must not" specify absolute requirements that a
-platform must meet to qualify for a tier. The words "should" and "should not" specify
+In this policy, the words "MUST" and "MUST NOT" specify absolute requirements that a
+platform must meet to qualify for a tier. The words "SHOULD" and "SHOULD NOT" specify
 requirements that apply in almost all cases, but for which the approving teams may grant
-an exception for good reason. The word "may" indicates something entirely optional, and
+an exception for good reason. The word "MAY" indicates something entirely optional, and
 does not indicate guidance or recommendations. This language is based on
 [IETF RFC 2119](https://tools.ietf.org/html/rfc2119).
 
@@ -59,27 +59,27 @@ does not indicate guidance or recommendations. This language is based on
 At this tier, ECC provides no official support for a platform, so we place minimal
 requirements on the introduction of platforms.
 
-A proposed new tier 3 platform must be reviewed and approved by a member of the ECC core
+A proposed new tier 3 platform MUST be reviewed and approved by a member of the ECC core
 team based on these requirements.
 
-- The platform must provide documentation for the Zcash community explaining how to build
+- The platform MUST provide documentation for the Zcash community explaining how to build
   for the platform, using cross-compilation if possible. If the platform supports running
-  binaries, or running tests (even if they do not pass), the documentation must explain
+  binaries, or running tests (even if they do not pass), the documentation MUST explain
   how to run such binaries or tests for the platform, using emulation if possible or
   dedicated hardware if necessary.
-- Tier 3 platforms must not impose burden on the authors of pull requests, or other
+- Tier 3 platforms MUST NOT impose burden on the authors of pull requests, or other
   developers in the community, to maintain the platform. In particular, do not post
   comments (automated or manual) on a PR that derail or suggest a block on the PR based on
   a tier 3 platform. Do not send automated messages or notifications (via any medium,
   including via @) to a PR author or others involved with a PR regarding a tier 3
   platform, unless they have opted into such messages.
-- Patches adding or updating tier 3 platforms must not break any existing tier 2 or tier 1
-  platform, and must not knowingly break another tier 3 platform without approval of the
+- Patches adding or updating tier 3 platforms MUST NOT break any existing tier 2 or tier 1
+  platform, and MUST NOT knowingly break another tier 3 platform without approval of the
   ECC core team.
 
 If a tier 3 platform stops meeting these requirements, or the platform shows no signs of
 activity and has not built for some time, or removing the platform would improve the
-quality of the Zcash codebase, we may post a PR to remove it.
+quality of the Zcash codebase, we MAY post a PR to remove it.
 
 ## Tier 2 platform policy
 
@@ -87,27 +87,27 @@ At this tier, the Zcash developers guarantee that a platform builds, and will re
 patches that fail to build for a platform. Thus, we place requirements that ensure the
 platform will not block forward progress of the Zcash project.
 
-A proposed new tier 2 platform must be reviewed and approved by the ECC core team based
+A proposed new tier 2 platform MUST be reviewed and approved by the ECC core team based
 on these requirements.
 
-In addition, the ECC infrastructure team must approve the integration of the platform into
+In addition, the ECC infrastructure team MUST approve the integration of the platform into
 Continuous Integration (CI), and the tier 2 CI-related requirements. This review and
-approval may take place in a PR adding the platform to CI, or simply by an infrastructure
+approval MAY take place in a PR adding the platform to CI, or simply by an infrastructure
 team member reporting the outcome of a team discussion.
 
-- A tier 2 platform must have value to people other than its proponents. (It may still be
-  a niche platform, but it must not be exclusively useful for an inherently closed group.)
-- A tier 2 platform must have a designated team of developers (the "platform maintainers")
+- A tier 2 platform MUST have value to people other than its proponents. (It MAY still be
+  a niche platform, but it MUST NOT be exclusively useful for an inherently closed group.)
+- A tier 2 platform MUST have a designated team of developers (the "platform maintainers")
   supporting it, without the need for a paid support contract.
-- The platform must not place undue burden on Zcash developers not specifically concerned
+- The platform MUST NOT place undue burden on Zcash developers not specifically concerned
   with that platform. Zcash developers are expected to not gratuitously break a tier 2
   platform, but are not expected to become experts in every tier 2 platform, and are not
   expected to provide platform-specific implementations for every tier 2 platform.
-- The platform must build reliably in CI, for all components that ECC's CI considers
+- The platform MUST build reliably in CI, for all components that ECC's CI considers
   mandatory.
 - All requirements for tier 3 apply.
 
-A tier 2 platform may be demoted or removed if it no longer meets these requirements.
+A tier 2 platform MAY be demoted or removed if it no longer meets these requirements.
 
 ## Tier 1 platform policy
 
@@ -115,22 +115,22 @@ At this tier, the Zcash developers guarantee that a platform builds and passes a
 and will reject patches that fail to build or pass the test suite on a platform. We hold
 tier 1 platforms to our highest standard of requirements.
 
-- Tier 1 platforms must have substantial, widespread interest within the Zcash community,
-  and must serve the ongoing needs of multiple production users of Zcash across multiple
-  organizations or projects. These requirements are subjective. A tier 1 platform may be
+- Tier 1 platforms MUST have substantial, widespread interest within the Zcash community,
+  and MUST serve the ongoing needs of multiple production users of Zcash across multiple
+  organizations or projects. These requirements are subjective. A tier 1 platform MAY be
   demoted or removed if it becomes obsolete or no longer meets this requirement.
-- The platform must build and pass tests reliably in CI, for all components that ECC's CI
+- The platform MUST build and pass tests reliably in CI, for all components that ECC's CI
   considers mandatory.
-- Building the platform and running the test suite for the platform must not take
-  substantially longer than other platforms, and should not substantially raise the
+- Building the platform and running the test suite for the platform MUST NOT take
+  substantially longer than other platforms, and SHOULD NOT substantially raise the
   maintenance burden of the CI infrastructure.
-- Tier 1 platforms must not have a hard requirement for signed, verified, or otherwise
-  "approved" binaries. Developers must be able to build, run, and test binaries for the
+- Tier 1 platforms MUST NOT have a hard requirement for signed, verified, or otherwise
+  "approved" binaries. Developers MUST be able to build, run, and test binaries for the
   platform on systems they control, or provide such binaries for others to run. (Doing so
-  may require enabling some appropriate "developer mode" on such systems, but must not
+  MAY require enabling some appropriate "developer mode" on such systems, but MUST NOT
   require the payment of any additional fee or other consideration, or agreement to any
   onerous legal agreements.)
 - All requirements for tier 2 apply.
 
-A tier 1 platform may be demoted or removed if it no longer meets these requirements but
+A tier 1 platform MAY be demoted or removed if it no longer meets these requirements but
 still meets the requirements for a lower tier.
