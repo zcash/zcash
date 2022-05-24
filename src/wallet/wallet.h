@@ -899,24 +899,48 @@ public:
      * This method must only be called once.
      */
     bool LimitToAmount(
-        CAmount amount,
-        CAmount dustThreshold,
-        std::set<libzcash::OutputPool> recipientPools);
+        const CAmount amount,
+        const CAmount dustThreshold,
+        const std::set<libzcash::OutputPool>& recipientPools);
 
     /**
      * Compute the total ZEC amount of spendable inputs.
      */
     CAmount Total() const {
         CAmount result = 0;
+        result += GetTransparentBalance();
+        result += GetSproutBalance();
+        result += GetSaplingBalance();
+        result += GetOrchardBalance();
+        return result;
+    }
+
+    CAmount GetTransparentBalance() const {
+        CAmount result = 0;
         for (const auto& t : utxos) {
             result += t.Value();
         }
+        return result;
+    }
+
+    CAmount GetSproutBalance() const {
+        CAmount result = 0;
         for (const auto& t : sproutNoteEntries) {
             result += t.note.value();
         }
+        return result;
+    }
+
+    CAmount GetSaplingBalance() const {
+        CAmount result = 0;
         for (const auto& t : saplingNoteEntries) {
             result += t.note.value();
         }
+        return result;
+    }
+
+    CAmount GetOrchardBalance() const {
+        CAmount result = 0;
         for (const auto& t : orchardNoteMetadata) {
             result += t.GetNoteValue();
         }

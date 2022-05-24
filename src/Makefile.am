@@ -323,12 +323,14 @@ BITCOIN_CORE_H = \
   wallet/asyncrpcoperation_shieldcoinbase.h \
   wallet/crypter.h \
   wallet/db.h \
+  wallet/memo.h \
   wallet/orchard.h \
   wallet/paymentdisclosure.h \
   wallet/paymentdisclosuredb.h \
   wallet/rpcwallet.h \
   wallet/wallet.h \
   wallet/walletdb.h \
+  wallet/wallet_tx_builder.h \
   warnings.h \
   zmq/zmqabstractnotifier.h \
   zmq/zmqconfig.h\
