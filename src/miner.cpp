@@ -1441,7 +1441,7 @@ void static BitcoinMiner()
                                 if (isSecondBlockAllowed(notaryid, blocktime, tiptime + nMaxGAPAllowed, params.nHF22NotariesPriorityRotateDelta, vPriorityList))
                                 {
                                     HASHTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
-                                    LogPrint("hfnet", "%s[%d]: notaryid.%ld, ht.%ld\n allowed to mine mindiff", __func__, __LINE__, notaryid, Mining_height);
+                                    LogPrint("hfnet", "%s[%d]: notaryid.%ld, ht.%ld --> allowed to mine mindiff\n", __func__, __LINE__, notaryid, Mining_height);
                                 }
                             }
                         }
