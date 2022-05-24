@@ -30,6 +30,7 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "miner.h"
 #include "wallet/paymentdisclosuredb.h"
+#include "wallet/wallet_tx_builder.h"
 
 #include <array>
 #include <iostream>
@@ -46,7 +47,7 @@ using namespace libzcash;
 AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         TransactionBuilder builder,
         ZTXOSelector ztxoSelector,
-        std::vector<SendManyRecipient> recipients,
+        std::vector<ResolvedPayment> recipients,
         int minDepth,
         unsigned int anchorDepth,
         TransactionStrategy strategy,
@@ -64,7 +65,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     sendFromAccount_ = pwalletMain->FindAccountForSelector(ztxoSelector_).value_or(ZCASH_LEGACY_ACCOUNT);
 
     // Determine the target totals and recipient pools
-    for (const SendManyRecipient& recipient : recipients_) {
+    for (const ResolvedPayment& recipient : recipients_) {
         std::visit(match {
             [&](const CKeyID& addr) {
                 transparentRecipients_ += 1;
@@ -559,15 +560,14 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 builder_.AddTransparentOutput(scriptId, r.amount);
             },
             [&](const libzcash::SaplingPaymentAddress& addr) {
-                auto value = r.amount;
-                auto memo = get_memo_from_hex_string(r.memo.value_or(""));
-
-                builder_.AddSaplingOutput(ovks.second, addr, value, memo);
+                builder_.AddSaplingOutput(
+                        ovks.second, addr, r.amount,
+                        r.memo.has_value() ? r.memo.value().ToBytes() : Memo::NoMemo().ToBytes());
             },
             [&](const libzcash::OrchardRawAddress& addr) {
-                auto value = r.amount;
-                auto memo = r.memo.has_value() ? std::optional(get_memo_from_hex_string(r.memo.value())) : std::nullopt;
-                builder_.AddOrchardOutput(ovks.second, addr, value, memo);
+                builder_.AddOrchardOutput(
+                        ovks.second, addr, r.amount,
+                        r.memo.has_value() ? std::optional(r.memo.value().ToBytes()) : std::nullopt);
             }
         }, r.address);
     }
@@ -768,32 +768,6 @@ CAmount AsyncRPCOperation_sendmany::DefaultDustThreshold() {
     CTxOut txout(CAmount(1), scriptPubKey);
     // TODO: use a local for minRelayTxFee rather than a global
     return txout.GetDustThreshold(minRelayTxFee);
-}
-
-std::array<unsigned char, ZC_MEMO_SIZE> AsyncRPCOperation_sendmany::get_memo_from_hex_string(std::string s) {
-    // initialize to default memo (no_memo), see section 5.5 of the protocol spec
-    std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};
-
-    std::vector<unsigned char> rawMemo = ParseHex(s.c_str());
-
-    // If ParseHex comes across a non-hex char, it will stop but still return results so far.
-    size_t slen = s.length();
-    if (slen % 2 !=0 || (slen>0 && rawMemo.size()!=slen/2)) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Memo must be in hexadecimal format");
-    }
-
-    if (rawMemo.size() > ZC_MEMO_SIZE) {
-        throw JSONRPCError(
-                RPC_INVALID_PARAMETER,
-                strprintf("Memo size of %d bytes is too big, maximum allowed is %d bytes", rawMemo.size(), ZC_MEMO_SIZE));
-    }
-
-    // copy vector into boost array
-    int lenMemo = rawMemo.size();
-    for (int i = 0; i < ZC_MEMO_SIZE && i < lenMemo; i++) {
-        memo[i] = rawMemo[i];
-    }
-    return memo;
 }
 
 /**

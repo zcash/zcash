@@ -7851,7 +7851,7 @@ bool ZTXOSelector::SelectsOrchard() const {
 bool SpendableInputs::LimitToAmount(
     const CAmount amountRequired,
     const CAmount dustThreshold,
-    std::set<OutputPool> recipientPools)
+    const std::set<OutputPool>& recipientPools)
 {
     assert(amountRequired >= 0 && dustThreshold > 0);
     // Calling this method twice is a programming error.
