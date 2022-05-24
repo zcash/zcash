@@ -8,6 +8,7 @@
 #include "coins.h"
 #include "consensus/params.h"
 #include "keystore.h"
+#include "policy/fees.h"
 #include "primitives/transaction.h"
 #include "random.h"
 #include "script/script.h"
@@ -259,7 +260,7 @@ private:
     const CCoinsViewCache* coinsView;
     CCriticalSection* cs_coinsView;
     CMutableTransaction mtx;
-    CAmount fee = 10000;
+    CAmount fee = DEFAULT_FEE;
     std::optional<uint256> orchardAnchor;
     std::optional<orchard::Builder> orchardBuilder;
     CAmount valueBalanceOrchard = 0;
