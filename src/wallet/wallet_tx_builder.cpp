@@ -1,0 +1,682 @@
+// Copyright (c) 2022 The Zcash developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
+
+#include "wallet/wallet_tx_builder.h"
+
+using namespace libzcash;
+
+PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
+        const ZTXOSelector& selector,
+        SpendableInputs& spendable,
+        const std::vector<Payment>& payments,
+        TransactionStrategy strategy,
+        CAmount fee,
+        uint32_t anchorConfirmations) const
+{
+    assert(!payments.empty());
+    assert(selector.RequireSpendingKeys());
+    assert(fee >= 0);
+
+    auto selected = ResolveInputsAndPayments(spendable, payments, strategy, fee);
+    if (std::holds_alternative<InputSelectionError>(selected)) {
+        return std::get<InputSelectionError>(selected);
+    }
+
+    auto resolvedPayments = std::get<std::pair<SpendableInputs, Payments>>(selected).second;
+
+    auto sendFromAccount = wallet.FindAccountForSelector(selector).value_or(ZCASH_LEGACY_ACCOUNT);
+    auto allowedChangeTypes = [&](const std::set<ReceiverType>& receiverTypes) -> std::set<OutputPool> {
+        std::set<OutputPool> result{resolvedPayments.GetRecipientPools()};
+        if (sendFromAccount != ZCASH_LEGACY_ACCOUNT) {
+            result.insert(OutputPool::Sapling);
+        }
+        for (ReceiverType rtype : receiverTypes) {
+            switch (rtype) {
+                case ReceiverType::P2PKH:
+                case ReceiverType::P2SH:
+                    // TODO: This is the correct policy, but it’s a breaking change from previous
+                    //       behavior, so enable it separately.
+                    // if ((spendable.utxos.empty() && strategy.AllowRevealedRecipients())
+                    //     || strategy.AllowFullyTransparent()) {
+                    if (!spendable.utxos.empty()) {
+                        result.insert(OutputPool::Transparent);
+                    }
+                    break;
+                case ReceiverType::Sapling:
+                    if (!spendable.saplingNoteEntries.empty() || strategy.AllowRevealedAmounts()) {
+                        result.insert(OutputPool::Sapling);
+                    }
+                    break;
+                case ReceiverType::Orchard:
+                    if (!spendable.orchardNoteMetadata.empty() || strategy.AllowRevealedAmounts()) {
+                        result.insert(OutputPool::Orchard);
+                    }
+                    break;
+            }
+        }
+        return result;
+    };
+
+    std::optional<ChangeAddress> changeAddr;
+    std::visit(match {
+        [&](const CKeyID& keyId) {
+            changeAddr = pwalletMain->GenerateChangeAddressForAccount(
+                    sendFromAccount,
+                    allowedChangeTypes({ReceiverType::P2PKH}));
+        },
+        [&](const CScriptID& scriptId) {
+            changeAddr = pwalletMain->GenerateChangeAddressForAccount(
+                    sendFromAccount,
+                    allowedChangeTypes({ReceiverType::P2SH}));
+        },
+        [&](const libzcash::SproutPaymentAddress& addr) {
+            // for Sprout, we return change to the originating address.
+            changeAddr = addr;
+        },
+        [&](const libzcash::SproutViewingKey& vk) {
+            // for Sprout, we return change to the originating address.
+            changeAddr = vk.address();
+        },
+        [&](const libzcash::SaplingPaymentAddress& addr) {
+            // for Sapling, if using a legacy address, return change to the
+            // originating address; otherwise return it to the Sapling internal
+            // address corresponding to the UFVK.
+            if (sendFromAccount == ZCASH_LEGACY_ACCOUNT) {
+                changeAddr = addr;
+            } else {
+                changeAddr = pwalletMain->GenerateChangeAddressForAccount(
+                        sendFromAccount,
+                        allowedChangeTypes({ReceiverType::Sapling}));
+            }
+        },
+        [&](const libzcash::SaplingExtendedFullViewingKey& fvk) {
+            // for Sapling, if using a legacy address, return change to the
+            // originating address; otherwise return it to the Sapling internal
+            // address corresponding to the UFVK.
+            if (sendFromAccount == ZCASH_LEGACY_ACCOUNT) {
+                changeAddr = fvk.DefaultAddress();
+            } else {
+                changeAddr = pwalletMain->GenerateChangeAddressForAccount(
+                        sendFromAccount,
+                        allowedChangeTypes({ReceiverType::Sapling}));
+            }
+        },
+        [&](const libzcash::UnifiedAddress& ua) {
+            auto zufvk = pwalletMain->GetUFVKForAddress(ua);
+            if (zufvk.has_value()) {
+                changeAddr = zufvk.value().GetChangeAddress(
+                        allowedChangeTypes(ua.GetKnownReceiverTypes()));
+            }
+        },
+        [&](const libzcash::UnifiedFullViewingKey& fvk) {
+            auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), fvk);
+            changeAddr = zufvk.GetChangeAddress(
+                    allowedChangeTypes(fvk.GetKnownReceiverTypes()));
+        },
+        [&](const AccountZTXOPattern& acct) {
+            changeAddr = pwalletMain->GenerateChangeAddressForAccount(
+                    acct.GetAccountId(),
+                    allowedChangeTypes(acct.GetReceiverTypes()));
+        }
+    }, selector.GetPattern());
+    if (!changeAddr.has_value()) {
+        return AddressResolutionError::ChangeAddressSelectionError;
+    }
+
+    auto ovks = SelectOVKs(selector, spendable);
+
+    return TransactionEffects(
+            sendFromAccount,
+            anchorConfirmations,
+            spendable,
+            resolvedPayments,
+            changeAddr.value(),
+            fee,
+            ovks.first,
+            ovks.second);
+}
+
+CAmount WalletTxBuilder::DefaultDustThreshold() const {
+    CKey secret{CKey::TestOnlyRandomKey(true)};
+    CScript scriptPubKey = GetScriptForDestination(secret.GetPubKey().GetID());
+    CTxOut txout(CAmount(1), scriptPubKey);
+    return txout.GetDustThreshold(minRelayFee);
+}
+
+SpendableInputs WalletTxBuilder::FindAllSpendableInputs(
+        const ZTXOSelector& selector,
+        bool allowTransparentCoinbase,
+        int32_t minDepth) const
+{
+    return wallet.FindSpendableInputs(selector, allowTransparentCoinbase, minDepth, std::nullopt);
+}
+
+bool WalletTxBuilder::AllowTransparentCoinbase(
+        const std::vector<Payment>& payments,
+        TransactionStrategy strategy)
+{
+    bool allowed = strategy.AllowRevealedSenders();
+    for (const auto& payment : payments) {
+        if (!allowed) break;
+        allowed &= std::visit(match {
+            [](const CKeyID& p2pkh) { return false; },
+            [](const CScriptID& p2sh) { return false; },
+            [](const SproutPaymentAddress& addr) { return false; },
+            [](const SaplingPaymentAddress& addr) { return true; },
+            [](const UnifiedAddress& ua) {
+                return ua.GetSaplingReceiver().has_value() || ua.GetOrchardReceiver().has_value();
+            }
+        }, payment.GetAddress());
+    }
+    return allowed;
+}
+
+InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
+        SpendableInputs& spendableMut,
+        const std::vector<Payment>& payments,
+        TransactionStrategy strategy,
+        CAmount fee) const
+{
+    LOCK2(cs_main, wallet.cs_wallet);
+
+    bool allowTransparentCoinbase{true};
+
+    // Determine the target totals and recipient pools
+    CAmount sendAmount{0};
+    for (const auto& payment : payments) {
+        std::visit(match {
+            [&](const CKeyID& p2pkh) { allowTransparentCoinbase = strategy.AllowRevealedSenders(); },
+            [&](const CScriptID& p2sh) { allowTransparentCoinbase = strategy.AllowRevealedSenders(); },
+            [&](const SproutPaymentAddress& addr) { },
+            [&](const SaplingPaymentAddress& addr) { },
+            [&](const UnifiedAddress& ua) { }
+        }, payment.GetAddress());
+        sendAmount += payment.GetAmount();
+    }
+    CAmount targetAmount = sendAmount + fee;
+
+    // This is a simple greedy algorithm to attempt to preserve requested
+    // transactional privacy while moving as much value to the most recent pool
+    // as possible.  This will also perform opportunistic shielding if the
+    // transaction strategy permits.
+
+    CAmount maxSaplingAvailable = spendableMut.GetSaplingBalance();
+    CAmount maxOrchardAvailable = spendableMut.GetOrchardBalance();
+    uint32_t orchardOutputs{0};
+
+    // we can only select Orchard addresses if there are sufficient non-Sprout
+    // funds to cover the total payments + fee.
+    bool canResolveOrchard = spendableMut.Total() - spendableMut.GetSproutBalance() >= targetAmount;
+    std::vector<ResolvedPayment> resolvedPayments;
+    std::optional<AddressResolutionError> resolutionError;
+    for (const auto& payment : payments) {
+        std::visit(match {
+            [&](const CKeyID& p2pkh) {
+                if (strategy.AllowRevealedRecipients()) {
+                    resolvedPayments.emplace_back(std::nullopt, p2pkh, payment.GetAmount(), payment.GetMemo());
+                } else {
+                    resolutionError = AddressResolutionError::TransparentRecipientNotPermitted;
+                }
+            },
+            [&](const CScriptID& p2sh) {
+                if (strategy.AllowRevealedRecipients()) {
+                    resolvedPayments.emplace_back(std::nullopt, p2sh, payment.GetAmount(), payment.GetMemo());
+                } else {
+                    resolutionError = AddressResolutionError::TransparentRecipientNotPermitted;
+                }
+            },
+            [&](const SproutPaymentAddress& addr) {
+                resolutionError = AddressResolutionError::SproutRecipientNotPermitted;
+            },
+            [&](const SaplingPaymentAddress& addr) {
+                if (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxSaplingAvailable) {
+                    resolvedPayments.emplace_back(std::nullopt, addr, payment.GetAmount(), payment.GetMemo());
+                    if (!strategy.AllowRevealedAmounts()) {
+                        maxSaplingAvailable -= payment.GetAmount();
+                    }
+                } else {
+                    resolutionError = AddressResolutionError::InsufficientSaplingFunds;
+                }
+            },
+            [&](const UnifiedAddress& ua) {
+                bool resolved{false};
+                if (canResolveOrchard && ua.GetOrchardReceiver().has_value()) {
+                    if (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxOrchardAvailable) {
+                        resolvedPayments.emplace_back(
+                            ua, ua.GetOrchardReceiver().value(), payment.GetAmount(), payment.GetMemo());
+                        if (!strategy.AllowRevealedAmounts()) {
+                            maxOrchardAvailable -= payment.GetAmount();
+                        }
+                        orchardOutputs += 1;
+                        resolved = true;
+                    }
+                }
+
+                if (!resolved && ua.GetSaplingReceiver().has_value()) {
+                    if (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxSaplingAvailable) {
+                        resolvedPayments.emplace_back(
+                            ua, ua.GetSaplingReceiver().value(), payment.GetAmount(), payment.GetMemo());
+                        if (!strategy.AllowRevealedAmounts()) {
+                            maxSaplingAvailable -= payment.GetAmount();
+                        }
+                        resolved = true;
+                    }
+                }
+
+                if (!resolved && ua.GetP2SHReceiver().has_value() && strategy.AllowRevealedRecipients()) {
+                    resolvedPayments.emplace_back(
+                        ua, ua.GetP2SHReceiver().value(), payment.GetAmount(), std::nullopt);
+                    resolved = true;
+                }
+
+                if (!resolved && ua.GetP2PKHReceiver().has_value() && strategy.AllowRevealedRecipients()) {
+                    resolvedPayments.emplace_back(
+                        ua, ua.GetP2PKHReceiver().value(), payment.GetAmount(), std::nullopt);
+                    resolved = true;
+                }
+
+                if (!resolved) {
+                    resolutionError = AddressResolutionError::UnifiedAddressResolutionError;
+                }
+            }
+        }, payment.GetAddress());
+
+        if (resolutionError.has_value()) {
+            return resolutionError.value();
+        }
+    }
+    auto resolved = Payments(resolvedPayments);
+
+    if (spendableMut.HasTransparentCoinbase() && resolved.HasTransparentRecipient()) {
+        return AddressResolutionError::TransparentRecipientNotPermitted;
+    }
+
+    if (orchardOutputs > this->maxOrchardActions) {
+        return ExcessOrchardActionsError(spendableMut.orchardNoteMetadata.size());
+    }
+
+    // Set the dust threshold so that we can select enough inputs to avoid
+    // creating dust change amounts.
+    CAmount dustThreshold{this->DefaultDustThreshold()};
+
+    // TODO: the set of recipient pools is not quite sufficient information here; we should
+    // probably perform note selection at the same time as we're performing resolved payment
+    // construction above.
+    if (!spendableMut.LimitToAmount(targetAmount, dustThreshold, resolved.GetRecipientPools())) {
+        CAmount changeAmount{spendableMut.Total() - targetAmount};
+        if (changeAmount > 0 && changeAmount < dustThreshold) {
+            // TODO: we should provide the option for the caller to explicitly
+            // forego change (definitionally an amount below the dust amount)
+            // and send the extra to the recipient or the miner fee to avoid
+            // creating dust change, rather than prohibit them from sending
+            // entirely in this circumstance.
+            // (Daira disagrees, as this could leak information to the recipient)
+            return DustThresholdError(dustThreshold, spendableMut.Total(), changeAmount);
+        } else {
+            return InsufficientFundsError(spendableMut.Total(), targetAmount, allowTransparentCoinbase);
+        }
+    }
+
+    // When spending transparent coinbase outputs, all inputs must be fully
+    // consumed, and they may only be sent to shielded recipients.
+    if (spendableMut.HasTransparentCoinbase() && spendableMut.Total() != targetAmount) {
+        return ChangeNotAllowedError(spendableMut.Total(), targetAmount);
+    }
+
+    if (spendableMut.orchardNoteMetadata.size() > this->maxOrchardActions) {
+        return ExcessOrchardActionsError(spendableMut.orchardNoteMetadata.size());
+    }
+
+    return std::make_pair(spendableMut, resolved);
+}
+
+std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
+        const ZTXOSelector& selector,
+        const SpendableInputs& spendable) const
+{
+    uint256 internalOVK;
+    uint256 externalOVK;
+    if (!spendable.orchardNoteMetadata.empty()) {
+        std::optional<OrchardFullViewingKey> fvk;
+        std::visit(match {
+            [&](const UnifiedAddress& ua) {
+                auto ufvk = wallet.GetUFVKForAddress(ua);
+                // This is safe because spending key checks will have ensured that we
+                // have a UFVK corresponding to this address, and Orchard notes will
+                // not have been selected if the UFVK does not contain an Orchard key.
+                fvk = ufvk.value().GetOrchardKey().value();
+            },
+            [&](const UnifiedFullViewingKey& ufvk) {
+                // Orchard notes will not have been selected if the UFVK does not contain
+                // an Orchard key.
+                fvk = ufvk.GetOrchardKey().value();
+            },
+            [&](const AccountZTXOPattern& acct) {
+                // By definition, we have a UFVK for every known account.
+                auto ufvk = wallet.GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
+                // Orchard notes will not have been selected if the UFVK does not contain
+                // an Orchard key.
+                fvk = ufvk.value().GetOrchardKey().value();
+            },
+            [&](const auto& other) {
+                throw std::runtime_error("SelectOVKs: Selector cannot select Orchard notes.");
+            }
+        }, selector.GetPattern());
+        assert(fvk.has_value());
+
+        internalOVK = fvk.value().ToInternalOutgoingViewingKey();
+        externalOVK = fvk.value().ToExternalOutgoingViewingKey();
+    } else if (!spendable.saplingNoteEntries.empty()) {
+        std::optional<SaplingDiversifiableFullViewingKey> dfvk;
+        std::visit(match {
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                libzcash::SaplingExtendedSpendingKey extsk;
+                assert(pwalletMain->GetSaplingExtendedSpendingKey(addr, extsk));
+                dfvk = extsk.ToXFVK();
+            },
+            [&](const UnifiedAddress& ua) {
+                auto ufvk = pwalletMain->GetUFVKForAddress(ua);
+                // This is safe because spending key checks will have ensured that we
+                // have a UFVK corresponding to this address, and Sapling notes will
+                // not have been selected if the UFVK does not contain a Sapling key.
+                dfvk = ufvk.value().GetSaplingKey().value();
+            },
+            [&](const UnifiedFullViewingKey& ufvk) {
+                // Sapling notes will not have been selected if the UFVK does not contain
+                // a Sapling key.
+                dfvk = ufvk.GetSaplingKey().value();
+            },
+            [&](const AccountZTXOPattern& acct) {
+                // By definition, we have a UFVK for every known account.
+                auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId());
+                // Sapling notes will not have been selected if the UFVK does not contain
+                // a Sapling key.
+                dfvk = ufvk.value().GetSaplingKey().value();
+            },
+            [&](const auto& other) {
+                throw std::runtime_error("SelectOVKs: Selector cannot select Sapling notes.");
+            }
+        }, selector.GetPattern());
+        assert(dfvk.has_value());
+
+        auto ovks = dfvk.value().GetOVKs();
+        internalOVK = ovks.first;
+        externalOVK = ovks.second;
+    } else if (!spendable.utxos.empty()) {
+        std::optional<transparent::AccountPubKey> tfvk;
+        std::visit(match {
+            [&](const CKeyID& keyId) {
+                tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+            },
+            [&](const CScriptID& keyId) {
+                tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+            },
+            [&](const UnifiedAddress& ua) {
+                // This is safe because spending key checks will have ensured that we
+                // have a UFVK corresponding to this address, and transparent UTXOs will
+                // not have been selected if the UFVK does not contain a transparent key.
+                auto ufvk = pwalletMain->GetUFVKForAddress(ua);
+                tfvk = ufvk.value().GetTransparentKey().value();
+            },
+            [&](const UnifiedFullViewingKey& ufvk) {
+                // Transparent UTXOs will not have been selected if the UFVK does not contain
+                // a transparent key.
+                tfvk = ufvk.GetTransparentKey().value();
+            },
+            [&](const AccountZTXOPattern& acct) {
+                if (acct.GetAccountId() == ZCASH_LEGACY_ACCOUNT) {
+                    tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+                } else {
+                    // By definition, we have a UFVK for every known account.
+                    auto ufvk = pwalletMain->GetUnifiedFullViewingKeyByAccount(acct.GetAccountId()).value();
+                    // Transparent UTXOs will not have been selected if the UFVK does not contain
+                    // a transparent key.
+                    tfvk = ufvk.GetTransparentKey().value();
+                }
+            },
+            [&](const auto& other) {
+                throw std::runtime_error("SelectOVKs: Selector cannot select transparent UTXOs.");
+            }
+        }, selector.GetPattern());
+        assert(tfvk.has_value());
+
+        auto ovks = tfvk.value().GetOVKsForShielding();
+        internalOVK = ovks.first;
+        externalOVK = ovks.second;
+    } else if (!spendable.sproutNoteEntries.empty()) {
+        // use the legacy transparent account OVKs when sending from Sprout
+        auto tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
+        auto ovks = tfvk.GetOVKsForShielding();
+        internalOVK = ovks.first;
+        externalOVK = ovks.second;
+    } else {
+        // This should be unreachable; it is left in place as a guard to ensure
+        // that when new input types are added to SpendableInputs in the future
+        // that we do not accidentally return the all-zeros OVK.
+        throw std::runtime_error("No spendable inputs.");
+    }
+
+    return std::make_pair(internalOVK, externalOVK);
+}
+
+PrivacyPolicy TransactionEffects::GetRequiredPrivacyPolicy() const
+{
+    PrivacyPolicy maxPrivacy = PrivacyPolicy::FullPrivacy;
+
+    if (!spendable.orchardNoteMetadata.empty() && payments.HasSaplingRecipient()) {
+        maxPrivacy = PrivacyPolicy::AllowRevealedAmounts;
+    }
+
+    if (!spendable.saplingNoteEntries.empty() && payments.HasOrchardRecipient()) {
+        maxPrivacy = PrivacyPolicy::AllowRevealedAmounts;
+    }
+
+    if (!spendable.sproutNoteEntries.empty() && payments.HasSaplingRecipient()) {
+        maxPrivacy = PrivacyPolicy::AllowRevealedAmounts;
+    }
+
+    bool hasTransparentSource = !spendable.utxos.empty();
+    if (payments.HasTransparentRecipient()) {
+        if (hasTransparentSource) {
+            // TODO: This is the correct policy, but it’s a breaking change from previous behavior,
+            //       so enable it separately.
+            // maxPrivacy = PrivacyPolicy::AllowFullyTransparent;
+        } else {
+            maxPrivacy = PrivacyPolicy::AllowRevealedRecipients;
+        }
+    } else if (hasTransparentSource) {
+        maxPrivacy = PrivacyPolicy::AllowRevealedSenders;
+    }
+
+    // TODO: Check for conditions where PrivacyPolicy::AllowLinkingAccountAccesses
+    // or PrivacyPolicy::NoPrivacy are required
+
+    return maxPrivacy;
+}
+
+
+TransactionBuilderResult TransactionEffects::ApproveAndBuild(
+        const Consensus::Params& consensus,
+        const CWallet& wallet,
+        const CChain& chain,
+        const TransactionStrategy& strategy) const
+{
+    auto requiredPrivacy = this->GetRequiredPrivacyPolicy();
+    if (!strategy.IsCompatibleWith(requiredPrivacy)) {
+        return TransactionBuilderResult(strprintf(
+            "The specified privacy policy, %s, does not permit the creation of "
+            "the requested transaction. Select %s or weaker to allow this transaction "
+            "to be constructed.",
+            strategy.PolicyName(),
+            TransactionStrategy::ToString(requiredPrivacy)
+        ));
+    }
+
+    int nextBlockHeight = chain.Height() + 1;
+
+    // Allow Orchard recipients by setting an Orchard anchor.
+    std::optional<uint256> orchardAnchor;
+    if (spendable.sproutNoteEntries.empty() && nPreferredTxVersion > ZIP225_MIN_TX_VERSION && this->anchorConfirmations > 0) {
+        auto orchardAnchorHeight = nextBlockHeight - this->anchorConfirmations;
+        if (consensus.NetworkUpgradeActive(orchardAnchorHeight, Consensus::UPGRADE_NU5)) {
+            LOCK(cs_main);
+            auto anchorBlockIndex = chain[orchardAnchorHeight];
+            assert(anchorBlockIndex != nullptr);
+            orchardAnchor = anchorBlockIndex->hashFinalOrchardRoot;
+        }
+    }
+
+    auto builder = TransactionBuilder(consensus, nextBlockHeight, orchardAnchor, &wallet);
+    builder.SetFee(fee);
+
+    // Track the total of notes that we've added to the builder. This
+    // shouldn't strictly be necessary, given `spendable.LimitToAmount`
+    CAmount sum = 0;
+    CAmount targetAmount = payments.Total() + fee;
+
+    // Create Sapling outpoints
+    std::vector<SaplingOutPoint> saplingOutPoints;
+    std::vector<SaplingNote> saplingNotes;
+    std::vector<SaplingExtendedSpendingKey> saplingKeys;
+
+    for (const auto& t : spendable.saplingNoteEntries) {
+        saplingOutPoints.push_back(t.op);
+        saplingNotes.push_back(t.note);
+
+        libzcash::SaplingExtendedSpendingKey saplingKey;
+        assert(wallet.GetSaplingExtendedSpendingKey(t.address, saplingKey));
+        saplingKeys.push_back(saplingKey);
+
+        sum += t.note.value();
+        if (sum >= targetAmount) {
+            break;
+        }
+    }
+
+    // Fetch Sapling anchor and witnesses, and Orchard Merkle paths.
+    uint256 anchor;
+    std::vector<std::optional<SaplingWitness>> witnesses;
+    std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> orchardSpendInfo;
+    {
+        LOCK(wallet.cs_wallet);
+        if (!wallet.GetSaplingNoteWitnesses(saplingOutPoints, anchorConfirmations, witnesses, anchor)) {
+            // This error should not appear once we're nAnchorConfirmations blocks past
+            // Sapling activation.
+            return TransactionBuilderResult("Insufficient Sapling witnesses.");
+        }
+        if (builder.GetOrchardAnchor().has_value()) {
+            orchardSpendInfo = wallet.GetOrchardSpendInfo(spendable.orchardNoteMetadata, builder.GetOrchardAnchor().value());
+        }
+    }
+
+    // Add Orchard spends
+    for (size_t i = 0; i < orchardSpendInfo.size(); i++) {
+        auto spendInfo = std::move(orchardSpendInfo[i]);
+        if (!builder.AddOrchardSpend(
+            std::move(spendInfo.first),
+            std::move(spendInfo.second)))
+        {
+            return TransactionBuilderResult(
+                strprintf("Failed to add Orchard note to transaction (check %s for details)", GetDebugLogPath())
+            );
+        }
+    }
+
+    // Add Sapling spends
+    for (size_t i = 0; i < saplingNotes.size(); i++) {
+        if (!witnesses[i]) {
+            return TransactionBuilderResult(strprintf(
+                "Missing witness for Sapling note at outpoint %s",
+                spendable.saplingNoteEntries[i].op.ToString()
+            ));
+        }
+
+        builder.AddSaplingSpend(saplingKeys[i].expsk, saplingNotes[i], anchor, witnesses[i].value());
+    }
+
+    // Add outputs
+    for (const auto& r : payments.GetResolvedPayments()) {
+        std::visit(match {
+            [&](const CKeyID& keyId) {
+                builder.AddTransparentOutput(keyId, r.amount);
+            },
+            [&](const CScriptID& scriptId) {
+                builder.AddTransparentOutput(scriptId, r.amount);
+            },
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                builder.AddSaplingOutput(
+                        externalOVK, addr, r.amount,
+                        r.memo.has_value() ? r.memo.value().ToBytes() : Memo::NoMemo().ToBytes());
+            },
+            [&](const libzcash::OrchardRawAddress& addr) {
+                builder.AddOrchardOutput(
+                        externalOVK, addr, r.amount,
+                        r.memo.has_value() ? std::optional(r.memo.value().ToBytes()) : std::nullopt);
+            }
+        }, r.address);
+    }
+
+    // Add transparent utxos
+    for (const auto& out : spendable.utxos) {
+        const CTxOut& txOut = out.tx->vout[out.i];
+        builder.AddTransparentInput(COutPoint(out.tx->GetHash(), out.i), txOut.scriptPubKey, txOut.nValue);
+
+        sum += txOut.nValue;
+        if (sum >= targetAmount) {
+            break;
+        }
+    }
+
+    // Find Sprout witnesses
+    // When spending notes, take a snapshot of note witnesses and anchors as the treestate will
+    // change upon arrival of new blocks which contain joinsplit transactions.  This is likely
+    // to happen as creating a chained joinsplit transaction can take longer than the block interval.
+    // So, we need to take locks on cs_main and wallet.cs_wallet so that the witnesses aren't
+    // updated.
+    //
+    // TODO: these locks would ideally be shared for selection of Sapling anchors and witnesses
+    // as well.
+    std::vector<std::optional<SproutWitness>> vSproutWitnesses;
+    {
+        LOCK2(cs_main, wallet.cs_wallet);
+        std::vector<JSOutPoint> vOutPoints;
+        for (const auto& t : spendable.sproutNoteEntries) {
+            vOutPoints.push_back(t.jsop);
+        }
+
+        // inputAnchor is not needed by builder.AddSproutInput as it is for Sapling.
+        uint256 inputAnchor;
+        if (!wallet.GetSproutNoteWitnesses(vOutPoints, anchorConfirmations, vSproutWitnesses, inputAnchor)) {
+            // This error should not appear once we're nAnchorConfirmations blocks past
+            // Sprout activation.
+            return TransactionBuilderResult("Insufficient Sprout witnesses.");
+        }
+    }
+
+    // Add Sprout spends
+    for (int i = 0; i < spendable.sproutNoteEntries.size(); i++) {
+        const auto& t = spendable.sproutNoteEntries[i];
+        libzcash::SproutSpendingKey sk;
+        assert(wallet.GetSproutSpendingKey(t.address, sk));
+
+        builder.AddSproutInput(sk, t.note, vSproutWitnesses[i].value());
+
+        sum += t.note.value();
+        if (sum >= targetAmount) {
+            break;
+        }
+    }
+
+    std::visit(match {
+        [&](const SproutPaymentAddress& addr) {
+            builder.SendChangeToSprout(addr);
+        },
+        [&](const RecipientAddress& addr) {
+            builder.SendChangeTo(addr, internalOVK);
+        }
+    }, changeAddr);
+
+    // Build the transaction
+    return builder.Build();
+}
