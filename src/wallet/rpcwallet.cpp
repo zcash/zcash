@@ -41,6 +41,7 @@
 #include "wallet/asyncrpcoperation_saplingmigration.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
+#include "wallet/wallet_tx_builder.h"
 
 #include <stdint.h>
 
@@ -4936,7 +4937,7 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
 
 size_t EstimateTxSize(
         const ZTXOSelector& ztxoSelector,
-        const std::vector<SendManyRecipient>& recipients,
+        const std::vector<ResolvedPayment>& recipients,
         int nextBlockHeight) {
     CMutableTransaction mtx;
     mtx.fOverwintered = true;
@@ -4950,7 +4951,7 @@ size_t EstimateTxSize(
     size_t txsize = 0;
     size_t taddrRecipientCount = 0;
     size_t orchardRecipientCount = 0;
-    for (const SendManyRecipient& recipient : recipients) {
+    for (const ResolvedPayment& recipient : recipients) {
         std::visit(match {
             [&](const CKeyID&) {
                 taddrRecipientCount += 1;
@@ -5152,7 +5153,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     }
 
     std::set<RecipientAddress> recipientAddrs;
-    std::vector<SendManyRecipient> recipients;
+    std::vector<ResolvedPayment> recipients;
     CAmount nTotalOut = 0;
     size_t nOrchardOutputs = 0;
     for (const UniValue& o : outputs.getValues()) {
@@ -5194,18 +5195,34 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         }
 
         UniValue memoValue = find_value(o, "memo");
-        std::optional<std::string> memo;
+        std::optional<Memo> memo;
         if (!memoValue.isNull()) {
-            memo = memoValue.get_str();
+            auto memoHex = memoValue.get_str();
             if (!std::visit(libzcash::IsShieldedRecipient(), addr.value())) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, memos cannot be sent to transparent addresses.");
-            } else if (!IsHex(memo.value())) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected memo data in hexadecimal format.");
+                throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "Invalid parameter, memos cannot be sent to transparent addresses.");
             }
 
-            if (memo.value().length() > ZC_MEMO_SIZE*2) {
-                throw JSONRPCError(RPC_INVALID_PARAMETER,  strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
-            }
+            std::visit(match {
+                [&](MemoError err) {
+                    switch (err) {
+                        case MemoError::HexDecodeError:
+                            throw JSONRPCError(
+                                    RPC_INVALID_PARAMETER,
+                                    "Invalid parameter, expected memo data in hexadecimal format.");
+                        case MemoError::MemoTooLong:
+                            throw JSONRPCError(
+                                    RPC_INVALID_PARAMETER,
+                                    strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
+                        default:
+                            assert(false);
+                    }
+                },
+                [&](Memo result) {
+                    memo = result;
+                }
+            }, Memo::FromHex(memoHex));
         }
 
         UniValue av = find_value(o, "amount");
@@ -5237,7 +5254,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             }
         }
 
-        recipients.push_back(SendManyRecipient(ua, addr.value(), nAmount, memo));
+        recipients.push_back(ResolvedPayment(ua, addr.value(), nAmount, memo));
         nTotalOut += nAmount;
     }
     if (recipients.empty()) {

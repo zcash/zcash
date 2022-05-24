@@ -774,14 +774,15 @@ public:
     static std::optional<TransactionStrategy> FromString(std::string privacyPolicy);
     static std::string ToString(PrivacyPolicy policy);
 
-    std::string PolicyName() {
+    std::string PolicyName() const {
         return ToString(requestedLevel);
     }
 
-    bool AllowRevealedAmounts();
-    bool AllowRevealedRecipients();
-    bool AllowRevealedSenders();
-    bool AllowLinkingAccountAddresses();
+    bool AllowRevealedAmounts() const;
+    bool AllowRevealedRecipients() const;
+    bool AllowRevealedSenders() const;
+    bool AllowFullyTransparent() const;
+    bool AllowLinkingAccountAddresses() const;
 
     // A strategy is compatible with a given required level if
     // it is as strong as, or weaker than, the required level.
@@ -789,7 +790,7 @@ public:
     // (the most restrictive policy) then that transaction can
     // safely be constructed if the user specifies AllowRevealedRecipients,
     // because the transaction will not reveal any recipients anyway.
-    bool IsCompatibleWith(PrivacyPolicy requiredLevel);
+    bool IsCompatibleWith(PrivacyPolicy requiredLevel) const;
 };
 
 /**
@@ -912,29 +913,54 @@ public:
      * This method must only be called once.
      */
     bool LimitToAmount(
-        CAmount amount,
-        CAmount dustThreshold,
-        std::set<libzcash::OutputPool> recipientPools);
+        const CAmount amount,
+        const CAmount dustThreshold,
+        const std::set<libzcash::OutputPool>& recipientPools);
 
     /**
      * Compute the total ZEC amount of spendable inputs.
      */
     CAmount Total() const {
         CAmount result = 0;
+        result += GetTransparentBalance();
+        result += GetSproutBalance();
+        result += GetSaplingBalance();
+        result += GetOrchardBalance();
+        return result;
+    }
+
+    CAmount GetTransparentBalance() const {
+        CAmount result = 0;
         for (const auto& t : utxos) {
             result += t.Value();
         }
+        return result;
+    }
+
+    CAmount GetSproutBalance() const {
+        CAmount result = 0;
         for (const auto& t : sproutNoteEntries) {
             result += t.note.value();
         }
+        return result;
+    }
+
+    CAmount GetSaplingBalance() const {
+        CAmount result = 0;
         for (const auto& t : saplingNoteEntries) {
             result += t.note.value();
         }
+        return result;
+    }
+
+    CAmount GetOrchardBalance() const {
+        CAmount result = 0;
         for (const auto& t : orchardNoteMetadata) {
             result += t.GetNoteValue();
         }
         return result;
     }
+
 
     /**
      * Return whether or not the set of selected UTXOs contains

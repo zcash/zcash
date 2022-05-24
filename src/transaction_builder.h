@@ -289,8 +289,8 @@ public:
         const Consensus::Params& consensusParams,
         int nHeight,
         std::optional<uint256> orchardAnchor,
-        CKeyStore* keyStore = nullptr,
-        CCoinsViewCache* coinsView = nullptr,
+        const CKeyStore* keyStore = nullptr,
+        const CCoinsViewCache* coinsView = nullptr,
         CCriticalSection* cs_coinsView = nullptr);
 
     // TransactionBuilder should never be copied

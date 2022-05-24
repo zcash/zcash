@@ -7769,7 +7769,7 @@ std::string TransactionStrategy::ToString(PrivacyPolicy policy) {
     }
 }
 
-bool TransactionStrategy::AllowRevealedAmounts() {
+bool TransactionStrategy::AllowRevealedAmounts() const {
     switch (requestedLevel) {
         case PrivacyPolicy::FullPrivacy:
             return false;
@@ -7786,7 +7786,7 @@ bool TransactionStrategy::AllowRevealedAmounts() {
     }
 }
 
-bool TransactionStrategy::AllowRevealedRecipients() {
+bool TransactionStrategy::AllowRevealedRecipients() const {
     switch (requestedLevel) {
         case PrivacyPolicy::FullPrivacy:
         case PrivacyPolicy::AllowRevealedAmounts:
@@ -7803,7 +7803,7 @@ bool TransactionStrategy::AllowRevealedRecipients() {
     }
 }
 
-bool TransactionStrategy::AllowRevealedSenders() {
+bool TransactionStrategy::AllowRevealedSenders() const {
     switch (requestedLevel) {
         case PrivacyPolicy::FullPrivacy:
         case PrivacyPolicy::AllowRevealedAmounts:
@@ -7820,7 +7820,24 @@ bool TransactionStrategy::AllowRevealedSenders() {
     }
 }
 
-bool TransactionStrategy::AllowLinkingAccountAddresses() {
+bool TransactionStrategy::AllowFullyTransparent() const {
+    switch (requestedLevel) {
+        case PrivacyPolicy::FullPrivacy:
+        case PrivacyPolicy::AllowRevealedAmounts:
+        case PrivacyPolicy::AllowRevealedRecipients:
+        case PrivacyPolicy::AllowRevealedSenders:
+            return false;
+        case PrivacyPolicy::AllowFullyTransparent:
+        case PrivacyPolicy::AllowLinkingAccountAddresses:
+        case PrivacyPolicy::NoPrivacy:
+            return true;
+        default:
+            // Fail closed.
+            return false;
+    }
+}
+
+bool TransactionStrategy::AllowLinkingAccountAddresses() const {
     switch (requestedLevel) {
         case PrivacyPolicy::FullPrivacy:
         case PrivacyPolicy::AllowRevealedAmounts:
@@ -7837,7 +7854,7 @@ bool TransactionStrategy::AllowLinkingAccountAddresses() {
     }
 }
 
-bool TransactionStrategy::IsCompatibleWith(PrivacyPolicy requiredLevel) {
+bool TransactionStrategy::IsCompatibleWith(PrivacyPolicy requiredLevel) const {
     switch (requiredLevel) {
         case PrivacyPolicy::FullPrivacy:
             // FullPrivacy is most restrictive (it needs no privicy-violating
@@ -7949,7 +7966,7 @@ bool ZTXOSelector::SelectsOrchard() const {
 bool SpendableInputs::LimitToAmount(
     const CAmount amountRequired,
     const CAmount dustThreshold,
-    std::set<OutputPool> recipientPools)
+    const std::set<OutputPool>& recipientPools)
 {
     assert(amountRequired >= 0 && dustThreshold > 0);
     // Calling this method twice is a programming error.
