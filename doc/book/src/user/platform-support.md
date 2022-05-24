@@ -45,6 +45,7 @@ available.
 | target                  | OS           | notes |
 | ----------------------- | ------------ | ----- |
 | `x86_64-pc-linux-gnu`   | Arch         |
+| `x86_64-unknown-freebsd`| FreeBSD      |
 | `x86_64-w64-mingw32`    | Windows      | 64-bit MinGW |
 | `x86_64-apple-darwin16` | macOS 10.14+ |
 | `aarch64-linux-gnu`     | ARM64 Linux  |
