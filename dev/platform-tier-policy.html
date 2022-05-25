@@ -1,0 +1,294 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Platform Tier Policy - The zcashd Book</title>
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">zcashd</a></li><li class="chapter-item expanded "><a href="../user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../user/platform-support.html"><strong aria-hidden="true">1.1.</strong> Platform Support</a></li><li class="chapter-item expanded "><a href="../user/metrics.html"><strong aria-hidden="true">1.2.</strong> Metrics</a></li><li class="chapter-item expanded "><a href="../user/deprecation.html"><strong aria-hidden="true">1.3.</strong> Deprecated Features</a></li></ol></li><li class="chapter-item expanded "><a href="../dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../dev/rust.html"><strong aria-hidden="true">2.1.</strong> Rust in zcashd</a></li><li class="chapter-item expanded "><a href="../dev/regtest.html"><strong aria-hidden="true">2.2.</strong> Regtest tips and hints</a></li><li class="chapter-item expanded "><a href="../dev/platform-tier-policy.html" class="active"><strong aria-hidden="true">2.3.</strong> Platform Tier Policy</a></li><li class="chapter-item expanded "><a href="../dev/deprecation.html"><strong aria-hidden="true">2.4.</strong> Deprecation Procedure</a></li></ol></li><li class="chapter-item expanded "><a href="../design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain state</a></li><li class="chapter-item expanded "><a href="../design/coins-view.html"><strong aria-hidden="true">3.2.</strong> "Coins" view</a></li><li class="chapter-item expanded "><a href="../design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P data propagation</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">The zcashd Book</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="platform-tier-policy"><a class="header" href="#platform-tier-policy">Platform Tier Policy</a></h1>
+<h2 id="general"><a class="header" href="#general">General</a></h2>
+<p>ECC provides three tiers of platform support, modeled after the
+<a href="https://doc.rust-lang.org/stable/rustc/platform-tier-policy.html">Rust Target Tier Policy</a>:</p>
+<ul>
+<li>The Zcash developers provide no guarantees about tier 3 platforms; they exist in the
+codebase, but may or may not build.</li>
+<li>ECC's continuous integration checks that tier 2 platforms will always build, but they
+may or may not pass tests.</li>
+<li>ECC's continuous integration checks that tier 1 platforms will always build and pass
+tests.</li>
+</ul>
+<p>Adding a new tier 3 platform imposes minimal requirements; we focus primarily on avoiding
+disruption to other ongoing Zcash development.</p>
+<p>Tier 2 and tier 1 platforms place work on Zcash developers as a whole, to avoid breaking
+the platform. The broader Zcash community may also feel more inclined to support
+higher-tier platforms in their downstream uses of <code>zcashd</code> (though they are not obligated
+to do so). Thus, these tiers require commensurate and ongoing efforts from the maintainers
+of the platform, to demonstrate value and to minimize any disruptions to ongoing Zcash
+development.</p>
+<p>This policy defines the requirements for accepting a proposed platform at a given level of
+support.</p>
+<p>Each tier builds on all the requirements from the previous tier, unless overridden by a
+stronger requirement.</p>
+<p>While these criteria attempt to document the policy, that policy still involves human
+judgment. Platforms must fulfill the spirit of the requirements as well, as determined by
+the judgment of the approving reviewers. Reviewers and team members evaluating platforms
+and platform-specific patches should always use their own best judgment regarding the
+quality of work, and the suitability of a platform for the Zcash project. Neither this
+policy nor any decisions made regarding platforms shall create any binding agreement or
+estoppel by any party.</p>
+<p>For a list of all supported platforms and their corresponding tiers (&quot;tier 3&quot;, &quot;tier 2&quot;,
+or &quot;tier 1&quot;), see <a href="../user/platform-support.html">Platform Support</a>.</p>
+<p>The availability or tier of a platform in Zcash releases is not a hard stability guarantee
+about the future availability or tier of that platform. Higher-level platform tiers are an
+increasing commitment to the support of a platform, and we will take that commitment and
+potential disruptions into account when evaluating the potential demotion or removal of a
+platform that has been part of a stable release. The promotion or demotion of a platform
+will not generally affect existing stable releases, only current development and future
+releases.</p>
+<p>In this policy, the words &quot;MUST&quot; and &quot;MUST NOT&quot; specify absolute requirements that a
+platform must meet to qualify for a tier. The words &quot;SHOULD&quot; and &quot;SHOULD NOT&quot; specify
+requirements that apply in almost all cases, but for which the approving teams may grant
+an exception for good reason. The word &quot;MAY&quot; indicates something entirely optional, and
+does not indicate guidance or recommendations. This language is based on
+<a href="https://tools.ietf.org/html/rfc2119">IETF RFC 2119</a>.</p>
+<h2 id="tier-3-platform-policy"><a class="header" href="#tier-3-platform-policy">Tier 3 platform policy</a></h2>
+<p>At this tier, ECC provides no official support for a platform, so we place minimal
+requirements on the introduction of platforms.</p>
+<p>A proposed new tier 3 platform MUST be reviewed and approved by a member of the ECC core
+team based on these requirements.</p>
+<ul>
+<li>The platform MUST provide documentation for the Zcash community explaining how to build
+for the platform, using cross-compilation if possible. If the platform supports running
+binaries, or running tests (even if they do not pass), the documentation MUST explain
+how to run such binaries or tests for the platform, using emulation if possible or
+dedicated hardware if necessary.</li>
+<li>Tier 3 platforms MUST NOT impose burden on the authors of pull requests, or other
+developers in the community, to maintain the platform. In particular, do not post
+comments (automated or manual) on a PR that derail or suggest a block on the PR based on
+a tier 3 platform. Do not send automated messages or notifications (via any medium,
+including via @) to a PR author or others involved with a PR regarding a tier 3
+platform, unless they have opted into such messages.</li>
+<li>Patches adding or updating tier 3 platforms MUST NOT break any existing tier 2 or tier 1
+platform, and MUST NOT knowingly break another tier 3 platform without approval of the
+ECC core team.</li>
+</ul>
+<p>If a tier 3 platform stops meeting these requirements, or the platform shows no signs of
+activity and has not built for some time, or removing the platform would improve the
+quality of the Zcash codebase, we MAY post a PR to remove it.</p>
+<h2 id="tier-2-platform-policy"><a class="header" href="#tier-2-platform-policy">Tier 2 platform policy</a></h2>
+<p>At this tier, the Zcash developers guarantee that a platform builds, and will reject
+patches that fail to build for a platform. Thus, we place requirements that ensure the
+platform will not block forward progress of the Zcash project.</p>
+<p>A proposed new tier 2 platform MUST be reviewed and approved by the ECC core team based
+on these requirements.</p>
+<p>In addition, the ECC infrastructure team MUST approve the integration of the platform into
+Continuous Integration (CI), and the tier 2 CI-related requirements. This review and
+approval MAY take place in a PR adding the platform to CI, or simply by an infrastructure
+team member reporting the outcome of a team discussion.</p>
+<ul>
+<li>A tier 2 platform MUST have value to people other than its proponents. (It MAY still be
+a niche platform, but it MUST NOT be exclusively useful for an inherently closed group.)</li>
+<li>A tier 2 platform MUST have a designated team of developers (the &quot;platform maintainers&quot;)
+supporting it, without the need for a paid support contract.</li>
+<li>The platform MUST NOT place undue burden on Zcash developers not specifically concerned
+with that platform. Zcash developers are expected to not gratuitously break a tier 2
+platform, but are not expected to become experts in every tier 2 platform, and are not
+expected to provide platform-specific implementations for every tier 2 platform.</li>
+<li>The platform MUST build reliably in CI, for all components that ECC's CI considers
+mandatory.</li>
+<li>All requirements for tier 3 apply.</li>
+</ul>
+<p>A tier 2 platform MAY be demoted or removed if it no longer meets these requirements.</p>
+<h2 id="tier-1-platform-policy"><a class="header" href="#tier-1-platform-policy">Tier 1 platform policy</a></h2>
+<p>At this tier, the Zcash developers guarantee that a platform builds and passes all tests,
+and will reject patches that fail to build or pass the test suite on a platform. We hold
+tier 1 platforms to our highest standard of requirements.</p>
+<ul>
+<li>Tier 1 platforms MUST have substantial, widespread interest within the Zcash community,
+and MUST serve the ongoing needs of multiple production users of Zcash across multiple
+organizations or projects. These requirements are subjective. A tier 1 platform MAY be
+demoted or removed if it becomes obsolete or no longer meets this requirement.</li>
+<li>The platform MUST build and pass tests reliably in CI, for all components that ECC's CI
+considers mandatory.</li>
+<li>Building the platform and running the test suite for the platform MUST NOT take
+substantially longer than other platforms, and SHOULD NOT substantially raise the
+maintenance burden of the CI infrastructure.</li>
+<li>Tier 1 platforms MUST NOT have a hard requirement for signed, verified, or otherwise
+&quot;approved&quot; binaries. Developers MUST be able to build, run, and test binaries for the
+platform on systems they control, or provide such binaries for others to run. (Doing so
+MAY require enabling some appropriate &quot;developer mode&quot; on such systems, but MUST NOT
+require the payment of any additional fee or other consideration, or agreement to any
+onerous legal agreements.)</li>
+<li>All requirements for tier 2 apply.</li>
+</ul>
+<p>A tier 1 platform MAY be demoted or removed if it no longer meets these requirements but
+still meets the requirements for a lower tier.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../dev/regtest.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="../dev/deprecation.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../dev/regtest.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="../dev/deprecation.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+    </body>
+</html>

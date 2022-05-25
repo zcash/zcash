@@ -76,7 +76,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">zcashd</a></li><li class="chapter-item expanded "><a href="user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="user/metrics.html"><strong aria-hidden="true">1.1.</strong> Metrics</a></li><li class="chapter-item expanded "><a href="user/deprecation.html"><strong aria-hidden="true">1.2.</strong> Deprecated Features</a></li></ol></li><li class="chapter-item expanded "><a href="dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="dev/rust.html"><strong aria-hidden="true">2.1.</strong> Rust in zcashd</a></li><li class="chapter-item expanded "><a href="dev/regtest.html"><strong aria-hidden="true">2.2.</strong> Regtest tips and hints</a></li><li class="chapter-item expanded "><a href="dev/deprecation.html"><strong aria-hidden="true">2.3.</strong> Deprecation Procedure</a></li></ol></li><li class="chapter-item expanded "><a href="design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain state</a></li><li class="chapter-item expanded "><a href="design/coins-view.html"><strong aria-hidden="true">3.2.</strong> "Coins" view</a></li><li class="chapter-item expanded "><a href="design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P data propagation</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">zcashd</a></li><li class="chapter-item expanded "><a href="user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="user/platform-support.html"><strong aria-hidden="true">1.1.</strong> Platform Support</a></li><li class="chapter-item expanded "><a href="user/metrics.html"><strong aria-hidden="true">1.2.</strong> Metrics</a></li><li class="chapter-item expanded "><a href="user/deprecation.html"><strong aria-hidden="true">1.3.</strong> Deprecated Features</a></li></ol></li><li class="chapter-item expanded "><a href="dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="dev/rust.html"><strong aria-hidden="true">2.1.</strong> Rust in zcashd</a></li><li class="chapter-item expanded "><a href="dev/regtest.html"><strong aria-hidden="true">2.2.</strong> Regtest tips and hints</a></li><li class="chapter-item expanded "><a href="dev/platform-tier-policy.html"><strong aria-hidden="true">2.3.</strong> Platform Tier Policy</a></li><li class="chapter-item expanded "><a href="dev/deprecation.html"><strong aria-hidden="true">2.4.</strong> Deprecation Procedure</a></li></ol></li><li class="chapter-item expanded "><a href="design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain state</a></li><li class="chapter-item expanded "><a href="design/coins-view.html"><strong aria-hidden="true">3.2.</strong> "Coins" view</a></li><li class="chapter-item expanded "><a href="design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P data propagation</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -183,6 +183,45 @@ for detailed instructions.</p>
 <p>This section contains user documentation specific to <code>zcashd</code>.</p>
 <p>See <a href="https://zcash.readthedocs.io/">here</a> for more general Zcash documentation, as well as
 installation instructions for <code>zcashd</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="platform-support"><a class="header" href="#platform-support">Platform Support</a></h1>
+<p>Support for different platforms (build &quot;targets&quot; and operating systems) are organised into
+three tiers, each with a different set of guarantees. For more information on the policies
+for targets at each tier, see the <a href="user/../dev/platform-tier-policy.html">Platform Tier Policy</a>.</p>
+<h2 id="tier-1"><a class="header" href="#tier-1">Tier 1</a></h2>
+<p>Tier 1 platforms can be thought of as &quot;guaranteed to work&quot;. ECC builds official binary
+releases for each tier 1 platform, and automated testing ensures that each tier 1 platform
+builds and passes tests after each change.</p>
+<p>&quot;End of Support&quot; dates are the latest currently-known date after which the platform will
+be removed from tier 1. These dates are subject to change.</p>
+<table><thead><tr><th>target</th><th>OS</th><th>End of Support</th></tr></thead><tbody>
+<tr><td><code>x86_64-pc-linux-gnu</code></td><td>CentOS 8</td><td>TBD</td></tr>
+<tr><td></td><td>Debian 10</td><td>June 2024</td></tr>
+<tr><td></td><td>Debian 11</td><td>June 2026</td></tr>
+<tr><td></td><td>Ubuntu 18.04</td><td>April 2023</td></tr>
+<tr><td></td><td>Ubuntu 20.04</td><td>April 2025</td></tr>
+</tbody></table>
+<h2 id="tier-2"><a class="header" href="#tier-2">Tier 2</a></h2>
+<p>Tier 2 platforms can be thought of as &quot;guaranteed to build&quot;. ECC builds official binary
+releases for each tier 2 platform, and automated builds ensure that each tier 2 platform
+builds after each change. Automated tests are not always run so it's not guaranteed to
+produce a working build, but tier 2 platforms often work to quite a good degree, and
+patches are always welcome!</p>
+<p>&quot;End of Support&quot; dates are the latest currently-known date after which the platform will
+be removed from tier 2. These dates are subject to change.</p>
+<table><thead><tr><th>target</th><th>OS</th><th>End of Support</th></tr></thead><tbody>
+<tr><td>N/A</td><td></td><td></td></tr>
+</tbody></table>
+<h2 id="tier-3"><a class="header" href="#tier-3">Tier 3</a></h2>
+<p>Tier 3 platforms are those for which the <code>zcashd</code> codebase has support, but ECC does not
+require builds or tests to pass, so these may or may not work. Official builds are not
+available.</p>
+<table><thead><tr><th>target</th><th>OS</th><th>notes</th></tr></thead><tbody>
+<tr><td><code>x86_64-pc-linux-gnu</code></td><td>Arch</td><td></td></tr>
+<tr><td><code>x86_64-unknown-freebsd</code></td><td>FreeBSD</td><td></td></tr>
+<tr><td><code>x86_64-w64-mingw32</code></td><td>Windows</td><td>64-bit MinGW</td></tr>
+<tr><td><code>x86_64-apple-darwin16</code></td><td>macOS 10.14+</td><td></td></tr>
+<tr><td><code>aarch64-linux-gnu</code></td><td>ARM64 Linux</td><td></td></tr>
+</tbody></table>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="zcashd-metrics"><a class="header" href="#zcashd-metrics">zcashd metrics</a></h1>
 <h2 id="metrics-ui"><a class="header" href="#metrics-ui">Metrics UI</a></h2>
 <p>This is the user interface that <code>zcashd</code> displays by default when run. It
@@ -508,6 +547,124 @@ $
 <pre><code>$ cat /tmp/test9d907s8a/96246/node0/zcash.conf
 </code></pre>
 <p>In this way, the RPC test framework can teach us more about running <code>regtest</code> nodes.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="platform-tier-policy"><a class="header" href="#platform-tier-policy">Platform Tier Policy</a></h1>
+<h2 id="general"><a class="header" href="#general">General</a></h2>
+<p>ECC provides three tiers of platform support, modeled after the
+<a href="https://doc.rust-lang.org/stable/rustc/platform-tier-policy.html">Rust Target Tier Policy</a>:</p>
+<ul>
+<li>The Zcash developers provide no guarantees about tier 3 platforms; they exist in the
+codebase, but may or may not build.</li>
+<li>ECC's continuous integration checks that tier 2 platforms will always build, but they
+may or may not pass tests.</li>
+<li>ECC's continuous integration checks that tier 1 platforms will always build and pass
+tests.</li>
+</ul>
+<p>Adding a new tier 3 platform imposes minimal requirements; we focus primarily on avoiding
+disruption to other ongoing Zcash development.</p>
+<p>Tier 2 and tier 1 platforms place work on Zcash developers as a whole, to avoid breaking
+the platform. The broader Zcash community may also feel more inclined to support
+higher-tier platforms in their downstream uses of <code>zcashd</code> (though they are not obligated
+to do so). Thus, these tiers require commensurate and ongoing efforts from the maintainers
+of the platform, to demonstrate value and to minimize any disruptions to ongoing Zcash
+development.</p>
+<p>This policy defines the requirements for accepting a proposed platform at a given level of
+support.</p>
+<p>Each tier builds on all the requirements from the previous tier, unless overridden by a
+stronger requirement.</p>
+<p>While these criteria attempt to document the policy, that policy still involves human
+judgment. Platforms must fulfill the spirit of the requirements as well, as determined by
+the judgment of the approving reviewers. Reviewers and team members evaluating platforms
+and platform-specific patches should always use their own best judgment regarding the
+quality of work, and the suitability of a platform for the Zcash project. Neither this
+policy nor any decisions made regarding platforms shall create any binding agreement or
+estoppel by any party.</p>
+<p>For a list of all supported platforms and their corresponding tiers (&quot;tier 3&quot;, &quot;tier 2&quot;,
+or &quot;tier 1&quot;), see <a href="dev/../user/platform-support.html">Platform Support</a>.</p>
+<p>The availability or tier of a platform in Zcash releases is not a hard stability guarantee
+about the future availability or tier of that platform. Higher-level platform tiers are an
+increasing commitment to the support of a platform, and we will take that commitment and
+potential disruptions into account when evaluating the potential demotion or removal of a
+platform that has been part of a stable release. The promotion or demotion of a platform
+will not generally affect existing stable releases, only current development and future
+releases.</p>
+<p>In this policy, the words &quot;MUST&quot; and &quot;MUST NOT&quot; specify absolute requirements that a
+platform must meet to qualify for a tier. The words &quot;SHOULD&quot; and &quot;SHOULD NOT&quot; specify
+requirements that apply in almost all cases, but for which the approving teams may grant
+an exception for good reason. The word &quot;MAY&quot; indicates something entirely optional, and
+does not indicate guidance or recommendations. This language is based on
+<a href="https://tools.ietf.org/html/rfc2119">IETF RFC 2119</a>.</p>
+<h2 id="tier-3-platform-policy"><a class="header" href="#tier-3-platform-policy">Tier 3 platform policy</a></h2>
+<p>At this tier, ECC provides no official support for a platform, so we place minimal
+requirements on the introduction of platforms.</p>
+<p>A proposed new tier 3 platform MUST be reviewed and approved by a member of the ECC core
+team based on these requirements.</p>
+<ul>
+<li>The platform MUST provide documentation for the Zcash community explaining how to build
+for the platform, using cross-compilation if possible. If the platform supports running
+binaries, or running tests (even if they do not pass), the documentation MUST explain
+how to run such binaries or tests for the platform, using emulation if possible or
+dedicated hardware if necessary.</li>
+<li>Tier 3 platforms MUST NOT impose burden on the authors of pull requests, or other
+developers in the community, to maintain the platform. In particular, do not post
+comments (automated or manual) on a PR that derail or suggest a block on the PR based on
+a tier 3 platform. Do not send automated messages or notifications (via any medium,
+including via @) to a PR author or others involved with a PR regarding a tier 3
+platform, unless they have opted into such messages.</li>
+<li>Patches adding or updating tier 3 platforms MUST NOT break any existing tier 2 or tier 1
+platform, and MUST NOT knowingly break another tier 3 platform without approval of the
+ECC core team.</li>
+</ul>
+<p>If a tier 3 platform stops meeting these requirements, or the platform shows no signs of
+activity and has not built for some time, or removing the platform would improve the
+quality of the Zcash codebase, we MAY post a PR to remove it.</p>
+<h2 id="tier-2-platform-policy"><a class="header" href="#tier-2-platform-policy">Tier 2 platform policy</a></h2>
+<p>At this tier, the Zcash developers guarantee that a platform builds, and will reject
+patches that fail to build for a platform. Thus, we place requirements that ensure the
+platform will not block forward progress of the Zcash project.</p>
+<p>A proposed new tier 2 platform MUST be reviewed and approved by the ECC core team based
+on these requirements.</p>
+<p>In addition, the ECC infrastructure team MUST approve the integration of the platform into
+Continuous Integration (CI), and the tier 2 CI-related requirements. This review and
+approval MAY take place in a PR adding the platform to CI, or simply by an infrastructure
+team member reporting the outcome of a team discussion.</p>
+<ul>
+<li>A tier 2 platform MUST have value to people other than its proponents. (It MAY still be
+a niche platform, but it MUST NOT be exclusively useful for an inherently closed group.)</li>
+<li>A tier 2 platform MUST have a designated team of developers (the &quot;platform maintainers&quot;)
+supporting it, without the need for a paid support contract.</li>
+<li>The platform MUST NOT place undue burden on Zcash developers not specifically concerned
+with that platform. Zcash developers are expected to not gratuitously break a tier 2
+platform, but are not expected to become experts in every tier 2 platform, and are not
+expected to provide platform-specific implementations for every tier 2 platform.</li>
+<li>The platform MUST build reliably in CI, for all components that ECC's CI considers
+mandatory.</li>
+<li>All requirements for tier 3 apply.</li>
+</ul>
+<p>A tier 2 platform MAY be demoted or removed if it no longer meets these requirements.</p>
+<h2 id="tier-1-platform-policy"><a class="header" href="#tier-1-platform-policy">Tier 1 platform policy</a></h2>
+<p>At this tier, the Zcash developers guarantee that a platform builds and passes all tests,
+and will reject patches that fail to build or pass the test suite on a platform. We hold
+tier 1 platforms to our highest standard of requirements.</p>
+<ul>
+<li>Tier 1 platforms MUST have substantial, widespread interest within the Zcash community,
+and MUST serve the ongoing needs of multiple production users of Zcash across multiple
+organizations or projects. These requirements are subjective. A tier 1 platform MAY be
+demoted or removed if it becomes obsolete or no longer meets this requirement.</li>
+<li>The platform MUST build and pass tests reliably in CI, for all components that ECC's CI
+considers mandatory.</li>
+<li>Building the platform and running the test suite for the platform MUST NOT take
+substantially longer than other platforms, and SHOULD NOT substantially raise the
+maintenance burden of the CI infrastructure.</li>
+<li>Tier 1 platforms MUST NOT have a hard requirement for signed, verified, or otherwise
+&quot;approved&quot; binaries. Developers MUST be able to build, run, and test binaries for the
+platform on systems they control, or provide such binaries for others to run. (Doing so
+MAY require enabling some appropriate &quot;developer mode&quot; on such systems, but MUST NOT
+require the payment of any additional fee or other consideration, or agreement to any
+onerous legal agreements.)</li>
+<li>All requirements for tier 2 apply.</li>
+</ul>
+<p>A tier 1 platform MAY be demoted or removed if it no longer meets these requirements but
+still meets the requirements for a lower tier.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="deprecation-procedure"><a class="header" href="#deprecation-procedure">Deprecation Procedure</a></h1>
 <p>From time to time, features of <code>zcashd</code> and its associated wallet and RPC API are
 deprecated to allow eventual removal of functionality that has been superseded

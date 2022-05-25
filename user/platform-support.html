@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Deprecated Features - The zcashd Book</title>
+        <title>Platform Support - The zcashd Book</title>
         <!-- Custom HTML head -->
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="">
@@ -75,7 +75,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">zcashd</a></li><li class="chapter-item expanded "><a href="../user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../user/platform-support.html"><strong aria-hidden="true">1.1.</strong> Platform Support</a></li><li class="chapter-item expanded "><a href="../user/metrics.html"><strong aria-hidden="true">1.2.</strong> Metrics</a></li><li class="chapter-item expanded "><a href="../user/deprecation.html" class="active"><strong aria-hidden="true">1.3.</strong> Deprecated Features</a></li></ol></li><li class="chapter-item expanded "><a href="../dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../dev/rust.html"><strong aria-hidden="true">2.1.</strong> Rust in zcashd</a></li><li class="chapter-item expanded "><a href="../dev/regtest.html"><strong aria-hidden="true">2.2.</strong> Regtest tips and hints</a></li><li class="chapter-item expanded "><a href="../dev/platform-tier-policy.html"><strong aria-hidden="true">2.3.</strong> Platform Tier Policy</a></li><li class="chapter-item expanded "><a href="../dev/deprecation.html"><strong aria-hidden="true">2.4.</strong> Deprecation Procedure</a></li></ol></li><li class="chapter-item expanded "><a href="../design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain state</a></li><li class="chapter-item expanded "><a href="../design/coins-view.html"><strong aria-hidden="true">3.2.</strong> "Coins" view</a></li><li class="chapter-item expanded "><a href="../design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P data propagation</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">zcashd</a></li><li class="chapter-item expanded "><a href="../user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../user/platform-support.html" class="active"><strong aria-hidden="true">1.1.</strong> Platform Support</a></li><li class="chapter-item expanded "><a href="../user/metrics.html"><strong aria-hidden="true">1.2.</strong> Metrics</a></li><li class="chapter-item expanded "><a href="../user/deprecation.html"><strong aria-hidden="true">1.3.</strong> Deprecated Features</a></li></ol></li><li class="chapter-item expanded "><a href="../dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../dev/rust.html"><strong aria-hidden="true">2.1.</strong> Rust in zcashd</a></li><li class="chapter-item expanded "><a href="../dev/regtest.html"><strong aria-hidden="true">2.2.</strong> Regtest tips and hints</a></li><li class="chapter-item expanded "><a href="../dev/platform-tier-policy.html"><strong aria-hidden="true">2.3.</strong> Platform Tier Policy</a></li><li class="chapter-item expanded "><a href="../dev/deprecation.html"><strong aria-hidden="true">2.4.</strong> Deprecation Procedure</a></li></ol></li><li class="chapter-item expanded "><a href="../design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain state</a></li><li class="chapter-item expanded "><a href="../design/coins-view.html"><strong aria-hidden="true">3.2.</strong> "Coins" view</a></li><li class="chapter-item expanded "><a href="../design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P data propagation</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -134,74 +134,54 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="deprecated-features"><a class="header" href="#deprecated-features">Deprecated Features</a></h1>
-<p>In order to support the continuous improvement of <code>zcashd</code>, features are
-periodically deprecated and removed when they have been superseded or are no
-longer useful.  Deprecation follows a 3-stage process:</p>
-<ol>
-<li>Initially, a feature will be marked as DEPRECATED in the release notes and
-user-facing documentation, but no other changes are made; the feature
-continues to be available and function as normal. While features at this
-stage remain enabled by default, they may be explicitly disabled by
-specifying <code>-allowdeprecated=none</code> on the command line when starting the
-node, or by including <code>allowdeprecated=none</code> as a line in the <code>zcash.conf</code>
-file. </li>
-<li>In the next stage of deprecation, the feature will be disabled by default.
-Disabled features may be reenabled via use of the <code>-allowdeprecated</code> flag.</li>
-<li>In the third stage, the feature is fully removed and is no longer available.</li>
-</ol>
-<p>Features that enter Stage 1 in a particular release will be disabled by default
-after no fewer than 3 releases that update <code>zcashd</code>'s minor-version, and
-features will only be fully removed after a total of at least 6 minor-version updates.
-<code>zcashd</code>'s release schedule intends to produce a release that updates the minor
-version every 6 weeks, so deprecated features remain accessible by default for
-approximately 18 weeks, and then can be expected to be removed no less than 36
-weeks after their initial deprecation. Deprecation and removal timelines might
-be extended beyond this on a case-by-case basis to satisfy user requirements. </p>
-<h1 id="currently-deprecated"><a class="header" href="#currently-deprecated">Currently Deprecated</a></h1>
-<h2 id="stage-1"><a class="header" href="#stage-1">Stage 1</a></h2>
-<p>The following features are deprecated, but remain enabled by default. These features
-will be disabled if <code>-allowdeprecated=none</code> is added to the CLI arguments when starting
-the node, or if an <code>allowdeprecated=none</code> line is added to <code>zcash.conf</code>.</p>
-<h3 id="deprecated-in-500"><a class="header" href="#deprecated-in-500">Deprecated in 5.0.0</a></h3>
-<p>The following features are deprecated as of release 5.0.0 and will be disabled by
-default as of release 5.3.0.</p>
-<ul>
-<li><code>legacy_privacy</code> - The default &quot;legacy&quot; privacy policy for z_sendmany is
-deprecated. Use <code>-allowdeprecated=none</code> to require the default behavior to
-conform to the <code>FullPrivacy</code> directive in all cases instead of just for
-transactions involving unified addresses. </li>
-<li><code>getnewaddress</code> - The <code>getnewaddress</code> RPC method is deprecated.</li>
-<li><code>getrawchangeaddress</code> - The <code>getrawchangeaddress</code> RPC method is deprecated.</li>
-<li><code>z_getbalance</code> - The <code>z_getbalance</code> RPC method is deprecated.</li>
-<li><code>z_gettotalbalance</code> - The <code>z_gettotalbalance</code> RPC method is deprecated.</li>
-<li><code>z_getnewaddress</code> - The <code>z_getnewaddress</code> RPC method is deprecated.</li>
-<li><code>z_listaddresses</code> - The <code>z_listaddresses</code> RPC method is deprecated.</li>
-<li><code>addrtype</code> - The <code>type</code> attribute is deprecated in the results of RPC
-methods that return address metadata. It is recommended that applications
-using this metadata be updated to use the <code>pool</code> or <code>address_type</code>
-attributes, which have replaced the <code>type</code> attribute, as appropriate.</li>
-</ul>
-<h2 id="stage-2"><a class="header" href="#stage-2">Stage 2</a></h2>
-<p>Each feature in the lists below may be enabled by adding <code>-allowdeprecated=&lt;feature&gt;</code>
-to the CLI arguments when starting the node, or by adding an <code>allowdeprecated=&lt;feature&gt;</code>
-line to <code>zcash.conf</code>.</p>
-<h3 id="disabled-in-500"><a class="header" href="#disabled-in-500">Disabled in 5.0.0</a></h3>
-<p>The following features are disabled by default, and will be removed in release 5.3.0.</p>
-<ul>
-<li><code>zcrawreceive</code> - The <code>zcrawreceive</code> RPC method is disabled.</li>
-<li><code>zcrawjoinsplit</code> - The <code>zcrawjoinsplit</code> RPC method is disabled.</li>
-<li><code>zcrawkeygen</code> - The <code>zcrawkeygen</code> RPC method is disabled.</li>
-</ul>
+                        <h1 id="platform-support"><a class="header" href="#platform-support">Platform Support</a></h1>
+<p>Support for different platforms (build &quot;targets&quot; and operating systems) are organised into
+three tiers, each with a different set of guarantees. For more information on the policies
+for targets at each tier, see the <a href="../dev/platform-tier-policy.html">Platform Tier Policy</a>.</p>
+<h2 id="tier-1"><a class="header" href="#tier-1">Tier 1</a></h2>
+<p>Tier 1 platforms can be thought of as &quot;guaranteed to work&quot;. ECC builds official binary
+releases for each tier 1 platform, and automated testing ensures that each tier 1 platform
+builds and passes tests after each change.</p>
+<p>&quot;End of Support&quot; dates are the latest currently-known date after which the platform will
+be removed from tier 1. These dates are subject to change.</p>
+<table><thead><tr><th>target</th><th>OS</th><th>End of Support</th></tr></thead><tbody>
+<tr><td><code>x86_64-pc-linux-gnu</code></td><td>CentOS 8</td><td>TBD</td></tr>
+<tr><td></td><td>Debian 10</td><td>June 2024</td></tr>
+<tr><td></td><td>Debian 11</td><td>June 2026</td></tr>
+<tr><td></td><td>Ubuntu 18.04</td><td>April 2023</td></tr>
+<tr><td></td><td>Ubuntu 20.04</td><td>April 2025</td></tr>
+</tbody></table>
+<h2 id="tier-2"><a class="header" href="#tier-2">Tier 2</a></h2>
+<p>Tier 2 platforms can be thought of as &quot;guaranteed to build&quot;. ECC builds official binary
+releases for each tier 2 platform, and automated builds ensure that each tier 2 platform
+builds after each change. Automated tests are not always run so it's not guaranteed to
+produce a working build, but tier 2 platforms often work to quite a good degree, and
+patches are always welcome!</p>
+<p>&quot;End of Support&quot; dates are the latest currently-known date after which the platform will
+be removed from tier 2. These dates are subject to change.</p>
+<table><thead><tr><th>target</th><th>OS</th><th>End of Support</th></tr></thead><tbody>
+<tr><td>N/A</td><td></td><td></td></tr>
+</tbody></table>
+<h2 id="tier-3"><a class="header" href="#tier-3">Tier 3</a></h2>
+<p>Tier 3 platforms are those for which the <code>zcashd</code> codebase has support, but ECC does not
+require builds or tests to pass, so these may or may not work. Official builds are not
+available.</p>
+<table><thead><tr><th>target</th><th>OS</th><th>notes</th></tr></thead><tbody>
+<tr><td><code>x86_64-pc-linux-gnu</code></td><td>Arch</td><td></td></tr>
+<tr><td><code>x86_64-unknown-freebsd</code></td><td>FreeBSD</td><td></td></tr>
+<tr><td><code>x86_64-w64-mingw32</code></td><td>Windows</td><td>64-bit MinGW</td></tr>
+<tr><td><code>x86_64-apple-darwin16</code></td><td>macOS 10.14+</td><td></td></tr>
+<tr><td><code>aarch64-linux-gnu</code></td><td>ARM64 Linux</td><td></td></tr>
+</tbody></table>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../user/metrics.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../user.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
-                            <a rel="next" href="../dev.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../user/metrics.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         <div style="clear: both"></div>
@@ -210,10 +190,10 @@ line to <code>zcash.conf</code>.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../user/metrics.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../user.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
-                    <a rel="next" href="../dev.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="../user/metrics.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
