@@ -2,11 +2,13 @@
 
 [zcashd](README.md)
 - [User Documentation](user.md)
+  - [Platform Support](user/platform-support.md)
   - [Metrics](user/metrics.md)
   - [Deprecated Features](user/deprecation.md)
 - [Developer Documentation](dev.md)
   - [Rust in `zcashd`](dev/rust.md)
   - [Regtest tips and hints](dev/regtest.md)
+  - [Platform Tier Policy](dev/platform-tier-policy.md)
   - [Deprecation Procedure](dev/deprecation.md)
 - [Design](design.md)
   - [Chain state](design/chain-state.md)
