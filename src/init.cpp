@@ -641,7 +641,7 @@ void ThreadStartWalletNotifier()
     if (pwalletMain)
     {
         std::optional<uint256> walletBestBlockHash;
-        {
+        if (!fReindex) {
             LOCK(pwalletMain->cs_wallet);
             walletBestBlockHash = pwalletMain->GetPersistedBestBlock();
         }
