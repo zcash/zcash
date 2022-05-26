@@ -25,12 +25,12 @@
 #ifdef ENABLE_MINING
 void eh_HashState::Update(const unsigned char *input, size_t inputLen)
 {
-    blake2b_update(inner.get(), input, inputLen);
+    inner->update({input, inputLen});
 }
 
 void eh_HashState::Finalize(unsigned char *hash, size_t hLen)
 {
-    blake2b_finalize(inner.get(), hash, hLen);
+    inner->finalize({hash, hLen});
 }
 #endif
 
@@ -155,15 +155,15 @@ std::vector<unsigned char> GetMinimalFromIndices(std::vector<eh_index> indices,
 static EhSolverCancelledException solver_cancelled;
 
 template<unsigned int N, unsigned int K>
-void Equihash<N,K>::InitialiseState(eh_HashState& base_state)
+eh_HashState Equihash<N,K>::InitialiseState()
 {
     uint32_t le_N = htole32(N);
     uint32_t le_K = htole32(K);
-    unsigned char personalization[BLAKE2bPersonalBytes] = {};
+    unsigned char personalization[blake2b::PERSONALBYTES] = {};
     memcpy(personalization, "ZcashPoW", 8);
     memcpy(personalization+8,  &le_N, 4);
     memcpy(personalization+12, &le_K, 4);
-    base_state = eh_HashState((512/N)*N/8, personalization);
+    return eh_HashState((512/N)*N/8, personalization);
 }
 
 void GenerateHash(const eh_HashState& base_state, eh_index g,
@@ -730,7 +730,7 @@ invalidsolution:
 }
 
 // Explicit instantiations for Equihash<96,3>
-template void Equihash<96,3>::InitialiseState(eh_HashState& base_state);
+template eh_HashState Equihash<96,3>::InitialiseState();
 template bool Equihash<96,3>::BasicSolve(const eh_HashState& base_state,
                                          const std::function<bool(std::vector<unsigned char>)> validBlock,
                                          const std::function<bool(EhSolverCancelCheck)> cancelled);
@@ -739,7 +739,7 @@ template bool Equihash<96,3>::OptimisedSolve(const eh_HashState& base_state,
                                              const std::function<bool(EhSolverCancelCheck)> cancelled);
 
 // Explicit instantiations for Equihash<200,9>
-template void Equihash<200,9>::InitialiseState(eh_HashState& base_state);
+template eh_HashState Equihash<200,9>::InitialiseState();
 template bool Equihash<200,9>::BasicSolve(const eh_HashState& base_state,
                                           const std::function<bool(std::vector<unsigned char>)> validBlock,
                                           const std::function<bool(EhSolverCancelCheck)> cancelled);
@@ -748,7 +748,7 @@ template bool Equihash<200,9>::OptimisedSolve(const eh_HashState& base_state,
                                               const std::function<bool(EhSolverCancelCheck)> cancelled);
 
 // Explicit instantiations for Equihash<96,5>
-template void Equihash<96,5>::InitialiseState(eh_HashState& base_state);
+template eh_HashState Equihash<96,5>::InitialiseState();
 template bool Equihash<96,5>::BasicSolve(const eh_HashState& base_state,
                                          const std::function<bool(std::vector<unsigned char>)> validBlock,
                                          const std::function<bool(EhSolverCancelCheck)> cancelled);
@@ -757,7 +757,7 @@ template bool Equihash<96,5>::OptimisedSolve(const eh_HashState& base_state,
                                              const std::function<bool(EhSolverCancelCheck)> cancelled);
 
 // Explicit instantiations for Equihash<48,5>
-template void Equihash<48,5>::InitialiseState(eh_HashState& base_state);
+template eh_HashState Equihash<48,5>::InitialiseState();
 template bool Equihash<48,5>::BasicSolve(const eh_HashState& base_state,
                                          const std::function<bool(std::vector<unsigned char>)> validBlock,
                                          const std::function<bool(EhSolverCancelCheck)> cancelled);

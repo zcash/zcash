@@ -14,6 +14,8 @@
 #include <stdlib.h> // for function qsort
 
 #include <rust/blake2b.h>
+#include <rust/constants.h>
+#include <rust/cxx.h>
 
 typedef uint32_t u32;
 typedef unsigned char uchar;
@@ -43,17 +45,16 @@ typedef u32 proof[PROOFSIZE];
 enum verify_code { POW_OK, POW_DUPLICATE, POW_OUT_OF_ORDER, POW_NONZERO_XOR };
 const char *errstr[] = { "OK", "duplicate index", "indices out of order", "nonzero xor" };
 
-void genhash(const BLAKE2bState *ctx, u32 idx, uchar *hash) {
-  auto state = blake2b_clone(ctx);
+void genhash(const rust::Box<blake2b::State>& ctx, u32 idx, uchar *hash) {
+  auto state = ctx->box_clone();
   u32 leb = htole32(idx / HASHESPERBLAKE);
-  blake2b_update(state, (uchar *)&leb, sizeof(u32));
+  state->update({(const uchar *)&leb, sizeof(u32)});
   uchar blakehash[HASHOUT];
-  blake2b_finalize(state, blakehash, HASHOUT);
-  blake2b_free(state);
+  state->finalize({blakehash, HASHOUT});
   memcpy(hash, blakehash + (idx % HASHESPERBLAKE) * WN/8, WN/8);
 }
 
-int verifyrec(const BLAKE2bState *ctx, u32 *indices, uchar *hash, int r) {
+int verifyrec(const rust::Box<blake2b::State>& ctx, u32 *indices, uchar *hash, int r) {
   if (r == 0) {
     genhash(ctx, *indices, hash);
     return POW_OK;
@@ -95,7 +96,7 @@ bool duped(proof prf) {
 }
 
 // verify Wagner conditions
-int verify(u32 indices[PROOFSIZE], const BLAKE2bState *ctx) {
+int verify(u32 indices[PROOFSIZE], const rust::Box<blake2b::State> ctx) {
   if (duped(indices))
     return POW_DUPLICATE;
   uchar hash[WN/8];

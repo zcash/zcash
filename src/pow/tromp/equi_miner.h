@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <assert.h>
+#include <optional>
 
 typedef uint16_t u16;
 typedef uint64_t u64;
@@ -207,7 +208,7 @@ u32 min(const u32 a, const u32 b) {
 }
 
 struct equi {
-  BLAKE2bState* blake_ctx;
+  std::optional<rust::Box<blake2b::State>> blake_ctx;
   htalloc hta;
   bsizes *nslots; // PUT IN BUCKET STRUCT
   proof *sols;
@@ -230,10 +231,9 @@ struct equi {
     hta.dealloctrees();
     free(nslots);
     free(sols);
-    blake2b_free(blake_ctx);
   }
-  void setstate(const BLAKE2bState *ctx) {
-    blake_ctx = blake2b_clone(ctx);
+  void setstate(const rust::Box<blake2b::State>& ctx) {
+    blake_ctx = ctx->box_clone();
     memset(nslots, 0, NBUCKETS * sizeof(au32)); // only nslots[0] needs zeroing
     nsols = 0;
   }
@@ -435,15 +435,13 @@ struct equi {
 
   void digit0(const u32 id) {
     uchar hash[HASHOUT];
-    BLAKE2bState* state;
     htlayout htl(this, 0);
     const u32 hashbytes = hashsize(0);
     for (u32 block = id; block < NBLOCKS; block += nthreads) {
-      state = blake2b_clone(blake_ctx);
+      auto state = blake_ctx.value()->box_clone();
       u32 leb = htole32(block);
-      blake2b_update(state, (uchar *)&leb, sizeof(u32));
-      blake2b_finalize(state, hash, HASHOUT);
-      blake2b_free(state);
+      state->update({(const uchar *)&leb, sizeof(u32)});
+      state->finalize({hash, HASHOUT});
       for (u32 i = 0; i<HASHESPERBLAKE; i++) {
         const uchar *ph = hash + i * WN/8;
 #if BUCKBITS == 16 && RESTBITS == 4

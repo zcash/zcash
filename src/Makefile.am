@@ -45,9 +45,15 @@ LIBBITCOIN_WALLET=libbitcoin_wallet.a
 endif
 
 # TODO: Figure out how to avoid an explicit file list.
-CXXBRIDGE_RS  = rust/src/equihash.rs
-CXXBRIDGE_H   = rust/gen/include/rust/equihash.h
-CXXBRIDGE_CPP = rust/gen/src/equihash.cpp
+CXXBRIDGE_RS = \
+  rust/src/blake2b.rs \
+  rust/src/equihash.rs
+CXXBRIDGE_H = \
+  rust/gen/include/rust/blake2b.h \
+  rust/gen/include/rust/equihash.h
+CXXBRIDGE_CPP = \
+  rust/gen/src/blake2b.cpp \
+  rust/gen/src/equihash.cpp
 
 # We add a rust/cxx.h include to indicate that we provide this (via the rustcxx depends
 # package), so that cxxbridge doesn't include it within the generated headers and code.
@@ -56,7 +62,7 @@ CXXBRIDGE_OPTS = -i rust/cxx.h
 $(CXXBRIDGE_RS): ;
 $(CXXBRIDGE_H) $(CXXBRIDGE_CPP): $(CXXBRIDGE_RS)
 	@$(MKDIR_P) $(@D)
-	$(AM_V_GEN)$(CXXBRIDGE) $(CXXBRIDGE_OPTS) $< -o $@
+	$(AM_V_GEN)$(CXXBRIDGE) $(CXXBRIDGE_OPTS) rust/src/$(basename $(@F)).rs -o $@
 
 # We pass through CC etc. flags so they are available to Rust dependencies that internally
 # compile C or C++ code with the `cc` crate.

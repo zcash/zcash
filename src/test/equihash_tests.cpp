@@ -47,8 +47,7 @@ void PrintSolutions(std::stringstream &strm, std::set<std::vector<uint32_t>> sol
 #ifdef ENABLE_MINING
 void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, const arith_uint256 &nonce, const std::set<std::vector<uint32_t>> &solns) {
     size_t cBitLen { n/(k+1) };
-    eh_HashState state;
-    EhInitialiseState(n, k, state);
+    eh_HashState state = EhInitialiseState(n, k);
     uint256 V = ArithToUint256(nonce);
     BOOST_TEST_MESSAGE("Running solver: n = " << n << ", k = " << k << ", I = " << I << ", V = " << V.GetHex());
     state.Update((unsigned char*)&I[0], I.size());

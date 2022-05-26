@@ -17,6 +17,8 @@
 #include <vector>
 
 #include <rust/blake2b.h>
+#include <rust/constants.h>
+#include <rust/cxx.h>
 
 typedef uint256 ChainCode;
 
@@ -154,31 +156,29 @@ public:
 class CBLAKE2bWriter
 {
 private:
-    BLAKE2bState* state;
+    rust::Box<blake2b::State> state;
 
 public:
     int nType;
     int nVersion;
 
-    CBLAKE2bWriter(int nTypeIn, int nVersionIn, const unsigned char* personal) : nType(nTypeIn), nVersion(nVersionIn) {
-        state = blake2b_init(32, personal);
-    }
-    ~CBLAKE2bWriter() {
-        blake2b_free(state);
-    }
+    CBLAKE2bWriter(int nTypeIn, int nVersionIn, const unsigned char* personal) :
+        nType(nTypeIn),
+        nVersion(nVersionIn),
+        state(blake2b::init(32, {personal, blake2b::PERSONALBYTES})) {}
 
     int GetType() const { return nType; }
     int GetVersion() const { return nVersion; }
 
     CBLAKE2bWriter& write(const char *pch, size_t size) {
-        blake2b_update(state, (const unsigned char*)pch, size);
+        state->update({(const unsigned char*)pch, size});
         return (*this);
     }
 
     // invalidates the object
     uint256 GetHash() {
         uint256 result;
-        blake2b_finalize(state, (unsigned char*)&result, 32);
+        state->finalize({result.begin(), result.size()});
         return result;
     }
 

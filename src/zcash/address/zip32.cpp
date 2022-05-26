@@ -12,11 +12,12 @@
 
 #include <librustzcash.h>
 #include <rust/blake2b.h>
+#include <rust/constants.h>
 
-const unsigned char ZCASH_HD_SEED_FP_PERSONAL[BLAKE2bPersonalBytes] =
+const unsigned char ZCASH_HD_SEED_FP_PERSONAL[blake2b::PERSONALBYTES] =
     {'Z', 'c', 'a', 's', 'h', '_', 'H', 'D', '_', 'S', 'e', 'e', 'd', '_', 'F', 'P'};
 
-const unsigned char ZCASH_TADDR_OVK_PERSONAL[BLAKE2bPersonalBytes] =
+const unsigned char ZCASH_TADDR_OVK_PERSONAL[blake2b::PERSONALBYTES] =
     {'Z', 'c', 'T', 'a', 'd', 'd', 'r', 'T', 'o', 'S', 'a', 'p', 'l', 'i', 'n', 'g'};
 
 uint256 HDSeed::Fingerprint() const
@@ -30,11 +31,10 @@ uint256 ovkForShieldingFromTaddr(HDSeed& seed) {
     auto rawSeed = seed.RawSeed();
 
     // I = BLAKE2b-512("ZcTaddrToSapling", seed)
-    auto state = blake2b_init(64, ZCASH_TADDR_OVK_PERSONAL);
-    blake2b_update(state, rawSeed.data(), rawSeed.size());
+    auto state = blake2b::init(64, {ZCASH_TADDR_OVK_PERSONAL, blake2b::PERSONALBYTES});
+    state->update({rawSeed.data(), rawSeed.size()});
     auto intermediate = std::array<unsigned char, 64>();
-    blake2b_finalize(state, intermediate.data(), 64);
-    blake2b_free(state);
+    state->finalize({intermediate.data(), 64});
 
     // I_L = I[0..32]
     uint256 intermediate_L;

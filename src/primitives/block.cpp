@@ -11,11 +11,13 @@
 #include "utilstrencodings.h"
 #include "crypto/common.h"
 
+#include <rust/constants.h>
+
 #include <algorithm>
 
-const unsigned char ZCASH_AUTH_DATA_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
+const unsigned char ZCASH_AUTH_DATA_HASH_PERSONALIZATION[blake2b::PERSONALBYTES] =
     {'Z','c','a','s','h','A','u','t','h','D','a','t','H','a','s','h'};
-const unsigned char ZCASH_BLOCK_COMMITMENTS_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
+const unsigned char ZCASH_BLOCK_COMMITMENTS_HASH_PERSONALIZATION[blake2b::PERSONALBYTES] =
     {'Z','c','a','s','h','B','l','o','c','k','C','o','m','m','i','t'};
 
 uint256 DeriveBlockCommitmentsHash(

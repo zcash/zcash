@@ -206,7 +206,7 @@ uint256 JoinSplit<NumInputs, NumOutputs>::h_sig(
     const std::array<uint256, NumInputs>& nullifiers,
     const Ed25519VerificationKey& joinSplitPubKey
 ) {
-    const unsigned char personalization[BLAKE2bPersonalBytes]
+    const unsigned char personalization[blake2b::PERSONALBYTES]
         = {'Z','c','a','s','h','C','o','m','p','u','t','e','h','S','i','g'};
 
     std::vector<unsigned char> block(randomSeed.begin(), randomSeed.end());
@@ -219,10 +219,9 @@ uint256 JoinSplit<NumInputs, NumOutputs>::h_sig(
 
     uint256 output;
 
-    auto state = blake2b_init(32, personalization);
-    blake2b_update(state, &block[0], block.size());
-    blake2b_finalize(state, output.begin(), 32);
-    blake2b_free(state);
+    auto state = blake2b::init(32, {personalization, blake2b::PERSONALBYTES});
+    state->update({&block[0], block.size()});
+    state->finalize({output.begin(), 32});
 
     return output;
 }

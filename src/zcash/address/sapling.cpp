@@ -10,10 +10,11 @@
 #include "zcash/prf.h"
 
 #include <librustzcash.h>
+#include <rust/constants.h>
 
 namespace libzcash {
 
-const unsigned char ZCASH_SAPLING_FVFP_PERSONALIZATION[BLAKE2bPersonalBytes] =
+const unsigned char ZCASH_SAPLING_FVFP_PERSONALIZATION[blake2b::PERSONALBYTES] =
     {'Z', 'c', 'a', 's', 'h', 'S', 'a', 'p', 'l', 'i', 'n', 'g', 'F', 'V', 'F', 'P'};
 
 //! Sapling

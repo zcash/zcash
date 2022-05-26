@@ -229,8 +229,7 @@ UniValue generate(const UniValue& params, bool fHelp)
         }
 
         // Hash state
-        eh_HashState eh_state;
-        EhInitialiseState(n, k, eh_state);
+        eh_HashState eh_state = EhInitialiseState(n, k);
 
         // I = the block header minus nonce and solution.
         CEquihashInput I{*pblock};
