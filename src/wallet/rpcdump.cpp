@@ -549,6 +549,13 @@ UniValue dumpwallet(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
+    if (!fEnableDumpWallet)
+        throw runtime_error(
+            "dumpwallet is DEPRECATED and will be removed in a future release\n"
+            "\nUse z_exportwallet instead, or restart with `-allowdeprecated=dumpwallet`\n"
+            "if you require backward compatibility.\n"
+            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
+
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "dumpwallet \"filename\"\n"
