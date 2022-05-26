@@ -344,7 +344,9 @@ public:
 
 CMutableTransaction CreateCoinbaseTransaction(const CChainParams& chainparams, CAmount nFees, const MinerAddress& minerAddress, int nHeight)
 {
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
+        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
+                chainparams.GetConsensus(), nHeight,
+                !std::holds_alternative<libzcash::OrchardRawAddress>(minerAddress) && nPreferredTxVersion < ZIP225_MIN_TX_VERSION);
         mtx.vin.resize(1);
         mtx.vin[0].prevout.SetNull();
         if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {

@@ -279,6 +279,12 @@ private:
 
 public:
     TransactionBuilder() {}
+    /**
+     * If an Orchard anchor is provided, the resulting builder will always attempt
+     * to construct a V5 transaction unless NU5 is not yet active. If an Orchard
+     * anchor is not provided, the transaction version will be based on the
+     * value of the -preferredtxversion configuration flag.
+     */
     TransactionBuilder(
         const Consensus::Params& consensusParams,
         int nHeight,

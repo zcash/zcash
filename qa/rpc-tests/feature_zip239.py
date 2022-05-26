@@ -44,6 +44,7 @@ class Zip239Test(BitcoinTestFramework):
             nuparams(HEARTWOOD_BRANCH_ID, 205),
             nuparams(CANOPY_BRANCH_ID, 205),
             nuparams(NU5_BRANCH_ID, 210),
+            "-preferredtxversion=5"
         ]
 
         nodes = []

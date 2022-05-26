@@ -1530,7 +1530,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");
     int nHeight = retValue.get_int();
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1);
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1, false);
     if (mtx.nVersion == 1) {
         mtx.nVersion = 2;
     }
@@ -1633,7 +1633,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");
     int nHeight = retValue.get_int();
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1);
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1, false);
 
     // Test constructor of AsyncRPCOperation_mergetoaddress
     KeyIO keyIO(Params());
@@ -1682,7 +1682,7 @@ void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
 
     auto AddTrx = [&consensusParams]() {
         auto taddr = pwalletMain->GenerateNewKey(true).GetID();
-        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, 1);
+        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, 1, false);
         CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
         mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
         CWalletTx wtx(pwalletMain, mtx);

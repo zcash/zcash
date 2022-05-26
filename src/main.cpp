@@ -89,6 +89,7 @@ bool fSpentIndex = false;       // insightexplorer
 bool fTimestampIndex = false;   // insightexplorer
 bool fHavePruned = false;
 bool fPruneMode = false;
+int32_t nPreferredTxVersion = DEFAULT_PREFERRED_TX_VERSION;
 bool fIsBareMultisigStd = DEFAULT_PERMIT_BAREMULTISIG;
 bool fCheckBlockIndex = false;
 bool fCheckpointsEnabled = DEFAULT_CHECKPOINTS_ENABLED;
@@ -7869,11 +7870,11 @@ public:
 CMutableTransaction CreateNewContextualCMutableTransaction(
     const Consensus::Params& consensusParams,
     int nHeight,
-    bool requireSprout)
+    bool requireV4)
 {
     CMutableTransaction mtx;
 
-    auto txVersionInfo = CurrentTxVersionInfo(consensusParams, nHeight, requireSprout);
+    auto txVersionInfo = CurrentTxVersionInfo(consensusParams, nHeight, requireV4);
     mtx.fOverwintered   = txVersionInfo.fOverwintered;
     mtx.nVersionGroupId = txVersionInfo.nVersionGroupId;
     mtx.nVersion        = txVersionInfo.nVersion;
