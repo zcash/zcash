@@ -2255,7 +2255,7 @@ SpendableInputs CWallet::FindSpendableInputs(
             }
         }
 
-        if (selectSprout) {
+        if (selectSprout && nDepth > 0) {
             for (auto const& [jsop, nd] : wtx.mapSproutNoteData) {
                 SproutPaymentAddress pa = nd.address;
 
@@ -2294,7 +2294,7 @@ SpendableInputs CWallet::FindSpendableInputs(
                             (unsigned char) j);
 
                     unspent.sproutNoteEntries.push_back(SproutNoteEntry {
-                        jsop, pa, plaintext.note(pa), plaintext.memo(), wtx.GetDepthInMainChain() });
+                        jsop, pa, plaintext.note(pa), plaintext.memo(), nDepth });
 
                 } catch (const note_decryption_failed &err) {
                     // Couldn't decrypt with this spending key
@@ -2310,7 +2310,7 @@ SpendableInputs CWallet::FindSpendableInputs(
             }
         }
 
-        if (selectSapling) {
+        if (selectSapling && nDepth > 0) {
             for (auto const& [op, nd] : wtx.mapSaplingNoteData) {
                 auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
 
@@ -2334,7 +2334,8 @@ SpendableInputs CWallet::FindSpendableInputs(
 
                 auto note = notePt.note(nd.ivk).value();
                 unspent.saplingNoteEntries.push_back(SaplingNoteEntry {
-                    op, pa, note, notePt.memo(), wtx.GetDepthInMainChain() });
+                    op, pa, note, notePt.memo(), nDepth});
+
             }
         }
     }
@@ -2394,11 +2395,10 @@ SpendableInputs CWallet::FindSpendableInputs(
                 assert(mit != mapWallet.end());
 
                 int confirmations = mit->second.GetDepthInMainChain();
-                if (confirmations < 0) continue;
-                if (confirmations >= minDepth) {
-                    noteMeta.SetConfirmations(confirmations);
-                    unspent.orchardNoteMetadata.push_back(noteMeta);
-                }
+                if (confirmations < 0 || confirmations < minDepth) continue;
+
+                noteMeta.SetConfirmations(confirmations);
+                unspent.orchardNoteMetadata.push_back(noteMeta);
             }
         }
     }
