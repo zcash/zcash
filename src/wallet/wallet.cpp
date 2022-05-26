@@ -3213,11 +3213,13 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
         auto tmp = wtxIn.mapSproutNoteData;
         // Ensure we keep any cached witnesses we may already have
         for (const std::pair <JSOutPoint, SproutNoteData> nd : wtx.mapSproutNoteData) {
-            if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
-                tmp.at(nd.first).witnesses.assign(
-                        nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+            if (tmp.count(nd.first)) {
+                if (nd.second.witnesses.size() > 0) {
+                    tmp.at(nd.first).witnesses.assign(
+                            nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+                }
+                tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
             }
-            tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
         }
         // Now copy over the updated note data
         wtx.mapSproutNoteData = tmp;
@@ -3229,11 +3231,13 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
         // Ensure we keep any cached witnesses we may already have
 
         for (const std::pair <SaplingOutPoint, SaplingNoteData> nd : wtx.mapSaplingNoteData) {
-            if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
-                tmp.at(nd.first).witnesses.assign(
-                        nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+            if (tmp.count(nd.first)) {
+                if (nd.second.witnesses.size() > 0) {
+                    tmp.at(nd.first).witnesses.assign(
+                            nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+                }
+                tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
             }
-            tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
         }
 
         // Now copy over the updated note data
