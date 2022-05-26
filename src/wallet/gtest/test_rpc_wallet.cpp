@@ -284,12 +284,14 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     pwalletMain->LoadWalletTx(wtx);
 
     // Context that z_sendmany requires
-    auto builder = TransactionBuilder(consensusParams, nextBlockHeight, std::nullopt, pwalletMain);
+    auto builder = WalletTxBuilder(*pwalletMain, minRelayTxFee);
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight, false);
 
     auto selector = pwalletMain->ZTXOSelectorForAddress(taddr, true, false).value();
-    std::vector<ResolvedPayment> recipients = { ResolvedPayment(std::nullopt, pa, 1*COIN, Memo::FromHexOrThrow("ABCD")) };
-    TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
+    std::vector<Payment> recipients = { Payment(pa, 1*COIN, Memo::FromHexOrThrow("ABCD")) };
+    // we need AllowFullyTransparent because the transaction will result
+    // in transparent change as a consequence of sending from a legacy taddr
+    TransactionStrategy strategy(PrivacyPolicy::AllowFullyTransparent);
     std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 0, 0, strategy));
     std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
 
