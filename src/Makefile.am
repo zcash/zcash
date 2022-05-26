@@ -64,7 +64,11 @@ RUST_BUILD_OPTS = --release --target $(RUST_TARGET) --manifest-path $(top_srcdir
 
 rust_verbose = $(rust_verbose_@AM_V@)
 rust_verbose_ = $(rust_verbose_@AM_DEFAULT_V@)
-rust_verbose_1 = --verbose
+rust_verbose_0 = @echo "  RUST     $@";
+
+cargo_verbose = $(cargo_verbose_@AM_V@)
+cargo_verbose_ = $(cargo_verbose_@AM_DEFAULT_V@)
+cargo_verbose_1 = --verbose
 
 if ENABLE_ONLINE_RUST
 # Ensure that .cargo/config does not exist
@@ -86,10 +90,10 @@ $(CARGO_CONFIGURED): $(top_srcdir)/.cargo/config.offline
 endif
 
 cargo-build-lib: $(CARGO_CONFIGURED)
-	$(RUST_ENV_VARS) $(CARGO) build --lib $(RUST_BUILD_OPTS) $(rust_verbose)
+	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build --lib $(RUST_BUILD_OPTS) $(cargo_verbose)
 
 cargo-build-bins: $(CARGO_CONFIGURED)
-	$(RUST_ENV_VARS) $(CARGO) build --bins $(RUST_BUILD_OPTS) $(rust_verbose)
+	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build --bins $(RUST_BUILD_OPTS) $(cargo_verbose)
 
 $(WALLET_TOOL_BIN): cargo-build-bins
 	$(AM_V_at)cp $(WALLET_TOOL_BUILD) $@
