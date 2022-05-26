@@ -42,6 +42,9 @@ if ENABLE_WALLET
 LIBBITCOIN_WALLET=libbitcoin_wallet.a
 endif
 
+# We pass through CC etc. flags so they are available to Rust dependencies that internally
+# compile C or C++ code with the `cc` crate.
+#
 # We depend on the secp256k1 crate for some logic on the Rust side of the FFI. This crate
 # is a wrapper around libsecp256k1, which we already vendor in our code; the crate vendors
 # its own copy with non-colliding symbols. To ensure that we only use a single version of
@@ -49,7 +52,14 @@ endif
 # same library as the C++ code.
 # - Note that this does not prevent the secp256k1-sys vendored code from being built; this
 #   requires https://github.com/rust-bitcoin/rust-secp256k1/issues/380 to be addressed.
-RUST_ENV_VARS = RUSTC="$(RUSTC)" TERM=dumb RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming"
+RUST_ENV_VARS = \
+  RUSTC="$(RUSTC)" \
+  RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming" \
+  CC="$(CC)" \
+  CFLAGS="$(CFLAGS)" \
+  CXX="$(CXX)" \
+  CXXFLAGS="$(CXXFLAGS)" \
+  TERM=dumb
 RUST_BUILD_OPTS = --release --target $(RUST_TARGET) --manifest-path $(top_srcdir)/Cargo.toml
 
 rust_verbose = $(rust_verbose_@AM_V@)
