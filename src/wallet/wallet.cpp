@@ -2260,7 +2260,7 @@ SpendableInputs CWallet::FindSpendableInputs(
             }
         }
 
-        if (selectSprout) {
+        if (selectSprout && nDepth > 0) {
             for (auto const& [jsop, nd] : wtx.mapSproutNoteData) {
                 SproutPaymentAddress pa = nd.address;
 
@@ -2315,7 +2315,7 @@ SpendableInputs CWallet::FindSpendableInputs(
             }
         }
 
-        if (selectSapling) {
+        if (selectSapling && nDepth > 0) {
             for (auto const& [op, nd] : wtx.mapSaplingNoteData) {
                 auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
 
@@ -2399,7 +2399,6 @@ SpendableInputs CWallet::FindSpendableInputs(
                 assert(mit != mapWallet.end());
 
                 int confirmations = mit->second.GetDepthInMainChain(asOfHeight);
-                if (confirmations < 0) continue;
                 if (confirmations >= minDepth) {
                     noteMeta.SetConfirmations(confirmations);
                     unspent.orchardNoteMetadata.push_back(noteMeta);
