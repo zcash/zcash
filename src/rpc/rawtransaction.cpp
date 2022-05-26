@@ -227,15 +227,24 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
     UniValue vjoinsplit = TxJoinSplitToJSON(tx);
     entry.pushKV("vjoinsplit", vjoinsplit);
 
-    if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
-        entry.pushKV("valueBalance", ValueFromAmount(tx.GetValueBalanceSapling()));
-        entry.pushKV("valueBalanceZat", tx.GetValueBalanceSapling());
-        UniValue vspenddesc = TxShieldedSpendsToJSON(tx);
-        entry.pushKV("vShieldedSpend", vspenddesc);
-        UniValue voutputdesc = TxShieldedOutputsToJSON(tx);
-        entry.pushKV("vShieldedOutput", voutputdesc);
-        if (!(vspenddesc.empty() && voutputdesc.empty())) {
-            entry.pushKV("bindingSig", HexStr(tx.bindingSig.begin(), tx.bindingSig.end()));
+    if (tx.fOverwintered) {
+        if (tx.nVersion >= SAPLING_TX_VERSION) {
+            entry.pushKV("valueBalance", ValueFromAmount(tx.GetValueBalanceSapling()));
+            entry.pushKV("valueBalanceZat", tx.GetValueBalanceSapling());
+            UniValue vspenddesc = TxShieldedSpendsToJSON(tx);
+            entry.pushKV("vShieldedSpend", vspenddesc);
+            UniValue voutputdesc = TxShieldedOutputsToJSON(tx);
+            entry.pushKV("vShieldedOutput", voutputdesc);
+            if (!(vspenddesc.empty() && voutputdesc.empty())) {
+                entry.pushKV("bindingSig", HexStr(tx.bindingSig.begin(), tx.bindingSig.end()));
+            }
+        }
+        if (tx.nVersion >= ZIP225_TX_VERSION) {
+            UniValue orchard(UniValue::VOBJ);
+            CAmount valueBalanceOrchard = tx.GetOrchardBundle().GetValueBalance();
+            orchard.pushKV("valueBalance", ValueFromAmount(valueBalanceOrchard));
+            orchard.pushKV("valueBalanceZat", valueBalanceOrchard);
+            entry.pushKV("orchard", orchard);
         }
     }
 
@@ -397,6 +406,10 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "     ,...\n"
             "  ],\n"
             "  \"bindingSig\" : \"hash\",          (string, optional) The Sapling binding sig\n"
+            "  \"orchard\" : {               (JSON object with Orchard-specific information)\n"
+            "     \"valueBalance\" : x.xxx,  (numeric, optional) The net value of Orchard Actions in " + CURRENCY_UNIT + "\n"
+            "     \"valueBalanceZat\" : n,   (numeric, optional) The net value of Orchard Actions in " + MINOR_CURRENCY_UNIT + "\n"
+            "  },\n"
             "  \"joinSplitPubKey\" : \"hex\",      (string, optional) An encoding of a JoinSplitSig public validating key\n"
             "  \"joinSplitSig\" : \"hex\",         (string, optional) The Sprout binding signature\n"
             "  \"blockhash\" : \"hash\",           (string) the block hash\n"
