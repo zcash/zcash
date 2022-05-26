@@ -4635,7 +4635,7 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
 
 size_t EstimateTxSize(
         const ZTXOSelector& ztxoSelector,
-        const std::vector<ResolvedPayment>& recipients,
+        const std::vector<Payment>& recipients,
         int nextBlockHeight) {
     CMutableTransaction mtx;
     mtx.fOverwintered = true;
@@ -4649,7 +4649,7 @@ size_t EstimateTxSize(
     size_t txsize = 0;
     size_t taddrRecipientCount = 0;
     size_t orchardRecipientCount = 0;
-    for (const ResolvedPayment& recipient : recipients) {
+    for (const Payment& recipient : recipients) {
         std::visit(match {
             [&](const CKeyID&) {
                 taddrRecipientCount += 1;
@@ -4665,15 +4665,14 @@ size_t EstimateTxSize(
                 jsdesc.proof = GrothProof();
                 mtx.vJoinSplit.push_back(jsdesc);
             },
-            [&](const libzcash::OrchardRawAddress& addr) {
-                if (fromSprout) {
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Sending funds from a Sprout address to a Unified Address is not supported by z_sendmany");
+            [&](const libzcash::UnifiedAddress& addr) {
+                if (addr.GetOrchardReceiver().has_value()) {
+                    orchardRecipientCount += 1;
+                } else if (addr.GetSaplingReceiver().has_value()) {
+                    mtx.vShieldedOutput.push_back(OutputDescription());
                 }
-                orchardRecipientCount += 1;
             }
-        }, recipient.address);
+        }, recipient.GetAddress());
     }
 
     bool nu5Active = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_NU5);
@@ -4797,7 +4796,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     }
 
     bool involvesUnifiedAddress = false;
-    bool involvesOrchard = false;
 
     // Check that the from address is valid.
     // Unified address (UA) allowed here (#5185)
@@ -4833,7 +4831,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                                 "Invalid from address, UA does not correspond to a known account.");
                     }
                     involvesUnifiedAddress = true;
-                    involvesOrchard = ua.GetOrchardReceiver().has_value();
                 },
                 [&](const auto& other) {
                     if (selectorAccount.has_value() && selectorAccount.value() != ZCASH_LEGACY_ACCOUNT) {
@@ -4853,8 +4850,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amounts array is empty.");
     }
 
-    std::set<RecipientAddress> recipientAddrs;
-    std::vector<ResolvedPayment> recipients;
+    std::set<PaymentAddress> recipientAddrs;
+    std::vector<Payment> recipients;
     CAmount nTotalOut = 0;
     size_t nOrchardOutputs = 0;
     for (const UniValue& o : outputs.getValues()) {
@@ -4868,27 +4865,11 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         }
 
         std::string addrStr = find_value(o, "address").get_str();
-        auto decoded = keyIO.DecodePaymentAddress(addrStr);
-        if (!decoded.has_value()) {
+        auto addr = keyIO.DecodePaymentAddress(addrStr);
+        if (!addr.has_value()) {
             throw JSONRPCError(
                     RPC_INVALID_PARAMETER,
                     std::string("Invalid parameter, unknown address format: ") + addrStr);
-        }
-
-        std::optional<RecipientAddress> addr = std::visit(
-            SelectRecipientAddress(chainparams.GetConsensus(), nextBlockHeight),
-            decoded.value());
-        if (!addr.has_value()) {
-            bool toSprout = std::holds_alternative<libzcash::SproutPaymentAddress>(decoded.value());
-            if (toSprout) {
-                throw JSONRPCError(
-                    RPC_INVALID_PARAMETER,
-                    "Sending funds into the Sprout value pool is not supported by z_sendmany");
-            } else {
-                throw JSONRPCError(
-                    RPC_INVALID_PARAMETER,
-                    "Unified address contained only receiver types that are unrecognized or for which the required consensus feature is not yet active.");
-            }
         }
 
         if (!recipientAddrs.insert(addr.value()).second) {
@@ -4899,7 +4880,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         std::optional<Memo> memo;
         if (!memoValue.isNull()) {
             auto memoHex = memoValue.get_str();
-            if (!std::visit(libzcash::IsShieldedRecipient(), addr.value())) {
+            if (!std::visit(libzcash::HasShieldedRecipient(), addr.value())) {
                 throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
                         "Invalid parameter, memos cannot be sent to transparent addresses.");
@@ -4932,30 +4913,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amount must be positive");
         }
 
-        std::optional<libzcash::UnifiedAddress> ua = std::nullopt;
-        if (std::holds_alternative<libzcash::UnifiedAddress>(decoded.value())) {
-            ua = std::get<libzcash::UnifiedAddress>(decoded.value());
-            involvesUnifiedAddress = true;
-            involvesOrchard = involvesOrchard || ua.value().GetOrchardReceiver().has_value();
-        }
-
-        if (std::holds_alternative<libzcash::OrchardRawAddress>(addr.value())) {
-            nOrchardOutputs += 1;
-            if (nOrchardOutputs > nOrchardActionLimit) {
-                throw JSONRPCError(
-                    RPC_INVALID_PARAMETER,
-                    strprintf(
-                        "Attempting to create %u Orchard outputs would exceed the current limit "
-                        "of %u notes, which exists to prevent memory exhaustion. Restart with "
-                        "`-orchardactionlimit=N` where N >= %u to allow the wallet to attempt "
-                        "to construct this transaction.",
-                        nOrchardOutputs,
-                        nOrchardActionLimit,
-                        nOrchardOutputs));
-            }
-        }
-
-        recipients.push_back(ResolvedPayment(ua, addr.value(), nAmount, memo));
+        recipients.push_back(Payment(addr.value(), nAmount, memo));
         nTotalOut += nAmount;
     }
     if (recipients.empty()) {
@@ -5019,22 +4977,10 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     o.pushKV("fee", std::stod(FormatMoney(nFee)));
     UniValue contextInfo = o;
 
-    std::optional<uint256> orchardAnchor;
-    auto nAnchorDepth = std::min((unsigned int) nMinDepth, nAnchorConfirmations);
-    if ((ztxoSelector.SelectsOrchard() || nOrchardOutputs > 0) && nAnchorDepth == 0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot select Orchard notes or send to Orchard recipients when minconf=0.");
-    }
-    if (!ztxoSelector.SelectsSprout() && (involvesOrchard || nPreferredTxVersion >= ZIP225_MIN_TX_VERSION) && nAnchorDepth > 0) {
-        auto orchardAnchorHeight = nextBlockHeight - nAnchorDepth;
-        if (chainparams.GetConsensus().NetworkUpgradeActive(orchardAnchorHeight, Consensus::UPGRADE_NU5)) {
-            auto anchorBlockIndex = chainActive[orchardAnchorHeight];
-            assert(anchorBlockIndex != nullptr);
-            orchardAnchor = anchorBlockIndex->hashFinalOrchardRoot;
-        }
-    }
-    TransactionBuilder builder(chainparams.GetConsensus(), nextBlockHeight, orchardAnchor, pwalletMain);
-
     // Create operation and add to global queue
+    auto nAnchorDepth = std::min((unsigned int) nMinDepth, nAnchorConfirmations);
+    WalletTxBuilder builder(*pwalletMain, minRelayTxFee);
+
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation(
             new AsyncRPCOperation_sendmany(

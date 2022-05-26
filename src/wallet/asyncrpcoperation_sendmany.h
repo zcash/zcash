@@ -26,24 +26,18 @@
 
 using namespace libzcash;
 
-class TxOutputAmounts {
-public:
-    CAmount t_outputs_total{0};
-    CAmount sapling_outputs_total{0};
-    CAmount orchard_outputs_total{0};
-};
-
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
 public:
     AsyncRPCOperation_sendmany(
-        TransactionBuilder builder,
+        WalletTxBuilder builder,
         ZTXOSelector ztxoSelector,
-        std::vector<ResolvedPayment> recipients,
+        std::vector<Payment> recipients,
         int minDepth,
         unsigned int anchorDepth,
         TransactionStrategy strategy,
         CAmount fee = DEFAULT_FEE,
         UniValue contextInfo = NullUniValue);
+
     virtual ~AsyncRPCOperation_sendmany();
 
     // We don't want to be copied or moved around
@@ -61,28 +55,14 @@ public:
 private:
     friend class TEST_FRIEND_AsyncRPCOperation_sendmany;    // class for unit testing
 
-    TransactionBuilder builder_;
+    WalletTxBuilder builder_;
     ZTXOSelector ztxoSelector_;
-    std::vector<ResolvedPayment> recipients_;
+    std::vector<Payment> recipients_;
+    TransactionStrategy strategy_;
     int mindepth_{1};
     unsigned int anchordepth_{nAnchorConfirmations};
     CAmount fee_;
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
-
-    bool isfromsprout_{false};
-    bool isfromsapling_{false};
-    TransactionStrategy strategy_;
-    AccountId sendFromAccount_;
-    std::set<OutputPool> recipientPools_;
-    TxOutputAmounts txOutputAmounts_;
-
-    /**
-     * Compute the internal and external OVKs to use in transaction construction, given
-     * the spendable inputs.
-     */
-    std::pair<uint256, uint256> SelectOVKs(const SpendableInputs& spendable) const;
-
-    static CAmount DefaultDustThreshold();
 
     uint256 main_impl();
 };
