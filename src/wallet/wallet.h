@@ -894,9 +894,10 @@ class ZTXOSelector {
 private:
     ZTXOPattern pattern;
     bool requireSpendingKeys;
+    bool requireTransparentCoinbase;
 
-    ZTXOSelector(ZTXOPattern patternIn, bool requireSpendingKeysIn):
-        pattern(patternIn), requireSpendingKeys(requireSpendingKeysIn) {}
+    ZTXOSelector(ZTXOPattern patternIn, bool requireSpendingKeysIn, bool requireCoinbaseIn):
+        pattern(patternIn), requireSpendingKeys(requireSpendingKeysIn), requireTransparentCoinbase(requireCoinbaseIn) {}
 
     friend class CWallet;
 public:
@@ -906,6 +907,10 @@ public:
 
     bool RequireSpendingKeys() const {
         return requireSpendingKeys;
+    }
+
+    bool RequireTransparentCoinbase() const {
+        return requireTransparentCoinbase;
     }
 
     bool SelectsTransparent() const;
@@ -1530,6 +1535,7 @@ public:
     std::optional<ZTXOSelector> ZTXOSelectorForAccount(
             libzcash::AccountId account,
             bool requireSpendingKey,
+            bool requireTransparentCoinbase,
             std::set<libzcash::ReceiverType> receiverTypes={}) const;
 
     /**
@@ -1541,6 +1547,7 @@ public:
     std::optional<ZTXOSelector> ZTXOSelectorForAddress(
             const libzcash::PaymentAddress& addr,
             bool requireSpendingKey,
+            bool requireTransparentCoinbase,
             bool allowAddressLinkability) const;
 
     /**
@@ -1551,13 +1558,14 @@ public:
      */
     std::optional<ZTXOSelector> ZTXOSelectorForViewingKey(
             const libzcash::ViewingKey& vk,
-            bool requireSpendingKey) const;
+            bool requireSpendingKey,
+            bool requireTransparentCoinbase) const;
 
     /**
      * Returns the ZTXO selector that will select UTXOs sent to legacy
      * transparent addresses managed by this wallet.
      */
-    static ZTXOSelector LegacyTransparentZTXOSelector(bool requireSpendingKey);
+    static ZTXOSelector LegacyTransparentZTXOSelector(bool requireSpendingKey, bool requireTransparentCoinbase);
 
     /**
      * Look up the account for a given selector. This resolves the account ID
