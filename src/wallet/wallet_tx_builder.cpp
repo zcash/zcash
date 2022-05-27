@@ -8,24 +8,18 @@ using namespace libzcash;
 
 PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
         const ZTXOSelector& selector,
+        SpendableInputs& spendable,
         const std::vector<Payment>& payments,
         TransactionStrategy strategy,
-        int32_t minDepth,
         CAmount fee,
         uint32_t anchorConfirmations) const
 {
-    assert(!payments.empty());
-    assert(selector.RequireSpendingKeys());
-    assert(minDepth >= 0);
-    assert(fee >= 0);
-
-    auto selected = SelectInputs(selector, payments, strategy, minDepth, fee);
+    auto selected = ResolveInputsAndPayments(spendable, payments, strategy, fee);
     if (std::holds_alternative<InputSelectionError>(selected)) {
         return std::get<InputSelectionError>(selected);
     }
 
-    auto spendable = std::get<std::pair<SpendableInputs, Payments>>(selected).first;
-    auto resolvedPayments = std::get<std::pair<SpendableInputs, Payments>>(selected).second;
+    auto resolvedPayments = std::get<Payments>(selected);
 
     auto sendFromAccount = wallet.FindAccountForSelector(selector).value_or(ZCASH_LEGACY_ACCOUNT);
     auto allowedChangeTypes = [&](const std::set<ReceiverType>& receiverTypes) -> std::set<OutputPool> {
@@ -143,27 +137,45 @@ CAmount WalletTxBuilder::DefaultDustThreshold() const {
     return txout.GetDustThreshold(minRelayFee);
 }
 
-InputSelectionResult WalletTxBuilder::SelectInputs(
+SpendableInputs WalletTxBuilder::FindAllSpendableInputs(
         const ZTXOSelector& selector,
+        bool allowTransparentCoinbase,
+        int32_t minDepth) const
+{
+    return wallet.FindSpendableInputs(selector, allowTransparentCoinbase, minDepth);
+}
+
+bool WalletTxBuilder::AllowTransparentCoinbase(
+        const std::vector<Payment>& payments,
+        TransactionStrategy strategy)
+{
+    bool allowed = strategy.AllowRevealedSenders();
+    for (const auto& payment : payments) {
+        if (!allowed) break;
+        std::visit(match {
+            [&](const CKeyID& p2pkh) { allowed = false; },
+            [&](const CScriptID& p2sh) { allowed = false; },
+            [&](const SproutPaymentAddress& addr) { allowed = false; },
+            [&](const SaplingPaymentAddress& addr) { },
+            [&](const UnifiedAddress& ua) {
+                allowed &= (ua.GetSaplingReceiver().has_value() || ua.GetOrchardReceiver().has_value());
+            }
+        }, payment.GetAddress());
+    }
+    return allowed;
+}
+
+InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
+        SpendableInputs& spendableMut,
         const std::vector<Payment>& payments,
         TransactionStrategy strategy,
-        int mindepth,
         CAmount fee) const
 {
     LOCK2(cs_main, wallet.cs_wallet);
 
-    bool allowTransparentCoinbase{true};
-
-    // Determine the target totals and recipient pools
+    // Determine the target totals
     CAmount sendAmount{0};
     for (const auto& payment : payments) {
-        std::visit(match {
-            [&](const CKeyID& p2pkh) { allowTransparentCoinbase = strategy.AllowRevealedSenders(); },
-            [&](const CScriptID& p2sh) { allowTransparentCoinbase = strategy.AllowRevealedSenders(); },
-            [&](const SproutPaymentAddress& addr) { },
-            [&](const SaplingPaymentAddress& addr) { },
-            [&](const UnifiedAddress& ua) { }
-        }, payment.GetAddress());
         sendAmount += payment.GetAmount();
     }
     CAmount targetAmount = sendAmount + fee;
@@ -179,13 +191,13 @@ InputSelectionResult WalletTxBuilder::SelectInputs(
     // as possible.  This will also perform opportunistic shielding if the
     // transaction strategy permits.
 
-    CAmount maxSaplingAvailable = spendable.GetSaplingBalance();
-    CAmount maxOrchardAvailable = spendable.GetOrchardBalance();
+    CAmount maxSaplingAvailable = spendableMut.GetSaplingBalance();
+    CAmount maxOrchardAvailable = spendableMut.GetOrchardBalance();
     uint32_t orchardOutputs{0};
 
     // we can only select Orchard addresses if there are sufficient non-Sprout
     // funds to cover the total payments + fee.
-    bool canResolveOrchard = spendable.Total() - spendable.GetSproutBalance() >= targetAmount;
+    bool canResolveOrchard = spendableMut.Total() - spendableMut.GetSproutBalance() >= targetAmount;
     std::vector<ResolvedPayment> resolvedPayments;
     std::optional<AddressResolutionError> resolutionError;
     for (const auto& payment : payments) {
@@ -266,12 +278,12 @@ InputSelectionResult WalletTxBuilder::SelectInputs(
     }
     auto resolved = Payments(resolvedPayments);
 
-    if (spendable.HasTransparentCoinbase() && resolved.HasTransparentRecipient()) {
+    if (spendableMut.HasTransparentCoinbase() && resolved.HasTransparentRecipient()) {
         return AddressResolutionError::TransparentRecipientNotPermitted;
     }
 
     if (orchardOutputs > this->maxOrchardActions) {
-        return ExcessOrchardActionsError(spendable.orchardNoteMetadata.size());
+        return ExcessOrchardActionsError(spendableMut.orchardNoteMetadata.size());
     }
 
     // Set the dust threshold so that we can select enough inputs to avoid
@@ -281,8 +293,8 @@ InputSelectionResult WalletTxBuilder::SelectInputs(
     // TODO: the set of recipient pools is not quite sufficient information here; we should
     // probably perform note selection at the same time as we're performing resolved payment
     // construction above.
-    if (!spendable.LimitToAmount(targetAmount, dustThreshold, resolved.GetRecipientPools())) {
-        CAmount changeAmount{spendable.Total() - targetAmount};
+    if (!spendableMut.LimitToAmount(targetAmount, dustThreshold, resolved.GetRecipientPools())) {
+        CAmount changeAmount{spendableMut.Total() - targetAmount};
         if (changeAmount > 0 && changeAmount < dustThreshold) {
             // TODO: we should provide the option for the caller to explicitly
             // forego change (definitionally an amount below the dust amount)
@@ -290,9 +302,9 @@ InputSelectionResult WalletTxBuilder::SelectInputs(
             // creating dust change, rather than prohibit them from sending
             // entirely in this circumstance.
             // (Daira disagrees, as this could leak information to the recipient)
-            return DustThresholdError(dustThreshold, spendable.Total(), changeAmount);
+            return DustThresholdError(dustThreshold, spendableMut.Total(), changeAmount);
         } else {
-            return InsufficientFundsError(spendable.Total(), targetAmount, allowTransparentCoinbase);
+            return InsufficientFundsError(spendableMut.Total(), targetAmount);
         }
     }
 
@@ -300,7 +312,7 @@ InputSelectionResult WalletTxBuilder::SelectInputs(
         return ExcessOrchardActionsError(spendable.orchardNoteMetadata.size());
     }
 
-    return std::make_pair(spendable, resolved);
+    return resolved;
 }
 
 std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(

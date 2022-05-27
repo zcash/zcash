@@ -216,10 +216,9 @@ class InsufficientFundsError {
 public:
     CAmount available;
     CAmount required;
-    bool transparentCoinbasePermitted;
 
-    InsufficientFundsError(CAmount available, CAmount required, bool transparentCoinbasePermitted):
-        available(available), required(required), transparentCoinbasePermitted(transparentCoinbasePermitted) { }
+    InsufficientFundsError(CAmount available, CAmount required):
+        available(available), required(required) { }
 };
 
 class ExcessOrchardActionsError {
@@ -238,7 +237,7 @@ typedef std::variant<
 
 typedef std::variant<
     InputSelectionError,
-    std::pair<SpendableInputs, Payments>> InputSelectionResult;
+    Payments> InputSelectionResult;
 
 typedef std::variant<
     InputSelectionError,
@@ -251,37 +250,46 @@ private:
     uint32_t maxOrchardActions;
 
     /**
-     * Select inputs sufficient to fulfill the specified requested payments.
-     */
-    InputSelectionResult SelectInputs(
-        const ZTXOSelector& selector,
-        const std::vector<Payment>& payments,
-        TransactionStrategy strategy,
-        int mindepth,
-        CAmount fee) const;
-
-    /**
      * Compute the default dust threshold
      */
     CAmount DefaultDustThreshold() const;
 
     /**
+     * Select inputs sufficient to fulfill the specified requested payments,
+     * and choose unified address receivers based upon the available inputs
+     * and the requested transaction strategy.
+     */
+    InputSelectionResult ResolveInputsAndPayments(
+            SpendableInputs& spendable,
+            const std::vector<Payment>& payments,
+            TransactionStrategy strategy,
+            CAmount fee) const;
+    /**
      * Compute the internal and external OVKs to use in transaction construction, given
      * the spendable inputs.
      */
     std::pair<uint256, uint256> SelectOVKs(
-        const ZTXOSelector& selector,
-        const SpendableInputs& spendable) const;
+            const ZTXOSelector& selector,
+            const SpendableInputs& spendable) const;
 
 public:
     WalletTxBuilder(const CWallet& wallet, CFeeRate minRelayFee):
         wallet(wallet), minRelayFee(minRelayFee) {}
 
+    static bool AllowTransparentCoinbase(
+            const std::vector<Payment>& payments,
+            TransactionStrategy strategy);
+
+    SpendableInputs FindAllSpendableInputs(
+            const ZTXOSelector& selector,
+            bool allowTransparentCoinbase,
+            int32_t minDepth) const;
+
     PrepareTransactionResult PrepareTransaction(
             const ZTXOSelector& selector,
+            SpendableInputs& spendable,
             const std::vector<Payment>& payments,
             TransactionStrategy strategy,
-            int32_t minDepth,
             CAmount fee,
             uint32_t anchorConfirmations) const;
 };
