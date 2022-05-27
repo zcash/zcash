@@ -4151,7 +4151,7 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
             nBalance = getBalanceZaddr(addr, nMinDepth, INT_MAX, false);
         },
         [&](const libzcash::UnifiedAddress& addr) {
-            auto selector = pwalletMain->ZTXOSelectorForAddress(addr, true, false);
+            auto selector = pwalletMain->ZTXOSelectorForAddress(addr, true, false, false);
             if (!selector.has_value()) {
                 throw JSONRPCError(
                     RPC_INVALID_ADDRESS_OR_KEY,
@@ -4245,7 +4245,7 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
     // FVKs make it possible to correctly determine balance without having the
     // spending key, so we permit that here.
     bool requireSpendingKey = std::holds_alternative<libzcash::SproutViewingKey>(fvk);
-    auto selector = pwalletMain->ZTXOSelectorForViewingKey(fvk, requireSpendingKey);
+    auto selector = pwalletMain->ZTXOSelectorForViewingKey(fvk, requireSpendingKey, false);
     if (!selector.has_value()) {
         throw JSONRPCError(
             RPC_INVALID_PARAMETER,
@@ -4346,7 +4346,7 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Get the receivers for this account.
-    auto selector = pwalletMain->ZTXOSelectorForAccount(account, false);
+    auto selector = pwalletMain->ZTXOSelectorForAccount(account, false, false);
     if (!selector.has_value()) {
         throw JSONRPCError(
             RPC_INVALID_PARAMETER,
@@ -5101,7 +5101,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     auto fromaddress = params[0].get_str();
     ZTXOSelector ztxoSelector = [&]() {
         if (fromaddress == "ANY_TADDR") {
-            return CWallet::LegacyTransparentZTXOSelector(true);
+            return CWallet::LegacyTransparentZTXOSelector(true, false);
         } else {
             auto decoded = keyIO.DecodePaymentAddress(fromaddress);
             if (!decoded.has_value()) {
@@ -5114,7 +5114,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                 decoded.value(),
                 true,
                 // LegacyCompat does not include AllowLinkingAccountAddresses.
-                maybeStrategy.has_value() ? maybeStrategy.value().AllowLinkingAccountAddresses() : false);
+                maybeStrategy.has_value() ? maybeStrategy.value().AllowLinkingAccountAddresses() : false,
+                false);
             if (!ztxoSelectorOpt.has_value()) {
                 throw JSONRPCError(
                         RPC_INVALID_ADDRESS_OR_KEY,

@@ -80,8 +80,6 @@ void AsyncRPCOperation_sendmany::main() {
     set_state(OperationStatus::EXECUTING);
     start_execution_clock();
 
-    bool success = false;
-
 #ifdef ENABLE_MINING
     GenerateBitcoins(false, 0, Params());
 #endif
@@ -142,11 +140,16 @@ void AsyncRPCOperation_sendmany::main() {
 //
 // At least #4 differs from the Rust transaction builder.
 uint256 AsyncRPCOperation_sendmany::main_impl() {
+    auto spendable = builder_.FindAllSpendableInputs(
+            ztxoSelector_,
+            WalletTxBuilder::AllowTransparentCoinbase(recipients_, strategy_),
+            mindepth_);
+
     auto preparedTx = builder_.PrepareTransaction(
             ztxoSelector_,
+            spendable,
             recipients_,
             strategy_,
-            mindepth_,
             fee_,
             anchordepth_);
 
@@ -188,7 +191,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                             throw JSONRPCError(
                                 RPC_INVALID_PARAMETER,
                                 "Could not select a unified address receiver that allows this transaction "
-                                "to proceed without publicly reveal the transaction amount. THIS MAY AFFECT "
+                                "to proceed without publicly revealing the transaction amount. THIS MAY AFFECT "
                                 "YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to "
                                 "`AllowRevealedAmounts` or weaker if you wish to allow this transaction to "
                                 "proceed anyway.");
@@ -197,10 +200,11 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                             throw JSONRPCError(
                                 RPC_INVALID_PARAMETER,
                                 "Could not select a change address that allows this transaction "
-                                "to proceed without publicly reveal the transaction amount. THIS MAY AFFECT "
+                                "to proceed without publicly revealing transaction details. THIS MAY AFFECT "
                                 "YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to "
                                 "`AllowRevealedAmounts` or weaker if you wish to allow this transaction to "
-                                "proceed anyway.");
+                                "proceed anyway; if sending from a legacy transparent address, "
+                                "`AllowFullyTransparent` may be required.");
                         default:
                             assert(false);
                     }
@@ -210,10 +214,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                         RPC_INVALID_PARAMETER,
                         strprintf(
                             "Insufficient funds: have %s, need %s",
-                            FormatMoney(err.available), FormatMoney(err.required))
-                            + (err.transparentCoinbasePermitted ? "" :
-                                "; note that coinbase outputs will not be selected if you specify "
-                                "ANY_TADDR or if any transparent recipients are included."));
+                            FormatMoney(err.available), FormatMoney(err.required)));
                 },
                 [&](const DustThresholdError& err) {
                     throw JSONRPCError(
