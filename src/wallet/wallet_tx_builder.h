@@ -238,7 +238,7 @@ typedef std::variant<
 
 typedef std::variant<
     InputSelectionError,
-    std::pair<SpendableInputs, Payments>> InputSelectionResult;
+    Payments> InputSelectionResult;
 
 typedef std::variant<
     InputSelectionError,

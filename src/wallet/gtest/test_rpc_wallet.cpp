@@ -287,7 +287,7 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     auto builder = WalletTxBuilder(*pwalletMain, minRelayTxFee);
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight, false);
 
-    auto selector = pwalletMain->ZTXOSelectorForAddress(taddr, true, false).value();
+    auto selector = pwalletMain->ZTXOSelectorForAddress(taddr, true, false, TransactionStrategy(PrivacyPolicy::FullPrivacy)).value();
     std::vector<Payment> recipients = { Payment(pa, 1*COIN, Memo::FromHexOrThrow("ABCD")) };
     // we need AllowFullyTransparent because the transaction will result
     // in transparent change as a consequence of sending from a legacy taddr

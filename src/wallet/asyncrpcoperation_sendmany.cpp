@@ -78,8 +78,6 @@ void AsyncRPCOperation_sendmany::main() {
     set_state(OperationStatus::EXECUTING);
     start_execution_clock();
 
-    bool success = false;
-
 #ifdef ENABLE_MINING
     GenerateBitcoins(false, 0, Params());
 #endif

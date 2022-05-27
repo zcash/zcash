@@ -14,16 +14,12 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
         CAmount fee,
         uint32_t anchorConfirmations) const
 {
-    assert(!payments.empty());
-    assert(selector.RequireSpendingKeys());
-    assert(fee >= 0);
-
     auto selected = ResolveInputsAndPayments(spendable, payments, strategy, fee);
     if (std::holds_alternative<InputSelectionError>(selected)) {
         return std::get<InputSelectionError>(selected);
     }
 
-    auto resolvedPayments = std::get<std::pair<SpendableInputs, Payments>>(selected).second;
+    auto resolvedPayments = std::get<Payments>(selected);
 
     auto sendFromAccount = wallet.FindAccountForSelector(selector).value_or(ZCASH_LEGACY_ACCOUNT);
     auto allowedChangeTypes = [&](const std::set<ReceiverType>& receiverTypes) -> std::set<OutputPool> {
@@ -180,18 +176,9 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
 {
     LOCK2(cs_main, wallet.cs_wallet);
 
-    bool allowTransparentCoinbase{true};
-
-    // Determine the target totals and recipient pools
+    // Determine the target totals
     CAmount sendAmount{0};
     for (const auto& payment : payments) {
-        std::visit(match {
-            [&](const CKeyID& p2pkh) { allowTransparentCoinbase = strategy.AllowRevealedSenders(); },
-            [&](const CScriptID& p2sh) { allowTransparentCoinbase = strategy.AllowRevealedSenders(); },
-            [&](const SproutPaymentAddress& addr) { },
-            [&](const SaplingPaymentAddress& addr) { },
-            [&](const UnifiedAddress& ua) { }
-        }, payment.GetAddress());
         sendAmount += payment.GetAmount();
     }
     CAmount targetAmount = sendAmount + fee;
@@ -314,7 +301,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
             // (Daira disagrees, as this could leak information to the recipient)
             return DustThresholdError(dustThreshold, spendableMut.Total(), changeAmount);
         } else {
-            return InsufficientFundsError(spendableMut.Total(), targetAmount, allowTransparentCoinbase);
+            return InsufficientFundsError(spendableMut.Total(), targetAmount, AllowTransparentCoinbase(payments, strategy));
         }
     }
 
@@ -328,7 +315,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
         return ExcessOrchardActionsError(spendableMut.orchardNoteMetadata.size());
     }
 
-    return std::make_pair(spendableMut, resolved);
+    return resolved;
 }
 
 std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
