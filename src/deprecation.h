@@ -38,9 +38,10 @@ static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
 }};
 static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
 #ifdef ENABLE_WALLET
+    "dumpwallet",
     "zcrawreceive",
     "zcrawjoinsplit",
-    "zcrawkeygen",
+    "zcrawkeygen"
 #endif
 }};
 
@@ -57,6 +58,7 @@ extern bool fEnableZCRawReceive;
 extern bool fEnableZCRawJoinSplit;
 extern bool fEnableZCRawKeygen;
 extern bool fEnableAddrTypeField;
+extern bool fEnableDumpWallet;
 #endif
 
 /**

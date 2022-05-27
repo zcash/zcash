@@ -69,3 +69,10 @@ The following features are disabled by default, and will be removed in release 5
   - `zcrawreceive` - The `zcrawreceive` RPC method is disabled.
   - `zcrawjoinsplit` - The `zcrawjoinsplit` RPC method is disabled.
   - `zcrawkeygen` - The `zcrawkeygen` RPC method is disabled.
+
+### Disabled in 5.0.1
+
+The following features are disabled by default, and will be removed in release 5.3.0.
+
+  - `dumpwallet` - The `dumpwallet` RPC method is disabled.
+
