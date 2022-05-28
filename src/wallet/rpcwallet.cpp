@@ -4633,6 +4633,14 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
 #define CTXIN_SPEND_DUST_SIZE   148
 #define CTXOUT_REGULAR_SIZE     34
 
+// JSDescription size depends on the transaction version
+#define V3_JS_DESCRIPTION_SIZE    (GetSerializeSize(JSDescription(), SER_NETWORK, (OVERWINTER_TX_VERSION | (1 << 31))))
+// Here we define the maximum number of zaddr outputs that can be included in a transaction.
+// If input notes are small, we might actually require more than one joinsplit per zaddr output.
+// For now though, we assume we use one joinsplit per zaddr output (and the second output note is change).
+// We reduce the result by 1 to ensure there is room for non-joinsplit CTransaction data.
+#define Z_SENDMANY_MAX_ZADDR_OUTPUTS_BEFORE_SAPLING    ((MAX_TX_SIZE_BEFORE_SAPLING / V3_JS_DESCRIPTION_SIZE) - 1)
+
 size_t EstimateTxSize(
         const ZTXOSelector& ztxoSelector,
         const std::vector<Payment>& recipients,
