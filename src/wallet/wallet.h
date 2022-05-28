@@ -736,6 +736,9 @@ public:
 
 class COutput
 {
+private:
+    COutput() { }
+
 public:
     const CWalletTx *tx;
     int i;
@@ -745,6 +748,10 @@ public:
 
     COutput(const CWalletTx *txIn, int iIn, int nDepthIn, bool fSpendableIn, bool fIsCoinbaseIn = false) :
             tx(txIn), i(iIn), nDepth(nDepthIn), fSpendable(fSpendableIn), fIsCoinbase(fIsCoinbaseIn){ }
+
+    static COutput Dummy() {
+        return COutput();
+    }
 
     CAmount Value() const { return tx->vout[i].nValue; }
     std::string ToString() const;
@@ -916,6 +923,11 @@ public:
     std::vector<SproutNoteEntry> sproutNoteEntries;
     std::vector<SaplingNoteEntry> saplingNoteEntries;
     std::vector<OrchardNoteMetadata> orchardNoteMetadata;
+
+    /**
+     * Retain the first `maxUtxoCount` utxos, and discard the rest.
+     */
+    void LimitTransparentUtxos(size_t maxUtxoCount);
 
     /**
      * Selectively discard notes that are not required to obtain the desired
