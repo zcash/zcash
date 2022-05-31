@@ -342,3 +342,89 @@ pub extern "C" fn orchard_bundle_coinbase_outputs_are_valid(
     // are decryptable with the all-zeros OVK.
     true
 }
+
+/// A type alias for a pointer to a C++ value that is the target of
+/// a mutating action by a callback across the FFI
+// XXX this is duplicated from wallet.rs, should it be in a common place?
+pub type FFICallbackReceiver = std::ptr::NonNull<libc::c_void>;
+
+// This layout must match struct RawBundleActionn
+#[repr(C)]
+pub struct FFIBundleAction {
+    cv: [u8; 32],
+    nullifier: [u8; 32],
+    rk: [u8; 32],
+    cmx: [u8; 32],
+    ephemeral_key: [u8; 32],
+    enc_ciphertext: [u8; 580],
+    out_ciphertext: [u8; 80],
+    spend_auth_sig: [u8; 64],
+}
+
+// copies (pushes) a single orchard action
+pub type ActionPushCB =
+    unsafe extern "C" fn(obj: Option<FFICallbackReceiver>, data: FFIBundleAction);
+
+#[no_mangle]
+pub extern "C" fn orchard_bundle_get_actions(
+    bundle: *const Bundle<Authorized, Amount>,
+    callback_receiver: Option<FFICallbackReceiver>,
+    action_push_cb: Option<ActionPushCB>,
+) -> bool {
+    if let Some(_bundle) = unsafe { bundle.as_ref() } {
+        // XXX need to fill in the fields of this action, dummmy values for now
+        let action = FFIBundleAction {
+            cv: [0; 32],
+            nullifier: [2; 32],
+            rk: [3; 32],
+            cmx: [4; 32],
+            ephemeral_key: [5; 32],
+            enc_ciphertext: [6; 580],
+            out_ciphertext: [7; 80],
+            spend_auth_sig: [8; 64],
+        };
+        unsafe { (action_push_cb.unwrap())(callback_receiver, action) };
+        true
+    } else {
+        false
+    }
+}
+
+// This layout must match struct OrchardAction
+// These are the values that are not per-action (common across all actions)
+#[repr(C)]
+pub struct FFIBundleCommon {
+    enable_spends: bool,
+    enable_outputs: bool,
+    value_balance_zat: i64,
+    anchor: [u8; 32],
+    proofs: u8, // TODO *mut u8,
+    binding_sig: [u8; 64],
+}
+
+// copies (pushes) the common (across all actions) parts of an Orchard bundle
+pub type BundleCommonPushCB =
+    unsafe extern "C" fn(obj: Option<FFICallbackReceiver>, data: FFIBundleCommon);
+
+#[no_mangle]
+pub extern "C" fn orchard_bundle_get_common(
+    bundle: *const Bundle<Authorized, Amount>,
+    callback_receiver: Option<FFICallbackReceiver>,
+    common_push_cb: Option<BundleCommonPushCB>,
+) -> bool {
+    if let Some(_bundle) = unsafe { bundle.as_ref() } {
+        // XXX need to fill in the fields of this action, dummmy values for now
+        let common = FFIBundleCommon {
+            enable_spends: true,
+            enable_outputs: false,
+            value_balance_zat: 9999,
+            anchor: [3; 32],
+            proofs: 4,
+            binding_sig: [5; 64],
+        };
+        unsafe { (common_push_cb.unwrap())(callback_receiver, common) };
+        true
+    } else {
+        false
+    }
+}

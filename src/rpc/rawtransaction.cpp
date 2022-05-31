@@ -151,6 +151,63 @@ UniValue TxShieldedOutputsToJSON(const CTransaction& tx) {
     return vdesc;
 }
 
+static std::string cArrayToString(const uint8_t* start, size_t len)
+{
+    std::string res;
+    for (size_t i = 0; i < len; ++i) {
+        res.append(strprintf("%02x", start[i]));
+    }
+    return res;
+}
+
+UniValue TxActionsToJSON(const OrchardBundle& orchard_bundle)
+{
+    UniValue arr(UniValue::VARR);
+    BundleActions actions{orchard_bundle.GetActions()};
+    for (const RawBundleAction& action : actions.GetActions()) {
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("cv", cArrayToString(action.cv, 32));
+        obj.pushKV("nullifier", cArrayToString(action.nullifier, 32));
+        obj.pushKV("rk", cArrayToString(action.rk, 32));
+        obj.pushKV("cmx", cArrayToString(action.cmx, 32));
+        obj.pushKV("ephemeral_key", cArrayToString(action.ephemeralKey, 32));
+        obj.pushKV("enc_ciphertext", cArrayToString(action.encCiphertext, 580));
+        obj.pushKV("out_ciphertext", cArrayToString(action.outCiphertext, 80));
+        arr.push_back(obj);
+
+    }
+    return arr;
+}
+
+// See https://zips.z.cash/zip-0225
+// TODO proofs, bindingSig
+void TxOrchardBundleToJSON(const CTransaction& tx, UniValue& entry)
+{
+    const OrchardBundle orchard_bundle{tx.GetOrchardBundle()};
+
+    // If this tx has no actions, then flags, value balance, etc. are not present.
+    if (orchard_bundle.GetNumActions() == 0) return;
+
+    UniValue obj(UniValue::VOBJ);
+    {
+        BundleCommon common{orchard_bundle.GetCommon()};
+        RawBundleCommon raw_common{common.GetCommon()};
+        {
+            UniValue obj_flags{UniValue::VOBJ};
+            obj_flags.pushKV("enableSpends", raw_common.enableSpends);
+            obj_flags.pushKV("enableOutputs", raw_common.enableOutputs);
+            obj.pushKV("flags", obj_flags);
+        }
+        obj.pushKV("anchor", cArrayToString(raw_common.anchor, 32));
+        obj.pushKV("valueBalanceZat", raw_common.valueBalanceZat);
+        obj.pushKV("valueBalance", ValueFromAmount(raw_common.valueBalanceZat));
+        obj.pushKV("bindingSig", cArrayToString(raw_common.bindingSig, 64));
+        // TODO proofs
+    }
+    obj.pushKV("actions", TxActionsToJSON(orchard_bundle));
+    entry.pushKV("orchard", obj);
+}
+
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 {
     const uint256 txid = tx.GetHash();
@@ -240,13 +297,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
                 entry.pushKV("bindingSig", HexStr(tx.bindingSig.begin(), tx.bindingSig.end()));
             }
         }
-        if (tx.nVersion >= ZIP225_TX_VERSION) {
-            UniValue orchard(UniValue::VOBJ);
-            CAmount valueBalanceOrchard = tx.GetOrchardBundle().GetValueBalance();
-            orchard.pushKV("valueBalance", ValueFromAmount(valueBalanceOrchard));
-            orchard.pushKV("valueBalanceZat", valueBalanceOrchard);
-            entry.pushKV("orchard", orchard);
-        }
+        TxOrchardBundleToJSON(tx, entry);
     }
 
     if (tx.nVersion >= 2 && tx.vJoinSplit.size() > 0) {
@@ -395,7 +446,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "     }\n"
             "     ,...\n"
             "  ],\n"
-            "  \"vShieldedOutput\" : [            (array of json objects, only for version >= 3)\n"
+            "  \"vShieldedOutput\" : [          (array of json objects, only for version >= 3)\n"
             "     {\n"
             "       \"cv\" : \"hex\",             (string) Value commitment to the input note\n"
             "       \"cmu\" : \"hex\",            (string) The u-coordinate of the note commitment for the output note\n"
@@ -407,9 +458,9 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "     ,...\n"
             "  ],\n"
             "  \"bindingSig\" : \"hash\",          (string, optional) The Sapling binding sig\n"
-            "  \"orchard\" : {               (JSON object with Orchard-specific information)\n"
-            "     \"valueBalance\" : x.xxx,  (numeric, optional) The net value of Orchard Actions in " + CURRENCY_UNIT + "\n"
-            "     \"valueBalanceZat\" : n,   (numeric, optional) The net value of Orchard Actions in " + MINOR_CURRENCY_UNIT + "\n"
+            "  \"orchard\" : {                   (JSON object with Orchard-specific information)\n"
+            "     \"valueBalance\" : x.xxx,      (numeric, optional) The net value of Orchard Actions in " + CURRENCY_UNIT + "\n"
+            "     \"valueBalanceZat\" : n,       (numeric, optional) The net value of Orchard Actions in " + MINOR_CURRENCY_UNIT + "\n"
             "  },\n"
             "  \"joinSplitPubKey\" : \"hex\",      (string, optional) An encoding of a JoinSplitSig public validating key\n"
             "  \"joinSplitSig\" : \"hex\",         (string, optional) The Sprout binding signature\n"
@@ -908,7 +959,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
             "       \"ALL|ANYONECANPAY\"\n"
             "       \"NONE|ANYONECANPAY\"\n"
             "       \"SINGLE|ANYONECANPAY\"\n"
-            "5.  \"branchid\"       (string, optional) The hex representation of the consensus branch id to sign with."
+            "5.  \"branchid\"       (string, optional) The hex representation of the consensus branch id to sign with.\n"
             " This can be used to force signing with consensus rules that are ahead of the node's current height.\n"
 
             "\nResult:\n"

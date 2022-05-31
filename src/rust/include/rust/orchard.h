@@ -126,6 +126,50 @@ bool orchard_bundle_spends_enabled(const OrchardBundlePtr* bundle);
 /// if no Orchard actions are present.
 bool orchard_bundle_coinbase_outputs_are_valid(const OrchardBundlePtr* bundle);
 
+// See https://zips.z.cash/zip-0225#orchard-action-description-orchardaction
+// This layout must match FFIBundleAction
+struct RawBundleAction {
+    uint8_t cv[32];
+    uint8_t nullifier[32];
+    uint8_t rk[32];
+    uint8_t cmx[32];
+    uint8_t ephemeralKey[32];
+    uint8_t encCiphertext[580];
+    uint8_t outCiphertext[80];
+    uint8_t spendAuthSig[64];
+};
+
+typedef void (*orchard_bundle_push_action_t)(void* callbackReceiver, const RawBundleAction);
+
+/// Returns the raw action data associated with the Orchard bundle.
+/// Returns `false` if the orchard bundle is not present.
+bool orchard_bundle_get_actions(
+    const OrchardBundlePtr* bundle,
+    void* callbackReceiver,
+    orchard_bundle_push_action_t push_action_cb);
+
+// See https://zips.z.cash/zip-0225#specification (Orchard Transaction Fields)
+// These are the values that are not per-action (common across all actions)
+// This layout must match FFIBundleCommon
+struct RawBundleCommon {
+    bool enableSpends;
+    bool enableOutputs;
+    int64_t valueBalanceZat;
+    uint8_t anchor[32];
+    // uint8_t* proofs; // TODO
+    uint8_t proofs;
+    uint8_t bindingSig[64];
+};
+
+typedef void (*orchard_bundle_push_common_t)(void* callbackReceiver, const RawBundleCommon);
+
+/// Returns the raw action data associated with the Orchard bundle.
+/// Returns `false` if the orchard bundle is not present.
+bool orchard_bundle_get_common(
+    const OrchardBundlePtr* bundle,
+    void* callbackReceiver,
+    orchard_bundle_push_common_t push_common_cb);
+
 #ifdef __cplusplus
 }
 #endif

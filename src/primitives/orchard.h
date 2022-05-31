@@ -16,6 +16,38 @@ class OrchardMerkleFrontier;
 class OrchardWallet;
 namespace orchard { class UnauthorizedBundle; }
 
+// similar to class OrchardActions, a place to accumulate FFI returns
+class BundleActions {
+private:
+    std::vector<RawBundleAction> actions;
+public:
+    BundleActions() {}
+
+    void AddAction(RawBundleAction& action) {
+        actions.push_back(action);
+    }
+
+    const std::vector<RawBundleAction>& GetActions() {
+        return actions;
+    }
+};
+
+// similar to class OrchardActions, a place to accumulate FFI returns
+class BundleCommon {
+private:
+    RawBundleCommon common;
+public:
+    BundleCommon() {}
+
+    void AddCommon(RawBundleCommon& c) {
+        common = c;
+    }
+
+    const RawBundleCommon& GetCommon() {
+        return common;
+    }
+};
+
 /**
  * The Orchard component of an authorized transaction.
  */
@@ -136,6 +168,32 @@ public:
 
     bool CoinbaseOutputsAreValid() const {
         return orchard_bundle_coinbase_outputs_are_valid(inner.get());
+    }
+
+    static void PushBundleAction(void* receiver, RawBundleAction raw_action) {
+        reinterpret_cast<BundleActions*>(receiver)->AddAction(raw_action);
+    }
+
+    BundleActions GetActions() const {
+        BundleActions result;
+        orchard_bundle_get_actions(
+            inner.get(),
+            &result,
+            PushBundleAction);
+        return result;
+    }
+
+    static void PushBundleCommon(void* receiver, RawBundleCommon raw_bundle_common) {
+        reinterpret_cast<BundleCommon*>(receiver)->AddCommon(raw_bundle_common);
+    }
+
+    BundleCommon GetCommon() const {
+        BundleCommon result;
+        orchard_bundle_get_common(
+            inner.get(),
+            &result,
+            PushBundleCommon);
+        return result;
     }
 };
 
