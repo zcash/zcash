@@ -1802,7 +1802,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         pwalletMain = NULL;
         LogPrintf("Wallet disabled!\n");
     } else {
-        CWallet::InitLoadWallet(chainparams, clearWitnessCaches);
+        CWallet::InitLoadWallet(chainparams, clearWitnessCaches || fReindex);
         if (!pwalletMain)
             return false;
     }
