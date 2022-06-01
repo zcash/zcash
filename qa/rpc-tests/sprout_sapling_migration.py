@@ -164,6 +164,19 @@ class SproutSaplingMigration(BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
+        # Wallet RPCs that depend on accurate chain state are blocked while in IBD. This
+        # test starts from a clean chain state, so we need to mine a single block first to
+        # ensure that the chain tip's block time is within 24 hours of the current time.
+        #
+        # We mine 2 blocks because we need to make two transparent->Sprout spends below
+        # (to load Sprout addresses with funds), and `get_coinbase_address` only selects
+        # a coinbase address with spendable coins. If we only mined one block here and 100
+        # below, the selected coinbase address would only have one coin (due to the way
+        # the `generate` RPC uses one address per call).
+        print("Mining blocks...")
+        self.nodes[0].generate(2)
+        self.sync_all()
+
         # Check enabling via '-migration' and disabling via rpc
         check_migration_status(self.nodes[0], SAPLING_ADDR, ENABLED_NO_FUNDS)
         self.nodes[0].z_setmigration(False)
@@ -171,8 +184,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
 
         # 1. Test using self.nodes[0] which has the parameter
         print("Running test using '-migrationdestaddress'...")
-        print("Mining blocks...")
-        self.nodes[0].generate(101)
+        self.nodes[0].generate(99)
         self.sync_all()
         tAddr = get_coinbase_address(self.nodes[0])
 
