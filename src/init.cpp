@@ -365,8 +365,8 @@ std::string HelpMessage(HelpMessageMode mode)
             "Warning: Reverting this setting requires re-downloading the entire blockchain. "
             "(default: 0 = disable pruning blocks, >%u = target size in MiB to use for block files)"), MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024));
 #ifdef ENABLE_WALLET
-    strUsage += HelpMessageOpt("-reindex-chainstate", _("Rebuild chain state from the currently indexed blocks (implies -rescan unless pruning or unless -rescan=0 is explicitly specified)"));
-    strUsage += HelpMessageOpt("-reindex", _("Rebuild chain state and block index from the blk*.dat files on disk (implies -rescan unless pruning or unless -rescan=0 is explicitly specified)"));
+    strUsage += HelpMessageOpt("-reindex-chainstate", _("Rebuild chain state from the currently indexed blocks (implies -rescan)"));
+    strUsage += HelpMessageOpt("-reindex", _("Rebuild chain state and block index from the blk*.dat files on disk (implies -rescan)"));
 #else
     strUsage += HelpMessageOpt("-reindex-chainstate", _("Rebuild chain state from the currently indexed blocks"));
     strUsage += HelpMessageOpt("-reindex", _("Rebuild chain state and block index from the blk*.dat files on disk"));
@@ -646,7 +646,7 @@ void ThreadStartWalletNotifier()
     if (pwalletMain)
     {
         std::optional<uint256> walletBestBlockHash;
-        {
+        if (!fReindex) {
             LOCK(pwalletMain->cs_wallet);
             walletBestBlockHash = pwalletMain->GetPersistedBestBlock();
         }
@@ -951,9 +951,6 @@ void InitParameterInteraction()
             LogPrintf("%s: parameter interaction: -externalip set -> setting -discover=0\n", __func__);
     }
 
-#ifdef ENABLE_WALLET
-    // -rescan only affects the wallet.
-
     if (GetBoolArg("-salvagewallet", false)) {
         // Rewrite just private keys: rescan to find transactions
         if (SoftSetBoolArg("-rescan", true))
@@ -964,17 +961,6 @@ void InitParameterInteraction()
         if (SoftSetBoolArg("-rescan", true))
             LogPrintf("%s: parameter interaction: -zapwallettxes=<mode> -> setting -rescan=1\n", __func__);
     }
-
-    if (GetBoolArg("-reindex", false) && !GetArg("-prune", 0)) {
-        if (SoftSetBoolArg("-rescan", true))
-            LogPrintf("%s: parameter interaction: -reindex=1 and not pruning -> setting -rescan=1\n", __func__);
-    }
-
-    if (GetBoolArg("-reindex-chainstate", false) && !GetArg("-prune", 0)) {
-        if (SoftSetBoolArg("-rescan", true))
-            LogPrintf("%s: parameter interaction: -reindex-chainstate=1 and not pruning -> setting -rescan=1\n", __func__);
-    }
-#endif
 
     // disable walletbroadcast and whitelistrelay in blocksonly mode
     if (GetBoolArg("-blocksonly", DEFAULT_BLOCKSONLY)) {
@@ -1821,7 +1807,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         pwalletMain = NULL;
         LogPrintf("Wallet disabled!\n");
     } else {
-        CWallet::InitLoadWallet(chainparams, clearWitnessCaches);
+        CWallet::InitLoadWallet(chainparams, clearWitnessCaches || fReindex);
         if (!pwalletMain)
             return false;
     }

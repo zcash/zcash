@@ -6356,8 +6356,22 @@ static const CRPCCommand commands[] =
     { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }
 };
 
+void OnWalletRPCPreCommand(const CRPCCommand& cmd)
+{
+    // Disable wallet methods that rely on accurate chain state while
+    // the node is reindexing.
+    if (!cmd.okSafeMode && IsInitialBlockDownload(Params().GetConsensus())) {
+        for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++) {
+            if (cmd.name == commands[vcidx].name) {
+                throw JSONRPCError(RPC_IN_WARMUP, "This wallet operation is disabled while reindexing.");
+            }
+        }
+    }
+}
+
 void RegisterWalletRPCCommands(CRPCTable &tableRPC)
 {
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
         tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
+    RPCServer::OnPreCommand(&OnWalletRPCPreCommand);
 }

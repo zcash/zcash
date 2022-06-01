@@ -170,7 +170,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
                 blockStack.emplace_back(
                     pindex,
                     oldFrontiers,
-                    recentlyConflicted.first.at(pindex));
+                    recentlyConflicted.first[pindex]);
 
                 pindex = pindex->pprev;
             }
