@@ -9,6 +9,9 @@
 
 #include "threadsafety.h"
 
+#include <boost/thread/condition_variable.hpp>
+#include <boost/thread/locks.hpp>
+#include <boost/thread/mutex.hpp>
 #include <condition_variable>
 #include <thread>
 #include <mutex>
@@ -202,8 +205,8 @@ using DebugLock = UniqueLock<typename std::remove_reference<typename std::remove
 class CSemaphore
 {
 private:
-    std::condition_variable condition;
-    std::mutex mutex;
+    boost::condition_variable condition;
+    boost::mutex mutex;
     int value;
 
 public:
@@ -211,14 +214,16 @@ public:
 
     void wait()
     {
-        std::unique_lock<std::mutex> lock(mutex);
-        condition.wait(lock, [&]() { return value >= 1; });
+        boost::unique_lock<boost::mutex> lock(mutex);
+        while (value < 1) {
+            condition.wait(lock);
+        }
         value--;
     }
 
     bool try_wait()
     {
-        std::lock_guard<std::mutex> lock(mutex);
+        boost::unique_lock<boost::mutex> lock(mutex);
         if (value < 1)
             return false;
         value--;
@@ -228,7 +233,7 @@ public:
     void post()
     {
         {
-            std::lock_guard<std::mutex> lock(mutex);
+            boost::unique_lock<boost::mutex> lock(mutex);
             value++;
         }
         condition.notify_one();
