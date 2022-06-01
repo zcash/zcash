@@ -228,15 +228,24 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
     UniValue vjoinsplit = TxJoinSplitToJSON(tx);
     entry.pushKV("vjoinsplit", vjoinsplit);
 
-    if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
-        entry.pushKV("valueBalance", ValueFromAmount(tx.GetValueBalanceSapling()));
-        entry.pushKV("valueBalanceZat", tx.GetValueBalanceSapling());
-        UniValue vspenddesc = TxShieldedSpendsToJSON(tx);
-        entry.pushKV("vShieldedSpend", vspenddesc);
-        UniValue voutputdesc = TxShieldedOutputsToJSON(tx);
-        entry.pushKV("vShieldedOutput", voutputdesc);
-        if (!(vspenddesc.empty() && voutputdesc.empty())) {
-            entry.pushKV("bindingSig", HexStr(tx.bindingSig.begin(), tx.bindingSig.end()));
+    if (tx.fOverwintered) {
+        if (tx.nVersion >= SAPLING_TX_VERSION) {
+            entry.pushKV("valueBalance", ValueFromAmount(tx.GetValueBalanceSapling()));
+            entry.pushKV("valueBalanceZat", tx.GetValueBalanceSapling());
+            UniValue vspenddesc = TxShieldedSpendsToJSON(tx);
+            entry.pushKV("vShieldedSpend", vspenddesc);
+            UniValue voutputdesc = TxShieldedOutputsToJSON(tx);
+            entry.pushKV("vShieldedOutput", voutputdesc);
+            if (!(vspenddesc.empty() && voutputdesc.empty())) {
+                entry.pushKV("bindingSig", HexStr(tx.bindingSig.begin(), tx.bindingSig.end()));
+            }
+        }
+        if (tx.nVersion >= ZIP225_TX_VERSION) {
+            UniValue orchard(UniValue::VOBJ);
+            CAmount valueBalanceOrchard = tx.GetOrchardBundle().GetValueBalance();
+            orchard.pushKV("valueBalance", ValueFromAmount(valueBalanceOrchard));
+            orchard.pushKV("valueBalanceZat", valueBalanceOrchard);
+            entry.pushKV("orchard", orchard);
         }
     }
 
@@ -296,35 +305,46 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
 
             "\nResult (if verbose > 0):\n"
             "{\n"
-            "  \"in_active_chain\": b,   (bool) Whether specified block is in the active chain or not (only present with explicit \"blockhash\" argument)\n"
-            "  \"hex\" : \"data\",       (string) The serialized, hex-encoded data for 'txid'\n"
-            "  \"txid\" : \"id\",        (string) The transaction id (same as provided)\n"
-            "  \"authdigest\" : \"id\",  (string) The transaction's auth digest. For pre-v5 transactions this will be ffff..ffff\n"
-            "  \"size\" : n,             (numeric) The transaction size\n"
-            "  \"version\" : n,          (numeric) The version\n"
-            "  \"locktime\" : ttt,       (numeric) The lock time\n"
-            "  \"expiryheight\" : ttt,   (numeric, optional) The block height after which the transaction expires\n"
-            "  \"vin\" : [               (array of json objects)\n"
-            "     {\n"
-            "       \"txid\": \"id\",    (string) The transaction id\n"
+            "  \"in_active_chain\": b,        (bool) Whether specified block is in the active chain or not (only present with explicit \"blockhash\" argument)\n"
+            "  \"hex\" : \"data\",              (string) The serialized, hex-encoded data for 'txid'\n"
+            "  \"txid\" : \"id\",               (string) The transaction id (same as provided)\n"
+            "  \"authdigest\" : \"id\",         (string) The transaction's auth digest. For pre-v5 transactions this will be ffff..ffff\n"
+            "  \"size\" : n,                  (numeric) The transaction size\n"
+            "  \"overwintered\" : b,          (bool, optional) Whether the overwintered flag is set\n"
+            "  \"version\" : n,               (numeric) The version\n"
+            "  \"versiongroupid\" : \"hex\",    (string, optional) The version group ID\n"
+            "  \"locktime\" : ttt,            (numeric) The lock time\n"
+            "  \"expiryheight\" : ttt,        (numeric, optional) The block height after which the transaction expires\n"
+            "  \"vin\" : [                    (array of json objects)\n"
+            "     {                    (coinbase transactions)\n"
+            "       \"coinbase\": \"hex\", (string) The coinbase scriptSig as hex\n"
+            "       \"sequence\": n      (numeric) The script sequence number\n"
+            "     },\n"
+            "     {                    (non-coinbase transactions)\n"
+            "       \"txid\": \"id\",      (string) The transaction id\n"
             "       \"vout\": n,         (numeric) \n"
             "       \"scriptSig\": {     (json object) The script\n"
-            "         \"asm\": \"asm\",  (string) asm\n"
-            "         \"hex\": \"hex\"   (string) hex\n"
+            "         \"asm\": \"asm\",    (string) asm\n"
+            "         \"hex\": \"hex\"     (string) hex\n"
             "       },\n"
             "       \"sequence\": n      (numeric) The script sequence number\n"
+            "       \"value\": n         (numeric, optional) The value of the output being spent in " + CURRENCY_UNIT + "\n"
+            "       \"valueSat\": n      (numeric, optional) The value of the output being spent, in zats\n"
+            "       \"address\": n       (string, optional) The address of the output being spent\n"
             "     }\n"
             "     ,...\n"
             "  ],\n"
             "  \"vout\" : [              (array of json objects)\n"
             "     {\n"
             "       \"value\" : x.xxx,            (numeric) The value in " + CURRENCY_UNIT + "\n"
+            "       \"valueZat\" : n,             (numeric) The value in zats\n"
+            "       \"valueSat\" : n,             (numeric) The value in zats\n"
             "       \"n\" : n,                    (numeric) index\n"
             "       \"scriptPubKey\" : {          (json object)\n"
-            "         \"asm\" : \"asm\",          (string) the asm\n"
-            "         \"hex\" : \"hex\",          (string) the hex\n"
+            "         \"asm\" : \"asm\",            (string) the asm\n"
+            "         \"hex\" : \"hex\",            (string) the hex\n"
             "         \"reqSigs\" : n,            (numeric) The required sigs\n"
-            "         \"type\" : \"pubkeyhash\",  (string) The type, eg 'pubkeyhash'\n"
+            "         \"type\" : \"pubkeyhash\",    (string) The type, eg 'pubkeyhash'\n"
             "         \"addresses\" : [           (json array of string)\n"
             "           \"zcashaddress\"          (string) Zcash address\n"
             "           ,...\n"
@@ -336,8 +356,10 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "  \"vjoinsplit\" : [        (array of json objects, only for version >= 2)\n"
             "     {\n"
             "       \"vpub_old\" : x.xxx,         (numeric) public input value in " + CURRENCY_UNIT + "\n"
+            "       \"vpub_oldZat\" : n,          (numeric) public input value in zats\n"
             "       \"vpub_new\" : x.xxx,         (numeric) public output value in " + CURRENCY_UNIT + "\n"
-            "       \"anchor\" : \"hex\",         (string) the anchor\n"
+            "       \"vpub_newZat\" : n,          (numeric) public output value in zats\n"
+            "       \"anchor\" : \"hex\",           (string) the anchor\n"
             "       \"nullifiers\" : [            (json array of string)\n"
             "         \"hex\"                     (string) input note nullifier\n"
             "         ,...\n"
@@ -346,13 +368,13 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "         \"hex\"                     (string) output note commitment\n"
             "         ,...\n"
             "       ],\n"
-            "       \"onetimePubKey\" : \"hex\",  (string) the onetime public key used to encrypt the ciphertexts\n"
-            "       \"randomSeed\" : \"hex\",     (string) the random seed\n"
+            "       \"onetimePubKey\" : \"hex\",    (string) the onetime public key used to encrypt the ciphertexts\n"
+            "       \"randomSeed\" : \"hex\",       (string) the random seed\n"
             "       \"macs\" : [                  (json array of string)\n"
             "         \"hex\"                     (string) input note MAC\n"
             "         ,...\n"
             "       ],\n"
-            "       \"proof\" : \"hex\",          (string) the zero-knowledge proof\n"
+            "       \"proof\" : \"hex\",            (string) the zero-knowledge proof\n"
             "       \"ciphertexts\" : [           (json array of string)\n"
             "         \"hex\"                     (string) output note ciphertext\n"
             "         ,...\n"
@@ -360,10 +382,42 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "     }\n"
             "     ,...\n"
             "  ],\n"
-            "  \"blockhash\" : \"hash\",   (string) the block hash\n"
-            "  \"confirmations\" : n,      (numeric) The confirmations\n"
-            "  \"time\" : ttt,             (numeric) The transaction time in seconds since epoch (Jan 1 1970 GMT)\n"
-            "  \"blocktime\" : ttt         (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)\n"
+            "  \"valueBalance\" : x.xxx,  (numeric, optional) The net value of Sapling Spends minus Outputs in " + CURRENCY_UNIT + "\n"
+            "  \"valueBalanceZat\" : n,   (numeric, optional) The net value of Sapling Spends minus Outputs in " + MINOR_CURRENCY_UNIT + "\n"
+            "  \"vShieldedSpend\" : [     (array of json objects, only for version >= 3)\n"
+            "     {\n"
+            "       \"cv\" : \"hex\",           (string) Value commitment to the input note\n"
+            "       \"anchor\" : \"hex\",       (string) Merkle root of the Sapling note commitment tree\n"
+            "       \"nullifier\" : \"hex\",    (string) The nullifier of the input note\n"
+            "       \"rk\" : \"hex\",           (string) The randomized public key for spendAuthSig\n"
+            "       \"proof\" : \"hex\",        (string) A zero-knowledge proof using the Sapling Spend circuit\n"
+            "       \"spendAuthSig\" : \"hex\", (string) A signature authorizing this Spend\n"
+            "     }\n"
+            "     ,...\n"
+            "  ],\n"
+            "  \"vShieldedOutput\" : [            (array of json objects, only for version >= 3)\n"
+            "     {\n"
+            "       \"cv\" : \"hex\",             (string) Value commitment to the input note\n"
+            "       \"cmu\" : \"hex\",            (string) The u-coordinate of the note commitment for the output note\n"
+            "       \"ephemeralKey\" : \"hex\",   (string) A Jubjub public key\n"
+            "       \"encCiphertext\" : \"hex\",  (string) The output note encrypted to the recipient\n"
+            "       \"outCiphertext\" : \"hex\",  (string) A ciphertext enabling the sender to recover the output note\n"
+            "       \"proof\" : \"hex\",          (string) A zero-knowledge proof using the Sapling Output circuit\n"
+            "     }\n"
+            "     ,...\n"
+            "  ],\n"
+            "  \"bindingSig\" : \"hash\",          (string, optional) The Sapling binding sig\n"
+            "  \"orchard\" : {               (JSON object with Orchard-specific information)\n"
+            "     \"valueBalance\" : x.xxx,  (numeric, optional) The net value of Orchard Actions in " + CURRENCY_UNIT + "\n"
+            "     \"valueBalanceZat\" : n,   (numeric, optional) The net value of Orchard Actions in " + MINOR_CURRENCY_UNIT + "\n"
+            "  },\n"
+            "  \"joinSplitPubKey\" : \"hex\",      (string, optional) An encoding of a JoinSplitSig public validating key\n"
+            "  \"joinSplitSig\" : \"hex\",         (string, optional) The Sprout binding signature\n"
+            "  \"blockhash\" : \"hash\",           (string) the block hash\n"
+            "  \"height\" : n,                   (numeric) the block height\n"
+            "  \"confirmations\" : n,            (numeric) The confirmations\n"
+            "  \"time\" : ttt,                   (numeric) The transaction time in seconds since epoch (Jan 1 1970 GMT)\n"
+            "  \"blocktime\" : ttt               (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)\n"
             "}\n"
 
             "\nExamples:\n"
