@@ -1684,14 +1684,19 @@ License: BOSL-1+ with Zcash exception
  version 1.0.
  .
  Only if this Original Work is included as part of the distribution of one of the
- following projects ("the Project"):
+ following (each, the "Project"):
  .
- - The Zcash projects published by the Electric Coin Company,
- - The Zebra project published by the Zcash Foundation,
+ - The Zcash projects published by the Electric Coin Company;
+ - The Zebra project published by the Zcash Foundation;
+ - A project that is designed to integrate with Zcash and provides additional
+   functionality or utility to the Zcash network and holders of the ZEC coin; or
+ - A blockchain that descends from the Zcash blockchain and that is forked
+   within 100 blocks of the current block height of the Zcash blockchain at the
+   time of the code fork;
  .
- then License is granted to use this package under the BOSL as modified by the
- following clarification and special exception. This exception applies only to
- the Original Work when linked or combined with the Project and not to the
+ then License is granted to use the Original Work under the BOSL as modified by
+ the following clarification and special exception. This exception applies only
+ to the Original Work when linked or combined with the Project and not to the
  Original Work when linked, combined, or included in or with any other software
  or project or on a standalone basis.
  .
