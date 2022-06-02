@@ -31,7 +31,7 @@ use std::path::{Path, PathBuf};
 use std::slice;
 use std::sync::Once;
 use subtle::CtOption;
-use tracing::{error, info};
+use tracing::info;
 
 #[cfg(not(target_os = "windows"))]
 use std::ffi::OsStr;
@@ -44,7 +44,6 @@ use std::ffi::OsString;
 use std::os::windows::ffi::OsStringExt;
 
 use zcash_primitives::{
-    block::equihash,
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
     merkle_tree::MerklePath,
     sapling::{
@@ -67,6 +66,7 @@ use zcash_proofs::{
 
 mod blake2b;
 mod ed25519;
+mod equihash;
 mod metrics_ffi;
 mod streams_ffi;
 mod tracing_ffi;
@@ -526,38 +526,6 @@ pub extern "C" fn librustzcash_sapling_ka_derivepublic(
     *result = p.to_bytes();
 
     true
-}
-
-/// Validates the provided Equihash solution against the given parameters, input
-/// and nonce.
-#[no_mangle]
-pub extern "C" fn librustzcash_eh_isvalid(
-    n: u32,
-    k: u32,
-    input: *const c_uchar,
-    input_len: size_t,
-    nonce: *const c_uchar,
-    nonce_len: size_t,
-    soln: *const c_uchar,
-    soln_len: size_t,
-) -> bool {
-    let expected_soln_len = (1 << k) * ((n / (k + 1)) as usize + 1) / 8;
-    if (k >= n) || (n % 8 != 0) || (soln_len != expected_soln_len) {
-        error!(
-            "eh_isvalid: params wrong, n={}, k={}, soln_len={} expected={}",
-            n, k, soln_len, expected_soln_len,
-        );
-        return false;
-    }
-    let rs_input = unsafe { slice::from_raw_parts(input, input_len) };
-    let rs_nonce = unsafe { slice::from_raw_parts(nonce, nonce_len) };
-    let rs_soln = unsafe { slice::from_raw_parts(soln, soln_len) };
-    if let Err(e) = equihash::is_valid_solution(n, k, rs_input, rs_nonce, rs_soln) {
-        error!("eh_isvalid: is_valid_solution: {}", e);
-        false
-    } else {
-        true
-    }
 }
 
 /// Creates a Sapling verification context. Please free this when you're done.

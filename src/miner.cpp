@@ -996,8 +996,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
 
             while (true) {
                 // Hash state
-                eh_HashState state;
-                EhInitialiseState(n, k, state);
+                eh_HashState state = EhInitialiseState(n, k);
 
                 // I = the block header minus nonce and solution.
                 CEquihashInput I{*pblock};
@@ -1008,8 +1007,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
                 state.Update((unsigned char*)&ss[0], ss.size());
 
                 // H(I||V||...
-                eh_HashState curr_state;
-                curr_state = state;
+                eh_HashState curr_state = state;
                 curr_state.Update(pblock->nNonce.begin(), pblock->nNonce.size());
 
                 // (x_1, x_2, ...) = A(I, V, n, k)
@@ -1058,7 +1056,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
                 if (solver == "tromp") {
                     // Create solver and initialize it.
                     equi eq(1);
-                    eq.setstate(curr_state.inner.get());
+                    eq.setstate(curr_state.inner);
 
                     // Initialization done, start algo driver.
                     eq.digit0(0);

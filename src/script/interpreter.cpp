@@ -16,6 +16,7 @@
 #include "uint256.h"
 
 #include <librustzcash.h>
+#include <rust/constants.h>
 #include <rust/transaction.h>
 
 using namespace std;
@@ -1061,17 +1062,17 @@ public:
     }
 };
 
-const unsigned char ZCASH_PREVOUTS_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
+const unsigned char ZCASH_PREVOUTS_HASH_PERSONALIZATION[blake2b::PERSONALBYTES] =
     {'Z','c','a','s','h','P','r','e','v','o','u','t','H','a','s','h'};
-const unsigned char ZCASH_SEQUENCE_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
+const unsigned char ZCASH_SEQUENCE_HASH_PERSONALIZATION[blake2b::PERSONALBYTES] =
     {'Z','c','a','s','h','S','e','q','u','e','n','c','H','a','s','h'};
-const unsigned char ZCASH_OUTPUTS_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
+const unsigned char ZCASH_OUTPUTS_HASH_PERSONALIZATION[blake2b::PERSONALBYTES] =
     {'Z','c','a','s','h','O','u','t','p','u','t','s','H','a','s','h'};
-const unsigned char ZCASH_JOINSPLITS_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
+const unsigned char ZCASH_JOINSPLITS_HASH_PERSONALIZATION[blake2b::PERSONALBYTES] =
     {'Z','c','a','s','h','J','S','p','l','i','t','s','H','a','s','h'};
-const unsigned char ZCASH_SHIELDED_SPENDS_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
+const unsigned char ZCASH_SHIELDED_SPENDS_HASH_PERSONALIZATION[blake2b::PERSONALBYTES] =
     {'Z','c','a','s','h','S','S','p','e','n','d','s','H','a','s','h'};
-const unsigned char ZCASH_SHIELDED_OUTPUTS_HASH_PERSONALIZATION[BLAKE2bPersonalBytes] =
+const unsigned char ZCASH_SHIELDED_OUTPUTS_HASH_PERSONALIZATION[blake2b::PERSONALBYTES] =
     {'Z','c','a','s','h','S','O','u','t','p','u','t','H','a','s','h'};
 
 uint256 GetPrevoutHash(const CTransaction& txTo) {

@@ -86,8 +86,7 @@ TEST(EquihashTests, IsProbablyDuplicate) {
 
 TEST(EquihashTests, CheckBasicSolverCancelled) {
     Equihash<48,5> Eh48_5;
-    eh_HashState state;
-    Eh48_5.InitialiseState(state);
+    eh_HashState state = Eh48_5.InitialiseState();
     uint256 V = uint256S("0x00");
     state.Update(V.begin(), V.size());
 
@@ -190,8 +189,7 @@ TEST(EquihashTests, CheckBasicSolverCancelled) {
 
 TEST(EquihashTests, CheckOptimisedSolverCancelled) {
     Equihash<48,5> Eh48_5;
-    eh_HashState state;
-    Eh48_5.InitialiseState(state);
+    eh_HashState state = Eh48_5.InitialiseState();
     uint256 V = uint256S("0x00");
     state.Update(V.begin(), V.size());
 

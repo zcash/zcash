@@ -200,8 +200,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         unsigned int k = Params().GetConsensus().nEquihashK;
 
         // Hash state
-        eh_HashState eh_state;
-        EhInitialiseState(n, k, eh_state);
+        eh_HashState eh_state = EhInitialiseState(n, k);
 
         // I = the block header minus nonce and solution.
         CEquihashInput I{*pblock};
@@ -246,11 +245,11 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
             }
 
             for (auto soln : solns) {
-                if (!librustzcash_eh_isvalid(
+                if (!equihash::is_valid(
                     n, k,
-                    (unsigned char*)&ss[0], ss.size(),
-                    pblock->nNonce.begin(), pblock->nNonce.size(),
-                    soln.data(), soln.size())) continue;
+                    {(const unsigned char*)ss.data(), ss.size()},
+                    {pblock->nNonce.begin(), pblock->nNonce.size()},
+                    {soln.data(), soln.size()})) continue;
                 pblock->nSolution = soln;
 
                 CValidationState state;

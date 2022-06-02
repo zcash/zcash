@@ -39,16 +39,17 @@ void EhIndexToArray(const eh_index i, unsigned char* array);
 #include <set>
 
 #include <rust/blake2b.h>
+#include <rust/constants.h>
+#include <rust/cxx.h>
 
 struct eh_HashState {
-    std::unique_ptr<BLAKE2bState, decltype(&blake2b_free)> inner;
+    rust::Box<blake2b::State> inner;
 
-    eh_HashState() : inner(nullptr, blake2b_free) {}
-
-    eh_HashState(size_t length, unsigned char personalization[BLAKE2bPersonalBytes]) : inner(blake2b_init(length, personalization), blake2b_free) {}
+    eh_HashState(size_t length, unsigned char personalization[blake2b::PERSONALBYTES]) :
+        inner(blake2b::init(length, {personalization, blake2b::PERSONALBYTES})) {}
 
     eh_HashState(eh_HashState&& baseState) : inner(std::move(baseState.inner)) {}
-    eh_HashState(const eh_HashState& baseState) : inner(blake2b_clone(baseState.inner.get()), blake2b_free) {}
+    eh_HashState(const eh_HashState& baseState) : inner(baseState.inner->box_clone()) {}
     eh_HashState& operator=(eh_HashState&& baseState)
     {
         if (this != &baseState) {
@@ -59,7 +60,7 @@ struct eh_HashState {
     eh_HashState& operator=(const eh_HashState& baseState)
     {
         if (this != &baseState) {
-            inner.reset(blake2b_clone(baseState.inner.get()));
+            inner = baseState.inner->box_clone();
         }
         return *this;
     }
@@ -212,7 +213,7 @@ public:
 
     Equihash() { }
 
-    void InitialiseState(eh_HashState& base_state);
+    eh_HashState InitialiseState();
     bool BasicSolve(const eh_HashState& base_state,
                     const std::function<bool(std::vector<unsigned char>)> validBlock,
                     const std::function<bool(EhSolverCancelCheck)> cancelled);
@@ -228,18 +229,19 @@ static Equihash<200,9> Eh200_9;
 static Equihash<96,5> Eh96_5;
 static Equihash<48,5> Eh48_5;
 
-#define EhInitialiseState(n, k, base_state)  \
+#define EhInitialiseState(n, k) [&](){ \
     if (n == 96 && k == 3) {                 \
-        Eh96_3.InitialiseState(base_state);  \
+        return Eh96_3.InitialiseState();  \
     } else if (n == 200 && k == 9) {         \
-        Eh200_9.InitialiseState(base_state); \
+        return Eh200_9.InitialiseState(); \
     } else if (n == 96 && k == 5) {          \
-        Eh96_5.InitialiseState(base_state);  \
+        return Eh96_5.InitialiseState();  \
     } else if (n == 48 && k == 5) {          \
-        Eh48_5.InitialiseState(base_state);  \
+        return Eh48_5.InitialiseState();  \
     } else {                                 \
         throw std::invalid_argument("Unsupported Equihash parameters"); \
-    }
+    } \
+}()
 
 inline bool EhBasicSolve(unsigned int n, unsigned int k, const eh_HashState& base_state,
                     const std::function<bool(std::vector<unsigned char>)> validBlock,

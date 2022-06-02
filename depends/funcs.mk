@@ -32,6 +32,19 @@ define fetch_file
     rm -rf $$($(1)_download_dir) ))
 endef
 
+define vendor_crate_deps
+(test -f $$($(1)_source_dir)/$(5) || \
+  ( mkdir -p $$($(1)_download_dir)/$(1) && echo Vendoring dependencies for $(1)... && \
+    tar -xf $(native_rust_cached) -C $$($(1)_download_dir) && \
+    tar --strip-components=1 -xf $$($(1)_source_dir)/$(2) -C $$($(1)_download_dir)/$(1) && \
+	patch -p1 -d $$($(1)_download_dir)/$(1) < $(PATCHES_PATH)/$(1)/$(3) && \
+	$$($(1)_download_dir)/native/bin/cargo vendor --locked --manifest-path $$($(1)_download_dir)/$(1)/$(4) $$($(1)_download_dir)/$(CRATE_REGISTRY) && \
+	cd $$($(1)_download_dir) && \
+	find $(CRATE_REGISTRY) | sort | tar --no-recursion -czf $$($(1)_download_dir)/$(5).temp -T - && \
+    mv $$($(1)_download_dir)/$(5).temp $$($(1)_source_dir)/$(5) && \
+    rm -rf $$($(1)_download_dir) ))
+endef
+
 define int_get_build_recipe_hash
 $(eval $(1)_all_file_checksums:=$(shell $(build_SHA256SUM) $(meta_depends) packages/$(1).mk $(addprefix $(PATCHES_PATH)/$(1)/,$($(1)_patches)) | cut -d" " -f1))
 $(eval $(1)_recipe_hash:=$(shell echo -n "$($(1)_all_file_checksums)" | $(build_SHA256SUM) | cut -d" " -f1))

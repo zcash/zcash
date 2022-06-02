@@ -15,7 +15,9 @@ BITCOIN_CONFIG_INCLUDES=-I$(builddir)/config
 BITCOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BDB_CPPFLAGS) $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS)
 
 BITCOIN_CONFIG_INCLUDES += -I$(srcdir)/rust/include
+BITCOIN_CONFIG_INCLUDES += -I$(srcdir)/rust/gen/include
 BITCOIN_INCLUDES += -I$(srcdir)/rust/include
+BITCOIN_INCLUDES += -I$(srcdir)/rust/gen/include
 BITCOIN_INCLUDES += -I$(srcdir)/secp256k1/include
 BITCOIN_INCLUDES += -I$(srcdir)/univalue/include
 
@@ -42,6 +44,29 @@ if ENABLE_WALLET
 LIBBITCOIN_WALLET=libbitcoin_wallet.a
 endif
 
+# TODO: Figure out how to avoid an explicit file list.
+CXXBRIDGE_RS = \
+  rust/src/blake2b.rs \
+  rust/src/equihash.rs
+CXXBRIDGE_H = \
+  rust/gen/include/rust/blake2b.h \
+  rust/gen/include/rust/equihash.h
+CXXBRIDGE_CPP = \
+  rust/gen/src/blake2b.cpp \
+  rust/gen/src/equihash.cpp
+
+# We add a rust/cxx.h include to indicate that we provide this (via the rustcxx depends
+# package), so that cxxbridge doesn't include it within the generated headers and code.
+CXXBRIDGE_OPTS = -i rust/cxx.h
+
+$(CXXBRIDGE_RS): ;
+$(CXXBRIDGE_H) $(CXXBRIDGE_CPP): $(CXXBRIDGE_RS)
+	@$(MKDIR_P) $(@D)
+	$(AM_V_GEN)$(CXXBRIDGE) $(CXXBRIDGE_OPTS) rust/src/$(basename $(@F)).rs -o $@
+
+# We pass through CC etc. flags so they are available to Rust dependencies that internally
+# compile C or C++ code with the `cc` crate.
+#
 # We depend on the secp256k1 crate for some logic on the Rust side of the FFI. This crate
 # is a wrapper around libsecp256k1, which we already vendor in our code; the crate vendors
 # its own copy with non-colliding symbols. To ensure that we only use a single version of
@@ -49,12 +74,23 @@ endif
 # same library as the C++ code.
 # - Note that this does not prevent the secp256k1-sys vendored code from being built; this
 #   requires https://github.com/rust-bitcoin/rust-secp256k1/issues/380 to be addressed.
-RUST_ENV_VARS = RUSTC="$(RUSTC)" TERM=dumb RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming"
+RUST_ENV_VARS = \
+  RUSTC="$(RUSTC)" \
+  RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming" \
+  CC="$(CC)" \
+  CFLAGS="$(CFLAGS)" \
+  CXX="$(CXX)" \
+  CXXFLAGS="$(CXXFLAGS)" \
+  TERM=dumb
 RUST_BUILD_OPTS = --release --target $(RUST_TARGET) --manifest-path $(top_srcdir)/Cargo.toml
 
 rust_verbose = $(rust_verbose_@AM_V@)
 rust_verbose_ = $(rust_verbose_@AM_DEFAULT_V@)
-rust_verbose_1 = --verbose
+rust_verbose_0 = @echo "  RUST     $@";
+
+cargo_verbose = $(cargo_verbose_@AM_V@)
+cargo_verbose_ = $(cargo_verbose_@AM_DEFAULT_V@)
+cargo_verbose_1 = --verbose
 
 if ENABLE_ONLINE_RUST
 # Ensure that .cargo/config does not exist
@@ -76,10 +112,10 @@ $(CARGO_CONFIGURED): $(top_srcdir)/.cargo/config.offline
 endif
 
 cargo-build-lib: $(CARGO_CONFIGURED)
-	$(RUST_ENV_VARS) $(CARGO) build --lib $(RUST_BUILD_OPTS) $(rust_verbose)
+	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build --lib $(RUST_BUILD_OPTS) $(cargo_verbose)
 
 cargo-build-bins: $(CARGO_CONFIGURED)
-	$(RUST_ENV_VARS) $(CARGO) build --bins $(RUST_BUILD_OPTS) $(rust_verbose)
+	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build --bins $(RUST_BUILD_OPTS) $(cargo_verbose)
 
 $(WALLET_TOOL_BIN): cargo-build-bins
 	$(AM_V_at)cp $(WALLET_TOOL_BUILD) $@
@@ -558,6 +594,7 @@ zcash_tx_LDADD += $(BOOST_LIBS)
 
 # zcash protocol primitives #
 libzcash_a_SOURCES = \
+  $(CXXBRIDGE_CPP) \
   zcash/IncrementalMerkleTree.cpp \
   zcash/NoteEncryption.cpp \
   zcash/Address.cpp \
@@ -603,7 +640,7 @@ endif
 
 libzcash_script_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
 libzcash_script_la_LIBADD = $(LIBSECP256K1)
-libzcash_script_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/rust/include -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
+libzcash_script_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/rust/include -I$(srcdir)/rust/gen/include -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
 libzcash_script_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
 endif
@@ -614,6 +651,8 @@ CTAES_DIST += crypto/ctaes/ctaes.c
 CTAES_DIST += crypto/ctaes/ctaes.h
 CTAES_DIST += crypto/ctaes/README.md
 CTAES_DIST += crypto/ctaes/test.c
+
+BUILT_SOURCES = $(CXXBRIDGE_H)
 
 CLEANFILES = *.gcda *.gcno */*.gcno wallet/*/*.gcno $(bin_SCRIPTS)
 
@@ -626,6 +665,7 @@ clean-local:
 	-$(MAKE) -C secp256k1 clean
 	-$(MAKE) -C univalue clean
 	rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
+	rm -f rust/gen
 	rm -f fuzz.cpp
 	rm -rf fuzzing/*/output
 	-rm -f config.h

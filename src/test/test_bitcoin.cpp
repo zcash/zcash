@@ -157,8 +157,7 @@ TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>&
     IncrementExtraNonce(pblocktemplate, chainActive.Tip(), extraNonce, chainparams.GetConsensus());
 
     // Hash state
-    eh_HashState eh_state;
-    EhInitialiseState(n, k, eh_state);
+    eh_HashState eh_state = EhInitialiseState(n, k);
 
     // I = the block header minus nonce and solution.
     CEquihashInput I{block};

@@ -8,6 +8,7 @@
 #include "librustzcash.h"
 
 #include <rust/blake2b.h>
+#include <rust/constants.h>
 
 #define NOTEENCRYPTION_CIPHER_KEYSIZE 32
 
@@ -32,13 +33,12 @@ void PRF_ock(
     memcpy(block+64, cm.begin(), 32);
     memcpy(block+96, epk.begin(), 32);
 
-    unsigned char personalization[BLAKE2bPersonalBytes] = {};
+    unsigned char personalization[blake2b::PERSONALBYTES] = {};
     memcpy(personalization, "Zcash_Derive_ock", 16);
 
-    auto state = blake2b_init(NOTEENCRYPTION_CIPHER_KEYSIZE, personalization);
-    blake2b_update(state, block, 128);
-    blake2b_finalize(state, K, NOTEENCRYPTION_CIPHER_KEYSIZE);
-    blake2b_free(state);
+    auto state = blake2b::init(NOTEENCRYPTION_CIPHER_KEYSIZE, {personalization, blake2b::PERSONALBYTES});
+    state->update({block, 128});
+    state->finalize({K, NOTEENCRYPTION_CIPHER_KEYSIZE});
 }
 
 void KDF_Sapling(
@@ -51,13 +51,12 @@ void KDF_Sapling(
     memcpy(block+0, dhsecret.begin(), 32);
     memcpy(block+32, epk.begin(), 32);
 
-    unsigned char personalization[BLAKE2bPersonalBytes] = {};
+    unsigned char personalization[blake2b::PERSONALBYTES] = {};
     memcpy(personalization, "Zcash_SaplingKDF", 16);
 
-    auto state = blake2b_init(NOTEENCRYPTION_CIPHER_KEYSIZE, personalization);
-    blake2b_update(state, block, 64);
-    blake2b_finalize(state, K, NOTEENCRYPTION_CIPHER_KEYSIZE);
-    blake2b_free(state);
+    auto state = blake2b::init(NOTEENCRYPTION_CIPHER_KEYSIZE, {personalization, blake2b::PERSONALBYTES});
+    state->update({block, 64});
+    state->finalize({K, NOTEENCRYPTION_CIPHER_KEYSIZE});
 }
 
 void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
@@ -78,14 +77,13 @@ void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
     memcpy(block+64, epk.begin(), 32);
     memcpy(block+96, pk_enc.begin(), 32);
 
-    unsigned char personalization[BLAKE2bPersonalBytes] = {};
+    unsigned char personalization[blake2b::PERSONALBYTES] = {};
     memcpy(personalization, "ZcashKDF", 8);
     memcpy(personalization+8, &nonce, 1);
 
-    auto state = blake2b_init(NOTEENCRYPTION_CIPHER_KEYSIZE, personalization);
-    blake2b_update(state, block, 128);
-    blake2b_finalize(state, K, NOTEENCRYPTION_CIPHER_KEYSIZE);
-    blake2b_free(state);
+    auto state = blake2b::init(NOTEENCRYPTION_CIPHER_KEYSIZE, {personalization, blake2b::PERSONALBYTES});
+    state->update({block, 128});
+    state->finalize({K, NOTEENCRYPTION_CIPHER_KEYSIZE});
 }
 
 namespace libzcash {

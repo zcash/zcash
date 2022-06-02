@@ -17,9 +17,10 @@
 #include "zcash/address/zip32.h"
 
 #include <variant>
+#include <rust/constants.h>
 #include <rust/unified_keys.h>
 
-const unsigned char ZCASH_UFVK_ID_PERSONAL[BLAKE2bPersonalBytes] =
+const unsigned char ZCASH_UFVK_ID_PERSONAL[blake2b::PERSONALBYTES] =
     {'Z', 'c', 'a', 's', 'h', '_', 'U', 'F', 'V', 'K', '_', 'I', 'd', '_', 'F', 'P'};
 
 namespace libzcash {

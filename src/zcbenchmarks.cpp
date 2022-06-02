@@ -161,8 +161,7 @@ double benchmark_solve_equihash()
     const Consensus::Params& params = Params(CBaseChainParams::MAIN).GetConsensus();
     unsigned int n = params.nEquihashN;
     unsigned int k = params.nEquihashK;
-    eh_HashState eh_state;
-    EhInitialiseState(n, k, eh_state);
+    eh_HashState eh_state = EhInitialiseState(n, k);
     eh_state.Update((unsigned char*)&ss[0], ss.size());
 
     uint256 nonce = GetRandHash();
