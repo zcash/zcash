@@ -32,6 +32,7 @@
 #include <boost/assign/list_of.hpp>
 
 #include <univalue.h>
+#include <rust/orchard_bundle.h>
 
 using namespace std;
 
@@ -151,6 +152,63 @@ UniValue TxShieldedOutputsToJSON(const CTransaction& tx) {
     return vdesc;
 }
 
+UniValue TxActionsToJSON(const rust::Vec<orchard_bundle::Action>& actions)
+{
+    UniValue arr(UniValue::VARR);
+    for (const auto& action : actions) {
+        UniValue obj(UniValue::VOBJ);
+        auto cv = action.cv();
+        obj.pushKV("cv", HexStr(cv.begin(), cv.end()));
+        auto nullifier = action.nullifier();
+        obj.pushKV("nullifier", HexStr(nullifier.begin(), nullifier.end()));
+        auto rk = action.rk();
+        obj.pushKV("rk", HexStr(rk.begin(), rk.end()));
+        auto cmx = action.cmx();
+        obj.pushKV("cmx", HexStr(cmx.begin(), cmx.end()));
+        auto ephemeralKey = action.ephemeral_key();
+        obj.pushKV("ephemeralKey", HexStr(ephemeralKey.begin(), ephemeralKey.end()));
+        auto encCiphertext = action.enc_ciphertext();
+        obj.pushKV("encCiphertext", HexStr(encCiphertext.begin(), encCiphertext.end()));
+        auto outCiphertext = action.out_ciphertext();
+        obj.pushKV("outCiphertext", HexStr(outCiphertext.begin(), outCiphertext.end()));
+        auto spendAuthSig = action.spend_auth_sig();
+        obj.pushKV("spendAuthSig", HexStr(spendAuthSig.begin(), spendAuthSig.end()));
+        arr.push_back(obj);
+    }
+    return arr;
+}
+
+// See https://zips.z.cash/zip-0225
+UniValue TxOrchardBundleToJSON(const CTransaction& tx, UniValue& entry)
+{
+    auto bundle = tx.GetOrchardBundle().GetDetails();
+
+    UniValue obj(UniValue::VOBJ);
+    auto actions = bundle->actions();
+    obj.pushKV("actions", TxActionsToJSON(actions));
+    auto valueBalanceZat = bundle->value_balance_zat();
+    obj.pushKV("valueBalance", ValueFromAmount(valueBalanceZat));
+    obj.pushKV("valueBalanceZat", valueBalanceZat);
+    // If this tx has no actions, then flags, anchor, etc. are not present.
+    if (!actions.empty()) {
+        {
+            UniValue obj_flags{UniValue::VOBJ};
+            auto enableSpends = bundle->enable_spends();
+            obj_flags.pushKV("enableSpends", enableSpends);
+            auto enableOutputs = bundle->enable_outputs();
+            obj_flags.pushKV("enableOutputs", enableOutputs);
+            obj.pushKV("flags", obj_flags);
+        }
+        auto anchor = bundle->anchor();
+        obj.pushKV("anchor", HexStr(anchor.begin(), anchor.end()));
+        auto proof = bundle->proof();
+        obj.pushKV("proof", HexStr(proof.begin(), proof.end()));
+        auto bindingSig = bundle->binding_sig();
+        obj.pushKV("bindingSig", HexStr(bindingSig.begin(), bindingSig.end()));
+    }
+    return obj;
+}
+
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 {
     const uint256 txid = tx.GetHash();
@@ -241,10 +299,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
             }
         }
         if (tx.nVersion >= ZIP225_TX_VERSION) {
-            UniValue orchard(UniValue::VOBJ);
-            CAmount valueBalanceOrchard = tx.GetOrchardBundle().GetValueBalance();
-            orchard.pushKV("valueBalance", ValueFromAmount(valueBalanceOrchard));
-            orchard.pushKV("valueBalanceZat", valueBalanceOrchard);
+            UniValue orchard = TxOrchardBundleToJSON(tx, entry);
             entry.pushKV("orchard", orchard);
         }
     }
@@ -407,9 +462,29 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "     ,...\n"
             "  ],\n"
             "  \"bindingSig\" : \"hash\",          (string, optional) The Sapling binding sig\n"
-            "  \"orchard\" : {               (JSON object with Orchard-specific information)\n"
-            "     \"valueBalance\" : x.xxx,  (numeric, optional) The net value of Orchard Actions in " + CURRENCY_UNIT + "\n"
-            "     \"valueBalanceZat\" : n,   (numeric, optional) The net value of Orchard Actions in " + MINOR_CURRENCY_UNIT + "\n"
+            "  \"orchard\" : {                   (JSON object with Orchard-specific information)\n"
+            "     \"actions\" : [                (JSON array of objects)\n"
+            "       {\n"
+            "         \"cv\" : \"hex\",            (string) A value commitment to the net value of the input note minus the output note\n"
+            "         \"nullifier\" : \"hex\",     (string) The nullifier of the input note\n"
+            "         \"rk\" : \"hex\",            (string) The randomized validating key for spendAuthSig\n"
+            "         \"cmx\" : \"hex\",           (string) The x-coordinate of the note commitment for the output note\n"
+            "         \"ephemeralKey\" : \"hex\",  (string) An encoding of an ephemeral Pallas public key\n"
+            "         \"encCiphertext\" : \"hex\", (string) The output note encrypted to the recipient\n"
+            "         \"outCiphertext\" : \"hex\", (string) A ciphertext enabling the sender to recover the output note\n"
+            "         \"spendAuthSig\" : \"hex\"   (string) A signature authorizing the spend in this Action\n"
+            "       }\n"
+            "       ,...\n"
+            "     ],\n"
+            "     \"valueBalance\" : x.xxx,      (numeric, optional) The net value of Orchard Actions in " + CURRENCY_UNIT + "\n"
+            "     \"valueBalanceZat\" : n,       (numeric, optional) The net value of Orchard Actions in " + MINOR_CURRENCY_UNIT + "\n"
+            "     \"flags\" : { (optional)\n"
+            "       \"enableSpends\"  : true|false (bool)\n"
+            "       \"enableOutputs\" : true|false (bool)\n"
+            "     },\n"
+            "     \"anchor\" : \"hex\",          (string, optional) A root of the Orchard note commitment tree at some block height in the past\n"
+            "     \"proof\" : \"hex\",           (string, optional) Encoding of aggregated zk-SNARK proofs for Orchard Actions\n"
+            "     \"bindingSig\" : \"hex\"       (string, optional) An Orchard binding signature on the SIGHASH transaction hash\n"
             "  },\n"
             "  \"joinSplitPubKey\" : \"hex\",      (string, optional) An encoding of a JoinSplitSig public validating key\n"
             "  \"joinSplitSig\" : \"hex\",         (string, optional) The Sprout binding signature\n"

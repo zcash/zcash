@@ -9,6 +9,7 @@
 
 #include <amount.h>
 #include <rust/orchard.h>
+#include <rust/orchard_bundle.h>
 #include <rust/orchard/wallet.h>
 #include "zcash/address/orchard.hpp"
 
@@ -53,6 +54,10 @@ public:
             inner.reset(orchard_bundle_clone(bundle.inner.get()));
         }
         return *this;
+    }
+
+    rust::Box<orchard_bundle::Bundle> GetDetails() const {
+        return orchard_bundle::from_tx_bundle(reinterpret_cast<orchard_bundle::OrchardBundle*>(inner.get()));
     }
 
     size_t RecursiveDynamicUsage() const {
