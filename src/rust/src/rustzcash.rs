@@ -47,7 +47,6 @@ use zcash_primitives::{
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
     merkle_tree::MerklePath,
     sapling::{
-        self,
         keys::FullViewingKey,
         note_encryption::sapling_ka_agree,
         redjubjub::{self, Signature},
@@ -81,6 +80,7 @@ mod init_ffi;
 mod orchard_bundle;
 mod orchard_ffi;
 mod orchard_keys_ffi;
+mod sapling;
 mod transaction_ffi;
 mod unified_keys_ffi;
 mod wallet;
@@ -1170,7 +1170,7 @@ pub extern "C" fn librustzcash_sapling_diversifier_index(
     j_ret: *mut [c_uchar; 11],
 ) {
     let dk = zip32::DiversifierKey(unsafe { *dk });
-    let diversifier = sapling::Diversifier(unsafe { *d });
+    let diversifier = Diversifier(unsafe { *d });
     let j_ret = unsafe { &mut *j_ret };
 
     let j = dk.diversifier_index(&diversifier);
