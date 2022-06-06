@@ -14,11 +14,11 @@ void TestLibsodiumEd25519SignatureVerification(
 {
     SCOPED_TRACE(scope);
 
-    Ed25519VerificationKey vk;
-    std::copy(pubkey.begin(), pubkey.end(), vk.bytes);
+    ed25519::VerificationKey vk;
+    std::copy(pubkey.begin(), pubkey.end(), vk.bytes.begin());
 
-    Ed25519Signature signature;
-    std::copy(sig.begin(), sig.end(), signature.bytes);
+    ed25519::Signature signature;
+    std::copy(sig.begin(), sig.end(), signature.bytes.begin());
 
     EXPECT_EQ(
         crypto_sign_verify_detached(
@@ -28,7 +28,7 @@ void TestLibsodiumEd25519SignatureVerification(
         0);
 
     EXPECT_EQ(
-        ed25519_verify(&vk, &signature, (const unsigned char*)msg.data(), msg.size()),
+        ed25519::verify(vk, signature, {(const unsigned char*)msg.data(), msg.size()}),
         true);
 }
 
@@ -42,11 +42,11 @@ void ZIP215Check(
     std::vector<unsigned char> pubkey_hex = ParseHex(pubkey);
     std::vector<unsigned char> sig_hex = ParseHex(sig);
 
-    Ed25519VerificationKey vk;
-    std::copy(pubkey_hex.begin(), pubkey_hex.end(), vk.bytes);
+    ed25519::VerificationKey vk;
+    std::copy(pubkey_hex.begin(), pubkey_hex.end(), vk.bytes.begin());
 
-    Ed25519Signature signature;
-    std::copy(sig_hex.begin(), sig_hex.end(), signature.bytes);
+    ed25519::Signature signature;
+    std::copy(sig_hex.begin(), sig_hex.end(), signature.bytes.begin());
 
     std::string msg("Zcash");
 
@@ -64,7 +64,7 @@ void ZIP215Check(
         expected_legacy);
 
     EXPECT_EQ(
-        ed25519_verify(&vk, &signature, (const unsigned char*)msg.data(), msg.size()),
+        ed25519::verify(vk, signature, {(const unsigned char*)msg.data(), msg.size()}),
         valid_zip215);
 }
 

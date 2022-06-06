@@ -309,12 +309,12 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         // it is byte-flipped in the RPC output.
         uint256 joinSplitPubKey;
         std::copy(
-            tx.joinSplitPubKey.bytes,
-            tx.joinSplitPubKey.bytes + ED25519_VERIFICATION_KEY_LEN,
+            tx.joinSplitPubKey.bytes.begin(),
+            tx.joinSplitPubKey.bytes.end(),
             joinSplitPubKey.begin());
         entry.pushKV("joinSplitPubKey", joinSplitPubKey.GetHex());
         entry.pushKV("joinSplitSig",
-            HexStr(tx.joinSplitSig.bytes, tx.joinSplitSig.bytes + ED25519_SIGNATURE_LEN));
+            HexStr(tx.joinSplitSig.bytes.begin(), tx.joinSplitSig.bytes.end()));
     }
 
     if (!hashBlock.IsNull()) {

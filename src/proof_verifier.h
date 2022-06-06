@@ -8,7 +8,7 @@
 #include <primitives/transaction.h>
 #include <uint256.h>
 
-#include <rust/ed25519/types.h>
+#include <rust/ed25519.h>
 
 class ProofVerifier {
 private:
@@ -35,7 +35,7 @@ public:
     // Verifies that the JoinSplit proof is correct.
     bool VerifySprout(
         const JSDescription& jsdesc,
-        const Ed25519VerificationKey& joinSplitPubKey
+        const ed25519::VerificationKey& joinSplitPubKey
     );
 };
 

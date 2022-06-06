@@ -401,7 +401,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 
     // Prepare raw transaction to handle JoinSplits
     CMutableTransaction mtx(tx_);
-    ed25519_generate_keypair(&joinSplitPrivKey_, &joinSplitPubKey_);
+    ed25519::generate_keypair(joinSplitPrivKey_, joinSplitPubKey_);
     mtx.joinSplitPubKey = joinSplitPubKey_;
     tx_ = CTransaction(mtx);
 
@@ -856,19 +856,16 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId_, txdata);
 
     // Add the signature
-    if (!ed25519_sign(
-        &joinSplitPrivKey_,
-        dataToBeSigned.begin(), 32,
-        &mtx.joinSplitSig))
-    {
-        throw std::runtime_error("ed25519_sign failed");
-    }
+    ed25519::sign(
+        joinSplitPrivKey_,
+        {dataToBeSigned.begin(), 32},
+        mtx.joinSplitSig);
 
     // Sanity check
-    if (!ed25519_verify(
-        &mtx.joinSplitPubKey,
-        &mtx.joinSplitSig,
-        dataToBeSigned.begin(), 32))
+    if (!ed25519::verify(
+        mtx.joinSplitPubKey,
+        mtx.joinSplitSig,
+        {dataToBeSigned.begin(), 32}))
     {
         throw std::runtime_error("ed25519_verify failed");
     }

@@ -2941,7 +2941,7 @@ UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
 
-    Ed25519VerificationKey joinSplitPubKey;
+    ed25519::VerificationKey joinSplitPubKey;
     uint256 anchor = SproutMerkleTree().root();
     std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs({JSInput(), JSInput()});
     std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs({JSOutput(), JSOutput()});

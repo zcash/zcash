@@ -255,7 +255,7 @@ bool ShieldToAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) co
 
     // Prepare raw transaction to handle JoinSplits
     CMutableTransaction mtx(m_op->tx_);
-    ed25519_generate_keypair(&m_op->joinSplitPrivKey_, &m_op->joinSplitPubKey_);
+    ed25519::generate_keypair(m_op->joinSplitPrivKey_, m_op->joinSplitPubKey_);
     mtx.joinSplitPubKey = m_op->joinSplitPubKey_;
     m_op->tx_ = CTransaction(mtx);
 
@@ -379,19 +379,16 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
     uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
 
     // Add the signature
-    if (!ed25519_sign(
-        &joinSplitPrivKey_,
-        dataToBeSigned.begin(), 32,
-        &mtx.joinSplitSig))
-    {
-        throw std::runtime_error("ed25519_sign failed");
-    }
+    ed25519::sign(
+        joinSplitPrivKey_,
+        {dataToBeSigned.begin(), 32},
+        mtx.joinSplitSig);
 
     // Sanity check
-    if (!ed25519_verify(
-        &mtx.joinSplitPubKey,
-        &mtx.joinSplitSig,
-        dataToBeSigned.begin(), 32))
+    if (!ed25519::verify(
+        mtx.joinSplitPubKey,
+        mtx.joinSplitSig,
+        {dataToBeSigned.begin(), 32}))
     {
         throw std::runtime_error("ed25519_verify failed");
     }

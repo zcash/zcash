@@ -38,8 +38,6 @@
 #include <utility>
 #include <variant>
 
-#include <rust/ed25519.h>
-
 using namespace libzcash;
 
 AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(

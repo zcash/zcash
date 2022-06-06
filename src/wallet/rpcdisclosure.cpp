@@ -246,17 +246,17 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
     // it is byte-flipped in the RPC output.
     uint256 joinSplitPubKey;
     std::copy(
-        tx.joinSplitPubKey.bytes,
-        tx.joinSplitPubKey.bytes + ED25519_VERIFICATION_KEY_LEN,
+        tx.joinSplitPubKey.bytes.begin(),
+        tx.joinSplitPubKey.bytes.end(),
         joinSplitPubKey.begin());
     o.pushKV("joinSplitPubKey", joinSplitPubKey.ToString());
 
     // Verify the payment disclosure was signed using the same key as the transaction i.e. the joinSplitPrivKey.
     uint256 dataToBeSigned = SerializeHash(pd.payload, SER_GETHASH, 0);
-    bool sigVerified = ed25519_verify(
-        &tx.joinSplitPubKey,
-        &pd.payloadSig,
-        dataToBeSigned.begin(), 32);
+    bool sigVerified = ed25519::verify(
+        tx.joinSplitPubKey,
+        pd.payloadSig,
+        {dataToBeSigned.begin(), 32});
     o.pushKV("signatureVerified", sigVerified);
     if (!sigVerified) {
         errs.push_back("Payment disclosure signature does not match transaction signature");        

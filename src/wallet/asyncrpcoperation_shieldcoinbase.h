@@ -19,7 +19,7 @@
 
 #include <univalue.h>
 
-#include <rust/ed25519/types.h>
+#include <rust/ed25519.h>
 
 using namespace libzcash;
 
@@ -73,8 +73,8 @@ private:
     CAmount fee_;
     PaymentAddress tozaddr_;
 
-    Ed25519VerificationKey joinSplitPubKey_;
-    Ed25519SigningKey joinSplitPrivKey_;
+    ed25519::VerificationKey joinSplitPubKey_;
+    ed25519::SigningKey joinSplitPrivKey_;
 
     std::vector<ShieldCoinbaseUTXO> inputs_;
 
