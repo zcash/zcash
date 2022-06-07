@@ -160,8 +160,7 @@ Files: depends/sources/utfcpp-*.tar.gz
 Copyright: 2006 Nemanja Trifunovic
 License: Boost-Software-License-1.0
 
-Files: depends/*/vendored-sources/halo2/*
- depends/*/vendored-sources/orchard/*
+Files: depends/*/vendored-sources/orchard/*
 Copyright: 2020-2022 The Electric Coin Company
 License: BOSL-1+ with Zcash exception
 
