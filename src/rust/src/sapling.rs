@@ -6,17 +6,13 @@ use bellman::groth16::Proof;
 use group::GroupEncoding;
 
 use zcash_primitives::{
-    sapling::{
-        redjubjub::{self, Signature},
-    },
+    sapling::redjubjub::{self, Signature},
     transaction::components::Amount,
 };
-use zcash_proofs::{
-    sapling::SaplingVerificationContext,
-};
+use zcash_proofs::sapling::SaplingVerificationContext;
 
 use super::GROTH_PROOF_SIZE;
-use super::{SAPLING_OUTPUT_VK, SAPLING_SPEND_VK, de_ct};
+use super::{de_ct, SAPLING_OUTPUT_VK, SAPLING_SPEND_VK};
 
 #[cxx::bridge(namespace = "sapling")]
 mod ffi {

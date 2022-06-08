@@ -47,20 +47,16 @@ use zcash_primitives::{
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
     merkle_tree::MerklePath,
     sapling::{
-        keys::FullViewingKey,
-        note_encryption::sapling_ka_agree,
-        redjubjub::self,
-        Diversifier, Note, PaymentAddress, ProofGenerationKey, Rseed, ViewingKey,
+        keys::FullViewingKey, note_encryption::sapling_ka_agree, redjubjub, Diversifier, Note,
+        PaymentAddress, ProofGenerationKey, Rseed, ViewingKey,
     },
     sapling::{merkle_hash, spend_sig},
     transaction::components::Amount,
     zip32::{self, sapling_address, sapling_derive_internal_fvk, sapling_find_address},
 };
 use zcash_proofs::{
-    circuit::sapling::TREE_DEPTH as SAPLING_TREE_DEPTH,
-    load_parameters,
-    sapling::SaplingProvingContext,
-    sprout,
+    circuit::sapling::TREE_DEPTH as SAPLING_TREE_DEPTH, load_parameters,
+    sapling::SaplingProvingContext, sprout,
 };
 
 mod blake2b;
