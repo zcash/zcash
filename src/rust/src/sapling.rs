@@ -2,6 +2,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+// This is added because `check_spend` takes several arguments over FFI. This
+// annotation gets removed by the cxx procedural macro so it needs to be enabled
+// on the entire module.
+#![allow(clippy::too_many_arguments)]
+
 use bellman::groth16::Proof;
 use group::GroupEncoding;
 
