@@ -23,7 +23,7 @@ mod ffi {
     extern "Rust" {
         type Verifier;
 
-        fn init_verifier(zip216_enabled: bool) -> Box<Verifier>;
+        fn init_verifier() -> Box<Verifier>;
         fn check_spend(
             &mut self,
             cv: &[u8; 32],
@@ -52,8 +52,11 @@ mod ffi {
 
 struct Verifier(SaplingVerificationContext);
 
-fn init_verifier(zip216_enabled: bool) -> Box<Verifier> {
-    Box::new(Verifier(SaplingVerificationContext::new(zip216_enabled)))
+fn init_verifier() -> Box<Verifier> {
+    // We consider ZIP 216 active all of the time because blocks prior to NU5
+    // activation (on mainnet and testnet) did not contain Sapling transactions
+    // that violated its canonicity rule.
+    Box::new(Verifier(SaplingVerificationContext::new(true)))
 }
 
 impl Verifier {

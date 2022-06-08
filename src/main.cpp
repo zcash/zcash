@@ -1318,12 +1318,7 @@ bool ContextualCheckShieldedInputs(
     if (!tx.vShieldedSpend.empty() ||
         !tx.vShieldedOutput.empty())
     {
-        // The nu5Active flag passed in here enables the new consensus rules from ZIP 216
-        // (https://zips.z.cash/zip-0216#specification) on the following fields:
-        //
-        // - spendAuthSig in Sapling Spend descriptions
-        // - bindingSigSapling
-        auto ctx = sapling::init_verifier(nu5Active);
+        auto ctx = sapling::init_verifier();
 
         for (const SpendDescription &spend : tx.vShieldedSpend) {
             if (!ctx->check_spend(
