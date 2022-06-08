@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#define NUM_KMD_SEASONS 6
+#define NUM_KMD_SEASONS 7
 #define NUM_KMD_NOTARIES 64
 
 extern const uint32_t nStakedDecemberHardforkTimestamp; //December 2019 hardfork
@@ -13,8 +13,11 @@ extern const int32_t nS4HardforkHeight;   //dPoW Season 4 2020 hardfork
 extern const uint32_t nS5Timestamp; //dPoW Season 5 June 14th, 2021 hardfork (03:00:00 PM UTC) (defined in komodo_globals.h)
 extern const int32_t nS5HardforkHeight;   //dPoW Season 5 June 14th, 2021 hardfork estimated block height (defined in komodo_globals.h)
 
-static const uint32_t KMD_SEASON_TIMESTAMPS[NUM_KMD_SEASONS] = {1525132800, 1563148800, nStakedDecemberHardforkTimestamp, nS4Timestamp, nS5Timestamp, 1751328000};
-static const int32_t KMD_SEASON_HEIGHTS[NUM_KMD_SEASONS] = {814000, 1444000, nDecemberHardforkHeight, nS4HardforkHeight, nS5HardforkHeight, 7113400};
+extern const uint32_t nS6Timestamp;       // dPoW Season 6, Fri Jun 24 2022 13:37:33 GMT+0000
+extern const int32_t nS6HardforkHeight;   // dPoW Season 6, Fri Jun 24 2022
+
+static const uint32_t KMD_SEASON_TIMESTAMPS[NUM_KMD_SEASONS] = {1525132800, 1563148800, nStakedDecemberHardforkTimestamp, nS4Timestamp, nS5Timestamp, nS6Timestamp, 1751328000};
+static const int32_t KMD_SEASON_HEIGHTS[NUM_KMD_SEASONS] = {814000, 1444000, nDecemberHardforkHeight, nS4HardforkHeight, nS5HardforkHeight, nS6HardforkHeight, 7113400};
 
 // Era array of pubkeys. Add extra seasons to bottom as requried, after adding appropriate info above. 
 static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
@@ -416,6 +419,73 @@ static const char *notaries_elected[NUM_KMD_SEASONS][NUM_KMD_NOTARIES][2] =
         {"sheeba_SH", "03e6578015b7f0ab78a486070435031fff7bae11256ca6a9f3d358ab03029737cb"}, // 60
         {"strob_SH", "025ceac4256cef83ca4b110f837a71d70a5a977ecfdf807335e00bc78b560d451a"},
         {"strobnidan_SH", "02b967fde3686d45056343e488997d4c53f25cd7ad38548cd12b136010a09295ae"},
+        {"dragonhound_DEV", "038e010c33c56b61389409eea5597fe17967398731e23185c84c472a16fc5d34ab"}
+   },
+   {
+        // Season 6
+        {"blackice_DEV", "02ca882f153e715091a2dbc5409096f8c109d9fe6506ca7a918056dd37162b6f6e"}, // 0
+        {"blackice_AR", "02909c79a198179c193fb85bbd4ba09b875a5a9bd481fec284658188b96ed43519"},
+        {"alien_EU", "03bb749e337b9074465fa28e757b5aa92cb1f0fea1a39589bca91a602834d443cd"},
+        {"alien_NA", "03bea1ac333b95c8669ec091907ea8713cae26f74b9e886e13593400e21c4d30a8"},
+        {"alien_SH", "03911a60395801082194b6834244fa78a3c30ff3e888667498e157b4aa80b0a65f"},
+        {"alienx_EU", "026afe5b112d1b39e0edafd5e051e261a676104460581f3673f26ceff7f1e6c56c"},
+        {"alienx_NA", "02f0b3ef87629509441b1ae95f28108f258a81910e483b90e0496205e24e7069b8"},
+        {"artem.pikulin_AR", "026a8ed1e4eeeb023cfb8e003e1c1de6a2b771f37e112745ffb8b6e375a9cbfdec"},
+        {"artem.pikulin_DEV", "036b9848396ddcdb9bb58ddab2c24b710b8e4e9b0ee084a00518505ecd9e9fe174"},
+        {"blackice_EU", "02668f5f723584f97f5e6f9196fc31018f36a6cf824c60328ad0c097a785df4745"},
+        {"chmex_AR", "036c856ea778ea105b93c0be187004d4e51161eda32888aa307b8f72d490884005"}, // 10
+        {"chmex_EU", "025b7209ba37df8d9695a23ea706ea2594863ab09055ca6bf485855937f3321d1d"},
+        {"chmex_NA", "030c2528c29d5328243c910277e3d74aa77c9b4e145308007d2b11550731591dbe"},
+        {"chmex_SH", "02698305eb3c27a2c724efd2152f9250739355116f201656c34b83aac2d3aebd19"},
+        {"chmex1_SH", "02d27ed1cddfbaff9e47865e7df0165457e8f075f70bbea8c0498598ccf494555d"},
+        {"cipi_1_EU", "03d6e1f3a693b5d69049791005d7cb64c259a1ad85833f5a9c545d4fee29905009"},
+        {"cipi_2_EU", "0202e430157486503f4bde3d3ca770c8f1e2447cf480a6b273b5265b9620f585e3"},
+        {"cipi_AR", "033ae024cdb748e083406a2e20037017a1292079ad6a8161ae5b43f398724fea74"},
+        {"cipi_NA", "036cc1d7476e4260601927be0fc8b748ae68d8fec8f5c498f71569a01bd92046c5"},
+        {"computergenie_EU", "03a8c071036228e0900e0171f616ce1a58f0a761193551d68c4c20e70534f2e183"},
+        {"computergenie_NA", "03a78ae070a5e9e935112cf7ea8293f18950f1011694ea0260799e8762c8a6f0a4"}, // 20
+        {"dimxy_AR", "02689d0b77b1e8e8c93a102d8b689fd08179164d70e2dd585543c3896a0916e6a1"},
+        {"dimxy_DEV", "039a01cd626d5efbe7fd05a59d8e5fced53bacac589192278f9b00ad31654b6956"},
+        {"dragonhound_NA", "02e650819f4d1cabeaad6bc5ec8c0722a89e63059a10f8b5e97c983c321608329b"},
+        {"fediakash_AR", "027dfe5403f8870fb0e1b94a2b4204373b31ea73179ba500a88dd56d22855cd03b"},
+        {"gcharang_DEV", "033b82b5791c65477dd11095cf33332013df6d2bcb7aa06a6dae5f7b22b6959b0b"},
+        {"gcharang_SH", "02cb445948bf0d89f8d61102e12a5ee6e98be61ac7c2cb9ba435219ea9db967117"},
+        {"goldenman_AR", "02c11f651df6a03f1a17b9ea0b1a73c0acca7aeacd4081e09bd7dd939690af8ae1"},
+        {"kolo_AR", "028431645f923a9e383a4e37cbb7168fa34988da23d43097124fe882bdac6d175f"},
+        {"kolo_EU", "03e1287d4c14ad73ce9ddd31361a7de8df4eeeefe9460a1ff9a6b2a1242ad3b7c2"},
+        {"kolox_AR", "0289f5f64f4bb18d014c4e9f4c888f4da2b6518e88fd5b7768728c38177b66d305"}, // 30
+        {"komodopioneers_EU", "0351f7f2a6ecce863e4e774bfafe2e59e151c08bf8f350286763a6b8ed97274b82"},
+        {"madmax_DEV", "027100e6b3db2028034db651946ecde90e45be3799ebc310d39af4496772a850ad"},
+        {"marmarachain_EU", "0234e40800500370d43979586ee2cec2e777a0368d10c682e78bca30fd1630c18d"},
+        {"mcrypt_AR", "029bdb33b08f96524082490f4373bc6026b92bcaef9bc521a840a799c73b75ed80"},
+        {"mcrypt_SH", "025faab3cc2e83bf7dad6a9463cbff86c08800e937942126f258cf219bc2320043"},
+        {"metaphilibert_SH", "0284af1a5ef01503e6316a2ca4abf8423a794e9fc17ac6846f042b6f4adedc3309"},
+        {"mylo_NA", "0365a778014c216401b6ba9c28eec88f116a9a9912e145ba2dbbd065d98b493af5"},
+        {"mylo_SH", "03458dca36e800d5bc121d8c0d35f9fc6282880a79fee2d7e050f887b797bc7d6e"},
+        {"nodeone_NA", "03f9dd0484e81174fd50775cb9099691c7d140ff00c0f088847e38dc87da67eb9b"},
+        {"nutellalicka_AR", "0285be2518bf8d65fceaa5f4d8485002f90d3b7ff274b23bb925fd167128e19589"}, // 40
+        {"nutellalicka_SH", "03a8b10c1f74af429fc43ab4eb722f6c2a88087f2d71703e7f0e8001207a966fb5"},
+        {"ocean_AR", "03c2bc8c57a001a788851fedc33ce72797ee8fe26eaa3abb1b807727e4867a3105"},
+        {"pbca26_NA", "03d8b25536da157d931b159a72c0eeaedb1bf7bb3eb2d02647fa41b2422a2b064e"},
+        {"pbca26_SH", "039a55787b742c3725323f0bd81c90a484fbdbf276a16317883bb03eedd9d6aa7c"},
+        {"phit_SH", "02a9cef2141fb2af24349c1eea20f5fa8f5dba2835723778d19b23353ddcd877b1"},
+        {"ptyx_NA", "0395640e81359526ecbc140716ddd5c9a1ce2a697fb547ca896e17cad3c65e78db"},
+        {"ptyx2_NA", "0225ff37e49e443065018736fbcad175ab5993b51b99b846e8de0b8b9abbed2ef2"},
+        {"sheeba_SH", "03e6578015b7f0ab78a486070435031fff7bae11256ca6a9f3d358ab03029737cb"},
+        {"smdmitry_AR", "022a2a45979a6631a25e4c96469423de720a2f4c849548957c35a35c91041ee7ac"},
+        {"smdmitry_EU", "02eb3aad81778f8d6f7e5295c44ca224e5c812f5e43fc1e9ce4ebafc23324183c9"}, // 50
+        {"smdmitry_SH", "02d01cd6b87cbf5a9795c06968f0d169168c1be0d82cfeb79958b11ae2c30316c1"},
+        {"strob_SH", "025ceac4256cef83ca4b110f837a71d70a5a977ecfdf807335e00bc78b560d451a"},
+        {"strobnidan_SH", "02b967fde3686d45056343e488997d4c53f25cd7ad38548cd12b136010a09295ae"},
+        {"tokel_NA", "02b472713e87fb2560569857051ea0811c65d668a6fe73df165afe152417f774a0"},
+        {"tonyl_AR", "029ad03929ec295e9164e2bfb9f0e0102c280d5e5212503d079d2d99ab492a9106"},
+        {"tonyl_DEV", "02342ec82b31a016b71cd1eb2f482a74f63172e1029ba2fb18f0def3bd4fc0668a"},
+        {"van_EU", "03af7f8c82f20671ca1978116353839d3e501523e379bfb52b1e05d7816bb5812f"},
+        {"webworker01_EU", "0321d523645caffd8e762764ba56f7874a61b9bf534837a2cb6e7da219fab15eef"},
+        {"webworker01_NA", "0287883ddd8da366401893ebcc1ff7e52d2ad3736984120a0ab01603e02c21dc98"},
+        {"who-biz_NA", "02f91a6772fe1a376e2bbe4b190008e3f878d40a8eaf92c65f1a7680b6b42ea47b"}, // 60
+        {"yurii-khi_DEV", "03e57c7341d2c8a3be62e1caaa28978d76a8277dea7bb484fdd8c55dc05e4e4e93"},
+        {"ca333_EU", "021d6fbe67d12f492a01306c70ab096f8b8581eb5f958d3f5fe3588ae8c7797f42"},
         {"dragonhound_DEV", "038e010c33c56b61389409eea5597fe17967398731e23185c84c472a16fc5d34ab"}
    }
 };
