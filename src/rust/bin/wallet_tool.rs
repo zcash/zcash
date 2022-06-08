@@ -166,6 +166,23 @@ pub fn main() {
     );
 
     let opts = CliOptions::parse_args(&args, ParsingStyle::default()).unwrap_or_else(|e| {
+        eprintln!(concat!(
+        	"This is the zcashd-wallet-tool.\n",
+		"This tool is used to export your Zcash wallet backup file and recovery seed phrase.\n\n",
+		"To restore your wallet from the backup file, use the z_importwallet command.\n",
+		"Command usage: zcash-cli z_importwallet path/to/backup/file\n\n",
+		"Please be aware: zcashd does not allow you to import your mnemonic seed phrase yet.\n",
+		"If you lose your wallet backup file, your funds are still safe, \n",
+		"but can only be recovered once zcashd can import seed phrases.\n\n",
+		"A new wallet backup file will contain the first 50 transparent \n",
+		"addresses of your wallet and your mnemonic seed phrase.\n",
+		"It will not contain any shielded addresses.\n\n",
+		"Every time you create a new unified or shielded address, you must backup \n",
+		"your wallet file if you want to be able to restore the addresses into a new wallet.\n\n",
+
+		"This tool will connect to zcashd.\n",
+		"The optional arguments below provide ways to configure the zcashd instance and connection.\n",
+	));
         eprintln!(
             "{}: {}\n\nUsage: {} [OPTIONS]\n\n{}\n\n{}",
             command,
