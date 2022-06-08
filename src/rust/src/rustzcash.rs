@@ -19,7 +19,7 @@
 // See https://github.com/rust-lang/rfcs/pull/2585 for more background.
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
-use bellman::groth16::{Parameters, PreparedVerifyingKey, Proof};
+use bellman::groth16::{Parameters, PreparedVerifyingKey};
 use blake2s_simd::Params as Blake2sParams;
 use bls12_381::Bls12;
 use group::{cofactor::CofactorGroup, GroupEncoding};
@@ -49,7 +49,7 @@ use zcash_primitives::{
     sapling::{
         keys::FullViewingKey,
         note_encryption::sapling_ka_agree,
-        redjubjub::{self, Signature},
+        redjubjub::self,
         Diversifier, Note, PaymentAddress, ProofGenerationKey, Rseed, ViewingKey,
     },
     sapling::{merkle_hash, spend_sig},
@@ -59,7 +59,7 @@ use zcash_primitives::{
 use zcash_proofs::{
     circuit::sapling::TREE_DEPTH as SAPLING_TREE_DEPTH,
     load_parameters,
-    sapling::{SaplingProvingContext, SaplingVerificationContext},
+    sapling::SaplingProvingContext,
     sprout,
 };
 
@@ -537,149 +537,9 @@ pub extern "C" fn librustzcash_sapling_ka_derivepublic(
     true
 }
 
-/// Creates a Sapling verification context. Please free this when you're done.
-#[no_mangle]
-pub extern "C" fn librustzcash_sapling_verification_ctx_init(
-    zip216_enabled: bool,
-) -> *mut SaplingVerificationContext {
-    let ctx = Box::new(SaplingVerificationContext::new(zip216_enabled));
-
-    Box::into_raw(ctx)
-}
-
-/// Frees a Sapling verification context returned from
-/// [`librustzcash_sapling_verification_ctx_init`].
-#[no_mangle]
-pub extern "C" fn librustzcash_sapling_verification_ctx_free(ctx: *mut SaplingVerificationContext) {
-    drop(unsafe { Box::from_raw(ctx) });
-}
-
 const GROTH_PROOF_SIZE: usize = 48 // π_A
     + 96 // π_B
     + 48; // π_C
-
-/// Check the validity of a Sapling Spend description, accumulating the value
-/// commitment into the context.
-#[no_mangle]
-pub extern "C" fn librustzcash_sapling_check_spend(
-    ctx: *mut SaplingVerificationContext,
-    cv: *const [c_uchar; 32],
-    anchor: *const [c_uchar; 32],
-    nullifier: *const [c_uchar; 32],
-    rk: *const [c_uchar; 32],
-    zkproof: *const [c_uchar; GROTH_PROOF_SIZE],
-    spend_auth_sig: *const [c_uchar; 64],
-    sighash_value: *const [c_uchar; 32],
-) -> bool {
-    // Deserialize the value commitment
-    let cv = match de_ct(jubjub::ExtendedPoint::from_bytes(unsafe { &*cv })) {
-        Some(p) => p,
-        None => return false,
-    };
-
-    // Deserialize the anchor, which should be an element
-    // of Fr.
-    let anchor = match de_ct(bls12_381::Scalar::from_bytes(unsafe { &*anchor })) {
-        Some(a) => a,
-        None => return false,
-    };
-
-    // Deserialize rk
-    let rk = match redjubjub::PublicKey::read(&(unsafe { &*rk })[..]) {
-        Ok(p) => p,
-        Err(_) => return false,
-    };
-
-    // Deserialize the signature
-    let spend_auth_sig = match Signature::read(&(unsafe { &*spend_auth_sig })[..]) {
-        Ok(sig) => sig,
-        Err(_) => return false,
-    };
-
-    // Deserialize the proof
-    let zkproof = match Proof::read(&(unsafe { &*zkproof })[..]) {
-        Ok(p) => p,
-        Err(_) => return false,
-    };
-
-    unsafe { &mut *ctx }.check_spend(
-        cv,
-        anchor,
-        unsafe { &*nullifier },
-        rk,
-        unsafe { &*sighash_value },
-        spend_auth_sig,
-        zkproof,
-        unsafe { SAPLING_SPEND_VK.as_ref() }.unwrap(),
-    )
-}
-
-/// Check the validity of a Sapling Output description, accumulating the value
-/// commitment into the context.
-#[no_mangle]
-pub extern "C" fn librustzcash_sapling_check_output(
-    ctx: *mut SaplingVerificationContext,
-    cv: *const [c_uchar; 32],
-    cm: *const [c_uchar; 32],
-    epk: *const [c_uchar; 32],
-    zkproof: *const [c_uchar; GROTH_PROOF_SIZE],
-) -> bool {
-    // Deserialize the value commitment
-    let cv = match de_ct(jubjub::ExtendedPoint::from_bytes(unsafe { &*cv })) {
-        Some(p) => p,
-        None => return false,
-    };
-
-    // Deserialize the commitment, which should be an element
-    // of Fr.
-    let cm = match de_ct(bls12_381::Scalar::from_bytes(unsafe { &*cm })) {
-        Some(a) => a,
-        None => return false,
-    };
-
-    // Deserialize the ephemeral key
-    let epk = match de_ct(jubjub::ExtendedPoint::from_bytes(unsafe { &*epk })) {
-        Some(p) => p,
-        None => return false,
-    };
-
-    // Deserialize the proof
-    let zkproof = match Proof::read(&(unsafe { &*zkproof })[..]) {
-        Ok(p) => p,
-        Err(_) => return false,
-    };
-
-    unsafe { &mut *ctx }.check_output(
-        cv,
-        cm,
-        epk,
-        zkproof,
-        unsafe { SAPLING_OUTPUT_VK.as_ref() }.unwrap(),
-    )
-}
-
-/// Finally checks the validity of the entire Sapling transaction given
-/// valueBalance and the binding signature.
-#[no_mangle]
-pub extern "C" fn librustzcash_sapling_final_check(
-    ctx: *mut SaplingVerificationContext,
-    value_balance: i64,
-    binding_sig: *const [c_uchar; 64],
-    sighash_value: *const [c_uchar; 32],
-) -> bool {
-    let value_balance = match Amount::from_i64(value_balance) {
-        Ok(vb) => vb,
-        Err(()) => return false,
-    };
-
-    // Deserialize the signature
-    let binding_sig = match Signature::read(&(unsafe { &*binding_sig })[..]) {
-        Ok(sig) => sig,
-        Err(_) => return false,
-    };
-
-    unsafe { &*ctx }.final_check(value_balance, unsafe { &*sighash_value }, binding_sig)
-}
 
 /// Sprout JoinSplit proof generation.
 #[no_mangle]
