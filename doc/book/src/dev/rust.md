@@ -3,6 +3,26 @@
 `zcashd` is primarily a C++ codebase, but most new code is being written in Rust
 where possible.
 
+## Auditing Rust dependencies
+
+We use [`cargo-vet`] to audit our Rust dependencies. This means that after
+adding a new dependency, or updating existing dependencies with `cargo update`,
+CI will fail until corresponding audits have been added.
+
+We also have a significant number of pre-existing unaudited dependency versions
+that are excluded from auditing checks. We aim to reduce this list over time.
+New entries should not be added to the exclusion list without justification.
+
+To audit a dependency, first [install `cargo-vet`] and then follow the
+["Performing Audits" guide]. If you are updating a dependency then instead of
+auditing the new version in its entirety, you can optionally just audit the
+delta between the old and new versions - even if the old version is in the
+"unaudited" exclusion list.
+
+[`cargo-vet`]: https://github.com/mozilla/cargo-vet
+[install `cargo-vet`]: https://mozilla.github.io/cargo-vet/install.html
+["Performing Audits" guide]: https://mozilla.github.io/cargo-vet/performing-audits.html
+
 ## Adding new dependencies in online-Rust mode
 
 The `zcashd` build system pins all dependencies, and in order to facilitate
