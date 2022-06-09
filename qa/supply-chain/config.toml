@@ -1,0 +1,939 @@
+
+# cargo-vet config file
+
+[[unaudited.addr2line]]
+version = "0.17.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.adler]]
+version = "1.0.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.aead]]
+version = "0.4.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.aes]]
+version = "0.7.5"
+criteria = "safe-to-deploy"
+
+[[unaudited.ahash]]
+version = "0.7.6"
+criteria = "safe-to-deploy"
+
+[[unaudited.aho-corasick]]
+version = "0.7.18"
+criteria = "safe-to-deploy"
+
+[[unaudited.ansi_term]]
+version = "0.12.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.anyhow]]
+version = "1.0.56"
+criteria = "safe-to-deploy"
+
+[[unaudited.arrayref]]
+version = "0.3.6"
+criteria = "safe-to-deploy"
+
+[[unaudited.arrayvec]]
+version = "0.5.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.arrayvec]]
+version = "0.7.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.atomic-shim]]
+version = "0.2.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.autocfg]]
+version = "1.1.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.backtrace]]
+version = "0.3.64"
+criteria = "safe-to-deploy"
+
+[[unaudited.base64ct]]
+version = "1.0.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.bech32]]
+version = "0.8.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.bellman]]
+version = "0.13.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.bip0039]]
+version = "0.9.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.bitflags]]
+version = "1.3.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.bitvec]]
+version = "1.0.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.blake2b_simd]]
+version = "0.5.11"
+criteria = "safe-to-deploy"
+
+[[unaudited.blake2b_simd]]
+version = "1.0.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.blake2s_simd]]
+version = "1.0.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.block-buffer]]
+version = "0.9.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.block-buffer]]
+version = "0.10.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.block-modes]]
+version = "0.8.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.block-padding]]
+version = "0.2.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.bls12_381]]
+version = "0.7.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.bs58]]
+version = "0.4.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.bumpalo]]
+version = "3.8.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.byte-slice-cast]]
+version = "1.2.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.byteorder]]
+version = "1.4.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.bytes]]
+version = "1.1.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.cc]]
+version = "1.0.73"
+criteria = "safe-to-deploy"
+
+[[unaudited.cfg-if]]
+version = "0.1.10"
+criteria = "safe-to-deploy"
+
+[[unaudited.cfg-if]]
+version = "1.0.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.chacha20]]
+version = "0.8.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.chacha20poly1305]]
+version = "0.9.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.cipher]]
+version = "0.3.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.clearscreen]]
+version = "1.0.9"
+criteria = "safe-to-deploy"
+
+[[unaudited.constant_time_eq]]
+version = "0.1.5"
+criteria = "safe-to-deploy"
+
+[[unaudited.cpufeatures]]
+version = "0.2.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.crossbeam-channel]]
+version = "0.5.4"
+criteria = "safe-to-deploy"
+
+[[unaudited.crossbeam-deque]]
+version = "0.8.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.crossbeam-epoch]]
+version = "0.9.8"
+criteria = "safe-to-deploy"
+
+[[unaudited.crossbeam-utils]]
+version = "0.8.8"
+criteria = "safe-to-deploy"
+
+[[unaudited.crunchy]]
+version = "0.2.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.crypto-common]]
+version = "0.1.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.crypto-mac]]
+version = "0.11.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.curve25519-dalek]]
+version = "3.2.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.cxx]]
+version = "1.0.68"
+criteria = "safe-to-deploy"
+
+[[unaudited.cxxbridge-flags]]
+version = "1.0.68"
+criteria = "safe-to-deploy"
+
+[[unaudited.cxxbridge-macro]]
+version = "1.0.68"
+criteria = "safe-to-deploy"
+
+[[unaudited.dashmap]]
+version = "4.0.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.digest]]
+version = "0.9.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.digest]]
+version = "0.10.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.directories]]
+version = "4.0.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.dirs]]
+version = "2.0.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.dirs-sys]]
+version = "0.3.7"
+criteria = "safe-to-deploy"
+
+[[unaudited.ed25519-zebra]]
+version = "3.0.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.either]]
+version = "1.6.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.endian-type]]
+version = "0.1.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.ff]]
+version = "0.12.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.fixed-hash]]
+version = "0.7.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.fnv]]
+version = "1.0.7"
+criteria = "safe-to-deploy"
+
+[[unaudited.fpe]]
+version = "0.5.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.funty]]
+version = "2.0.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.futures-channel]]
+version = "0.3.21"
+criteria = "safe-to-deploy"
+
+[[unaudited.futures-core]]
+version = "0.3.21"
+criteria = "safe-to-deploy"
+
+[[unaudited.futures-task]]
+version = "0.3.21"
+criteria = "safe-to-deploy"
+
+[[unaudited.futures-util]]
+version = "0.3.21"
+criteria = "safe-to-deploy"
+
+[[unaudited.generic-array]]
+version = "0.14.5"
+criteria = "safe-to-deploy"
+
+[[unaudited.getrandom]]
+version = "0.1.16"
+criteria = "safe-to-deploy"
+
+[[unaudited.getrandom]]
+version = "0.2.6"
+criteria = "safe-to-deploy"
+
+[[unaudited.gimli]]
+version = "0.26.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.group]]
+version = "0.12.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.gumdrop]]
+version = "0.8.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.gumdrop_derive]]
+version = "0.8.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.hashbrown]]
+version = "0.11.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.hdwallet]]
+version = "0.3.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.hermit-abi]]
+version = "0.1.19"
+criteria = "safe-to-deploy"
+
+[[unaudited.hex]]
+version = "0.4.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.hmac]]
+version = "0.11.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.http]]
+version = "0.2.6"
+criteria = "safe-to-deploy"
+
+[[unaudited.http-body]]
+version = "0.4.4"
+criteria = "safe-to-deploy"
+
+[[unaudited.httparse]]
+version = "1.6.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.httpdate]]
+version = "1.0.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.hyper]]
+version = "0.14.18"
+criteria = "safe-to-deploy"
+
+[[unaudited.impl-codec]]
+version = "0.6.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.impl-trait-for-tuples]]
+version = "0.2.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.incrementalmerkletree]]
+version = "0.3.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.indexmap]]
+version = "1.8.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.instant]]
+version = "0.1.12"
+criteria = "safe-to-deploy"
+
+[[unaudited.ipnet]]
+version = "2.4.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.itoa]]
+version = "1.0.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.js-sys]]
+version = "0.3.57"
+criteria = "safe-to-deploy"
+
+[[unaudited.jubjub]]
+version = "0.9.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.lazy_static]]
+version = "1.4.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.libc]]
+version = "0.2.122"
+criteria = "safe-to-deploy"
+
+[[unaudited.libm]]
+version = "0.2.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.link-cplusplus]]
+version = "1.0.6"
+criteria = "safe-to-deploy"
+
+[[unaudited.lock_api]]
+version = "0.4.7"
+criteria = "safe-to-deploy"
+
+[[unaudited.log]]
+version = "0.4.16"
+criteria = "safe-to-deploy"
+
+[[unaudited.mach]]
+version = "0.3.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.matchers]]
+version = "0.1.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.memchr]]
+version = "2.4.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.memoffset]]
+version = "0.6.5"
+criteria = "safe-to-deploy"
+
+[[unaudited.memuse]]
+version = "0.2.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.metrics]]
+version = "0.17.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.metrics-exporter-prometheus]]
+version = "0.6.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.metrics-macros]]
+version = "0.4.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.metrics-util]]
+version = "0.10.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.miniz_oxide]]
+version = "0.4.4"
+criteria = "safe-to-deploy"
+
+[[unaudited.mio]]
+version = "0.8.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.miow]]
+version = "0.3.7"
+criteria = "safe-to-deploy"
+
+[[unaudited.nibble_vec]]
+version = "0.1.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.nix]]
+version = "0.22.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.nom]]
+version = "5.1.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.nonempty]]
+version = "0.7.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.ntapi]]
+version = "0.3.7"
+criteria = "safe-to-deploy"
+
+[[unaudited.num-bigint]]
+version = "0.4.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.num-integer]]
+version = "0.1.44"
+criteria = "safe-to-deploy"
+
+[[unaudited.num-traits]]
+version = "0.2.14"
+criteria = "safe-to-deploy"
+
+[[unaudited.num_cpus]]
+version = "1.13.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.num_threads]]
+version = "0.1.5"
+criteria = "safe-to-deploy"
+
+[[unaudited.object]]
+version = "0.27.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.once_cell]]
+version = "1.10.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.opaque-debug]]
+version = "0.3.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.ordered-float]]
+version = "2.10.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.pairing]]
+version = "0.22.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.parity-scale-codec]]
+version = "3.1.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.parity-scale-codec-derive]]
+version = "3.1.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.parking_lot]]
+version = "0.11.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.parking_lot_core]]
+version = "0.8.5"
+criteria = "safe-to-deploy"
+
+[[unaudited.password-hash]]
+version = "0.3.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.pasta_curves]]
+version = "0.4.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.pbkdf2]]
+version = "0.9.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.phf]]
+version = "0.8.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.phf_codegen]]
+version = "0.8.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.phf_generator]]
+version = "0.8.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.phf_shared]]
+version = "0.8.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.pin-project-lite]]
+version = "0.2.8"
+criteria = "safe-to-deploy"
+
+[[unaudited.pin-utils]]
+version = "0.1.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.poly1305]]
+version = "0.7.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.ppv-lite86]]
+version = "0.2.16"
+criteria = "safe-to-deploy"
+
+[[unaudited.primitive-types]]
+version = "0.11.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.proc-macro-crate]]
+version = "1.1.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.proc-macro2]]
+version = "1.0.37"
+criteria = "safe-to-deploy"
+
+[[unaudited.quanta]]
+version = "0.9.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.quote]]
+version = "1.0.17"
+criteria = "safe-to-deploy"
+
+[[unaudited.radium]]
+version = "0.7.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.radix_trie]]
+version = "0.2.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.rand]]
+version = "0.7.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.rand]]
+version = "0.8.5"
+criteria = "safe-to-deploy"
+
+[[unaudited.rand_chacha]]
+version = "0.2.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.rand_chacha]]
+version = "0.3.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.rand_core]]
+version = "0.5.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.rand_core]]
+version = "0.6.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.rand_hc]]
+version = "0.2.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.rand_pcg]]
+version = "0.2.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.raw-cpuid]]
+version = "10.3.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.rayon]]
+version = "1.5.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.rayon-core]]
+version = "1.9.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.reddsa]]
+version = "0.3.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.redox_syscall]]
+version = "0.2.13"
+criteria = "safe-to-deploy"
+
+[[unaudited.redox_users]]
+version = "0.4.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.regex]]
+version = "1.5.5"
+criteria = "safe-to-deploy"
+
+[[unaudited.regex-automata]]
+version = "0.1.10"
+criteria = "safe-to-deploy"
+
+[[unaudited.regex-syntax]]
+version = "0.6.25"
+criteria = "safe-to-deploy"
+
+[[unaudited.ring]]
+version = "0.16.20"
+criteria = "safe-to-deploy"
+
+[[unaudited.ripemd]]
+version = "0.1.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.rustc-demangle]]
+version = "0.1.21"
+criteria = "safe-to-deploy"
+
+[[unaudited.rustc-hex]]
+version = "2.1.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.scopeguard]]
+version = "1.1.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.secp256k1]]
+version = "0.21.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.secp256k1-sys]]
+version = "0.4.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.secrecy]]
+version = "0.8.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.serde]]
+version = "1.0.136"
+criteria = "safe-to-deploy"
+
+[[unaudited.serde_derive]]
+version = "1.0.136"
+criteria = "safe-to-deploy"
+
+[[unaudited.sha2]]
+version = "0.9.9"
+criteria = "safe-to-deploy"
+
+[[unaudited.sharded-slab]]
+version = "0.1.4"
+criteria = "safe-to-deploy"
+
+[[unaudited.siphasher]]
+version = "0.3.10"
+criteria = "safe-to-deploy"
+
+[[unaudited.sketches-ddsketch]]
+version = "0.1.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.smallvec]]
+version = "1.8.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.socket2]]
+version = "0.4.4"
+criteria = "safe-to-deploy"
+
+[[unaudited.spin]]
+version = "0.5.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.static_assertions]]
+version = "1.1.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.subtle]]
+version = "2.4.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.syn]]
+version = "1.0.91"
+criteria = "safe-to-deploy"
+
+[[unaudited.synstructure]]
+version = "0.12.6"
+criteria = "safe-to-deploy"
+
+[[unaudited.tap]]
+version = "1.0.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.terminfo]]
+version = "0.7.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.thiserror]]
+version = "1.0.30"
+criteria = "safe-to-deploy"
+
+[[unaudited.thiserror-impl]]
+version = "1.0.30"
+criteria = "safe-to-deploy"
+
+[[unaudited.thread_local]]
+version = "1.1.4"
+criteria = "safe-to-deploy"
+
+[[unaudited.time]]
+version = "0.3.9"
+criteria = "safe-to-deploy"
+
+[[unaudited.time-macros]]
+version = "0.2.4"
+criteria = "safe-to-deploy"
+
+[[unaudited.tinyvec]]
+version = "1.5.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.tinyvec_macros]]
+version = "0.1.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.tokio]]
+version = "1.17.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.tokio-macros]]
+version = "1.7.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.toml]]
+version = "0.5.9"
+criteria = "safe-to-deploy"
+
+[[unaudited.tower-service]]
+version = "0.3.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.tracing]]
+version = "0.1.32"
+criteria = "safe-to-deploy"
+
+[[unaudited.tracing-appender]]
+version = "0.2.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.tracing-attributes]]
+version = "0.1.20"
+criteria = "safe-to-deploy"
+
+[[unaudited.tracing-core]]
+version = "0.1.24"
+criteria = "safe-to-deploy"
+
+[[unaudited.tracing-subscriber]]
+version = "0.3.10"
+criteria = "safe-to-deploy"
+
+[[unaudited.try-lock]]
+version = "0.2.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.typenum]]
+version = "1.15.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.uint]]
+version = "0.9.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.unicode-normalization]]
+version = "0.1.19"
+criteria = "safe-to-deploy"
+
+[[unaudited.unicode-xid]]
+version = "0.2.2"
+criteria = "safe-to-deploy"
+
+[[unaudited.universal-hash]]
+version = "0.4.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.untrusted]]
+version = "0.7.1"
+criteria = "safe-to-deploy"
+
+[[unaudited.valuable]]
+version = "0.1.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.version_check]]
+version = "0.9.4"
+criteria = "safe-to-deploy"
+
+[[unaudited.want]]
+version = "0.3.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.wasi]]
+version = "0.9.0+wasi-snapshot-preview1"
+criteria = "safe-to-deploy"
+
+[[unaudited.wasi]]
+version = "0.10.2+wasi-snapshot-preview1"
+criteria = "safe-to-deploy"
+
+[[unaudited.wasi]]
+version = "0.11.0+wasi-snapshot-preview1"
+criteria = "safe-to-deploy"
+
+[[unaudited.wasm-bindgen]]
+version = "0.2.80"
+criteria = "safe-to-deploy"
+
+[[unaudited.wasm-bindgen-backend]]
+version = "0.2.80"
+criteria = "safe-to-deploy"
+
+[[unaudited.wasm-bindgen-macro]]
+version = "0.2.80"
+criteria = "safe-to-deploy"
+
+[[unaudited.wasm-bindgen-macro-support]]
+version = "0.2.80"
+criteria = "safe-to-deploy"
+
+[[unaudited.wasm-bindgen-shared]]
+version = "0.2.80"
+criteria = "safe-to-deploy"
+
+[[unaudited.web-sys]]
+version = "0.3.57"
+criteria = "safe-to-deploy"
+
+[[unaudited.which]]
+version = "4.2.5"
+criteria = "safe-to-deploy"
+
+[[unaudited.winapi]]
+version = "0.3.9"
+criteria = "safe-to-deploy"
+
+[[unaudited.winapi-i686-pc-windows-gnu]]
+version = "0.4.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.winapi-x86_64-pc-windows-gnu]]
+version = "0.4.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.wyz]]
+version = "0.5.0"
+criteria = "safe-to-deploy"
+
+[[unaudited.zeroize]]
+version = "1.4.3"
+criteria = "safe-to-deploy"
+
+[[unaudited.zeroize_derive]]
+version = "1.3.2"
+criteria = "safe-to-deploy"
+
