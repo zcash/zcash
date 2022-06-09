@@ -120,7 +120,7 @@ public:
         consensus.nPowMaxAdjustUp = 16; // 16% adjustment up
         consensus.nPowTargetSpacing = 1 * 60;
         consensus.nPowAllowMinDifficultyBlocksAfterHeight = boost::none;
-        consensus.nHF22Height = 2872714;
+        consensus.nHF22Height = 2973410; /* nS6HardforkHeight + 7 * 1440 (~1 week) */
         consensus.nHF22NotariesPriorityRotateDelta = 20;
         assert(0 < consensus.nHF22NotariesPriorityRotateDelta);
         consensus.vUpgrades[Consensus::BASE_SPROUT].nProtocolVersion = 170002;
