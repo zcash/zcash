@@ -152,7 +152,7 @@ uint64_t komodo_commission(const CBlock *block,int32_t height);
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig, uint256 merkleroot);
 uint256 komodo_calcmerkleroot(CBlock *pblock, uint256 prevBlockHash, int32_t nHeight, bool fNew, CScript scriptPubKey);
 int32_t komodo_newStakerActive(int32_t height, uint32_t timestamp);
-int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33, void* ptr);
+int32_t komodo_notaryvin(CMutableTransaction &txNew, uint8_t *notarypub33, const CScript &opretIn, uint32_t nLockTimeIn);
 int32_t komodo_is_notarytx(const CTransaction& tx);
 uint64_t komodo_notarypay(CMutableTransaction &txNew, std::vector<int8_t> &NotarisationNotaries, uint32_t timestamp, int32_t height, uint8_t *script, int32_t len);
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
@@ -315,9 +315,22 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
             txvalue = tx.GetValueOut();
             if ( KOMODO_VALUETOOBIG(txvalue) != 0 )
                 continue;
-            if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,0) < 0 )
+
+            /* HF22 - check interest validation against pindexPrev->GetMedianTimePast() + 777 */
+            uint32_t cmptime = (uint32_t)pblock->nTime;
+
+            if (ASSETCHAINS_SYMBOL[0] == 0 &&
+                consensusParams.nHF22Height != boost::none && nHeight > consensusParams.nHF22Height.get()
+            ) {
+                uint32_t cmptime_old = cmptime;
+                cmptime = nMedianTimePast + 777;
+                LogPrint("hfnet","%s[%d]: cmptime.%lu -> %lu\n", __func__, __LINE__, cmptime_old, cmptime);
+                LogPrint("hfnet","%s[%d]: ht.%ld\n", __func__, __LINE__, nHeight);
+            }
+
+            if (ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx, nHeight, cmptime, 0) < 0)
             {
-                fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure txid.%s nHeight.%d nTime.%u vs locktime.%u\n",tx.GetHash().ToString().c_str(),nHeight,(uint32_t)pblock->nTime,(uint32_t)tx.nLockTime);
+                LogPrintf("%s: komodo_validate_interest failure txid.%s nHeight.%d nTime.%u vs locktime.%u (cmptime.%lu)\n", __func__, tx.GetHash().ToString(), nHeight, (uint32_t)pblock->nTime, (uint32_t)tx.nLockTime, cmptime);
                 continue;
             }
 
@@ -819,7 +832,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
         if ( ASSETCHAINS_SYMBOL[0] == 0 && IS_KOMODO_NOTARY && My_notaryid >= 0 )
         {
-            uint32_t r; CScript opret; void **ptr=0;
+            uint32_t r; CScript opret;
             CMutableTransaction txNotary = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
             if ( pblock->nTime < pindexPrev->nTime+60 )
                 pblock->nTime = pindexPrev->nTime + 60;
@@ -834,14 +847,13 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 pblock->nTime += (r % (33 - gpucount)*(33 - gpucount));
             }
             pblock->vtx[0] = txNew;
+
             if ( Mining_height > nDecemberHardforkHeight ) //December 2019 hardfork
-            {
                 opret = komodo_makeopret(pblock, true);
-                ptr = (void**)calloc(0,sizeof(void *)*2);
-                ptr[0] = (void*)(CScript*)&opret;
-                ptr[1] = (void*)(unsigned long long)pblock->nTime;
-            } 
-            if ( komodo_notaryvin(txNotary,NOTARY_PUBKEY33,ptr) > 0 )
+            else
+                opret.clear();
+
+            if (komodo_notaryvin(txNotary, NOTARY_PUBKEY33, opret, pblock->nTime) > 0)
             {
                 CAmount txfees = 5000;
                 pblock->vtx.push_back(txNotary);
@@ -849,8 +861,7 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txNotary));
                 nFees += txfees;
                 pblocktemplate->vTxFees[0] = -nFees;
-                //*(uint64_t *)(&pblock->vtx[0].vout[0].nValue) += txfees;
-                fprintf(stderr,"added notaryvin includes proof.%i\n", ptr!=0);
+                fprintf(stderr,"added notaryvin includes proof.%d\n", opret.size() > 0);
             }
             else
             {
@@ -862,7 +873,6 @@ CBlockTemplate* CreateNewBlock(CPubKey _pk,const CScript& _scriptPubKeyIn, int32
                 }
                 return(0);
             }
-            if ( ptr!=0 ) free(ptr);
         }
         else if ( ASSETCHAINS_CC == 0 && pindexPrev != 0 && ASSETCHAINS_STAKED == 0 && (ASSETCHAINS_SYMBOL[0] != 0 || !IS_KOMODO_NOTARY || My_notaryid < 0) )
         {
@@ -1115,7 +1125,6 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,uint32_t *bl
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc,int32_t newStakerActive);
 int32_t FOUND_BLOCK,KOMODO_MAYBEMINED;
 extern int32_t KOMODO_LASTMINED,KOMODO_INSYNC;
-int32_t roundrobin_delay;
 arith_uint256 HASHTarget,HASHTarget_POW;
 
 // wait for peers to connect
@@ -1339,7 +1348,6 @@ void static BitcoinMiner()
             pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
             savebits = pblock->nBits;
             HASHTarget = arith_uint256().SetCompact(savebits);
-            roundrobin_delay = ROUNDROBIN_DELAY;
             if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )
             {
                 j = 65;
@@ -1394,7 +1402,53 @@ void static BitcoinMiner()
                         HASHTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                         fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
                     } else fprintf(stderr,"duplicate at j.%d\n",j);
-                } else Mining_start = 0;
+
+                    /* check if hf22 rule can be applied */
+                    const Consensus::Params &params = chainparams.GetConsensus();
+                    if (params.nHF22Height != boost::none)
+                    {
+                        const uint32_t nHeightAfterGAPSecondBlockAllowed = params.nHF22Height.get();
+                        const uint32_t nMaxGAPAllowed = params.nMaxFutureBlockTime + 1;
+                        const uint32_t tiptime = pindexPrev->GetBlockTime();
+
+                        if (Mining_height > nHeightAfterGAPSecondBlockAllowed)
+                        {
+                            const uint32_t &blocktime = pblock->nTime;
+                            if (blocktime >= tiptime + nMaxGAPAllowed && tiptime == blocktimes[1])
+                            {
+                                // already assumed notaryid >= 0 and chain is KMD
+                                LogPrint("hfnet", "%s[%d]: time.(%lu >= %lu), notaryid.%ld, ht.%ld\n", __func__, __LINE__, blocktime, tiptime, notaryid, Mining_height);
+
+                                /* build priority list */
+                                std::vector<int32_t> vPriorityList(64);
+                                // fill the priority list by notaries numbers, 0..63
+                                int id = 0;
+                                std::generate(vPriorityList.begin(), vPriorityList.end(), [&id] { return id++; }); // std::iota
+                                // move the notaries participated in last 65 to the end of priority list
+                                std::vector<int32_t>::iterator it;
+                                for (size_t i = sizeof(mids) / sizeof(mids[0]) - 1; i > 0; --i)
+                                { // ! mids[0] is not included
+                                    if (mids[i] != -1)
+                                    {
+                                        it = std::find(vPriorityList.begin(), vPriorityList.end(), mids[i]);
+                                        if (it != vPriorityList.end() && std::next(it) != vPriorityList.end())
+                                        {
+                                            std::rotate(it, std::next(it), vPriorityList.end());
+                                        }
+                                    }
+                                }
+
+                                if (isSecondBlockAllowed(notaryid, blocktime, tiptime + nMaxGAPAllowed, params.nHF22NotariesPriorityRotateDelta, vPriorityList))
+                                {
+                                    HASHTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
+                                    LogPrint("hfnet", "%s[%d]: notaryid.%ld, ht.%ld --> allowed to mine mindiff\n", __func__, __LINE__, notaryid, Mining_height);
+                                }
+                            }
+                        }
+                    } // hf22 rule check
+                }
+                else
+                    Mining_start = 0;
             } else Mining_start = 0;
 
             if ( ASSETCHAINS_STAKED > 0 )
@@ -1415,7 +1469,6 @@ void static BitcoinMiner()
                     break;
                 // komodo_longestchain();
                 // Hash state
-                KOMODO_CHOSEN_ONE = 0;
 
                 crypto_generichash_blake2b_state state;
                 EhInitialiseState(n, k, state);
@@ -1517,7 +1570,7 @@ void static BitcoinMiner()
                         gotinvalid = 1;
                         return(false);
                     }
-                    KOMODO_CHOSEN_ONE = 1;
+
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     LogPrintf("KomodoMiner:\n");
@@ -1531,7 +1584,7 @@ void static BitcoinMiner()
                             std::lock_guard<std::mutex> lock{m_cs};
                             cancelSolver = false;
                         }
-                        KOMODO_CHOSEN_ONE = 0;
+
                         SetThreadPriority(THREAD_PRIORITY_LOWEST);
                         // In regression test mode, stop mining after a block is found.
                         if (chainparams.MineBlocksOnDemand()) {

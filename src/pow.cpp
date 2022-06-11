@@ -580,7 +580,6 @@ int32_t komodo_currentheight();
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
 bool komodo_checkopret(CBlock *pblock, CScript &merkleroot);
 CScript komodo_makeopret(CBlock *pblock, bool fNew);
-extern int32_t KOMODO_CHOSEN_ONE;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 #define KOMODO_ELECTION_GAP 2000
 
@@ -588,6 +587,26 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,uint32_t blo
 int32_t KOMODO_LOADINGBLOCKS = 1;
 
 extern std::string NOTARY_PUBKEY;
+
+bool isSecondBlockAllowed(int32_t notaryid, uint32_t blocktime, uint32_t threshold, uint32_t delta, const std::vector<int32_t> &vPriorityList)
+{
+
+    if (blocktime >= threshold && delta > 0 &&
+        vPriorityList.size() == 64 && notaryid >= 0)
+    {
+        size_t nPos = ((blocktime - threshold) / delta);
+
+        if (nPos < vPriorityList.size())
+        {
+            // if nodeid found in current range of priority -> allow it
+            if (std::count(vPriorityList.begin(), vPriorityList.begin() + nPos + 1, notaryid) > 0)
+                return true;
+        }
+        else
+            return true; // if time is bigger than the biggest range -> all nodes allowed
+    }
+    return false;
+}
 
 bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t height, const Consensus::Params& params)
 {
@@ -638,6 +657,75 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
                     flag = 0;
                 else fprintf(stderr,"ht.%d notaryid.%d special.%d flag.%d special2.%d\n",height,notaryid,special,flag,special2);
             }
+
+            /* hf22 rule applied to stale blocks */
+            if (params.nHF22Height != boost::none) {
+
+                const uint32_t nHeightAfterGAPSecondBlockAllowed = params.nHF22Height.get();
+                const uint32_t nMaxGAPAllowed = params.nMaxFutureBlockTime + 1;
+
+                /*  in KMD chain after nHeightAfterGAPSecondBlockAllowed height we should allow
+                    notary nodes to mine a second block if nMaxGAPAllowed since last block passed
+                */
+                if (ASSETCHAINS_SYMBOL[0] == 0 && height > nHeightAfterGAPSecondBlockAllowed)
+                {
+                    const uint32_t &blocktime = blkHeader.nTime;
+                    if (blocktime /* upcoming block time */ >= tiptime /* last block in chain time */ + nMaxGAPAllowed &&
+                        tiptime == blocktimes[1] /* just for ensure that all is correct */ )
+                    {
+                        assert(notaryid >= 0); /* assume to be notary */
+
+                        /* here special2 is:
+                                -2 - if it's notary but 57 seconds from last block is not passed
+                                -1 - notary repeat in mids[1..65], i.e. in last 65 blocks
+                                 0 - non-notary
+                                 1 - notary
+                                 2 - notary with easy diff allowed, bcz of "after gap"
+                        */
+
+                        LogPrint("hfnet","%s[%d]: time.(%lu >= %lu), special2.%ld, notaryid.%ld\n", __func__, __LINE__, blocktime, tiptime, special2, notaryid);
+
+                        /* build priority list */
+                        std::vector<int32_t> vPriorityList(64);
+                        // fill the priority list by notaries numbers, 0..63
+                        int id = 0;
+                        std::generate(vPriorityList.begin(), vPriorityList.end(), [&id] { return id++; }); // std::iota
+                        // move the notaries participated in last 65 to the end of priority list
+                        std::vector<int32_t>::iterator it;
+                        for (size_t i = sizeof(mids)/sizeof(mids[0]) - 1; i > 0; --i) { // ! mids[0] is not included
+                            if (mids[i] != -1 ) {
+                                it = std::find(vPriorityList.begin(), vPriorityList.end(), mids[i]);
+                                if (it != vPriorityList.end() && std::next(it) != vPriorityList.end()) {
+                                    std::rotate(it, std::next(it), vPriorityList.end());
+                                }
+                            }
+                        }
+
+                        LogPrint("hfnet","%s[%d]: vPriorityList = \n    [ ", __func__, __LINE__);
+                        for (const auto &id : vPriorityList) {
+                            LogPrint("hfnet", "%ld ", id);
+                        }
+                        LogPrint("hfnet", "]\n");
+
+                        /* reconsider special2 if allowed */
+                        if ((-1 == special2 || 1 == special2) &&
+                            isSecondBlockAllowed(notaryid, blocktime, tiptime + nMaxGAPAllowed, params.nHF22NotariesPriorityRotateDelta, vPriorityList))
+                        {
+                            special2 = 2;
+                            LogPrint("hfnet", "%s[%d]: special2.%ld, notaryid.%ld, ht.%ld, hash.%s\n", __func__, __LINE__, special2, notaryid, height, blkHeader.GetHash().ToString());
+                        }
+
+                        LogPrint("hfnet","%s[%d]: Allowed to mine: \n    [ ", __func__, __LINE__);
+                        for (int i = 0; i < 64; i++) {
+                            if (isSecondBlockAllowed(i, blocktime, tiptime + nMaxGAPAllowed, params.nHF22NotariesPriorityRotateDelta, vPriorityList))
+                                LogPrint("hfnet", "%d ", i);
+                        }
+                        LogPrint("hfnet", "]\n");
+
+                    }
+                }
+            }
+
             if ( (flag != 0 || special2 > 0) && special2 != -2 )
             {
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);

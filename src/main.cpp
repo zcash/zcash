@@ -1810,8 +1810,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     auto verifier = libzcash::ProofVerifier::Strict();
     if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx,chainActive.LastTip()->nHeight+1,chainActive.LastTip()->GetMedianTimePast() + 777,0) < 0 )
     {
-        fprintf(stderr,"AcceptToMemoryPool komodo_validate_interest failure\n");
-        return error("AcceptToMemoryPool: komodo_validate_interest failed");
+        return error("%s: komodo_validate_interest failed txid.%s", __func__, tx.GetHash().ToString());
     }
     
     if (!CheckTransaction(tiptime,tx, state, verifier, 0, 0))
@@ -5258,11 +5257,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     for (uint32_t i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction& tx = block.vtx[i];
-        if ( komodo_validate_interest(tx,height == 0 ? komodo_block2height((CBlock *)&block) : height,block.nTime,0) < 0 )
-        {
-            fprintf(stderr, "validate intrest failed for txnum.%i tx.%s\n", i, tx.ToString().c_str());
-            return error("CheckBlock: komodo_validate_interest failed");
-        }
+
         if (!CheckTransaction(tiptime,tx, state, verifier, i, (int32_t)block.vtx.size()))
             return error("CheckBlock: CheckTransaction failed");
     }
@@ -5406,9 +5401,32 @@ bool ContextualCheckBlock(int32_t slowflag,const CBlock& block, CValidationState
     const Consensus::Params& consensusParams = Params().GetConsensus();
     bool sapling = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING);
 
-    // Check that all transactions are finalized
+    uint32_t cmptime = block.nTime;
+    const int32_t txheight = nHeight == 0 ? komodo_block2height((CBlock *)&block) : nHeight;
+
+    /* HF22 - check interest validation against pindexPrev->GetMedianTimePast() + 777 */
+    if (ASSETCHAINS_SYMBOL[0] == 0 &&
+        consensusParams.nHF22Height != boost::none && txheight > consensusParams.nHF22Height.get()
+    ) {
+        if (pindexPrev) {
+            uint32_t cmptime_old = cmptime;
+            cmptime = pindexPrev->GetMedianTimePast() + 777;
+            LogPrint("hfnet","%s[%d]: cmptime.%lu -> %lu\n", __func__, __LINE__, cmptime_old, cmptime);
+            LogPrint("hfnet","%s[%d]: ht.%ld, hash.%s\n", __func__, __LINE__, txheight, block.GetHash().ToString());
+        } else
+            LogPrint("hfnet","%s[%d]: STRANGE! pindexPrev == nullptr, ht.%ld, hash.%s!\n", __func__, __LINE__, txheight, block.GetHash().ToString());
+    }
+
+    // Check that all transactions are finalized, also validate interest in each tx
     for (uint32_t i = 0; i < block.vtx.size(); i++) {
         const CTransaction& tx = block.vtx[i];
+
+        // Interest validation
+        if (komodo_validate_interest(tx, txheight, cmptime, 0) < 0)
+        {
+            fprintf(stderr, "validate intrest failed for txnum.%i tx.%s\n", i, tx.ToString().c_str());
+            return error("%s: komodo_validate_interest failed", __func__);
+        }
 
         // Check transaction contextually against consensus rules at block height
         if (!ContextualCheckTransaction(slowflag,&block,pindexPrev,tx, state, nHeight, 100)) {
