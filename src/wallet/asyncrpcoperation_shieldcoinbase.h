@@ -78,8 +78,6 @@ public:
     virtual UniValue getStatus() const;
 
     bool testmode = false;  // Set to true to disable sending txs and generating proofs
-    bool cheatSpend = false; // set when this is shielding a cheating coinbase
-
     bool paymentDisclosureMode = true; // Set to true to save esk for encrypted notes in payment disclosure database.
 
 private:

@@ -165,7 +165,7 @@ TEST_F(ContextualCheckBlockTest, BadCoinbaseHeight) {
     block.vtx[0] = tx2;
     CBlock prev;
     CBlockIndex indexPrev {prev};
-    indexPrev.SetHeight(0);
+    indexPrev.nHeight = 0;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-height", false)).Times(1);
     EXPECT_FALSE(ContextualCheckBlock(block, state, &indexPrev));
 

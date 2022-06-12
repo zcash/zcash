@@ -243,7 +243,7 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     auto blockHash2 = block2.GetHash();
     CBlockIndex fakeIndex2 {block2};
     mapBlockIndex.insert(std::make_pair(blockHash2, &fakeIndex2));
-    fakeIndex2.SetHeight(1);
+    fakeIndex2.nHeight = 1;
     chainActive.SetTip(&fakeIndex2);
     EXPECT_TRUE(chainActive.Contains(&fakeIndex2));
     EXPECT_EQ(1, chainActive.Height());
@@ -302,7 +302,7 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     auto blockHash3 = block3.GetHash();
     CBlockIndex fakeIndex3 {block3};
     mapBlockIndex.insert(std::make_pair(blockHash3, &fakeIndex3));
-    fakeIndex3.SetHeight(2);
+    fakeIndex3.nHeight = 2;
     chainActive.SetTip(&fakeIndex3);
     EXPECT_TRUE(chainActive.Contains(&fakeIndex3));
     EXPECT_EQ(2, chainActive.Height());
@@ -1189,7 +1189,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     auto blockHash2 = block2.GetHash();
     CBlockIndex fakeIndex2 {block2};
     mapBlockIndex.insert(std::make_pair(blockHash2, &fakeIndex2));
-    fakeIndex2.SetHeight(1);
+    fakeIndex2.nHeight = 1;
     chainActive.SetTip(&fakeIndex2);
     EXPECT_TRUE(chainActive.Contains(&fakeIndex2));
     EXPECT_EQ(1, chainActive.Height());
@@ -1289,7 +1289,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
     {
         // First block (case tested in _empty_chain)
         CBlockIndex index1(block1);
-        index1.SetHeight(1);
+        index1.nHeight = 1;
         auto outpts = CreateValidBlock(wallet, sk, index1, block1, sproutTree, saplingTree);
 
         // Called to fetch anchor
@@ -1330,7 +1330,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
         block2.hashPrevBlock = block1.GetHash();
         block2.vtx.push_back(wtx);
         CBlockIndex index2(block2);
-        index2.SetHeight(2);
+        index2.nHeight = 2;
         SproutMerkleTree sproutTree2 {sproutTree};
         SaplingMerkleTree saplingTree2 {saplingTree};
         wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree2, saplingTree2);
@@ -1390,7 +1390,7 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
         // First block (case tested in _empty_chain)
         CBlock block1;
         CBlockIndex index1(block1);
-        index1.SetHeight(1);
+        index1.nHeight = 1;
         CreateValidBlock(wallet, sk, index1, block1, sproutTree, saplingTree);
     }
 
@@ -1400,7 +1400,7 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
 
     {
         // Second block (case tested in _chain_tip)
-        index2.SetHeight(2);
+        index2.nHeight = 2;
         auto outpts = CreateValidBlock(wallet, sk, index2, block2, sproutTree, saplingTree);
 
         // Called to fetch anchor
@@ -1481,7 +1481,7 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
     blocks.resize(numBlocks);
     indices.resize(numBlocks);
     for (size_t i = 0; i < numBlocks; i++) {
-        indices[i].SetHeight(i);
+        indices[i].nHeight = i;
         auto oldSproutRoot = sproutTree.root();
         auto oldSaplingRoot = saplingTree.root();
         auto outpts = CreateValidBlock(wallet, sk, indices[i], blocks[i], sproutTree, saplingTree);

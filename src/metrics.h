@@ -23,8 +23,6 @@
 #include <mutex>
 #include <string>
 
-extern int64_t nHashCount;
-
 struct AtomicCounter {
     std::atomic<uint64_t> value;
 

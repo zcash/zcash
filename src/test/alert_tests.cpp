@@ -402,7 +402,7 @@ BOOST_AUTO_TEST_CASE(PartitionAlert)
         indexDummy[i].phashBlock = NULL;
         if (i == 0) indexDummy[i].pprev = NULL;
         else indexDummy[i].pprev = &indexDummy[i-1];
-        indexDummy[i].SetHeight(i);
+        indexDummy[i].nHeight = i;
         indexDummy[i].nTime = now - (400-i)*nPowTargetSpacing;
         // Other members don't matter, the partition check code doesn't
         // use them

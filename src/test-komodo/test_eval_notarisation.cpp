@@ -78,7 +78,7 @@ namespace TestEvalNotarisation {
             modify(notary);
 
             eval.txs[notary.GetHash()] = CTransaction(notary);
-            eval.blocks[notary.GetHash()].SetHeight(780060);
+            eval.blocks[notary.GetHash()].nHeight = 780060;
             eval.blocks[notary.GetHash()].nTime = 1522946781;
         }
 

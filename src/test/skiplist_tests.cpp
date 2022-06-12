@@ -20,15 +20,15 @@ BOOST_AUTO_TEST_CASE(skiplist_test)
     std::vector<CBlockIndex> vIndex(SKIPLIST_LENGTH);
 
     for (int i=0; i<SKIPLIST_LENGTH; i++) {
-        vIndex[i].SetHeight(i);
+        vIndex[i].nHeight = i;
         vIndex[i].pprev = (i == 0) ? NULL : &vIndex[i - 1];
         vIndex[i].BuildSkip();
     }
 
     for (int i=0; i<SKIPLIST_LENGTH; i++) {
         if (i > 0) {
-            BOOST_CHECK(vIndex[i].pskip == &vIndex[vIndex[i].pskip->GetHeight()]);
-            BOOST_CHECK(vIndex[i].pskip->GetHeight() < i);
+            BOOST_CHECK(vIndex[i].pskip == &vIndex[vIndex[i].pskip->nHeight]);
+            BOOST_CHECK(vIndex[i].pskip->nHeight < i);
         } else {
             BOOST_CHECK(vIndex[i].pskip == NULL);
         }
@@ -51,12 +51,12 @@ BOOST_AUTO_TEST_CASE(getlocator_test)
     std::vector<CBlockIndex> vBlocksMain(100000);
     for (unsigned int i=0; i<vBlocksMain.size(); i++) {
         vHashMain[i] = ArithToUint256(i); // Set the hash equal to the height, so we can quickly check the distances.
-        vBlocksMain[i].SetHeight(i);
+        vBlocksMain[i].nHeight = i;
         vBlocksMain[i].pprev = i ? &vBlocksMain[i - 1] : NULL;
         vBlocksMain[i].phashBlock = &vHashMain[i];
         vBlocksMain[i].BuildSkip();
-        BOOST_CHECK_EQUAL((int)UintToArith256(vBlocksMain[i].GetBlockHash()).GetLow64(), vBlocksMain[i].GetHeight());
-        BOOST_CHECK(vBlocksMain[i].pprev == NULL || vBlocksMain[i].GetHeight() == vBlocksMain[i].pprev->GetHeight() + 1);
+        BOOST_CHECK_EQUAL((int)UintToArith256(vBlocksMain[i].GetBlockHash()).GetLow64(), vBlocksMain[i].nHeight);
+        BOOST_CHECK(vBlocksMain[i].pprev == NULL || vBlocksMain[i].nHeight == vBlocksMain[i].pprev->nHeight + 1);
     }
 
     // Build a branch that splits off at block 49999, 50000 blocks long.
@@ -64,12 +64,12 @@ BOOST_AUTO_TEST_CASE(getlocator_test)
     std::vector<CBlockIndex> vBlocksSide(50000);
     for (unsigned int i=0; i<vBlocksSide.size(); i++) {
         vHashSide[i] = ArithToUint256(i + 50000 + (arith_uint256(1) << 128)); // Add 1<<128 to the hashes, so GetLow64() still returns the height.
-        vBlocksSide[i].SetHeight(i + 50000);
+        vBlocksSide[i].nHeight = i + 50000;
         vBlocksSide[i].pprev = i ? &vBlocksSide[i - 1] : &vBlocksMain[49999];
         vBlocksSide[i].phashBlock = &vHashSide[i];
         vBlocksSide[i].BuildSkip();
-        BOOST_CHECK_EQUAL((int)UintToArith256(vBlocksSide[i].GetBlockHash()).GetLow64(), vBlocksSide[i].GetHeight());
-        BOOST_CHECK(vBlocksSide[i].pprev == NULL || vBlocksSide[i].GetHeight() == vBlocksSide[i].pprev->GetHeight() + 1);
+        BOOST_CHECK_EQUAL((int)UintToArith256(vBlocksSide[i].GetBlockHash()).GetLow64(), vBlocksSide[i].nHeight);
+        BOOST_CHECK(vBlocksSide[i].pprev == NULL || vBlocksSide[i].nHeight == vBlocksSide[i].pprev->nHeight + 1);
     }
 
     // Build a CChain for the main branch.
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(getlocator_test)
 
         // Entries 1 through 11 (inclusive) go back one step each.
         for (unsigned int i = 1; i < 12 && i < locator.vHave.size() - 1; i++) {
-            BOOST_CHECK_EQUAL(UintToArith256(locator.vHave[i]).GetLow64(), tip->GetHeight() - i);
+            BOOST_CHECK_EQUAL(UintToArith256(locator.vHave[i]).GetLow64(), tip->nHeight - i);
         }
 
         // The further ones (excluding the last one) go back with exponential steps.

@@ -68,7 +68,7 @@ int64_t GetNetworkHashPS(int lookup, int height)
     if (height >= 0 && height < chainActive.Height())
         pb = chainActive[height];
 
-    if (pb == NULL || !pb->GetHeight())
+    if (pb == NULL || !pb->nHeight)
         return 0;
 
     // If lookup is nonpositive, then use difficulty averaging window.
@@ -76,8 +76,8 @@ int64_t GetNetworkHashPS(int lookup, int height)
         lookup = Params().GetConsensus().nPowAveragingWindow;
 
     // If lookup is larger than chain, then set it to chain length.
-    if (lookup > pb->GetHeight())
-        lookup = pb->GetHeight();
+    if (lookup > pb->nHeight)
+        lookup = pb->nHeight;
 
     CBlockIndex *pb0 = pb;
     int64_t minTime = pb0->GetBlockTime();
@@ -93,7 +93,7 @@ int64_t GetNetworkHashPS(int lookup, int height)
     if (minTime == maxTime)
         return 0;
 
-    arith_uint256 workDiff = pb->chainPower.chainWork - pb0->chainPower.chainWork;
+    arith_uint256 workDiff = pb->nChainWork - pb0->nChainWork;
     int64_t timeDiff = maxTime - minTime;
 
     return (int64_t)(workDiff.getdouble() / timeDiff);
@@ -163,7 +163,6 @@ UniValue getnetworkhashps(const UniValue& params, bool fHelp, const CPubKey& myp
 }
 
 #ifdef ENABLE_MINING
-extern bool VERUS_MINTBLOCKS;
 UniValue getgenerate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 {
     if (fHelp || params.size() != 0)
@@ -185,7 +184,7 @@ UniValue getgenerate(const UniValue& params, bool fHelp, const CPubKey& mypk)
 
     LOCK(cs_main);
     UniValue obj(UniValue::VOBJ);
-    bool staking = VERUS_MINTBLOCKS;
+    bool staking = false;
     if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
         staking = true;
     obj.push_back(Pair("staking",          staking));
@@ -315,7 +314,7 @@ UniValue generate(const UniValue& params, bool fHelp, const CPubKey& mypk)
         }
 endloop:
         CValidationState state;
-        if (!ProcessNewBlock(1,chainActive.LastTip()->GetHeight()+1,state, NULL, pblock, true, NULL))
+        if (!ProcessNewBlock(1,chainActive.LastTip()->nHeight+1,state, NULL, pblock, true, NULL))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
@@ -371,25 +370,8 @@ UniValue setgenerate(const UniValue& params, bool fHelp, const CPubKey& mypk)
         //if (nGenProcLimit == 0)
         //    fGenerate = false;
     }
-    if ( ASSETCHAINS_LWMAPOS != 0 )
-    {
-        if (fGenerate && !nGenProcLimit)
-        {
-            VERUS_MINTBLOCKS = 1;
-            fGenerate = GetBoolArg("-gen", false);
-            KOMODO_MININGTHREADS = nGenProcLimit;
-        }
-        else if (!fGenerate)
-        {
-            VERUS_MINTBLOCKS = 0;
-            KOMODO_MININGTHREADS = 0;
-        }
-        else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
-    }
-    else
-    {
-        KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
-    }
+
+    KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
 
     mapArgs["-gen"] = (fGenerate ? "1" : "0");
     mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
@@ -500,7 +482,7 @@ UniValue getmininginfo(const UniValue& params, bool fHelp, const CPubKey& mypk)
     obj.push_back(Pair("testnet",          Params().TestnetToBeDeprecatedFieldRPC()));
     obj.push_back(Pair("chain",            Params().NetworkIDString()));
 #ifdef ENABLE_MINING
-    bool staking = VERUS_MINTBLOCKS;
+    bool staking = false;
     if ( ASSETCHAINS_STAKED != 0 && GetBoolArg("-gen", false) && GetBoolArg("-genproclimit", -1) == 0 )
         staking = true;
     obj.push_back(Pair("staking",          staking));
@@ -788,7 +770,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp, const CPubKey& myp
 #ifdef ENABLE_WALLET
         CReserveKey reservekey(pwalletMain);
         LEAVE_CRITICAL_SECTION(cs_main);
-        pblocktemplate = CreateNewBlockWithKey(reservekey,pindexPrevNew->GetHeight()+1,KOMODO_MAXGPUCOUNT,false);
+        pblocktemplate = CreateNewBlockWithKey(reservekey,pindexPrevNew->nHeight+1,KOMODO_MAXGPUCOUNT,false);
 #else
         pblocktemplate = CreateNewBlockWithKey();
 #endif
@@ -843,7 +825,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp, const CPubKey& myp
                 // Correct this if GetBlockTemplate changes the order
                 entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
             }
-            CAmount nReward = GetBlockSubsidy(chainActive.LastTip()->GetHeight()+1, Params().GetConsensus());
+            CAmount nReward = GetBlockSubsidy(chainActive.LastTip()->nHeight+1, Params().GetConsensus());
             entry.push_back(Pair("coinbasevalue", nReward));
             entry.push_back(Pair("required", true));
             txCoinbase = entry;
@@ -881,24 +863,24 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp, const CPubKey& myp
     if ( ASSETCHAINS_STAKED != 0 )
     {
         arith_uint256 POWtarget; int32_t PoSperc;
-        POWtarget = komodo_PoWtarget(&PoSperc,hashTarget,(int32_t)(pindexPrev->GetHeight()+1),ASSETCHAINS_STAKED,komodo_newStakerActive(chainActive.Height()+1, pblock->nTime));
+        POWtarget = komodo_PoWtarget(&PoSperc,hashTarget,(int32_t)(pindexPrev->nHeight+1),ASSETCHAINS_STAKED,komodo_newStakerActive(chainActive.Height()+1, pblock->nTime));
         result.push_back(Pair("target", POWtarget.GetHex()));
         result.push_back(Pair("PoSperc", (int64_t)PoSperc));
         result.push_back(Pair("ac_staked", (int64_t)ASSETCHAINS_STAKED));
         result.push_back(Pair("origtarget", hashTarget.GetHex()));
     }
     /*else if ( ASSETCHAINS_ADAPTIVEPOW > 0 )
-        result.push_back(Pair("target",komodo_adaptivepow_target((int32_t)(pindexPrev->GetHeight()+1),hashTarget,pblock->nTime).GetHex()));*/
+        result.push_back(Pair("target",komodo_adaptivepow_target((int32_t)(pindexPrev->nHeight+1),hashTarget,pblock->nTime).GetHex()));*/
     else
         result.push_back(Pair("target", hashTarget.GetHex()));
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
     result.push_back(Pair("mutable", aMutable));
     result.push_back(Pair("noncerange", "00000000ffffffff"));
     result.push_back(Pair("sigoplimit", (int64_t)MAX_BLOCK_SIGOPS));
-    result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_SIZE(chainActive.LastTip()->GetHeight()+1)));
+    result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_SIZE(chainActive.LastTip()->nHeight+1)));
     result.push_back(Pair("curtime", pblock->GetBlockTime()));
     result.push_back(Pair("bits", strprintf("%08x", pblock->nBits)));
-    result.push_back(Pair("height", (int64_t)(pindexPrev->GetHeight()+1)));
+    result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
 
     //fprintf(stderr,"return complete template\n");
     return result;
@@ -977,8 +959,8 @@ UniValue submitblock(const UniValue& params, bool fHelp, const CPubKey& mypk)
     CValidationState state;
     submitblock_StateCatcher sc(block.GetHash());
     RegisterValidationInterface(&sc);
-    //printf("submitblock, height=%d, coinbase sequence: %d, scriptSig: %s\n", chainActive.LastTip()->GetHeight()+1, block.vtx[0].vin[0].nSequence, block.vtx[0].vin[0].scriptSig.ToString().c_str());
-    bool fAccepted = ProcessNewBlock(1,chainActive.LastTip()->GetHeight()+1,state, NULL, &block, true, NULL);
+    //printf("submitblock, height=%d, coinbase sequence: %d, scriptSig: %s\n", chainActive.LastTip()->nHeight+1, block.vtx[0].vin[0].nSequence, block.vtx[0].vin[0].scriptSig.ToString().c_str());
+    bool fAccepted = ProcessNewBlock(1,chainActive.LastTip()->nHeight+1,state, NULL, &block, true, NULL);
     UnregisterValidationInterface(&sc);
     if (fBlockPresent)
     {
