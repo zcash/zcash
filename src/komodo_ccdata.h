@@ -24,6 +24,3 @@ int32_t komodo_addpair(struct komodo_ccdataMoMoM *mdata,int32_t notarized_height
 int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height);
 
 void komodo_purge_ccdata(int32_t height);
-
-// this is just a demo of ccdata processing to create example data for the MoMoM and allMoMs calls
-int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccdata,struct komodo_ccdataMoMoM *MoMoMdata);

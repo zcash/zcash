@@ -34,8 +34,6 @@
 #include <vector>
 
 #define OPRETTYPE_TIMELOCK 1
-#define OPRETTYPE_STAKEPARAMS 2
-#define OPRETTYPE_STAKECHEAT 3
 
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
 
@@ -626,8 +624,9 @@ public:
 
     void clear()
     {
-        // The default std::vector::clear() does not release memory.
-        CScriptBase().swap(*this);
+        // The default prevector::clear() does not release memory
+        CScriptBase::clear();
+        shrink_to_fit();
     }
 };
 

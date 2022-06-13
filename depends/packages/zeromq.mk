@@ -22,7 +22,7 @@ $(package)_sha256_hash=bcbabe1e2c7d0eec4ed612e10b94b112dd5f06fcefa994a0c79a45d83
 define $(package)_set_vars
   $(package)_config_opts=--without-documentation --disable-shared --disable-curve
   $(package)_config_opts_linux=--with-pic
-  $(package)_cxxflags=-std=c++11
+  $(package)_cxxflags+=-std=c++11
 endef
 endif
 

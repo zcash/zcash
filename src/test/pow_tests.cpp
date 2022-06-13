@@ -78,12 +78,10 @@ BOOST_AUTO_TEST_CASE(GetBlockProofEquivalentTime_test)
     std::vector<CBlockIndex> blocks(10000);
     for (int i = 0; i < 10000; i++) {
         blocks[i].pprev = i ? &blocks[i - 1] : NULL;
-        blocks[i].SetHeight(i);
+        blocks[i].nHeight = i;
         blocks[i].nTime = 1269211443 + i * params.nPowTargetSpacing;
         blocks[i].nBits = 0x207fffff; /* target 0x7fffff000... */
-        blocks[i].chainPower = CChainPower(&blocks[i]);
-        if (i != 0)
-            blocks[i].chainPower += GetBlockProof(blocks[i - 1]);
+        blocks[i].nChainWork = i ? blocks[i - 1].nChainWork + GetBlockProof(blocks[i - 1]) : arith_uint256(0);
     }
 
     for (int j = 0; j < 1000; j++) {

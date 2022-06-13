@@ -87,7 +87,7 @@ UniValue z_getoperationstatus_IMPL(const UniValue&, bool);
 
 #define PLAN_NAME_MAX   8
 #define VALID_PLAN_NAME(x)  (strlen(x) <= PLAN_NAME_MAX)
-#define THROW_IF_SYNCING(INSYNC)  if (INSYNC == 0) { throw runtime_error(strprintf("%s: Chain still syncing at height %d, aborting to prevent linkability analysis!",__FUNCTION__,chainActive.Tip()->GetHeight())); }
+#define THROW_IF_SYNCING(INSYNC)  if (INSYNC == 0) { throw runtime_error(strprintf("%s: Chain still syncing at height %d, aborting to prevent linkability analysis!",__FUNCTION__,chainActive.Tip()->nHeight)); }
 
 int tx_height( const uint256 &hash );
 
@@ -658,7 +658,7 @@ UniValue kvupdate(const UniValue& params, bool fHelp, const CPubKey& mypk)
             valuesize = (int32_t)strlen(params[1].get_str().c_str());
         }
         memcpy(keyvalue,key,keylen);
-        if ( (refvaluesize= komodo_kvsearch(&refpubkey,chainActive.LastTip()->GetHeight(),&tmpflags,&height,&keyvalue[keylen],key,keylen)) >= 0 )
+        if ( (refvaluesize= komodo_kvsearch(&refpubkey,chainActive.LastTip()->nHeight,&tmpflags,&height,&keyvalue[keylen],key,keylen)) >= 0 )
         {
             if ( (tmpflags & KOMODO_KVPROTECTED) != 0 )
             {
@@ -683,7 +683,7 @@ UniValue kvupdate(const UniValue& params, bool fHelp, const CPubKey& mypk)
         //    printf("%02x",((uint8_t *)&sig)[i]);
         //printf(" sig for keylen.%d + valuesize.%d\n",keylen,refvaluesize);
         ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
-        height = chainActive.LastTip()->GetHeight();
+        height = chainActive.LastTip()->nHeight;
         if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
             ret.push_back(Pair("owner",refpubkey.GetHex()));
         ret.push_back(Pair("height", (int64_t)height));
@@ -755,7 +755,7 @@ UniValue paxdeposit(const UniValue& params, bool fHelp, const CPubKey& mypk)
     int64_t fiatoshis = atof(params[1].get_str().c_str()) * COIN;
     std::string base = params[2].get_str();
     std::string dest;
-    height = chainActive.LastTip()->GetHeight();
+    height = chainActive.LastTip()->nHeight;
     if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,(char *)base.c_str()) != 0 || available < fiatoshis )
     {
         fprintf(stderr,"available %llu vs fiatoshis %llu\n",(long long)available,(long long)fiatoshis);
@@ -2206,7 +2206,7 @@ UniValue listsinceblock(const UniValue& params, bool fHelp, const CPubKey& mypk)
         if(params[2].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
 
-    int depth = pindex ? (1 + chainActive.Height() - pindex->GetHeight()) : -1;
+    int depth = pindex ? (1 + chainActive.Height() - pindex->nHeight) : -1;
 
     UniValue transactions(UniValue::VARR);
 
@@ -2977,14 +2977,14 @@ UniValue listunspent(const UniValue& params, bool fHelp, const CPubKey& mypk)
             uint64_t interest; uint32_t locktime;
             if ( pindex != 0 && (tipindex= chainActive.LastTip()) != 0 )
             {
-                interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->GetHeight());
+                interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
                 //interest = komodo_interest(txheight,nValue,out.tx->nLockTime,tipindex->nTime);
                 entry.push_back(Pair("interest",ValueFromAmount(interest)));
             }
-            //fprintf(stderr,"nValue %.8f pindex.%p tipindex.%p locktime.%u txheight.%d pindexht.%d\n",(double)nValue/COIN,pindex,chainActive.LastTip(),locktime,txheight,pindex->GetHeight());
+            //fprintf(stderr,"nValue %.8f pindex.%p tipindex.%p locktime.%u txheight.%d pindexht.%d\n",(double)nValue/COIN,pindex,chainActive.LastTip(),locktime,txheight,pindex->nHeight);
         }
         else if ( chainActive.LastTip() != 0 )
-            txheight = (chainActive.LastTip()->GetHeight() - out.nDepth - 1);
+            txheight = (chainActive.LastTip()->nHeight - out.nDepth - 1);
         entry.push_back(Pair("scriptPubKey", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
         entry.push_back(Pair("rawconfirmations",out.nDepth));
         entry.push_back(Pair("confirmations",komodo_dpowconfs(txheight,out.nDepth)));
@@ -3013,8 +3013,8 @@ uint64_t komodo_interestsum()
                 CBlockIndex *tipindex,*pindex = it->second;
                 if ( pindex != 0 && (tipindex= chainActive.LastTip()) != 0 )
                 {
-                    interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->GetHeight());
-                    //interest = komodo_interest(pindex->GetHeight(),nValue,out.tx->nLockTime,tipindex->nTime);
+                    interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
+                    //interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,tipindex->nTime);
                     sum += interest;
                 }
             }
@@ -3744,7 +3744,7 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp, const CPubKey& mypk
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    bool allowSapling = (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight <= chainActive.LastTip()->GetHeight());
+    bool allowSapling = (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight <= chainActive.LastTip()->nHeight);
 
     std::string defaultType;
     if ( GetTime() < KOMODO_SAPLING_ACTIVATION )
@@ -4977,12 +4977,12 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp, const CPubKey& myp
         Params().GetConsensus(), nextBlockHeight, pwalletMain);
 
     // Contextual transaction we will build on
-    int blockHeight = chainActive.LastTip()->GetHeight();
+    int blockHeight = chainActive.LastTip()->nHeight;
     nextBlockHeight = blockHeight + 1;
     // (used if no Sapling addresses are involved)
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
-    contextualTx.nLockTime = chainActive.LastTip()->GetHeight();
+    contextualTx.nLockTime = chainActive.LastTip()->nHeight;
 
     if (contextualTx.nVersion == 1) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplits
@@ -5492,96 +5492,84 @@ UniValue z_listoperationids(const UniValue& params, bool fHelp, const CPubKey& m
 #include "script/sign.h"
 extern std::string NOTARY_PUBKEY;
 
-int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33, void *pTr)
+/**
+ * @brief Search for 10k sat. P2PK notary utxos and make proof tx (txNew) from it for further include in block.
+ * opretIn should be empty script before december hardfork, and contains prepared opret script after.
+ *
+ * @param txNew - out: signed notary proof tx
+ * @param notarypub33 - notary node compressed pubkey to search 10k sat. P2PK utxos in the wallet (wallet should be unlocked)
+ * @param opretIn - after nDecemberHardforkHeight, prepared in advance opret script, before nDecemberHardforkHeight should be empty script
+ * @param nLockTimeIn - nLockTime that will be set for notary proof tx in-case of after nDecemberHardforkHeight
+ * @return int32_t - signature length of vin[0] in resulted notary proof tx, actually > 0 if txNew is correct, and 0 in-case of any error
+ */
+int32_t komodo_notaryvin(CMutableTransaction &txNew, uint8_t *notarypub33, const CScript &opretIn, uint32_t nLockTimeIn)
 {
-    set<CBitcoinAddress> setAddress; uint8_t *script,utxosig[128]; uint256 utxotxid; uint64_t utxovalue; int32_t i,siglen=0,nMinDepth = 0,nMaxDepth = 9999999; vector<COutput> vecOutputs; uint32_t utxovout,eligible,earliest = 0; CScript best_scriptPubKey; bool fNegative,fOverflow;
-    bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr;
-    auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    if (!EnsureWalletIsAvailable(0))
-        return 0;
+    int32_t siglen = 0;
 
-    assert(pwalletMain != NULL);
-    const CKeyStore& keystore = *pwalletMain;
+    vector<COutput> vecOutputs;
+    bool signSuccess;
+    SignatureData sigdata;
+
+    /* nMinDepth = 1 - don't allow to spend unconfirmed 10k sat. utxos, bcz we don't ensure that they would be
+       included in the same block.
+    */
+
+    const int nMinDepth = 1, nMaxDepth = 9999999;
+    bool fAfterDecemberHardfork = opretIn.size() > 0;
+    if (!(notarypub33[0] == 0x02 || notarypub33[0] == 0x03)) return 0; // invalid compressed public key
+
+    auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+
+    if (!pwalletMain) return 0;
+    assert(pwalletMain != nullptr);
+
+    if (pwalletMain->IsLocked()) return 0;
+
+    const CKeyStore &keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    utxovalue = 0;
-    memset(&utxotxid,0,sizeof(utxotxid));
-    memset(&utxovout,0,sizeof(utxovout));
-    memset(utxosig,0,sizeof(utxosig));
+
+    const CScript targetP2PKScript = CScript() << std::vector<unsigned char>(notarypub33, notarypub33 + 33) << OP_CHECKSIG;
+
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-    BOOST_FOREACH(const COutput& out, vecOutputs)
+
+    for (const COutput& out : vecOutputs)
     {
-        if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
+        if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
             continue;
-        if ( setAddress.size() )
-        {
-            CTxDestination address;
-            if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
-                continue;
-            if (!setAddress.count(address))
-                continue;
-        }
+
         CAmount nValue = out.tx->vout[out.i].nValue;
-        if ( nValue != 10000 )
+        const CScript &pk = out.tx->vout[out.i].scriptPubKey;
+
+        if (nValue != 10000 || !pk.IsPayToPublicKey() || pk != targetP2PKScript)
             continue;
-        const CScript& pk = out.tx->vout[out.i].scriptPubKey;
-        CTxDestination address;
-        if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
-        {
-            //entry.push_back(Pair("address", CBitcoinAddress(address).ToString()));
-            //if (pwalletMain->mapAddressBook.count(address))
-            //    entry.push_back(Pair("account", pwalletMain->mapAddressBook[address].name));
-        }
-        script = (uint8_t *)&out.tx->vout[out.i].scriptPubKey[0];
-        if ( out.tx->vout[out.i].scriptPubKey.size() != 35 || script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(notarypub33,script+1,33) != 0 )
-        {
-            //fprintf(stderr,"scriptsize.%d [0] %02x\n",(int32_t)out.tx->vout[out.i].scriptPubKey.size(),script[0]);
-            continue;
-        }
-        utxovalue = (uint64_t)nValue;
-        utxotxid = out.tx->GetHash();
-        utxovout = out.i;
-        best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
-        //fprintf(stderr,"check %s/v%d %llu\n",(char *)utxotxid.GetHex().c_str(),utxovout,(long long)utxovalue);
 
         txNew.vin.resize(1);
-        txNew.vout.resize((pTr!=0)+1);
-        txfee = utxovalue / 2;
-        //for (i=0; i<32; i++)
-        //    ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
-        txNew.vin[0].prevout.hash = utxotxid; //revtxid;
-        txNew.vin[0].prevout.n = utxovout;
-        txNew.vout[0].nValue = utxovalue - txfee;
+        txNew.vout.resize(static_cast<size_t>(fAfterDecemberHardfork) + 1);
+
+        txNew.vin[0].prevout.hash = out.tx->GetHash();
+        txNew.vin[0].prevout.n = out.i;
+        txNew.vout[0].nValue = nValue / 2; // 5000 sat. goes to this proof tx, and 5000 sat. will be a fee
         txNew.vout[0].scriptPubKey = CScript() << ParseHex(CRYPTO777_PUBSECPSTR) << OP_CHECKSIG;
-        if ( pTr != 0 )
+
+        if (fAfterDecemberHardfork)
         {
-            void **p = (void**)pTr;
             txNew.vout[1].nValue = 0;
-            txNew.vout[1].scriptPubKey = *(CScript*)p[0];
-            txNew.nLockTime = (uint32_t)(unsigned long long)p[1];
+            txNew.vout[1].scriptPubKey = opretIn;
+            txNew.nLockTime = nLockTimeIn;
         }
         CTransaction txNewConst(txNew);
-        signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, utxovalue, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
+        signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, nValue, SIGHASH_ALL), pk, sigdata, consensusBranchId);
         if (!signSuccess)
-            fprintf(stderr,"notaryvin failed to create signature\n");
+            LogPrintf("notaryvin failed to create signature (tried to spend %s -> notaryvin)\n", out.ToString());
         else
         {
-            UpdateTransaction(txNew,0,sigdata);
-            ptr = (uint8_t *)&sigdata.scriptSig[0];
+            UpdateTransaction(txNew, 0, sigdata);
             siglen = sigdata.scriptSig.size();
-            for (i=0; i<siglen; i++)
-                utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
-            //fprintf(stderr," siglen.%d notaryvin %s/v%d\n",siglen,utxotxid.GetHex().c_str(),utxovout);
             break;
         }
     }
-    return(siglen);
+    return siglen;
 }
-
-int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig, CPubKey &pk)
-{
-    return pwalletMain->VerusStakeTransaction(pBlock, txNew, nBits, hashResult, utxosig, pk);
-}
-
 
 #include "../cc/CCfaucet.h"
 #include "../cc/CCassets.h"

@@ -572,18 +572,6 @@ extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 const CScript &CCoinsViewCache::GetSpendFor(const CCoins *coins, const CTxIn& input)
 {
     assert(coins);
-    /*if (coins->nHeight < 6400 && !strcmp(ASSETCHAINS_SYMBOL, "VRSC"))
-    {
-        std::string hc = input.prevout.hash.ToString();
-        if (LaunchMap().lmap.count(hc))
-        {
-            CTransactionExceptionData &txData = LaunchMap().lmap[hc];
-            if ((txData.voutMask & (((uint64_t)1) << (uint64_t)input.prevout.n)) != 0)
-            {
-                return txData.scriptPubKey;
-            }
-        }
-    }*/
     return coins->vout[input.prevout.n].scriptPubKey;
 }
 

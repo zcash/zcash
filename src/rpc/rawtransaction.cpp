@@ -275,7 +275,7 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
         if ( ASSETCHAINS_SYMBOL[0] == 0 && pindex != 0 && tx.nLockTime >= 500000000 && (tipindex= chainActive.LastTip()) != 0 )
         {
             int64_t interest; int32_t txheight; uint32_t locktime;
-            interest = komodo_accrued_interest(&txheight,&locktime,tx.GetHash(),i,0,txout.nValue,(int32_t)tipindex->GetHeight());
+            interest = komodo_accrued_interest(&txheight,&locktime,tx.GetHash(),i,0,txout.nValue,(int32_t)tipindex->nHeight);
             out.push_back(Pair("interest", ValueFromAmount(interest)));
         }
         out.push_back(Pair("valueSat", txout.nValue)); // [+] Decker
@@ -377,7 +377,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         if ( KOMODO_NSPV_FULLNODE && ASSETCHAINS_SYMBOL[0] == 0 && tx.nLockTime >= 500000000 && (tipindex= chainActive.LastTip()) != 0 )
         {
             int64_t interest; int32_t txheight; uint32_t locktime;
-            interest = komodo_accrued_interest(&txheight,&locktime,tx.GetHash(),i,0,txout.nValue,(int32_t)tipindex->GetHeight());
+            interest = komodo_accrued_interest(&txheight,&locktime,tx.GetHash(),i,0,txout.nValue,(int32_t)tipindex->nHeight);
             out.push_back(Pair("interest", ValueFromAmount(interest)));
         }        
         out.push_back(Pair("valueZat", txout.nValue));
@@ -409,9 +409,9 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         if (mi != mapBlockIndex.end() && (*mi).second) {
             CBlockIndex* pindex = (*mi).second;
             if (chainActive.Contains(pindex)) {
-                entry.push_back(Pair("height", pindex->GetHeight()));
-                entry.push_back(Pair("rawconfirmations", 1 + chainActive.Height() - pindex->GetHeight()));
-                entry.push_back(Pair("confirmations", komodo_dpowconfs(pindex->GetHeight(),1 + chainActive.Height() - pindex->GetHeight())));
+                entry.push_back(Pair("height", pindex->nHeight));
+                entry.push_back(Pair("rawconfirmations", 1 + chainActive.Height() - pindex->nHeight));
+                entry.push_back(Pair("confirmations", komodo_dpowconfs(pindex->nHeight,1 + chainActive.Height() - pindex->nHeight)));
                 entry.push_back(Pair("time", pindex->GetBlockTime()));
                 entry.push_back(Pair("blocktime", pindex->GetBlockTime()));
             } else {
@@ -539,8 +539,8 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp, const CPubKey& my
         if (mi != mapBlockIndex.end() && (*mi).second) {
             CBlockIndex* pindex = (*mi).second;
             if (chainActive.Contains(pindex)) {
-                nHeight = pindex->GetHeight();
-                nConfirmations = 1 + chainActive.Height() - pindex->GetHeight();
+                nHeight = pindex->nHeight;
+                nConfirmations = 1 + chainActive.Height() - pindex->nHeight;
                 nBlockTime = pindex->GetBlockTime();
             } else {
                 nHeight = -1;

@@ -102,7 +102,7 @@ UniValue height_MoM(const UniValue& params, bool fHelp, const CPubKey& mypk)
             ret.push_back(Pair("error",(char *)"no active chain yet"));
             return(ret);
         }
-        height = chainActive.Tip()->GetHeight();
+        height = chainActive.Tip()->nHeight;
     }
     //fprintf(stderr,"height_MoM height.%d\n",height);
     depth = komodo_MoM(&notarized_height,&MoM,&kmdtxid,height,&MoMoM,&MoMoMoffset,&MoMoMdepth,&kmdstarti,&kmdendi);

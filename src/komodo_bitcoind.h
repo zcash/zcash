@@ -17,7 +17,6 @@
 
 #include <curl/curl.h>
 #include <curl/easy.h>
-#include "primitives/nonce.h"
 #include "consensus/params.h"
 #include "komodo_defs.h"
 #include "script/standard.h"
@@ -162,7 +161,14 @@ int32_t komodo_blockheight(uint256 hash);
 
 uint32_t komodo_blocktime(uint256 hash);
 
-int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash);
+/******
+ * @brief Verify that a height and hash match the most recent (based on height) notarized_checkpoint
+ * @param[out] notarized_heightp the notarized height found
+ * @param[in] nHeight the height that should be greater than the notarized height
+ * @param[in] hash the hash that should match the notarized hash
+ * @returns true on success
+ */
+bool komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash);
 
 uint32_t komodo_interest_args(uint32_t *txheighttimep,int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 
@@ -202,7 +208,6 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
 int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_uint256 bnTarget,arith_uint256 bhash);
 
 // for now, we will ignore slowFlag in the interest of keeping success/fail simpler for security purposes
-bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height);
 
 uint64_t komodo_notarypayamount(int32_t nHeight, int64_t notarycount);
 
