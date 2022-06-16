@@ -497,9 +497,9 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
     }
 
     // Keep track of treestate within this transaction
-    // The SaltedTxidHasher is fine to use here; it salts the map keys automatically
+    // The SaltedHasher is fine to use here; it salts the map keys automatically
     // with randomness generated on construction.
-    boost::unordered_map<uint256, SproutMerkleTree, SaltedTxidHasher> intermediates;
+    boost::unordered_map<uint256, SproutMerkleTree, SaltedHasher> intermediates;
     std::vector<uint256> previousCommitments;
 
     while (!vpubNewProcessed) {

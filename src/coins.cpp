@@ -106,7 +106,7 @@ bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
 }
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
-SaltedTxidHasher::SaltedTxidHasher() : k0(GetRand(std::numeric_limits<uint64_t>::max())), k1(GetRand(std::numeric_limits<uint64_t>::max())) {}
+SaltedHasher::SaltedHasher() : k0(GetRand(std::numeric_limits<uint64_t>::max())), k1(GetRand(std::numeric_limits<uint64_t>::max())) {}
 
 CCoinsViewCache::CCoinsViewCache(CCoinsView *baseIn) : CCoinsViewBacked(baseIn), hasModifier(false), cachedCoinsUsage(0) { }
 
@@ -1005,7 +1005,7 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
 
 std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
 {
-    boost::unordered_map<uint256, SproutMerkleTree, SaltedTxidHasher> intermediates;
+    boost::unordered_map<uint256, SproutMerkleTree, SaltedHasher> intermediates;
 
     for (const JSDescription &joinsplit : tx.vJoinSplit)
     {

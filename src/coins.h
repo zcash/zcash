@@ -244,14 +244,14 @@ public:
     }
 };
 
-class SaltedTxidHasher
+class SaltedHasher
 {
 private:
     /** Salt */
     const uint64_t k0, k1;
 
 public:
-    SaltedTxidHasher();
+    SaltedHasher();
 
     /**
      * This *must* return size_t. With Boost 1.46 on 32-bit systems the
@@ -337,11 +337,11 @@ enum ShieldedType
     ORCHARD,
 };
 
-typedef boost::unordered_map<uint256, CCoinsCacheEntry, SaltedTxidHasher> CCoinsMap;
-typedef boost::unordered_map<uint256, CAnchorsSproutCacheEntry, SaltedTxidHasher> CAnchorsSproutMap;
-typedef boost::unordered_map<uint256, CAnchorsSaplingCacheEntry, SaltedTxidHasher> CAnchorsSaplingMap;
-typedef boost::unordered_map<uint256, CAnchorsOrchardCacheEntry, SaltedTxidHasher> CAnchorsOrchardMap;
-typedef boost::unordered_map<uint256, CNullifiersCacheEntry, SaltedTxidHasher> CNullifiersMap;
+typedef boost::unordered_map<uint256, CCoinsCacheEntry, SaltedHasher> CCoinsMap;
+typedef boost::unordered_map<uint256, CAnchorsSproutCacheEntry, SaltedHasher> CAnchorsSproutMap;
+typedef boost::unordered_map<uint256, CAnchorsSaplingCacheEntry, SaltedHasher> CAnchorsSaplingMap;
+typedef boost::unordered_map<uint256, CAnchorsOrchardCacheEntry, SaltedHasher> CAnchorsOrchardMap;
+typedef boost::unordered_map<uint256, CNullifiersCacheEntry, SaltedHasher> CNullifiersMap;
 typedef boost::unordered_map<uint32_t, HistoryCache> CHistoryCacheMap;
 
 struct CCoinsStats
