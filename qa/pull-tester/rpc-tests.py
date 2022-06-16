@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2016 The Bitcoin Core developers
-# Copyright (c) 2020-2022 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 """
@@ -73,7 +72,6 @@ BASE_SCRIPTS= [
     'wallet_addresses.py',
     'wallet_anchorfork.py',
     'wallet_changeindicator.py',
-    'wallet_deprecation.py',
     'wallet_doublespend.py',
     'wallet_import_export.py',
     'wallet_isfromme.py',
@@ -142,7 +140,6 @@ BASE_SCRIPTS= [
     'wallet_broadcast.py',
     'wallet_z_sendmany.py',
     'wallet_zero_value.py',
-    'threeofthreerestore.py',
 ]
 
 ZMQ_SCRIPTS = [
@@ -190,6 +187,8 @@ def main():
     parser.add_argument('--force', '-f', action='store_true', help='run tests even on platforms where they are disabled by default (e.g. windows).')
     parser.add_argument('--help', '-h', '-?', action='store_true', help='print help text and exit')
     parser.add_argument('--jobs', '-j', type=int, default=4, help='how many test scripts to run in parallel. Default=4.')
+    parser.add_argument('--machines', '-m', type=int, default=-1, help='how many machines run in parallel. Default=4.')
+    parser.add_argument('--rpcgroup', '-r', type=int, default=4, help='how many test on each machine to run in parallel. Default=4.')
     parser.add_argument('--nozmq', action='store_true', help='do not run the zmq tests')
     args, unknown_args = parser.parse_known_args()
 
@@ -266,7 +265,18 @@ def main():
         subprocess.check_call((config["environment"]["SRCDIR"] + '/qa/rpc-tests/' + test_list[0]).split() + ['-h'])
         sys.exit(0)
 
-    run_tests(test_list, config["environment"]["SRCDIR"], config["environment"]["BUILDDIR"], config["environment"]["EXEEXT"], args.jobs, args.coverage, passon_args)
+    if args.machines != -1:
+        #check if we have evenly divisble groups of test to ensure all tests are included
+        if len(test_list) % args.machines !=0:
+            n = int(len(test_list) // args.machines + 1)
+            split_list = [test_list[i:n] for i in range(0, len(test_list), args.machines)]
+            run_tests(split_list[args.rpcgroup], config["environment"]["SRCDIR"], config["environment"]["BUILDDIR"], config["environment"]["EXEEXT"], args.jobs, args.coverage, passon_args)    
+        else:
+            n = int(len(test_list) / args.machines)
+            split_list = [test_list[i:n+i] for i in range(0, len(test_list),n)]
+            run_tests(split_list[args.rpcgroup], config["environment"]["SRCDIR"], config["environment"]["BUILDDIR"], config["environment"]["EXEEXT"], args.jobs, args.coverage, passon_args)    
+    else:   
+        run_tests(test_list, config["environment"]["SRCDIR"], config["environment"]["BUILDDIR"], config["environment"]["EXEEXT"], args.jobs, args.coverage, passon_args)
 
 def run_tests(test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=False, args=[]):
     BOLD = ("","")
@@ -276,8 +286,8 @@ def run_tests(test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=Fal
         BOLD = ('\033[0m', '\033[1m')
 
     #Set env vars
-    if "ZCASHD" not in os.environ:
-        os.environ["ZCASHD"] = build_dir + '/src/zcashd' + exeext
+    if "BITCOIND" not in os.environ:
+        os.environ["BITCOIND"] = build_dir + '/src/zcashd' + exeext
 
     tests_dir = src_dir + '/qa/rpc-tests/'
 
