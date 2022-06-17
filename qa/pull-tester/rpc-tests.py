@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2016 The Bitcoin Core developers
+# Copyright (c) 2020-2022 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 """
@@ -72,6 +73,7 @@ BASE_SCRIPTS= [
     'wallet_addresses.py',
     'wallet_anchorfork.py',
     'wallet_changeindicator.py',
+    'wallet_deprecation.py',
     'wallet_doublespend.py',
     'wallet_import_export.py',
     'wallet_isfromme.py',
@@ -140,6 +142,7 @@ BASE_SCRIPTS= [
     'wallet_broadcast.py',
     'wallet_z_sendmany.py',
     'wallet_zero_value.py',
+    'threeofthreerestore.py',
 ]
 
 ZMQ_SCRIPTS = [
