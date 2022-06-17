@@ -69,8 +69,8 @@ rayon = "1.5"
 
 # Metrics
 ipnet = "2"
-metrics = "0.17"
-metrics-exporter-prometheus = "0.6"
+metrics = "0.19"
+metrics-exporter-prometheus = "0.10"
 
 # Wallet tool
 # (also depends on tracing, and tracing-subscriber with "env-filter" and "fmt" features)

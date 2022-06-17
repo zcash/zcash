@@ -1,5 +1,5 @@
 use libc::{c_char, c_double};
-use metrics::{try_recorder, GaugeValue, Key, Label};
+use metrics::{try_recorder, Key, Label};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use std::ffi::CStr;
 use std::net::{IpAddr, SocketAddr};
@@ -14,20 +14,12 @@ pub extern "C" fn metrics_run(
     allow_ips_len: usize,
     prometheus_port: u16,
 ) -> bool {
-    // Parse any allowed IPs.
+    // Convert the C string IPs to Rust strings.
     let allow_ips = unsafe { slice::from_raw_parts(allow_ips, allow_ips_len) };
-    let mut allow_ips: Vec<ipnet::IpNet> = match allow_ips
+    let mut allow_ips: Vec<&str> = match allow_ips
         .iter()
         .map(|&p| unsafe { CStr::from_ptr(p) })
-        .map(|s| {
-            s.to_str().ok().and_then(|s| {
-                s.parse()
-                    .map_err(|e| {
-                        error!("Invalid -metricsallowip argument '{}': {}", s, e);
-                    })
-                    .ok()
-            })
-        })
+        .map(|s| s.to_str().ok())
         .collect()
     {
         Some(ips) => ips,
@@ -36,7 +28,7 @@ pub extern "C" fn metrics_run(
         }
     };
     // We always allow localhost.
-    allow_ips.extend(&["127.0.0.0/8".parse().unwrap(), "::1/128".parse().unwrap()]);
+    allow_ips.extend(&["127.0.0.0/8", "::1/128"]);
 
     // Parse the address to bind to.
     let bind_address = SocketAddr::new(
@@ -64,11 +56,21 @@ pub extern "C" fn metrics_run(
 
     allow_ips
         .into_iter()
-        .fold(
-            PrometheusBuilder::new().listen_address(bind_address),
-            |builder, subnet| builder.add_allowed(subnet),
+        .try_fold(
+            PrometheusBuilder::new().with_http_listener(bind_address),
+            |builder, subnet| {
+                builder.add_allowed_address(subnet).map_err(|e| {
+                    error!("Invalid -metricsallowip argument '{}': {}", subnet, e);
+                    e
+                })
+            },
         )
-        .install()
+        .and_then(|builder| {
+            builder.install().map_err(|e| {
+                error!("Could not install Prometheus exporter: {}", e);
+                e
+            })
+        })
         .is_ok()
 }
 
@@ -153,7 +155,7 @@ pub extern "C" fn metrics_key(
 pub extern "C" fn metrics_static_increment_counter(callsite: *const FfiCallsite, value: u64) {
     if let Some(recorder) = try_recorder() {
         let callsite = unsafe { callsite.as_ref().unwrap() };
-        recorder.increment_counter(&callsite.key, value);
+        recorder.register_counter(&callsite.key).increment(value);
     }
 }
 
@@ -162,7 +164,7 @@ pub extern "C" fn metrics_increment_counter(key: *mut FfiKey, value: u64) {
     if let Some(recorder) = try_recorder() {
         if !key.is_null() {
             let key = unsafe { Box::from_raw(key) };
-            recorder.increment_counter(&key.inner, value);
+            recorder.register_counter(&key.inner).increment(value);
         }
     }
 }
@@ -171,7 +173,7 @@ pub extern "C" fn metrics_increment_counter(key: *mut FfiKey, value: u64) {
 pub extern "C" fn metrics_static_update_gauge(callsite: *const FfiCallsite, value: c_double) {
     if let Some(recorder) = try_recorder() {
         let callsite = unsafe { callsite.as_ref().unwrap() };
-        recorder.update_gauge(&callsite.key, GaugeValue::Absolute(value));
+        recorder.register_gauge(&callsite.key).set(value as f64);
     }
 }
 
@@ -180,7 +182,7 @@ pub extern "C" fn metrics_update_gauge(key: *mut FfiKey, value: c_double) {
     if let Some(recorder) = try_recorder() {
         if !key.is_null() {
             let key = unsafe { Box::from_raw(key) };
-            recorder.update_gauge(&key.inner, GaugeValue::Absolute(value));
+            recorder.register_gauge(&key.inner).set(value as f64);
         }
     }
 }
@@ -189,7 +191,9 @@ pub extern "C" fn metrics_update_gauge(key: *mut FfiKey, value: c_double) {
 pub extern "C" fn metrics_static_increment_gauge(callsite: *const FfiCallsite, value: c_double) {
     if let Some(recorder) = try_recorder() {
         let callsite = unsafe { callsite.as_ref().unwrap() };
-        recorder.update_gauge(&callsite.key, GaugeValue::Increment(value));
+        recorder
+            .register_gauge(&callsite.key)
+            .increment(value as f64);
     }
 }
 
@@ -198,7 +202,7 @@ pub extern "C" fn metrics_increment_gauge(key: *mut FfiKey, value: c_double) {
     if let Some(recorder) = try_recorder() {
         if !key.is_null() {
             let key = unsafe { Box::from_raw(key) };
-            recorder.update_gauge(&key.inner, GaugeValue::Increment(value));
+            recorder.register_gauge(&key.inner).increment(value as f64);
         }
     }
 }
@@ -207,7 +211,9 @@ pub extern "C" fn metrics_increment_gauge(key: *mut FfiKey, value: c_double) {
 pub extern "C" fn metrics_static_decrement_gauge(callsite: *const FfiCallsite, value: c_double) {
     if let Some(recorder) = try_recorder() {
         let callsite = unsafe { callsite.as_ref().unwrap() };
-        recorder.update_gauge(&callsite.key, GaugeValue::Decrement(value));
+        recorder
+            .register_gauge(&callsite.key)
+            .decrement(value as f64);
     }
 }
 
@@ -216,7 +222,7 @@ pub extern "C" fn metrics_decrement_gauge(key: *mut FfiKey, value: c_double) {
     if let Some(recorder) = try_recorder() {
         if !key.is_null() {
             let key = unsafe { Box::from_raw(key) };
-            recorder.update_gauge(&key.inner, GaugeValue::Decrement(value));
+            recorder.register_gauge(&key.inner).decrement(value as f64);
         }
     }
 }
@@ -225,7 +231,9 @@ pub extern "C" fn metrics_decrement_gauge(key: *mut FfiKey, value: c_double) {
 pub extern "C" fn metrics_static_record_histogram(callsite: *const FfiCallsite, value: c_double) {
     if let Some(recorder) = try_recorder() {
         let callsite = unsafe { callsite.as_ref().unwrap() };
-        recorder.record_histogram(&callsite.key, value);
+        recorder
+            .register_histogram(&callsite.key)
+            .record(value as f64);
     }
 }
 
@@ -234,7 +242,7 @@ pub extern "C" fn metrics_record_histogram(key: *mut FfiKey, value: c_double) {
     if let Some(recorder) = try_recorder() {
         if !key.is_null() {
             let key = unsafe { Box::from_raw(key) };
-            recorder.record_histogram(&key.inner, value);
+            recorder.register_histogram(&key.inner).record(value as f64);
         }
     }
 }

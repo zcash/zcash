@@ -20,10 +20,6 @@ criteria = "safe-to-deploy"
 version = "0.7.6"
 criteria = "safe-to-deploy"
 
-[[unaudited.aho-corasick]]
-version = "0.7.18"
-criteria = "safe-to-deploy"
-
 [[unaudited.ansi_term]]
 version = "0.12.1"
 criteria = "safe-to-deploy"
@@ -212,10 +208,6 @@ criteria = "safe-to-deploy"
 version = "1.0.68"
 criteria = "safe-to-deploy"
 
-[[unaudited.dashmap]]
-version = "4.0.2"
-criteria = "safe-to-deploy"
-
 [[unaudited.digest]]
 version = "0.9.0"
 criteria = "safe-to-deploy"
@@ -242,10 +234,6 @@ criteria = "safe-to-deploy"
 
 [[unaudited.either]]
 version = "1.6.1"
-criteria = "safe-to-deploy"
-
-[[unaudited.endian-type]]
-version = "0.1.2"
 criteria = "safe-to-deploy"
 
 [[unaudited.ff]]
@@ -433,19 +421,19 @@ version = "0.2.0"
 criteria = "safe-to-deploy"
 
 [[unaudited.metrics]]
-version = "0.17.1"
+version = "0.19.0"
 criteria = "safe-to-deploy"
 
 [[unaudited.metrics-exporter-prometheus]]
-version = "0.6.1"
+version = "0.10.0"
 criteria = "safe-to-deploy"
 
 [[unaudited.metrics-macros]]
-version = "0.4.1"
+version = "0.5.1"
 criteria = "safe-to-deploy"
 
 [[unaudited.metrics-util]]
-version = "0.10.2"
+version = "0.13.0"
 criteria = "safe-to-deploy"
 
 [[unaudited.miniz_oxide]]
@@ -458,10 +446,6 @@ criteria = "safe-to-deploy"
 
 [[unaudited.miow]]
 version = "0.3.7"
-criteria = "safe-to-deploy"
-
-[[unaudited.nibble_vec]]
-version = "0.1.0"
 criteria = "safe-to-deploy"
 
 [[unaudited.nix]]
@@ -510,10 +494,6 @@ criteria = "safe-to-deploy"
 
 [[unaudited.opaque-debug]]
 version = "0.3.0"
-criteria = "safe-to-deploy"
-
-[[unaudited.ordered-float]]
-version = "2.10.0"
 criteria = "safe-to-deploy"
 
 [[unaudited.pairing]]
@@ -602,10 +582,6 @@ criteria = "safe-to-deploy"
 
 [[unaudited.radium]]
 version = "0.7.0"
-criteria = "safe-to-deploy"
-
-[[unaudited.radix_trie]]
-version = "0.2.1"
 criteria = "safe-to-deploy"
 
 [[unaudited.rand]]
@@ -729,7 +705,7 @@ version = "0.3.10"
 criteria = "safe-to-deploy"
 
 [[unaudited.sketches-ddsketch]]
-version = "0.1.2"
+version = "0.1.3"
 criteria = "safe-to-deploy"
 
 [[unaudited.smallvec]]
@@ -798,10 +774,6 @@ criteria = "safe-to-deploy"
 
 [[unaudited.tokio]]
 version = "1.17.0"
-criteria = "safe-to-deploy"
-
-[[unaudited.tokio-macros]]
-version = "1.7.0"
 criteria = "safe-to-deploy"
 
 [[unaudited.toml]]
