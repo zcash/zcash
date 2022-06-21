@@ -446,11 +446,47 @@ class FakeCoinsViewDB : public CCoinsView {
 
     uint256 hash;
     SproutMerkleTree sproutTree;
-    SaplingMerkleTree saplingTree;
-    OrchardMerkleFrontier orchardTree;
+    std::vector<SaplingMerkleTree> saplingTrees;
+    std::vector<OrchardMerkleFrontier> orchardTrees;
 
 public:
-    FakeCoinsViewDB(std::string dbName, uint256& hash) : db(GetDataDir() / dbName, 100, false, false), hash(hash) {}
+    FakeCoinsViewDB(std::string dbName, uint256& hash) : db(GetDataDir() / dbName, 100, false, false), hash(hash) {
+        SaplingMerkleTree emptySaplingTree;
+        saplingTrees.push_back(emptySaplingTree);
+
+        OrchardMerkleFrontier emptyOrchardTree;
+        orchardTrees.push_back(emptyOrchardTree);
+    }
+
+    void SetSaplingTrees(std::vector<std::string> trees) {
+        saplingTrees.clear();
+        for (const auto& treeHex : trees) {
+            auto treeBytes = ParseHex(treeHex);
+            SaplingMerkleTree tree;
+            CDataStream so(treeBytes, SER_NETWORK, PROTOCOL_VERSION);
+            so >> tree;
+            saplingTrees.push_back(tree);
+        }
+
+        // Ensure the empty tree is present.
+        SaplingMerkleTree emptyTree;
+        saplingTrees.push_back(emptyTree);
+    }
+
+    void SetOrchardTrees(std::vector<std::string> trees) {
+        orchardTrees.clear();
+        for (const auto& treeHex : trees) {
+            auto treeBytes = ParseHex(treeHex);
+            OrchardMerkleFrontier tree;
+            CDataStream so(treeBytes, SER_NETWORK, PROTOCOL_VERSION);
+            so >> tree;
+            orchardTrees.push_back(tree);
+        }
+
+        // Ensure the empty tree is present.
+        OrchardMerkleFrontier emptyTree;
+        orchardTrees.push_back(emptyTree);
+    }
 
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
         if (rt == sproutTree.root()) {
@@ -461,17 +497,21 @@ public:
     }
 
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
-        if (rt == saplingTree.root()) {
-            tree = saplingTree;
-            return true;
+        for (const auto& saplingTree : saplingTrees) {
+            if (rt == saplingTree.root()) {
+                tree = saplingTree;
+                return true;
+            }
         }
         return false;
     }
 
     bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
-        if (rt == orchardTree.root()) {
-            tree = orchardTree;
-            return true;
+        for (const auto& orchardTree : orchardTrees) {
+            if (rt == orchardTree.root()) {
+                tree = orchardTree;
+                return true;
+            }
         }
         return false;
     }
@@ -497,9 +537,9 @@ public:
             case SPROUT:
                 return sproutTree.root();
             case SAPLING:
-                return saplingTree.root();
+                return saplingTrees[0].root();
             case ORCHARD:
-                return orchardTree.root();
+                return orchardTrees[0].root();
             default:
                 throw new std::runtime_error("Unknown shielded type");
         }
