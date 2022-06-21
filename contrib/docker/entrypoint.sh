@@ -32,6 +32,8 @@ if [[ -n "${ZCASHD_SHOWMETRICS}" ]];then ZCASHD_CMD+=" -showmetrics=${ZCASHD_SHO
 if [[ -n "${ZCASHD_LOGIPS}" ]];then ZCASHD_CMD+=" -logips=${ZCASHD_LOGIPS}";fi
 if [[ -n "${ZCASHD_EXPERIMENTALFEATURES}" ]];then ZCASHD_CMD+=" -experimentalfeatures=${ZCASHD_EXPERIMENTALFEATURES}";fi
 if [[ -n "${ZCASHD_GEN}" ]];then ZCASHD_CMD+=" -gen=${ZCASHD_GEN}";fi
+if [[ -n "${ZCASHD_EQUIHASHSOLVER}" ]];then ZCASHD_CMD+=" -gen=${ZCASHD_EQUIHASHSOLVER}";fi
+if [[ -n "${ZCASHD_GENPROCLIMIT}" ]];then ZCASHD_CMD+=" -gen=${ZCASHD_GENPROCLIMIT}";fi
 if [[ -n "${ZCASHD_ZSHIELDCOINBASE}" ]];then ZCASHD_CMD+=" -zshieldcoinbase=${ZCASHD_ZSHIELDCOINBASE}";fi
 if [[ -n "${ZCASHD_RPCUSER}" ]];then ZCASHD_CMD+=" -rpcuser=${ZCASHD_RPCUSER}";fi
 if [[ -n "${ZCASHD_RPCPASSWORD}" ]];then ZCASHD_CMD+=" -rpcpassword=${ZCASHD_RPCPASSWORD}";fi
