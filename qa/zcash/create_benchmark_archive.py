@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import binascii
 import calendar
 import json
@@ -23,9 +24,9 @@ Example usage:
 make -C src/leveldb/
 virtualenv venv
 . venv/bin/activate
-pip install --global-option=build_ext --global-option="-L$(pwd)/src/leveldb/" --global-option="-I$(pwd)/src/leveldb/include/" plyvel
+pip install --global-option=build_ext --global-option="-L$(pwd)/src/leveldb/out-shared" --global-option="-I$(pwd)/src/leveldb/include/" plyvel==1.3.0
 pip install progressbar2
-LD_LIBRARY_PATH=src/leveldb python qa/zcash/create_benchmark_archive.py
+LD_LIBRARY_PATH=src/leveldb/out-shared python qa/zcash/create_benchmark_archive.py
 """ % ZCASH_CLI
 
 def check_deps():
@@ -58,12 +59,12 @@ def compress_amount(n):
         return 0
     e = 0
     while (((n % 10) == 0) and e < 9):
-        n /= 10
+        n //= 10
         e += 1
     if e < 9:
         d = (n % 10)
         assert(d >= 1 and d <= 9)
-        n /= 10
+        n //= 10
         return 1 + (n*9 + d - 1)*10 + e
     else:
         return 1 + (n - 1)*10 + 9
@@ -170,12 +171,12 @@ def create_benchmark_archive(blk_hash):
         print('Block contains %d JoinSplit-containing transactions' % js_txs)
         return
 
-    inputs = [(x['txid'], x['vout']) for tx in txs for x in tx['vin'] if x.has_key('txid')]
+    inputs = [(x['txid'], x['vout']) for tx in txs for x in tx['vin'] if 'txid' in x]
     print('Total inputs: %d' % len(inputs))
 
     unique_inputs = {}
     for i in sorted(inputs):
-        if unique_inputs.has_key(i[0]):
+        if i[0] in unique_inputs:
             unique_inputs[i[0]].append(i[1])
         else:
             unique_inputs[i[0]] = [i[1]]
@@ -247,7 +248,7 @@ def create_benchmark_archive(blk_hash):
 
     # Make reproducible archive
     os.remove('%s/LOG' % db_path)
-    files = subprocess.check_output(['find', 'benchmark']).strip().split('\n')
+    files = subprocess.check_output(['find', 'benchmark']).decode('utf8').strip().split('\n')
     archive_name = 'block-%d.tar' % blk['height']
     tar = tarfile.open(archive_name, 'w')
     for name in sorted(files):
