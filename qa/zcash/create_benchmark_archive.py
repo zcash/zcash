@@ -261,3 +261,4 @@ def create_benchmark_archive(blk_hash):
 if __name__ == '__main__':
     check_deps()
     create_benchmark_archive('0000000007cdb809e48e51dd0b530e8f5073e0a9e9bd7ae920fe23e874658c74')
+    create_benchmark_archive('0000000000651d7fb11f0dd1be8dc87c29dca74cbf91140c6aafbacc09e7da04')

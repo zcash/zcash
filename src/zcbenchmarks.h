@@ -17,6 +17,7 @@ extern double benchmark_try_decrypt_sapling_notes(size_t nAddrs);
 extern double benchmark_increment_sprout_note_witnesses(size_t nTxs);
 extern double benchmark_increment_sapling_note_witnesses(size_t nTxs);
 extern double benchmark_connectblock_slow();
+extern double benchmark_connectblock_orchard();
 extern double benchmark_sendtoaddress(CAmount amount);
 extern double benchmark_loadwallet();
 extern double benchmark_listunspent();

@@ -603,6 +603,52 @@ double benchmark_connectblock_slow()
     return duration;
 }
 
+double benchmark_connectblock_orchard()
+{
+    // Test for slowness encountered on 2022-06-20
+    SelectParams(CBaseChainParams::MAIN);
+    CBlock block;
+    FILE* fp = fsbridge::fopen(GetDataDir() / "benchmark/block-1708048.dat", "rb");
+    if (!fp) throw new std::runtime_error("Failed to open block data file");
+    CAutoFile blkFile(fp, SER_DISK, CLIENT_VERSION);
+    blkFile >> block;
+    blkFile.fclose();
+
+    // Fake its inputs
+    auto hashPrev = uint256S("0000000001337f1dd6df5ab7dc19f67c47ffdc6f2b6aae8626b023dc7d1dd601");
+    FakeCoinsViewDB fakeDB("benchmark/block-1708048-inputs", hashPrev);
+    fakeDB.SetSaplingTrees({
+        "01b02bd52471dff0de47602867308090d3b902382437252dff22bbff4c53053a5001f8bacfe2858595371f7220fbb20d3671d777ad6fe2b5dac1b4001eff6c52bb5a140000011e4b4d444e6dd1dbfba6d2b46fcc465a02fdbd813e17c05c04e105b64a94f3640000010de1ce54980e3bf469fff5d430c792ab02d162dfbff9abab55015c5cab46c86b00000001c33f17aa4e36e2e93faeb3fb811e8b499c5d6e11c709dd93fea6ae175d853673012accb7e30be11669222dff6ed9b5575815be8dbbb9f793ec796c30f30cbde80500000000000134e093f073973de750e85daff57c07a102dbc7bbc77436e99b0074f36f1cbf130000015ec9e9b1295908beed437df4126032ca57ada8e3ebb67067cd22a73c79a84009",
+    });
+    fakeDB.SetOrchardTrees({
+        "0191d40100000000008af1cad8a7bc344581480f11b2896e6ef03799b98edc19aaa0123117ddef512e01d700a097a7dfce6fe2e77ba57843ac865ea69a7f664050e42d096cc144744422074f5c8c014e17d86ee296de28ae0c50a55506f14f06258a8120023e75a06a0230a0b80c66f79f318890c3e1eca5c5b98bb23ae56d9c79ed094d31ce96f850120320616e517dcf87f0c5457996c307537eaf63664217d87ad9bb5e7539b90ad73a9e7a903df0df8217724cf10f95f41317776054e4b2e5f50a3d5a9369f298470787a4fc067681dbcf704b64da10a3de6c24f1d04b286a5345d56a735262fb871723f6d3c7b9a8f205cb0c5cc3b1bda25a6ab45ac17f894df8e925610aa14dfa3ad4e323b3ae0cabfb6be4087fec8c66d9a9bbfc354bf1d9588b6620448182063b",
+        "01a9d30100000000001a471915f689c1ebb722a8cb1f326914a2a0288a6ad6dd60bc123cdb5c938a3801cc096845e1e49f812073b8369b5ab0f0da6ae4413bf86f6d28e54039acde11080980947f9699f6b4081e94ec552ef6f9341ca101805cf809653183a98f4e2d8a35ee63096d5c673128918e6790176f252287693aa90774fd46bd27b49c18b3dc0a9180c0b126beac04eebdb32227b223fc95ba5a40e06408192dd9ff8e0c45ac36dd64e135a13d15a59e83b973cadafab39acb47b455a7abb075f68f748ede1c3fb55d42d0cb363605f01d31dca64e00b6c7036f39c296bd36e5ea3cab99cb59319e7a903df0df8217724cf10f95f41317776054e4b2e5f50a3d5a9369f298470787a4fc067681dbcf704b64da10a3de6c24f1d04b286a5345d56a735262fb871723f6d3c7b9a8f205cb0c5cc3b1bda25a6ab45ac17f894df8e925610aa14dfa3ad4e323b3ae0cabfb6be4087fec8c66d9a9bbfc354bf1d9588b6620448182063b",
+    });
+    CCoinsViewCache view(&fakeDB);
+
+    // Fake the chain
+    CBlockIndex index(block);
+    index.nHeight = 1708048;
+    CBlockIndex indexPrev;
+    indexPrev.phashBlock = &hashPrev;
+    indexPrev.nHeight = index.nHeight - 1;
+    indexPrev.hashFinalOrchardRoot = uint256S("03fa83e2eb5fd7dcf22a413a0226394cb7525c066e7b07f976e7bda75d2eb0a5");
+    index.pprev = &indexPrev;
+    mapBlockIndex.insert(std::make_pair(hashPrev, &indexPrev));
+
+    CValidationState state;
+    struct timeval tv_start;
+    timer_start(tv_start);
+    assert(ConnectBlock(block, state, &index, view, Params(), true, false));
+    auto duration = timer_stop(tv_start);
+
+    // Undo alterations to global state
+    mapBlockIndex.erase(hashPrev);
+    SelectParams(ChainNameFromCommandLine());
+
+    return duration;
+}
+
 extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 extern UniValue sendtoaddress(const UniValue& params, bool fHelp);
 
