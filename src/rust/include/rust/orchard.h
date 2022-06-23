@@ -53,21 +53,6 @@ bool orchard_bundle_serialize(
 /// A transaction with no Orchard component has a value balance of zero.
 int64_t orchard_bundle_value_balance(const OrchardBundlePtr* bundle);
 
-/// Validates the given Orchard bundle against bundle-specific consensus rules.
-///
-/// If `bundle == nullptr`, this returns `true`.
-///
-/// ## Consensus rules
-///
-/// [§4.6](https://zips.z.cash/protocol/protocol.pdf#actiondesc):
-/// - Canonical element encodings are enforced by `orchard_bundle_parse`.
-/// - SpendAuthSig^Orchard validity is enforced by `orchard_batch_validate`.
-/// - Proof validity is enforced here.
-///
-/// [§7.1](https://zips.z.cash/protocol/protocol.pdf#txnencodingandconsensus):
-/// - `bindingSigOrchard` validity is enforced by `orchard_batch_validate`.
-bool orchard_bundle_validate(const OrchardBundlePtr* bundle);
-
 /// Returns the number of actions associated with the bundle.
 size_t orchard_bundle_actions_len(const OrchardBundlePtr* bundle);
 
@@ -101,16 +86,24 @@ OrchardBatchValidatorPtr* orchard_batch_validation_init();
 void orchard_batch_validation_free(OrchardBatchValidatorPtr* batch);
 
 /// Adds an Orchard bundle to this batch.
-///
-/// Currently, only RedPallas signatures are batch-validated.
 void orchard_batch_add_bundle(
     OrchardBatchValidatorPtr* batch,
     const OrchardBundlePtr* bundle,
-    const unsigned char* txid);
+    const unsigned char* sighash);
 
 /// Validates this batch.
 ///
 /// Returns false if any item in the batch is invalid.
+///
+/// ## Consensus rules
+///
+/// [§4.6](https://zips.z.cash/protocol/protocol.pdf#actiondesc):
+/// - Canonical element encodings are enforced by `orchard_bundle_parse`.
+/// - SpendAuthSig^Orchard validity is enforced here.
+/// - Proof validity is enforced here.
+///
+/// [§7.1](https://zips.z.cash/protocol/protocol.pdf#txnencodingandconsensus):
+/// - `bindingSigOrchard` validity is enforced here.
 bool orchard_batch_validate(const OrchardBatchValidatorPtr* batch);
 
 /// Returns whether the Orchard bundle is present and outputs
@@ -135,8 +128,6 @@ namespace orchard
 {
 /**
  * A validator for the Orchard authorization component of a transaction.
- *
- * Currently, only RedPallas signatures are batch-validated.
  */
 class AuthValidator
 {
@@ -160,7 +151,8 @@ public:
         return *this;
     }
 
-    /// Creates a validation context that batch-validates Orchard signatures.
+    /// Creates a validation context that batch-validates Orchard proofs and
+    /// signatures.
     static AuthValidator Batch() {
         auto batch = AuthValidator();
         batch.inner.reset(orchard_batch_validation_init());
@@ -174,14 +166,20 @@ public:
     }
 
     /// Queues an Orchard bundle for validation.
-    void Queue(const OrchardBundlePtr* bundle, const unsigned char* txid) {
-        orchard_batch_add_bundle(inner.get(), bundle, txid);
+    void Queue(const OrchardBundlePtr* bundle, const unsigned char* sighash) {
+        orchard_batch_add_bundle(inner.get(), bundle, sighash);
     }
 
     /// Validates the queued Orchard authorizations, returning `true` if all
-    /// signatures were valid and `false` otherwise.
-    bool Validate() const {
-        return orchard_batch_validate(inner.get());
+    /// proofs and signatures were valid, and `false` otherwise.
+    ///
+    /// Throws `std::logic_error` if called more than once.
+    bool Validate() {
+        if (!inner) {
+            throw std::logic_error("orchard::AuthValidator has already been used");
+        }
+
+        return orchard_batch_validate(inner.release());
     }
 };
 } // namespace orchard

@@ -3,19 +3,15 @@ use std::{mem, ptr};
 use libc::size_t;
 use memuse::DynamicUsage;
 use orchard::{
-    bundle::Authorized,
+    bundle::{Authorized, BatchValidator},
     keys::OutgoingViewingKey,
     note_encryption::OrchardDomain,
-    primitives::redpallas::{self, Binding, SpendAuth},
     Bundle,
 };
 use rand_core::OsRng;
 use tracing::{debug, error};
 use zcash_note_encryption::try_output_recovery_with_ovk;
-use zcash_primitives::transaction::{
-    components::{orchard as orchard_serialization, Amount},
-    TxId,
-};
+use zcash_primitives::transaction::components::{orchard as orchard_serialization, Amount};
 
 use crate::streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
 
@@ -101,39 +97,6 @@ pub extern "C" fn orchard_bundle_value_balance(bundle: *const Bundle<Authorized,
         .unwrap_or(0)
 }
 
-/// Validates the given Orchard bundle against bundle-specific consensus rules.
-///
-/// If `bundle == nullptr`, this returns `true`.
-///
-/// ## Consensus rules
-///
-/// [§4.6](https://zips.z.cash/protocol/protocol.pdf#actiondesc):
-/// - Canonical element encodings are enforced by [`orchard_bundle_parse`].
-/// - SpendAuthSig^Orchard validity is enforced by [`BatchValidator`] via
-///   [`orchard_batch_validate`].
-/// - Proof validity is enforced here.
-///
-/// [§7.1](https://zips.z.cash/protocol/protocol.pdf#txnencodingandconsensus):
-/// - `bindingSigOrchard` validity is enforced by [`BatchValidator`] via
-///   [`orchard_batch_validate`].
-#[no_mangle]
-pub extern "C" fn orchard_bundle_validate(bundle: *const Bundle<Authorized, Amount>) -> bool {
-    if let Some(bundle) = unsafe { bundle.as_ref() } {
-        let vk = unsafe { crate::ORCHARD_VK.as_ref() }.unwrap();
-
-        if bundle.verify_proof(vk).is_err() {
-            error!("Invalid Orchard proof");
-            return false;
-        }
-
-        true
-    } else {
-        // The Orchard component of a transaction without an Orchard bundle is by
-        // definition valid.
-        true
-    }
-}
-
 #[no_mangle]
 pub extern "C" fn orchard_bundle_actions_len(bundle: *const Bundle<Authorized, Amount>) -> usize {
     if let Some(bundle) = unsafe { bundle.as_ref() } {
@@ -182,67 +145,7 @@ pub extern "C" fn orchard_bundle_anchor(
     }
 }
 
-/// A signature within an authorized Orchard bundle.
-#[derive(Debug)]
-struct BundleSignature {
-    /// The signature item for validation.
-    signature: redpallas::batch::Item<SpendAuth, Binding>,
-}
-
-/// Batch validation context for Orchard.
-pub struct BatchValidator {
-    signatures: Vec<BundleSignature>,
-}
-
-impl BatchValidator {
-    fn new() -> Self {
-        BatchValidator { signatures: vec![] }
-    }
-
-    fn add_bundle(&mut self, bundle: &Bundle<Authorized, Amount>, txid: TxId) {
-        for action in bundle.actions().iter() {
-            self.signatures.push(BundleSignature {
-                signature: action
-                    .rk()
-                    .create_batch_item(action.authorization().clone(), txid.as_ref()),
-            });
-        }
-
-        self.signatures.push(BundleSignature {
-            signature: bundle.binding_validating_key().create_batch_item(
-                bundle.authorization().binding_signature().clone(),
-                txid.as_ref(),
-            ),
-        });
-    }
-
-    fn validate(&self) -> bool {
-        if self.signatures.is_empty() {
-            // An empty batch is always valid, but is not free to run; skip it.
-            return true;
-        }
-
-        let mut validator = redpallas::batch::Verifier::new();
-        for sig in self.signatures.iter() {
-            validator.queue(sig.signature.clone());
-        }
-
-        match validator.verify(OsRng) {
-            Ok(()) => true,
-            Err(e) => {
-                error!("RedPallas batch validation failed: {}", e);
-                // TODO: Try sub-batches to figure out which signatures are invalid. We can
-                // postpone this for now:
-                // - For per-transaction batching (when adding to the mempool), we don't care
-                //   which signature within the transaction failed.
-                // - For per-block batching, we currently don't care which transaction failed.
-                false
-            }
-        }
-    }
-}
-
-/// Creates a RedPallas batch validation context.
+/// Creates an Orchard bundle batch validation context.
 ///
 /// Please free this when you're done.
 #[no_mangle]
@@ -251,7 +154,7 @@ pub extern "C" fn orchard_batch_validation_init() -> *mut BatchValidator {
     Box::into_raw(ctx)
 }
 
-/// Frees a RedPallas batch validation context returned from
+/// Frees an Orchard bundle batch validation context returned from
 /// [`orchard_batch_validation_init`].
 #[no_mangle]
 pub extern "C" fn orchard_batch_validation_free(ctx: *mut BatchValidator) {
@@ -261,22 +164,20 @@ pub extern "C" fn orchard_batch_validation_free(ctx: *mut BatchValidator) {
 }
 
 /// Adds an Orchard bundle to this batch.
-///
-/// Currently, only RedPallas signatures are batch-validated.
 #[no_mangle]
 pub extern "C" fn orchard_batch_add_bundle(
     batch: *mut BatchValidator,
     bundle: *const Bundle<Authorized, Amount>,
-    txid: *const [u8; 32],
+    sighash: *const [u8; 32],
 ) {
     let batch = unsafe { batch.as_mut() };
     let bundle = unsafe { bundle.as_ref() };
-    let txid = unsafe { txid.as_ref() }.cloned().map(TxId::from_bytes);
+    let sighash = unsafe { sighash.as_ref() };
 
-    match (batch, bundle, txid) {
-        (Some(batch), Some(bundle), Some(txid)) => batch.add_bundle(bundle, txid),
-        (_, _, None) => error!("orchard_batch_add_bundle() called without txid!"),
-        (Some(_), None, Some(txid)) => debug!("Tx {} has no Orchard component", txid),
+    match (batch, bundle, sighash) {
+        (Some(batch), Some(bundle), Some(sighash)) => batch.add_bundle(bundle, *sighash),
+        (_, _, None) => error!("orchard_batch_add_bundle() called without sighash!"),
+        (Some(_), None, Some(_)) => debug!("Tx has no Orchard component"),
         (None, Some(_), _) => debug!("Orchard BatchValidator not provided, assuming disabled."),
         (None, None, _) => (), // Boring, don't bother logging.
     }
@@ -286,10 +187,25 @@ pub extern "C" fn orchard_batch_add_bundle(
 ///
 /// - Returns `true` if `batch` is null.
 /// - Returns `false` if any item in the batch is invalid.
+///
+/// The batch validation context is freed by this function.
+///
+/// ## Consensus rules
+///
+/// [§4.6](https://zips.z.cash/protocol/protocol.pdf#actiondesc):
+/// - Canonical element encodings are enforced by [`orchard_bundle_parse`].
+/// - SpendAuthSig^Orchard validity is enforced here.
+/// - Proof validity is enforced here.
+///
+/// [§7.1](https://zips.z.cash/protocol/protocol.pdf#txnencodingandconsensus):
+/// - `bindingSigOrchard` validity is enforced here.
 #[no_mangle]
-pub extern "C" fn orchard_batch_validate(batch: *const BatchValidator) -> bool {
-    if let Some(batch) = unsafe { batch.as_ref() } {
-        batch.validate()
+pub extern "C" fn orchard_batch_validate(batch: *mut BatchValidator) -> bool {
+    if !batch.is_null() {
+        let batch = unsafe { Box::from_raw(batch) };
+        let vk =
+            unsafe { crate::ORCHARD_VK.as_ref() }.expect("ORCHARD_VK should have been initialized");
+        batch.validate(vk, OsRng)
     } else {
         // The orchard::BatchValidator C++ class uses null to represent a disabled batch
         // validator.
