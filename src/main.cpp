@@ -2568,7 +2568,7 @@ bool CheckTxShieldedInputs(
         auto txid = tx.GetHash().ToString();
         auto rejectCode = ShieldedReqRejectCode(*unmetShieldedReq);
         auto rejectReason = ShieldedReqRejectReason(*unmetShieldedReq);
-        TracingError(
+        TracingDebug(
             "main", "CheckTxShieldedInputs(): shielded requirements not met",
             "txid", txid.c_str(),
             "reason", rejectReason.c_str());
