@@ -43,6 +43,7 @@ BASE_SCRIPTS= [
     'sprout_sapling_migration.py',
     'remove_sprout_shielding.py',
     'zcjoinsplitdoublespend.py',
+    'create_sprout_chains.py',
     # vv Tests less than 2m vv
     'zcjoinsplit.py',
     'mergetoaddress_mixednotes.py',
