@@ -9,6 +9,7 @@
 #endif
 
 #include "utiltime.h"
+#include "sync.h"
 
 #include <chrono>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -16,30 +17,83 @@
 
 using namespace std;
 
-static int64_t nMockTime = 0; //!< For unit testing
+RecursiveMutex clock_lock;
+static CClock* zcashdClock = SystemClock::Instance();
 
-int64_t GetTime()
-{
-    if (nMockTime) return nMockTime;
-
-    return time(NULL);
+void SystemClock::SetGlobal() {
+    LOCK(clock_lock);
+    zcashdClock = SystemClock::Instance();
 }
 
-void SetMockTime(int64_t nMockTimeIn)
-{
-    nMockTime = nMockTimeIn;
+int64_t SystemClock::GetTime() const {
+    return std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-int64_t GetTimeMillis()
-{
+int64_t SystemClock::GetTimeMillis() const {
     return std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-int64_t GetTimeMicros()
-{
+int64_t SystemClock::GetTimeMicros() const {
     return std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+void FixedClock::SetGlobal(int64_t nFixedTime) {
+    LOCK(clock_lock);
+    FixedClock::Instance()->Set(nFixedTime);
+    zcashdClock = FixedClock::Instance();
+}
+
+int64_t FixedClock::GetTime() const {
+    return nFixedTime;
+}
+
+int64_t FixedClock::GetTimeMillis() const {
+    return nFixedTime * 1000;
+}
+
+int64_t FixedClock::GetTimeMicros() const {
+    return nFixedTime * 1000000;
+}
+
+OffsetClock OffsetClock::instance;
+
+void OffsetClock::SetGlobal(int64_t nOffsetSeconds) {
+    LOCK(clock_lock);
+    OffsetClock::Instance()->Set(nOffsetSeconds);
+    zcashdClock = OffsetClock::Instance();
+}
+
+int64_t OffsetClock::GetTime() const {
+    return std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count()
+        + nOffsetSeconds;
+}
+
+int64_t OffsetClock::GetTimeMillis() const {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count()
+        + (nOffsetSeconds * 1000);
+}
+
+int64_t OffsetClock::GetTimeMicros() const {
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count()
+        + (nOffsetSeconds * 1000000);
+}
+
+int64_t GetTime() {
+    return zcashdClock->GetTime();
+}
+
+int64_t GetTimeMillis() {
+    return zcashdClock->GetTimeMillis();
+}
+
+int64_t GetTimeMicros() {
+    return zcashdClock->GetTimeMicros();
 }
 
 void MilliSleep(int64_t n)

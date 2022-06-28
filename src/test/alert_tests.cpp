@@ -289,7 +289,7 @@ BOOST_FIXTURE_TEST_SUITE(Alert_tests, ReadAlerts)
 
 BOOST_AUTO_TEST_CASE(AlertApplies)
 {
-    SetMockTime(11);
+    FixedClock::SetGlobal(11);
     const std::vector<unsigned char>& alertKey = Params(CBaseChainParams::MAIN).AlertKey();
 
     for (const CAlert& alert : alerts)
@@ -342,13 +342,13 @@ BOOST_AUTO_TEST_CASE(AlertApplies)
     // SubVer without comment doesn't match SubVer pattern with
     BOOST_CHECK(!alerts[3].AppliesTo(1, "/MagicBean:0.2.1/"));
 
-    SetMockTime(0);
+    SystemClock::SetGlobal();
 }
 
 
 BOOST_AUTO_TEST_CASE(AlertNotify)
 {
-    SetMockTime(11);
+    FixedClock::SetGlobal(11);
     const std::vector<unsigned char>& alertKey = Params(CBaseChainParams::MAIN).AlertKey();
 
     fs::path temp = fs::temp_directory_path() /
@@ -382,13 +382,13 @@ BOOST_AUTO_TEST_CASE(AlertNotify)
 #endif
     fs::remove(temp);
 
-    SetMockTime(0);
+    SystemClock::SetGlobal();
     mapAlerts.clear();
 }
 
 BOOST_AUTO_TEST_CASE(AlertDisablesRPC)
 {
-    SetMockTime(11);
+    FixedClock::SetGlobal(11);
     const std::vector<unsigned char>& alertKey = Params(CBaseChainParams::MAIN).AlertKey();
 
     // Command should work before alerts
@@ -404,7 +404,7 @@ BOOST_AUTO_TEST_CASE(AlertDisablesRPC)
     BOOST_CHECK_EQUAL(alerts[8].strRPCError, "");
     BOOST_CHECK_EQUAL(GetWarnings("rpc").first, "");
 
-    SetMockTime(0);
+    SystemClock::SetGlobal();
     mapAlerts.clear();
 }
 

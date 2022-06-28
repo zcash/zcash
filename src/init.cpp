@@ -1240,8 +1240,17 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     fAlerts = GetBoolArg("-alerts", DEFAULT_ALERTS);
 
-    // Option to startup with mocktime set (used for regression testing):
-    SetMockTime(GetArg("-mocktime", 0)); // SetMockTime(0) is a no-op
+    // Option to startup with mocktime set (used for regression testing);
+    // an mocktime of 0 (the default) selects the system clock.
+    int64_t nMockTime = GetArg("-mocktime", 0);
+    if (nMockTime != 0) {
+        FixedClock::SetGlobal(nMockTime);
+    } else {
+        // Option to start a node with the system clock offset by a constant
+        // value throughout the life of the node (used for regression testing):
+        int64_t nOffsetTime = GetArg("-clockoffset", 0);
+        OffsetClock::SetGlobal(nOffsetTime);
+    }
 
     if (GetBoolArg("-peerbloomfilters", DEFAULT_PEERBLOOMFILTERS))
         nLocalServices |= NODE_BLOOM;

@@ -20,7 +20,7 @@ const uint256 TX_ID3 = ArithToUint256(3);
 TEST(MempoolLimitTests, RecentlyEvictedListAddWrapsAfterMaxSize)
 {
     RecentlyEvictedList recentlyEvicted(2, 100);
-    SetMockTime(1);
+    FixedClock::SetGlobal(1);
     recentlyEvicted.add(TX_ID1);
     recentlyEvicted.add(TX_ID2);
     recentlyEvicted.add(TX_ID3);
@@ -28,56 +28,59 @@ TEST(MempoolLimitTests, RecentlyEvictedListAddWrapsAfterMaxSize)
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID1));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID2));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));
+    SystemClock::SetGlobal();
 }
 
 TEST(MempoolLimitTests, RecentlyEvictedListDoesNotContainAfterExpiry)
 {
-    SetMockTime(1);
+    FixedClock::SetGlobal(1);
     // maxSize=3, timeToKeep=1
     RecentlyEvictedList recentlyEvicted(3, 1);
     recentlyEvicted.add(TX_ID1);
-    SetMockTime(2);
+    FixedClock::SetGlobal(2);
     recentlyEvicted.add(TX_ID2);
     recentlyEvicted.add(TX_ID3);
     // After 1 second the txId will still be there
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID1));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID2));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));
-    SetMockTime(3);
+    FixedClock::SetGlobal(3);
     // After 2 seconds it is gone
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID1));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID2));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));
-    SetMockTime(4);
+    FixedClock::SetGlobal(4);
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID1));
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID2));
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID3));
+    SystemClock::SetGlobal();
 }
 
 TEST(MempoolLimitTests, RecentlyEvictedDropOneAtATime)
 {
-    SetMockTime(1);
+    FixedClock::SetGlobal(1);
     RecentlyEvictedList recentlyEvicted(3, 2);
     recentlyEvicted.add(TX_ID1);
-    SetMockTime(2);
+    FixedClock::SetGlobal(2);
     recentlyEvicted.add(TX_ID2);
-    SetMockTime(3);
+    FixedClock::SetGlobal(3);
     recentlyEvicted.add(TX_ID3);
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID1));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID2));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));
-    SetMockTime(4);
+    FixedClock::SetGlobal(4);
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID1));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID2));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));
-    SetMockTime(5);
+    FixedClock::SetGlobal(5);
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID1));
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID2));
     EXPECT_TRUE(recentlyEvicted.contains(TX_ID3));
-    SetMockTime(6);
+    FixedClock::SetGlobal(6);
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID1));
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID2));
     EXPECT_FALSE(recentlyEvicted.contains(TX_ID3));
+    SystemClock::SetGlobal();
 }
 
 TEST(MempoolLimitTests, WeightedTxTreeCheckSizeAfterDropping)
