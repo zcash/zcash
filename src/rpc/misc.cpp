@@ -497,14 +497,18 @@ UniValue setmocktime(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "setmocktime timestamp\n"
-            "\nSet the local time to given timestamp (-regtest only)\n"
+            "\nSet the local time to given timestamp (-regtest only).\n"
+            "The node must be started with `-mocktime` in order to use this API.\n"
             "\nArguments:\n"
             "1. timestamp  (integer, required) Unix seconds-since-epoch timestamp\n"
             "   Pass 0 to go back to using the system time."
         );
 
     if (!Params().MineBlocksOnDemand())
-        throw runtime_error("setmocktime for regression testing (-regtest mode) only");
+        throw runtime_error("setmocktime: for regression testing (-regtest mode) only");
+
+    if (GetNodeClock() != FixedClock::Instance())
+        throw runtime_error("setmocktime: the node must be started with `-mocktime` in order to use this API");
 
     // cs_vNodes is locked and node send/receive times are updated
     // atomically with the time change to prevent peers from being
@@ -513,7 +517,9 @@ UniValue setmocktime(const UniValue& params, bool fHelp)
     LOCK2(cs_main, cs_vNodes);
 
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VNUM));
-    SetMockTime(params[0].get_int64());
+    std::chrono::seconds nMockTime(params[0].get_int64());
+
+    FixedClock::Instance()->Set(nMockTime);
 
     uint64_t t = GetTime();
     for (CNode* pnode : vNodes) {

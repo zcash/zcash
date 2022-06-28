@@ -47,8 +47,11 @@ BOOST_AUTO_TEST_CASE(May15)
     // idea, so this test is only run if you manually download
     // test/data/Mar12Fork.dat from
     // http://sourceforge.net/projects/bitcoin/files/Bitcoin/blockchain/Mar12Fork.dat/download
-    unsigned int tMay15 = 1368576000;
-    SetMockTime(tMay15); // Test as if it was right at May 15
+    FixedClock::SetGlobal();
+
+    // Test as if the time is exactly 2013-05-15 00:00:00Z
+    int64_t tMay15 = 1368576000;
+    FixedClock::Instance()->Set(std::chrono::seconds(tMay15));
 
     CBlock forkingBlock;
     if (read_block("Mar12Fork.dat", forkingBlock))
@@ -61,7 +64,7 @@ BOOST_AUTO_TEST_CASE(May15)
         BOOST_CHECK(CheckBlock(forkingBlock, state, Params(), verifier, false, false, true));
     }
 
-    SetMockTime(0);
+    SystemClock::SetGlobal();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

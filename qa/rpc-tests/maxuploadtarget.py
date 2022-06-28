@@ -122,12 +122,18 @@ class MaxUploadTest(BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 2)
 
     def setup_network(self):
+        # We will start the node mocking the time otherwise things break
+        # because the CNode time counters can't be reset backward after
+        # initialization
+        old_time = int(time.time() - 60*60*24*9)
+
         # Start a node with maxuploadtarget of 200 MB (/24h)
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, [
             "-debug",
             '-nuparams=2bb40e60:1', # Blossom
-            "-maxuploadtarget=2200"]))
+            "-maxuploadtarget=2200",
+            "-mocktime=%d" % old_time ]))
 
     def mine_full_block(self, node, address):
         # Want to create a full block
@@ -155,12 +161,6 @@ class MaxUploadTest(BitcoinTestFramework):
         node.generate(1)
 
     def run_test(self):
-        # Before we connect anything, we first set the time on the node
-        # to be in the past, otherwise things break because the CNode
-        # time counters can't be reset backward after initialization
-        old_time = int(time.time() - 60*60*24*9)
-        self.nodes[0].setmocktime(old_time)
-
         # Generate some old blocks
         self.nodes[0].generate(260)
 

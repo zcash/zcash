@@ -938,7 +938,7 @@ void CTxMemPool::SetMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMem
     LogPrint("mempool", "Setting mempool cost limit: (limit=%d, time=%d)\n", totalCostLimit, evictionMemorySeconds);
     delete recentlyEvicted;
     delete weightedTxTree;
-    recentlyEvicted = new RecentlyEvictedList(evictionMemorySeconds);
+    recentlyEvicted = new RecentlyEvictedList(GetNodeClock(), evictionMemorySeconds);
     weightedTxTree = new WeightedTxTree(totalCostLimit);
 }
 

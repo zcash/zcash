@@ -14,6 +14,7 @@
 #include "primitives/transaction.h"
 #include "policy/fees.h"
 #include "uint256.h"
+#include "util/time.h"
 
 const size_t DEFAULT_MEMPOOL_TOTAL_COST_LIMIT = 80000000;
 const int64_t DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES = 60;
@@ -27,6 +28,8 @@ const uint64_t LOW_FEE_PENALTY = 16000;
 // in order to prevent them from being re-accepted for a given amount of time.
 class RecentlyEvictedList
 {
+    const CClock* const clock;
+
     const size_t capacity;
 
     const int64_t timeToKeep;
@@ -39,11 +42,13 @@ class RecentlyEvictedList
     void pruneList();
 
 public:
-    RecentlyEvictedList(size_t capacity_, int64_t timeToKeep_) : capacity(capacity_), timeToKeep(timeToKeep_)
+    RecentlyEvictedList(const CClock* clock_, size_t capacity_, int64_t timeToKeep_) :
+        clock(clock_), capacity(capacity_), timeToKeep(timeToKeep_)
     {
         assert(capacity <= EVICTION_MEMORY_ENTRIES);
     }
-    RecentlyEvictedList(int64_t timeToKeep_) : RecentlyEvictedList(EVICTION_MEMORY_ENTRIES, timeToKeep_) {}
+    RecentlyEvictedList(const CClock* clock_, int64_t timeToKeep_) :
+        RecentlyEvictedList(clock_, EVICTION_MEMORY_ENTRIES, timeToKeep_) {}
 
     void add(const uint256& txId);
     bool contains(const uint256& txId);

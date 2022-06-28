@@ -4,10 +4,12 @@
 #include "util/test.h"
 #include "util/time.h"
 
+#include <chrono>
 
 TEST(Metrics, AtomicTimer) {
+    FixedClock::SetGlobal();
     AtomicTimer t;
-    SetMockTime(100);
+    FixedClock::Instance()->Set(std::chrono::seconds(100));
 
     EXPECT_FALSE(t.running());
 
@@ -36,13 +38,13 @@ TEST(Metrics, AtomicTimer) {
     c.increment();
     EXPECT_EQ(0, t.rate(c));
 
-    SetMockTime(101);
+    FixedClock::Instance()->Set(std::chrono::seconds(101));
     EXPECT_EQ(1, t.rate(c));
 
     c.decrement();
     EXPECT_EQ(0, t.rate(c));
 
-    SetMockTime(102);
+    FixedClock::Instance()->Set(std::chrono::seconds(102));
     EXPECT_EQ(0, t.rate(c));
 
     c.increment();
@@ -51,17 +53,20 @@ TEST(Metrics, AtomicTimer) {
     t.stop();
     EXPECT_FALSE(t.running());
     EXPECT_EQ(0.5, t.rate(c));
+
+    SystemClock::SetGlobal();
 }
 
 TEST(Metrics, GetLocalSolPS) {
-    SetMockTime(100);
+    FixedClock::SetGlobal();
+    FixedClock::Instance()->Set(std::chrono::seconds(100));
     miningTimer.start();
 
     // No time has passed
     EXPECT_EQ(0, GetLocalSolPS());
 
     // Increment time
-    SetMockTime(101);
+    FixedClock::Instance()->Set(std::chrono::seconds(101));
     EXPECT_EQ(0, GetLocalSolPS());
 
     // Increment solutions
@@ -69,7 +74,7 @@ TEST(Metrics, GetLocalSolPS) {
     EXPECT_EQ(1, GetLocalSolPS());
 
     // Increment time
-    SetMockTime(102);
+    FixedClock::Instance()->Set(std::chrono::seconds(102));
     EXPECT_EQ(0.5, GetLocalSolPS());
 
     // Increment solutions
@@ -82,7 +87,7 @@ TEST(Metrics, GetLocalSolPS) {
     EXPECT_EQ(1.5, GetLocalSolPS());
 
     // Increment time
-    SetMockTime(103);
+    FixedClock::Instance()->Set(std::chrono::seconds(103));
     EXPECT_EQ(1.5, GetLocalSolPS());
 
     // Start timing again
@@ -90,7 +95,7 @@ TEST(Metrics, GetLocalSolPS) {
     EXPECT_EQ(1.5, GetLocalSolPS());
 
     // Increment time
-    SetMockTime(104);
+    FixedClock::Instance()->Set(std::chrono::seconds(104));
     EXPECT_EQ(1, GetLocalSolPS());
 
     miningTimer.stop();
@@ -98,20 +103,24 @@ TEST(Metrics, GetLocalSolPS) {
     solutionTargetChecks.decrement();
     solutionTargetChecks.decrement();
     solutionTargetChecks.decrement();
+
+    SystemClock::SetGlobal();
 }
 
 TEST(Metrics, EstimateNetHeight) {
+    FixedClock::SetGlobal();
     auto params = RegtestActivateBlossom(false, 200).GetConsensus();
     int64_t blockTimes[400];
     for (int i = 0; i < 400; i++) {
         blockTimes[i] = i ? blockTimes[i - 1] + params.PoWTargetSpacing(i) : 0;
     }
-    SetMockTime(blockTimes[399]);
+    FixedClock::Instance()->Set(std::chrono::seconds(blockTimes[399]));
     for (int i = 0; i < 400; i++) {
         // Check that we are within 1 of the correct height
         EXPECT_LT(std::abs(399 - EstimateNetHeight(params, i, blockTimes[i])), 2);
     }
     RegtestDeactivateBlossom();
+    SystemClock::SetGlobal();
 }
 
 TEST(Metrics, NextUpgrade) {

@@ -9,20 +9,105 @@
 #endif
 
 #include "util/time.h"
+#include "sync.h"
 
 #include <chrono>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
 
-using namespace std;
+RecursiveMutex cs_clock;
+static CClock* zcashdClock = SystemClock::Instance();
 
-static int64_t nMockTime = 0; //!< For unit testing
+const CClock* GetNodeClock() {
+    return zcashdClock;
+}
 
-int64_t GetTime()
-{
-    if (nMockTime) return nMockTime;
+int64_t GetTime() {
+    return zcashdClock->GetTime();
+}
 
-    return time(NULL);
+int64_t GetTimeMillis() {
+    return zcashdClock->GetTimeMillis();
+}
+
+int64_t GetTimeMicros() {
+    return zcashdClock->GetTimeMicros();
+}
+
+void SystemClock::SetGlobal() {
+    zcashdClock = SystemClock::Instance();
+}
+
+int64_t SystemClock::GetTime() const {
+    return std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+int64_t SystemClock::GetTimeMillis() const {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+int64_t SystemClock::GetTimeMicros() const {
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+void FixedClock::SetGlobal() {
+    zcashdClock = FixedClock::Instance();
+}
+
+void FixedClock::Set(std::chrono::seconds fixedSeconds) {
+    LOCK(cs_clock);
+    this->fixedSeconds = fixedSeconds;
+}
+
+int64_t FixedClock::GetTime() const {
+    LOCK(cs_clock);
+    return fixedSeconds.count();
+}
+
+int64_t FixedClock::GetTimeMillis() const {
+    LOCK(cs_clock);
+    return std::chrono::duration_cast<std::chrono::milliseconds>(fixedSeconds).count();
+}
+
+int64_t FixedClock::GetTimeMicros() const {
+    LOCK(cs_clock);
+    return std::chrono::duration_cast<std::chrono::microseconds>(fixedSeconds).count();
+}
+
+void OffsetClock::SetGlobal() {
+    zcashdClock = OffsetClock::Instance();
+}
+
+void OffsetClock::Set(std::chrono::seconds offsetSeconds) {
+    LOCK(cs_clock);
+    this->offsetSeconds = offsetSeconds;
+}
+
+int64_t OffsetClock::GetTime() const {
+    LOCK(cs_clock);
+    return std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+            + offsetSeconds
+        ).count();
+}
+
+int64_t OffsetClock::GetTimeMillis() const {
+    LOCK(cs_clock);
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+            + offsetSeconds
+        ).count();
+}
+
+int64_t OffsetClock::GetTimeMicros() const {
+    LOCK(cs_clock);
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+            + offsetSeconds
+        ).count();
 }
 
 bool ChronoSanityCheck()
@@ -66,24 +151,6 @@ bool ChronoSanityCheck()
         return false;
     }
     return true;
-}
-
-
-void SetMockTime(int64_t nMockTimeIn)
-{
-    nMockTime = nMockTimeIn;
-}
-
-int64_t GetTimeMillis()
-{
-    return std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
-}
-
-int64_t GetTimeMicros()
-{
-    return std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
 void MilliSleep(int64_t n)
