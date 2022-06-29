@@ -20,6 +20,7 @@ import http.client
 import random
 import shutil
 import subprocess
+import tarfile
 import tempfile
 import time
 import re
@@ -170,7 +171,7 @@ def sync_mempools(rpc_connections, wait=0.5, timeout=60):
 
 bitcoind_processes = {}
 
-def initialize_datadir(dirname, n):
+def initialize_datadir(dirname, n, clock_offset=0):
     datadir = os.path.join(dirname, "node"+str(n))
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
@@ -183,6 +184,9 @@ def initialize_datadir(dirname, n):
         f.write("port="+str(p2p_port(n))+"\n")
         f.write("rpcport="+str(rpc_port(n))+"\n")
         f.write("listenonion=0\n")
+        if clock_offset != 0: 
+            f.write('clockoffset='+str(clock_offset)+'\n')
+
     return datadir
 
 def rpc_auth_pair(n):
@@ -220,42 +224,30 @@ def wait_for_bitcoind_start(process, url, i):
                 raise # unknown JSON RPC exception
         time.sleep(0.25)
 
-def initialize_chain(test_dir, num_nodes, cachedir):
+def initialize_chain(test_dir, num_nodes, cachedir, cache_behavior='current'):
     """
-    Create a cache of a 200-block-long chain (with wallet) for MAX_NODES
-    Afterward, create num_nodes copies from the cache
+    Create a set of node datadirs in `test_dir`, based upon the specified
+    `cache_behavior` value. The following values are recognized for 
+    `cache_behavior`:
+
+    * 'current': create a 200-block-long chain (with wallet) for MAX_NODES
+      in `cachedir` if necessary. Afterward, create num_nodes copies in 
+      `test_dir` from the cache. The resulting nodes will be configured to
+      use the -clockoffset config argument when starting to ensure that 
+      the cached chain is not treated as being excessively out-of-date.
+    * 'sprout': use persisted chain data containing known amounts of Sprout
+      funds from the files in `qa/rpc-tests/cache/sprout`. This allows 
+      testing of Sprout spends even though Sprout outputs can no longer
+      be created by zcashd software. The resulting nodes will be configured to
+      use the -clockoffset config argument when starting to ensure that 
+      the cached chain is not treated as being excessively out-of-date.
+    * 'fresh': force re-creation of the cache, and then start as for `current`.
+    * 'clean': start the nodes without cached chain data, allowing the test
+      to take full control of chain setup.
     """
-
-    # Due to the consensus change fix for the timejacking attack, we need to
-    # ensure that the cache is pretty fresh. Specifically, we need the median
-    # time past of the chain tip of the cache to be no more than 90 minutes
-    # behind the current local time, or else mined blocks will be rejected by
-    # all nodes, halting the test. With Sapling active by default, this requires
-    # the chain tip itself to be no more than 75 minutes behind the current
-    # local time.
-    #
-    # We address this here, by regenerating the cache if it is more than 60
-    # minutes old. This gives 15 minutes of slack initially that an RPC test has
-    # to complete in, if it is started right at the oldest cache time. Within an
-    # individual test, the first five calls to `generate` will each advance the
-    # median time past of the chain tip by 2.5 minutes (with Sapling active by
-    # default). Therefore, if the logic between the completion of any two
-    # adjacent calls to `generate` within a test takes longer than 2.5 minutes,
-    # the excess will subtract from the slack.
-    if os.path.isdir(os.path.join(cachedir, "node0")):
-        if os.stat(cachedir).st_mtime + (60 * 60) < time.time():
-            print("initialize_chain(): Removing stale cache")
-            shutil.rmtree(cachedir)
-
     assert num_nodes <= MAX_NODES
-    create_cache = False
-    for i in range(MAX_NODES):
-        if not os.path.isdir(os.path.join(cachedir, 'node'+str(i))):
-            create_cache = True
-            break
 
-    if create_cache:
-
+    def rebuild_cache():
         #find and delete old cache directories if any exist
         for i in range(MAX_NODES):
             if os.path.isdir(os.path.join(cachedir,"node"+str(i))):
@@ -264,7 +256,7 @@ def initialize_chain(test_dir, num_nodes, cachedir):
         # Create cache directories, run bitcoinds:
         block_time = int(time.time()) - (200 * PRE_BLOSSOM_BLOCK_TARGET_SPACING)
         for i in range(MAX_NODES):
-            datadir=initialize_datadir(cachedir, i)
+            datadir = initialize_datadir(cachedir, i)
             args = [ os.getenv("ZCASHD", ZCASHD_BINARY), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
             args.extend([
                 '-nuparams=5ba81b19:1', # Overwinter
@@ -311,16 +303,70 @@ def initialize_chain(test_dir, num_nodes, cachedir):
         stop_nodes(rpcs)
         wait_bitcoinds()
         for i in range(MAX_NODES):
+            # record the system time at which the cache was regenerated
+            with open(log_filename(cachedir, i, 'cache_config.json'), "w", encoding="utf8") as cache_conf_file:
+                cache_config = { "cache_time": time.time() }
+                cache_conf_json = json.dumps(cache_config, indent=4)
+                cache_conf_file.write(cache_conf_json)
+
             os.remove(log_filename(cachedir, i, "debug.log"))
             os.remove(log_filename(cachedir, i, "db.log"))
             os.remove(log_filename(cachedir, i, "peers.dat"))
             os.remove(log_filename(cachedir, i, "fee_estimates.dat"))
 
-    for i in range(num_nodes):
-        from_dir = os.path.join(cachedir, "node"+str(i))
-        to_dir = os.path.join(test_dir,  "node"+str(i))
-        shutil.copytree(from_dir, to_dir)
-        initialize_datadir(test_dir, i) # Overwrite port/rpcport in zcash.conf
+    def init_from_cache():
+        for i in range(num_nodes):
+            from_dir = os.path.join(cachedir, "node"+str(i))
+            to_dir = os.path.join(test_dir,  "node"+str(i))
+            shutil.copytree(from_dir, to_dir)
+            with open(os.path.join(to_dir, 'regtest', 'cache_config.json'), "r", encoding="utf8") as cache_conf_file:
+                cache_conf = json.load(cache_conf_file)
+                # obtain the clock offset as a negative number of seconds
+                offset = round(cache_conf['cache_time']) - round(time.time())
+                # overwrite port/rpcport and clock offset in zcash.conf
+                initialize_datadir(test_dir, i, clock_offset=offset) 
+
+    def init_sprout():
+        assert num_nodes <= 4 # only 4 nodes with Sprout funds are supported
+        sprout_cache_path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'cache', 'sprout')
+        for i in range(num_nodes):
+            to_dir = os.path.join(test_dir, "node"+str(i), "regtest")
+            os.makedirs(to_dir)
+            # Unzip the persisted Sprout config file
+            with tarfile.open(os.path.join(sprout_cache_path, "chain_cache.tar.gz"), "r:gz") as tgz:
+                tgz.extractall(path = to_dir)
+            with tarfile.open(os.path.join(sprout_cache_path, "node"+str(i)+"_wallet.tar.gz"), "r:gz") as tgz:
+                tgz.extractall(path = os.path.join(to_dir, "wallet.dat"))
+            with open(os.path.join(to_dir, 'cache_config.json'), "r", encoding="utf8") as cache_conf_file:
+                cache_conf = json.load(cache_conf_file)
+                # obtain the clock offset as a negative number of seconds
+                offset = round(cache_conf['cache_time']) - round(time.time())
+                # overwrite port/rpcport and clock offset in zcash.conf
+                initialize_datadir(test_dir, i, clock_offset=offset) 
+
+    def cache_rebuild_required():
+        for i in range(MAX_NODES):
+            node_path = os.path.join(cachedir, 'node'+str(i))
+            if os.path.isdir(node_path):
+                if not os.path.isfile(log_filename(cachedir, i, 'cache_config.json')):
+                    return True
+            else:
+                return True
+        return False
+
+    if cache_behavior == 'current':
+        if cache_rebuild_required(): rebuild_cache() 
+        init_from_cache()
+    elif cache_behavior == 'sprout':
+        init_sprout()
+    elif cache_behavior == 'fresh':
+        rebuild_cache()
+        init_from_cache()
+    elif cache_behavior == 'clean':
+        initialize_chain_clean(test_dir, num_nodes)
+    else:
+        raise Exception('Cache behavior %s not recognized' % cache_behavior)
+
 
 def initialize_chain_clean(test_dir, num_nodes):
     """
