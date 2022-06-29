@@ -93,7 +93,7 @@ $(CXXBRIDGE_H) $(CXXBRIDGE_CPP): $(CXXBRIDGE_RS)
 #   requires https://github.com/rust-bitcoin/rust-secp256k1/issues/380 to be addressed.
 RUST_ENV_VARS = \
   RUSTC="$(RUSTC)" \
-  RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming" \
+  RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming -L native=$(abs_top_srcdir)/src/secp256k1/.libs" \
   CC="$(CC)" \
   CFLAGS="$(CFLAGS)" \
   CXX="$(CXX)" \
@@ -135,7 +135,7 @@ endif
 cargo-build-lib: $(CARGO_CONFIGURED)
 	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build --lib $(RUST_BUILD_OPTS) $(cargo_verbose)
 
-cargo-build-bins: $(CARGO_CONFIGURED)
+cargo-build-bins: $(CARGO_CONFIGURED) $(LIBSECP256K1)
 	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build --bins $(RUST_BUILD_OPTS) $(cargo_verbose)
 
 $(INSPECT_TOOL_BIN): cargo-build-bins

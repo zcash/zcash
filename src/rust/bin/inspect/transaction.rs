@@ -6,21 +6,23 @@ use std::{
 use bellman::groth16;
 use group::GroupEncoding;
 use orchard::note_encryption::OrchardDomain;
+use secp256k1::{Secp256k1, VerifyOnly};
 use zcash_address::{
     unified::{self, Encoding},
     ToAddress, ZcashAddress,
 };
 use zcash_note_encryption::try_output_recovery_with_ovk;
+#[allow(deprecated)]
 use zcash_primitives::{
     consensus::BlockHeight,
-    legacy::Script,
+    legacy::{keys::pubkey_to_address, Script, TransparentAddress},
     memo::{Memo, MemoBytes},
     sapling::note_encryption::SaplingDomain,
     transaction::{
         components::{orchard as orchard_serialization, sapling, transparent, Amount},
         sighash::{signature_hash, SignableInput, TransparentAuthorizingContext},
         txid::TxIdDigester,
-        Authorization, Transaction, TransactionData,
+        Authorization, Transaction, TransactionData, TxVersion,
     },
 };
 use zcash_proofs::sapling::SaplingVerificationContext;
@@ -184,6 +186,13 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
     eprintln!("Zcash transaction");
     eprintln!(" - ID: {}", tx.txid());
     eprintln!(" - Version: {:?}", tx.version());
+    match tx.version() {
+        // TODO: If pre-v5 and no branch ID provided in context, disable signature checks.
+        TxVersion::Sprout(_) | TxVersion::Overwinter | TxVersion::Sapling => (),
+        TxVersion::Zip225 => {
+            eprintln!(" - Consensus branch ID: {:?}", tx.consensus_branch_id());
+        }
+    }
 
     let is_coinbase = is_coinbase(&tx);
     let height = if is_coinbase {
@@ -193,16 +202,23 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
         None
     };
 
-    let transparent_coins = if tx.transparent_bundle().map_or(false, |b| !b.vin.is_empty()) {
-        context.as_ref().and_then(|ctx| ctx.transparent_coins())
-    } else {
-        // TODO: Check that `transparentcoins` is not set.
-        Some(vec![])
+    let transparent_coins = match (
+        tx.transparent_bundle().map_or(false, |b| !b.vin.is_empty()),
+        context.as_ref().and_then(|ctx| ctx.transparent_coins()),
+    ) {
+        (true, coins) => coins,
+        (false, Some(_)) => {
+            eprintln!("⚠️  Context was given \"transparentcoins\" but this transaction has no transparent inputs");
+            Some(vec![])
+        }
+        (false, None) => Some(vec![]),
     };
 
-    let common_sighash = transparent_coins.map(|all_prev_outputs| {
+    let sighash_params = transparent_coins.as_ref().map(|coins| {
         let f_transparent = MapTransparent {
-            auth: TransparentAuth { all_prev_outputs },
+            auth: TransparentAuth {
+                all_prev_outputs: coins.clone(),
+            },
         };
 
         // We don't have tx.clone()
@@ -214,15 +230,117 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
             tx.into_data()
                 .map_authorization(f_transparent, IdentityMap, IdentityMap);
         let txid_parts = tx.digest(TxIdDigester);
-        signature_hash(&tx, &SignableInput::Shielded, &txid_parts)
+        (tx, txid_parts)
     });
+
+    let common_sighash = sighash_params
+        .as_ref()
+        .map(|(tx, txid_parts)| signature_hash(tx, &SignableInput::Shielded, txid_parts));
 
     if let Some(bundle) = tx.transparent_bundle() {
         assert!(!(bundle.vin.is_empty() && bundle.vout.is_empty()));
         if !(bundle.vin.is_empty() || is_coinbase) {
             eprintln!(" - {} transparent input(s)", bundle.vin.len());
+            if let Some(coins) = &transparent_coins {
+                if bundle.vin.len() != coins.len() {
+                    eprintln!("  ⚠️  \"transparentcoins\" has length {}", coins.len());
+                }
 
-            // TODO: Check transparent signatures if possible.
+                let (tx, txid_parts) = sighash_params.as_ref().unwrap();
+                let ctx = Secp256k1::<VerifyOnly>::gen_new();
+
+                for (i, (txin, coin)) in bundle.vin.iter().zip(coins).enumerate() {
+                    match coin.script_pubkey.address() {
+                        Some(addr @ TransparentAddress::PublicKey(_)) => {
+                            // Format is [sig_and_type_len] || sig || [hash_type] || [pubkey_len] || pubkey
+                            // where [x] encodes a single byte.
+                            let sig_and_type_len = txin.script_sig.0.first().map(|l| *l as usize);
+                            let pubkey_len = sig_and_type_len
+                                .and_then(|sig_len| txin.script_sig.0.get(1 + sig_len))
+                                .map(|l| *l as usize);
+                            let script_len = sig_and_type_len.zip(pubkey_len).map(
+                                |(sig_and_type_len, pubkey_len)| {
+                                    1 + sig_and_type_len + 1 + pubkey_len
+                                },
+                            );
+
+                            if Some(txin.script_sig.0.len()) != script_len {
+                                eprintln!(
+                                    "  ⚠️  \"transparentcoins\" {} is P2PKH; txin {} scriptSig has length {} but data {}",
+                                    i,
+                                    i,
+                                    txin.script_sig.0.len(),
+                                    if let Some(l) = script_len {
+                                        format!("implies length {}.", l)
+                                    } else {
+                                        "would cause an out-of-bounds read.".to_owned()
+                                    },
+                                );
+                            } else {
+                                let sig_len = sig_and_type_len.unwrap() - 1;
+
+                                let sig = secp256k1::ecdsa::Signature::from_der(
+                                    &txin.script_sig.0[1..1 + sig_len],
+                                );
+                                let hash_type = txin.script_sig.0[1 + sig_len];
+                                let pubkey = secp256k1::PublicKey::from_slice(
+                                    &txin.script_sig.0[1 + sig_len + 2..],
+                                );
+
+                                if let Err(e) = sig {
+                                    eprintln!(
+                                        "  ⚠️  Txin {} has invalid signature encoding: {}",
+                                        i, e
+                                    );
+                                }
+                                if let Err(e) = pubkey {
+                                    eprintln!("  ⚠️  Txin {} has invalid pubkey encoding: {}", i, e);
+                                }
+                                if let (Ok(sig), Ok(pubkey)) = (sig, pubkey) {
+                                    #[allow(deprecated)]
+                                    if pubkey_to_address(&pubkey) != addr {
+                                        eprintln!("  ⚠️  Txin {} pubkey does not match coin's script_pubkey", i);
+                                    }
+
+                                    let sighash = signature_hash(
+                                        tx,
+                                        &SignableInput::Transparent {
+                                            hash_type,
+                                            index: i,
+                                            // For P2PKH these are the same.
+                                            script_code: &coin.script_pubkey,
+                                            script_pubkey: &coin.script_pubkey,
+                                            value: coin.value,
+                                        },
+                                        txid_parts,
+                                    );
+                                    let msg = secp256k1::Message::from_slice(sighash.as_ref())
+                                        .expect("signature_hash() returns correct length");
+
+                                    if let Err(e) = ctx.verify_ecdsa(&msg, &sig, &pubkey) {
+                                        eprintln!("  ⚠️  Spend {} is invalid: {}", i, e);
+                                    }
+                                }
+                            }
+                        }
+                        // TODO: Check P2SH structure.
+                        Some(TransparentAddress::Script(_)) => {
+                            eprintln!("  🔎 \"transparentcoins\"[{}] is a P2SH coin.", i);
+                        }
+                        // TODO: Check arbitrary scripts.
+                        None => {
+                            eprintln!(
+                                "  🔎 \"transparentcoins\"[{}] has a script we can't check yet.",
+                                i
+                            );
+                        }
+                    }
+                }
+            } else {
+                eprintln!(
+                    "  🔎 To check transparent inputs, add \"transparentcoins\" array to context"
+                );
+            }
         }
         if !bundle.vout.is_empty() {
             eprintln!(" - {} transparent output(s)", bundle.vout.len());

@@ -86,6 +86,7 @@ fn inspect_bytes(bytes: Vec<u8>, context: Option<Context>) {
     } else if let Some(header) = complete(&bytes, |r| BlockHeader::read(r)) {
         block::inspect_header(&header, context);
     } else if let Some(tx) = complete(&bytes, |r| Transaction::read(r, BranchId::Sprout)) {
+        // TODO: Take the branch ID used above from the context if present.
         transaction::inspect(tx, context);
     } else {
         // It's not a known variable-length format. check fixed-length data formats.
