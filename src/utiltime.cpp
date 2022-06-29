@@ -17,11 +17,11 @@
 
 using namespace std;
 
-RecursiveMutex clock_lock;
+RecursiveMutex cs_clock;
 static CClock* zcashdClock = SystemClock::Instance();
 
 void SystemClock::SetGlobal() {
-    LOCK(clock_lock);
+    LOCK(cs_clock);
     zcashdClock = SystemClock::Instance();
 }
 
@@ -41,7 +41,7 @@ int64_t SystemClock::GetTimeMicros() const {
 }
 
 void FixedClock::SetGlobal(int64_t nFixedTime) {
-    LOCK(clock_lock);
+    LOCK(cs_clock);
     FixedClock::Instance()->Set(nFixedTime);
     zcashdClock = FixedClock::Instance();
 }
@@ -61,7 +61,7 @@ int64_t FixedClock::GetTimeMicros() const {
 OffsetClock OffsetClock::instance;
 
 void OffsetClock::SetGlobal(int64_t nOffsetSeconds) {
-    LOCK(clock_lock);
+    LOCK(cs_clock);
     OffsetClock::Instance()->Set(nOffsetSeconds);
     zcashdClock = OffsetClock::Instance();
 }
