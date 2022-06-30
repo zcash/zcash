@@ -29,11 +29,12 @@ class FinalSaplingRootTest(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 2
-        self.setup_clean_chain = True
+        self.cache_behavior = 'sprout'
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
-            '-txindex',                # Avoid JSONRPC error: No information available about transaction
+            '-txindex', # Avoid JSONRPC error: No information available about transaction
+            '-reindex', # Required due to enabling -txindex
             nuparams(NU5_BRANCH_ID, 210),
             '-debug',
             ]] * self.num_nodes)
@@ -42,9 +43,6 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
-        self.nodes[0].generate(200)
-        self.sync_all()
-
         # Verify genesis block contains null field for what is now called the final sapling root field.
         blk = self.nodes[0].getblock("0")
         assert_equal(blk["finalsaplingroot"], NULL_FIELD)
@@ -78,10 +76,10 @@ class FinalSaplingRootTest(BitcoinTestFramework):
             assert_equal(treestate["height"], height)
             assert_equal(treestate["hash"], self.nodes[0].getblockhash(height))
 
-            assert "skipHash" not in treestate["sprout"]
-            assert_equal(treestate["sprout"]["commitments"]["finalRoot"], SPROUT_TREE_EMPTY_ROOT)
-            assert_equal(treestate["sprout"]["commitments"]["finalState"], "000000")
-
+            if height < 100:
+                assert "skipHash" not in treestate["sprout"]
+                assert_equal(treestate["sprout"]["commitments"]["finalRoot"], SPROUT_TREE_EMPTY_ROOT)
+                assert_equal(treestate["sprout"]["commitments"]["finalState"], "000000")
 
             assert "skipHash" not in treestate["sapling"]
             assert_equal(treestate["sapling"]["commitments"]["finalRoot"], SAPLING_TREE_EMPTY_ROOT)
@@ -94,7 +92,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         taddr0 = get_coinbase_address(self.nodes[0])
         saplingAddr0 = self.nodes[0].z_getnewaddress('sapling')
         recipients = []
-        recipients.append({"address": saplingAddr0, "amount": Decimal('20')})
+        recipients.append({"address": saplingAddr0, "amount": Decimal('10')})
         myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
@@ -142,16 +140,18 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         assert_equal(root, self.nodes[0].getblock("203")["finalsaplingroot"])
 
         # Mine a block with a Sprout shielded tx and verify the final Sapling root does not change
-        zaddr1 = self.nodes[1].z_getnewaddress('sprout')
-        result = self.nodes[0].z_shieldcoinbase(taddr0, zaddr1, 0, 1)
-        wait_and_assert_operationid_status(self.nodes[0], result['opid'])
+        zaddr0 = self.nodes[0].listaddresses()[0]['sprout']['addresses'][0]
+        assert_equal(self.nodes[0].z_getbalance(zaddr0), Decimal('50'))
+        recipients = [{"address": taddr0, "amount": Decimal('12.34')}]
+        opid = self.nodes[0].z_sendmany(zaddr0, recipients, 1, 0, 'AllowRevealedRecipients')
+        wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
         assert_equal(len(self.nodes[0].getblock("204")["tx"]), 2)
-        assert_equal(self.nodes[1].z_getbalance(zaddr1), Decimal("10"))
+        assert_equal(self.nodes[0].z_getbalance(zaddr0), Decimal("37.66"))
         assert_equal(root, self.nodes[0].getblock("204")["finalsaplingroot"])
 
         new_treestate = self.nodes[0].z_gettreestate(str(-1))
@@ -160,13 +160,12 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         assert new_treestate["sprout"]["commitments"]["finalRoot"] != treestate["sprout"]["commitments"]["finalRoot"]
         assert new_treestate["sprout"]["commitments"]["finalState"] != treestate["sprout"]["commitments"]["finalState"]
         assert_equal(len(new_treestate["sprout"]["commitments"]["finalRoot"]), 64)
-        assert_equal(len(new_treestate["sprout"]["commitments"]["finalState"]), 134)
+        assert_equal(len(new_treestate["sprout"]["commitments"]["finalState"]), 204)
         treestate = new_treestate
 
         # Mine a block with a Sapling shielded recipient and verify the final Sapling root changes
         saplingAddr1 = self.nodes[1].z_getnewaddress("sapling")
-        recipients = []
-        recipients.append({"address": saplingAddr1, "amount": Decimal('12.34')})
+        recipients = [{"address": saplingAddr1, "amount": Decimal('2.34')}]
         myopid = self.nodes[0].z_sendmany(saplingAddr0, recipients, 1, 0)
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
@@ -175,7 +174,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(len(self.nodes[0].getblock("205")["tx"]), 2)
-        assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal("12.34"))
+        assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal("2.34"))
         assert root is not self.nodes[0].getblock("205")["finalsaplingroot"]
 
         # Verify there is a Sapling output description (its commitment was added to tree)
@@ -193,7 +192,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         # Mine a block with a Sapling shielded sender and transparent recipient and verify the final Sapling root doesn't change
         taddr2 = self.nodes[0].getnewaddress()
         recipients = []
-        recipients.append({"address": taddr2, "amount": Decimal('12.34')})
+        recipients.append({"address": taddr2, "amount": Decimal('2.34')})
         myopid = self.nodes[1].z_sendmany(saplingAddr1, recipients, 1, 0)
         mytxid = wait_and_assert_operationid_status(self.nodes[1], myopid)
 
@@ -202,7 +201,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(len(self.nodes[0].getblock("206")["tx"]), 2)
-        assert_equal(self.nodes[0].z_getbalance(taddr2), Decimal("12.34"))
+        assert_equal(self.nodes[0].z_getbalance(taddr2), Decimal("2.34"))
 
         blk = self.nodes[0].getblock("206")
         root = blk["finalsaplingroot"]
