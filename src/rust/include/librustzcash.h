@@ -35,7 +35,8 @@ extern "C" {
         const codeunit* output_path,
         size_t output_path_len,
         const codeunit* sprout_path,
-        size_t sprout_path_len
+        size_t sprout_path_len,
+        bool load_proving_keys
     );
 
     /// Writes the "uncommitted" note value for empty leaves

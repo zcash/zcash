@@ -881,7 +881,8 @@ static void ZC_LoadParams(
         reinterpret_cast<const codeunit*>(sapling_output_str.c_str()),
         sapling_output_str.length(),
         reinterpret_cast<const codeunit*>(sprout_groth16_str.c_str()),
-        sprout_groth16_str.length()
+        sprout_groth16_str.length(),
+        true
     );
 
     gettimeofday(&tv_end, 0);

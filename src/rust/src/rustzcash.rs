@@ -122,6 +122,11 @@ fn fixed_scalar_mult(from: &[u8; 32], p_g: &jubjub::SubgroupPoint) -> jubjub::Su
 
 /// Loads the zk-SNARK parameters into memory and saves paths as necessary.
 /// Only called once.
+///
+/// If `load_proving_keys` is `false`, the proving keys will not be loaded, making it
+/// impossible to create proofs. This flag is for the Boost test suite, which never
+/// creates shielded transactions, but exercises code that requires the verifying keys to
+/// be present even if there are no shielded components to verify.
 #[no_mangle]
 pub extern "C" fn librustzcash_init_zksnark_params(
     #[cfg(not(target_os = "windows"))] spend_path: *const u8,
@@ -133,6 +138,7 @@ pub extern "C" fn librustzcash_init_zksnark_params(
     #[cfg(not(target_os = "windows"))] sprout_path: *const u8,
     #[cfg(target_os = "windows")] sprout_path: *const u16,
     sprout_path_len: usize,
+    load_proving_keys: bool,
 ) {
     PROOF_PARAMETERS_LOADED.call_once(|| {
         #[cfg(not(target_os = "windows"))]
@@ -173,24 +179,26 @@ pub extern "C" fn librustzcash_init_zksnark_params(
 
         // Load params
         let params = load_parameters(spend_path, output_path, sprout_path);
+        let sapling_spend_params = params.spend_params;
+        let sapling_output_params = params.output_params;
 
         // Generate Orchard parameters.
         info!(target: "main", "Loading Orchard parameters");
-        let orchard_pk = orchard::circuit::ProvingKey::build();
+        let orchard_pk = load_proving_keys.then(orchard::circuit::ProvingKey::build);
         let orchard_vk = orchard::circuit::VerifyingKey::build();
 
         // Caller is responsible for calling this function once, so
         // these global mutations are safe.
         unsafe {
-            SAPLING_SPEND_PARAMS = Some(params.spend_params);
-            SAPLING_OUTPUT_PARAMS = Some(params.output_params);
+            SAPLING_SPEND_PARAMS = load_proving_keys.then(|| sapling_spend_params);
+            SAPLING_OUTPUT_PARAMS = load_proving_keys.then(|| sapling_output_params);
             SPROUT_GROTH16_PARAMS_PATH = sprout_path.map(|p| p.to_owned());
 
             SAPLING_SPEND_VK = Some(params.spend_vk);
             SAPLING_OUTPUT_VK = Some(params.output_vk);
             SPROUT_GROTH16_VK = params.sprout_vk;
 
-            ORCHARD_PK = Some(orchard_pk);
+            ORCHARD_PK = orchard_pk;
             ORCHARD_VK = Some(orchard_vk);
         }
     });
