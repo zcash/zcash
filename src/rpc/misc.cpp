@@ -513,7 +513,12 @@ UniValue setmocktime(const UniValue& params, bool fHelp)
     LOCK2(cs_main, cs_vNodes);
 
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VNUM));
-    SetMockTime(params[0].get_int64());
+    int64_t nMockTime = params[0].get_int64();
+    if (nMockTime == 0) {
+        SystemClock::SetGlobal();
+    } else {
+        FixedClock::SetGlobal(nMockTime);
+    }
 
     uint64_t t = GetTime();
     for (CNode* pnode : vNodes) {

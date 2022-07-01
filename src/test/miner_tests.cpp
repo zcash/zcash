@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
                 pblock->nSolution = soln;
 
                 CValidationState state;
-                
+
                 if (ProcessNewBlock(state, NULL, pblock, true, NULL) && state.IsValid()) {
                     goto foundit;
                 }
@@ -408,7 +408,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     chainActive.Tip()->nHeight = nHeight;
 
     // non-final txs in mempool
-    SetMockTime(chainActive.Tip()->GetMedianTimePast()+1);
+    FixedClock::SetGlobal(chainActive.Tip()->GetMedianTimePast()+1);
 
     // height locked
     tx.vin[0].prevout.hash = txFirst[0]->GetHash();
@@ -443,7 +443,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 
     // However if we advance height and time by one, both will.
     chainActive.Tip()->nHeight++;
-    SetMockTime(chainActive.Tip()->GetMedianTimePast()+2);
+    FixedClock::SetGlobal(chainActive.Tip()->GetMedianTimePast()+2);
 
     // FIXME: we should *actually* create a new block so the following test
     //        works; CheckFinalTx() isn't fooled by monkey-patching nHeight.
@@ -455,7 +455,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     delete pblocktemplate;
 
     chainActive.Tip()->nHeight--;
-    SetMockTime(0);
+    SystemClock::SetGlobal();
     mempool.clear();
 
     for (CTransaction *tx : txFirst)
