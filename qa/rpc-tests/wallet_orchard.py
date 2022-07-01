@@ -69,7 +69,29 @@ class WalletOrchardTest(BitcoinTestFramework):
         # t-coinbase -> Orchard
         recipients = [{"address": ua1, "amount": Decimal('10')}]
         myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, 0, 'AllowRevealedSenders')
-        wait_and_assert_operationid_status(self.nodes[0], myopid)
+        mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
+
+        resp = self.nodes[0].getrawtransaction(mytxid, 1)['orchard']
+
+        # Verify existence of Orchard related JSON fields
+        actions = resp['actions']
+        assert(len(actions) == 2)
+        for action in actions:
+            assert('cv' in action)
+            assert('nullifier' in action)
+            assert('rk' in action)
+            assert('cmx' in action)
+            assert('ephemeralKey' in action)
+            assert('encCiphertext' in action)
+            assert('outCiphertext' in action)
+        flags = resp['flags']
+        assert_equal(flags['enableSpends'], True)
+        assert_equal(flags['enableOutputs'], True)
+        assert_equal(resp['valueBalance'], Decimal('-10'))
+        assert_equal(resp['valueBalanceZat'], Decimal('-1000000000'))
+        assert('anchor' in resp)
+        assert('proof' in resp)
+        assert('bindingSig' in resp)
 
         self.sync_all()
         self.nodes[0].generate(1)

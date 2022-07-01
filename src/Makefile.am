@@ -47,13 +47,16 @@ endif
 # TODO: Figure out how to avoid an explicit file list.
 CXXBRIDGE_RS = \
   rust/src/blake2b.rs \
-  rust/src/equihash.rs
+  rust/src/equihash.rs \
+  rust/src/orchard_bundle.rs
 CXXBRIDGE_H = \
   rust/gen/include/rust/blake2b.h \
-  rust/gen/include/rust/equihash.h
+  rust/gen/include/rust/equihash.h \
+  rust/gen/include/rust/orchard_bundle.h
 CXXBRIDGE_CPP = \
   rust/gen/src/blake2b.cpp \
-  rust/gen/src/equihash.cpp
+  rust/gen/src/equihash.cpp \
+  rust/gen/src/orchard_bundle.cpp
 
 # We add a rust/cxx.h include to indicate that we provide this (via the rustcxx depends
 # package), so that cxxbridge doesn't include it within the generated headers and code.
