@@ -25,3 +25,12 @@ by default, but may be be reenabled using `-allowdeprecated=<feature>`.
     `allowdeprecated=dumpwallet`. `dumpwallet` should not be used; it is
     unsafe for backup purposes as it does not return any key information
     for keys used to derive shielded addresses. Use `z_exportwallet` instead.
+
+As of this release, the following features are deprecated, but remain available
+by default. These features may be disabled by setting `-allowdeprecated=none`.
+After at least 3 minor-version releases, these features will be disabled by
+default and the following flags to `-allowdeprecated` will be required to
+permit their continued use:
+
+  - `wallettxvjoinsplit` - controls availability of the deprecated `vjoinsplit`
+    attribute returned by the `gettransaction` RPC method.

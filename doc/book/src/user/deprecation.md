@@ -55,6 +55,11 @@ default as of release 5.3.0.
     using this metadata be updated to use the `pool` or `address_type`
     attributes, which have replaced the `type` attribute, as appropriate.
 
+### Deprecated in 5.1.0
+
+  - `wallettxvjoinsplit` - The `vjoinsplit` attribute returned by the
+    `gettransaction` RPC method is deprecated.
+
 Stage 2
 -------
 
