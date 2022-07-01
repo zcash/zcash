@@ -87,22 +87,13 @@ public:
         return orchard_bundle_value_balance(inner.get());
     }
 
-    /// Returns true if this Orchard bundle satisfies the bundle-specific consensus rules,
-    /// or if this does not contain an Orchard bundle.
+    /// Queues this bundle's authorization for validation.
     ///
-    /// This does not validate the bundle's signatures; use `QueueSignatureValidation` for
-    /// those checks.
-    bool CheckBundleSpecificConsensusRules() const {
-        return orchard_bundle_validate(inner.get());
-    }
-
-    /// Queues this bundle's signatures for validation.
-    ///
-    /// `txid` must be for the transaction this bundle is within.
-    void QueueSignatureValidation(
-        orchard::AuthValidator& batch, const uint256& txid) const
+    /// `sighash` must be for the transaction this bundle is within.
+    void QueueAuthValidation(
+        orchard::AuthValidator& batch, const uint256& sighash) const
     {
-        batch.Queue(inner.get(), txid.begin());
+        batch.Queue(inner.get(), sighash.begin());
     }
 
     const size_t GetNumActions() const {

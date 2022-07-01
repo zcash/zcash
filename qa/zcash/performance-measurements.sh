@@ -135,14 +135,14 @@ function zcashd_valgrind_stop {
 }
 
 function extract_benchmark_data {
-    if [ -f "block-107134.tar.xz" ]; then
+    if [ -f "$1.tar.xz" ]; then
         # Check the hash of the archive:
         "$SHA256CMD" $SHA256ARGS -c <<EOF
-4bd5ad1149714394e8895fa536725ed5d6c32c99812b962bfa73f03b5ffad4bb  block-107134.tar.xz
+$2  $1.tar.xz
 EOF
         ARCHIVE_RESULT=$?
     else
-        echo "block-107134.tar.xz not found."
+        echo "$1.tar.xz not found."
         ARCHIVE_RESULT=1
     fi
     if [ $ARCHIVE_RESULT -ne 0 ]; then
@@ -153,7 +153,15 @@ EOF
         echo "Usage details are inside the Python script."
         exit 1
     fi
-    xzcat block-107134.tar.xz | tar x -C "$DATADIR/regtest"
+    xzcat $1.tar.xz | tar x -C "$DATADIR/regtest"
+}
+
+function extract_benchmark_data_107134 {
+    extract_benchmark_data block-107134 4bd5ad1149714394e8895fa536725ed5d6c32c99812b962bfa73f03b5ffad4bb
+}
+
+function extract_benchmark_data_1708048 {
+    extract_benchmark_data block-1708048 bdae4b1baf528fa93d86b902e1032d4d1fc3d3080f76cd284635787e472f2534
 }
 
 
@@ -218,8 +226,12 @@ case "$1" in
                 zcash_rpc zcbenchmark incnotewitnesses 100 "${@:3}"
                 ;;
             connectblockslow)
-                extract_benchmark_data
+                extract_benchmark_data_107134
                 zcash_rpc zcbenchmark connectblockslow 10
+                ;;
+            connectblockorchard)
+                extract_benchmark_data_1708048
+                zcash_rpc zcbenchmark connectblockorchard 10
                 ;;
             sendtoaddress)
                 zcash_rpc zcbenchmark sendtoaddress 10 "${@:4}"
@@ -280,8 +292,12 @@ case "$1" in
                 zcash_rpc zcbenchmark incnotewitnesses 1 "${@:3}"
                 ;;
             connectblockslow)
-                extract_benchmark_data
+                extract_benchmark_data_107134
                 zcash_rpc zcbenchmark connectblockslow 1
+                ;;
+            connectblockorchard)
+                extract_benchmark_data_1708048
+                zcash_rpc zcbenchmark connectblockorchard 1
                 ;;
             sendtoaddress)
                 zcash_rpc zcbenchmark sendtoaddress 1 "${@:4}"
@@ -340,8 +356,12 @@ case "$1" in
                 zcash_rpc zcbenchmark incnotewitnesses 1 "${@:3}"
                 ;;
             connectblockslow)
-                extract_benchmark_data
+                extract_benchmark_data_107134
                 zcash_rpc zcbenchmark connectblockslow 1
+                ;;
+            connectblockorchard)
+                extract_benchmark_data_1708048
+                zcash_rpc zcbenchmark connectblockorchard 1
                 ;;
             *)
                 zcashd_valgrind_stop

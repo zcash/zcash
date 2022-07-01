@@ -1379,8 +1379,8 @@ bool ContextualCheckShieldedInputs(
         librustzcash_sapling_verification_ctx_free(ctx);
     }
 
-    // Queue Orchard signatures to be batch-validated.
-    tx.GetOrchardBundle().QueueSignatureValidation(orchardAuth, dataToBeSigned);
+    // Queue Orchard bundle to be batch-validated.
+    tx.GetOrchardBundle().QueueAuthValidation(orchardAuth, dataToBeSigned);
 
     return true;
 }
@@ -1408,16 +1408,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
         // Sapling zk-SNARK proofs are checked in librustzcash_sapling_check_{spend,output},
         // called from ContextualCheckTransaction.
 
-        // Check bundle-specific Orchard consensus rules. Since we check encoding
-        // consensus rules at parse time, and signature validation is batched, all we are
-        // checking here is proof validity. Once we implement batched proof verification,
-        // this will move into orchardAuth.
-        auto orchardBundle = tx.GetOrchardBundle();
-        if (!orchardBundle.CheckBundleSpecificConsensusRules()) {
-            return state.DoS(
-                100, error("CheckTransaction(): Orchard bundle proof does not verify"),
-                REJECT_INVALID, "bad-txns-orchard-verification-failed");
-        }
+        // Orchard zk-SNARK proofs are checked by orchard::AuthValidator::Batch.
 
         return true;
     }

@@ -6,111 +6,148 @@ description = "The cryptographic code in this crate has been reviewed for correc
 
 [criteria.license-reviewed]
 description = "The license of this crate has been reviewed for compatibility with its usage in this repository. If the crate is not available under the MIT license, `contrib/debian/copyright` has been updated with a corresponding copyright notice for files under `depends/*/vendored-sources/CRATE_NAME`."
+
 [[audits.equihash]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "safe-to-deploy"
 version = "0.1.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.equihash]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.1.0 -> 0.2.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.f4jumble]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "crypto-reviewed"
 version = "0.1.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.f4jumble]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "safe-to-deploy"
 version = "0.1.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.halo2_gadgets]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "crypto-reviewed"
 version = "0.1.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.halo2_gadgets]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "safe-to-deploy"
 version = "0.1.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.halo2_gadgets]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = ["crypto-reviewed", "safe-to-deploy"]
+delta = "0.1.0 -> 0.2.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.halo2_proofs]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "crypto-reviewed"
 version = "0.1.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.halo2_proofs]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "safe-to-deploy"
 version = "0.1.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.halo2_proofs]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = ["crypto-reviewed", "safe-to-deploy"]
+delta = "0.1.0 -> 0.2.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.orchard]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "crypto-reviewed"
 version = "0.1.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.orchard]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "safe-to-deploy"
 version = "0.1.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.orchard]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = ["crypto-reviewed", "safe-to-deploy"]
+delta = "0.1.0 -> 0.2.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.zcash_address]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "safe-to-deploy"
 version = "0.1.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.zcash_encoding]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "safe-to-deploy"
 version = "0.1.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.zcash_history]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "safe-to-deploy"
 version = "0.3.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.zcash_note_encryption]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "crypto-reviewed"
 version = "0.1.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.zcash_note_encryption]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "safe-to-deploy"
 version = "0.1.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.zcash_primitives]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "crypto-reviewed"
 version = "0.6.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.zcash_primitives]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "safe-to-deploy"
 version = "0.6.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.zcash_primitives]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = ["crypto-reviewed", "safe-to-deploy"]
+delta = "0.6.0 -> 0.7.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.zcash_proofs]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "crypto-reviewed"
 version = "0.6.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.zcash_proofs]]
 who = "Jack Grigg <jack@z.cash>"
-notes = "The ECC core team maintains this crate, and we have reviewed every line."
 criteria = "safe-to-deploy"
 version = "0.6.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.zcash_proofs]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = ["crypto-reviewed", "safe-to-deploy"]
+delta = "0.6.0 -> 0.7.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 

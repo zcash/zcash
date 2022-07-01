@@ -1,6 +1,5 @@
 
 # cargo-vet config file
-
 [[unaudited.addr2line]]
 version = "0.17.0"
 criteria = "safe-to-deploy"
