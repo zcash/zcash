@@ -24,8 +24,8 @@ class SystemClock: public CClock {
 private:
     SystemClock() {}
     ~SystemClock() {}
-    SystemClock(SystemClock const&)    = delete;
-    SystemClock& operator=(const SystemClock&)= delete;
+    SystemClock(SystemClock const&) = delete;
+    SystemClock& operator=(const SystemClock&) = delete;
 public:
     static SystemClock* Instance() {
         static SystemClock instance;
@@ -47,8 +47,8 @@ private:
 
     FixedClock(): nFixedTime(0) {}
     ~FixedClock() {}
-    FixedClock(FixedClock const&)    = delete;
-    FixedClock& operator=(const FixedClock&)= delete;
+    FixedClock(FixedClock const&) = delete;
+    FixedClock& operator=(const FixedClock&) = delete;
 
     void Set(int64_t nFixedTime) {
         this->nFixedTime = nFixedTime;
@@ -77,8 +77,8 @@ private:
 
     OffsetClock(): nOffsetSeconds(0) {}
     ~OffsetClock() {}
-    OffsetClock(OffsetClock const&)    = delete;
-    OffsetClock& operator=(const OffsetClock&)= delete;
+    OffsetClock(OffsetClock const&) = delete;
+    OffsetClock& operator=(const OffsetClock&) = delete;
 
     void Set(int64_t nOffsetSeconds) {
         this->nOffsetSeconds = nOffsetSeconds;
