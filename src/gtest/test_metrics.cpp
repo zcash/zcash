@@ -7,7 +7,7 @@
 
 TEST(Metrics, AtomicTimer) {
     AtomicTimer t;
-    FixedClock::SetGlobal(100);
+    SetMockTime(100);
 
     EXPECT_FALSE(t.running());
 
@@ -36,13 +36,13 @@ TEST(Metrics, AtomicTimer) {
     c.increment();
     EXPECT_EQ(0, t.rate(c));
 
-    FixedClock::SetGlobal(101);
+    SetMockTime(101);
     EXPECT_EQ(1, t.rate(c));
 
     c.decrement();
     EXPECT_EQ(0, t.rate(c));
 
-    FixedClock::SetGlobal(102);
+    SetMockTime(102);
     EXPECT_EQ(0, t.rate(c));
 
     c.increment();
@@ -51,19 +51,17 @@ TEST(Metrics, AtomicTimer) {
     t.stop();
     EXPECT_FALSE(t.running());
     EXPECT_EQ(0.5, t.rate(c));
-
-    SystemClock::SetGlobal();
 }
 
 TEST(Metrics, GetLocalSolPS) {
-    FixedClock::SetGlobal(100);
+    SetMockTime(100);
     miningTimer.start();
 
     // No time has passed
     EXPECT_EQ(0, GetLocalSolPS());
 
     // Increment time
-    FixedClock::SetGlobal(101);
+    SetMockTime(101);
     EXPECT_EQ(0, GetLocalSolPS());
 
     // Increment solutions
@@ -71,7 +69,7 @@ TEST(Metrics, GetLocalSolPS) {
     EXPECT_EQ(1, GetLocalSolPS());
 
     // Increment time
-    FixedClock::SetGlobal(102);
+    SetMockTime(102);
     EXPECT_EQ(0.5, GetLocalSolPS());
 
     // Increment solutions
@@ -84,7 +82,7 @@ TEST(Metrics, GetLocalSolPS) {
     EXPECT_EQ(1.5, GetLocalSolPS());
 
     // Increment time
-    FixedClock::SetGlobal(103);
+    SetMockTime(103);
     EXPECT_EQ(1.5, GetLocalSolPS());
 
     // Start timing again
@@ -92,7 +90,7 @@ TEST(Metrics, GetLocalSolPS) {
     EXPECT_EQ(1.5, GetLocalSolPS());
 
     // Increment time
-    FixedClock::SetGlobal(104);
+    SetMockTime(104);
     EXPECT_EQ(1, GetLocalSolPS());
 
     miningTimer.stop();
@@ -100,8 +98,6 @@ TEST(Metrics, GetLocalSolPS) {
     solutionTargetChecks.decrement();
     solutionTargetChecks.decrement();
     solutionTargetChecks.decrement();
-
-    SystemClock::SetGlobal();
 }
 
 TEST(Metrics, EstimateNetHeight) {
@@ -110,12 +106,11 @@ TEST(Metrics, EstimateNetHeight) {
     for (int i = 0; i < 400; i++) {
         blockTimes[i] = i ? blockTimes[i - 1] + params.PoWTargetSpacing(i) : 0;
     }
-    FixedClock::SetGlobal(blockTimes[399]);
+    SetMockTime(blockTimes[399]);
     for (int i = 0; i < 400; i++) {
         // Check that we are within 1 of the correct height
         EXPECT_LT(std::abs(399 - EstimateNetHeight(params, i, blockTimes[i])), 2);
     }
-    SystemClock::SetGlobal();
     RegtestDeactivateBlossom();
 }
 
