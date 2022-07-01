@@ -28,7 +28,7 @@ class OrchardReorgTest(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 4
-        self.setup_clean_chain = True
+        self.cache_behavior = 'clean'
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[

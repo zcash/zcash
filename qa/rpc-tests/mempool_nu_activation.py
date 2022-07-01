@@ -26,7 +26,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 2
-        self.setup_clean_chain = True
+        self.cache_behavior = 'clean'
 
     def setup_network(self):
         args = ["-checkmempool", "-debug=mempool", "-blockmaxsize=4000",

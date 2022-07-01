@@ -16,7 +16,7 @@ class FrameworkTest (BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 2
-        self.setup_clean_chain = True
+        self.cache_behavior = 'clean'
 
     def start_node_with(self, index, extra_args=[]):
         args = []

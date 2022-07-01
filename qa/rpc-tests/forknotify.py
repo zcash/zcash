@@ -18,7 +18,6 @@ class ForkNotifyTest(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 2
-        self.setup_clean_chain = False
 
     alert_filename = None  # Set by setup_network
 

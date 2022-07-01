@@ -20,7 +20,7 @@ class WalletAddressesTest(BitcoinTestFramework):
         super().__init__()
         # need 2 nodes to import addresses
         self.num_nodes = 2
-        self.setup_clean_chain = True
+        self.cache_behavior = 'clean'
 
     def setup_network(self):
         self.nodes = start_nodes(

@@ -10,7 +10,7 @@ class ThreeOfThreeRestoreTest(BitcoinTestFramework):
 
     def __init__(self):
         super().__init__()
-        self.setup_clean_chain = True
+        self.cache_behavior = 'clean'
         self.num_nodes = 4
 
     def setup_network(self, split=False):

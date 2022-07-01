@@ -22,7 +22,7 @@ class GetrawtransactionTest(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 3
-        self.setup_clean_chain = True
+        self.cache_behavior = 'clean'
 
     def setup_network(self):
         # -insightexplorer causes spentindex to be enabled (fSpentIndex = true)
