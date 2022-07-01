@@ -350,6 +350,11 @@ methods that return address metadata. It is recommended that applications
 using this metadata be updated to use the <code>pool</code> or <code>address_type</code>
 attributes, which have replaced the <code>type</code> attribute, as appropriate.</li>
 </ul>
+<h3 id="deprecated-in-510"><a class="header" href="#deprecated-in-510">Deprecated in 5.1.0</a></h3>
+<ul>
+<li><code>wallettxvjoinsplit</code> - The <code>vjoinsplit</code> attribute returned by the
+<code>gettransaction</code> RPC method is deprecated.</li>
+</ul>
 <h2 id="stage-2"><a class="header" href="#stage-2">Stage 2</a></h2>
 <p>Each feature in the lists below may be enabled by adding <code>-allowdeprecated=&lt;feature&gt;</code>
 to the CLI arguments when starting the node, or by adding an <code>allowdeprecated=&lt;feature&gt;</code>
