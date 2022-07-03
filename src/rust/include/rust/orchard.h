@@ -135,18 +135,20 @@ private:
     /// An optional batch validator (with `nullptr` corresponding to `None`).
     /// Memory is allocated by Rust.
     std::unique_ptr<OrchardBatchValidatorPtr, decltype(&orchard_batch_validation_free)> inner;
+    bool enabled{false};
 
-    AuthValidator() : inner(nullptr, orchard_batch_validation_free) {}
+    AuthValidator(bool enabled) : inner(nullptr, orchard_batch_validation_free), enabled(enabled) {}
 
 public:
     // AuthValidator should never be copied
     AuthValidator(const AuthValidator&) = delete;
     AuthValidator& operator=(const AuthValidator&) = delete;
-    AuthValidator(AuthValidator&& bundle) : inner(std::move(bundle.inner)) {}
+    AuthValidator(AuthValidator&& bundle) : inner(std::move(bundle.inner)), enabled(bundle.enabled) {}
     AuthValidator& operator=(AuthValidator&& bundle)
     {
         if (this != &bundle) {
             inner = std::move(bundle.inner);
+            enabled = bundle.enabled;
         }
         return *this;
     }
@@ -154,7 +156,7 @@ public:
     /// Creates a validation context that batch-validates Orchard proofs and
     /// signatures.
     static AuthValidator Batch() {
-        auto batch = AuthValidator();
+        auto batch = AuthValidator(true);
         batch.inner.reset(orchard_batch_validation_init());
         return batch;
     }
@@ -162,7 +164,7 @@ public:
     /// Creates a validation context that performs no validation. This can be
     /// used when avoiding duplicate effort such as during reindexing.
     static AuthValidator Disabled() {
-        return AuthValidator();
+        return AuthValidator(false);
     }
 
     /// Queues an Orchard bundle for validation.
@@ -175,11 +177,11 @@ public:
     ///
     /// Throws `std::logic_error` if called more than once.
     bool Validate() {
-        if (!inner) {
+        if (enabled && !inner) {
             throw std::logic_error("orchard::AuthValidator has already been used");
         }
 
-        return orchard_batch_validate(inner.release());
+        return inner ? orchard_batch_validate(inner.release()) : true;
     }
 };
 } // namespace orchard
