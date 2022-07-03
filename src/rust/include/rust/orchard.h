@@ -161,8 +161,8 @@ public:
 
     /// Creates a validation context that performs no validation. This can be
     /// used when avoiding duplicate effort such as during reindexing.
-    static AuthValidator Disabled() {
-        return AuthValidator();
+    static std::optional<AuthValidator> Disabled() {
+        return std::nullopt;
     }
 
     /// Queues an Orchard bundle for validation.

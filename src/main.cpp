@@ -1245,7 +1245,7 @@ bool ContextualCheckShieldedInputs(
         const PrecomputedTransactionData& txdata,
         CValidationState &state,
         const CCoinsViewCache &view,
-        orchard::AuthValidator& orchardAuth,
+        std::optional<orchard::AuthValidator>& orchardAuth,
         const Consensus::Params& consensus,
         uint32_t consensusBranchId,
         bool nu5Active,
@@ -1380,7 +1380,9 @@ bool ContextualCheckShieldedInputs(
     }
 
     // Queue Orchard bundle to be batch-validated.
-    tx.GetOrchardBundle().QueueAuthValidation(orchardAuth, dataToBeSigned);
+    if (orchardAuth.has_value()) {
+        tx.GetOrchardBundle().QueueAuthValidation(orchardAuth.value(), dataToBeSigned);
+    }
 
     return true;
 }
@@ -2001,7 +2003,7 @@ bool AcceptToMemoryPool(
 
         // This will be a single-transaction batch, which is still more efficient as every
         // Orchard bundle contains at least two signatures.
-        auto orchardAuth = orchard::AuthValidator::Batch();
+        std::optional<orchard::AuthValidator> orchardAuth = orchard::AuthValidator::Batch();
 
         // Check shielded input signatures.
         if (!ContextualCheckShieldedInputs(
@@ -2018,8 +2020,8 @@ bool AcceptToMemoryPool(
             return false;
         }
 
-        // Check Orchard bundle authorizations.
-        if (!orchardAuth.Validate()) {
+        // Check Orchard bundle authorizations. `orchardAuth` here is known to be non-null
+        if (!orchardAuth.value().Validate()) {
             return state.DoS(100, false, REJECT_INVALID, "bad-orchard-bundle-authorization");
         }
 
@@ -3073,7 +3075,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto verifier = fExpensiveChecks ? ProofVerifier::Strict() : ProofVerifier::Disabled();
 
     // Disable Orchard batch signature validation if possible.
-    auto orchardAuth = fExpensiveChecks ?
+    std::optional<orchard::AuthValidator> orchardAuth = fExpensiveChecks ?
         orchard::AuthValidator::Batch() : orchard::AuthValidator::Disabled();
 
     // If in initial block download, and this block is an ancestor of a checkpoint,
@@ -3516,7 +3518,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                                REJECT_INVALID, "bad-cb-amount");
 
     // Ensure Orchard signatures are valid (if we are checking them)
-    if (!orchardAuth.Validate()) {
+    if (orchardAuth.has_value() && !orchardAuth.value().Validate()) {
         return state.DoS(100,
             error("ConnectBlock(): an Orchard bundle within the block is invalid"),
             REJECT_INVALID, "bad-orchard-bundle-authorization");
