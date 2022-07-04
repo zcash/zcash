@@ -632,6 +632,10 @@ criteria = "safe-to-deploy"
 version = "0.3.0"
 criteria = "safe-to-deploy"
 
+[[unaudited.redjubjub]]
+version = "0.5.0"
+criteria = "safe-to-deploy"
+
 [[unaudited.redox_syscall]]
 version = "0.2.13"
 criteria = "safe-to-deploy"

@@ -120,9 +120,9 @@ checksum = "cf9ff0bbfd639f15c74af777d81383cf53efb7c93613f6cab67c6c11e05bbf8b"
 
 [[package]]
 name = "bellman"
-version = "0.13.0"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d96d7f4f3dc9a699bdef1d19648f6f20ef966b51892d224582a4475be669cb5"
+checksum = "a4dd656ef4fdf7debb6d87d4dd92642fcbcdb78cbf6600c13e25c87e4d1a3807"
 dependencies = [
  "bitvec",
  "blake2s_simd",
@@ -1642,6 +1642,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "redjubjub"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6039ff156887caf92df308cbaccdc058c9d3155a913da046add6e48c4cdbd91d"
+dependencies = [
+ "blake2b_simd",
+ "byteorder",
+ "digest 0.9.0",
+ "jubjub",
+ "rand_core 0.6.3",
+ "serde",
+ "thiserror",
+ "zeroize",
+]
+
+[[package]]
 name = "redox_syscall"
 version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2320,9 +2336,9 @@ dependencies = [
 
 [[package]]
 name = "zcash_proofs"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92c0928a33ab146a4e93e2a1141ce589de1bbe93c90219965dcccadc15f4e4e8"
+checksum = "98bf5f6af051dd929263f279b21b9c04c1f30116c70f3c190de2566677f245ef"
 dependencies = [
  "bellman",
  "blake2b_simd",
@@ -2334,6 +2350,8 @@ dependencies = [
  "jubjub",
  "lazy_static",
  "rand_core 0.6.3",
+ "redjubjub",
+ "tracing",
  "zcash_primitives",
 ]
 

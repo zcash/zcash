@@ -92,7 +92,7 @@ public:
     std::array<uint8_t, WIDTH> GetRawBytes() const
     {
         std::array<uint8_t, WIDTH> buf = {};
-        memcpy(buf.data(), this->begin(), WIDTH);
+        std::memcpy(buf.data(), this->begin(), WIDTH);
 
         return buf;
     }
