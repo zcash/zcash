@@ -16,6 +16,7 @@
 
 #include "librustzcash.h"
 #include <rust/ed25519.h>
+#include <rust/sapling.h>
 
 static void ECDSA(benchmark::State& state)
 {
@@ -106,21 +107,19 @@ static void SaplingSpend(benchmark::State& state)
     ss >> spend;
     uint256 dataToBeSigned = uint256S("0x2dbf83fe7b88a7cbd80fac0c719483906bb9a0c4fc69071e4780d5f2c76e592c");
 
-    auto ctx = librustzcash_sapling_verification_ctx_init(true);
+    auto ctx = sapling::init_verifier();
 
     while (state.KeepRunning()) {
-        librustzcash_sapling_check_spend(
-            ctx,
-            spend.cv.begin(),
-            spend.anchor.begin(),
-            spend.nullifier.begin(),
-            spend.rk.begin(),
-            spend.zkproof.begin(),
-            spend.spendAuthSig.begin(),
-            dataToBeSigned.begin());
+        ctx->check_spend(
+            spend.cv.GetRawBytes(),
+            spend.anchor.GetRawBytes(),
+            spend.nullifier.GetRawBytes(),
+            spend.rk.GetRawBytes(),
+            spend.zkproof,
+            spend.spendAuthSig,
+            dataToBeSigned.GetRawBytes()
+        );
     }
-
-    librustzcash_sapling_verification_ctx_free(ctx);
 }
 
 static void SaplingOutput(benchmark::State& state)
@@ -132,18 +131,16 @@ static void SaplingOutput(benchmark::State& state)
         PROTOCOL_VERSION);
     ss >> output;
 
-    auto ctx = librustzcash_sapling_verification_ctx_init(true);
+    auto ctx = sapling::init_verifier();
 
     while (state.KeepRunning()) {
-        librustzcash_sapling_check_output(
-            ctx,
-            output.cv.begin(),
-            output.cmu.begin(),
-            output.ephemeralKey.begin(),
-            output.zkproof.begin());
+        ctx->check_output(
+            output.cv.GetRawBytes(),
+            output.cmu.GetRawBytes(),
+            output.ephemeralKey.GetRawBytes(),
+            output.zkproof
+        );
     }
-
-    librustzcash_sapling_verification_ctx_free(ctx);
 }
 
 BENCHMARK(ECDSA);

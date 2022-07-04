@@ -47,6 +47,7 @@
 
 #include <rust/ed25519.h>
 #include <rust/metrics.h>
+#include <rust/sapling.h>
 
 using namespace std;
 
@@ -1317,26 +1318,18 @@ bool ContextualCheckShieldedInputs(
     if (!tx.vShieldedSpend.empty() ||
         !tx.vShieldedOutput.empty())
     {
-        // The nu5Active flag passed in here enables the new consensus rules from ZIP 216
-        // (https://zips.z.cash/zip-0216#specification) on the following fields:
-        //
-        // - spendAuthSig in Sapling Spend descriptions
-        // - bindingSigSapling
-        auto ctx = librustzcash_sapling_verification_ctx_init(nu5Active);
+        auto ctx = sapling::init_verifier();
 
         for (const SpendDescription &spend : tx.vShieldedSpend) {
-            if (!librustzcash_sapling_check_spend(
-                ctx,
-                spend.cv.begin(),
-                spend.anchor.begin(),
-                spend.nullifier.begin(),
-                spend.rk.begin(),
-                spend.zkproof.begin(),
-                spend.spendAuthSig.begin(),
-                dataToBeSigned.begin()
-            ))
-            {
-                librustzcash_sapling_verification_ctx_free(ctx);
+            if (!ctx->check_spend(
+                spend.cv.GetRawBytes(),
+                spend.anchor.GetRawBytes(),
+                spend.nullifier.GetRawBytes(),
+                spend.rk.GetRawBytes(),
+                spend.zkproof,
+                spend.spendAuthSig,
+                dataToBeSigned.GetRawBytes()
+            )) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
                     error("ContextualCheckShieldedInputs(): Sapling spend description invalid"),
@@ -1345,38 +1338,30 @@ bool ContextualCheckShieldedInputs(
         }
 
         for (const OutputDescription &output : tx.vShieldedOutput) {
-            if (!librustzcash_sapling_check_output(
-                ctx,
-                output.cv.begin(),
-                output.cmu.begin(),
-                output.ephemeralKey.begin(),
-                output.zkproof.begin()
-            ))
-            {
-                librustzcash_sapling_verification_ctx_free(ctx);
+            if (!ctx->check_output(
+                output.cv.GetRawBytes(),
+                output.cmu.GetRawBytes(),
+                output.ephemeralKey.GetRawBytes(),
+                output.zkproof
+            )) {
                 // This should be a non-contextual check, but we check it here
                 // as we need to pass over the outputs anyway in order to then
-                // call librustzcash_sapling_final_check().
+                // call ctx->final_check().
                 return state.DoS(100, error("ContextualCheckShieldedInputs(): Sapling output description invalid"),
                                       REJECT_INVALID, "bad-txns-sapling-output-description-invalid");
             }
         }
 
-        if (!librustzcash_sapling_final_check(
-            ctx,
+        if (!ctx->final_check(
             tx.GetValueBalanceSapling(),
-            tx.bindingSig.begin(),
-            dataToBeSigned.begin()
-        ))
-        {
-            librustzcash_sapling_verification_ctx_free(ctx);
+            tx.bindingSig,
+            dataToBeSigned.GetRawBytes()
+        )) {
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
                 error("ContextualCheckShieldedInputs(): Sapling binding signature invalid"),
                 REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid");
         }
-
-        librustzcash_sapling_verification_ctx_free(ctx);
     }
 
     // Queue Orchard bundle to be batch-validated.

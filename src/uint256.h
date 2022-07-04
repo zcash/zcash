@@ -89,6 +89,14 @@ public:
                ((uint64_t)ptr[7]) << 56;
     }
 
+    std::array<uint8_t, WIDTH> GetRawBytes() const
+    {
+        std::array<uint8_t, WIDTH> buf = {};
+        memcpy(buf.data(), this->begin(), WIDTH);
+
+        return buf;
+    }
+
     template<typename Stream>
     void Serialize(Stream& s) const
     {

@@ -135,7 +135,8 @@ public:
             uint256S("00000000002038016f976744c369dce7419fca30e7171dfac703af5e5f7ad1d4");
         consensus.vUpgrades[Consensus::UPGRADE_NU5].nProtocolVersion = 170100;
         consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight = 1687104;
-
+        consensus.vUpgrades[Consensus::UPGRADE_NU5].hashActivationBlock =
+            uint256S("0000000000d723156d9b65ffcf4984da7a19675ed7e2f06d9e5d5188af087bf8");
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nProtocolVersion = 0x7FFFFFFF;
         consensus.vUpgrades[Consensus::UPGRADE_ZFUTURE].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
@@ -239,7 +240,7 @@ public:
         }
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("00000000000000000000000000000000000000000000000004a90edff47bbdc6");
+        consensus.nMinimumChainWork = uint256S("000000000000000000000000000000000000000000000000098e5c63248dcb28");
 
         /**
          * The message start string should be awesome! ⓩ❤
