@@ -402,7 +402,7 @@ bool ContextualCheckShieldedInputs(
         const PrecomputedTransactionData& txdata,
         CValidationState &state,
         const CCoinsViewCache &view,
-        orchard::AuthValidator& orchardAuth,
+        std::optional<orchard::AuthValidator>& orchardAuth,
         const Consensus::Params& consensus,
         uint32_t consensusBranchId,
         bool nu5Active,
