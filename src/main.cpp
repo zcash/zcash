@@ -47,7 +47,6 @@
 
 #include <rust/ed25519.h>
 #include <rust/metrics.h>
-#include <rust/sapling.h>
 
 using namespace std;
 
@@ -1246,6 +1245,7 @@ bool ContextualCheckShieldedInputs(
         const PrecomputedTransactionData& txdata,
         CValidationState &state,
         const CCoinsViewCache &view,
+        std::optional<rust::Box<sapling::BatchValidator>>& saplingAuth,
         std::optional<orchard::AuthValidator>& orchardAuth,
         const Consensus::Params& consensus,
         uint32_t consensusBranchId,
@@ -1318,17 +1318,16 @@ bool ContextualCheckShieldedInputs(
     if (!tx.vShieldedSpend.empty() ||
         !tx.vShieldedOutput.empty())
     {
-        auto ctx = sapling::init_verifier();
+        auto assembler = sapling::new_bundle_assembler();
 
         for (const SpendDescription &spend : tx.vShieldedSpend) {
-            if (!ctx->check_spend(
+            if (!assembler->add_spend(
                 spend.cv.GetRawBytes(),
                 spend.anchor.GetRawBytes(),
                 spend.nullifier.GetRawBytes(),
                 spend.rk.GetRawBytes(),
                 spend.zkproof,
-                spend.spendAuthSig,
-                dataToBeSigned.GetRawBytes()
+                spend.spendAuthSig
             )) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -1338,10 +1337,12 @@ bool ContextualCheckShieldedInputs(
         }
 
         for (const OutputDescription &output : tx.vShieldedOutput) {
-            if (!ctx->check_output(
+            if (!assembler->add_output(
                 output.cv.GetRawBytes(),
                 output.cmu.GetRawBytes(),
                 output.ephemeralKey.GetRawBytes(),
+                output.encCiphertext,
+                output.outCiphertext,
                 output.zkproof
             )) {
                 // This should be a non-contextual check, but we check it here
@@ -1352,15 +1353,19 @@ bool ContextualCheckShieldedInputs(
             }
         }
 
-        if (!ctx->final_check(
+        auto bundle = sapling::finish_bundle_assembly(
+            std::move(assembler),
             tx.GetValueBalanceSapling(),
-            tx.bindingSig,
-            dataToBeSigned.GetRawBytes()
-        )) {
-            return state.DoS(
-                dosLevelPotentiallyRelaxing,
-                error("ContextualCheckShieldedInputs(): Sapling binding signature invalid"),
-                REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid");
+            tx.bindingSig);
+
+        // Queue Sapling bundle to be batch-validated. This also checks some consensus rules.
+        if (saplingAuth.has_value()) {
+            if (!saplingAuth.value()->check_bundle(std::move(bundle), dataToBeSigned.GetRawBytes())) {
+                return state.DoS(
+                    dosLevelPotentiallyRelaxing,
+                    error("ContextualCheckShieldedInputs(): Sapling bundle invalid"),
+                    REJECT_INVALID, "bad-txns-sapling-bundle-invalid");
+            }
         }
     }
 
@@ -1986,6 +1991,11 @@ bool AcceptToMemoryPool(
                 __func__, hash.ToString(), FormatStateMessage(state));
         }
 
+        // This will be a single-transaction batch, which will be more efficient
+        // than unbatched if the transaction contains at least one Sapling Spend
+        // or at least two Sapling Outputs.
+        std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = sapling::init_batch_validator();
+
         // This will be a single-transaction batch, which is still more efficient as every
         // Orchard bundle contains at least two signatures.
         std::optional<orchard::AuthValidator> orchardAuth = orchard::AuthValidator::Batch();
@@ -1996,6 +2006,7 @@ bool AcceptToMemoryPool(
             txdata,
             state,
             view,
+            saplingAuth,
             orchardAuth,
             chainparams.GetConsensus(),
             consensusBranchId,
@@ -2005,7 +2016,11 @@ bool AcceptToMemoryPool(
             return false;
         }
 
-        // Check Orchard bundle authorizations. `orchardAuth` here is known to be non-null
+        // Check Sapling and Orchard bundle authorizations.
+        // `saplingAuth` and `orchardAuth` are known here to be non-null.
+        if (!saplingAuth.value()->validate()) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-sapling-bundle-authorization");
+        }
         if (!orchardAuth.value().Validate()) {
             return state.DoS(100, false, REJECT_INVALID, "bad-orchard-bundle-authorization");
         }
@@ -3059,7 +3074,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // proof verification is expensive, disable if possible
     auto verifier = fExpensiveChecks ? ProofVerifier::Strict() : ProofVerifier::Disabled();
 
-    // Disable Orchard batch signature validation if possible.
+    // Disable Sapling and Orchard batch validation if possible.
+    std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = fExpensiveChecks ?
+        std::optional(sapling::init_batch_validator()) : std::nullopt;
     std::optional<orchard::AuthValidator> orchardAuth = fExpensiveChecks ?
         orchard::AuthValidator::Batch() : orchard::AuthValidator::Disabled();
 
@@ -3302,6 +3319,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             txdata.back(),
             state,
             view,
+            saplingAuth,
             orchardAuth,
             chainparams.GetConsensus(),
             consensusBranchId,
@@ -3501,6 +3519,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                          error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
                                block.vtx[0].GetValueOut(), blockReward),
                                REJECT_INVALID, "bad-cb-amount");
+
+    // Ensure Sapling authorizations are valid (if we are checking them)
+    if (saplingAuth.has_value() && !saplingAuth.value()->validate()) {
+        return state.DoS(100,
+            error("ConnectBlock(): a Sapling bundle within the block is invalid"),
+            REJECT_INVALID, "bad-sapling-bundle-authorization");
+    }
 
     // Ensure Orchard signatures are valid (if we are checking them)
     if (orchardAuth.has_value() && !orchardAuth.value().Validate()) {

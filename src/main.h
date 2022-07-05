@@ -43,6 +43,7 @@
 #include <utility>
 #include <vector>
 
+#include <rust/sapling.h>
 #include <rust/orchard.h>
 
 #include <boost/unordered_map.hpp>
@@ -402,6 +403,7 @@ bool ContextualCheckShieldedInputs(
         const PrecomputedTransactionData& txdata,
         CValidationState &state,
         const CCoinsViewCache &view,
+        std::optional<rust::Box<sapling::BatchValidator>>& saplingAuth,
         std::optional<orchard::AuthValidator>& orchardAuth,
         const Consensus::Params& consensus,
         uint32_t consensusBranchId,

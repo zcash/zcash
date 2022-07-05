@@ -176,6 +176,11 @@ def create_benchmark_archive(blk_hash):
 
     unique_inputs = {}
     for i in sorted(inputs):
+        if i[0] in blk['tx']:
+            # This is a child transaction spending the output of a parent transaction in
+            # the same block. We don't want to store the parent coin in the inputs table,
+            # or this will fail the BIP 30 consensus rule.
+            continue
         if i[0] in unique_inputs:
             unique_inputs[i[0]].append(i[1])
         else:
@@ -262,3 +267,4 @@ if __name__ == '__main__':
     check_deps()
     create_benchmark_archive('0000000007cdb809e48e51dd0b530e8f5073e0a9e9bd7ae920fe23e874658c74')
     create_benchmark_archive('0000000000651d7fb11f0dd1be8dc87c29dca74cbf91140c6aafbacc09e7da04')
+    create_benchmark_archive('00000000012e0b5a8fb0d67c995b92e7c097ddeeab1151de61c4f484611fde11')

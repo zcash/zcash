@@ -19,7 +19,7 @@
 // See https://github.com/rust-lang/rfcs/pull/2585 for more background.
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
-use bellman::groth16::{Parameters, PreparedVerifyingKey};
+use bellman::groth16::{self, prepare_verifying_key, Parameters, PreparedVerifyingKey};
 use blake2s_simd::Params as Blake2sParams;
 use bls12_381::Bls12;
 use group::{cofactor::CofactorGroup, GroupEncoding};
@@ -88,8 +88,8 @@ mod test_harness_ffi;
 mod tests;
 
 static PROOF_PARAMETERS_LOADED: Once = Once::new();
-static mut SAPLING_SPEND_VK: Option<PreparedVerifyingKey<Bls12>> = None;
-static mut SAPLING_OUTPUT_VK: Option<PreparedVerifyingKey<Bls12>> = None;
+static mut SAPLING_SPEND_VK: Option<groth16::VerifyingKey<Bls12>> = None;
+static mut SAPLING_OUTPUT_VK: Option<groth16::VerifyingKey<Bls12>> = None;
 static mut SPROUT_GROTH16_VK: Option<PreparedVerifyingKey<Bls12>> = None;
 
 static mut SAPLING_SPEND_PARAMS: Option<Parameters<Bls12>> = None;
@@ -179,6 +179,11 @@ pub extern "C" fn librustzcash_init_zksnark_params(
         let sapling_spend_params = params.spend_params;
         let sapling_output_params = params.output_params;
 
+        // We need to clone these because we aren't necessarily storing the proving
+        // parameters in memory.
+        let sapling_spend_vk = sapling_spend_params.vk.clone();
+        let sapling_output_vk = sapling_output_params.vk.clone();
+
         // Generate Orchard parameters.
         info!(target: "main", "Loading Orchard parameters");
         let orchard_pk = load_proving_keys.then(orchard::circuit::ProvingKey::build);
@@ -191,8 +196,8 @@ pub extern "C" fn librustzcash_init_zksnark_params(
             SAPLING_OUTPUT_PARAMS = load_proving_keys.then(|| sapling_output_params);
             SPROUT_GROTH16_PARAMS_PATH = sprout_path.map(|p| p.to_owned());
 
-            SAPLING_SPEND_VK = Some(params.spend_vk);
-            SAPLING_OUTPUT_VK = Some(params.output_vk);
+            SAPLING_SPEND_VK = Some(sapling_spend_vk);
+            SAPLING_OUTPUT_VK = Some(sapling_output_vk);
             SPROUT_GROTH16_VK = params.sprout_vk;
 
             ORCHARD_PK = orchard_pk;
@@ -845,7 +850,7 @@ pub extern "C" fn librustzcash_sapling_spend_proof(
             anchor,
             merkle_path,
             unsafe { SAPLING_SPEND_PARAMS.as_ref() }.unwrap(),
-            unsafe { SAPLING_SPEND_VK.as_ref() }.unwrap(),
+            &prepare_verifying_key(unsafe { SAPLING_SPEND_VK.as_ref() }.unwrap()),
         )
         .expect("proving should not fail");
 

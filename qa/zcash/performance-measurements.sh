@@ -164,6 +164,10 @@ function extract_benchmark_data_1708048 {
     extract_benchmark_data block-1708048 bdae4b1baf528fa93d86b902e1032d4d1fc3d3080f76cd284635787e472f2534
 }
 
+function extract_benchmark_data_1723244 {
+    extract_benchmark_data block-1723244 94acfef482103a61c848ddaa3129877cba987c4a00fa42425f4cf030b7c3fa4c
+}
+
 
 if [ $# -lt 2 ]
 then
@@ -228,6 +232,10 @@ case "$1" in
             connectblockslow)
                 extract_benchmark_data_107134
                 zcash_rpc zcbenchmark connectblockslow 10
+                ;;
+            connectblocksapling)
+                extract_benchmark_data_1723244
+                zcash_rpc zcbenchmark connectblocksapling 10
                 ;;
             connectblockorchard)
                 extract_benchmark_data_1708048
@@ -295,6 +303,10 @@ case "$1" in
                 extract_benchmark_data_107134
                 zcash_rpc zcbenchmark connectblockslow 1
                 ;;
+            connectblocksapling)
+                extract_benchmark_data_1723244
+                zcash_rpc zcbenchmark connectblocksapling 1
+                ;;
             connectblockorchard)
                 extract_benchmark_data_1708048
                 zcash_rpc zcbenchmark connectblockorchard 1
@@ -358,6 +370,10 @@ case "$1" in
             connectblockslow)
                 extract_benchmark_data_107134
                 zcash_rpc zcbenchmark connectblockslow 1
+                ;;
+            connectblocksapling)
+                extract_benchmark_data_1723244
+                zcash_rpc zcbenchmark connectblocksapling 1
                 ;;
             connectblockorchard)
                 extract_benchmark_data_1708048

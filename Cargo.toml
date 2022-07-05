@@ -56,7 +56,7 @@ zcash_encoding = "0.1"
 zcash_history = "0.3"
 zcash_note_encryption = "0.1"
 zcash_primitives = { version = "0.7", features = ["transparent-inputs"] }
-zcash_proofs = "0.7"
+zcash_proofs = "0.7.1"
 ed25519-zebra = "3"
 zeroize = "1.4.2"
 
