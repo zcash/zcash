@@ -4,6 +4,33 @@ release-notes at release time)
 Notable changes
 ===============
 
+Faster block validation for Sapling and Orchard transactions
+------------------------------------------------------------
+
+Block validation in `zcashd` is a mostly single-threaded process, due to how the
+chain update logic inherited from Bitcoin Core is written. However, certain more
+computationally intensive checks are performed more efficiently than checking
+everything individually:
+
+- ECDSA signatures on transparent inputs are checked via multithreading.
+- RedPallas signatures on Orchard actions are checked via batch validation.
+
+As of this release, `zcashd` applies these techniques to more Sapling and
+Orchard components:
+
+- RedJubjub signatures on Sapling Spends are checked via batch validation.
+- Groth16 proofs for Sapling Spends and Outputs are checked via batch validation
+  and multithreading.
+- Halo 2 proofs for Orchard Actions are checked via batch validation and
+  multithreading.
+
+This reduces worst-case block validation times for observed historic blocks by
+around 80% on a Ryzen 9 5950X CPU.
+
+The number of threads used for checking Groth16 and Halo 2 proofs (as well as
+for creating them when spending funds) can be set via the `RAYON_NUM_THREADS`
+environment variable.
+
 Option handling
 ---------------
 
@@ -14,6 +41,12 @@ Option handling
   whenever the transaction does not contain Orchard components. This can be
   helpful if recipients of transactions are likely to be using legacy wallets
   that have not yet been upgraded to support parsing V5 transactions.
+
+RPC interface
+-------------
+
+- The `getrawtransaction` RPC method now includes details about Orchard actions
+  within transactions.
 
 Deprecated
 ----------
