@@ -2241,6 +2241,11 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, const Consensus:
 
 bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams)
 {
+    if (pindex->GetBlockPos().IsNull()) {
+        return error("ReadBlockFromDisk(CBlock&, CBlockIndex*): block index entry does not provide a valid disk position for block %s at %s",
+                pindex->ToString(), pindex->GetBlockPos().ToString());
+    }
+
     if (!ReadBlockFromDisk(block, pindex->GetBlockPos(), consensusParams))
         return false;
     if (block.GetHash() != pindex->GetBlockHash())
