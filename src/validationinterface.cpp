@@ -250,6 +250,11 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             // exploitable as a timing channel.
             GetMainSignals().ChainTip(blockData.pindex, &block, blockData.oldTrees);
 
+            // Notify UI to display prev block's coinbase if it was ours.
+            static uint256 hashPrevBestCoinBase;
+            GetMainSignals().UpdatedTransaction(hashPrevBestCoinBase);
+            hashPrevBestCoinBase = block.vtx[0].GetHash();
+
             // This block is done!
             pindexLastTip = blockData.pindex;
         }
