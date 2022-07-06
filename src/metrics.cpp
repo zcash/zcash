@@ -9,10 +9,10 @@
 #include "main.h"
 #include "timedata.h"
 #include "ui_interface.h"
-#include "util.h"
-#include "utiltime.h"
-#include "utilmoneystr.h"
-#include "utilstrencodings.h"
+#include "util/system.h"
+#include "util/time.h"
+#include "util/moneystr.h"
+#include "util/strencodings.h"
 
 #include <boost/range/irange.hpp>
 #include <boost/thread.hpp>

@@ -22,7 +22,7 @@
 #include "pow.h"
 #include "rpc/server.h"
 #include "txmempool.h"
-#include "util.h"
+#include "util/system.h"
 #include "validationinterface.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"

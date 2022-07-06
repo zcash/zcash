@@ -4,7 +4,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "hash.h"
-#include "utilstrencodings.h"
+#include "util/strencodings.h"
 #include "test/test_bitcoin.h"
 
 #include <vector>

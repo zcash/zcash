@@ -4,7 +4,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "compressor.h"
-#include "util.h"
+#include "util/system.h"
 #include "test/test_bitcoin.h"
 
 #include <stdint.h>

@@ -9,9 +9,9 @@
 #include "key_io.h"
 #include "script/script.h"
 #include "uint256.h"
-#include "util.h"
-#include "utilstrencodings.h"
-#include "utiltest.h"
+#include "util/system.h"
+#include "util/strencodings.h"
+#include "util/test.h"
 #include "test/test_bitcoin.h"
 
 #include "zcash/Address.hpp"

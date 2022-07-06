@@ -18,8 +18,8 @@
 #include "rpc/server.h"
 #include "serialize.h"
 #include "streams.h"
-#include "utilstrencodings.h"
-#include "utiltest.h"
+#include "util/strencodings.h"
+#include "util/test.h"
 #include "warnings.h"
 
 #include "test/test_bitcoin.h"

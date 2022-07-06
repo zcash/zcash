@@ -18,7 +18,7 @@
 
 #include "compat/endian.h"
 #include "crypto/equihash.h"
-#include "util.h"
+#include "util/system.h"
 
 #include <optional>
 

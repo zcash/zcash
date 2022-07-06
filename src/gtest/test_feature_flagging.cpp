@@ -2,7 +2,7 @@
 
 #include "chainparams.h"
 #include "consensus/params.h"
-#include "utiltest.h"
+#include "util/test.h"
 
 #include <optional>
 

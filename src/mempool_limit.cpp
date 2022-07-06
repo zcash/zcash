@@ -9,7 +9,7 @@
 #include "random.h"
 #include "serialize.h"
 #include "timedata.h"
-#include "utiltime.h"
+#include "util/time.h"
 #include "version.h"
 
 const TxWeight ZERO_WEIGHT = TxWeight(0, 0);

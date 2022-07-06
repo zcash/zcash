@@ -8,7 +8,7 @@
 #include "fs.h"
 #include "key.h"
 #include "main.h"
-#include "util.h"
+#include "util/system.h"
 
 #include "librustzcash.h"
 

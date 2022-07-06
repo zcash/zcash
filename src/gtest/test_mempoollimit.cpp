@@ -8,8 +8,8 @@
 #include "arith_uint256.h"
 #include "mempool_limit.h"
 #include "gtest/utils.h"
-#include "utiltime.h"
-#include "utiltest.h"
+#include "util/time.h"
+#include "util/test.h"
 #include "transaction_builder.h"
 
 

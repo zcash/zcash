@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "utilstrencodings.h"
+#include "util/strencodings.h"
 
 
 #include "zcash/prf.h"
-#include "util.h"
+#include "util/system.h"
 #include "streams.h"
 #include "version.h"
 #include "serialize.h"
@@ -12,7 +12,7 @@
 #include "proof_verifier.h"
 #include "transaction_builder.h"
 #include "gtest/utils.h"
-#include "utiltest.h"
+#include "util/test.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"

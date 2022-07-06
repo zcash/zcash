@@ -5,7 +5,7 @@
 #include "zcash/Address.hpp"
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
-#include "util.h"
+#include "util/system.h"
 
 /**
  * This test covers Sapling methods on CWallet

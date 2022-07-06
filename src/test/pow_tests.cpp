@@ -5,8 +5,8 @@
 
 #include "main.h"
 #include "pow.h"
-#include "util.h"
-#include "utiltest.h"
+#include "util/system.h"
+#include "util/test.h"
 #include "test/test_bitcoin.h"
 
 #include <boost/test/unit_test.hpp>

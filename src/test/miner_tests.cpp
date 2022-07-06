@@ -9,7 +9,7 @@
 #include "miner.h"
 #include "pubkey.h"
 #include "uint256.h"
-#include "util.h"
+#include "util/system.h"
 #include "crypto/equihash.h"
 //#include "pow/tromp/equi_miner.h"
 

@@ -6,7 +6,7 @@
 #include "chainparams.h"
 #include "zmqpublishnotifier.h"
 #include "main.h"
-#include "util.h"
+#include "util/system.h"
 
 static std::multimap<std::string, CZMQAbstractPublishNotifier*> mapPublishNotifiers;
 

@@ -13,7 +13,7 @@
 #include "serialize.h"
 #include "test/test_bitcoin.h"
 #include "test/test_util.h"
-#include "util.h"
+#include "util/system.h"
 #include "version.h"
 
 #include <iostream>

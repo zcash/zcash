@@ -8,8 +8,8 @@
  * Server/client environment: argument handling, config file parsing,
  * thread wrappers
  */
-#ifndef BITCOIN_UTIL_H
-#define BITCOIN_UTIL_H
+#ifndef BITCOIN_UTIL_SYSTEM_H
+#define BITCOIN_UTIL_SYSTEM_H
 
 #if defined(HAVE_CONFIG_H)
 #include "config/bitcoin-config.h"
@@ -19,7 +19,7 @@
 #include "fs.h"
 #include "logging.h"
 #include "tinyformat.h"
-#include "utiltime.h"
+#include "util/time.h"
 
 #include <atomic>
 #include <exception>
@@ -216,4 +216,4 @@ template <typename Callable> void TraceThread(const char* name,  Callable func)
     }
 }
 
-#endif // BITCOIN_UTIL_H
+#endif // BITCOIN_UTIL_SYSTEM_H

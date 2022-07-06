@@ -4,7 +4,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "zmqabstractnotifier.h"
-#include "util.h"
+#include "util/system.h"
 
 
 CZMQAbstractNotifier::~CZMQAbstractNotifier()

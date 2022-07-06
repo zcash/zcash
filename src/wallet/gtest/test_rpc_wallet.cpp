@@ -5,7 +5,7 @@
 #include "primitives/transaction.h"
 #include "consensus/validation.h"
 #include "transaction_builder.h"
-#include "utiltest.h"
+#include "util/test.h"
 #include "gtest/utils.h"
 #include "wallet/asyncrpcoperation_mergetoaddress.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"

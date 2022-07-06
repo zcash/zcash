@@ -3,8 +3,8 @@
 #include "key.h"
 #include "pubkey.h"
 #include "random.h"
-#include "util.h"
-#include "utiltest.h"
+#include "util/system.h"
+#include "util/test.h"
 
 #include "librustzcash.h"
 #include <sodium.h>

@@ -8,7 +8,7 @@
 #include "bench.h"
 #include "bloom.h"
 #include "random.h"
-#include "utiltime.h"
+#include "util/time.h"
 #include "crypto/ripemd160.h"
 #include "crypto/sha1.h"
 #include "crypto/sha256.h"

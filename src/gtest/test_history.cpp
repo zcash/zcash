@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "main.h"
-#include "utiltest.h"
+#include "util/test.h"
 #include "zcash/History.hpp"
 
 // Fake an empty view

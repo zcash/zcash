@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 #include "coins.h"
-#include "util.h"
+#include "util/system.h"
 #include "init.h"
 #include "primitives/transaction.h"
 #include "base58.h"
@@ -25,7 +25,7 @@
 #include "streams.h"
 #include "transaction_builder.h"
 #include "txdb.h"
-#include "utiltest.h"
+#include "util/test.h"
 #include "wallet/wallet.h"
 
 #include "zcbenchmarks.h"

@@ -8,7 +8,7 @@
 #include "primitives/transaction.h"
 #include "txmempool.h"
 #include "policy/fees.h"
-#include "util.h"
+#include "util/system.h"
 
 // Implementation is in test_checktransaction.cpp
 extern CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH_ID);

@@ -12,7 +12,7 @@
 #include "crypto/sha256.h"
 #include "librustzcash.h"
 #include "consensus/params.h"
-#include "utiltest.h"
+#include "util/test.h"
 
 class TestNoteDecryption : public ZCNoteDecryption {
 public:

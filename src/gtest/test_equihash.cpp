@@ -7,7 +7,7 @@
 
 #include "crypto/equihash.h"
 #include "uint256.h"
-#include "utilstrencodings.h"
+#include "util/strencodings.h"
 
 void TestExpandAndCompress(const std::string &scope, size_t bit_len, size_t byte_pad,
                            std::vector<unsigned char> compact,

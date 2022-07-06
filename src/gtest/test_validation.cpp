@@ -5,7 +5,7 @@
 #include "consensus/validation.h"
 #include "main.h"
 #include "transaction_builder.h"
-#include "utiltest.h"
+#include "util/test.h"
 
 #include <optional>
 

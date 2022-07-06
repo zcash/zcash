@@ -11,7 +11,7 @@
 #include "compat.h" // for Windows API
 #endif
 #include "logging.h"  // for LogPrint()
-#include "utiltime.h" // for GetTime()
+#include "util/time.h" // for GetTime()
 
 #include <limits>
 

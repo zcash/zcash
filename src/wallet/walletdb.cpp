@@ -15,8 +15,8 @@
 #include "serialize.h"
 #include "script/standard.h"
 #include "sync.h"
-#include "util.h"
-#include "utiltime.h"
+#include "util/system.h"
+#include "util/time.h"
 #include "wallet/wallet.h"
 #include "zcash/Proof.hpp"
 

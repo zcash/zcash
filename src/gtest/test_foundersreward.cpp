@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
 #include "main.h"
-#include "utilmoneystr.h"
+#include "util/moneystr.h"
 #include "chainparams.h"
 #include "consensus/funding.h"
 #include "fs.h"
 #include "key_io.h"
-#include "utilstrencodings.h"
+#include "util/strencodings.h"
 #include "zcash/Address.hpp"
 #include "wallet/wallet.h"
 #include "amount.h"
@@ -14,8 +14,8 @@
 #include <string>
 #include <set>
 #include <vector>
-#include "util.h"
-#include "utiltest.h"
+#include "util/system.h"
+#include "util/test.h"
 
 // To run tests:
 // ./zcash-gtest --gtest_filter="FoundersRewardTest.*"

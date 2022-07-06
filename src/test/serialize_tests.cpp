@@ -7,7 +7,7 @@
 #include "streams.h"
 #include "hash.h"
 #include "test/test_bitcoin.h"
-#include "utilstrencodings.h"
+#include "util/strencodings.h"
 
 #include <array>
 #include <optional>

@@ -43,8 +43,8 @@ the bad alert.
 #include "alert.h"
 #include "init.h"
 
-#include "util.h"
-#include "utiltime.h"
+#include "util/system.h"
+#include "util/time.h"
 #include "key.h"
 #include "clientversion.h"
 #include "chainparams.h"

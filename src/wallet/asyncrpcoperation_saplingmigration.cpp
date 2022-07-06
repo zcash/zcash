@@ -7,8 +7,8 @@
 #include "sync.h"
 #include "tinyformat.h"
 #include "transaction_builder.h"
-#include "util.h"
-#include "utilmoneystr.h"
+#include "util/system.h"
+#include "util/moneystr.h"
 #include "wallet.h"
 
 #include <optional>

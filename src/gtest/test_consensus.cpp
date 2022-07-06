@@ -4,7 +4,7 @@
 #include <rust/ed25519.h>
 
 #include "uint256.h"
-#include "utilstrencodings.h"
+#include "util/strencodings.h"
 
 void TestLibsodiumEd25519SignatureVerification(
     const std::string &scope,

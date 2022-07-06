@@ -4,7 +4,7 @@
 #include "chainparams.h"
 #include "pow.h"
 #include "random.h"
-#include "utiltest.h"
+#include "util/test.h"
 
 void TestDifficultyAveragingImpl(const Consensus::Params& params)
 {

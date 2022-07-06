@@ -2,7 +2,7 @@
 #define BITCOIN_GTEST_UTILS_H
 
 #include "random.h"
-#include "util.h"
+#include "util/system.h"
 #include "key_io.h"
 
 int GenZero(int n);

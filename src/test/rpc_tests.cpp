@@ -10,7 +10,7 @@
 #include "key_io.h"
 #include "main.h"
 #include "netbase.h"
-#include "utilstrencodings.h"
+#include "util/strencodings.h"
 
 #include "test/test_bitcoin.h"
 #include "test/test_util.h"
