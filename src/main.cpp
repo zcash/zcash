@@ -3065,11 +3065,29 @@ static bool ShouldCheckTransactions(const CChainParams& chainparams, const CBloc
 
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex,
                   CCoinsViewCache& view, const CChainParams& chainparams,
-                  bool fJustCheck, bool fCheckAuthDataRoot)
+                  bool fJustCheck, CheckAs blockChecks)
 {
     AssertLockHeld(cs_main);
 
+    bool fCheckAuthDataRoot = true;
     bool fExpensiveChecks = true;
+
+    switch (blockChecks) {
+    case CheckAs::Block:
+        break;
+    case CheckAs::BlockTemplate:
+        // Disable checking proofs and signatures for block templates, to avoid
+        // checking them twice for transactions that were already checked when
+        // added to the mempool.
+        fExpensiveChecks = false;
+    case CheckAs::SlowBenchmark:
+        // Disable checking the authDataRoot for block templates and slow block
+        // benchmarks.
+        fCheckAuthDataRoot = false;
+        break;
+    default:
+        assert(false);
+    }
 
     // If this block is an ancestor of a checkpoint, disable expensive checks
     if (fCheckpointsEnabled && Checkpoints::IsAncestorOfLastCheckpoint(chainparams.Checkpoints(), pindex)) {
@@ -5087,7 +5105,10 @@ bool ProcessNewBlock(CValidationState& state, const CChainParams& chainparams, c
  * This is only invoked by the miner.
  * The block's proof-of-work is assumed invalid and not checked.
  */
-bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckMerkleRoot)
+bool TestBlockValidity(
+    CValidationState& state, const CChainParams& chainparams,
+    const CBlock& block, CBlockIndex* pindexPrev,
+    bool fIsBlockTemplate)
 {
     AssertLockHeld(cs_main);
     assert(pindexPrev == chainActive.Tip());
@@ -5100,6 +5121,9 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
     // JoinSplit proofs are verified in ConnectBlock
     auto verifier = ProofVerifier::Disabled();
 
+    bool fCheckMerkleRoot = !fIsBlockTemplate;
+    auto blockChecks = fIsBlockTemplate ? CheckAs::BlockTemplate : CheckAs::Block;
+
     // NOTE: CheckBlockHeader is called by CheckBlock
     if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev))
         return false;
@@ -5108,7 +5132,7 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
         return false;
     if (!ContextualCheckBlock(block, state, chainparams, pindexPrev, true))
         return false;
-    if (!ConnectBlock(block, state, &indexDummy, viewNew, chainparams, true, fCheckMerkleRoot))
+    if (!ConnectBlock(block, state, &indexDummy, viewNew, chainparams, true, blockChecks))
         return false;
     assert(state.IsValid());
 
