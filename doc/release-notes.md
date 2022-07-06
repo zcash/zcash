@@ -45,6 +45,10 @@ Option handling
 RPC interface
 -------------
 
+- The `getblocktemplate` RPC method now skips proof and signature checks on
+  templates it creates, as these templates only include transactions that have
+  previously been checked when being added to the mempool.
+
 - The `getrawtransaction` RPC method now includes details about Orchard actions
   within transactions.
 
