@@ -7,7 +7,7 @@
 #ifdef ENABLE_WALLET
 #include "wallet/crypter.h"
 #endif
-#include "utiltest.h"
+#include "util/test.h"
 #include "zcash/Address.hpp"
 
 #include "json_test_vectors.h"

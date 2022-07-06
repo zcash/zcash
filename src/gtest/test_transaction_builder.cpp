@@ -9,7 +9,7 @@
 #include "transaction_builder.h"
 #include "gtest/test_transaction_builder.h"
 #include "gtest/utils.h"
-#include "utiltest.h"
+#include "util/test.h"
 #include "zcash/Address.hpp"
 #include "zcash/address/mnemonic.h"
 

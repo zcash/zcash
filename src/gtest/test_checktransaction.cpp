@@ -6,7 +6,7 @@
 #include "consensus/validation.h"
 #include "transaction_builder.h"
 #include "gtest/utils.h"
-#include "utiltest.h"
+#include "util/test.h"
 #include "zcash/JoinSplit.hpp"
 
 #include <librustzcash.h>

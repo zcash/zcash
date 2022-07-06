@@ -9,7 +9,7 @@
 #include "mempool_limit.h"
 #include "gtest/utils.h"
 #include "util/time.h"
-#include "utiltest.h"
+#include "util/test.h"
 #include "transaction_builder.h"
 
 

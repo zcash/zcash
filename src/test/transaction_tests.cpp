@@ -25,7 +25,7 @@
 #include "test/test_util.h"
 #include "primitives/transaction.h"
 #include "transaction_builder.h"
-#include "utiltest.h"
+#include "util/test.h"
 
 #include <array>
 #include <map>

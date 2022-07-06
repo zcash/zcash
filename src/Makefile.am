@@ -287,7 +287,7 @@ BITCOIN_CORE_H = \
   util/match.h \
   util/moneystr.h \
   util/strencodings.h \
-  utiltest.h \
+  util/test.h \
   util/time.h \
   validationinterface.h \
   version.h \
@@ -468,7 +468,7 @@ libbitcoin_common_a_SOURCES = \
   script/sign.cpp \
   script/standard.cpp \
   transaction_builder.cpp \
-  utiltest.cpp \
+  util/test.cpp \
   warnings.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)

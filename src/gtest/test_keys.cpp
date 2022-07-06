@@ -2,7 +2,7 @@
 #include <key_io.h>
 #include <zcash/Address.hpp>
 
-#include "utiltest.h"
+#include "util/test.h"
 
 #include <variant>
 

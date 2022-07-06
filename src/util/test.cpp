@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-#include "utiltest.h"
+#include "util/test.h"
 
 #include "consensus/upgrades.h"
 #include "transaction_builder.h"

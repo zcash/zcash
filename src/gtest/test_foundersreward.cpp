@@ -15,7 +15,7 @@
 #include <set>
 #include <vector>
 #include "util/system.h"
-#include "utiltest.h"
+#include "util/test.h"
 
 // To run tests:
 // ./zcash-gtest --gtest_filter="FoundersRewardTest.*"

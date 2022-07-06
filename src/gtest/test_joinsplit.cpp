@@ -12,7 +12,7 @@
 #include "proof_verifier.h"
 #include "transaction_builder.h"
 #include "gtest/utils.h"
-#include "utiltest.h"
+#include "util/test.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"

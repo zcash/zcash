@@ -11,7 +11,7 @@
 #include "uint256.h"
 #include "util/system.h"
 #include "util/strencodings.h"
-#include "utiltest.h"
+#include "util/test.h"
 #include "test/test_bitcoin.h"
 
 #include "zcash/Address.hpp"

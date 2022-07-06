@@ -25,7 +25,7 @@
 #include "streams.h"
 #include "transaction_builder.h"
 #include "txdb.h"
-#include "utiltest.h"
+#include "util/test.h"
 #include "wallet/wallet.h"
 
 #include "zcbenchmarks.h"

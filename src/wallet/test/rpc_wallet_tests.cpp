@@ -21,7 +21,7 @@
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 
 #include "init.h"
-#include "utiltest.h"
+#include "util/test.h"
 
 #include "test/test_bitcoin.h"
 #include "test/test_util.h"

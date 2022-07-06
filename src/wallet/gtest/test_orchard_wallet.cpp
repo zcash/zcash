@@ -4,7 +4,7 @@
 #include "consensus/validation.h"
 #include "random.h"
 #include "transaction_builder.h"
-#include "utiltest.h"
+#include "util/test.h"
 #include "wallet/orchard.h"
 #include "zcash/Address.hpp"
 

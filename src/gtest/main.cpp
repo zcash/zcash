@@ -4,7 +4,7 @@
 #include "pubkey.h"
 #include "random.h"
 #include "util/system.h"
-#include "utiltest.h"
+#include "util/test.h"
 
 #include "librustzcash.h"
 #include <sodium.h>
