@@ -139,7 +139,10 @@ def run_cmd(results, case, zcash, name, args=[]):
         return None
 
 def wait_for_balance(zcash, zaddr, expected=None, minconf=1):
-    print('Waiting for funds to %s...' % zaddr)
+    if (minconf == 1):
+        print('Waiting for funds to %s...' % zaddr)
+    else:
+        print('Waiting for funds to %s to receive %d confirmations...' % (zaddr, minconf))
     unconfirmed_balance = Decimal(zcash.z_getbalance(zaddr, 0)).quantize(Decimal('1.00000000'))
     print('Expecting: %s; Unconfirmed Balance: %s' % (expected, unconfirmed_balance))
     if expected is not None and unconfirmed_balance != expected:
