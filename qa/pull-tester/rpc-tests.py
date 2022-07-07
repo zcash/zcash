@@ -30,7 +30,6 @@ SERIAL_SCRIPTS = [
     # These tests involve enough shielded spends (consuming all CPU
     # cores) that we can't run them in parallel.
     'mergetoaddress_sapling.py',
-    'mergetoaddress_sprout.py',
     'wallet_shieldingcoinbase.py',
 ]
 
