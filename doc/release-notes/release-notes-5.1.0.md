@@ -46,8 +46,8 @@ RPC interface
   templates it creates, as these templates only include transactions that have
   previously been checked when being added to the mempool.
 
-- The `getrawtransaction` RPC method now includes details about Orchard actions
-  within transactions.
+- The `getrawtransaction` and `decoderawtransaction` RPC methods now include
+  details about Orchard actions within transactions.
 
 Wallet
 ------
