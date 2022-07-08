@@ -712,8 +712,8 @@ void ThreadStartWalletNotifier()
                     // We know we have the genesis block.
                     assert(pindexFork != nullptr);
 
-                    if (pindexLastTip->nHeight < pindexFork->nHeight ||
-                        pindexLastTip->nHeight - pindexFork->nHeight < 100)
+                    if ((pindexLastTip->nHeight < pindexFork->nHeight || pindexLastTip->nHeight - pindexFork->nHeight < 100) &&
+                        !pindexLastTip->GetBlockPos().IsNull())
                     {
                         break;
                     }

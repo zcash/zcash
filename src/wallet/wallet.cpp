@@ -2693,7 +2693,12 @@ void CWallet::IncrementNoteWitnesses(
     // If we're at or beyond NU5 activation, update the Orchard note commitment tree.
     if (performOrchardWalletUpdates && consensus.NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5)) {
         assert(orchardWallet.AppendNoteCommitments(pindex->nHeight, *pblock));
-        assert(pindex->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
+        // This assertion slows scanning for blocks with few shielded transactions by an
+        // order of magnitude. It is only intended as a consistency check between the node
+        // and wallet computing trees. Commented out until we have figured out what is
+        // causing the slowness and fixed it.
+        // https://github.com/zcash/zcash/issues/6052
+        //assert(pindex->hashFinalOrchardRoot == orchardWallet.GetLatestAnchor());
     }
 
     // Update witness heights

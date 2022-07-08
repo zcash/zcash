@@ -561,18 +561,35 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state,
                           CBlockIndex *pindexPrev,
                           bool fCheckTransactions);
 
+/**
+ * How a given block should be checked.
+ *
+ * - `CheckAs::Block` applies all relevant block checks.
+ * - `CheckAs::BlockTemplate` is the same as `CheckAs::Block` except that proofs
+ *   and signatures are not validated, and the authDataRoot is not checked (as
+ *   the coinbase transaction is not fully complete).
+ * - `CheckAs::SlowBenchmark` is the same as `CheckAs::Block` except that the
+ *   authDataRoot is not checked (as the required history tree state is not
+ *   currently faked).
+ */
+enum class CheckAs {
+    Block,
+    BlockTemplate,
+    SlowBenchmark,
+};
+
 /** Apply the effects of this block (with given index) on the UTXO set represented by coins.
  *  Validity checks that depend on the UTXO set are also done; ConnectBlock()
  *  can fail if those validity checks fail (among other reasons). */
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins,
                   const CChainParams& chainparams,
-                  bool fJustCheck = false, bool fCheckAuthDataRoot = true);
+                  bool fJustCheck = false, CheckAs blockChecks = CheckAs::Block);
 
 /**
  * Check a block is completely valid from start to finish (only works on top
  * of our current best block, with cs_main held)
  */
-bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckMerkleRoot);
+bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fIsBlockTemplate);
 
 
 /**
