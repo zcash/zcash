@@ -138,8 +138,11 @@ def run_cmd(results, case, zcash, name, args=[]):
             results[case] = False
         return None
 
-def wait_for_balance(zcash, zaddr, expected=None):
-    print('Waiting for funds to %s...' % zaddr)
+def wait_for_balance(zcash, zaddr, expected=None, minconf=1):
+    if (minconf == 1):
+        print('Waiting for funds to %s...' % zaddr)
+    else:
+        print('Waiting for funds to %s to receive %d confirmations...' % (zaddr, minconf))
     unconfirmed_balance = Decimal(zcash.z_getbalance(zaddr, 0)).quantize(Decimal('1.00000000'))
     print('Expecting: %s; Unconfirmed Balance: %s' % (expected, unconfirmed_balance))
     if expected is not None and unconfirmed_balance != expected:
@@ -148,7 +151,7 @@ def wait_for_balance(zcash, zaddr, expected=None):
     # Default timeout is 15 minutes
     ttl = 900
     while True:
-        balance = Decimal(zcash.z_getbalance(zaddr)).quantize(Decimal('1.00000000'))
+        balance = Decimal(zcash.z_getbalance(zaddr, minconf)).quantize(Decimal('1.00000000'))
         if (expected is not None and balance == unconfirmed_balance) or (expected is None and balance > 0):
             print('Received %s' % balance)
             return balance
@@ -221,7 +224,8 @@ def z_sendmany(results, case, zcash, from_addr, recipients):
         [{
             'address': to_addr,
             'amount': amount,
-        } for (to_addr, amount) in recipients]
+        } for (to_addr, amount) in recipients],
+        1 # minconf
     ])
 
 def check_z_sendmany(results, case, zcash, from_addr, recipients):
@@ -240,6 +244,10 @@ def check_z_sendmany_parallel(results, zcash, runs):
         for (to_addr, amount) in run[2]]
 
 def z_mergetoaddress(results, case, zcash, from_addrs, to_addr):
+    for addr in from_addrs:
+        balance = Decimal(zcash.z_getbalance(addr, 0)).quantize(Decimal('1.00000000'))
+        if balance > 0:
+            wait_for_balance(zcash, addr, balance, minconf=4)
     return async_txid_cmd(results, case, zcash, 'z_mergetoaddress', [from_addrs, to_addr])
 
 def check_z_mergetoaddress(results, case, zcash, from_addrs, to_addr, amount):
