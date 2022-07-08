@@ -52,6 +52,25 @@ RPC interface
 - The `getrawtransaction` RPC method now includes details about Orchard actions
   within transactions.
 
+Wallet
+------
+
+- Rescan performance of post-NU5 blocks has been slightly improved (overall
+  rescan time for a single-account wallet decreases by around 6% on a Ryzen 9
+  5950X). Further improvements will be implemented in future releases to help
+  mitigate the effect of blocks full of shielded outputs.
+
+- The `CWallet::UpdatedTransaction` signal is no longer called while holding the
+  `cs_main` lock. This fixes an issue where RPCs could block for long periods of
+  time on `zcashd` nodes with large wallets. Downstream code forks that have
+  reconnected the `NotifyTransactionChanged` wallet signal should take note of
+  this change, and not rely there on access to globals protected by `cs_main`.
+
+- Some `zcashd 5.0.0` nodes would shut down some time after start with the error
+  `ThreadNotifyWallets: Failed to read block X while notifying wallets of block disconnects`.
+  `zcashd` now attempts to rectify the situation, and otherwise will inform the
+  user before shutting down that a reindex is required.
+
 Deprecated
 ----------
 
