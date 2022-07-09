@@ -38,7 +38,6 @@ BASE_SCRIPTS= [
     # Longest test should go first, to favor running tests in parallel
     # vv Tests less than 5m vv
     'wallet.py',
-    'wallet_shieldcoinbase_sprout.py',
     'sprout_sapling_migration.py',
     'remove_sprout_shielding.py',
     'zcjoinsplitdoublespend.py',
