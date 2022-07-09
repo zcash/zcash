@@ -180,12 +180,6 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     }
     CAmount targetAmount = sendAmount + fee;
 
-    // When spending transparent coinbase outputs, all inputs must be fully
-    // consumed, and they may only be sent to shielded recipients.
-    if (spendable.HasTransparentCoinbase() && spendable.Total() != targetAmount) {
-        return ChangeNotAllowedError(spendable.Total(), targetAmount);
-    }
-
     // This is a simple greedy algorithm to attempt to preserve requested
     // transactional privacy while moving as much value to the most recent pool
     // as possible.  This will also perform opportunistic shielding if the
@@ -308,8 +302,14 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
         }
     }
 
-    if (spendable.orchardNoteMetadata.size() > this->maxOrchardActions) {
-        return ExcessOrchardActionsError(spendable.orchardNoteMetadata.size());
+    // When spending transparent coinbase outputs, all inputs must be fully
+    // consumed, and they may only be sent to shielded recipients.
+    if (spendableMut.HasTransparentCoinbase() && spendableMut.Total() != targetAmount) {
+        return ChangeNotAllowedError(spendableMut.Total(), targetAmount);
+    }
+
+    if (spendableMut.orchardNoteMetadata.size() > this->maxOrchardActions) {
+        return ExcessOrchardActionsError(spendableMut.orchardNoteMetadata.size());
     }
 
     return resolved;
