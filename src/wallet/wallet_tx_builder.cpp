@@ -232,12 +232,6 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
         return InsufficientFundsError(spendableMut.Total(), targetAmount);
     }
 
-    // When spending transparent coinbase outputs, all inputs must be fully
-    // consumed, and they may only be sent to shielded recipients.
-    if (spendableMut.HasTransparentCoinbase() && spendableMut.Total() != targetAmount) {
-        return ChangeNotAllowedError(spendableMut.Total(), targetAmount);
-    }
-
     // This is a simple greedy algorithm to attempt to preserve requested
     // transactional privacy while moving as much value to the most recent pool
     // as possible.  This will also perform opportunistic shielding if the
@@ -361,6 +355,12 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
         } else {
             return InsufficientFundsError(spendableMut.Total(), targetAmount);
         }
+    }
+
+    // When spending transparent coinbase outputs, all inputs must be fully
+    // consumed, and they may only be sent to shielded recipients.
+    if (spendableMut.HasTransparentCoinbase() && spendableMut.Total() != targetAmount) {
+        return ChangeNotAllowedError(spendableMut.Total(), targetAmount);
     }
 
     if (spendableMut.orchardNoteMetadata.size() > this->maxOrchardActions) {
