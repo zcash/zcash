@@ -43,17 +43,14 @@ static bool fDaemon;
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
-    // This is the main process thread, but after this point, all we do here is wait for
-    // shutdown, and then shut down the node.
-    RenameThread("zc-wait-to-stop");
-
-    bool fShutdown = ShutdownRequested();
     // Tell the main threads to shutdown.
-    while (!fShutdown)
+    while (!ShutdownRequested())
     {
         MilliSleep(200);
-        fShutdown = ShutdownRequested();
     }
+
+    RenameThread("zc-wait-to-stop");
+
     if (threadGroup)
     {
         Interrupt(*threadGroup);
