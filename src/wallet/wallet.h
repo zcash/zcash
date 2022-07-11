@@ -272,11 +272,23 @@ public:
      */
     int witnessHeight;
 
-    SproutNoteData() : address(), nullifier(), witnessHeight {-1} { }
+    /**
+     * (memory only) Block height at which this note was observed to be spent.
+     *
+     * This is used to prune the list of witnesses once we are guaranteed to
+     * never be unspending the note. If the node is restarted in the window
+     * between detecting the spend and pruning the witnesses (or before the
+     * pruning is serialized to disk), then the spentness will likely not be
+     * re-detected until a rescan is performed (meaning that this note's
+     * witnesses will continue to be updated).
+     */
+    std::optional<int> spentHeight;
+
+    SproutNoteData() : address(), nullifier(), witnessHeight {-1}, spentHeight() { }
     SproutNoteData(libzcash::SproutPaymentAddress a) :
-            address {a}, nullifier(), witnessHeight {-1} { }
+            address {a}, nullifier(), witnessHeight {-1}, spentHeight() { }
     SproutNoteData(libzcash::SproutPaymentAddress a, uint256 n) :
-            address {a}, nullifier {n}, witnessHeight {-1} { }
+            address {a}, nullifier {n}, witnessHeight {-1}, spentHeight() { }
 
     ADD_SERIALIZE_METHODS;
 
@@ -309,14 +321,33 @@ public:
      * We initialize the height to -1 for the same reason as we do in SproutNoteData.
      * See the comment in that class for a full description.
      */
-    SaplingNoteData() : witnessHeight {-1}, nullifier() { }
+    SaplingNoteData() : witnessHeight {-1}, nullifier(), spentHeight() { }
     SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk) : ivk {ivk}, witnessHeight {-1}, nullifier() { }
     SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk, uint256 n) : ivk {ivk}, witnessHeight {-1}, nullifier(n) { }
 
     std::list<SaplingWitness> witnesses;
+    /**
+     * The height of the most recently-witnessed block for this note, or -1 if
+     * no block has ever been witnessed.
+     *
+     * If the note has been spent, this is equal to the height of the last block
+     * after the note was spent for which this note was witnessed.
+     */
     int witnessHeight;
     libzcash::SaplingIncomingViewingKey ivk;
     std::optional<uint256> nullifier;
+
+    /**
+     * (memory only) Block height at which this note was observed to be spent.
+     *
+     * This is used to prune the list of witnesses once we are guaranteed to
+     * never be unspending the note. If the node is restarted in the window
+     * between detecting the spend and pruning the witnesses (or before the
+     * pruning is serialized to disk), then the spentness will likely not be
+     * re-detected until a rescan is performed (meaning that this note's
+     * witnesses will continue to be updated).
+     */
+    std::optional<int> spentHeight;
 
     ADD_SERIALIZE_METHODS;
 

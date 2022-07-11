@@ -2534,6 +2534,37 @@ void CWallet::ClearNoteWitnessCache()
 }
 
 template<typename NoteDataMap>
+void UpdateSpentHeightAndMaybePruneWitnesses(NoteDataMap& noteDataMap, int indexHeight, const uint256& nullifier)
+{
+    for (auto& item : noteDataMap) {
+        auto* nd = &(item.second);
+
+        // If the note has no witnesses, then either the note has not been mined
+        // (and thus cannot be spent at this height), or has been spent for long
+        // enough that we will never unspend it. Either way, we can skip the
+        // spentness check and pruning.
+        if (nd->witnesses.empty()) continue;
+
+        // Update spent heights on Sprout and Sapling note data. We know here that
+        // the block is in the main chain (or else this function wouldn't have been
+        // called with it), so any nullifier that appears in it is by definition a
+        // spend. If the note has no nullifier, we can't do a spentness check.
+        if (nd->nullifier.has_value() && nd->nullifier.value() == nullifier) {
+            nd->spentHeight = indexHeight;
+        }
+
+        // Prune witnesses for notes spent more than WITNESS_CACHE_SIZE blocks ago,
+        // so we stop updating their witnesses. This is safe to do because we know
+        // we won't roll back more than WITNESS_CACHE_SIZE blocks due to checks
+        // elsewhere in the code.
+        if (nd->spentHeight.has_value() && nd->spentHeight.value() + WITNESS_CACHE_SIZE < indexHeight) {
+            nd->witnesses.clear();
+            nd->witnessHeight = -1;
+        }
+    }
+}
+
+template<typename NoteDataMap>
 void CopyPreviousWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t nWitnessCacheSize)
 {
     for (auto& item : noteDataMap) {
@@ -2546,8 +2577,12 @@ void CopyPreviousWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t nW
             // have been decremented, and we are incrementing the blocks
             // immediately after.
             assert(nWitnessCacheSize >= nd->witnesses.size());
-            // Witnesses being incremented should always be either -1
-            // (never incremented or decremented) or one below indexHeight
+            // `witnessHeight` should only be in one of two cases:
+            // - -1, indicating that this note does not need to track witnesses.
+            //   This may be because the note is not mined, or because the note
+            //   was spent long enough ago that its witness cache was cleared.
+            // - The height prior to the current height, indicating that this
+            //   note is being actively incremented.
             assert((nd->witnessHeight == -1) || (nd->witnessHeight == indexHeight - 1));
             // Copy the witness for the previous block if we have one
             if (nd->witnesses.size() > 0) {
@@ -2610,8 +2645,21 @@ void UpdateWitnessHeights(NoteDataMap& noteDataMap, int indexHeight, int64_t nWi
 {
     for (auto& item : noteDataMap) {
         auto* nd = &(item.second);
+        // At this point, we can be in one of three cases:
+        // - Notes with a witnessHeight greater than indexHeight are not updated
+        //   (as this is a rescan).
+        // - All newly and actively witnessed notes will have a witness height
+        //   below indexHeight and at least one witness, for which we need to
+        //   set the note's witnessHeight accurately.
+        // - Any note we are not witnessing because either it hasn't been mined
+        //   yet or it was spent more than WITNESS_CACHE_SIZE blocks ago, is
+        //   guaranteed to have no witnesses and a witnessHeight of -1.
         if (nd->witnessHeight < indexHeight) {
-            nd->witnessHeight = indexHeight;
+            if (nd->witnesses.empty()) {
+                assert(nd->witnessHeight == -1);
+            } else {
+                nd->witnessHeight = indexHeight;
+            }
             // Check the validity of the cache
             // See comment in CopyPreviousWitnesses about validity.
             assert(nWitnessCacheSize >= nd->witnesses.size());
@@ -2627,6 +2675,38 @@ void CWallet::IncrementNoteWitnesses(
         bool performOrchardWalletUpdates)
 {
     LOCK(cs_wallet);
+
+    // Read the block from disk if we don't already have it.
+    const CBlock* pblock {pblockIn};
+    CBlock block;
+    if (!pblock) {
+        ReadBlockFromDisk(block, pindex, consensus);
+        pblock = &block;
+    }
+
+    // Update the wallet's note maps for spentness changes.
+    for (const CTransaction& tx : pblock->vtx) {
+        if (!tx.vJoinSplit.empty() || !tx.vShieldedSpend.empty()) {
+            for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+                // Sprout
+                for (const auto& jsdesc : tx.vJoinSplit) {
+                    for (const uint256& nullifier : jsdesc.nullifiers) {
+                        ::UpdateSpentHeightAndMaybePruneWitnesses(
+                            wtxItem.second.mapSproutNoteData, pindex->nHeight, nullifier);
+                    }
+                }
+                // Sapling
+                for (const auto& spend : tx.vShieldedSpend) {
+                    ::UpdateSpentHeightAndMaybePruneWitnesses(
+                        wtxItem.second.mapSaplingNoteData, pindex->nHeight, spend.nullifier);
+                }
+            }
+        }
+    }
+
+    // For any notes that still have stored witnesses (and thus are still being
+    // incremented), copy their previous witness so we have a starting point to
+    // which we can append this block's commitments.
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
        ::CopyPreviousWitnesses(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize);
        ::CopyPreviousWitnesses(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize);
@@ -2641,13 +2721,6 @@ void CWallet::IncrementNoteWitnesses(
 
     if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
         nWitnessCacheSize += 1;
-    }
-
-    const CBlock* pblock {pblockIn};
-    CBlock block;
-    if (!pblock) {
-        ReadBlockFromDisk(block, pindex, consensus);
-        pblock = &block;
     }
 
     for (const CTransaction& tx : pblock->vtx) {
@@ -2723,16 +2796,31 @@ void DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t n
             // See comment below (this would be invalid if there were a
             // prior decrement).
             assert(nWitnessCacheSize >= nd->witnesses.size());
-            // Witnesses being decremented should always be either -1
-            // (never incremented or decremented) or equal to the height
-            // of the block being removed (indexHeight)
+            // `witnessHeight` should only be in one of two cases:
+            // - -1, indicating that this note does not need to track witnesses.
+            //   This may be because the note is not mined, or because the note
+            //   was spent long enough ago that its witness cache was cleared.
+            // - The current height, indicating that this note is being actively
+            //   decremented.
             assert((nd->witnessHeight == -1) || (nd->witnessHeight == indexHeight));
             if (nd->witnesses.size() > 0) {
                 nd->witnesses.pop_front();
             }
-            // indexHeight is the height of the block being removed, so
-            // the new witness cache height is one below it.
-            nd->witnessHeight = indexHeight - 1;
+            if (nd->witnesses.empty()) {
+                // We are in one of three cases:
+                // - We weren't tracking witnesses, so we continue to not do so.
+                // - The note has been unmined (and we popped the last witnees
+                //   we were tracking), so we stop tracking witnesses.
+                // - A rollback greater than nWitnessCacheSize has occurred, in
+                //   which case CWallet::DecrementNoteWitnesses will fail an
+                //   assertion after this function returns (as expected, because
+                //   wallet assumptions are broken and we cannot progress).
+                nd->witnessHeight = -1;
+            } else {
+                // indexHeight is the height of the block being removed, so
+                // the new witness cache height is one below it.
+                nd->witnessHeight = indexHeight - 1;
+            }
         }
         // Check the validity of the cache
         // Technically if there are notes witnessed above the current
