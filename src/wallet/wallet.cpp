@@ -1488,7 +1488,10 @@ void CWallet::RunSaplingMigration(int blockHeight) {
         for (const CTransaction& transaction : pendingSaplingMigrationTxs) {
             // Send the transaction
             CWalletTx wtx(this, transaction);
-            CommitTransaction(wtx, std::nullopt);
+            CValidationState state;
+            if (!CommitTransaction(wtx, std::nullopt, state)) {
+                LogPrintf("Error: The Sapling migration transaction was rejected! Reason given: %s", state.GetRejectReason());
+            }
         }
         pendingSaplingMigrationTxs.clear();
     }
@@ -4524,7 +4527,8 @@ void CWallet::ReacceptWalletTransactions()
     // Try to add wallet transactions to memory pool
     for (std::pair<const int64_t, CWalletTx*>& item : mapSorted) {
         CWalletTx& wtx = *(item.second);
-        wtx.AcceptToMemoryPool(false);
+        CValidationState state;
+        wtx.AcceptToMemoryPool(state, false);
     }
 }
 
@@ -5586,7 +5590,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 /**
  * Call after CreateTransaction unless you want to abort
  */
-bool CWallet::CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_wrapper<CReserveKey>> reservekey)
+bool CWallet::CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_wrapper<CReserveKey>> reservekey, CValidationState& state)
 {
     {
         LOCK2(cs_main, cs_wallet);
@@ -5625,10 +5629,10 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_
         if (fBroadcastTransactions)
         {
             // Broadcast
-            if (!wtxNew.AcceptToMemoryPool(false))
+            if (!wtxNew.AcceptToMemoryPool(state, false))
             {
                 // This must not fail. The transaction has already been signed and recorded.
-                LogPrintf("CommitTransaction(): Error: Transaction not valid\n");
+                LogPrintf("CommitTransaction(): Error: Transaction not valid, %s\n", state.GetRejectReason());
                 return false;
             }
             wtxNew.RelayWalletTransaction();
@@ -6711,9 +6715,8 @@ int CMerkleTx::GetBlocksToMaturity() const
 }
 
 
-bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
+bool CMerkleTx::AcceptToMemoryPool(CValidationState& state, bool fLimitFree, bool fRejectAbsurdFee)
 {
-    CValidationState state;
     return ::AcceptToMemoryPool(Params(), mempool, state, *this, fLimitFree, NULL, fRejectAbsurdFee);
 }
 
