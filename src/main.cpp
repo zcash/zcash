@@ -36,7 +36,6 @@
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 #include "warnings.h"
 
-#include <algorithm>
 #include <atomic>
 #include <sstream>
 #include <variant>

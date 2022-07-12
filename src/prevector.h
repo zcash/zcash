@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <iterator>
+#include <utility>
 
 #pragma pack(push, 1)
 /** Implements a drop-in replacement for std::vector<T> which stores up to N
