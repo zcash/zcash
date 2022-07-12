@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+#include "consensus/merkle.h"
 #include "merkleblock.h"
 #include "serialize.h"
 #include "streams.h"
@@ -49,7 +50,7 @@ BOOST_AUTO_TEST_CASE(pmt_test1)
         }
 
         // calculate actual merkle root and height
-        uint256 merkleRoot1 = block.BuildMerkleTree();
+        uint256 merkleRoot1 = BlockMerkleRoot(block);
         std::vector<uint256> vTxid(nTx, uint256());
         for (unsigned int j=0; j<nTx; j++)
             vTxid[j] = block.vtx[j].GetHash();

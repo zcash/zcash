@@ -14,6 +14,7 @@
 #include "checkqueue.h"
 #include "consensus/consensus.h"
 #include "consensus/funding.h"
+#include "consensus/merkle.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "deprecation.h"
@@ -4729,6 +4730,9 @@ bool CheckBlock(const CBlock& block,
 {
     // These are checks that are independent of context.
 
+    if (block.fChecked)
+        return true;
+
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(block, state, chainparams, fCheckPOW))
@@ -4737,7 +4741,7 @@ bool CheckBlock(const CBlock& block,
     // Check the merkle root.
     if (fCheckMerkleRoot) {
         bool mutated;
-        uint256 hashMerkleRoot2 = block.BuildMerkleTree(&mutated);
+        uint256 hashMerkleRoot2 = BlockMerkleRoot(block, &mutated);
         if (block.hashMerkleRoot != hashMerkleRoot2)
             return state.DoS(100, error("CheckBlock(): hashMerkleRoot mismatch"),
                              REJECT_INVALID, "bad-txnmrklroot", true);
@@ -4786,6 +4790,9 @@ bool CheckBlock(const CBlock& block,
     if (nSigOps > MAX_BLOCK_SIGOPS)
         return state.DoS(100, error("CheckBlock(): out-of-bounds SigOpCount"),
                          REJECT_INVALID, "bad-blk-sigops", true);
+
+    if (fCheckPOW && fCheckMerkleRoot)
+        block.fChecked = true;
 
     return true;
 }

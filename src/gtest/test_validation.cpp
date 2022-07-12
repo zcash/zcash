@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include "consensus/merkle.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "main.h"
@@ -154,7 +155,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
     // Create a fake block. It doesn't need to contain any transactions; we just
     // need it to be in the global state when our fake view is used.
     CBlock block;
-    block.hashMerkleRoot = block.BuildMerkleTree();
+    block.hashMerkleRoot = BlockMerkleRoot(block);
     auto blockHash = block.GetHash();
     CBlockIndex fakeIndex {block};
     mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
@@ -226,14 +227,14 @@ TEST(Validation, ReceivedBlockTransactions) {
     // Create a fake genesis block
     CBlock block1;
     block1.vtx.push_back(GetValidSproutReceive(sk, 5, true));
-    block1.hashMerkleRoot = block1.BuildMerkleTree();
+    block1.hashMerkleRoot = BlockMerkleRoot(block1);
     CBlockIndex fakeIndex1 {block1};
 
     // Create a fake child block
     CBlock block2;
     block2.hashPrevBlock = block1.GetHash();
     block2.vtx.push_back(GetValidSproutReceive(sk, 10, true));
-    block2.hashMerkleRoot = block2.BuildMerkleTree();
+    block2.hashMerkleRoot = BlockMerkleRoot(block2);
     CBlockIndex fakeIndex2 {block2};
     fakeIndex2.pprev = &fakeIndex1;
 

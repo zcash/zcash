@@ -6,6 +6,7 @@
 #include "rpc/server.h"
 #include "rpc/client.h"
 
+#include "consensus/merkle.h"
 #include "fs.h"
 #include "key_io.h"
 #include "main.h"
@@ -1696,7 +1697,7 @@ void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
         BOOST_CHECK_EQUAL(height, chainActive.Height());
         CBlock block;
         if (has_trx) block.vtx.push_back(wtx);
-        block.hashMerkleRoot = block.BuildMerkleTree();
+        block.hashMerkleRoot = BlockMerkleRoot(block);
         auto blockHash = block.GetHash();
         CBlockIndex fakeIndex {block};
         fakeIndex.nHeight = height+1;

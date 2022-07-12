@@ -3,6 +3,7 @@
 
 #include "base58.h"
 #include "chainparams.h"
+#include "consensus/merkle.h"
 #include "fs.h"
 #include "key_io.h"
 #include "main.h"
@@ -233,7 +234,7 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     EXPECT_EQ(-1, chainActive.Height());
     CBlock block;
     block.vtx.push_back(wtx);
-    block.hashMerkleRoot = block.BuildMerkleTree();
+    block.hashMerkleRoot = BlockMerkleRoot(block);
     auto blockHash = block.GetHash();
     CBlockIndex fakeIndex {block};
     mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
@@ -273,7 +274,7 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     EXPECT_EQ(0, chainActive.Height());
     CBlock block2;
     block2.vtx.push_back(wtx2);
-    block2.hashMerkleRoot = block2.BuildMerkleTree();
+    block2.hashMerkleRoot = BlockMerkleRoot(block2);
     block2.hashPrevBlock = blockHash;
     auto blockHash2 = block2.GetHash();
     CBlockIndex fakeIndex2 {block2};
@@ -336,7 +337,7 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     EXPECT_EQ(1, chainActive.Height());
     CBlock block3;
     block3.vtx.push_back(wtx3);
-    block3.hashMerkleRoot = block3.BuildMerkleTree();
+    block3.hashMerkleRoot = BlockMerkleRoot(block3);
     block3.hashPrevBlock = blockHash2;
     auto blockHash3 = block3.GetHash();
     CBlockIndex fakeIndex3 {block3};
@@ -723,7 +724,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
         EXPECT_EQ(-1, chainActive.Height());
         CBlock block;
         block.vtx.push_back(wtx);
-        block.hashMerkleRoot = block.BuildMerkleTree();
+        block.hashMerkleRoot = BlockMerkleRoot(block);
         auto blockHash = block.GetHash();
         CBlockIndex fakeIndex {block};
         mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
@@ -852,7 +853,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     EXPECT_EQ(-1, chainActive.Height());
     CBlock block;
     block.vtx.push_back(wtx);
-    block.hashMerkleRoot = block.BuildMerkleTree();
+    block.hashMerkleRoot = BlockMerkleRoot(block);
     auto blockHash = block.GetHash();
     CBlockIndex fakeIndex {block};
     fakeIndex.hashFinalOrchardRoot = orchardTree.root();
@@ -969,7 +970,7 @@ TEST(WalletTests, SproutNullifierIsSpent) {
     EXPECT_EQ(-1, chainActive.Height());
     CBlock block;
     block.vtx.push_back(wtx2);
-    block.hashMerkleRoot = block.BuildMerkleTree();
+    block.hashMerkleRoot = BlockMerkleRoot(block);
     auto blockHash = block.GetHash();
     CBlockIndex fakeIndex {block};
     mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
@@ -1023,7 +1024,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     EXPECT_EQ(-1, chainActive.Height());
     CBlock block;
     block.vtx.push_back(wtx);
-    block.hashMerkleRoot = block.BuildMerkleTree();
+    block.hashMerkleRoot = BlockMerkleRoot(block);
     auto blockHash = block.GetHash();
     CBlockIndex fakeIndex {block};
     mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
@@ -1112,7 +1113,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     EXPECT_EQ(-1, chainActive.Height());
     CBlock block;
     block.vtx.push_back(wtx);
-    block.hashMerkleRoot = block.BuildMerkleTree();
+    block.hashMerkleRoot = BlockMerkleRoot(block);
     auto blockHash = block.GetHash();
     CBlockIndex fakeIndex {block};
     mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
@@ -1241,7 +1242,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         EXPECT_EQ(-1, chainActive.Height());
         CBlock block;
         block.vtx.push_back(wtx);
-        block.hashMerkleRoot = block.BuildMerkleTree();
+        block.hashMerkleRoot = BlockMerkleRoot(block);
         auto blockHash = block.GetHash();
         CBlockIndex fakeIndex {block};
         mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
@@ -1316,7 +1317,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         EXPECT_EQ(0, chainActive.Height());
         CBlock block2;
         block2.vtx.push_back(wtx2);
-        block2.hashMerkleRoot = block2.BuildMerkleTree();
+        block2.hashMerkleRoot = BlockMerkleRoot(block2);
         block2.hashPrevBlock = blockHash;
         auto blockHash2 = block2.GetHash();
         CBlockIndex fakeIndex2 {block2};
@@ -2100,7 +2101,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     EXPECT_EQ(-1, chainActive.Height());
     CBlock block;
     block.vtx.push_back(wtx);
-    block.hashMerkleRoot = block.BuildMerkleTree();
+    block.hashMerkleRoot = BlockMerkleRoot(block);
     auto blockHash = block.GetHash();
     CBlockIndex fakeIndex {block};
     mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
@@ -2249,7 +2250,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     SproutMerkleTree sproutTree;
     CBlock block;
     block.vtx.push_back(wtx);
-    block.hashMerkleRoot = block.BuildMerkleTree();
+    block.hashMerkleRoot = BlockMerkleRoot(block);
     auto blockHash = block.GetHash();
     CBlockIndex fakeIndex {block};
     mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));

@@ -3,6 +3,7 @@
 
 #include "main.h"
 #include "primitives/transaction.h"
+#include "consensus/merkle.h"
 #include "consensus/validation.h"
 #include "transaction_builder.h"
 #include "util/test.h"
@@ -271,7 +272,7 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     EXPECT_EQ(-1, chainActive.Height());
     CBlock block;
     block.vtx.push_back(wtx);
-    block.hashMerkleRoot = block.BuildMerkleTree();
+    block.hashMerkleRoot = BlockMerkleRoot(block);
     auto blockHash = block.GetHash();
     CBlockIndex fakeIndex {block};
     mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));

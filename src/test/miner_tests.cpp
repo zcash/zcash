@@ -4,6 +4,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "arith_uint256.h"
+#include "consensus/merkle.h"
 #include "consensus/validation.h"
 #include "main.h"
 #include "miner.h"
@@ -189,7 +190,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         pblock->vtx[0] = CTransaction(txCoinbase);
         if (txFirst.size() < 2)
             txFirst.push_back(new CTransaction(pblock->vtx[0]));
-        pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+        pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
         pblock->nNonce = uint256S(blockinfo[i].nonce_hex);
         pblock->nSolution = ParseHex(blockinfo[i].solution_hex);
 
