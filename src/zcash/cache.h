@@ -7,6 +7,8 @@
 
 #include "cuckoocache.h"
 
+#include <rust/cxx.h>
+
 #include <array>
 
 namespace libzcash
@@ -36,7 +38,7 @@ public:
 
 typedef CuckooCache::cache<BundleCacheEntry, BundleCacheHasher> BundleValidityCache;
 
-std::unique_ptr<BundleValidityCache> NewBundleValidityCache(size_t nMaxCacheSize);
+std::unique_ptr<BundleValidityCache> NewBundleValidityCache(rust::Str kind, size_t nMaxCacheSize);
 } // namespace libzcash
 
 template void CuckooCache::cache<libzcash::BundleCacheEntry, libzcash::BundleCacheHasher>::insert(libzcash::BundleCacheEntry e);

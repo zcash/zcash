@@ -7,12 +7,12 @@
 
 namespace libzcash
 {
-std::unique_ptr<BundleValidityCache> NewBundleValidityCache(size_t nMaxCacheSize)
+std::unique_ptr<BundleValidityCache> NewBundleValidityCache(rust::Str kind, size_t nMaxCacheSize)
 {
     auto cache = std::unique_ptr<BundleValidityCache>(new BundleValidityCache());
     size_t nElems = cache->setup_bytes(nMaxCacheSize);
-    LogPrintf("Using %zu MiB out of %zu requested for bundle cache, able to store %zu elements\n",
-              (nElems * sizeof(BundleCacheEntry)) >> 20, nMaxCacheSize >> 20, nElems);
+    LogPrintf("Using %zu MiB out of %zu requested for %s bundle cache, able to store %zu elements\n",
+              (nElems * sizeof(BundleCacheEntry)) >> 20, nMaxCacheSize >> 20, kind, nElems);
     return cache;
 }
 } // namespace libzcash

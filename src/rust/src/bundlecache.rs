@@ -13,7 +13,7 @@ mod ffi {
 
         type BundleValidityCache;
 
-        fn NewBundleValidityCache(bytes: usize) -> UniquePtr<BundleValidityCache>;
+        fn NewBundleValidityCache(kind: &str, bytes: usize) -> UniquePtr<BundleValidityCache>;
         fn insert(self: Pin<&mut BundleValidityCache>, entry: [u8; 32]);
         fn contains(&self, entry: &[u8; 32], erase: bool) -> bool;
     }
@@ -46,7 +46,7 @@ pub(crate) struct BundleValidityCache {
 }
 
 impl BundleValidityCache {
-    fn new(personalization: &[u8; 16], cache_bytes: usize) -> Self {
+    fn new(kind: &'static str, personalization: &[u8; 16], cache_bytes: usize) -> Self {
         // Use BLAKE2b to produce entries from bundles. It has a block size of 128 bytes,
         // into which we put:
         // - 32 byte nonce
@@ -65,7 +65,7 @@ impl BundleValidityCache {
 
         Self {
             hasher,
-            cache: ffi::NewBundleValidityCache(cache_bytes),
+            cache: ffi::NewBundleValidityCache(kind, cache_bytes),
         }
     }
 
@@ -84,7 +84,7 @@ impl BundleValidityCache {
             .as_bytes()
             .try_into()
             .map(CacheEntry)
-            .unwrap()
+            .expect("BLAKE2b configured with hash length of 32 so conversion cannot fail")
     }
 
     pub(crate) fn insert(&mut self, queued_entries: CacheEntries) {
@@ -117,10 +117,12 @@ static mut ORCHARD_BUNDLE_VALIDITY_CACHE: Option<RwLock<BundleValidityCache>> = 
 fn init(cache_bytes: usize) {
     BUNDLE_CACHES_LOADED.call_once(|| unsafe {
         SAPLING_BUNDLE_VALIDITY_CACHE = Some(RwLock::new(BundleValidityCache::new(
+            "Sapling",
             b"SaplingVeriCache",
             cache_bytes,
         )));
         ORCHARD_BUNDLE_VALIDITY_CACHE = Some(RwLock::new(BundleValidityCache::new(
+            "Orchard",
             b"OrchardVeriCache",
             cache_bytes,
         )));
