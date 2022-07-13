@@ -69,6 +69,7 @@ mod zcashd_orchard;
 
 mod address_ffi;
 mod builder_ffi;
+mod bundlecache;
 mod history_ffi;
 mod incremental_merkle_tree;
 mod incremental_merkle_tree_ffi;

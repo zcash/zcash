@@ -7,6 +7,8 @@
 // on the entire module.
 #![allow(clippy::too_many_arguments)]
 
+use std::convert::TryInto;
+
 use bellman::groth16::{prepare_verifying_key, Proof};
 use group::GroupEncoding;
 
@@ -17,12 +19,19 @@ use zcash_primitives::{
         redjubjub::{self, Signature},
         Nullifier,
     },
-    transaction::components::{sapling, Amount},
+    transaction::{
+        components::{sapling, Amount},
+        txid::{BlockTxCommitmentDigester, TxIdDigester},
+        Authorized, TransactionDigest,
+    },
 };
 use zcash_proofs::sapling::{self as sapling_proofs, SaplingVerificationContext};
 
 use super::GROTH_PROOF_SIZE;
 use super::{de_ct, SAPLING_OUTPUT_VK, SAPLING_SPEND_VK};
+use crate::bundlecache::{
+    sapling_bundle_validity_cache, sapling_bundle_validity_cache_mut, CacheEntries,
+};
 
 #[cxx::bridge(namespace = "sapling")]
 mod ffi {
@@ -82,13 +91,19 @@ mod ffi {
         ) -> bool;
 
         type BatchValidator;
-        fn init_batch_validator() -> Box<BatchValidator>;
+        fn init_batch_validator(cache_store: bool) -> Box<BatchValidator>;
         fn check_bundle(self: &mut BatchValidator, bundle: Box<Bundle>, sighash: [u8; 32]) -> bool;
         fn validate(self: &mut BatchValidator) -> bool;
     }
 }
 
 struct Bundle(sapling::Bundle<sapling::Authorized>);
+
+impl Bundle {
+    fn commitment<D: TransactionDigest<Authorized>>(&self, digester: D) -> D::SaplingDigest {
+        digester.digest_sapling(Some(&self.0))
+    }
+}
 
 struct BundleAssembler {
     shielded_spends: Vec<sapling::SpendDescription<sapling::Authorized>>,
@@ -325,10 +340,18 @@ impl Verifier {
     }
 }
 
-struct BatchValidator(Option<sapling_proofs::BatchValidator>);
+struct BatchValidatorInner {
+    validator: sapling_proofs::BatchValidator,
+    queued_entries: CacheEntries,
+}
 
-fn init_batch_validator() -> Box<BatchValidator> {
-    Box::new(BatchValidator(Some(sapling_proofs::BatchValidator::new())))
+struct BatchValidator(Option<BatchValidatorInner>);
+
+fn init_batch_validator(cache_store: bool) -> Box<BatchValidator> {
+    Box::new(BatchValidator(Some(BatchValidatorInner {
+        validator: sapling_proofs::BatchValidator::new(),
+        queued_entries: CacheEntries::new(cache_store),
+    })))
 }
 
 impl BatchValidator {
@@ -343,8 +366,29 @@ impl BatchValidator {
     /// `sighash` must be for the transaction this bundle is within.
     #[allow(clippy::boxed_local)]
     fn check_bundle(&mut self, bundle: Box<Bundle>, sighash: [u8; 32]) -> bool {
-        if let Some(validator) = &mut self.0 {
-            validator.check_bundle(bundle.0, sighash)
+        if let Some(inner) = &mut self.0 {
+            let cache = sapling_bundle_validity_cache();
+
+            // Compute the cache entry for this bundle.
+            let cache_entry = {
+                let bundle_commitment = bundle.commitment(TxIdDigester).unwrap();
+                let bundle_authorizing_commitment = bundle.commitment(BlockTxCommitmentDigester);
+                cache.compute_entry(
+                    bundle_commitment.as_bytes().try_into().unwrap(),
+                    bundle_authorizing_commitment.as_bytes().try_into().unwrap(),
+                    &sighash,
+                )
+            };
+
+            // Check if this bundle's validation result exists in the cache.
+            if cache.contains(cache_entry, &mut inner.queued_entries) {
+                true
+            } else {
+                // The bundle has been added to `inner.queued_entries` because it was not
+                // in the cache. We now check the bundle against the Sapling-specific
+                // consensus rules, and add its authorization to the validation batch.
+                inner.validator.check_bundle(bundle.0, sighash)
+            }
         } else {
             tracing::error!("sapling::BatchValidator has already been used");
             false
@@ -352,12 +396,21 @@ impl BatchValidator {
     }
 
     fn validate(&mut self) -> bool {
-        if let Some(validator) = self.0.take() {
-            validator.validate(
+        if let Some(inner) = self.0.take() {
+            if inner.validator.validate(
                 unsafe { SAPLING_SPEND_VK.as_ref() }.unwrap(),
                 unsafe { SAPLING_OUTPUT_VK.as_ref() }.unwrap(),
                 OsRng,
-            )
+            ) {
+                // `Self::validate()` is only called if every `Self::check_bundle()`
+                // returned `true`, so at this point every bundle that was added to
+                // `inner.queued_entries` has valid authorization and satisfies the
+                // Sapling-specific consensus rules.
+                sapling_bundle_validity_cache_mut().insert(inner.queued_entries);
+                true
+            } else {
+                false
+            }
         } else {
             tracing::error!("sapling::BatchValidator has already been used");
             false

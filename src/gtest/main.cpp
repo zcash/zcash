@@ -11,6 +11,8 @@
 #include <sodium.h>
 #include <tracing.h>
 
+#include <rust/bundlecache.h>
+
 #include <boost/filesystem.hpp>
 
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
@@ -66,7 +68,8 @@ public:
 int main(int argc, char **argv) {
   assert(sodium_init() != -1);
   ECC_Start();
-  InitSignatureCache();
+    InitSignatureCache(DEFAULT_MAX_SIG_CACHE_SIZE * ((size_t) 1 << 20));
+    bundlecache::init(DEFAULT_MAX_SIG_CACHE_SIZE * ((size_t) 1 << 20));
 
     // Log all errors to a common test file.
     fs::path tmpPath = fs::temp_directory_path();

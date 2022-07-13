@@ -47,16 +47,19 @@ endif
 # TODO: Figure out how to avoid an explicit file list.
 CXXBRIDGE_RS = \
   rust/src/blake2b.rs \
+  rust/src/bundlecache.rs \
   rust/src/equihash.rs \
   rust/src/orchard_bundle.rs \
   rust/src/sapling.rs
 CXXBRIDGE_H = \
   rust/gen/include/rust/blake2b.h \
+  rust/gen/include/rust/bundlecache.h \
   rust/gen/include/rust/equihash.h \
   rust/gen/include/rust/orchard_bundle.h \
   rust/gen/include/rust/sapling.h
 CXXBRIDGE_CPP = \
   rust/gen/src/blake2b.cpp \
+  rust/gen/src/bundlecache.cpp \
   rust/gen/src/equihash.cpp \
   rust/gen/src/orchard_bundle.cpp \
   rust/gen/src/sapling.cpp
@@ -174,6 +177,7 @@ LIBZCASH_H = \
   zcash/address/sprout.hpp \
   zcash/address/unified.h \
   zcash/address/zip32.h \
+  zcash/cache.h \
   zcash/History.hpp \
   zcash/JoinSplit.hpp \
   zcash/Note.hpp \
@@ -613,6 +617,7 @@ libzcash_a_SOURCES = \
   zcash/address/sprout.cpp \
   zcash/address/unified.cpp \
   zcash/address/zip32.cpp \
+  zcash/cache.cpp \
   zcash/History.cpp \
   zcash/JoinSplit.cpp \
   zcash/Note.cpp \
