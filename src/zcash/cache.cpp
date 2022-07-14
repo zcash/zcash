@@ -16,3 +16,7 @@ std::unique_ptr<BundleValidityCache> NewBundleValidityCache(rust::Str kind, size
     return cache;
 }
 } // namespace libzcash
+
+// Explicit instantiations for libzcash::BundleValidityCache
+template void libzcash::BundleValidityCache::insert(libzcash::BundleCacheEntry e);
+template bool libzcash::BundleValidityCache::contains(const libzcash::BundleCacheEntry& e, const bool erase) const;

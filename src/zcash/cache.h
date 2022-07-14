@@ -41,7 +41,4 @@ typedef CuckooCache::cache<BundleCacheEntry, BundleCacheHasher> BundleValidityCa
 std::unique_ptr<BundleValidityCache> NewBundleValidityCache(rust::Str kind, size_t nMaxCacheSize);
 } // namespace libzcash
 
-template void CuckooCache::cache<libzcash::BundleCacheEntry, libzcash::BundleCacheHasher>::insert(libzcash::BundleCacheEntry e);
-template bool CuckooCache::cache<libzcash::BundleCacheEntry, libzcash::BundleCacheHasher>::contains(const libzcash::BundleCacheEntry& e, const bool erase) const;
-
 #endif // ZCASH_ZCASH_CACHE_H
