@@ -2680,7 +2680,10 @@ void CWallet::IncrementNoteWitnesses(
     const CBlock* pblock {pblockIn};
     CBlock block;
     if (!pblock) {
-        ReadBlockFromDisk(block, pindex, consensus);
+        if (!ReadBlockFromDisk(block, pindex, consensus)) {
+            throw std::runtime_error(
+                strprintf("Can't read block %d from disk (%s)", pindex->nHeight, pindex->GetBlockHash().GetHex()));
+        }
         pblock = &block;
     }
 
@@ -4408,7 +4411,12 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
 
     while (pindex) {
         CBlock block;
-        ReadBlockFromDisk(block, pindex, Params().GetConsensus());
+        if (!ReadBlockFromDisk(block, pindex, Params().GetConsensus())) {
+            // CWallet::WitnessNoteCommitment is only called from the deprecated RPC
+            // methods `zc_raw_receive` and `zc_raw_joinsplit`.
+            throw std::runtime_error(
+                strprintf("Can't read block %d from disk (%s)", pindex->nHeight, pindex->GetBlockHash().GetHex()));
+        }
 
         for (const CTransaction& tx : block.vtx)
         {
@@ -4534,7 +4542,10 @@ int CWallet::ScanForWalletTransactions(
                 ShowProgress(_("Rescanning..."), std::max(1, std::min(99, (int)((Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), pindex, false) - dProgressStart) / (dProgressTip - dProgressStart) * 100))));
 
             CBlock block;
-            ReadBlockFromDisk(block, pindex, consensus);
+            if (!ReadBlockFromDisk(block, pindex, consensus)) {
+                throw std::runtime_error(
+                    strprintf("Can't read block %d from disk (%s)", pindex->nHeight, pindex->GetBlockHash().GetHex()));
+            }
             for (CTransaction& tx : block.vtx)
             {
                 if (AddToWalletIfInvolvingMe(consensus, tx, &block, pindex->nHeight, fUpdate)) {
