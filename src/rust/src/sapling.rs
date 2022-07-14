@@ -364,6 +364,10 @@ impl BatchValidator {
     /// it fails other consensus rules.
     ///
     /// `sighash` must be for the transaction this bundle is within.
+    ///
+    /// If this batch was configured to not cache the results, then if the bundle was in
+    /// the global bundle validity cache, it will have been removed (and this method will
+    /// return `true`).
     #[allow(clippy::boxed_local)]
     fn check_bundle(&mut self, bundle: Box<Bundle>, sighash: [u8; 32]) -> bool {
         if let Some(inner) = &mut self.0 {
@@ -395,6 +399,19 @@ impl BatchValidator {
         }
     }
 
+    /// Batch-validates the accumulated bundles.
+    ///
+    /// Returns `true` if every proof and signature in every bundle added to the batch
+    /// validator is valid, or `false` if one or more are invalid. No attempt is made to
+    /// figure out which of the accumulated bundles might be invalid; if that information
+    /// is desired, construct separate [`BatchValidator`]s for sub-batches of the bundles.
+    ///
+    /// This method MUST NOT be called if any prior call to `Self::check_bundle` returned
+    /// `false`.
+    ///
+    /// If this batch was configured to cache the results, then if this method returns
+    /// `true` every bundle added to the batch will have also been added to the global
+    /// bundle validity cache.
     fn validate(&mut self) -> bool {
         if let Some(inner) = self.0.take() {
             if inner.validator.validate(

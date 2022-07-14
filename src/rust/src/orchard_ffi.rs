@@ -238,9 +238,10 @@ pub extern "C" fn orchard_batch_validate(batch: *mut BatchValidator) -> bool {
         let vk =
             unsafe { crate::ORCHARD_VK.as_ref() }.expect("ORCHARD_VK should have been initialized");
         if batch.validator.validate(vk, OsRng) {
-            // `Self::validate()` is only called if every `Self::check_bundle()`
-            // returned `true`, so at this point every bundle that was added to
-            // `inner.queued_entries` has valid authorization.
+            // `BatchValidator::validate()` is only called if every
+            // `BatchValidator::check_bundle()` returned `true`, so at this point
+            // every bundle that was added to `inner.queued_entries` has valid
+            // authorization.
             orchard_bundle_validity_cache_mut().insert(batch.queued_entries);
             true
         } else {
