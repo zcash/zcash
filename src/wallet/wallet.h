@@ -262,21 +262,31 @@ public:
     std::list<SproutWitness> witnesses;
 
     /**
-     * Block height corresponding to the most current witness.
+     * The height of the most recently-witnessed block for this note.
      *
-     * When we first create a SproutNoteData in CWallet::FindMySproutNotes, this is set to
-     * -1 as a placeholder. The next time CWallet::ChainTip is called, we can
-     * determine what height the witness cache for this note is valid for (even
-     * if no witnesses were cached), and so can set the correct value in
-     * CWallet::IncrementNoteWitnesses and CWallet::DecrementNoteWitnesses.
+     * Set to -1 if the note is unmined, or if the note was spent long enough
+     * ago that we will never unspend it.
      */
     int witnessHeight;
 
-    SproutNoteData() : address(), nullifier(), witnessHeight {-1} { }
+    /**
+     * (memory only) Block height at which this note was observed to be spent.
+     *
+     * This is used to prune the list of witnesses once we are guaranteed to
+     * never be unspending the note. If the node is restarted in the window
+     * between detecting the spend and pruning the witnesses (or before the
+     * pruning is serialized to disk), then the spentness will likely not be
+     * re-detected until a rescan is performed (meaning that this note's
+     * witnesses will continue to be updated, which is only a performance
+     * rather than a correctness issue).
+     */
+    std::optional<int> spentHeight;
+
+    SproutNoteData() : address(), nullifier(), witnessHeight {-1}, spentHeight() { }
     SproutNoteData(libzcash::SproutPaymentAddress a) :
-            address {a}, nullifier(), witnessHeight {-1} { }
+            address {a}, nullifier(), witnessHeight {-1}, spentHeight() { }
     SproutNoteData(libzcash::SproutPaymentAddress a, uint256 n) :
-            address {a}, nullifier {n}, witnessHeight {-1} { }
+            address {a}, nullifier {n}, witnessHeight {-1}, spentHeight() { }
 
     ADD_SERIALIZE_METHODS;
 
@@ -309,14 +319,33 @@ public:
      * We initialize the height to -1 for the same reason as we do in SproutNoteData.
      * See the comment in that class for a full description.
      */
-    SaplingNoteData() : witnessHeight {-1}, nullifier() { }
+    SaplingNoteData() : witnessHeight {-1}, nullifier(), spentHeight() { }
     SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk) : ivk {ivk}, witnessHeight {-1}, nullifier() { }
     SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk, uint256 n) : ivk {ivk}, witnessHeight {-1}, nullifier(n) { }
 
     std::list<SaplingWitness> witnesses;
+    /**
+     * The height of the most recently-witnessed block for this note.
+     *
+     * Set to -1 if the note is unmined, or if the note was spent long enough
+     * ago that we will never unspend it.
+     */
     int witnessHeight;
     libzcash::SaplingIncomingViewingKey ivk;
     std::optional<uint256> nullifier;
+
+    /**
+     * (memory only) Block height at which this note was observed to be spent.
+     *
+     * This is used to prune the list of witnesses once we are guaranteed to
+     * never be unspending the note. If the node is restarted in the window
+     * between detecting the spend and pruning the witnesses (or before the
+     * pruning is serialized to disk), then the spentness will likely not be
+     * re-detected until a rescan is performed (meaning that this note's
+     * witnesses will continue to be updated, which is only a performance
+     * rather than a correctness issue).
+     */
+    std::optional<int> spentHeight;
 
     ADD_SERIALIZE_METHODS;
 
