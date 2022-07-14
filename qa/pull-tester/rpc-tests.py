@@ -147,7 +147,7 @@ BASE_SCRIPTS= [
 
 ZMQ_SCRIPTS = [
     # ZMQ test can only be run if bitcoin was built with zmq-enabled.
-    # call rpc_tests.py with -nozmq to explicitly exclude these tests.
+    # call rpc_tests.py with --nozmq to explicitly exclude these tests.
     "zmq_test.py"]
 
 EXTENDED_SCRIPTS = [
@@ -225,7 +225,7 @@ def main():
             import zmq
             zmq # Silences pyflakes
         except ImportError:
-            print("ERROR: \"import zmq\" failed. Use -nozmq to run without the ZMQ tests."
+            print("ERROR: \"import zmq\" failed. Use --nozmq to run without the ZMQ tests."
                   "To run zmq tests, see dependency info in /qa/README.md.")
             raise
 
