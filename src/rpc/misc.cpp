@@ -500,8 +500,7 @@ UniValue setmocktime(const UniValue& params, bool fHelp)
             "\nSet the local time to given timestamp (-regtest only).\n"
             "The node must be started with `-mocktime` in order to use this API.\n"
             "\nArguments:\n"
-            "1. timestamp  (integer, required) Unix seconds-since-epoch timestamp\n"
-            "   Pass 0 to go back to using the system time."
+            "1. timestamp  (integer, required) Unix seconds-since-epoch timestamp."
         );
 
     if (!Params().MineBlocksOnDemand())

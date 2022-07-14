@@ -15,7 +15,9 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread.hpp>
 
+// This guards accesses to FixedClock and OffsetClock.
 RecursiveMutex cs_clock;
+
 static CClock* zcashdClock = SystemClock::Instance();
 
 const CClock* GetNodeClock() {
