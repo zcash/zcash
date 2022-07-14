@@ -262,13 +262,10 @@ public:
     std::list<SproutWitness> witnesses;
 
     /**
-     * Block height corresponding to the most current witness.
+     * The height of the most recently-witnessed block for this note.
      *
-     * When we first create a SproutNoteData in CWallet::FindMySproutNotes, this is set to
-     * -1 as a placeholder. The next time CWallet::ChainTip is called, we can
-     * determine what height the witness cache for this note is valid for (even
-     * if no witnesses were cached), and so can set the correct value in
-     * CWallet::IncrementNoteWitnesses and CWallet::DecrementNoteWitnesses.
+     * Set to -1 if the note is unmined, or if the note was spent long enough
+     * ago that we will never unspend it.
      */
     int witnessHeight;
 
@@ -280,7 +277,8 @@ public:
      * between detecting the spend and pruning the witnesses (or before the
      * pruning is serialized to disk), then the spentness will likely not be
      * re-detected until a rescan is performed (meaning that this note's
-     * witnesses will continue to be updated).
+     * witnesses will continue to be updated, which is only a performance
+     * rather than a correctness issue).
      */
     std::optional<int> spentHeight;
 
@@ -327,11 +325,10 @@ public:
 
     std::list<SaplingWitness> witnesses;
     /**
-     * The height of the most recently-witnessed block for this note, or -1 if
-     * no block has ever been witnessed.
+     * The height of the most recently-witnessed block for this note.
      *
-     * If the note has been spent, this is equal to the height of the last block
-     * after the note was spent for which this note was witnessed.
+     * Set to -1 if the note is unmined, or if the note was spent long enough
+     * ago that we will never unspend it.
      */
     int witnessHeight;
     libzcash::SaplingIncomingViewingKey ivk;
@@ -345,7 +342,8 @@ public:
      * between detecting the spend and pruning the witnesses (or before the
      * pruning is serialized to disk), then the spentness will likely not be
      * re-detected until a rescan is performed (meaning that this note's
-     * witnesses will continue to be updated).
+     * witnesses will continue to be updated, which is only a performance
+     * rather than a correctness issue).
      */
     std::optional<int> spentHeight;
 
