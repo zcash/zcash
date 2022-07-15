@@ -46,6 +46,7 @@
 #include "wallet/walletdb.h"
 #endif
 #include "warnings.h"
+#include <chrono>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -834,6 +835,10 @@ bool InitSanityCheck(void)
     if (!glibc_sanity_test() || !glibcxx_sanity_test())
         return false;
 
+    if (!ChronoSanityCheck()) {
+        return InitError("Clock epoch mismatch. Aborting.");
+    }
+
     return true;
 }
 
@@ -1241,8 +1246,21 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     fAlerts = GetBoolArg("-alerts", DEFAULT_ALERTS);
 
-    // Option to startup with mocktime set (used for regression testing):
-    SetMockTime(GetArg("-mocktime", 0)); // SetMockTime(0) is a no-op
+    // Option to startup with mocktime set (used for regression testing);
+    // a mocktime of 0 (the default) selects the system clock.
+    int64_t nMockTime = GetArg("-mocktime", 0);
+    int64_t nOffsetTime = GetArg("-clockoffset", 0);
+    if (nMockTime != 0 && nOffsetTime != 0) {
+        return InitError(_("-mocktime and -clockoffset cannot be used together"));
+    } else if (nMockTime != 0) {
+        FixedClock::SetGlobal();
+        FixedClock::Instance()->Set(std::chrono::seconds(nMockTime));
+    } else if (nOffsetTime != 0) {
+        // Option to start a node with the system clock offset by a constant
+        // value throughout the life of the node (used for regression testing):
+        OffsetClock::SetGlobal();
+        OffsetClock::Instance()->Set(std::chrono::seconds(nOffsetTime));
+    }
 
     if (GetBoolArg("-peerbloomfilters", DEFAULT_PEERBLOOMFILTERS))
         nLocalServices |= NODE_BLOOM;

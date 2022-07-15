@@ -6,6 +6,7 @@
 #include "compat/sanity.h"
 #include "key.h"
 #include "test/test_bitcoin.h"
+#include "util/time.h"
 
 #include <boost/test/unit_test.hpp>
 
@@ -16,6 +17,7 @@ BOOST_AUTO_TEST_CASE(basic_sanity)
   BOOST_CHECK_MESSAGE(glibc_sanity_test() == true, "libc sanity test");
   BOOST_CHECK_MESSAGE(glibcxx_sanity_test() == true, "stdlib sanity test");
   BOOST_CHECK_MESSAGE(CKey::ECC_InitSanityCheck() == true, "ECC sanity test");
+  BOOST_CHECK_MESSAGE(ChronoSanityCheck() == true, "chrono epoch test");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

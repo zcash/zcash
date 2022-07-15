@@ -262,12 +262,14 @@ def initialize_chain(test_dir, num_nodes, cachedir):
                 shutil.rmtree(os.path.join(cachedir,"node"+str(i)))
 
         # Create cache directories, run bitcoinds:
+        block_time = int(time.time()) - (200 * PRE_BLOSSOM_BLOCK_TARGET_SPACING)
         for i in range(MAX_NODES):
             datadir=initialize_datadir(cachedir, i)
             args = [ os.getenv("ZCASHD", ZCASHD_BINARY), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
             args.extend([
                 '-nuparams=5ba81b19:1', # Overwinter
                 '-nuparams=76b809bb:1', # Sapling
+                '-mocktime=%d' % block_time
             ])
             if i > 0:
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
@@ -294,7 +296,6 @@ def initialize_chain(test_dir, num_nodes, cachedir):
         # Blocks are created with timestamps 2.5 minutes apart (matching the
         # chain defaulting above to Sapling active), starting 200 * 2.5 minutes
         # before the current time.
-        block_time = int(time.time()) - (200 * PRE_BLOSSOM_BLOCK_TARGET_SPACING)
         for i in range(2):
             for peer in range(4):
                 for j in range(25):

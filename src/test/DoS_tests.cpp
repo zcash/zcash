@@ -93,10 +93,12 @@ BOOST_AUTO_TEST_CASE(DoS_banscore)
 
 BOOST_AUTO_TEST_CASE(DoS_bantime)
 {
+    FixedClock::SetGlobal();
+
     const Consensus::Params& params = Params().GetConsensus();
     CNode::ClearBanned();
-    int64_t nStartTime = GetTime();
-    SetMockTime(nStartTime); // Overrides future calls to GetTime()
+    std::chrono::seconds nStartTime(GetTime());
+    FixedClock::Instance()->Set(nStartTime); // Overrides future calls to GetTime()
 
     CAddress addr(ip(0xa0b0c001));
     CNode dummyNode(INVALID_SOCKET, addr, "", true);
@@ -106,11 +108,13 @@ BOOST_AUTO_TEST_CASE(DoS_bantime)
     SendMessages(params, &dummyNode);
     BOOST_CHECK(CNode::IsBanned(addr));
 
-    SetMockTime(nStartTime+60*60);
+    FixedClock::Instance()->Set(nStartTime + std::chrono::seconds(60*60));
     BOOST_CHECK(CNode::IsBanned(addr));
 
-    SetMockTime(nStartTime+60*60*24+1);
+    FixedClock::Instance()->Set(nStartTime + std::chrono::seconds(60*60*24+1));
     BOOST_CHECK(!CNode::IsBanned(addr));
+
+    SystemClock::SetGlobal();
 }
 
 CTransaction RandomOrphan()

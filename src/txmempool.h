@@ -18,6 +18,7 @@
 #include "random.h"
 #include "addressindex.h"
 #include "spentindex.h"
+#include "util/time.h"
 
 #undef foreach
 #include "boost/multi_index_container.hpp"
@@ -209,7 +210,7 @@ private:
     std::map<uint256, const CTransaction*> mapSproutNullifiers;
     std::map<uint256, const CTransaction*> mapSaplingNullifiers;
     std::map<uint256, const CTransaction*> mapOrchardNullifiers;
-    RecentlyEvictedList* recentlyEvicted = new RecentlyEvictedList(DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES * 60);
+    RecentlyEvictedList* recentlyEvicted = new RecentlyEvictedList(GetNodeClock(), DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES * 60);
     WeightedTxTree* weightedTxTree = new WeightedTxTree(DEFAULT_MEMPOOL_TOTAL_COST_LIMIT);
 
     void checkNullifiers(ShieldedType type) const;
