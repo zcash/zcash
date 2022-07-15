@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <chrono>
 
 class CClock {
 public:
