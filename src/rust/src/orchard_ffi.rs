@@ -1,19 +1,19 @@
-use std::{mem, ptr};
+use std::{convert::TryInto, mem, ptr};
 
 use libc::size_t;
 use memuse::DynamicUsage;
 use orchard::{
-    bundle::{Authorized, BatchValidator},
-    keys::OutgoingViewingKey,
-    note_encryption::OrchardDomain,
-    Bundle,
+    bundle::Authorized, keys::OutgoingViewingKey, note_encryption::OrchardDomain, Bundle,
 };
 use rand_core::OsRng;
 use tracing::{debug, error};
 use zcash_note_encryption::try_output_recovery_with_ovk;
 use zcash_primitives::transaction::components::{orchard as orchard_serialization, Amount};
 
-use crate::streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb};
+use crate::{
+    bundlecache::{orchard_bundle_validity_cache, orchard_bundle_validity_cache_mut, CacheEntries},
+    streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb},
+};
 
 #[no_mangle]
 pub extern "C" fn orchard_bundle_clone(
@@ -145,12 +145,20 @@ pub extern "C" fn orchard_bundle_anchor(
     }
 }
 
+pub struct BatchValidator {
+    validator: orchard::bundle::BatchValidator,
+    queued_entries: CacheEntries,
+}
+
 /// Creates an Orchard bundle batch validation context.
 ///
 /// Please free this when you're done.
 #[no_mangle]
-pub extern "C" fn orchard_batch_validation_init() -> *mut BatchValidator {
-    let ctx = Box::new(BatchValidator::new());
+pub extern "C" fn orchard_batch_validation_init(cache_store: bool) -> *mut BatchValidator {
+    let ctx = Box::new(BatchValidator {
+        validator: orchard::bundle::BatchValidator::new(),
+        queued_entries: CacheEntries::new(cache_store),
+    });
     Box::into_raw(ctx)
 }
 
@@ -175,7 +183,31 @@ pub extern "C" fn orchard_batch_add_bundle(
     let sighash = unsafe { sighash.as_ref() };
 
     match (batch, bundle, sighash) {
-        (Some(batch), Some(bundle), Some(sighash)) => batch.add_bundle(bundle, *sighash),
+        (Some(batch), Some(bundle), Some(sighash)) => {
+            let cache = orchard_bundle_validity_cache();
+
+            // Compute the cache entry for this bundle.
+            let cache_entry = {
+                let bundle_commitment = bundle.commitment();
+                let bundle_authorizing_commitment = bundle.authorizing_commitment();
+                cache.compute_entry(
+                    bundle_commitment.0.as_bytes().try_into().unwrap(),
+                    bundle_authorizing_commitment
+                        .0
+                        .as_bytes()
+                        .try_into()
+                        .unwrap(),
+                    sighash,
+                )
+            };
+
+            // Check if this bundle's validation result exists in the cache.
+            if !cache.contains(cache_entry, &mut batch.queued_entries) {
+                // The bundle has been added to `inner.queued_entries` because it was not
+                // in the cache. We now add its authorization to the validation batch.
+                batch.validator.add_bundle(bundle, *sighash);
+            }
+        }
         (_, _, None) => error!("orchard_batch_add_bundle() called without sighash!"),
         (Some(_), None, Some(_)) => debug!("Tx has no Orchard component"),
         (None, Some(_), _) => debug!("Orchard BatchValidator not provided, assuming disabled."),
@@ -205,7 +237,16 @@ pub extern "C" fn orchard_batch_validate(batch: *mut BatchValidator) -> bool {
         let batch = unsafe { Box::from_raw(batch) };
         let vk =
             unsafe { crate::ORCHARD_VK.as_ref() }.expect("ORCHARD_VK should have been initialized");
-        batch.validate(vk, OsRng)
+        if batch.validator.validate(vk, OsRng) {
+            // `BatchValidator::validate()` is only called if every
+            // `BatchValidator::check_bundle()` returned `true`, so at this point
+            // every bundle that was added to `inner.queued_entries` has valid
+            // authorization.
+            orchard_bundle_validity_cache_mut().insert(batch.queued_entries);
+            true
+        } else {
+            false
+        }
     } else {
         // The orchard::BatchValidator C++ class uses null to represent a disabled batch
         // validator.

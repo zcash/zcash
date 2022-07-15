@@ -1994,11 +1994,11 @@ bool AcceptToMemoryPool(
         // This will be a single-transaction batch, which will be more efficient
         // than unbatched if the transaction contains at least one Sapling Spend
         // or at least two Sapling Outputs.
-        std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = sapling::init_batch_validator();
+        std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = sapling::init_batch_validator(true);
 
         // This will be a single-transaction batch, which is still more efficient as every
         // Orchard bundle contains at least two signatures.
-        std::optional<orchard::AuthValidator> orchardAuth = orchard::AuthValidator::Batch();
+        std::optional<orchard::AuthValidator> orchardAuth = orchard::AuthValidator::Batch(true);
 
         // Check shielded input signatures.
         if (!ContextualCheckShieldedInputs(
@@ -3094,14 +3094,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         fExpensiveChecks = false;
     }
 
+    // Don't cache results if we're actually connecting blocks (still consult the cache, though).
+    bool fCacheResults = fJustCheck;
+
     // proof verification is expensive, disable if possible
     auto verifier = fExpensiveChecks ? ProofVerifier::Strict() : ProofVerifier::Disabled();
 
     // Disable Sapling and Orchard batch validation if possible.
     std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = fExpensiveChecks ?
-        std::optional(sapling::init_batch_validator()) : std::nullopt;
+        std::optional(sapling::init_batch_validator(fCacheResults)) : std::nullopt;
     std::optional<orchard::AuthValidator> orchardAuth = fExpensiveChecks ?
-        orchard::AuthValidator::Batch() : orchard::AuthValidator::Disabled();
+        orchard::AuthValidator::Batch(fCacheResults) : orchard::AuthValidator::Disabled();
 
     // If in initial block download, and this block is an ancestor of a checkpoint,
     // and -ibdskiptxverification is set, disable all transaction checks.
@@ -3329,7 +3332,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             nFees += view.GetValueIn(tx)-tx.GetValueOut();
 
             std::vector<CScriptCheck> vChecks;
-            bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
             if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata.back(), chainparams.GetConsensus(), consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));

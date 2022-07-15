@@ -1325,7 +1325,7 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     // Coinbase transaction should pass contextual checks.
     EXPECT_TRUE(ContextualCheckTransaction(tx, state, chainparams, 10, 57));
 
-    std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = sapling::init_batch_validator();
+    std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = sapling::init_batch_validator(false);
     auto orchardAuth = orchard::AuthValidator::Disabled();
     auto heartwoodBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_HEARTWOOD].nBranchId;
 

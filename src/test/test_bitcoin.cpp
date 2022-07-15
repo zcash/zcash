@@ -33,6 +33,8 @@
 
 #include "librustzcash.h"
 
+#include <rust/bundlecache.h>
+
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 
 CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
@@ -50,7 +52,8 @@ BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
     ECC_Start();
     SetupEnvironment();
     SetupNetworking();
-    InitSignatureCache();
+    InitSignatureCache(DEFAULT_MAX_SIG_CACHE_SIZE * ((size_t) 1 << 20));
+    bundlecache::init(DEFAULT_MAX_SIG_CACHE_SIZE * ((size_t) 1 << 20));
 
     // Uncomment this to log all errors to stdout so we see them in test output.
     // We don't enable this by default because several tests intentionally cause

@@ -80,7 +80,7 @@ bool orchard_bundle_anchor(
 ///
 /// Please free this with `orchard_batch_validation_free` when you are done with
 /// it.
-OrchardBatchValidatorPtr* orchard_batch_validation_init();
+OrchardBatchValidatorPtr* orchard_batch_validation_init(bool cache_store);
 
 /// Frees a batch validator returned from `orchard_batch_validation_init`.
 void orchard_batch_validation_free(OrchardBatchValidatorPtr* batch);
@@ -153,9 +153,9 @@ public:
 
     /// Creates a validation context that batch-validates Orchard proofs and
     /// signatures.
-    static AuthValidator Batch() {
+    static AuthValidator Batch(bool cacheResult) {
         auto batch = AuthValidator();
-        batch.inner.reset(orchard_batch_validation_init());
+        batch.inner.reset(orchard_batch_validation_init(cacheResult));
         return batch;
     }
 
