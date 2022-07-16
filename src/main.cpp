@@ -3094,8 +3094,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         fExpensiveChecks = false;
     }
 
-    // Don't cache results if we're actually connecting blocks (still consult the cache, though).
-    bool fCacheResults = fJustCheck;
+    // Don't cache results if we're actually connecting blocks or benchmarking
+    // (still consult the cache, though, which will be empty for benchmarks).
+    bool fCacheResults = fJustCheck && (blockChecks != CheckAs::SlowBenchmark);
 
     // proof verification is expensive, disable if possible
     auto verifier = fExpensiveChecks ? ProofVerifier::Strict() : ProofVerifier::Disabled();
