@@ -34,12 +34,12 @@ class GetBlockTemplateTest(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 1
-        self.setup_clean_chain = True
+        self.cache_behavior = 'sprout'
 
     def setup_network(self, split=False):
         args = [
-            nuparams(CANOPY_BRANCH_ID, 115),
-            nuparams(NU5_BRANCH_ID, 130),
+            nuparams(CANOPY_BRANCH_ID, 215),
+            nuparams(NU5_BRANCH_ID, 230),
         ]
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [args] * self.num_nodes)
         self.is_network_split = False
@@ -128,22 +128,14 @@ class GetBlockTemplateTest(BitcoinTestFramework):
     def run_test(self):
         node = self.node
 
-        # Generate Sprout funds before Canopy activates; using the Sprout address will
-        # force the generation of v4 transactions from NU5.
-        print("Generating pre-Canopy blocks to create sprout funds")
-        # coinbase only becomes mature after 100 blocks, so make one mature.
-        node.generate(105)
-
-        self.sprout_addr = node.z_getnewaddress('sprout')
-        myopid = node.z_shieldcoinbase('*', self.sprout_addr)['opid']
-        wait_and_assert_operationid_status(node, myopid)
+        self.sprout_addr = node.listaddresses()[0]['sprout']['addresses'][0]
 
         self.transparent_addr = node.getnewaddress()
         account = node.z_getnewaccount()['account']
         self.unified_addr = node.z_getaddressforaccount(account)['address']
-        node.generate(15)
+        node.generate(20)
 
-        # at height 120, NU5 is not active
+        # at height 220, NU5 is not active
         assert_equal(node.getblockchaininfo()['upgrades'][nustr(NU5_BRANCH_ID)]['status'], 'pending')
 
         print("Testing getblocktemplate for pre-NU5")

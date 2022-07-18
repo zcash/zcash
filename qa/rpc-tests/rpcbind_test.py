@@ -29,7 +29,7 @@ class RPCBindTest(BitcoinTestFramework):
 
     def __init__(self):
         super().__init__()
-        self.setup_clean_chain = True
+        self.cache_behavior = 'clean'
         self.num_nodes = 1
 
     def setup_network(self):

@@ -17,7 +17,7 @@ class TxExpiryDoSTest(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 1
-        self.setup_clean_chain = True
+        self.cache_behavior = 'clean'
 
     def setup_network(self):
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)

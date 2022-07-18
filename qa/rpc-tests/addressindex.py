@@ -46,7 +46,7 @@ class AddressIndexTest(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 4
-        self.setup_clean_chain = True
+        self.cache_behavior = 'clean'
 
     def setup_network(self):
         # -insightexplorer causes addressindex to be enabled (fAddressIndex = true)

@@ -146,7 +146,6 @@ class EstimateFeeTest(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 3
-        self.setup_clean_chain = False
 
     def setup_network(self):
         '''

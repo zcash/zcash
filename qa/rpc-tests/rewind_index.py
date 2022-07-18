@@ -18,7 +18,7 @@ class RewindBlockIndexTest (BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 3
-        self.setup_clean_chain = True
+        self.cache_behavior = 'clean'
 
     def setup_network(self, split=False):
         # Node 0 - Overwinter, then Sprout, then Overwinter again

@@ -28,7 +28,6 @@ class BlockchainTest(BitcoinTestFramework):
 
     def __init__(self):
         super().__init__()
-        self.setup_clean_chain = False
         self.num_nodes = 2
 
     def setup_network(self, split=False):

@@ -5,8 +5,8 @@
 
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_true, get_coinbase_address, \
-    start_nodes, wait_and_assert_operationid_status, \
+from test_framework.util import assert_equal, assert_true, \
+    start_nodes, \
     wait_and_assert_operationid_status_result, DEFAULT_FEE
 
 SAPLING_ADDR = 'zregtestsapling1ssqj3f3majnl270985gqcdqedd9t4nlttjqskccwevj2v20sc25deqspv3masufnwcdy67cydyy'
@@ -52,7 +52,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 4
-        self.setup_clean_chain = True
+        self.cache_behavior = 'sprout'
 
     def setup_nodes(self):
         extra_args = [[
@@ -67,17 +67,17 @@ class SproutSaplingMigration(BitcoinTestFramework):
         assert_equal(0, len(extra_args[1]))
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args)
 
-    def run_migration_test(self, node, sproutAddr, saplingAddr, target_height):
+    def run_migration_test(self, node, sproutAddr, saplingAddr, target_height, sprout_initial_balance):
         # Make sure we are in a good state to run the test
-        assert_equal(102, node.getblockcount() % 500, "Should be at block 102 % 500")
-        assert_equal(node.z_getbalance(sproutAddr), Decimal('10'))
+        assert_equal(200, node.getblockcount() % 500, "Should be at block 200 % 500")
+        assert_equal(node.z_getbalance(sproutAddr), sprout_initial_balance)
         assert_equal(node.z_getbalance(saplingAddr), Decimal('0'))
         check_migration_status(node, saplingAddr, DISABLED_BEFORE_MIGRATION)
 
         # Migrate
         node.z_setmigration(True)
         print("Mining to block 494 % 500...")
-        node.generate(392)  # 102 % 500 -> 494 % 500
+        node.generate(294) # 200 % 500 -> 494 % 500
         self.sync_all()
 
         # At 494 % 500 we should have no async operations
@@ -90,7 +90,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         # At 495 % 500 we should have an async operation
         operationstatus = node.z_getoperationstatus()
         print("migration operation: {}".format(operationstatus))
-        assert_equal(1, len(operationstatus), "num async operations at 495  % 500")
+        assert_equal(1, len(operationstatus), "num async operations at 495 % 500")
         assert_equal('saplingmigration', operationstatus[0]['method'])
         assert_equal(target_height, operationstatus[0]['target_height'])
 
@@ -109,7 +109,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
 
         # At 498 % 500 the mempool will be empty and no funds will have moved
         assert_equal(0, len(node.getrawmempool()), "mempool size at 498 % 500")
-        assert_equal(node.z_getbalance(sproutAddr), Decimal('10'))
+        assert_equal(node.z_getbalance(sproutAddr), sprout_initial_balance)
         assert_equal(node.z_getbalance(saplingAddr), Decimal('0'))
 
         node.generate(1)
@@ -125,7 +125,7 @@ class SproutSaplingMigration(BitcoinTestFramework):
         # Check that unmigrated amount + unfinalized = starting balance - fee
         status = node.z_getmigrationstatus()
         print("status: {}".format(status))
-        assert_equal(Decimal('10.0') - DEFAULT_FEE, Decimal(status['unmigrated_amount']) + Decimal(status['unfinalized_migrated_amount']))
+        assert_equal(sprout_initial_balance - DEFAULT_FEE, Decimal(status['unmigrated_amount']) + Decimal(status['unfinalized_migrated_amount']))
 
         # The transaction in the mempool should be the one listed in migration_txids,
         # and it should expire at the next 450 % 500.
@@ -142,9 +142,9 @@ class SproutSaplingMigration(BitcoinTestFramework):
         sprout_balance = node.z_getbalance(sproutAddr)
         sapling_balance = node.z_getbalance(saplingAddr)
         print("sprout balance: {}, sapling balance: {}".format(sprout_balance, sapling_balance))
-        assert_true(sprout_balance < Decimal('10'), "Should have less Sprout funds")
+        assert_true(sprout_balance < sprout_initial_balance, "Should have less Sprout funds")
         assert_true(sapling_balance > Decimal('0'), "Should have more Sapling funds")
-        assert_true(sprout_balance + sapling_balance, Decimal('10.0') - DEFAULT_FEE)
+        assert_true(sprout_balance + sapling_balance, sprout_initial_balance - DEFAULT_FEE)
 
         check_migration_status(node, saplingAddr, DURING_MIGRATION)
         # At 10 % 500 the transactions will be considered 'finalized'
@@ -156,59 +156,34 @@ class SproutSaplingMigration(BitcoinTestFramework):
         assert_equal(sprout_balance, Decimal(status['unmigrated_amount']))
         assert_equal(sapling_balance, Decimal(status['finalized_migrated_amount']))
 
-    def send_to_sprout_zaddr(self, tAddr, sproutAddr):
-        # Send some ZEC to a Sprout address
-        result = self.nodes[0].z_shieldcoinbase(tAddr, sproutAddr, 0, 1)
-        wait_and_assert_operationid_status(self.nodes[0], result['opid'])
-        self.nodes[0].generate(1)
-        self.sync_all()
-
     def run_test(self):
-        # Wallet RPCs that depend on accurate chain state are blocked while in IBD. This
-        # test starts from a clean chain state, so we need to mine a single block first to
-        # ensure that the chain tip's block time is within 24 hours of the current time.
-        #
-        # We mine 2 blocks because we need to make two transparent->Sprout spends below
-        # (to load Sprout addresses with funds), and `get_coinbase_address` only selects
-        # a coinbase address with spendable coins. If we only mined one block here and 100
-        # below, the selected coinbase address would only have one coin (due to the way
-        # the `generate` RPC uses one address per call).
-        print("Mining blocks...")
-        self.nodes[0].generate(2)
-        self.sync_all()
-
         # Check enabling via '-migration' and disabling via rpc
-        check_migration_status(self.nodes[0], SAPLING_ADDR, ENABLED_NO_FUNDS)
+        check_migration_status(self.nodes[0], SAPLING_ADDR, ENABLED_BEFORE_MIGRATION)
         self.nodes[0].z_setmigration(False)
-        check_migration_status(self.nodes[0], SAPLING_ADDR, DISABLED_NO_FUNDS)
+        check_migration_status(self.nodes[0], SAPLING_ADDR, DISABLED_BEFORE_MIGRATION)
+
+        print("Running test using '-migrationdestaddress'...")
 
         # 1. Test using self.nodes[0] which has the parameter
-        print("Running test using '-migrationdestaddress'...")
-        self.nodes[0].generate(99)
-        self.sync_all()
-        tAddr = get_coinbase_address(self.nodes[0])
-
         # Import a previously generated key to test '-migrationdestaddress'
         self.nodes[0].z_importkey(SAPLING_KEY)
-        sproutAddr0 = self.nodes[0].z_getnewaddress('sprout')
+        sproutAddr0 = self.nodes[0].listaddresses()[0]['sprout']['addresses'][0]
 
-        self.send_to_sprout_zaddr(tAddr, sproutAddr0)
-        self.run_migration_test(self.nodes[0], sproutAddr0, SAPLING_ADDR, 500)
+        self.run_migration_test(self.nodes[0], sproutAddr0, SAPLING_ADDR, 500, Decimal('50'))
         # Disable migration so only self.nodes[1] has a transaction in the mempool at block 999
         self.nodes[0].z_setmigration(False)
 
         # 2. Test using self.nodes[1] which will use the default Sapling address
         print("Running test using default Sapling address...")
-        # Mine more blocks so we start at 102 % 500
+        # Mine more blocks so we start at 200 % 500
         print("Mining blocks...")
-        self.nodes[1].generate(91)  # 511 -> 602
+        self.nodes[1].generate(190)  # 510 -> 700
         self.sync_all()
 
-        sproutAddr1 = self.nodes[1].z_getnewaddress('sprout')
+        sproutAddr1 = self.nodes[1].listaddresses()[0]['sprout']['addresses'][0]
         saplingAddr1 = self.nodes[1].z_getnewaddress('sapling')
 
-        self.send_to_sprout_zaddr(tAddr, sproutAddr1)
-        self.run_migration_test(self.nodes[1], sproutAddr1, saplingAddr1, 1000)
+        self.run_migration_test(self.nodes[1], sproutAddr1, saplingAddr1, 1000, Decimal('50'))
 
 
 if __name__ == '__main__':

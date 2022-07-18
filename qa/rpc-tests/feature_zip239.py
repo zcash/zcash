@@ -3,6 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+from decimal import Decimal
 from test_framework.mininode import (
     NU5_PROTO_VERSION,
     CInv,
@@ -20,6 +21,7 @@ from test_framework.util import (
     HEARTWOOD_BRANCH_ID,
     CANOPY_BRANCH_ID,
     NU5_BRANCH_ID,
+    DEFAULT_FEE,
     assert_equal,
     assert_false,
     assert_true,
@@ -27,7 +29,7 @@ from test_framework.util import (
     hex_str_to_bytes,
     nuparams,
     p2p_port,
-    start_node,
+    start_nodes,
     wait_and_assert_operationid_status,
 )
 from tx_expiry_helper import TestNode
@@ -37,22 +39,19 @@ import time
 
 # Test ZIP 239 behaviour before and after NU5.
 class Zip239Test(BitcoinTestFramework):
+    def __init__(self):
+        super().__init__()
+        self.cache_behavior = 'sprout'
+
     def setup_nodes(self):
-        extra_args=[
-            # Enable Canopy at height 205 to allow shielding Sprout funds first.
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            # Enable Canopy at height 205
             nuparams(BLOSSOM_BRANCH_ID, 205),
             nuparams(HEARTWOOD_BRANCH_ID, 205),
             nuparams(CANOPY_BRANCH_ID, 205),
             nuparams(NU5_BRANCH_ID, 210),
             "-preferredtxversion=5"
-        ]
-
-        nodes = []
-        nodes.append(start_node(0, self.options.tmpdir, extra_args))
-        nodes.append(start_node(1, self.options.tmpdir, extra_args))
-        nodes.append(start_node(2, self.options.tmpdir, extra_args))
-        nodes.append(start_node(3, self.options.tmpdir, extra_args))
-        return nodes
+        ]] * self.num_nodes)
 
     def cinv_for(self, txid, authDigest=None):
         if authDigest is not None:
@@ -187,16 +186,12 @@ class Zip239Test(BitcoinTestFramework):
             print("Node's block index is not NU5-aware, skipping remaining tests")
             return
 
-        # Load funds into the Sprout address
-        sproutzaddr = self.nodes[0].z_getnewaddress('sprout')
-        result = self.nodes[2].z_shieldcoinbase("*", sproutzaddr, 0)
-        wait_and_assert_operationid_status(self.nodes[2], result['opid'])
-        self.sync_all()
-        self.nodes[1].generate(1)
-        self.sync_all()
+        # Look up the Sprout address that contains existing funds
+        sproutzaddr = self.nodes[0].listaddresses()[0]['sprout']['addresses'][0]
+        assert_equal(self.nodes[0].z_getbalance(sproutzaddr), Decimal('50'))
 
         # Activate NU5. Block height after this is 210.
-        self.nodes[0].generate(9)
+        self.nodes[0].generate(10)
         self.sync_all()
 
         # Add v4 transaction to the mempool.
@@ -204,7 +199,7 @@ class Zip239Test(BitcoinTestFramework):
         opid = self.nodes[0].z_sendmany(sproutzaddr, [{
             'address': node1_taddr,
             'amount': 1,
-        }])
+        }], 1, DEFAULT_FEE, 'AllowRevealedRecipients')
         v4_txid = uint256_from_str(hex_str_to_bytes(
             wait_and_assert_operationid_status(self.nodes[0], opid)
         )[::-1])

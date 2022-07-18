@@ -38,8 +38,6 @@ addnode connect to generic DNS name
 class ProxyTest(BitcoinTestFramework):        
     def __init__(self):
         super().__init__()
-        self.num_nodes = 4
-        self.setup_clean_chain = False
 
         self.have_ipv6 = test_ipv6_local()
         # Create two proxies on different ports

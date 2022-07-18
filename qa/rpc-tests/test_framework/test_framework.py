@@ -26,7 +26,6 @@ from .util import (
     wait_bitcoinds,
     enable_coverage,
     check_json_precision,
-    initialize_chain_clean,
     PortSeed,
 )
 
@@ -35,7 +34,7 @@ class BitcoinTestFramework(object):
 
     def __init__(self):
         self.num_nodes = 4
-        self.setup_clean_chain = False
+        self.cache_behavior = 'current'
         self.nodes = None
 
     def run_test(self):
@@ -46,10 +45,7 @@ class BitcoinTestFramework(object):
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
-        if self.setup_clean_chain:
-            initialize_chain_clean(self.options.tmpdir, self.num_nodes)
-        else:
-            initialize_chain(self.options.tmpdir, self.num_nodes, self.options.cachedir)
+        initialize_chain(self.options.tmpdir, self.num_nodes, self.options.cachedir, self.cache_behavior)
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir)
@@ -192,7 +188,7 @@ class ComparisonTestFramework(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 1
-        self.setup_clean_chain = True
+        self.cache_behavior = 'clean'
 
     def add_options(self, parser):
         parser.add_option("--testbinary", dest="testbinary",
