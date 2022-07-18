@@ -3444,7 +3444,7 @@ bool CWallet::AddToWalletIfInvolvingMe(
         auto sproutNoteData = FindMySproutNotes(tx);
 
         // Sapling
-        auto saplingNoteDataAndAddressesToAdd = FindMySaplingNotes(tx, nHeight);
+        auto saplingNoteDataAndAddressesToAdd = FindMySaplingNotes(consensus, tx, nHeight);
         auto saplingNoteData = saplingNoteDataAndAddressesToAdd.first;
         auto saplingAddressesToAdd = saplingNoteDataAndAddressesToAdd.second;
         for (const auto &addressToAdd : saplingAddressesToAdd) {
@@ -3637,7 +3637,10 @@ mapSproutNoteData_t CWallet::FindMySproutNotes(const CTransaction &tx) const
  * the result of FindMySaplingNotes (for the addresses available at the time) will
  * already have been cached in CWalletTx.mapSaplingNoteData.
  */
-std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySaplingNotes(const CTransaction &tx, int height) const
+std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySaplingNotes(
+    const Consensus::Params& consensus,
+    const CTransaction &tx,
+    int height) const
 {
     LOCK(cs_KeyStore);
     uint256 hash = tx.GetHash();
@@ -3651,7 +3654,7 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
         for (auto it = mapSaplingFullViewingKeys.begin(); it != mapSaplingFullViewingKeys.end(); ++it) {
             SaplingIncomingViewingKey ivk = it->first;
 
-            auto result = SaplingNotePlaintext::decrypt(Params().GetConsensus(), height, output.encCiphertext, ivk, output.ephemeralKey, output.cmu);
+            auto result = SaplingNotePlaintext::decrypt(consensus, height, output.encCiphertext, ivk, output.ephemeralKey, output.cmu);
             if (!result) {
                 continue;
             }
