@@ -24,6 +24,42 @@ class CValidationInterface;
 class CValidationState;
 class uint256;
 
+class BatchScanner {
+public:
+    /**
+     * Adds a transaction to the batch scanner.
+     *
+     * `block_tag` is the hash of the block that triggered this txid being added
+     * to the batch, or the all-zeros hash to indicate that no block triggered
+     * it (i.e. it was a mempool change).
+     */
+    virtual void AddTransaction(
+        const CTransaction &tx,
+        const std::vector<unsigned char> &txBytes,
+        const int nHeight) = 0;
+
+    /**
+     * Flushes any pending batches.
+     *
+     * After calling this, every transaction passed to `AddTransaction` should
+     * have its result available when the matching call to `SyncTransaction` is
+     * made.
+     */
+    virtual void Flush() = 0;
+
+    /**
+     * Notifies the batch scanner of updated transaction data (transaction, and
+     * optionally the block it is found in).
+     *
+     * This will be called with transactions in the same order as they were
+     * `AddTransaction`.
+     */
+    virtual void SyncTransaction(
+        const CTransaction &tx,
+        const CBlock *pblock,
+        const int nHeight) = 0;
+};
+
 struct MerkleFrontiers {
     SproutMerkleTree sprout;
     SaplingMerkleTree sapling;
@@ -42,6 +78,7 @@ void UnregisterAllValidationInterfaces();
 class CValidationInterface {
 protected:
     virtual void UpdatedBlockTip(const CBlockIndex *pindex) {}
+    virtual BatchScanner* GetBatchScanner() { return nullptr; }
     virtual void SyncTransaction(const CTransaction &tx, const CBlock *pblock, const int nHeight) {}
     virtual void EraseFromWallet(const uint256 &hash) {}
     virtual void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, std::optional<MerkleFrontiers> added) {}
@@ -56,10 +93,56 @@ protected:
     friend void ::UnregisterAllValidationInterfaces();
 };
 
+// aggregate_non_null_values is a combiner which places any non-nullptr values
+// returned from slots into a container.
+template<typename Container>
+struct aggregate_non_null_values
+{
+    typedef Container result_type;
+
+    template<typename InputIterator>
+    Container operator()(InputIterator first, InputIterator last) const
+    {
+        Container values;
+
+        while (first != last) {
+            auto ptr = *first;
+            if (ptr != nullptr) {
+                values.push_back(ptr);
+            }
+            ++first;
+        }
+        return values;
+    }
+};
+
 struct CMainSignals {
     /** Notifies listeners of updated block chain tip */
     boost::signals2::signal<void (const CBlockIndex *)> UpdatedBlockTip;
-    /** Notifies listeners of updated transaction data (transaction, and optionally the block it is found in. */
+    /**
+     * Requests a pointer to the listener's batch scanner for shielded outputs,
+     * if it has one.
+     *
+     * The listener is responsible for managing the memory of the batch scanner.
+     * In practice each listener will have a single persistent batch scanner.
+     *
+     * This signal is called at the start of each notification loop, which runs
+     * on integer second boundaries. This is an opportunity for the listener to
+     * perform any updating of the batch scanner's internal state (such as
+     * updating its set of incoming viewing keys).
+     *
+     * Listeners of this signal should not listen to `SyncTransaction` or they
+     * will be notified about transactions twice.
+     */
+    boost::signals2::signal<
+        BatchScanner* (),
+        aggregate_non_null_values<std::vector<BatchScanner*>>> GetBatchScanner;
+    /**
+     * Notifies listeners of updated transaction data (transaction, and optionally the block it is found in.
+     *
+     * Listeners of this signal should not listen to `GetBatchScanner` or they
+     * will be notified about transactions twice.
+     */
     boost::signals2::signal<void (const CTransaction &, const CBlock *, const int nHeight)> SyncTransaction;
     /** Notifies listeners of an erased transaction (currently disabled, requires transaction replacement). */
     boost::signals2::signal<void (const uint256 &)> EraseTransaction;
