@@ -42,6 +42,8 @@
 #include <utility>
 #include <vector>
 
+#include <rust/wallet_scanner.h>
+
 #include <boost/shared_ptr.hpp>
 
 extern CWallet* pwalletMain;
@@ -1054,9 +1056,12 @@ typedef struct WalletDecryptedNotes {
 class WalletBatchScanner : public BatchScanner {
 private:
     CWallet* pwallet;
+    rust::Box<wallet::BatchScanner> inner;
     std::map<uint256, WalletDecryptedNotes> decryptedNotes;
 
-    WalletBatchScanner(CWallet* pwalletIn) : pwallet(pwalletIn) {}
+    static rust::Box<wallet::BatchScanner> CreateBatchScanner(CWallet* pwallet);
+
+    WalletBatchScanner(CWallet* pwalletIn) : pwallet(pwalletIn), inner(CreateBatchScanner(pwalletIn)) {}
 
     friend class CWallet;
 
@@ -1755,10 +1760,7 @@ public:
 
     DBErrors ReorderTransactions();
 
-    WalletDecryptedNotes TryDecryptShieldedOutputs(
-        const Consensus::Params& consensus,
-        const CTransaction& tx,
-        const int nHeight);
+    WalletDecryptedNotes TryDecryptShieldedOutputs(const CTransaction& tx);
 
     void MarkDirty();
     bool UpdateNullifierNoteMap();

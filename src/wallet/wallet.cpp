@@ -3414,16 +3414,12 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
     return !unchangedSproutFlag || !unchangedSaplingFlag || !unchangedOrchardFlag;
 }
 
-WalletDecryptedNotes CWallet::TryDecryptShieldedOutputs(
-        const Consensus::Params& consensus,
-        const CTransaction& tx,
-        const int nHeight)
+WalletDecryptedNotes CWallet::TryDecryptShieldedOutputs(const CTransaction& tx)
 {
     // Sprout
     auto sproutNoteData = FindMySproutNotes(tx);
 
-    // Sapling
-    auto saplingNoteDataAndAddressesToAdd = FindMySaplingNotes(consensus, tx, nHeight);
+    // Sapling is trial decrypted in Rust.
 
     // Orchard
     // TODO: Trial decryption of Orchard notes alongside Sprout and Sapling will
@@ -3432,7 +3428,6 @@ WalletDecryptedNotes CWallet::TryDecryptShieldedOutputs(
 
     return WalletDecryptedNotes {
         .sproutNoteData = sproutNoteData,
-        .saplingNoteDataAndAddressesToAdd = saplingNoteDataAndAddressesToAdd,
     };
 }
 
@@ -3516,11 +3511,30 @@ bool CWallet::AddToWalletIfInvolvingMe(
     }
 }
 
-void WalletBatchScanner::AddTransactionToBatch(const CTransaction &tx, const int nHeight)
-{
-    decryptedNotes.insert(std::make_pair(
-        tx.GetHash(),
-        pwallet->TryDecryptShieldedOutputs(Params().GetConsensus(), tx, nHeight)));
+rust::Box<wallet::BatchScanner> WalletBatchScanner::CreateBatchScanner(CWallet* pwallet) {
+    LOCK(pwallet->cs_KeyStore);
+
+    auto chainParams = Params();
+    auto consensus = chainParams.GetConsensus();
+    auto network = wallet::network(
+        chainParams.NetworkIDString(),
+        consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight,
+        consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight,
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight,
+        consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight,
+        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
+        consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight);
+
+    // TODO: Pass the map across the FFI once cxx supports it.
+    std::vector<std::array<uint8_t, 32>> ivks;
+    for (const auto& it : pwallet->mapSaplingFullViewingKeys) {
+        SaplingIncomingViewingKey ivk = it.first;
+        ivks.push_back(ivk.GetRawBytes());
+    }
+
+    return wallet::init_batch_scanner(
+        *network,
+        {ivks.data(), ivks.size()});
 }
 
 bool WalletBatchScanner::AddToWalletIfInvolvingMe(
@@ -3538,6 +3552,26 @@ bool WalletBatchScanner::AddToWalletIfInvolvingMe(
     }
     auto decryptedNotes = decryptedNotesForTx->second;
 
+    // Fill in the details about decrypted Sapling notes.
+    auto batchResults = inner->collect_results(tx.GetHash().GetRawBytes());
+    for (auto decrypted : batchResults->get_sapling()) {
+        SaplingIncomingViewingKey ivk(uint256::FromRawBytes(decrypted.ivk));
+        libzcash::SaplingPaymentAddress addr(
+            decrypted.diversifier,
+            uint256::FromRawBytes(decrypted.pk_d));
+
+        decryptedNotes.saplingNoteDataAndAddressesToAdd.first.insert(
+            std::make_pair(
+                SaplingOutPoint(uint256::FromRawBytes(decrypted.txid), decrypted.output),
+                SaplingNoteData(ivk)));
+
+        // Only track the recipient -> ivk mappings the wallet doesn't have.
+        if (pwallet->mapSaplingIncomingViewingKeys.count(addr) == 0) {
+            decryptedNotes.saplingNoteDataAndAddressesToAdd.second.insert(
+                std::make_pair(addr, ivk));
+        }
+    }
+
     return pwallet->AddToWalletIfInvolvingMe(
         consensus, tx, pblock, nHeight, decryptedNotes, fUpdate);
 }
@@ -3551,10 +3585,17 @@ void WalletBatchScanner::AddTransaction(
     const std::vector<unsigned char> &txBytes,
     const int nHeight)
 {
-    AddTransactionToBatch(tx, nHeight);
+    // Decrypt Sprout outputs immediately.
+    decryptedNotes.insert(
+        std::make_pair(tx.GetHash(), pwallet->TryDecryptShieldedOutputs(tx)));
+
+    // Queue Sapling outputs for trial decryption.
+    inner->add_transaction({txBytes.data(), txBytes.size()}, nHeight);
 }
 
-void WalletBatchScanner::Flush() {}
+void WalletBatchScanner::Flush() {
+    inner->flush();
+}
 
 void WalletBatchScanner::SyncTransaction(
     const CTransaction &tx,
@@ -3572,6 +3613,12 @@ void WalletBatchScanner::SyncTransaction(
 
 BatchScanner* CWallet::GetBatchScanner()
 {
+    LOCK(cs_wallet);
+
+    // Rebuild the batch scanner to update its set of IVKs.
+    delete validationInterfaceBatchScanner;
+    validationInterfaceBatchScanner = new WalletBatchScanner(this);
+
     return validationInterfaceBatchScanner;
 }
 
@@ -4691,7 +4738,10 @@ int CWallet::ScanForWalletTransactions(
                     strprintf("Can't read block %d from disk (%s)", pindex->nHeight, pindex->GetBlockHash().GetHex()));
             }
             for (CTransaction& tx : block.vtx) {
-                batchScanner.AddTransactionToBatch(tx, pindex->nHeight);
+                CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
+                ssTx << tx;
+                std::vector<unsigned char> txBytes(ssTx.begin(), ssTx.end());
+                batchScanner.AddTransaction(tx, txBytes, pindex->nHeight);
             }
             batchScanner.Flush();
             for (CTransaction& tx : block.vtx)
