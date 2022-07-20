@@ -330,7 +330,35 @@ where
     }
 }
 
-impl<A, D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE> + Clone>
+/// Helper trait to abstract over how Sapling and Orchard outputs are represented.
+trait OutputSource<'o, Output: 'o> {
+    type Iterator: Iterator<Item = &'o Output>;
+
+    /// Returns the number of outputs in this source.
+    ///
+    /// This enables sources to be used that know their length but don't provide iterators
+    /// that implement `ExactSizeIterator`.
+    fn count(&self) -> usize;
+
+    /// Returns an iterator over references to the outputs.
+    fn get(&'o self) -> Self::Iterator;
+}
+
+impl<'o> OutputSource<'o, OutputDescription<GrothProofBytes>>
+    for &'o [OutputDescription<GrothProofBytes>]
+{
+    type Iterator = std::slice::Iter<'o, OutputDescription<GrothProofBytes>>;
+
+    fn count(&self) -> usize {
+        self.len()
+    }
+
+    fn get(&'o self) -> Self::Iterator {
+        self.iter()
+    }
+}
+
+impl<'o, A, D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE> + Clone + 'o>
     Batch<A, D, Output>
 {
     /// Adds the given outputs to this batch.
@@ -338,18 +366,23 @@ impl<A, D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE> + Clone>
     /// `replier` will be called with the result of every output.
     fn add_outputs(
         &mut self,
-        domain: impl Fn() -> D,
-        outputs: &[Output],
+        domain: impl Fn(&Output) -> D,
+        outputs: &'o impl OutputSource<'o, Output>,
         replier: channel::Sender<OutputItem<A, D>>,
     ) {
-        self.outputs
-            .extend(outputs.iter().cloned().map(|output| (domain(), output)));
-        self.repliers.extend((0..outputs.len()).map(|output_index| {
-            OutputReplier(OutputIndex {
-                output_index,
-                value: replier.clone(),
-            })
-        }));
+        self.outputs.extend(
+            outputs
+                .get()
+                .cloned()
+                .map(|output| (domain(&output), output)),
+        );
+        self.repliers
+            .extend((0..outputs.count()).map(|output_index| {
+                OutputReplier(OutputIndex {
+                    output_index,
+                    value: replier.clone(),
+                })
+            }));
     }
 }
 
@@ -487,12 +520,12 @@ where
     /// If after adding the given outputs, the accumulated batch size is at least
     /// `BATCH_SIZE_THRESHOLD`, `Self::flush` is called. Subsequent calls to
     /// `Self::add_outputs` will be accumulated into a new batch.
-    fn add_outputs(
+    fn add_outputs<'o>(
         &mut self,
         block_tag: BlockHash,
         txid: TxId,
-        domain: impl Fn() -> D,
-        outputs: &[Output],
+        domain: impl Fn(&Output) -> D,
+        outputs: &'o impl OutputSource<'o, Output>,
     ) {
         let (tx, rx) = channel::unbounded();
         self.acc.add_outputs(domain, outputs, tx);
@@ -622,8 +655,8 @@ impl BatchScanner {
             runner.add_outputs(
                 block_tag,
                 txid,
-                || SaplingDomain::new(sapling_serialization::zip212_enforcement(&params, height)),
-                bundle.shielded_outputs(),
+                |_| SaplingDomain::new(sapling_serialization::zip212_enforcement(&params, height)),
+                &bundle.shielded_outputs(),
             );
         }
 
