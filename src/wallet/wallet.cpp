@@ -3577,15 +3577,16 @@ rust::Box<wallet::BatchScanner> WalletBatchScanner::CreateBatchScanner(CWallet* 
     auto network = Params().RustNetwork();
 
     // TODO: Pass the map across the FFI once cxx supports it.
-    std::vector<std::array<uint8_t, 32>> ivks;
+    std::vector<std::array<uint8_t, 32>> saplingIvks;
     for (const auto& it : pwallet->mapSaplingFullViewingKeys) {
         SaplingIncomingViewingKey ivk = it.first;
-        ivks.push_back(ivk.GetRawBytes());
+        saplingIvks.push_back(ivk.GetRawBytes());
     }
 
     return wallet::init_batch_scanner(
         *network,
-        {ivks.data(), ivks.size()});
+        {saplingIvks.data(), saplingIvks.size()},
+        pwallet->orchardWallet.PrepareIvks());
 }
 
 bool WalletBatchScanner::AddToWalletIfInvolvingMe(

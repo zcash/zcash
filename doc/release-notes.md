@@ -4,3 +4,8 @@ release-notes at release time)
 Notable changes
 ===============
 
+Wallet Performance Improvements
+-------------------------------
+
+- The `zcashd.wallet.batchscanner.outputs.scanned` metrics counter (enabled when
+  `-prometheusport` is set) now includes an `orchard` kind.

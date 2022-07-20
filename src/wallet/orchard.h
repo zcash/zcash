@@ -391,6 +391,10 @@ public:
         return libzcash::OrchardIncomingViewingKey(ivkPtr);
     }
 
+    wallet::OrchardPreparedIncomingViewingKeys* PrepareIvks() const {
+        return orchard_wallet_prepare_ivks(inner.get());
+    }
+
     /**
      * Adds an address/IVK pair to the wallet, and returns `true` if the
      * IVK corresponds to a full viewing key known to the wallet, `false`

@@ -28,6 +28,7 @@ use crate::{
     builder_ffi::OrchardSpendInfo,
     incremental_merkle_tree::{read_tree, write_tree},
     streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb},
+    wallet_scanner::OrchardPreparedIncomingViewingKeys,
     zcashd_orchard::OrderedAddress,
 };
 
@@ -126,6 +127,13 @@ impl KeyStore {
 
     pub fn ivk_for_address(&self, addr: &Address) -> Option<&IncomingViewingKey> {
         self.payment_addresses.get(&OrderedAddress::new(*addr))
+    }
+
+    /// Returns prepared incoming viewing keys for batched trial decryption, or `None` if
+    /// there aren't any.
+    pub fn prepare_ivks(&self) -> Option<OrchardPreparedIncomingViewingKeys> {
+        (!self.viewing_keys.is_empty())
+            .then(|| OrchardPreparedIncomingViewingKeys::new(self.viewing_keys.keys()))
     }
 
     pub fn get_nullifier(&self, note: &Note) -> Option<Nullifier> {
@@ -1017,6 +1025,19 @@ pub extern "C" fn orchard_wallet_get_ivk_for_address(
         .key_store
         .ivk_for_address(addr)
         .map(|ivk| Box::into_raw(Box::new(ivk.clone())))
+        .unwrap_or(std::ptr::null_mut())
+}
+
+#[no_mangle]
+pub extern "C" fn orchard_wallet_prepare_ivks(
+    wallet: *const Wallet,
+) -> *mut OrchardPreparedIncomingViewingKeys {
+    let wallet = unsafe { wallet.as_ref() }.expect("Wallet pointer may not be null.");
+
+    wallet
+        .key_store
+        .prepare_ivks()
+        .map(|ivks| Box::into_raw(Box::new(ivks)))
         .unwrap_or(std::ptr::null_mut())
 }
 
