@@ -113,3 +113,5 @@ lto = 'thin'
 panic = 'abort'
 codegen-units = 1
 
+[patch.crates-io]
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "d05b6cee9df7c4019509e2f54899b5979fb641b5" }
