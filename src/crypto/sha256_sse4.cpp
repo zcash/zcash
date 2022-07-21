@@ -1,6 +1,6 @@
 // Copyright (c) 2017 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 //
 // This is a translation to GCC extended asm syntax from YASM code by Intel
 // (available at the bottom of this file).
@@ -1000,10 +1000,7 @@ void Transform(uint32_t* s, const unsigned char* chunk, size_t blocks)
 ;
 ; This code is described in an Intel White-Paper:
 ; "Fast SHA-256 Implementations on Intel Architecture Processors"
-;
-; To find it, surf to http://www.intel.com/p/en_US/embedded 
-; and search for that title.
-; The paper is expected to be released roughly at the end of April, 2012
+; at <https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/sha-256-implementations-paper.pdf>.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; This code schedules 1 blocks at a time, with 4 lanes per block
