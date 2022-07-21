@@ -17,6 +17,7 @@ bench_bench_bitcoin_SOURCES = \
   bench/rollingbloom.cpp \
   bench/verification.cpp \
   bench/crypto_hash.cpp \
+  bench/merkle_root.cpp \
   bench/base58.cpp \
   bench/lockedpool.cpp \
   bench/perf.cpp \
@@ -31,6 +32,8 @@ bench_bench_bitcoin_LDADD = \
   $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
+  $(LIBBITCOIN_CRYPTO_SSE41) \
+  $(LIBBITCOIN_CRYPTO_AVX2) \
   $(LIBLEVELDB) \
   $(LIBLEVELDB_SSE42) \
   $(LIBMEMENV) \

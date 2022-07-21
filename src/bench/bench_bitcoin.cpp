@@ -5,6 +5,7 @@
 
 #include "bench.h"
 
+#include "crypto/sha256.h"
 #include "fs.h"
 #include "key.h"
 #include "main.h"
@@ -17,6 +18,7 @@ const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 int
 main(int argc, char** argv)
 {
+    SHA256AutoDetect();
     ECC_Start();
     auto globalVerifyHandle = new ECCVerifyHandle();
     SetupEnvironment();
