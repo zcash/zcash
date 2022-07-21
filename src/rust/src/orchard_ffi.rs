@@ -233,7 +233,7 @@ pub extern "C" fn orchard_batch_add_bundle(
 /// - `bindingSigOrchard` validity is enforced here.
 #[no_mangle]
 pub extern "C" fn orchard_batch_validate(batch: *mut BatchValidator) -> bool {
-    // *TCR:bad-txns-orchard-binding-signature-invalid
+    // https://p.z.cash/TCR:bad-txns-orchard-binding-signature-invalid?partial
     if !batch.is_null() {
         let batch = unsafe { Box::from_raw(batch) };
         let vk =
@@ -276,6 +276,9 @@ pub extern "C" fn orchard_bundle_spends_enabled(bundle: *const Bundle<Authorized
 ///
 /// This should only be called on an Orchard bundle that is
 /// an element of a coinbase transaction.
+///
+/// https://p.z.cash/TCR:bad-cb-output-decryption?partial
+/// https://p.z.cash/TCR:bad-cb-output-decryption-canopy?partial
 #[no_mangle]
 pub extern "C" fn orchard_bundle_coinbase_outputs_are_valid(
     bundle: *const Bundle<Authorized, Amount>,

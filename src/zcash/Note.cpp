@@ -343,7 +343,7 @@ std::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
         SaplingNotePlaintext plaintext = *ret;
 
         // Check leadbyte is allowed at block height
-        // *TCR:bad-cb-output-decryption
+        // https://p.z.cash/TCR:bad-cb-output-decryption?partial
         if (!plaintext_version_is_valid(params, height, plaintext.get_leadbyte())) {
             LogPrint("receiveunsafe", "Received note plaintext with invalid lead byte %d at height %d",
                      plaintext.get_leadbyte(), height);

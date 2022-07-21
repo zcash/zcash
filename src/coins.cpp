@@ -1094,7 +1094,7 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
 
 bool CCoinsViewCache::HaveInputs(const CTransaction& tx) const
 {
-    // *TCR:bad-txns-inputs-missingorspent
+    // https://p.z.cash/TCR:bad-txns-inputs-missingorspent?partial
     if (!tx.IsCoinBase()) {
         for (unsigned int i = 0; i < tx.vin.size(); i++) {
             const COutPoint &prevout = tx.vin[i].prevout;

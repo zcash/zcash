@@ -46,7 +46,7 @@ inline bool plaintext_version_is_valid(const Consensus::Params& params, int heig
     if (params.NetworkUpgradeActive(height, Consensus::UPGRADE_CANOPY)) {
         int gracePeriodEndHeight = params.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight + ZIP212_GRACE_PERIOD;
 
-        // *TCR:bad-cb-output-decryption-canopy
+        // https://p.z.cash/TCR:bad-cb-output-decryption-canopy?partial
         if (height < gracePeriodEndHeight && leadbyte != 0x01 && leadbyte != 0x02) {
             // non-{0x01,0x02} received after Canopy activation and before grace period has elapsed
             return false;
@@ -57,7 +57,7 @@ inline bool plaintext_version_is_valid(const Consensus::Params& params, int heig
         }
         return true;
     } else {
-        // *TCR:bad-cb-output-decryption
+        // https://p.z.cash/TCR:bad-cb-output-decryption?partial
         // return false if non-0x01 received when Canopy is not active
         return leadbyte == 0x01;
     }

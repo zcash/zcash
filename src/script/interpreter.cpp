@@ -1215,10 +1215,10 @@ uint256 SignatureHash(
         throw logic_error("input index is out of range");
     }
 
-    // *TCR:bad-txns-sapling-binding-signature-invalid
-    // *TCR:bad-txns-orchard-binding-signature-invalid
-    // *SCR:sapling-spend-auth-signature-invalid
-    // *ACR:orchard-spend-auth-signature-invalid
+    // https://p.z.cash/TCR:bad-txns-sapling-binding-signature-invalid?partial
+    // https://p.z.cash/TCR:bad-txns-orchard-binding-signature-invalid?partial
+    // https://p.z.cash/SCR:sapling-spend-auth-signature-invalid?partial
+    // https://p.z.cash/ACR:orchard-spend-auth-signature-invalid?partial
 
     auto sigversion = SignatureHashVersion(txTo);
 

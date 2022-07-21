@@ -49,7 +49,7 @@ pub extern "C" fn ed25519_verify(
     msg: *const c_uchar,
     msg_len: size_t,
 ) -> bool {
-    // *TCR:bad-joinsplit-public-key
+    // https://p.z.cash/TCR:bad-joinsplit-public-key?partial
     let vk = match VerificationKey::try_from(*unsafe { vk.as_ref() }.unwrap()) {
         Ok(vk) => vk,
         Err(_) => return false,
@@ -64,6 +64,6 @@ pub extern "C" fn ed25519_verify(
 
     let msg = unsafe { slice::from_raw_parts(msg, msg_len) };
 
-    // *TCR:bad-txns-invalid-joinsplit-signature
+    // https://p.z.cash/TCR:bad-txns-invalid-joinsplit-signature?partial
     vk.verify(&signature, msg).is_ok()
 }
