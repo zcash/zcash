@@ -7,6 +7,7 @@ use std::sync::mpsc;
 use group::GroupEncoding;
 use zcash_note_encryption::{batch, BatchDomain, Domain, ShieldedOutput, ENC_CIPHERTEXT_SIZE};
 use zcash_primitives::{
+    block::BlockHash,
     consensus, constants,
     sapling::{self, note_encryption::SaplingDomain},
     transaction::{
@@ -46,9 +47,18 @@ mod ffi {
             network: &Network,
             sapling_ivks: &[[u8; 32]],
         ) -> Result<Box<BatchScanner>>;
-        fn add_transaction(self: &mut BatchScanner, tx_bytes: &[u8], height: u32) -> Result<()>;
+        fn add_transaction(
+            self: &mut BatchScanner,
+            block_tag: [u8; 32],
+            tx_bytes: &[u8],
+            height: u32,
+        ) -> Result<()>;
         fn flush(self: &mut BatchScanner);
-        fn collect_results(self: &mut BatchScanner, txid: [u8; 32]) -> Box<BatchResult>;
+        fn collect_results(
+            self: &mut BatchScanner,
+            block_tag: [u8; 32],
+            txid: [u8; 32],
+        ) -> Box<BatchResult>;
 
         fn get_sapling(self: &BatchResult) -> Vec<SaplingDecryptionResult>;
     }
@@ -298,10 +308,12 @@ impl<D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE> + Clone> Bat
     }
 }
 
+type ResultKey = (BlockHash, TxId);
+
 /// Logic to run batches of trial decryptions on the global threadpool.
 struct BatchRunner<D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>> {
     acc: Batch<D, Output>,
-    pending_results: HashMap<TxId, mpsc::Receiver<OutputIndex<Option<DecryptedNote<D>>>>>,
+    pending_results: HashMap<ResultKey, mpsc::Receiver<OutputIndex<Option<DecryptedNote<D>>>>>,
 }
 
 impl<D, Output> BatchRunner<D, Output>
@@ -330,13 +342,23 @@ where
 {
     /// Batches the given outputs for trial decryption.
     ///
+    /// `block_tag` is the hash of the block that triggered this txid being added to the
+    /// batch, or the all-zeros hash to indicate that no block triggered it (i.e. it was a
+    /// mempool change).
+    ///
     /// If after adding the given outputs, the accumulated batch size is at least
     /// `BATCH_SIZE_THRESHOLD`, `Self::flush` is called. Subsequent calls to
     /// `Self::add_outputs` will be accumulated into a new batch.
-    fn add_outputs(&mut self, txid: TxId, domain: impl Fn() -> D, outputs: &[Output]) {
+    fn add_outputs(
+        &mut self,
+        block_tag: BlockHash,
+        txid: TxId,
+        domain: impl Fn() -> D,
+        outputs: &[Output],
+    ) {
         let (tx, rx) = mpsc::channel();
         self.acc.add_outputs(domain, outputs, tx);
-        self.pending_results.insert(txid, rx);
+        self.pending_results.insert((block_tag, txid), rx);
 
         if self.acc.outputs.len() >= BATCH_SIZE_THRESHOLD {
             self.flush();
@@ -355,9 +377,17 @@ where
     }
 
     /// Collects the pending decryption results for the given transaction.
-    fn collect_results(&mut self, txid: TxId) -> HashMap<(TxId, usize), DecryptedNote<D>> {
+    ///
+    /// `block_tag` is the hash of the block that triggered this txid being added to the
+    /// batch, or the all-zeros hash to indicate that no block triggered it (i.e. it was a
+    /// mempool change).
+    fn collect_results(
+        &mut self,
+        block_tag: BlockHash,
+        txid: TxId,
+    ) -> HashMap<(TxId, usize), DecryptedNote<D>> {
         self.pending_results
-            .remove(&txid)
+            .remove(&(block_tag, txid))
             // We won't have a pending result if the transaction didn't have outputs of
             // this runner's kind.
             .map(|rx| {
@@ -409,10 +439,20 @@ fn init_batch_scanner(
 impl BatchScanner {
     /// Adds the given transaction's shielded outputs to the various batch runners.
     ///
+    /// `block_tag` is the hash of the block that triggered this txid being added to the
+    /// batch, or the all-zeros hash to indicate that no block triggered it (i.e. it was a
+    /// mempool change).
+    ///
     /// After adding the outputs, any accumulated batch of sufficient size is run on the
     /// global threadpool. Subsequent calls to `Self::add_transaction` will accumulate
     /// those output kinds into new batches.
-    fn add_transaction(&mut self, tx_bytes: &[u8], height: u32) -> Result<(), io::Error> {
+    fn add_transaction(
+        &mut self,
+        block_tag: [u8; 32],
+        tx_bytes: &[u8],
+        height: u32,
+    ) -> Result<(), io::Error> {
+        let block_tag = BlockHash(block_tag);
         // The consensusBranchId parameter is ignored; it is not used in trial decryption.
         let tx = Transaction::read(tx_bytes, consensus::BranchId::Sprout)?;
         let txid = tx.txid();
@@ -423,6 +463,7 @@ impl BatchScanner {
         if let Some((runner, bundle)) = self.sapling_runner.as_mut().zip(tx.sapling_bundle()) {
             let params = self.params;
             runner.add_outputs(
+                block_tag,
                 txid,
                 || SaplingDomain::for_height(params, height),
                 &bundle.shielded_outputs,
@@ -443,14 +484,19 @@ impl BatchScanner {
 
     /// Collects the pending decryption results for the given transaction.
     ///
+    /// `block_tag` is the hash of the block that triggered this txid being added to the
+    /// batch, or the all-zeros hash to indicate that no block triggered it (i.e. it was a
+    /// mempool change).
+    ///
     /// TODO: Return the `HashMap`s directly once `cxx` supports it.
-    fn collect_results(&mut self, txid: [u8; 32]) -> Box<BatchResult> {
+    fn collect_results(&mut self, block_tag: [u8; 32], txid: [u8; 32]) -> Box<BatchResult> {
+        let block_tag = BlockHash(block_tag);
         let txid = TxId::from_bytes(txid);
 
         let sapling = self
             .sapling_runner
             .as_mut()
-            .map(|runner| runner.collect_results(txid))
+            .map(|runner| runner.collect_results(block_tag, txid))
             .unwrap_or_default();
 
         Box::new(BatchResult { sapling })

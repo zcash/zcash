@@ -71,13 +71,14 @@ void UnregisterAllValidationInterfaces() {
 void AddTxToBatches(
     std::vector<BatchScanner*> &batchScanners,
     const CTransaction &tx,
+    const uint256 &blockTag,
     const int nHeight)
 {
     CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
     ssTx << tx;
     std::vector<unsigned char> txBytes(ssTx.begin(), ssTx.end());
     for (auto& batchScanner : batchScanners) {
-        batchScanner->AddTransaction(tx, txBytes, nHeight);
+        batchScanner->AddTransaction(tx, txBytes, blockTag, nHeight);
     }
 }
 
@@ -319,7 +320,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
                 // Batch transactions that went from 1-confirmed to 0-confirmed
                 // or conflicted.
                 for (const CTransaction &tx : block.vtx) {
-                    AddTxToBatches(batchScanners, tx, pindexScan->nHeight);
+                    AddTxToBatches(batchScanners, tx, block.GetHash(), pindexScan->nHeight);
                 }
 
                 // On to the next block!
@@ -347,17 +348,25 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 
                 // Batch transactions that went from mempool to conflicted:
                 for (const CTransaction &tx : blockData.txConflicted) {
-                    AddTxToBatches(batchScanners, tx, blockData.pindex->nHeight + 1);
+                    AddTxToBatches(
+                        batchScanners,
+                        tx,
+                        blockData.pindex->GetBlockHash(),
+                        blockData.pindex->nHeight + 1);
                 }
                 // ... and transactions that got confirmed:
                 for (const CTransaction &tx : block.vtx) {
-                    AddTxToBatches(batchScanners, tx, blockData.pindex->nHeight);
+                    AddTxToBatches(
+                        batchScanners,
+                        tx,
+                        blockData.pindex->GetBlockHash(),
+                        blockData.pindex->nHeight);
                 }
             }
 
             // Batch transactions in the mempool.
             for (auto tx : recentlyAdded.first) {
-                AddTxToBatches(batchScanners, tx, pindexLastTip->nHeight + 1);
+                AddTxToBatches(batchScanners, tx, uint256(), pindexLastTip->nHeight + 1);
             }
         }
 

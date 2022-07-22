@@ -3559,7 +3559,11 @@ bool WalletBatchScanner::AddToWalletIfInvolvingMe(
     auto decryptedNotes = decryptedNotesForTx->second;
 
     // Fill in the details about decrypted Sapling notes.
-    auto batchResults = inner->collect_results(tx.GetHash().GetRawBytes());
+    uint256 blockTag;
+    if (pblock) {
+        blockTag = pblock->GetHash();
+    }
+    auto batchResults = inner->collect_results(blockTag.GetRawBytes(), tx.GetHash().GetRawBytes());
     for (auto decrypted : batchResults->get_sapling()) {
         SaplingIncomingViewingKey ivk(uint256::FromRawBytes(decrypted.ivk));
         libzcash::SaplingPaymentAddress addr(
@@ -3589,6 +3593,7 @@ bool WalletBatchScanner::AddToWalletIfInvolvingMe(
 void WalletBatchScanner::AddTransaction(
     const CTransaction &tx,
     const std::vector<unsigned char> &txBytes,
+    const uint256 &blockTag,
     const int nHeight)
 {
     // Decrypt Sprout outputs immediately.
@@ -3596,7 +3601,7 @@ void WalletBatchScanner::AddTransaction(
         std::make_pair(tx.GetHash(), pwallet->TryDecryptShieldedOutputs(tx)));
 
     // Queue Sapling outputs for trial decryption.
-    inner->add_transaction({txBytes.data(), txBytes.size()}, nHeight);
+    inner->add_transaction(blockTag.GetRawBytes(), {txBytes.data(), txBytes.size()}, nHeight);
 }
 
 void WalletBatchScanner::Flush() {
@@ -4747,7 +4752,7 @@ int CWallet::ScanForWalletTransactions(
                 CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
                 ssTx << tx;
                 std::vector<unsigned char> txBytes(ssTx.begin(), ssTx.end());
-                batchScanner.AddTransaction(tx, txBytes, pindex->nHeight);
+                batchScanner.AddTransaction(tx, txBytes, pindex->GetBlockHash(), pindex->nHeight);
             }
             batchScanner.Flush();
             for (CTransaction& tx : block.vtx)

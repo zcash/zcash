@@ -1082,6 +1082,7 @@ public:
     void AddTransaction(
         const CTransaction &tx,
         const std::vector<unsigned char> &txBytes,
+        const uint256 &blockTag,
         const int nHeight);
 
     void Flush();
