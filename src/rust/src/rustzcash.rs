@@ -81,6 +81,7 @@ mod sapling;
 mod transaction_ffi;
 mod unified_keys_ffi;
 mod wallet;
+mod wallet_scanner;
 mod zip339_ffi;
 
 mod test_harness_ffi;

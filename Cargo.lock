@@ -956,6 +956,7 @@ dependencies = [
  "bls12_381",
  "byteorder",
  "clearscreen",
+ "crossbeam-channel",
  "cxx",
  "ed25519-zebra",
  "group",

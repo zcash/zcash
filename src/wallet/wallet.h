@@ -42,6 +42,8 @@
 #include <utility>
 #include <vector>
 
+#include <rust/wallet_scanner.h>
+
 #include <boost/shared_ptr.hpp>
 
 extern CWallet* pwalletMain;
@@ -1038,6 +1040,59 @@ public:
     }
 };
 
+typedef struct WalletDecryptedNotes {
+    mapSproutNoteData_t sproutNoteData;
+    /**
+     * The decrypted Sapling notes, and any newly-discovered addresses that
+     * should be added to the keystore.
+     *
+     * NOTE: Adding every recipient address to this map will cause the
+     * transaction to not be added to the wallet, as the address write will
+     * attempt to overwrite an existing entry and fail.
+     */
+    std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> saplingNoteDataAndAddressesToAdd;
+} WalletDecryptedNotes;
+
+class WalletBatchScanner : public BatchScanner {
+private:
+    CWallet* pwallet;
+    rust::Box<wallet::BatchScanner> inner;
+    std::map<uint256, WalletDecryptedNotes> decryptedNotes;
+
+    static rust::Box<wallet::BatchScanner> CreateBatchScanner(CWallet* pwallet);
+
+    WalletBatchScanner(CWallet* pwalletIn) : pwallet(pwalletIn), inner(CreateBatchScanner(pwalletIn)) {}
+
+    friend class CWallet;
+
+public:
+    void AddTransactionToBatch(const CTransaction &tx, const int nHeight);
+
+    bool AddToWalletIfInvolvingMe(
+        const Consensus::Params& consensus,
+        const CTransaction& tx,
+        const CBlock* pblock,
+        const int nHeight,
+        bool fUpdate);
+
+    //
+    // BatchScanner APIs
+    //
+
+    void AddTransaction(
+        const CTransaction &tx,
+        const std::vector<unsigned char> &txBytes,
+        const uint256 &blockTag,
+        const int nHeight);
+
+    void Flush();
+
+    void SyncTransaction(
+        const CTransaction &tx,
+        const CBlock *pblock,
+        const int nHeight);
+};
+
 /**
  * A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
@@ -1046,6 +1101,7 @@ class CWallet : public CCryptoKeyStore, public CValidationInterface
 {
 private:
     friend class CWalletTx;
+    friend class WalletBatchScanner;
 
     /**
      * Select a set of coins such that nValueRet >= nTargetValue and at least
@@ -1215,6 +1271,17 @@ protected:
      */
     OrchardWallet orchardWallet;
 
+    /**
+     * The batch scanner for this wallet's CValidationInterface listener.
+     *
+     * This is stored in the wallet so that the wallet can manage its memory and
+     * the CValidationInterface provider uses pointers so the vtables work.
+     * We rely on the CValidationInterface provider only using its pointer to
+     * the batch scanner synchronously, and we use a separate batch scanner
+     * inside ScanForWalletTransactions so they don't collide.
+     */
+    WalletBatchScanner* validationInterfaceBatchScanner;
+
 public:
     /*
      * Main wallet lock.
@@ -1257,6 +1324,8 @@ public:
     {
         delete pwalletdbEncryption;
         pwalletdbEncryption = NULL;
+        delete validationInterfaceBatchScanner;
+        validationInterfaceBatchScanner = nullptr;
     }
 
     void SetNull(const CChainParams& params)
@@ -1275,6 +1344,7 @@ public:
         fBroadcastTransactions = false;
         nWitnessCacheSize = 0;
         networkIdString = params.NetworkIDString();
+        validationInterfaceBatchScanner = new WalletBatchScanner(this);
     }
 
     /**
@@ -1691,6 +1761,8 @@ public:
 
     DBErrors ReorderTransactions();
 
+    WalletDecryptedNotes TryDecryptShieldedOutputs(const CTransaction& tx);
+
     void MarkDirty();
     bool UpdateNullifierNoteMap();
     void UpdateNullifierNoteMapWithTx(const CWalletTx& wtx);
@@ -1698,12 +1770,13 @@ public:
     void UpdateSaplingNullifierNoteMapForBlock(const CBlock* pblock);
     void LoadWalletTx(const CWalletTx& wtxIn);
     bool AddToWallet(const CWalletTx& wtxIn, CWalletDB* pwalletdb);
-    void SyncTransaction(const CTransaction& tx, const CBlock* pblock, const int nHeight);
+    BatchScanner* GetBatchScanner();
     bool AddToWalletIfInvolvingMe(
             const Consensus::Params& consensus,
             const CTransaction& tx,
             const CBlock* pblock,
             const int nHeight,
+            WalletDecryptedNotes decryptedNotes,
             bool fUpdate
             );
     void EraseFromWallet(const uint256 &hash);
@@ -1806,7 +1879,10 @@ public:
         const uint256& hSig,
         uint8_t n) const;
     mapSproutNoteData_t FindMySproutNotes(const CTransaction& tx) const;
-    std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> FindMySaplingNotes(const CTransaction& tx, int height) const;
+    std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> FindMySaplingNotes(
+        const Consensus::Params& consensus,
+        const CTransaction& tx,
+        int height) const;
     bool IsSproutNullifierFromMe(const uint256& nullifier) const;
     bool IsSaplingNullifierFromMe(const uint256& nullifier) const;
 
