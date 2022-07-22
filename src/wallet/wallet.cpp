@@ -3554,7 +3554,7 @@ bool WalletBatchScanner::AddToWalletIfInvolvingMe(
 
     auto decryptedNotesForTx = decryptedNotes.find(tx.GetHash());
     if (decryptedNotesForTx == decryptedNotes.end()) {
-        throw std::logic_error("Called SyncTransaction with a tx that wasn't passed to AddTransaction");
+        throw std::logic_error("Called WalletBatchScanner::AddToWalletIfInvolvingMe with a tx that wasn't passed to AddTransaction");
     }
     auto decryptedNotes = decryptedNotesForTx->second;
 

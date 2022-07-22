@@ -453,7 +453,8 @@ impl BatchScanner {
         height: u32,
     ) -> Result<(), io::Error> {
         let block_tag = BlockHash(block_tag);
-        // The consensusBranchId parameter is ignored; it is not used in trial decryption.
+        // The consensusBranchId parameter is ignored; it is not used in trial decryption
+        // and does not affect transaction parsing.
         let tx = Transaction::read(tx_bytes, consensus::BranchId::Sprout)?;
         let txid = tx.txid();
         let height = consensus::BlockHeight::from_u32(height);

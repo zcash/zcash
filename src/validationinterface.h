@@ -139,7 +139,8 @@ struct CMainSignals {
         BatchScanner* (),
         aggregate_non_null_values<std::vector<BatchScanner*>>> GetBatchScanner;
     /**
-     * Notifies listeners of updated transaction data (transaction, and optionally the block it is found in.
+     * Notifies listeners of updated transaction data (the transaction, and
+     * optionally the block it is found in).
      *
      * Listeners of this signal should not listen to `GetBatchScanner` or they
      * will be notified about transactions twice.
