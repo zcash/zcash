@@ -1,4 +1,4 @@
-Zcash 5.1.0
+Zcash 5.2.0-rc1
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
