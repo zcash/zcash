@@ -2,8 +2,8 @@ use core::fmt;
 use std::collections::HashMap;
 use std::io;
 use std::mem;
-use std::sync::mpsc;
 
+use crossbeam_channel as channel;
 use group::GroupEncoding;
 use zcash_note_encryption::{batch, BatchDomain, Domain, ShieldedOutput, ENC_CIPHERTEXT_SIZE};
 use zcash_primitives::{
@@ -222,7 +222,7 @@ struct OutputIndex<V> {
     value: V,
 }
 
-type OutputReplier<D> = OutputIndex<mpsc::Sender<OutputIndex<Option<DecryptedNote<D>>>>>;
+type OutputReplier<D> = OutputIndex<channel::Sender<OutputIndex<Option<DecryptedNote<D>>>>>;
 
 /// A batch of outputs to trial decrypt.
 struct Batch<D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>> {
@@ -296,7 +296,7 @@ impl<D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE> + Clone> Bat
         &mut self,
         domain: impl Fn() -> D,
         outputs: &[Output],
-        replier: mpsc::Sender<OutputIndex<Option<DecryptedNote<D>>>>,
+        replier: channel::Sender<OutputIndex<Option<DecryptedNote<D>>>>,
     ) {
         self.outputs
             .extend(outputs.iter().cloned().map(|output| (domain(), output)));
@@ -313,7 +313,7 @@ type ResultKey = (BlockHash, TxId);
 /// Logic to run batches of trial decryptions on the global threadpool.
 struct BatchRunner<D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>> {
     acc: Batch<D, Output>,
-    pending_results: HashMap<ResultKey, mpsc::Receiver<OutputIndex<Option<DecryptedNote<D>>>>>,
+    pending_results: HashMap<ResultKey, channel::Receiver<OutputIndex<Option<DecryptedNote<D>>>>>,
 }
 
 impl<D, Output> BatchRunner<D, Output>
@@ -356,7 +356,7 @@ where
         domain: impl Fn() -> D,
         outputs: &[Output],
     ) {
-        let (tx, rx) = mpsc::channel();
+        let (tx, rx) = channel::unbounded();
         self.acc.add_outputs(domain, outputs, tx);
         self.pending_results.insert((block_tag, txid), rx);
 
