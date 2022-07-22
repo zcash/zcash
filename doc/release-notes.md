@@ -29,7 +29,8 @@ These include:
 - We now prune witness data in the wallet for notes spent more than 100 blocks
   in the past, so that we can avoid unnecessarily updating those witnesses.
   In order to take advantage of this performance improvement, users will need
-  to start their nodes with `-rescan` the first time .
+  to start their nodes with `-rescan` one time, in order to ensure that witnesses
+  for spent notes are in the wallet are properly pruned.
 
 - The process for incrementing the witnesses for notes the wallet is tracking
   has been optimized to avoid redundant passes over the wallet.
