@@ -2,11 +2,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-// This is added because `check_spend` takes several arguments over FFI. This
-// annotation gets removed by the cxx procedural macro so it needs to be enabled
-// on the entire module.
-#![allow(clippy::too_many_arguments)]
-
 use std::convert::TryInto;
 
 use bellman::groth16::{prepare_verifying_key, Proof};
@@ -66,6 +61,7 @@ mod ffi {
         type Verifier;
 
         fn init_verifier() -> Box<Verifier>;
+        #[allow(clippy::too_many_arguments)]
         fn check_spend(
             self: &mut Verifier,
             cv: &[u8; 32],
@@ -226,6 +222,7 @@ fn init_verifier() -> Box<Verifier> {
 }
 
 impl Verifier {
+    #[allow(clippy::too_many_arguments)]
     fn check_spend(
         &mut self,
         cv: &[u8; 32],
