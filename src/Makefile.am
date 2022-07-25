@@ -233,6 +233,7 @@ BITCOIN_CORE_H = \
   consensus/validation.h \
   core_io.h \
   core_memusage.h \
+  cuckoocache.h \
   deprecation.h \
   experimental_features.h \
   fs.h \

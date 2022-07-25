@@ -36,6 +36,7 @@ libcxx 14.0.6 2022-09-01
 native_rust 1.60.0 2022-09-01
 native_rust 1.61.0 2022-09-01
 native_rust 1.62.0 2022-09-01
+native_rust 1.62.1 2022-09-01
 
 # We're never updating to this version
 bdb 18.1.40 2024-02-01
