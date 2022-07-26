@@ -13,6 +13,21 @@ criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.13.0 -> 0.13.1"
 notes = "Adds multi-threaded batch validation, which I checked against the existing single-threaded batch validation."
 
+[[audits.cxx]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.68 -> 1.0.72"
+
+[[audits.cxxbridge-flags]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.68 -> 1.0.72"
+
+[[audits.cxxbridge-macro]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.68 -> 1.0.72"
+
 [[audits.equihash]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -66,6 +81,21 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.1.0 -> 0.2.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.proc-macro2]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.37 -> 1.0.41"
+
+[[audits.syn]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.91 -> 1.0.98"
+
+[[audits.unicode-ident]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+version = "1.0.2"
 
 [[audits.zcash_address]]
 who = "Jack Grigg <jack@z.cash>"

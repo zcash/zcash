@@ -1,24 +1,25 @@
 package=native_cxxbridge
 # The version needs to match cxx in Cargo.toml
-$(package)_version=1.0.68
+$(package)_version=1.0.72
 $(package)_download_path=https://github.com/dtolnay/cxx/archive/refs/tags
 $(package)_file_name=native_cxxbridge-$($(package)_version).tar.gz
 $(package)_download_file=$($(package)_version).tar.gz
-$(package)_sha256_hash=6fed9ef1c64a37c343727368b38c27fa4e15b27ca9924c6672a6a5496080c832
+$(package)_sha256_hash=22b2ec9b6cbec281f4b4d8dc8e403e7ab276b9d2140d4e7074a1388a252c4c0b
 $(package)_build_subdir=gen/cmd
 $(package)_dependencies=native_rust
 # This file is somewhat annoying to update, but can be done like so from the repo base:
+# $ export VERSION=1.0.72
 # $ rm .cargo/config .cargo/.configured-for-offline
 # $ mkdir tmp
 # $ cd tmp
-# $ tar xf ../depends/sources/native_cxxbridge-1.0.68.tar.gz
-# $ cd cxx-1.0.68
+# $ tar xf ../depends/sources/native_cxxbridge-$VERSION.tar.gz
+# $ cd cxx-$VERSION
 # $ cargo build --release --package=cxxbridge-cmd --bin=cxxbridge
 # $ cargo clean
 # $ cd ..
-# $ mv cxx-1.0.68 cxx-1.0.68-locked
-# $ tar xf ../depends/sources/native_cxxbridge-1.0.68.tar.gz
-# $ diff -urN cxx-1.0.68 cxx-1.0.68-locked >../depends/patches/native_cxxbridge/lockfile.diff
+# $ mv cxx-$VERSION cxx-$VERSION-locked
+# $ tar xf ../depends/sources/native_cxxbridge-$VERSION.tar.gz
+# $ diff -urN cxx-$VERSION cxx-$VERSION-locked >../depends/patches/native_cxxbridge/lockfile.diff
 $(package)_patches=lockfile.diff
 $(package)_extra_sources=$(package)-$($(package)_version)-vendored.tar.gz
 

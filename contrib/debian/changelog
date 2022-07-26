@@ -1,3 +1,15 @@
+zcash (5.2.0) stable; urgency=medium
+
+  * 5.2.0 release.
+
+ -- Electric Coin Company <team@electriccoin.co>  Mon, 25 Jul 2022 12:42:25 -0600
+
+zcash (5.2.0~rc1) stable; urgency=medium
+
+  * 5.2.0-rc1 release.
+
+ -- Electric Coin Company <team@electriccoin.co>  Fri, 22 Jul 2022 15:07:59 -0600
+
 zcash (5.1.0) stable; urgency=medium
 
   * 5.1.0 release.
