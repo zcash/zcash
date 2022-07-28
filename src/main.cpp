@@ -1716,6 +1716,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for duplicate inputs
+    // https://p.z.cash/TCR:bad-txns-inputs-duplicate
     set<COutPoint> vInOutPoints;
     for (const CTxIn& txin : tx.vin)
     {
@@ -1725,6 +1726,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for duplicate joinsplit nullifiers in this transaction
+    // https://p.z.cash/TCR:bad-joinsplits-nullifiers-duplicate
     {
         set<uint256> vJoinSplitNullifiers;
         for (const JSDescription& joinsplit : tx.vJoinSplit)
@@ -1741,6 +1743,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for duplicate sapling nullifiers in this transaction
+    // https://p.z.cash/TCR:bad-spend-description-nullifiers-duplicate
     {
         set<uint256> vSaplingNullifiers;
         for (const SpendDescription& spend_desc : tx.vShieldedSpend)
@@ -1754,6 +1757,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for duplicate orchard nullifiers in this transaction
+    // https://p.z.cash/TCR:bad-orchard-nullifiers-duplicate
     {
         std::set<uint256> vOrchardNullifiers;
         for (const uint256& nf : tx.GetOrchardBundle().GetNullifiers())
@@ -2650,6 +2654,9 @@ bool CheckTxShieldedInputs(
     int dosLevel)
 {
     // Are the shielded spends' requirements met?
+    // https://p.z.cash/TCR:bad-txns-sprout-duplicate-nullifier?partial
+    // https://p.z.cash/TCR:bad-txns-sapling-duplicate-nullifier?partial
+    // https://p.z.cash/TCR:bad-txns-orchard-duplicate-nullifier?partial
     auto unmetShieldedReq = view.HaveShieldedRequirements(tx);
     if (unmetShieldedReq) {
         auto txid = tx.GetHash().ToString();
@@ -3355,6 +3362,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         std::vector<CTxOut> allPrevOutputs;
 
         // Are the shielded spends' requirements met?
+        // https://p.z.cash/TCR:bad-txns-sprout-duplicate-nullifier?partial
+        // https://p.z.cash/TCR:bad-txns-sapling-duplicate-nullifier?partial
+        // https://p.z.cash/TCR:bad-txns-orchard-duplicate-nullifier?partial
         if (!Consensus::CheckTxShieldedInputs(tx, state, view, 100)) {
             return false;
         }
