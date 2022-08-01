@@ -5,12 +5,14 @@ use std::process;
 
 use gumdrop::{Options, ParsingStyle};
 use lazy_static::lazy_static;
+use zcash_address::ZcashAddress;
 use zcash_primitives::{block::BlockHeader, consensus::BranchId, transaction::Transaction};
 use zcash_proofs::{default_params_folder, load_parameters, ZcashParameters};
 
 mod context;
 use context::{Context, ZUint256};
 
+mod address;
 mod block;
 mod transaction;
 
@@ -55,8 +57,10 @@ fn main() {
         return;
     }
 
-    if let Ok(bytes) = hex::decode(opts.data) {
+    if let Ok(bytes) = hex::decode(&opts.data) {
         inspect_bytes(bytes, opts.context);
+    } else if let Ok(addr) = ZcashAddress::try_from_encoded(&opts.data) {
+        address::inspect(addr);
     } else {
         // Unknown data format.
         eprintln!("String does not match known Zcash data formats.");
