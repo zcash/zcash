@@ -48,7 +48,7 @@ bool CCoins::Spend(uint32_t nPos)
 bool CCoinsView::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return false; }
 bool CCoinsView::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return false; }
 bool CCoinsView::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const { return false; }
-bool CCoinsView::GetNullifier(const uint256 &nullifier, ShieldedType type) const { return false; }
+bool CCoinsView::GetNullifier(const uint256 &nullifier, ShieldedType type) const { return true; }
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
 uint256 CCoinsView::GetBestBlock() const { return uint256(); }
