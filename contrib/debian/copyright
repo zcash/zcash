@@ -265,6 +265,11 @@ Copyright: 2011 The LevelDB Authors
 License: BSD-3-clause-Google
 Comment: The LevelDB Authors are listed in src/leveldb/AUTHORS.
 
+Files: src/crc32c/*
+Copyright: 2017 The CRC32C Authors
+License: BSD-3-clause-Google
+Comment: The CRC32C Authors are listed in src/crc32c/AUTHORS.
+
 License: Apache-2.0
  On Debian systems, the full text of the Apache License v2.0 can be found in the
  file `/usr/share/common-licenses/Apache-2.0`.
