@@ -950,6 +950,7 @@ version = "0.2.0"
 dependencies = [
  "anyhow",
  "backtrace",
+ "bech32",
  "bellman",
  "blake2b_simd",
  "blake2s_simd",

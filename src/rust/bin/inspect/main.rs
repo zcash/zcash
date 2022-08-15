@@ -5,7 +5,9 @@ use std::process;
 
 use gumdrop::{Options, ParsingStyle};
 use lazy_static::lazy_static;
+use secrecy::Zeroize;
 use zcash_address::ZcashAddress;
+use zcash_primitives::zip339;
 use zcash_primitives::{block::BlockHeader, consensus::BranchId, transaction::Transaction};
 use zcash_proofs::{default_params_folder, load_parameters, ZcashParameters};
 
@@ -14,6 +16,7 @@ use context::{Context, ZUint256};
 
 mod address;
 mod block;
+mod keys;
 mod transaction;
 
 lazy_static! {
@@ -45,10 +48,11 @@ struct CliOptions {
 
 fn main() {
     let args = env::args().collect::<Vec<_>>();
-    let opts = CliOptions::parse_args(&args[1..], ParsingStyle::default()).unwrap_or_else(|e| {
-        eprintln!("{}: {}", args[0], e);
-        process::exit(2);
-    });
+    let mut opts =
+        CliOptions::parse_args(&args[1..], ParsingStyle::default()).unwrap_or_else(|e| {
+            eprintln!("{}: {}", args[0], e);
+            process::exit(2);
+        });
 
     if opts.help_requested() {
         println!("Usage: {} data [context]", args[0]);
@@ -57,7 +61,12 @@ fn main() {
         return;
     }
 
-    if let Ok(bytes) = hex::decode(&opts.data) {
+    let lang = zip339::Language::English;
+
+    if let Ok(mnemonic) = zip339::Mnemonic::from_phrase_in(lang, &opts.data) {
+        opts.data.zeroize();
+        keys::inspect_mnemonic(mnemonic, lang, opts.context);
+    } else if let Ok(bytes) = hex::decode(&opts.data) {
         inspect_bytes(bytes, opts.context);
     } else if let Ok(addr) = ZcashAddress::try_from_encoded(&opts.data) {
         address::inspect(addr);

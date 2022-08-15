@@ -1,3 +1,4 @@
+use std::convert::TryFrom;
 use std::fmt;
 use std::str::FromStr;
 
@@ -9,6 +10,7 @@ use zcash_primitives::{
     consensus::Network,
     legacy::Script,
     transaction::components::{transparent, Amount},
+    zip32::AccountId,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -44,6 +46,68 @@ impl<'de> Deserialize<'de> for JsonNetwork {
         D: serde::Deserializer<'de>,
     {
         deserializer.deserialize_str(JsonNetworkVisitor)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct JsonAccountId(AccountId);
+
+struct JsonAccountIdVisitor;
+
+impl<'de> Visitor<'de> for JsonAccountIdVisitor {
+    type Value = JsonAccountId;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a u31")
+    }
+
+    fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        u32::try_from(v)
+            .map_err(|_| E::custom(format!("u32 out of range: {}", v)))
+            .map(AccountId::from)
+            .map(JsonAccountId)
+    }
+
+    fn visit_i128<E>(self, v: i128) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        u32::try_from(v)
+            .map_err(|_| E::custom(format!("u32 out of range: {}", v)))
+            .map(AccountId::from)
+            .map(JsonAccountId)
+    }
+
+    fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        u32::try_from(v)
+            .map_err(|_| E::custom(format!("u32 out of range: {}", v)))
+            .map(AccountId::from)
+            .map(JsonAccountId)
+    }
+
+    fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        u32::try_from(v)
+            .map_err(|_| E::custom(format!("u32 out of range: {}", v)))
+            .map(AccountId::from)
+            .map(JsonAccountId)
+    }
+}
+
+impl<'de> Deserialize<'de> for JsonAccountId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_u32(JsonAccountIdVisitor)
     }
 }
 
@@ -177,6 +241,7 @@ struct ZTxOut {
 #[derive(Debug, Deserialize)]
 pub(crate) struct Context {
     network: Option<JsonNetwork>,
+    accounts: Option<Vec<JsonAccountId>>,
     pub(crate) chainhistoryroot: Option<ZUint256>,
     transparentcoins: Option<Vec<ZTxOut>>,
 }
@@ -199,6 +264,12 @@ impl Context {
             Network::MainNetwork => zcash_address::Network::Main,
             Network::TestNetwork => zcash_address::Network::Test,
         })
+    }
+
+    pub(crate) fn accounts(&self) -> Option<Vec<AccountId>> {
+        self.accounts
+            .as_ref()
+            .map(|accounts| accounts.iter().map(|id| id.0).collect())
     }
 
     pub(crate) fn transparent_coins(&self) -> Option<Vec<transparent::TxOut>> {

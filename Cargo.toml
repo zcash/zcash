@@ -81,6 +81,7 @@ metrics-exporter-prometheus = "0.10"
 gumdrop = "0.8"
 
 # zcash-inspect tool
+bech32 = "0.8"
 equihash = "0.2"
 hex = "0.4"
 lazy_static = "1.4"
