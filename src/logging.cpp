@@ -126,7 +126,7 @@ bool LogAcceptCategory(const char* category)
 
 void ShrinkDebugFile()
 {
-    // Scroll debug.log if it's getting too big
+    // Scroll debug log if it's getting too big
     fs::path pathLog = GetDebugLogPath();
     FILE* file = fsbridge::fopen(pathLog, "r");
     if (file && fs::file_size(pathLog) > 10 * 1000000)

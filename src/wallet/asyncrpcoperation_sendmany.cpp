@@ -530,7 +530,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         {
             throw JSONRPCError(
                 RPC_WALLET_ERROR,
-                "Failed to add Orchard note to transaction (check debug.log for details)"
+                strprintf("Failed to add Orchard note to transaction (check %s for details)", GetDebugLogPath())
             );
         }
     }

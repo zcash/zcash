@@ -22,7 +22,7 @@ main(int argc, char** argv)
     ECC_Start();
     auto globalVerifyHandle = new ECCVerifyHandle();
     SetupEnvironment();
-    fPrintToDebugLog = false; // don't want to write to debug.log file
+    fPrintToDebugLog = false; // don't want to write to debug log file
 
     fs::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
     fs::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";

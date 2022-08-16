@@ -33,10 +33,10 @@ std::string LogConfigFilter();
 /** Return true if log accepts specified category */
 bool LogAcceptCategory(const char* category);
 
-/** Print to debug.log with level INFO and category "main". */
+/** Print to debug log with level INFO and category "main". */
 #define LogPrintf(...) LogPrintInner("info", "main", __VA_ARGS__)
 
-/** Print to debug.log with level DEBUG. */
+/** Print to debug log with level DEBUG. */
 #define LogPrint(category, ...) LogPrintInner("debug", category, __VA_ARGS__)
 
 #define LogPrintInner(level, category, ...) do {           \

@@ -163,7 +163,7 @@ namespace {
         SetMiscWarning(strMessage, GetTime());
         LogError("main", "*** %s\n", strMessage);
         uiInterface.ThreadSafeMessageBox(
-            userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details") : userMessage,
+            userMessage.empty() ? strprintf(_("Error: A fatal internal error occurred, see %s for details"), GetDebugLogPath()) : userMessage,
             "", CClientUIInterface::MSG_ERROR);
         StartShutdown();
         return false;

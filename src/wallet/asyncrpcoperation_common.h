@@ -36,7 +36,7 @@ UniValue SendTransaction(
         CWalletTx wtx(pwalletMain, tx);
         // save the mapping from (receiver, txid) to UA
         if (!pwalletMain->SaveRecipientMappings(tx.GetHash(), recipients)) {
-            // More details in debug.log
+            // More details in debug log
             throw JSONRPCError(RPC_WALLET_ERROR, "SendTransaction: SaveRecipientMappings failed");
         }
         CValidationState state;
