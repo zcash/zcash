@@ -437,12 +437,8 @@ criteria = "safe-to-deploy"
 version = "0.8.2"
 criteria = "safe-to-deploy"
 
-[[exemptions.miow]]
-version = "0.3.7"
-criteria = "safe-to-deploy"
-
 [[exemptions.nix]]
-version = "0.22.3"
+version = "0.24.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.nom]]
@@ -451,10 +447,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.nonempty]]
 version = "0.7.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.ntapi]]
-version = "0.3.7"
 criteria = "safe-to-deploy"
 
 [[exemptions.num-bigint]]
@@ -770,7 +762,7 @@ version = "0.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.tokio]]
-version = "1.17.0"
+version = "1.20.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.toml]]
@@ -892,6 +884,17 @@ criteria = "safe-to-deploy"
 [[exemptions.winapi-x86_64-pc-windows-gnu]]
 version = "0.4.0"
 criteria = "safe-to-deploy"
+
+[[exemptions.windows-sys]]
+version = "0.36.1"
+criteria = "safe-to-deploy"
+
+[exemptions.windows-sys.dependency-criteria]
+windows_aarch64_msvc = "safe-to-run"
+windows_i686_gnu = "safe-to-run"
+windows_i686_msvc = "safe-to-run"
+windows_x86_64_gnu = "safe-to-run"
+windows_x86_64_msvc = "safe-to-run"
 
 [[exemptions.wyz]]
 version = "0.5.0"

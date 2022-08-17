@@ -21,15 +21,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: install
-          args: --git https://github.com/mozilla/cargo-vet.git cargo-vet
-
-      # This is necessary because `cargo vet --locked` implies `cargo metadata --frozen`,
-      # preventing all network access.
-      - name: Ensure dependency sources are present
-        uses: actions-rs/cargo@v1
-        with:
-          command: fetch
-          args: --locked
+          args: cargo-vet
 
       - name: Run cargo vet --locked
         uses: actions-rs/cargo@v1

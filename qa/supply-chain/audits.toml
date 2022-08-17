@@ -7,11 +7,41 @@ description = "The cryptographic code in this crate has been reviewed for correc
 [criteria.license-reviewed]
 description = "The license of this crate has been reviewed for compatibility with its usage in this repository. If the crate is not available under the MIT license, `contrib/debian/copyright` has been updated with a corresponding copyright notice for files under `depends/*/vendored-sources/CRATE_NAME`."
 
+[[audits.anyhow]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.56 -> 1.0.61"
+notes = "Update does not introduce new code. Minor build script changes look fine."
+
 [[audits.bellman]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.13.0 -> 0.13.1"
 notes = "Adds multi-threaded batch validation, which I checked against the existing single-threaded batch validation."
+
+[[audits.chacha20]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = ["crypto-reviewed", "safe-to-deploy"]
+delta = "0.8.1 -> 0.8.2"
+notes = "Unpins zeroize."
+
+[[audits.chacha20poly1305]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = ["crypto-reviewed", "safe-to-deploy"]
+delta = "0.9.0 -> 0.9.1"
+notes = "Unpins zeroize."
+
+[[audits.clearscreen]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.9 -> 1.0.10"
+notes = "Bumps nix and removes some of its default features."
+
+[[audits.crypto-common]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = ["crypto-reviewed", "safe-to-deploy"]
+delta = "0.1.3 -> 0.1.6"
+notes = "New trait and type alias look fine."
 
 [[audits.cxx]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -46,6 +76,15 @@ criteria = ["crypto-reviewed", "safe-to-deploy"]
 version = "0.1.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.getrandom]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.2.6 -> 0.2.7"
+notes = """
+Checked that getrandom::wasi::getrandom_inner matches wasi::random_get.
+Checked that getrandom::util_libc::Weak lock ordering matches std::sys::unix::weak::DlsymWeak.
+"""
+
 [[audits.halo2_gadgets]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
@@ -69,6 +108,38 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.1.0 -> 0.2.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.itoa]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.1 -> 1.0.3"
+notes = "Update makes no changes to code."
+
+[[audits.mio]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.8.2 -> 0.8.4"
+notes = """
+Migrates from winapi to windows-sys. The changes to API usage look reasonable
+based on what I've seen in other uses of the windows-sys crate. Unsafe code
+falls into two categories:
+- Usage of `mem::zeroed()`, which doesn't look obviously wrong. The
+  `..unsafe { mem::zeroed() }` in `sys::unix::selector::kqueue` looks weird
+  but AFAICT is saying \"take any unspecified fields from an instance of this
+  struct that has been zero-initialized\", which is fine for integer fields. It
+  would be nice if there was documentation to this effect (explaining why this
+  is done instead of `..Default::default()`).
+- Calls to Windows API methods. These are either pre-existing (and altered for
+  the differences in the crate abstractions), or newly added in logic that
+  appears to be copied from miow 0.3.6 (I scanned this by eye and didn't see
+  any noteworthy changes other than handling windows-sys API differences).
+"""
+
+[[audits.num-integer]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.1.44 -> 0.1.45"
+notes = "Fixes some argument-handling panic bugs."
 
 [[audits.orchard]]
 who = "Jack Grigg <jack@z.cash>"
@@ -87,15 +158,94 @@ who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.37 -> 1.0.41"
 
+[[audits.serde]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.136 -> 1.0.143"
+notes = "Bumps serde-derive and adds some constructors."
+
+[[audits.serde_derive]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.136 -> 1.0.143"
+notes = "Bumps syn, inverts some build flags."
+
 [[audits.syn]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.91 -> 1.0.98"
 
+[[audits.thiserror]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.30 -> 1.0.32"
+notes = "Bumps thiserror-impl, no code changes."
+
+[[audits.thiserror-impl]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.30 -> 1.0.32"
+notes = "Only change is to refine an error message."
+
 [[audits.unicode-ident]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 version = "1.0.2"
+
+[[audits.windows_aarch64_msvc]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-run"
+version = "0.36.1"
+notes = """
+Adds a binary blob to the library search path, that contains a subset of
+the Windows SDK to avoid a direct dependency on the latter. See
+https://github.com/microsoft/windows-rs/pull/1217 for context. I did not
+audit the binary blob, but the build script looks fine.
+"""
+
+[[audits.windows_i686_gnu]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-run"
+version = "0.36.1"
+notes = """
+Adds a binary blob to the library search path, that contains a subset of
+the Windows SDK to avoid a direct dependency on the latter. See
+https://github.com/microsoft/windows-rs/pull/1217 for context. I did not
+audit the binary blob, but the build script looks fine.
+"""
+
+[[audits.windows_i686_msvc]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-run"
+version = "0.36.1"
+notes = """
+Adds a binary blob to the library search path, that contains a subset of
+the Windows SDK to avoid a direct dependency on the latter. See
+https://github.com/microsoft/windows-rs/pull/1217 for context. I did not
+audit the binary blob, but the build script looks fine.
+"""
+
+[[audits.windows_x86_64_gnu]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-run"
+version = "0.36.1"
+notes = """
+Adds a binary blob to the library search path, that contains a subset of
+the Windows SDK to avoid a direct dependency on the latter. See
+https://github.com/microsoft/windows-rs/pull/1217 for context. I did not
+audit the binary blob, but the build script looks fine.
+"""
+
+[[audits.windows_x86_64_msvc]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-run"
+version = "0.36.1"
+notes = """
+Adds a binary blob to the library search path, that contains a subset of
+the Windows SDK to avoid a direct dependency on the latter. See
+https://github.com/microsoft/windows-rs/pull/1217 for context. I did not
+audit the binary blob, but the build script looks fine.
+"""
 
 [[audits.zcash_address]]
 who = "Jack Grigg <jack@z.cash>"
