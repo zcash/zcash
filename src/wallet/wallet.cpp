@@ -2235,7 +2235,7 @@ SpendableInputs CWallet::FindSpendableInputs(
                 isminetype mine = IsMine(output);
 
                 // skip spent utxos
-                if (IsSpent(wtxid, i)) continue;
+                if (IsSpent(wtxid, i, std::nullopt)) continue;
                 // skip utxos that don't belong to the wallet
                 if (mine == ISMINE_NO) continue;
                 // skip utxos that for which we don't have the spending keys, if
@@ -2413,7 +2413,7 @@ SpendableInputs CWallet::FindSpendableInputs(
  * Outpoint is spent if any non-conflicted transaction
  * spends it:
  */
-bool CWallet::IsSpent(const uint256& hash, unsigned int n) const
+bool CWallet::IsSpent(const uint256& hash, unsigned int n, std::optional<int> unspentAsOfDepth) const
 {
     const COutPoint outpoint(hash, n);
     pair<TxSpends::const_iterator, TxSpends::const_iterator> range;
@@ -2423,7 +2423,7 @@ bool CWallet::IsSpent(const uint256& hash, unsigned int n) const
     {
         const uint256& wtxid = it->second;
         std::map<uint256, CWalletTx>::const_iterator mit = mapWallet.find(wtxid);
-        if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= 0)
+        if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= unspentAsOfDepth.value_or(0))
             return true; // Spent
     }
     return false;
@@ -4981,7 +4981,7 @@ CAmount CWalletTx::GetAvailableCredit(bool fUseCache, const isminefilter& filter
     uint256 hashTx = GetHash();
     for (unsigned int i = 0; i < vout.size(); i++)
     {
-        if (!pwallet->IsSpent(hashTx, i))
+        if (!pwallet->IsSpent(hashTx, i, std::nullopt))
         {
             const CTxOut &txout = vout[i];
             nCredit += pwallet->GetCredit(txout, filter);
@@ -5246,7 +5246,8 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                              bool fIncludeCoinBase,
                              bool fOnlySpendable,
                              int nMinDepth,
-                             std::set<CTxDestination>* onlyFilterByDests) const
+                             std::set<CTxDestination>* onlyFilterByDests,
+                             std::optional<int> unspentAsOfDepth) const
 {
     assert(nMinDepth >= 0);
     AssertLockHeld(cs_main);
@@ -5295,7 +5296,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                     }
                 }
 
-                if (!(IsSpent(wtxid, i)) && mine != ISMINE_NO &&
+                if (!(IsSpent(wtxid, i, unspentAsOfDepth)) && mine != ISMINE_NO &&
                     !IsLockedCoin((*it).first, i) && (pcoin->vout[i].nValue > 0 || fIncludeZeroValue) &&
                     (!coinControl || !coinControl->HasSelected() || coinControl->fAllowOtherInputs || coinControl->IsSelected((*it).first, i)))
                         vCoins.push_back(COutput(pcoin, i, nDepth, isSpendable, isCoinbase));
@@ -6248,7 +6249,7 @@ std::map<CTxDestination, CAmount> CWallet::GetAddressBalances()
                 if(!ExtractDestination(pcoin->vout[i].scriptPubKey, addr))
                     continue;
 
-                CAmount n = IsSpent(walletEntry.first, i) ? 0 : pcoin->vout[i].nValue;
+                CAmount n = IsSpent(walletEntry.first, i, std::nullopt) ? 0 : pcoin->vout[i].nValue;
 
                 if (!balances.count(addr))
                     balances[addr] = 0;

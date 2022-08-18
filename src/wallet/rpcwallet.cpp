@@ -2394,9 +2394,9 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 3)
+    if (fHelp || params.size() > 4)
         throw runtime_error(
-            "listunspent ( minconf maxconf  [\"address\",...] )\n"
+            "listunspent ( minconf maxconf  [\"address\",...] unspent_as_of)\n"
             "\nReturns array of unspent transparent transaction outputs with between minconf and\n"
             "maxconf (inclusive) confirmations. Use `z_listunspent` instead to see information\n"
             "related to unspent shielded notes. Results may be optionally filtered to only include\n"
@@ -2425,7 +2425,9 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "  }\n"
             "  ,...\n"
             "]\n"
-
+            "4. as_of_height     (numeric, optional, default=1) Return information for transaction outputs\n"
+            "                    as of the specified block height. This overrides the value provided for\n"
+            "                    `minconf`.\n"
             "\nExamples\n"
             + HelpExampleCli("listunspent", "")
             + HelpExampleCli("listunspent", "6 9999999 \"[\\\"t1PGFqEzfmQch1gKD3ra4k18PNj3tTUUSqg\\\",\\\"t1LtvqCaApEdUGFkpKMM4MstjcaL4dKg8SP\\\"]\"")
@@ -2458,10 +2460,32 @@ UniValue listunspent(const UniValue& params, bool fHelp)
         }
     }
 
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    std::optional<int> unspentAsOfDepth;
+    if (params.size() > 3) {
+        auto asOfHeight = params[3].get_int();
+        // it's fine to specify a height that's greater than the current height
+        if (chainActive.Height() > asOfHeight) {
+            unspentAsOfDepth = chainActive.Height() - asOfHeight;
+            if (unspentAsOfDepth.value() > nMinDepth) {
+                nMinDepth = unspentAsOfDepth.value();
+            }
+        }
+    }
+
     UniValue results(UniValue::VARR);
     vector<COutput> vecOutputs;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    pwalletMain->AvailableCoins(
+            vecOutputs,
+            false,        // fOnlyConfirmed
+            nullptr,      // coinControl
+            true,         // fIncludeZeroValue
+            true,         // fIncludeCoinBase
+            false,        // fOnlySpendable
+            nMinDepth,
+            destinations.empty() ? nullptr : &destinations,
+            unspentAsOfDepth);
     for (const COutput& out : vecOutputs) {
         if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
             continue;

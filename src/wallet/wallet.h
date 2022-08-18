@@ -1436,7 +1436,8 @@ public:
                         bool fIncludeCoinBase=true,
                         bool fOnlySpendable=false,
                         int nMinDepth = 0,
-                        std::set<CTxDestination>* onlyFilterByDests = nullptr) const;
+                        std::set<CTxDestination>* onlyFilterByDests = nullptr,
+                        std::optional<int> unspentAsOfDepth = std::nullopt) const;
 
     /**
      * Shuffle and select coins until nTargetValue is reached while avoiding
@@ -1522,7 +1523,7 @@ public:
     bool SelectorMatchesAddress(const ZTXOSelector& source, const libzcash::SproutPaymentAddress& a0) const;
     bool SelectorMatchesAddress(const ZTXOSelector& source, const libzcash::SaplingPaymentAddress& a0) const;
 
-    bool IsSpent(const uint256& hash, unsigned int n) const;
+    bool IsSpent(const uint256& hash, unsigned int n, std::optional<int> unspentAsOfDepth) const;
     bool IsSproutSpent(const uint256& nullifier) const;
     bool IsSaplingSpent(const uint256& nullifier) const;
     bool IsOrchardSpent(const OrchardOutPoint& outpoint) const;
