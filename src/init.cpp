@@ -474,12 +474,12 @@ std::string HelpMessage(HelpMessageMode mode)
         CURRENCY_UNIT, FormatMoney(DEFAULT_MIN_RELAY_TX_FEE)));
     strUsage += HelpMessageOpt("-maxtxfee=<amt>", strprintf(_("Maximum total fees (in %s) to use in a single wallet transaction or raw transaction; setting this too low may abort large transactions (default: %s)"),
         CURRENCY_UNIT, FormatMoney(DEFAULT_TRANSACTION_MAXFEE)));
-    strUsage += HelpMessageOpt("-printtoconsole", _("Send trace/debug info to console instead of debug.log file"));
+    strUsage += HelpMessageOpt("-printtoconsole", strprintf(_("Send trace/debug info to console instead of %s"), GetDebugLogPath()));
     if (showDebug)
     {
         strUsage += HelpMessageOpt("-printpriority", strprintf("Log transaction priority and fee per kB when mining blocks (default: %u)", DEFAULT_PRINTPRIORITY));
     }
-    // strUsage += HelpMessageOpt("-shrinkdebugfile", _("Shrink debug.log file on client startup (default: 1 when no -debug)"));
+    // strUsage += HelpMessageOpt("-shrinkdebugfile", strprintf(_("Shrink %s on client startup (default: 1 when no -debug)"), GetDebugLogPath()));
 
     AppendParamsHelpMessages(strUsage, showDebug);
 
@@ -670,7 +670,7 @@ void ThreadStartWalletNotifier()
 
                     LogError("main", "*** %s: %s", __func__, errmsg);
                     uiInterface.ThreadSafeMessageBox(
-                        _("Error: A fatal wallet synchronization error occurred, see debug.log for details"),
+                        strprintf(_("Error: A fatal wallet synchronization error occurred, see %s for details"), GetDebugLogPath()),
                         "", CClientUIInterface::MSG_ERROR);
                     StartShutdown();
                     return true;
@@ -1071,7 +1071,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     sigaction(SIGTERM, &sa, NULL);
     sigaction(SIGINT, &sa, NULL);
 
-    // Reopen debug.log on SIGHUP
+    // Reopen debug log on SIGHUP
     assert(fReopenDebugLog.is_lock_free());
     struct sigaction sa_hup;
     sa_hup.sa_handler = HandleSIGHUP;
@@ -1507,7 +1507,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     {
         uiInterface.InitMessage.connect(SetRPCWarmupStatus);
         if (!AppInitServers(threadGroup))
-            return InitError(_("Unable to start HTTP server. See debug log for details."));
+            return InitError(strprintf(_("Unable to start HTTP server. See %s for details."), GetDebugLogPath()));
     }
 
     int64_t nStart;

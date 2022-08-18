@@ -311,7 +311,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
                             "*** %s: Failed to read block %s while collecting shielded outputs",
                             __func__, pindexScan->GetBlockHash().GetHex());
                     uiInterface.ThreadSafeMessageBox(
-                        _("Error: A fatal internal error occurred, see debug.log for details"),
+                        strprintf(_("Error: A fatal internal error occurred, see %s for details"), GetDebugLogPath()),
                         "", CClientUIInterface::MSG_ERROR);
                     StartShutdown();
                     return;
@@ -340,7 +340,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
                             "*** %s: Failed to read block %s while collecting shielded outputs from block connects",
                             __func__, blockData.pindex->GetBlockHash().GetHex());
                     uiInterface.ThreadSafeMessageBox(
-                        _("Error: A fatal internal error occurred, see debug.log for details"),
+                        strprintf(_("Error: A fatal internal error occurred, see %s for details"), GetDebugLogPath()),
                         "", CClientUIInterface::MSG_ERROR);
                     StartShutdown();
                     return;
@@ -382,7 +382,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
                         "*** %s: Failed to read block %s while notifying wallets of block disconnects",
                         __func__, pindexLastTip->GetBlockHash().GetHex());
                 uiInterface.ThreadSafeMessageBox(
-                    _("Error: A fatal internal error occurred, see debug.log for details"),
+                    strprintf(_("Error: A fatal internal error occurred, see %s for details"), GetDebugLogPath()),
                     "", CClientUIInterface::MSG_ERROR);
                 StartShutdown();
                 return;
@@ -416,7 +416,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
                         "*** %s: Failed to read block %s while notifying wallets of block connects",
                         __func__, blockData.pindex->GetBlockHash().GetHex());
                 uiInterface.ThreadSafeMessageBox(
-                    _("Error: A fatal internal error occurred, see debug.log for details"),
+                    strprintf(_("Error: A fatal internal error occurred, see %s for details"), GetDebugLogPath()),
                     "", CClientUIInterface::MSG_ERROR);
                 StartShutdown();
                 return;
