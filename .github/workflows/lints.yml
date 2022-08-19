@@ -51,7 +51,6 @@ jobs:
       - name: Shellcheck
         run: ./test/lint/lint-shell.sh
         if: always()
-        continue-on-error: true # Temporary until we get this passing
 
       - name: Whitespace
         run: ./test/lint/lint-whitespace.sh
