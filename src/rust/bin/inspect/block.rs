@@ -205,17 +205,10 @@ impl Block {
     }
 
     fn build_auth_data_root(&self) -> [u8; 32] {
-        /// Returns 0 if x == 0, otherwise the smallest power of 2 greater than or equal to x.
-        /// Algorithm based on <https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2>.
-        fn next_pow2(mut x: u64) -> u64 {
-            x -= 1;
-            x |= x >> 1;
-            x |= x >> 2;
-            x |= x >> 4;
-            x |= x >> 8;
-            x |= x >> 16;
-            x |= x >> 32;
-            x + 1
+        fn next_pow2(x: u64) -> u64 {
+            // Fails if `x` is greater than `1u64 << 63`, but this can't occur because a
+            // block can't feasibly contain that many transactions.
+            1u64 << (64 - x.saturating_sub(1).leading_zeros())
         }
 
         let perfect_size = next_pow2(self.txs.len() as u64) as usize;
