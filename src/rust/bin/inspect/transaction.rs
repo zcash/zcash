@@ -49,9 +49,9 @@ pub fn extract_height_from_coinbase(tx: &Transaction) -> Option<BlockHeight> {
             // Blocks 1 to 16.
             Some(h @ OP_1..=OP_16) => Some(BlockHeight::from_u32((h - OP_1 + 1).into())),
             // All other heights use CScriptNum encoding, which will never be longer
-            // than 8 bytes for Zcash heights. These have the format
+            // than 5 bytes for Zcash heights. These have the format
             // `[len(encoding)] || encoding`.
-            Some(h @ 1..=8) => {
+            Some(h @ 1..=5) => {
                 let rest = &input.script_sig.0[1..];
                 let encoding_len = h as usize;
                 if rest.len() < encoding_len {
