@@ -4922,14 +4922,6 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
     return ret;
 }
 
-// JSDescription size depends on the transaction version
-#define V3_JS_DESCRIPTION_SIZE    (GetSerializeSize(JSDescription(), SER_NETWORK, (OVERWINTER_TX_VERSION | (1 << 31))))
-// Here we define the maximum number of zaddr outputs that can be included in a transaction.
-// If input notes are small, we might actually require more than one joinsplit per zaddr output.
-// For now though, we assume we use one joinsplit per zaddr output (and the second output note is change).
-// We reduce the result by 1 to ensure there is room for non-joinsplit CTransaction data.
-#define Z_SENDMANY_MAX_ZADDR_OUTPUTS_BEFORE_SAPLING    ((MAX_TX_SIZE_BEFORE_SAPLING / V3_JS_DESCRIPTION_SIZE) - 1)
-
 // transaction.h comment: spending taddr output requires CTxIn >= 148 bytes and typical taddr txout is 34 bytes
 #define CTXIN_SPEND_DUST_SIZE   148
 #define CTXOUT_REGULAR_SIZE     34
@@ -5014,17 +5006,20 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf ) ( fee ) ( privacyPolicy )\n"
             "\nSend multiple times. Amounts are decimal numbers with at most 8 digits of precision."
             "\nChange generated from one or more transparent addresses flows to a new transparent"
-            "\naddress, while change generated from a shielded address returns to itself."
-            "\nWhen sending coinbase UTXOs to a shielded address, change is not allowed."
-            "\nThe entire value of the UTXO(s) must be consumed."
-            + strprintf("\nBefore Sapling activates, the maximum number of zaddr outputs is %d due to transaction size limits.\n", Z_SENDMANY_MAX_ZADDR_OUTPUTS_BEFORE_SAPLING)
+            "\naddress, while change generated from a legacy Sapling address returns to itself."
+            "\nWhen sending from a unified address, change is returned to the internal-only address"
+            "\nfor the associated unified account."
+            "\nWhen spending coinbase UTXOs, only shielded recipients are permitted and change is not allowed;"
+            "\nthe entire value of the coinbase UTXO(s) must be consumed."
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
             "1. \"fromaddress\"         (string, required) The transparent or shielded address to send the funds from.\n"
             "                           The following special strings are also accepted:\n"
             "                               - \"ANY_TADDR\": Select non-coinbase UTXOs from any transparent addresses belonging to the wallet.\n"
             "                                              Use z_shieldcoinbase to shield coinbase UTXOs from multiple transparent addresses.\n"
-            "                           If the address is a UA, transfer from the most recent value pool with sufficient funds\n"
+            "                           If a unified address is provided for this argument, the TXOs to be spent will be selected from those\n"
+            "                           associated with the account corresponding to that unified address, from value pools corresponding\n"
+            "                           to the receivers included in the UA.\n"
             "2. \"amounts\"             (array, required) An array of json objects representing the amounts to send.\n"
             "    [{\n"
             "      \"address\":address  (string, required) The address is a taddr, zaddr, or Unified Address\n"
