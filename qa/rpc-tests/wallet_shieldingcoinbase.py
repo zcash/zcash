@@ -100,7 +100,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         error_result = wait_and_assert_operationid_status_result(
                 self.nodes[0], 
                 myopid, "failed", 
-                "When shielding coinbase funds, the wallet does not allow any change. The proposed transaction would result in 8.76542211 in change.", 
+                "When shielding coinbase funds, the wallet does not allow any change. The proposed transaction would result in 38.76542211 in change.", 
                 10)
 
         # Test that the returned status object contains a params field with the operation's input parameters

@@ -359,7 +359,12 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
 
     // When spending transparent coinbase outputs, all inputs must be fully
     // consumed, and they may only be sent to shielded recipients.
-    if (spendableMut.HasTransparentCoinbase() && spendableMut.Total() != targetAmount) {
+    if (spendableMut.HasTransparentCoinbase() &&
+        spendableMut.Total() != targetAmount &&
+        // if we have only shielded recipients and we can generate a shielded change
+        // address given the sender(s), we can perform opportunistic shielding
+
+        ) {
         return ChangeNotAllowedError(spendableMut.Total(), targetAmount);
     }
 

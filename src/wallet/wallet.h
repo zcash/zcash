@@ -903,6 +903,12 @@ enum class RecipientType {
     CounterpartyAddress
 };
 
+enum class LimitResult {
+    InsufficientFunds,
+    SufficientFunds,
+    SufficientFundsOpportunistic
+};
+
 class SpendableInputs {
 private:
     bool limited = false;
@@ -929,7 +935,7 @@ public:
      *
      * This method must only be called once.
      */
-    bool LimitToAmount(
+    LimitResult LimitToAmount(
         const CAmount amount,
         const CAmount dustThreshold,
         const std::set<libzcash::OutputPool>& recipientPools);

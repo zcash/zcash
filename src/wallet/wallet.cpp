@@ -2233,10 +2233,10 @@ SpendableInputs CWallet::FindSpendableInputs(
         if (nDepth < 0 || nDepth < minDepth) continue;
 
         if (selectTransparent &&
-            // skip transparent utxo selection if coinbase spend restrictions are not met
+            // require the tx to either not be coinbase, or have met coinbase maturity restrictions
             (!isCoinbase || (allowTransparentCoinbase && wtx.GetBlocksToMaturity() <= 0)) &&
-            // select only transparent utxos if RequireTransparentCoinbase
-            (isCoinbase || !selector.RequireTransparentCoinbase())) {
+            // require the tx to be coinbase if RequireTransparentCoinbase
+            (!selector.RequireTransparentCoinbase() || isCoinbase)) {
 
             for (int i = 0; i < wtx.vout.size(); i++) {
                 const auto& output = wtx.vout[i];
