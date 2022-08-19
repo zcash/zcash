@@ -5,7 +5,7 @@ export LC_ALL=C
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 RUST_PACKAGE="$SCRIPT_DIR/../../depends/packages/native_rust.mk"
 
-RUST_VERSION=$( cat $RUST_PACKAGE | grep -oP "_version=\K.*" )
+RUST_VERSION=$( grep -oP "_version=\K.*" $RUST_PACKAGE )
 
 update_hash() {
     url="https://static.rust-lang.org/dist/$1-$RUST_VERSION-$2.tar.gz"

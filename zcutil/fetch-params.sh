@@ -35,7 +35,7 @@ ZC_DISABLE_CURL="${ZC_DISABLE_CURL:-}"
 LOCKFILE=/tmp/fetch_params.lock
 
 fetch_wget() {
-    if [ -z "$WGETCMD" ] || ! [ -z "$ZC_DISABLE_WGET" ]; then
+    if [ -z "$WGETCMD" ] || [ -n "$ZC_DISABLE_WGET" ]; then
         return 1
     fi
 
@@ -53,7 +53,7 @@ EOF
 }
 
 fetch_ipfs() {
-    if [ -z "$IPFSCMD" ] || ! [ -z "$ZC_DISABLE_IPFS" ]; then
+    if [ -z "$IPFSCMD" ] || [ -n "$ZC_DISABLE_IPFS" ]; then
         return 1
     fi
 
@@ -66,7 +66,7 @@ EOF
 }
 
 fetch_curl() {
-    if [ -z "$CURLCMD" ] || ! [ -z "$ZC_DISABLE_CURL" ]; then
+    if [ -z "$CURLCMD" ] || [ -n "$ZC_DISABLE_CURL" ]; then
         return 1
     fi
 

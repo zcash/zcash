@@ -11,7 +11,8 @@ FUZZ_OPTIONS_STRING="Options are: ${fuzz_cases::-2}"
 
 required_options_count=0
 
-export AFL_INSTALL_DIR=$(realpath "./afl-temp")
+AFL_INSTALL_DIR=$(realpath "./afl-temp")
+export AFL_INSTALL_DIR
 
 function help {
     cat <<EOF
@@ -47,7 +48,7 @@ while (( "$#" )); do
             help
             exit 0
         ;;
-        -*|--*=)
+        -?|--*=)
             echo "Error: Unsupported flag $1" >&2
             help
             exit 1
