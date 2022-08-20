@@ -39,7 +39,7 @@ while (( "$#" )); do
             help
             exit 0
         ;;
-        -*|--*=)
+        -?|--*=)
             echo "Error: Unsupported flag $1" >&2
             help
             exit 1

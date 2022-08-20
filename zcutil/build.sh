@@ -23,7 +23,7 @@ cd "$(dirname "$("$READLINK" -f "$0")")/.."
 # Allow user overrides to $MAKE. Typical usage for users who need it:
 #   MAKE=gmake ./zcutil/build.sh -j$(nproc)
 if [ -z "${MAKE-}" ]; then
-    MAKE=make
+    MAKE="make"
 fi
 
 # Allow overrides to $BUILD and $HOST for porters. Most users will not need it.

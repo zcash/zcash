@@ -20,7 +20,7 @@ for nonzctag in $(git ls-remote origin \
                  )
 do
     git push origin ":refs/tags/${nonzctag}" &
-    i="$(expr "$i" + 1)"
+    i=$((i + 1))
     [ "$i" -ge "$MAXJOBS" ] && wait -n
 done
 

@@ -7,9 +7,8 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 CLANG_PACKAGE="$SCRIPT_DIR/../../depends/packages/native_clang.mk"
 LIBCXX_PACKAGE="$SCRIPT_DIR/../../depends/packages/libcxx.mk"
 
-CLANG_MAJOR_VERSION=$( cat $CLANG_PACKAGE | grep -oP "_major_version=\K.*" )
-CLANG_VERSION=$( cat $CLANG_PACKAGE | grep -v _major_version | grep -oP "_version=\K.*" )
-LIBCXX_MSYS2_VERSION=$( cat $LIBCXX_PACKAGE | grep -oP "_msys2_version=\K.*" )
+CLANG_VERSION=$( grep -v _major_version $CLANG_PACKAGE | grep -oP "_version=\K.*" )
+LIBCXX_MSYS2_VERSION=$( grep -oP "_msys2_version=\K.*" $LIBCXX_PACKAGE )
 
 update_clang_hash() {
     url="https://github.com/llvm/llvm-project/releases/download/llvmorg-$CLANG_VERSION/clang+llvm-$CLANG_VERSION-$1.tar.xz"

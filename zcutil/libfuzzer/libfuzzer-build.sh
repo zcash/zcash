@@ -22,12 +22,12 @@ usage() {
     echo "Where fuzzer is an entry in ./src/fuzzing/*, the default sanitizer"
     echo "is \"address\" and default instrument is ( \"^.*/src/$\" )."
     echo ""
-    exit -1
+    exit 255
 }
 
 die() {
     echo $1
-    exit -1
+    exit 255
 }
 
 # parse command line options
@@ -120,11 +120,12 @@ fi
 
 set -x
 
-export ZCUTIL=$(realpath "./zcutil")
+ZCUTIL=$(realpath "./zcutil")
+export ZCUTIL
 
 # overwrite the Linux make profile to use clang instead of GCC:
 
-cat $ZCUTIL/../depends/hosts/linux.mk | sed -e 's/=gcc/=clang/g' | sed -e 's/=g++/=clang++/g' > x
+sed -e 's/=gcc/=clang/g' $ZCUTIL/../depends/hosts/linux.mk | sed -e 's/=g++/=clang++/g' > x
 mv x $ZCUTIL/../depends/hosts/linux.mk
 
 # the build_stage distinction helps to layer an intermediate docker
@@ -134,7 +135,7 @@ mv x $ZCUTIL/../depends/hosts/linux.mk
 if [ "$BUILD_STAGE" = "depends" ]
 then
     # make an empty fuzz file just so we can build dependencies
-    > src/fuzz.cpp
+    true > src/fuzz.cpp
 else
     cp "./src/fuzzing/$FUZZER_NAME/fuzz.cpp" src/fuzz.cpp || die "Can't copy fuzz.cpp for that fuzzer"
 fi
