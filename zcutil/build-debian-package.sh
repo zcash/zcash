@@ -8,7 +8,7 @@ set -x
 
 BUILD_PATH="/tmp/zcbuild"
 PACKAGE_NAME="zcash"
-SRC_PATH=`pwd`
+SRC_PATH=$(pwd)
 SRC_DEB=$SRC_PATH/contrib/debian
 SRC_DOC=$SRC_PATH/doc
 
