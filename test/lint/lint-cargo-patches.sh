@@ -29,7 +29,9 @@ EXIT_CODE=0
 # Check that every patch has a matching replacement.
 for PATCH in $(tail -n+$CARGO_TOML_PATCH_START $CARGO_TOML | sed 's/.*git = "\([^"]*\)", rev = "\([^"]*\)".*/\1#\2/' | sort | uniq)
 do
+    # shellcheck disable=SC2001
     PATCH_GIT=$(echo $PATCH | sed 's/#.*//')
+    # shellcheck disable=SC2001
     PATCH_REV=$(echo $PATCH | sed 's/.*#//')
 
     # Canonicalize the git URL (matching how Cargo treats them, so we don't over-lint).

@@ -55,7 +55,7 @@ fi
 mkdir -p "$AFL_INSTALL_DIR"
 cd "$AFL_INSTALL_DIR"
 
-if [ ! -z "$(ls -A .)" ]; then
+if [ -n "$(ls -A .)" ]; then
     echo "$1 is not empty. This script will only attempt to build AFL in an empty directory."
     exit 1
 fi
@@ -63,8 +63,7 @@ fi
 # Get the AFL source
 rm -f afl-latest.tgz
 wget https://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz
-sha256sum afl-latest.tgz | grep '43614b4b91c014d39ef086c5cc84ff5f068010c264c2c05bf199df60898ce045'
-if [ "$?" != "0" ]
+if ! sha256sum afl-latest.tgz | grep '43614b4b91c014d39ef086c5cc84ff5f068010c264c2c05bf199df60898ce045';
 then
     echo "Wrong SHA256 hash for afl"
     exit

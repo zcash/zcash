@@ -11,7 +11,7 @@ fi
 env | sort | grep ZCASHD || true
 export ZCASHD_CMD='zcashd -printtoconsole'
 
-if [[ ! -n ${ZCASHD_NETWORK} ]];then
+if [[ -z ${ZCASHD_NETWORK} ]];then
   export ZCASHD_NETWORK=mainnet
 fi
 

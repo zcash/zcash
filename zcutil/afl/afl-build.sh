@@ -11,7 +11,7 @@ export AFL_LOG_DIR
 
 for d in src/fuzzing/*/ ; do
     fuzz_cases+="$(basename "$d"), "
-    fuzz_cases_choices=("${fuzz_cases_choices[@]}" $(basename "$d"))
+    fuzz_cases_choices=("${fuzz_cases_choices[@]}" "$(basename "$d")")
 done
 
 FUZZ_OPTIONS_STRING="Options are: ${fuzz_cases::-2}"
