@@ -83,6 +83,7 @@ clean_exe src/zcash-cli
 clean_exe src/zcashd
 clean_exe src/zcashd-wallet-tool
 clean_exe src/zcash-gtest
+clean_exe src/zcash-inspect
 clean_exe src/zcash-tx
 clean_exe src/test/test_bitcoin
 

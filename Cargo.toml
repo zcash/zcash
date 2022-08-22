@@ -29,6 +29,10 @@ path = "src/rust/src/rustzcash.rs"
 crate-type = ["staticlib"]
 
 [[bin]]
+name = "zcash-inspect"
+path = "src/rust/bin/inspect/main.rs"
+
+[[bin]]
 name = "zcashd-wallet-tool"
 path = "src/rust/bin/wallet_tool.rs"
 
@@ -57,7 +61,7 @@ zcash_encoding = "0.1"
 zcash_history = "0.3"
 zcash_note_encryption = "0.1"
 zcash_primitives = { version = "0.7", features = ["transparent-inputs"] }
-zcash_proofs = "0.7.1"
+zcash_proofs = { version = "0.7.1", features = ["directories"] }
 ed25519-zebra = "3"
 zeroize = "1.4.2"
 
@@ -73,12 +77,24 @@ ipnet = "2"
 metrics = "0.19"
 metrics-exporter-prometheus = "0.10"
 
+# General tool dependencies
+gumdrop = "0.8"
+
+# zcash-inspect tool
+bech32 = "0.8"
+equihash = "0.2"
+hex = "0.4"
+lazy_static = "1.4"
+serde = "1.0"
+serde_json = "1.0"
+sha2 = "0.9"
+uint = "0.9"
+
 # Wallet tool
 # (also depends on tracing, and tracing-subscriber with "env-filter" and "fmt" features)
 anyhow = "1.0"
 backtrace = "0.3"
 clearscreen = "1.0"
-gumdrop = "0.8"
 rand = "0.8"
 secrecy = "0.8"
 thiserror = "1"

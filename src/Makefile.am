@@ -33,6 +33,9 @@ LIBSECP256K1=secp256k1/libsecp256k1.la
 LIBUNIVALUE=univalue/libunivalue.la
 LIBZCASH=libzcash.a
 
+INSPECT_TOOL_BIN=zcash-inspect$(EXEEXT)
+INSPECT_TOOL_BUILD=$(top_builddir)/target/$(RUST_TARGET)/release/zcash-inspect$(EXEEXT)
+
 WALLET_TOOL_BIN=zcashd-wallet-tool$(EXEEXT)
 WALLET_TOOL_BUILD=$(top_builddir)/target/$(RUST_TARGET)/release/zcashd-wallet-tool$(EXEEXT)
 
@@ -90,7 +93,7 @@ $(CXXBRIDGE_H) $(CXXBRIDGE_CPP): $(CXXBRIDGE_RS)
 #   requires https://github.com/rust-bitcoin/rust-secp256k1/issues/380 to be addressed.
 RUST_ENV_VARS = \
   RUSTC="$(RUSTC)" \
-  RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming" \
+  RUSTFLAGS="--cfg=rust_secp_no_symbol_renaming -L native=$(abs_top_srcdir)/src/secp256k1/.libs" \
   CC="$(CC)" \
   CFLAGS="$(CFLAGS)" \
   CXX="$(CXX)" \
@@ -132,8 +135,11 @@ endif
 cargo-build-lib: $(CARGO_CONFIGURED)
 	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build --lib $(RUST_BUILD_OPTS) $(cargo_verbose)
 
-cargo-build-bins: $(CARGO_CONFIGURED)
+cargo-build-bins: $(CARGO_CONFIGURED) $(LIBSECP256K1)
 	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build --bins $(RUST_BUILD_OPTS) $(cargo_verbose)
+
+$(INSPECT_TOOL_BIN): cargo-build-bins
+	$(AM_V_at)cp $(INSPECT_TOOL_BUILD) $@
 
 $(WALLET_TOOL_BIN): cargo-build-bins
 	$(AM_V_at)cp $(WALLET_TOOL_BUILD) $@
@@ -174,7 +180,7 @@ endif
 
 if BUILD_BITCOIN_UTILS
   bin_PROGRAMS += zcash-cli zcash-tx
-  bin_SCRIPTS += $(WALLET_TOOL_BIN)
+  bin_SCRIPTS += $(INSPECT_TOOL_BIN) $(WALLET_TOOL_BIN)
 endif
 
 LIBZCASH_H = \
