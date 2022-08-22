@@ -13,7 +13,7 @@ SUBDIRS = src
 if ENABLE_MAN
 SUBDIRS += doc/man
 endif
-.PHONY: deploy FORCE
+.PHONY: deploy FORCE rpc-tests
 
 GZIP_ENV="-9n"
 
@@ -174,3 +174,6 @@ clean-local:
 distclean-local:
 	rm -f zcutil/bin/db_*
 	rmdir zcutil/bin 2>/dev/null || true
+
+rpc-tests: $(BITCOIND_BIN)
+	qa/pull-tester/rpc-tests.py $(RPC_TEST)

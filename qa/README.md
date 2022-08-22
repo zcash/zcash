@@ -11,15 +11,16 @@ Before running the tests, the following must be installed.
 
 Unix
 ----
-The python3-zmq library is required. On Ubuntu or Debian it can be installed via:
+The python3-zmq library and simplejson are required. On Ubuntu or Debian they
+can be installed via:
 ```
-sudo apt-get install python3-zmq
+sudo apt-get install python3-simplejson python3-zmq
 ```
 
 OS X
 ------
 ```
-pip3 install pyzmq
+pip3 install pyzmq simplejson
 ```
 
 Running tests
@@ -27,19 +28,22 @@ Running tests
 
 You can run any single test by calling
 
-    qa/pull-tester/rpc-tests.py <testname>
+    RPC_TEST=<testname> make rpc-tests
 
 Or you can run any combination of tests by calling
 
-    qa/pull-tester/rpc-tests.py <testname1> <testname2> <testname3> ...
+    RPC_TEST="<testname1> <testname2> <testname3> ..." make rpc-tests
 
 Run the regression test suite with
 
-    qa/pull-tester/rpc-tests.py
+    make rpc-tests
 
 Run all possible tests with
 
-    qa/pull-tester/rpc-tests.py --extended
+    RPC_TEST="--extended" make rpc-tests
+
+You can also run the tests directly using `qa/pull-tester/rpc-tests.py` instead
+of `make`, but that won't ensure that zcashd is up-to-date with any changes.
 
 By default, tests will be run in parallel. To specify how many jobs to run,
 append `--jobs=n` (default n=4).
