@@ -11,15 +11,16 @@ Before running the tests, the following must be installed.
 
 Unix
 ----
-The python3-zmq library is required. On Ubuntu or Debian it can be installed via:
+The python3-zmq library and simplejson are required. On Ubuntu or Debian they
+can be installed via:
 ```
-sudo apt-get install python3-zmq
+sudo apt-get install python3-simplejson python3-zmq
 ```
 
 OS X
 ------
 ```
-pip3 install pyzmq
+pip3 install pyzmq simplejson
 ```
 
 Running tests
