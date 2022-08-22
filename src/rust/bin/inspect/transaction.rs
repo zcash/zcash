@@ -236,6 +236,17 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
     let common_sighash = sighash_params
         .as_ref()
         .map(|(tx, txid_parts)| signature_hash(tx, &SignableInput::Shielded, txid_parts));
+    if let Some(sighash) = &common_sighash {
+        if tx.sprout_bundle().is_some()
+            || tx.sapling_bundle().is_some()
+            || tx.orchard_bundle().is_some()
+        {
+            eprintln!(
+                " - Sighash for shielded signatures: {}",
+                hex::encode(sighash.as_ref()),
+            );
+        }
+    }
 
     if let Some(bundle) = tx.transparent_bundle() {
         assert!(!(bundle.vin.is_empty() && bundle.vout.is_empty()));
