@@ -27,19 +27,22 @@ Running tests
 
 You can run any single test by calling
 
-    qa/pull-tester/rpc-tests.py <testname>
+    RPC_TEST=<testname> make rpc-tests
 
 Or you can run any combination of tests by calling
 
-    qa/pull-tester/rpc-tests.py <testname1> <testname2> <testname3> ...
+    RPC_TEST="<testname1> <testname2> <testname3> ..." make rpc-tests
 
 Run the regression test suite with
 
-    qa/pull-tester/rpc-tests.py
+    make rpc-tests
 
 Run all possible tests with
 
-    qa/pull-tester/rpc-tests.py --extended
+    RPC_TEST="--extended" make rpc-tests
+
+You can also run the tests directly using `qa/pull-tester/rpc-tests.py` instead
+of `make`, but that won't ensure that zcashd is up-to-date with any changes.
 
 By default, tests will be run in parallel. To specify how many jobs to run,
 append `--jobs=n` (default n=4).
