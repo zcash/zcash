@@ -110,7 +110,9 @@ fn inspect_bytes(bytes: Vec<u8>, context: Option<Context>) {
 fn inspect_fixed_length_bytes(bytes: Vec<u8>) {
     match bytes.len() {
         32 => {
-            eprintln!("This is most likely a hash of some sort.");
+            eprintln!(
+                "This is most likely a hash of some sort, or maybe a commitment or nullifier."
+            );
             if bytes.iter().take(4).all(|c| c == &0) {
                 eprintln!("- It could be a mainnet block hash.");
             }
