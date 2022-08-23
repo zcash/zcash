@@ -8,7 +8,7 @@ The process is meant to be automated, but an example `docker-build.sh` script is
 
 
 ## build images
-`apt-package-tekton-list.txt` contains the required packages for debian based systems.
+`apt-package-list.txt` contains the required packages for debian based systems.
 
 `Dockerfile-build.apt` uses that file, and some build time arguments, to build apt based build images.
 
@@ -16,12 +16,21 @@ Currently available images are hosted at
 https://hub.docker.com/r/electriccoinco/zcashd-build/tags
 
 
-
 ## Tekton worker images
 
 `Dockerfile-tekton-worker` uses the above build images as a base and layers on toolchains needed for testing
 
 - requirements.txt is the python package requirements for the tekton worker
+- ~/.zcash-params is needed for full_test_suite.py to run gracefully
+
+Currently available images are hosted at https://hub.docker.com/r/electriccoinco
+
+## Tekton bench images
+
+`Dockerfile-tekton-bench` uses the above build images as a base and layers on toolchains needed for testing
+
+- benchmark-200k-UTXOs.tar.xz is used by performance-measurements.sh to run benchmarks for zcashd
+- block-107134.tar.xz is used by performance-measurements.sh to run benchmarks for zcashd
 
 Currently available images are hosted at https://hub.docker.com/r/electriccoinco
 

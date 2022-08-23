@@ -1,0 +1,9 @@
+ARG FROMBASEOS
+ARG FROMBASEOS_BUILD_TAG
+FROM electriccoinco/zcashd-worker-$FROMBASEOS$FROMBASEOS_BUILD_TAG
+
+COPY ./benchmark-200k-UTXOs.tar.xz /home/benchmark-200k-UTXOs.tar.xz
+COPY ./block-107134.tar.xz /home/block-107134.tar.xz
+
+
+
