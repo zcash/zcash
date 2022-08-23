@@ -1,0 +1,6 @@
+prometheus_client
+python-dotenv
+slick-bitcoinrpc
+pycurl
+geocoder
+pygeohash
