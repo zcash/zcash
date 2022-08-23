@@ -156,8 +156,6 @@ $(LIBUNIVALUE): $(wildcard univalue/lib/*) $(wildcard univalue/include/*)
 # But to build the less dependent modules first, we manually select their order here:
 EXTRA_LIBRARIES += \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBBITCOIN_CRYPTO_SSE41) \
-  $(LIBBITCOIN_CRYPTO_AVX2) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_SERVER) \
@@ -469,6 +467,7 @@ crypto_libbitcoin_crypto_sse41_a_CPPFLAGS = $(AM_CPPFLAGS)
 if ENABLE_SSE41
 crypto_libbitcoin_crypto_sse41_a_CXXFLAGS += $(SSE41_CXXFLAGS)
 crypto_libbitcoin_crypto_sse41_a_CPPFLAGS += -DENABLE_SSE41
+LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_SSE41)
 endif
 crypto_libbitcoin_crypto_sse41_a_SOURCES = crypto/sha256_sse41.cpp
 
@@ -477,6 +476,7 @@ crypto_libbitcoin_crypto_avx2_a_CPPFLAGS = $(AM_CPPFLAGS)
 if ENABLE_AVX2
 crypto_libbitcoin_crypto_avx2_a_CXXFLAGS += $(AVX2_CXXFLAGS)
 crypto_libbitcoin_crypto_avx2_a_CPPFLAGS += -DENABLE_AVX2
+LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_AVX2)
 endif
 crypto_libbitcoin_crypto_avx2_a_SOURCES = crypto/sha256_avx2.cpp
 
@@ -585,10 +585,8 @@ zcashd_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_ZMQ) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBBITCOIN_CRYPTO_SSE41) \
-  $(LIBBITCOIN_CRYPTO_AVX2) \
-  $(LIBZCASH) \
   $(LIBRUSTZCASH) \
+  $(LIBZCASH) \
   $(LIBLEVELDB) \
   $(LIBLEVELDB_SSE42) \
   $(LIBMEMENV) \
@@ -600,7 +598,6 @@ zcashd_LDADD += \
   $(EVENT_PTHREADS_LIBS) \
   $(EVENT_LIBS) \
   $(ZMQ_LIBS) \
-  $(LIBBITCOIN_CRYPTO) \
   $(LIBZCASH_LIBS)
 
 # bitcoin-cli binary #
@@ -619,11 +616,9 @@ zcash_cli_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(BOOST_LIBS) \
   $(EVENT_LIBS) \
-  $(LIBZCASH) \
   $(LIBRUSTZCASH) \
+  $(LIBZCASH) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBBITCOIN_CRYPTO_SSE41) \
-  $(LIBBITCOIN_CRYPTO_AVX2) \
   $(LIBSECP256K1) \
   $(LIBZCASH_LIBS)
 #
@@ -644,11 +639,9 @@ zcash_tx_LDADD = \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
   $(LIBSECP256K1) \
-  $(LIBZCASH) \
   $(LIBRUSTZCASH) \
+  $(LIBZCASH) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBBITCOIN_CRYPTO_SSE41) \
-  $(LIBBITCOIN_CRYPTO_AVX2) \
   $(LIBZCASH_LIBS)
 
 zcash_tx_LDADD += $(BOOST_LIBS)
