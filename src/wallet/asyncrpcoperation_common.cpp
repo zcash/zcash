@@ -134,7 +134,7 @@ void ThrowInputSelectionError(const InputSelectionError& err) {
                     "`-orchardactionlimit=N` where N >= %u to allow the wallet to attempt "
                     "to construct this transaction.",
                     err.orchardNotes,
-                    nOrchardActionLimit,
+                    err.maxNotes,
                     err.orchardNotes));
         }
     }, err);

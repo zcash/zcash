@@ -333,7 +333,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     }
 
     if (orchardOutputs > this->maxOrchardActions) {
-        return ExcessOrchardActionsError(spendableMut.orchardNoteMetadata.size());
+        return ExcessOrchardActionsError(spendableMut.orchardNoteMetadata.size(), this->maxOrchardActions);
     }
 
     // Set the dust threshold so that we can select enough inputs to avoid
@@ -365,7 +365,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     }
 
     if (spendableMut.orchardNoteMetadata.size() > this->maxOrchardActions) {
-        return ExcessOrchardActionsError(spendableMut.orchardNoteMetadata.size());
+        return ExcessOrchardActionsError(spendableMut.orchardNoteMetadata.size(), this->maxOrchardActions);
     }
 
     return resolved;
@@ -536,6 +536,11 @@ PrivacyPolicy TransactionEffects::GetRequiredPrivacyPolicy() const
 }
 
 
+bool TransactionEffects::InvolvesOrchard() const
+{
+    return spendable.GetOrchardBalance() > 0 || payments.HasOrchardRecipient();
+}
+
 TransactionBuilderResult TransactionEffects::ApproveAndBuild(
         const Consensus::Params& consensus,
         const CWallet& wallet,
@@ -557,7 +562,10 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
 
     // Allow Orchard recipients by setting an Orchard anchor.
     std::optional<uint256> orchardAnchor;
-    if (spendable.sproutNoteEntries.empty() && nPreferredTxVersion > ZIP225_MIN_TX_VERSION && this->anchorConfirmations > 0) {
+    if (spendable.sproutNoteEntries.empty()
+        && (InvolvesOrchard() || nPreferredTxVersion > ZIP225_MIN_TX_VERSION)
+        && this->anchorConfirmations > 0)
+    {
         auto orchardAnchorHeight = nextBlockHeight - this->anchorConfirmations;
         if (consensus.NetworkUpgradeActive(orchardAnchorHeight, Consensus::UPGRADE_NU5)) {
             LOCK(cs_main);

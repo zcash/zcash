@@ -190,6 +190,8 @@ public:
         return fee;
     }
 
+    bool InvolvesOrchard() const;
+
     TransactionBuilderResult ApproveAndBuild(
             const Consensus::Params& consensus,
             const CWallet& wallet,
@@ -238,8 +240,9 @@ public:
 class ExcessOrchardActionsError {
 public:
     uint32_t orchardNotes;
+    uint32_t maxNotes;
 
-    ExcessOrchardActionsError(uint32_t orchardNotes): orchardNotes(orchardNotes) { }
+    ExcessOrchardActionsError(uint32_t orchardNotes, uint32_t maxNotes): orchardNotes(orchardNotes), maxNotes(maxNotes) { }
 };
 
 typedef std::variant<
@@ -289,7 +292,7 @@ private:
 
 public:
     WalletTxBuilder(const CWallet& wallet, CFeeRate minRelayFee):
-        wallet(wallet), minRelayFee(minRelayFee) {}
+        wallet(wallet), minRelayFee(minRelayFee), maxOrchardActions(nOrchardActionLimit) {}
 
     static bool AllowTransparentCoinbase(
             const std::vector<Payment>& payments,
