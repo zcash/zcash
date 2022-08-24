@@ -8,21 +8,23 @@ Also recommended: Install ctop - https://github.com/bcicen/ctop
 Decide where you want to store (or refence existing ) zcashd data.
 
 For example, create 2 new directories:
-'''
+```
 sudo mkdir -p /srv/zcashd/.zcash
 sudo mkdir -p /srv/zcashd/.zcash-params
-'''
+```
 
 Make uid 2001 owner of the directories. This is the uid of user zcashd runs as.
-'''
+```
 sudo chown -R 2001 /srv/zcashd/.zcash
 sudo chown -R 2001 /srv/zcashd/.zcash-params
-'''
+```
 
 ### Installing Loki Docker log driver
-'''
+
+```
 docker plugin install  grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
-'''
+```
+
 ### Update HTTP Timeout for graceful stops
 ```
 export COMPOSE_HTTP_TIMEOUT=500
