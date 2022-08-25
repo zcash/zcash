@@ -160,6 +160,12 @@ Files: depends/sources/utfcpp-*.tar.gz
 Copyright: 2006 Nemanja Trifunovic
 License: Boost-Software-License-1.0
 
+Files: depends/sources/tl-expected-*.tar.gz
+Copyright: 2017-2021 Sy Brand <simonrbrand@gmail.com> (@TartanLlama)
+License: CC0-1.0
+Comment: Other contributors are Simon Truscott (@bobbleclank), Kévin Alexandre Boissonneault (@KABoissonneault),
+ and Björn Fahller (@rollbear).
+
 Files: depends/*/vendored-sources/orchard/*
 Copyright: 2020-2022 The Electric Coin Company
 License: BOSL-1+ with Zcash exception
