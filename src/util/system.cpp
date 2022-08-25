@@ -299,7 +299,7 @@ const fs::path &ZC_GetParamsDir()
         return path;
 
     if (mapArgs.count("-paramsdir")) {
-        path = fs::system_complete(mapArgs["-paramsdir"]);
+        path = fs::weakly_canonical(fs::system_complete(mapArgs["-paramsdir"]));
         if (!fs::is_directory(path)) {
             throw std::runtime_error(strprintf("The -paramsdir '%s' does not exist or is not a directory", path.string()));
         }
