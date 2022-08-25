@@ -1003,7 +1003,7 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
     return nResult;
 }
 
-std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
+tl::expected<void, UnsatisfiedShieldedReq> CCoinsViewCache::CheckShieldedRequirements(const CTransaction& tx) const
 {
     boost::unordered_map<uint256, SproutMerkleTree, SaltedTxidHasher> intermediates;
 
@@ -1019,7 +1019,7 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
                 TracingWarn("consensus", "Sprout double-spend detected",
                     "txid", txid.c_str(),
                     "nf", nf.c_str());
-                return UnsatisfiedShieldedReq::SproutDuplicateNullifier;
+                return tl::unexpected(UnsatisfiedShieldedReq::SproutDuplicateNullifier);
             }
         }
 
@@ -1033,7 +1033,7 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
             TracingWarn("consensus", "Transaction uses unknown Sprout anchor",
                 "txid", txid.c_str(),
                 "anchor", anchor.c_str());
-            return UnsatisfiedShieldedReq::SproutUnknownAnchor;
+            return tl::unexpected(UnsatisfiedShieldedReq::SproutUnknownAnchor);
         }
 
         for (const uint256& commitment : joinsplit.commitments)
@@ -1051,7 +1051,7 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
             TracingWarn("consensus", "Sapling double-spend detected",
                 "txid", txid.c_str(),
                 "nf", nf.c_str());
-            return UnsatisfiedShieldedReq::SaplingDuplicateNullifier;
+            return tl::unexpected(UnsatisfiedShieldedReq::SaplingDuplicateNullifier);
         }
 
         SaplingMerkleTree tree;
@@ -1061,7 +1061,7 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
             TracingWarn("consensus", "Transaction uses unknown Sapling anchor",
                 "txid", txid.c_str(),
                 "anchor", anchor.c_str());
-            return UnsatisfiedShieldedReq::SaplingUnknownAnchor;
+            return tl::unexpected(UnsatisfiedShieldedReq::SaplingUnknownAnchor);
         }
     }
 
@@ -1072,7 +1072,7 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
             TracingWarn("consensus", "Orchard double-spend detected",
                 "txid", txid.c_str(),
                 "nf", nf.c_str());
-            return UnsatisfiedShieldedReq::OrchardDuplicateNullifier;
+            return tl::unexpected(UnsatisfiedShieldedReq::OrchardDuplicateNullifier);
         }
     }
 
@@ -1085,11 +1085,11 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
             TracingWarn("consensus", "Transaction uses unknown Orchard anchor",
                 "txid", txid.c_str(),
                 "anchor", anchor.c_str());
-            return UnsatisfiedShieldedReq::OrchardUnknownAnchor;
+            return tl::unexpected(UnsatisfiedShieldedReq::OrchardUnknownAnchor);
         }
     }
 
-    return std::nullopt;
+    return {};
 }
 
 bool CCoinsViewCache::HaveInputs(const CTransaction& tx) const
