@@ -299,7 +299,7 @@ const fs::path &ZC_GetParamsDir()
         return path;
 
     if (mapArgs.count("-paramsdir")) {
-        path = fs::system_complete(mapArgs["-paramsdir"]);
+        path = fs::weakly_canonical(fs::system_complete(mapArgs["-paramsdir"]));
         if (!fs::is_directory(path)) {
             throw std::runtime_error(strprintf("The -paramsdir '%s' does not exist or is not a directory", path.string()));
         }
@@ -318,7 +318,7 @@ const fs::path GetExportDir()
     fs::path path;
     LOCK(cs_args);
     if (mapArgs.count("-exportdir")) {
-        path = fs::system_complete(mapArgs["-exportdir"]);
+        path = fs::weakly_canonical(fs::system_complete(mapArgs["-exportdir"]));
         if (fs::exists(path) && !fs::is_directory(path)) {
             throw std::runtime_error(strprintf("The -exportdir '%s' already exists and is not a directory", path.string()));
         }
@@ -342,7 +342,7 @@ const fs::path &GetDataDir(bool fNetSpecific)
         return path;
 
     if (mapArgs.count("-datadir")) {
-        path = fs::system_complete(mapArgs["-datadir"]);
+        path = fs::weakly_canonical(fs::system_complete(mapArgs["-datadir"]));
         if (!fs::is_directory(path)) {
             path = "";
             return path;
