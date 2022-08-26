@@ -19,7 +19,7 @@
 // See https://github.com/rust-lang/rfcs/pull/2585 for more background.
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
-use bellman::groth16::{self, prepare_verifying_key, Parameters, PreparedVerifyingKey};
+use bellman::groth16::{self, Parameters, PreparedVerifyingKey};
 use blake2s_simd::Params as Blake2sParams;
 use bls12_381::Bls12;
 use group::{cofactor::CofactorGroup, GroupEncoding};
@@ -45,19 +45,14 @@ use std::os::windows::ffi::OsStringExt;
 
 use zcash_primitives::{
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
-    merkle_tree::MerklePath,
     sapling::{
         keys::FullViewingKey, note_encryption::sapling_ka_agree, redjubjub, Diversifier, Note,
-        PaymentAddress, ProofGenerationKey, Rseed, ViewingKey,
+        Rseed, ViewingKey,
     },
     sapling::{merkle_hash, spend_sig},
-    transaction::components::Amount,
     zip32::{self, sapling_address, sapling_derive_internal_fvk, sapling_find_address},
 };
-use zcash_proofs::{
-    circuit::sapling::TREE_DEPTH as SAPLING_TREE_DEPTH, load_parameters,
-    sapling::SaplingProvingContext, sprout,
-};
+use zcash_proofs::{load_parameters, sprout};
 
 mod blake2b;
 mod ed25519;
@@ -657,56 +652,6 @@ pub extern "C" fn librustzcash_sprout_verify(
     )
 }
 
-/// This function (using the proving context) constructs an Output proof given
-/// the necessary witness information. It outputs `cv` and the `zkproof`.
-#[no_mangle]
-pub extern "C" fn librustzcash_sapling_output_proof(
-    ctx: *mut SaplingProvingContext,
-    esk: *const [c_uchar; 32],
-    payment_address: *const [c_uchar; 43],
-    rcm: *const [c_uchar; 32],
-    value: u64,
-    cv: *mut [c_uchar; 32],
-    zkproof: *mut [c_uchar; GROTH_PROOF_SIZE],
-) -> bool {
-    // Grab `esk`, which the caller should have constructed for the DH key exchange.
-    let esk = match de_ct(jubjub::Scalar::from_bytes(unsafe { &*esk })) {
-        Some(p) => p,
-        None => return false,
-    };
-
-    // Grab the payment address from the caller
-    let payment_address = match PaymentAddress::from_bytes(unsafe { &*payment_address }) {
-        Some(pa) => pa,
-        None => return false,
-    };
-
-    // The caller provides the commitment randomness for the output note
-    let rcm = match de_ct(jubjub::Scalar::from_bytes(unsafe { &*rcm })) {
-        Some(p) => p,
-        None => return false,
-    };
-
-    // Create proof
-    let (proof, value_commitment) = unsafe { &mut *ctx }.output_proof(
-        esk,
-        payment_address,
-        rcm,
-        value,
-        unsafe { SAPLING_OUTPUT_PARAMS.as_ref() }.unwrap(),
-    );
-
-    // Write the proof out to the caller
-    proof
-        .write(&mut (unsafe { &mut *zkproof })[..])
-        .expect("should be able to serialize a proof");
-
-    // Write the value commitment to the caller
-    *unsafe { &mut *cv } = value_commitment.to_bytes();
-
-    true
-}
-
 /// Computes the signature for each Spend description, given the key `ask`, the
 /// re-randomization `ar`, the 32-byte sighash `sighash`, and an output `result`
 /// buffer of 64-bytes for the signature.
@@ -742,148 +687,6 @@ pub extern "C" fn librustzcash_sapling_spend_sig(
         .expect("result should be 64 bytes");
 
     true
-}
-
-/// This function (using the proving context) constructs a binding signature.
-///
-/// You must provide the intended valueBalance so that we can internally check
-/// consistency.
-#[no_mangle]
-pub extern "C" fn librustzcash_sapling_binding_sig(
-    ctx: *const SaplingProvingContext,
-    value_balance: i64,
-    sighash: *const [c_uchar; 32],
-    result: *mut [c_uchar; 64],
-) -> bool {
-    let value_balance = match Amount::from_i64(value_balance) {
-        Ok(vb) => vb,
-        Err(()) => return false,
-    };
-
-    // Sign
-    let sig = match unsafe { &*ctx }.binding_sig(value_balance, unsafe { &*sighash }) {
-        Ok(s) => s,
-        Err(_) => return false,
-    };
-
-    // Write out signature
-    sig.write(&mut (unsafe { &mut *result })[..])
-        .expect("result should be 64 bytes");
-
-    true
-}
-
-/// This function (using the proving context) constructs a Spend proof given the
-/// necessary witness information. It outputs `cv` (the value commitment) and
-/// `rk` (so that you don't have to compute it) along with the proof.
-#[no_mangle]
-pub extern "C" fn librustzcash_sapling_spend_proof(
-    ctx: *mut SaplingProvingContext,
-    ak: *const [c_uchar; 32],
-    nsk: *const [c_uchar; 32],
-    diversifier: *const [c_uchar; 11],
-    rcm: *const [c_uchar; 32],
-    ar: *const [c_uchar; 32],
-    value: u64,
-    anchor: *const [c_uchar; 32],
-    merkle_path: *const [c_uchar; 1 + 33 * SAPLING_TREE_DEPTH + 8],
-    cv: *mut [c_uchar; 32],
-    rk_out: *mut [c_uchar; 32],
-    zkproof: *mut [c_uchar; GROTH_PROOF_SIZE],
-) -> bool {
-    // Grab `ak` from the caller, which should be a point.
-    let ak = match de_ct(jubjub::ExtendedPoint::from_bytes(unsafe { &*ak })) {
-        Some(p) => p,
-        None => return false,
-    };
-
-    // `ak` should be prime order.
-    let ak = match de_ct(ak.into_subgroup()) {
-        Some(p) => p,
-        None => return false,
-    };
-
-    // Grab `nsk` from the caller
-    let nsk = match de_ct(jubjub::Scalar::from_bytes(unsafe { &*nsk })) {
-        Some(p) => p,
-        None => return false,
-    };
-
-    // Construct the proof generation key
-    let proof_generation_key = ProofGenerationKey { ak, nsk };
-
-    // Grab the diversifier from the caller
-    let diversifier = Diversifier(unsafe { *diversifier });
-
-    // The caller chooses the note randomness
-    // If this is after ZIP 212, the caller has calculated rcm, and we don't need to call
-    // Note::derive_esk, so we just pretend the note was using this rcm all along.
-    let rseed = match de_ct(jubjub::Scalar::from_bytes(unsafe { &*rcm })) {
-        Some(p) => Rseed::BeforeZip212(p),
-        None => return false,
-    };
-
-    // The caller also chooses the re-randomization of ak
-    let ar = match de_ct(jubjub::Scalar::from_bytes(unsafe { &*ar })) {
-        Some(p) => p,
-        None => return false,
-    };
-
-    // We need to compute the anchor of the Spend.
-    let anchor = match de_ct(bls12_381::Scalar::from_bytes(unsafe { &*anchor })) {
-        Some(p) => p,
-        None => return false,
-    };
-
-    // Parse the Merkle path from the caller
-    let merkle_path = match MerklePath::from_slice(unsafe { &(&*merkle_path)[..] }) {
-        Ok(w) => w,
-        Err(_) => return false,
-    };
-
-    // Create proof
-    let (proof, value_commitment, rk) = unsafe { &mut *ctx }
-        .spend_proof(
-            proof_generation_key,
-            diversifier,
-            rseed,
-            ar,
-            value,
-            anchor,
-            merkle_path,
-            unsafe { SAPLING_SPEND_PARAMS.as_ref() }.unwrap(),
-            &prepare_verifying_key(unsafe { SAPLING_SPEND_VK.as_ref() }.unwrap()),
-        )
-        .expect("proving should not fail");
-
-    // Write value commitment to caller
-    *unsafe { &mut *cv } = value_commitment.to_bytes();
-
-    // Write proof out to caller
-    proof
-        .write(&mut (unsafe { &mut *zkproof })[..])
-        .expect("should be able to serialize a proof");
-
-    // Write out `rk` to the caller
-    rk.write(&mut unsafe { &mut *rk_out }[..])
-        .expect("should be able to write to rk_out");
-
-    true
-}
-
-/// Creates a Sapling proving context. Please free this when you're done.
-#[no_mangle]
-pub extern "C" fn librustzcash_sapling_proving_ctx_init() -> *mut SaplingProvingContext {
-    let ctx = Box::new(SaplingProvingContext::new());
-
-    Box::into_raw(ctx)
-}
-
-/// Frees a Sapling proving context returned from
-/// [`librustzcash_sapling_proving_ctx_init`].
-#[no_mangle]
-pub extern "C" fn librustzcash_sapling_proving_ctx_free(ctx: *mut SaplingProvingContext) {
-    drop(unsafe { Box::from_raw(ctx) });
 }
 
 /// Derive the master ExtendedSpendingKey from a seed.

@@ -1181,9 +1181,8 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
     auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
 
-    auto ctx = librustzcash_sapling_proving_ctx_init();
+    auto ctx = sapling::init_prover();
     auto odesc = output.Build(ctx).value();
-    librustzcash_sapling_proving_ctx_free(ctx);
 
     CMutableTransaction mtx = GetValidTransaction();
     mtx.fOverwintered = true;
@@ -1286,9 +1285,8 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     }
 
     // Add a Sapling output.
-    auto ctx = librustzcash_sapling_proving_ctx_init();
+    auto ctx = sapling::init_prover();
     auto odesc = output.Build(ctx).value();
-    librustzcash_sapling_proving_ctx_free(ctx);
     mtx.vShieldedOutput.push_back(odesc);
 
     // Coinbase transaction should fail non-contextual checks with valueBalanceSapling
