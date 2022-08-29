@@ -5434,7 +5434,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 2 || params.size() > 4)
+    if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
             "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee ) ( limit )\n"
             "\nShield transparent coinbase funds by sending to a shielded zaddr.  This is an asynchronous operation and utxos"
@@ -5451,6 +5451,26 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
             "4. limit                 (numeric, optional, default="
             + strprintf("%d", SHIELD_COINBASE_DEFAULT_LIMIT) + ") Limit on the maximum number of utxos to shield.  Set to 0 to use as many as will fit in the transaction.\n"
+            "5. privacyPolicy         (string, optional, default=\"LegacyCompat\") Policy for what information leakage is acceptable.\n"
+            "                         One of the following strings:\n"
+            "                               - \"FullPrivacy\": Only allow fully-shielded transactions (involving a single shielded value pool).\n"
+            "                               - \"LegacyCompat\": If the transaction involves any Unified Addresses, this is equivalent to\n"
+            "                                 \"FullPrivacy\". Otherwise, this is equivalent to \"AllowFullyTransparent\".\n"
+            "                               - \"AllowRevealedAmounts\": Allow funds to cross between shielded value pools, revealing the amount\n"
+            "                                 that crosses pools.\n"
+            "                               - \"AllowRevealedRecipients\": Allow transparent recipients. This also implies revealing\n"
+            "                                 information described under \"AllowRevealedAmounts\".\n"
+            "                               - \"AllowRevealedSenders\": Allow transparent funds to be spent, revealing the sending\n"
+            "                                 addresses and amounts. This implies revealing information described under \"AllowRevealedAmounts\".\n"
+            "                               - \"AllowFullyTransparent\": Allow transaction to both spend transparent funds and have\n"
+            "                                 transparent recipients. This implies revealing information described under \"AllowRevealedSenders\"\n"
+            "                                 and \"AllowRevealedRecipients\".\n"
+            "                               - \"AllowLinkingAccountAddresses\": Allow selecting transparent coins from the full account,\n"
+            "                                 rather than just the funds sent to the transparent receiver in the provided Unified Address.\n"
+            "                                 This implies revealing information described under \"AllowRevealedSenders\".\n"
+            "                               - \"NoPrivacy\": Allow the transaction to reveal any information necessary to create it.\n"
+            "                                 This implies revealing information described under \"AllowFullyTransparent\" and\n"
+            "                                 \"AllowLinkingAccountAddresses\".\n"
             "\nResult:\n"
             "{\n"
             "  \"remainingUTXOs\": xxx       (numeric) Number of coinbase utxos still available for shielding.\n"

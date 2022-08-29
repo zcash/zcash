@@ -168,6 +168,7 @@ uint256 AsyncRPCOperation_shieldcoinbase::main_impl() {
             ztxoSelector_,
             spendable,
             payments,
+            chainActive,
             strategy_,
             fee_,
             nAnchorConfirmations);

@@ -6,22 +6,30 @@
 
 using namespace libzcash;
 
+int GetAnchorHeight(const CChain& chain, int anchorConfirmations)
+{
+    int nextBlockHeight = chain.Height() + 1;
+    return nextBlockHeight - anchorConfirmations;
+}
+
 PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
         const ZTXOSelector& selector,
         SpendableInputs& spendable,
         const std::vector<Payment>& payments,
+        const CChain& chain,
         TransactionStrategy strategy,
         CAmount fee,
         uint32_t anchorConfirmations) const
 {
     assert(fee < MAX_MONEY);
 
-    auto selected = ResolveInputsAndPayments(spendable, payments, strategy, fee);
+    auto selected = ResolveInputsAndPayments(spendable, payments, chain, strategy, fee, anchorConfirmations);
     if (std::holds_alternative<InputSelectionError>(selected)) {
         return std::get<InputSelectionError>(selected);
     }
 
-    auto resolvedPayments = std::get<Payments>(selected);
+    auto resolvedSelection = std::get<InputSelection>(selected);
+    auto resolvedPayments = resolvedSelection.GetPayments();
 
     if (spendable.Total() < resolvedPayments.Total() + fee) {
         return InsufficientFundsError(
@@ -174,7 +182,16 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
             changeAddr,
             fee,
             ovks.first,
-            ovks.second);
+            ovks.second,
+            resolvedSelection.GetOrchardAnchorHeight());
+}
+
+Payments InputSelection::GetPayments() const {
+    return this->payments;
+}
+
+std::optional<int> InputSelection::GetOrchardAnchorHeight() const {
+    return this->orchardAnchorHeight;
 }
 
 CAmount WalletTxBuilder::DefaultDustThreshold() const {
@@ -215,8 +232,10 @@ bool WalletTxBuilder::AllowTransparentCoinbase(
 InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
         SpendableInputs& spendableMut,
         const std::vector<Payment>& payments,
+        const CChain& chain,
         TransactionStrategy strategy,
-        CAmount fee) const
+        CAmount fee,
+        uint32_t anchorConfirmations) const
 {
     LOCK2(cs_main, wallet.cs_wallet);
 
@@ -241,6 +260,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     bool canResolveOrchard = spendableMut.Total() - spendableMut.GetSproutBalance() >= targetAmount;
     std::vector<ResolvedPayment> resolvedPayments;
     std::optional<AddressResolutionError> resolutionError;
+    std::optional<int> orchardAnchorHeight = std::optional<int>();;
     for (const auto& payment : payments) {
         std::visit(match {
             [&](const CKeyID& p2pkh) {
@@ -275,27 +295,31 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
             },
             [&](const UnifiedAddress& ua) {
                 bool resolved{false};
-                if (canResolveOrchard && ua.GetOrchardReceiver().has_value()) {
-                    if (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxOrchardAvailable) {
-                        resolvedPayments.emplace_back(
-                            ua, ua.GetOrchardReceiver().value(), payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
-                        if (!strategy.AllowRevealedAmounts()) {
-                            maxOrchardAvailable -= payment.GetAmount();
-                        }
-                        orchardOutputs += 1;
-                        resolved = true;
+                int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);
+                if (Params().GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5)
+                    && canResolveOrchard
+                    && ua.GetOrchardReceiver().has_value()
+                    && (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxOrchardAvailable)
+                    ) {
+                    resolvedPayments.emplace_back(
+                        ua, ua.GetOrchardReceiver().value(), payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
+                    if (!strategy.AllowRevealedAmounts()) {
+                        maxOrchardAvailable -= payment.GetAmount();
                     }
+                    orchardOutputs += 1;
+                    orchardAnchorHeight = std::optional(anchorHeight);
+                    resolved = true;
                 }
 
-                if (!resolved && ua.GetSaplingReceiver().has_value()) {
-                    if (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxSaplingAvailable) {
-                        resolvedPayments.emplace_back(
-                            ua, ua.GetSaplingReceiver().value(), payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
-                        if (!strategy.AllowRevealedAmounts()) {
-                            maxSaplingAvailable -= payment.GetAmount();
-                        }
-                        resolved = true;
+                if (!resolved && ua.GetSaplingReceiver().has_value()
+                    && (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxSaplingAvailable)
+                    ) {
+                    resolvedPayments.emplace_back(
+                        ua, ua.GetSaplingReceiver().value(), payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
+                    if (!strategy.AllowRevealedAmounts()) {
+                        maxSaplingAvailable -= payment.GetAmount();
                     }
+                    resolved = true;
                 }
 
                 if (!resolved && ua.GetP2SHReceiver().has_value() && strategy.AllowRevealedRecipients()) {
@@ -362,7 +386,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
         return ExcessOrchardActionsError(spendableMut.orchardNoteMetadata.size(), this->maxOrchardActions);
     }
 
-    return resolved;
+    return InputSelection(resolved, orchardAnchorHeight);
 }
 
 std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
@@ -527,7 +551,6 @@ PrivacyPolicy TransactionEffects::GetRequiredPrivacyPolicy() const
     return maxPrivacy;
 }
 
-
 bool TransactionEffects::InvolvesOrchard() const
 {
     return spendable.GetOrchardBalance() > 0 || payments.HasOrchardRecipient();
@@ -558,10 +581,9 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
 	&& (InvolvesOrchard() || nPreferredTxVersion > ZIP225_MIN_TX_VERSION)
 	&& this->anchorConfirmations > 0
 	) {
-        auto orchardAnchorHeight = nextBlockHeight - this->anchorConfirmations;
-        if (consensus.NetworkUpgradeActive(orchardAnchorHeight, Consensus::UPGRADE_NU5)) {
+        if (this->orchardAnchorHeight.has_value()) {
             LOCK(cs_main);
-            auto anchorBlockIndex = chain[orchardAnchorHeight];
+            auto anchorBlockIndex = chain[this->orchardAnchorHeight.value()];
             assert(anchorBlockIndex != nullptr);
             orchardAnchor = anchorBlockIndex->hashFinalOrchardRoot;
         }
