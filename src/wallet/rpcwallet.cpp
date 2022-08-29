@@ -5078,12 +5078,12 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     KeyIO keyIO(chainparams);
 
     // We need to know the privacy policy before we construct the ZTXOSelector,
-    // but we can't determine the default privacy policy without knowing whether
-    // any UAs are involved. We break this cycle by parsing the privacy policy
-    // argument first, and then resolving it to the default after parsing the
-    // rest of the arguments. This works because all possible defaults for the
-    // privacy policy have the same effect on ZTXOSelector construction (in that
-    // they don't include AllowLinkingAccountAddresses).
+    // but we can't determine what “LegacyCompat” maps to without knowing
+    // whether any UAs are involved. We break this cycle by parsing the privacy
+    // policy argument first, and then resolving “LegacyCompat” after parsing
+    // the rest of the arguments. This works because all interpretations for
+    // “LegacyCompat” have the same effect on ZTXOSelector construction (in that
+    // they don't include `AllowLinkingAccountAddresses`).
     std::optional<TransactionStrategy> maybeStrategy;
     if (params.size() > 4) {
         auto strategyName = params[4].get_str();
@@ -5451,7 +5451,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
             "4. limit                 (numeric, optional, default="
             + strprintf("%d", SHIELD_COINBASE_DEFAULT_LIMIT) + ") Limit on the maximum number of utxos to shield.  Set to 0 to use as many as will fit in the transaction.\n"
-            "5. privacyPolicy         (string, optional, default=\"LegacyCompat\") Policy for what information leakage is acceptable.\n"
+            "5. privacyPolicy         (string, optional, default=\"AllowRevealedSenders\") Policy for what information leakage is acceptable.\n"
             "                         One of the following strings:\n"
             "                               - \"FullPrivacy\": Only allow fully-shielded transactions (involving a single shielded value pool).\n"
             "                               - \"LegacyCompat\": If the transaction involves any Unified Addresses, this is equivalent to\n"
@@ -5510,6 +5510,8 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
                     strprintf("Unknown privacy policy name '%s'", strategyName));
             }
         }
+    } else {
+        maybeStrategy = TransactionStrategy(PrivacyPolicy::AllowRevealedSenders);
     }
 
     // Validate the from address
@@ -5629,7 +5631,6 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     // Now that we've set involvesUnifiedAddress correctly, we can finish
     // evaluating the strategy.
     TransactionStrategy strategy = maybeStrategy.value_or(
-        // Default privacy policy is "LegacyCompat".
         (involvesUnifiedAddress || !fEnableLegacyPrivacyStrategy) ?
             TransactionStrategy(PrivacyPolicy::FullPrivacy) :
             TransactionStrategy(PrivacyPolicy::AllowFullyTransparent)
