@@ -147,6 +147,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             ztxoSelector_,
             spendable,
             recipients_,
+            chainActive,
             strategy_,
             fee_,
             anchordepth_);

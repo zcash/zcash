@@ -2271,7 +2271,7 @@ SpendableInputs CWallet::FindSpendableInputs(
             }
         }
 
-        if (selectSprout && nDepth > 0 && !selector.RequireTransparentCoinbase()) {
+        if (selectSprout && !selector.RequireTransparentCoinbase()) {
             for (auto const& [jsop, nd] : wtx.mapSproutNoteData) {
                 SproutPaymentAddress pa = nd.address;
 
@@ -2326,7 +2326,7 @@ SpendableInputs CWallet::FindSpendableInputs(
             }
         }
 
-        if (selectSapling && nDepth > 0 && !selector.RequireTransparentCoinbase()) {
+        if (selectSapling && !selector.RequireTransparentCoinbase()) {
             for (auto const& [op, nd] : wtx.mapSaplingNoteData) {
                 auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
 
