@@ -1,12 +1,12 @@
 ---
-version: '2'
+version: '2.2'
 
 services:
   zcashd:
 #    command: ["-reindex"]
     image: electriccoinco/zcashd:latest
 #    image: localhost:5000/electriccoinco/zcashd:v5.0.0
-    mem_limit: 6G
+    mem_limit: 8G
     volumes:
       - $ZCASHD_DATADIR:/srv/zcashd/.zcash
       - $ZCASHD_PARMDIR:/srv/zcashd/.zcash-params
@@ -34,14 +34,14 @@ services:
 
   node_exporter:
     image: prom/node-exporter:latest
-    container_name: monitoring_node_exporter
+    container_name: mon_node_exporter
     restart: unless-stopped
     expose:
       - 9100
 
   grafana:
     #image: grafana/grafana:8.2.2
-    image: grafana/grafana:9.0.0
+    image: grafana/grafana
     ports:
       - "3000:3000"
     env_file:

@@ -58,7 +58,7 @@ class ZcashExporter:
         self.ZCASH_DIFFICULTY= Gauge('zcash_difficulty', 'the current difficulty')
         self.ZCASH_VERIFICATION_PROG = Gauge('zcash_verification_progress', 'Zcashd estimate of chain verification progress' )
         self.ZCASH_ESTIMATED_HEIGHT = Gauge('zcash_estimated_height', 'Zcashd if syncing, the estimated height of the chain, else the current best height4 ')
-        self.ZCASH_CHAINWORK = Gauge('zcash_chainwork', 'total amount of work in active chain, in hexadecimal')
+        self.ZCASH_CHAINWORK = Info('zcash_chainwork', 'total amount of work in active chain, in hexadecimal')
         self.ZCASH_CHAIN_DISK_SIZE = Gauge('zcash_chain_size_on_disk', 'the estimated size of the block and undo files on disk')
         self.ZCASH_COMMITMENTS = Gauge('zcash_commitments', 'the current number of note commitments in the commitment tree')
         
@@ -159,6 +159,7 @@ class ZcashExporter:
             logging.info("missed zcash RPC endpoint call getinfo()")
         try:
             zcash_info = api.getblockchaininfo()
+            logging.info("return from rpc")
             self.ZCASH_CHAIN.info({'zcash_chain': str(zcash_info['chain'])})
             self.ZCASH_BLOCKS.set(zcash_info['blocks'])
             self.ZCASH_IBD.set(zcash_info['initial_block_download_complete'])
@@ -167,9 +168,10 @@ class ZcashExporter:
             self.ZCASH_DIFFICULTY.set(zcash_info['difficulty'])
             self.ZCASH_VERIFICATION_PROG.set(zcash_info['verificationprogress'])
             self.ZCASH_ESTIMATED_HEIGHT.set(zcash_info['estimatedheight'])
-            self.ZCASH_CHAINWORK.set(zcash_info['chainwork'])
+            self.ZCASH_CHAINWORK.info({'zcash_chainwork': str(zcash_info['chainwork'])})
             self.ZCASH_CHAIN_DISK_SIZE.set(zcash_info['size_on_disk'])
             self.ZCASH_COMMITMENTS.set(zcash_info['commitments'])
+            logging.info("parse complete")
             #@todo
             # softfork
             # upgrades
