@@ -132,11 +132,12 @@ LIBBITCOIN_CRYPTO_SHANI = crypto/libbitcoin_crypto_shani.a
 LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_SHANI)
 endif
 
-cargo-build-lib: $(CARGO_CONFIGURED)
-	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build --lib $(RUST_BUILD_OPTS) $(cargo_verbose)
+cargo-build: $(CARGO_CONFIGURED) $(LIBSECP256K1)
+	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build $(RUST_BUILD_OPTS) $(cargo_verbose)
 
-cargo-build-bins: $(CARGO_CONFIGURED) $(LIBSECP256K1)
-	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build --bins $(RUST_BUILD_OPTS) $(cargo_verbose)
+cargo-build-lib: cargo-build
+
+cargo-build-bins: cargo-build
 
 $(INSPECT_TOOL_BIN): cargo-build-bins
 	$(AM_V_at)cp $(INSPECT_TOOL_BUILD) $@
