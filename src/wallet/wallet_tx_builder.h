@@ -12,6 +12,8 @@
 
 using namespace libzcash;
 
+int GetAnchorHeight(const CChain& chain, int anchorConfirmations);
+
 /**
  * A payment that has been resolved to send to a specific
  * recipient address in a single pool.
@@ -156,6 +158,10 @@ private:
     CAmount fee{0};
     uint256 internalOVK;
     uint256 externalOVK;
+    // TODO: This needs to be richer, like an `anchorBlock`, so the `TransactionEffects` can
+    //       be recalculated if the state of the chain has changed significantly between the time of
+    //       preparation and the time of approval.
+    int anchorHeight;
 
 public:
     TransactionEffects(
@@ -166,7 +172,8 @@ public:
         std::optional<ChangeAddress> changeAddr,
         CAmount fee,
         uint256 internalOVK,
-        uint256 externalOVK) :
+        uint256 externalOVK,
+        int anchorHeight) :
             sendFromAccount(sendFromAccount),
             anchorConfirmations(anchorConfirmations),
             spendable(spendable),
@@ -174,7 +181,8 @@ public:
             changeAddr(changeAddr),
             fee(fee),
             internalOVK(internalOVK),
-            externalOVK(externalOVK) {}
+            externalOVK(externalOVK),
+            anchorHeight(anchorHeight) {}
 
     PrivacyPolicy GetRequiredPrivacyPolicy() const;
 
@@ -252,9 +260,21 @@ typedef std::variant<
     ChangeNotAllowedError,
     ExcessOrchardActionsError> InputSelectionError;
 
+class InputSelection {
+private:
+    Payments payments;
+    int orchardAnchorHeight;
+
+public:
+    InputSelection(Payments payments, int orchardAnchorHeight):
+        payments(payments), orchardAnchorHeight(orchardAnchorHeight) {}
+
+    Payments GetPayments() const;
+};
+
 typedef std::variant<
     InputSelectionError,
-    Payments> InputSelectionResult;
+    InputSelection> InputSelectionResult;
 
 typedef std::variant<
     InputSelectionError,
@@ -279,9 +299,10 @@ private:
     InputSelectionResult ResolveInputsAndPayments(
             SpendableInputs& spendable,
             const std::vector<Payment>& payments,
+            const CChain& chain,
             TransactionStrategy strategy,
-            CAmount fee) const;
-
+            CAmount fee,
+            uint32_t anchorConfirmations) const;
     /**
      * Compute the internal and external OVKs to use in transaction construction, given
      * the spendable inputs.
@@ -307,6 +328,7 @@ public:
             const ZTXOSelector& selector,
             SpendableInputs& spendable,
             const std::vector<Payment>& payments,
+            const CChain& chain,
             TransactionStrategy strategy,
             CAmount fee,
             uint32_t anchorConfirmations) const;
