@@ -22,6 +22,7 @@
 #include <optional>
 
 #include <rust/builder.h>
+#include <rust/sapling.h>
 
 #define NO_MEMO {{0xF6}}
 
@@ -202,7 +203,7 @@ struct OutputDescriptionInfo {
         libzcash::SaplingNote note,
         std::array<unsigned char, ZC_MEMO_SIZE> memo) : ovk(ovk), note(note), memo(memo) {}
 
-    std::optional<OutputDescription> Build(void* ctx);
+    std::optional<OutputDescription> Build(rust::Box<sapling::Prover>& ctx);
 };
 
 struct JSDescriptionInfo {

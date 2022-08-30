@@ -125,7 +125,7 @@ SpendDescriptionInfo::SpendDescriptionInfo(
     librustzcash_sapling_generate_r(alpha.begin());
 }
 
-std::optional<OutputDescription> OutputDescriptionInfo::Build(void* ctx) {
+std::optional<OutputDescription> OutputDescriptionInfo::Build(rust::Box<sapling::Prover>& ctx) {
     auto cmu = this->note.cmu();
     if (!cmu) {
         return std::nullopt;
@@ -143,21 +143,23 @@ std::optional<OutputDescription> OutputDescriptionInfo::Build(void* ctx) {
     libzcash::SaplingPaymentAddress address(this->note.d, this->note.pk_d);
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << address;
-    std::vector<unsigned char> addressBytes(ss.begin(), ss.end());
+    std::array<unsigned char, 43> addressBytes;
+    std::move(ss.begin(), ss.end(), addressBytes.begin());
 
+    std::array<unsigned char, 32> cvBytes;
     OutputDescription odesc;
     uint256 rcm = this->note.rcm();
-    if (!librustzcash_sapling_output_proof(
-            ctx,
-            encryptor.get_esk().begin(),
-            addressBytes.data(),
-            rcm.begin(),
+    if (!ctx->create_output_proof(
+            encryptor.get_esk().GetRawBytes(),
+            addressBytes,
+            rcm.GetRawBytes(),
             this->note.value(),
-            odesc.cv.begin(),
-            odesc.zkproof.begin())) {
+            cvBytes,
+            odesc.zkproof)) {
         return std::nullopt;
     }
 
+    odesc.cv = uint256::FromRawBytes(cvBytes);
     odesc.cmu = *cmu;
     odesc.ephemeralKey = encryptor.get_epk();
     odesc.encCiphertext = enc.first;
@@ -554,7 +556,7 @@ TransactionBuilderResult TransactionBuilder::Build()
     // Sapling spends and outputs
     //
 
-    auto ctx = librustzcash_sapling_proving_ctx_init();
+    auto ctx = sapling::init_prover();
 
     // Create Sapling SpendDescriptions
     for (auto spend : spends) {
@@ -562,33 +564,35 @@ TransactionBuilderResult TransactionBuilder::Build()
         auto nf = spend.note.nullifier(
             spend.expsk.full_viewing_key(), spend.witness.position());
         if (!cm || !nf) {
-            librustzcash_sapling_proving_ctx_free(ctx);
             return TransactionBuilderResult("Spend is invalid");
         }
 
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << spend.witness.path();
-        std::vector<unsigned char> witness(ss.begin(), ss.end());
+        std::array<unsigned char, 1065> witness;
+        std::move(ss.begin(), ss.end(), witness.begin());
 
+        std::array<unsigned char, 32> cv;
+        std::array<unsigned char, 32> rk;
         SpendDescription sdesc;
         uint256 rcm = spend.note.rcm();
-        if (!librustzcash_sapling_spend_proof(
-                ctx,
-                spend.expsk.full_viewing_key().ak.begin(),
-                spend.expsk.nsk.begin(),
-                spend.note.d.data(),
-                rcm.begin(),
-                spend.alpha.begin(),
+        if (!ctx->create_spend_proof(
+                spend.expsk.full_viewing_key().ak.GetRawBytes(),
+                spend.expsk.nsk.GetRawBytes(),
+                spend.note.d,
+                rcm.GetRawBytes(),
+                spend.alpha.GetRawBytes(),
                 spend.note.value(),
-                spend.anchor.begin(),
-                witness.data(),
-                sdesc.cv.begin(),
-                sdesc.rk.begin(),
-                sdesc.zkproof.data())) {
-            librustzcash_sapling_proving_ctx_free(ctx);
+                spend.anchor.GetRawBytes(),
+                witness,
+                cv,
+                rk,
+                sdesc.zkproof)) {
             return TransactionBuilderResult("Spend proof failed");
         }
 
+        sdesc.cv = uint256::FromRawBytes(cv);
+        sdesc.rk = uint256::FromRawBytes(rk);
         sdesc.anchor = spend.anchor;
         sdesc.nullifier = *nf;
         mtx.vShieldedSpend.push_back(sdesc);
@@ -598,13 +602,11 @@ TransactionBuilderResult TransactionBuilder::Build()
     for (auto output : outputs) {
         // Check this out here as well to provide better logging.
         if (!output.note.cmu()) {
-            librustzcash_sapling_proving_ctx_free(ctx);
             return TransactionBuilderResult("Output is invalid");
         }
 
         auto odesc = output.Build(ctx);
         if (!odesc) {
-            librustzcash_sapling_proving_ctx_free(ctx);
             return TransactionBuilderResult("Failed to create output description");
         }
 
@@ -623,11 +625,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         try {
             CreateJSDescriptions();
         } catch (JSDescException e) {
-            librustzcash_sapling_proving_ctx_free(ctx);
             return TransactionBuilderResult(e.what());
-        } catch (std::runtime_error e) {
-            librustzcash_sapling_proving_ctx_free(ctx);
-            throw e;
         }
     }
 
@@ -649,10 +647,8 @@ TransactionBuilderResult TransactionBuilder::Build()
             dataToBeSigned = SignatureHash(scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
         }
     } catch (std::ios_base::failure ex) {
-        librustzcash_sapling_proving_ctx_free(ctx);
         return TransactionBuilderResult("Could not construct signature hash: " + std::string(ex.what()));
     } catch (std::logic_error ex) {
-        librustzcash_sapling_proving_ctx_free(ctx);
         return TransactionBuilderResult("Could not construct signature hash: " + std::string(ex.what()));
     }
 
@@ -674,13 +670,10 @@ TransactionBuilderResult TransactionBuilder::Build()
             dataToBeSigned.begin(),
             mtx.vShieldedSpend[i].spendAuthSig.data());
     }
-    librustzcash_sapling_binding_sig(
-        ctx,
+    ctx->binding_sig(
         mtx.valueBalanceSapling,
-        dataToBeSigned.begin(),
-        mtx.bindingSig.data());
-
-    librustzcash_sapling_proving_ctx_free(ctx);
+        dataToBeSigned.GetRawBytes(),
+        mtx.bindingSig);
 
     // Create Sprout joinSplitSig
     if (!ed25519_sign(

@@ -5,14 +5,15 @@
 use std::convert::TryInto;
 
 use bellman::groth16::{prepare_verifying_key, Proof};
-use group::GroupEncoding;
+use group::{cofactor::CofactorGroup, GroupEncoding};
 
 use rand_core::OsRng;
 use zcash_note_encryption::EphemeralKeyBytes;
 use zcash_primitives::{
+    merkle_tree::MerklePath,
     sapling::{
         redjubjub::{self, Signature},
-        Nullifier,
+        Diversifier, Nullifier, PaymentAddress, ProofGenerationKey, Rseed,
     },
     transaction::{
         components::{sapling, Amount},
@@ -20,10 +21,15 @@ use zcash_primitives::{
         Authorized, TransactionDigest,
     },
 };
-use zcash_proofs::sapling::{self as sapling_proofs, SaplingVerificationContext};
+use zcash_proofs::{
+    circuit::sapling::TREE_DEPTH as SAPLING_TREE_DEPTH,
+    sapling::{self as sapling_proofs, SaplingProvingContext, SaplingVerificationContext},
+};
 
 use super::GROTH_PROOF_SIZE;
-use super::{de_ct, SAPLING_OUTPUT_VK, SAPLING_SPEND_VK};
+use super::{
+    de_ct, SAPLING_OUTPUT_PARAMS, SAPLING_OUTPUT_VK, SAPLING_SPEND_PARAMS, SAPLING_SPEND_VK,
+};
 use crate::bundlecache::{
     sapling_bundle_validity_cache, sapling_bundle_validity_cache_mut, CacheEntries,
 };
@@ -57,6 +63,40 @@ mod ffi {
             value_balance: i64,
             binding_sig: [u8; 64],
         ) -> Box<Bundle>;
+
+        type Prover;
+
+        fn init_prover() -> Box<Prover>;
+        #[allow(clippy::too_many_arguments)]
+        fn create_spend_proof(
+            self: &mut Prover,
+            ak: &[u8; 32],
+            nsk: &[u8; 32],
+            diversifier: &[u8; 11],
+            rcm: &[u8; 32],
+            ar: &[u8; 32],
+            value: u64,
+            anchor: &[u8; 32],
+            merkle_path: &[u8; 1065], // 1 + 33 * SAPLING_TREE_DEPTH + 8
+            cv: &mut [u8; 32],
+            rk_out: &mut [u8; 32],
+            zkproof: &mut [u8; 192], // GROTH_PROOF_SIZE
+        ) -> bool;
+        fn create_output_proof(
+            self: &mut Prover,
+            esk: &[u8; 32],
+            payment_address: &[u8; 43],
+            rcm: &[u8; 32],
+            value: u64,
+            cv: &mut [u8; 32],
+            zkproof: &mut [u8; 192], // GROTH_PROOF_SIZE
+        ) -> bool;
+        fn binding_sig(
+            self: &mut Prover,
+            value_balance: i64,
+            sighash: &[u8; 32],
+            result: &mut [u8; 64],
+        ) -> bool;
 
         type Verifier;
 
@@ -210,6 +250,179 @@ fn finish_bundle_assembly(
         value_balance,
         authorization: sapling::Authorized { binding_sig },
     }))
+}
+
+struct Prover(SaplingProvingContext);
+
+fn init_prover() -> Box<Prover> {
+    Box::new(Prover(SaplingProvingContext::new()))
+}
+
+impl Prover {
+    #[allow(clippy::too_many_arguments)]
+    fn create_spend_proof(
+        &mut self,
+        ak: &[u8; 32],
+        nsk: &[u8; 32],
+        diversifier: &[u8; 11],
+        rcm: &[u8; 32],
+        ar: &[u8; 32],
+        value: u64,
+        anchor: &[u8; 32],
+        merkle_path: &[u8; 1 + 33 * SAPLING_TREE_DEPTH + 8],
+        cv: &mut [u8; 32],
+        rk_out: &mut [u8; 32],
+        zkproof: &mut [u8; GROTH_PROOF_SIZE],
+    ) -> bool {
+        // Grab `ak` from the caller, which should be a point.
+        let ak = match de_ct(jubjub::ExtendedPoint::from_bytes(ak)) {
+            Some(p) => p,
+            None => return false,
+        };
+
+        // `ak` should be prime order.
+        let ak = match de_ct(ak.into_subgroup()) {
+            Some(p) => p,
+            None => return false,
+        };
+
+        // Grab `nsk` from the caller
+        let nsk = match de_ct(jubjub::Scalar::from_bytes(nsk)) {
+            Some(p) => p,
+            None => return false,
+        };
+
+        // Construct the proof generation key
+        let proof_generation_key = ProofGenerationKey { ak, nsk };
+
+        // Grab the diversifier from the caller
+        let diversifier = Diversifier(*diversifier);
+
+        // The caller chooses the note randomness
+        // If this is after ZIP 212, the caller has calculated rcm, and we don't need to call
+        // Note::derive_esk, so we just pretend the note was using this rcm all along.
+        let rseed = match de_ct(jubjub::Scalar::from_bytes(rcm)) {
+            Some(p) => Rseed::BeforeZip212(p),
+            None => return false,
+        };
+
+        // The caller also chooses the re-randomization of ak
+        let ar = match de_ct(jubjub::Scalar::from_bytes(ar)) {
+            Some(p) => p,
+            None => return false,
+        };
+
+        // We need to compute the anchor of the Spend.
+        let anchor = match de_ct(bls12_381::Scalar::from_bytes(anchor)) {
+            Some(p) => p,
+            None => return false,
+        };
+
+        // Parse the Merkle path from the caller
+        let merkle_path = match MerklePath::from_slice(merkle_path) {
+            Ok(w) => w,
+            Err(_) => return false,
+        };
+
+        // Create proof
+        let (proof, value_commitment, rk) = self
+            .0
+            .spend_proof(
+                proof_generation_key,
+                diversifier,
+                rseed,
+                ar,
+                value,
+                anchor,
+                merkle_path,
+                unsafe { SAPLING_SPEND_PARAMS.as_ref() }.unwrap(),
+                &prepare_verifying_key(unsafe { SAPLING_SPEND_VK.as_ref() }.unwrap()),
+            )
+            .expect("proving should not fail");
+
+        // Write value commitment to caller
+        *cv = value_commitment.to_bytes();
+
+        // Write proof out to caller
+        proof
+            .write(&mut zkproof[..])
+            .expect("should be able to serialize a proof");
+
+        // Write out `rk` to the caller
+        rk.write(&mut rk_out[..])
+            .expect("should be able to write to rk_out");
+
+        true
+    }
+    fn create_output_proof(
+        &mut self,
+        esk: &[u8; 32],
+        payment_address: &[u8; 43],
+        rcm: &[u8; 32],
+        value: u64,
+        cv: &mut [u8; 32],
+        zkproof: &mut [u8; GROTH_PROOF_SIZE],
+    ) -> bool {
+        // Grab `esk`, which the caller should have constructed for the DH key exchange.
+        let esk = match de_ct(jubjub::Scalar::from_bytes(esk)) {
+            Some(p) => p,
+            None => return false,
+        };
+
+        // Grab the payment address from the caller
+        let payment_address = match PaymentAddress::from_bytes(payment_address) {
+            Some(pa) => pa,
+            None => return false,
+        };
+
+        // The caller provides the commitment randomness for the output note
+        let rcm = match de_ct(jubjub::Scalar::from_bytes(rcm)) {
+            Some(p) => p,
+            None => return false,
+        };
+
+        // Create proof
+        let (proof, value_commitment) = self.0.output_proof(
+            esk,
+            payment_address,
+            rcm,
+            value,
+            unsafe { SAPLING_OUTPUT_PARAMS.as_ref() }.unwrap(),
+        );
+
+        // Write the proof out to the caller
+        proof
+            .write(&mut zkproof[..])
+            .expect("should be able to serialize a proof");
+
+        // Write the value commitment to the caller
+        *cv = value_commitment.to_bytes();
+
+        true
+    }
+    fn binding_sig(
+        &mut self,
+        value_balance: i64,
+        sighash: &[u8; 32],
+        result: &mut [u8; 64],
+    ) -> bool {
+        let value_balance = match Amount::from_i64(value_balance) {
+            Ok(vb) => vb,
+            Err(()) => return false,
+        };
+
+        // Sign
+        let sig = match self.0.binding_sig(value_balance, sighash) {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+
+        // Write out signature
+        sig.write(&mut result[..])
+            .expect("result should be 64 bytes");
+
+        true
+    }
 }
 
 struct Verifier(SaplingVerificationContext);

@@ -37,6 +37,7 @@
 #include "validationinterface.h"
 
 #include <librustzcash.h>
+#include <rust/sapling.h>
 
 #include <boost/thread.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -127,13 +128,13 @@ class AddFundingStreamValueToTx
 {
 private:
     CMutableTransaction &mtx;
-    void* ctx;
+    rust::Box<sapling::Prover>& ctx;
     const CAmount fundingStreamValue;
     const libzcash::Zip212Enabled zip212Enabled;
 public:
     AddFundingStreamValueToTx(
             CMutableTransaction &mtx,
-            void* ctx,
+            rust::Box<sapling::Prover>& ctx,
             const CAmount fundingStreamValue,
             const libzcash::Zip212Enabled zip212Enabled): mtx(mtx), ctx(ctx), fundingStreamValue(fundingStreamValue), zip212Enabled(zip212Enabled) {}
 
@@ -182,7 +183,7 @@ public:
         }
     }
 
-    CAmount SetFoundersRewardAndGetMinerValue(void* ctx) const {
+    CAmount SetFoundersRewardAndGetMinerValue(rust::Box<sapling::Prover>& ctx) const {
         auto block_subsidy = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
         auto miner_reward = block_subsidy; // founders' reward or funding stream amounts will be subtracted below
 
@@ -197,7 +198,6 @@ public:
                     miner_reward -= fselem.second;
                     bool added = std::visit(AddFundingStreamValueToTx(mtx, ctx, fselem.second, GetZip212Flag()), fselem.first);
                     if (!added) {
-                        librustzcash_sapling_proving_ctx_free(ctx);
                         throw new std::runtime_error("Failed to add funding stream output.");
                     }
                 }
@@ -217,7 +217,7 @@ public:
         return miner_reward + nFees;
     }
 
-    void ComputeBindingSig(void* saplingCtx, std::optional<orchard::UnauthorizedBundle> orchardBundle) const {
+    void ComputeBindingSig(rust::Box<sapling::Prover> saplingCtx, std::optional<orchard::UnauthorizedBundle> orchardBundle) const {
         // Empty output script.
         uint256 dataToBeSigned;
         try {
@@ -233,7 +233,6 @@ public:
                     txdata);
             }
         } catch (std::logic_error ex) {
-            librustzcash_sapling_proving_ctx_free(saplingCtx);
             throw ex;
         }
 
@@ -242,26 +241,23 @@ public:
             if (authorizedBundle.has_value()) {
                 mtx.orchardBundle = authorizedBundle.value();
             } else {
-                librustzcash_sapling_proving_ctx_free(saplingCtx);
                 throw new std::runtime_error("Failed to create Orchard proof or signatures");
             }
         }
 
-        bool success = librustzcash_sapling_binding_sig(
-            saplingCtx,
+        bool success = saplingCtx->binding_sig(
             mtx.valueBalanceSapling,
-            dataToBeSigned.begin(),
-            mtx.bindingSig.data());
+            dataToBeSigned.GetRawBytes(),
+            mtx.bindingSig);
 
         if (!success) {
-            librustzcash_sapling_proving_ctx_free(saplingCtx);
             throw new std::runtime_error("An error occurred computing the binding signature.");
         }
     }
 
     // Create Orchard output
     void operator()(const libzcash::OrchardRawAddress &to) const {
-        auto ctx = librustzcash_sapling_proving_ctx_init();
+        auto ctx = sapling::init_prover();
 
         // `enableSpends` must be set to `false` for coinbase transactions. This
         // means the Orchard anchor is unconstrained, so we set it to the empty
@@ -289,18 +285,15 @@ public:
 
         auto bundle = builder.Build();
         if (!bundle.has_value()) {
-            librustzcash_sapling_proving_ctx_free(ctx);
             throw new std::runtime_error("Failed to create shielded output for miner");
         }
 
-        ComputeBindingSig(ctx, std::move(bundle));
-
-        librustzcash_sapling_proving_ctx_free(ctx);
+        ComputeBindingSig(std::move(ctx), std::move(bundle));
     }
 
     // Create shielded output
     void operator()(const libzcash::SaplingPaymentAddress &pa) const {
-        auto ctx = librustzcash_sapling_proving_ctx_init();
+        auto ctx = sapling::init_prover();
 
         auto miner_reward = SetFoundersRewardAndGetMinerValue(ctx);
         mtx.valueBalanceSapling -= miner_reward;
@@ -312,20 +305,17 @@ public:
 
         auto odesc = output.Build(ctx);
         if (!odesc) {
-            librustzcash_sapling_proving_ctx_free(ctx);
             throw new std::runtime_error("Failed to create shielded output for miner");
         }
         mtx.vShieldedOutput.push_back(odesc.value());
 
-        ComputeBindingSig(ctx, std::nullopt);
-
-        librustzcash_sapling_proving_ctx_free(ctx);
+        ComputeBindingSig(std::move(ctx), std::nullopt);
     }
 
     // Create transparent output
     void operator()(const boost::shared_ptr<CReserveScript> &coinbaseScript) const {
         // Add the FR output and fetch the miner's output value.
-        auto ctx = librustzcash_sapling_proving_ctx_init();
+        auto ctx = sapling::init_prover();
 
         // Miner output will be vout[0]; Founders' Reward & funding stream outputs
         // will follow.
@@ -336,10 +326,8 @@ public:
         mtx.vout[0] = CTxOut(value, coinbaseScript->reserveScript);
 
         if (mtx.vShieldedOutput.size() > 0) {
-            ComputeBindingSig(ctx, std::nullopt);
+            ComputeBindingSig(std::move(ctx), std::nullopt);
         }
-
-        librustzcash_sapling_proving_ctx_free(ctx);
     }
 };
 
