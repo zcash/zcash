@@ -68,7 +68,7 @@ it is disabled. We do not recommend you enable it until it has undergone a
 security review.
 
 RPC Interface
----------------
+-------------
 
 Users should choose a strong RPC password. If no RPC username and password are
 set, zcashd will not start and will print an error message with a suggestion
