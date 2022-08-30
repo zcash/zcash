@@ -1,7 +1,8 @@
 Data Directory Files
 ====================
 
-Files within the zcashd data directory (``~/.zcash/``) on Linux unless otherwise specified) include:
+Files within the zcashd data directory (``~/.zcash/`` on Linux unless otherwise specified)
+include:
 
 | File                  | Description
 |-----------------------|--------------

@@ -8,14 +8,6 @@ Zcash has been subjected to a formal third-party security review. For security
 announcements, audit results and other general security information, see
 https://z.cash/support/security.html
 
-x86-64 Linux Only
------------------
-
-There are [known bugs](https://github.com/scipr-lab/libsnark/issues/26/)
-which make proving keys generated on 64-bit systems unusable on 32-bit and
-big-endian systems. It's unclear if a warning will be issued in this case, or
-if the proving system will be silently compromised.
-
 Wallet Encryption
 -----------------
 
@@ -74,6 +66,9 @@ REST Interface
 The REST interface is a feature inherited from upstream Bitcoin.  By default,
 it is disabled. We do not recommend you enable it until it has undergone a
 security review.
+
+RPC Interface
+---------------
 
 Users should choose a strong RPC password. If no RPC username and password are
 set, zcashd will not start and will print an error message with a suggestion
