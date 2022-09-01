@@ -1,0 +1,418 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Using zcashd with Tor - The zcashd Book</title>
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">zcashd</a></li><li class="chapter-item expanded "><a href="../user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../user/platform-support.html"><strong aria-hidden="true">1.1.</strong> Platform Support</a></li><li class="chapter-item expanded "><a href="../user/wallet-backup.html"><strong aria-hidden="true">1.2.</strong> Wallet Backup</a></li><li class="chapter-item expanded "><a href="../user/shield-coinbase.html"><strong aria-hidden="true">1.3.</strong> Shielding Coinbase Outputs</a></li><li class="chapter-item expanded "><a href="../user/files.html"><strong aria-hidden="true">1.4.</strong> Data Directory Structure</a></li><li class="chapter-item expanded "><a href="../user/metrics.html"><strong aria-hidden="true">1.5.</strong> Metrics</a></li><li class="chapter-item expanded "><a href="../user/tor.html" class="active"><strong aria-hidden="true">1.6.</strong> Using zcashd with Tor</a></li><li class="chapter-item expanded "><a href="../user/security-warnings.html"><strong aria-hidden="true">1.7.</strong> Security Warnings</a></li><li class="chapter-item expanded "><a href="../user/deprecation.html"><strong aria-hidden="true">1.8.</strong> Deprecated Features</a></li></ol></li><li class="chapter-item expanded "><a href="../dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../dev/dnsseed-policy.html"><strong aria-hidden="true">2.1.</strong> DNS Seeders</a></li><li class="chapter-item expanded "><a href="../dev/rust.html"><strong aria-hidden="true">2.2.</strong> Rust in zcashd</a></li><li class="chapter-item expanded "><a href="../dev/regtest.html"><strong aria-hidden="true">2.3.</strong> Regtest Tips And Hints</a></li><li class="chapter-item expanded "><a href="../dev/platform-tier-policy.html"><strong aria-hidden="true">2.4.</strong> Platform Tier Policy</a></li><li class="chapter-item expanded "><a href="../dev/deprecation.html"><strong aria-hidden="true">2.5.</strong> Deprecation Procedure</a></li></ol></li><li class="chapter-item expanded "><a href="../design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain State</a></li><li class="chapter-item expanded "><a href="../design/coins-view.html"><strong aria-hidden="true">3.2.</strong> "Coins" View</a></li><li class="chapter-item expanded "><a href="../design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P Data Propagation</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">The zcashd Book</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="tor-support-in-zcash"><a class="header" href="#tor-support-in-zcash">Tor Support in Zcash</a></h1>
+<p>Tor can be used to provide a layer of network anonymity for Zcash users.
+Additionally, Zcash users may chose to connect only to Tor hidden services, and
+also to expose their own Tor hidden service to allow users to connect to them
+over the Tor network.</p>
+<ol start="0">
+<li>Install Tor</li>
+</ol>
+<hr />
+<p>The easiest way to install Tor is to use the
+<a href="https://www.torproject.org/download/">Tor Browser Bundle</a>.  For headless
+installs, you probably want to install the Tor daemon.  The Tor Project
+provides <a href="https://support.torproject.org/apt/">instructions</a> for doing this on
+common Linux distributions.  Note that the Tor Browser Bundle exposes a SOCKS
+listener on tcp/9150 by default, while the Tor daemon exposes the SOCKS
+listener on tcp/9050.  For the purposes of the example below, we'll assume that
+you're using the Tor daemon and that the SOCKS listener is on tcp/9050.</p>
+<ol>
+<li>Run zcashd over Tor</li>
+</ol>
+<hr />
+<p>Configuring zcashd to use a Tor SOCKS proxy will route all outgoing connections
+over Tor.</p>
+<pre><code class="language-bash">$ zcashd -proxy=127.0.0.1:9050
+</code></pre>
+<p>Yay!  Your zcashd node is now leveraging the Tor network to connect to other
+zcashd nodes.  But there's more fun to be had.  By creating a
+<a href="https://2019.www.torproject.org/docs/faq.html.en#TorOnionServices">Tor Hidden Service</a>.
+you can help promote privacy for Zcash users by advertising your node's .onion
+address to other Tor Zcash users.</p>
+<ol start="2">
+<li>Expose your zcashd via a Tor hidden service (optional)</li>
+</ol>
+<hr />
+<p>Edit your /etc/tor/torrc (or equivalent config file) to map the hidden service
+to your zcashd TCP listener.  The directory can be whatever you like but the
+port numbers should be equal to the zcashd p2p listen port (8233 by default).
+An example is below.</p>
+<pre><code class="language-yaml">############### This section is just for location-hidden services ###
+
+## Once you have configured a hidden service, you can look at the
+## contents of the file &quot;.../hidden_service/hostname&quot; for the address
+## to tell people.
+##
+## HiddenServicePort x y:z says to redirect requests on port x to the
+## address y:z.
+
+#
+# Placeholder for when zcashd adds support for Onion v3 addresses
+#HiddenServiceDir /var/lib/tor/zcash_hidden_service_v3/
+#HiddenServiceVersion 3
+#HiddenServicePort 8233 127.0.0.1:8233
+
+# use the generated v2 Onion hostname until v3 support is complete
+HiddenServiceDir /var/lib/tor/zcash_hidden_service_v2/
+HiddenServiceVersion 2
+HiddenServicePort 8233 127.0.0.1:8233
+</code></pre>
+<p>Note that zcashd does not yet support Onion v3 addresses, but will do so before
+v2 addresses are removed from Tor.  See <a href="https://github.com/zcash/zcash/issues/3051">this
+issue</a> for more information on
+what's required to make zcashd support v3 Onion addresses.</p>
+<p>After making these edits to /etc/tor/torrc, restart tor to create the hidden
+service hostname and keys.</p>
+<pre><code class="language-bash">$ sudo systemctl restart tor
+</code></pre>
+<p>Then set a bash variable to provide your Onion service hostname to zcashd so it
+can advertise your node to other Tor capable nodes on the Zcash network.</p>
+<pre><code class="language-bash">$ export MY_ONION_HOSTNAME=`sudo cat /var/lib/tor/zcash_hidden_service_v2/hostname`
+</code></pre>
+<p>Now configure the zcashd node to use the Tor proxy, enable the TCP listener
+(only on localhost), and advertise your onion address so that other nodes on
+the Zcash network can connect to you over Tor.</p>
+<pre><code class="language-bash">$ zcashd -proxy=127.0.0.1:9050 -externalip=$MY_ONION_HOSTNAME -listen -bind=127.0.0.1 -listenonion=0
+</code></pre>
+<p>zcashd flags used:</p>
+<ul>
+<li><code>-proxy=ip:port</code>: sets the proxy server. This must match the port IP and port
+on which your Tor listener is configured.</li>
+<li><code>-externalip=&lt;ip|host&gt;</code>: sets the publicly routable address that zcashd will
+advertise to other zcash nodes. This can be an IPv4, IPv6 or .onion address.
+Onion addresses are given preference for advertising and connections. Onionv3
+addresses are <a href="https://github.com/zcash/zcash/issues/3051">not yet supported</a>.</li>
+<li><code>-listen</code>: Enable listening for incoming connections with this flag;
+listening is off by default, but is needed in order for Tor to connect to
+zcashd.</li>
+<li><code>-bind=ip</code>: Bind (only) to this IP.  Will bind to all interfaces by default
+if <code>listen=1</code>.</li>
+<li><code>-listenonion=&lt;0|1&gt;</code>: Enable or disable autoconfiguration of Tor hidden
+service via control socket API.  Disabled in this example because we manually
+configured the hidden service in /etc/tor/torrc.</li>
+</ul>
+<p>Once your node is up and running, you can use <code>zcash-cli</code> to verify that it
+is properly connected to other Zcash nodes over the p2p network, and is
+correctly advertising its Onion address to the network.</p>
+<pre><code class="language-bash">$ zcash-cli getnetworkinfo
+</code></pre>
+<pre><code class="language-javascript">{
+  &quot;version&quot;: 4020050,
+  &quot;subversion&quot;: &quot;/MagicBean:4.2.0/&quot;,
+  &quot;protocolversion&quot;: 170013,
+  &quot;connections&quot;: 9,
+  &quot;networks&quot;: [
+    {
+    &quot;name&quot;: &quot;ipv4&quot;,
+    &quot;limited&quot;: true,
+    &quot;reachable&quot;: false,
+    &quot;proxy&quot;: &quot;127.0.0.1:9050&quot;,
+    &quot;proxy_randomize_credentials&quot;: true
+    },
+    {
+    &quot;name&quot;: &quot;ipv6&quot;,
+    &quot;limited&quot;: true,
+    &quot;reachable&quot;: false,
+    &quot;proxy&quot;: &quot;127.0.0.1:9050&quot;,
+    &quot;proxy_randomize_credentials&quot;: true
+    },
+    {
+    &quot;name&quot;: &quot;onion&quot;,
+    &quot;limited&quot;: false,
+    &quot;reachable&quot;: true,
+    &quot;proxy&quot;: &quot;127.0.0.1:9050&quot;,
+    &quot;proxy_randomize_credentials&quot;: true
+    }
+  ],
+  &quot;relayfee&quot;: 0.00000100,
+  &quot;localaddresses&quot;: [
+    {
+    &quot;address&quot;: &quot;ynizm2wpla6ec22q.onion&quot;,
+    &quot;port&quot;: 8233,
+    &quot;score&quot;: 10
+    }
+  ],
+}
+</code></pre>
+<ol start="3">
+<li>Dynamically Configure Onion Service (Optional)</li>
+</ol>
+<hr />
+<p>Starting with Tor version 0.2.7.1 it is possible, through Tor's control socket
+API, to create and destroy 'ephemeral' hidden services programmatically. zcashd
+has been updated to make use of this.</p>
+<p>This configuration could be used instead of manually configuring the Onion
+service as in step 2 above.</p>
+<p>If Tor is running (and proper authentication has been configured), zcashd
+automatically creates a hidden service to listen on. zcashd will also use Tor
+automatically to connect to other .onion nodes if the control socket can be
+successfully opened.</p>
+<p>This new feature is enabled by default if zcashd is listening (<code>-listen</code>) and
+requires a Tor connection to work. It can be explicitly disabled with
+<code>-listenonion=0</code> and, if not disabled, configured using the <code>-torcontrol</code>
+and <code>-torpassword</code> settings. To show verbose debugging information, pass
+<code>-debug=tor</code>.</p>
+<p>Connecting to Tor's control socket API requires one of two authentication
+methods to be configured:</p>
+<ol>
+<li>Cookie authentication, which requires write access to the <code>CookieAuthFile</code>
+specified in Tor configuration. In some cases, this is preconfigured and the
+creation of a hidden service is automatic. If permission problems are seen
+with <code>-debug=tor</code> they can be resolved by adding both the user running tor
+and  the user running zcashd to the same group and setting permissions
+appropriately. On Debian-based systems the user running zcashd can be added
+to the debian-tor group, which has the appropriate permissions.</li>
+<li>Authentication with the <code>-torpassword</code> flag and a <code>hash-password</code>, which
+can be enabled and specified in Tor configuration.</li>
+</ol>
+<p>On Debian systems, where Tor is installed via APT, you can trivially permit
+zcashd to connect to the Tor socket by adding the zcash user to the
+<code>debian-tor</code> group.</p>
+<pre><code class="language-bash">$ sudo usermod -aG debian-tor zcash
+</code></pre>
+<p>When properly configured, this will allow zcashd to automatically connect to
+the Tor control socket API and configure an ephemeral hidden service.</p>
+<pre><code class="language-bash">$ zcashd -debug=tor
+</code></pre>
+<pre><code>Feb 11 15:26:20.323  INFO main: tor: Got service ID tweustb4j6o3u5x7, advertizing service tweustb4j6o3u5x7.onion:8233
+Feb 11 15:26:20.323  DEBUG tor: tor: Cached service private key to /home/zcash/.zcash/onion_private_key
+Feb 11 15:26:20.323  INFO main: AddLocal(tweustb4j6o3u5x7.onion:8233,4)
+...
+Feb 11 15:26:47.565  INFO main: ProcessMessages: advertizing address tweustb4j6o3u5x7.onion:8233
+</code></pre>
+<ol start="4">
+<li>Connect to a single Zcash Onion server</li>
+</ol>
+<hr />
+<p>This invocation will start zcashd and connect via Tor to a single zcashd onion
+server.</p>
+<p>Launch zcashd as follows:</p>
+<pre><code class="language-bash">$ zcashd -onion=127.0.0.1:9050 -connect=ynizm2wpla6ec22q.onion
+</code></pre>
+<ul>
+<li><code>-onion=ip:port</code>: Use SOCKS5 proxy to reach peers via Tor hidden services.
+This must match the port IP and port on which your Tor listener is
+configured.</li>
+<li><code>-connect=&lt;hostname|ip&gt;</code>: Connect only to the specified node(s); <code>-noconnect</code>
+or <code>-connect=0</code> alone to disable automatic connections</li>
+</ul>
+<p>Now use zcash-cli to verify there is only a single peer connection.</p>
+<pre><code class="language-bash">$ zcash-cli getpeerinfo
+</code></pre>
+<pre><code class="language-javascript">[
+  {
+    &quot;id&quot;: 1,
+    &quot;addr&quot;: &quot;ynizm2wpla6ec22q.onion&quot;,
+    ...
+    &quot;version&quot;: 170013,
+    &quot;subver&quot;: &quot;/MagicBean:4.2.0/&quot;,
+    &quot;inbound&quot;: false,
+    ...
+  }
+]
+</code></pre>
+<ol start="4">
+<li>Connect to multiple Zcash Onion servers</li>
+</ol>
+<hr />
+<p>This invocation will start zcashd, skip DNS seeding, connect via Tor to a
+multiple zcashd onion servers, and also advertise your Onion server to other
+Tor capable Zcash nodes.</p>
+<p>Launch zcashd as follows:</p>
+<pre><code class="language-bash">$ export MY_ONION_HOSTNAME=`sudo cat /var/lib/tor/zcash_hidden_service_v2/hostname`
+$ zcashd -listen -onion=127.0.0.1:9050 -addnode=ynizm2wpla6ec22q.onion -dnsseed=0 -onlynet=onion -externalip=$MY_ONION_HOSTNAME -bind=127.0.0.1
+</code></pre>
+<p>zcashd flags used:</p>
+<ul>
+<li><code>-onion=ip:port</code>: Use SOCKS5 proxy to reach peers via Tor hidden services.
+This must match the port IP and port on which your Tor listener is
+configured.</li>
+<li><code>-addnode=&lt;host|ip&gt;</code>: Add a node to connect to and attempt to keep the
+connection open</li>
+<li><code>-externalip=&lt;ip|onion&gt;</code>: sets the publicly routable address that zcashd will
+advertise to other zcash nodes. This can be an IPv4, IPv6 or .onion address.
+Onion addresses are given preference for advertising and connections. Onionv3
+addresses are <a href="https://github.com/zcash/zcash/issues/3051">not yet supported</a>.</li>
+<li><code>-listen</code>: Enable listening for incoming connections with this flag;
+listening is off by default, but is needed in order for Tor to connect to
+zcashd.</li>
+<li><code>-bind=&lt;ip&gt;</code>: Bind (only) to this IP.  Will bind to all interfaces by default
+if <code>listen=1</code> and <code>bind</code> is not set.</li>
+<li><code>-onlynet=&lt;net&gt;</code>: Only connect to nodes in network <code>&lt;net&gt;</code> (ipv4, ipv6 or
+onion)</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../user/metrics.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="../user/security-warnings.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../user/metrics.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="../user/security-warnings.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+    </body>
+</html>

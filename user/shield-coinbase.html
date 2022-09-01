@@ -1,0 +1,284 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Shielding Coinbase Outputs - The zcashd Book</title>
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../favicon.svg">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">zcashd</a></li><li class="chapter-item expanded "><a href="../user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../user/platform-support.html"><strong aria-hidden="true">1.1.</strong> Platform Support</a></li><li class="chapter-item expanded "><a href="../user/wallet-backup.html"><strong aria-hidden="true">1.2.</strong> Wallet Backup</a></li><li class="chapter-item expanded "><a href="../user/shield-coinbase.html" class="active"><strong aria-hidden="true">1.3.</strong> Shielding Coinbase Outputs</a></li><li class="chapter-item expanded "><a href="../user/files.html"><strong aria-hidden="true">1.4.</strong> Data Directory Structure</a></li><li class="chapter-item expanded "><a href="../user/metrics.html"><strong aria-hidden="true">1.5.</strong> Metrics</a></li><li class="chapter-item expanded "><a href="../user/tor.html"><strong aria-hidden="true">1.6.</strong> Using zcashd with Tor</a></li><li class="chapter-item expanded "><a href="../user/security-warnings.html"><strong aria-hidden="true">1.7.</strong> Security Warnings</a></li><li class="chapter-item expanded "><a href="../user/deprecation.html"><strong aria-hidden="true">1.8.</strong> Deprecated Features</a></li></ol></li><li class="chapter-item expanded "><a href="../dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../dev/dnsseed-policy.html"><strong aria-hidden="true">2.1.</strong> DNS Seeders</a></li><li class="chapter-item expanded "><a href="../dev/rust.html"><strong aria-hidden="true">2.2.</strong> Rust in zcashd</a></li><li class="chapter-item expanded "><a href="../dev/regtest.html"><strong aria-hidden="true">2.3.</strong> Regtest Tips And Hints</a></li><li class="chapter-item expanded "><a href="../dev/platform-tier-policy.html"><strong aria-hidden="true">2.4.</strong> Platform Tier Policy</a></li><li class="chapter-item expanded "><a href="../dev/deprecation.html"><strong aria-hidden="true">2.5.</strong> Deprecation Procedure</a></li></ol></li><li class="chapter-item expanded "><a href="../design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain State</a></li><li class="chapter-item expanded "><a href="../design/coins-view.html"><strong aria-hidden="true">3.2.</strong> "Coins" View</a></li><li class="chapter-item expanded "><a href="../design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P Data Propagation</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">The zcashd Book</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="shielding-coinbase-utxos"><a class="header" href="#shielding-coinbase-utxos">Shielding Coinbase UTXOs</a></h1>
+<p><strong>Summary</strong></p>
+<p>Use <code>z_shieldcoinbase</code> RPC call to shield coinbase UTXOs.</p>
+<p><strong>Who should read this document</strong></p>
+<p>Miners, Mining pools, Online wallets</p>
+<h2 id="background"><a class="header" href="#background">Background</a></h2>
+<p>The current Zcash protocol includes a consensus rule that coinbase rewards must
+be sent to a shielded address.</p>
+<h2 id="user-experience-challenges"><a class="header" href="#user-experience-challenges">User Experience Challenges</a></h2>
+<p>A user can use the z_sendmany RPC call to shield coinbase funds, but the call
+was not designed for sweeping up many UTXOs, and offered a suboptimal user
+experience.</p>
+<p>If customers send mining pool payouts to their online wallet, the service
+provider must sort through UTXOs to correctly determine the non-coinbase UTXO
+funds that can be withdrawn or transferred by customers to another transparent
+address.</p>
+<h2 id="solution"><a class="header" href="#solution">Solution</a></h2>
+<p>The z_shieldcoinbase call makes it easy to sweep up coinbase rewards from
+multiple coinbase UTXOs across multiple coinbase reward addresses.</p>
+<pre><code>z_shieldcoinbase fromaddress toaddress (fee) (limit)
+</code></pre>
+<p>The default fee is 0.0010000 ZEC and the default limit on the maximum number of
+UTXOs to shield is 50.</p>
+<h2 id="examples"><a class="header" href="#examples">Examples</a></h2>
+<p>Sweep up coinbase UTXOs from a transparent address you use for mining:</p>
+<pre><code>zcash-cli z_shieldcoinbase tMyMiningAddress zMyPrivateAddress
+</code></pre>
+<p>Sweep up coinbase UTXOs from multiple transparent addresses to a shielded
+address:</p>
+<pre><code>zcash-cli z_shieldcoinbase &quot;*&quot; zMyPrivateAddress
+</code></pre>
+<p>Sweep up with a fee of 1.23 ZEC:</p>
+<pre><code>zcash-cli z_shieldcoinbase tMyMiningAddress zMyPrivateAddress 1.23
+</code></pre>
+<p>Sweep up with a fee of 0.1 ZEC and set limit on the maximum number of UTXOs to
+shield at 25:</p>
+<pre><code>zcash-cli z_shieldcoinbase &quot;*&quot; zMyPrivateAddress 0.1 25
+</code></pre>
+<h3 id="asynchronous-call"><a class="header" href="#asynchronous-call">Asynchronous Call</a></h3>
+<p>The <code>z_shieldcoinbase</code> RPC call is an asynchronous call, so you can queue up
+multiple operations.</p>
+<p>When you invoke</p>
+<pre><code>zcash-cli z_shieldcoinbase tMyMiningAddress zMyPrivateAddress
+</code></pre>
+<p>JSON will be returned immediately, with the following data fields populated:</p>
+<ul>
+<li>operationid: a temporary id to use with <code>z_getoperationstatus</code> and
+<code>z_getoperationresult</code> to get the status and result of the operation.</li>
+<li>shieldedUTXOs: number of coinbase UTXOs being shielded</li>
+<li>shieldedValue: value of coinbase UTXOs being shielded.</li>
+<li>remainingUTXOs: number of coinbase UTXOs still available for shielding.</li>
+<li>remainingValue: value of coinbase UTXOs still available for shielding</li>
+</ul>
+<h3 id="locking-utxos"><a class="header" href="#locking-utxos">Locking UTXOs</a></h3>
+<p>The <code>z_shieldcoinbase</code> call will lock any selected UTXOs. This prevents the
+selected UTXOs which are already queued up from being selected for any other
+send operation.  If the <code>z_shieldcoinbase</code> call fails, any locked UTXOs are
+unlocked.</p>
+<p>You can use the RPC call <code>lockunspent</code> to see which UTXOs have been locked.
+You can also use this call to unlock any UTXOs in the event of an unexpected
+system failure which leaves UTXOs in a locked state.</p>
+<h3 id="limits-performance-and-transaction-confirmation"><a class="header" href="#limits-performance-and-transaction-confirmation">Limits, Performance and Transaction Confirmation</a></h3>
+<p>The number of coinbase UTXOs selected for shielding can be adjusted by setting
+the limit parameter. The default value is 50.</p>
+<p>If the limit parameter is set to zero, the zcashd <code>mempooltxinputlimit</code> option
+will be used instead, where the default value for <code>mempooltxinputlimit</code> is
+zero, which means no limit.</p>
+<p>Any limit is constrained by a hard limit due to the consensus rule defining a
+maximum transaction size of 100,000 bytes.</p>
+<p>In general, the more UTXOs that are selected, the longer it takes for the
+transaction to be verified.  Due to the quadratic hashing problem, some miners
+use the <code>mempooltxinputlimit</code> option to reject transactions with a large number
+of UTXO inputs.</p>
+<p>Currently, as of November 2017, there is no commonly agreed upon limit, but as
+a rule of thumb (a form of emergent consensus) if a transaction has less than
+100 UTXO inputs, the transaction will be mined promptly by the majority of
+mining pools, but if it has many more UTXO inputs, such as 500, it might take
+several days to be mined by a miner who has higher or no limits.</p>
+<h3 id="anatomy-of-a-z_shieldcoinbase-transaction"><a class="header" href="#anatomy-of-a-z_shieldcoinbase-transaction">Anatomy of a z_shieldcoinbase transaction</a></h3>
+<p>The transaction created is a shielded transaction.  It consists of a single
+joinsplit, which consumes coinbase UTXOs as input, and deposits value at a
+shielded address, minus any fee.</p>
+<p>The number of coinbase UTXOs is determined by a user configured limit.</p>
+<p>If no limit is set (in the case when limit parameter and <code>mempooltxinputlimit</code>
+options are set to zero) the behaviour of z_shieldcoinbase is to consume as
+many UTXOs as possible, with <code>z_shieldcoinbase</code> constructing a transaction up
+to the size limit of 100,000 bytes.</p>
+<p>As a result, the maximum number of inputs that can be selected is:</p>
+<ul>
+<li>P2PKH coinbase UTXOs ~ 662</li>
+<li>2-of-3 multisig P2SH coinbase UTXOs ~ 244.</li>
+</ul>
+<p>Here is an example of using <code>z_shieldcoinbase</code> on testnet to shield multi-sig coinbase UTXOs.</p>
+<ul>
+<li>Block 141042 is almost ~2 MB in size (the maximum size for a block) and
+contains 1 coinbase reward transaction and 20 transactions, each indivually
+created by a call to z_shieldcoinbase.
+<ul>
+<li>https://explorer.testnet.z.cash/block/0050552a78e97c89f666713c8448d49ad1d7263274422272696187dedf6c0d03</li>
+</ul>
+</li>
+<li>Drilling down into a transaction, you can see there is one joinsplit, with
+244 inputs (vin) and 0 outputs (vout).
+<ul>
+<li>https://explorer.testnet.z.cash/tx/cf4f3da2e434f68b6e361303403344e22a9ff9a8fda9abc180d9520d0ca6527d</li>
+</ul>
+</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../user/wallet-backup.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                            <a rel="next" href="../user/files.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../user/wallet-backup.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                    <a rel="next" href="../user/files.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+    </body>
+</html>
