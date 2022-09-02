@@ -109,3 +109,12 @@ features = ["ansi", "env-filter", "fmt", "time"]
 lto = true
 panic = 'abort'
 codegen-units = 1
+
+[patch.crates-io]
+equihash = { git = "https://github.com/zcash/librustzcash.git", rev = "e5dad037e9ac091d75dbc4e962f9e34e100f0c67" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "e5dad037e9ac091d75dbc4e962f9e34e100f0c67" }
+zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "e5dad037e9ac091d75dbc4e962f9e34e100f0c67" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "e5dad037e9ac091d75dbc4e962f9e34e100f0c67" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "e5dad037e9ac091d75dbc4e962f9e34e100f0c67" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "e5dad037e9ac091d75dbc4e962f9e34e100f0c67" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "e5dad037e9ac091d75dbc4e962f9e34e100f0c67" }

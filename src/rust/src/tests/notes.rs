@@ -664,7 +664,6 @@ fn notes() {
             &tv.default_pk_d,
             tv.note_v,
             &tv.note_r,
-            &tv.ak,
             &tv.nk,
             tv.note_pos,
             &mut result

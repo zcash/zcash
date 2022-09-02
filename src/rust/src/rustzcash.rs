@@ -47,7 +47,7 @@ use zcash_primitives::{
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
     sapling::{
         keys::FullViewingKey, note_encryption::sapling_ka_agree, redjubjub, Diversifier, Note,
-        Rseed, ViewingKey,
+        NullifierDerivingKey, Rseed,
     },
     sapling::{merkle_hash, spend_sig},
     zip32::{self, sapling_address, sapling_derive_internal_fvk, sapling_find_address},
@@ -401,7 +401,6 @@ pub extern "C" fn librustzcash_sapling_compute_nf(
     pk_d: *const [c_uchar; 32],
     value: u64,
     rcm: *const [c_uchar; 32],
-    ak: *const [c_uchar; 32],
     nk: *const [c_uchar; 32],
     position: u64,
     result: *mut [c_uchar; 32],
@@ -413,28 +412,17 @@ pub extern "C" fn librustzcash_sapling_compute_nf(
         Err(_) => return false,
     };
 
-    let ak = match de_ct(jubjub::ExtendedPoint::from_bytes(unsafe { &*ak })) {
-        Some(p) => p,
-        None => return false,
-    };
-
-    let ak = match de_ct(ak.into_subgroup()) {
-        Some(ak) => ak,
-        None => return false,
-    };
-
     let nk = match de_ct(jubjub::ExtendedPoint::from_bytes(unsafe { &*nk })) {
         Some(p) => p,
         None => return false,
     };
 
     let nk = match de_ct(nk.into_subgroup()) {
-        Some(nk) => nk,
+        Some(nk) => NullifierDerivingKey(nk),
         None => return false,
     };
 
-    let vk = ViewingKey { ak, nk };
-    let nf = note.nf(&vk, position);
+    let nf = note.nf(&nk, position);
     let result = unsafe { &mut *result };
     result.copy_from_slice(&nf.0);
 
