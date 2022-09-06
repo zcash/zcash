@@ -16,18 +16,17 @@ Specification](https://zips.z.cash/protocol/protocol.pdf).
 
 This repository hosts the `zcashd` software, a Zcash consensus node
 implementation. It downloads and stores the entire history of Zcash
-transactions; depending on the speed of your computer and network
-connection, the synchronization process could take a day or more once
-the blockchain has reached a significant size.
+transactions. Depending on the speed of your computer and network
+connection, the synchronization process could take several days.
 
 <p align="center">
   <img src="doc/imgs/zcashd_screen.gif" height="500">
 </p>
 
 The `zcashd` code is derived from a source fork of
-[`bitcoind`](https://github.com/bitcoin/bitcoin). The code was forked
-initially from the `bitcoind v0.9.*` era, and the two codebases have
-diverged substantially.
+[Bitcoin Core](https://github.com/bitcoin/bitcoin). The code was forked
+initially from Bitcoin Core v0.11.2, and the two codebases have diverged
+substantially.
 
 #### :lock: Security Warnings
 
@@ -45,7 +44,7 @@ height.
 
 ## Other Zcash Implementations
 
-The [zebra](https://github.com/ZcashFoundation/zebra) project offers a
+The [Zebra](https://github.com/ZcashFoundation/zebra) project offers a
 different Zcash consensus node implementation, written largely from the
 ground up.
 
@@ -53,7 +52,7 @@ ground up.
 
 Please see our [user
 guide](https://zcash.readthedocs.io/en/latest/rtd_pages/rtd_docs/user_guide.html)
-for joining the main Zcash network.
+for instructions on joining the main Zcash network.
 
 ### Need Help?
 
