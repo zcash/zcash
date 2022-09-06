@@ -11,7 +11,7 @@ import itertools
 from statistics import mean
 import sys
 
-from test_framework.authproxy import AuthServiceProxy, JSONRPCException
+from test_framework.authproxy import AuthServiceProxy
 
 ### TODO: Get host/port from config
 if len(sys.argv) > 1:
@@ -109,6 +109,9 @@ def bucket_transactions(block_range, analyzers):
 
 def identity(x):
     return x
+
+def concat(lists):
+    return [j for i in lists for j in i]
 
 def get_shielded_spends(tx):
     try:
