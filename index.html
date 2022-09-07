@@ -138,17 +138,23 @@
 <img align="right" width="120" height="80" src="doc/imgs/logo.png"></h1>
 <h2 id="what-is-zcash"><a class="header" href="#what-is-zcash">What is Zcash?</a></h2>
 <p><a href="https://z.cash/">Zcash</a> is an implementation of the &quot;Zerocash&quot; protocol.
-Based on Bitcoin's code, Zcash intends to offer a far higher standard of privacy
-through a sophisticated zero-knowledge proving scheme that preserves
-confidentiality of transaction metadata. More technical details are available
-in our <a href="https://zips.z.cash/protocol/protocol.pdf">Protocol Specification</a>.</p>
-<p>This software is the Zcash client. It downloads and stores the entire history
-of Zcash transactions; depending on the speed of your computer and network
-connection, the synchronization process could take a day or more once the
-blockchain has reached a significant size.</p>
+Initially based on Bitcoin's design, Zcash intends to offer a far
+higher standard of privacy through a sophisticated zero-knowledge
+proving scheme that preserves confidentiality of transaction
+metadata. More technical details are available in our <a href="https://zips.z.cash/protocol/protocol.pdf">Protocol
+Specification</a>.</p>
+<h2 id="the-zcashd-full-node"><a class="header" href="#the-zcashd-full-node">The <code>zcashd</code> Full Node</a></h2>
+<p>This repository hosts the <code>zcashd</code> software, a Zcash consensus node
+implementation. It downloads and stores the entire history of Zcash
+transactions. Depending on the speed of your computer and network
+connection, the synchronization process could take several days.</p>
 <p align="center">
   <img src="doc/imgs/zcashd_screen.gif" height="500">
 </p>
+<p>The <code>zcashd</code> code is derived from a source fork of
+<a href="https://github.com/bitcoin/bitcoin">Bitcoin Core</a>. The code was forked
+initially from Bitcoin Core v0.11.2, and the two codebases have diverged
+substantially.</p>
 <h4 id="lock-security-warnings"><a class="header" href="#lock-security-warnings">:lock: Security Warnings</a></h4>
 <p>See important security warnings on the
 <a href="https://z.cash/support/security/">Security Information page</a>.</p>
@@ -158,8 +164,14 @@ blockchain has reached a significant size.</p>
 is an automatic deprecation shutdown feature which will halt the node some
 time after this 16-week period. The automatic feature is based on block
 height.</p>
+<h2 id="other-zcash-implementations"><a class="header" href="#other-zcash-implementations">Other Zcash Implementations</a></h2>
+<p>The <a href="https://github.com/ZcashFoundation/zebra">Zebra</a> project offers a
+different Zcash consensus node implementation, written largely from the
+ground up.</p>
 <h2 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h2>
-<p>Please see our <a href="https://zcash.readthedocs.io/en/latest/rtd_pages/rtd_docs/user_guide.html">user guide</a> for joining the main Zcash network.</p>
+<p>Please see our <a href="https://zcash.readthedocs.io/en/latest/rtd_pages/rtd_docs/user_guide.html">user
+guide</a>
+for instructions on joining the main Zcash network.</p>
 <h3 id="need-help"><a class="header" href="#need-help">Need Help?</a></h3>
 <ul>
 <li>:blue_book: See the documentation at the <a href="https://zcash.readthedocs.io">ReadTheDocs</a>
