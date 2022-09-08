@@ -539,8 +539,7 @@ checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 [[package]]
 name = "equihash"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab579d7cf78477773b03e80bc2f89702ef02d7112c711d54ca93dcdce68533d5"
+source = "git+https://github.com/daira/librustzcash.git?branch=mem-experiment#e25d9afec077d0d32ba8b3e20e52ec2001497ed8"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -2322,8 +2321,7 @@ dependencies = [
 [[package]]
 name = "zcash_encoding"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fb61ea88eb539bc0ac2068e5da99411dd4978595b3d7ff6a4b1562ddc8e8710"
+source = "git+https://github.com/daira/librustzcash.git?branch=mem-experiment#e25d9afec077d0d32ba8b3e20e52ec2001497ed8"
 dependencies = [
  "byteorder",
  "nonempty",
@@ -2332,8 +2330,7 @@ dependencies = [
 [[package]]
 name = "zcash_history"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb611a28a4e13ac715ee712f4344d6b279b767daf6345dafefb2c4bf582b6679"
+source = "git+https://github.com/daira/librustzcash.git?branch=mem-experiment#e25d9afec077d0d32ba8b3e20e52ec2001497ed8"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -2343,8 +2340,7 @@ dependencies = [
 [[package]]
 name = "zcash_note_encryption"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33f84ae538f05a8ac74c82527f06b77045ed9553a0871d9db036166a4c344e3a"
+source = "git+https://github.com/daira/librustzcash.git?branch=mem-experiment#e25d9afec077d0d32ba8b3e20e52ec2001497ed8"
 dependencies = [
  "chacha20",
  "chacha20poly1305",
@@ -2355,8 +2351,7 @@ dependencies = [
 [[package]]
 name = "zcash_primitives"
 version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fbb401f5dbc482b831954aaa7cba0a8fe148241db6d19fe7cebda78252ca680"
+source = "git+https://github.com/daira/librustzcash.git?branch=mem-experiment#e25d9afec077d0d32ba8b3e20e52ec2001497ed8"
 dependencies = [
  "aes",
  "bip0039",

@@ -109,3 +109,10 @@ features = ["ansi", "env-filter", "fmt", "time"]
 lto = true
 panic = 'abort'
 codegen-units = 1
+
+[patch.crates-io]
+equihash = { git = "https://github.com/daira/librustzcash.git", branch = "mem-experiment" }
+zcash_encoding = { git = "https://github.com/daira/librustzcash.git", branch = "mem-experiment" }
+zcash_history = { git = "https://github.com/daira/librustzcash.git", branch = "mem-experiment" }
+zcash_note_encryption = { git = "https://github.com/daira/librustzcash.git", branch = "mem-experiment" }
+zcash_primitives = { git = "https://github.com/daira/librustzcash.git", branch = "mem-experiment" }
