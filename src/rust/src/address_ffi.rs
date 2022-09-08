@@ -7,7 +7,7 @@ use std::{
 use libc::{c_char, c_void};
 use zcash_address::{
     unified::{self, Container, Encoding},
-    FromAddress, Network, ToAddress, ZcashAddress,
+    ConversionError, Network, ToAddress, TryFromAddress, ZcashAddress,
 };
 use zcash_primitives::sapling;
 
@@ -45,11 +45,13 @@ struct UnifiedAddressHelper {
     ua: unified::Address,
 }
 
-impl FromAddress for UnifiedAddressHelper {
-    fn from_unified(
+impl TryFromAddress for UnifiedAddressHelper {
+    type Error = zcash_address::UnsupportedAddress;
+
+    fn try_from_unified(
         net: Network,
         ua: unified::Address,
-    ) -> Result<Self, zcash_address::UnsupportedAddress> {
+    ) -> Result<Self, ConversionError<Self::Error>> {
         Ok(Self { net, ua })
     }
 }
