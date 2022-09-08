@@ -12,8 +12,15 @@ some common range of blocks.
 
 import datetime
 import itertools
+import os.path
 from statistics import mean
 import sys
+
+sys.path.insert(
+    1,
+    os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                 "../../qa/rpc-tests")
+)
 
 from test_framework.authproxy import AuthServiceProxy
 
