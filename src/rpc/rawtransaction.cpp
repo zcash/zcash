@@ -22,6 +22,7 @@
 #include "script/sign.h"
 #include "script/standard.h"
 #include "uint256.h"
+#include "util/moneystr.h"
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
 #endif
@@ -333,6 +334,20 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
             }
         }
     }
+
+    auto feePaid = tx.GetFeePaid([&](const COutPoint& out) -> std::optional<CAmount> {
+        CSpentIndexValue spentInfo;
+        CSpentIndexKey spentKey(out.hash, out.n);
+        if (fSpentIndex && GetSpentIndex(spentKey, spentInfo)) {
+            return spentInfo.satoshis;
+        } else {
+            return std::nullopt;
+        }
+    });
+    if (feePaid.has_value()) {
+        entry.pushKV("feePaid", FormatMoney(feePaid.value()));
+        entry.pushKV("feePaidZat", feePaid.value());
+    }
 }
 
 UniValue getrawtransaction(const UniValue& params, bool fHelp)
@@ -493,6 +508,8 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "  \"confirmations\" : n,            (numeric) The confirmations\n"
             "  \"time\" : ttt,                   (numeric) The transaction time in seconds since epoch (Jan 1 1970 GMT)\n"
             "  \"blocktime\" : ttt               (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)\n"
+            "  \"feePaid\" : ttt                 (numeric, optional) The fee paid by the transaction, in "+CURRENCY_UNIT+".\n"
+            "  \"feePaidZat\" : ttt              (numeric, optional) The fee paid by the transaction, in "+MINOR_CURRENCY_UNIT+".\n"
             "}\n"
 
             "\nExamples:\n"
