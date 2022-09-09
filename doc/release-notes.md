@@ -19,3 +19,13 @@ has a memory limit of 100 MiB.
 - (counter) `zcashd.wallet.batchscanner.outputs.scanned`
 - (gauge) `zcashd.wallet.batchscanner.size.transactions`
 - (gauge) `zcashd.wallet.batchscanner.usage.bytes`
+
+RPC Interface
+-------------
+
+- The `finalorchardroot` field in the `getblock` result and the
+  `orchard.commitments.finalRoot` field in the `z_gettreestate` result  have
+  been changed to match the byte ordering used for the `orchard.anchor`
+  field in the `getrawtransaction` result. These previously produced different
+  hash values from the `orchard.anchor` field due to having been byte-flipped
+  in their internal representation in zcashd.
