@@ -151,7 +151,7 @@ delta between the old and new versions - even if the old version is in the
 &quot;unaudited&quot; exclusion list.</p>
 <h2 id="adding-new-dependencies-in-online-rust-mode"><a class="header" href="#adding-new-dependencies-in-online-rust-mode">Adding new dependencies in online-Rust mode</a></h2>
 <p>The <code>zcashd</code> build system pins all dependencies, and in order to facilitate
-deterministic builds, <code>cargo</code> is configured to run in offline mode with vendored
+reproducible builds, <code>cargo</code> is configured to run in offline mode with vendored
 crates. This means that if, for example, you add the <code>foobar</code> crate to
 <code>Cargo.toml</code>, you will likely see an error similar to this:</p>
 <pre><code>$ cargo check
@@ -159,14 +159,32 @@ error: no matching package named `foobar` found
 location searched: registry `https://github.com/rust-lang/crates.io-index`
 required by package `librustzcash v0.2.0 (/path/to/zcash)`
 </code></pre>
-<p>Instead, you first need to build <code>zcashd</code> in online-Rust mode:</p>
+<p>To add dependencies that are compatible with the reproducible build system, you need to follow these steps:</p>
+<ol>
+<li>First, if you've made changes to dependencies in <code>Cargo.toml</code>, these must be reverted before the next step:
+<pre><code>git stash
+</code></pre>
+</li>
+<li>Next, reconfigure the build system for &quot;online&quot; mode:
 <pre><code>CONFIGURE_FLAGS=--enable-online-rust ./zcutil/build.sh
 </code></pre>
-<p>After doing so, you can add a new dependency as follows:</p>
-<ol>
-<li>Add the new dependency to <code>Cargo.toml</code>.</li>
-<li>Run <code>cargo check</code> to update the <code>Cargo.lock</code> file.</li>
-<li>Commit <code>Cargo.toml</code> and <code>Cargo.lock</code>.</li>
+</li>
+<li>Now, introduce the dependency changes into <code>Cargo.toml</code>. If you saved changes in Step 1 with <code>git stash</code>, you can reapply them:
+<pre><code>git stash pop
+</code></pre>
+</li>
+<li>Update <code>Cargo.lock</code>:
+<pre><code>cargo check
+</code></pre>
+</li>
+<li>Commit the changes to <code>Cargo.toml</code> and <code>Cargo.lock</code> together:
+<pre><code>git commit ./Cargo.{toml,lock}
+</code></pre>
+</li>
+<li>Verify the reproducible build works in vendored/offline mode without the <code>--enable-online-rust</code> flag:
+<pre><code>./zcutil/build.sh
+</code></pre>
+</li>
 </ol>
 <h2 id="using-a-local-rust-dependency"><a class="header" href="#using-a-local-rust-dependency">Using a local Rust dependency</a></h2>
 <p>During development, you can use a locally checked out version of a dependency
