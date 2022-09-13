@@ -57,6 +57,7 @@ BASE_SCRIPTS= [
     'wallet_listreceived.py',
     'mempool_tx_expiry.py',
     'finalsaplingroot.py',
+    'finalorchardroot.py',
     'wallet_orchard.py',
     'wallet_overwintertx.py',
     'wallet_persistence.py',
