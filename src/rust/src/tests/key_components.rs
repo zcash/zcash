@@ -667,7 +667,7 @@ fn key_components() {
 
         let pgk = ProofGenerationKey { ak, nsk };
         let fvk = pgk.to_viewing_key();
-        assert_eq!(&fvk.nk.to_bytes(), &tv.nk);
+        assert_eq!(&fvk.nk.0.to_bytes(), &tv.nk);
         {
             let mut nk = [0u8; 32];
             librustzcash_nsk_to_nk(&tv.nsk, &mut nk);
@@ -698,6 +698,6 @@ fn key_components() {
             .unwrap();
         assert_eq!(&note.cmu().to_bytes(), &tv.note_cm);
 
-        assert_eq!(note.nf(&fvk, tv.note_pos), Nullifier(tv.note_nf));
+        assert_eq!(note.nf(&fvk.nk, tv.note_pos), Nullifier(tv.note_nf));
     }
 }
