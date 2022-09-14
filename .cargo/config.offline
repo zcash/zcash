@@ -6,7 +6,7 @@ replace-with = "vendored-sources"
 
 [source."https://github.com/zcash/librustzcash.git"]
 git = "https://github.com/zcash/librustzcash.git"
-rev = "e5dad037e9ac091d75dbc4e962f9e34e100f0c67"
+rev = "abe452d8a5a3d3bce102c3445f9e321d68296d8f"
 replace-with = "vendored-sources"
 
 [source.vendored-sources]
