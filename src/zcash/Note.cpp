@@ -85,7 +85,6 @@ std::optional<uint256> SaplingNote::cmu() const {
 // Call librustzcash to compute the nullifier
 std::optional<uint256> SaplingNote::nullifier(const SaplingFullViewingKey& vk, const uint64_t position) const
 {
-    auto ak = vk.ak;
     auto nk = vk.nk;
 
     uint256 result;
@@ -95,7 +94,6 @@ std::optional<uint256> SaplingNote::nullifier(const SaplingFullViewingKey& vk, c
             pk_d.begin(),
             value(),
             rcm_tmp.begin(),
-            ak.begin(),
             nk.begin(),
             position,
             result.begin()

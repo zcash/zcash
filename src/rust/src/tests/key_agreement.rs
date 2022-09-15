@@ -1,6 +1,6 @@
 use group::{Group, GroupEncoding};
 use rand_core::{OsRng, RngCore};
-use zcash_primitives::sapling::{Diversifier, ViewingKey};
+use zcash_primitives::sapling::{Diversifier, NullifierDerivingKey, ViewingKey};
 
 use crate::{
     librustzcash_sapling_generate_r, librustzcash_sapling_ka_agree,
@@ -14,7 +14,7 @@ fn test_key_agreement() {
     // Create random viewing key
     let vk = ViewingKey {
         ak: jubjub::SubgroupPoint::random(&mut rng),
-        nk: jubjub::SubgroupPoint::random(&mut rng),
+        nk: NullifierDerivingKey(jubjub::SubgroupPoint::random(&mut rng)),
     };
 
     // Create a random address with the viewing key

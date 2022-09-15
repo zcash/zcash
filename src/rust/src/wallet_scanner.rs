@@ -149,6 +149,13 @@ impl consensus::Parameters for Network {
         }
     }
 
+    fn address_network(&self) -> Option<zcash_address::Network> {
+        match self {
+            Self::Consensus(params) => params.address_network(),
+            Self::RegTest { .. } => Some(zcash_address::Network::Regtest),
+        }
+    }
+
     fn hrp_sapling_extended_spending_key(&self) -> &str {
         match self {
             Self::Consensus(params) => params.hrp_sapling_extended_spending_key(),
@@ -227,6 +234,13 @@ type OutputReplier<D> = OutputIndex<channel::Sender<OutputIndex<Option<Decrypted
 /// A batch of outputs to trial decrypt.
 struct Batch<D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>> {
     ivks: Vec<D::IncomingViewingKey>,
+    /// We currently store outputs and repliers as parallel vectors, because
+    /// [`batch::try_note_decryption`] accepts a slice of domain/output pairs
+    /// rather than a value that implements `IntoIterator`, and therefore we
+    /// can't just use `map` to select the parts we need in order to perform
+    /// batch decryption. Ideally the domain, output, and output replier would
+    /// all be part of the same struct, which would also track the output index
+    /// (that is captured in the outer `OutputIndex` of each `OutputReplier`).
     outputs: Vec<(D, Output)>,
     repliers: Vec<OutputReplier<D>>,
 }
@@ -254,33 +268,20 @@ where
     /// Runs the batch of trial decryptions, and reports the results.
     fn run(self) {
         assert_eq!(self.outputs.len(), self.repliers.len());
-        let decrypted = batch::try_note_decryption(&self.ivks, &self.outputs);
-        for (decrypted_note, (ivk, replier)) in decrypted.into_iter().zip(
-            // The output of `batch::try_note_decryption` corresponds to the stream of
-            // trial decryptions:
-            //     (ivk0, out0), (ivk0, out1), ..., (ivk0, outN), (ivk1, out0), ...
-            // So we can use the position in the stream to figure out which output was
-            // decrypted and which ivk decrypted it.
-            self.ivks
-                .iter()
-                .flat_map(|ivk| self.repliers.iter().map(move |tx| (ivk, tx))),
-        ) {
-            let value = decrypted_note.map(|(note, recipient, memo)| DecryptedNote {
-                ivk: ivk.clone(),
-                memo,
-                note,
-                recipient,
-            });
+        let decryption_results = batch::try_note_decryption(&self.ivks, &self.outputs);
+        for (decryption_result, replier) in decryption_results.into_iter().zip(self.repliers.iter())
+        {
+            let result = OutputIndex {
+                output_index: replier.output_index,
+                value: decryption_result.map(|((note, recipient, memo), ivk_idx)| DecryptedNote {
+                    ivk: self.ivks[ivk_idx].clone(),
+                    recipient,
+                    note,
+                    memo,
+                }),
+            };
 
-            let output_index = replier.output_index;
-            let tx = &replier.value;
-            if tx
-                .send(OutputIndex {
-                    output_index,
-                    value,
-                })
-                .is_err()
-            {
+            if replier.value.send(result).is_err() {
                 tracing::debug!("BatchRunner was dropped before batch finished");
                 return;
             }
