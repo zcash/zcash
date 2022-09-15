@@ -43,6 +43,17 @@ When estimating the number of coinbase utxos we can shield in a single transacti
 #define CTXIN_SPEND_DUST_SIZE   148
 #define CTXOUT_REGULAR_SIZE     34
 
+class Remaining {
+public:
+    Remaining(size_t utxoCounter, size_t numUtxos, CAmount remainingValue, CAmount shieldingValue):
+        utxoCounter(utxoCounter), numUtxos(numUtxos), remainingValue(remainingValue), shieldingValue(shieldingValue) { }
+
+    size_t utxoCounter;
+    size_t numUtxos;
+    CAmount remainingValue;
+    CAmount shieldingValue;
+};
+
 class AsyncRPCOperation_shieldcoinbase : public AsyncRPCOperation {
 public:
     AsyncRPCOperation_shieldcoinbase(
@@ -61,6 +72,8 @@ public:
     AsyncRPCOperation_shieldcoinbase& operator=(AsyncRPCOperation_shieldcoinbase const&) = delete;  // Copy assign
     AsyncRPCOperation_shieldcoinbase& operator=(AsyncRPCOperation_shieldcoinbase &&) = delete;      // Move assign
 
+    Remaining prepare();
+
     virtual void main();
 
     virtual UniValue getStatus() const;
@@ -76,6 +89,7 @@ private:
     TransactionStrategy strategy_;
     int nUTXOLimit_;
     CAmount fee_;
+    PrepareTransactionResult preparedTx_;
 
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 
@@ -102,4 +116,3 @@ public:
 
 
 #endif // ZCASH_WALLET_ASYNCRPCOPERATION_SHIELDCOINBASE_H
-

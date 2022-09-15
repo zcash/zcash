@@ -5436,7 +5436,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
-            "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee ) ( limit )\n"
+            "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee ) ( limit ) ( privacyPolicy )\n"
             "\nShield transparent coinbase funds by sending to a shielded zaddr.  This is an asynchronous operation and utxos"
             "\nselected for shielding will be locked.  If there is an error, they are unlocked.  The RPC call `listlockunspent`"
             "\ncan be used to return a list of locked utxos.  The number of coinbase utxos selected for shielding can be limited"
@@ -5522,7 +5522,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     // Set of source addresses to filter utxos by
     ZTXOSelector ztxoSelector = [&]() {
-        if (fromaddress == "*") {
+        if (isFromWildcard) {
             return CWallet::LegacyTransparentZTXOSelector(true, true);
         } else {
             auto decoded = keyIO.DecodePaymentAddress(fromaddress);
@@ -5636,19 +5636,23 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             TransactionStrategy(PrivacyPolicy::AllowFullyTransparent)
     );
 
+    auto async_shieldcoinbase =
+        new AsyncRPCOperation_shieldcoinbase(
+                std::move(builder), ztxoSelector, destaddress.value(), strategy, nUTXOLimit, nFee, contextInfo);
+    auto results = async_shieldcoinbase->prepare();
+
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(
-        std::move(builder), ztxoSelector, destaddress.value(), strategy, nUTXOLimit, nFee, contextInfo) );
+    std::shared_ptr<AsyncRPCOperation> operation(async_shieldcoinbase);
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
 
     // Return continuation information
     UniValue o(UniValue::VOBJ);
-//    o.pushKV("remainingUTXOs", static_cast<uint64_t>(utxoCounter - numUtxos));
-//    o.pushKV("remainingValue", ValueFromAmount(remainingValue));
-//    o.pushKV("shieldingUTXOs", static_cast<uint64_t>(numUtxos));
-//    o.pushKV("shieldingValue", ValueFromAmount(shieldedValue));
+    o.pushKV("remainingUTXOs", static_cast<uint64_t>(results.utxoCounter - results.numUtxos));
+    o.pushKV("remainingValue", ValueFromAmount(results.remainingValue));
+    o.pushKV("shieldingUTXOs", static_cast<uint64_t>(results.numUtxos));
+    o.pushKV("shieldingValue", ValueFromAmount(results.shieldingValue));
     o.pushKV("opid", operationId);
     return o;
 }

@@ -122,7 +122,8 @@ void AsyncRPCOperation_shieldcoinbase::main() {
     LogPrintf("%s",s);
 }
 
-uint256 AsyncRPCOperation_shieldcoinbase::main_impl() {
+
+Remaining AsyncRPCOperation_shieldcoinbase::prepare() {
     auto spendable = builder_.FindAllSpendableInputs(ztxoSelector_, true, COINBASE_MATURITY);
 
     // Find unspent coinbase utxos and update estimated size
@@ -132,6 +133,7 @@ uint256 AsyncRPCOperation_shieldcoinbase::main_impl() {
     // FIXME: bump this up to an appropriate size for Orchard
     size_t estimatedTxSize = 2000;  // 1802 joinsplit description + tx overhead + wiggle room
     size_t utxoCounter = 0;
+    size_t numUtxos = 0;
     bool maxedOutFlag = false;
 
     for (const COutput& out : spendable.utxos) {
@@ -143,16 +145,17 @@ uint256 AsyncRPCOperation_shieldcoinbase::main_impl() {
             continue;
         }
 
+        utxoCounter++;
         if (!maxedOutFlag) {
             size_t increase =
                 (std::get_if<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
 
-            if (estimatedTxSize + increase >= max_tx_size || (nUTXOLimit_ > 0 && utxoCounter > nUTXOLimit_)) {
+            if (estimatedTxSize + increase >= max_tx_size || (0 < nUTXOLimit_ && nUTXOLimit_ < utxoCounter)) {
                 maxedOutFlag = true;
             } else {
-                utxoCounter++;
                 estimatedTxSize += increase;
                 shieldingValue += nValue;
+                numUtxos++;
             }
         }
 
@@ -161,10 +164,10 @@ uint256 AsyncRPCOperation_shieldcoinbase::main_impl() {
         }
     }
 
-    spendable.LimitTransparentUtxos(utxoCounter);
+    spendable.LimitTransparentUtxos(numUtxos);
 
     std::vector<Payment> payments = { Payment(toAddress_, shieldingValue - fee_, std::nullopt, true) };
-    auto preparedTx = builder_.PrepareTransaction(
+    preparedTx_ = builder_.PrepareTransaction(
             ztxoSelector_,
             spendable,
             payments,
@@ -173,6 +176,10 @@ uint256 AsyncRPCOperation_shieldcoinbase::main_impl() {
             fee_,
             nAnchorConfirmations);
 
+    return Remaining(utxoCounter, numUtxos, remainingValue, shieldingValue);
+}
+
+uint256 AsyncRPCOperation_shieldcoinbase::main_impl() {
     uint256 txid;
     std::visit(match {
         [&](const InputSelectionError& err) {
@@ -211,7 +218,7 @@ uint256 AsyncRPCOperation_shieldcoinbase::main_impl() {
 
             txid = tx.GetHash();
         }
-    }, preparedTx);
+    }, preparedTx_);
     return txid;
 }
 
