@@ -861,7 +861,7 @@ bool ContextualCheckTransaction(
     assert(!nu5Active || canopyActive);         // NU5 cannot be active unless Canopy is
     assert(!futureActive || nu5Active);         // ZFUTURE must include consensus rules for all supported network upgrades.
 
-    auto const orchard_bundle = tx.GetOrchardBundle();
+    auto& orchard_bundle = tx.GetOrchardBundle();
 
     // Rules that apply only to Sprout
     if (beforeOverwinter) {
