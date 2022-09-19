@@ -365,7 +365,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             }
 
             // Batch transactions in the mempool.
-            for (auto tx : recentlyAdded.first) {
+            for (auto& tx : recentlyAdded.first) {
                 AddTxToBatches(batchScanners, tx, uint256(), pindexLastTip->nHeight + 1);
             }
         }
@@ -406,8 +406,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 
         // Notify block connections
         while (!blockStack.empty()) {
-            auto blockData = blockStack.back();
-            blockStack.pop_back();
+            auto& blockData = blockStack.back();
 
             // Read block from disk.
             CBlock block;
@@ -445,10 +444,11 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 
             // This block is done!
             pindexLastTip = blockData.pindex;
+            blockStack.pop_back();
         }
 
         // Notify transactions in the mempool
-        for (auto tx : recentlyAdded.first) {
+        for (auto& tx : recentlyAdded.first) {
             try {
                 SyncWithWallets(batchScanners, tx, NULL, pindexLastTip->nHeight + 1);
             } catch (const boost::thread_interrupted&) {
