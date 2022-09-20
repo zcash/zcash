@@ -322,7 +322,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         entry.pushKV("blockhash", hashBlock.GetHex());
         BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
         if (mi != mapBlockIndex.end() && (*mi).second) {
-            CBlockIndex* pindex = (*mi).second;
+            const CBlockIndex* pindex = (*mi).second;
             if (chainActive.Contains(pindex)) {
                 entry.pushKV("height", pindex->nHeight);
                 entry.pushKV("confirmations", 1 + chainActive.Height() - pindex->nHeight);
@@ -341,7 +341,12 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         if (fSpentIndex && GetSpentIndex(spentKey, spentInfo)) {
             return spentInfo.satoshis;
         } else {
-            return std::nullopt;
+            std::optional<CTxOut> txOut = GetTxOut(Params().GetConsensus(), ReadFromCoinsDb(), out);
+            if (txOut.has_value()) {
+                return txOut.value().nValue;
+            } else {
+                return std::nullopt;
+            }
         }
     });
     if (feePaid.has_value()) {
