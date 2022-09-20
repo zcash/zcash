@@ -124,6 +124,8 @@ struct CachedBlockData {
 
 void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 {
+    size_t nBatchScannerMemLimit = DEFAULT_BATCHSCANNERMEMLIMIT * 1024 * 1024;
+
     // If pindexLastTip == nullptr, the wallet is at genesis.
     // However, the genesis block is not loaded synchronously.
     // We need to wait for ThreadImport to finish.
@@ -304,10 +306,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
         // Closure that returns true if batchScanners is using less memory than
         // the desired limit.
         auto belowBatchMemoryLimit = [&]() {
-            // For now, set no limit. This should mean that the refactor to
-            // introduce blockStackScanned is a no-op, as we still add every
-            // block in blockStack to batchScanners at the start.
-            return true;
+            return RecursiveDynamicUsage(batchScanners) < nBatchScannerMemLimit;
         };
 
         // Closure that will add a block from blockStack to batchScanners.
