@@ -75,6 +75,9 @@ mod ffi {
 /// TODO: Tune this.
 const BATCH_SIZE_THRESHOLD: usize = 20;
 
+const METRIC_OUTPUTS_SCANNED: &str = "zcashd.wallet.batchscanner.outputs.scanned";
+const METRIC_LABEL_KIND: &str = "kind";
+
 const METRIC_SIZE_TXS: &str = "zcashd.wallet.batchscanner.size.transactions";
 const METRIC_USAGE_BYTES: &str = "zcashd.wallet.batchscanner.usage.bytes";
 
@@ -201,6 +204,15 @@ impl consensus::Parameters for Network {
     }
 }
 
+trait OutputDomain: BatchDomain {
+    // The kind of output, for metrics labelling.
+    const KIND: &'static str;
+}
+
+impl<P: consensus::Parameters> OutputDomain for SaplingDomain<P> {
+    const KIND: &'static str = "sapling";
+}
+
 /// A decrypted note.
 struct DecryptedNote<D: Domain> {
     /// The incoming viewing key used to decrypt the note.
@@ -301,7 +313,7 @@ where
 
 impl<D, Output> Batch<D, Output>
 where
-    D: BatchDomain,
+    D: OutputDomain,
     Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>,
     D::IncomingViewingKey: Clone,
 {
@@ -330,6 +342,12 @@ where
 
         assert_eq!(self.outputs.len(), self.repliers.len());
         let decryption_results = batch::try_note_decryption(&self.ivks, &self.outputs);
+        metrics::counter!(
+            METRIC_OUTPUTS_SCANNED,
+            self.outputs.len() as u64,
+            METRIC_LABEL_KIND => D::KIND,
+        );
+
         for (decryption_result, OutputReplier(replier)) in
             decryption_results.into_iter().zip(self.repliers.iter())
         {
@@ -465,7 +483,7 @@ where
 
 impl<D, Output> BatchRunner<D, Output>
 where
-    D: BatchDomain,
+    D: OutputDomain,
     Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>,
     D::IncomingViewingKey: Clone,
 {
@@ -482,7 +500,7 @@ where
 
 impl<D, Output> BatchRunner<D, Output>
 where
-    D: BatchDomain + Send + 'static,
+    D: OutputDomain + Send + 'static,
     D::IncomingViewingKey: Clone + Send,
     D::Memo: Send,
     D::Note: Send,
