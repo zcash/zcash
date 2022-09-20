@@ -250,7 +250,7 @@ struct OutputIndex<V> {
     value: V,
 }
 
-type OutputItem<D> = OutputIndex<Option<DecryptedNote<D>>>;
+type OutputItem<D> = OutputIndex<DecryptedNote<D>>;
 
 /// The sender for the result of batch scanning a specific transaction output.
 struct OutputReplier<D: Domain>(OutputIndex<channel::Sender<OutputItem<D>>>);
@@ -340,35 +340,47 @@ where
         let own_usage = std::mem::size_of_val(&self) + self.dynamic_usage();
         self.running_usage.fetch_add(own_usage, Ordering::SeqCst);
 
-        assert_eq!(self.outputs.len(), self.repliers.len());
-        let decryption_results = batch::try_note_decryption(&self.ivks, &self.outputs);
+        // Deconstruct self so we can consume the pieces individually.
+        let Self {
+            ivks,
+            outputs,
+            repliers,
+            running_usage,
+        } = self;
+
+        assert_eq!(outputs.len(), repliers.len());
+        let decryption_results = batch::try_note_decryption(&ivks, &outputs);
         metrics::counter!(
             METRIC_OUTPUTS_SCANNED,
-            self.outputs.len() as u64,
+            outputs.len() as u64,
             METRIC_LABEL_KIND => D::KIND,
         );
 
         for (decryption_result, OutputReplier(replier)) in
-            decryption_results.into_iter().zip(self.repliers.iter())
+            decryption_results.into_iter().zip(repliers.into_iter())
         {
-            let result = OutputIndex {
-                output_index: replier.output_index,
-                value: decryption_result.map(|((note, recipient, memo), ivk_idx)| DecryptedNote {
-                    ivk: self.ivks[ivk_idx].clone(),
-                    recipient,
-                    note,
-                    memo,
-                }),
-            };
+            // If `decryption_result` is `None` then we will just drop `replier`,
+            // indicating to the parent `BatchRunner` that this output was not for us.
+            if let Some(((note, recipient, memo), ivk_idx)) = decryption_result {
+                let result = OutputIndex {
+                    output_index: replier.output_index,
+                    value: DecryptedNote {
+                        ivk: ivks[ivk_idx].clone(),
+                        recipient,
+                        note,
+                        memo,
+                    },
+                };
 
-            if replier.value.send(result).is_err() {
-                tracing::debug!("BatchRunner was dropped before batch finished");
-                break;
+                if replier.value.send(result).is_err() {
+                    tracing::debug!("BatchRunner was dropped before batch finished");
+                    break;
+                }
             }
         }
 
         // Signal that the heap memory for this batch is about to be freed.
-        self.running_usage.fetch_sub(own_usage, Ordering::SeqCst);
+        running_usage.fetch_sub(own_usage, Ordering::SeqCst);
     }
 }
 
@@ -559,14 +571,18 @@ where
             // We won't have a pending result if the transaction didn't have outputs of
             // this runner's kind.
             .map(|BatchReceiver(rx)| {
+                // This iterator will end once the channel becomes empty and disconnected.
+                // We created one sender per output, and each sender is dropped after the
+                // batch it is in completes (and in the case of successful decryptions,
+                // after the decrypted note has been sent to the channel). Completion of
+                // the iterator therefore corresponds to complete knowledge of the outputs
+                // of this transaction that could be decrypted.
                 rx.into_iter()
-                    .filter_map(
+                    .map(
                         |OutputIndex {
                              output_index,
                              value,
-                         }| {
-                            value.map(|decrypted_note| ((txid, output_index), decrypted_note))
-                        },
+                         }| { ((txid, output_index), value) },
                     )
                     .collect()
             })
