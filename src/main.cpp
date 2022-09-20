@@ -2235,6 +2235,34 @@ bool GetTransaction(const uint256& hash, CTransaction& txOut, const Consensus::P
     return false;
 }
 
+std::optional<CTxOut> GetTxOut(
+        const Consensus::Params& params,
+        const TxReadStrategy& readStrategy,
+        const COutPoint& outPoint) {
+    return std::visit(match {
+        [&](const ReadFromIndex& ridx) -> std::optional<CTxOut> {
+            CTransaction txOut;
+            uint256 hashBlockOut;
+            if (GetTransaction(outPoint.hash, txOut, params, hashBlockOut, false, ridx.GetBlockIndex()) &&
+                    txOut.vout.size() > outPoint.n) {
+                return txOut.vout[outPoint.n];
+            }
+
+            return std::nullopt;
+        },
+        [&](const ReadFromCoinsDb&) -> std::optional<CTxOut> {
+            CTransaction txOut;
+            uint256 hashBlockOut;
+            if (GetTransaction(outPoint.hash, txOut, params, hashBlockOut, true, nullptr) &&
+                    txOut.vout.size() > outPoint.n) {
+                return txOut.vout[outPoint.n];
+            }
+
+            return std::nullopt;
+        }
+    }, readStrategy);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // CBlock and CBlockIndex

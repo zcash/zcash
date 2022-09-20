@@ -313,6 +313,34 @@ std::pair<std::string, int64_t> GetWarnings(const std::string& strFor);
  * the transaction if `fAllowSlow = true`.
  */
 bool GetTransaction(const uint256& hash, CTransaction& tx, const Consensus::Params& params, uint256& hashBlock, bool fAllowSlow = false, const CBlockIndex* blockIndex = nullptr);
+
+/**
+ * A variant constructor for TxReadStrategy for if a blockIndex pointer is available.
+ */
+class ReadFromIndex {
+private:
+    const CBlockIndex* blockIndex;
+public:
+    ReadFromIndex(const CBlockIndex* blockIndex): blockIndex(blockIndex) {}
+
+    const CBlockIndex* GetBlockIndex() const {
+        return blockIndex;
+    }
+};
+
+/**
+ * A variant constructor for TxReadStrategy if querying the coins db
+ */
+class ReadFromCoinsDb { };
+
+typedef std::variant<ReadFromIndex, ReadFromCoinsDb> TxReadStrategy;
+
+/** Retrieve the txout referenced by the specified outpoint. */
+std::optional<CTxOut> GetTxOut(
+        const Consensus::Params& params,
+        const TxReadStrategy& readStrategy,
+        const COutPoint& outPoint);
+
 /** Find the best known block, and make it the tip of the block chain */
 bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams, const CBlock* pblock = NULL);
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
