@@ -3590,6 +3590,11 @@ bool WalletBatchScanner::AddToWalletIfInvolvingMe(
 // BatchScanner APIs
 //
 
+size_t WalletBatchScanner::RecursiveDynamicUsage()
+{
+    return inner->get_dynamic_usage();
+}
+
 void WalletBatchScanner::AddTransaction(
     const CTransaction &tx,
     const std::vector<unsigned char> &txBytes,

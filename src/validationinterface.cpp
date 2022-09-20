@@ -68,6 +68,16 @@ void UnregisterAllValidationInterfaces() {
     g_signals.UpdatedBlockTip.disconnect_all_slots();
 }
 
+size_t RecursiveDynamicUsage(
+    std::vector<BatchScanner*> &batchScanners)
+{
+    size_t usage = 0;
+    for (auto& batchScanner : batchScanners) {
+        usage += batchScanner->RecursiveDynamicUsage();
+    }
+    return usage;
+}
+
 void AddTxToBatches(
     std::vector<BatchScanner*> &batchScanners,
     const CTransaction &tx,

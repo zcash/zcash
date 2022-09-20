@@ -27,6 +27,11 @@ class uint256;
 class BatchScanner {
 public:
     /**
+     * Returns the current dynamic memory usage of this batch scanner.
+     */
+    virtual size_t RecursiveDynamicUsage() = 0;
+
+    /**
      * Adds a transaction to the batch scanner.
      *
      * `block_tag` is the hash of the block that triggered this txid being added
