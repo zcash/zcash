@@ -15,6 +15,9 @@
 #include "miner.h"
 #include "zcash/IncrementalMerkleTree.hpp"
 
+/** Default limit on batch scanner memory usage in MiB. */
+static const size_t DEFAULT_BATCHSCANNERMEMLIMIT = 100;
+
 class CBlock;
 class CBlockIndex;
 struct CBlockLocator;
@@ -26,6 +29,11 @@ class uint256;
 
 class BatchScanner {
 public:
+    /**
+     * Returns the current dynamic memory usage of this batch scanner.
+     */
+    virtual size_t RecursiveDynamicUsage() = 0;
+
     /**
      * Adds a transaction to the batch scanner.
      *

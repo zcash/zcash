@@ -1079,6 +1079,8 @@ public:
     // BatchScanner APIs
     //
 
+    size_t RecursiveDynamicUsage();
+
     void AddTransaction(
         const CTransaction &tx,
         const std::vector<unsigned char> &txBytes,
