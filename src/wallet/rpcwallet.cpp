@@ -2396,7 +2396,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() > 4)
         throw runtime_error(
-            "listunspent ( minconf maxconf  [\"address\",...] unspent_as_of)\n"
+            "listunspent ( minconf maxconf  [\"address\",...] as_of_height)\n"
             "\nReturns array of unspent transparent transaction outputs with between minconf and\n"
             "maxconf (inclusive) confirmations. Use `z_listunspent` instead to see information\n"
             "related to unspent shielded notes. Results may be optionally filtered to only include\n"
@@ -2462,16 +2462,9 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    std::optional<int> unspentAsOfDepth;
+    std::optional<int> asOfHeight;
     if (params.size() > 3) {
-        auto asOfHeight = params[3].get_int();
-        // it's fine to specify a height that's greater than the current height
-        if (chainActive.Height() > asOfHeight) {
-            unspentAsOfDepth = chainActive.Height() - asOfHeight;
-            if (unspentAsOfDepth.value() > nMinDepth) {
-                nMinDepth = unspentAsOfDepth.value();
-            }
-        }
+        asOfHeight = params[3].get_int();
     }
 
     UniValue results(UniValue::VARR);
@@ -2485,7 +2478,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             false,        // fOnlySpendable
             nMinDepth,
             destinations.empty() ? nullptr : &destinations,
-            unspentAsOfDepth);
+            asOfHeight);
     for (const COutput& out : vecOutputs) {
         if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
             continue;

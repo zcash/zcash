@@ -399,7 +399,7 @@ struct SaplingNoteEntry
 class CMerkleTx : public CTransaction
 {
 private:
-    int GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet) const;
+    int GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet, const std::optional<int>& asOfHeight = std::nullopt) const;
 
 public:
     uint256 hashBlock;
@@ -444,7 +444,7 @@ public:
     int GetDepthInMainChain(const CBlockIndex* &pindexRet) const;
     int GetDepthInMainChain() const { const CBlockIndex *pindexRet; return GetDepthInMainChain(pindexRet); }
     bool IsInMainChain() const { const CBlockIndex *pindexRet; return GetDepthInMainChainINTERNAL(pindexRet) > 0; }
-    int GetBlocksToMaturity() const;
+    int GetBlocksToMaturity(const std::optional<int>& asOfHeight = std::nullopt) const;
     /** Pass this transaction to the mempool. Fails if absolute fee exceeds maxTxFee. */
     bool AcceptToMemoryPool(CValidationState& state, bool fLimitFree=true, bool fRejectAbsurdFee=true);
 };
@@ -1437,7 +1437,7 @@ public:
                         bool fOnlySpendable=false,
                         int nMinDepth = 0,
                         std::set<CTxDestination>* onlyFilterByDests = nullptr,
-                        std::optional<int> unspentAsOfDepth = std::nullopt) const;
+                        const std::optional<int>& unspentAsOfDepth = std::nullopt) const;
 
     /**
      * Shuffle and select coins until nTargetValue is reached while avoiding

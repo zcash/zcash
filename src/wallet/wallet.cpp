@@ -2413,7 +2413,7 @@ SpendableInputs CWallet::FindSpendableInputs(
  * Outpoint is spent if any non-conflicted transaction
  * spends it:
  */
-bool CWallet::IsSpent(const uint256& hash, unsigned int n, std::optional<int> unspentAsOfDepth) const
+bool CWallet::IsSpent(const uint256& hash, unsigned int n, std::optional<int> asOfDepth) const
 {
     const COutPoint outpoint(hash, n);
     pair<TxSpends::const_iterator, TxSpends::const_iterator> range;
@@ -2423,8 +2423,11 @@ bool CWallet::IsSpent(const uint256& hash, unsigned int n, std::optional<int> un
     {
         const uint256& wtxid = it->second;
         std::map<uint256, CWalletTx>::const_iterator mit = mapWallet.find(wtxid);
-        if (mit != mapWallet.end() && mit->second.GetDepthInMainChain() >= unspentAsOfDepth.value_or(0))
-            return true; // Spent
+        if (mit != mapWallet.end()) {
+            auto confirmations = mit->second.GetDepthInMainChain();
+            if (confirmations >= asOfDepth.value_or(0))
+                return true;
+        }
     }
     return false;
 }
@@ -5247,7 +5250,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                              bool fOnlySpendable,
                              int nMinDepth,
                              std::set<CTxDestination>* onlyFilterByDests,
-                             std::optional<int> unspentAsOfDepth) const
+                             const std::optional<int>& asOfHeight) const
 {
     assert(nMinDepth >= 0);
     AssertLockHeld(cs_main);
@@ -5256,30 +5259,26 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
     vCoins.clear();
 
     {
-        for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
-        {
-            const uint256& wtxid = it->first;
-            const CWalletTx* pcoin = &(*it).second;
-
-            if (!CheckFinalTx(*pcoin))
+        for (const auto& [wtxid, pcoin] : mapWallet) {
+            if (!CheckFinalTx(pcoin))
                 continue;
 
-            if (fOnlyConfirmed && !pcoin->IsTrusted())
+            if (fOnlyConfirmed && !pcoin.IsTrusted())
                 continue;
 
-            if (pcoin->IsCoinBase() && !fIncludeCoinBase)
+            if (pcoin.IsCoinBase() && !fIncludeCoinBase)
                 continue;
 
-            bool isCoinbase = pcoin->IsCoinBase();
-            if (isCoinbase && pcoin->GetBlocksToMaturity() > 0)
+            bool isCoinbase = pcoin.IsCoinBase();
+            if (isCoinbase && pcoin.GetBlocksToMaturity(asOfHeight) > 0)
                 continue;
 
-            int nDepth = pcoin->GetDepthInMainChain();
+            int nDepth = pcoin.GetDepthInMainChain();
             if (nDepth < nMinDepth)
                 continue;
 
-            for (unsigned int i = 0; i < pcoin->vout.size(); i++) {
-                const auto& output = pcoin->vout[i];
+            for (unsigned int i = 0; i < pcoin.vout.size(); i++) {
+                const auto& output = pcoin.vout[i];
                 isminetype mine = IsMine(output);
 
                 bool isSpendable = ((mine & ISMINE_SPENDABLE) != ISMINE_NO) ||
@@ -5296,10 +5295,10 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                     }
                 }
 
-                if (!(IsSpent(wtxid, i, unspentAsOfDepth)) && mine != ISMINE_NO &&
-                    !IsLockedCoin((*it).first, i) && (pcoin->vout[i].nValue > 0 || fIncludeZeroValue) &&
-                    (!coinControl || !coinControl->HasSelected() || coinControl->fAllowOtherInputs || coinControl->IsSelected((*it).first, i)))
-                        vCoins.push_back(COutput(pcoin, i, nDepth, isSpendable, isCoinbase));
+                if (!(IsSpent(wtxid, i, asOfHeight)) && mine != ISMINE_NO &&
+                    !IsLockedCoin(wtxid, i) && (pcoin.vout[i].nValue > 0 || fIncludeZeroValue) &&
+                    (!coinControl || !coinControl->HasSelected() || coinControl->fAllowOtherInputs || coinControl->IsSelected(wtxid, i)))
+                        vCoins.push_back(COutput(&pcoin, i, nDepth, isSpendable, isCoinbase));
             }
         }
     }
@@ -6985,7 +6984,7 @@ void CMerkleTx::SetMerkleBranch(const CBlock& block)
     }
 }
 
-int CMerkleTx::GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet) const
+int CMerkleTx::GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet, const std::optional<int>& asOfHeight) const
 {
     if (hashBlock.IsNull() || nIndex == -1)
         return 0;
@@ -6996,8 +6995,11 @@ int CMerkleTx::GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet) const
     if (mi == mapBlockIndex.end())
         return 0;
     CBlockIndex* pindex = (*mi).second;
-    if (!pindex || !chainActive.Contains(pindex))
+    if (!pindex ||
+        !chainActive.Contains(pindex) ||
+        (asOfHeight.has_value() && pindex->nHeight > asOfHeight.value())) {
         return 0;
+    }
 
     pindexRet = pindex;
     return chainActive.Height() - pindex->nHeight + 1;
@@ -7013,7 +7015,7 @@ int CMerkleTx::GetDepthInMainChain(const CBlockIndex* &pindexRet) const
     return nResult;
 }
 
-int CMerkleTx::GetBlocksToMaturity() const
+int CMerkleTx::GetBlocksToMaturity(const std::optional<int>& asOfHeight) const
 {
     if (!IsCoinBase())
         return 0;
