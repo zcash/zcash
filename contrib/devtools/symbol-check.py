@@ -187,7 +187,11 @@ if __name__ == '__main__':
     if retval == 0:
         print("Everything OK")
     else:
-        print("Note: this script is intended to ensure that Gitian builds meet our compatibility policy.")
-        print("The above warnings do not necessarily mean the program(s) will not work on your system.")
+        print("""\
+Note: this script is intended to ensure that Gitian builds meet our compatibility policy.
+The above warnings do not necessarily mean the program(s) will not work on your system.
+In particular, warnings about an unsupported version of glibc are expected if you compile
+on a system that uses glibc > 2.23.
+""")
 
     exit(retval)
