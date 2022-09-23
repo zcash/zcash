@@ -48,15 +48,31 @@ who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.68 -> 1.0.72"
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.72 -> 1.0.76"
+notes = "Impls Unpin for SharedPtr and UniquePtr. The rationale makes sense."
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.68 -> 1.0.72"
 
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.72 -> 1.0.76"
+
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.68 -> 1.0.72"
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.72 -> 1.0.76"
 
 [[audits.equihash]]
 who = "Jack Grigg <jack@z.cash>"
