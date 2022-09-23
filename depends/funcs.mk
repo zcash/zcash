@@ -37,7 +37,7 @@ define vendor_crate_deps
   ( mkdir -p $$($(1)_download_dir)/$(1) && echo Vendoring dependencies for $(1)... && \
     tar -xf $(native_rust_cached) -C $$($(1)_download_dir) && \
     tar --strip-components=1 -xf $$($(1)_source_dir)/$(2) -C $$($(1)_download_dir)/$(1) && \
-	patch -p1 -d $$($(1)_download_dir)/$(1) < $(PATCHES_PATH)/$(1)/$(3) && \
+	cp $$($(1)_download_dir)/$(1)/$(3) $$($(1)_download_dir)/$(1)/Cargo.lock && \
 	$$($(1)_download_dir)/native/bin/cargo vendor --locked --manifest-path $$($(1)_download_dir)/$(1)/$(4) $$($(1)_download_dir)/$(CRATE_REGISTRY) && \
 	cd $$($(1)_download_dir) && \
 	find $(CRATE_REGISTRY) | sort | tar --no-recursion -czf $$($(1)_download_dir)/$(5).temp -T - && \
