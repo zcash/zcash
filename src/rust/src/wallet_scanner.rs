@@ -14,7 +14,10 @@ use zcash_note_encryption::{batch, BatchDomain, Domain, ShieldedOutput, ENC_CIPH
 use zcash_primitives::{
     block::BlockHash,
     consensus, constants,
-    sapling::{self, note_encryption::SaplingDomain},
+    sapling::{
+        note_encryption::{PreparedIncomingViewingKey, SaplingDomain},
+        SaplingIvk,
+    },
     transaction::{
         components::{sapling::GrothProofBytes, OutputDescription},
         Transaction, TxId,
@@ -214,9 +217,9 @@ impl<P: consensus::Parameters> OutputDomain for SaplingDomain<P> {
 }
 
 /// A decrypted note.
-struct DecryptedNote<D: Domain> {
-    /// The incoming viewing key used to decrypt the note.
-    ivk: D::IncomingViewingKey,
+struct DecryptedNote<A, D: Domain> {
+    /// The tag corresponding to the incoming viewing key used to decrypt the note.
+    ivk_tag: A,
     /// The recipient of the note.
     recipient: D::Recipient,
     /// The note!
@@ -225,8 +228,9 @@ struct DecryptedNote<D: Domain> {
     memo: D::Memo,
 }
 
-impl<D: Domain> fmt::Debug for DecryptedNote<D>
+impl<A, D: Domain> fmt::Debug for DecryptedNote<A, D>
 where
+    A: fmt::Debug,
     D::IncomingViewingKey: fmt::Debug,
     D::Recipient: fmt::Debug,
     D::Note: fmt::Debug,
@@ -234,7 +238,7 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("DecryptedNote")
-            .field("ivk", &self.ivk)
+            .field("ivk_tag", &self.ivk_tag)
             .field("recipient", &self.recipient)
             .field("note", &self.note)
             .field("memo", &self.memo)
@@ -250,12 +254,12 @@ struct OutputIndex<V> {
     value: V,
 }
 
-type OutputItem<D> = OutputIndex<DecryptedNote<D>>;
+type OutputItem<A, D> = OutputIndex<DecryptedNote<A, D>>;
 
 /// The sender for the result of batch scanning a specific transaction output.
-struct OutputReplier<D: Domain>(OutputIndex<channel::Sender<OutputItem<D>>>);
+struct OutputReplier<A, D: Domain>(OutputIndex<channel::Sender<OutputItem<A, D>>>);
 
-impl<D: Domain> DynamicUsage for OutputReplier<D> {
+impl<A, D: Domain> DynamicUsage for OutputReplier<A, D> {
     #[inline(always)]
     fn dynamic_usage(&self) -> usize {
         // We count the memory usage of items in the channel on the receiver side.
@@ -269,7 +273,8 @@ impl<D: Domain> DynamicUsage for OutputReplier<D> {
 }
 
 /// A batch of outputs to trial decrypt.
-struct Batch<D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>> {
+struct Batch<A, D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>> {
+    tags: Vec<A>,
     ivks: Vec<D::IncomingViewingKey>,
     /// We currently store outputs and repliers as parallel vectors, because
     /// [`batch::try_note_decryption`] accepts a slice of domain/output pairs
@@ -279,7 +284,7 @@ struct Batch<D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>> {
     /// all be part of the same struct, which would also track the output index
     /// (that is captured in the outer `OutputIndex` of each `OutputReplier`).
     outputs: Vec<(D, Output)>,
-    repliers: Vec<OutputReplier<D>>,
+    repliers: Vec<OutputReplier<A, D>>,
     // Pointer to the parent `BatchRunner`'s heap usage tracker for running batches.
     running_usage: Arc<AtomicUsize>,
 }
@@ -288,7 +293,7 @@ fn base_vec_usage<T>(c: &Vec<T>) -> usize {
     c.capacity() * mem::size_of::<T>()
 }
 
-impl<D, Output> DynamicUsage for Batch<D, Output>
+impl<A, D, Output> DynamicUsage for Batch<A, D, Output>
 where
     D: BatchDomain,
     Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>,
@@ -311,15 +316,21 @@ where
     }
 }
 
-impl<D, Output> Batch<D, Output>
+impl<A, D, Output> Batch<A, D, Output>
 where
+    A: Clone,
     D: OutputDomain,
     Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>,
-    D::IncomingViewingKey: Clone,
 {
     /// Constructs a new batch.
-    fn new(ivks: Vec<D::IncomingViewingKey>, running_usage: Arc<AtomicUsize>) -> Self {
+    fn new(
+        tags: Vec<A>,
+        ivks: Vec<D::IncomingViewingKey>,
+        running_usage: Arc<AtomicUsize>,
+    ) -> Self {
+        assert_eq!(tags.len(), ivks.len());
         Self {
+            tags,
             ivks,
             outputs: vec![],
             repliers: vec![],
@@ -342,6 +353,7 @@ where
 
         // Deconstruct self so we can consume the pieces individually.
         let Self {
+            tags,
             ivks,
             outputs,
             repliers,
@@ -365,7 +377,7 @@ where
                 let result = OutputIndex {
                     output_index: replier.output_index,
                     value: DecryptedNote {
-                        ivk: ivks[ivk_idx].clone(),
+                        ivk_tag: tags[ivk_idx].clone(),
                         recipient,
                         note,
                         memo,
@@ -384,7 +396,9 @@ where
     }
 }
 
-impl<D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE> + Clone> Batch<D, Output> {
+impl<A, D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE> + Clone>
+    Batch<A, D, Output>
+{
     /// Adds the given outputs to this batch.
     ///
     /// `replier` will be called with the result of every output.
@@ -392,7 +406,7 @@ impl<D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE> + Clone> Bat
         &mut self,
         domain: impl Fn() -> D,
         outputs: &[Output],
-        replier: channel::Sender<OutputItem<D>>,
+        replier: channel::Sender<OutputItem<A, D>>,
     ) {
         self.outputs
             .extend(outputs.iter().cloned().map(|output| (domain(), output)));
@@ -422,9 +436,9 @@ impl DynamicUsage for ResultKey {
 }
 
 /// The receiver for the result of batch scanning a specific transaction.
-struct BatchReceiver<D: Domain>(channel::Receiver<OutputItem<D>>);
+struct BatchReceiver<A, D: Domain>(channel::Receiver<OutputItem<A, D>>);
 
-impl<D: Domain> DynamicUsage for BatchReceiver<D> {
+impl<A, D: Domain> DynamicUsage for BatchReceiver<A, D> {
     fn dynamic_usage(&self) -> usize {
         // We count the memory usage of items in the channel on the receiver side.
         let num_items = self.0.len();
@@ -441,7 +455,7 @@ impl<D: Domain> DynamicUsage for BatchReceiver<D> {
         //   - Space for an item.
         //   - The state of the slot, stored as an AtomicUsize.
         const PTR_SIZE: usize = std::mem::size_of::<usize>();
-        let item_size = std::mem::size_of::<OutputItem<D>>();
+        let item_size = std::mem::size_of::<OutputItem<A, D>>();
         const ATOMIC_USIZE_SIZE: usize = std::mem::size_of::<AtomicUsize>();
         let block_size = PTR_SIZE + ITEMS_PER_BLOCK * (item_size + ATOMIC_USIZE_SIZE);
 
@@ -455,16 +469,16 @@ impl<D: Domain> DynamicUsage for BatchReceiver<D> {
 }
 
 /// Logic to run batches of trial decryptions on the global threadpool.
-struct BatchRunner<D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>> {
+struct BatchRunner<A, D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>> {
     // The batch currently being accumulated.
-    acc: Batch<D, Output>,
+    acc: Batch<A, D, Output>,
     // The dynamic memory usage of the running batches.
     running_usage: Arc<AtomicUsize>,
     // Receivers for the results of the running batches.
-    pending_results: HashMap<ResultKey, BatchReceiver<D>>,
+    pending_results: HashMap<ResultKey, BatchReceiver<A, D>>,
 }
 
-impl<D, Output> DynamicUsage for BatchRunner<D, Output>
+impl<A, D, Output> DynamicUsage for BatchRunner<A, D, Output>
 where
     D: BatchDomain,
     Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>,
@@ -493,27 +507,29 @@ where
     }
 }
 
-impl<D, Output> BatchRunner<D, Output>
+impl<A, D, Output> BatchRunner<A, D, Output>
 where
+    A: Clone,
     D: OutputDomain,
     Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>,
-    D::IncomingViewingKey: Clone,
 {
     /// Constructs a new batch runner for the given incoming viewing keys.
-    fn new(ivks: Vec<D::IncomingViewingKey>) -> Self {
+    fn new(ivks: impl Iterator<Item = (A, D::IncomingViewingKey)>) -> Self {
         let running_usage = Arc::new(AtomicUsize::new(0));
+        let (tags, ivks) = ivks.unzip();
         Self {
-            acc: Batch::new(ivks, running_usage.clone()),
+            acc: Batch::new(tags, ivks, running_usage.clone()),
             running_usage,
             pending_results: HashMap::default(),
         }
     }
 }
 
-impl<D, Output> BatchRunner<D, Output>
+impl<A, D, Output> BatchRunner<A, D, Output>
 where
+    A: Clone + Send + 'static,
     D: OutputDomain + Send + 'static,
-    D::IncomingViewingKey: Clone + Send,
+    D::IncomingViewingKey: Clone + Send + 'static,
     D::Memo: Send,
     D::Note: Send,
     D::Recipient: Send,
@@ -550,7 +566,11 @@ where
     /// Subsequent calls to `Self::add_outputs` will be accumulated into a new batch.
     fn flush(&mut self) {
         if !self.acc.is_empty() {
-            let mut batch = Batch::new(self.acc.ivks.clone(), self.running_usage.clone());
+            let mut batch = Batch::new(
+                self.acc.tags.clone(),
+                self.acc.ivks.clone(),
+                self.running_usage.clone(),
+            );
             mem::swap(&mut batch, &mut self.acc);
             rayon::spawn_fifo(|| batch.run());
         }
@@ -565,7 +585,7 @@ where
         &mut self,
         block_tag: BlockHash,
         txid: TxId,
-    ) -> HashMap<(TxId, usize), DecryptedNote<D>> {
+    ) -> HashMap<(TxId, usize), DecryptedNote<A, D>> {
         self.pending_results
             .remove(&ResultKey(block_tag, txid))
             // We won't have a pending result if the transaction didn't have outputs of
@@ -593,7 +613,8 @@ where
 /// A batch scanner for the `zcashd` wallet.
 struct BatchScanner {
     params: Network,
-    sapling_runner: Option<BatchRunner<SaplingDomain<Network>, OutputDescription<GrothProofBytes>>>,
+    sapling_runner:
+        Option<BatchRunner<[u8; 32], SaplingDomain<Network>, OutputDescription<GrothProofBytes>>>,
 }
 
 impl DynamicUsage for BatchScanner {
@@ -613,15 +634,17 @@ fn init_batch_scanner(
     let sapling_runner = if sapling_ivks.is_empty() {
         None
     } else {
-        let ivks = sapling_ivks
+        let ivks: Vec<(_, _)> = sapling_ivks
             .iter()
-            .map(|ivk| {
-                let ivk: Option<sapling::SaplingIvk> =
-                    jubjub::Fr::from_bytes(ivk).map(sapling::SaplingIvk).into();
-                ivk.ok_or("Invalid Sapling ivk passed to wallet::init_batch_scanner()")
+            .map(|raw_ivk| {
+                let ivk: Option<_> = jubjub::Fr::from_bytes(raw_ivk)
+                    .map(|scalar_ivk| PreparedIncomingViewingKey::new(&SaplingIvk(scalar_ivk)))
+                    .into();
+                ivk.map(|prepared_ivk| (*raw_ivk, prepared_ivk))
+                    .ok_or("Invalid Sapling ivk passed to wallet::init_batch_scanner()")
             })
             .collect::<Result<_, _>>()?;
-        Some(BatchRunner::new(ivks))
+        Some(BatchRunner::new(ivks.into_iter()))
     };
 
     Ok(Box::new(BatchScanner {
@@ -717,7 +740,7 @@ impl BatchScanner {
 }
 
 struct BatchResult {
-    sapling: HashMap<(TxId, usize), DecryptedNote<SaplingDomain<Network>>>,
+    sapling: HashMap<(TxId, usize), DecryptedNote<[u8; 32], SaplingDomain<Network>>>,
 }
 
 impl BatchResult {
@@ -728,7 +751,7 @@ impl BatchResult {
                 |((txid, output), decrypted_note)| ffi::SaplingDecryptionResult {
                     txid: *txid.as_ref(),
                     output: *output as u32,
-                    ivk: decrypted_note.ivk.to_repr(),
+                    ivk: decrypted_note.ivk_tag,
                     diversifier: decrypted_note.recipient.diversifier().0,
                     pk_d: decrypted_note.recipient.pk_d().to_bytes(),
                 },

@@ -6,7 +6,17 @@ replace-with = "vendored-sources"
 
 [source."https://github.com/zcash/librustzcash.git"]
 git = "https://github.com/zcash/librustzcash.git"
-rev = "abe452d8a5a3d3bce102c3445f9e321d68296d8f"
+rev = "f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec"
+replace-with = "vendored-sources"
+
+[source."https://github.com/zcash/orchard.git"]
+git = "https://github.com/zcash/orchard.git"
+rev = "f206b3f5d4e31bba75d03d9d03d5fa25825a9384"
+replace-with = "vendored-sources"
+
+[source."https://github.com/zkcrypto/group.git"]
+git = "https://github.com/zkcrypto/group.git"
+rev = "a7f3ceb2373e9fe536996f7b4d55c797f3e667f0"
 replace-with = "vendored-sources"
 
 [source.vendored-sources]
