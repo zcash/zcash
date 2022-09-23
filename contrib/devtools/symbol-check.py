@@ -91,6 +91,9 @@ if ALLOW_DYNAMIC_LIBSTDCXX:
     ALLOWED_LIBRARIES.add(b'libstdc++.so.6')  # C++ standard library
 
 
+def escape(s):
+    return s.decode('us-ascii', 'backslashreplace')
+
 class CPPFilt(object):
     '''
     Demangle C++ symbol names.
@@ -118,7 +121,7 @@ def read_symbols(executable, imports=True):
     p = subprocess.Popen([READELF_CMD, '--dyn-syms', '-W', executable], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
     (stdout, stderr) = p.communicate()
     if p.returncode:
-        raise IOError('Could not read symbols for %s: %s' % (executable, stderr.strip()))
+        raise IOError(u"Could not read symbols for %s: %s" % (executable, escape(stderr.strip())))
     syms = []
     for line in stdout.split(b'\n'):
         line = line.split()
@@ -162,22 +165,22 @@ if __name__ == '__main__':
     cppfilt = CPPFilt()
     retval = 0
     for filename in sys.argv[1:]:
-        print("Checking %s..." % (filename,))
+        print(u"Checking %s..." % (filename,))
         # Check imported symbols
         for sym,version in read_symbols(filename, True):
             if version and not check_version(MAX_VERSIONS, version):
-                print('%s: symbol %s from unsupported version %s' % (filename, cppfilt(sym).decode('utf-8'), version.decode('utf-8')))
+                print(u"%s: symbol %s from unsupported version %s" % (filename, escape(cppfilt(sym)), escape(version)))
                 retval = 1
         # Check exported symbols
         for sym,version in read_symbols(filename, False):
             if sym in IGNORE_EXPORTS:
                 continue
-            print('%s: export of symbol %s not allowed' % (filename, cppfilt(sym).decode('utf-8')))
+            print(u"%s: export of symbol %s not allowed" % (filename, escape(cppfilt(sym))))
             retval = 1
         # Check dependency libraries
         for library_name in read_libraries(filename):
             if library_name not in ALLOWED_LIBRARIES:
-                print('%s: NEEDED library %s is not allowed' % (filename, library_name.decode('utf-8')))
+                print(u"%s: NEEDED library %s is not allowed" % (filename, escape(library_name)))
                 retval = 1
         print()
 
