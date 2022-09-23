@@ -74,8 +74,8 @@ rayon = "1.5"
 
 # Metrics
 ipnet = "2"
-metrics = "0.19"
-metrics-exporter-prometheus = "0.10"
+metrics = "0.20"
+metrics-exporter-prometheus = "0.11"
 
 # General tool dependencies
 gumdrop = "0.8"

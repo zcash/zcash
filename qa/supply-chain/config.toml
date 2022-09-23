@@ -67,10 +67,6 @@ criteria = "safe-to-deploy"
 version = "0.7.2"
 criteria = "safe-to-deploy"
 
-[[exemptions.atomic-shim]]
-version = "0.2.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.autocfg]]
 version = "1.1.0"
 criteria = "safe-to-deploy"
@@ -324,7 +320,7 @@ version = "0.8.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.hashbrown]]
-version = "0.11.2"
+version = "0.12.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.hdwallet]]
@@ -377,10 +373,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.indexmap]]
 version = "1.8.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.instant]]
-version = "0.1.12"
 criteria = "safe-to-deploy"
 
 [[exemptions.ipnet]]
@@ -569,6 +561,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.poly1305]]
 version = "0.7.2"
+criteria = "safe-to-deploy"
+
+[[exemptions.portable-atomic]]
+version = "0.3.15"
 criteria = "safe-to-deploy"
 
 [[exemptions.ppv-lite86]]

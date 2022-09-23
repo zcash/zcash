@@ -148,6 +148,12 @@ criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.1.0 -> 0.2.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.indexmap]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.8.1 -> 1.9.1"
+notes = "I'm satisfied that the assertion guarding the new unsafe block is correct."
+
 [[audits.inout]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -165,6 +171,26 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.2.0 -> 0.2.1"
 notes = "Exposes an existing macro. Note that I am the author of the crate."
+
+[[audits.metrics]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.19.0 -> 0.20.1"
+
+[[audits.metrics-exporter-prometheus]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.10.0 -> 0.11.0"
+
+[[audits.metrics-macros]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.5.1 -> 0.6.0"
+
+[[audits.metrics-util]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.13.0 -> 0.14.0"
 
 [[audits.mio]]
 who = "Jack Grigg <jack@z.cash>"
@@ -204,6 +230,17 @@ criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.1.0 -> 0.2.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.parking_lot]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.11.2 -> 0.12.1"
+notes = "Most `unsafe {}` changes were to reduce the scope of the unsafe blocks. I didn't closely review the migration to the asm! macro but it looks reasonable."
+
+[[audits.parking_lot_core]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.8.5 -> 0.9.3"
+
 [[audits.poly1305]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -214,6 +251,11 @@ notes = "Changes to unsafe (avx2) code look reasonable."
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.37 -> 1.0.41"
+
+[[audits.quanta]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.9.3 -> 0.10.1"
 
 [[audits.serde]]
 who = "Jack Grigg <jack@z.cash>"
@@ -226,6 +268,12 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.136 -> 1.0.143"
 notes = "Bumps syn, inverts some build flags."
+
+[[audits.sketches-ddsketch]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.1.3 -> 0.2.0"
+notes = "I did not review the refactor, but there are no unsafe blocks and I didn't see any obvious changes that could result in panics."
 
 [[audits.syn]]
 who = "Daira Hopwood <daira@jacaranda.org>"
