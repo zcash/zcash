@@ -189,8 +189,8 @@ pub extern "C" fn librustzcash_init_zksnark_params(
         // Caller is responsible for calling this function once, so
         // these global mutations are safe.
         unsafe {
-            SAPLING_SPEND_PARAMS = load_proving_keys.then(|| sapling_spend_params);
-            SAPLING_OUTPUT_PARAMS = load_proving_keys.then(|| sapling_output_params);
+            SAPLING_SPEND_PARAMS = load_proving_keys.then_some(sapling_spend_params);
+            SAPLING_OUTPUT_PARAMS = load_proving_keys.then_some(sapling_output_params);
             SPROUT_GROTH16_PARAMS_PATH = sprout_path.map(|p| p.to_owned());
 
             SAPLING_SPEND_VK = Some(sapling_spend_vk);
