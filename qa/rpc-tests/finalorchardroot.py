@@ -277,7 +277,6 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         assert_equal(len(new_treestate["orchard"]["commitments"]["finalRoot"]), 64)
         assert_equal(len(new_treestate["orchard"]["commitments"]["finalState"]), 260)
 
-        pass
 
 
 if __name__ == '__main__':
