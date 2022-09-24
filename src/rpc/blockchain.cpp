@@ -241,7 +241,8 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.pushKV("authdataroot", blockindex->hashAuthDataRoot.GetHex());
     result.pushKV("finalsaplingroot", blockindex->hashFinalSaplingRoot.GetHex());
     if (nu5Active) {
-        result.pushKV("finalorchardroot", blockindex->hashFinalOrchardRoot.GetHex());
+        auto finalOrchardRootBytes = blockindex->hashFinalOrchardRoot;
+        result.pushKV("finalorchardroot", HexStr(finalOrchardRootBytes.begin(), finalOrchardRootBytes.end()));
     }
     result.pushKV("chainhistoryroot", blockindex->hashChainHistoryRoot.GetHex());
     UniValue txs(UniValue::VARR);
@@ -716,9 +717,14 @@ UniValue getblock(const UniValue& params, bool fHelp)
             "  \"version\" : n,         (numeric) The block version\n"
             "  \"merkleroot\" : \"xxxx\", (string) The merkle root\n"
             "  \"finalsaplingroot\" : \"xxxx\", (string) The root of the Sapling commitment tree after applying this block\n"
-            "  \"finalorchardroot\" : \"xxxx\", (string) The root of the Orchard commitment tree after applying this block.\n"
-            "                                        Omitted for blocks prior to NU5 activation. This will be the null\n"
-            "                                        hash if this block has never been connected to a main chain.\n"
+            "  \"finalorchardroot\" : \"xxxx\", (string, optional) The root of the Orchard commitment tree after\n"
+            "                               applying this block. Omitted for blocks prior to NU5 activation. This\n"
+            "                               will be the null hash if this block has never been connected to a\n"
+            "                               main chain.\n"
+            "                               NB: The serialized representation of this field returned by this method\n"
+            "                                   was byte-flipped relative to its representation in the `getrawtransaction`\n"
+            "                                   output in prior releases up to and including v5.2.0. This has now been\n"
+            "                                   rectified.\n"
             "  \"tx\" : [               (array of string) The transaction ids\n"
             "     \"transactionid\"     (string) The transaction id\n"
             "     ,...\n"
@@ -1247,6 +1253,10 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
             "    \"skipHash\": \"hash\",   (string) hash of most recent block with more information\n"
             "    \"commitments\": {\n"
             "      \"finalRoot\": \"hex\", (string)\n"
+            "                          NB: The serialized representation of this field returned by this method\n"
+            "                              was byte-flipped relative to its representation in the `getrawtransaction`\n"
+            "                              output in prior releases up to and including v5.2.0. This has now been\n"
+            "                              rectified.\n"
             "      \"finalState\": \"hex\" (string)\n"
             "    }\n"
             "  },\n"
@@ -1345,7 +1355,8 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
     if (nu5_activation_height.has_value()) {
         UniValue orchard_result(UniValue::VOBJ);
         UniValue orchard_commitments(UniValue::VOBJ);
-        orchard_commitments.pushKV("finalRoot", pindex->hashFinalOrchardRoot.GetHex());
+        auto finalOrchardRootBytes = pindex->hashFinalOrchardRoot;
+        orchard_commitments.pushKV("finalRoot", HexStr(finalOrchardRootBytes.begin(), finalOrchardRootBytes.end()));
         bool need_skiphash = false;
         OrchardMerkleFrontier tree;
         if (pcoinsTip->GetOrchardAnchorAt(pindex->hashFinalOrchardRoot, tree)) {
