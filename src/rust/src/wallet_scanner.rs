@@ -301,13 +301,16 @@ where
     fn dynamic_usage(&self) -> usize {
         // We don't have a `DynamicUsage` bound on `D::IncomingViewingKey`, `D`, or
         // `Output`, and we can't use newtypes because the batch decryption API takes
-        // slices. But we know that we don't allocate memory inside either of these, so we
-        // just compute the size directly.
-        base_vec_usage(&self.ivks) + base_vec_usage(&self.outputs) + self.repliers.dynamic_usage()
+        // slices. TODO: this does not include memory allocated inside self.ivks.
+        base_vec_usage(&self.tags)
+            + base_vec_usage(&self.ivks)
+            + base_vec_usage(&self.outputs)
+            + self.repliers.dynamic_usage()
     }
 
     fn dynamic_usage_bounds(&self) -> (usize, Option<usize>) {
-        let base_usage = base_vec_usage(&self.ivks) + base_vec_usage(&self.outputs);
+        let base_usage =
+            base_vec_usage(&self.tags) + base_vec_usage(&self.ivks) + base_vec_usage(&self.outputs);
         let bounds = self.repliers.dynamic_usage_bounds();
         (
             base_usage + bounds.0,
