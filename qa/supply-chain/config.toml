@@ -7,6 +7,12 @@ audit-as-crates-io = true
 [policy.f4jumble]
 audit-as-crates-io = true
 
+[policy.group]
+audit-as-crates-io = true
+
+[policy.orchard]
+audit-as-crates-io = true
+
 [policy.zcash_address]
 audit-as-crates-io = true
 

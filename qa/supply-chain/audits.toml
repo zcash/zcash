@@ -7,6 +7,12 @@ description = "The cryptographic code in this crate has been reviewed for correc
 [criteria.license-reviewed]
 description = "The license of this crate has been reviewed for compatibility with its usage in this repository. If the crate is not available under the MIT license, `contrib/debian/copyright` has been updated with a corresponding copyright notice for files under `depends/*/vendored-sources/CRATE_NAME`."
 
+[[audits.aead]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "0.4.3 -> 0.5.1"
+notes = "Adds an AeadCore::generate_nonce function to generate random nonces, given a CryptoRng."
+
 [[audits.anyhow]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -25,11 +31,28 @@ criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.8.1 -> 0.8.2"
 notes = "Unpins zeroize."
 
+[[audits.chacha20]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "0.8.2 -> 0.9.0"
+
 [[audits.chacha20poly1305]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.9.0 -> 0.9.1"
 notes = "Unpins zeroize."
+
+[[audits.chacha20poly1305]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "0.9.1 -> 0.10.1"
+notes = "This mainly adapts to API changes between aead 0.4 and aead 0.5."
+
+[[audits.cipher]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "0.3.0 -> 0.4.3"
+notes = "Significant rework of (mainly RustCrypto-internal) APIs."
 
 [[audits.clearscreen]]
 who = "Jack Grigg <jack@z.cash>"
@@ -125,6 +148,12 @@ criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.1.0 -> 0.2.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.inout]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+version = "0.1.3"
+notes = "Reviewed in full."
+
 [[audits.itoa]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -169,6 +198,12 @@ criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.1.0 -> 0.2.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.poly1305]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "0.7.2 -> 0.8.0"
+notes = "Changes to unsafe (avx2) code look reasonable."
+
 [[audits.proc-macro2]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -207,6 +242,12 @@ notes = "Only change is to refine an error message."
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 version = "1.0.2"
+
+[[audits.universal-hash]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "0.4.1 -> 0.5.0"
+notes = "I checked correctness of to_blocks which uses unsafe code in a safe function."
 
 [[audits.windows_aarch64_msvc]]
 who = "Jack Grigg <jack@z.cash>"
@@ -316,4 +357,10 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.7.0 -> 0.7.1"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.zeroize]]
+who = "Daira Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "1.4.3 -> 1.5.7"
+notes = "The zeroize_c_string unit test has UB, but that's very unlikely to cause a problem in practice."
 
