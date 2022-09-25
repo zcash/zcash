@@ -357,9 +357,14 @@ impl<Item: Task + DynamicUsage> Tasks<Item> for WithUsage {
             running_usage: self.running_usage.clone(),
         };
 
-        // We use the size of `self` as a lower bound on the actual heap memory allocated
-        // by the rayon threadpool to store this `Batch`.
-        task.own_usage = mem::size_of_val(&task) + task.item.dynamic_usage();
+        // `rayon::spawn_fifo` creates a `HeapJob` holding a closure. The size of a
+        // closure is (to good approximation) the size of the captured environment, which
+        // in this case is two moved variables:
+        // - An `Arc<Registry>`, which is a pointer to data that is amortized over the
+        //   entire `rayon` thread pool, so we only count the pointer size here.
+        // - The spawned closure, which in our case moves `task` into it.
+        task.own_usage =
+            mem::size_of::<Arc<()>>() + mem::size_of_val(&task) + task.item.dynamic_usage();
 
         // Approximate now as when the heap cost of this running batch begins. In practice
         // this is fine, because `Self::add_task` is called from `Self::run_task` which
