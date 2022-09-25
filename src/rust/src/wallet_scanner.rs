@@ -98,6 +98,24 @@ pub enum Network {
     },
 }
 
+impl DynamicUsage for Network {
+    fn dynamic_usage(&self) -> usize {
+        match self {
+            Network::Consensus(params) => params.dynamic_usage(),
+            // We know that `Option<BlockHeight>` allocates no memory.
+            Network::RegTest { .. } => 0,
+        }
+    }
+
+    fn dynamic_usage_bounds(&self) -> (usize, Option<usize>) {
+        match self {
+            Network::Consensus(params) => params.dynamic_usage_bounds(),
+            // We know that `Option<BlockHeight>` allocates no memory.
+            Network::RegTest { .. } => (0, Some(0)),
+        }
+    }
+}
+
 /// Constructs a `Network` from the given network string.
 ///
 /// The heights are only for constructing a regtest network, and are ignored otherwise.
@@ -392,32 +410,33 @@ struct Batch<A, D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>> 
     repliers: Vec<OutputReplier<A, D>>,
 }
 
-fn base_vec_usage<T>(c: &Vec<T>) -> usize {
-    c.capacity() * mem::size_of::<T>()
-}
-
 impl<A, D, Output> DynamicUsage for Batch<A, D, Output>
 where
-    D: BatchDomain,
-    Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>,
+    A: DynamicUsage,
+    D: BatchDomain + DynamicUsage,
+    D::IncomingViewingKey: DynamicUsage,
+    Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE> + DynamicUsage,
 {
     fn dynamic_usage(&self) -> usize {
-        // We don't have a `DynamicUsage` bound on `D::IncomingViewingKey`, `D`, or
-        // `Output`, and we can't use newtypes because the batch decryption API takes
-        // slices. TODO: this does not include memory allocated inside self.ivks.
-        base_vec_usage(&self.tags)
-            + base_vec_usage(&self.ivks)
-            + base_vec_usage(&self.outputs)
+        self.tags.dynamic_usage()
+            + self.ivks.dynamic_usage()
+            + self.outputs.dynamic_usage()
             + self.repliers.dynamic_usage()
     }
 
     fn dynamic_usage_bounds(&self) -> (usize, Option<usize>) {
-        let base_usage =
-            base_vec_usage(&self.tags) + base_vec_usage(&self.ivks) + base_vec_usage(&self.outputs);
-        let bounds = self.repliers.dynamic_usage_bounds();
+        let (tags_lower, tags_upper) = self.tags.dynamic_usage_bounds();
+        let (ivks_lower, ivks_upper) = self.ivks.dynamic_usage_bounds();
+        let (outputs_lower, outputs_upper) = self.outputs.dynamic_usage_bounds();
+        let (repliers_lower, repliers_upper) = self.repliers.dynamic_usage_bounds();
+
         (
-            base_usage + bounds.0,
-            bounds.1.map(|upper| base_usage + upper),
+            tags_lower + ivks_lower + outputs_lower + repliers_lower,
+            tags_upper
+                .zip(ivks_upper)
+                .zip(outputs_upper)
+                .zip(repliers_upper)
+                .map(|(((a, b), c), d)| a + b + c + d),
         )
     }
 }
@@ -587,8 +606,10 @@ where
 
 impl<A, D, Output, T> DynamicUsage for BatchRunner<A, D, Output, T>
 where
-    D: BatchDomain,
-    Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE>,
+    A: DynamicUsage,
+    D: BatchDomain + DynamicUsage,
+    D::IncomingViewingKey: DynamicUsage,
+    Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE> + DynamicUsage,
     T: Tasks<Batch<A, D, Output>> + DynamicUsage,
 {
     fn dynamic_usage(&self) -> usize {

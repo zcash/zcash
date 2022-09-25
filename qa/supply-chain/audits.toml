@@ -160,6 +160,12 @@ criteria = "safe-to-deploy"
 delta = "1.0.1 -> 1.0.3"
 notes = "Update makes no changes to code."
 
+[[audits.memuse]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.2.0 -> 0.2.1"
+notes = "Exposes an existing macro. Note that I am the author of the crate."
+
 [[audits.mio]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"

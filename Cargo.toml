@@ -111,12 +111,12 @@ panic = 'abort'
 codegen-units = 1
 
 [patch.crates-io]
-equihash = { git = "https://github.com/zcash/librustzcash.git", rev = "f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec" }
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec" }
-zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec" }
+equihash = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
+zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
 orchard = { git = "https://github.com/zcash/orchard.git", rev = "f206b3f5d4e31bba75d03d9d03d5fa25825a9384" }
-group = { git = "https://github.com/zkcrypto/group.git", rev = "a7f3ceb2373e9fe536996f7b4d55c797f3e667f0" }
+group = { git = "https://github.com/zkcrypto/group.git", rev = "f61e3e420ed1220c8f1f80988f8c6c5e202d8715" }

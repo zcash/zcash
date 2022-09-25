@@ -551,7 +551,7 @@ checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 [[package]]
 name = "equihash"
 version = "0.2.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec#f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec"
+source = "git+https://github.com/zcash/librustzcash.git?rev=913aa0a9885acbd6af9cf3525221d632e4f5a6e4#913aa0a9885acbd6af9cf3525221d632e4f5a6e4"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -560,7 +560,7 @@ dependencies = [
 [[package]]
 name = "f4jumble"
 version = "0.1.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec#f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec"
+source = "git+https://github.com/zcash/librustzcash.git?rev=913aa0a9885acbd6af9cf3525221d632e4f5a6e4#913aa0a9885acbd6af9cf3525221d632e4f5a6e4"
 dependencies = [
  "blake2b_simd",
 ]
@@ -688,9 +688,10 @@ checksum = "78cc372d058dcf6d5ecd98510e7fbc9e5aec4d21de70f65fea8fecebcd881bd4"
 [[package]]
 name = "group"
 version = "0.12.0"
-source = "git+https://github.com/zkcrypto/group.git?rev=a7f3ceb2373e9fe536996f7b4d55c797f3e667f0#a7f3ceb2373e9fe536996f7b4d55c797f3e667f0"
+source = "git+https://github.com/zkcrypto/group.git?rev=f61e3e420ed1220c8f1f80988f8c6c5e202d8715#f61e3e420ed1220c8f1f80988f8c6c5e202d8715"
 dependencies = [
  "ff",
+ "memuse",
  "rand_core 0.6.3",
  "subtle",
 ]
@@ -1079,9 +1080,9 @@ dependencies = [
 
 [[package]]
 name = "memuse"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f69d25cd7528769ad3d897e99eb942774bff8b23165012af490351a44c5b583b"
+checksum = "2145869435ace5ea6ea3d35f59be559317ec9a0d04e1812d5f185a87b6d36f1a"
 dependencies = [
  "nonempty",
 ]
@@ -2326,7 +2327,7 @@ dependencies = [
 [[package]]
 name = "zcash_address"
 version = "0.1.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec#f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec"
+source = "git+https://github.com/zcash/librustzcash.git?rev=913aa0a9885acbd6af9cf3525221d632e4f5a6e4#913aa0a9885acbd6af9cf3525221d632e4f5a6e4"
 dependencies = [
  "bech32",
  "bs58",
@@ -2337,7 +2338,7 @@ dependencies = [
 [[package]]
 name = "zcash_encoding"
 version = "0.1.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec#f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec"
+source = "git+https://github.com/zcash/librustzcash.git?rev=913aa0a9885acbd6af9cf3525221d632e4f5a6e4#913aa0a9885acbd6af9cf3525221d632e4f5a6e4"
 dependencies = [
  "byteorder",
  "nonempty",
@@ -2346,7 +2347,7 @@ dependencies = [
 [[package]]
 name = "zcash_history"
 version = "0.3.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec#f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec"
+source = "git+https://github.com/zcash/librustzcash.git?rev=913aa0a9885acbd6af9cf3525221d632e4f5a6e4#913aa0a9885acbd6af9cf3525221d632e4f5a6e4"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -2356,7 +2357,7 @@ dependencies = [
 [[package]]
 name = "zcash_note_encryption"
 version = "0.1.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec#f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec"
+source = "git+https://github.com/zcash/librustzcash.git?rev=913aa0a9885acbd6af9cf3525221d632e4f5a6e4#913aa0a9885acbd6af9cf3525221d632e4f5a6e4"
 dependencies = [
  "chacha20",
  "chacha20poly1305",
@@ -2369,7 +2370,7 @@ dependencies = [
 [[package]]
 name = "zcash_primitives"
 version = "0.7.0"
-source = "git+https://github.com/zcash/librustzcash.git?rev=f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec#f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec"
+source = "git+https://github.com/zcash/librustzcash.git?rev=913aa0a9885acbd6af9cf3525221d632e4f5a6e4#913aa0a9885acbd6af9cf3525221d632e4f5a6e4"
 dependencies = [
  "aes",
  "bip0039",
@@ -2406,7 +2407,7 @@ dependencies = [
 [[package]]
 name = "zcash_proofs"
 version = "0.7.1"
-source = "git+https://github.com/zcash/librustzcash.git?rev=f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec#f78c91fd0cc9ac3ee9e183b1140da8745fcc8fec"
+source = "git+https://github.com/zcash/librustzcash.git?rev=913aa0a9885acbd6af9cf3525221d632e4f5a6e4#913aa0a9885acbd6af9cf3525221d632e4f5a6e4"
 dependencies = [
  "bellman",
  "blake2b_simd",
