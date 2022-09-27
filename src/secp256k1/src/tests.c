@@ -15,8 +15,8 @@
 #include <time.h>
 
 #include "secp256k1.c"
-#include "include/secp256k1.h"
-#include "include/secp256k1_preallocated.h"
+#include "../include/secp256k1.h"
+#include "../include/secp256k1_preallocated.h"
 #include "testrand_impl.h"
 #include "util.h"
 
@@ -30,8 +30,8 @@ void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps) 
 # endif
 #endif
 
-#include "contrib/lax_der_parsing.c"
-#include "contrib/lax_der_privatekey_parsing.c"
+#include "../contrib/lax_der_parsing.c"
+#include "../contrib/lax_der_privatekey_parsing.c"
 
 #include "modinv32_impl.h"
 #ifdef SECP256K1_WIDEMUL_INT128
@@ -3101,18 +3101,32 @@ void test_ge(void) {
 
     /* Test batch gej -> ge conversion with many infinities. */
     for (i = 0; i < 4 * runs + 1; i++) {
+        int odd;
         random_group_element_test(&ge[i]);
+        odd = secp256k1_fe_is_odd(&ge[i].x);
+        CHECK(odd == 0 || odd == 1);
         /* randomly set half the points to infinity */
-        if(secp256k1_fe_is_odd(&ge[i].x)) {
+        if (odd == i % 2) {
             secp256k1_ge_set_infinity(&ge[i]);
         }
         secp256k1_gej_set_ge(&gej[i], &ge[i]);
     }
-    /* batch invert */
+    /* batch convert */
     secp256k1_ge_set_all_gej_var(ge, gej, 4 * runs + 1);
     /* check result */
     for (i = 0; i < 4 * runs + 1; i++) {
         ge_equals_gej(&ge[i], &gej[i]);
+    }
+
+    /* Test batch gej -> ge conversion with all infinities. */
+    for (i = 0; i < 4 * runs + 1; i++) {
+        secp256k1_gej_set_infinity(&gej[i]);
+    }
+    /* batch convert */
+    secp256k1_ge_set_all_gej_var(ge, gej, 4 * runs + 1);
+    /* check result */
+    for (i = 0; i < 4 * runs + 1; i++) {
+        CHECK(secp256k1_ge_is_infinity(&ge[i]));
     }
 
     free(ge);
@@ -5434,6 +5448,55 @@ void test_random_pubkeys(void) {
     }
 }
 
+void run_pubkey_comparison(void) {
+    unsigned char pk1_ser[33] = {
+        0x02,
+        0x58, 0x84, 0xb3, 0xa2, 0x4b, 0x97, 0x37, 0x88, 0x92, 0x38, 0xa6, 0x26, 0x62, 0x52, 0x35, 0x11,
+        0xd0, 0x9a, 0xa1, 0x1b, 0x80, 0x0b, 0x5e, 0x93, 0x80, 0x26, 0x11, 0xef, 0x67, 0x4b, 0xd9, 0x23
+    };
+    const unsigned char pk2_ser[33] = {
+        0x02,
+        0xde, 0x36, 0x0e, 0x87, 0x59, 0x8f, 0x3c, 0x01, 0x36, 0x2a, 0x2a, 0xb8, 0xc6, 0xf4, 0x5e, 0x4d,
+        0xb2, 0xc2, 0xd5, 0x03, 0xa7, 0xf9, 0xf1, 0x4f, 0xa8, 0xfa, 0x95, 0xa8, 0xe9, 0x69, 0x76, 0x1c
+    };
+    secp256k1_pubkey pk1;
+    secp256k1_pubkey pk2;
+    int32_t ecount = 0;
+
+    CHECK(secp256k1_ec_pubkey_parse(ctx, &pk1, pk1_ser, sizeof(pk1_ser)) == 1);
+    CHECK(secp256k1_ec_pubkey_parse(ctx, &pk2, pk2_ser, sizeof(pk2_ser)) == 1);
+
+    secp256k1_context_set_illegal_callback(ctx, counting_illegal_callback_fn, &ecount);
+    CHECK(secp256k1_ec_pubkey_cmp(ctx, NULL, &pk2) < 0);
+    CHECK(ecount == 1);
+    CHECK(secp256k1_ec_pubkey_cmp(ctx, &pk1, NULL) > 0);
+    CHECK(ecount == 2);
+    CHECK(secp256k1_ec_pubkey_cmp(ctx, &pk1, &pk2) < 0);
+    CHECK(secp256k1_ec_pubkey_cmp(ctx, &pk2, &pk1) > 0);
+    CHECK(secp256k1_ec_pubkey_cmp(ctx, &pk1, &pk1) == 0);
+    CHECK(secp256k1_ec_pubkey_cmp(ctx, &pk2, &pk2) == 0);
+    CHECK(ecount == 2);
+    {
+        secp256k1_pubkey pk_tmp;
+        memset(&pk_tmp, 0, sizeof(pk_tmp)); /* illegal pubkey */
+        CHECK(secp256k1_ec_pubkey_cmp(ctx, &pk_tmp, &pk2) < 0);
+        CHECK(ecount == 3);
+        CHECK(secp256k1_ec_pubkey_cmp(ctx, &pk_tmp, &pk_tmp) == 0);
+        CHECK(ecount == 5);
+        CHECK(secp256k1_ec_pubkey_cmp(ctx, &pk2, &pk_tmp) > 0);
+        CHECK(ecount == 6);
+    }
+
+    secp256k1_context_set_illegal_callback(ctx, NULL, NULL);
+
+    /* Make pk2 the same as pk1 but with 3 rather than 2. Note that in
+     * an uncompressed encoding, these would have the opposite ordering */
+    pk1_ser[0] = 3;
+    CHECK(secp256k1_ec_pubkey_parse(ctx, &pk2, pk1_ser, sizeof(pk1_ser)) == 1);
+    CHECK(secp256k1_ec_pubkey_cmp(ctx, &pk1, &pk2) < 0);
+    CHECK(secp256k1_ec_pubkey_cmp(ctx, &pk2, &pk1) > 0);
+}
+
 void run_random_pubkeys(void) {
     int i;
     for (i = 0; i < 10*count; i++) {
@@ -6408,7 +6471,7 @@ int main(int argc, char **argv) {
         count = strtol(argv[1], NULL, 0);
     } else {
         const char* env = getenv("SECP256K1_TEST_ITERS");
-        if (env) {
+        if (env && strlen(env) > 0) {
             count = strtol(env, NULL, 0);
         }
     }
@@ -6485,6 +6548,7 @@ int main(int argc, char **argv) {
 #endif
 
     /* ecdsa tests */
+    run_pubkey_comparison();
     run_random_pubkeys();
     run_ecdsa_der_parse();
     run_ecdsa_sign_verify();
