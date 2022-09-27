@@ -7,7 +7,6 @@
 #ifndef SECP256K1_ECMULT_H
 #define SECP256K1_ECMULT_H
 
-#include "num.h"
 #include "group.h"
 #include "scalar.h"
 #include "scratch.h"

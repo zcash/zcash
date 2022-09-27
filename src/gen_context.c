@@ -9,8 +9,9 @@
 #if !defined(ECMULT_GEN_PREC_BITS)
 #include "libsecp256k1-config.h"
 #endif
-#define USE_BASIC_CONFIG 1
-#include "basic-config.h"
+
+/* We can't require the precomputed tables when creating them. */
+#undef USE_ECMULT_STATIC_PRECOMPUTATION
 
 #include "include/secp256k1.h"
 #include "assumptions.h"
