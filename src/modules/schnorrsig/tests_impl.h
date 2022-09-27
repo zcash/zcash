@@ -7,7 +7,7 @@
 #ifndef SECP256K1_MODULE_SCHNORRSIG_TESTS_H
 #define SECP256K1_MODULE_SCHNORRSIG_TESTS_H
 
-#include "secp256k1_schnorrsig.h"
+#include "../../../include/secp256k1_schnorrsig.h"
 
 /* Checks that a bit flip in the n_flip-th argument (that has n_bytes many
  * bytes) changes the hash function
@@ -103,7 +103,7 @@ void test_schnorrsig_api(void) {
     unsigned char sk3[32];
     unsigned char msg[32];
     secp256k1_keypair keypairs[3];
-    secp256k1_keypair invalid_keypair = { 0 };
+    secp256k1_keypair invalid_keypair = {{ 0 }};
     secp256k1_xonly_pubkey pk[3];
     secp256k1_xonly_pubkey zero_pk;
     unsigned char sig[64];

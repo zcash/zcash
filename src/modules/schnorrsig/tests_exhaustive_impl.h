@@ -7,7 +7,7 @@
 #ifndef SECP256K1_MODULE_SCHNORRSIG_TESTS_EXHAUSTIVE_H
 #define SECP256K1_MODULE_SCHNORRSIG_TESTS_EXHAUSTIVE_H
 
-#include "include/secp256k1_schnorrsig.h"
+#include "../../../include/secp256k1_schnorrsig.h"
 #include "src/modules/schnorrsig/main_impl.h"
 
 static const unsigned char invalid_pubkey_bytes[][32] = {

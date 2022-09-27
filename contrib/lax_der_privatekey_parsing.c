@@ -5,7 +5,6 @@
  ***********************************************************************/
 
 #include <string.h>
-#include <secp256k1.h>
 
 #include "lax_der_privatekey_parsing.h"
 
