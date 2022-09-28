@@ -19,6 +19,7 @@ has a memory limit of 100 MiB.
 - (counter) `zcashd.wallet.batchscanner.outputs.scanned`
 - (gauge) `zcashd.wallet.batchscanner.size.transactions`
 - (gauge) `zcashd.wallet.batchscanner.usage.bytes`
+- (gauge) `zcashd.wallet.synced.block.height`
 
 RPC Interface
 -------------

@@ -17,9 +17,13 @@
 #include <chrono>
 #include <thread>
 
+#include <rust/metrics.h>
+
 using namespace boost::placeholders;
 
 static CMainSignals g_signals;
+
+static constexpr const char* METRIC_WALLET_SYNCED_HEIGHT = "zcashd.wallet.synced.block.height";
 
 CMainSignals& GetMainSignals()
 {
@@ -447,6 +451,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 
             // On to the next block!
             pindexLastTip = pindexLastTip->pprev;
+            MetricsGauge(METRIC_WALLET_SYNCED_HEIGHT, pindexLastTip->nHeight);
         }
 
         // Notify block connections
@@ -513,6 +518,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 
                 // This block is done!
                 pindexLastTip = blockData.pindex;
+                MetricsGauge(METRIC_WALLET_SYNCED_HEIGHT, pindexLastTip->nHeight);
                 assert(blockStack.rbegin() != blockStackScanned);
                 blockStack.pop_back();
             }
