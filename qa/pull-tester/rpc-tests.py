@@ -39,10 +39,6 @@ BASE_SCRIPTS= [
     # Longest test should go first, to favor running tests in parallel
     # vv Tests less than 5m vv
     'wallet.py',
-    'wallet_shieldcoinbase_sprout.py',
-    'sprout_sapling_migration.py',
-    'remove_sprout_shielding.py',
-    'zcjoinsplitdoublespend.py',
     # vv Tests less than 2m vv
     'zcjoinsplit.py',
     'mergetoaddress_mixednotes.py',
@@ -144,6 +140,10 @@ BASE_SCRIPTS= [
     'wallet_z_sendmany.py',
     'wallet_zero_value.py',
     'threeofthreerestore.py',
+    'wallet_shieldcoinbase_sprout.py',
+    'sprout_sapling_migration.py',
+    'remove_sprout_shielding.py',
+    'zcjoinsplitdoublespend.py',
 ]
 
 ZMQ_SCRIPTS = [
