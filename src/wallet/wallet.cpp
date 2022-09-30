@@ -1443,8 +1443,11 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
         ChainTipAdded(pindex, pblock, added.value(), true);
         // Prevent migration transactions from being created when node is syncing after launch,
         // and also when node wakes up from suspension/hibernation and incoming blocks are old.
-        if (!IsInitialBlockDownload(consensus) &&
-            pblock->GetBlockTime() > GetTime() - 3 * 60 * 60)
+        // We do not call IsInitialBlockDownload() because during IBD that locks on cs_main,
+        // which we must not do during wallet sync. However, IBD does not end until the chain
+        // tip is within nMaxTipAge of the current time, so we use that as a proxy.
+        const int64_t hibernationOld = 3 * 60 * 60;
+        if (pblock->GetBlockTime() > GetTime() - std::min(nMaxTipAge, hibernationOld))
         {
             RunSaplingMigration(pindex->nHeight);
         }
