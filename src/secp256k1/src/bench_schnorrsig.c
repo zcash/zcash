@@ -8,8 +8,8 @@
 #include <stdlib.h>
 
 
-#include "include/secp256k1.h"
-#include "include/secp256k1_schnorrsig.h"
+#include "../include/secp256k1.h"
+#include "../include/secp256k1_schnorrsig.h"
 #include "util.h"
 #include "bench.h"
 

@@ -9,10 +9,16 @@
 #if !defined(ECMULT_GEN_PREC_BITS)
 #include "libsecp256k1-config.h"
 #endif
-#define USE_BASIC_CONFIG 1
-#include "basic-config.h"
 
-#include "include/secp256k1.h"
+/* We can't require the precomputed tables when creating them. */
+#undef USE_ECMULT_STATIC_PRECOMPUTATION
+
+/* In principle we could use external ASM, but this yields only a minor speedup in
+   build time and it's very complicated. In particular when cross-compiling, we'd
+   need to build the external ASM for the build and the host machine. */
+#undef USE_EXTERNAL_ASM
+
+#include "../include/secp256k1.h"
 #include "assumptions.h"
 #include "util.h"
 #include "field_impl.h"
