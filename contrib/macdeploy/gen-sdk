@@ -2,7 +2,6 @@
 import argparse
 import plistlib
 import pathlib
-import sys
 import tarfile
 import gzip
 import os

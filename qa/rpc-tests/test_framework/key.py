@@ -14,7 +14,6 @@ disk in swap! Use with caution!
 import ctypes
 import ctypes.util
 import hashlib
-import sys
 
 ssl = ctypes.cdll.LoadLibrary(ctypes.util.find_library ('ssl') or 'libeay32')
 

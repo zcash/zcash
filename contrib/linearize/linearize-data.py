@@ -7,13 +7,10 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 
-import json
 import struct
 import re
 import os
 import os.path
-import base64
-import httplib
 import sys
 import hashlib
 import datetime

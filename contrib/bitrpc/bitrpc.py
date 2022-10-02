@@ -1,6 +1,5 @@
 from jsonrpc import ServiceProxy
 import sys
-import string
 import getpass
 
 # ===== BEGIN USER SETTINGS =====

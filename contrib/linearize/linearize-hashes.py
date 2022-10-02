@@ -9,7 +9,6 @@
 
 from http.client import HTTPConnection
 import json
-import struct
 import re
 import base64
 import sys

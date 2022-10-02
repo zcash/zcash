@@ -6,7 +6,6 @@
 Test script for security-check.py
 '''
 import subprocess
-import sys
 import unittest
 
 def write_testcode(filename):
