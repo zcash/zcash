@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''
 Bitcoin base58 encoding and decoding.
 
