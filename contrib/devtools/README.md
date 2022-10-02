@@ -75,34 +75,9 @@ If there are 'unsupported' symbols, the return value will be 1 a list like this 
     .../64/test_bitcoin: symbol std::out_of_range::~out_of_range() from unsupported version GLIBCXX_3.4.15
     .../64/test_bitcoin: symbol _ZNSt8__detail15_List_nod from unsupported version GLIBCXX_3.4.15
 
-update-translations.py
-=======================
-
-Run this script from the root of the repository to update all translations from transifex.
-It will do the following automatically:
-
-- fetch all translations
-- post-process them into valid and committable format
-- add missing translations to the build system (TODO)
-
-See doc/translation-process.md for more information.
-
 gen-manpages.sh
 ===============
 
 A small script to automatically create manpages in ../../doc/man by running the release binaries with the -help option.
 This requires help2man which can be found at: https://www.gnu.org/software/help2man/
 
-git-subtree-check.sh
-====================
-
-Run this script from the root of the repository to verify that a subtree matches the contents of
-the commit it claims to have been updated to.
-
-To use, make sure that you have fetched the upstream repository branch in which the subtree is
-maintained:
-* for src/secp256k1: https://github.com/bitcoin/secp256k1.git (branch master)
-* for sec/leveldb: https://github.com/bitcoin/leveldb.git (branch bitcoin-fork)
-
-Usage: git-subtree-check.sh DIR COMMIT
-COMMIT may be omitted, in which case HEAD is used.
