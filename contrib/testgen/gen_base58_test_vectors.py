@@ -45,7 +45,6 @@ def is_valid(v):
     result = b58decode_chk(v)
     if result is None:
         return False
-    valid = False
     for template in templates:
         prefix = bytearray(template[0])
         suffix = bytearray(template[2])
