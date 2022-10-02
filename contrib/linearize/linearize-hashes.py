@@ -93,7 +93,7 @@ def get_block_hashes(settings, max_blocks_per_call=10000):
 
 def get_rpc_cookie():
 	# Open the cookie file
-	with open(os.path.join(os.path.expanduser(settings['datadir']), '.cookie'), 'r') as f:
+	with open(os.path.join(os.path.expanduser(settings['datadir']), '.cookie'), 'r', encoding="ascii") as f:
 		combined = f.readline()
 		combined_split = combined.split(":")
 		settings['rpcuser'] = combined_split[0]
