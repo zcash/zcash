@@ -193,4 +193,4 @@ In particular, warnings about an unsupported version of glibc are expected if yo
 on a system that uses glibc > 2.23.
 """)
 
-    exit(retval)
+    sys.exit(retval)
