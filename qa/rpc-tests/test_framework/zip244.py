@@ -91,7 +91,7 @@ def sapling_spends_noncompact_digest(saplingBundle):
     digest = blake2b(digest_size=32, person=b'ZTxIdSSpendNHash')
     for desc in saplingBundle.spends:
         digest.update(ser_uint256(desc.cv))
-        digest.update(ser_uint256(desc.anchor))
+        digest.update(ser_uint256(saplingBundle.anchor))
         digest.update(ser_uint256(desc.rk))
     return digest.digest()
 
