@@ -6,6 +6,8 @@
 
 #include "chain.h"
 
+#include "main.h"
+
 /**
  * CChain implementation
  */
@@ -56,6 +58,34 @@ const CBlockIndex *CChain::FindFork(const CBlockIndex *pindex) const {
     while (pindex && !Contains(pindex))
         pindex = pindex->pprev;
     return pindex;
+}
+
+void CBlockIndex::ClearSolution()
+{
+    AssertLockHeld(cs_main);
+    std::vector<unsigned char> empty;
+    nSolution.swap(empty);
+}
+
+CBlockHeader CBlockIndex::GetBlockHeader() const
+{
+    AssertLockHeld(cs_main);
+    CBlockHeader header;
+    if (nSolution.empty()) {
+        assert(ReadBlockHeaderFromDisk(header, GetBlockPos()));
+    } else {
+        header.nVersion             = nVersion;
+        if (pprev) {
+            header.hashPrevBlock    = pprev->GetBlockHash();
+        }
+        header.hashMerkleRoot       = hashMerkleRoot;
+        header.hashBlockCommitments = hashBlockCommitments;
+        header.nTime                = nTime;
+        header.nBits                = nBits;
+        header.nNonce               = nNonce;
+        header.nSolution            = nSolution;
+    }
+    return header;
 }
 
 /** Turn the lowest '1' bit in the binary representation of a number into a '0'. */

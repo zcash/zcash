@@ -191,6 +191,12 @@ static const BlockStatus BLOCK_VALID_CONSENSUS = BLOCK_VALID_SCRIPTS;
  */
 class CBlockIndex
 {
+protected:
+    // The Equihash solution, if it is stored. Once we know that the block is on
+    // disk and the header can be read back, this field can be cleared via the
+    // ClearSolution method to save memory.
+    std::vector<unsigned char> nSolution;
+
 public:
     //! pointer to the hash of the block, if any. Memory is owned by this CBlockIndex
     const uint256* phashBlock;
@@ -308,7 +314,6 @@ public:
     unsigned int nTime;
     unsigned int nBits;
     uint256 nNonce;
-    std::vector<unsigned char> nSolution;
 
     //! (memory only) Sequential id assigned to distinguish order in which blocks are received.
     uint32_t nSequenceId;
@@ -386,20 +391,16 @@ public:
         return ret;
     }
 
-    CBlockHeader GetBlockHeader() const
-    {
-        CBlockHeader block;
-        block.nVersion       = nVersion;
-        if (pprev)
-            block.hashPrevBlock = pprev->GetBlockHash();
-        block.hashMerkleRoot = hashMerkleRoot;
-        block.hashBlockCommitments = hashBlockCommitments;
-        block.nTime          = nTime;
-        block.nBits          = nBits;
-        block.nNonce         = nNonce;
-        block.nSolution      = nSolution;
-        return block;
+    //! Get the block header for this block index. Requires cs_main.
+    CBlockHeader GetBlockHeader() const;
+
+    //! Set the `nSolution` field of this block index from another block index.
+    void SetSolution(const std::vector<unsigned char>& solution) {
+        nSolution = solution;
     }
+
+    //! Clear the Equihash solution to save memory. Requires cs_main.
+    void ClearSolution();
 
     uint256 GetBlockHash() const
     {
@@ -565,20 +566,40 @@ public:
         // them to CBlockTreeDB::LoadBlockIndexGuts() in txdb.cpp :)
     }
 
-    uint256 GetBlockHash() const
+    //! Get the block header for this block index.
+    CBlockHeader GetBlockHeader() const
     {
-        CBlockHeader block;
-        block.nVersion        = nVersion;
-        block.hashPrevBlock   = hashPrev;
-        block.hashMerkleRoot  = hashMerkleRoot;
-        block.hashBlockCommitments = hashBlockCommitments;
-        block.nTime           = nTime;
-        block.nBits           = nBits;
-        block.nNonce          = nNonce;
-        block.nSolution       = nSolution;
-        return block.GetHash();
+        CBlockHeader header;
+        header.nVersion             = nVersion;
+        header.hashPrevBlock        = hashPrev;
+        header.hashMerkleRoot       = hashMerkleRoot;
+        header.hashBlockCommitments = hashBlockCommitments;
+        header.nTime                = nTime;
+        header.nBits                = nBits;
+        header.nNonce               = nNonce;
+        header.nSolution            = nSolution;
+        return header;
     }
 
+    uint256 GetBlockHash() const
+    {
+        return GetBlockHeader().GetHash();
+    }
+
+    std::vector<unsigned char> GetSolution() const {
+        assert(!nSolution.empty());
+        return nSolution;
+    }
+
+    //! This method should not be called on a CDiskBlockIndex.
+    void SetSolution(const std::vector<unsigned char>& solution) {
+        assert(false);
+    }
+
+    //! This method should not be called on a CDiskBlockIndex.
+    void ClearSolution() {
+        assert(false);
+    }
 
     std::string ToString() const
     {
