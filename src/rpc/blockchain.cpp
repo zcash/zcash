@@ -118,7 +118,7 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     result.pushKV("finalsaplingroot", blockindex->hashFinalSaplingRoot.GetHex());
     result.pushKV("time", (int64_t)blockindex->nTime);
     result.pushKV("nonce", blockindex->nNonce.GetHex());
-    result.pushKV("solution", HexStr(blockindex->nSolution));
+    result.pushKV("solution", HexStr(blockindex->GetBlockHeader().nSolution));
     result.pushKV("bits", strprintf("%08x", blockindex->nBits));
     result.pushKV("difficulty", GetDifficulty(blockindex));
     result.pushKV("chainwork", blockindex->nChainWork.GetHex());
