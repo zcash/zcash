@@ -585,6 +585,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
         if (pcursor->GetKey(key) && key.first == DB_BLOCK_INDEX) {
             CDiskBlockIndex diskindex;
             if (pcursor->GetValue(diskindex)) {
+                std::cout << "diskindex = " << diskindex.ToString() << std::endl;
                 // Construct block index object
                 CBlockIndex* pindexNew = insertBlockIndex(diskindex.GetBlockHash());
                 pindexNew->pprev          = insertBlockIndex(diskindex.hashPrev);

@@ -12,6 +12,7 @@
 #include "pow.h"
 #include "tinyformat.h"
 #include "uint256.h"
+#include "util/strencodings.h"
 
 #include <optional>
 #include <vector>
@@ -431,10 +432,12 @@ public:
 
     std::string ToString() const
     {
-        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
+        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s, nSolution (%d bytes)=%s)",
             pprev, nHeight,
             hashMerkleRoot.ToString(),
-            phashBlock ? GetBlockHash().ToString() : "(nil)");
+            phashBlock ? GetBlockHash().ToString() : "(nil)",
+            nSolution.size(),
+            HexStr(nSolution.begin(), nSolution.end()));
     }
 
     //! Check whether this block index entry is valid up to the passed validity level.
