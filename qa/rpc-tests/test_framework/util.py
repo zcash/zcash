@@ -270,7 +270,7 @@ def initialize_chain(test_dir, num_nodes, cachedir, cache_behavior='current'):
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
             bitcoind_processes[i] = subprocess.Popen(args)
             if os.getenv("PYTHON_DEBUG", ""):
-                print("initialize_chain: %s started, waiting for RPC to come up" % zcashd_binary())
+                print("initialize_chain: %s started, waiting for RPC to come up" % (zcashd_binary(),))
             wait_for_bitcoind_start(bitcoind_processes[i], rpc_url(i), i)
             if os.getenv("PYTHON_DEBUG", ""):
                 print("initialize_chain: RPC successfully started")
@@ -433,7 +433,7 @@ def assert_start_raises_init_error(i, dirname, extra_args=None, expected_msg=Non
             node = start_node(i, dirname, extra_args, stderr=log_stderr)
             stop_node(node, i)
         except Exception as e:
-            assert ("%s exited" % zcashd_binary()) in str(e) #node must have shutdown
+            assert ("%s exited" % (zcashd_binary(),)) in str(e) #node must have shutdown
             if expected_msg is not None:
                 log_stderr.seek(0)
                 stderr = log_stderr.read().decode('utf-8')
@@ -441,7 +441,7 @@ def assert_start_raises_init_error(i, dirname, extra_args=None, expected_msg=Non
                     raise AssertionError("Expected error \"" + expected_msg + "\" not found in:\n" + stderr)
         else:
             if expected_msg is None:
-                assert_msg = "%s should have exited with an error" % zcashd_binary()
+                assert_msg = "%s should have exited with an error" % (zcashd_binary(),)
             else:
                 assert_msg = "%s should have exited with expected error %s" % (zcashd_binary(), expected_msg)
             raise AssertionError(assert_msg)
