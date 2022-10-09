@@ -396,12 +396,12 @@ public:
     CBlockHeader GetBlockHeader() const;
 
     //! Set the `nSolution` field of this block index from another block index.
-    void SetSolution(const std::vector<unsigned char>& solution) {
+    virtual void SetSolution(const std::vector<unsigned char>& solution) {
         nSolution = solution;
     }
 
     //! Clear the Equihash solution to save memory. Requires cs_main.
-    void ClearSolution();
+    virtual void ClearSolution();
 
     uint256 GetBlockHash() const
     {
@@ -595,12 +595,12 @@ public:
     }
 
     //! This method should not be called on a CDiskBlockIndex.
-    void SetSolution(const std::vector<unsigned char>& solution) {
+    virtual void SetSolution(const std::vector<unsigned char>& solution) {
         assert(false);
     }
 
     //! This method should not be called on a CDiskBlockIndex.
-    void ClearSolution() {
+    virtual void ClearSolution() {
         assert(false);
     }
 
