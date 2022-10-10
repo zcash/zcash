@@ -411,8 +411,8 @@ def main():
     print("""
 You should also check the Rust dependencies using cargo:
 
-  cargo install cargo-outdated cargo-audit
-  cargo outdated
+  cargo install cargo-upgrades cargo-audit
+  cargo upgrades
   cargo audit
 """)
     if status == 0:
