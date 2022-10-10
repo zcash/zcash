@@ -532,6 +532,18 @@ public:
         READWRITE(nBits);
         READWRITE(nNonce);
         READWRITE(nSolution);
+        if (nSolution.empty()) {
+            std::cout << "CDiskBlockIndex(version: " << this->nVersion << ",\n"
+                    << "                hashPrev: " << hashPrev.ToString() << ",\n"
+                    << "                hashMerkleRoot: " << hashMerkleRoot.ToString() << ",\n"
+                    << "                hashBlockCommitments: " << hashBlockCommitments.ToString() << ",\n"
+                    << "                nTime: " << nTime << ",\n"
+                    << "                nBits: " << nBits << ",\n"
+                    << "                nNonce: " << HexStr(nNonce.begin(), nNonce.end()) << ",\n"
+                    << "                nSolution: " << HexStr(nSolution.begin(), nSolution.end()) << ")"
+                    << std::endl;
+            assert(false);
+        }
 
         // Only read/write nSproutValue if the client version used to create
         // this index was storing them.
@@ -596,12 +608,12 @@ public:
 
     //! This method should not be called on a CDiskBlockIndex.
     virtual void SetSolution(const std::vector<unsigned char>& solution) {
-        assert(false);
+        assert(!"called CDiskBlockIndex::SetSolution");
     }
 
     //! This method should not be called on a CDiskBlockIndex.
     virtual void ClearSolution() {
-        assert(false);
+        assert(!"called CDiskBlockIndex::ClearSolution");
     }
 
     std::string ToString() const
