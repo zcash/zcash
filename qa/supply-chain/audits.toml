@@ -60,6 +60,12 @@ criteria = "safe-to-deploy"
 delta = "1.0.9 -> 1.0.10"
 notes = "Bumps nix and removes some of its default features."
 
+[[audits.cpufeatures]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.2.2 -> 0.2.5"
+notes = "Unsafe changes just introduce `#[inline(never)]` wrappers."
+
 [[audits.crypto-common]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
