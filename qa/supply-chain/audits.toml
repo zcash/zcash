@@ -19,6 +19,12 @@ criteria = "safe-to-deploy"
 delta = "1.0.56 -> 1.0.61"
 notes = "Update does not introduce new code. Minor build script changes look fine."
 
+[[audits.anyhow]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.61 -> 1.0.65"
+notes = "Build script changes just alter what it is probing for; no difference in side effects."
+
 [[audits.bellman]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
@@ -187,6 +193,28 @@ criteria = "safe-to-deploy"
 delta = "1.0.1 -> 1.0.3"
 notes = "Update makes no changes to code."
 
+[[audits.libm]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.2.2 -> 0.2.5"
+
+[[audits.link-cplusplus]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.6 -> 1.0.7"
+
+[[audits.lock_api]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.4.7 -> 0.4.9"
+notes = "The unsafe changes fix soundness bugs. The unsafe additions in the new ArcMutexGuard::into_arc method seem fine, but it should probably have used ManuallyDrop instead of mem::forget."
+
+[[audits.log]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.4.16 -> 0.4.17"
+notes = "I confirmed that the unsafe transmutes are fine; NonZeroU128 and NonZeroI128 are `#[repr(transparent)]` wrappers around u128 and i128 respectively."
+
 [[audits.memuse]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -284,11 +312,21 @@ criteria = "safe-to-deploy"
 delta = "1.0.136 -> 1.0.143"
 notes = "Bumps serde-derive and adds some constructors."
 
+[[audits.serde]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.143 -> 1.0.145"
+
 [[audits.serde_derive]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.136 -> 1.0.143"
 notes = "Bumps syn, inverts some build flags."
+
+[[audits.serde_derive]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.143 -> 1.0.145"
 
 [[audits.sketches-ddsketch]]
 who = "Jack Grigg <jack@z.cash>"
@@ -307,11 +345,23 @@ criteria = "safe-to-deploy"
 delta = "1.0.30 -> 1.0.32"
 notes = "Bumps thiserror-impl, no code changes."
 
+[[audits.thiserror]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.32 -> 1.0.37"
+notes = "The new build script invokes rustc to determine whether it supports the Provider API. The only side-effect is it overwrites `$OUT_DIR/probe.rs`, which is fine because it is unique to the thiserror package."
+
 [[audits.thiserror-impl]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.30 -> 1.0.32"
 notes = "Only change is to refine an error message."
+
+[[audits.thiserror-impl]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.32 -> 1.0.37"
+notes = "Proc macro changes migrating to the Provider API look fine."
 
 [[audits.unicode-ident]]
 who = "Daira Hopwood <daira@jacaranda.org>"
