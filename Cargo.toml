@@ -67,15 +67,15 @@ zeroize = "1.4.2"
 
 # Rust/C++ interop
 # The version needs to match depends/packages/native_cxxbridge.mk
-cxx = { version = "=1.0.76", features = ["c++17"] }
+cxx = { version = "=1.0.78", features = ["c++17"] }
 
 # Rust threading
 rayon = "1.5"
 
 # Metrics
 ipnet = "2"
-metrics = "0.19"
-metrics-exporter-prometheus = "0.10"
+metrics = "0.20"
+metrics-exporter-prometheus = "0.11"
 
 # General tool dependencies
 gumdrop = "0.8"
