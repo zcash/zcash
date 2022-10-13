@@ -403,6 +403,7 @@ public:
 
     uint256 GetBlockHash() const
     {
+        assert(phashBlock);
         return *phashBlock;
     }
 
@@ -432,7 +433,7 @@ public:
         return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
             pprev, nHeight,
             hashMerkleRoot.ToString(),
-            GetBlockHash().ToString());
+            phashBlock ? GetBlockHash().ToString() : "(nil)");
     }
 
     //! Check whether this block index entry is valid up to the passed validity level.
