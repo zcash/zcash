@@ -214,7 +214,7 @@ def wait_for_bitcoind_start(process, url, i):
     '''
     while True:
         if process.poll() is not None:
-            raise Exception('%s exited with status %i during initialization' % (zcashd_binary(), process.returncode))
+            raise Exception('%s node %i exited with status %i during initialization' % (zcashd_binary(), i, process.returncode))
         try:
             rpc = get_rpc_proxy(url, i)
             rpc.getblockcount()
