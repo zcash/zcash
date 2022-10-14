@@ -12,7 +12,7 @@
 
 { pkgs ? import ./contrib/nix/pkgs.nix {} }:
 
-pkgs.clangStdenv.mkDerivation {
+pkgs.llvmPackages_14.stdenv.mkDerivation {
   name = "zcash";
 
   src = ./.;
@@ -27,9 +27,18 @@ pkgs.clangStdenv.mkDerivation {
     pkgs.gtest
     pkgs.libevent
     pkgs.openssl
-    pkgs.libsodium
+    (pkgs.libsodium.overrideAttrs (old: {
+      patches = old.patches ++ [
+        ./depends/patches/libsodium/1.0.15-pubkey-validation.diff
+        ./depends/patches/libsodium/1.0.15-signature-validation.diff
+      ];
+    }))
     pkgs.utf8cpp
-    pkgs.zeromq
+    (pkgs.zeromq.overrideAttrs (old: {
+      patches = [
+        ./depends/patches/zeromq/windows-unused-variables.diff
+      ];
+    }))
   ];
 
   nativeBuildInputs = [
