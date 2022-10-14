@@ -14,6 +14,9 @@ zcutil/bin/
 *zcashTest.pk
 *zcashTest.vk
 
+# Nix
+/result
+
 # autoreconf
 Makefile.in
 aclocal.m4
