@@ -29,8 +29,14 @@
             default = zcash;
 
             librustzcash = crane.lib.${system}.buildPackage {
-              doCheck = true;
               src = ./.;
+
+              buildInputs = pkgs.lib.optionals pkgs.stdenv.isDarwin [
+                pkgs.darwin.apple_sdk.frameworks.Security
+                pkgs.libiconv
+              ];
+
+              doCheck = true;
             };
 
             zcash = pkgs.llvmPackages_14.stdenv.mkDerivation {
@@ -58,8 +64,6 @@
                     ./depends/patches/zeromq/windows-unused-variables.diff
                   ];
                 }))
-              ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-                pkgs.darwin.apple_sdk.frameworks.Security
               ];
 
               nativeBuildInputs = [
