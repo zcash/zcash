@@ -406,7 +406,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     """
     datadir = os.path.join(dirname, "node"+str(i))
     if binary is None:
-        binary = os.getenv("ZCASHD", ZCASHD_BINARY)
+        binary = zcashd_binary()
     args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest" ]
     args.extend([
         '-nuparams=5ba81b19:1', # Overwinter
