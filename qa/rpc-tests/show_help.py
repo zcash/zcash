@@ -376,7 +376,7 @@ Debugging/Testing options:
        0.10)
 
   -printtoconsole
-       Send trace/debug info to console instead of debug log
+       Send trace/debug info to console instead of the debug log
 
 Chain selection options:
 
