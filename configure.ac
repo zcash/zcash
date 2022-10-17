@@ -98,9 +98,6 @@ dnl Required tools and programs:
 ZC_REQUIRE_TOOL(AR, ar)
 ZC_REQUIRE_TOOL(RANLIB, ranlib)
 ZC_REQUIRE_TOOL(STRIP, strip)
-ZC_REQUIRE_PROG([GIT], [git])
-ZC_REQUIRE_PROG(RUSTC, rustc)
-ZC_REQUIRE_PROG(CARGO, cargo)
 ZC_REQUIRE_PROG(CXXBRIDGE, cxxbridge)
 dnl This one is still optional and checked by complicated logic below:
 AC_PATH_PROG(CCACHE,ccache)
@@ -109,6 +106,12 @@ AC_PATH_PROG(XGETTEXT,xgettext)
 ZC_REQUIRE_PROG(HEXDUMP,hexdump)
 AC_PATH_PROG(READELF,readelf)
 ZC_REQUIRE_TOOL(CPPFILT,c++filt)
+
+AC_ARG_WITH([rustzcash-dir],
+    [AS_HELP_STRING([--with-rustzcash-dir],
+                    [path to rustzcash library (default is to build the included version)])],
+    [use_rustzcash_dir=$withval])
+AM_CONDITIONAL(ENABLE_RUST, test "x$use_rustzcash_dir" = x)
 
 AC_ARG_ENABLE([online-rust],
   [AS_HELP_STRING([--enable-online-rust],
@@ -586,6 +589,19 @@ if test x$use_lcov = xyes; then
   AX_CHECK_COMPILE_FLAG([--coverage],[CXXFLAGS="$CXXFLAGS --coverage"],
     [AC_MSG_ERROR("lcov testing requested but --coverage flag does not work")])
 fi
+
+if test x$use_rustzcash_dir = x; then
+  ZC_REQUIRE_PROG([GIT], [git])
+  ZC_REQUIRE_PROG(RUSTC, rustc)
+  ZC_REQUIRE_PROG(CARGO, cargo)
+else
+  LIBRUSTZCASH="$use_rustzcash_dir/lib/librustzcash.a"
+  INSPECT_TOOL_BUILD="$use_rustzcash_dir/bin/zcash-inspect"
+  WALLET_TOOL_BUILD="$use_rustzcash_dir/bin/zcashd-wallet-tool"
+fi
+AC_SUBST(LIBRUSTZCASH)
+AC_SUBST(INSPECT_TOOL_BUILD)
+AC_SUBST(WALLET_TOOL_BUILD)
 
 dnl Check for endianness
 AC_C_BIGENDIAN

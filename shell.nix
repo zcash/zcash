@@ -7,4 +7,4 @@
     }
   )
   { src = ./.; }
-).defaultNix
+).shellNix
