@@ -61,6 +61,10 @@ llvmPackages_14.stdenv.mkDerivation {
   # Because of fetch-params, everything expects the parameters to be in `HOME`.
   HOME = "${zk-parameters}/var/cache";
 
+  postPatch = ''
+    patchShebangs ./src/test/bitcoin-util-test.py
+  '';
+
   configureFlags = [
     "--with-boost-libdir=${boost}/lib"
     "--with-rustzcash-dir=${librustzcash}"
