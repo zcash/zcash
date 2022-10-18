@@ -4,20 +4,29 @@
   outputs = { self, crane, flake-utils, nixpkgs, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = nixpkgs.legacyPackages.${system};
+        # This doesn’t quite do the same thing as loading overlays, but it’s
+        # close?
+        applyOverlays = super:
+          super.lib.foldl (self: overlay: self // overlay self super) super;
+
+        pkgs = applyOverlays nixpkgs.legacyPackages.${system} [
+          (import ./contrib/nix/dependencies.nix)
+        ];
+
+        callPackage = pkgs.lib.callPackageWith pkgs;
       in
         {
           packages = rec {
             default = zcash;
 
-            librustzcash = pkgs.callPackage ./contrib/nix/librustzcash.nix {
+            librustzcash = callPackage ./contrib/nix/librustzcash.nix {
               crane = crane.lib.${system};
             };
 
-            zk-parameters = pkgs.callPackage ./contrib/nix/zk-parameters.nix {
+            zk-parameters = callPackage ./contrib/nix/zk-parameters.nix {
             };
 
-            zcash = pkgs.callPackage ./contrib/nix/zcash.nix {
+            zcash = callPackage ./contrib/nix/zcash.nix {
               inherit librustzcash zk-parameters;
             };
           };
