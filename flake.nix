@@ -39,6 +39,39 @@
               doCheck = true;
             };
 
+            zk-parameters = pkgs.stdenv.mkDerivation {
+              name = "zk-parameters";
+
+              src = ./.;
+
+              nativeBuildInputs = [
+                pkgs.cacert
+                pkgs.flock
+                pkgs.wget
+              ];
+
+              phases = [ "unpackPhase" "patchPhase" "installPhase" ];
+
+              # This is currently needed because it’s the easiest way to break a
+              # catch-22. If the build is sandboxed (the ideal), then we can’t
+              # download arbitrary files. However, if it’s off, then `/tmp`
+              # doesn’t get relocated, and so the nix build user can’t access
+              # it. Ideally, we’d be able to figure out how to disable the
+              # sandbox _just enough_ to download data at this one point. then
+              # this change could go away.
+              patches = [
+                ./contrib/nix/patches/fetch-params.patch
+              ];
+
+              # We override `HOME` here because Nix sets it to somewhere
+              # unwritable when we’re sandboxed (as we should be). But
+              # fetch-params relies on `HOME`. So make a temporary `HOME` until
+              # we fix that dependency.
+              installPhase = ''
+                HOME="$out/var/cache" ./zcutil/fetch-params.sh
+              '';
+            };
+
             zcash = pkgs.llvmPackages_14.stdenv.mkDerivation {
               pname = "zcash";
               version = "5.3.0";
@@ -73,6 +106,7 @@
                 pkgs.makeWrapper
                 pkgs.pkg-config
                 pkgs.python3
+                zk-parameters
               ];
 
               # I think this is needed because the “utf8cpp” dir component is
@@ -80,10 +114,16 @@
               # up correctly.
               CXXFLAGS = "-I${pkgs.utf8cpp}/include/utf8cpp";
 
+              # Because of fetch-params, everything expects the parameters to be
+              # in `HOME`.
+              HOME = "${zk-parameters}/var/cache";
+
               configureFlags = [
                 "--with-boost-libdir=${pkgs.boost}/lib"
                 "--with-rustzcash-dir=${librustzcash}"
               ];
+
+              doCheck = true;
             };
           };
         });
