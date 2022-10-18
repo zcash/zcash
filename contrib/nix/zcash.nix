@@ -7,7 +7,7 @@
 , libevent
 , librustzcash
 , libsodium
-, llvmPackages_14
+, llvmPackages
 , makeWrapper
 , openssl
 , pkg-config
@@ -17,7 +17,7 @@
 , zk-parameters
 }:
 
-llvmPackages_14.stdenv.mkDerivation {
+llvmPackages.stdenv.mkDerivation {
   pname = "zcash";
   version = "5.3.0";
 
@@ -29,19 +29,10 @@ llvmPackages_14.stdenv.mkDerivation {
     gtest
     libevent
     librustzcash
-    (libsodium.overrideAttrs (old: {
-      patches = old.patches ++ [
-        ../../depends/patches/libsodium/1.0.15-pubkey-validation.diff
-        ../../depends/patches/libsodium/1.0.15-signature-validation.diff
-      ];
-    }))
+    libsodium
     openssl
     utf8cpp
-    (zeromq.overrideAttrs (old: {
-      patches = [
-        ../../depends/patches/zeromq/windows-unused-variables.diff
-      ];
-    }))
+    zeromq
   ];
 
   nativeBuildInputs = [
