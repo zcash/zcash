@@ -22,12 +22,15 @@ use zcash_primitives::{
         components::{orchard as orchard_serialization, sapling, transparent, Amount},
         sighash::{signature_hash, SignableInput, TransparentAuthorizingContext},
         txid::TxIdDigester,
-        Authorization, Transaction, TransactionData, TxVersion,
+        Authorization, Transaction, TransactionData, TxId, TxVersion,
     },
 };
 use zcash_proofs::sapling::SaplingVerificationContext;
 
-use crate::{context::Context, GROTH16_PARAMS, ORCHARD_VK};
+use crate::{
+    context::{Context, ZTxOut},
+    GROTH16_PARAMS, ORCHARD_VK,
+};
 
 pub fn is_coinbase(tx: &Transaction) -> bool {
     tx.transparent_bundle()
@@ -294,9 +297,8 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
                                     &txin.script_sig.0[1..1 + sig_len],
                                 );
                                 let hash_type = txin.script_sig.0[1 + sig_len];
-                                let pubkey = secp256k1::PublicKey::from_slice(
-                                    &txin.script_sig.0[1 + sig_len + 2..],
-                                );
+                                let pubkey_bytes = &txin.script_sig.0[1 + sig_len + 2..];
+                                let pubkey = secp256k1::PublicKey::from_slice(pubkey_bytes);
 
                                 if let Err(e) = sig {
                                     eprintln!(
@@ -330,6 +332,11 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
 
                                     if let Err(e) = ctx.verify_ecdsa(&msg, &sig, &pubkey) {
                                         eprintln!("  ⚠️  Spend {} is invalid: {}", i, e);
+                                        eprintln!(
+                                            "   - sighash is {}",
+                                            hex::encode(sighash.as_ref())
+                                        );
+                                        eprintln!("   - pubkey is {}", hex::encode(pubkey_bytes));
                                     }
                                 }
                             }
@@ -349,12 +356,26 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
                 }
             } else {
                 eprintln!(
-                    "  🔎 To check transparent inputs, add \"transparentcoins\" array to context"
+                    "  🔎 To check transparent inputs, add \"transparentcoins\" array to context."
                 );
+                eprintln!("     The following transparent inputs are required: ");
+                for txin in &bundle.vin {
+                    eprintln!(
+                        "     - txid {}, index {}",
+                        TxId::from_bytes(*txin.prevout.hash()),
+                        txin.prevout.n()
+                    )
+                }
             }
         }
         if !bundle.vout.is_empty() {
             eprintln!(" - {} transparent output(s)", bundle.vout.len());
+            for txout in &bundle.vout {
+                eprintln!(
+                    "     - {}",
+                    serde_json::to_string(&ZTxOut::from(txout.clone())).unwrap()
+                );
+            }
         }
     }
 
