@@ -34,7 +34,7 @@ spec:
         echo $(git rev-parse HEAD)
         echo $(git rev-parse --short HEAD)
         
-        if [ "$(params.BUILD_FOR_HOST)" == "x86_64-apple-darwin11" ]
+        if [ "$(params.BUILD_FOR_HOST)" == "x86_64-apple-darwin18" ]
         then
             mkdir -p depends/SDKs
             curl -fs https://ecc.mypinata.cloud/ipfs/QmeSwckvSCGL9SXGdEHoAyqXdzD7T9HYTwsC34Bj5EVDF5 \
@@ -50,14 +50,11 @@ spec:
       script: |
         #!/bin/bash
         set -o pipefail
-        python -m pip install pyblake2 pyflakes python-qpid-proton pyutil pyzmq requests simplejson
-        
         cp -a /home/.zcash-params $HOME/
-        cp -r /home/benchmark-200k-UTXOs.tar.xz /workspace/source
-        cp -r /home/block-107134.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
         cd /workspace/source
 
-        ./qa/zcash/performance-measurements.sh time sleep | jq  '[.[]|.runningtime | tonumber] | add / (. | length | tonumber)'
+        ./qa/zcash/performance-measurements.sh time sleep | jq  '.[]|.runningtime | tonumber' | python ./perf_metrics.py
 
     - name: bench-createsaplingspend
       image: $(params.BUILD_CONTAINER)
@@ -65,11 +62,10 @@ spec:
         #!/bin/bash
         set -o pipefail
         cp -a /home/.zcash-params $HOME/
-        cp -r /home/benchmark-200k-UTXOs.tar.xz /workspace/source
-        cp -r /home/block-107134.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
         cd /workspace/source
 
-        ./qa/zcash/performance-measurements.sh time createsaplingspend | jq  '[.[]|.runningtime | tonumber] | add / (. | length | tonumber)'
+        ./qa/zcash/performance-measurements.sh time createsaplingspend | jq  '.[]|.runningtime | tonumber' | python ./perf_metrics.py
 
     - name: bench-verifysaplingspend
       image: $(params.BUILD_CONTAINER)
@@ -77,11 +73,10 @@ spec:
         #!/bin/bash
         set -o pipefail
         cp -a /home/.zcash-params $HOME/
-        cp -r /home/benchmark-200k-UTXOs.tar.xz /workspace/source
-        cp -r /home/block-107134.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
         cd /workspace/source
 
-        ./qa/zcash/performance-measurements.sh time verifysaplingspend | jq  '[.[]|.runningtime | tonumber] | add / (. | length | tonumber)'
+        ./qa/zcash/performance-measurements.sh time verifysaplingspend | jq  '.[]|.runningtime | tonumber' | python ./perf_metrics.py
 
     - name: bench-createsaplingoutput
       image: $(params.BUILD_CONTAINER)
@@ -89,11 +84,10 @@ spec:
         #!/bin/bash
         set -o pipefail
         cp -a /home/.zcash-params $HOME/
-        cp -r /home/benchmark-200k-UTXOs.tar.xz /workspace/source
-        cp -r /home/block-107134.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
         cd /workspace/source
 
-        ./qa/zcash/performance-measurements.sh time createsaplingoutput | jq '[.[]|.runningtime | tonumber] | add / (. | length | tonumber)'
+        ./qa/zcash/performance-measurements.sh time createsaplingoutput | jq '.[]|.runningtime | tonumber' | python ./perf_metrics.py
 
     - name: bench-verifysaplingoutput
       image: $(params.BUILD_CONTAINER)
@@ -101,11 +95,10 @@ spec:
         #!/bin/bash
         set -o pipefail
         cp -a /home/.zcash-params $HOME/
-        cp -r /home/benchmark-200k-UTXOs.tar.xz /workspace/source
-        cp -r /home/block-107134.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
         cd /workspace/source
 
-        ./qa/zcash/performance-measurements.sh time verifysaplingoutput | jq '[.[]|.runningtime | tonumber] | add / (. | length | tonumber)'
+        ./qa/zcash/performance-measurements.sh time verifysaplingoutput | jq '.[]|.runningtime | tonumber' | python ./perf_metrics.py
 
     - name: bench-createjoinsplit
       image: $(params.BUILD_CONTAINER)
@@ -113,11 +106,10 @@ spec:
         #!/bin/bash
         set -o pipefail
         cp -a /home/.zcash-params $HOME/
-        cp -r /home/benchmark-200k-UTXOs.tar.xz /workspace/source
-        cp -r /home/block-107134.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
         cd /workspace/source
 
-        ./qa/zcash/performance-measurements.sh time createjoinsplit | jq '[.[]|.runningtime | tonumber] | add / (. | length | tonumber)'
+        ./qa/zcash/performance-measurements.sh time createjoinsplit | jq '.[]|.runningtime | tonumber' | python ./perf_metrics.py
 
     - name: bench-verifyjoinsplit
       image: $(params.BUILD_CONTAINER)
@@ -125,11 +117,10 @@ spec:
         #!/bin/bash
         set -o pipefail
         cp -a /home/.zcash-params $HOME/
-        cp -r /home/benchmark-200k-UTXOs.tar.xz /workspace/source
-        cp -r /home/block-107134.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
         cd /workspace/source
 
-        ./qa/zcash/performance-measurements.sh time verifyjoinsplit | jq '[.[]|.runningtime | tonumber] | add / (. | length | tonumber)'
+        ./qa/zcash/performance-measurements.sh time verifyjoinsplit | jq '.[]|.runningtime | tonumber' | python ./perf_metrics.py
 
     - name: bench-verifyequihash
       image: $(params.BUILD_CONTAINER)
@@ -137,23 +128,10 @@ spec:
         #!/bin/bash
         set -o pipefail
         cp -a /home/.zcash-params $HOME/
-        cp -r /home/benchmark-200k-UTXOs.tar.xz /workspace/source
-        cp -r /home/block-107134.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
         cd /workspace/source
 
-        ./qa/zcash/performance-measurements.sh time verifyequihash | jq '[.[]|.runningtime | tonumber] | add / (. | length | tonumber)'
-
-    - name: bench-connectblockslow
-      image: $(params.BUILD_CONTAINER)
-      script: |
-        #!/bin/bash
-        set -o pipefail
-        cp -a /home/.zcash-params $HOME/
-        cp -r /home/benchmark-200k-UTXOs.tar.xz /workspace/source
-        cp -r /home/block-107134.tar.xz /workspace/source
-        cd /workspace/source
-
-        ./qa/zcash/performance-measurements.sh time connectblockslow | sed -n '2,$p' | jq '[.[]|.runningtime | tonumber] | add / (. | length | tonumber)'
+        ./qa/zcash/performance-measurements.sh time verifyequihash | jq '.[]|.runningtime | tonumber' | python ./perf_metrics.py
 
     - name: bench-loadwallet-200k-recv
       image: $(params.BUILD_CONTAINER)
@@ -162,10 +140,10 @@ spec:
         set -o pipefail
         cp -a /home/.zcash-params $HOME/
         cp -r /home/benchmark-200k-UTXOs.tar.xz /workspace/source
-        cp -r /home/block-107134.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
         cd /workspace/source
 
-        ./qa/zcash/performance-measurements.sh time loadwallet 200k-recv | sed 1d | jq '[.[]|.runningtime | tonumber] | add / (. | length | tonumber)'
+        ./qa/zcash/performance-measurements.sh time loadwallet 200k-recv | sed 1d | jq '.[]|.runningtime | tonumber' | python ./perf_metrics.py
 
     - name: bench-loadwallet-200k-send
       image: $(params.BUILD_CONTAINER)
@@ -174,10 +152,10 @@ spec:
         set -o pipefail
         cp -a /home/.zcash-params $HOME/
         cp -r /home/benchmark-200k-UTXOs.tar.xz /workspace/source
-        cp -r /home/block-107134.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
         cd /workspace/source
 
-        ./qa/zcash/performance-measurements.sh time loadwallet 200k-send | sed 1d | jq '[.[]|.runningtime | tonumber] | add / (. | length | tonumber)'
+        ./qa/zcash/performance-measurements.sh time loadwallet 200k-send | sed 1d | jq '.[]|.runningtime | tonumber' | python ./perf_metrics.py
 
     - name: bench-listunspent-200k-recv
       image: $(params.BUILD_CONTAINER)
@@ -186,10 +164,10 @@ spec:
         set -o pipefail
         cp -a /home/.zcash-params $HOME/
         cp -r /home/benchmark-200k-UTXOs.tar.xz /workspace/source
-        cp -r /home/block-107134.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
         cd /workspace/source
 
-        ./qa/zcash/performance-measurements.sh time listunspent 200k-recv | sed 1d | jq '[.[]|.runningtime | tonumber] | add / (. | length | tonumber)'
+        ./qa/zcash/performance-measurements.sh time listunspent 200k-recv | sed 1d | jq '.[]|.runningtime | tonumber' | python ./perf_metrics.py
 
     - name: bench-listunspent-200k-send
       image: $(params.BUILD_CONTAINER)
@@ -198,8 +176,43 @@ spec:
         set -o pipefail
         cp -a /home/.zcash-params $HOME/
         cp -r /home/benchmark-200k-UTXOs.tar.xz /workspace/source
-        cp -r /home/block-107134.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
         cd /workspace/source
 
-        ./qa/zcash/performance-measurements.sh time listunspent 200k-send | sed 1d | jq '[.[]|.runningtime | tonumber] | add / (. | length | tonumber)'
+        ./qa/zcash/performance-measurements.sh time listunspent 200k-send | sed 1d | jq '.[]|.runningtime | tonumber' | python ./perf_metrics.py
 
+    - name: bench-connectblocksapling
+      image: $(params.BUILD_CONTAINER)
+      script: |
+        #!/bin/bash
+        set -o pipefail
+        cp -a /home/.zcash-params $HOME/
+        cp -r /home/block-1723244.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
+        cd /workspace/source
+
+        ./qa/zcash/performance-measurements.sh time connectblocksapling | sed -n '2,$p' | jq '.[]|.runningtime | tonumber' | python ./perf_metrics.py
+
+    - name: bench-connectblockorchard
+      image: $(params.BUILD_CONTAINER)
+      script: |
+        #!/bin/bash
+        set -o pipefail
+        cp -a /home/.zcash-params $HOME/
+        cp -r /home/block-1708048.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
+        cd /workspace/source
+
+        ./qa/zcash/performance-measurements.sh time connectblockorchard | sed -n '2,$p' | jq '.[]|.runningtime | tonumber' | python ./perf_metrics.py
+
+    - name: bench-connectblockslow
+      image: $(params.BUILD_CONTAINER)
+      script: |
+        #!/bin/bash
+        set -o pipefail
+        cp -a /home/.zcash-params $HOME/
+        cp -r /home/block-107134.tar.xz /workspace/source
+        cp /home/perf_metrics.py /workspace/source
+        cd /workspace/source
+
+        ./qa/zcash/performance-measurements.sh time connectblockslow | sed -n '2,$p' | jq '.[]|.runningtime | tonumber' | python ./perf_metrics.py
