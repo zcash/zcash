@@ -30,6 +30,41 @@
               inherit librustzcash zk-parameters;
             };
           };
+
+          apps = rec {
+            default = zcashd;
+
+            bench_bitcoin = {
+              type = "app";
+              program = "${self.packages.${system}.zcash}/bin/bench_bitcoin";
+            };
+
+            zcash-cli = {
+              type = "app";
+              program = "${self.packages.${system}.zcash}/bin/zcash-cli";
+            };
+
+            zcash-inspect = {
+              type = "app";
+              program = "${self.packages.${system}.zcash}/bin/zcash-inspect";
+            };
+
+            zcash-tx = {
+              type = "app";
+              program = "${self.packages.${system}.zcash}/bin/zcash-tx";
+            };
+
+            zcashd = {
+              type = "app";
+              program = "${self.packages.${system}.zcash}/bin/zcashd";
+            };
+
+            zcashd-wallet-tool = {
+              type = "app";
+              program =
+                "${self.packages.${system}.zcash}/bin/zcashd-wallet-tool";
+            };
+          };
         });
 
   inputs = {
