@@ -90,8 +90,8 @@ def main_logged(revision, release, releaseprev, releasefrom, releaseheight, hotf
 
     verify_tags(revision, releaseprev, releasefrom)
     verify_version(release, releaseprev, hotfix)
-    verify_dependency_updates()
     initialize_git(revision, release, hotfix)
+    verify_dependency_updates()
     patch_version_in_files(release, releaseprev)
     patch_release_height(releaseheight)
     commit('Versioning changes for {}.'.format(release.novtext))
