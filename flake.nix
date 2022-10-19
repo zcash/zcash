@@ -22,35 +22,29 @@
   outputs = { self, crane, flake-utils, nixpkgs, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        # This doesn’t quite do the same thing as loading overlays, but it’s
-        # close?
-        applyOverlays = super:
-          super.lib.foldl (self: overlay: self // overlay self super) super;
-
-        pkgs = applyOverlays nixpkgs.legacyPackages.${system} [
-          (import ./contrib/nix/dependencies.nix)
-        ];
-
-        callPackage = pkgs.lib.callPackageWith pkgs;
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ (import ./contrib/nix/dependencies.nix) ];
+        };
       in
         {
-          packages = rec {
-            default = zcash;
+          packages = {
+            default = self.packages.${system}.zcash;
 
-            librustzcash = callPackage ./contrib/nix/librustzcash.nix {
+            librustzcash = pkgs.callPackage ./contrib/nix/librustzcash.nix {
               crane = crane.lib.${system};
             };
 
-            zk-parameters = callPackage ./contrib/nix/zk-parameters.nix {
+            zk-parameters = pkgs.callPackage ./contrib/nix/zk-parameters.nix {
             };
 
-            zcash = callPackage ./contrib/nix/zcash.nix {
-              inherit librustzcash zk-parameters;
+            zcash = pkgs.callPackage ./contrib/nix/zcash.nix {
+              inherit (self.packages.${system}) librustzcash zk-parameters;
             };
           };
 
-          apps = rec {
-            default = zcashd;
+          apps = {
+            default = self.apps.${system}.zcashd;
 
             bench_bitcoin = {
               type = "app";
