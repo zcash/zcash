@@ -4,6 +4,7 @@
 , db62
 , gtest
 , hexdump
+, lib
 , libevent
 , librustzcash
 , libsodium
@@ -21,7 +22,10 @@ llvmPackages.stdenv.mkDerivation {
   pname = "zcash";
   version = "5.3.0";
 
-  src = ../..;
+  src = lib.cleanSourceWith {
+    filter = name: type: ! lib.hasSuffix ".nix" (baseNameOf (toString name));
+    src = lib.cleanSource ../..;
+  };
 
   buildInputs = [
     boost
