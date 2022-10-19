@@ -59,6 +59,19 @@
                 "${self.packages.${system}.zcash}/bin/zcashd-wallet-tool";
             };
           };
+
+          devShells = {
+            release = pkgs.mkShell {
+              nativeBuildInputs = [
+                pkgs.debian-devscripts
+                pkgs.help2man
+                (pkgs.python3.withPackages (pypkgs: [
+                  pypkgs.progressbar2
+                  pypkgs.requests
+                ]))
+              ];
+            };
+          };
         });
 
   inputs = {
