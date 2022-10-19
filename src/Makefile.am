@@ -28,12 +28,16 @@ LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBBITCOIN_CRYPTO_SSE41=crypto/libbitcoin_crypto_sse41.a
 LIBBITCOIN_CRYPTO_AVX2=crypto/libbitcoin_crypto_avx2.a
+LIBRUSTZCASH=$(top_builddir)/target/$(RUST_TARGET)/release/librustzcash.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
 LIBUNIVALUE=univalue/libunivalue.la
 LIBZCASH=libzcash.a
 
 INSPECT_TOOL_BIN=zcash-inspect$(EXEEXT)
+INSPECT_TOOL_BUILD=$(top_builddir)/target/$(RUST_TARGET)/release/zcash-inspect$(EXEEXT)
+
 WALLET_TOOL_BIN=zcashd-wallet-tool$(EXEEXT)
+WALLET_TOOL_BUILD=$(top_builddir)/target/$(RUST_TARGET)/release/zcashd-wallet-tool$(EXEEXT)
 
 if ENABLE_ZMQ
 LIBBITCOIN_ZMQ=libbitcoin_zmq.a
@@ -77,7 +81,6 @@ $(CXXBRIDGE_H) $(CXXBRIDGE_CPP): $(CXXBRIDGE_RS)
 	@$(MKDIR_P) $(@D)
 	$(AM_V_GEN)$(CXXBRIDGE) $(CXXBRIDGE_OPTS) rust/src/$(basename $(@F)).rs -o $@
 
-if ENABLE_RUST
 # We pass through CC etc. flags so they are available to Rust dependencies that internally
 # compile C or C++ code with the `cc` crate.
 #
@@ -106,10 +109,6 @@ cargo_verbose = $(cargo_verbose_@AM_V@)
 cargo_verbose_ = $(cargo_verbose_@AM_DEFAULT_V@)
 cargo_verbose_1 = --verbose
 
-LIBRUSTZCASH=$(top_builddir)/target/$(RUST_TARGET)/release/librustzcash.a
-INSPECT_TOOL_BUILD=$(top_builddir)/target/$(RUST_TARGET)/release/zcash-inspect$(EXEEXT)
-WALLET_TOOL_BUILD=$(top_builddir)/target/$(RUST_TARGET)/release/zcashd-wallet-tool$(EXEEXT)
-
 if ENABLE_ONLINE_RUST
 # Ensure that .cargo/config does not exist
 CARGO_CONFIGURED = $(top_srcdir)/.cargo/.configured-for-online
@@ -128,6 +127,10 @@ $(CARGO_CONFIGURED): $(top_srcdir)/.cargo/config.offline
 	$(AM_V_at)echo "directory = \"$(RUST_VENDORED_SOURCES)\"" >>$(top_srcdir)/.cargo/config
 	$(AM_V_at)touch $@
 endif
+if ENABLE_SHANI
+LIBBITCOIN_CRYPTO_SHANI = crypto/libbitcoin_crypto_shani.a
+LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_SHANI)
+endif
 
 cargo-build: $(CARGO_CONFIGURED) $(LIBSECP256K1)
 	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build $(RUST_BUILD_OPTS) $(cargo_verbose)
@@ -143,18 +146,6 @@ $(WALLET_TOOL_BIN): cargo-build-bins
 	$(AM_V_at)cp $(WALLET_TOOL_BUILD) $@
 
 $(LIBRUSTZCASH): cargo-build-lib
-else
-$(INSPECT_TOOL_BIN):
-	$(AM_V_at)cp $(INSPECT_TOOL_BUILD) $@
-
-$(WALLET_TOOL_BIN):
-	$(AM_V_at)cp $(WALLET_TOOL_BUILD) $@
-endif
-
-if ENABLE_SHANI
-LIBBITCOIN_CRYPTO_SHANI = crypto/libbitcoin_crypto_shani.a
-LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_SHANI)
-endif
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
