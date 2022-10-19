@@ -94,6 +94,16 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.76 -> 1.0.78"
 
+[[audits.cxx]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "1.0.78 -> 1.0.79"
+notes = """
+This release changes the result of the `cxxbridge` `exception` call to return
+a struct containing both the pointer to an error message and its length,
+instead of just the raw `*const u8`.
+"""
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -109,6 +119,12 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.76 -> 1.0.78"
 
+[[audits.cxxbridge-flags]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "1.0.78 -> 1.0.79"
+notes = "This is exclusively an update to the `cxxbridge` dependency version."
+
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -123,6 +139,12 @@ delta = "1.0.72 -> 1.0.76"
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.76 -> 1.0.78"
+
+[[audits.cxxbridge-macro]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "1.0.78 -> 1.0.79"
+notes = "This is exclusively an update to the `cxxbridge` dependency version."
 
 [[audits.equihash]]
 who = "Jack Grigg <jack@z.cash>"
