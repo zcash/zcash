@@ -7,7 +7,7 @@
 stdenv.mkDerivation {
   name = "zk-parameters";
 
-  src = ../..;
+  src = ../../zcutil;
 
   nativeBuildInputs = [
     cacert
@@ -21,10 +21,10 @@ stdenv.mkDerivation {
   # we’re sandboxed (as we should be). But fetch-params relies on `HOME`. So
   # make a temporary `HOME` until we fix that dependency.
   installPhase = ''
-    HOME="$out/var/cache" $src/zcutil/fetch-params.sh
+    HOME="$out/var/cache" $src/fetch-params.sh
   '';
 
-  outputHash = "sha256-tRiqwvDDYFS1K41p0BSlrO+2wIdZWI7LWLDVzqDp3vs=";
+  outputHash = "sha256-FghsYxqkn3u0jEFe+I3fk2mJcNcrjedjqdmgZTZ1XqE=";
   outputHashAlgo = "sha256";
   outputHashMode = "recursive";
 }
