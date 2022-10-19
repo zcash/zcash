@@ -56,14 +56,17 @@ llvmPackages.stdenv.mkDerivation {
   # Because of fetch-params, everything expects the parameters to be in `HOME`.
   HOME = "${zk-parameters}/var/cache";
 
+  # So we can override the path to librustzcash in the Makefile.
+  NIX_LIBRUSTZCASH = librustzcash;
+
+  patches = [ ./patches/autoreconf/make-nix-friendly.patch ];
+
   postPatch = ''
+    substituteInPlace ./src/Makefile.am --subst-var NIX_LIBRUSTZCASH
     patchShebangs ./src/test/bitcoin-util-test.py
   '';
 
-  configureFlags = [
-    "--with-boost-libdir=${boost}/lib"
-    "--with-rustzcash-dir=${librustzcash}"
-  ];
+  configureFlags = [ "--with-boost-libdir=${boost}/lib" ];
 
   doCheck = true;
 }

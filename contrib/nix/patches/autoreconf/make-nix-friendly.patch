@@ -1,0 +1,55 @@
+diff --git a/configure.ac b/configure.ac
+index cce1a76d0..e6cfc61fd 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -98,9 +98,6 @@ dnl Required tools and programs:
+ ZC_REQUIRE_TOOL(AR, ar)
+ ZC_REQUIRE_TOOL(RANLIB, ranlib)
+ ZC_REQUIRE_TOOL(STRIP, strip)
+-ZC_REQUIRE_PROG([GIT], [git])
+-ZC_REQUIRE_PROG(RUSTC, rustc)
+-ZC_REQUIRE_PROG(CARGO, cargo)
+ ZC_REQUIRE_PROG(CXXBRIDGE, cxxbridge)
+ dnl This one is still optional and checked by complicated logic below:
+ AC_PATH_PROG(CCACHE,ccache)
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 72cff51c9..2f2448dd7 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -28,16 +28,16 @@ LIBBITCOIN_UTIL=libbitcoin_util.a
+ LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
+ LIBBITCOIN_CRYPTO_SSE41=crypto/libbitcoin_crypto_sse41.a
+ LIBBITCOIN_CRYPTO_AVX2=crypto/libbitcoin_crypto_avx2.a
+-LIBRUSTZCASH=$(top_builddir)/target/$(RUST_TARGET)/release/librustzcash.a
++LIBRUSTZCASH=@NIX_LIBRUSTZCASH@/lib/librustzcash.a
+ LIBSECP256K1=secp256k1/libsecp256k1.la
+ LIBUNIVALUE=univalue/libunivalue.la
+ LIBZCASH=libzcash.a
+ 
+ INSPECT_TOOL_BIN=zcash-inspect$(EXEEXT)
+-INSPECT_TOOL_BUILD=$(top_builddir)/target/$(RUST_TARGET)/release/zcash-inspect$(EXEEXT)
++INSPECT_TOOL_BUILD=@NIX_LIBRUSTZCASH@/bin/zcash-inspect$(EXEEXT)
+ 
+ WALLET_TOOL_BIN=zcashd-wallet-tool$(EXEEXT)
+-WALLET_TOOL_BUILD=$(top_builddir)/target/$(RUST_TARGET)/release/zcashd-wallet-tool$(EXEEXT)
++WALLET_TOOL_BUILD=@NIX_LIBRUSTZCASH@/bin/zcashd-wallet-tool$(EXEEXT)
+ 
+ if ENABLE_ZMQ
+ LIBBITCOIN_ZMQ=libbitcoin_zmq.a
+@@ -139,14 +139,12 @@ cargo-build-lib: cargo-build
+ 
+ cargo-build-bins: cargo-build
+ 
+-$(INSPECT_TOOL_BIN): cargo-build-bins
++$(INSPECT_TOOL_BIN):
+ 	$(AM_V_at)cp $(INSPECT_TOOL_BUILD) $@
+ 
+-$(WALLET_TOOL_BIN): cargo-build-bins
++$(WALLET_TOOL_BIN):
+ 	$(AM_V_at)cp $(WALLET_TOOL_BUILD) $@
+ 
+-$(LIBRUSTZCASH): cargo-build-lib
+-
+ $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
+ 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
+ 
