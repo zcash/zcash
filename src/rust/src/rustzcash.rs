@@ -46,10 +46,9 @@ use std::os::windows::ffi::OsStringExt;
 use zcash_primitives::{
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
     sapling::{
-        keys::FullViewingKey, note_encryption::sapling_ka_agree, redjubjub, Diversifier, Note,
-        NullifierDerivingKey, Rseed,
+        keys::FullViewingKey, merkle_hash, note_encryption::sapling_ka_agree, redjubjub, spend_sig,
+        Diversifier, Note, NullifierDerivingKey, Rseed,
     },
-    sapling::{merkle_hash, spend_sig},
     zip32::{self, sapling_address, sapling_derive_internal_fvk, sapling_find_address},
 };
 use zcash_proofs::{load_parameters, sprout};
@@ -757,7 +756,7 @@ pub extern "C" fn librustzcash_zip32_sapling_derive_internal_fvk(
     dk_ret: *mut [c_uchar; 32],
 ) {
     let fvk = FullViewingKey::read(&unsafe { *fvk }[..]).expect("valid Sapling FullViewingKey");
-    let dk = zip32::DiversifierKey::from_bytes(unsafe { *dk });
+    let dk = zip32::sapling::DiversifierKey::from_bytes(unsafe { *dk });
 
     let (fvk_internal, dk_internal) = sapling_derive_internal_fvk(&fvk, &dk);
     let fvk_ret = unsafe { &mut *fvk_ret };
@@ -776,7 +775,7 @@ pub extern "C" fn librustzcash_zip32_sapling_address(
     addr_ret: *mut [c_uchar; 43],
 ) -> bool {
     let fvk = FullViewingKey::read(&unsafe { *fvk }[..]).expect("valid Sapling FullViewingKey");
-    let dk = zip32::DiversifierKey::from_bytes(unsafe { *dk });
+    let dk = zip32::sapling::DiversifierKey::from_bytes(unsafe { *dk });
     let j = zip32::DiversifierIndex(unsafe { *j });
 
     match sapling_address(&fvk, &dk, j) {
@@ -800,7 +799,7 @@ pub extern "C" fn librustzcash_zip32_find_sapling_address(
     addr_ret: *mut [c_uchar; 43],
 ) -> bool {
     let fvk = FullViewingKey::read(&unsafe { *fvk }[..]).expect("valid Sapling FullViewingKey");
-    let dk = zip32::DiversifierKey::from_bytes(unsafe { *dk });
+    let dk = zip32::sapling::DiversifierKey::from_bytes(unsafe { *dk });
     let j = zip32::DiversifierIndex(unsafe { *j });
 
     match sapling_find_address(&fvk, &dk, j) {
@@ -823,7 +822,7 @@ pub extern "C" fn librustzcash_sapling_diversifier_index(
     d: *const [c_uchar; 11],
     j_ret: *mut [c_uchar; 11],
 ) {
-    let dk = zip32::DiversifierKey::from_bytes(unsafe { *dk });
+    let dk = zip32::sapling::DiversifierKey::from_bytes(unsafe { *dk });
     let diversifier = Diversifier(unsafe { *d });
     let j_ret = unsafe { &mut *j_ret };
 
