@@ -144,6 +144,11 @@ delta = "1.0.76 -> 1.0.78"
 who = "Kris Nuttycombe <kris@nutty.land>"
 criteria = "safe-to-deploy"
 delta = "1.0.78 -> 1.0.79"
+
+[[audits.cxxbridge-macro]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "1.0.78 -> 1.0.79"
 notes = "This is exclusively an update to the `cxxbridge` dependency version."
 
 [[audits.equihash]]
@@ -172,6 +177,11 @@ notes = """
 Checked that getrandom::wasi::getrandom_inner matches wasi::random_get.
 Checked that getrandom::util_libc::Weak lock ordering matches std::sys::unix::weak::DlsymWeak.
 """
+
+[[audits.group]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.12.0 -> 0.12.1"
 
 [[audits.halo2_gadgets]]
 who = "Jack Grigg <jack@z.cash>"
@@ -300,6 +310,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.1.0 -> 0.2.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.orchard]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.2.0 -> 0.3.0"
 
 [[audits.parking_lot]]
 who = "Jack Grigg <jack@z.cash>"
@@ -457,11 +472,21 @@ criteria = "safe-to-deploy"
 version = "0.1.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.zcash_address]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.1.0 -> 0.2.0"
+
 [[audits.zcash_encoding]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 version = "0.1.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.zcash_encoding]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.1.0 -> 0.2.0"
 
 [[audits.zcash_history]]
 who = "Jack Grigg <jack@z.cash>"
@@ -475,6 +500,11 @@ criteria = ["crypto-reviewed", "safe-to-deploy"]
 version = "0.1.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.zcash_note_encryption]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.1.0 -> 0.2.0"
+
 [[audits.zcash_primitives]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
@@ -486,6 +516,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.6.0 -> 0.7.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.zcash_primitives]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.7.0 -> 0.8.1"
 
 [[audits.zcash_proofs]]
 who = "Jack Grigg <jack@z.cash>"
@@ -504,6 +539,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.7.0 -> 0.7.1"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.zcash_proofs]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.7.1 -> 0.8.0"
 
 [[audits.zeroize]]
 who = "Daira Hopwood <daira@jacaranda.org>"
