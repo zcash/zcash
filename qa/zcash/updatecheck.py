@@ -35,6 +35,7 @@ import requests
 import os
 import re
 import sys
+import xdg
 import datetime
 
 SOURCE_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..")
@@ -113,6 +114,8 @@ def get_dependency_list():
 
 def parse_token():
     token_path = os.path.realpath(os.path.join(SOURCE_ROOT, ".updatecheck-token"))
+    if not os.path.exists(token_path):
+        token_path = os.path.join(xdg.xdg_data_home(), "zcash/updatecheck/token")
     try:
         with open(token_path, encoding='utf8') as f:
             token = f.read().strip()

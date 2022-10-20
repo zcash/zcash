@@ -28,9 +28,9 @@ Check that dependencies are up-to-date or have been postponed:
 $ ./qa/zcash/updatecheck.py
 ```
 
-You can optionally create an `.updatecheck-token` file in the root of the
-repository to avoid running into GitHub rate limiting. Create an unprivileged
-personal access token on GitHub and copy the value into the file.
+You can optionally create an `$XDG_DATA_HOME/zcash/updatecheck/token` file to
+avoid running into GitHub rate limiting. Create an unprivileged personal access
+token on GitHub and copy the value into the file.
 
 If there are updates that have not been postponed, review their changelogs
 for urgent security fixes, and if there aren't any, postpone the update by
@@ -58,9 +58,8 @@ The release script has the following dependencies:
 
 - `help2man`
 - `debchange` (part of the devscripts Debian package)
-
-You can optionally install the `progressbar2` Python module with pip to have a
-progress bar displayed during the build process.
+- the python modules `progressbar2` (optional - displays a progress bar),
+  `requests` and `xdg`
 
 ## Versioning
 
