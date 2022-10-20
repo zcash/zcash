@@ -171,7 +171,7 @@ pub extern "C" fn orchard_unauthorized_bundle_prove_and_sign(
     let mut rng = OsRng;
     let res = bundle
         .create_proof(pk, &mut rng)
-        .and_then(|b| b.apply_signatures(&mut rng, *sighash, &signing_keys));
+        .and_then(|b| b.apply_signatures(rng, *sighash, &signing_keys));
 
     match res {
         Ok(signed) => Box::into_raw(Box::new(signed)),
