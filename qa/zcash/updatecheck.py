@@ -3,8 +3,7 @@
 # This script checks for updates to zcashd's dependencies.
 #
 # The SOURCE_ROOT constant specifies the location of the zcashd codebase to
-# check, and the GITHUB_API_* constants specify a personal access token for the
-# GitHub API, which need not have any special privileges.
+# check.
 #
 # All dependencies must be specified inside the get_dependency_list() function
 # below. A dependency is specified by:
@@ -126,10 +125,10 @@ class GitHubToken:
             sys.exit(1)
 
     def user(self):
-        return self.user
+        return self._user
 
     def password(self):
-        return self.password
+        return self._password
 
 class Version(list):
     def __init__(self, version_tuple):
