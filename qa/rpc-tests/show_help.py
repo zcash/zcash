@@ -12,7 +12,6 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, zcashd_binary
 import subprocess
 import tempfile
-import time
 
 help_message = """
 In order to ensure you are adequately protecting your privacy when using Zcash,
@@ -489,9 +488,7 @@ class ShowHelpTest(BitcoinTestFramework):
     def show_help(self):
         with tempfile.SpooledTemporaryFile(max_size=2**16) as log_stdout:
             args = [ zcashd_binary(), "--help" ]
-            process = subprocess.Popen(args, stdout=log_stdout)
-            while process.poll() is None:
-                time.sleep(0.25)
+            process = subprocess.run(args, stdout=log_stdout)
             assert_equal(process.returncode, 0)
             log_stdout.seek(0)
             stdout = log_stdout.read().decode('utf-8')
