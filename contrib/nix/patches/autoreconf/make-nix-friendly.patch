@@ -16,12 +16,11 @@ diff --git a/src/Makefile.am b/src/Makefile.am
 index 72cff51c9..2f2448dd7 100644
 --- a/src/Makefile.am
 +++ b/src/Makefile.am
-@@ -4,7 +4,7 @@
+@@ -4,7 +4,6 @@
  # Distributed under the MIT software license, see the accompanying
  # file COPYING or https://www.opensource.org/licenses/mit-license.php .
  
 -DIST_SUBDIRS = secp256k1 univalue
-+DIST_SUBDIRS = secp256k1
  
  AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS) $(HARDENED_LDFLAGS) $(GPROF_LDFLAGS) $(SANITIZER_LDFLAGS)
  AM_CXXFLAGS = $(DEBUG_CXXFLAGS) $(HARDENED_CXXFLAGS) $(ERROR_CXXFLAGS) $(GPROF_CXXFLAGS) $(SANITIZER_CXXFLAGS)
@@ -31,7 +30,8 @@ index 72cff51c9..2f2448dd7 100644
  LIBBITCOIN_CRYPTO_AVX2=crypto/libbitcoin_crypto_avx2.a
 -LIBRUSTZCASH=$(top_builddir)/target/$(RUST_TARGET)/release/librustzcash.a
 +LIBRUSTZCASH=@NIX_LIBRUSTZCASH@/lib/librustzcash.a
- LIBSECP256K1=secp256k1/libsecp256k1.la
+-LIBSECP256K1=secp256k1/libsecp256k1.la
++LIBSECP256K1=@NIX_LIBSECP256K1@/lib/libsecp256k1.la
 -LIBUNIVALUE=univalue/libunivalue.la
 +LIBUNIVALUE=@NIX_LIBUNIVALUE@/lib/libunivalue.la
  LIBZCASH=libzcash.a
@@ -46,7 +46,7 @@ index 72cff51c9..2f2448dd7 100644
  
  if ENABLE_ZMQ
  LIBBITCOIN_ZMQ=libbitcoin_zmq.a
-@@ -139,19 +139,14 @@ cargo-build-lib: cargo-build
+@@ -139,19 +139,12 @@ cargo-build-lib: cargo-build
  
  cargo-build-bins: cargo-build
  
@@ -60,8 +60,8 @@ index 72cff51c9..2f2448dd7 100644
  
 -$(LIBRUSTZCASH): cargo-build-lib
 -
- $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
- 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
+-$(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
+-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
 -
 -$(LIBUNIVALUE): $(wildcard univalue/lib/*) $(wildcard univalue/include/*)
 -	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
