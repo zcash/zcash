@@ -153,7 +153,7 @@ cov: test_bitcoin.coverage/.dirstamp cov-zcash total.coverage/.dirstamp
 endif
 
 dist_bin_SCRIPTS = zcutil/fetch-params.sh
-dist_noinst_SCRIPTS = autogen.sh zcutil/build-debian-package.sh zcutil/build.sh
+dist_noinst_SCRIPTS = autogen.sh zcutil/build-debian-package.sh
 
 RUST_DIST = $(top_srcdir)/.cargo $(top_srcdir)/Cargo.toml $(top_srcdir)/Cargo.lock $(top_srcdir)/rust-toolchain.toml
 
