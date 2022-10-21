@@ -13,6 +13,7 @@
 , openssl
 , pkg-config
 , python3
+, univalue
 , utf8cpp
 , zeromq
 , zk-parameters
@@ -35,6 +36,7 @@ llvmPackages.stdenv.mkDerivation {
     librustzcash
     libsodium
     openssl
+    univalue
     utf8cpp
     zeromq
   ];
@@ -58,11 +60,14 @@ llvmPackages.stdenv.mkDerivation {
 
   # So we can override the path to librustzcash in the Makefile.
   NIX_LIBRUSTZCASH = librustzcash;
+  NIX_LIBUNIVALUE = univalue;
 
   patches = [ ./patches/autoreconf/make-nix-friendly.patch ];
 
   postPatch = ''
-    substituteInPlace ./src/Makefile.am --subst-var NIX_LIBRUSTZCASH
+    substituteInPlace ./src/Makefile.am \
+      --subst-var NIX_LIBRUSTZCASH \
+      --subst-var NIX_LIBUNIVALUE
     patchShebangs ./src/test/bitcoin-util-test.py
   '';
 
