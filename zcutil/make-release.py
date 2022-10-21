@@ -246,7 +246,8 @@ def patch_version_in_files(release, releaseprev):
     patch_README(release, releaseprev)
     patch_clientversion_h(release)
     patch_configure_ac(release)
-    patch_gitian_linux_yml(release, releaseprev)
+    patch_gitian_linux_yml(release, releaseprev, 'contrib/gitian-descriptors/gitian-linux.yml')
+    patch_gitian_linux_yml(release, releaseprev, 'contrib/gitian-descriptors/gitian-linux-parallel.yml')
 
 
 @phase('Patching release height for end-of-support halt.')
@@ -374,8 +375,7 @@ def patch_configure_ac(release):
     )
 
 
-def patch_gitian_linux_yml(release, releaseprev):
-    path = 'contrib/gitian-descriptors/gitian-linux.yml'
+def patch_gitian_linux_yml(release, releaseprev, path):
     with PathPatcher(path) as (inf, outf):
         outf.write(inf.readline())
 

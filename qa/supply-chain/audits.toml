@@ -19,6 +19,12 @@ criteria = "safe-to-deploy"
 delta = "1.0.56 -> 1.0.61"
 notes = "Update does not introduce new code. Minor build script changes look fine."
 
+[[audits.anyhow]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.61 -> 1.0.65"
+notes = "Build script changes just alter what it is probing for; no difference in side effects."
+
 [[audits.bellman]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
@@ -60,6 +66,12 @@ criteria = "safe-to-deploy"
 delta = "1.0.9 -> 1.0.10"
 notes = "Bumps nix and removes some of its default features."
 
+[[audits.cpufeatures]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.2.2 -> 0.2.5"
+notes = "Unsafe changes just introduce `#[inline(never)]` wrappers."
+
 [[audits.crypto-common]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
@@ -77,6 +89,21 @@ criteria = "safe-to-deploy"
 delta = "1.0.72 -> 1.0.76"
 notes = "Impls Unpin for SharedPtr and UniquePtr. The rationale makes sense."
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.76 -> 1.0.78"
+
+[[audits.cxx]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "1.0.78 -> 1.0.79"
+notes = """
+This release changes the result of the `cxxbridge` `exception` call to return
+a struct containing both the pointer to an error message and its length,
+instead of just the raw `*const u8`.
+"""
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -87,6 +114,17 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.72 -> 1.0.76"
 
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.76 -> 1.0.78"
+
+[[audits.cxxbridge-flags]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "1.0.78 -> 1.0.79"
+notes = "This is exclusively an update to the `cxxbridge` dependency version."
+
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -96,6 +134,22 @@ delta = "1.0.68 -> 1.0.72"
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.72 -> 1.0.76"
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.76 -> 1.0.78"
+
+[[audits.cxxbridge-macro]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "1.0.78 -> 1.0.79"
+
+[[audits.cxxbridge-macro]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "1.0.78 -> 1.0.79"
+notes = "This is exclusively an update to the `cxxbridge` dependency version."
 
 [[audits.equihash]]
 who = "Jack Grigg <jack@z.cash>"
@@ -124,6 +178,11 @@ Checked that getrandom::wasi::getrandom_inner matches wasi::random_get.
 Checked that getrandom::util_libc::Weak lock ordering matches std::sys::unix::weak::DlsymWeak.
 """
 
+[[audits.group]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.12.0 -> 0.12.1"
+
 [[audits.halo2_gadgets]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
@@ -147,6 +206,12 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.1.0 -> 0.2.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.indexmap]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.8.1 -> 1.9.1"
+notes = "I'm satisfied that the assertion guarding the new unsafe block is correct."
 
 [[audits.inout]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -160,11 +225,53 @@ criteria = "safe-to-deploy"
 delta = "1.0.1 -> 1.0.3"
 notes = "Update makes no changes to code."
 
+[[audits.libm]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.2.2 -> 0.2.5"
+
+[[audits.link-cplusplus]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.6 -> 1.0.7"
+
+[[audits.lock_api]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.4.7 -> 0.4.9"
+notes = "The unsafe changes fix soundness bugs. The unsafe additions in the new ArcMutexGuard::into_arc method seem fine, but it should probably have used ManuallyDrop instead of mem::forget."
+
+[[audits.log]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.4.16 -> 0.4.17"
+notes = "I confirmed that the unsafe transmutes are fine; NonZeroU128 and NonZeroI128 are `#[repr(transparent)]` wrappers around u128 and i128 respectively."
+
 [[audits.memuse]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.2.0 -> 0.2.1"
 notes = "Exposes an existing macro. Note that I am the author of the crate."
+
+[[audits.metrics]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.19.0 -> 0.20.1"
+
+[[audits.metrics-exporter-prometheus]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.10.0 -> 0.11.0"
+
+[[audits.metrics-macros]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.5.1 -> 0.6.0"
+
+[[audits.metrics-util]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.13.0 -> 0.14.0"
 
 [[audits.mio]]
 who = "Jack Grigg <jack@z.cash>"
@@ -204,6 +311,22 @@ criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.1.0 -> 0.2.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.orchard]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.2.0 -> 0.3.0"
+
+[[audits.parking_lot]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.11.2 -> 0.12.1"
+notes = "Most `unsafe {}` changes were to reduce the scope of the unsafe blocks. I didn't closely review the migration to the asm! macro but it looks reasonable."
+
+[[audits.parking_lot_core]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.8.5 -> 0.9.3"
+
 [[audits.poly1305]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -215,17 +338,38 @@ who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.37 -> 1.0.41"
 
+[[audits.quanta]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.9.3 -> 0.10.1"
+
 [[audits.serde]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.136 -> 1.0.143"
 notes = "Bumps serde-derive and adds some constructors."
 
+[[audits.serde]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.143 -> 1.0.145"
+
 [[audits.serde_derive]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.136 -> 1.0.143"
 notes = "Bumps syn, inverts some build flags."
+
+[[audits.serde_derive]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.143 -> 1.0.145"
+
+[[audits.sketches-ddsketch]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.1.3 -> 0.2.0"
+notes = "I did not review the refactor, but there are no unsafe blocks and I didn't see any obvious changes that could result in panics."
 
 [[audits.syn]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -238,11 +382,23 @@ criteria = "safe-to-deploy"
 delta = "1.0.30 -> 1.0.32"
 notes = "Bumps thiserror-impl, no code changes."
 
+[[audits.thiserror]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.32 -> 1.0.37"
+notes = "The new build script invokes rustc to determine whether it supports the Provider API. The only side-effect is it overwrites `$OUT_DIR/probe.rs`, which is fine because it is unique to the thiserror package."
+
 [[audits.thiserror-impl]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.30 -> 1.0.32"
 notes = "Only change is to refine an error message."
+
+[[audits.thiserror-impl]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.32 -> 1.0.37"
+notes = "Proc macro changes migrating to the Provider API look fine."
 
 [[audits.unicode-ident]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -316,11 +472,21 @@ criteria = "safe-to-deploy"
 version = "0.1.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.zcash_address]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.1.0 -> 0.2.0"
+
 [[audits.zcash_encoding]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 version = "0.1.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.zcash_encoding]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.1.0 -> 0.2.0"
 
 [[audits.zcash_history]]
 who = "Jack Grigg <jack@z.cash>"
@@ -334,6 +500,11 @@ criteria = ["crypto-reviewed", "safe-to-deploy"]
 version = "0.1.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.zcash_note_encryption]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.1.0 -> 0.2.0"
+
 [[audits.zcash_primitives]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
@@ -345,6 +516,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.6.0 -> 0.7.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.zcash_primitives]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.7.0 -> 0.8.1"
 
 [[audits.zcash_proofs]]
 who = "Jack Grigg <jack@z.cash>"
@@ -363,6 +539,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.7.0 -> 0.7.1"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.zcash_proofs]]
+who = "Kris Nuttycombe <kris@nutty.land>"
+criteria = "safe-to-deploy"
+delta = "0.7.1 -> 0.8.0"
 
 [[audits.zeroize]]
 who = "Daira Hopwood <daira@jacaranda.org>"

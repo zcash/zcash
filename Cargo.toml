@@ -49,33 +49,33 @@ libc = "0.2"
 jubjub = "0.9"
 memuse = "0.2"
 nonempty = "0.7"
-orchard = "0.2"
+orchard = "0.3"
 secp256k1 = "0.21"
 subtle = "2.2"
 rand_core = "0.6"
 tracing = "0.1"
 tracing-core = "0.1"
 tracing-appender = "0.2"
-zcash_address = "0.1"
-zcash_encoding = "0.1"
+zcash_address = "0.2"
+zcash_encoding = "0.2"
 zcash_history = "0.3"
-zcash_note_encryption = "0.1"
-zcash_primitives = { version = "0.7", features = ["transparent-inputs"] }
-zcash_proofs = { version = "0.7.1", features = ["directories"] }
+zcash_note_encryption = "0.2"
+zcash_primitives = { version = "0.8.1", features = ["transparent-inputs"] }
+zcash_proofs = { version = "0.8", features = ["directories"] }
 ed25519-zebra = "3"
 zeroize = "1.4.2"
 
 # Rust/C++ interop
 # The version needs to match depends/packages/native_cxxbridge.mk
-cxx = { version = "=1.0.76", features = ["c++17"] }
+cxx = { version = "=1.0.79", features = ["c++17"] }
 
 # Rust threading
 rayon = "1.5"
 
 # Metrics
 ipnet = "2"
-metrics = "0.19"
-metrics-exporter-prometheus = "0.10"
+metrics = "0.20"
+metrics-exporter-prometheus = "0.11"
 
 # General tool dependencies
 gumdrop = "0.8"
@@ -110,13 +110,3 @@ lto = true
 panic = 'abort'
 codegen-units = 1
 
-[patch.crates-io]
-equihash = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
-zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "913aa0a9885acbd6af9cf3525221d632e4f5a6e4" }
-orchard = { git = "https://github.com/zcash/orchard.git", rev = "f206b3f5d4e31bba75d03d9d03d5fa25825a9384" }
-group = { git = "https://github.com/zkcrypto/group.git", rev = "f61e3e420ed1220c8f1f80988f8c6c5e202d8715" }

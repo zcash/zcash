@@ -1,5 +1,5 @@
 ---
-name: "zcash-5.3.0"
+name: "zcash-5.3.0-rc1"
 enable_cache: true
 distro: "debian"
 suites:
@@ -36,7 +36,7 @@ script: |
   WRAP_DIR=$HOME/wrapped
   HOSTS="x86_64-linux-gnu"
   CONFIGFLAGS="--enable-glibc-back-compat --enable-reduce-exports --disable-bench --enable-hardening --enable-werror"
-  MAKEOPTS="V=1"
+  MAKEOPTS="V=1 -j$(nproc)"
   FAKETIME_HOST_PROGS=""
   FAKETIME_PROGS="date ar ranlib nm strip objcopy"
   HOST_CFLAGS=""

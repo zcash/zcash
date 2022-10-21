@@ -261,7 +261,7 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
                 let ctx = Secp256k1::<VerifyOnly>::gen_new();
 
                 for (i, (txin, coin)) in bundle.vin.iter().zip(coins).enumerate() {
-                    match coin.script_pubkey.address() {
+                    match coin.recipient_address() {
                         Some(addr @ TransparentAddress::PublicKey(_)) => {
                             // Format is [sig_and_type_len] || sig || [hash_type] || [pubkey_len] || pubkey
                             // where [x] encodes a single byte.

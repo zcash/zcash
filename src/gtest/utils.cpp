@@ -1,6 +1,8 @@
 #include "gtest/utils.h"
 #include "rpc/server.h"
+#ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
+#endif
 
 int GenZero(int n)
 {
@@ -35,6 +37,8 @@ void LoadProofParameters() {
     );
 }
 
+#ifdef ENABLE_WALLET
+
 void LoadGlobalWallet() {
     CCoinsViewDB *pcoinsdbview;
     bool fFirstRun;
@@ -67,3 +71,5 @@ void UnloadGlobalWallet() {
     bitdb.Flush(true);
     bitdb.Reset();
 }
+
+#endif

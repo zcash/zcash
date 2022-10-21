@@ -28,7 +28,7 @@ pub extern "C" fn metrics_run(
         }
     };
     // We always allow localhost.
-    allow_ips.extend(&["127.0.0.0/8", "::1/128"]);
+    allow_ips.extend(["127.0.0.0/8", "::1/128"]);
 
     // Parse the address to bind to.
     let bind_address = SocketAddr::new(
