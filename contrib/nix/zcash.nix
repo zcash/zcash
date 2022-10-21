@@ -4,6 +4,7 @@
 , db62
 , gtest
 , hexdump
+, leveldb
 , lib
 , libevent
 , librustzcash
@@ -33,6 +34,7 @@ llvmPackages.stdenv.mkDerivation {
     boost
     db62
     gtest
+    leveldb
     libevent
     librustzcash
     libsodium
@@ -60,7 +62,9 @@ llvmPackages.stdenv.mkDerivation {
   # Because of fetch-params, everything expects the parameters to be in `HOME`.
   HOME = "${zk-parameters}/var/cache";
 
-  # So we can override the path to librustzcash in the Makefile.
+  # So we can override the paths to libraries provided by the “depends/” build
+  # in the Makefile.
+  NIX_LIBLEVELDB = leveldb;
   NIX_LIBRUSTZCASH = librustzcash;
   NIX_LIBSECP256K1 = secp256k1;
   NIX_LIBUNIVALUE = univalue;
@@ -69,6 +73,7 @@ llvmPackages.stdenv.mkDerivation {
 
   postPatch = ''
     substituteInPlace ./src/Makefile.am \
+      --subst-var NIX_LIBLEVELDB \
       --subst-var NIX_LIBRUSTZCASH \
       --subst-var NIX_LIBSECP256K1 \
       --subst-var NIX_LIBUNIVALUE

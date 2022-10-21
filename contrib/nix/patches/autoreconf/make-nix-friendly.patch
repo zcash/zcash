@@ -12,6 +12,15 @@ index cce1a76d0..e6cfc61fd 100644
  ZC_REQUIRE_PROG(CXXBRIDGE, cxxbridge)
  dnl This one is still optional and checked by complicated logic below:
  AC_PATH_PROG(CCACHE,ccache)
+@@ -876,7 +873,7 @@ fi
+ LEVELDB_CPPFLAGS=
+ LIBLEVELDB=
+ LIBMEMENV=
+-AM_CONDITIONAL([EMBEDDED_LEVELDB],[true])
++AM_CONDITIONAL([EMBEDDED_LEVELDB],[false])
+ AC_SUBST(LEVELDB_CPPFLAGS)
+ AC_SUBST(LIBLEVELDB)
+ AC_SUBST(LIBMEMENV)
 diff --git a/src/Makefile.am b/src/Makefile.am
 index 72cff51c9..2f2448dd7 100644
 --- a/src/Makefile.am
@@ -24,10 +33,11 @@ index 72cff51c9..2f2448dd7 100644
  
  AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS) $(HARDENED_LDFLAGS) $(GPROF_LDFLAGS) $(SANITIZER_LDFLAGS)
  AM_CXXFLAGS = $(DEBUG_CXXFLAGS) $(HARDENED_CXXFLAGS) $(ERROR_CXXFLAGS) $(GPROF_CXXFLAGS) $(SANITIZER_CXXFLAGS)
-@@ -28,16 +28,16 @@ LIBBITCOIN_UTIL=libbitcoin_util.a
+@@ -28,16 +28,17 @@ LIBBITCOIN_UTIL=libbitcoin_util.a
  LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
  LIBBITCOIN_CRYPTO_SSE41=crypto/libbitcoin_crypto_sse41.a
  LIBBITCOIN_CRYPTO_AVX2=crypto/libbitcoin_crypto_avx2.a
++LIBLEVELDB=@NIX_LIBLEVELDB@/lib/libleveldb.a
 -LIBRUSTZCASH=$(top_builddir)/target/$(RUST_TARGET)/release/librustzcash.a
 +LIBRUSTZCASH=@NIX_LIBRUSTZCASH@/lib/librustzcash.a
 -LIBSECP256K1=secp256k1/libsecp256k1.la
