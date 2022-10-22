@@ -13,7 +13,7 @@
 , makeWrapper
 , openssl
 , pkg-config
-, python3
+, python
 , secp256k1
 , src
 , univalue
@@ -49,7 +49,7 @@ llvmPackages.stdenv.mkDerivation {
     hexdump
     makeWrapper
     pkg-config
-    python3
+    python
     zk-parameters
   ];
 

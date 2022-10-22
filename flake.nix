@@ -23,22 +23,23 @@
             || pkgs.lib.hasInfix "/depends/patches" path;
           src = pkgs.lib.cleanSource ./.;
         };
+
+        callPackage = pkgs.lib.callPackageWith (pkgs // { inherit src; });
+        callPackages = pkgs.lib.callPackagesWith (pkgs // { inherit src; });
       in
         {
+          checks = callPackages ./contrib/nix/checks.nix { };
+
           packages = {
             default = self.packages.${system}.zcash;
 
-            librustzcash = pkgs.callPackage ./contrib/nix/librustzcash.nix {
-              inherit src;
+            librustzcash = callPackage ./contrib/nix/librustzcash.nix {
               crane = crane.lib.${system};
             };
 
-            zk-parameters = pkgs.callPackage ./contrib/nix/zk-parameters.nix {
-              inherit src;
-            };
+            zk-parameters = callPackage ./contrib/nix/zk-parameters.nix { };
 
-            zcash = pkgs.callPackage ./contrib/nix/zcash.nix {
-              inherit src;
+            zcash = callPackage ./contrib/nix/zcash.nix {
               inherit (self.packages.${system}) librustzcash zk-parameters;
             };
           };
@@ -78,20 +79,25 @@
             };
           };
 
-          devShells = {
-            release = pkgs.mkShell {
-              inherit src;
+          devShells =
+            # `pkgs.debian-devscripts` is Linux-specific, so we can only do a
+            # release from there.
+            if pkgs.lib.hasSuffix "-linux" system
+            then {
+              release = pkgs.mkShell {
+                inherit src;
 
-              nativeBuildInputs = [
-                pkgs.debian-devscripts
-                pkgs.help2man
-                (pkgs.python3.withPackages (pypkgs: [
-                  pypkgs.progressbar2
-                  pypkgs.requests
-                ]))
-              ];
-            };
-          };
+                nativeBuildInputs = [
+                  pkgs.debian-devscripts
+                  pkgs.help2man
+                  (pkgs.python.withPackages (pypkgs: [
+                    pypkgs.progressbar2
+                    pypkgs.requests
+                  ]))
+                ];
+              };
+            }
+            else { };
         });
 
   inputs = {

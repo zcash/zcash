@@ -1,6 +1,5 @@
 # This overlay contains all the things that we do to upstream libraries to work
 # for us.
-
 final: previous: {
   leveldb = (previous.leveldb.override {
     static = true;
@@ -32,6 +31,10 @@ final: previous: {
   });
 
   llvmPackages = final.llvmPackages_14;
+
+  python = previous.python3;
+
+  pythonPackages = previous.python3Packages;
 
   snappy = previous.snappy.override {
     static = true;
