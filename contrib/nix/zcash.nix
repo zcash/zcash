@@ -15,6 +15,7 @@
 , pkg-config
 , python3
 , secp256k1
+, src
 , univalue
 , utf8cpp
 , zeromq
@@ -22,13 +23,10 @@
 }:
 
 llvmPackages.stdenv.mkDerivation {
+  inherit src;
+
   pname = "zcash";
   version = "5.3.0";
-
-  src = lib.cleanSourceWith {
-    filter = name: type: ! lib.hasSuffix ".nix" (baseNameOf (toString name));
-    src = lib.cleanSource ../..;
-  };
 
   buildInputs = [
     boost
