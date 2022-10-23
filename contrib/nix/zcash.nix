@@ -1,5 +1,6 @@
 { autoreconfHook
 , boost
+, ctaes
 , cxx-rs
 , db62
 , gtest
@@ -30,6 +31,7 @@ llvmPackages.stdenv.mkDerivation {
 
   buildInputs = [
     boost
+    ctaes
     db62
     gtest
     leveldb
@@ -55,7 +57,7 @@ llvmPackages.stdenv.mkDerivation {
 
   # I think this is needed because the “utf8cpp” dir component is non-standard,
   # but I don’t know why the package doesn’t set that up correctly.
-  CXXFLAGS = "-I${utf8cpp}/include/utf8cpp";
+  CXXFLAGS = "-I${ctaes} -I${utf8cpp}/include/utf8cpp";
 
   # Because of fetch-params, everything expects the parameters to be in `HOME`.
   HOME = "${zk-parameters}/var/cache";
@@ -67,7 +69,10 @@ llvmPackages.stdenv.mkDerivation {
   NIX_LIBSECP256K1 = secp256k1;
   NIX_LIBUNIVALUE = univalue;
 
-  patches = [ ./patches/autoreconf/make-nix-friendly.patch ];
+  patches = [
+    ./patches/autoreconf/make-nix-friendly.patch
+    ./patches/zcash/ctaes.patch
+  ];
 
   postPatch = ''
     substituteInPlace ./src/Makefile.am \

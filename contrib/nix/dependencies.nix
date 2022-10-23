@@ -1,6 +1,18 @@
 # This overlay contains all the things that we do to upstream libraries to work
 # for us.
 final: previous: {
+  ctaes = final.runCommand "ctaes" {
+    src = final.fetchFromGitHub {
+      owner = "bitcoin-core";
+      repo = "ctaes";
+      rev = "8012b062ea4931f10cc2fd2075fddc3782a57ee4";
+      sha256 = "sha256-/uQQLO7ZKnimap4ual/dHNwd4nTvoo4+3qZ/HqjxLuA=";
+    };
+  } ''
+    mkdir -p $out
+    cp $src/ctaes.c $src/ctaes.h $out/
+  '';
+
   leveldb = (previous.leveldb.override {
     static = true;
   }).overrideAttrs (old: {

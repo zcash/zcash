@@ -17,6 +17,7 @@
             ! (pkgs.lib.hasSuffix ".nix" path
                || pkgs.lib.hasInfix "/depends" path
                || pkgs.lib.hasInfix "/src/crc32c" path
+               || pkgs.lib.hasInfix "/src/crypto/ctaes" path
                || pkgs.lib.hasInfix "/src/leveldb" path
                || pkgs.lib.hasInfix "/src/secp256k1" path
                || pkgs.lib.hasInfix "/src/univalue" path)
