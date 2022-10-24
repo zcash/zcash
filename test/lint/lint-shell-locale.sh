@@ -26,7 +26,7 @@ for SHELL_SCRIPT in $(git ls-files -- "*.sh"); do
         echo "Missing bash strict mode as first non-comment non-empty lines in ${SHELL_SCRIPT}"
         EXIT_CODE=1
     fi
-    if grep -q "# This script is intentionally locale-dependent by not setting \"export LC_ALL=C\"." "${SHELL_SCRIPT}"; then
+    if grep -q "# This script is intentionally locale-dependent by not setting \"export LC_ALL=C\"" "${SHELL_SCRIPT}"; then
         continue
     fi
     FIRST_NON_COMMENT_LINE=${FIRST_NON_COMMENT_LINES[1]}
