@@ -48,7 +48,6 @@ jobs:
       - name: Shell locale
         run: ./test/lint/lint-shell-locale.sh
         if: always()
-        continue-on-error: true # Temporary until we get this passing
 
       - name: Shellcheck
         run: ./test/lint/lint-shell.sh

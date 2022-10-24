@@ -10,7 +10,7 @@ export LC_ALL=C
 
 srcdir="$(dirname $0)"
 cd "$srcdir"
-if [ -z ${LIBTOOLIZE} ] && GLIBTOOLIZE="$(command -v glibtoolize)"; then
+if [[ ! -v LIBTOOLIZE || -z ${LIBTOOLIZE} ]] && GLIBTOOLIZE="$(command -v glibtoolize)"; then
   LIBTOOLIZE="${GLIBTOOLIZE}"
   export LIBTOOLIZE
 fi

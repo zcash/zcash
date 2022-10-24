@@ -24,8 +24,8 @@ while getopts "?" opt; do
   esac
 done
 
-if [ -z "${TRAVIS_COMMIT_RANGE}" ]; then
-  if [ -n "$1" ]; then
+if [ ! -v TRAVIS_COMMIT_RANGE ] || [ -z "${TRAVIS_COMMIT_RANGE}" ]; then
+  if [ -v 1 ] && [ -n "$1" ]; then
     TRAVIS_COMMIT_RANGE="HEAD~$1...HEAD"
   else
     TRAVIS_COMMIT_RANGE="HEAD"

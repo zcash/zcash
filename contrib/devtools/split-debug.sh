@@ -2,8 +2,9 @@
 source $(dirname ${BASH_SOURCE[0]})/../strict-mode.bash
 export LC_ALL=C
 
-if [ $# -ne 3 ];
-    then echo "usage: $0 <input> <stripped-binary> <debug-binary>"
+if [ $# -ne 3 ]; then
+    echo "usage: $0 <input> <stripped-binary> <debug-binary>"
+    exit 1
 fi
 
 /usr/bin/objcopy --enable-deterministic-archives -p --only-keep-debug $1 $3
