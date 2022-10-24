@@ -52,9 +52,34 @@ final: previous: {
     static = true;
   };
 
+  tinyformat = final.stdenv.mkDerivation {
+    pname = "tinyformat";
+    version = "2.3.0";
+
+    src = final.fetchFromGitHub {
+      owner = "c42f";
+      repo = "tinyformat";
+      rev = "aef402d85c1e8f9bf491b72570bfe8938ae26727";
+      sha256 = "sha256-Ka7fp5ZviTMgCXHdS/OKq+P871iYqoDOsj8HtJGAU3Y=";
+    };
+
+    patches = [ ./patches/tinyformat/bitcoin.patch ];
+
+    # ./patches/tinyformat/bitcoin.patch introduces C++11 features.
+    CXXFLAGS = "-std=c++11";
+
+    installPhase = ''
+      runHook preInstall
+      mkdir -p $out
+      cp tinyformat.h $out/
+      runHook postInstall
+    '';
+  };
+
   univalue = final.stdenv.mkDerivation {
     pname = "univalue";
     version = "1.0.3";
+
     src = final.fetchFromGitHub {
       owner = "bitcoin-core";
       repo = "univalue-subtree";

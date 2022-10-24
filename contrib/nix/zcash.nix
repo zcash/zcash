@@ -17,6 +17,7 @@
 , python
 , secp256k1
 , src
+, tinyformat
 , univalue
 , utf8cpp
 , zeromq
@@ -40,6 +41,7 @@ llvmPackages.stdenv.mkDerivation {
     libsodium
     openssl
     secp256k1
+    tinyformat
     univalue
     utf8cpp
     zeromq
@@ -57,7 +59,7 @@ llvmPackages.stdenv.mkDerivation {
 
   # I think this is needed because the “utf8cpp” dir component is non-standard,
   # but I don’t know why the package doesn’t set that up correctly.
-  CXXFLAGS = "-I${ctaes} -I${utf8cpp}/include/utf8cpp";
+  CXXFLAGS = "-I${ctaes} -I${tinyformat} -I${utf8cpp}/include/utf8cpp";
 
   # Because of fetch-params, everything expects the parameters to be in `HOME`.
   HOME = "${zk-parameters}/var/cache";
@@ -72,6 +74,7 @@ llvmPackages.stdenv.mkDerivation {
   patches = [
     ./patches/autoreconf/make-nix-friendly.patch
     ./patches/zcash/ctaes.patch
+    ./patches/zcash/tinyformat.patch
   ];
 
   postPatch = ''

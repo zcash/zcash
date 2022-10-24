@@ -20,6 +20,7 @@
                || pkgs.lib.hasInfix "/src/crypto/ctaes" path
                || pkgs.lib.hasInfix "/src/leveldb" path
                || pkgs.lib.hasInfix "/src/secp256k1" path
+               || pkgs.lib.hasSuffix "/src/tinyformat.h" path
                || pkgs.lib.hasInfix "/src/univalue" path)
             || pkgs.lib.hasInfix "/depends/patches" path;
           src = pkgs.lib.cleanSource ./.;
