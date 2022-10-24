@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-
+source $(dirname ${BASH_SOURCE[0]})/../strict-mode.bash
 export LC_ALL=C
+
 TOPDIR=${TOPDIR:-$(git rev-parse --show-toplevel)}
 SRCDIR=${SRCDIR:-$TOPDIR/src}
 MANDIR=${MANDIR:-$TOPDIR/doc/man}

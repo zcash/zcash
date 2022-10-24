@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-#
+source $(dirname ${BASH_SOURCE[0]})/../contrib/strict-mode.bash
+export LC_ALL=C
+set -x
+
 # Warning: This deletes tags on "origin", so point that at the right target!
 #
 # Note: It doesn't delete any local tags.
-
-export LC_ALL=C
-set -exu -o pipefail
 
 ZCASH_TAG_RGX='^v[0-9]+.[0-9]+.[0-9]+.z[0-9]+'
 MAXJOBS=7

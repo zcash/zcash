@@ -2,7 +2,7 @@
 #   other scripts. I.e., any script should start with the following two lines:
 #
 #     #!/usr/bin/env bash
-#     source ./path/to/bash-strict-mode
+#     source $(dirname ${BASH_SOURCE[0]})/path/to/bash-strict-mode
 #
 #   resources:
 # • https://olivergondza.github.io/2019/10/01/bash-strict-mode.html

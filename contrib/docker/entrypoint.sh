@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-
+source $(dirname ${BASH_SOURCE[0]})/../strict-mode.bash
 export LC_ALL=C
-set -eo pipefail
 
 if [[ ${1} == "--version" ]];then
   zcashd --version

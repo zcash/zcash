@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-#
+source $(dirname ${BASH_SOURCE[0]})/../../contrib/strict-mode.bash
+export LC_ALL=C
+
 # Copyright (c) 2017 The Bitcoin Core developers
 # Copyright (c) 2020-2022 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
@@ -9,7 +11,6 @@
 
 # We can't run this check unless we know the commit range for the PR.
 
-export LC_ALL=C
 while getopts "?" opt; do
   case $opt in
     ?)

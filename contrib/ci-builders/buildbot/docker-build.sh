@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-
+source $(dirname ${BASH_SOURCE[0]})/../../strict-mode.bash
 export LC_ALL=C
-set -exo pipefail
+set -x
 
 # Debian 9
 docker build . -f Dockerfile-build-python.apt --build-arg FROMBASEOS=debian --build-arg FROMBASEOS_BUILD_TAG=9 -t electriccoinco/zcashd-build-debian9

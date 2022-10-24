@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-
+source $(dirname ${BASH_SOURCE[0]})/../../contrib/strict-mode.bash
 export LC_ALL=C
-set -eu -o pipefail
 
 AFL_HARDEN=1
 CONFIGURE_FLAGS="--enable-tests=no --enable-fuzz-main"

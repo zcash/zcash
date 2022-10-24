@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
+source $(dirname ${BASH_SOURCE[0]})/../strict-mode.bash
+export LC_ALL=C
 
 if [ $# -ne 3 ];
     then echo "usage: $0 <input> <stripped-binary> <debug-binary>"

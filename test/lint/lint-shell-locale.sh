@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-#
+source $(dirname ${BASH_SOURCE[0]})/../../contrib/strict-mode.bash
+export LC_ALL=C
+
 # Copyright (c) 2018 The Bitcoin Core developers
 # Copyright (c) 2020-2022 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
@@ -11,8 +13,6 @@
 #   a.) explicitly opt out of locale dependence using
 #       "export LC_ALL=C" or "export LC_ALL=C.UTF-8", or
 #   b.) explicitly opt in to locale dependence using the annotation below.
-
-export LC_ALL=C
 
 EXIT_CODE=0
 for SHELL_SCRIPT in $(git ls-files -- "*.sh"); do
