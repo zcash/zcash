@@ -443,7 +443,7 @@ def assert_start_raises_init_error(i, dirname, extra_args=None, expected_msg=Non
             if expected_msg is None:
                 assert_msg = "%s should have exited with an error" % (zcashd_binary(),)
             else:
-                assert_msg = "%s should have exited with expected error %s" % (zcashd_binary(), expected_msg)
+                assert_msg = "%s should have exited with expected error %r" % (zcashd_binary(), expected_msg)
             raise AssertionError(assert_msg)
 
 def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, binary=None):
