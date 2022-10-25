@@ -7,6 +7,52 @@
 
 extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
 
+UniValue SendTransaction(
+        const CTransaction& tx,
+        const TxContext& context,
+        std::optional<std::reference_wrapper<CReserveKey>> reservekey,
+        bool testmode)
+{
+    UniValue o(UniValue::VOBJ);
+    // Send the transaction
+    if (!testmode) {
+        CWalletTx wtx(pwalletMain, tx);
+        // save the mapping from (receiver, txid) to UA
+        if (!std::visit(match {
+                    [&](const std::vector<RecipientMapping>& recipients) {
+                        return pwalletMain->SaveRecipientMappings(tx.GetHash(), recipients);
+                    },
+                    [&](const TransactionEffects& effects) {
+                        return pwalletMain->SaveRecipientMappings(
+                                tx.GetHash(),
+                                effects.GetPayments().GetResolvedPayments());
+                    }
+            }, context)) {
+            if (const auto* effects = std::get_if<TransactionEffects>(&context))
+                effects->UnlockSpendable();
+
+            // More details in debug log
+            throw JSONRPCError(RPC_WALLET_ERROR, "SendTransaction: SaveRecipientMappings failed");
+        }
+        CValidationState state;
+        if (!pwalletMain->CommitTransaction(wtx, reservekey, state)) {
+            if (const auto* effects = std::get_if<TransactionEffects>(&context))
+                effects->UnlockSpendable();
+            std::string strError = strprintf("SendTransaction: Transaction commit failed:: %s", state.GetRejectReason());
+            throw JSONRPCError(RPC_WALLET_ERROR, strError);
+        }
+        o.pushKV("txid", tx.GetHash().ToString());
+    } else {
+        // Test mode does not send the transaction to the network nor save the recipient mappings.
+        o.pushKV("test", 1);
+        o.pushKV("txid", tx.GetHash().ToString());
+        o.pushKV("hex", EncodeHexTx(tx));
+    }
+    if (const auto* effects = std::get_if<TransactionEffects>(&context))
+        effects->UnlockSpendable();
+    return o;
+}
+
 std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::optional<std::reference_wrapper<CReserveKey>> reservekey, bool testmode) {
     // Sign the raw transaction
     UniValue rawtxnValue = find_value(obj, "rawtxn");

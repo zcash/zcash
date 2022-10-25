@@ -171,7 +171,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
 
     auto ovks = SelectOVKs(selector, spendable);
 
-    return TransactionEffects(
+    auto effects = TransactionEffects(
             anchorConfirmations,
             spendable,
             resolvedPayments,
@@ -180,6 +180,10 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
             ovks.first,
             ovks.second,
             anchorHeight);
+
+    effects.LockSpendable();
+
+    return effects;
 }
 
 Payments InputSelection::GetPayments() const {
@@ -526,6 +530,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
 {
     auto requiredPrivacy = this->GetRequiredPrivacyPolicy();
     if (!strategy.IsCompatibleWith(requiredPrivacy)) {
+        UnlockSpendable();
         return TransactionBuilderResult(strprintf(
             "The specified privacy policy, %s, does not permit the creation of "
             "the requested transaction. Select %s to allow this transaction "
@@ -583,6 +588,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
     {
         LOCK(wallet.cs_wallet);
         if (!wallet.GetSaplingNoteWitnesses(saplingOutPoints, anchorConfirmations, witnesses, anchor)) {
+            UnlockSpendable();
             // This error should not appear once we're nAnchorConfirmations blocks past
             // Sapling activation.
             return TransactionBuilderResult("Insufficient Sapling witnesses.");
@@ -599,6 +605,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
             std::move(spendInfo.first),
             std::move(spendInfo.second)))
         {
+            UnlockSpendable();
             return TransactionBuilderResult(
                 strprintf("Failed to add Orchard note to transaction (check %s for details)", GetDebugLogPath())
             );
@@ -608,6 +615,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
     // Add Sapling spends
     for (size_t i = 0; i < saplingNotes.size(); i++) {
         if (!witnesses[i]) {
+            UnlockSpendable();
             return TransactionBuilderResult(strprintf(
                 "Missing witness for Sapling note at outpoint %s",
                 spendable.saplingNoteEntries[i].op.ToString()
@@ -670,6 +678,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
         // inputAnchor is not needed by builder.AddSproutInput as it is for Sapling.
         uint256 inputAnchor;
         if (!wallet.GetSproutNoteWitnesses(vOutPoints, anchorConfirmations, vSproutWitnesses, inputAnchor)) {
+            UnlockSpendable();
             // This error should not appear once we're nAnchorConfirmations blocks past
             // Sprout activation.
             return TransactionBuilderResult("Insufficient Sprout witnesses.");
@@ -702,5 +711,41 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
     }
 
     // Build the transaction
-    return builder.Build();
+    auto result = builder.Build();
+    if (result.IsError()) {
+        UnlockSpendable();
+    }
+    return result;
+}
+
+// TODO: Lock Orchard notes
+void TransactionEffects::LockSpendable() const
+{
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    for (auto utxo : spendable.utxos) {
+        COutPoint outpt(utxo.tx->GetHash(), utxo.i);
+        pwalletMain->LockCoin(outpt);
+    }
+    for (auto note : spendable.sproutNoteEntries) {
+        pwalletMain->LockNote(note.jsop);
+    }
+    for (auto note : spendable.saplingNoteEntries) {
+        pwalletMain->LockNote(note.op);
+    }
+}
+
+// TODO: Unlock Orchard notes
+void TransactionEffects::UnlockSpendable() const
+{
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    for (auto utxo : spendable.utxos) {
+        COutPoint outpt(utxo.tx->GetHash(), utxo.i);
+        pwalletMain->UnlockCoin(outpt);
+    }
+    for (auto note : spendable.sproutNoteEntries) {
+        pwalletMain->UnlockNote(note.jsop);
+    }
+    for (auto note : spendable.saplingNoteEntries) {
+        pwalletMain->UnlockNote(note.op);
+    }
 }
