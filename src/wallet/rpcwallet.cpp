@@ -297,6 +297,86 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
     }
 }
 
+// We accept any `PrivacyPolicy` constructor name, but there is also a special
+// “LegacyCompat” policy that maps to a different `PrivacyPolicy` depending on
+// other aspects of the transaction. Here we use `std::nullopt` for the
+// “LegacyCompat” case and resolve that when we have more context.
+//
+// We need to know the privacy policy before we construct the ZTXOSelector, but
+// we can't determine what “LegacyCompat” maps to without knowing whether any
+// UAs are involved. We break this cycle by parsing the privacy policy argument
+// first, and then resolving “LegacyCompat” after parsing the rest of the
+// arguments. This works because all interpretations for “LegacyCompat” have the
+// same effect on ZTXOSelector construction (in that they don't include
+// `AllowLinkingAccountAddresses`).
+std::optional<TransactionStrategy>
+reifyPrivacyPolicy(const std::optional<PrivacyPolicy>& defaultPolicy,
+                   const std::optional<std::string>& specifiedPolicy)
+{
+    std::optional<TransactionStrategy> strategy = std::nullopt;
+    if (specifiedPolicy.has_value()) {
+        auto strategyName = specifiedPolicy.value();
+        if (strategyName == "LegacyCompat") {
+            strategy = std::nullopt;
+        } else {
+            strategy = TransactionStrategy::FromString(strategyName);
+            if (!strategy.has_value()) {
+                throw JSONRPCError(
+                    RPC_INVALID_PARAMETER,
+                    strprintf("Unknown privacy policy name '%s'", strategyName));
+            }
+        }
+    } else if (defaultPolicy.has_value()) {
+        strategy = TransactionStrategy(defaultPolicy.value());
+    }
+
+    return strategy;
+}
+
+// Determines which `TransactionStrategy` should be used for the “LegacyCompat”
+// policy given the set of addresses involved.
+PrivacyPolicy
+interpretLegacyCompat(const ZTXOSelector& sender,
+                      const std::set<PaymentAddress>& recipients)
+{
+    auto legacyCompatPolicy = PrivacyPolicy::FullPrivacy;
+
+    if (fEnableLegacyPrivacyStrategy) {
+        bool hasUASender =
+            std::visit(match {
+                [&](const UnifiedAddress& _) { return true; },
+                [&](const UnifiedFullViewingKey& _) { return true; },
+                [&](const AccountZTXOPattern& acct) {
+                    return acct.GetAccountId() != ZCASH_LEGACY_ACCOUNT;
+                },
+                [&](auto _) { return false; }
+            }, sender.GetPattern());
+        bool hasUARecipient =
+            std::find_if(recipients.begin(), recipients.end(),
+                         [](const PaymentAddress& addr) {
+                             return std::holds_alternative<UnifiedAddress>(addr);
+                         })
+                != recipients.end();
+
+        if (!hasUASender && !hasUARecipient) {
+            legacyCompatPolicy = PrivacyPolicy::AllowFullyTransparent;
+        }
+    }
+
+    return legacyCompatPolicy;
+}
+
+// Provides the final `TransactionStrategy` to be used for a transaction.
+TransactionStrategy
+resolveTransactionStrategy(const ZTXOSelector& sender,
+                           const std::set<PaymentAddress>& recipients,
+                           const std::optional<TransactionStrategy>& maybeStrategy)
+{
+    return
+        maybeStrategy.value_or(
+            TransactionStrategy(interpretLegacyCompat(sender, recipients)));
+}
+
 UniValue sendtoaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -4783,27 +4863,10 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     KeyIO keyIO(chainparams);
 
-    // We need to know the privacy policy before we construct the ZTXOSelector,
-    // but we can't determine the default privacy policy without knowing whether
-    // any UAs are involved. We break this cycle by parsing the privacy policy
-    // argument first, and then resolving it to the default after parsing the
-    // rest of the arguments. This works because all possible defaults for the
-    // privacy policy have the same effect on ZTXOSelector construction (in that
-    // they don't include AllowLinkingAccountAddresses).
-    std::optional<TransactionStrategy> maybeStrategy;
-    if (params.size() > 4) {
-        auto strategyName = params[4].get_str();
-        if (strategyName != "LegacyCompat") {
-            maybeStrategy = TransactionStrategy::FromString(strategyName);
-            if (!maybeStrategy.has_value()) {
-                throw JSONRPCError(
-                    RPC_INVALID_PARAMETER,
-                    strprintf("Unknown privacy policy name '%s'", strategyName));
-            }
-        }
-    }
-
-    bool involvesUnifiedAddress = false;
+    auto maybeStrategy =
+        reifyPrivacyPolicy(
+            std::nullopt,
+            params.size() > 4 ? std::optional(params[4].get_str()) : std::nullopt);
 
     // Check that the from address is valid.
     // Unified address (UA) allowed here (#5185)
@@ -4841,7 +4904,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                                 RPC_INVALID_ADDRESS_OR_KEY,
                                 "Invalid from address, UA does not correspond to a known account.");
                     }
-                    involvesUnifiedAddress = true;
                 },
                 [&](const auto& other) {
                     if (selectorAccount.has_value() && selectorAccount.value() != ZCASH_LEGACY_ACCOUNT) {
@@ -4931,14 +4993,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "No recipients");
     }
 
-    // Now that we've set involvesUnifiedAddress correctly, we can finish
-    // evaluating the strategy.
-    TransactionStrategy strategy = maybeStrategy.value_or(
-        // Default privacy policy is "LegacyCompat".
-        (involvesUnifiedAddress || !fEnableLegacyPrivacyStrategy) ?
-            TransactionStrategy(PrivacyPolicy::FullPrivacy) :
-            TransactionStrategy(PrivacyPolicy::AllowFullyTransparent)
-    );
+    auto strategy = resolveTransactionStrategy(ztxoSelector, recipientAddrs, maybeStrategy);
 
     // Sanity check for transaction size
     // TODO: move this to the builder?
