@@ -48,7 +48,9 @@ public:
             PaymentAddress address,
             CAmount amount,
             std::optional<Memo> memo) :
-        address(address), amount(amount), memo(memo) {}
+        address(address), amount(amount), memo(memo) {
+        assert(amount >= 0);
+    }
 
     const PaymentAddress& GetAddress() const {
         return address;
@@ -158,6 +160,10 @@ private:
     int anchorHeight;
 
 public:
+    /**
+     * This class locks the `SpendableInputs` provided to it. `UnlockSpendable` must be called to
+     * release them before the instance goes out of scope.
+     */
     TransactionEffects(
         uint32_t anchorConfirmations,
         SpendableInputs spendable,
@@ -184,6 +190,17 @@ public:
     const SpendableInputs& GetSpendable() const {
         return spendable;
     }
+
+    /**
+     * This is automatically called by the constructor, so it’s not generally necessary to call this
+     * otherwise.
+     */
+    void LockSpendable(CWallet& wallet) const;
+
+    /**
+     * This should be called just before the `TransactionEffects` goes out of scope.
+     */
+    void UnlockSpendable(CWallet& wallet) const;
 
     const Payments& GetPayments() const {
         return payments;

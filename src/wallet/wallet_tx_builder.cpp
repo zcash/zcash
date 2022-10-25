@@ -147,7 +147,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
 
     auto ovks = SelectOVKs(wallet, selector, spendable);
 
-    return TransactionEffects(
+    auto effects = TransactionEffects(
             anchorConfirmations,
             spendable,
             resolvedPayments,
@@ -156,6 +156,8 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
             ovks.first,
             ovks.second,
             anchorHeight);
+    effects.LockSpendable(wallet);
+    return effects;
 }
 
 Payments InputSelection::GetPayments() const {
@@ -645,4 +647,36 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
 
     // Build the transaction
     return builder.Build();
+}
+
+// TODO: Lock Orchard notes (#6226)
+void TransactionEffects::LockSpendable(CWallet& wallet) const
+{
+    LOCK2(cs_main, wallet.cs_wallet);
+    for (auto utxo : spendable.utxos) {
+        COutPoint outpt(utxo.tx->GetHash(), utxo.i);
+        wallet.LockCoin(outpt);
+    }
+    for (auto note : spendable.sproutNoteEntries) {
+        wallet.LockNote(note.jsop);
+    }
+    for (auto note : spendable.saplingNoteEntries) {
+        wallet.LockNote(note.op);
+    }
+}
+
+// TODO: Unlock Orchard notes (#6226)
+void TransactionEffects::UnlockSpendable(CWallet& wallet) const
+{
+    LOCK2(cs_main, wallet.cs_wallet);
+    for (auto utxo : spendable.utxos) {
+        COutPoint outpt(utxo.tx->GetHash(), utxo.i);
+        wallet.UnlockCoin(outpt);
+    }
+    for (auto note : spendable.sproutNoteEntries) {
+        wallet.UnlockNote(note.jsop);
+    }
+    for (auto note : spendable.saplingNoteEntries) {
+        wallet.UnlockNote(note.op);
+    }
 }

@@ -64,7 +64,7 @@ private:
     CAmount fee_;
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 
-    uint256 main_impl();
+    uint256 main_impl(CWallet& wallet);
 };
 
 // To test private methods, a friend class can act as a proxy
@@ -74,8 +74,8 @@ public:
 
     TEST_FRIEND_AsyncRPCOperation_sendmany(std::shared_ptr<AsyncRPCOperation_sendmany> ptr) : delegate(ptr) {}
 
-    uint256 main_impl() {
-        return delegate->main_impl();
+    uint256 main_impl(CWallet& wallet) {
+        return delegate->main_impl(wallet);
     }
 
     void set_state(OperationStatus state) {
