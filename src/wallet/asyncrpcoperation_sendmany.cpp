@@ -185,7 +185,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                     strategy_);
             auto tx = buildResult.GetTxOrThrow();
 
-            UniValue sendResult = SendTransaction(tx, payments.GetResolvedPayments(), std::nullopt, testmode);
+            UniValue sendResult = SendEffectedTransaction(tx, effects, std::nullopt, testmode);
             set_result(sendResult);
 
             txid = tx.GetHash();

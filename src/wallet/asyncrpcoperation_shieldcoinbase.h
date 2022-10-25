@@ -89,7 +89,7 @@ private:
     TransactionStrategy strategy_;
     int nUTXOLimit_;
     CAmount fee_;
-    PrepareTransactionResult preparedTx_;
+    std::optional<TransactionEffects> effects_;
 
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 

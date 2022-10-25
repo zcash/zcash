@@ -49,8 +49,11 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
 
         # Attempt to shield coinbase to Sprout on node 0. Should fail;
         # transfers to Sprout are no longer supported
-        myopid = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), n0_sprout_addr0, 0)['opid']
-        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Sending funds into the Sprout pool is no longer supported.")
+        try:
+            self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), n0_sprout_addr0, 0)['opid']
+        except JSONRPCException as e:
+            errorString = e.error['message'];
+        assert_equal("Sending funds into the Sprout pool is no longer supported.", errorString)
 
         self.nodes[0].generate(1)
         self.sync_all()

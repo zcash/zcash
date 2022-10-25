@@ -55,6 +55,11 @@ UniValue SendTransaction(
     return o;
 }
 
+UniValue SendEffectedTransaction(
+        const CTransaction& tx,
+        const TransactionEffects& effects,
+        std::optional<std::reference_wrapper<CReserveKey>> reservekey,
+        bool testmode);
 
 /**
  * Sign and send a raw transaction.

@@ -88,7 +88,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
             self.nodes[0].z_shieldcoinbase("*", myzaddr, 999)
         except JSONRPCException as e:
             errorString = e.error['message']
-        assert_equal(errorString, "Amount out of range")
+        assert_equal(errorString, "Insufficient funds: have 50.00, need 999.00")
 
         # Shielding will fail because limit parameter must be at least 0
         try:
