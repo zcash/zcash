@@ -49,7 +49,9 @@ public:
             CAmount amount,
             std::optional<Memo> memo,
             bool isInternal = false) :
-        address(address), amount(amount), memo(memo), isInternal(isInternal) {}
+        address(address), amount(amount), memo(memo), isInternal(isInternal) {
+        assert(amount >= 0);
+    }
 
     const PaymentAddress& GetAddress() const {
         return address;
@@ -189,6 +191,10 @@ public:
     const SpendableInputs& GetSpendable() const {
         return spendable;
     }
+
+    void LockSpendable() const;
+
+    void UnlockSpendable() const;
 
     const Payments& GetPayments() const {
         return payments;
