@@ -28,9 +28,10 @@ Check that dependencies are up-to-date or have been postponed:
 $ ./qa/zcash/updatecheck.py
 ```
 
-You can optionally create an `$XDG_DATA_HOME/zcash/updatecheck/token` file to
-avoid running into GitHub rate limiting. Create an unprivileged personal access
-token on GitHub and copy the value into the file.
+You can optionally create a file `~/.local/share/zcash/updatecheck/token` (or
+`$XDG_DATA_HOME/zcash/updatecheck/token` if the `XDG_DATA_HOME` environment
+variable is set) to avoid running into GitHub rate limiting. Create an
+unprivileged personal access token on GitHub and copy the value into the file.
 
 If there are updates that have not been postponed, review their changelogs
 for urgent security fixes, and if there aren't any, postpone the update by

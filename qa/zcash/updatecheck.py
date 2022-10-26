@@ -203,7 +203,7 @@ class GithubTagReleaseLister:
 
     def all_tag_names(self):
         url = "https://api.github.com/repos/" + safe(self.org) + "/" + safe(self.repo) + "/git/refs/tags"
-        auth = ()
+        auth = {}
         if token:
             auth = { 'Authorization': 'Bearer ' + token }
         r = requests.get(url, headers=auth)
