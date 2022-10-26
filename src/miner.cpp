@@ -34,6 +34,7 @@
 #include "ui_interface.h"
 #include "util/system.h"
 #include "util/moneystr.h"
+#include "util/time.h"
 #include "validationinterface.h"
 
 #include <librustzcash.h>
@@ -413,6 +414,8 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
         vector<TxPriority> vecPriority;
         vecPriority.reserve(mempool.mapTx.size());
 
+        bool fEnableTxMiningDelay = GetBoolArg("-enabletxminingdelay", DEFAULT_ENABLETXMININGDELAY);
+
         // If we're given a coinbase tx, it's been precomputed, its fees are zero,
         // so we can't include any mempool transactions; this will be an empty block.
         if (!next_cb_mtx) {
@@ -425,7 +428,10 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
                                         ? nMedianTimePast
                                         : pblock->GetBlockTime();
 
-                if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, nLockTimeCutoff) || IsExpiredTx(tx, nHeight))
+                if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, nLockTimeCutoff) || IsExpiredTx(tx, nHeight) ||
+                    (fEnableTxMiningDelay &&
+                     pblock->nTime < SaturatingAddTime(mi->GetTime(), tx.EstimatePropagationLatencyInSeconds()) &&
+                     !mempool.IsPositivelyPrioritised(tx.GetHash())))
                     continue;
 
                 COrphan* porphan = NULL;

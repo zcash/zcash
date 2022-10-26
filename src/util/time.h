@@ -105,4 +105,6 @@ std::string DateTimeStrFormat(const char* pszFormat, int64_t nTime);
 /** Sanity check epoch match normal Unix epoch */
 bool ChronoSanityCheck();
 
+int64_t SaturatingAddTime(int64_t a, int64_t b);
+
 #endif // BITCOIN_UTIL_TIME_H

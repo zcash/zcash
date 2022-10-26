@@ -41,7 +41,8 @@ from test_framework.util import (
 from decimal import Decimal
 
 TURNSTILE_ARGS = ['-experimentalfeatures',
-                  '-developersetpoolsizezero']
+                  '-developersetpoolsizezero',
+                  '-enabletxminingdelay=0']
 
 class TurnstileTest (BitcoinTestFramework):
 
@@ -51,7 +52,7 @@ class TurnstileTest (BitcoinTestFramework):
         self.cache_behavior = 'clean'
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [['-enabletxminingdelay=0']] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         self.is_network_split=False
@@ -67,7 +68,7 @@ class TurnstileTest (BitcoinTestFramework):
         assert False, "pool named %r not found" % (name,)
 
     # Helper method to start a single node with extra args and sync to the network
-    def start_and_sync_node(self, index, args=[]):
+    def start_and_sync_node(self, index, args):
         self.nodes[index] = start_node(index, self.options.tmpdir, extra_args=args)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
@@ -75,7 +76,7 @@ class TurnstileTest (BitcoinTestFramework):
         self.sync_all()
 
     # Helper method to stop and restart a single node with extra args and sync to the network
-    def restart_and_sync_node(self, index, args=[]):
+    def restart_and_sync_node(self, index, args):
         self.nodes[index].stop()
         bitcoind_processes[index].wait()
         self.start_and_sync_node(index, args)
@@ -176,7 +177,7 @@ class TurnstileTest (BitcoinTestFramework):
         check_node_log(self, 0, string_to_find1, True)
         check_node_log(self, 0, string_to_find2, False)
         check_node_log(self, 0, string_to_find3, False)
-        self.start_and_sync_node(0)
+        self.start_and_sync_node(0, ['-enabletxminingdelay=0'])
 
         assert_equal(newhash, self.nodes[0].getbestblockhash())
 

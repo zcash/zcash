@@ -162,6 +162,14 @@ bool SoftSetArg(const std::string& strArg, const std::string& strValue);
 bool SoftSetBoolArg(const std::string& strArg, bool fValue);
 
 /**
+ * Set a boolean argument unconditionally
+ *
+ * @param strArg Argument to set (e.g. "-foo")
+ * @param fValue Value (e.g. false)
+ */
+void SetBoolArg(const std::string& strArg, bool fValue);
+
+/**
  * Format a string to be used as group of options in help messages
  *
  * @param message Group name (e.g. "RPC server options:")

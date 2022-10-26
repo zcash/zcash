@@ -17,10 +17,10 @@ class WalletPersistenceTest (BitcoinTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory " + self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+        initialize_chain_clean(self.options.tmpdir, self.num_nodes)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(4, self.options.tmpdir)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [['-enabletxminingdelay=0']] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,2,3)

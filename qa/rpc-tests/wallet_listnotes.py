@@ -20,9 +20,10 @@ from decimal import Decimal
 # Test wallet z_listunspent behaviour across network upgrades
 class WalletListNotes(BitcoinTestFramework):
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, [[
+        return start_nodes(self.num_nodes, self.options.tmpdir, [[
             nuparams(NU5_BRANCH_ID, 215),
-        ]] * 4)
+            '-enabletxminingdelay=0',
+        ]] * self.num_nodes)
 
     def run_test(self):
         # Current height = 200 -> Sapling

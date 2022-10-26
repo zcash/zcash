@@ -18,7 +18,7 @@ class JoinSplitTest(BitcoinTestFramework):
         self.nodes = []
         self.is_network_split = False
         self.nodes.append(start_node(0, self.options.tmpdir, 
-            ["-allowdeprecated=zcrawkeygen", "-allowdeprecated=zcrawjoinsplit", "-allowdeprecated=zcrawreceive"]
+            ['-allowdeprecated=zcrawkeygen', '-allowdeprecated=zcrawjoinsplit', '-allowdeprecated=zcrawreceive', '-enabletxminingdelay=0']
             ))
 
     def run_test(self):

@@ -21,6 +21,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         args = [
             '-regtestprotectcoinbase',
             '-debug=zrpcunsafe',
+            '-enabletxminingdelay=0',
             nuparams(NU5_BRANCH_ID, self.nu5_activation),
         ]
         self.nodes = []

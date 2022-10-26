@@ -24,6 +24,8 @@ static const int DEFAULT_GENERATE_THREADS = 1;
 
 static const bool DEFAULT_PRINTPRIORITY = false;
 
+static const bool DEFAULT_ENABLETXMININGDELAY = true;
+
 typedef std::variant<
     libzcash::OrchardRawAddress,
     libzcash::SaplingPaymentAddress,

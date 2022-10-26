@@ -303,6 +303,16 @@ BOOST_AUTO_TEST_CASE(gettime)
     BOOST_CHECK((GetTime() & ~0xFFFFFFFFLL) == 0);
 }
 
+BOOST_AUTO_TEST_CASE(test_SaturatingAddTime)
+{
+    BOOST_CHECK_EQUAL(SaturatingAddTime(1, 2), 3);
+    BOOST_CHECK_EQUAL(SaturatingAddTime(1, -2), -1);
+    BOOST_CHECK_EQUAL(SaturatingAddTime(INT64_MAX, 1), INT64_MAX);
+    BOOST_CHECK_EQUAL(SaturatingAddTime(INT64_MIN, -1), INT64_MIN);
+    BOOST_CHECK_EQUAL(SaturatingAddTime(INT64_MIN, 1), INT64_MIN + 1);
+    BOOST_CHECK_EQUAL(SaturatingAddTime(INT64_MAX, -1), INT64_MAX - 1);
+}
+
 BOOST_AUTO_TEST_CASE(test_ParseInt32)
 {
     int32_t n;

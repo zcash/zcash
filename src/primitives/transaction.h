@@ -992,6 +992,10 @@ public:
         return a.wtxid.hash != b.wtxid.hash;
     }
 
+    int64_t EstimatePropagationLatencyInSeconds() const {
+        return 10;
+    }
+
     std::string ToString() const;
 };
 

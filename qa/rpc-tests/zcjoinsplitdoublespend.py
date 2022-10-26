@@ -17,8 +17,12 @@ class JoinSplitTest(BitcoinTestFramework):
         return super(JoinSplitTest, self).setup_network(True)
 
     def setup_nodes(self):
-        return start_nodes(self.num_nodes, self.options.tmpdir,
-                extra_args = [["-allowdeprecated=zcrawjoinsplit", "-allowdeprecated=zcrawkeygen", "-allowdeprecated=zcrawreceive"]] * self.num_nodes)
+        return start_nodes(self.num_nodes, self.options.tmpdir, [[
+            '-allowdeprecated=zcrawjoinsplit',
+            '-allowdeprecated=zcrawkeygen',
+            '-allowdeprecated=zcrawreceive',
+            '-enabletxminingdelay=0',
+        ]] * self.num_nodes)
 
     def txid_in_mempool(self, node, txid):
         exception_triggered = False

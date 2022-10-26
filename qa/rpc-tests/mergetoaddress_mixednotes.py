@@ -12,12 +12,14 @@ from mergetoaddress_helper import assert_mergetoaddress_exception
 
 class MergeToAddressMixedNotes(BitcoinTestFramework):
     def setup_nodes(self):
-        self.num_nodes = 4
-        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[['-anchorconfirmations=1']] * self.num_nodes)
+        return start_nodes(self.num_nodes, self.options.tmpdir, [[
+            '-anchorconfirmations=1',
+            '-enabletxminingdelay=0',
+        ]] * self.num_nodes)
 
     def setup_chain(self):
         print("Initializing test directory " + self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+        initialize_chain_clean(self.options.tmpdir, self.num_nodes)
 
     def run_test(self):
         print("Mining blocks...")

@@ -25,7 +25,8 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
         args = [
             '-nuparams=5ba81b19:1', # Overwinter
             '-nuparams=76b809bb:1', # Sapling
-            '-txindex'              # Avoid JSONRPC error: No information available about transaction
+            '-txindex',             # Avoid JSONRPC error: No information available about transaction
+            '-enabletxminingdelay=0',
         ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))

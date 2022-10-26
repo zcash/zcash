@@ -823,6 +823,16 @@ void CTxMemPool::ClearPrioritisation(const uint256 hash)
     mapDeltas.erase(hash);
 }
 
+bool CTxMemPool::IsPositivelyPrioritised(const uint256 hash) const
+{
+    LOCK(cs);
+    std::map<uint256, std::pair<double, CAmount> >::const_iterator pos = mapDeltas.find(hash);
+    if (pos == mapDeltas.end())
+        return false;
+    const std::pair<double, CAmount> &deltas = pos->second;
+    return deltas.first > 0.0 || deltas.second > 0;
+}
+
 bool CTxMemPool::HasNoInputsOf(const CTransaction &tx) const
 {
     for (unsigned int i = 0; i < tx.vin.size(); i++)

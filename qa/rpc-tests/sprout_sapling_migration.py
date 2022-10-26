@@ -55,17 +55,13 @@ class SproutSaplingMigration(BitcoinTestFramework):
         self.cache_behavior = 'sprout'
 
     def setup_nodes(self):
-        extra_args = [[
-        ]] * self.num_nodes
-        # Add migration parameters to nodes[0]
-        extra_args[0] = extra_args[0] + [
+        # Use migration parameters for nodes[0]
+        return start_nodes(self.num_nodes, self.options.tmpdir, [[
             '-migration',
             '-migrationdestaddress=' + SAPLING_ADDR,
-            '-debug=zrpcunsafe'
-        ]
-        assert_equal(3, len(extra_args[0]))
-        assert_equal(0, len(extra_args[1]))
-        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args)
+            '-debug=zrpcunsafe',
+            '-enabletxminingdelay=0',
+        ]] + [['-enabletxminingdelay=0']] * (self.num_nodes-1))
 
     def run_migration_test(self, node, sproutAddr, saplingAddr, target_height, sprout_initial_balance):
         # Make sure we are in a good state to run the test

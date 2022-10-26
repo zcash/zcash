@@ -9,7 +9,7 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, connect_nodes, \
+from test_framework.util import assert_equal, connect_nodes, start_nodes, \
     sync_blocks, gather_inputs
 
 
@@ -22,6 +22,9 @@ class TxnMallTest(BitcoinTestFramework):
     def setup_network(self):
         # Start with split network:
         return super(TxnMallTest, self).setup_network(True)
+
+    def setup_nodes(self):
+        return start_nodes(self.num_nodes, self.options.tmpdir, [['-enabletxminingdelay=0']] * self.num_nodes)
 
     def run_test(self):
         mining_reward = 10

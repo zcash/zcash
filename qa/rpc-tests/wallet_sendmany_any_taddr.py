@@ -18,10 +18,10 @@ TX_EXPIRING_SOON_THRESHOLD = 3
 # Test ANY_TADDR special string in z_sendmany
 class WalletSendManyAnyTaddr(BitcoinTestFramework):
     def setup_nodes(self):
-        return start_nodes(self.num_nodes, self.options.tmpdir,
-            [[
-                "-txexpirydelta=%d" % TX_EXPIRY_DELTA,
-            ]] * self.num_nodes)
+        return start_nodes(self.num_nodes, self.options.tmpdir, [[
+            '-txexpirydelta=%d' % TX_EXPIRY_DELTA,
+            '-enabletxminingdelay=0',
+        ]] * self.num_nodes)
 
     def run_test(self):
         # Sanity-check the test harness

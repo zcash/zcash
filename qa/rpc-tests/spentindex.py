@@ -22,17 +22,24 @@ from test_framework.mininode import COIN
 
 
 class SpentIndexTest(BitcoinTestFramework):
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 3
 
     def setup_chain(self):
         print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 3)
+        initialize_chain_clean(self.options.tmpdir, self.num_nodes)
 
     def setup_network(self):
         # -insightexplorer causes spentindex to be enabled (fSpentIndex = true)
 
-        self.nodes = start_nodes(
-            3, self.options.tmpdir,
-            [['-debug', '-txindex', '-experimentalfeatures', '-insightexplorer']]*3)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [[
+            '-debug',
+            '-txindex',
+            '-experimentalfeatures',
+            '-insightexplorer',
+            '-enabletxminingdelay=0',
+        ]] * self.num_nodes)
         connect_nodes(self.nodes[0], 1)
         connect_nodes(self.nodes[0], 2)
 

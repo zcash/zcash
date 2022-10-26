@@ -377,7 +377,9 @@ UniValue prioritisetransaction(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 3)
         throw runtime_error(
             "prioritisetransaction <txid> <priority delta> <fee delta>\n"
-            "Accepts the transaction into mined blocks at a higher (or lower) priority\n"
+            "Accepts the transaction into mined blocks at a higher (or lower) priority.\n"
+            "If either the priority or fee delta of a transaction is positive, it is also not subject "
+            "to the mining delay controlled by the `enabletxminingdelay` configuration option."
             "\nArguments:\n"
             "1. \"txid\"       (string, required) The transaction id.\n"
             "2. priority delta (numeric, required) The priority to add or subtract.\n"

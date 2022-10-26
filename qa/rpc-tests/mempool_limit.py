@@ -21,11 +21,11 @@ from time import sleep
 class MempoolLimit(BitcoinTestFramework):
     def setup_nodes(self):
         extra_args = [
-            ["-debug=mempool", '-mempooltxcostlimit=8000'], # 2 transactions at min cost
-            ["-debug=mempool", '-mempooltxcostlimit=8000'], # 2 transactions at min cost
-            ["-debug=mempool", '-mempooltxcostlimit=8000'], # 2 transactions at min cost
+            ["-debug=mempool", '-mempooltxcostlimit=8000', '-enabletxminingdelay=0'], # 2 transactions at min cost
+            ["-debug=mempool", '-mempooltxcostlimit=8000', '-enabletxminingdelay=0'], # 2 transactions at min cost
+            ["-debug=mempool", '-mempooltxcostlimit=8000', '-enabletxminingdelay=0'], # 2 transactions at min cost
             # Let node 3 hold one more transaction
-            ["-debug=mempool", '-mempooltxcostlimit=12000'], # 3 transactions at min cost
+            ["-debug=mempool", '-mempooltxcostlimit=12000', '-enabletxminingdelay=0'], # 3 transactions at min cost
         ]
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args)
 

@@ -22,7 +22,7 @@ class KeyImportExportTest (BitcoinTestFramework):
         self.cache_behavior = 'clean'
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir )
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [['-enabletxminingdelay=0']] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)

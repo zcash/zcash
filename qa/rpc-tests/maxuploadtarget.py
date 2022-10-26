@@ -130,10 +130,12 @@ class MaxUploadTest(BitcoinTestFramework):
         # Start a node with maxuploadtarget of 200 MB (/24h)
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, [
-            "-debug",
+            '-debug',
             '-nuparams=2bb40e60:1', # Blossom
-            "-maxuploadtarget=2200",
-            "-mocktime=%d" % old_time ]))
+            '-maxuploadtarget=2200',
+            '-mocktime=%d' % old_time,
+            '-enabletxminingdelay=0',
+        ]))
 
     def mine_full_block(self, node, address):
         # Want to create a full block

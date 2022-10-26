@@ -37,11 +37,11 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         self.cache_behavior = 'sprout'
 
     def setup_network(self, split=False):
-        args = [
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [[
             nuparams(CANOPY_BRANCH_ID, 215),
             nuparams(NU5_BRANCH_ID, 230),
-        ]
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [args] * self.num_nodes)
+            '-enabletxminingdelay=0',
+        ]] * self.num_nodes)
         self.is_network_split = False
         self.node = self.nodes[0]
 

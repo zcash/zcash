@@ -32,12 +32,13 @@ class FinalOrchardRootTest(BitcoinTestFramework):
         self.cache_behavior = 'sprout'
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [[
             '-txindex', # Avoid JSONRPC error: No information available about transaction
             '-reindex', # Required due to enabling -txindex
             nuparams(NU5_BRANCH_ID, 200),
             '-debug',
-            ]] * self.num_nodes)
+            '-enabletxminingdelay=0',
+        ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         self.is_network_split=False
         self.sync_all()

@@ -23,9 +23,9 @@ class WalletAddressesTest(BitcoinTestFramework):
         self.cache_behavior = 'clean'
 
     def setup_network(self):
-        self.nodes = start_nodes(
-            self.num_nodes, self.options.tmpdir,
-            extra_args=[[nuparams(NU5_BRANCH_ID, 2),]] * self.num_nodes)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [[
+            nuparams(NU5_BRANCH_ID, 2),
+        ]] * self.num_nodes)
         connect_nodes_bi(self.nodes, 0, 1)
         self.is_network_split = False
         self.sync_all()

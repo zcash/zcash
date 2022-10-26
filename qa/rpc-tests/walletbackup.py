@@ -65,10 +65,10 @@ class WalletBackupTest(BitcoinTestFramework):
 
         # nodes 1, 2,3 are spenders, let's give them a keypool=100
         extra_args = [
-            ["-keypool=100", ed0, "-allowdeprecated=dumpwallet"], 
-            ["-keypool=100", ed1, "-allowdeprecated=dumpwallet"], 
-            ["-keypool=100", ed2, "-allowdeprecated=dumpwallet"], 
-            []
+            ['-keypool=100', ed0, '-allowdeprecated=dumpwallet', '-enabletxminingdelay=0'],
+            ['-keypool=100', ed1, '-allowdeprecated=dumpwallet', '-enabletxminingdelay=0'],
+            ['-keypool=100', ed2, '-allowdeprecated=dumpwallet', '-enabletxminingdelay=0'],
+            ['-enabletxminingdelay=0']
         ]
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args)
         connect_nodes(self.nodes[0], 3)

@@ -24,6 +24,7 @@ class WalletUnifiedChangeTest(BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, [[
             nuparams(NU5_BRANCH_ID, 201),
+            '-enabletxminingdelay=0',
         ]] * self.num_nodes)
 
     def run_test(self):

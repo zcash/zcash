@@ -34,7 +34,8 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
             nuparams(HEARTWOOD_BRANCH_ID, 10),
             nuparams(CANOPY_BRANCH_ID, 20),
             nuparams(NU5_BRANCH_ID, 20),
-            "-nurejectoldversions=false",
+            '-nurejectoldversions=false',
+            '-enabletxminingdelay=0',
         ]
         return start_node(index, self.options.tmpdir, args + extra_args)
 

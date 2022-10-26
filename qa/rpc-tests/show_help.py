@@ -405,6 +405,10 @@ Block creation options:
        Set maximum size of high-priority/low-fee transactions in bytes
        (default: 1000000)
 
+  -enabletxminingdelay
+       Improve orphan rate by not mining a transaction until it has had a
+       chance to propagate and be verified by other nodes (default: 1)
+
 Mining options:
 
   -gen

@@ -29,7 +29,11 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
         self.cache_behavior = 'clean'
 
     def setup_network(self):
-        args = ["-checkmempool", "-debug=mempool", "-blockmaxsize=4000",
+        args = [
+            '-checkmempool',
+            '-debug=mempool',
+            '-blockmaxsize=4000',
+            '-enabletxminingdelay=0',
             nuparams(BLOSSOM_BRANCH_ID, 200),
             nuparams(HEARTWOOD_BRANCH_ID, 210),
             nuparams(CANOPY_BRANCH_ID, 220),

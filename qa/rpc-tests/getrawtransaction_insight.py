@@ -27,8 +27,13 @@ class GetrawtransactionTest(BitcoinTestFramework):
     def setup_network(self):
         # -insightexplorer causes spentindex to be enabled (fSpentIndex = true)
 
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir,
-            [['-debug', '-txindex', '-experimentalfeatures', '-insightexplorer']] * self.num_nodes)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [[
+            '-debug',
+            '-txindex',
+            '-experimentalfeatures',
+            '-insightexplorer',
+            '-enabletxminingdelay=0',
+        ]] * self.num_nodes)
         connect_nodes(self.nodes[0], 1)
         connect_nodes(self.nodes[0], 2)
 

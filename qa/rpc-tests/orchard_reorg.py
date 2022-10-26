@@ -31,12 +31,13 @@ class OrchardReorgTest(BitcoinTestFramework):
         self.cache_behavior = 'clean'
 
     def setup_nodes(self):
-        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+        return start_nodes(self.num_nodes, self.options.tmpdir, [[
             nuparams(BLOSSOM_BRANCH_ID, 1),
             nuparams(HEARTWOOD_BRANCH_ID, 5),
             nuparams(CANOPY_BRANCH_ID, 5),
             nuparams(NU5_BRANCH_ID, 10),
             '-nurejectoldversions=false',
+            '-enabletxminingdelay=0',
         ]] * self.num_nodes)
 
     def run_test(self):

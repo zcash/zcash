@@ -166,6 +166,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     LOCK(cs_main);
     fCheckpointsEnabled = false;
     fCoinbaseEnforcedShieldingEnabled = false;
+    SetBoolArg("-enabletxminingdelay", false);
 
     // We can't make transactions until we have inputs
     // Therefore, load 100 blocks :)
@@ -193,85 +194,6 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
         pblock->nNonce = uint256S(blockinfo[i].nonce_hex);
         pblock->nSolution = ParseHex(blockinfo[i].solution_hex);
-
-/*
-        {
-        arith_uint256 try_nonce(0);
-        unsigned int n = Params().GetConsensus().nEquihashN;
-        unsigned int k = Params().GetConsensus().nEquihashK;
-
-        // Hash state
-        eh_HashState eh_state = EhInitialiseState(n, k);
-
-        // I = the block header minus nonce and solution.
-        CEquihashInput I{*pblock};
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << I;
-
-        // H(I||...
-        eh_state.Update((unsigned char*)&ss[0], ss.size());
-
-        while (true) {
-            pblock->nNonce = ArithToUint256(try_nonce);
-
-            // H(I||V||...
-            eh_HashState curr_state(eh_state);
-            curr_state.Update(pblock->nNonce.begin(), pblock->nNonce.size());
-
-            // Create solver and initialize it.
-            equi eq(1);
-            eq.setstate(curr_state.state);
-
-            // Initialization done, start algo driver.
-            eq.digit0(0);
-            eq.xfull = eq.bfull = eq.hfull = 0;
-            eq.showbsizes(0);
-            for (u32 r = 1; r < WK; r++) {
-                (r&1) ? eq.digitodd(r, 0) : eq.digiteven(r, 0);
-                eq.xfull = eq.bfull = eq.hfull = 0;
-                eq.showbsizes(r);
-            }
-            eq.digitK(0);
-
-            // Convert solution indices to byte array (decompress) and pass it to validBlock method.
-            std::set<std::vector<unsigned char>> solns;
-            for (size_t s = 0; s < std::min(MAXSOLS, eq.nsols); s++) {
-                LogPrint("pow", "Checking solution %d\n", s+1);
-                std::vector<eh_index> index_vector(PROOFSIZE);
-                for (size_t i = 0; i < PROOFSIZE; i++) {
-                    index_vector[i] = eq.sols[s][i];
-                }
-                std::vector<unsigned char> sol_char = GetMinimalFromIndices(index_vector, DIGITBITS);
-                solns.insert(sol_char);
-            }
-
-            for (auto soln : solns) {
-                if (!equihash::is_valid(
-                    n, k,
-                    {(const unsigned char*)ss.data(), ss.size()},
-                    {pblock->nNonce.begin(), pblock->nNonce.size()},
-                    {soln.data(), soln.size()})) continue;
-                pblock->nSolution = soln;
-
-                CValidationState state;
-
-                if (ProcessNewBlock(state, NULL, pblock, true, NULL) && state.IsValid()) {
-                    goto foundit;
-                }
-
-                //std::cout << state.GetRejectReason() << std::endl;
-            }
-
-            try_nonce += 1;
-        }
-        foundit:
-
-            std::cout << "    {\"" << pblock->nNonce.GetHex() << "\", \"";
-            std::cout << HexStr(pblock->nSolution.begin(), pblock->nSolution.end());
-            std::cout << "\"}," << std::endl;
-
-        }
-*/
 
         // These tests assume null hashBlockCommitments (before Sapling)
         pblock->hashBlockCommitments = uint256();
@@ -457,6 +379,51 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 2);
     delete pblocktemplate;
+    mempool.clear();
+
+    // When enabletxminingdelay=1, a newly accepted mempool transaction should not
+    // be included in a block template until EstimatePropagationLatencyInSeconds()
+    // seconds have passed, *unless* it is positively prioritised.
+    SetBoolArg("-enabletxminingdelay", true);
+
+    CMutableTransaction tx3;
+    tx3.vin.resize(1);
+    tx3.vin[0].prevout.hash = txFirst[1]->GetHash();
+    tx3.vin[0].prevout.n = 0;
+    tx3.vin[0].scriptSig = CScript() << OP_1;
+    tx3.vout.resize(1);
+    tx3.vout[0].nValue = 49000LL;
+    tx3.vout[0].scriptPubKey = CScript() << OP_1;
+    hash = tx3.GetHash();
+    CTxMemPoolEntry tx3_entry = entry.Time(GetTime()).FromTx(tx3);
+    mempool.addUnchecked(hash, tx3_entry);
+
+    // tx3 should not be included
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
+    BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 1);
+    delete pblocktemplate;
+
+    // .. even if negatively prioritised.
+    mempool.PrioritiseTransaction(hash, std::string("unused"), 0.0, -1);
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
+    BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 1);
+    delete pblocktemplate;
+
+    // tx3 should be included if positively prioritised
+    mempool.ClearPrioritisation(hash);
+    mempool.PrioritiseTransaction(hash, std::string("unused"), 0.0, 1);
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
+    BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 2);
+    delete pblocktemplate;
+
+    // ... or if EstimatePropagationLatencyInSeconds() seconds have passed.
+    mempool.ClearPrioritisation(hash);
+    auto latency = tx3_entry.GetSharedTx()->EstimatePropagationLatencyInSeconds();
+    BOOST_CHECK_EQUAL(latency, 10);
+    FixedClock::Instance()->Set(std::chrono::seconds(SaturatingAddTime(GetTime(), latency)));
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
+    BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 2);
+    delete pblocktemplate;
 
     // Restore the original system state
     chainActive.Tip()->nHeight--;
@@ -468,6 +435,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 
     fCheckpointsEnabled = true;
     fCoinbaseEnforcedShieldingEnabled = true;
+    SetBoolArg("-enabletxminingdelay", DEFAULT_ENABLETXMININGDELAY);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

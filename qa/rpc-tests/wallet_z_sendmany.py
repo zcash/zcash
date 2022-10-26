@@ -21,9 +21,14 @@ from decimal import Decimal
 
 # Test wallet address behaviour across network upgrades
 class WalletZSendmanyTest(BitcoinTestFramework):
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 3
+
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir, [[
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [[
             nuparams(NU5_BRANCH_ID, 238),
+            '-enabletxminingdelay=0',
         ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)

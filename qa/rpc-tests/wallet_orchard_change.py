@@ -25,6 +25,7 @@ class WalletOrchardChangeTest(BitcoinTestFramework):
         return start_nodes(self.num_nodes, self.options.tmpdir, [[
             nuparams(NU5_BRANCH_ID, 205),
             '-regtestwalletsetbestchaineveryblock',
+            '-enabletxminingdelay=0',
         ]] * self.num_nodes)
 
     def check_has_output(self, node, tx, expected):

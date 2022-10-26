@@ -21,17 +21,22 @@ from test_framework.util import (
 from decimal import Decimal
 
 class WalletIsFromMe(BitcoinTestFramework):
+    def __init__(self):
+        super().__init__()
+        self.num_nodes = 1
+
     def setup_chain(self):
-        initialize_chain_clean(self.options.tmpdir, 1)
+        initialize_chain_clean(self.options.tmpdir, self.num_nodes)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(1, self.options.tmpdir, extra_args=[[
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [[
             nuparams(OVERWINTER_BRANCH_ID, 1),
             nuparams(SAPLING_BRANCH_ID, 1),
             nuparams(BLOSSOM_BRANCH_ID, 1),
             nuparams(HEARTWOOD_BRANCH_ID, 1),
             nuparams(CANOPY_BRANCH_ID, 1),
-        ]])
+            '-enabletxminingdelay=0',
+        ]] * self.num_nodes)
         self.is_network_split=False
 
     def run_test (self):
