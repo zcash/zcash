@@ -264,6 +264,11 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
                 let ctx = Secp256k1::<VerifyOnly>::gen_new();
 
                 for (i, (txin, coin)) in bundle.vin.iter().zip(coins).enumerate() {
+                    eprintln!(
+                        "   - prevout: txid {}, index {}",
+                        TxId::from_bytes(*txin.prevout.hash()),
+                        txin.prevout.n()
+                    );
                     match coin.recipient_address() {
                         Some(addr @ TransparentAddress::PublicKey(_)) => {
                             // Format is [sig_and_type_len] || sig || [hash_type] || [pubkey_len] || pubkey
@@ -280,7 +285,7 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
 
                             if Some(txin.script_sig.0.len()) != script_len {
                                 eprintln!(
-                                    "  ⚠️  \"transparentcoins\" {} is P2PKH; txin {} scriptSig has length {} but data {}",
+                                    "    ⚠️  \"transparentcoins\" {} is P2PKH; txin {} scriptSig has length {} but data {}",
                                     i,
                                     i,
                                     txin.script_sig.0.len(),
@@ -302,17 +307,20 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
 
                                 if let Err(e) = sig {
                                     eprintln!(
-                                        "  ⚠️  Txin {} has invalid signature encoding: {}",
+                                        "    ⚠️  Txin {} has invalid signature encoding: {}",
                                         i, e
                                     );
                                 }
                                 if let Err(e) = pubkey {
-                                    eprintln!("  ⚠️  Txin {} has invalid pubkey encoding: {}", i, e);
+                                    eprintln!(
+                                        "    ⚠️  Txin {} has invalid pubkey encoding: {}",
+                                        i, e
+                                    );
                                 }
                                 if let (Ok(sig), Ok(pubkey)) = (sig, pubkey) {
                                     #[allow(deprecated)]
                                     if pubkey_to_address(&pubkey) != addr {
-                                        eprintln!("  ⚠️  Txin {} pubkey does not match coin's script_pubkey", i);
+                                        eprintln!("    ⚠️  Txin {} pubkey does not match coin's script_pubkey", i);
                                     }
 
                                     let sighash = signature_hash(
@@ -331,12 +339,12 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
                                         .expect("signature_hash() returns correct length");
 
                                     if let Err(e) = ctx.verify_ecdsa(&msg, &sig, &pubkey) {
-                                        eprintln!("  ⚠️  Spend {} is invalid: {}", i, e);
+                                        eprintln!("    ⚠️  Spend {} is invalid: {}", i, e);
                                         eprintln!(
-                                            "   - sighash is {}",
+                                            "     - sighash is {}",
                                             hex::encode(sighash.as_ref())
                                         );
-                                        eprintln!("   - pubkey is {}", hex::encode(pubkey_bytes));
+                                        eprintln!("     - pubkey is {}", hex::encode(pubkey_bytes));
                                     }
                                 }
                             }
