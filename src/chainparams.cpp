@@ -296,7 +296,7 @@ public:
             (525000, uint256S("0x0000000001a36c500378be8862d9bf1bea8f1616da6e155971b608139cc7e39b"))
             (1860000, uint256S("0x000000000043a968c78af5fb8133e00e6fe340051c19dd969e53ab62bf3dc22a")),
             1667052073,     // * UNIX timestamp of last checkpoint block
-            11768038,        // * total number of transactions between genesis and last checkpoint
+            11768038,       // * total number of transactions between genesis and last checkpoint
             3644            // * estimated number of transactions per day after checkpoint
                             //   total number of tx / (checkpoint block height / (24 * 24))
         };
