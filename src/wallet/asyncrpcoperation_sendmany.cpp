@@ -155,7 +155,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     uint256 txid;
     std::visit(match {
         [&](const InputSelectionError& err) {
-            ThrowInputSelectionError(err);
+            throw FormatInputSelectionError(err, strategy_);
         },
         [&](const TransactionEffects& effects) {
             const auto& spendable = effects.GetSpendable();
@@ -181,8 +181,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             auto buildResult = effects.ApproveAndBuild(
                     Params().GetConsensus(),
                     *pwalletMain,
-                    chainActive,
-                    strategy_);
+                    chainActive);
             auto tx = buildResult.GetTxOrThrow();
 
             UniValue sendResult = SendEffectedTransaction(tx, effects, std::nullopt, testmode);

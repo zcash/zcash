@@ -90,7 +90,9 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         sprout_addr = self.nodes[1].z_getnewaddress('sprout')
         recipients = [{"address": sprout_addr, "amount": Decimal('1')}]
         myopid = self.nodes[0].z_sendmany(taddr_0, recipients, 1, 0, 'AllowRevealedSenders')
-        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Sending funds into the Sprout pool is no longer supported.")
+        unsupported_sprout_msg = """This transaction cannot be sent as is. The following issues were identified:
+* Sending funds into the Sprout pool is no longer supported."""
+        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", unsupported_sprout_msg)
         print("taddr -> Sprout z_sendmany tx rejected at Canopy activation on node 0")
 
         # Create z_mergetoaddress [taddr, Sprout] -> Sprout transaction on node 0. Should fail

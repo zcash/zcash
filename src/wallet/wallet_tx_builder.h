@@ -186,8 +186,6 @@ public:
             externalOVK(externalOVK),
             orchardAnchorHeight(orchardAnchorHeight) {}
 
-    PrivacyPolicy GetRequiredPrivacyPolicy() const;
-
     const SpendableInputs& GetSpendable() const {
         return spendable;
     }
@@ -209,14 +207,18 @@ public:
     TransactionBuilderResult ApproveAndBuild(
             const Consensus::Params& consensus,
             const CWallet& wallet,
-            const CChain& chain,
-            const TransactionStrategy& strategy) const;
+            const CChain& chain) const;
 };
 
+// TODO: Cases that require `AllowRevealedAmounts` should only trigger if there
+//       is actual `valueBalance`, not only because two different pools are
+//       involved in the tx.
 enum class AddressResolutionError {
     SproutSpendNotPermitted,
     SproutRecipientNotPermitted,
+    TransparentSenderNotPermitted,
     TransparentRecipientNotPermitted,
+    FullyTransparentCoinbaseNotPermitted,
     InsufficientSaplingFunds,
     UnifiedAddressResolutionError,
     ChangeAddressSelectionError
@@ -245,9 +247,10 @@ class InsufficientFundsError {
 public:
     CAmount available;
     CAmount required;
+    bool isFromUa;
 
-    InsufficientFundsError(CAmount available, CAmount required):
-        available(available), required(required) { }
+    InsufficientFundsError(CAmount available, CAmount required, bool isFromUa):
+        available(available), required(required), isFromUa(isFromUa) { }
 };
 
 class ExcessOrchardActionsError {
@@ -255,11 +258,16 @@ public:
     uint32_t orchardNotes;
     uint32_t maxNotes;
 
-    ExcessOrchardActionsError(uint32_t orchardNotes, uint32_t maxNotes): orchardNotes(orchardNotes), maxNotes(maxNotes) { }
+    ExcessOrchardActionsError(uint32_t orchardNotes, uint32_t maxNotes) :
+        orchardNotes(orchardNotes), maxNotes(maxNotes) { }
 };
 
+// TODO: More applicative-style accumulation here
 typedef std::variant<
-    AddressResolutionError,
+    std::pair<std::set<AddressResolutionError>, PrivacyPolicy>,
+    // TODO: InsufficientFunds/DustThreshold _may_ also be solved by weakening
+    //       privacy policy. Error message should indicate that _iff_
+    //       AllowRevealedAmounts/Senders would solve the problem.
     InsufficientFundsError,
     DustThresholdError,
     ChangeNotAllowedError,
@@ -280,12 +288,14 @@ public:
 };
 
 typedef std::variant<
-    InputSelectionError,
-    InputSelection> InputSelectionResult;
+    InputSelection,
+    InputSelectionError> InputSelectionResult;
 
+// TODO: replace with tl:expected
+// if this returns an error, the `std::set` will not be empty.
 typedef std::variant<
-    InputSelectionError,
-    TransactionEffects> PrepareTransactionResult;
+    TransactionEffects,
+    InputSelectionError> PrepareTransactionResult;
 
 class WalletTxBuilder {
 private:
@@ -304,6 +314,7 @@ private:
      * and the requested transaction strategy.
      */
     InputSelectionResult ResolveInputsAndPayments(
+            bool isFromUa,
             SpendableInputs& spendable,
             const std::vector<Payment>& payments,
             const CChain& chain,
