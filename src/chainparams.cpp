@@ -242,7 +242,7 @@ public:
         }
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0000000000000000000000000000000000000000000000000afb16bd5d58e5be");
+        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000afb16bd5d58e5be");
 
         /**
          * The message start string should be awesome! ⓩ❤
