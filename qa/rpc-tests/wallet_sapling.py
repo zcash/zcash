@@ -165,7 +165,10 @@ class WalletSaplingTest(BitcoinTestFramework):
              {'address': node4_saplingaddr, 'amount': Decimal('2.5') - DEFAULT_FEE}],
             1, DEFAULT_FEE
         )
-        wait_and_assert_operationid_status(self.nodes[1], myopid, "failed", "Sending funds into the Sprout pool is no longer supported.")
+
+        unsupported_sprout_msg = """This transaction cannot be sent as is. The following issues were identified:
+* Sending funds into the Sprout pool is no longer supported."""
+        wait_and_assert_operationid_status(self.nodes[1], myopid, "failed", unsupported_sprout_msg)
 
 if __name__ == '__main__':
     WalletSaplingTest().main()

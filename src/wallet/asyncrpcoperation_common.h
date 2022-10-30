@@ -69,6 +69,6 @@ UniValue SendEffectedTransaction(
  */
 std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::optional<std::reference_wrapper<CReserveKey>> reservekey, bool testmode);
 
-void ThrowInputSelectionError(const InputSelectionError& err);
+UniValue FormatInputSelectionError(const InputSelectionError& err, TransactionStrategy requestedPrivacy);
 
 #endif // ZCASH_WALLET_ASYNCRPCOPERATION_COMMON_H

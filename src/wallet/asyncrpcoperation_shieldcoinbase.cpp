@@ -166,8 +166,10 @@ Remaining AsyncRPCOperation_shieldcoinbase::prepare() {
 
     spendable.LimitTransparentUtxos(numUtxos);
 
+    // TODO: Don’t check this outside of `PrepareTransaction`
     if (shieldingValue < fee_) {
-        ThrowInputSelectionError(InsufficientFundsError(shieldingValue, fee_));
+        bool isFromUa = std::holds_alternative<libzcash::UnifiedAddress>(ztxoSelector_.GetPattern());
+        throw FormatInputSelectionError(InsufficientFundsError(shieldingValue, fee_, isFromUa), strategy_);
     }
 
     std::vector<Payment> payments = { Payment(toAddress_, shieldingValue - fee_, std::nullopt, true) };
@@ -183,10 +185,10 @@ Remaining AsyncRPCOperation_shieldcoinbase::prepare() {
 
     std::visit(match {
         [&](const InputSelectionError& err) {
-            ThrowInputSelectionError(err);
+            throw FormatInputSelectionError(err, strategy_);
         },
         [&](const TransactionEffects& effects) {
-          effects_ = effects;
+            effects_ = effects;
         }
     }, preparationResult);
 
@@ -219,8 +221,7 @@ uint256 AsyncRPCOperation_shieldcoinbase::main_impl() {
     auto buildResult = effects_->ApproveAndBuild(
             Params().GetConsensus(),
             *pwalletMain,
-            chainActive,
-            strategy_);
+            chainActive);
 
     auto tx = buildResult.GetTxOrThrow();
 

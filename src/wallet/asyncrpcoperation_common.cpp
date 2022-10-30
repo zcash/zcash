@@ -75,98 +75,124 @@ std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::opti
     return std::make_pair(tx, sendResult);
 }
 
-void ThrowInputSelectionError(const InputSelectionError& err) {
-    std::visit(match {
-        [&](const AddressResolutionError& err) {
-            switch (err) {
-                case AddressResolutionError::SproutSpendNotPermitted:
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Sending from the Sprout shielded pool to the Sapling "
-                        "shielded pool is not enabled by default because it will "
-                        "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
-                        "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
-                        "or weaker if you wish to allow this transaction to proceed anyway.");
-                case AddressResolutionError::SproutRecipientNotPermitted:
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Sending funds into the Sprout pool is no longer supported.");
-                case AddressResolutionError::TransparentRecipientNotPermitted:
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "This transaction would have transparent recipients, which is not "
-                        "enabled by default because it will publicly reveal transaction "
-                        "recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
-                        "with the `privacyPolicy` parameter set to `AllowRevealedRecipients` "
-                        "or weaker if you wish to allow this transaction to proceed anyway.");
-                case AddressResolutionError::InsufficientSaplingFunds:
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Sending from the Sapling shielded pool to the Orchard "
-                        "shielded pool is not enabled by default because it will "
-                        "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
-                        "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
-                        "or weaker if you wish to allow this transaction to proceed anyway.");
-                case AddressResolutionError::UnifiedAddressResolutionError:
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Could not select a unified address receiver that allows this transaction "
-                        "to proceed without publicly revealing the transaction amount. THIS MAY AFFECT "
-                        "YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to "
-                        "`AllowRevealedAmounts` or weaker if you wish to allow this transaction to "
-                        "proceed anyway.");
-                case AddressResolutionError::ChangeAddressSelectionError:
-                    // this should be unreachable, but we handle it defensively
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Could not select a change address that allows this transaction "
-                        "to proceed without publicly revealing transaction details. THIS MAY AFFECT "
-                        "YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to "
-                        "`AllowRevealedAmounts` or weaker if you wish to allow this transaction to "
-                        "proceed anyway; if sending from a legacy transparent address, "
-                        "`AllowFullyTransparent` may be required.");
-                default:
-                    assert(false);
-            }
-        },
-        [&](const InsufficientFundsError& err) {
-            throw JSONRPCError(
-                RPC_INVALID_PARAMETER,
-                strprintf(
-                    "Insufficient funds: have %s, need %s",
-                    FormatMoney(err.available), FormatMoney(err.required)));
-        },
-        [&](const DustThresholdError& err) {
-            throw JSONRPCError(
-                RPC_INVALID_PARAMETER,
-                strprintf(
-                    "Insufficient funds: have %s, need %s more to avoid creating invalid change output %s "
-                    "(dust threshold is %s)",
-                    FormatMoney(err.available),
-                    FormatMoney(err.dustThreshold - err.changeAmount),
-                    FormatMoney(err.changeAmount),
-                    FormatMoney(err.dustThreshold)));
-        },
-        [&](const ChangeNotAllowedError& err) {
-            throw JSONRPCError(
-                    RPC_WALLET_ERROR,
+UniValue FormatInputSelectionError(const InputSelectionError& err, TransactionStrategy requestedPrivacy) {
+    return std::visit(match{
+        [&](const std::pair<std::set<AddressResolutionError>, PrivacyPolicy>& failures) {
+            std::string body =
+                "This transaction cannot be sent as is. The following issues were identified:";
+            std::string suffix;
+                if (!requestedPrivacy.IsCompatibleWith(failures.second)) {
+                    suffix = strprintf(
+                            "\nThe specified privacy policy, %s, does not permit the creation of "
+                            "the requested transaction. %s is the strongest privacy policy that "
+                            "would allow this transaction to be sent as is. "
+                            "WEAKENING THE POLICY MAY AFFECT YOUR PRIVACY.",
+                            requestedPrivacy.PolicyName(),
+                            TransactionStrategy::ToString(failures.second));
+                }
+
+                for (AddressResolutionError e : failures.first) {
+                    switch (e) {
+                        case AddressResolutionError::SproutSpendNotPermitted:
+                            body = body +
+                                "\n* Sending from the Sprout shielded pool to the Sapling "
+                                "shielded pool requires AllowRevealedAmounts because it will "
+                                "publicly reveal the amount that moves between pools.";
+                            break;
+                        case AddressResolutionError::SproutRecipientNotPermitted:
+                            body = body +
+                                "\n* Sending funds into the Sprout pool is no longer supported.";
+                            break;
+                        case AddressResolutionError::TransparentSenderNotPermitted:
+                            body = body +
+                                "\n* This transaction selects transparent coins, which requires "
+                                "AllowRevealedSenders because it will publicly reveal transaction "
+                                "senders and amounts.";
+                            break;
+                        case AddressResolutionError::TransparentRecipientNotPermitted:
+                            body = body +
+                                "\n* This transaction would have transparent recipients, which requires "
+                                "AllowRevealedRecipients because it will publicly reveal amounts and "
+                                "addresses of the transaparent funds.";
+                            break;
+                        case AddressResolutionError::FullyTransparentCoinbaseNotPermitted:
+                            body = body +
+                                "\n* Transparent coinbase must first be shielded before spending to a "
+                                "transparent address. No privacy policy will avoid this.";
+                            break;
+                        case AddressResolutionError::InsufficientSaplingFunds:
+                            body = body +
+                                "\n* Sending from the Sapling shielded pool to the Orchard "
+                                "shielded pool requires AllowRevealedAmounts because it will "
+                                "publicly reveal the amount that moves between pools.";
+                            break;
+                        case AddressResolutionError::UnifiedAddressResolutionError:
+                            body = body +
+                                "\n* Could not select a unified address receiver that allows this transaction "
+                                "to proceed without revealing funds that move between pools, which requires "
+                                "AllowRevealedAmounts.";
+                            break;
+                        case AddressResolutionError::ChangeAddressSelectionError:
+                            // this should be unreachable, but we handle it defensively
+                            body = body +
+                                "\n* Could not select a change address that allows this transaction "
+                                "to proceed without publicly revealing the change amount. This requires "
+                                "AllowRevealedAmounts.";
+                            break;
+                        default:
+                            assert(false);
+                    }
+                }
+
+                return JSONRPCError(RPC_INVALID_PARAMETER, body + suffix);
+            },
+            [&](const InsufficientFundsError& err) {
+                return JSONRPCError(
+                    RPC_INVALID_PARAMETER,
                     strprintf(
-                        "When shielding coinbase funds, the wallet does not allow any change. "
-                        "The proposed transaction would result in %s in change.",
-                        FormatMoney(err.available - err.required)
-                        ));
-        },
-        [&](const ExcessOrchardActionsError& err) {
-            throw JSONRPCError(
-                RPC_INVALID_PARAMETER,
-                strprintf(
-                    "Attempting to spend %u Orchard notes would exceed the current limit "
-                    "of %u notes, which exists to prevent memory exhaustion. Restart with "
-                    "`-orchardactionlimit=N` where N >= %u to allow the wallet to attempt "
-                    "to construct this transaction.",
-                    err.orchardNotes,
-                    err.maxNotes,
-                    err.orchardNotes));
-        }
-    }, err);
+                            "Insufficient funds: have %s, need %s",
+                            FormatMoney(err.available), FormatMoney(err.required))
+                        + ((!err.isFromUa || requestedPrivacy.AllowLinkingAccountAddresses())
+                           ? ""
+                           : " (This transaction may require "
+                             "selecting transparent coins that were sent to multiple Unified "
+                             "Addresses, which is not enabled by default because it would create a "
+                             "public link between the transparent receivers of these addresses. "
+                             "THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
+                             "parameter set to `AllowLinkingAccountAddresses` or weaker if you wish "
+                             "to allow this transaction to proceed anyway.)"));
+            },
+            [](const DustThresholdError& err) {
+                return JSONRPCError(
+                    RPC_INVALID_PARAMETER,
+                    strprintf(
+                        "Insufficient funds: have %s, need %s more to avoid creating invalid change output %s "
+                        "(dust threshold is %s)",
+                        FormatMoney(err.available),
+                        FormatMoney(err.dustThreshold - err.changeAmount),
+                        FormatMoney(err.changeAmount),
+                        FormatMoney(err.dustThreshold)));
+            },
+            [](const ChangeNotAllowedError& err) {
+                return JSONRPCError(
+                        RPC_WALLET_ERROR,
+                        strprintf(
+                            "When shielding coinbase funds, the wallet does not allow any change. "
+                            "The proposed transaction would result in %s in change.",
+                            FormatMoney(err.available - err.required)
+                            ));
+            },
+            [](const ExcessOrchardActionsError& err) {
+                return JSONRPCError(
+                    RPC_INVALID_PARAMETER,
+                    strprintf(
+                        "Attempting to spend %u Orchard notes would exceed the current limit "
+                        "of %u notes, which exists to prevent memory exhaustion. Restart with "
+                        "`-orchardactionlimit=N` where N >= %u to allow the wallet to attempt "
+                        "to construct this transaction.",
+                        err.orchardNotes,
+                        err.maxNotes,
+                        err.orchardNotes));
+            }
+        }, err);
 }
