@@ -752,6 +752,9 @@ public:
 
 /**
  * A strategy to use for managing privacy when constructing a transaction.
+ *
+ * **NB**: These are intentionally in an order where `<` will never do the right
+ *         thing. See `PrivacyPolicyMeet` for a correct comparison.
  */
 enum class PrivacyPolicy {
     FullPrivacy,
@@ -762,6 +765,14 @@ enum class PrivacyPolicy {
     AllowLinkingAccountAddresses,
     NoPrivacy,
 };
+
+/** Returns the meet of two privacy policies. I.e., the strongest policy that is
+ *  compatible with both of the provided policies.
+ *
+ *  See https://github.com/zcash/zcash/issues/6240 for the graph that this
+ *  models.
+ */
+PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b);
 
 class TransactionStrategy {
     PrivacyPolicy requestedLevel;
