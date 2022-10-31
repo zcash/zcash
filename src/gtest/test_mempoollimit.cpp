@@ -155,7 +155,7 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
 
         auto result = builder.Build();
         if (result.IsError()) {
-            std::cerr << result.GetError() << std::endl;
+            std::cerr << result.FormatError() << std::endl;
         }
         WeightedTxInfo info = WeightedTxInfo::from(result.GetTxOrThrow(), DEFAULT_FEE);
         EXPECT_EQ(5168, info.txWeight.cost);

@@ -139,7 +139,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
     auto maybeTx = builder.Build();
     EXPECT_TRUE(maybeTx.IsTx());
     if (maybeTx.IsError()) {
-        std::cerr << "Failed to build transaction: " << maybeTx.GetError() << std::endl;
+        std::cerr << "Failed to build transaction: " << maybeTx.FormatError() << std::endl;
         GTEST_FAIL();
     }
     auto tx = maybeTx.GetTxOrThrow();
