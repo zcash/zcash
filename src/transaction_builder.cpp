@@ -227,21 +227,73 @@ JSDescription JSDescriptionInfo::BuildRandomized(
 
 TransactionBuilderResult::TransactionBuilderResult(const CTransaction& tx) : maybeTx(tx) {}
 
-TransactionBuilderResult::TransactionBuilderResult(const std::string& error) : maybeError(error) {}
+TransactionBuilderResult::TransactionBuilderResult(const TransactionBuilderFailure& error) : maybeError(error) {}
 
 bool TransactionBuilderResult::IsTx() { return maybeTx.has_value(); }
 
 bool TransactionBuilderResult::IsError() { return maybeError.has_value(); }
 
+std::string TransactionBuilderResult::FormatError() {
+    return
+        std::visit(match {
+            [](Pool pool) {
+                return strprintf("Insufficient %s witnesses.", pool);
+            },
+            [](const SaplingOutPoint& op) {
+                return strprintf("Missing witness for Sapling note at outpoint %s", op.ToString());
+            },
+            [](JSDescException e) {
+                return std::string(e.what());
+            },
+            [](const std::ios_base::failure& ex) {
+                return "Could not construct signature hash: " + std::string(ex.what());
+            },
+            [](const std::logic_error& ex) {
+                return "Could not construct signature hash: " + std::string(ex.what());
+            },
+            [](SimpleTransactionBuilderFailure failure) {
+                switch (failure) {
+                    case SimpleTransactionBuilderFailure::FailedToAddOrchardNote:
+                        return strprintf(
+                            "Failed to add Orchard note to transaction (check %s for details)",
+                            GetDebugLogPath());
+                    case SimpleTransactionBuilderFailure::NegativeChange:
+                        return std::string("Change cannot be negative");
+                    case SimpleTransactionBuilderFailure::CouldNotDetermineChangeAddress:
+                        return std::string("Could not determine change address");
+                    case SimpleTransactionBuilderFailure::FailedToBuildOrchardBundle:
+                        return std::string("Failed to build Orchard bundle");
+                    case SimpleTransactionBuilderFailure::SpendIsInvalid:
+                        return std::string("Spend is invalid");
+                    case SimpleTransactionBuilderFailure::SpendProofFailed:
+                        return std::string("Spend proof failed");
+                    case SimpleTransactionBuilderFailure::OutputIsInvalid:
+                        return std::string("Output is invalid");
+                    case SimpleTransactionBuilderFailure::FailedToCreateOutputDescription:
+                        return std::string("Failed to create output description");
+                    case SimpleTransactionBuilderFailure::FailedToCreateOrchardProofOrSignatures:
+                        return std::string("Failed to create Orchard proof or signatures");
+                    case SimpleTransactionBuilderFailure::FailedToCreateJoinSplitSig:
+                        return std::string("Failed to create Sprout joinSplitSig");
+                    case SimpleTransactionBuilderFailure::JoinSplitSigSanityCheckFailed:
+                        return std::string("Sprout joinSplitSig sanity check failed");
+                    case SimpleTransactionBuilderFailure::FailedToSignTransaction:
+                        return std::string("Failed to sign transaction");
+                    default: assert(false);
+                }
+            }
+        }, GetError());
+}
+
 CTransaction TransactionBuilderResult::GetTxOrThrow() {
     if (maybeTx.has_value()) {
         return maybeTx.value();
     } else {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Failed to build transaction: " + GetError());
+        throw JSONRPCError(RPC_WALLET_ERROR, "Failed to build transaction: " + FormatError());
     }
 }
 
-std::string TransactionBuilderResult::GetError() {
+TransactionBuilderFailure TransactionBuilderResult::GetError() {
     if (maybeError.has_value()) {
         return maybeError.value();
     } else {
@@ -273,17 +325,6 @@ TransactionBuilder::TransactionBuilder(
         orchardBuilder = orchard::Builder(true, true, orchardAnchor.value());
     }
 }
-
-// This exception is thrown in certain scenarios when building JoinSplits fails.
-struct JSDescException : public std::exception
-{
-    JSDescException (const std::string msg_) : msg(msg_) {}
-
-    const char* what() { return msg.c_str(); }
-
-private:
-    std::string msg;
-};
 
 void TransactionBuilder::SetExpiryHeight(uint32_t nExpiryHeight)
 {
@@ -501,7 +542,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         change -= tOut.nValue;
     }
     if (change < 0) {
-        return TransactionBuilderResult("Change cannot be negative");
+        return TransactionBuilderResult(SimpleTransactionBuilderFailure::NegativeChange);
     }
 
     //
@@ -534,7 +575,7 @@ TransactionBuilderResult TransactionBuilder::Build()
             auto changeAddr = jsInputs[0].key.address();
             AddSproutOutput(changeAddr, change);
         } else {
-            return TransactionBuilderResult("Could not determine change address");
+            return TransactionBuilderResult(SimpleTransactionBuilderFailure::CouldNotDetermineChangeAddress);
         }
     }
 
@@ -548,7 +589,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         if (bundle.has_value()) {
             orchardBundle = std::move(bundle);
         } else {
-            return TransactionBuilderResult("Failed to build Orchard bundle");
+            return TransactionBuilderResult(SimpleTransactionBuilderFailure::FailedToBuildOrchardBundle);
         }
     }
 
@@ -564,7 +605,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         auto nf = spend.note.nullifier(
             spend.expsk.full_viewing_key(), spend.witness.position());
         if (!cm || !nf) {
-            return TransactionBuilderResult("Spend is invalid");
+            return TransactionBuilderResult(SimpleTransactionBuilderFailure::SpendIsInvalid);
         }
 
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
@@ -588,7 +629,7 @@ TransactionBuilderResult TransactionBuilder::Build()
                 cv,
                 rk,
                 sdesc.zkproof)) {
-            return TransactionBuilderResult("Spend proof failed");
+            return TransactionBuilderResult(SimpleTransactionBuilderFailure::SpendProofFailed);
         }
 
         sdesc.cv = uint256::FromRawBytes(cv);
@@ -602,12 +643,12 @@ TransactionBuilderResult TransactionBuilder::Build()
     for (auto output : outputs) {
         // Check this out here as well to provide better logging.
         if (!output.note.cmu()) {
-            return TransactionBuilderResult("Output is invalid");
+            return TransactionBuilderResult(SimpleTransactionBuilderFailure::OutputIsInvalid);
         }
 
         auto odesc = output.Build(ctx);
         if (!odesc) {
-            return TransactionBuilderResult("Failed to create output description");
+            return TransactionBuilderResult(SimpleTransactionBuilderFailure::FailedToCreateOutputDescription);
         }
 
         mtx.vShieldedOutput.push_back(odesc.value());
@@ -625,7 +666,9 @@ TransactionBuilderResult TransactionBuilder::Build()
         try {
             CreateJSDescriptions();
         } catch (JSDescException e) {
-            return TransactionBuilderResult(e.what());
+            return TransactionBuilderResult(e);
+        } catch (std::runtime_error e) {
+            throw e;
         }
     }
 
@@ -647,9 +690,9 @@ TransactionBuilderResult TransactionBuilder::Build()
             dataToBeSigned = SignatureHash(scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
         }
     } catch (std::ios_base::failure ex) {
-        return TransactionBuilderResult("Could not construct signature hash: " + std::string(ex.what()));
+        return TransactionBuilderResult(ex);
     } catch (std::logic_error ex) {
-        return TransactionBuilderResult("Could not construct signature hash: " + std::string(ex.what()));
+        return TransactionBuilderResult(ex);
     }
 
     if (orchardBundle.has_value()) {
@@ -658,7 +701,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         if (authorizedBundle.has_value()) {
             mtx.orchardBundle = authorizedBundle.value();
         } else {
-            return TransactionBuilderResult("Failed to create Orchard proof or signatures");
+            return TransactionBuilderResult(SimpleTransactionBuilderFailure::FailedToCreateOrchardProofOrSignatures);
         }
     }
 
@@ -681,7 +724,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         dataToBeSigned.begin(), 32,
         &mtx.joinSplitSig))
     {
-        return TransactionBuilderResult("Failed to create Sprout joinSplitSig");
+        return TransactionBuilderResult(SimpleTransactionBuilderFailure::FailedToCreateJoinSplitSig);
     }
 
     // Sanity check Sprout joinSplitSig
@@ -690,7 +733,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         &mtx.joinSplitSig,
         dataToBeSigned.begin(), 32))
     {
-        return TransactionBuilderResult("Sprout joinSplitSig sanity check failed");
+        return TransactionBuilderResult(SimpleTransactionBuilderFailure::JoinSplitSigSanityCheckFailed);
     }
 
     // Transparent signatures
@@ -705,7 +748,7 @@ TransactionBuilderResult TransactionBuilder::Build()
             tIn.scriptPubKey, sigdata, consensusBranchId);
 
         if (!signSuccess) {
-            return TransactionBuilderResult("Failed to sign transaction");
+            return TransactionBuilderResult(SimpleTransactionBuilderFailure::FailedToSignTransaction);
         } else {
             UpdateTransaction(mtx, nIn, sigdata);
         }

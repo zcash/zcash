@@ -839,7 +839,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     auto maybeTx = builder.Build();
     EXPECT_TRUE(maybeTx.IsTx());
     if (maybeTx.IsError()) {
-        std::cerr << "Failed to build transaction: " << maybeTx.GetError() << std::endl;
+        std::cerr << "Failed to build transaction: " << maybeTx.FormatError() << std::endl;
         GTEST_FAIL();
     }
     auto tx = maybeTx.GetTxOrThrow();
@@ -893,7 +893,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     auto maybeTx2 = builder2.Build();
     EXPECT_TRUE(maybeTx2.IsTx());
     if (maybeTx2.IsError()) {
-        std::cerr << "Failed to build transaction: " << maybeTx2.GetError() << std::endl;
+        std::cerr << "Failed to build transaction: " << maybeTx2.FormatError() << std::endl;
         GTEST_FAIL();
     }
     auto tx2 = maybeTx2.GetTxOrThrow();
@@ -906,7 +906,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     auto maybeTx3 = builder3.Build();
     EXPECT_TRUE(maybeTx3.IsTx());
     if (maybeTx3.IsError()) {
-        std::cerr << "Failed to build transaction: " << maybeTx3.GetError() << std::endl;
+        std::cerr << "Failed to build transaction: " << maybeTx3.FormatError() << std::endl;
         GTEST_FAIL();
     }
     auto tx3 = maybeTx3.GetTxOrThrow();
