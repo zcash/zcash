@@ -238,18 +238,65 @@ struct JSDescriptionInfo {
     );
 };
 
+enum Pool {
+    Transparent,
+    Sprout,
+    Sapling,
+    Orchard
+};
+
+// This exception is thrown in certain scenarios when building JoinSplits fails.
+struct JSDescException : public std::exception
+{
+    JSDescException (const std::string msg_) : msg(msg_) {}
+
+    bool operator==(const JSDescException& that) const {
+        return this->msg == that.msg;
+    }
+
+    const char* what() { return msg.c_str(); };
+
+private:
+    std::string msg;
+};
+
+enum class SimpleTransactionBuilderFailure {
+    FailedToAddOrchardNote,
+    NegativeChange,
+    CouldNotDetermineChangeAddress,
+    FailedToBuildOrchardBundle,
+    SpendIsInvalid,
+    SpendProofFailed,
+    OutputIsInvalid,
+    FailedToCreateOutputDescription,
+    FailedToCreateOrchardProofOrSignatures,
+    FailedToCreateJoinSplitSig,
+    JoinSplitSigSanityCheckFailed,
+    FailedToSignTransaction
+};
+
+typedef std::variant<
+    Pool, // insufficient witnesses
+    SaplingOutPoint, // missing witness at outpoint
+    JSDescException,
+    std::ios_base::failure, // Could not construct signature hash
+    std::logic_error, // Could not construct signature hash
+    SimpleTransactionBuilderFailure
+    > TransactionBuilderFailure;
+
 class TransactionBuilderResult {
 private:
     std::optional<CTransaction> maybeTx;
-    std::optional<std::string> maybeError;
+    std::optional<TransactionBuilderFailure> maybeError;
 public:
     TransactionBuilderResult() = delete;
     TransactionBuilderResult(const CTransaction& tx);
-    TransactionBuilderResult(const std::string& error);
+    TransactionBuilderResult(const TransactionBuilderFailure& error);
     bool IsTx();
     bool IsError();
     CTransaction GetTxOrThrow();
-    std::string GetError();
+    TransactionBuilderFailure GetError();
+    std::string FormatError();
 };
 
 class TransactionBuilder

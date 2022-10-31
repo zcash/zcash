@@ -591,7 +591,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
             UnlockSpendable();
             // This error should not appear once we're nAnchorConfirmations blocks past
             // Sapling activation.
-            return TransactionBuilderResult("Insufficient Sapling witnesses.");
+            return TransactionBuilderResult(Sapling);
         }
         if (builder.GetOrchardAnchor().has_value()) {
             orchardSpendInfo = wallet.GetOrchardSpendInfo(spendable.orchardNoteMetadata, builder.GetOrchardAnchor().value());
@@ -606,9 +606,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
             std::move(spendInfo.second)))
         {
             UnlockSpendable();
-            return TransactionBuilderResult(
-                strprintf("Failed to add Orchard note to transaction (check %s for details)", GetDebugLogPath())
-            );
+            return TransactionBuilderResult(SimpleTransactionBuilderFailure::FailedToAddOrchardNote);
         }
     }
 
@@ -616,10 +614,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
     for (size_t i = 0; i < saplingNotes.size(); i++) {
         if (!witnesses[i]) {
             UnlockSpendable();
-            return TransactionBuilderResult(strprintf(
-                "Missing witness for Sapling note at outpoint %s",
-                spendable.saplingNoteEntries[i].op.ToString()
-            ));
+            return TransactionBuilderResult(spendable.saplingNoteEntries[i].op);
         }
 
         builder.AddSaplingSpend(saplingKeys[i].expsk, saplingNotes[i], anchor, witnesses[i].value());
@@ -681,7 +676,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
             UnlockSpendable();
             // This error should not appear once we're nAnchorConfirmations blocks past
             // Sprout activation.
-            return TransactionBuilderResult("Insufficient Sprout witnesses.");
+            return TransactionBuilderResult(Sprout);
         }
     }
 
