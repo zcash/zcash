@@ -314,6 +314,7 @@ private:
      * and the requested transaction strategy.
      */
     InputSelectionResult ResolveInputsAndPayments(
+            const CChainParams& params,
             bool isFromUa,
             SpendableInputs& spendable,
             const std::vector<Payment>& payments,
@@ -321,6 +322,7 @@ private:
             TransactionStrategy strategy,
             CAmount fee,
             uint32_t anchorConfirmations) const;
+
     /**
      * Compute the internal and external OVKs to use in transaction construction, given
      * the spendable inputs.
@@ -343,6 +345,7 @@ public:
             int32_t minDepth) const;
 
     PrepareTransactionResult PrepareTransaction(
+            const CChainParams& params,
             const ZTXOSelector& selector,
             SpendableInputs& spendable,
             const std::vector<Payment>& payments,
