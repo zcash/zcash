@@ -144,6 +144,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             mindepth_);
 
     auto preparedTx = builder_.PrepareTransaction(
+            Params(),
             ztxoSelector_,
             spendable,
             recipients_,

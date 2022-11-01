@@ -17,6 +17,7 @@ typedef std::variant<
     InputSelectionError> PossiblyChangeAddress;
 
 PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
+        const CChainParams& params,
         const ZTXOSelector& selector,
         SpendableInputs& spendable,
         const std::vector<Payment>& payments,
@@ -28,7 +29,8 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
     assert(fee < MAX_MONEY);
 
     bool isFromUa = std::holds_alternative<libzcash::UnifiedAddress>(selector.GetPattern());
-    auto selected = ResolveInputsAndPayments(isFromUa, spendable, payments, chain, strategy, fee, anchorConfirmations);
+    auto selected = ResolveInputsAndPayments(params, isFromUa, spendable, payments, chain, strategy, fee, anchorConfirmations);
+
     if (std::holds_alternative<InputSelectionError>(selected)) {
         return std::get<InputSelectionError>(selected);
     }
@@ -63,7 +65,9 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
                         }
                         break;
                     case ReceiverType::Orchard:
-                        if (!spendable.orchardNoteMetadata.empty() || strategy.AllowRevealedAmounts()) {
+                        int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);
+                        if (params.GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5)
+                            && (!spendable.orchardNoteMetadata.empty() || strategy.AllowRevealedAmounts())) {
                             result.insert(OutputPool::Orchard);
                         }
                         break;
@@ -153,7 +157,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
                     }
                 },
                 [&](const libzcash::UnifiedFullViewingKey& fvk) -> PossiblyChangeAddress {
-                    auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), fvk);
+                    auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(params, fvk);
                     auto sendTo = zufvk.GetChangeAddress(
                             allowedChangeTypes(fvk.GetKnownReceiverTypes()));
                     if (sendTo.has_value()) {
@@ -247,6 +251,7 @@ bool WalletTxBuilder::AllowTransparentCoinbase(
 }
 
 InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
+        const CChainParams& params,
         bool isFromUa,
         SpendableInputs& spendableMut,
         const std::vector<Payment>& payments,
@@ -318,7 +323,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
             [&](const UnifiedAddress& ua) {
                 bool resolved{false};
                 int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);
-                if (Params().GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5)
+                if (params.GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5)
                     && canResolveOrchard
                     && ua.GetOrchardReceiver().has_value()
                     && (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxOrchardAvailable)

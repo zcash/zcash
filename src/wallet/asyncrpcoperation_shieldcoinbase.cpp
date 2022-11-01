@@ -175,6 +175,7 @@ Remaining AsyncRPCOperation_shieldcoinbase::prepare() {
     std::vector<Payment> payments = { Payment(toAddress_, shieldingValue - fee_, std::nullopt, true) };
 
     auto preparationResult = builder_.PrepareTransaction(
+            Params(),
             ztxoSelector_,
             spendable,
             payments,
