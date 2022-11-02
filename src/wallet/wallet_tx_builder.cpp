@@ -54,8 +54,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
                 switch (rtype) {
                     case ReceiverType::P2PKH:
                     case ReceiverType::P2SH:
-                        if ((spendable.utxos.empty() && strategy.AllowRevealedRecipients()) ||
-                                strategy.AllowFullyTransparent()) {
+                        if (strategy.AllowRevealedRecipients()) {
                             result.insert(OutputPool::Transparent);
                         }
                         break;
@@ -82,19 +81,27 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
                     auto sendTo = pwalletMain->GenerateChangeAddressForAccount(
                             sendFromAccount,
                             allowedChangeTypes({ReceiverType::P2PKH}));
-                    assert(sendTo.has_value());
-                    resolvedPayments.AddPayment(
-                            ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
-                    return sendTo.value();
+                    if (sendTo.has_value()) {
+                        resolvedPayments.AddPayment(
+                                ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
+                        return sendTo.value();
+                    } else {
+                        return std::pair(std::set{AddressResolutionError::ChangeAddressSelectionError},
+                                         PrivacyPolicy::AllowFullyTransparent);
+                    }
                 },
                 [&](const CScriptID& scriptId) -> PossiblyChangeAddress {
                     auto sendTo = pwalletMain->GenerateChangeAddressForAccount(
                             sendFromAccount,
                             allowedChangeTypes({ReceiverType::P2SH}));
-                    assert(sendTo.has_value());
-                    resolvedPayments.AddPayment(
-                            ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
-                    return sendTo.value();
+                    if (sendTo.has_value()) {
+                        resolvedPayments.AddPayment(
+                                ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
+                        return sendTo.value();
+                    } else {
+                        return std::pair(std::set{AddressResolutionError::ChangeAddressSelectionError},
+                                         PrivacyPolicy::AllowFullyTransparent);
+                    }
                 },
                 [](const libzcash::SproutPaymentAddress& addr) -> PossiblyChangeAddress {
                     // for Sprout, we return change to the originating address using the tx builder.
