@@ -5580,7 +5580,9 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
                 true,
                 true,
                 // LegacyCompat does not include AllowLinkingAccountAddresses.
-                maybeStrategy.has_value() ? maybeStrategy.value().AllowLinkingAccountAddresses() : false);
+                maybeStrategy.has_value()
+                    ? maybeStrategy.value()
+                    : TransactionStrategy(PrivacyPolicy::FullPrivacy));
             if (!ztxoSelectorOpt.has_value()) {
                 throw JSONRPCError(
                         RPC_INVALID_ADDRESS_OR_KEY,
