@@ -47,9 +47,9 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         taddr0 = get_coinbase_address(self.nodes[0])
         taddr1 = self.nodes[1].getnewaddress()
         taddr2 = self.nodes[2].getnewaddress()
-        zaddr2 = self.nodes[2].z_getnewaddress('sprout')
+        zaddr2 = self.nodes[2].z_getnewaddress('sapling')
         taddr3 = self.nodes[3].getnewaddress()
-        zaddr3 = self.nodes[3].z_getnewaddress('sprout')
+        zaddr3 = self.nodes[3].z_getnewaddress('sapling')
 
         #
         # Currently at block 195. The next block to be mined 196 is a Sapling block
