@@ -218,7 +218,7 @@ Payments InputSelection::GetPayments() const {
     return this->payments;
 }
 
-std::optional<int> InputSelection::GetOrchardAnchorHeight() const {
+int InputSelection::GetOrchardAnchorHeight() const {
     return this->orchardAnchorHeight;
 }
 
@@ -291,7 +291,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     std::vector<ResolvedPayment> resolvedPayments;
     std::set<AddressResolutionError> resolutionError;
     PrivacyPolicy maxPrivacy = PrivacyPolicy::FullPrivacy;
-    std::optional<int> orchardAnchorHeight = std::optional<int>();;
+    int orchardAnchorHeight = GetAnchorHeight(chain, anchorConfirmations);
     for (const auto& payment : payments) {
         std::visit(match {
             [&](const CKeyID& p2pkh) {
@@ -329,8 +329,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
             },
             [&](const UnifiedAddress& ua) {
                 bool resolved{false};
-                int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);
-                if (params.GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5)
+                if (params.GetConsensus().NetworkUpgradeActive(orchardAnchorHeight, Consensus::UPGRADE_NU5)
                     && canResolveOrchard
                     && ua.GetOrchardReceiver().has_value()
                     && (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxOrchardAvailable)
@@ -341,7 +340,6 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                         maxOrchardAvailable -= payment.GetAmount();
                     }
                     orchardOutputs += 1;
-                    orchardAnchorHeight = std::optional(anchorHeight);
                     resolved = true;
                 }
 
@@ -577,12 +575,10 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
         && (InvolvesOrchard() || nPreferredTxVersion > ZIP225_MIN_TX_VERSION)
         && this->anchorConfirmations > 0)
     {
-        if (this->orchardAnchorHeight.has_value()) {
-            LOCK(cs_main);
-            auto anchorBlockIndex = chain[this->orchardAnchorHeight.value()];
-            assert(anchorBlockIndex != nullptr);
-            orchardAnchor = anchorBlockIndex->hashFinalOrchardRoot;
-        }
+        LOCK(cs_main);
+        auto anchorBlockIndex = chain[this->orchardAnchorHeight];
+        assert(anchorBlockIndex != nullptr);
+        orchardAnchor = anchorBlockIndex->hashFinalOrchardRoot;
     }
 
     auto builder = TransactionBuilder(consensus, nextBlockHeight, orchardAnchor, &wallet);
