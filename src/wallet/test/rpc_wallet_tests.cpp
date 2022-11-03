@@ -1238,10 +1238,10 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // there are no utxos to spend
     {
-        auto selector = pwalletMain->ZTXOSelectorForAddress(taddr1, true, false, FULL_PRIVACY).value();
+        TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
+        auto selector = pwalletMain->ZTXOSelectorForAddress(taddr1, true, false, strategy).value();
         WalletTxBuilder builder(*pwalletMain, minRelayTxFee);
         std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
-        TransactionStrategy strategy;
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
         operation->main();
         BOOST_CHECK(operation->isFailed());
@@ -1251,10 +1251,10 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // there are no unspent notes to spend
     {
-        auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true, false, FULL_PRIVACY).value();
+        TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
+        auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true, false, strategy).value();
         WalletTxBuilder builder(*pwalletMain, minRelayTxFee);
         std::vector<Payment> recipients = { Payment(taddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
-        TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
         operation->main();
         BOOST_CHECK(operation->isFailed());
