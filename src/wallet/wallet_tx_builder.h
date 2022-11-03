@@ -163,7 +163,7 @@ private:
     // TODO: This needs to be richer, like an `orchardAnchorBlock`, so the `TransactionEffects` can
     //       be recalculated if the state of the chain has changed significantly between the time of
     //       preparation and the time of approval.
-    std::optional<int> orchardAnchorHeight;
+    int orchardAnchorHeight;
 
 public:
     TransactionEffects(
@@ -175,7 +175,7 @@ public:
         CAmount fee,
         uint256 internalOVK,
         uint256 externalOVK,
-        std::optional<int> orchardAnchorHeight) :
+        int orchardAnchorHeight) :
             sendFromAccount(sendFromAccount),
             anchorConfirmations(anchorConfirmations),
             spendable(spendable),
@@ -276,15 +276,15 @@ typedef std::variant<
 class InputSelection {
 private:
     Payments payments;
-    std::optional<int> orchardAnchorHeight;
+    int orchardAnchorHeight;
 
 public:
-    InputSelection(Payments payments, std::optional<int> orchardAnchorHeight):
+    InputSelection(Payments payments, int orchardAnchorHeight):
         payments(payments), orchardAnchorHeight(orchardAnchorHeight) {}
 
     Payments GetPayments() const;
 
-    std::optional<int> GetOrchardAnchorHeight() const;
+    int GetOrchardAnchorHeight() const;
 };
 
 typedef std::variant<
