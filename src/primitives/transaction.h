@@ -993,7 +993,7 @@ public:
     }
 
     int64_t EstimatePropagationLatencyInSeconds() const {
-        return 10;
+        return 30;
     }
 
     std::string ToString() const;

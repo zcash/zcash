@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     // ... or if EstimatePropagationLatencyInSeconds() seconds have passed.
     mempool.ClearPrioritisation(hash);
     auto latency = tx3_entry.GetSharedTx()->EstimatePropagationLatencyInSeconds();
-    BOOST_CHECK_EQUAL(latency, 10);
+    BOOST_CHECK_EQUAL(latency, 30);
     FixedClock::Instance()->Set(std::chrono::seconds(SaturatingAddTime(GetTime(), latency)));
     BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 2);
