@@ -79,23 +79,21 @@ class UpgradeGoldenTest(BitcoinTestFramework):
                 regtest_path = self.options.tmpdir+"/node"+ str(i)+"/regtest"
                 shutil.rmtree(regtest_path)
                 with tarfile.open(upgrade.tgz_path, "r:gz") as tgz:
-                    def is_within_directory(directory, target):
-                        
-                        abs_directory = os.path.abspath(directory)
-                        abs_target = os.path.abspath(target)
+                    def is_within_directory(directory, target):                        
+                        abs_directory = os.path.realpath(directory, strict=True)
+                        abs_target = os.path.realpath(target, strict=True)
                     
                         prefix = os.path.commonprefix([abs_directory, abs_target])
                         
                         return prefix == abs_directory
                     
-                    def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
-                    
-                        for member in tar.getmembers():
+                    def safe_extract(tar, path, members):
+                          for member in tar.getmembers():
                             member_path = os.path.join(path, member.name)
                             if not is_within_directory(path, member_path):
-                                raise Exception("Attempted Path Traversal in Tar File")
+                                raise Exception("Attempted Path or Symlink Traversal in Tar File")
                     
-                        tar.extractall(path, members, numeric_owner=numeric_owner) 
+                        tar.extractall(path, members) 
                         
                     
                     safe_extract(tgz, path=regtest_path)
