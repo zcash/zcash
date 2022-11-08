@@ -95,7 +95,10 @@ CBlockHeader CBlockIndex::GetBlockHeader() const
         header.nSolution        = nSolution;
     } else {
         CDiskBlockIndex dbindex;
-        assert(pblocktree->ReadDiskBlockIndex(GetBlockHash(), dbindex));
+        if (!pblocktree->ReadDiskBlockIndex(GetBlockHash(), dbindex)) {
+            LogPrintf("%s: Failed to read index entry", __func__);
+            throw std::runtime_error("Failed to read index entry");
+        }
         header.nSolution        = dbindex.GetSolution();
     }
     return header;

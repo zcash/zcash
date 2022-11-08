@@ -634,7 +634,12 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                 CBlockHeader header;
                 {
                     LOCK(cs_main);
-                    header = pindexNew->GetBlockHeader();
+                    try {
+                        header = pindexNew->GetBlockHeader();
+                    } catch (const runtime_error&) {
+                        return error("LoadBlockIndex(): failed to read index entry: diskindex hash = %s",
+                            diskindex.GetBlockHash().ToString());
+                    }
                 }
                 if (header.GetHash() != diskindex.GetBlockHash())
                     return error("LoadBlockIndex(): inconsistent header vs diskindex hash: header hash = %s, diskindex hash = %s",
