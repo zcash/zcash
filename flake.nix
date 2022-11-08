@@ -87,24 +87,47 @@
       };
 
       devShells =
-        # `pkgs.debian-devscripts` is Linux-specific, so we can only do a
-        # release from there.
-        if pkgs.lib.hasSuffix "-linux" system
-        then {
-          release = pkgs.mkShell {
-            inherit src;
+        {
+          default = self.devShells.${system}.zcash;
 
-            nativeBuildInputs = [
-              pkgs.debian-devscripts
-              pkgs.help2man
-              (pkgs.python.withPackages (pypkgs: [
-                pypkgs.progressbar2
-                pypkgs.requests
-              ]))
-            ];
-          };
+          librustzcash = self.packages.${system}.librustzcash.overrideAttrs (old: {
+            nativeBuildInputs =
+              old.nativeBuildInputs
+              ++ [
+                pkgs.rust-analyzer # LSP server
+              ];
+          });
+
+          zcash = self.packages.${system}.zcash.overrideAttrs (old: {
+            nativeBuildInputs =
+              old.nativeBuildInputs
+              ++ [
+                pkgs.lldb # debugger
+                pkgs.valgrind # debugger
+              ];
+          });
         }
-        else {};
+        // (
+          # `pkgs.debian-devscripts` is Linux-specific, so we can only do a
+          # release from there.
+          if pkgs.lib.hasSuffix "-linux" system
+          then {
+            release = pkgs.mkShell {
+              inherit src;
+
+              nativeBuildInputs = [
+                pkgs.debian-devscripts
+                pkgs.help2man
+                (pkgs.python.withPackages (pypkgs: [
+                  pypkgs.progressbar2
+                  pypkgs.requests
+                  pypkgs.xdg
+                ]))
+              ];
+            };
+          }
+          else {}
+        );
     });
 
   inputs = {
