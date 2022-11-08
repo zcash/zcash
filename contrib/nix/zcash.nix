@@ -1,29 +1,29 @@
-{ autoreconfHook
-, boost
-, ctaes
-, cxx-rs
-, db62
-, gtest
-, hexdump
-, leveldb
-, lib
-, libevent
-, librustzcash
-, libsodium
-, llvmPackages
-, makeWrapper
-, openssl
-, pkg-config
-, python
-, secp256k1
-, src
-, tinyformat
-, univalue
-, utf8cpp
-, zeromq
-, zk-parameters
+{
+  autoreconfHook,
+  boost,
+  ctaes,
+  cxx-rs,
+  db62,
+  gtest,
+  hexdump,
+  leveldb,
+  lib,
+  libevent,
+  librustzcash,
+  libsodium,
+  llvmPackages,
+  makeWrapper,
+  openssl,
+  pkg-config,
+  python,
+  secp256k1,
+  src,
+  tinyformat,
+  univalue,
+  utf8cpp,
+  zeromq,
+  zk-parameters,
 }:
-
 llvmPackages.stdenv.mkDerivation {
   inherit src;
 
@@ -86,7 +86,7 @@ llvmPackages.stdenv.mkDerivation {
     patchShebangs ./src/test/bitcoin-util-test.py
   '';
 
-  configureFlags = [ "--with-boost-libdir=${boost}/lib" ];
+  configureFlags = ["--with-boost-libdir=${boost}/lib"];
 
   doCheck = true;
 }

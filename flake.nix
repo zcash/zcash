@@ -1,106 +1,111 @@
 {
   description = "Internet money";
 
-  outputs = { self, crane, flake-utils, nixpkgs, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ (import ./contrib/nix/dependencies.nix) ];
+  outputs = {
+    self,
+    crane,
+    flake-utils,
+    nixpkgs,
+    ...
+  }:
+    flake-utils.lib.eachDefaultSystem (system: let
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [(import ./contrib/nix/dependencies.nix)];
+      };
+
+      # Specific derivations may further filter the src, but this cuts out all
+      # the general cruft to start with (source control info, Nix build info,
+      # “depends/” build info, etc.).
+      src = pkgs.lib.cleanSourceWith {
+        filter = path: type:
+          ! (pkgs.lib.hasSuffix ".nix" path
+            || pkgs.lib.hasInfix "/depends" path
+            || pkgs.lib.hasInfix "/src/crc32c" path
+            || pkgs.lib.hasInfix "/src/crypto/ctaes" path
+            || pkgs.lib.hasInfix "/src/leveldb" path
+            || pkgs.lib.hasInfix "/src/secp256k1" path
+            || pkgs.lib.hasSuffix "/src/tinyformat.h" path
+            || pkgs.lib.hasInfix "/src/univalue" path)
+          || pkgs.lib.hasInfix "/depends/patches" path;
+        src = pkgs.lib.cleanSource ./.;
+      };
+
+      callPackage = pkgs.lib.callPackageWith (pkgs // {inherit src;});
+      callPackages = pkgs.lib.callPackagesWith (pkgs // {inherit src;});
+    in {
+      checks = callPackages ./contrib/nix/checks.nix {};
+
+      formatter = pkgs.alejandra;
+
+      packages = {
+        default = self.packages.${system}.zcash;
+
+        librustzcash = callPackage ./contrib/nix/librustzcash.nix {
+          crane = crane.lib.${system};
         };
 
-        # Specific derivations may further filter the src, but this cuts out all
-        # the general cruft to start with (source control info, Nix build info,
-        # “depends/” build info, etc.).
-        src = pkgs.lib.cleanSourceWith {
-          filter = path: type:
-            ! (pkgs.lib.hasSuffix ".nix" path
-               || pkgs.lib.hasInfix "/depends" path
-               || pkgs.lib.hasInfix "/src/crc32c" path
-               || pkgs.lib.hasInfix "/src/crypto/ctaes" path
-               || pkgs.lib.hasInfix "/src/leveldb" path
-               || pkgs.lib.hasInfix "/src/secp256k1" path
-               || pkgs.lib.hasSuffix "/src/tinyformat.h" path
-               || pkgs.lib.hasInfix "/src/univalue" path)
-            || pkgs.lib.hasInfix "/depends/patches" path;
-          src = pkgs.lib.cleanSource ./.;
+        zk-parameters = callPackage ./contrib/nix/zk-parameters.nix {};
+
+        zcash = callPackage ./contrib/nix/zcash.nix {
+          inherit (self.packages.${system}) librustzcash zk-parameters;
+        };
+      };
+
+      apps = {
+        default = self.apps.${system}.zcashd;
+
+        bench_bitcoin = {
+          type = "app";
+          program = "${self.packages.${system}.zcash}/bin/bench_bitcoin";
         };
 
-        callPackage = pkgs.lib.callPackageWith (pkgs // { inherit src; });
-        callPackages = pkgs.lib.callPackagesWith (pkgs // { inherit src; });
-      in
-        {
-          checks = callPackages ./contrib/nix/checks.nix { };
+        zcash-cli = {
+          type = "app";
+          program = "${self.packages.${system}.zcash}/bin/zcash-cli";
+        };
 
-          packages = {
-            default = self.packages.${system}.zcash;
+        zcash-inspect = {
+          type = "app";
+          program = "${self.packages.${system}.zcash}/bin/zcash-inspect";
+        };
 
-            librustzcash = callPackage ./contrib/nix/librustzcash.nix {
-              crane = crane.lib.${system};
-            };
+        zcash-tx = {
+          type = "app";
+          program = "${self.packages.${system}.zcash}/bin/zcash-tx";
+        };
 
-            zk-parameters = callPackage ./contrib/nix/zk-parameters.nix { };
+        zcashd = {
+          type = "app";
+          program = "${self.packages.${system}.zcash}/bin/zcashd";
+        };
 
-            zcash = callPackage ./contrib/nix/zcash.nix {
-              inherit (self.packages.${system}) librustzcash zk-parameters;
-            };
+        zcashd-wallet-tool = {
+          type = "app";
+          program = "${self.packages.${system}.zcash}/bin/zcashd-wallet-tool";
+        };
+      };
+
+      devShells =
+        # `pkgs.debian-devscripts` is Linux-specific, so we can only do a
+        # release from there.
+        if pkgs.lib.hasSuffix "-linux" system
+        then {
+          release = pkgs.mkShell {
+            inherit src;
+
+            nativeBuildInputs = [
+              pkgs.debian-devscripts
+              pkgs.help2man
+              (pkgs.python.withPackages (pypkgs: [
+                pypkgs.progressbar2
+                pypkgs.requests
+              ]))
+            ];
           };
-
-          apps = {
-            default = self.apps.${system}.zcashd;
-
-            bench_bitcoin = {
-              type = "app";
-              program = "${self.packages.${system}.zcash}/bin/bench_bitcoin";
-            };
-
-            zcash-cli = {
-              type = "app";
-              program = "${self.packages.${system}.zcash}/bin/zcash-cli";
-            };
-
-            zcash-inspect = {
-              type = "app";
-              program = "${self.packages.${system}.zcash}/bin/zcash-inspect";
-            };
-
-            zcash-tx = {
-              type = "app";
-              program = "${self.packages.${system}.zcash}/bin/zcash-tx";
-            };
-
-            zcashd = {
-              type = "app";
-              program = "${self.packages.${system}.zcash}/bin/zcashd";
-            };
-
-            zcashd-wallet-tool = {
-              type = "app";
-              program =
-                "${self.packages.${system}.zcash}/bin/zcashd-wallet-tool";
-            };
-          };
-
-          devShells =
-            # `pkgs.debian-devscripts` is Linux-specific, so we can only do a
-            # release from there.
-            if pkgs.lib.hasSuffix "-linux" system
-            then {
-              release = pkgs.mkShell {
-                inherit src;
-
-                nativeBuildInputs = [
-                  pkgs.debian-devscripts
-                  pkgs.help2man
-                  (pkgs.python.withPackages (pypkgs: [
-                    pypkgs.progressbar2
-                    pypkgs.requests
-                  ]))
-                ];
-              };
-            }
-            else { };
-        });
+        }
+        else {};
+    });
 
   inputs = {
     crane = {

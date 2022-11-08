@@ -1,11 +1,11 @@
-{ crane
-, darwin
-, lib
-, libiconv
-, src
-, stdenv
+{
+  crane,
+  darwin,
+  lib,
+  libiconv,
+  src,
+  stdenv,
 }:
-
 crane.buildPackage {
   src = lib.cleanSourceWith {
     filter = path: type:
