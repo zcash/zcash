@@ -4693,8 +4693,10 @@ int CWallet::ScanForWalletTransactions(
     {
         LOCK2(cs_main, cs_wallet);
 
-        // no need to read and scan block, if block was created before
-        // our wallet birthday (as adjusted for block time variability)
+        // There is no need to read and scan blocks that were created before
+        // our wallet birthday (as adjusted for block time variability).
+        // If there is an Orchard wallet checkpoint, the rewind point must not
+        // be advanced past the last Orchard wallet checkpoint height.
         auto optOrchardCheckpointHeight = orchardWallet.GetLastCheckpointHeight();
         while (chainActive.Next(pindex) != NULL && nTimeFirstKey && pindex->GetBlockTime() < nTimeFirstKey - TIMESTAMP_WINDOW &&
                (!optOrchardCheckpointHeight.has_value() || pindex->nHeight < optOrchardCheckpointHeight.value())) {
