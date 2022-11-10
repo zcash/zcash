@@ -4693,9 +4693,13 @@ int CWallet::ScanForWalletTransactions(
     {
         LOCK2(cs_main, cs_wallet);
 
-        // no need to read and scan block, if block was created before
-        // our wallet birthday (as adjusted for block time variability)
-        while (chainActive.Next(pindex) != NULL && nTimeFirstKey && pindex->GetBlockTime() < nTimeFirstKey - TIMESTAMP_WINDOW) {
+        // There is no need to read and scan blocks that were created before
+        // our wallet birthday (as adjusted for block time variability).
+        // If there is an Orchard wallet checkpoint, the rewind point must not
+        // be advanced past the last Orchard wallet checkpoint height.
+        auto optOrchardCheckpointHeight = orchardWallet.GetLastCheckpointHeight();
+        while (chainActive.Next(pindex) != NULL && nTimeFirstKey && pindex->GetBlockTime() < nTimeFirstKey - TIMESTAMP_WINDOW &&
+               (!optOrchardCheckpointHeight.has_value() || pindex->nHeight < optOrchardCheckpointHeight.value())) {
             pindex = chainActive.Next(pindex);
         }
 
@@ -4705,7 +4709,7 @@ int CWallet::ScanForWalletTransactions(
         // the witness data that is being removed in the rewind here.
         auto nu5_height = chainParams.GetConsensus().GetActivationHeight(Consensus::UPGRADE_NU5);
         bool performOrchardWalletUpdates{false};
-        if (orchardWallet.GetLastCheckpointHeight().has_value()) {
+        if (optOrchardCheckpointHeight.has_value()) {
             // We have a checkpoint, so attempt to rewind the Orchard wallet at most as
             // far as the NU5 activation block.
             // If there's no activation height, we shouldn't have a checkpoint already,
@@ -4718,7 +4722,7 @@ int CWallet::ScanForWalletTransactions(
                 LogPrintf(
                         "CWallet::ScanForWalletTransactions(): Rewinding Orchard wallet to height %d; current is %d",
                         rewindHeight,
-                        orchardWallet.GetLastCheckpointHeight().value());
+                        optOrchardCheckpointHeight.value());
                 uint32_t uResultHeight{0};
                 if (orchardWallet.Rewind(rewindHeight, uResultHeight)) {
                     // rewind was successful or a no-op, so perform Orchard wallet updates
