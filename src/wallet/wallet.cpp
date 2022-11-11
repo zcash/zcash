@@ -7735,23 +7735,82 @@ std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(co
     return std::nullopt;
 }
 
+PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b)
+{
+    switch (a) {
+        case PrivacyPolicy::FullPrivacy:
+            return b;
+        case PrivacyPolicy::AllowRevealedAmounts:
+            switch (b) {
+                case PrivacyPolicy::FullPrivacy:
+                    return a;
+                default: return b;
+            };
+        case PrivacyPolicy::AllowRevealedRecipients:
+            switch (b) {
+                case PrivacyPolicy::FullPrivacy:
+                case PrivacyPolicy::AllowRevealedAmounts:
+                    return a;
+                case PrivacyPolicy::AllowRevealedSenders:
+                    return PrivacyPolicy::AllowFullyTransparent;
+                case PrivacyPolicy::AllowLinkingAccountAddresses:
+                    return PrivacyPolicy::NoPrivacy;
+                default: return b;
+            };
+        case PrivacyPolicy::AllowRevealedSenders:
+            switch (b) {
+                case PrivacyPolicy::FullPrivacy:
+                case PrivacyPolicy::AllowRevealedAmounts:
+                    return a;
+                case PrivacyPolicy::AllowRevealedRecipients:
+                    return PrivacyPolicy::AllowFullyTransparent;
+                default: return b;
+            };
+        case PrivacyPolicy::AllowFullyTransparent:
+            switch (b) {
+                case PrivacyPolicy::FullPrivacy:
+                case PrivacyPolicy::AllowRevealedAmounts:
+                case PrivacyPolicy::AllowRevealedRecipients:
+                case PrivacyPolicy::AllowRevealedSenders:
+                    return a;
+                case PrivacyPolicy::AllowLinkingAccountAddresses:
+                    return PrivacyPolicy::NoPrivacy;
+                default: return b;
+            };
+        case PrivacyPolicy::AllowLinkingAccountAddresses:
+            switch (b) {
+                case PrivacyPolicy::FullPrivacy:
+                case PrivacyPolicy::AllowRevealedAmounts:
+                case PrivacyPolicy::AllowRevealedSenders:
+                    return a;
+                case PrivacyPolicy::AllowRevealedRecipients:
+                case PrivacyPolicy::AllowFullyTransparent:
+                    return PrivacyPolicy::NoPrivacy;
+                default: return b;
+            };
+        case PrivacyPolicy::NoPrivacy:
+            return a;
+        default: assert(false);
+    }
+}
+
 std::optional<TransactionStrategy> TransactionStrategy::FromString(std::string privacyPolicy) {
     TransactionStrategy strategy;
 
     if (privacyPolicy == "FullPrivacy") {
-        strategy.privacy = PrivacyPolicy::FullPrivacy;
+        strategy.requestedLevel = PrivacyPolicy::FullPrivacy;
     } else if (privacyPolicy == "AllowRevealedAmounts") {
-        strategy.privacy = PrivacyPolicy::AllowRevealedAmounts;
+        strategy.requestedLevel = PrivacyPolicy::AllowRevealedAmounts;
     } else if (privacyPolicy == "AllowRevealedRecipients") {
-        strategy.privacy = PrivacyPolicy::AllowRevealedRecipients;
+        strategy.requestedLevel = PrivacyPolicy::AllowRevealedRecipients;
     } else if (privacyPolicy == "AllowRevealedSenders") {
-        strategy.privacy = PrivacyPolicy::AllowRevealedSenders;
+        strategy.requestedLevel = PrivacyPolicy::AllowRevealedSenders;
     } else if (privacyPolicy == "AllowFullyTransparent") {
-        strategy.privacy = PrivacyPolicy::AllowFullyTransparent;
+        strategy.requestedLevel = PrivacyPolicy::AllowFullyTransparent;
     } else if (privacyPolicy == "AllowLinkingAccountAddresses") {
-        strategy.privacy = PrivacyPolicy::AllowLinkingAccountAddresses;
+        strategy.requestedLevel = PrivacyPolicy::AllowLinkingAccountAddresses;
     } else if (privacyPolicy == "NoPrivacy") {
-        strategy.privacy = PrivacyPolicy::NoPrivacy;
+        strategy.requestedLevel = PrivacyPolicy::NoPrivacy;
     } else {
         // Unknown privacy policy.
         return std::nullopt;
@@ -7760,72 +7819,49 @@ std::optional<TransactionStrategy> TransactionStrategy::FromString(std::string p
     return strategy;
 }
 
-bool TransactionStrategy::AllowRevealedAmounts() {
-    switch (privacy) {
+std::string TransactionStrategy::ToString(PrivacyPolicy policy) {
+    switch (policy) {
         case PrivacyPolicy::FullPrivacy:
-            return false;
+            return "FullPrivacy";
         case PrivacyPolicy::AllowRevealedAmounts:
+            return "AllowRevealedAmounts";
         case PrivacyPolicy::AllowRevealedRecipients:
+            return "AllowRevealedRecipients";
         case PrivacyPolicy::AllowRevealedSenders:
+            return "AllowRevealedSenders";
         case PrivacyPolicy::AllowFullyTransparent:
+            return "AllowFullyTransparent";
         case PrivacyPolicy::AllowLinkingAccountAddresses:
+            return "AllowLinkingAccountAddresses";
         case PrivacyPolicy::NoPrivacy:
-            return true;
+            return "NoPrivacy";
         default:
-            // Fail closed.
-            return false;
+            assert(false);
     }
 }
 
-bool TransactionStrategy::AllowRevealedRecipients() {
-    switch (privacy) {
-        case PrivacyPolicy::FullPrivacy:
-        case PrivacyPolicy::AllowRevealedAmounts:
-        case PrivacyPolicy::AllowRevealedSenders:
-        case PrivacyPolicy::AllowLinkingAccountAddresses:
-            return false;
-        case PrivacyPolicy::AllowRevealedRecipients:
-        case PrivacyPolicy::AllowFullyTransparent:
-        case PrivacyPolicy::NoPrivacy:
-            return true;
-        default:
-            // Fail closed.
-            return false;
-    }
+bool TransactionStrategy::AllowRevealedAmounts() const {
+    return IsCompatibleWith(PrivacyPolicy::AllowRevealedAmounts);
 }
 
-bool TransactionStrategy::AllowRevealedSenders() {
-    switch (privacy) {
-        case PrivacyPolicy::FullPrivacy:
-        case PrivacyPolicy::AllowRevealedAmounts:
-        case PrivacyPolicy::AllowRevealedRecipients:
-            return false;
-        case PrivacyPolicy::AllowRevealedSenders:
-        case PrivacyPolicy::AllowFullyTransparent:
-        case PrivacyPolicy::AllowLinkingAccountAddresses:
-        case PrivacyPolicy::NoPrivacy:
-            return true;
-        default:
-            // Fail closed.
-            return false;
-    }
+bool TransactionStrategy::AllowRevealedRecipients() const {
+    return IsCompatibleWith(PrivacyPolicy::AllowRevealedRecipients);
 }
 
-bool TransactionStrategy::AllowLinkingAccountAddresses() {
-    switch (privacy) {
-        case PrivacyPolicy::FullPrivacy:
-        case PrivacyPolicy::AllowRevealedAmounts:
-        case PrivacyPolicy::AllowRevealedRecipients:
-        case PrivacyPolicy::AllowRevealedSenders:
-        case PrivacyPolicy::AllowFullyTransparent:
-            return false;
-        case PrivacyPolicy::AllowLinkingAccountAddresses:
-        case PrivacyPolicy::NoPrivacy:
-            return true;
-        default:
-            // Fail closed.
-            return false;
-    }
+bool TransactionStrategy::AllowRevealedSenders() const {
+    return IsCompatibleWith(PrivacyPolicy::AllowRevealedSenders);
+}
+
+bool TransactionStrategy::AllowFullyTransparent() const {
+    return IsCompatibleWith(PrivacyPolicy::AllowFullyTransparent);
+}
+
+bool TransactionStrategy::AllowLinkingAccountAddresses() const {
+    return IsCompatibleWith(PrivacyPolicy::AllowLinkingAccountAddresses);
+}
+
+bool TransactionStrategy::IsCompatibleWith(PrivacyPolicy requiredLevel) const {
+    return requestedLevel == PrivacyPolicyMeet(requestedLevel, requiredLevel);
 }
 
 bool ZTXOSelector::SelectsTransparent() const {
@@ -7872,7 +7908,7 @@ bool ZTXOSelector::SelectsOrchard() const {
 bool SpendableInputs::LimitToAmount(
     const CAmount amountRequired,
     const CAmount dustThreshold,
-    std::set<OutputPool> recipientPools)
+    const std::set<OutputPool>& recipientPools)
 {
     assert(amountRequired >= 0 && dustThreshold > 0);
     // Calling this method twice is a programming error.

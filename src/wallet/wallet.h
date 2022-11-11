@@ -752,6 +752,9 @@ public:
 
 /**
  * A strategy to use for managing privacy when constructing a transaction.
+ *
+ * **NB**: These are intentionally in an order where `<` will never do the right
+ *         thing. See `PrivacyPolicyMeet` for a correct comparison.
  */
 enum class PrivacyPolicy {
     FullPrivacy,
@@ -763,20 +766,42 @@ enum class PrivacyPolicy {
     NoPrivacy,
 };
 
+/** Returns the meet of two privacy policies. I.e., the strongest policy that is
+ *  compatible with both of the provided policies.
+ *
+ *  See https://github.com/zcash/zcash/issues/6240 for the graph that this
+ *  models.
+ */
+PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b);
+
 class TransactionStrategy {
-    PrivacyPolicy privacy;
+    PrivacyPolicy requestedLevel;
 
 public:
-    TransactionStrategy() : privacy(PrivacyPolicy::FullPrivacy) {}
-    TransactionStrategy(const TransactionStrategy& strategy) : privacy(strategy.privacy) {}
-    TransactionStrategy(PrivacyPolicy privacyPolicy) : privacy(privacyPolicy) {}
+    TransactionStrategy() : requestedLevel(PrivacyPolicy::FullPrivacy) {}
+    TransactionStrategy(const TransactionStrategy& strategy) : requestedLevel(strategy.requestedLevel) {}
+    TransactionStrategy(PrivacyPolicy privacyPolicy) : requestedLevel(privacyPolicy) {}
 
     static std::optional<TransactionStrategy> FromString(std::string privacyPolicy);
+    static std::string ToString(PrivacyPolicy policy);
 
-    bool AllowRevealedAmounts();
-    bool AllowRevealedRecipients();
-    bool AllowRevealedSenders();
-    bool AllowLinkingAccountAddresses();
+    std::string PolicyName() const {
+        return ToString(requestedLevel);
+    }
+
+    bool AllowRevealedAmounts() const;
+    bool AllowRevealedRecipients() const;
+    bool AllowRevealedSenders() const;
+    bool AllowFullyTransparent() const;
+    bool AllowLinkingAccountAddresses() const;
+
+    // A strategy is compatible with a given required level if
+    // it is as strong as, or weaker than, the required level.
+    // So, for example, if a transaction only requires FullPrivacy
+    // (the most restrictive policy) then that transaction can
+    // safely be constructed if the user specifies AllowRevealedRecipients,
+    // because the transaction will not reveal any recipients anyway.
+    bool IsCompatibleWith(PrivacyPolicy requiredLevel) const;
 };
 
 /**
@@ -899,24 +924,48 @@ public:
      * This method must only be called once.
      */
     bool LimitToAmount(
-        CAmount amount,
-        CAmount dustThreshold,
-        std::set<libzcash::OutputPool> recipientPools);
+        const CAmount amount,
+        const CAmount dustThreshold,
+        const std::set<libzcash::OutputPool>& recipientPools);
 
     /**
      * Compute the total ZEC amount of spendable inputs.
      */
     CAmount Total() const {
         CAmount result = 0;
+        result += GetTransparentBalance();
+        result += GetSproutBalance();
+        result += GetSaplingBalance();
+        result += GetOrchardBalance();
+        return result;
+    }
+
+    CAmount GetTransparentBalance() const {
+        CAmount result = 0;
         for (const auto& t : utxos) {
             result += t.Value();
         }
+        return result;
+    }
+
+    CAmount GetSproutBalance() const {
+        CAmount result = 0;
         for (const auto& t : sproutNoteEntries) {
             result += t.note.value();
         }
+        return result;
+    }
+
+    CAmount GetSaplingBalance() const {
+        CAmount result = 0;
         for (const auto& t : saplingNoteEntries) {
             result += t.note.value();
         }
+        return result;
+    }
+
+    CAmount GetOrchardBalance() const {
+        CAmount result = 0;
         for (const auto& t : orchardNoteMetadata) {
             result += t.GetNoteValue();
         }

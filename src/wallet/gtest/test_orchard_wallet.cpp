@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "consensus/validation.h"
+#include "gtest/utils.h"
 #include "random.h"
 #include "transaction_builder.h"
 #include "util/test.h"
@@ -36,6 +37,7 @@ CTransaction FakeOrchardTx(const OrchardSpendingKey& sk, libzcash::diversifier_i
     // Create a shielding transaction from transparent to Orchard
     // 0.0005 t-ZEC in, 0.0004 z-ZEC out, default fee
     auto builder = TransactionBuilder(Params().GetConsensus(), 1, orchardAnchor, &keystore);
+    builder.SetFee(10000);
     builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 50000);
     builder.AddOrchardOutput(std::nullopt, recipient, 40000, std::nullopt);
 
@@ -80,6 +82,8 @@ TEST(OrchardWalletTests, TxInvolvesMyNotes) {
 // This test is here instead of test_transaction_builder.cpp because it depends
 // on OrchardWallet, which only exists if the wallet is compiled in.
 TEST(TransactionBuilder, OrchardToOrchard) {
+    LoadProofParameters();
+
     auto consensusParams = RegtestActivateNU5();
     OrchardWallet wallet;
 
@@ -146,7 +150,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
     EXPECT_EQ(tx.vShieldedSpend.size(), 0);
     EXPECT_EQ(tx.vShieldedOutput.size(), 0);
     EXPECT_TRUE(tx.GetOrchardBundle().IsPresent());
-    EXPECT_EQ(tx.GetOrchardBundle().GetValueBalance(), 10000);
+    EXPECT_EQ(tx.GetOrchardBundle().GetValueBalance(), 1000);
 
     CValidationState state;
     EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 3, true));
