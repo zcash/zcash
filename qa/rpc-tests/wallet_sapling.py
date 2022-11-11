@@ -4,7 +4,6 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.authproxy import JSONRPCException
 from test_framework.util import (
     assert_equal,
     get_coinbase_address,
@@ -170,16 +169,13 @@ class WalletSaplingTest(BitcoinTestFramework):
         # Make sure we get a useful error when trying to send to both sprout and sapling
         node4_sproutaddr = self.nodes[3].z_getnewaddress('sprout')
         node4_saplingaddr = self.nodes[3].z_getnewaddress('sapling')
-        try:
-            self.nodes[1].z_sendmany(
-                taddr1,
-                [{'address': node4_sproutaddr, 'amount': Decimal('2.5')},
-                 {'address': node4_saplingaddr, 'amount': Decimal('2.5') - DEFAULT_FEE}],
-                1, DEFAULT_FEE, 'AllowRevealedSenders'
-            )
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Sending funds into the Sprout value pool is not supported by z_sendmany", e.error['message'])
+        myopid = self.nodes[1].z_sendmany(
+            taddr1,
+            [{'address': node4_sproutaddr, 'amount': Decimal('2.5')},
+             {'address': node4_saplingaddr, 'amount': Decimal('2.5') - DEFAULT_FEE}],
+            1, DEFAULT_FEE, 'AllowRevealedSenders'
+        )
+        wait_and_assert_operationid_status(self.nodes[1], myopid, "failed", "Sending funds into the Sprout pool is no longer supported.")
 
 if __name__ == '__main__':
     WalletSaplingTest().main()
