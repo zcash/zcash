@@ -17,6 +17,8 @@
 
 #include <boost/thread.hpp>
 
+#include <rust/metrics.h>
+
 using namespace std;
 
 // NOTE: Per issue #3277, do not use the prefix 'X' or 'x' as they were
@@ -383,6 +385,7 @@ bool CCoinsViewDB::GetStats(CCoinsStats &stats) const {
 }
 
 bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockFileInfo*> >& fileInfo, int nLastFile, const std::vector<CBlockIndex*>& blockinfo) {
+    MetricsIncrementCounter("zcashd.debug.blocktree.write_batch");
     CDBBatch batch(*this);
     for (std::vector<std::pair<int, const CBlockFileInfo*> >::const_iterator it=fileInfo.begin(); it != fileInfo.end(); it++) {
         batch.Write(make_pair(DB_BLOCK_FILES, it->first), *it->second);
@@ -392,6 +395,7 @@ bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockF
         std::pair<char, uint256> key = make_pair(DB_BLOCK_INDEX, (*it)->GetBlockHash());
         try {
             CDiskBlockIndex dbindex {*it, [this, &key]() {
+                MetricsIncrementCounter("zcashd.debug.blocktree.write_batch_read_dbindex");
                 // It can happen that the index entry is written, then the Equihash solution is cleared from memory,
                 // then the index entry is rewritten. In that case we must read the solution from the old entry.
                 CDiskBlockIndex dbindex_old;

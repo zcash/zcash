@@ -17,6 +17,8 @@
 #include <optional>
 #include <vector>
 
+#include <rust/metrics.h>
+
 static const int SPROUT_VALUE_VERSION = 1001400;
 static const int SAPLING_VALUE_VERSION = 1010100;
 static const int CHAIN_HISTORY_ROOT_VERSION = 2010200;
@@ -372,6 +374,7 @@ public:
         nBits          = block.nBits;
         nNonce         = block.nNonce;
         nSolution      = block.nSolution;
+        MetricsIncrementCounter("zcashd.debug.memory.allocated_equihash_solutions");
     }
 
     CDiskBlockPos GetBlockPos() const {

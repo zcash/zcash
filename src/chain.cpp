@@ -9,6 +9,8 @@
 #include "main.h"
 #include "txdb.h"
 
+#include <rust/metrics.h>
+
 /**
  * CChain implementation
  */
@@ -71,7 +73,7 @@ void CBlockIndex::TrimSolution()
     // try to avoid these reads by gating trimming on the validity status: the re-reads are
     // efficient anyway because of caching in leveldb, and most of them are unavoidable.
     if (HasSolution()) {
-        MetricsIncrementCounter("zcashd.trimmed_equihash_solutions");
+        MetricsIncrementCounter("zcashd.debug.memory.trimmed_equihash_solutions");
         std::vector<unsigned char> empty;
         nSolution.swap(empty);
     }
@@ -94,6 +96,7 @@ CBlockHeader CBlockIndex::GetBlockHeader() const
     if (HasSolution()) {
         header.nSolution        = nSolution;
     } else {
+        MetricsIncrementCounter("zcashd.debug.blocktree.trimmed_equihash_read_dbindex");
         CDiskBlockIndex dbindex;
         if (!pblocktree->ReadDiskBlockIndex(GetBlockHash(), dbindex)) {
             LogPrintf("%s: Failed to read index entry", __func__);
