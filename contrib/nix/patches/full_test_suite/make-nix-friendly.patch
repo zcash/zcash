@@ -1,0 +1,83 @@
+diff --git a/qa/zcash/full_test_suite.py b/qa/zcash/full_test_suite.py
+index fd67a6945..86ced99da 100755
+--- a/qa/zcash/full_test_suite.py
++++ b/qa/zcash/full_test_suite.py
+@@ -7,6 +7,7 @@ import argparse
+ from glob import glob
+ import os
+ import re
++import shutil
+ import subprocess
+ import sys
+ 
+@@ -47,14 +48,14 @@ RE_FORTIFY_AVAILABLE = re.compile('FORTIFY_SOURCE support available.*Yes')
+ RE_FORTIFY_USED = re.compile('Binary compiled with FORTIFY_SOURCE support.*Yes')
+ 
+ CXX_BINARIES = [
+-    'src/zcashd',
+-    'src/zcash-cli',
+-    'src/zcash-gtest',
+-    'src/zcash-tx',
+-    'src/test/test_bitcoin',
++    'zcashd',
++    'zcash-cli',
++    'zcash-gtest',
++    'zcash-tx',
++    'test_bitcoin',
+ ]
+ RUST_BINARIES = [
+-    'src/zcashd-wallet-tool',
++    'zcashd-wallet-tool',
+ ]
+ 
+ def test_rpath_runpath(filename):
+@@ -70,8 +71,13 @@ def test_rpath_runpath(filename):
+         return False
+ 
+ def test_fortify_source(filename):
++    path = shutil.which(filename)
++    if not path:
++        print('FAIL: %s can’t be found.' % filename)
++        return False
++
+     proc = subprocess.Popen(
+-        [repofile('qa/zcash/checksec.sh'), '--fortify-file=' + repofile(filename)],
++        ['checksec', '--fortify-file=' + shutil.which(filename)],
+         stdout=subprocess.PIPE,
+     )
+     line1 = proc.stdout.readline()
+@@ -87,9 +93,6 @@ def test_fortify_source(filename):
+ def check_security_hardening():
+     ret = True
+ 
+-    # PIE, RELRO, Canary, and NX are tested by make check-security.
+-    ret &= subprocess.call(['make', '-C', repofile('src'), 'check-security']) == 0
+-
+     # The remaining checks are only for ELF binaries
+     # Assume that if zcashd is an ELF binary, they all are
+     with open(repofile('src/zcashd'), 'rb') as f:
+@@ -97,9 +100,6 @@ def check_security_hardening():
+         if not magic.startswith(b'\x7fELF'):
+             return ret
+ 
+-    for bin in CXX_BINARIES + RUST_BINARIES:
+-        ret &= test_rpath_runpath(bin)
+-
+     # NOTE: checksec.sh does not reliably determine whether FORTIFY_SOURCE
+     # is enabled for the entire binary. See issue #915.
+     # FORTIFY_SOURCE is not applicable to Rust binaries.
+@@ -166,14 +162,9 @@ def rust_test():
+ #
+ 
+ STAGES = [
+-    'rust-test',
+     'btest',
+     'gtest',
+     'sec-hard',
+-    'no-dot-so',
+-    'util-test',
+-    'secp256k1',
+-    'univalue',
+     'rpc',
+ ]
+ 

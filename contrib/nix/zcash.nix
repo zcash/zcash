@@ -83,10 +83,15 @@ llvmPackages.stdenv.mkDerivation {
       --subst-var NIX_LIBRUSTZCASH \
       --subst-var NIX_LIBSECP256K1 \
       --subst-var NIX_LIBUNIVALUE
+    patchShebangs ./contrib/devtools/security-check.py
     patchShebangs ./src/test/bitcoin-util-test.py
   '';
 
   configureFlags = ["--with-boost-libdir=${boost}/lib"];
 
   doCheck = true;
+
+  postCheck = ''
+    make -C src check-security
+  '';
 }

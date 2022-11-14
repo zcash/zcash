@@ -26,7 +26,8 @@
             || pkgs.lib.hasInfix "/src/leveldb" path
             || pkgs.lib.hasInfix "/src/secp256k1" path
             || pkgs.lib.hasSuffix "/src/tinyformat.h" path
-            || pkgs.lib.hasInfix "/src/univalue" path)
+            || pkgs.lib.hasInfix "/src/univalue" path
+            || pkgs.lib.hasInfix "/qa/zcash/checksec.sh" path)
           || pkgs.lib.hasInfix "/depends/patches" path;
         src = pkgs.lib.cleanSource ./.;
       };
@@ -112,6 +113,14 @@
           # release from there.
           if pkgs.lib.hasSuffix "-linux" system
           then {
+            # FIXME: sec-hard doesn’t currently pass
+            # TODO: I don’t think this should be a shell, maybe an app.
+            full_test_suite = callPackage ./contrib/nix/full_test_suite.nix {
+              inherit src;
+              inherit (self.packages.${system}) zcash;
+
+            };
+
             release = pkgs.mkShell {
               inherit src;
 
