@@ -3,6 +3,13 @@
 export LC_ALL=C
 set -eu
 
+SCRIPT_NAME=$(basename $0)
+
+[[ -v XDG_CACHE_HOME ]] || XDG_CACHE_HOME="${HOME}/.cache"
+# We don’t care too much about most of the properties of `XDG_RUNTIME_DIR` in
+# this script, so we just fall back to `XDG_CACHE_HOME`.
+[[ -v XDG_RUNTIME_DIR ]] || XDG_RUNTIME_DIR="${XDG_CACHE_HOME}"
+
 uname_S=$(uname -s 2>/dev/null || echo not)
 
 if [ "$uname_S" = "Darwin" ]; then
@@ -32,7 +39,9 @@ ZC_DISABLE_WGET="${ZC_DISABLE_WGET:-}"
 ZC_DISABLE_IPFS="${ZC_DISABLE_IPFS:-}"
 ZC_DISABLE_CURL="${ZC_DISABLE_CURL:-}"
 
-LOCKFILE=/tmp/fetch_params.lock
+LOCK_DIR="${XDG_RUNTIME_DIR}/zcash"
+mkdir -p "${LOCK_DIR}"
+LOCKFILE="${LOCK_DIR}/fetch-params.lock"
 
 fetch_wget() {
     if [ -z "$WGETCMD" ] || [ -n "$ZC_DISABLE_WGET" ]; then
@@ -166,17 +175,19 @@ lock() {
 }
 
 exit_locked_error() {
-    echo "Only one instance of fetch-params.sh can be run at a time." >&2
+    echo "Only one instance of ${SCRIPT_NAME} can be run at a time." >&2
+    echo "If you are certain no other instance is running, you can try removing" >&2
+    echo "${LOCKFILE}" >&2
     exit 1
 }
 
 main() {
 
-    lock fetch-params.sh \
+    lock \
     || exit_locked_error
 
     cat <<EOF
-Zcash - fetch-params.sh
+Zcash - ${SCRIPT_NAME}
 
 This script will fetch the Zcash zkSNARK parameters and verify their
 integrity with sha256sum.
