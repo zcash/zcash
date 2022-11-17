@@ -45,10 +45,15 @@ using namespace std;
  **/
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp || params.size() > 1)
         throw runtime_error(
-            "getinfo\n"
+            "getinfo ( asOfHeight )\n"
             "Returns an object containing various state info.\n"
+            "\nArguments:\n"
+            "1. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
+            "                    the blockchain was at the height specified by this argument.\n"
+            "                    The default is to use the entire blockchain that the node is\n"
+            "                    aware of.\n"
             "\nResult:\n"
             "{\n"
             "  \"version\": xxxxx,           (numeric) the server version\n"
@@ -82,6 +87,11 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 #endif
 
+    std::optional<int> asOfHeight;
+    if (params.size() > 0) {
+        asOfHeight = params[0].get_int();
+    }
+
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
 
@@ -93,7 +103,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.pushKV("walletversion", pwalletMain->GetVersion());
-        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance()));
+        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance(asOfHeight)));
     }
 #endif
     obj.pushKV("blocks",        (int)chainActive.Height());

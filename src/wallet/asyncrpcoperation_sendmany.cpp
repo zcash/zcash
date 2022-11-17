@@ -192,7 +192,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     SpendableInputs spendable;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
-        spendable = pwalletMain->FindSpendableInputs(ztxoSelector_, allowTransparentCoinbase, mindepth_);
+        spendable = pwalletMain->FindSpendableInputs(ztxoSelector_, allowTransparentCoinbase, mindepth_, std::nullopt);
     }
     if (!spendable.LimitToAmount(targetAmount, dustThreshold, recipientPools_)) {
         CAmount changeAmount{spendable.Total() - targetAmount};
