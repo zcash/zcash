@@ -15,6 +15,12 @@ from test_framework.util import (
 
 from decimal import Decimal
 
+def unspent_total(unspent):
+    total = 0
+    for item in unspent:
+        total += item['amount']
+    return total
+
 class WalletListUnspent(BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir, [[
@@ -29,6 +35,8 @@ class WalletListUnspent(BitcoinTestFramework):
         self.nodes[1].generate(1) # height 201
         self.sync_all()
         assert_equal(self.nodes[0].getbalance(), 260) # additional 10 ZEC matured
+        assert_equal(self.nodes[0].getbalance("", 0, False, False, 200), 250)
+        assert_equal(unspent_total(self.nodes[0].listunspent(0, 999999, [], 200)), 250)
 
         # Shield some coinbase funds so that they become spendable
         n1acct = self.nodes[1].z_getnewaccount()['account']
@@ -100,12 +108,6 @@ class WalletListUnspent(BitcoinTestFramework):
         self.nodes[0].generate(2)
         self.sync_all() # height 211
         assert_equal(self.nodes[0].getbalance(), 350) # 325 + 20 (matured) - 5 (sent)
-
-        def unspent_total(unspent):
-            total = 0
-            for item in unspent:
-                total += item['amount']
-            return total
 
         unspent_205 = self.nodes[0].listunspent(0, 999999, [], 205)
         print("----------------------------------------------------------------")
