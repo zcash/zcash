@@ -119,12 +119,12 @@ private:
 public:
     bool WriteBatchSync(const std::vector<std::pair<int, const CBlockFileInfo*> >& fileInfo, int nLastFile, const std::vector<CBlockIndex*>& blockinfo);
     bool EraseBatchSync(const std::vector<const CBlockIndex*>& blockinfo);
-    bool ReadBlockFileInfo(int nFile, CBlockFileInfo &info);
-    bool ReadLastBlockFile(int &nFile);
+    bool ReadBlockFileInfo(int nFile, CBlockFileInfo &info) const;
+    bool ReadLastBlockFile(int &nFile) const;
     bool WriteReindexing(bool fReindexing);
-    bool ReadReindexing(bool &fReindexing);
-    bool ReadDiskBlockIndex(const uint256 &blockhash, CDiskBlockIndex &dbindex);
-    bool ReadTxIndex(const uint256 &txid, CDiskTxPos &pos);
+    bool ReadReindexing(bool &fReindexing) const;
+    bool ReadDiskBlockIndex(const uint256 &blockhash, CDiskBlockIndex &dbindex) const;
+    bool ReadTxIndex(const uint256 &txid, CDiskTxPos &pos) const;
     bool WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> > &vect);
 
     // START insightexplorer
@@ -133,18 +133,18 @@ public:
     bool WriteAddressIndex(const std::vector<CAddressIndexDbEntry> &vect);
     bool EraseAddressIndex(const std::vector<CAddressIndexDbEntry> &vect);
     bool ReadAddressIndex(uint160 addressHash, int type, std::vector<CAddressIndexDbEntry> &addressIndex, int start = 0, int end = 0);
-    bool ReadSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value);
+    bool ReadSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value) const;
     bool UpdateSpentIndex(const std::vector<CSpentIndexDbEntry> &vect);
     bool WriteTimestampIndex(const CTimestampIndexKey &timestampIndex);
     bool ReadTimestampIndex(unsigned int high, unsigned int low,
             const bool fActiveOnly, std::vector<std::pair<uint256, unsigned int> > &vect);
     bool WriteTimestampBlockIndex(const CTimestampBlockIndexKey &blockhashIndex,
             const CTimestampBlockIndexValue &logicalts);
-    bool ReadTimestampBlockIndex(const uint256 &hash, unsigned int &logicalTS);
+    bool ReadTimestampBlockIndex(const uint256 &hash, unsigned int &logicalTS) const;
     // END insightexplorer
 
     bool WriteFlag(const std::string &name, bool fValue);
-    bool ReadFlag(const std::string &name, bool &fValue);
+    bool ReadFlag(const std::string &name, bool &fValue) const;
     bool LoadBlockIndexGuts(
         std::function<CBlockIndex*(const uint256&)> insertBlockIndex,
         const CChainParams& chainParams);
