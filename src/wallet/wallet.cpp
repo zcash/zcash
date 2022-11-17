@@ -6987,6 +6987,8 @@ void CMerkleTx::SetMerkleBranch(const CBlock& block)
 
 int CMerkleTx::GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet, const std::optional<int>& asOfHeight) const
 {
+    int effectiveChainHeight = min(chainActive.Height(), asOfHeight.value_or(chainActive.Height()));
+
     if (hashBlock.IsNull() || nIndex == -1)
         return 0;
     AssertLockHeld(cs_main);
@@ -6998,12 +7000,12 @@ int CMerkleTx::GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet, const 
     CBlockIndex* pindex = (*mi).second;
     if (!pindex ||
         !chainActive.Contains(pindex) ||
-        (asOfHeight.has_value() && pindex->nHeight > asOfHeight.value())) {
+        pindex->nHeight > effectiveChainHeight) {
         return 0;
     }
 
     pindexRet = pindex;
-    return chainActive.Height() - pindex->nHeight + 1;
+    return effectiveChainHeight - pindex->nHeight + 1;
 }
 
 int CMerkleTx::GetDepthInMainChain(const CBlockIndex* &pindexRet, const std::optional<int>& asOfHeight) const
