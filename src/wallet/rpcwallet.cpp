@@ -847,10 +847,7 @@ UniValue listaddressgroupings(const UniValue& params, bool fHelp)
             "\nLists groups of transparent addresses which have had their common ownership\n"
             "made public by common use as inputs or as the resulting change in past transactions.\n"
             "\nArguments:\n"
-            "1. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "1. " + asOfHeightMessage() +
             "\nResult:\n"
             "[\n"
             "  [\n"
@@ -869,10 +866,7 @@ UniValue listaddressgroupings(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 0) {
-        asOfHeight = params[0].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 0);
 
     KeyIO keyIO(Params());
     UniValue jsonGroupings(UniValue::VARR);
@@ -970,10 +964,7 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
             "1. \"zcashaddress\"  (string, required) The Zcash address for transactions.\n"
             "2. minconf         (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "3. inZat           (bool, optional, default=false) Get the result amount in " + MINOR_CURRENCY_UNIT + " (as an integer).\n"
-            "4. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "4. " + asOfHeightMessage() +
             "\nResult:\n"
             "amount   (numeric) The total amount in " + CURRENCY_UNIT + "(or " + MINOR_CURRENCY_UNIT + " if inZat is true) received at this address.\n"
             "\nExamples:\n"
@@ -1006,10 +997,7 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
     if (params.size() > 1)
         nMinDepth = params[1].get_int();
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 3) {
-        asOfHeight = params[3].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 3);
 
     // Tally
     CAmount nAmount = 0;
@@ -1049,10 +1037,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "3. includeWatchonly (bool, optional, default=false) Also include balance in watchonly addresses (see 'importaddress')\n"
             "4. inZat            (bool, optional, default=false) Get the result amount in " + MINOR_CURRENCY_UNIT + " (as an integer).\n"
-            "5. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "5. " + asOfHeightMessage() +
             "\nResult:\n"
             "amount              (numeric) The total amount in " + CURRENCY_UNIT + "(or " + MINOR_CURRENCY_UNIT + " if inZat is true) received.\n"
             "\nExamples:\n"
@@ -1081,10 +1066,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         filter = filter | ISMINE_WATCH_ONLY;
     }
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 4) {
-        asOfHeight = params[4].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 4);
 
     CAmount nBalance = pwalletMain->GetBalance(asOfHeight, filter, min_depth);
     if (!params[3].isNull() && params[3].get_bool()) {
@@ -1103,18 +1085,12 @@ UniValue getunconfirmedbalance(const UniValue &params, bool fHelp)
         throw runtime_error(
             "getunconfirmedbalance ( asOfHeight )\n"
             "\nArguments:\n"
-            "1. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "1. " + asOfHeightMessage() +
             "Returns the server's total unconfirmed transparent balance\n");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 0) {
-        asOfHeight = params[0].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 0);
 
     return ValueFromAmount(pwalletMain->GetUnconfirmedBalance(asOfHeight));
 }
@@ -1327,10 +1303,7 @@ UniValue ListReceived(const UniValue& params)
         if(params[2].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 3) {
-        asOfHeight = params[3].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 3);
 
     // Tally
     std::map<CTxDestination, tallyitem> mapTally;
@@ -1421,10 +1394,7 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
             "1. minconf       (numeric, optional, default=1) The minimum number of confirmations before payments are included.\n"
             "2. includeempty  (numeric, optional, default=false) Whether to include addresses that haven't received any payments.\n"
             "3. includeWatchonly (bool, optional, default=false) Whether to include watchonly addresses (see 'importaddress').\n"
-            "4. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "4. " + asOfHeightMessage() +
             "\nResult:\n"
             "[\n"
             "  {\n"
@@ -1555,10 +1525,7 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
             "2. count          (numeric, optional, default=10) The number of transactions to return\n"
             "3. from           (numeric, optional, default=0) The number of transactions to skip\n"
             "4. includeWatchonly (bool, optional, default=false) Include transactions to watchonly addresses (see 'importaddress')\n"
-            "5. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "5. " + asOfHeightMessage() +
             "\nResult:\n"
             "[\n"
             "  {\n"
@@ -1613,10 +1580,7 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
         if(params[3].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 4) {
-        asOfHeight = params[4].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 4);
 
     if (nCount < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Negative count");
@@ -1678,10 +1642,7 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
             "1. \"blockhash\"   (string, optional) The block hash to list transactions since\n"
             "2. target-confirmations:    (numeric, optional) The confirmations required, must be 1 or more\n"
             "3. includeWatchonly:        (bool, optional, default=false) Include transactions to watchonly addresses (see 'importaddress')"
-            "4. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "4. " + asOfHeightMessage() +
             "\nResult:\n"
             "{\n"
             "  \"transactions\": [\n"
@@ -1740,10 +1701,7 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
         if(params[2].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 3) {
-        asOfHeight = params[3].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 3);
 
     int depth = pindex ? (1 + chainActive.Height() - pindex->nHeight) : -1;
 
@@ -1781,10 +1739,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"txid\"    (string, required) The transaction id\n"
             "2. \"includeWatchonly\"    (bool, optional, default=false) Whether to include watchonly addresses in balance calculation and details[]\n"
-            "3. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "3. " + asOfHeightMessage() +
             "\nResult:\n"
             "{\n"
             "  \"status\" : \"mined|waiting|expiringsoon|expired\",    (string) The transaction status, can be 'mined', 'waiting', 'expiringsoon' or 'expired'\n"
@@ -1838,10 +1793,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
         if(params[1].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 2) {
-        asOfHeight = params[2].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 2);
 
     UniValue entry(UniValue::VOBJ);
     if (!pwalletMain->mapWallet.count(hash))
@@ -2389,10 +2341,7 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
             "getwalletinfo ( asOfHeight )\n"
             "Returns wallet state information.\n"
             "\nArguments:\n"
-            "1. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "1. " + asOfHeightMessage() +
             "\nResult:\n"
             "{\n"
             "  \"walletversion\": xxxxx,     (numeric) the wallet version\n"
@@ -2416,10 +2365,7 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getwalletinfo", "")
         );
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 0) {
-        asOfHeight = params[0].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 0);
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -2493,10 +2439,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "      \"address\"   (string) Zcash address\n"
             "      ,...\n"
             "    ]\n"
-            "4. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "4. " + asOfHeightMessage() +
             "\nResult\n"
             "[                   (array of json object)\n"
             "  {\n"
@@ -2547,10 +2490,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 3) {
-        asOfHeight = params[3].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 3);
 
     UniValue results(UniValue::VARR);
     vector<COutput> vecOutputs;
@@ -2625,10 +2565,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "      \"address\"     (string) Sprout, Sapling, or Unified address\n"
             "      ,...\n"
             "    ]\n"
-            "5. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "5. " + asOfHeightMessage() +
             "\nResult (output indices for only one value pool will be present):\n"
             "[                             (array of json object)\n"
             "  {\n"
@@ -2727,10 +2664,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         saplingNullifiers = pwalletMain->GetSaplingNullifiers(saplingzaddrs);
     }
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 4) {
-        asOfHeight = params[4].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 4);
 
     UniValue results(UniValue::VARR);
 
@@ -3958,10 +3892,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"address\"      (string) The shielded address.\n"
             "2. minconf        (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
-            "3. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "3. " + asOfHeightMessage() +
             "\nResult (output indices for only one value pool will be present):\n"
             "[\n"
             "  {\n"
@@ -3996,10 +3927,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
     }
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 2) {
-        asOfHeight = params[2].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 2);
 
     UniValue result(UniValue::VARR);
 
@@ -4313,10 +4241,7 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"fvk\"        (string) The selected full viewing key.\n"
             "2. minconf      (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
-            "3. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "3. " + asOfHeightMessage() +
             "\nResult:\n"
             "{\n"
             "  \"pools\": {\n"
@@ -4361,10 +4286,7 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
         }
     }
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 2) {
-        asOfHeight = params[2].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 2);
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -4432,10 +4354,7 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. account      (numeric) The account number.\n"
             "2. minconf      (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
-            "3. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "3. " + asOfHeightMessage() +
             "\nResult:\n"
             "{\n"
             "  \"pools\": {\n"
@@ -4476,10 +4395,7 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
         }
     }
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 2) {
-        asOfHeight = params[2].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 2);
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -5501,10 +5417,7 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
             "Also, it is possible that manually created transactions involving this wallet\n"
             "will be included in the result.\n"
             "\nArguments:\n"
-            "1. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "1. " + asOfHeightMessage() +
             "\nResult:\n"
             "{\n"
             "  \"enabled\": true|false,                    (boolean) Whether or not migration is enabled\n"
@@ -5519,10 +5432,7 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
         );
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 0) {
-        asOfHeight = params[0].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 0);
 
     UniValue migrationStatus(UniValue::VOBJ);
     migrationStatus.pushKV("enabled", pwalletMain->fSaplingMigrationEnabled);
@@ -6397,10 +6307,7 @@ UniValue z_getnotescount(const UniValue& params, bool fHelp)
             "\nReturns the number of notes available in the wallet for each shielded value pool.\n"
             "\nArguments:\n"
             "1. minconf      (numeric, optional, default=1) Only include notes in transactions confirmed at least this many times.\n"
-            "2. asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-            "                    the blockchain was at the height specified by this argument.\n"
-            "                    The default is to use the entire blockchain that the node is\n"
-            "                    aware of.\n"
+            "2. " + asOfHeightMessage() +
             "\nResult:\n"
             "{\n"
             "  \"sprout\"      (numeric) the number of Sprout notes in the wallet\n"
@@ -6418,10 +6325,7 @@ UniValue z_getnotescount(const UniValue& params, bool fHelp)
     if (params.size() > 0)
         nMinDepth = params[0].get_int();
 
-    std::optional<int> asOfHeight;
-    if (params.size() > 1) {
-        asOfHeight = params[1].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 0);
 
     int sprout = 0;
     int sapling = 0;

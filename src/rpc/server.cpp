@@ -550,6 +550,22 @@ std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::vecto
         + config;
 }
 
+std::string asOfHeightMessage() {
+    return
+        ". asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
+        "                    the blockchain was at the height specified by this argument.\n"
+        "                    The default is to use the entire blockchain that the node is\n"
+        "                    aware of.\n";
+}
+
+std::optional<int> parseAsOfHeight(const UniValue& params, int index) {
+    std::optional<int> asOfHeight;
+    if (params.size() > index) {
+        asOfHeight = params[index].get_int();
+    }
+    return asOfHeight;
+}
+
 void RPCRegisterTimerInterface(RPCTimerInterface *iface)
 {
     timerInterfaces.push_back(iface);

@@ -192,6 +192,9 @@ std::string JSONRPCExecBatch(const UniValue& vReq);
 
 extern std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::vector<std::string>& enableArgs);
 
+std::string asOfHeightMessage();
+std::optional<int> parseAsOfHeight(const UniValue& params, int index);
+
 extern int interpretHeightArg(int nHeight, int currentHeight);
 extern int parseHeightArg(const std::string& strHeight, int currentHeight);
 
