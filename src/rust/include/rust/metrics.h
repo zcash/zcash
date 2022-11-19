@@ -24,7 +24,8 @@ bool metrics_run(
     const char* bind_address,
     const char* const* allow_ips,
     size_t allow_ips_len,
-    uint16_t prometheus_port);
+    uint16_t prometheus_port,
+    bool debug_metrics);
 
 struct MetricsCallsite;
 typedef struct MetricsCallsite MetricsCallsite;

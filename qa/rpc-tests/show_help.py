@@ -343,6 +343,9 @@ Monitoring options:
        any request path. Use -metricsallowip and -metricsbind to control
        access.
 
+  -debugmetrics
+       Include debug metrics in exposed node metrics.
+
 Debugging/Testing options:
 
   -debug=<category>
