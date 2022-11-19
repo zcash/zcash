@@ -2236,7 +2236,7 @@ SpendableInputs CWallet::FindSpendableInputs(
                 isminetype mine = IsMine(output);
 
                 // skip spent utxos
-                if (IsSpent(wtxid, i, std::nullopt)) continue;
+                if (IsSpent(wtxid, i, asOfHeight)) continue;
                 // skip utxos that don't belong to the wallet
                 if (mine == ISMINE_NO) continue;
                 // skip utxos that for which we don't have the spending keys, if
@@ -4985,7 +4985,7 @@ CAmount CWalletTx::GetAvailableCredit(const std::optional<int>& asOfHeight, bool
     uint256 hashTx = GetHash();
     for (unsigned int i = 0; i < vout.size(); i++)
     {
-        if (!pwallet->IsSpent(hashTx, i, std::nullopt))
+        if (!pwallet->IsSpent(hashTx, i, asOfHeight))
         {
             const CTxOut &txout = vout[i];
             nCredit += pwallet->GetCredit(txout, filter);
@@ -6249,7 +6249,7 @@ std::map<CTxDestination, CAmount> CWallet::GetAddressBalances(const std::optiona
                 if(!ExtractDestination(pcoin->vout[i].scriptPubKey, addr))
                     continue;
 
-                CAmount n = IsSpent(walletEntry.first, i, std::nullopt) ? 0 : pcoin->vout[i].nValue;
+                CAmount n = IsSpent(walletEntry.first, i, asOfHeight) ? 0 : pcoin->vout[i].nValue;
 
                 if (!balances.count(addr))
                     balances[addr] = 0;
