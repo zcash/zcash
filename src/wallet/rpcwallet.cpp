@@ -1791,7 +1791,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet transaction id");
     const CWalletTx& wtx = pwalletMain->mapWallet[hash];
 
-    CAmount nCredit = wtx.GetCredit(std::nullopt, filter);
+    CAmount nCredit = wtx.GetCredit(asOfHeight, filter);
     CAmount nDebit = wtx.GetDebit(filter);
     CAmount nNet = nCredit - nDebit;
     CAmount nFee = (wtx.IsFromMe(filter) ? wtx.GetValueOut() - nDebit : 0);
@@ -1805,7 +1805,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
     WalletTxToJSON(wtx, entry, asOfHeight);
 
     UniValue details(UniValue::VARR);
-    ListTransactions(wtx, 0, false, details, filter, std::nullopt);
+    ListTransactions(wtx, 0, false, details, filter, asOfHeight);
     entry.pushKV("details", details);
 
     string strHex = EncodeHexTx(static_cast<CTransaction>(wtx));
