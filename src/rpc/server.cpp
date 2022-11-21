@@ -556,20 +556,25 @@ std::string asOfHeightMessage(bool hasMinconf) {
           "                    `minconf` is at least 1 when `asOfHeight` is provided.\n"
         : "";
     return
-        ". asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
-        "                    the blockchain was at the height specified by this argument.\n"
-        "                    The default is to use the entire blockchain that the node is\n"
-        "                    aware of. A “future” height will fall back to the current\n"
-        "                    height. Any explicit value will cause the mempool to be\n"
-        "                    ignored, meaning no unconfirmed tx will be considered.\n"
+        ". asOfHeight       (numeric, optional, default “*”) Execute the query as if it\n"
+        "                    were run when the blockchain was at the height specified by\n"
+        "                    this argument. The default is to use the entire blockchain\n"
+        "                    that the node is aware of. A “future” height will fall back\n"
+        "                    to the current height. Any explicit value will cause the\n"
+        "                    mempool to be ignored, meaning no unconfirmed tx will be\n"
+        "                    considered.\n"
         + minconfInteraction;
 }
 
 std::optional<int> parseAsOfHeight(const UniValue& params, int index) {
     std::optional<int> asOfHeight;
-    if (params.size() > index) {
+    if (params.size() > index && !(params[index].isStr() && params[index].get_str() == "*")) {
         auto requestedHeight = params[index].get_int();
-        if (requestedHeight >= 0) {
+        if (requestedHeight < 0) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Can not perform the query as of a negative block height");
+        } else if (requestedHeight == 0) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Can not perform the query as of the genesis block");
+        } else {
             asOfHeight = params[index].get_int();
         }
     }
