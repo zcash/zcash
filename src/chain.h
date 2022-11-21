@@ -12,9 +12,12 @@
 #include "pow.h"
 #include "tinyformat.h"
 #include "uint256.h"
+#include "util/strencodings.h"
 
 #include <optional>
 #include <vector>
+
+#include <rust/metrics.h>
 
 static const int SPROUT_VALUE_VERSION = 1001400;
 static const int SAPLING_VALUE_VERSION = 1010100;
@@ -308,8 +311,13 @@ public:
     unsigned int nTime;
     unsigned int nBits;
     uint256 nNonce;
+protected:
+    // The Equihash solution, if it is stored. Once we know that the block index
+    // entry is present in leveldb, this field can be cleared via the TrimSolution
+    // method to save memory.
     std::vector<unsigned char> nSolution;
 
+public:
     //! (memory only) Sequential id assigned to distinguish order in which blocks are received.
     uint32_t nSequenceId;
 
@@ -366,6 +374,7 @@ public:
         nBits          = block.nBits;
         nNonce         = block.nNonce;
         nSolution      = block.nSolution;
+        MetricsIncrementCounter("zcashd.debug.memory.allocated_equihash_solutions");
     }
 
     CDiskBlockPos GetBlockPos() const {
@@ -386,23 +395,15 @@ public:
         return ret;
     }
 
-    CBlockHeader GetBlockHeader() const
-    {
-        CBlockHeader block;
-        block.nVersion       = nVersion;
-        if (pprev)
-            block.hashPrevBlock = pprev->GetBlockHash();
-        block.hashMerkleRoot = hashMerkleRoot;
-        block.hashBlockCommitments = hashBlockCommitments;
-        block.nTime          = nTime;
-        block.nBits          = nBits;
-        block.nNonce         = nNonce;
-        block.nSolution      = nSolution;
-        return block;
-    }
+    //! Get the block header for this block index. Requires cs_main.
+    CBlockHeader GetBlockHeader() const;
+
+    //! Clear the Equihash solution to save memory. Requires cs_main.
+    void TrimSolution();
 
     uint256 GetBlockHash() const
     {
+        assert(phashBlock);
         return *phashBlock;
     }
 
@@ -429,10 +430,11 @@ public:
 
     std::string ToString() const
     {
-        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
+        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s, HasSolution=%s)",
             pprev, nHeight,
             hashMerkleRoot.ToString(),
-            GetBlockHash().ToString());
+            phashBlock ? GetBlockHash().ToString() : "(nil)",
+            HasSolution());
     }
 
     //! Check whether this block index entry is valid up to the passed validity level.
@@ -442,6 +444,12 @@ public:
         if (nStatus & BLOCK_FAILED_MASK)
             return false;
         return ((nStatus & BLOCK_VALID_MASK) >= nUpTo);
+    }
+
+    //! Is the Equihash solution stored?
+    bool HasSolution() const
+    {
+        return !nSolution.empty();
     }
 
     //! Raise the validity level of this block index entry.
@@ -482,8 +490,11 @@ public:
         hashPrev = uint256();
     }
 
-    explicit CDiskBlockIndex(const CBlockIndex* pindex) : CBlockIndex(*pindex) {
+    explicit CDiskBlockIndex(const CBlockIndex* pindex, std::function<std::vector<unsigned char>()> getSolution) : CBlockIndex(*pindex) {
         hashPrev = (pprev ? pprev->GetBlockHash() : uint256());
+        if (!HasSolution()) {
+            nSolution = getSolution();
+        }
     }
 
     ADD_SERIALIZE_METHODS;
@@ -564,20 +575,31 @@ public:
         // them to CBlockTreeDB::LoadBlockIndexGuts() in txdb.cpp :)
     }
 
-    uint256 GetBlockHash() const
+    //! Get the block header for this block index.
+    CBlockHeader GetBlockHeader() const
     {
-        CBlockHeader block;
-        block.nVersion        = nVersion;
-        block.hashPrevBlock   = hashPrev;
-        block.hashMerkleRoot  = hashMerkleRoot;
-        block.hashBlockCommitments = hashBlockCommitments;
-        block.nTime           = nTime;
-        block.nBits           = nBits;
-        block.nNonce          = nNonce;
-        block.nSolution       = nSolution;
-        return block.GetHash();
+        CBlockHeader header;
+        header.nVersion             = nVersion;
+        header.hashPrevBlock        = hashPrev;
+        header.hashMerkleRoot       = hashMerkleRoot;
+        header.hashBlockCommitments = hashBlockCommitments;
+        header.nTime                = nTime;
+        header.nBits                = nBits;
+        header.nNonce               = nNonce;
+        header.nSolution            = nSolution;
+        return header;
     }
 
+    uint256 GetBlockHash() const
+    {
+        return GetBlockHeader().GetHash();
+    }
+
+    std::vector<unsigned char> GetSolution() const
+    {
+        assert(HasSolution());
+        return nSolution;
+    }
 
     std::string ToString() const
     {
@@ -587,6 +609,13 @@ public:
             GetBlockHash().ToString(),
             hashPrev.ToString());
         return str;
+    }
+
+private:
+    //! This method should not be called on a CDiskBlockIndex.
+    void TrimSolution()
+    {
+        assert(!"called CDiskBlockIndex::TrimSolution");
     }
 };
 

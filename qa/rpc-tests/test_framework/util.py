@@ -214,7 +214,7 @@ def wait_for_bitcoind_start(process, url, i):
     '''
     while True:
         if process.poll() is not None:
-            raise Exception('%s exited with status %i during initialization' % (zcashd_binary(), process.returncode))
+            raise Exception('%s node %d exited with status %i during initialization' % (zcashd_binary(), i, process.returncode))
         try:
             rpc = get_rpc_proxy(url, i)
             rpc.getblockcount()
@@ -433,7 +433,7 @@ def assert_start_raises_init_error(i, dirname, extra_args=None, expected_msg=Non
             node = start_node(i, dirname, extra_args, stderr=log_stderr)
             stop_node(node, i)
         except Exception as e:
-            assert ("%s exited" % (zcashd_binary(),)) in str(e) #node must have shutdown
+            assert ("%s node %d exited" % (zcashd_binary(), i)) in str(e) # node must have shutdown
             if expected_msg is not None:
                 log_stderr.seek(0)
                 stderr = log_stderr.read().decode('utf-8')
