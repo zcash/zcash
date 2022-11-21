@@ -67,9 +67,8 @@ class ListTransactionsTest(BitcoinTestFramework):
                            {"txid":txid},
                            {"category":"receive","amount":Decimal("0.1"),"amountZat":10000000,"confirmations":1})
         # Confirmations here are -1 instead of 0 because while we only went back
-        # 1 block, “0” means the tx is in the mempool, but since the tx has
-        # already been mined, that’s no longer the case. I.e., `asOfHeight`
-        # doesn’t affect off-chain information like the mempool.
+        # 1 block, “0” means the tx is in the mempool, but the tx has already
+        # been mined and `asOfHeight` ignores the mempool regardless.
         check_array_result(self.nodes[0].listtransactions("*", 10, 0, False, old_block),
                            {"txid":txid},
                            {"category":"send","amount":Decimal("-0.1"),"amountZat":-10000000,"confirmations":-1})

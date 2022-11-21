@@ -847,7 +847,7 @@ UniValue listaddressgroupings(const UniValue& params, bool fHelp)
             "\nLists groups of transparent addresses which have had their common ownership\n"
             "made public by common use as inputs or as the resulting change in past transactions.\n"
             "\nArguments:\n"
-            "1. " + asOfHeightMessage() +
+            "1. " + asOfHeightMessage(false) +
             "\nResult:\n"
             "[\n"
             "  [\n"
@@ -964,7 +964,7 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
             "1. \"zcashaddress\"  (string, required) The Zcash address for transactions.\n"
             "2. minconf         (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "3. inZat           (bool, optional, default=false) Get the result amount in " + MINOR_CURRENCY_UNIT + " (as an integer).\n"
-            "4. " + asOfHeightMessage() +
+            "4. " + asOfHeightMessage(true) +
             "\nResult:\n"
             "amount   (numeric) The total amount in " + CURRENCY_UNIT + "(or " + MINOR_CURRENCY_UNIT + " if inZat is true) received at this address.\n"
             "\nExamples:\n"
@@ -992,12 +992,10 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
         return ValueFromAmount(0);
     }
 
-    // Minimum confirmations
-    int nMinDepth = 1;
-    if (params.size() > 1)
-        nMinDepth = params[1].get_int();
-
     auto asOfHeight = parseAsOfHeight(params, 3);
+
+    // Minimum confirmations
+    int nMinDepth = parseMinconf(1, params, 1, asOfHeight);
 
     // Tally
     CAmount nAmount = 0;
@@ -1037,7 +1035,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "3. includeWatchonly (bool, optional, default=false) Also include balance in watchonly addresses (see 'importaddress')\n"
             "4. inZat            (bool, optional, default=false) Get the result amount in " + MINOR_CURRENCY_UNIT + " (as an integer).\n"
-            "5. " + asOfHeightMessage() +
+            "5. " + asOfHeightMessage(true) +
             "\nResult:\n"
             "amount              (numeric) The total amount in " + CURRENCY_UNIT + "(or " + MINOR_CURRENCY_UNIT + " if inZat is true) received.\n"
             "\nExamples:\n"
@@ -1056,17 +1054,14 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "dummy first argument must be excluded or set to \"*\" or \"\".");
     }
 
-    int min_depth = 0;
-    if (!params[1].isNull()) {
-        min_depth = params[1].get_int();
-    }
+    auto asOfHeight = parseAsOfHeight(params, 4);
+
+    int min_depth = parseMinconf(1, params, 1, asOfHeight);
 
     isminefilter filter = ISMINE_SPENDABLE;
     if (!params[2].isNull() && params[2].get_bool()) {
         filter = filter | ISMINE_WATCH_ONLY;
     }
-
-    auto asOfHeight = parseAsOfHeight(params, 4);
 
     CAmount nBalance = pwalletMain->GetBalance(asOfHeight, filter, min_depth);
     if (!params[3].isNull() && params[3].get_bool()) {
@@ -1085,7 +1080,7 @@ UniValue getunconfirmedbalance(const UniValue &params, bool fHelp)
         throw runtime_error(
             "getunconfirmedbalance ( asOfHeight )\n"
             "\nArguments:\n"
-            "1. " + asOfHeightMessage() +
+            "1. " + asOfHeightMessage(false) +
             "Returns the server's total unconfirmed transparent balance\n");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -1148,9 +1143,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Dummy value must be set to \"\"");
     }
     UniValue sendTo = params[1].get_obj();
-    int nMinDepth = 1;
-    if (params.size() > 2)
-        nMinDepth = params[2].get_int();
+    int nMinDepth = parseMinconf(1, params, 2, std::nullopt);
 
     CWalletTx wtx;
     if (params.size() > 3 && !params[3].isNull() && !params[3].get_str().empty())
@@ -1288,10 +1281,10 @@ struct tallyitem
 
 UniValue ListReceived(const UniValue& params)
 {
+    auto asOfHeight = parseAsOfHeight(params, 3);
+
     // Minimum confirmations
-    int nMinDepth = 1;
-    if (params.size() > 0)
-        nMinDepth = params[0].get_int();
+    int nMinDepth = parseMinconf(1, params, 0, asOfHeight);
 
     // Whether to include empty accounts
     bool fIncludeEmpty = false;
@@ -1302,8 +1295,6 @@ UniValue ListReceived(const UniValue& params)
     if(params.size() > 2)
         if(params[2].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
-
-    auto asOfHeight = parseAsOfHeight(params, 3);
 
     // Tally
     std::map<CTxDestination, tallyitem> mapTally;
@@ -1394,7 +1385,7 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
             "1. minconf       (numeric, optional, default=1) The minimum number of confirmations before payments are included.\n"
             "2. includeempty  (numeric, optional, default=false) Whether to include addresses that haven't received any payments.\n"
             "3. includeWatchonly (bool, optional, default=false) Whether to include watchonly addresses (see 'importaddress').\n"
-            "4. " + asOfHeightMessage() +
+            "4. " + asOfHeightMessage(true) +
             "\nResult:\n"
             "[\n"
             "  {\n"
@@ -1525,7 +1516,7 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
             "2. count          (numeric, optional, default=10) The number of transactions to return\n"
             "3. from           (numeric, optional, default=0) The number of transactions to skip\n"
             "4. includeWatchonly (bool, optional, default=false) Include transactions to watchonly addresses (see 'importaddress')\n"
-            "5. " + asOfHeightMessage() +
+            "5. " + asOfHeightMessage(false) +
             "\nResult:\n"
             "[\n"
             "  {\n"
@@ -1642,7 +1633,7 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
             "1. \"blockhash\"   (string, optional) The block hash to list transactions since\n"
             "2. target-confirmations:    (numeric, optional) The confirmations required, must be 1 or more\n"
             "3. includeWatchonly:        (bool, optional, default=false) Include transactions to watchonly addresses (see 'importaddress')"
-            "4. " + asOfHeightMessage() +
+            "4. " + asOfHeightMessage(false) +
             "\nResult:\n"
             "{\n"
             "  \"transactions\": [\n"
@@ -1739,7 +1730,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"txid\"    (string, required) The transaction id\n"
             "2. \"includeWatchonly\"    (bool, optional, default=false) Whether to include watchonly addresses in balance calculation and details[]\n"
-            "3. " + asOfHeightMessage() +
+            "3. " + asOfHeightMessage(false) +
             "\nResult:\n"
             "{\n"
             "  \"status\" : \"mined|waiting|expiringsoon|expired\",    (string) The transaction status, can be 'mined', 'waiting', 'expiringsoon' or 'expired'\n"
@@ -2341,7 +2332,7 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
             "getwalletinfo ( asOfHeight )\n"
             "Returns wallet state information.\n"
             "\nArguments:\n"
-            "1. " + asOfHeightMessage() +
+            "1. " + asOfHeightMessage(false) +
             "\nResult:\n"
             "{\n"
             "  \"walletversion\": xxxxx,     (numeric) the wallet version\n"
@@ -2439,7 +2430,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "      \"address\"   (string) Zcash address\n"
             "      ,...\n"
             "    ]\n"
-            "4. " + asOfHeightMessage() +
+            "4. " + asOfHeightMessage(true) +
             "\nResult\n"
             "[                   (array of json object)\n"
             "  {\n"
@@ -2464,9 +2455,9 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VNUM)(UniValue::VNUM)(UniValue::VARR));
 
-    int nMinDepth = 1;
-    if (params.size() > 0)
-        nMinDepth = params[0].get_int();
+    auto asOfHeight = parseAsOfHeight(params, 3);
+
+    int nMinDepth = parseMinconf(1, params, 0, asOfHeight);
 
     int nMaxDepth = 9999999;
     if (params.size() > 1)
@@ -2489,8 +2480,6 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    auto asOfHeight = parseAsOfHeight(params, 3);
 
     UniValue results(UniValue::VARR);
     vector<COutput> vecOutputs;
@@ -2565,7 +2554,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "      \"address\"     (string) Sprout, Sapling, or Unified address\n"
             "      ,...\n"
             "    ]\n"
-            "5. " + asOfHeightMessage() +
+            "5. " + asOfHeightMessage(true) +
             "\nResult (output indices for only one value pool will be present):\n"
             "[                             (array of json object)\n"
             "  {\n"
@@ -2593,13 +2582,9 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
 
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VNUM)(UniValue::VNUM)(UniValue::VBOOL)(UniValue::VARR));
 
-    int nMinDepth = 1;
-    if (params.size() > 0) {
-        nMinDepth = params[0].get_int();
-    }
-    if (nMinDepth < 0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
-    }
+    auto asOfHeight = parseAsOfHeight(params, 4);
+
+    int nMinDepth = parseMinconf(1, params, 0, asOfHeight);
 
     int nMaxDepth = 9999999;
     if (params.size() > 1) {
@@ -2663,8 +2648,6 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         pwalletMain->GetSaplingPaymentAddresses(saplingzaddrs);
         saplingNullifiers = pwalletMain->GetSaplingNullifiers(saplingzaddrs);
     }
-
-    auto asOfHeight = parseAsOfHeight(params, 4);
 
     UniValue results(UniValue::VARR);
 
@@ -3892,7 +3875,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"address\"      (string) The shielded address.\n"
             "2. minconf        (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
-            "3. " + asOfHeightMessage() +
+            "3. " + asOfHeightMessage(true) +
             "\nResult (output indices for only one value pool will be present):\n"
             "[\n"
             "  {\n"
@@ -3919,15 +3902,9 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    int nMinDepth = 1;
-    if (params.size() > 1) {
-        nMinDepth = params[1].get_int();
-    }
-    if (nMinDepth < 0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
-    }
-
     auto asOfHeight = parseAsOfHeight(params, 2);
+
+    int nMinDepth = parseMinconf(1, params, 1, asOfHeight);
 
     UniValue result(UniValue::VARR);
 
@@ -4164,13 +4141,7 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    int nMinDepth = 1;
-    if (params.size() > 1) {
-        nMinDepth = params[1].get_int();
-    }
-    if (nMinDepth < 0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
-    }
+    int nMinDepth = parseMinconf(1, params, 1, std::nullopt);
 
     KeyIO keyIO(Params());
     // Check that the from address is valid.
@@ -4241,7 +4212,7 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"fvk\"        (string) The selected full viewing key.\n"
             "2. minconf      (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
-            "3. " + asOfHeightMessage() +
+            "3. " + asOfHeightMessage(true) +
             "\nResult:\n"
             "{\n"
             "  \"pools\": {\n"
@@ -4278,15 +4249,9 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
     }
     auto fvk = decoded.value();
 
-    int minconf = 1;
-    if (params.size() > 1) {
-        minconf = params[1].get_int();
-        if (minconf < 0) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
-        }
-    }
-
     auto asOfHeight = parseAsOfHeight(params, 2);
+
+    int minconf = parseMinconf(1, params, 1, asOfHeight);
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -4354,7 +4319,7 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. account      (numeric) The account number.\n"
             "2. minconf      (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
-            "3. " + asOfHeightMessage() +
+            "3. " + asOfHeightMessage(true) +
             "\nResult:\n"
             "{\n"
             "  \"pools\": {\n"
@@ -4387,15 +4352,9 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
     }
     libzcash::AccountId account = accountInt;
 
-    int minconf = 1;
-    if (params.size() > 1) {
-        minconf = params[1].get_int();
-        if (minconf < 0) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
-        }
-    }
-
     auto asOfHeight = parseAsOfHeight(params, 2);
+
+    int minconf = parseMinconf(1, params, 1, asOfHeight);
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -4483,13 +4442,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    int nMinDepth = 1;
-    if (params.size() > 0) {
-        nMinDepth = params[0].get_int();
-    }
-    if (nMinDepth < 0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
-    }
+    int nMinDepth = parseMinconf(1, params, 0, std::nullopt);
 
     bool fIncludeWatchonly = false;
     if (params.size() > 1) {
@@ -5313,13 +5266,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     }
 
     // Minimum confirmations
-    int nMinDepth = DEFAULT_NOTE_CONFIRMATIONS;
-    if (params.size() > 2) {
-        nMinDepth = params[2].get_int();
-    }
-    if (nMinDepth < 0) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
-    }
+    int nMinDepth = parseMinconf(DEFAULT_NOTE_CONFIRMATIONS, params, 2, std::nullopt);
 
     // Fee in Zatoshis, not currency format)
     CAmount nFee = DEFAULT_FEE;
@@ -5417,7 +5364,7 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
             "Also, it is possible that manually created transactions involving this wallet\n"
             "will be included in the result.\n"
             "\nArguments:\n"
-            "1. " + asOfHeightMessage() +
+            "1. " + asOfHeightMessage(false) +
             "\nResult:\n"
             "{\n"
             "  \"enabled\": true|false,                    (boolean) Whether or not migration is enabled\n"
@@ -6307,7 +6254,7 @@ UniValue z_getnotescount(const UniValue& params, bool fHelp)
             "\nReturns the number of notes available in the wallet for each shielded value pool.\n"
             "\nArguments:\n"
             "1. minconf      (numeric, optional, default=1) Only include notes in transactions confirmed at least this many times.\n"
-            "2. " + asOfHeightMessage() +
+            "2. " + asOfHeightMessage(true) +
             "\nResult:\n"
             "{\n"
             "  \"sprout\"      (numeric) the number of Sprout notes in the wallet\n"
@@ -6321,11 +6268,9 @@ UniValue z_getnotescount(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    int nMinDepth = 1;
-    if (params.size() > 0)
-        nMinDepth = params[0].get_int();
+    auto asOfHeight = parseAsOfHeight(params, 1);
 
-    auto asOfHeight = parseAsOfHeight(params, 0);
+    int nMinDepth = parseMinconf(1, params, 0, asOfHeight);
 
     int sprout = 0;
     int sapling = 0;

@@ -7012,7 +7012,7 @@ int CMerkleTx::GetDepthInMainChain(const CBlockIndex* &pindexRet, const std::opt
 {
     AssertLockHeld(cs_main);
     int nResult = GetDepthInMainChainINTERNAL(pindexRet, asOfHeight);
-    if (nResult == 0 && !mempool.exists(GetHash()))
+    if (nResult == 0 && (asOfHeight.has_value() || !mempool.exists(GetHash())))
         return -1; // Not in chain, not in mempool
 
     return nResult;

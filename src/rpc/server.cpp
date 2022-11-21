@@ -550,20 +550,45 @@ std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::vecto
         + config;
 }
 
-std::string asOfHeightMessage() {
+std::string asOfHeightMessage(bool hasMinconf) {
+    std::string minconfInteraction = hasMinconf
+        ? "Because we can’t roll back offchain data (namely,\n"
+          "                    the mempool), setting an `asOfHeight` will ignore the\n"
+          "                    mempool, effectively treating `minconf` as being at least 1,\n"
+          "                    even if it’s explicitly set to 0. This includes when a\n"
+          "                    “future” `asOfHeight` is set, even though it is otherwise\n"
+          "                    the same as not passing `asOfHeight`."
+        : "";
     return
         ". asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
         "                    the blockchain was at the height specified by this argument.\n"
         "                    The default is to use the entire blockchain that the node is\n"
-        "                    aware of.\n";
+        "                    aware of. A “future” height will fall back to the current\n"
+        "                    height. " + minconfInteraction + "\n";
 }
 
 std::optional<int> parseAsOfHeight(const UniValue& params, int index) {
     std::optional<int> asOfHeight;
     if (params.size() > index) {
-        asOfHeight = params[index].get_int();
+        auto requestedHeight = params[index].get_int();
+        if (requestedHeight >= 0) {
+            asOfHeight = params[index].get_int();
+        }
     }
     return asOfHeight;
+}
+
+int parseMinconf(int def, const UniValue& params, int index, const std::optional<int>& asOfHeight) {
+    int nMinDepth = def;
+    if (params.size() > index) {
+        auto requestedDepth = params[index].get_int();
+        if (requestedDepth < 0) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
+        } else {
+            nMinDepth = asOfHeight.has_value() ? max(1, requestedDepth) : requestedDepth;
+        }
+    }
+    return nMinDepth;
 }
 
 void RPCRegisterTimerInterface(RPCTimerInterface *iface)

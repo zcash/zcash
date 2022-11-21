@@ -521,7 +521,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         #############################################
 
         #again, empty node1, send some small coins from node0 to node1
-        self.nodes[1].sendtoaddress(self.nodes[0].getnewaddress(), self.nodes[1].getbalance(), "", "", True)
+        self.nodes[1].sendtoaddress(self.nodes[0].getnewaddress(), self.nodes[1].getbalance("*", 0), "", "", True)
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()

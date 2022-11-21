@@ -50,7 +50,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             "getinfo ( asOfHeight )\n"
             "Returns an object containing various state info.\n"
             "\nArguments:\n"
-            "1. " + asOfHeightMessage() +
+            "1. " + asOfHeightMessage(false) +
             "\nResult:\n"
             "{\n"
             "  \"version\": xxxxx,           (numeric) the server version\n"

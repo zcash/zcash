@@ -442,7 +442,7 @@ public:
     /**
      * Return depth of transaction in blockchain:
      * -1  : not in blockchain, and not in memory pool (conflicted transaction)
-     *  0  : in memory pool, waiting to be included in a block
+     *  0  : in memory pool, waiting to be included in a block (never returned if `asOfHeight` is set)
      * >=1 : this many blocks deep in the main chain
      */
     int GetDepthInMainChain(const CBlockIndex* &pindexRet, const std::optional<int>& asOfHeight) const;
