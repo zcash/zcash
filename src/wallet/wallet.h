@@ -1435,6 +1435,8 @@ public:
 
     /**
      * populate vCoins with vector of available COutputs.
+     *
+     * **NB**: If `asOfHeight` is specified, then `nMinDepth` must be `> 0`.
      */
     void AvailableCoins(std::vector<COutput>& vCoins,
                         const std::optional<int>& asOfHeight,

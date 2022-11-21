@@ -5225,6 +5225,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                              std::set<CTxDestination>* onlyFilterByDests) const
 {
     assert(nMinDepth >= 0);
+    assert(!asOfHeight.has_value() || nMinDepth > 0);
     AssertLockHeld(cs_main);
     AssertLockHeld(cs_wallet);
 

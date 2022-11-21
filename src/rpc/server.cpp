@@ -552,19 +552,17 @@ std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::vecto
 
 std::string asOfHeightMessage(bool hasMinconf) {
     std::string minconfInteraction = hasMinconf
-        ? "Because we can’t roll back offchain data (namely,\n"
-          "                    the mempool), setting an `asOfHeight` will ignore the\n"
-          "                    mempool, effectively treating `minconf` as being at least 1,\n"
-          "                    even if it’s explicitly set to 0. This includes when a\n"
-          "                    “future” `asOfHeight` is set, even though it is otherwise\n"
-          "                    the same as not passing `asOfHeight`."
+        ? "                    For consistency with ignoring the mempool, we require that\n"
+          "                    `minconf` is at least 1 when `asOfHeight` is provided.\n"
         : "";
     return
         ". asOfHeight       (numeric, optional) Execute the query as if it were run when\n"
         "                    the blockchain was at the height specified by this argument.\n"
         "                    The default is to use the entire blockchain that the node is\n"
         "                    aware of. A “future” height will fall back to the current\n"
-        "                    height. " + minconfInteraction + "\n";
+        "                    height. Any explicit value will cause the mempool to be\n"
+        "                    ignored, meaning no unconfirmed tx will be considered.\n"
+        + minconfInteraction;
 }
 
 std::optional<int> parseAsOfHeight(const UniValue& params, int index) {
@@ -584,8 +582,10 @@ int parseMinconf(int def, const UniValue& params, int index, const std::optional
         auto requestedDepth = params[index].get_int();
         if (requestedDepth < 0) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
+        } else if (requestedDepth == 0 && asOfHeight.has_value()) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Require a minimum of 1 confirmation when `asOfHeight` is provided");
         } else {
-            nMinDepth = asOfHeight.has_value() ? max(1, requestedDepth) : requestedDepth;
+            nMinDepth = requestedDepth;
         }
     }
     return nMinDepth;
