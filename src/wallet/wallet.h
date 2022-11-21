@@ -1805,10 +1805,11 @@ public:
     CAmount GetBalance(const std::optional<int>& asOfHeight,
                        const isminefilter& filter=ISMINE_SPENDABLE,
                        const int min_depth=0) const;
-    CAmount GetUnconfirmedBalance(const std::optional<int>& asOfHeight) const;
+    /**
+     * Returns the balance taking into account _only_ transactions in the mempool.
+     */
+    CAmount GetUnconfirmedTransparentBalance() const;
     CAmount GetImmatureBalance(const std::optional<int>& asOfHeight) const;
-    CAmount GetUnconfirmedWatchOnlyBalance(const std::optional<int>& asOfHeight) const;
-    CAmount GetImmatureWatchOnlyBalance(const std::optional<int>& asOfHeight) const;
     CAmount GetLegacyBalance(const isminefilter& filter, int minDepth) const;
 
     /**

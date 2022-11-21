@@ -1076,18 +1076,14 @@ UniValue getunconfirmedbalance(const UniValue &params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 1)
+    if (fHelp || params.size() > 0)
         throw runtime_error(
-            "getunconfirmedbalance ( asOfHeight )\n"
-            "\nArguments:\n"
-            "1. " + asOfHeightMessage(false) +
+            "getunconfirmedbalance\n"
             "Returns the server's total unconfirmed transparent balance\n");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    auto asOfHeight = parseAsOfHeight(params, 0);
-
-    return ValueFromAmount(pwalletMain->GetUnconfirmedBalance(asOfHeight));
+    return ValueFromAmount(pwalletMain->GetUnconfirmedTransparentBalance());
 }
 
 
@@ -2337,10 +2333,12 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
             "{\n"
             "  \"walletversion\": xxxxx,     (numeric) the wallet version\n"
             "  \"balance\": xxxxxxx,         (numeric) the total confirmed transparent balance of the wallet in " + CURRENCY_UNIT + "\n"
-            "  \"unconfirmed_balance\": xxx, (numeric) the total unconfirmed transparent balance of the wallet in " + CURRENCY_UNIT + "\n"
+            "  \"unconfirmed_balance\": xxx, (numeric, optional) the total unconfirmed transparent balance of the wallet in " + CURRENCY_UNIT + ".\n"
+            "                              Not included if `asOfHeight` is specified.\n"
             "  \"immature_balance\": xxxxxx, (numeric) the total immature transparent balance of the wallet in " + CURRENCY_UNIT + "\n"
             "  \"shielded_balance\": xxxxxxx,  (numeric) the total confirmed shielded balance of the wallet in " + CURRENCY_UNIT + "\n"
-            "  \"shielded_unconfirmed_balance\": xxx, (numeric) the total unconfirmed shielded balance of the wallet in " + CURRENCY_UNIT + "\n"
+            "  \"shielded_unconfirmed_balance\": xxx, (numeric, optional) the total unconfirmed shielded balance of the wallet in " + CURRENCY_UNIT + ".\n"
+            "                              Not included if `asOfHeight` is specified.\n"
             "  \"txcount\": xxxxxxx,         (numeric) the total number of transactions in the wallet\n"
             "  \"keypoololdest\": xxxxxx,    (numeric) the timestamp (seconds since GMT epoch) of the oldest pre-generated key in the key pool\n"
             "  \"keypoolsize\": xxxx,        (numeric) how many new keys are pre-generated\n"
@@ -2363,10 +2361,14 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("walletversion", pwalletMain->GetVersion());
     obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance(asOfHeight)));
-    obj.pushKV("unconfirmed_balance", ValueFromAmount(pwalletMain->GetUnconfirmedBalance(asOfHeight)));
+    if (!asOfHeight.has_value()) {
+        obj.pushKV("unconfirmed_balance", ValueFromAmount(pwalletMain->GetUnconfirmedTransparentBalance()));
+    }
     obj.pushKV("immature_balance",    ValueFromAmount(pwalletMain->GetImmatureBalance(asOfHeight)));
     obj.pushKV("shielded_balance",    FormatMoney(getBalanceZaddr(std::nullopt, asOfHeight, 1, INT_MAX)));
-    obj.pushKV("shielded_unconfirmed_balance", FormatMoney(getBalanceZaddr(std::nullopt, asOfHeight, 0, 0)));
+    if (!asOfHeight.has_value()) {
+        obj.pushKV("shielded_unconfirmed_balance", FormatMoney(getBalanceZaddr(std::nullopt, asOfHeight, 0, 0)));
+    }
     obj.pushKV("txcount",       (int)pwalletMain->mapWallet.size());
     obj.pushKV("keypoololdest", pwalletMain->GetOldestKeyPoolTime());
     obj.pushKV("keypoolsize",   (int)pwalletMain->GetKeyPoolSize());

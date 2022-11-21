@@ -5146,7 +5146,7 @@ CAmount CWallet::GetBalance(const std::optional<int>& asOfHeight, const isminefi
     return nTotal;
 }
 
-CAmount CWallet::GetUnconfirmedBalance(const std::optional<int>& asOfHeight) const
+CAmount CWallet::GetUnconfirmedTransparentBalance() const
 {
     CAmount nTotal = 0;
     {
@@ -5154,8 +5154,8 @@ CAmount CWallet::GetUnconfirmedBalance(const std::optional<int>& asOfHeight) con
         for (const auto& entry : mapWallet)
         {
             const CWalletTx* pcoin = &entry.second;
-            if (!CheckFinalTx(*pcoin) || (!pcoin->IsTrusted(asOfHeight) && pcoin->GetDepthInMainChain(asOfHeight) == 0))
-                nTotal += pcoin->GetAvailableCredit(asOfHeight);
+            if (!CheckFinalTx(*pcoin) || (!pcoin->IsTrusted(std::nullopt) && pcoin->GetDepthInMainChain(std::nullopt) == 0))
+                nTotal += pcoin->GetAvailableCredit(std::nullopt);
         }
     }
     return nTotal;
@@ -5170,35 +5170,6 @@ CAmount CWallet::GetImmatureBalance(const std::optional<int>& asOfHeight) const
         {
             const CWalletTx* pcoin = &entry.second;
             nTotal += pcoin->GetImmatureCredit(asOfHeight);
-        }
-    }
-    return nTotal;
-}
-
-CAmount CWallet::GetUnconfirmedWatchOnlyBalance(const std::optional<int>& asOfHeight) const
-{
-    CAmount nTotal = 0;
-    {
-        LOCK2(cs_main, cs_wallet);
-        for (const auto& entry : mapWallet)
-        {
-            const CWalletTx* pcoin = &entry.second;
-            if (!CheckFinalTx(*pcoin) || (!pcoin->IsTrusted(asOfHeight) && pcoin->GetDepthInMainChain(asOfHeight) == 0))
-                nTotal += pcoin->GetAvailableCredit(true, ISMINE_WATCH_ONLY);
-        }
-    }
-    return nTotal;
-}
-
-CAmount CWallet::GetImmatureWatchOnlyBalance(const std::optional<int>& asOfHeight) const
-{
-    CAmount nTotal = 0;
-    {
-        LOCK2(cs_main, cs_wallet);
-        for (const auto& entry : mapWallet)
-        {
-            const CWalletTx* pcoin = &entry.second;
-            nTotal += pcoin->GetImmatureWatchOnlyCredit(asOfHeight);
         }
     }
     return nTotal;
