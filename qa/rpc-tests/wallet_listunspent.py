@@ -89,7 +89,8 @@ class WalletListUnspent(BitcoinTestFramework):
 
         self.nodes[0].generate(2)
         self.sync_all() # height 207
-        assert_equal(self.nodes[0].getbalance(), 310) # 300 + 20 (matured) - 2 (sent)
+        # FIXME: #6262, should be `318) # 300 + 20 (matured) - 2 (sent)`
+        assert_equal(self.nodes[0].getbalance(), 310) # 300 + 20 (matured) - 10 (sent)
 
         opid = self.nodes[0].z_sendmany(
                 'ANY_TADDR',
@@ -100,7 +101,8 @@ class WalletListUnspent(BitcoinTestFramework):
 
         self.nodes[0].generate(2)
         self.sync_all() # height 209
-        assert_equal(self.nodes[0].getbalance(), 320) # 310 + 20 (matured) - 3 (sent)
+        # FIXME: #6262, should be `335) # 318 + 20 (matured) - 3 (sent)`
+        assert_equal(self.nodes[0].getbalance(), 320) # 310 + 20 (matured) - 10 (sent)
 
         opid = self.nodes[0].z_sendmany(
                 'ANY_TADDR',
@@ -111,10 +113,11 @@ class WalletListUnspent(BitcoinTestFramework):
 
         self.nodes[0].generate(2)
         self.sync_all() # height 211
-        assert_equal(self.nodes[0].getbalance(), 330) # 325 + 20 (matured) - 5 (sent)
+        # FIXME: #6262, should be `350) # 335 + 20 (matured) - 5 (sent)`
+        assert_equal(self.nodes[0].getbalance(), 330) # 320 + 20 (matured) - 10 (sent)
 
         # check balances at various past points in the chain
-        # FIXME: change the comparison amounts when the above changes are made.
+        # FIXME: #6262, change the comparison amounts when the above changes are made.
         assert_equal(self.matured_at_height(205), 300)
         assert_equal(self.matured_at_height(207), 310)
         assert_equal(self.matured_at_height(209), 320)
