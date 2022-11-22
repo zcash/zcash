@@ -1032,7 +1032,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             "accounts. Prefer to use `z_getbalanceforaccount` instead.\n"
             "\nArguments:\n"
             "1. (dummy)          (string, optional) Remains for backward compatibility. Must be excluded or set to \"*\" or \"\".\n"
-            "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
+            "2. minconf          (numeric, optional, default=0) Only include transactions confirmed at least this many times.\n"
             "3. includeWatchonly (bool, optional, default=false) Also include balance in watchonly addresses (see 'importaddress')\n"
             "4. inZat            (bool, optional, default=false) Get the result amount in " + MINOR_CURRENCY_UNIT + " (as an integer).\n"
             "5. " + asOfHeightMessage(true) +
@@ -1056,7 +1056,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
     auto asOfHeight = parseAsOfHeight(params, 4);
 
-    int min_depth = parseMinconf(1, params, 1, asOfHeight);
+    int min_depth = parseMinconf(0, params, 1, asOfHeight);
 
     isminefilter filter = ISMINE_SPENDABLE;
     if (!params[2].isNull() && params[2].get_bool()) {
