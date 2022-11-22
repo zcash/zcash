@@ -24,6 +24,9 @@ class WalletListUnspent(BitcoinTestFramework):
             nuparams(NU5_BRANCH_ID, 201),
         ]] * 4)
 
+    def matured_at_height(self, height):
+        return unspent_total(self.nodes[0].listunspent(1, 999999, [], height))
+
     def run_test(self):
         assert_equal(self.nodes[0].getbalance(), 250)
         assert_equal(self.nodes[1].getbalance(), 250)
@@ -34,7 +37,7 @@ class WalletListUnspent(BitcoinTestFramework):
         assert_equal(self.nodes[0].getbalance(), 260) # additional 10 ZEC matured
         # check balances from before the latest tx
         assert_equal(self.nodes[0].getbalance("", 1, False, False, 200), 250)
-        assert_equal(unspent_total(self.nodes[0].listunspent(1, 999999, [], 200)), 250)
+        assert_equal(self.matured_at_height(200), 250)
 
         # Shield some coinbase funds so that they become spendable
         n1acct = self.nodes[1].z_getnewaccount()['account']
@@ -112,10 +115,10 @@ class WalletListUnspent(BitcoinTestFramework):
 
         # check balances at various past points in the chain
         # FIXME: change the comparison amounts when the above changes are made.
-        assert_equal(unspent_total(self.nodes[0].listunspent(1, 999999, [], 205)), 300)
-        assert_equal(unspent_total(self.nodes[0].listunspent(1, 999999, [], 207)), 310)
-        assert_equal(unspent_total(self.nodes[0].listunspent(1, 999999, [], 209)), 320)
-        assert_equal(unspent_total(self.nodes[0].listunspent(1, 999999, [], 211)), 330)
+        assert_equal(self.matured_at_height(205), 300)
+        assert_equal(self.matured_at_height(207), 310)
+        assert_equal(self.matured_at_height(209), 320)
+        assert_equal(self.matured_at_height(211), 330)
 
 if __name__ == '__main__':
     WalletListUnspent().main()
