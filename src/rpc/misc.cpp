@@ -45,12 +45,10 @@ using namespace std;
  **/
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() > 1)
+    if (fHelp || params.size() != 0)
         throw runtime_error(
-            "getinfo ( asOfHeight )\n"
+            "getinfo\n"
             "Returns an object containing various state info.\n"
-            "\nArguments:\n"
-            "1. " + asOfHeightMessage(false) +
             "\nResult:\n"
             "{\n"
             "  \"version\": xxxxx,           (numeric) the server version\n"
@@ -84,8 +82,6 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 #endif
 
-    auto asOfHeight = parseAsOfHeight(params, 0);
-
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
 
@@ -97,7 +93,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.pushKV("walletversion", pwalletMain->GetVersion());
-        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance(asOfHeight)));
+        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance(std::nullopt)));
     }
 #endif
     obj.pushKV("blocks",        (int)chainActive.Height());
