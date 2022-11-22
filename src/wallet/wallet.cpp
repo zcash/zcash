@@ -5052,6 +5052,9 @@ bool CWalletTx::IsTrusted(const std::optional<int>& asOfHeight) const
     int nDepth = GetDepthInMainChain(asOfHeight);
     if (nDepth >= 1)
         return true;
+    if (asOfHeight.has_value() && nDepth == 0)
+        // don’t trust mempool tx if using `asOfHeight`
+        return false;
     if (nDepth < 0)
         return false;
     if (!bSpendZeroConfChange || !IsFromMe(ISMINE_ALL)) // using wtx's cached debit
