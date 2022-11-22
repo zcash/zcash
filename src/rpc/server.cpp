@@ -552,8 +552,7 @@ std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::vecto
 
 std::string asOfHeightMessage(bool hasMinconf) {
     std::string minconfInteraction = hasMinconf
-        ? "                    For consistency with ignoring the mempool, we require that\n"
-          "                    `minconf` is at least 1 when `asOfHeight` is provided.\n"
+        ? "                    `minconf` must be at least 1 when `asOfHeight` is provided.\n"
         : "";
     return
         ". asOfHeight       (numeric, optional, default “*”) Execute the query as if it\n"
