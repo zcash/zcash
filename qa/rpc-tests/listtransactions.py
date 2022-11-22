@@ -14,11 +14,7 @@ from decimal import Decimal
 def count_array_matches(object_array, to_match):
     num_matched = 0
     for item in object_array:
-        all_match = True
-        for key,value in to_match.items():
-            if item[key] != value:
-                all_match = False
-        if all_match:
+        if all((item[key] == value for key,value in to_match.items())):
             num_matched = num_matched+1
     return num_matched
 

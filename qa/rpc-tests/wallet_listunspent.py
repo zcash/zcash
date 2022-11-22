@@ -16,10 +16,7 @@ from test_framework.util import (
 from decimal import Decimal
 
 def unspent_total(unspent):
-    total = 0
-    for item in unspent:
-        total += item['amount']
-    return total
+    return sum((item['amount'] for item in unspent))
 
 class WalletListUnspent(BitcoinTestFramework):
     def setup_nodes(self):

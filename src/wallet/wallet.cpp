@@ -2424,10 +2424,8 @@ bool CWallet::IsSpent(const uint256& hash, unsigned int n, const std::optional<i
     {
         const uint256& wtxid = it->second;
         std::map<uint256, CWalletTx>::const_iterator mit = mapWallet.find(wtxid);
-        if (mit != mapWallet.end()) {
-            auto confirmations = mit->second.GetDepthInMainChain(asOfHeight);
-            if (confirmations >= 0)
-                return true;
+        if (mit != mapWallet.end() && mit->second.GetDepthInMainChain(asOfHeight) >= 0) {
+            return true; // Spent
         }
     }
     return false;
