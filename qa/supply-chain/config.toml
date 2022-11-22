@@ -51,6 +51,10 @@ criteria = "safe-to-deploy"
 version = "0.7.6"
 criteria = "safe-to-deploy"
 
+[[exemptions.aho-corasick]]
+version = "0.7.19"
+criteria = "safe-to-deploy"
+
 [[exemptions.anyhow]]
 version = "1.0.56"
 criteria = "safe-to-deploy"
