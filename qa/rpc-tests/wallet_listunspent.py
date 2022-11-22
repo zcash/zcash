@@ -124,7 +124,7 @@ class WalletListUnspent(BitcoinTestFramework):
         assert_equal(self.matured_at_height(205), expected_matured_at_height(205) - 10 + 10)
         assert_equal(self.matured_at_height(207), expected_matured_at_height(207) - 10 + 10 - 10)
         assert_equal(self.matured_at_height(209), expected_matured_at_height(209) - 10 + 10 - 10 - 10)
-        assert_equal(self.matured_at_height(211), expected_matured_at_height(209) - 10 + 10 - 10 - 10 - 10)
+        assert_equal(self.matured_at_height(211), expected_matured_at_height(211) - 10 + 10 - 10 - 10 - 10)
 
 if __name__ == '__main__':
     WalletListUnspent().main()
