@@ -28,16 +28,19 @@ class WalletListUnspent(BitcoinTestFramework):
         return unspent_total(self.nodes[0].listunspent(1, 999999, [], height))
 
     def run_test(self):
-        assert_equal(self.nodes[0].getbalance(), 250)
-        assert_equal(self.nodes[1].getbalance(), 250)
+        def expected_matured_at_height(height):
+            return (height-200)*10 + 250
+
+        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(200))
+        assert_equal(self.nodes[1].getbalance(), expected_matured_at_height(200))
 
         # Activate NU5
         self.nodes[1].generate(1) # height 201
         self.sync_all()
-        assert_equal(self.nodes[0].getbalance(), 260) # additional 10 ZEC matured
+        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(201))
         # check balances from before the latest tx
-        assert_equal(self.nodes[0].getbalance("", 1, False, False, 200), 250)
-        assert_equal(self.matured_at_height(200), 250)
+        assert_equal(self.nodes[0].getbalance("", 1, False, False, 200), expected_matured_at_height(200))
+        assert_equal(self.matured_at_height(200), expected_matured_at_height(200))
 
         # Shield some coinbase funds so that they become spendable
         n1acct = self.nodes[1].z_getnewaccount()['account']
@@ -51,7 +54,7 @@ class WalletListUnspent(BitcoinTestFramework):
         self.sync_all()
         self.nodes[1].generate(2)
         self.sync_all() # height 203
-        assert_equal(self.nodes[0].getbalance(), 270) # 260 - 10 (spent) + 20 (matured)
+        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(203) - 10)
 
         assert_equal(
                 self.nodes[1].z_getbalanceforaccount(n1acct, 1)['pools']['orchard']['valueZat'],
@@ -70,7 +73,7 @@ class WalletListUnspent(BitcoinTestFramework):
         self.sync_all()
         self.nodes[1].generate(2)
         self.sync_all() # height 205
-        assert_equal(self.nodes[0].getbalance(), 300) # 270 + 20 (matured) + 10 (received)
+        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(205) - 10 + 10)
 
         # We will then perform several spends, and then check the list of
         # unspent notes as of various heights.
@@ -89,8 +92,8 @@ class WalletListUnspent(BitcoinTestFramework):
 
         self.nodes[0].generate(2)
         self.sync_all() # height 207
-        # FIXME: #6262, should be `318) # 300 + 20 (matured) - 2 (sent)`
-        assert_equal(self.nodes[0].getbalance(), 310) # 300 + 20 (matured) - 10 (sent)
+        # FIXME: #6262, should be `expected_matured_at_height(207) - 10 + 10 - 2`
+        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(207) - 10 + 10 - 10)
 
         opid = self.nodes[0].z_sendmany(
                 'ANY_TADDR',
@@ -101,8 +104,8 @@ class WalletListUnspent(BitcoinTestFramework):
 
         self.nodes[0].generate(2)
         self.sync_all() # height 209
-        # FIXME: #6262, should be `335) # 318 + 20 (matured) - 3 (sent)`
-        assert_equal(self.nodes[0].getbalance(), 320) # 310 + 20 (matured) - 10 (sent)
+        # FIXME: #6262, should be `expected_matured_at_height(209) - 10 + 10 - 2 - 3`
+        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(209) - 10 + 10 - 10 - 10)
 
         opid = self.nodes[0].z_sendmany(
                 'ANY_TADDR',
@@ -113,15 +116,15 @@ class WalletListUnspent(BitcoinTestFramework):
 
         self.nodes[0].generate(2)
         self.sync_all() # height 211
-        # FIXME: #6262, should be `350) # 335 + 20 (matured) - 5 (sent)`
-        assert_equal(self.nodes[0].getbalance(), 330) # 320 + 20 (matured) - 10 (sent)
+        # FIXME: #6262, should be `expected_matured_at_height(211) - 10 + 10 - 2 - 3 - 5`
+        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(211) - 10 + 10 - 10 - 10 - 10)
 
         # check balances at various past points in the chain
         # FIXME: #6262, change the comparison amounts when the above changes are made.
-        assert_equal(self.matured_at_height(205), 300)
-        assert_equal(self.matured_at_height(207), 310)
-        assert_equal(self.matured_at_height(209), 320)
-        assert_equal(self.matured_at_height(211), 330)
+        assert_equal(self.matured_at_height(205), expected_matured_at_height(205) - 10 + 10)
+        assert_equal(self.matured_at_height(207), expected_matured_at_height(207) - 10 + 10 - 10)
+        assert_equal(self.matured_at_height(209), expected_matured_at_height(209) - 10 + 10 - 10 - 10)
+        assert_equal(self.matured_at_height(211), expected_matured_at_height(209) - 10 + 10 - 10 - 10 - 10)
 
 if __name__ == '__main__':
     WalletListUnspent().main()

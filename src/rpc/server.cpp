@@ -555,7 +555,7 @@ std::string asOfHeightMessage(bool hasMinconf) {
         ? "                    `minconf` must be at least 1 when `asOfHeight` is provided.\n"
         : "";
     return
-        ". asOfHeight       (numeric, optional, default “*”) Execute the query as if it\n"
+        "asOfHeight       (numeric, optional, default “*”) Execute the query as if it\n"
         "                    were run when the blockchain was at the height specified by\n"
         "                    this argument. The default is to use the entire blockchain\n"
         "                    that the node is aware of. A “future” height will fall back\n"
@@ -580,8 +580,8 @@ std::optional<int> parseAsOfHeight(const UniValue& params, int index) {
     return asOfHeight;
 }
 
-int parseMinconf(int def, const UniValue& params, int index, const std::optional<int>& asOfHeight) {
-    int nMinDepth = def;
+int parseMinconf(int defaultValue, const UniValue& params, int index, const std::optional<int>& asOfHeight) {
+    int nMinDepth = defaultValue;
     if (params.size() > index) {
         auto requestedDepth = params[index].get_int();
         if (requestedDepth < 0) {
