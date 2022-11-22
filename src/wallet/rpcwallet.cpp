@@ -5004,11 +5004,11 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
             "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf ) ( fee ) ( privacyPolicy )\n"
-            "\nSend multiple times. Amounts are decimal numbers with at most 8 digits of precision."
-            "\nChange generated from one or more transparent addresses flows to a new transparent"
-            "\naddress, while change generated from a legacy Sapling address returns to itself."
-            "\nWhen sending from a unified address, change is returned to the internal-only address"
-            "\nfor the associated unified account."
+            "\nSend a transaction with multiple recipients. Amounts are decimal numbers with at"
+            "\nmost 8 digits of precision. Change generated from one or more transparent"
+            "\naddresses flows to a new transparent address, while change generated from a"
+            "\nlegacy Sapling address returns to itself. When sending from a unified address,"
+            "\nchange is returned to the internal-only address for the associated unified account."
             "\nWhen spending coinbase UTXOs, only shielded recipients are permitted and change is not allowed;"
             "\nthe entire value of the coinbase UTXO(s) must be consumed."
             + HelpRequiringPassphrase() + "\n"
