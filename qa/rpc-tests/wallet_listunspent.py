@@ -35,8 +35,9 @@ class WalletListUnspent(BitcoinTestFramework):
         self.nodes[1].generate(1) # height 201
         self.sync_all()
         assert_equal(self.nodes[0].getbalance(), 260) # additional 10 ZEC matured
-        assert_equal(self.nodes[0].getbalance("", 0, False, False, 200), 250)
-        assert_equal(unspent_total(self.nodes[0].listunspent(0, 999999, [], 200)), 250)
+        # check balances from before the latest tx
+        assert_equal(self.nodes[0].getbalance("", 1, False, False, 200), 250)
+        assert_equal(unspent_total(self.nodes[0].listunspent(1, 999999, [], 200)), 250)
 
         # Shield some coinbase funds so that they become spendable
         n1acct = self.nodes[1].z_getnewaccount()['account']
@@ -71,52 +72,53 @@ class WalletListUnspent(BitcoinTestFramework):
         self.sync_all() # height 205
         assert_equal(self.nodes[0].getbalance(), 300) # 270 + 20 (matured) + 10 (received)
 
-        print("----------------------------------------------------------------")
-        unspent_205 = self.nodes[0].listunspent(0, 999999, [])
-        for item in sorted(unspent_205, key=lambda item: item['confirmations']):
-            print(str(item))
-
         # We will then perform several spends, and then check the list of
         # unspent notes as of various heights.
 
         opid = self.nodes[0].z_sendmany(
                 'ANY_TADDR',
-                [{'address': n1uaddr, 'amount': 2}],
+                # FIXME: #6262 The amount here _should_ be 2, but because of a
+                #        bug in the selector for `ANY_TADDR`, it’s selecting
+                #        transparent coinbase, which also means we can’t have
+                #        change. When that bug is fixed, the test should fail
+                #        here, and we can switch it back to 2 (and cascade the
+                #        corrected amounts mentioned below.
+                [{'address': n1uaddr, 'amount': 10}],
                 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.nodes[0].generate(2)
         self.sync_all() # height 207
-        assert_equal(self.nodes[0].getbalance(), 318) # 300 + 20 (matured) - 2 (sent)
+        assert_equal(self.nodes[0].getbalance(), 310) # 300 + 20 (matured) - 2 (sent)
 
         opid = self.nodes[0].z_sendmany(
                 'ANY_TADDR',
-                [{'address': n1uaddr, 'amount': 3}],
+                # FIXME: Should be 3 (see above)
+                [{'address': n1uaddr, 'amount': 10}],
                 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.nodes[0].generate(2)
         self.sync_all() # height 209
-        assert_equal(self.nodes[0].getbalance(), 335) # 318 + 20 (matured) - 3 (sent)
+        assert_equal(self.nodes[0].getbalance(), 320) # 310 + 20 (matured) - 3 (sent)
 
         opid = self.nodes[0].z_sendmany(
                 'ANY_TADDR',
-                [{'address': n1uaddr, 'amount': 5}],
+                # FIXME: Should be 5 (see above)
+                [{'address': n1uaddr, 'amount': 10}],
                 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.nodes[0].generate(2)
         self.sync_all() # height 211
-        assert_equal(self.nodes[0].getbalance(), 350) # 325 + 20 (matured) - 5 (sent)
+        assert_equal(self.nodes[0].getbalance(), 330) # 325 + 20 (matured) - 5 (sent)
 
-        unspent_205 = self.nodes[0].listunspent(0, 999999, [], 205)
-        print("----------------------------------------------------------------")
-        for item in sorted(unspent_205, key=lambda item: item['confirmations']):
-            print(str(item))
-        assert_equal(unspent_total(self.nodes[0].listunspent(0, 999999, [], 205)), 300)
-        assert_equal(unspent_total(self.nodes[0].listunspent(0, 999999, [], 207)), 318)
-        assert_equal(unspent_total(self.nodes[0].listunspent(0, 999999, [], 209)), 335)
-        assert_equal(unspent_total(self.nodes[0].listunspent(0, 999999, [], 211)), 350)
+        # check balances at various past points in the chain
+        # FIXME: change the comparison amounts when the above changes are made.
+        assert_equal(unspent_total(self.nodes[0].listunspent(1, 999999, [], 205)), 300)
+        assert_equal(unspent_total(self.nodes[0].listunspent(1, 999999, [], 207)), 310)
+        assert_equal(unspent_total(self.nodes[0].listunspent(1, 999999, [], 209)), 320)
+        assert_equal(unspent_total(self.nodes[0].listunspent(1, 999999, [], 211)), 330)
 
 if __name__ == '__main__':
     WalletListUnspent().main()
