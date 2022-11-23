@@ -859,6 +859,8 @@ UniValue listaddressgroupings(const UniValue& params, bool fHelp)
             "  ]\n"
             "  ,...\n"
             "]\n"
+            "\nBitcoin compatibility:\n"
+            "The zero-argument form is compatible."
             "\nExamples:\n"
             + HelpExampleCli("listaddressgroupings", "")
             + HelpExampleRpc("listaddressgroupings", "")
@@ -967,6 +969,8 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
             "4. " + asOfHeightMessage(true) +
             "\nResult:\n"
             "amount   (numeric) The total amount in " + CURRENCY_UNIT + "(or " + MINOR_CURRENCY_UNIT + " if inZat is true) received at this address.\n"
+            "\nBitcoin compatibility:\n"
+            "Compatible with up to two arguments."
             "\nExamples:\n"
             "\nThe amount from transactions with at least 1 confirmation\n"
             + HelpExampleCli("getreceivedbyaddress", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\"") +
@@ -1038,6 +1042,8 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             "5. " + asOfHeightMessage(true) +
             "\nResult:\n"
             "amount              (numeric) The total amount in " + CURRENCY_UNIT + "(or " + MINOR_CURRENCY_UNIT + " if inZat is true) received.\n"
+            "\nBitcoin compatibility:\n"
+            "Compatible with up to three arguments."
             "\nExamples:\n"
             "\nThe total amount in the wallet\n"
             + HelpExampleCli("getbalance", "*") +
@@ -1277,7 +1283,15 @@ struct tallyitem
 
 UniValue ListReceived(const UniValue& params)
 {
-    auto asOfHeight = parseAsOfHeight(params, 3);
+    if (params.size() > 3 && params[3].get_str() != "") {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "addressFilter must be set to \"\"");
+    }
+
+    if (params.size() > 4 && params[4].get_bool() != false) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "includeImmatureCoinbase must be set to false");
+    }
+
+    auto asOfHeight = parseAsOfHeight(params, 5);
 
     // Minimum confirmations
     int nMinDepth = parseMinconf(1, params, 0, asOfHeight);
@@ -1370,9 +1384,9 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 4)
+    if (fHelp || params.size() > 6)
         throw runtime_error(
-            "listreceivedbyaddress ( minconf includeempty includeWatchonly asOfHeight )\n"
+            "listreceivedbyaddress ( minconf includeempty includeWatchonly addressFilter includeImmatureCoinbase asOfHeight )\n"
             "\nList balances by transparent receiving address. This API does not provide\n"
             "any information for associated with shielded addresses and should only be used\n"
             "in circumstances where it is necessary to interoperate with legacy Bitcoin\n"
@@ -1381,7 +1395,9 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
             "1. minconf       (numeric, optional, default=1) The minimum number of confirmations before payments are included.\n"
             "2. includeempty  (numeric, optional, default=false) Whether to include addresses that haven't received any payments.\n"
             "3. includeWatchonly (bool, optional, default=false) Whether to include watchonly addresses (see 'importaddress').\n"
-            "4. " + asOfHeightMessage(true) +
+            "4. addressFilter (string, optional, default=\"\") If present and non-empty, only return information on this address. Currently, only the default value is supported.\n"
+            "5. includeImmatureCoinbase (bool, optional, default=false) Include immature coinbase transactions. Currently, only the default value is supported.\n"
+            "6. " + asOfHeightMessage(true) +
             "\nResult:\n"
             "[\n"
             "  {\n"
@@ -1393,7 +1409,8 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
             "  }\n"
             "  ,...\n"
             "]\n"
-
+            "\nBitcoin compatibility:\n"
+            "Compatible up to five arguments, but can only use the default value for `addressFilter` and `includeImmatureCoinbase`."
             "\nExamples:\n"
             + HelpExampleCli("listreceivedbyaddress", "")
             + HelpExampleCli("listreceivedbyaddress", "6 true")
@@ -1621,15 +1638,17 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp)
+    if (fHelp || params.size() > 6)
         throw runtime_error(
-            "listsinceblock ( \"blockhash\" target-confirmations includeWatchonly asOfHeight )\n"
+            "listsinceblock ( \"blockhash\" target-confirmations includeWatchonly includeRemoved includeChange asOfHeight )\n"
             "\nGet all transactions in blocks since block [blockhash], or all transactions if omitted\n"
             "\nArguments:\n"
             "1. \"blockhash\"   (string, optional) The block hash to list transactions since\n"
             "2. target-confirmations:    (numeric, optional) The confirmations required, must be 1 or more\n"
             "3. includeWatchonly:        (bool, optional, default=false) Include transactions to watchonly addresses (see 'importaddress')"
-            "4. " + asOfHeightMessage(false) +
+            "4. includeRemoved           (bool, optional, default=true) Show transactions that were removed due to a reorg in the \"removed\" array (not guaranteed to work on pruned nodes)\n"
+            "5. includeChange            (bool, optional, default=false) Also add entries for change outputs. Currently, only the default value is supported.\n"
+            "6. " + asOfHeightMessage(false) +
             "\nResult:\n"
             "{\n"
             "  \"transactions\": [\n"
@@ -1651,9 +1670,13 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
             "    \"timereceived\": xxx,      (numeric) The time received in seconds since epoch (Jan 1 1970 GMT). Available for 'send' and 'receive' category of transactions.\n"
             "    \"comment\": \"...\",       (string) If a comment is associated with the transaction.\n"
             "    \"to\": \"...\",            (string) If a comment to is associated with the transaction.\n"
-             "  ],\n"
+            "  ],\n"
+            "  \"removed\": [...]            (array of objects, optional) structure is the same as \"transactions\" above, only present if includeRemoved=true\n"
+            "                              Note: transactions that were re-added in the active chain will appear as-is in this array, and may thus have a positive confirmation count.\n"
             "  \"lastblock\": \"lastblockhash\"     (string) The hash of the last block\n"
             "}\n"
+            "\nBitcoin compatibility:\n"
+            "Compatible up to five arguments, but can only use the default value for `includeChange`."
             "\nExamples:\n"
             + HelpExampleCli("listsinceblock", "")
             + HelpExampleCli("listsinceblock", "\"000000000000000bacf66f7497b7dc45ef753ee9a7d38571037cdb1a57f663ad\" 6")
@@ -1688,7 +1711,16 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
         if(params[2].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
 
-    auto asOfHeight = parseAsOfHeight(params, 3);
+    bool includeRemoved = true;
+    if (params.size() > 3) {
+        includeRemoved = params[3].get_bool();
+    }
+
+    if (params.size() > 4 && params[4].get_bool() != false) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "includeChange must be set to false");
+    }
+
+    auto asOfHeight = parseAsOfHeight(params, 5);
 
     int depth = pindex ? (1 + chainActive.Height() - pindex->nHeight) : -1;
 
@@ -1707,6 +1739,9 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
 
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("transactions", transactions);
+    if (includeRemoved) {
+        ret.pushKV("removed", UniValue(UniValue::VARR));
+    }
     ret.pushKV("lastblock", lastblock.GetHex());
 
     return ret;
@@ -1717,16 +1752,17 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 3)
+    if (fHelp || params.size() < 1 || params.size() > 4)
         throw runtime_error(
-            "gettransaction \"txid\" ( includeWatchonly asOfHeight )\n"
+            "gettransaction \"txid\" ( includeWatchonly verbose asOfHeight )\n"
             "\nReturns detailed information about in-wallet transaction <txid>. This does not\n"
             "include complete information about shielded components of the transaction; to obtain\n"
             "details about shielded components of the transaction use `z_viewtransaction`.\n"
             "\nArguments:\n"
             "1. \"txid\"    (string, required) The transaction id\n"
-            "2. \"includeWatchonly\"    (bool, optional, default=false) Whether to include watchonly addresses in balance calculation and details[]\n"
-            "3. " + asOfHeightMessage(false) +
+            "2. includeWatchonly    (bool, optional, default=false) Whether to include watchonly addresses in balance calculation and details[]\n"
+            "3. verbose       (bool, optional, default=false) Whether to include a `decoded` field containing the decoded transaction (equivalent to RPC decoderawtransaction). Currently, only the default value is supported.\n"
+            "4. " + asOfHeightMessage(false) +
             "\nResult:\n"
             "{\n"
             "  \"status\" : \"mined|waiting|expiringsoon|expired\",    (string) The transaction status, can be 'mined', 'waiting', 'expiringsoon' or 'expired'\n"
@@ -1763,7 +1799,8 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
             "  ],\n"
             "  \"hex\" : \"data\"         (string) Raw data for transaction\n"
             "}\n"
-
+            "\nBitcoin compatibility:\n"
+            "Compatible up to three arguments, but can only use the default value for `verbose`."
             "\nExamples:\n"
             + HelpExampleCli("gettransaction", "\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
             + HelpExampleCli("gettransaction", "\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\" true")
@@ -1780,7 +1817,11 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
         if(params[1].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
 
-    auto asOfHeight = parseAsOfHeight(params, 2);
+    if (params.size() > 2 && params[2].get_bool() != false) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "verbose must be set to false");
+    }
+
+    auto asOfHeight = parseAsOfHeight(params, 3);
 
     UniValue entry(UniValue::VOBJ);
     if (!pwalletMain->mapWallet.count(hash))
@@ -2417,9 +2458,9 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 4)
+    if (fHelp || params.size() > 6)
         throw runtime_error(
-            "listunspent ( minconf maxconf [\"address\",...] asOfHeight )\n"
+            "listunspent ( minconf maxconf [\"address\",...] includeUnsafe queryOptions asOfHeight )\n"
             "\nReturns array of unspent transparent transaction outputs with between minconf and\n"
             "maxconf (inclusive) confirmations. Use `z_listunspent` instead to see information\n"
             "related to unspent shielded notes. Results may be optionally filtered to only include\n"
@@ -2432,7 +2473,9 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "      \"address\"   (string) Zcash address\n"
             "      ,...\n"
             "    ]\n"
-            "4. " + asOfHeightMessage(true) +
+            "4. includeUnsafe    (bool, optional, default=true) Include outputs that are not safe to spend. Currently, only the default value is supported.\n"
+            "5. queryOptions     (object, optional, default={}) JSON with query options. Currently, only the default value is supported.\n"
+            "6. " + asOfHeightMessage(true) +
             "\nResult\n"
             "[                   (array of json object)\n"
             "  {\n"
@@ -2449,6 +2492,8 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "  }\n"
             "  ,...\n"
             "]\n"
+            "\nBitcoin compatibility:\n"
+            "Compatible up to five arguments, but can only use the default value for `includeUnsafe` and `queryOptions`."
             "\nExamples\n"
             + HelpExampleCli("listunspent", "")
             + HelpExampleCli("listunspent", "6 9999999 \"[\\\"t1PGFqEzfmQch1gKD3ra4k18PNj3tTUUSqg\\\",\\\"t1LtvqCaApEdUGFkpKMM4MstjcaL4dKg8SP\\\"]\"")
@@ -2457,7 +2502,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VNUM)(UniValue::VNUM)(UniValue::VARR));
 
-    auto asOfHeight = parseAsOfHeight(params, 3);
+    auto asOfHeight = parseAsOfHeight(params, 5);
 
     int nMinDepth = parseMinconf(1, params, 0, asOfHeight);
 
@@ -2479,6 +2524,14 @@ UniValue listunspent(const UniValue& params, bool fHelp)
                 throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, duplicated address: ") + destStr);
             }
         }
+    }
+
+    if (params.size() > 3 && params[3].get_bool() != false) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "includeUnsafe must be set to false");
+    }
+
+    if (params.size() > 4 && !params[4].get_obj().empty()) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "queryOptions must be set to {}");
     }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);

@@ -25,7 +25,7 @@ class WalletListUnspent(BitcoinTestFramework):
         ]] * 4)
 
     def matured_at_height(self, height):
-        return unspent_total(self.nodes[0].listunspent(1, 999999, [], height))
+        return unspent_total(self.nodes[0].listunspent(1, 999999, [], False, {}, height))
 
     def run_test(self):
         def expected_matured_at_height(height):
