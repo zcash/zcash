@@ -1672,11 +1672,11 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
             "    \"to\": \"...\",            (string) If a comment to is associated with the transaction.\n"
             "  ],\n"
             "  \"removed\": [...]            (array of objects, optional) structure is the same as \"transactions\" above, only present if includeRemoved=true\n"
-            "                              Note: transactions that were re-added in the active chain will appear as-is in this array, and may thus have a positive confirmation count.\n"
+            "                              Note: currently this only returns an empty array.\n"
             "  \"lastblock\": \"lastblockhash\"     (string) The hash of the last block\n"
             "}\n"
             "\nBitcoin compatibility:\n"
-            "Compatible up to five arguments, but can only use the default value for `includeChange`."
+            "Compatible up to five arguments, but can only use the default value for `includeChange`, and only returns an empty array for \"removed\"."
             "\nExamples:\n"
             + HelpExampleCli("listsinceblock", "")
             + HelpExampleCli("listsinceblock", "\"000000000000000bacf66f7497b7dc45ef753ee9a7d38571037cdb1a57f663ad\" 6")

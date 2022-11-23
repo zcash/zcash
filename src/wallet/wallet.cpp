@@ -6960,11 +6960,10 @@ void CMerkleTx::SetMerkleBranch(const CBlock& block)
 
 int CMerkleTx::GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet, const std::optional<int>& asOfHeight) const
 {
-    int effectiveChainHeight = min(chainActive.Height(), asOfHeight.value_or(chainActive.Height()));
-
     if (hashBlock.IsNull() || nIndex == -1)
         return 0;
     AssertLockHeld(cs_main);
+    int effectiveChainHeight = min(chainActive.Height(), asOfHeight.value_or(chainActive.Height()));
 
     // Find the block it claims to be in
     BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
