@@ -5223,7 +5223,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                              bool fIncludeCoinBase,
                              bool fOnlySpendable,
                              int nMinDepth,
-                             std::set<CTxDestination>* onlyFilterByDests) const
+                             const std::set<CTxDestination>& onlyFilterByDests) const
 {
     assert(nMinDepth >= 0);
     assert(!asOfHeight.has_value() || nMinDepth > 0);
@@ -5262,9 +5262,9 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                     continue;
 
                 // Filter by specific destinations if needed
-                if (onlyFilterByDests && !onlyFilterByDests->empty()) {
+                if (!onlyFilterByDests.empty()) {
                     CTxDestination address;
-                    if (!ExtractDestination(output.scriptPubKey, address) || onlyFilterByDests->count(address) == 0) {
+                    if (!ExtractDestination(output.scriptPubKey, address) || onlyFilterByDests.count(address) == 0) {
                         continue;
                     }
                 }

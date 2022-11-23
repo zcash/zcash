@@ -1446,7 +1446,7 @@ public:
                         bool fIncludeCoinBase=true,
                         bool fOnlySpendable=false,
                         int nMinDepth = 0,
-                        std::set<CTxDestination>* onlyFilterByDests = nullptr) const;
+                        const std::set<CTxDestination>& onlyFilterByDests = std::set<CTxDestination>()) const;
 
     /**
      * Shuffle and select coins until nTargetValue is reached while avoiding

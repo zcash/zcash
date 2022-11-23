@@ -2547,7 +2547,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             true,         // fIncludeCoinBase
             false,        // fOnlySpendable
             nMinDepth,
-            destinations.empty() ? nullptr : &destinations);
+            destinations);
     for (const COutput& out : vecOutputs) {
         if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
             continue;
@@ -2555,9 +2555,6 @@ UniValue listunspent(const UniValue& params, bool fHelp)
         CTxDestination address;
         const CScript& scriptPubKey = out.tx->vout[out.i].scriptPubKey;
         bool fValidAddress = ExtractDestination(scriptPubKey, address);
-
-        if (destinations.size() && (!fValidAddress || !destinations.count(address)))
-            continue;
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("txid", out.tx->GetHash().GetHex());
