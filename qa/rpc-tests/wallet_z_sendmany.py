@@ -11,6 +11,7 @@ from test_framework.util import (
     assert_greater_than,
     assert_raises_message,
     connect_nodes_bi,
+    get_coinbase_address,
     nuparams,
     start_nodes,
     wait_and_assert_operationid_status,
@@ -170,9 +171,8 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         n0account0 = self.nodes[0].z_getnewaccount()['account']
         n0ua0 = self.nodes[0].z_getaddressforaccount(n0account0)['address']
 
-        # Change went to a fresh address, so use `ANY_TADDR` which
-        # should hold the rest of our transparent funds.
-        source = 'ANY_TADDR'
+        # Prepare to fund the UA from coinbase
+        source = get_coinbase_address(self.nodes[2])
         recipients = []
         recipients.append({"address":n0ua0, "amount":10})
 
@@ -357,12 +357,13 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         #
 
         # Send some legacy transparent funds to n1ua0, creating Sapling outputs.
+        source = get_coinbase_address(self.nodes[2])
         recipients = [{"address":n1ua0, "amount":10}]
         # This requires the AllowRevealedSenders policy...
-        opid = self.nodes[2].z_sendmany('ANY_TADDR', recipients, 1, 0)
+        opid = self.nodes[2].z_sendmany(source, recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[2], opid, 'failed', revealed_senders_msg)
         # ... which we can always override with the NoPrivacy policy.
-        opid = self.nodes[2].z_sendmany('ANY_TADDR', recipients, 1, 0, 'NoPrivacy')
+        opid = self.nodes[2].z_sendmany(source, recipients, 1, 0, 'NoPrivacy')
         wait_and_assert_operationid_status(self.nodes[2], opid)
 
         self.sync_all()
@@ -396,7 +397,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         n0ua1 = self.nodes[0].z_getaddressforaccount(n0account0, ["orchard"])['address']
         recipients = [{"address":n0ua1, "amount": 6}]
 
-        # Should fail under default and 'FullPrivacy' policies ... 
+        # Should fail under default and 'FullPrivacy' policies ...
         revealed_amounts_msg = 'Sending from the Sapling shielded pool to the Orchard shielded pool is not enabled by default because it will publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` or weaker if you wish to allow this transaction to proceed anyway.'
         opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', revealed_amounts_msg)

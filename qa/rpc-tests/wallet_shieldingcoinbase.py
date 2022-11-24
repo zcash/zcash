@@ -88,8 +88,8 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
             errorString = e.error['message']
         assert_equal("Invalid from address, no payment source found for address.", errorString);
 
-        # This send will fail because our consensus does not allow transparent change when 
-        # shielding a coinbase utxo. 
+        # This send will fail because our consensus does not allow transparent change when
+        # shielding a coinbase utxo.
         # TODO: After upgrading to unified address support, change will be sent to the most
         # recent shielded spend authority corresponding to the account of the source address
         # and this send will succeed, causing this test to fail.
@@ -98,9 +98,9 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
 
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
         error_result = wait_and_assert_operationid_status_result(
-                self.nodes[0], 
-                myopid, "failed", 
-                "When shielding coinbase funds, the wallet does not allow any change. The proposed transaction would result in 8.76542211 in change.", 
+                self.nodes[0],
+                myopid, "failed",
+                "When shielding coinbase funds, the wallet does not allow any change. The proposed transaction would result in 8.76542211 in change.",
                 10)
 
         # Test that the returned status object contains a params field with the operation's input parameters
@@ -225,7 +225,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         amount = Decimal('10.0') - DEFAULT_FEE - Decimal('0.00000001')    # this leaves change at 1 zatoshi less than dust threshold
         recipients.append({"address":self.nodes[0].getnewaddress(), "amount":amount })
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 1)
-        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 10.00, need 0.00000053 more to avoid creating invalid change output 0.00000001 (dust threshold is 0.00000054)")
+        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 10.00, need 0.00000053 more to avoid creating invalid change output 0.00000001 (dust threshold is 0.00000054); note that coinbase outputs will not be selected if you specify ANY_TADDR or if any transparent recipients are included.")
 
         # Send will fail because send amount is too big, even when including coinbase utxos
         errorString = ""

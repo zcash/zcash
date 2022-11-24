@@ -80,51 +80,39 @@ class WalletListUnspent(BitcoinTestFramework):
 
         opid = self.nodes[0].z_sendmany(
                 'ANY_TADDR',
-                # FIXME: #6262 The amount here _should_ be 2, but because of a
-                #        bug in the selector for `ANY_TADDR`, it’s selecting
-                #        transparent coinbase, which also means we can’t have
-                #        change. When that bug is fixed, the test should fail
-                #        here, and we can switch it back to 2 (and cascade the
-                #        corrected amounts mentioned below.
-                [{'address': n1uaddr, 'amount': 10}],
+                [{'address': n1uaddr, 'amount': 2}],
                 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.nodes[0].generate(2)
         self.sync_all() # height 207
-        # FIXME: #6262, should be `expected_matured_at_height(207) - 10 + 10 - 2`
-        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(207) - 10 + 10 - 10)
+        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(207) - 10 + 10 - 2)
 
         opid = self.nodes[0].z_sendmany(
                 'ANY_TADDR',
-                # FIXME: Should be 3 (see above)
-                [{'address': n1uaddr, 'amount': 10}],
+                [{'address': n1uaddr, 'amount': 3}],
                 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.nodes[0].generate(2)
         self.sync_all() # height 209
-        # FIXME: #6262, should be `expected_matured_at_height(209) - 10 + 10 - 2 - 3`
-        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(209) - 10 + 10 - 10 - 10)
+        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(209) - 10 + 10 - 2 - 3)
 
         opid = self.nodes[0].z_sendmany(
                 'ANY_TADDR',
-                # FIXME: Should be 5 (see above)
-                [{'address': n1uaddr, 'amount': 10}],
+                [{'address': n1uaddr, 'amount': 5}],
                 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.nodes[0].generate(2)
         self.sync_all() # height 211
-        # FIXME: #6262, should be `expected_matured_at_height(211) - 10 + 10 - 2 - 3 - 5`
-        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(211) - 10 + 10 - 10 - 10 - 10)
+        assert_equal(self.nodes[0].getbalance(), expected_matured_at_height(211) - 10 + 10 - 2 - 3 - 5)
 
         # check balances at various past points in the chain
-        # FIXME: #6262, change the comparison amounts when the above changes are made.
         assert_equal(self.matured_at_height(205), expected_matured_at_height(205) - 10 + 10)
-        assert_equal(self.matured_at_height(207), expected_matured_at_height(207) - 10 + 10 - 10)
-        assert_equal(self.matured_at_height(209), expected_matured_at_height(209) - 10 + 10 - 10 - 10)
-        assert_equal(self.matured_at_height(211), expected_matured_at_height(211) - 10 + 10 - 10 - 10 - 10)
+        assert_equal(self.matured_at_height(207), expected_matured_at_height(207) - 10 + 10 - 2)
+        assert_equal(self.matured_at_height(209), expected_matured_at_height(209) - 10 + 10 - 2 - 3)
+        assert_equal(self.matured_at_height(211), expected_matured_at_height(211) - 10 + 10 - 2 - 3 - 5)
 
 if __name__ == '__main__':
     WalletListUnspent().main()
