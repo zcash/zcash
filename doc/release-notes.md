@@ -35,7 +35,7 @@ specified by this argument:
 * `z_getbalanceforaccount`
 * `z_getbalanceforviewingkey`
 * `z_getmigrationstatus`
-* `z_getnotescount` (also adds `minconf` parameter)
+* `z_getnotescount`
 * `z_listreceivedbyaddress`
 * `z_listunspent`
 
