@@ -67,12 +67,10 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     for (const SendManyRecipient& recipient : recipients_) {
         std::visit(match {
             [&](const CKeyID& addr) {
-                transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
                 recipientPools_.insert(OutputPool::Transparent);
             },
             [&](const CScriptID& addr) {
-                transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
                 recipientPools_.insert(OutputPool::Transparent);
             },
@@ -181,7 +179,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
     // Allow transparent coinbase inputs if there are no transparent
     // recipients.
-    bool allowTransparentCoinbase = transparentRecipients_ == 0;
+    bool allowTransparentCoinbase = !recipientPools_.count(OutputPool::Transparent);
 
     // Set the dust threshold so that we can select enough inputs to avoid
     // creating dust change amounts.
@@ -196,6 +194,8 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     }
     if (!spendable.LimitToAmount(targetAmount, dustThreshold, recipientPools_)) {
         CAmount changeAmount{spendable.Total() - targetAmount};
+        std::string insufficientFundsMessage =
+            strprintf("Insufficient funds: have %s", FormatMoney(spendable.Total()));
         if (changeAmount > 0 && changeAmount < dustThreshold) {
             // TODO: we should provide the option for the caller to explicitly
             // forego change (definitionally an amount below the dust amount)
@@ -203,34 +203,29 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             // creating dust change, rather than prohibit them from sending
             // entirely in this circumstance.
             // (Daira disagrees, as this could leak information to the recipient)
-            throw JSONRPCError(
-                    RPC_WALLET_INSUFFICIENT_FUNDS,
-                    strprintf(
-                        "Insufficient funds: have %s, need %s more to avoid creating invalid change output %s "
-                        "(dust threshold is %s)",
-                        FormatMoney(spendable.Total()),
-                        FormatMoney(dustThreshold - changeAmount),
-                        FormatMoney(changeAmount),
-                        FormatMoney(dustThreshold)));
+            insufficientFundsMessage +=
+                strprintf(
+                    ", need %s more to avoid creating invalid change output %s (dust threshold is %s)",
+                    FormatMoney(dustThreshold - changeAmount),
+                    FormatMoney(changeAmount),
+                    FormatMoney(dustThreshold));
         } else {
-            bool isFromUa = std::holds_alternative<libzcash::UnifiedAddress>(ztxoSelector_.GetPattern());
-            throw JSONRPCError(
-                    RPC_WALLET_INSUFFICIENT_FUNDS,
-                    strprintf(
-                        "Insufficient funds: have %s, need %s",
-                        FormatMoney(spendable.Total()), FormatMoney(targetAmount))
-                        + (allowTransparentCoinbase ? "" :
-                            "; note that coinbase outputs will not be selected if you specify "
-                            "ANY_TADDR or if any transparent recipients are included.")
-                        + ((!isFromUa || strategy_.AllowLinkingAccountAddresses()) ? "" :
-                            " (This transaction may require selecting transparent coins that were sent "
-                            "to multiple Unified Addresses, which is not enabled by default because "
-                            "it would create a public link between the transparent receivers of these "
-                            "addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
-                            "parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to "
-                            "allow this transaction to proceed anyway.)")
-                    );
+            insufficientFundsMessage += strprintf(", need %s", FormatMoney(targetAmount));
         }
+        bool isFromUa = std::holds_alternative<libzcash::UnifiedAddress>(ztxoSelector_.GetPattern());
+        throw JSONRPCError(
+                RPC_WALLET_INSUFFICIENT_FUNDS,
+                insufficientFundsMessage
+                + (allowTransparentCoinbase && ztxoSelector_.SelectsTransparentCoinbase() ? "" :
+                   "; note that coinbase outputs will not be selected if you specify "
+                   "ANY_TADDR or if any transparent recipients are included.")
+                + ((!isFromUa || strategy_.AllowLinkingAccountAddresses()) ? "" :
+                   " (This transaction may require selecting transparent coins that were sent "
+                   "to multiple Unified Addresses, which is not enabled by default because "
+                   "it would create a public link between the transparent receivers of these "
+                   "addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
+                   "parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to "
+                   "allow this transaction to proceed anyway.)"));
     }
 
     if (!(spendable.utxos.empty() || strategy_.AllowRevealedSenders())) {
