@@ -93,7 +93,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.pushKV("walletversion", pwalletMain->GetVersion());
-        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance()));
+        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance(std::nullopt)));
     }
 #endif
     obj.pushKV("blocks",        (int)chainActive.Height());
