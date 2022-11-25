@@ -281,7 +281,7 @@ private:
      *
      * First, epoch_check decrements and checks the cheap heuristic, and then does
      * a more expensive scan if the cheap heuristic runs out. If the expensive
-     * scan suceeds, the epochs are aged and old elements are allow_erased. The
+     * scan succeeds, the epochs are aged and old elements are allow_erased. The
      * cheap heuristic is reset to retrigger after the worst case growth of the
      * current epoch's elements would exceed the epoch_size.
      */
