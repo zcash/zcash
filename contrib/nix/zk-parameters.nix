@@ -4,7 +4,7 @@
 , runCommand
 , src
 , stdenv
-, wget
+, curl
 }:
 
 runCommand "zk-parameters" {
@@ -16,10 +16,10 @@ runCommand "zk-parameters" {
   nativeBuildInputs = [
     cacert
     flock
-    wget
+    curl
   ];
 
-  outputHash = "sha256-jLmX8/YqHKU2NXBj1VMEhHiwgneY2YVqS6qUFlwHYQI=";
+  outputHash = "sha256-ElJg8gLiHvwgFlUXADzSlYheEjxQcWWKNoVC4+d/Ss4=";
   outputHashAlgo = "sha256";
   outputHashMode = "recursive";
 }
