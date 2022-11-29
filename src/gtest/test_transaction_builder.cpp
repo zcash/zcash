@@ -39,7 +39,7 @@ TEST(TransactionBuilder, TransparentToSapling)
     auto pk = *ivk.address(d);
 
     // Create a shielding transaction from transparent to Sapling
-    // 0.0005 t-ZEC in, 0.0004 z-ZEC out, default fee
+    // 0.00005 t-ZEC in, 0.00004 z-ZEC out, default fee
     auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
     builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 5000);
     builder.AddSaplingOutput(fvk_from.ovk, pk, 4000, {});
@@ -73,7 +73,7 @@ TEST(TransactionBuilder, SaplingToSapling) {
     auto testNote = GetTestSaplingNote(pa, 4000);
 
     // Create a Sapling-only transaction
-    // 0.0004 z-ZEC in, 0.00025 z-ZEC out, default fee, 0.00005 z-ZEC change
+    // 0.00004 z-ZEC in, 0.000025 z-ZEC out, default fee, 0.000005 z-ZEC change
     auto builder = TransactionBuilder(consensusParams, 2, std::nullopt);
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
 
@@ -114,8 +114,8 @@ TEST(TransactionBuilder, SaplingToSprout) {
     auto sproutAddr = sproutSk.address();
 
     // Create a Sapling-to-Sprout transaction (reusing the note from above)
-    // - 0.0004 Sapling-ZEC in      - 0.00025 Sprout-ZEC out
-    //                              - 0.00005 Sapling-ZEC change
+    // - 0.00004 Sapling-ZEC in     - 0.000025 Sprout-ZEC out
+    //                              - 0.000005 Sapling-ZEC change
     //                              - default t-ZEC fee
     auto builder = TransactionBuilder(consensusParams, 2, std::nullopt, nullptr);
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
@@ -245,7 +245,7 @@ TEST(TransactionBuilder, TransparentToOrchard)
     auto orchardAnchor = fakeDB.GetBestAnchor(ShieldedType::ORCHARD);
 
     // Create a shielding transaction from transparent to Orchard
-    // 0.0005 t-ZEC in, 0.0004 z-ZEC out, default fee
+    // 0.00005 t-ZEC in, 0.00004 z-ZEC out, default fee
     auto builder = TransactionBuilder(consensusParams, 1, orchardAnchor, &keystore);
     builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 5000);
     builder.AddOrchardOutput(std::nullopt, recipient, 4000, std::nullopt);
@@ -315,19 +315,19 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
     auto testNote = GetTestSaplingNote(pa, 5999);
 
     // Fail if there is only a Sapling output
-    // 0.0005 z-ZEC out, default fee
+    // 0.00005 z-ZEC out, default fee
     auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
     builder.AddSaplingOutput(fvk.ovk, pa, 5000, {});
     EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
     // Fail if there is only a transparent output
-    // 0.0005 t-ZEC out, default fee
+    // 0.00005 t-ZEC out, default fee
     builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
     builder.AddTransparentOutput(taddr, 5000);
     EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
     // Fails if there is insufficient input
-    // 0.0005 t-ZEC out, default fee, 0.00059999 z-ZEC in
+    // 0.00005 t-ZEC out, default fee, 0.00005999 z-ZEC in
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
     EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
