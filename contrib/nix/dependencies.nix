@@ -10,8 +10,8 @@ final: previous: {
         sha256 = "sha256-/uQQLO7ZKnimap4ual/dHNwd4nTvoo4+3qZ/HqjxLuA=";
       };
     } ''
-      mkdir -p $out
-      cp $src/ctaes.c $src/ctaes.h $out/
+      mkdir -p $out/include
+      cp $src/ctaes.c $src/ctaes.h $out/include/
     '';
 
   leveldb =
@@ -77,8 +77,8 @@ final: previous: {
 
     installPhase = ''
       runHook preInstall
-      mkdir -p $out
-      cp tinyformat.h $out/
+      mkdir -p $out/include
+      cp tinyformat.h $out/include/
       runHook postInstall
     '';
   };

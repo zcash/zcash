@@ -57,10 +57,6 @@ llvmPackages.stdenv.mkDerivation {
     zk-parameters
   ];
 
-  # I think this is needed because the “utf8cpp” dir component is non-standard,
-  # but I don’t know why the package doesn’t set that up correctly.
-  CXXFLAGS = "-I${ctaes} -I${tinyformat} -I${utf8cpp}/include/utf8cpp";
-
   # Because of fetch-params, everything expects the parameters to be in `HOME`.
   HOME = "${zk-parameters}/var/cache";
 
@@ -75,6 +71,7 @@ llvmPackages.stdenv.mkDerivation {
     ./patches/autoreconf/make-nix-friendly.patch
     ./patches/zcash/ctaes.patch
     ./patches/zcash/tinyformat.patch
+    ./patches/zcash/utf8cpp.patch
   ];
 
   postPatch = ''
