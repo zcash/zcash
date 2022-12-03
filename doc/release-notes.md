@@ -17,6 +17,15 @@ RPC Changes
 [Deprecations](https://zcash.github.io/zcash/user/deprecation.html)
 --------------
 
+The following features have been deprecated, but remain available by default.
+These features may be disabled by setting `-allowdeprecated=none`. 18 weeks
+after this release, these features will be disabled by default and the following
+flags to `-allowdeprecated` will be required to permit their continued use:
+
+- `gbt_oldhashes`: the `finalsaplingroothash`, `lightclientroothash`, and
+  `blockcommitmentshash` fields in the output of `getblocktemplate` have been
+  replaced by the `defaultroots` field.
+
 The following previously-deprecated features have been disabled by default, and
 will be removed in 18 weeks:
 

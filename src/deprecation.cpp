@@ -12,6 +12,7 @@
 #include "chainparams.h"
 
 // Flags that enable deprecated functionality.
+bool fEnableGbtOldHashes = true;
 #ifdef ENABLE_WALLET
 bool fEnableGetNewAddress = true;
 bool fEnableGetRawChangeAddress = true;
@@ -91,6 +92,7 @@ std::optional<std::string> SetAllowedDeprecatedFeaturesFromCLIArgs() {
                 unrecMsg, GetAllowableDeprecatedFeatures());
     }
 
+    fEnableGbtOldHashes = allowdeprecated.count("gbt_oldhashes") > 0;
 #ifdef ENABLE_WALLET
     fEnableLegacyPrivacyStrategy = allowdeprecated.count("legacy_privacy") > 0;
     fEnableGetNewAddress = allowdeprecated.count("getnewaddress") > 0;

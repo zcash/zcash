@@ -37,6 +37,7 @@ the node, or if an `allowdeprecated=none` line is added to `zcash.conf`.
 
 | `feature`             | Deprecated | Feature details
 |-----------------------|------------|----------------
+| `gbt_oldhashes`       | 5.4.0      | The `finalsaplingroothash`, `lightclientroothash`, and `blockcommitmentshash` fields in the output of `getblocktemplate`, which are replaced by the `defaultroots` field.
 
 Stage 2
 -------
