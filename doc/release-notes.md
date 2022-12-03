@@ -13,3 +13,10 @@ RPC Changes
   case, they would (properly) require that the transaction didn’t have any
   change, but this could be confusing, as the documentation stated that these
   two conditions (using "ANY\_TADDR" and disallowing change) wouldn’t coincide.
+
+[Deprecations](https://zcash.github.io/zcash/user/deprecation.html)
+--------------
+
+The following previously-deprecated features have been removed:
+
+- `dumpwallet`
