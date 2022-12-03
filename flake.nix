@@ -51,6 +51,8 @@
         zcash = callPackage ./contrib/nix/zcash.nix {
           inherit (self.packages.${system}) librustzcash zk-parameters;
         };
+
+        zcashd-book = callPackage ./contrib/nix/zcashd-book.nix {};
       };
 
       apps = {
