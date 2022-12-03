@@ -37,6 +37,9 @@ class FinalSaplingRootTest(BitcoinTestFramework):
             '-reindex', # Required due to enabling -txindex
             nuparams(NU5_BRANCH_ID, 210),
             '-debug',
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
             ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         self.is_network_split=False
@@ -93,7 +96,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         saplingAddr0 = self.nodes[0].z_getnewaddress('sapling')
         recipients = []
         recipients.append({"address": saplingAddr0, "amount": Decimal('10')})
-        myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0, 'AllowRevealedSenders')
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
@@ -193,7 +196,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         taddr2 = self.nodes[0].getnewaddress()
         recipients = []
         recipients.append({"address": taddr2, "amount": Decimal('2.34')})
-        myopid = self.nodes[1].z_sendmany(saplingAddr1, recipients, 1, 0)
+        myopid = self.nodes[1].z_sendmany(saplingAddr1, recipients, 1, 0, 'AllowRevealedRecipients')
         mytxid = wait_and_assert_operationid_status(self.nodes[1], myopid)
 
         self.sync_all()

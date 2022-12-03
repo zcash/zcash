@@ -22,6 +22,7 @@ class WalletListUnspent(BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir, [[
             nuparams(NU5_BRANCH_ID, 201),
+            '-allowdeprecated=getnewaddress',
         ]] * 4)
 
     def matured_at_height(self, height):

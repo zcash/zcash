@@ -17,6 +17,19 @@ RPC Changes
 [Deprecations](https://zcash.github.io/zcash/user/deprecation.html)
 --------------
 
+The following previously-deprecated features have been disabled by default, and
+will be removed in 18 weeks:
+
+- `legacy_privacy`
+- `getnewaddress`
+- `getrawchangeaddress`
+- `z_getbalance`
+- `z_gettotalbalance`
+- `z_getnewaddress`
+- `z_listaddresses`
+- `addrtype`
+- `wallettxvjoinsplit`
+
 The following previously-deprecated features have been removed:
 
 - `dumpwallet`

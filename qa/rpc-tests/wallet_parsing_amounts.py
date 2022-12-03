@@ -11,7 +11,10 @@ from decimal import Decimal
 # Test wallet address behaviour across network upgrades
 class WalletAmountParsingTest(BitcoinTestFramework):
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir)
+        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[[
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+        ]] * 3)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)

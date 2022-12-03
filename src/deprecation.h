@@ -26,6 +26,13 @@ static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
 
     // Wallet-level features
 #ifdef ENABLE_WALLET
+#endif
+}};
+static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
+    // Node-level features
+
+    // Wallet-level features
+#ifdef ENABLE_WALLET
     "legacy_privacy",
     "getnewaddress",
     "getrawchangeaddress",
@@ -35,10 +42,6 @@ static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
     "z_listaddresses",
     "addrtype",
     "wallettxvjoinsplit"
-#endif
-}};
-static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
-#ifdef ENABLE_WALLET
 #endif
 }};
 

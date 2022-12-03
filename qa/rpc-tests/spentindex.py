@@ -32,7 +32,13 @@ class SpentIndexTest(BitcoinTestFramework):
 
         self.nodes = start_nodes(
             3, self.options.tmpdir,
-            [['-debug', '-txindex', '-experimentalfeatures', '-insightexplorer']]*3)
+            [[
+                '-debug',
+                '-txindex',
+                '-experimentalfeatures',
+                '-insightexplorer',
+                '-allowdeprecated=getnewaddress',
+            ]]*3)
         connect_nodes(self.nodes[0], 1)
         connect_nodes(self.nodes[0], 2)
 

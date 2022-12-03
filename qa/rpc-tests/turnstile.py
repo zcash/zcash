@@ -40,6 +40,10 @@ from test_framework.util import (
 )
 from decimal import Decimal
 
+BASE_ARGS = [
+    '-allowdeprecated=z_getnewaddress',
+    '-allowdeprecated=z_getbalance',
+]
 TURNSTILE_ARGS = ['-experimentalfeatures',
                   '-developersetpoolsizezero']
 
@@ -51,7 +55,7 @@ class TurnstileTest (BitcoinTestFramework):
         self.cache_behavior = 'clean'
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[BASE_ARGS] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         self.is_network_split=False
@@ -68,7 +72,7 @@ class TurnstileTest (BitcoinTestFramework):
 
     # Helper method to start a single node with extra args and sync to the network
     def start_and_sync_node(self, index, args=[]):
-        self.nodes[index] = start_node(index, self.options.tmpdir, extra_args=args)
+        self.nodes[index] = start_node(index, self.options.tmpdir, extra_args=BASE_ARGS+args)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -119,7 +123,7 @@ class TurnstileTest (BitcoinTestFramework):
         # Node 0 creates an unshielding transaction
         recipients = []
         recipients.append({"address": taddr0, "amount": Decimal('1')})
-        myopid = self.nodes[0].z_sendmany(dest_addr, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(dest_addr, recipients, 1, 0, 'AllowRevealedRecipients')
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Verify transaction appears in mempool of nodes

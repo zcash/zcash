@@ -34,7 +34,14 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
 
     # Start nodes with -regtestshieldcoinbase to set fCoinbaseMustBeShielded to true.
     def setup_network(self, split=False):
-        self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[['-regtestshieldcoinbase', '-debug=zrpcunsafe']] * 4 )
+        self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[[
+            '-regtestshieldcoinbase',
+            '-debug=zrpcunsafe',
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
+            '-allowdeprecated=z_gettotalbalance',
+        ]] * 4 )
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -96,7 +103,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":myzaddr, "amount":Decimal('1.23456789')})
 
-        myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
+        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 10, DEFAULT_FEE, 'AllowRevealedSenders')
         error_result = wait_and_assert_operationid_status_result(
                 self.nodes[0],
                 myopid, "failed",
@@ -120,7 +127,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         shieldvalue = Decimal('20.0') - DEFAULT_FEE
         recipients = []
         recipients.append({"address":myzaddr, "amount": shieldvalue})
-        myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
+        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 10, DEFAULT_FEE, 'AllowRevealedSenders')
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
 
@@ -129,7 +136,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         assert(len(results) == 0)
         results = self.nodes[0].z_listunspent(0) # set minconf to zero
         assert(len(results) == 1)
-        assert_equal(results[0]["type"], "sapling")
+        assert_equal(results[0]["pool"], "sapling")
         assert_equal(results[0]["address"], myzaddr)
         assert_equal(results[0]["amount"], shieldvalue)
         assert_equal(results[0]["confirmations"], 0)
@@ -141,7 +148,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         # Verify that z_listunspent returns one note which has been confirmed
         results = self.nodes[0].z_listunspent()
         assert(len(results) == 1)
-        assert_equal(results[0]["type"], "sapling")
+        assert_equal(results[0]["pool"], "sapling")
         assert_equal(results[0]["address"], myzaddr)
         assert_equal(results[0]["amount"], shieldvalue)
         assert_equal(results[0]["confirmations"], 1)
@@ -150,7 +157,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         # Verify that z_listunspent returns note for watchonly address on node 3.
         results = self.nodes[3].z_listunspent(1, 999, True)
         assert(len(results) == 1)
-        assert_equal(results[0]["type"], "sapling")
+        assert_equal(results[0]["pool"], "sapling")
         assert_equal(results[0]["address"], myzaddr)
         assert_equal(results[0]["amount"], shieldvalue)
         assert_equal(results[0]["confirmations"], 1)
@@ -198,7 +205,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         unshieldvalue = Decimal('10.0')
         recipients = []
         recipients.append({"address":mytaddr, "amount": unshieldvalue})
-        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1)
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedRecipients')
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert(mytxid is not None)
         self.sync_all()
@@ -240,7 +247,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         recipients.append({"address":self.nodes[1].getnewaddress(), "amount":Decimal('10000.0')})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 1)
         wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 10.00, need 10000.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR or if any transparent recipients are included.")
-        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1)
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedRecipients')
         wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 9.99998, need 10000.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR or if any transparent recipients are included.")
 
         # Send will fail because of insufficient funds unless sender uses coinbase utxos
@@ -276,14 +283,14 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         self.nodes[0].getinfo()
         # Issue #2263 Workaround END
 
-        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1)
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedRecipients')
         try:
             wait_and_assert_operationid_status(self.nodes[0], myopid)
         except JSONRPCException as e:
             print("JSONRPC error: "+e.error['message'])
             assert(False)
         except Exception as e:
-            print("Unexpected exception caught during testing: ", e.error['message'], str(sys.exc_info()[0]))
+            print("Unexpected exception caught during testing: ", e, str(sys.exc_info()[0]))
             assert(False)
 
         self.sync_all()

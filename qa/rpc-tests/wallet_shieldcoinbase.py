@@ -22,6 +22,8 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
             '-regtestprotectcoinbase',
             '-debug=zrpcunsafe',
             nuparams(NU5_BRANCH_ID, self.nu5_activation),
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
         ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))

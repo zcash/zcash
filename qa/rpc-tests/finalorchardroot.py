@@ -37,6 +37,9 @@ class FinalOrchardRootTest(BitcoinTestFramework):
             '-reindex', # Required due to enabling -txindex
             nuparams(NU5_BRANCH_ID, 200),
             '-debug',
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
             ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         self.is_network_split=False

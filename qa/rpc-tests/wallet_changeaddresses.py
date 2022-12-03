@@ -5,9 +5,11 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
+    SAPLING_BRANCH_ID,
     connect_nodes_bi,
     get_coinbase_address,
     initialize_chain_clean,
+    nuparams,
     start_node,
     wait_and_assert_operationid_status,
 )
@@ -23,9 +25,10 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
 
     def setup_network(self):
         args = [
-            '-nuparams=5ba81b19:1', # Overwinter
-            '-nuparams=76b809bb:1', # Sapling
-            '-txindex'              # Avoid JSONRPC error: No information available about transaction
+            nuparams(SAPLING_BRANCH_ID, 1),
+            '-txindex',              # Avoid JSONRPC error: No information available about transaction
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
         ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))
@@ -48,21 +51,21 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
         taddrSource = self.nodes[0].getnewaddress()
         for _ in range(6):
             recipients = [{"address": taddrSource, "amount": Decimal('2')}]
-            myopid = self.nodes[0].z_sendmany(midAddr, recipients, 1, 0)
+            myopid = self.nodes[0].z_sendmany(midAddr, recipients, 1, 0, 'AllowRevealedRecipients')
             wait_and_assert_operationid_status(self.nodes[0], myopid)
             self.sync_all()
             self.nodes[1].generate(1)
             self.sync_all()
 
-        def check_change_taddr_reuse(target):
+        def check_change_taddr_reuse(target, policy):
             recipients = [{"address": target, "amount": Decimal('1')}]
 
             # Send funds to recipient address twice
-            myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, 0)
+            myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, 0, policy)
             txid1 = wait_and_assert_operationid_status(self.nodes[0], myopid)
             self.nodes[1].generate(1)
             self.sync_all()
-            myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, 0)
+            myopid = self.nodes[0].z_sendmany(taddrSource, recipients, 1, 0, policy)
             txid2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
             self.nodes[1].generate(1)
             self.sync_all()
@@ -84,10 +87,10 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
 
         print()
         print('Checking z_sendmany(taddr->Sapling)')
-        check_change_taddr_reuse(saplingAddr)
+        check_change_taddr_reuse(saplingAddr, 'AllowRevealedSenders')
         print()
         print('Checking z_sendmany(taddr->taddr)')
-        check_change_taddr_reuse(taddr)
+        check_change_taddr_reuse(taddr, 'AllowFullyTransparent')
 
 if __name__ == '__main__':
     WalletChangeAddressesTest().main()

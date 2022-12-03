@@ -19,7 +19,10 @@ class WalletTest (BitcoinTestFramework):
         self.num_nodes = 4
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir)
+        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[[
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getbalance',
+        ]] * 3)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -215,7 +218,7 @@ class WalletTest (BitcoinTestFramework):
         # check integer balances from z_getbalance
         assert_equal(self.nodes[2].z_getbalance(mytaddr, 1, True), 1000000000)
 
-        mytxdetails = self.nodes[2].gettransaction(mytxid)
+        mytxdetails = self.nodes[2].getrawtransaction(mytxid, 1)
         myvjoinsplits = mytxdetails["vjoinsplit"]
         assert_equal(0, len(myvjoinsplits))
         assert("joinSplitPubKey" not in mytxdetails)

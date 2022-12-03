@@ -23,7 +23,12 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 5)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(5, self.options.tmpdir)
+        self.nodes = start_nodes(5, self.options.tmpdir, extra_args=[[
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
+            '-allowdeprecated=z_gettotalbalance',
+        ]] * 5)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -118,7 +123,7 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         verify_utxos(charlie, amounts[:4], ipk_zaddr["address"])
 
         # address is Sapling
-        assert_equal(ipk_zaddr["type"], "sapling")
+        assert_equal(ipk_zaddr["address_type"], "sapling")
 
         # Verify idempotent behavior:
         ipk_zaddr2 = charlie.z_importkey(bob_privkey)

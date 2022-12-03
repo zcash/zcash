@@ -54,10 +54,10 @@ class WalletDeprecationTest(BitcoinTestFramework):
         # Pick a subset of the deprecated RPC methods to test with. This test assumes that
         # the deprecation feature name is the same as the RPC method name.
         DEFAULT_ENABLED = [
-            "getnewaddress",
-            "z_getnewaddress",
         ]
         DEFAULT_DISABLED = [
+            "getnewaddress",
+            "z_getnewaddress",
         ]
 
         # RPC methods that are deprecated but enabled by default should succeed
