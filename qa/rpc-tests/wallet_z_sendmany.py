@@ -317,7 +317,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         # If we try to send 3 ZEC from n1ua0, it will fail with too-few funds.
         recipients = [{"address":n0ua0, "amount":3}]
-        linked_addrs_msg = 'Insufficient funds: have 2.00, need 3.00 (This transaction may require selecting transparent coins that were sent to multiple Unified Addresses, which is not enabled by default because it would create a public link between the transparent receivers of these addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to allow this transaction to proceed anyway.)'
+        linked_addrs_msg = 'Insufficient funds: have 2.00, need 3.00. (This transaction may require selecting transparent coins that were sent to multiple Unified Addresses, which is not enabled by default because it would create a public link between the transparent receivers of these addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to allow this transaction to proceed anyway.)'
         opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0)
         wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', linked_addrs_msg)
 

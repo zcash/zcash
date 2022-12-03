@@ -202,7 +202,8 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             // and send the extra to the recipient or the miner fee to avoid
             // creating dust change, rather than prohibit them from sending
             // entirely in this circumstance.
-            // (Daira disagrees, as this could leak information to the recipient)
+            // (Daira disagrees, as this could leak information to the recipient
+            // or to a viewing key holder.)
             insufficientFundsMessage +=
                 strprintf(
                     ", need %s more to avoid creating invalid change output %s (dust threshold is %s)",
@@ -216,7 +217,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
         throw JSONRPCError(
                 RPC_WALLET_INSUFFICIENT_FUNDS,
                 insufficientFundsMessage
-                + (allowTransparentCoinbase && ztxoSelector_.SelectsTransparentCoinbase() ? "" :
+                + (allowTransparentCoinbase && ztxoSelector_.SelectsTransparentCoinbase() ? "." :
                    "; note that coinbase outputs will not be selected if you specify "
                    "ANY_TADDR or if any transparent recipients are included.")
                 + ((!isFromUa || strategy_.AllowLinkingAccountAddresses()) ? "" :
