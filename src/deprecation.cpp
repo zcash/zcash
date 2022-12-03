@@ -20,9 +20,6 @@ bool fEnableZGetBalance = true;
 bool fEnableZGetTotalBalance = true;
 bool fEnableZListAddresses = true;
 bool fEnableLegacyPrivacyStrategy = true;
-bool fEnableZCRawReceive = true;
-bool fEnableZCRawJoinSplit = true;
-bool fEnableZCRawKeygen = true;
 bool fEnableAddrTypeField = true;
 bool fEnableWalletTxVJoinSplit = true;
 #endif
@@ -102,9 +99,6 @@ std::optional<std::string> SetAllowedDeprecatedFeaturesFromCLIArgs() {
     fEnableZGetBalance = allowdeprecated.count("z_getbalance") > 0;
     fEnableZGetTotalBalance = allowdeprecated.count("z_gettotalbalance") > 0;
     fEnableZListAddresses = allowdeprecated.count("z_listaddresses") > 0;
-    fEnableZCRawReceive = allowdeprecated.count("zcrawreceive") > 0;
-    fEnableZCRawJoinSplit = allowdeprecated.count("zcrawjoinsplit") > 0;
-    fEnableZCRawKeygen = allowdeprecated.count("zcrawkeygen") > 0;
     fEnableAddrTypeField = allowdeprecated.count("addrtype") > 0;
     fEnableWalletTxVJoinSplit = allowdeprecated.count("wallettxvjoinsplit") > 0;
 #endif

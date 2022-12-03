@@ -38,7 +38,7 @@ Options:
        selected from among {"none", "addrtype", "getnewaddress",
        "getrawchangeaddress", "legacy_privacy", "wallettxvjoinsplit",
        "z_getbalance", "z_getnewaddress", "z_gettotalbalance",
-       "z_listaddresses", "zcrawjoinsplit", "zcrawkeygen", "zcrawreceive"}
+       "z_listaddresses"}
 
   -blocknotify=<cmd>
        Execute command when the best block changes (%s in cmd is replaced by

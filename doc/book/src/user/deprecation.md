@@ -66,11 +66,3 @@ Stage 2
 Each feature in the lists below may be enabled by adding `-allowdeprecated=<feature>`
 to the CLI arguments when starting the node, or by adding an `allowdeprecated=<feature>`
 line to `zcash.conf`.
-
-### Disabled in 5.0.0
-
-The following features are disabled by default, and will be removed in release 5.3.0.
-
-  - `zcrawreceive` - The `zcrawreceive` RPC method is disabled.
-  - `zcrawjoinsplit` - The `zcrawjoinsplit` RPC method is disabled.
-  - `zcrawkeygen` - The `zcrawkeygen` RPC method is disabled.

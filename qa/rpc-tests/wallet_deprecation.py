@@ -58,7 +58,6 @@ class WalletDeprecationTest(BitcoinTestFramework):
             "z_getnewaddress",
         ]
         DEFAULT_DISABLED = [
-            "zcrawkeygen",
         ]
 
         # RPC methods that are deprecated but enabled by default should succeed

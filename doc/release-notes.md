@@ -20,3 +20,6 @@ RPC Changes
 The following previously-deprecated features have been removed:
 
 - `dumpwallet`
+- `zcrawreceive`
+- `zcrawjoinsplit`
+- `zcrawkeygen`
