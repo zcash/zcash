@@ -8,7 +8,13 @@
     nixpkgs,
     ...
   }:
-    flake-utils.lib.eachDefaultSystem (system: let
+    {
+      overlays.default = final: prev: {
+        zcash = self.packages.${final.system}.zcash;
+        zcashd-book = self.packages.${final.system}.zcashd-book;
+      };
+    }
+    // flake-utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {
         inherit system;
         overlays = [(import ./contrib/nix/dependencies.nix)];
@@ -35,10 +41,6 @@
       callPackage = pkgs.lib.callPackageWith (pkgs // {inherit src;});
       callPackages = pkgs.lib.callPackagesWith (pkgs // {inherit src;});
     in {
-      checks = callPackages ./contrib/nix/checks.nix {};
-
-      formatter = pkgs.alejandra;
-
       packages = {
         default = self.packages.${system}.zcash;
 
@@ -89,27 +91,17 @@
         };
       };
 
-      devShells =
-        {
-          default = self.devShells.${system}.zcash;
+      devShells = {
+        default = pkgs.mkShell {
+          inputsFrom = builtins.attrValues self.packages.${system};
 
-          librustzcash = self.packages.${system}.librustzcash.overrideAttrs (old: {
-            nativeBuildInputs =
-              old.nativeBuildInputs
-              ++ [
-                pkgs.rust-analyzer # LSP server
-              ];
-          });
-
-          zcash = self.packages.${system}.zcash.overrideAttrs (old: {
-            nativeBuildInputs =
-              old.nativeBuildInputs
-              ++ [
-                pkgs.lldb # debugger
-                pkgs.valgrind # debugger
-              ];
-          });
-        }
+          nativeBuildInputs = [
+            pkgs.lldb # debugger
+            pkgs.rust-analyzer # LSP server
+            # pkgs.valgrind # debugger # currently broken?
+          ];
+        };
+      }
         // (
           # `pkgs.debian-devscripts` is Linux-specific, so we can only do a
           # release from there.
@@ -120,7 +112,6 @@
             full_test_suite = callPackage ./contrib/nix/full_test_suite.nix {
               inherit src;
               inherit (self.packages.${system}) zcash;
-
             };
 
             release = pkgs.mkShell {
@@ -139,23 +130,25 @@
           }
           else {}
         );
+
+      checks = callPackages ./contrib/nix/checks.nix {};
+
+      formatter = pkgs.alejandra;
     });
 
   inputs = {
     crane = {
       inputs.nixpkgs.follows = "nixpkgs";
-      url = "github:ipetkov/crane";
+      url = github:ipetkov/crane;
     };
 
     flake-compat = {
-      url = "github:edolstra/flake-compat";
       flake = false;
+      url = github:edolstra/flake-compat;
     };
 
-    flake-utils.url = "github:numtide/flake-utils";
+    flake-utils.url = github:numtide/flake-utils;
 
-    # We use unstable because cxx-rs isn’t in a release yet … but we should
-    # probably be able to use 22.11 or whatever once it’s out.
-    nixpkgs.url = "nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = github:NixOS/nixpkgs/release-22.11;
   };
 }
