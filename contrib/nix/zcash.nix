@@ -58,14 +58,7 @@ llvmPackages.stdenv.mkDerivation {
   ];
 
   # Because of fetch-params, everything expects the parameters to be in `HOME`.
-  HOME = "${zk-parameters}/var/cache";
-
-  # So we can override the paths to libraries provided by the “depends/” build
-  # in the Makefile.
-  NIX_LIBLEVELDB = leveldb;
-  NIX_LIBRUSTZCASH = librustzcash;
-  NIX_LIBSECP256K1 = secp256k1;
-  NIX_LIBUNIVALUE = univalue;
+  HOME = "${zk-parameters}/share/zcash";
 
   patches = [
     ./patches/autoreconf/make-nix-friendly.patch
@@ -75,20 +68,31 @@ llvmPackages.stdenv.mkDerivation {
   ];
 
   postPatch = ''
+    # Overrides the paths to libraries provided by the “depends/” build in the
+    # Makefile.
     substituteInPlace ./src/Makefile.am \
-      --subst-var NIX_LIBLEVELDB \
-      --subst-var NIX_LIBRUSTZCASH \
-      --subst-var NIX_LIBSECP256K1 \
-      --subst-var NIX_LIBUNIVALUE
+      --subst-var-by NIX_LIBLEVELDB "${leveldb}" \
+      --subst-var-by NIX_LIBRUSTZCASH "${librustzcash}" \
+      --subst-var-by NIX_LIBSECP256K1 "${secp256k1}" \
+      --subst-var-by NIX_LIBUNIVALUE "${univalue}"
     patchShebangs ./contrib/devtools/security-check.py
-    patchShebangs ./src/test/bitcoin-util-test.py
   '';
 
-  configureFlags = ["--with-boost-libdir=${boost}/lib"];
+  configureFlags = ["--with-boost=${boost}"];
 
   doCheck = true;
 
   postCheck = ''
-    make -C src check-security
+    make -C ./src check-security
   '';
+
+  postInstall = ''
+    COMPLETIONS_DIR=$out/share/bash-completion/completions
+    mkdir -p "$COMPLETIONS_DIR"
+    cp ./contrib/zcashd.bash-completion $COMPLETIONS_DIR/zcashd
+    cp ./contrib/zcash-cli.bash-completion $COMPLETIONS_DIR/zcash-cli
+    cp ./contrib/zcash-tx.bash-completion $COMPLETIONS_DIR/zcash-tx
+  '';
+
+  doInstallCheck = true;
 }
