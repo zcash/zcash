@@ -4,57 +4,59 @@
 # bdb 18.1.40 2020-09-01
 #
 
-native_cxxbridge 1.0.80 2022-12-03
-native_cxxbridge 1.0.81 2022-12-03
-native_cxxbridge 1.0.82 2022-12-03
-native_rust 1.65.0 2022-12-03
-rustcxx 1.0.80 2022-12-03
-rustcxx 1.0.81 2022-12-03
-rustcxx 1.0.82 2022-12-03
-utfcpp 3.2.2 2022-12-03
+native_cxxbridge 1.0.80 2022-12-10
+native_cxxbridge 1.0.81 2022-12-10
+native_cxxbridge 1.0.82 2022-12-10
+native_cxxbridge 1.0.83 2022-12-10
+native_rust 1.65.0 2022-12-10
+rustcxx 1.0.80 2022-12-10
+rustcxx 1.0.81 2022-12-10
+rustcxx 1.0.82 2022-12-10
+rustcxx 1.0.83 2022-12-10
+utfcpp 3.2.2 2022-12-10
 
 # Ccache 4.0 requires adding CMake to the depends system.
-native_ccache 4.0 2022-12-03
-native_ccache 4.1 2022-12-03
-native_ccache 4.2 2022-12-03
-native_ccache 4.2.1 2022-12-03
-native_ccache 4.3 2022-12-03
-native_ccache 4.4 2022-12-03
-native_ccache 4.4.1 2022-12-03
-native_ccache 4.4.2 2022-12-03
-native_ccache 4.5 2022-12-03
-native_ccache 4.5.1 2022-12-03
-native_ccache 4.6 2022-12-03
-native_ccache 4.6.1 2022-12-03
-native_ccache 4.6.2 2022-12-03
-native_ccache 4.6.3 2022-12-03
-native_ccache 4.7 2022-12-03
-native_ccache 4.7.1 2022-12-03
-native_ccache 4.7.2 2022-12-03
-native_ccache 4.7.3 2022-12-03
-native_ccache 4.7.4 2022-12-03
+native_ccache 4.0 2022-12-10
+native_ccache 4.1 2022-12-10
+native_ccache 4.2 2022-12-10
+native_ccache 4.2.1 2022-12-10
+native_ccache 4.3 2022-12-10
+native_ccache 4.4 2022-12-10
+native_ccache 4.4.1 2022-12-10
+native_ccache 4.4.2 2022-12-10
+native_ccache 4.5 2022-12-10
+native_ccache 4.5.1 2022-12-10
+native_ccache 4.6 2022-12-10
+native_ccache 4.6.1 2022-12-10
+native_ccache 4.6.2 2022-12-10
+native_ccache 4.6.3 2022-12-10
+native_ccache 4.7 2022-12-10
+native_ccache 4.7.1 2022-12-10
+native_ccache 4.7.2 2022-12-10
+native_ccache 4.7.3 2022-12-10
+native_ccache 4.7.4 2022-12-10
 
 # Clang and Rust are currently pinned to LLVM 14
-libcxx 15.0.0 2022-12-03
-libcxx 15.0.1 2022-12-03
-libcxx 15.0.2 2022-12-03
-libcxx 15.0.3 2022-12-03
-libcxx 15.0.4 2022-12-03
-libcxx 15.0.5 2022-12-03
-libcxx 15.0.6 2022-12-03
-native_clang 15.0.0 2022-12-03
-native_clang 15.0.1 2022-12-03
-native_clang 15.0.2 2022-12-03
-native_clang 15.0.3 2022-12-03
-native_clang 15.0.4 2022-12-03
-native_clang 15.0.5 2022-12-03
-native_clang 15.0.6 2022-12-03
+libcxx 15.0.0 2022-12-10
+libcxx 15.0.1 2022-12-10
+libcxx 15.0.2 2022-12-10
+libcxx 15.0.3 2022-12-10
+libcxx 15.0.4 2022-12-10
+libcxx 15.0.5 2022-12-10
+libcxx 15.0.6 2022-12-10
+native_clang 15.0.0 2022-12-10
+native_clang 15.0.1 2022-12-10
+native_clang 15.0.2 2022-12-10
+native_clang 15.0.3 2022-12-10
+native_clang 15.0.4 2022-12-10
+native_clang 15.0.5 2022-12-10
+native_clang 15.0.6 2022-12-10
 
 # We're never updating to this version
 bdb 18.1.40 2024-02-01
 
 # Google Test 1.10.0 requires adding CMake to the depends system.
-googletest 1.10.0 2022-12-03
-googletest 1.11.0 2022-12-03
-googletest 1.12.0 2022-12-03
-googletest 1.12.1 2022-12-03
+googletest 1.10.0 2022-12-10
+googletest 1.11.0 2022-12-10
+googletest 1.12.0 2022-12-10
+googletest 1.12.1 2022-12-10
