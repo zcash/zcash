@@ -46,7 +46,7 @@
 
 #include <boost/assign/list_of.hpp>
 #include <boost/algorithm/string/trim.hpp>
-#include <utf8.h>
+#include <utf8cpp/utf8.h>
 
 #include <univalue.h>
 
