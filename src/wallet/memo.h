@@ -35,7 +35,7 @@ public:
 
         // If ParseHex comes across a non-hex char, it will stop but still return results so far.
         size_t slen = memoHex.length();
-        if (slen % 2 != 0 || (slen > 0 && rawMemo.size() != slen / 2)) {
+        if (slen != rawMemo.size() * 2) {
             return MemoError::HexDecodeError;
         }
 
@@ -43,13 +43,8 @@ public:
             return MemoError::MemoTooLong;
         }
 
-        for (int i = 0; i < ZC_MEMO_SIZE; i++) {
-            if (i < rawMemo.size()) {
-                result.value[i] = rawMemo[i];
-            } else {
-                result.value[i] = 0x0;
-            }
-        }
+        auto rest = std::copy(rawMemo.begin(), rawMemo.end(), result.value.begin());
+        std::fill(rest, result.value.end(), 0);
 
         return result;
     }
