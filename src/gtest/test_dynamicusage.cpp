@@ -1,6 +1,6 @@
 // Copyright (c) 2019-2022 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or https://www.opensource.org/licenses/mit-license.php
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include <gtest/gtest.h>
 #include <iostream>

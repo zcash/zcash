@@ -132,7 +132,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
     auto orchardAnchor = tree.root();
 
     // Create an Orchard-only transaction
-    // 0.0004 z-ZEC in, 0.00025 z-ZEC out, 0.0001 fee, 0.00005 z-ZEC change
+    // 0.0004 z-ZEC in, 0.00025 z-ZEC out, default fee, 0.00014 z-ZEC change
     auto builder = TransactionBuilder(consensusParams, 2, orchardAnchor);
     EXPECT_TRUE(builder.AddOrchardSpend(sk, std::move(spendInfo[0].second)));
     builder.AddOrchardOutput(std::nullopt, recipient, 25000, std::nullopt);
