@@ -216,6 +216,9 @@ bool CCoinsViewCache::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontie
 }
 
 bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, ShieldedType type) const {
+    // https://p.z.cash/TCR:bad-txns-sprout-duplicate-nullifier?partial
+    // https://p.z.cash/TCR:bad-txns-sapling-duplicate-nullifier?partial
+    // https://p.z.cash/TCR:bad-txns-orchard-duplicate-nullifier?partial
     CNullifiersMap* cacheToUse;
     switch (type) {
         case SPROUT:
@@ -1094,6 +1097,7 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
 
 bool CCoinsViewCache::HaveInputs(const CTransaction& tx) const
 {
+    // https://p.z.cash/TCR:bad-txns-inputs-missingorspent?partial
     if (!tx.IsCoinBase()) {
         for (unsigned int i = 0; i < tx.vin.size(); i++) {
             const COutPoint &prevout = tx.vin[i].prevout;

@@ -264,6 +264,7 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
 
 CAmount CTransaction::GetValueOut() const
 {
+    // https://p.z.cash/TCR:bad-cb-amount?partial
     CAmount nValueOut = 0;
     for (std::vector<CTxOut>::const_iterator it(vout.begin()); it != vout.end(); ++it)
     {

@@ -824,6 +824,9 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
  *    nHeight can become valid at a later height), we make the bans conditional on not
  *    being in Initial Block Download mode.
  * 4. The isInitBlockDownload argument is a function parameter to assist with testing.
+ * 5. Some consensus rules are labeled with https://p.z.cash/TCR:* where * is their anchor in the
+ *    Zcash Protocol Spec in the Transaction Consensus Rule section.
+      "*TCR:" means that the code partially defines the rule.
  */
 bool ContextualCheckTransaction(
         const CTransaction& tx,
@@ -866,6 +869,7 @@ bool ContextualCheckTransaction(
     // Rules that apply only to Sprout
     if (beforeOverwinter) {
         // Reject transactions which are intended for Overwinter and beyond
+        // https://p.z.cash/TCR:tx-overwinter-not-active
         if (tx.fOverwintered) {
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
@@ -877,6 +881,7 @@ bool ContextualCheckTransaction(
     // Rules that apply to Overwinter and later:
     if (overwinterActive) {
         // Reject transactions intended for Sprout
+        // https://p.z.cash/TCR:tx-overwintered-flag-not-set
         if (!tx.fOverwintered) {
             return state.DoS(
                 dosLevelConstricting,
@@ -889,6 +894,8 @@ bool ContextualCheckTransaction(
         // noncontextual checks in CheckTransactionWithoutProofVerification
 
         // Check that all transactions are unexpired
+        // https://p.z.cash/TCR:tx-overwinter-expired
+        // IsExpiredTx returns false for coinbase transactions.
         if (IsExpiredTx(tx, nHeight)) {
             // Don't increase banscore if the transaction only just expired
             int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? dosLevelConstricting : 0;
@@ -902,6 +909,7 @@ bool ContextualCheckTransaction(
         if (!saplingActive) {
             // Reject transactions with invalid version
             // OVERWINTER_MIN_TX_VERSION is checked against as a non-contextual check.
+            // https://p.z.cash/TCR:bad-overwinter-tx-version-or-group-id?partial
             if (tx.nVersion > OVERWINTER_MAX_TX_VERSION) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -910,6 +918,7 @@ bool ContextualCheckTransaction(
             }
 
             // Reject transactions with non-Overwinter version group ID
+            // https://p.z.cash/TCR:bad-overwinter-tx-version-or-group-id?partial
             if (tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -923,6 +932,7 @@ bool ContextualCheckTransaction(
     if (saplingActive) {
         // Reject transactions with invalid version
         if (tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
+            // https://p.z.cash/TCR:bad-sapling-tx-version-or-group-id?partial
             if (tx.nVersion < SAPLING_MIN_TX_VERSION) {
                 return state.DoS(
                     dosLevelConstricting,
@@ -930,6 +940,7 @@ bool ContextualCheckTransaction(
                     REJECT_INVALID, "bad-tx-sapling-version-too-low");
             }
 
+            // https://p.z.cash/TCR:bad-sapling-tx-version-or-group-id?partial
             if (tx.nVersion > SAPLING_MAX_TX_VERSION) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -939,6 +950,7 @@ bool ContextualCheckTransaction(
         }
 
         // Rules that became inactive after NU5 activation.
+        // https://p.z.cash/TCR:bad-sapling-tx-version-or-group-id?partial
         if (!nu5Active) {
             // Reject transactions with invalid version group id
             if (tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
@@ -955,11 +967,12 @@ bool ContextualCheckTransaction(
 
         // Reject transactions that exceed pre-sapling size limits
         static_assert(MAX_BLOCK_SIZE > MAX_TX_SIZE_BEFORE_SAPLING); // sanity
+        // https://p.z.cash/TCR:bad-txns-oversize
         if (::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) > MAX_TX_SIZE_BEFORE_SAPLING)
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
                 error("ContextualCheckTransaction(): size limits failed"),
-                REJECT_INVALID, "bad-txns-oversize");
+                REJECT_INVALID, "tx-pre-sapling-oversize");
     }
 
     // From Canopy onward, coinbase transaction must include outputs corresponding to the
@@ -977,6 +990,8 @@ bool ContextualCheckTransaction(
             // All Sapling outputs in coinbase transactions MUST have valid note commitments
             // when recovered using a 32-byte array of zeroes as the outgoing viewing key.
             // https://zips.z.cash/zip-0213#specification
+            // https://p.z.cash/TCR:bad-cb-output-decryption?partial
+            // https://p.z.cash/TCR:bad-cb-output-decryption-canopy?partial
             uint256 ovk;
             for (const OutputDescription &output : tx.vShieldedOutput) {
                 auto outPlaintext = SaplingOutgoingPlaintext::decrypt(
@@ -1040,6 +1055,7 @@ bool ContextualCheckTransaction(
 
         if (tx.IsCoinBase()) {
             // A coinbase transaction cannot have shielded outputs
+            // https://p.z.cash/TCR:bad-cb-has-output-description
             if (tx.vShieldedOutput.size() > 0)
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -1084,6 +1100,8 @@ bool ContextualCheckTransaction(
     if (nu5Active) {
         // Reject transactions with invalid version group id
         if (!futureActive) {
+            // https://p.z.cash/TCR:bad-tx-version-group-id?partial
+            // https://p.z.cash/TCR:bad-nu5-tx-version-or-group-id?partial
             if (!(tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID || tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID)) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -1107,7 +1125,9 @@ bool ContextualCheckTransaction(
         }
 
         // Reject transactions with invalid version
+        // https://p.z.cash/TCR:bad-tx-version-group-id?partial
         if (tx.nVersionGroupId == ZIP225_VERSION_GROUP_ID) {
+            // https://p.z.cash/TCR:bad-nu5-tx-version-or-group-id?partial
             if (tx.nVersion < ZIP225_MIN_TX_VERSION) {
                 return state.DoS(
                     dosLevelConstricting,
@@ -1115,6 +1135,7 @@ bool ContextualCheckTransaction(
                     REJECT_INVALID, "bad-tx-zip225-version-too-low");
             }
 
+            // https://p.z.cash/TCR:bad-nu5-tx-version-or-group-id?partial
             if (tx.nVersion > ZIP225_MAX_TX_VERSION) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -1134,6 +1155,7 @@ bool ContextualCheckTransaction(
             }
 
             // tx.nConsensusBranchId must match the current consensus branch id
+            // https://p.z.cash/TCR:bad-tx-consensus-branch-id-mismatch
             if (tx.GetConsensusBranchId().value() != consensusBranchId) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -1153,6 +1175,8 @@ bool ContextualCheckTransaction(
         }
 
         if (tx.IsCoinBase()) {
+            // https://p.z.cash/TCR:bad-cb-output-decryption?partial
+            // https://p.z.cash/TCR:bad-cb-output-decryption-canopy?partial
             if (!orchard_bundle.CoinbaseOutputsAreValid()) {
                 return state.DoS(
                     DOS_LEVEL_BLOCK,
@@ -1162,6 +1186,7 @@ bool ContextualCheckTransaction(
         } else {
             // ZIP 203: From NU5, the upper limit on nExpiryHeight is removed for coinbase
             // transactions.
+            // https://p.z.cash/TCR:bad-tx-expiry-height-too-high-postnu5
             if (tx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
                 return state.DoS(100, error("CheckTransaction(): expiry height is too high"),
                                  REJECT_INVALID, "bad-tx-expiry-height-too-high");
@@ -1171,6 +1196,7 @@ bool ContextualCheckTransaction(
         // Rules that apply generally before NU5. These were previously
         // noncontextual checks that became contextual after NU5 activation.
 
+        // https://p.z.cash/TCR:bad-tx-expiry-height-too-high-prenu5
         if (tx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
             return state.DoS(
                 dosLevelPotentiallyRelaxing,
@@ -1281,6 +1307,8 @@ bool ContextualCheckShieldedInputs(
         // Empty output script.
         CScript scriptCode;
         try {
+            // https://p.z.cash/TCR:bad-txns-sapling-binding-signature-invalid?partial
+            // https://p.z.cash/TCR:bad-txns-orchard-binding-signature-invalid?partial
             dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
             prevDataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, prevConsensusBranchId, txdata);
         } catch (std::logic_error ex) {
@@ -1291,6 +1319,8 @@ bool ContextualCheckShieldedInputs(
         }
     }
 
+    // https://p.z.cash/TCR:bad-joinsplit-public-key?partial
+    // https://p.z.cash/TCR:bad-txns-invalid-joinsplit-signature?partial
     if (!tx.vJoinSplit.empty())
     {
         if (!ed25519_verify(&tx.joinSplitPubKey, &tx.joinSplitSig, dataToBeSigned.begin(), 32)) {
@@ -1318,9 +1348,16 @@ bool ContextualCheckShieldedInputs(
     if (!tx.vShieldedSpend.empty() ||
         !tx.vShieldedOutput.empty())
     {
+        // https://p.z.cash/TCR:jubjub-canonical-encoding?partial
+        // We are relying on the fact that all blocks before NU5 activation on
+        // mainnet and testnet on the consensus chain in fact follow the
+        // post-NU5 spend authorization and binding signature rules.
         auto assembler = sapling::new_bundle_assembler();
 
         for (const SpendDescription &spend : tx.vShieldedSpend) {
+            // https://p.z.cash/TCR:bad-txns-sapling-binding-signature-invalid?partial
+            // https://p.z.cash/TCR:jubjub-canonical-encoding?partial
+            // https://p.z.cash/SCR:invalid-proof?partial
             if (!assembler->add_spend(
                 spend.cv.GetRawBytes(),
                 spend.anchor.GetRawBytes(),
@@ -1353,6 +1390,8 @@ bool ContextualCheckShieldedInputs(
             }
         }
 
+        // https://p.z.cash/TCR:bad-txns-sapling-binding-signature-invalid?partial
+        // https://p.z.cash/TCR:jubjub-canonical-encoding?partial
         auto bundle = sapling::finish_bundle_assembly(
             std::move(assembler),
             tx.GetValueBalanceSapling(),
@@ -1360,6 +1399,9 @@ bool ContextualCheckShieldedInputs(
 
         // Queue Sapling bundle to be batch-validated. This also checks some consensus rules.
         if (saplingAuth.has_value()) {
+            // https://p.z.cash/TCR:bad-txns-sapling-binding-signature-invalid?partial
+            // https://p.z.cash/SCR:sapling-spend-auth-signature-invalid?partial
+            // https://p.z.cash/SCR:invalid-proof?partial
             if (!saplingAuth.value()->check_bundle(std::move(bundle), dataToBeSigned.GetRawBytes())) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -1370,6 +1412,9 @@ bool ContextualCheckShieldedInputs(
     }
 
     // Queue Orchard bundle to be batch-validated.
+    // https://p.z.cash/TCR:bad-txns-orchard-binding-signature-invalid?partial
+    // https://p.z.cash/ACR:orchard-spend-auth-signature-invalid?partial
+    // https://p.z.cash/ACR:invalid-proof?partial
     if (orchardAuth.has_value()) {
         tx.GetOrchardBundle().QueueAuthValidation(orchardAuth.value(), dataToBeSigned);
     }
@@ -1439,15 +1484,19 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
      *        0 <= tx.nVersion < OVERWINTER_MIN_TX_VERSION
      *        OVERWINTER_MAX_TX_VERSION < tx.nVersion <= INT32_MAX
      */
+    // https://p.z.cash/TCR:tx-version-too-low?partial
     if (!tx.fOverwintered && tx.nVersion < SPROUT_MIN_TX_VERSION) {
         return state.DoS(100, error("CheckTransaction(): version too low"),
                          REJECT_INVALID, "bad-txns-version-too-low");
     }
     else if (tx.fOverwintered) {
+        // https://p.z.cash/TCR:bad-overwinter-tx-version-or-group-id?partial
+        // https://p.z.cash/TCR:tx-version-too-low?partial
         if (tx.nVersion < OVERWINTER_MIN_TX_VERSION) {
             return state.DoS(100, error("CheckTransaction(): overwinter version too low"),
                 REJECT_INVALID, "bad-tx-overwinter-version-too-low");
         }
+        // https://p.z.cash/TCR:bad-group-id?partial
         if (tx.nVersionGroupId != OVERWINTER_VERSION_GROUP_ID &&
                 tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID &&
                 tx.nVersionGroupId != ZIP225_VERSION_GROUP_ID &&
@@ -1465,6 +1514,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     // joinsplits or Orchard actions may be present.
     // Note that orchard_bundle.SpendsEnabled() is false when no
     // Orchard bundle is present, i.e. when nActionsOrchard == 0.
+    // https://p.z.cash/TCR:bad-txns-no-source-of-funds?partial
     if (tx.vin.empty() &&
         tx.vJoinSplit.empty() &&
         tx.vShieldedSpend.empty() &&
@@ -1480,6 +1530,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     // Sprout joinsplits or Orchard actions may be present.
     // Note that orchard_bundle.OutputsEnabled() is false when no
     // Orchard bundle is present, i.e. when nActionsOrchard == 0.
+    // https://p.z.cash/TCR:bad-txns-no-sink-of-funds?partial
     if (tx.vout.empty() &&
         tx.vJoinSplit.empty() &&
         tx.vShieldedOutput.empty() &&
@@ -1508,12 +1559,14 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for non-zero valueBalanceSapling when there are no Sapling inputs or outputs
+    // https://p.z.cash/TCR:bad-txns-valuebalance-nonzero?partial
     if (tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty() && tx.GetValueBalanceSapling() != 0) {
         return state.DoS(100, error("CheckTransaction(): tx.valueBalanceSapling has no sources or sinks"),
                             REJECT_INVALID, "bad-txns-valuebalance-nonzero");
     }
 
     // Check for overflow valueBalanceSapling
+    // https://p.z.cash/TCR:bad-txns-valuebalance-toolarge-sapling
     if (tx.GetValueBalanceSapling() > MAX_MONEY || tx.GetValueBalanceSapling() < -MAX_MONEY) {
         return state.DoS(100, error("CheckTransaction(): abs(tx.valueBalanceSapling) too large"),
                             REJECT_INVALID, "bad-txns-valuebalance-toolarge");
@@ -1530,6 +1583,12 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // nSpendsSapling, nOutputsSapling, and nActionsOrchard MUST all be less than 2^16
+    //
+    // This code enforces these rules even before NU5, which should be a no-op
+    // because fewer than 2^16 Spends or Outputs will fit in the largest possible
+    // transaction (imposed by the 2MB block size).
+    //
+    // https://p.z.cash/TCR:bad-too-many-sapling-spends
     size_t max_elements = (1 << 16) - 1;
     if (tx.vShieldedSpend.size() > max_elements) {
         return state.DoS(
@@ -1537,12 +1596,14 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             error("CheckTransaction(): 2^16 or more Sapling spends"),
             REJECT_INVALID, "bad-tx-too-many-sapling-spends");
     }
+    // https://p.z.cash/TCR:bad-too-many-sapling-outputs
     if (tx.vShieldedOutput.size() > max_elements) {
         return state.DoS(
             100,
             error("CheckTransaction(): 2^16 or more Sapling outputs"),
             REJECT_INVALID, "bad-tx-too-many-sapling-outputs");
     }
+    // https://p.z.cash/TCR:bad-too-many-orchard-actions
     if (orchard_bundle.GetNumActions() > max_elements) {
         return state.DoS(
             100,
@@ -1553,6 +1614,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     // Check that if neither Orchard spends nor outputs are enabled, the transaction contains
     // no Orchard actions. This subsumes the check that valueBalanceOrchard must equal zero
     // in the case that both spends and outputs are disabled.
+    // https://p.z.cash/TCR:bad-tx-orchard-flags-disable-actions
     if (orchard_bundle.GetNumActions() > 0 && !orchard_bundle.OutputsEnabled() && !orchard_bundle.SpendsEnabled()) {
         return state.DoS(
             100,
@@ -1563,6 +1625,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     auto valueBalanceOrchard = orchard_bundle.GetValueBalance();
 
     // Check for overflow valueBalanceOrchard
+    // https://p.z.cash/TCR:bad-txns-valuebalance-toolarge-orchard
     if (valueBalanceOrchard > MAX_MONEY || valueBalanceOrchard < -MAX_MONEY) {
         return state.DoS(100, error("CheckTransaction(): abs(tx.valueBalanceOrchard) too large"),
                          REJECT_INVALID, "bad-txns-valuebalance-toolarge");
@@ -1653,6 +1716,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for duplicate inputs
+    // https://p.z.cash/TCR:bad-txns-inputs-duplicate
     set<COutPoint> vInOutPoints;
     for (const CTxIn& txin : tx.vin)
     {
@@ -1662,6 +1726,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for duplicate joinsplit nullifiers in this transaction
+    // https://p.z.cash/TCR:bad-joinsplits-nullifiers-duplicate
     {
         set<uint256> vJoinSplitNullifiers;
         for (const JSDescription& joinsplit : tx.vJoinSplit)
@@ -1678,6 +1743,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for duplicate sapling nullifiers in this transaction
+    // https://p.z.cash/TCR:bad-spend-description-nullifiers-duplicate
     {
         set<uint256> vSaplingNullifiers;
         for (const SpendDescription& spend_desc : tx.vShieldedSpend)
@@ -1691,6 +1757,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for duplicate orchard nullifiers in this transaction
+    // https://p.z.cash/TCR:bad-orchard-nullifiers-duplicate
     {
         std::set<uint256> vOrchardNullifiers;
         for (const uint256& nf : tx.GetOrchardBundle().GetNullifiers())
@@ -1706,24 +1773,30 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     if (tx.IsCoinBase())
     {
         // There should be no joinsplits in a coinbase transaction
+        // https://p.z.cash/TCR:bad-cb-has-joinsplits
+        // https://p.z.cash/TCR:bad-cb-amount?partial -- check below is required for GetValueOut to be correct
         if (tx.vJoinSplit.size() > 0)
             return state.DoS(100, error("CheckTransaction(): coinbase has joinsplits"),
                              REJECT_INVALID, "bad-cb-has-joinsplits");
 
         // A coinbase transaction cannot have spend descriptions
+        // https://p.z.cash/TCR:bad-cb-has-spend-description
         if (tx.vShieldedSpend.size() > 0)
             return state.DoS(100, error("CheckTransaction(): coinbase has spend descriptions"),
                              REJECT_INVALID, "bad-cb-has-spend-description");
         // See ContextualCheckTransaction for consensus rules on coinbase output descriptions.
+        // https://p.z.cash/TCR:bad-cb-has-orchard-spend
         if (orchard_bundle.SpendsEnabled())
             return state.DoS(100, error("CheckTransaction(): coinbase has enableSpendsOrchard set"),
                              REJECT_INVALID, "bad-cb-has-orchard-spend");
 
+        // https://p.z.cash/TCR:bad-cb-length
         if (tx.vin[0].scriptSig.size() < 2 || tx.vin[0].scriptSig.size() > 100)
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-length");
     }
     else
     {
+        // https://p.z.cash/TCR:bad-txns-prevout-null
         for (const CTxIn& txin : tx.vin)
             if (txin.prevout.IsNull())
                 return state.DoS(10, false, REJECT_INVALID, "bad-txns-prevout-null");
@@ -1856,6 +1929,7 @@ bool AcceptToMemoryPool(
         // do all inputs exist?
         // Note that this does not check for the presence of actual outputs (see the next check for that),
         // and only helps with filling in pfMissingInputs (to determine missing vs spent).
+        // TODO: should we link this in with the consensus rule somehow?
         for (const CTxIn txin : tx.vin) {
             if (!view.HaveCoins(txin.prevout.hash)) {
                 if (pfMissingInputs)
@@ -2256,6 +2330,7 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
+    // https://p.z.cash/TCR:bad-cb-amount?partial
     CAmount nSubsidy = 12.5 * COIN;
 
     // Mining slow start
@@ -2524,6 +2599,7 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, CTxUndo &txund
                 assert(false);
             // mark an outpoint spent, and construct undo information
             txundo.vprevout.push_back(CTxInUndo(coins->vout[nPos]));
+            // https://p.z.cash/TCR:bad-txns-inputs-missingorspent?partial TODO
             coins->Spend(nPos);
             if (coins->vout.size() == 0) {
                 CTxInUndo& undo = txundo.vprevout.back();
@@ -2538,6 +2614,8 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, CTxUndo &txund
     inputs.SetNullifiers(tx, true);
 
     // add outputs
+    // https://p.z.cash/TCR:bad-txns-spend-of-genesis-output?partial
+    // This code which would normally mark that a UTXO exists is not called for the genesis block.
     inputs.ModifyNewCoins(tx.GetHash())->FromTx(tx, nHeight);
 }
 
@@ -2559,6 +2637,12 @@ int GetSpendHeight(const CCoinsViewCache& inputs)
 {
     LOCK(cs_main);
     CBlockIndex* pindexPrev = mapBlockIndex.find(inputs.GetBestBlock())->second;
+    // We add one because SetBestBlock is called at the end of ConnectBlock,
+    // but we need the current block's height for checking the consensus rule.
+    // https://p.z.cash/TCR:bad-txns-premature-spend-of-coinbase?partial
+
+    // We also add one here so that the call to GetSpendHeight in the mempool check
+    // uses the next block's height.
     return pindexPrev->nHeight + 1;
 }
 
@@ -2570,6 +2654,9 @@ bool CheckTxShieldedInputs(
     int dosLevel)
 {
     // Are the shielded spends' requirements met?
+    // https://p.z.cash/TCR:bad-txns-sprout-duplicate-nullifier?partial
+    // https://p.z.cash/TCR:bad-txns-sapling-duplicate-nullifier?partial
+    // https://p.z.cash/TCR:bad-txns-orchard-duplicate-nullifier?partial
     auto unmetShieldedReq = view.HaveShieldedRequirements(tx);
     if (unmetShieldedReq) {
         auto txid = tx.GetHash().ToString();
@@ -2606,6 +2693,7 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 
             if (coins->IsCoinBase()) {
                 // Ensure that coinbases are matured
+                // https://p.z.cash/TCR:bad-txns-premature-spend-of-coinbase
                 if (nSpendHeight - coins->nHeight < COINBASE_MATURITY) {
                     return state.Invalid(false,
                         REJECT_INVALID, "bad-txns-premature-spend-of-coinbase",
@@ -2614,6 +2702,7 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 
                 // Ensure that coinbases cannot be spent to transparent outputs
                 // Disabled on regtest
+                // https://p.z.cash/TCR:bad-txns-coinbase-spend-has-transparent-outputs
                 if (fCoinbaseEnforcedShieldingEnabled &&
                     consensusParams.fCoinbaseMustBeShielded &&
                     !tx.vout.empty()) {
@@ -2640,10 +2729,12 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
                 strprintf("value in (%s) < value out (%s)", FormatMoney(nValueIn), FormatMoney(tx.GetValueOut())));
 
         // Tally transaction fees
+        // https://p.z.cash/TCR:bad-txns-fee-negative
         CAmount nTxFee = nValueIn - tx.GetValueOut();
         if (nTxFee < 0)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-fee-negative");
         nFees += nTxFee;
+        // https://p.z.cash/TCR:bad-txns-fee-outofrange
         if (!MoneyRange(nFees))
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-fee-outofrange");
     }
@@ -3271,12 +3362,16 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         std::vector<CTxOut> allPrevOutputs;
 
         // Are the shielded spends' requirements met?
+        // https://p.z.cash/TCR:bad-txns-sprout-duplicate-nullifier?partial
+        // https://p.z.cash/TCR:bad-txns-sapling-duplicate-nullifier?partial
+        // https://p.z.cash/TCR:bad-txns-orchard-duplicate-nullifier?partial
         if (!Consensus::CheckTxShieldedInputs(tx, state, view, 100)) {
             return false;
         }
 
         if (!tx.IsCoinBase())
         {
+            // https://p.z.cash/TCR:bad-txns-inputs-missingorspent?partial
             if (!view.HaveInputs(tx))
                 return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
@@ -3330,6 +3425,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
         if (!tx.IsCoinBase())
         {
+            // https://p.z.cash/TCR:bad-cb-amount?partial
             nFees += view.GetValueIn(tx)-tx.GetValueOut();
 
             std::vector<CScriptCheck> vChecks;
@@ -3539,6 +3635,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     int64_t nTime1 = GetTimeMicros(); nTimeConnect += nTime1 - nTimeStart;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
+    // https://p.z.cash/TCR:bad-cb-amount?partial
+    // Because a coinbase transaction is enforced to have no inputs, we know that 
+    // vBalanceSapling and vBalanceOrchard must be <= 0, and therefore the result 
+    // of GetValueOut will be equal to the total transparent output - vBalanceSapling - vBalanceOrchard
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus());
     if (block.vtx[0].GetValueOut() > blockReward)
         return state.DoS(100,
@@ -3547,6 +3647,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                                REJECT_INVALID, "bad-cb-amount");
 
     // Ensure Sapling authorizations are valid (if we are checking them)
+    // https://p.z.cash/TCR:bad-txns-sapling-binding-signature-invalid?partial
+    // https://p.z.cash/TCR:jubjub-canonical-encoding?partial
     if (saplingAuth.has_value() && !saplingAuth.value()->validate()) {
         return state.DoS(100,
             error("ConnectBlock(): a Sapling bundle within the block is invalid"),
@@ -3554,6 +3656,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     // Ensure Orchard signatures are valid (if we are checking them)
+    // https://p.z.cash/TCR:bad-txns-orchard-binding-signature-invalid?partial
     if (orchardAuth.has_value() && !orchardAuth.value().Validate()) {
         return state.DoS(100,
             error("ConnectBlock(): an Orchard bundle within the block is invalid"),
@@ -4904,6 +5007,7 @@ bool ContextualCheckBlock(
     // In Zcash this has been enforced since launch, except that the genesis
     // block didn't include the height in the coinbase (see Zcash protocol spec
     // section '6.8 Bitcoin Improvement Proposals').
+    // https://p.z.cash/TCR:bad-cb-height?partial
     if (nHeight > 0)
     {
         CScript expect = CScript() << nHeight;
@@ -4916,10 +5020,11 @@ bool ContextualCheckBlock(
 
     // ZIP 203: From NU5 onwards, nExpiryHeight is set to the block height in coinbase
     // transactions.
+    // https://p.z.cash/TCR:bad-cb-expiryheight?partial
     if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
         if (block.vtx[0].nExpiryHeight != nHeight) {
             return state.DoS(100, error("%s: block height mismatch in nExpiryHeight", __func__),
-                             REJECT_INVALID, "bad-cb-height");
+                             REJECT_INVALID, "bad-cb-expiryheight");
         }
     }
 

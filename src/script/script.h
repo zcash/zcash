@@ -307,6 +307,8 @@ public:
 
     static std::vector<unsigned char> serialize(const int64_t& value)
     {
+        // https://p.z.cash/TCR:bad-cb-height?partial
+
         if(value == 0)
             return std::vector<unsigned char>();
 
@@ -389,6 +391,7 @@ class CScript : public CScriptBase
 protected:
     CScript& push_int64(int64_t n)
     {
+        // https://p.z.cash/TCR:bad-cb-height?partial
         if (n == -1 || (n >= 1 && n <= 16))
         {
             push_back(n + (OP_1 - 1));
