@@ -55,4 +55,5 @@ fi
 zcash-fetch-params
 touch .zcash/zcash.conf
 echo "Starting: ${ZCASHD_CMD}"
-exec "${ZCASHD_CMD}" "${@}"
+# shellcheck disable=SC2294 # see #6297
+eval exec "${ZCASHD_CMD}" "${@}"
