@@ -766,11 +766,15 @@ enum class PrivacyPolicy {
     NoPrivacy,
 };
 
-/** Returns the meet of two privacy policies. I.e., the strongest policy that is
- *  compatible with both of the provided policies.
+/**
+ * Privacy policies form a lattice where the relation is “strictness”. I.e.,
+ * `x ≤ y` means “Policy `x` allows at least everything that policy `y` allows.”
  *
- *  See https://github.com/zcash/zcash/issues/6240 for the graph that this
- *  models.
+ * This function returns the meet (greatest lower bound) of `a` and `b`, i.e.
+ * the strictest policy that allows everything allowed by `a` and also
+ * everything allowed by `b`.
+ *
+ * See #6240 for the graph that this models.
  */
 PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b);
 
@@ -795,13 +799,21 @@ public:
     bool AllowFullyTransparent() const;
     bool AllowLinkingAccountAddresses() const;
 
-    // A strategy is compatible with a given required level if
-    // it is as strong as, or weaker than, the required level.
-    // So, for example, if a transaction only requires FullPrivacy
-    // (the most restrictive policy) then that transaction can
-    // safely be constructed if the user specifies AllowRevealedRecipients,
-    // because the transaction will not reveal any recipients anyway.
-    bool IsCompatibleWith(PrivacyPolicy requiredLevel) const;
+    /**
+     * This strategy is compatible with a given policy if it is identical to or
+     * less strict than the policy.
+     *
+     * For example, if a transaction requires a policy no stricter than
+     * `AllowRevealedSenders`, then that transaction can safely be constructed
+     * if the user specifies `AllowLinkingAccountAddresses`, because
+     * `AllowLinkingAccountAddresses` is compatible with `AllowRevealedSenders`
+     * (the transaction will not link addresses anyway). However, if the
+     * transaction required `AllowRevealedRecipients`, it could not be
+     * constructed, because `AllowLinkingAccountAddresses` is _not_ compatible
+     * with `AllowRevealedRecipients` (the transaction reveals recipients, which
+     * is not allowed by `AllowLinkingAccountAddresses`.
+     */
+    bool IsCompatibleWith(PrivacyPolicy policy) const;
 };
 
 /**

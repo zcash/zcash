@@ -7856,8 +7856,8 @@ bool TransactionStrategy::AllowLinkingAccountAddresses() const {
     return IsCompatibleWith(PrivacyPolicy::AllowLinkingAccountAddresses);
 }
 
-bool TransactionStrategy::IsCompatibleWith(PrivacyPolicy requiredLevel) const {
-    return requestedLevel == PrivacyPolicyMeet(requestedLevel, requiredLevel);
+bool TransactionStrategy::IsCompatibleWith(PrivacyPolicy policy) const {
+    return requestedLevel == PrivacyPolicyMeet(requestedLevel, policy);
 }
 
 bool ZTXOSelector::SelectsTransparent() const {
