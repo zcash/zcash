@@ -55,4 +55,4 @@ fi
 zcash-fetch-params
 touch .zcash/zcash.conf
 echo "Starting: ${ZCASHD_CMD}"
-eval exec "${ZCASHD_CMD}" "${@}"
+exec "${ZCASHD_CMD}" "${@}"
