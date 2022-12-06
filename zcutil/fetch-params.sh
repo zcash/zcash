@@ -199,10 +199,10 @@ EOF
         # This may be the first time the user's run this script, so give
         # them some info, especially about bandwidth usage:
         cat <<EOF
-The complete parameters are currently just under 1.7GB in size, so plan 
+The complete parameters are currently just under 1.7GB in size, so plan
 accordingly for your bandwidth constraints. If the Sprout parameters are
-already present the additional Sapling parameters required are just under 
-800MB in size. If the files are already present and have the correct 
+already present the additional Sapling parameters required are just under
+800MB in size. If the files are already present and have the correct
 sha256sum, no networking is used.
 
 Creating params directory. For details about this directory, see:
@@ -225,7 +225,7 @@ EOF
     fetch_params "$SAPLING_SPROUT_GROTH16_NAME" "$PARAMS_DIR/$SAPLING_SPROUT_GROTH16_NAME" "b685d700c60328498fbde589c8c7c484c722b788b265b72af448a5bf0ee55b50"
 }
 
-if [ "x${1:-}" = 'x--testnet' ]
+if [ "${1:-}" = '--testnet' ]
 then
     echo "NOTE: testnet now uses the mainnet parameters, so the --testnet argument"
     echo "is no longer needed (ignored)"
