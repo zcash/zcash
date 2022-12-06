@@ -1,7 +1,6 @@
-#!/bin/sh
-
+#!/usr/bin/env bash
+source $(dirname ${BASH_SOURCE[0]})/../contrib/strict-mode.bash
 export LC_ALL=C
-set -eu
 
 uname_S=$(uname -s 2>/dev/null || echo not)
 
@@ -199,10 +198,10 @@ EOF
         # This may be the first time the user's run this script, so give
         # them some info, especially about bandwidth usage:
         cat <<EOF
-The complete parameters are currently just under 1.7GB in size, so plan 
+The complete parameters are currently just under 1.7GB in size, so plan
 accordingly for your bandwidth constraints. If the Sprout parameters are
-already present the additional Sapling parameters required are just under 
-800MB in size. If the files are already present and have the correct 
+already present the additional Sapling parameters required are just under
+800MB in size. If the files are already present and have the correct
 sha256sum, no networking is used.
 
 Creating params directory. For details about this directory, see:

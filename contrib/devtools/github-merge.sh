@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+source $(dirname ${BASH_SOURCE[0]})/../strict-mode.bash
+export LC_ALL=C
 
 # This script will locally construct a merge commit for a pull request on a
 # github repository, inspect it, sign it and optionally push it.

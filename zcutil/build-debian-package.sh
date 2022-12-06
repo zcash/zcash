@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
+source $(dirname ${BASH_SOURCE[0]})/../contrib/strict-mode.bash
+export LC_ALL=C
+set -x
+
 ## Usage:
 ##  ./zcutil/build-debian-package.sh
-
-export LC_ALL=C
-set -e
-set -x
 
 BUILD_PATH="/tmp/zcbuild"
 PACKAGE_NAME="zcash"

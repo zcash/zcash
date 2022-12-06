@@ -1,7 +1,8 @@
-#!/bin/sh
-# Copyright (c) 2020 The Zcash developers
-
+#!/usr/bin/env bash
+source $(dirname ${BASH_SOURCE[0]})/../contrib/strict-mode.bash
 export LC_ALL=C
+
+# Copyright (c) 2020 The Zcash developers
 
 zcutil/clean.sh
 

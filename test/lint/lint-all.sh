@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-#
+source $(dirname ${BASH_SOURCE[0]})/../../contrib/strict-mode.bash
+
 # Copyright (c) 2017-2019 The Bitcoin Core developers
 # Copyright (c) 2020-2022 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
@@ -8,11 +9,9 @@
 # This script runs all contrib/devtools/lint-*.sh files, and fails if any exit
 # with a non-zero status code.
 
-# This script is intentionally locale-dependent by not setting "export LC_ALL=C".
+# This script is intentionally locale-dependent by not setting "export LC_ALL=C"
 # in order to allow for the executed lint scripts to opt in or opt out of locale
 # dependence themselves.
-
-set -u
 
 SCRIPTDIR=$(dirname "${BASH_SOURCE[0]}")
 LINTALL=$(basename "${BASH_SOURCE[0]}")

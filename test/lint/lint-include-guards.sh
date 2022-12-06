@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-#
+source $(dirname ${BASH_SOURCE[0]})/../../contrib/strict-mode.bash
+export LC_ALL=C
+
 # Copyright (c) 2018 The Bitcoin Core developers
 # Copyright (c) 2020 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
@@ -7,7 +9,6 @@
 #
 # Check include guards.
 
-export LC_ALL=C
 HEADER_ID_PREFIX="ZCASH_"
 HEADER_ID_PREFIX_UPSTREAM="BITCOIN_"
 HEADER_ID_SUFFIX="_H"

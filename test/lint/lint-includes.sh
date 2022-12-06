@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-#
+source $(dirname ${BASH_SOURCE[0]})/../../strict-mode.bash
+export LC_ALL=C
+
 # Copyright (c) 2018 The Bitcoin Core developers
 # Copyright (c) 2020-2022 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
@@ -8,7 +10,6 @@
 # Check for duplicate includes.
 # Guard against accidental introduction of new Boost dependencies.
 
-export LC_ALL=C
 IGNORE_REGEXP="/(leveldb|crc32c)/"
 
 # cd to root folder of git repo for git ls-files to work properly

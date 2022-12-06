@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+source $(dirname ${BASH_SOURCE[0]})/../strict-mode.bash
 export LC_ALL=C
 
 # default arguments are --no-transitive-deps

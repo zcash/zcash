@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-
+source $(dirname ${BASH_SOURCE[0]})/../../strict-mode.bash
 export LC_ALL=C
-set -o pipefail
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 CLANG_PACKAGE="$SCRIPT_DIR/../../depends/packages/native_clang.mk"

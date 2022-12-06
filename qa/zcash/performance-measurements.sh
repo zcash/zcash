@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-
+source $(dirname ${BASH_SOURCE[0]})/../../contrib/strict-mode.bash
 export LC_ALL=C
-set -u
-
 
 DATADIR=./benchmark-datadir
 SHA256CMD="$(command -v sha256sum || echo shasum)"
@@ -245,7 +243,7 @@ case "$1" in
                 zcash_rpc zcbenchmark sendtoaddress 10 "${@:4}"
                 ;;
             loadwallet)
-                zcash_rpc zcbenchmark loadwallet 10 
+                zcash_rpc zcbenchmark loadwallet 10
                 ;;
             listunspent)
                 zcash_rpc zcbenchmark listunspent 10

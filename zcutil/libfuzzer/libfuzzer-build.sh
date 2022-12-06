@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-
+source $(dirname ${BASH_SOURCE[0]})/../../contrib/strict-mode.bash
 export LC_ALL=C
-set -eu -o pipefail
 
 usage() {
     echo ""

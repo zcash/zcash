@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-
+source $(dirname ${BASH_SOURCE[0]})/../../contrib/strict-mode.bash
 export LC_ALL=C
-set -exu -o pipefail
+set -x
 
 for d in src/fuzzing/*/ ; do
     fuzz_cases+="$(basename "$d"), "

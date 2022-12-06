@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-#
+source $(dirname ${BASH_SOURCE[0]})/../../contrib/strict-mode.bash
+export LC_ALL=C
+
 # Copyright (c) 2022 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 # Check that any patched Cargo dependencies are correctly configured.
-
-export LC_ALL=C
 
 REPOBASE="$(dirname $0)/../.."
 CARGO_TOML="$REPOBASE/Cargo.toml"
