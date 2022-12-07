@@ -203,7 +203,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
             // creating dust change, rather than prohibit them from sending
             // entirely in this circumstance.
             // (Daira disagrees, as this could leak information to the recipient
-            // or to a viewing key holder.)
+            // or to an external viewing key holder.)
             insufficientFundsMessage +=
                 strprintf(
                     ", need %s more to avoid creating invalid change output %s (dust threshold is %s)",
