@@ -214,7 +214,7 @@ def wait_for_bitcoind_start(process, url, i):
     '''
     while True:
         if process.poll() is not None:
-            raise Exception('%s exited with status %i during initialization' % (zcashd_binary(), process.returncode))
+            raise Exception('%s node %d exited with status %i during initialization' % (zcashd_binary(), i, process.returncode))
         try:
             rpc = get_rpc_proxy(url, i)
             rpc.getblockcount()
@@ -307,15 +307,15 @@ def initialize_chain(test_dir, num_nodes, cachedir, cache_behavior='current'):
         wait_bitcoinds()
         for i in range(MAX_NODES):
             # record the system time at which the cache was regenerated
-            with open(log_filename(cachedir, i, 'cache_config.json'), "w", encoding="utf8") as cache_conf_file:
+            with open(node_file(cachedir, i, 'cache_config.json'), "w", encoding="utf8") as cache_conf_file:
                 cache_config = { "cache_time": time.time() }
                 cache_conf_json = json.dumps(cache_config, indent=4)
                 cache_conf_file.write(cache_conf_json)
 
-            os.remove(log_filename(cachedir, i, "debug.log"))
-            os.remove(log_filename(cachedir, i, "db.log"))
-            os.remove(log_filename(cachedir, i, "peers.dat"))
-            os.remove(log_filename(cachedir, i, "fee_estimates.dat"))
+            os.remove(node_file(cachedir, i, "debug.log"))
+            os.remove(node_file(cachedir, i, "db.log"))
+            os.remove(node_file(cachedir, i, "peers.dat"))
+            os.remove(node_file(cachedir, i, "fee_estimates.dat"))
 
     def init_from_cache():
         for i in range(num_nodes):
@@ -351,7 +351,7 @@ def initialize_chain(test_dir, num_nodes, cachedir, cache_behavior='current'):
         for i in range(MAX_NODES):
             node_path = os.path.join(cachedir, 'node'+str(i))
             if os.path.isdir(node_path):
-                if not os.path.isfile(log_filename(cachedir, i, 'cache_config.json')):
+                if not os.path.isfile(node_file(cachedir, i, 'cache_config.json')):
                     return True
             else:
                 return True
@@ -433,7 +433,7 @@ def assert_start_raises_init_error(i, dirname, extra_args=None, expected_msg=Non
             node = start_node(i, dirname, extra_args, stderr=log_stderr)
             stop_node(node, i)
         except Exception as e:
-            assert ("%s exited" % (zcashd_binary(),)) in str(e) #node must have shutdown
+            assert ("%s node %d exited" % (zcashd_binary(), i)) in str(e) # node must have shutdown
             if expected_msg is not None:
                 log_stderr.seek(0)
                 stderr = log_stderr.read().decode('utf-8')
@@ -461,8 +461,8 @@ def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, binary=None):
         raise
     return rpcs
 
-def log_filename(dirname, n_node, logname):
-    return os.path.join(dirname, "node"+str(n_node), "regtest", logname)
+def node_file(dirname, n_node, filename):
+    return os.path.join(dirname, "node"+str(n_node), "regtest", filename)
 
 def check_node(i):
     bitcoind_processes[i].poll()

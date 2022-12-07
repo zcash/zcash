@@ -13,7 +13,7 @@ from test_framework.util import assert_equal, assert_true, zcashd_binary
 import subprocess
 import tempfile
 
-help_message = """
+help_message_1 = """
 In order to ensure you are adequately protecting your privacy when using Zcash,
 please see <https://z.cash/support/security/>.
 
@@ -85,7 +85,8 @@ Options:
        Keep at most <n> unconnectable transactions in memory (default: 100)
 
   -par=<n>
-       Set the number of script verification threads (-8 to 16, 0 = auto, <0 =
+       Set the number of script verification threads (""" # nondeterministic part here
+help_message_2 = """, 0 = auto, <0 =
        leave that many cores free, default: 0)
 
   -pid=<file>
@@ -342,6 +343,9 @@ Monitoring options:
        any request path. Use -metricsallowip and -metricsbind to control
        access.
 
+  -debugmetrics
+       Include debug metrics in exposed node metrics.
+
 Debugging/Testing options:
 
   -debug=<category>
@@ -492,7 +496,8 @@ class ShowHelpTest(BitcoinTestFramework):
             assert_equal(process.returncode, 0)
             log_stdout.seek(0)
             stdout = log_stdout.read().decode('utf-8')
-            assert_true(help_message in stdout)
+            assert_true(help_message_1 in stdout)
+            assert_true(help_message_2 in stdout)
 
     def run_test(self):
         self.show_help()

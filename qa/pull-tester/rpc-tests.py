@@ -62,6 +62,7 @@ BASE_SCRIPTS= [
     'wallet_overwintertx.py',
     'wallet_persistence.py',
     'wallet_listnotes.py',
+    'wallet_listunspent.py',
     # vv Tests less than 60s vv
     'orchard_reorg.py',
     'fundrawtransaction.py',

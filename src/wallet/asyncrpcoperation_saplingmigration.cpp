@@ -86,7 +86,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         // We set minDepth to 11 to avoid unconfirmed notes and in anticipation of specifying
         // an anchor at height N-10 for each Sprout JoinSplit description
         // Consider, should notes be sorted?
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 11);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, 11);
     }
     CAmount availableFunds = 0;
     for (const SproutNoteEntry& sproutEntry : sproutEntries) {

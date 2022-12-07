@@ -51,6 +51,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "aho-corasick"
+version = "0.7.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4f55bd91a0978cbfd91c457a164bab8b4001c833b7f323132c0a4e1922dd44e"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "anyhow"
 version = "1.0.65"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -964,6 +973,7 @@ dependencies = [
  "memuse",
  "metrics",
  "metrics-exporter-prometheus",
+ "metrics-util",
  "nonempty",
  "orchard",
  "rand 0.8.5",
@@ -977,6 +987,7 @@ dependencies = [
  "subtle",
  "thiserror",
  "time",
+ "tokio",
  "tracing",
  "tracing-appender",
  "tracing-core",
@@ -1108,6 +1119,7 @@ version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f7d24dc2dbae22bff6f1f9326ffce828c9f07ef9cc1e8002e5279f845432a30a"
 dependencies = [
+ "aho-corasick",
  "crossbeam-epoch",
  "crossbeam-utils",
  "hashbrown",

@@ -118,7 +118,7 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     result.pushKV("finalsaplingroot", blockindex->hashFinalSaplingRoot.GetHex());
     result.pushKV("time", (int64_t)blockindex->nTime);
     result.pushKV("nonce", blockindex->nNonce.GetHex());
-    result.pushKV("solution", HexStr(blockindex->nSolution));
+    result.pushKV("solution", HexStr(blockindex->GetBlockHeader().nSolution));
     result.pushKV("bits", strprintf("%08x", blockindex->nBits));
     result.pushKV("difficulty", GetDifficulty(blockindex));
     result.pushKV("chainwork", blockindex->nChainWork.GetHex());
@@ -684,15 +684,18 @@ UniValue getblockheader(const UniValue& params, bool fHelp)
 
     CBlockIndex* pblockindex = mapBlockIndex[hash];
 
-    if (!fVerbose)
-    {
-        CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION);
-        ssBlock << pblockindex->GetBlockHeader();
-        std::string strHex = HexStr(ssBlock.begin(), ssBlock.end());
-        return strHex;
+    try {
+        if (!fVerbose) {
+            CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION);
+            ssBlock << pblockindex->GetBlockHeader();
+            std::string strHex = HexStr(ssBlock.begin(), ssBlock.end());
+            return strHex;
+        } else {
+            return blockheaderToJSON(pblockindex);
+        }
+    } catch (const runtime_error&) {
+        throw JSONRPCError(RPC_DATABASE_ERROR, "Failed to read index entry");
     }
-
-    return blockheaderToJSON(pblockindex);
 }
 
 UniValue getblock(const UniValue& params, bool fHelp)

@@ -14,7 +14,7 @@ from decimal import Decimal
 def get_sub_array_from_array(object_array, to_match):
     '''
     Finds and returns a sub array from an array of arrays.
-    to_match should be a unique idetifier of a sub array
+    to_match should be a unique identifier of a sub array
     '''
     for item in object_array:
         all_match = True

@@ -126,7 +126,7 @@ class WalletAccountsTest(BitcoinTestFramework):
         # The UA contains the expected receiver kinds.
         self.check_receiver_types(ua0,   ['p2pkh', 'sapling', 'orchard'])
         self.check_receiver_types(ua0_2, ['p2pkh', 'sapling', 'orchard'])
-        self.check_receiver_types(ua0_3, [               'sapling', 'orchard'])
+        self.check_receiver_types(ua0_3, [         'sapling', 'orchard'])
         self.check_receiver_types(ua0_4, ['p2pkh',            'orchard'])
         self.check_receiver_types(ua1,   ['p2pkh', 'sapling', 'orchard'])
 

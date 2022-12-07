@@ -438,6 +438,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-prometheusport=<port>", _("Expose node metrics in the Prometheus exposition format. "
             "An HTTP listener will be started on <port>, which responds to GET requests on any request path. "
             "Use -metricsallowip and -metricsbind to control access."));
+    strUsage += HelpMessageOpt("-debugmetrics", _("Include debug metrics in exposed node metrics."));
 
     strUsage += HelpMessageGroup(_("Debugging/Testing options:"));
     if (showDebug)
@@ -1471,10 +1472,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             metricsBindCstr = metricsBind.c_str();
         }
 
+        bool debugMetrics = GetBoolArg("-debugmetrics", false);
+
         // Start up the metrics runtime. This spins off a Rust thread that runs
         // the Prometheus exporter. We just let this thread die at process end.
         LogPrintf("metrics thread start");
-        if (!metrics_run(metricsBindCstr, vAllowCstr.data(), vAllowCstr.size(), prometheusPort)) {
+        if (!metrics_run(metricsBindCstr, vAllowCstr.data(), vAllowCstr.size(), prometheusPort, debugMetrics)) {
             return InitError(strprintf(_("Failed to start Prometheus metrics exporter")));
         }
     }

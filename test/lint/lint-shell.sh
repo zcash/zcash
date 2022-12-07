@@ -40,7 +40,7 @@ if ! command -v shellcheck > /dev/null; then
 fi
 
 EXCLUDE="--exclude=$(IFS=','; echo "${disabled[*]}")"
-if ! shellcheck "$EXCLUDE" $(git ls-files -- '*.sh' | grep -vE 'src/(leveldb|secp256k1|univalue)/'); then
+if ! shellcheck "$EXCLUDE" $(git ls-files -- '*.sh' | grep -vE '(qa/zcash/checksec\.sh|src/(|leveldb|secp256k1|univalue)/)'); then
     EXIT_CODE=1
 fi
 
