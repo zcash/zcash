@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include <boost/unordered_map.hpp>
+#include <expected.hpp>
 #include "zcash/History.hpp"
 #include "zcash/IncrementalMerkleTree.hpp"
 
@@ -613,7 +614,7 @@ public:
     bool HaveInputs(const CTransaction& tx) const;
 
     //! Check whether all joinsplit and sapling spend requirements (anchors/nullifiers) are satisfied
-    std::optional<UnsatisfiedShieldedReq> HaveShieldedRequirements(const CTransaction& tx) const;
+    tl::expected<void, UnsatisfiedShieldedReq> CheckShieldedRequirements(const CTransaction& tx) const;
 
     //! Return priority of tx at height nHeight
     double GetPriority(const CTransaction &tx, int nHeight) const;

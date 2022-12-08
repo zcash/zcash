@@ -1,5 +1,5 @@
 zcash_packages := libsodium rustcxx utfcpp
-packages := boost libevent zeromq $(zcash_packages) googletest
+packages := boost libevent zeromq $(zcash_packages) googletest tl_expected
 native_packages := native_clang native_ccache native_rust native_cxxbridge
 
 ifneq (,$(wildcard /etc/arch-release))

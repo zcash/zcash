@@ -2570,11 +2570,11 @@ bool CheckTxShieldedInputs(
     int dosLevel)
 {
     // Are the shielded spends' requirements met?
-    auto unmetShieldedReq = view.HaveShieldedRequirements(tx);
-    if (unmetShieldedReq) {
+    auto unmetShieldedReq = view.CheckShieldedRequirements(tx);
+    if (!unmetShieldedReq.has_value()) {
         auto txid = tx.GetHash().ToString();
-        auto rejectCode = ShieldedReqRejectCode(*unmetShieldedReq);
-        auto rejectReason = ShieldedReqRejectReason(*unmetShieldedReq);
+        auto rejectCode = ShieldedReqRejectCode(unmetShieldedReq.error());
+        auto rejectReason = ShieldedReqRejectReason(unmetShieldedReq.error());
         TracingDebug(
             "main", "CheckTxShieldedInputs(): shielded requirements not met",
             "txid", txid.c_str(),
