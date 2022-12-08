@@ -254,8 +254,8 @@ TransactionBuilder::TransactionBuilder(
     const Consensus::Params& consensusParams,
     int nHeight,
     std::optional<uint256> orchardAnchor,
-    CKeyStore* keystore,
-    CCoinsViewCache* coinsView,
+    const CKeyStore* keystore,
+    const CCoinsViewCache* coinsView,
     CCriticalSection* cs_coinsView) :
     consensusParams(consensusParams),
     nHeight(nHeight),
