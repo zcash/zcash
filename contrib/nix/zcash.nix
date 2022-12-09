@@ -3,7 +3,7 @@
   boost,
   ctaes,
   cxx-rs,
-  db62,
+  db,
   gtest,
   hexdump,
   leveldb,
@@ -33,7 +33,7 @@ llvmPackages.stdenv.mkDerivation {
   buildInputs = [
     boost
     ctaes
-    db62
+    db
     gtest
     leveldb
     libevent

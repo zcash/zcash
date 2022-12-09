@@ -17,7 +17,11 @@
     // flake-utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [(import ./contrib/nix/dependencies.nix)];
+        overlays = [
+          (import ./contrib/nix/dependencies/system.nix)
+          (import ./contrib/nix/dependencies/depends)
+          (import ./contrib/nix/dependencies/subtrees)
+        ];
       };
 
       # Specific derivations may further filter the src, but this cuts out all
