@@ -11,6 +11,6 @@ define $(package)_preprocess_cmds
 endef
 
 define $(package)_stage_cmds
-  mkdir $($(package)_staging_dir)$(host_prefix)/include && \
-  cp include/tl/expected.hpp $($(package)_staging_dir)$(host_prefix)/include
+  mkdir -p $($(package)_staging_dir)$(host_prefix)/include && \
+  cp -r include/tl $($(package)_staging_dir)$(host_prefix)/include
 endef
