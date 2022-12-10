@@ -95,17 +95,26 @@
         };
       };
 
-      devShells = {
-        default = pkgs.mkShell {
-          inputsFrom = builtins.attrValues self.packages.${system};
+      devShells =
+        {
+          default = pkgs.mkShell {
+            # This should include all the packages we define, so that a user in
+            # the default shell (automatically entered via direnv) has access to
+            # all tooling required for any builds or checks.
+            inputsFrom =
+              builtins.attrValues self.checks.${system}
+              ++ builtins.attrValues self.packages.${system};
 
-          nativeBuildInputs = [
-            pkgs.lldb # debugger
-            pkgs.rust-analyzer # LSP server
-            # pkgs.valgrind # debugger # currently broken?
-          ];
-        };
-      }
+            # This contains any additional tooling we want as a developer (e.g.,
+            # things like debuggers that aren’t used in any build process but
+            # that we want around while doing day-to-day work.
+            nativeBuildInputs = [
+              pkgs.lldb # debugger
+              pkgs.rust-analyzer # LSP server
+              # pkgs.valgrind # debugger # currently broken?
+            ];
+          };
+        }
         // (
           # `pkgs.debian-devscripts` is Linux-specific, so we can only do a
           # release from there.

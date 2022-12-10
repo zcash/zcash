@@ -4,13 +4,14 @@
   pythonPackages,
   runCommand,
   rustfmt,
+  shellcheck,
   src,
 }: {
   cargo-patches =
     runCommand "cargo-patches" {
       inherit src;
     } ''
-      ${bash}/bin/bash $src/test/lint/lint-cargo-patches.sh
+      $src/test/lint/lint-cargo-patches.sh
       mkdir $out
     '';
 
@@ -18,15 +19,17 @@
     runCommand "include-guards" {
       inherit src;
     } ''
-      ${bash}/bin/bash $src/test/lint/lint-include-guards.sh
+      $src/test/lint/lint-include-guards.sh
       mkdir $out
     '';
 
   pyflakes =
     runCommand "pyflakes" {
       inherit src;
+
+      nativeBuildInputs = [pythonPackages.pyflakes];
     } ''
-      ${pythonPackages.pyflakes}/bin/pyflakes $src/qa $src/src $src/zcutil
+      pyflakes $src/qa $src/src $src/zcutil
       mkdir $out
     '';
 
@@ -34,7 +37,7 @@
     runCommand "python-utf8-encoding" {
       inherit src;
     } ''
-      ${bash}/bin/bash $src/test/lint/lint-python-utf8-encoding.sh
+      $src/test/lint/lint-python-utf8-encoding.sh
       mkdir $out
     '';
 
@@ -49,6 +52,18 @@
     } ''
       cd $src
       cargo fmt -- --check
+      mkdir $out
+    '';
+
+  shell =
+    runCommand "shell" {
+      inherit src;
+
+      nativeBuildInputs = [
+        shellcheck
+      ];
+    } ''
+      $src/test/lint/lint-shell.sh
       mkdir $out
     '';
 }
