@@ -72,7 +72,6 @@ private:
     bool isfromsprout_{false};
     bool isfromsapling_{false};
     TransactionStrategy strategy_;
-    uint32_t transparentRecipients_{0};
     AccountId sendFromAccount_;
     std::set<OutputPool> recipientPools_;
     TxOutputAmounts txOutputAmounts_;

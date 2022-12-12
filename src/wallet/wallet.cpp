@@ -2214,6 +2214,7 @@ SpendableInputs CWallet::FindSpendableInputs(
     KeyIO keyIO(Params());
 
     bool selectTransparent{selector.SelectsTransparent()};
+    bool selectTransparentCoinbase{selector.SelectsTransparentCoinbase()};
     bool selectSprout{selector.SelectsSprout()};
     bool selectSapling{selector.SelectsSapling()};
     bool selectOrchard{selector.SelectsOrchard()};
@@ -2229,7 +2230,7 @@ SpendableInputs CWallet::FindSpendableInputs(
 
         if (selectTransparent &&
             // skip transparent utxo selection if coinbase spend restrictions are not met
-            (!isCoinbase || (allowTransparentCoinbase && wtx.GetBlocksToMaturity(asOfHeight) <= 0))) {
+            (!isCoinbase || (selectTransparentCoinbase && allowTransparentCoinbase && wtx.GetBlocksToMaturity(asOfHeight) <= 0))) {
 
             for (int i = 0; i < wtx.vout.size(); i++) {
                 const auto& output = wtx.vout[i];
@@ -7820,6 +7821,23 @@ bool ZTXOSelector::SelectsTransparent() const {
         },
         [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetTransparentKey().has_value(); },
         [](const AccountZTXOPattern& acct) { return acct.IncludesP2PKH() || acct.IncludesP2SH(); }
+    }, this->pattern);
+}
+bool ZTXOSelector::SelectsTransparentCoinbase() const {
+    return std::visit(match {
+        [](const CKeyID& keyId) { return true; },
+        [](const CScriptID& scriptId) { return true; },
+        [](const libzcash::SproutPaymentAddress& addr) { return false; },
+        [](const libzcash::SproutViewingKey& vk) { return false; },
+        [](const libzcash::SaplingPaymentAddress& addr) { return false; },
+        [](const libzcash::SaplingExtendedFullViewingKey& vk) { return false; },
+        [](const libzcash::UnifiedAddress& ua) {
+            return ua.GetP2PKHReceiver().has_value() || ua.GetP2SHReceiver().has_value();
+        },
+        [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetTransparentKey().has_value(); },
+        [](const AccountZTXOPattern& acct) {
+            return (acct.IncludesP2PKH() || acct.IncludesP2SH()) && acct.GetAccountId() != ZCASH_LEGACY_ACCOUNT;
+        }
     }, this->pattern);
 }
 bool ZTXOSelector::SelectsSprout() const {

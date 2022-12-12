@@ -872,6 +872,7 @@ public:
     }
 
     bool SelectsTransparent() const;
+    bool SelectsTransparentCoinbase() const;
     bool SelectsSprout() const;
     bool SelectsSapling() const;
     bool SelectsOrchard() const;

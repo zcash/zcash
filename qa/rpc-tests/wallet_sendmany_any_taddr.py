@@ -97,7 +97,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
 
         # Check that ANY_TADDR note selection doesn't attempt a double-spend
         myopid = self.nodes[3].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 20}], 1)
-        wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "Insufficient funds: have 14.99998, need 20.00001")
+        wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "Insufficient funds: have 14.99998, need 20.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR or if any transparent recipients are included.")
 
         # Create an expired transaction on node 3.
         self.split_network()
@@ -123,7 +123,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
         assert_equal(0, self.nodes[2].getbalance())
 
         # Check that ANY_TADDR doesn't select an expired output.
-        wait_and_assert_operationid_status(self.nodes[2], self.nodes[2].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 13}]), "failed", "Insufficient funds: have 0.00, need 13.00001")
+        wait_and_assert_operationid_status(self.nodes[2], self.nodes[2].z_sendmany('ANY_TADDR', [{'address': recipient, 'amount': 13}]), "failed", "Insufficient funds: have 0.00, need 13.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR or if any transparent recipients are included.")
 
 if __name__ == '__main__':
     WalletSendManyAnyTaddr().main()
