@@ -759,6 +759,9 @@ public:
 
 /**
  * A strategy to use for managing privacy when constructing a transaction.
+ *
+ * **NB**: These are intentionally in an order where `<` will never do the right
+ *         thing. See `PrivacyPolicyMeet` for a correct comparison.
  */
 enum class PrivacyPolicy {
     FullPrivacy,
@@ -770,20 +773,54 @@ enum class PrivacyPolicy {
     NoPrivacy,
 };
 
+/**
+ * Privacy policies form a lattice where the relation is “strictness”. I.e.,
+ * `x ≤ y` means “Policy `x` allows at least everything that policy `y` allows.”
+ *
+ * This function returns the meet (greatest lower bound) of `a` and `b`, i.e.
+ * the strictest policy that allows everything allowed by `a` and also
+ * everything allowed by `b`.
+ *
+ * See #6240 for the graph that this models.
+ */
+PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b);
+
 class TransactionStrategy {
-    PrivacyPolicy privacy;
+    PrivacyPolicy requestedLevel;
 
 public:
-    TransactionStrategy() : privacy(PrivacyPolicy::FullPrivacy) {}
-    TransactionStrategy(const TransactionStrategy& strategy) : privacy(strategy.privacy) {}
-    TransactionStrategy(PrivacyPolicy privacyPolicy) : privacy(privacyPolicy) {}
+    TransactionStrategy() : requestedLevel(PrivacyPolicy::FullPrivacy) {}
+    TransactionStrategy(const TransactionStrategy& strategy) : requestedLevel(strategy.requestedLevel) {}
+    TransactionStrategy(PrivacyPolicy privacyPolicy) : requestedLevel(privacyPolicy) {}
 
     static std::optional<TransactionStrategy> FromString(std::string privacyPolicy);
+    static std::string ToString(PrivacyPolicy policy);
 
-    bool AllowRevealedAmounts();
-    bool AllowRevealedRecipients();
-    bool AllowRevealedSenders();
-    bool AllowLinkingAccountAddresses();
+    std::string PolicyName() const {
+        return ToString(requestedLevel);
+    }
+
+    bool AllowRevealedAmounts() const;
+    bool AllowRevealedRecipients() const;
+    bool AllowRevealedSenders() const;
+    bool AllowFullyTransparent() const;
+    bool AllowLinkingAccountAddresses() const;
+
+    /**
+     * This strategy is compatible with a given policy if it is identical to or
+     * less strict than the policy.
+     *
+     * For example, if a transaction requires a policy no stricter than
+     * `AllowRevealedSenders`, then that transaction can safely be constructed
+     * if the user specifies `AllowLinkingAccountAddresses`, because
+     * `AllowLinkingAccountAddresses` is compatible with `AllowRevealedSenders`
+     * (the transaction will not link addresses anyway). However, if the
+     * transaction required `AllowRevealedRecipients`, it could not be
+     * constructed, because `AllowLinkingAccountAddresses` is _not_ compatible
+     * with `AllowRevealedRecipients` (the transaction reveals recipients, which
+     * is not allowed by `AllowLinkingAccountAddresses`.
+     */
+    bool IsCompatibleWith(PrivacyPolicy policy) const;
 };
 
 /**
