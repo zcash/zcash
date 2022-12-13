@@ -4533,7 +4533,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "  \"spends\" : [\n"
             "    {\n"
             "      \"pool\" : \"sprout|sapling|orchard\",      (string) The shielded value pool\n"
-            "      \"type\" : \"sprout|sapling|orchard\",      (string) The shielded value pool (DEPRECATED legacy attribute)"
+            "      \"type\" : \"sprout|sapling|orchard\",      (string) The shielded value pool (DEPRECATED legacy attribute)\n"
             "      \"js\" : n,                       (numeric, sprout) the index of the JSDescription within vJoinSplit\n"
             "      \"jsSpend\" : n,                  (numeric, sprout) the index of the spend within the JSDescription\n"
             "      \"spend\" : n,                    (numeric, sapling) the index of the spend within vShieldedSpend\n"
