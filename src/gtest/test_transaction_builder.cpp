@@ -39,10 +39,10 @@ TEST(TransactionBuilder, TransparentToSapling)
     auto pk = *ivk.address(d);
 
     // Create a shielding transaction from transparent to Sapling
-    // 0.0005 t-ZEC in, 0.0004 z-ZEC out, default fee
+    // 0.00005 t-ZEC in, 0.00004 z-ZEC out, default fee
     auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
-    builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 50000);
-    builder.AddSaplingOutput(fvk_from.ovk, pk, 40000, {});
+    builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 5000);
+    builder.AddSaplingOutput(fvk_from.ovk, pk, 4000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx.vin.size(), 1);
@@ -50,7 +50,7 @@ TEST(TransactionBuilder, TransparentToSapling)
     EXPECT_EQ(tx.vJoinSplit.size(), 0);
     EXPECT_EQ(tx.vShieldedSpend.size(), 0);
     EXPECT_EQ(tx.vShieldedOutput.size(), 1);
-    EXPECT_EQ(tx.GetValueBalanceSapling(), -40000);
+    EXPECT_EQ(tx.GetValueBalanceSapling(), -4000);
 
     CValidationState state;
     EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 2, true));
@@ -70,10 +70,10 @@ TEST(TransactionBuilder, SaplingToSapling) {
     auto fvk = sk.full_viewing_key();
     auto pa = sk.default_address();
 
-    auto testNote = GetTestSaplingNote(pa, 40000);
+    auto testNote = GetTestSaplingNote(pa, 4000);
 
     // Create a Sapling-only transaction
-    // 0.0004 z-ZEC in, 0.00025 z-ZEC out, default fee, 0.00005 z-ZEC change
+    // 0.00004 z-ZEC in, 0.000025 z-ZEC out, default fee, 0.000005 z-ZEC change
     auto builder = TransactionBuilder(consensusParams, 2, std::nullopt);
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
 
@@ -81,7 +81,7 @@ TEST(TransactionBuilder, SaplingToSapling) {
     // TODO: the following check can be split out in to another test
     ASSERT_THROW(builder.AddSaplingSpend(expsk, testNote.note, uint256(), testNote.tree.witness()), UniValue);
 
-    builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
+    builder.AddSaplingOutput(fvk.ovk, pa, 2500, {});
     auto tx = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx.vin.size(), 0);
@@ -89,7 +89,7 @@ TEST(TransactionBuilder, SaplingToSapling) {
     EXPECT_EQ(tx.vJoinSplit.size(), 0);
     EXPECT_EQ(tx.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx.vShieldedOutput.size(), 2);
-    EXPECT_EQ(tx.GetValueBalanceSapling(), 10000);
+    EXPECT_EQ(tx.GetValueBalanceSapling(), 1000);
 
     CValidationState state;
     EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 3, true));
@@ -108,28 +108,28 @@ TEST(TransactionBuilder, SaplingToSprout) {
     auto expsk = sk.expanded_spending_key();
     auto pa = sk.default_address();
 
-    auto testNote = GetTestSaplingNote(pa, 40000);
+    auto testNote = GetTestSaplingNote(pa, 4000);
 
     auto sproutSk = libzcash::SproutSpendingKey::random();
     auto sproutAddr = sproutSk.address();
 
     // Create a Sapling-to-Sprout transaction (reusing the note from above)
-    // - 0.0004 Sapling-ZEC in      - 0.00025 Sprout-ZEC out
-    //                              - 0.00005 Sapling-ZEC change
+    // - 0.00004 Sapling-ZEC in     - 0.000025 Sprout-ZEC out
+    //                              - 0.000005 Sapling-ZEC change
     //                              - default t-ZEC fee
     auto builder = TransactionBuilder(consensusParams, 2, std::nullopt, nullptr);
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
-    builder.AddSproutOutput(sproutAddr, 25000);
+    builder.AddSproutOutput(sproutAddr, 2500);
     auto tx = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx.vin.size(), 0);
     EXPECT_EQ(tx.vout.size(), 0);
     EXPECT_EQ(tx.vJoinSplit.size(), 1);
-    EXPECT_EQ(tx.vJoinSplit[0].vpub_old, 25000);
+    EXPECT_EQ(tx.vJoinSplit[0].vpub_old, 2500);
     EXPECT_EQ(tx.vJoinSplit[0].vpub_new, 0);
     EXPECT_EQ(tx.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx.vShieldedOutput.size(), 1);
-    EXPECT_EQ(tx.GetValueBalanceSapling(), 35000);
+    EXPECT_EQ(tx.GetValueBalanceSapling(), 3500);
 
     CValidationState state;
     EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 3, true));
@@ -245,10 +245,10 @@ TEST(TransactionBuilder, TransparentToOrchard)
     auto orchardAnchor = fakeDB.GetBestAnchor(ShieldedType::ORCHARD);
 
     // Create a shielding transaction from transparent to Orchard
-    // 0.0005 t-ZEC in, 0.0004 z-ZEC out, default fee
+    // 0.00005 t-ZEC in, 0.00004 z-ZEC out, default fee
     auto builder = TransactionBuilder(consensusParams, 1, orchardAnchor, &keystore);
-    builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 50000);
-    builder.AddOrchardOutput(std::nullopt, recipient, 40000, std::nullopt);
+    builder.AddTransparentInput(COutPoint(uint256S("1234"), 0), scriptPubKey, 5000);
+    builder.AddOrchardOutput(std::nullopt, recipient, 4000, std::nullopt);
     auto maybeTx = builder.Build();
     EXPECT_TRUE(maybeTx.IsTx());
     if (maybeTx.IsError()) {
@@ -263,7 +263,7 @@ TEST(TransactionBuilder, TransparentToOrchard)
     EXPECT_EQ(tx.vShieldedSpend.size(), 0);
     EXPECT_EQ(tx.vShieldedOutput.size(), 0);
     EXPECT_TRUE(tx.GetOrchardBundle().IsPresent());
-    EXPECT_EQ(tx.GetOrchardBundle().GetValueBalance(), -40000);
+    EXPECT_EQ(tx.GetOrchardBundle().GetValueBalance(), -4000);
 
     CValidationState state;
     EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 2, true));
@@ -312,22 +312,22 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
     auto scriptPubKey = GetScriptForDestination(tkeyid);
     CTxDestination taddr = tkeyid;
 
-    auto testNote = GetTestSaplingNote(pa, 59999);
+    auto testNote = GetTestSaplingNote(pa, 5999);
 
     // Fail if there is only a Sapling output
-    // 0.0005 z-ZEC out, default fee
+    // 0.00005 z-ZEC out, default fee
     auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
-    builder.AddSaplingOutput(fvk.ovk, pa, 50000, {});
+    builder.AddSaplingOutput(fvk.ovk, pa, 5000, {});
     EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
     // Fail if there is only a transparent output
-    // 0.0005 t-ZEC out, default fee
+    // 0.00005 t-ZEC out, default fee
     builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
-    builder.AddTransparentOutput(taddr, 50000);
+    builder.AddTransparentOutput(taddr, 5000);
     EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
     // Fails if there is insufficient input
-    // 0.0005 t-ZEC out, default fee, 0.00059999 z-ZEC in
+    // 0.00005 t-ZEC out, default fee, 0.00005999 z-ZEC in
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
     EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
@@ -350,7 +350,7 @@ TEST(TransactionBuilder, ChangeOutput)
     auto expsk = sk.expanded_spending_key();
     auto pa = sk.default_address();
 
-    auto testNote = GetTestSaplingNote(pa, 25000);
+    auto testNote = GetTestSaplingNote(pa, 2500);
 
     // Generate change Sapling address
     auto sk2 = libzcash::SaplingSpendingKey::random();
@@ -366,14 +366,14 @@ TEST(TransactionBuilder, ChangeOutput)
     // No change address and no Sapling spends
     {
         auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
-        builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
+        builder.AddTransparentInput(COutPoint(), scriptPubKey, 2500);
         EXPECT_EQ("Could not determine change address", builder.Build().GetError());
     }
 
     // Change to the same address as the first Sapling spend
     {
         auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
-        builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
+        builder.AddTransparentInput(COutPoint(), scriptPubKey, 2500);
         builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
         auto tx = builder.Build().GetTxOrThrow();
 
@@ -382,13 +382,13 @@ TEST(TransactionBuilder, ChangeOutput)
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 1);
         EXPECT_EQ(tx.vShieldedOutput.size(), 1);
-        EXPECT_EQ(tx.GetValueBalanceSapling(), -15000);
+        EXPECT_EQ(tx.GetValueBalanceSapling(), -1500);
     }
 
     // Change to a Sapling address
     {
         auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
-        builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
+        builder.AddTransparentInput(COutPoint(), scriptPubKey, 2500);
         builder.SendChangeTo(zChangeAddr, fvkOut.ovk);
         auto tx = builder.Build().GetTxOrThrow();
 
@@ -397,13 +397,13 @@ TEST(TransactionBuilder, ChangeOutput)
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 0);
         EXPECT_EQ(tx.vShieldedOutput.size(), 1);
-        EXPECT_EQ(tx.GetValueBalanceSapling(), -15000);
+        EXPECT_EQ(tx.GetValueBalanceSapling(), -1500);
     }
 
     // Change to a transparent address
     {
         auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
-        builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
+        builder.AddTransparentInput(COutPoint(), scriptPubKey, 2500);
         builder.SendChangeTo(tkeyid, {});
         auto tx = builder.Build().GetTxOrThrow();
 
@@ -413,7 +413,7 @@ TEST(TransactionBuilder, ChangeOutput)
         EXPECT_EQ(tx.vShieldedSpend.size(), 0);
         EXPECT_EQ(tx.vShieldedOutput.size(), 0);
         EXPECT_EQ(tx.GetValueBalanceSapling(), 0);
-        EXPECT_EQ(tx.vout[0].nValue, 15000);
+        EXPECT_EQ(tx.vout[0].nValue, 1500);
     }
 
     // Revert to default
@@ -446,7 +446,8 @@ TEST(TransactionBuilder, SetFee)
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 1);
         EXPECT_EQ(tx.vShieldedOutput.size(), 2);
-        EXPECT_EQ(tx.GetValueBalanceSapling(), 10000);
+        // the value balance is just the amount exposed as the miner fee
+        EXPECT_EQ(tx.GetValueBalanceSapling(), 1000);
     }
 
     // Configured fee
@@ -462,6 +463,7 @@ TEST(TransactionBuilder, SetFee)
         EXPECT_EQ(tx.vJoinSplit.size(), 0);
         EXPECT_EQ(tx.vShieldedSpend.size(), 1);
         EXPECT_EQ(tx.vShieldedOutput.size(), 2);
+        // the value balance is just the amount exposed as the miner fee
         EXPECT_EQ(tx.GetValueBalanceSapling(), 20000);
     }
 

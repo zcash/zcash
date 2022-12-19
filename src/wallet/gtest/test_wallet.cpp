@@ -834,8 +834,8 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
 
     // Generate a bundle containing output note A.
     auto builder = TransactionBuilder(consensusParams, 1, orchardAnchor, &keystore);
-    builder.AddTransparentInput(COutPoint(uint256(), 0), scriptPubKey, 50000);
-    builder.AddOrchardOutput(std::nullopt, recipient, 40000, {});
+    builder.AddTransparentInput(COutPoint(uint256(), 0), scriptPubKey, 5000);
+    builder.AddOrchardOutput(std::nullopt, recipient, 4000, {});
     auto maybeTx = builder.Build();
     EXPECT_TRUE(maybeTx.IsTx());
     if (maybeTx.IsError()) {
@@ -1221,7 +1221,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         auto pk = extfvk.DefaultAddress();
 
         // Generate Sapling note A
-        libzcash::SaplingNote note(pk, 50000, zip_212_enabled[ver]);
+        libzcash::SaplingNote note(pk, 5000, zip_212_enabled[ver]);
         auto cm = note.cmu().value();
         MerkleFrontiers frontiers;
         frontiers.sapling.append(cm);
@@ -1231,7 +1231,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         // Generate transaction, which sends funds to note B
         auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
         builder.AddSaplingSpend(expsk, note, anchor, witness);
-        builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 25000, {});
+        builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 2500, {});
         auto tx = builder.Build().GetTxOrThrow();
 
         CWalletTx wtx {&wallet, tx};
@@ -1302,14 +1302,14 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         // Create transaction to spend note B
         auto builder2 = TransactionBuilder(consensusParams, 2, std::nullopt);
         builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness);
-        builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 12500, {});
+        builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 1250, {});
         auto tx2 = builder2.Build().GetTxOrThrow();
         EXPECT_EQ(tx2.vin.size(), 0);
         EXPECT_EQ(tx2.vout.size(), 0);
         EXPECT_EQ(tx2.vJoinSplit.size(), 0);
         EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
         EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
-        EXPECT_EQ(tx2.GetValueBalanceSapling(), 10000);
+        EXPECT_EQ(tx2.GetValueBalanceSapling(), 1000);
 
         CWalletTx wtx2 {&wallet, tx2};
 
@@ -2231,8 +2231,8 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     // Generate shielding tx from transparent to Sapling
     // 0.0005 t-ZEC in, 0.0004 z-ZEC out, default fee
     auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
-    builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
-    builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 40000, {});
+    builder.AddTransparentInput(COutPoint(), scriptPubKey, 5000);
+    builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 4000, {});
     auto tx1 = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx1.vin.size(), 1);
@@ -2240,7 +2240,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     EXPECT_EQ(tx1.vJoinSplit.size(), 0);
     EXPECT_EQ(tx1.vShieldedSpend.size(), 0);
     EXPECT_EQ(tx1.vShieldedOutput.size(), 1);
-    EXPECT_EQ(tx1.GetValueBalanceSapling(), -40000);
+    EXPECT_EQ(tx1.GetValueBalanceSapling(), -4000);
 
     CWalletTx wtx {&wallet, tx1};
 
@@ -2286,7 +2286,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, default fee, 0.00005 z-ZEC change
     auto builder2 = TransactionBuilder(consensusParams, 2, std::nullopt);
     builder2.AddSaplingSpend(expsk, note, anchor, witness);
-    builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 25000, {});
+    builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 2500, {});
     auto tx2 = builder2.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx2.vin.size(), 0);
@@ -2294,7 +2294,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     EXPECT_EQ(tx2.vJoinSplit.size(), 0);
     EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
-    EXPECT_EQ(tx2.GetValueBalanceSapling(), 10000);
+    EXPECT_EQ(tx2.GetValueBalanceSapling(), 1000);
 
     CWalletTx wtx2 {&wallet, tx2};
     auto hash2 = wtx2.GetHash();

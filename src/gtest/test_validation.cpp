@@ -162,7 +162,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
     chainActive.SetTip(&fakeIndex);
 
     // Fake a view containing a single coin.
-    CAmount coinValue(50000);
+    CAmount coinValue(5000);
     COutPoint utxo;
     utxo.hash = uint256S("4242424242424242424242424242424242424242424242424242424242424242");
     utxo.n = 0;
@@ -176,7 +176,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
     // a height during the Overwinter epoch.
     auto builder = TransactionBuilder(consensusParams, 15, std::nullopt, &keystore);
     builder.AddTransparentInput(utxo, scriptPubKey, coinValue);
-    builder.AddTransparentOutput(destination, 40000);
+    builder.AddTransparentOutput(destination, 4000);
     auto tx = builder.Build().GetTxOrThrow();
     ASSERT_FALSE(tx.IsCoinBase());
 
