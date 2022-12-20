@@ -167,14 +167,14 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     fCheckpointsEnabled = false;
     fCoinbaseEnforcedShieldingEnabled = false;
 
+    // Simple block creation, nothing special yet:
+    BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
+
     // We can't make transactions until we have inputs
     // Therefore, load 100 blocks :)
     std::vector<CTransaction*>txFirst;
     for (unsigned int i = 0; i < sizeof(blockinfo)/sizeof(*blockinfo); ++i)
     {
-        // Simple block creation, nothing special yet:
-        BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
-
         CBlock *pblock = &pblocktemplate->block; // pointer for convenience
         pblock->nVersion = 4;
         // Fake the blocks taking at least nPowTargetSpacing to be mined.
@@ -183,10 +183,13 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         // one spacing ahead of the tip. Within 11 blocks of genesis, the median
         // will be closer to the tip, and blocks will appear slower.
         pblock->nTime = chainActive.Tip()->GetMedianTimePast()+6*Params().GetConsensus().PoWTargetSpacing(i);
+        pblock->nBits = GetNextWorkRequired(chainActive.Tip(), pblock, chainparams.GetConsensus());
         CMutableTransaction txCoinbase(pblock->vtx[0]);
         txCoinbase.nVersion = 1;
         txCoinbase.vin[0].scriptSig = CScript() << (chainActive.Height()+1) << OP_0;
         txCoinbase.vout[0].scriptPubKey = CScript();
+        txCoinbase.vout[0].nValue = 50000 * (i + 1);
+        txCoinbase.vout[1].nValue = 12500 * (i + 1);
         pblock->vtx[0] = CTransaction(txCoinbase);
         if (txFirst.size() < 2)
             txFirst.push_back(new CTransaction(pblock->vtx[0]));
@@ -280,10 +283,8 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         BOOST_CHECK(ProcessNewBlock(state, chainparams, NULL, pblock, true, NULL));
         BOOST_CHECK_MESSAGE(state.IsValid(), state.GetRejectReason());
         pblock->hashPrevBlock = pblock->GetHash();
-
-        // Need to recreate the template each round because of mining slow start
-        delete pblocktemplate;
     }
+    delete pblocktemplate;
 
     // Just to make sure we can still make simple blocks
     BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
