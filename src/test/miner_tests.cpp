@@ -297,6 +297,14 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     BOOST_CHECK(pblocktemplate = CreateNewBlock(chainparams, scriptPubKey));
     delete pblocktemplate;
 
+    // Define a helper function to check the kind of failure from TestBlockValidity.
+    auto err_is = [](const std::string& msg) {
+        return [&](std::runtime_error const& e) {
+            BOOST_TEST_INFO(e.what());
+            return std::string(e.what()).find(msg) != std::string::npos;
+        };
+    };
+
     // block sigops > limit: 1000 CHECKMULTISIG + 1
     tx.vin.resize(1);
     // NOTE: OP_NOP is used to force 20 SigOps for the CHECKMULTISIG
@@ -314,7 +322,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         mempool.addUnchecked(hash, entry.Fee(10).Time(GetTime()).SpendsCoinbase(spendsCoinbase).FromTx(tx));
         tx.vin[0].prevout.hash = hash;
     }
-    BOOST_CHECK_THROW(CreateNewBlock(chainparams, scriptPubKey), std::runtime_error);
+    BOOST_CHECK_EXCEPTION(CreateNewBlock(chainparams, scriptPubKey), std::runtime_error, err_is("bad-blk-sigops"));
     mempool.clear();
 
     tx.vin[0].prevout.hash = txFirst[0]->GetHash();
@@ -356,7 +364,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     // orphan in mempool, template creation fails
     hash = tx.GetHash();
     mempool.addUnchecked(hash, entry.Fee(10).Time(GetTime()).FromTx(tx));
-    BOOST_CHECK_THROW(CreateNewBlock(chainparams, scriptPubKey), std::runtime_error);
+    BOOST_CHECK_EXCEPTION(CreateNewBlock(chainparams, scriptPubKey), std::runtime_error, err_is("bad-txns-inputs-missingorspent"));
     mempool.clear();
 
     // child with higher priority than parent
@@ -385,7 +393,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     hash = tx.GetHash();
     // give it a fee so it'll get mined
     mempool.addUnchecked(hash, entry.Fee(1).Time(GetTime()).SpendsCoinbase(false).FromTx(tx));
-    BOOST_CHECK_THROW(CreateNewBlock(chainparams, scriptPubKey), std::runtime_error);
+    BOOST_CHECK_EXCEPTION(CreateNewBlock(chainparams, scriptPubKey), std::runtime_error, err_is("bad-cb-multiple"));
     mempool.clear();
 
     // P2SH txn in mempool (valid, Zcash always had P2SH enabled)
@@ -416,7 +424,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vout[0].scriptPubKey = CScript() << OP_2;
     hash = tx.GetHash();
     mempool.addUnchecked(hash, entry.Fee(1000L).Time(GetTime()).SpendsCoinbase(true).FromTx(tx));
-    BOOST_CHECK_THROW(CreateNewBlock(chainparams, scriptPubKey), std::runtime_error);
+    BOOST_CHECK_EXCEPTION(CreateNewBlock(chainparams, scriptPubKey), std::runtime_error, err_is("bad-txns-inputs-missingorspent"));
     mempool.clear();
 
     // subsidy changing
