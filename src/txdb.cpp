@@ -391,7 +391,7 @@ bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockF
         batch.Write(make_pair(DB_BLOCK_FILES, it->first), *it->second);
     }
     batch.Write(DB_LAST_BLOCK, nLastFile);
-    for (std::vector<const CBlockIndex*>::const_iterator it=blockinfo.begin(); it != blockinfo.end(); it++) {
+    for (std::vector<CBlockIndex*>::const_iterator it=blockinfo.begin(); it != blockinfo.end(); it++) {
         std::pair<char, uint256> key = make_pair(DB_BLOCK_INDEX, (*it)->GetBlockHash());
         try {
             CDiskBlockIndex dbindex {*it, [this, &key]() {
