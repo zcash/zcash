@@ -9,11 +9,13 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_true, zcashd_binary
+from test_framework.util import assert_equal, zcashd_binary
+
+from difflib import SequenceMatcher, unified_diff
 import subprocess
 import tempfile
 
-help_message_1 = """
+help_message = """
 In order to ensure you are adequately protecting your privacy when using Zcash,
 please see <https://z.cash/support/security/>.
 
@@ -84,8 +86,7 @@ Options:
        Keep at most <n> unconnectable transactions in memory (default: 100)
 
   -par=<n>
-       Set the number of script verification threads (""" # nondeterministic part here
-help_message_2 = """, 0 = auto, <0 =
+       Set the number of script verification threads (IGNORE_NONDETERMINISTIC, 0 = auto, <0 =
        leave that many cores free, default: 0)
 
   -pid=<file>
@@ -481,6 +482,7 @@ Compatibility options:
   -preferredtxversion
        Preferentially create transactions having the specified version when
        possible (default: 4)
+
 """
 
 class ShowHelpTest(BitcoinTestFramework):
@@ -495,8 +497,34 @@ class ShowHelpTest(BitcoinTestFramework):
             assert_equal(process.returncode, 0)
             log_stdout.seek(0)
             stdout = log_stdout.read().decode('utf-8')
-            assert_true(help_message_1 in stdout)
-            assert_true(help_message_2 in stdout)
+            # Skip the first line which contains version information.
+            actual = stdout.split('\n', 1)[1]
+            expected = help_message
+
+            changed = False
+
+            for group in SequenceMatcher(None, expected, actual).get_grouped_opcodes():
+                # The first and last group are context lines.
+                assert_equal(group[0][0], 'equal')
+                assert_equal(group[-1][0], 'equal')
+
+                if (
+                    len(group) == 3 and
+                    group[1][0] == 'replace' and
+                    expected[group[1][1]:group[1][2]] == 'IGNORE_NONDETERMINISTIC'
+                ):
+                    # This is an expected difference, we can ignore it.
+                    pass
+                else:
+                    changed = True
+            if changed:
+                diff = '\n'.join(unified_diff(
+                    expected.split('\n'),
+                    actual.split('\n'),
+                    'expected',
+                    'actual',
+                ))
+                raise AssertionError('Help text has changed:\n' + diff)
 
     def run_test(self):
         self.show_help()
