@@ -13,7 +13,13 @@ from mergetoaddress_helper import assert_mergetoaddress_exception
 class MergeToAddressMixedNotes(BitcoinTestFramework):
     def setup_nodes(self):
         self.num_nodes = 4
-        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[['-anchorconfirmations=1']] * self.num_nodes)
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            '-anchorconfirmations=1',
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
+            '-allowdeprecated=z_gettotalbalance',
+        ]] * self.num_nodes)
 
     def setup_chain(self):
         print("Initializing test directory " + self.options.tmpdir)
@@ -41,7 +47,7 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
         assert_mergetoaddress_exception(
             "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress",
             lambda: self.nodes[0].z_mergetoaddress(["ANY_SPROUT", "ANY_SAPLING"], t_addr))
-        opid = self.nodes[0].z_sendmany(coinbase_addr, [{"address": saplingAddr, "amount": Decimal('10')}], 1, 0)
+        opid = self.nodes[0].z_sendmany(coinbase_addr, [{"address": saplingAddr, "amount": Decimal('10')}], 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
         self.nodes[0].generate(1)
         self.sync_all()

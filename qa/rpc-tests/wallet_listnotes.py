@@ -22,6 +22,8 @@ class WalletListNotes(BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir, [[
             nuparams(NU5_BRANCH_ID, 215),
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_gettotalbalance',
         ]] * 4)
 
     def run_test(self):
@@ -75,9 +77,9 @@ class WalletListNotes(BitcoinTestFramework):
         saplingzaddr = self.nodes[0].z_getnewaddress('sapling')
         receive_amount_2 = Decimal('1.0')
         change_amount_2 = receive_amount_1 - receive_amount_2 - DEFAULT_FEE
-        assert_equal('sapling', self.nodes[0].z_validateaddress(saplingzaddr)['type'])
+        assert_equal('sapling', self.nodes[0].z_validateaddress(saplingzaddr)['address_type'])
         recipients = [{"address": saplingzaddr, "amount":receive_amount_2}]
-        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, DEFAULT_FEE)
+        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedAmounts')
         txid_2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
 
@@ -116,7 +118,7 @@ class WalletListNotes(BitcoinTestFramework):
         receive_amount_3 = Decimal('2.0')
         change_amount_3 = change_amount_2 - receive_amount_3 - DEFAULT_FEE
         recipients = [{"address": saplingzaddr2, "amount":receive_amount_3}]
-        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, DEFAULT_FEE)
+        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedAmounts')
         txid_3 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         unspent_tx = self.nodes[0].z_listunspent(0)

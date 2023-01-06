@@ -7,7 +7,7 @@
 # Exercise the listtransactions API
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal
+from test_framework.util import assert_equal, start_nodes
 
 from decimal import Decimal
 
@@ -40,6 +40,11 @@ def check_array_result(object_array, to_match, expected):
         raise AssertionError("No objects matched %s"%(str(to_match)))
 
 class ListTransactionsTest(BitcoinTestFramework):
+
+    def setup_nodes(self):
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            '-allowdeprecated=getnewaddress',
+        ]] * self.num_nodes)
 
     def run_test(self):
         # Simple send, 0 to 1:

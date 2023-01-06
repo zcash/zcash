@@ -35,49 +35,25 @@ The following features are deprecated, but remain enabled by default. These feat
 will be disabled if `-allowdeprecated=none` is added to the CLI arguments when starting
 the node, or if an `allowdeprecated=none` line is added to `zcash.conf`.
 
-### Deprecated in 5.0.0
-
-The following features are deprecated as of release 5.0.0 and will be disabled by
-default as of release 5.3.0.
-
-  - `legacy_privacy` - The default "legacy" privacy policy for z_sendmany is
-    deprecated. Use `-allowdeprecated=none` to require the default behavior to
-    conform to the `FullPrivacy` directive in all cases instead of just for
-    transactions involving unified addresses. 
-  - `getnewaddress` - The `getnewaddress` RPC method is deprecated.
-  - `getrawchangeaddress` - The `getrawchangeaddress` RPC method is deprecated.
-  - `z_getbalance` - The `z_getbalance` RPC method is deprecated.
-  - `z_gettotalbalance` - The `z_gettotalbalance` RPC method is deprecated.
-  - `z_getnewaddress` - The `z_getnewaddress` RPC method is deprecated.
-  - `z_listaddresses` - The `z_listaddresses` RPC method is deprecated.
-  - `addrtype` - The `type` attribute is deprecated in the results of RPC
-    methods that return address metadata. It is recommended that applications
-    using this metadata be updated to use the `pool` or `address_type`
-    attributes, which have replaced the `type` attribute, as appropriate.
-
-### Deprecated in 5.1.0
-
-  - `wallettxvjoinsplit` - The `vjoinsplit` attribute returned by the
-    `gettransaction` RPC method is deprecated.
+| `feature`             | Deprecated | Feature details
+|-----------------------|------------|----------------
+| `gbt_oldhashes`       | 5.4.0      | The `finalsaplingroothash`, `lightclientroothash`, and `blockcommitmentshash` fields in the output of `getblocktemplate`, which are replaced by the `defaultroots` field.
 
 Stage 2
 -------
 
-Each feature in the lists below may be enabled by adding `-allowdeprecated=<feature>`
+Each feature in the table below may be enabled by adding `-allowdeprecated=<feature>`
 to the CLI arguments when starting the node, or by adding an `allowdeprecated=<feature>`
 line to `zcash.conf`.
 
-### Disabled in 5.0.0
-
-The following features are disabled by default, and will be removed in release 5.3.0.
-
-  - `zcrawreceive` - The `zcrawreceive` RPC method is disabled.
-  - `zcrawjoinsplit` - The `zcrawjoinsplit` RPC method is disabled.
-  - `zcrawkeygen` - The `zcrawkeygen` RPC method is disabled.
-
-### Disabled in 5.0.1
-
-The following features are disabled by default, and will be removed in release 5.3.0.
-
-  - `dumpwallet` - The `dumpwallet` RPC method is disabled.
-
+| `feature`             | Deprecated | Feature details
+|-----------------------|------------|----------------
+| `legacy_privacy`      | 5.0.0      | The default "legacy" privacy policy for `z_sendmany` has been replaced by the `FullPrivacy` directive.
+| `getnewaddress`       | 5.0.0      | The `getnewaddress` RPC method.
+| `getrawchangeaddress` | 5.0.0      | The `getrawchangeaddress` RPC method.
+| `z_getbalance`        | 5.0.0      | The `z_getbalance` RPC method.
+| `z_gettotalbalance`   | 5.0.0      | The `z_gettotalbalance` RPC method.
+| `z_getnewaddress`     | 5.0.0      | The `z_getnewaddress` RPC method.
+| `z_listaddresses`     | 5.0.0      | The `z_listaddresses` RPC method.
+| `addrtype`            | 5.0.0      | The `type` attribute is deprecated in the results of RPC methods that return address metadata. It is recommended that applications using this metadata be updated to use the `pool` or `address_type` attributes, which have replaced the `type` attribute, as appropriate.
+| `wallettxvjoinsplit`  | 5.1.0      | The `vjoinsplit` attribute returned by the `gettransaction` RPC method.

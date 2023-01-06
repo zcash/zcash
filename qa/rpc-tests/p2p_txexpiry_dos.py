@@ -20,7 +20,9 @@ class TxExpiryDoSTest(BitcoinTestFramework):
         self.cache_behavior = 'clean'
 
     def setup_network(self):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            '-allowdeprecated=getnewaddress',
+        ]] * self.num_nodes)
 
     def run_test(self):
         test_node = TestNode()

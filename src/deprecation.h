@@ -23,6 +23,14 @@ static const int DEPRECATION_WARN_LIMIT = 14 * 24 * EXPECTED_BLOCKS_PER_HOUR;
 //! Defaults for -allowdeprecated
 static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
     // Node-level features
+    "gbt_oldhashes"
+
+    // Wallet-level features
+#ifdef ENABLE_WALLET
+#endif
+}};
+static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
+    // Node-level features
 
     // Wallet-level features
 #ifdef ENABLE_WALLET
@@ -37,16 +45,9 @@ static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
     "wallettxvjoinsplit"
 #endif
 }};
-static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
-#ifdef ENABLE_WALLET
-    "dumpwallet",
-    "zcrawreceive",
-    "zcrawjoinsplit",
-    "zcrawkeygen"
-#endif
-}};
 
 // Flags that enable deprecated functionality.
+extern bool fEnableGbtOldHashes;
 #ifdef ENABLE_WALLET
 extern bool fEnableGetNewAddress;
 extern bool fEnableGetRawChangeAddress;
@@ -55,11 +56,7 @@ extern bool fEnableZGetBalance;
 extern bool fEnableZGetTotalBalance;
 extern bool fEnableZListAddresses;
 extern bool fEnableLegacyPrivacyStrategy;
-extern bool fEnableZCRawReceive;
-extern bool fEnableZCRawJoinSplit;
-extern bool fEnableZCRawKeygen;
 extern bool fEnableAddrTypeField;
-extern bool fEnableDumpWallet;
 extern bool fEnableWalletTxVJoinSplit;
 #endif
 

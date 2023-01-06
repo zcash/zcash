@@ -14,6 +14,7 @@
 #ifdef ENABLE_MINING
 #include "crypto/equihash.h"
 #endif
+#include "deprecation.h"
 #include "init.h"
 #include "key_io.h"
 #include "main.h"
@@ -782,9 +783,11 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     result.pushKV("version", pblock->nVersion);
     result.pushKV("previousblockhash", pblock->hashPrevBlock.GetHex());
     // The following 3 are deprecated; remove in a future release.
-    result.pushKV("blockcommitmentshash", pblock->hashBlockCommitments.GetHex());
-    result.pushKV("lightclientroothash", pblock->hashBlockCommitments.GetHex());
-    result.pushKV("finalsaplingroothash", pblock->hashBlockCommitments.GetHex());
+    if (fEnableGbtOldHashes) {
+        result.pushKV("blockcommitmentshash", pblock->hashBlockCommitments.GetHex());
+        result.pushKV("lightclientroothash", pblock->hashBlockCommitments.GetHex());
+        result.pushKV("finalsaplingroothash", pblock->hashBlockCommitments.GetHex());
+    }
     {
         // These are items in the result object that are valid only if the
         // block template returned by this RPC is used unmodified. Otherwise,

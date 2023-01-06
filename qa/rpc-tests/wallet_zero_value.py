@@ -10,7 +10,9 @@ from decimal import Decimal
 # Test wallet address behaviour across network upgrades
 class WalletZeroValueTest(BitcoinTestFramework):
     def setup_network(self, split=False):
-        self.nodes = start_nodes(2, self.options.tmpdir)
+        self.nodes = start_nodes(2, self.options.tmpdir, extra_args=[[
+            '-allowdeprecated=getnewaddress',
+        ]] * 2)
         connect_nodes_bi(self.nodes,0,1)
         self.is_network_split=False
         self.sync_all()

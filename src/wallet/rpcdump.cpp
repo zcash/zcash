@@ -348,12 +348,12 @@ UniValue importwallet(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "importwallet \"filename\"\n"
-            "\nImports taddr keys from a wallet dump file (see dumpwallet).\n"
+            "\nImports taddr keys from a wallet dump file (see z_exportwallet).\n"
             "\nArguments:\n"
             "1. \"filename\"    (string, required) The wallet file\n"
             "\nExamples:\n"
             "\nDump the wallet\n"
-            + HelpExampleCli("dumpwallet", "\"nameofbackup\"") +
+            + HelpExampleCli("z_exportwallet", "\"nameofbackup\"") +
             "\nImport the wallet\n"
             + HelpExampleCli("importwallet", "\"path/to/exportdir/nameofbackup\"") +
             "\nImport using the json rpc call\n"
@@ -546,31 +546,7 @@ UniValue z_exportwallet(const UniValue& params, bool fHelp)
 
 UniValue dumpwallet(const UniValue& params, bool fHelp)
 {
-    if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
-
-    if (!fEnableDumpWallet)
-        throw runtime_error(
-            "dumpwallet is DEPRECATED and will be removed in a future release\n"
-            "\nUse z_exportwallet instead, or restart with `-allowdeprecated=dumpwallet`\n"
-            "if you require backward compatibility.\n"
-            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
-
-    if (fHelp || params.size() != 1)
-        throw runtime_error(
-            "dumpwallet \"filename\"\n"
-            "\nDEPRECATED. Please use the z_exportwallet RPC instead.\n"
-            "\nDumps taddr wallet keys in a human-readable format.  Overwriting an existing file is not permitted.\n"
-            "\nArguments:\n"
-            "1. \"filename\"    (string, required) The filename, saved in folder set by zcashd -exportdir option\n"
-            "\nResult:\n"
-            "\"path\"           (string) The full path of the destination file\n"
-            "\nExamples:\n"
-            + HelpExampleCli("dumpwallet", "\"test\"")
-            + HelpExampleRpc("dumpwallet", "\"test\"")
-        );
-
-	return dumpwallet_impl(params, false);
+    throw JSONRPCError(RPC_METHOD_NOT_FOUND, "dumpwallet has been removed. Use z_exportwallet instead.");
 }
 
 UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)

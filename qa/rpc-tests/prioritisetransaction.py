@@ -33,6 +33,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
             "-relaypriority=true",
             "-printpriority=1",
             "-limitancestorcount=900",
+            "-allowdeprecated=getnewaddress",
         ]
         self.nodes.append(start_node(0, self.options.tmpdir, args))
         self.nodes.append(start_node(1, self.options.tmpdir, args))

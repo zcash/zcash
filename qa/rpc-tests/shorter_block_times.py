@@ -6,8 +6,10 @@
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
+    BLOSSOM_BRANCH_ID,
     assert_equal,
     get_coinbase_address,
+    nuparams,
     start_nodes,
     wait_and_assert_operationid_status,
 )
@@ -20,8 +22,10 @@ class ShorterBlockTimes(BitcoinTestFramework):
         self.cache_behavior = 'clean'
 
     def setup_nodes(self):
-        return start_nodes(self.num_nodes, self.options.tmpdir, [[
-            '-nuparams=2bb40e60:106', # Blossom
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            nuparams(BLOSSOM_BRANCH_ID, 106),
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_gettotalbalance',
         ]] * self.num_nodes)
 
     def run_test(self):
@@ -35,7 +39,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
         node0_taddr = get_coinbase_address(self.nodes[0])
         node0_zaddr = self.nodes[0].z_getnewaddress('sapling')
         recipients = [{'address': node0_zaddr, 'amount': Decimal('10.0')}]
-        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, 0, 'AllowRevealedSenders')
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert_equal(105, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # Blossom activation - 1
         self.sync_all()
@@ -60,7 +64,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
         assert_equal(15, self.nodes[1].getwalletinfo()['immature_balance'])
 
         # Send and mine a transaction after activation
-        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(node0_taddr, recipients, 1, 0, 'AllowRevealedSenders')
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert_equal(147, self.nodes[0].getrawtransaction(txid, 1)['expiryheight'])  # height + 1 + 40
         self.sync_all() # Ensure the transaction has propagated to node 1
