@@ -327,10 +327,6 @@ addresses.</p>
 rescan:</p>
 <pre><code class="language-bash">$ zcash-cli help importprivkey
 </code></pre>
-<h3 id="using-dumpwallet"><a class="header" href="#using-dumpwallet">Using <code>dumpwallet</code></a></h3>
-<p>This command inherited from Bitcoin is deprecated and should not be used. It
-will export private keys in a similar fashion as <code>z_exportwallet</code> but only for
-transparent addresses.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="shielding-coinbase-utxos"><a class="header" href="#shielding-coinbase-utxos">Shielding Coinbase UTXOs</a></h1>
 <p><strong>Summary</strong></p>
 <p>Use <code>z_shieldcoinbase</code> RPC call to shield coinbase UTXOs.</p>
@@ -927,47 +923,26 @@ be extended beyond this on a case-by-case basis to satisfy user requirements. </
 <p>The following features are deprecated, but remain enabled by default. These features
 will be disabled if <code>-allowdeprecated=none</code> is added to the CLI arguments when starting
 the node, or if an <code>allowdeprecated=none</code> line is added to <code>zcash.conf</code>.</p>
-<h3 id="deprecated-in-500"><a class="header" href="#deprecated-in-500">Deprecated in 5.0.0</a></h3>
-<p>The following features are deprecated as of release 5.0.0 and will be disabled by
-default as of release 5.3.0.</p>
-<ul>
-<li><code>legacy_privacy</code> - The default &quot;legacy&quot; privacy policy for z_sendmany is
-deprecated. Use <code>-allowdeprecated=none</code> to require the default behavior to
-conform to the <code>FullPrivacy</code> directive in all cases instead of just for
-transactions involving unified addresses. </li>
-<li><code>getnewaddress</code> - The <code>getnewaddress</code> RPC method is deprecated.</li>
-<li><code>getrawchangeaddress</code> - The <code>getrawchangeaddress</code> RPC method is deprecated.</li>
-<li><code>z_getbalance</code> - The <code>z_getbalance</code> RPC method is deprecated.</li>
-<li><code>z_gettotalbalance</code> - The <code>z_gettotalbalance</code> RPC method is deprecated.</li>
-<li><code>z_getnewaddress</code> - The <code>z_getnewaddress</code> RPC method is deprecated.</li>
-<li><code>z_listaddresses</code> - The <code>z_listaddresses</code> RPC method is deprecated.</li>
-<li><code>addrtype</code> - The <code>type</code> attribute is deprecated in the results of RPC
-methods that return address metadata. It is recommended that applications
-using this metadata be updated to use the <code>pool</code> or <code>address_type</code>
-attributes, which have replaced the <code>type</code> attribute, as appropriate.</li>
-</ul>
-<h3 id="deprecated-in-510"><a class="header" href="#deprecated-in-510">Deprecated in 5.1.0</a></h3>
-<ul>
-<li><code>wallettxvjoinsplit</code> - The <code>vjoinsplit</code> attribute returned by the
-<code>gettransaction</code> RPC method is deprecated.</li>
-</ul>
+<div class="table-wrapper"><table><thead><tr><th><code>feature</code></th><th>Deprecated</th><th>Feature details</th></tr></thead><tbody>
+<tr><td><code>gbt_oldhashes</code></td><td>5.4.0</td><td>The <code>finalsaplingroothash</code>, <code>lightclientroothash</code>, and <code>blockcommitmentshash</code> fields in the output of <code>getblocktemplate</code>, which are replaced by the <code>defaultroots</code> field.</td></tr>
+</tbody></table>
+</div>
 <h2 id="stage-2"><a class="header" href="#stage-2">Stage 2</a></h2>
-<p>Each feature in the lists below may be enabled by adding <code>-allowdeprecated=&lt;feature&gt;</code>
+<p>Each feature in the table below may be enabled by adding <code>-allowdeprecated=&lt;feature&gt;</code>
 to the CLI arguments when starting the node, or by adding an <code>allowdeprecated=&lt;feature&gt;</code>
 line to <code>zcash.conf</code>.</p>
-<h3 id="disabled-in-500"><a class="header" href="#disabled-in-500">Disabled in 5.0.0</a></h3>
-<p>The following features are disabled by default, and will be removed in release 5.3.0.</p>
-<ul>
-<li><code>zcrawreceive</code> - The <code>zcrawreceive</code> RPC method is disabled.</li>
-<li><code>zcrawjoinsplit</code> - The <code>zcrawjoinsplit</code> RPC method is disabled.</li>
-<li><code>zcrawkeygen</code> - The <code>zcrawkeygen</code> RPC method is disabled.</li>
-</ul>
-<h3 id="disabled-in-501"><a class="header" href="#disabled-in-501">Disabled in 5.0.1</a></h3>
-<p>The following features are disabled by default, and will be removed in release 5.3.0.</p>
-<ul>
-<li><code>dumpwallet</code> - The <code>dumpwallet</code> RPC method is disabled.</li>
-</ul>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="developer-documentation"><a class="header" href="#developer-documentation">Developer Documentation</a></h1>
+<div class="table-wrapper"><table><thead><tr><th><code>feature</code></th><th>Deprecated</th><th>Feature details</th></tr></thead><tbody>
+<tr><td><code>legacy_privacy</code></td><td>5.0.0</td><td>The default &quot;legacy&quot; privacy policy for <code>z_sendmany</code> has been replaced by the <code>FullPrivacy</code> directive.</td></tr>
+<tr><td><code>getnewaddress</code></td><td>5.0.0</td><td>The <code>getnewaddress</code> RPC method.</td></tr>
+<tr><td><code>getrawchangeaddress</code></td><td>5.0.0</td><td>The <code>getrawchangeaddress</code> RPC method.</td></tr>
+<tr><td><code>z_getbalance</code></td><td>5.0.0</td><td>The <code>z_getbalance</code> RPC method.</td></tr>
+<tr><td><code>z_gettotalbalance</code></td><td>5.0.0</td><td>The <code>z_gettotalbalance</code> RPC method.</td></tr>
+<tr><td><code>z_getnewaddress</code></td><td>5.0.0</td><td>The <code>z_getnewaddress</code> RPC method.</td></tr>
+<tr><td><code>z_listaddresses</code></td><td>5.0.0</td><td>The <code>z_listaddresses</code> RPC method.</td></tr>
+<tr><td><code>addrtype</code></td><td>5.0.0</td><td>The <code>type</code> attribute is deprecated in the results of RPC methods that return address metadata. It is recommended that applications using this metadata be updated to use the <code>pool</code> or <code>address_type</code> attributes, which have replaced the <code>type</code> attribute, as appropriate.</td></tr>
+<tr><td><code>wallettxvjoinsplit</code></td><td>5.1.0</td><td>The <code>vjoinsplit</code> attribute returned by the <code>gettransaction</code> RPC method.</td></tr>
+</tbody></table>
+</div><div style="break-before: page; page-break-before: always;"></div><h1 id="developer-documentation"><a class="header" href="#developer-documentation">Developer Documentation</a></h1>
 <p>This section contains documentation aimed at contributors to the <code>zcashd</code> codebase.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="expectations-for-dns-seed-operators"><a class="header" href="#expectations-for-dns-seed-operators">Expectations for DNS Seed operators</a></h1>
 <p>Zcash attempts to minimize the level of trust in DNS seeds,
