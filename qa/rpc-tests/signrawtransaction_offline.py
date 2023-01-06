@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_true, initialize_chain_clean, start_node, DEFAULT_FEE
+from test_framework.util import (
+    BLOSSOM_BRANCH_ID,
+    DEFAULT_FEE,
+    assert_equal,
+    assert_true,
+    initialize_chain_clean,
+    nuparams,
+    start_node,
+)
 from test_framework.authproxy import JSONRPCException
 
 from decimal import Decimal
@@ -14,7 +22,10 @@ class SignOfflineTest (BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 2)
 
     def setup_network(self):
-        self.nodes = [ start_node(0, self.options.tmpdir, ["-nuparams=2bb40e60:10"]) ]
+        self.nodes = [ start_node(0, self.options.tmpdir, [
+            nuparams(BLOSSOM_BRANCH_ID, 10),
+            '-allowdeprecated=getnewaddress',
+        ]) ]
         self.is_network_split = False
         self.sync_all()
 

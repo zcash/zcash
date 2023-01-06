@@ -135,9 +135,3 @@ rescan:
 ```bash
 $ zcash-cli help importprivkey
 ```
-
-### Using `dumpwallet`
-
-This command inherited from Bitcoin is deprecated and should not be used. It
-will export private keys in a similar fashion as `z_exportwallet` but only for
-transparent addresses.

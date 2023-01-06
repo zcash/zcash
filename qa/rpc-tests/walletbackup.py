@@ -17,7 +17,7 @@ Then 5 iterations of 1/2/3 sending coins amongst
 themselves to get transactions in the wallets,
 and the miner mining one block.
 
-Wallets are backed up using dumpwallet/backupwallet.
+Wallets are backed up using z_exportwallet/backupwallet.
 Then 5 more iterations of transactions and mining a block.
 
 Miner then generates 101 more blocks, so any
@@ -64,12 +64,11 @@ class WalletBackupTest(BitcoinTestFramework):
         ed2 = "-exportdir=" + self.options.tmpdir + "/node2"
 
         # nodes 1, 2,3 are spenders, let's give them a keypool=100
-        extra_args = [
-            ["-keypool=100", ed0, "-allowdeprecated=dumpwallet"], 
-            ["-keypool=100", ed1, "-allowdeprecated=dumpwallet"], 
-            ["-keypool=100", ed2, "-allowdeprecated=dumpwallet"], 
-            []
+        base_args = [
+            "-keypool=100",
+            "-allowdeprecated=getnewaddress",
         ]
+        extra_args = [base_args + [ed0], base_args + [ed1], base_args + [ed2], []]
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args)
         connect_nodes(self.nodes[0], 3)
         connect_nodes(self.nodes[1], 3)
@@ -102,7 +101,8 @@ class WalletBackupTest(BitcoinTestFramework):
         self.sync_all()
 
     # As above, this mirrors the original bash test.
-    def start_three(self, extra_args=None):
+    def start_three(self, extra_args=[]):
+        extra_args = extra_args + ["-allowdeprecated=getnewaddress"]
         self.nodes[0] = start_node(0, self.options.tmpdir, extra_args)
         self.nodes[1] = start_node(1, self.options.tmpdir, extra_args)
         self.nodes[2] = start_node(2, self.options.tmpdir, extra_args)
@@ -145,15 +145,15 @@ class WalletBackupTest(BitcoinTestFramework):
         logging.info("Backing up")
         tmpdir = self.options.tmpdir
         self.nodes[0].backupwallet("walletbak")
-        self.nodes[0].dumpwallet("walletdump")
+        self.nodes[0].z_exportwallet("walletdump")
         self.nodes[1].backupwallet("walletbak")
-        self.nodes[1].dumpwallet("walletdump")
+        self.nodes[1].z_exportwallet("walletdump")
         self.nodes[2].backupwallet("walletbak")
-        self.nodes[2].dumpwallet("walletdump")
+        self.nodes[2].z_exportwallet("walletdump")
 
-        # Verify dumpwallet cannot overwrite an existing file
+        # Verify z_exportwallet cannot overwrite an existing file
         try:
-            self.nodes[2].dumpwallet("walletdump")
+            self.nodes[2].z_exportwallet("walletdump")
             assert(False)
         except JSONRPCException as e:
             errorString = e.error['message']

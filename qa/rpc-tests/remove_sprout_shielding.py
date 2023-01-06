@@ -27,6 +27,9 @@ HAS_CANOPY = [
     nuparams(HEARTWOOD_BRANCH_ID, 210),
     nuparams(CANOPY_BRANCH_ID, 220),
     nuparams(NU5_BRANCH_ID, 225),
+    '-allowdeprecated=getnewaddress',
+    '-allowdeprecated=z_getnewaddress',
+    '-allowdeprecated=z_getbalance',
 ]
 
 class RemoveSproutShieldingTest (BitcoinTestFramework):
@@ -56,7 +59,7 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         taddr_0 = self.nodes[0].getnewaddress()
         for _ in range(3):
             recipients = [{"address": taddr_0, "amount": Decimal('1')}]
-            myopid = self.nodes[0].z_sendmany(sprout_addr, recipients, 1, 0)
+            myopid = self.nodes[0].z_sendmany(sprout_addr, recipients, 1, 0, 'AllowRevealedRecipients')
             wait_and_assert_operationid_status(self.nodes[0], myopid)
             self.sync_all()
             self.nodes[0].generate(1)

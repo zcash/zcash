@@ -9,6 +9,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
     CANOPY_BRANCH_ID,
+    DEFAULT_FEE,
     NU5_BRANCH_ID,
     get_coinbase_address,
     hex_str_to_bytes,
@@ -40,6 +41,8 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         args = [
             nuparams(CANOPY_BRANCH_ID, 215),
             nuparams(NU5_BRANCH_ID, 230),
+            "-allowdeprecated=getnewaddress",
+            "-allowdeprecated=z_getbalance",
         ]
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, [args] * self.num_nodes)
         self.is_network_split = False
@@ -49,13 +52,13 @@ class GetBlockTemplateTest(BitcoinTestFramework):
         node = self.node
         # sprout to transparent (v4)
         recipients = [{"address": self.transparent_addr, "amount": Decimal('0.1')}]
-        myopid = node.z_sendmany(self.sprout_addr, recipients, 1)
+        myopid = node.z_sendmany(self.sprout_addr, recipients, 1, DEFAULT_FEE, 'AllowRevealedRecipients')
         wait_and_assert_operationid_status(node, myopid)
 
     def add_nu5_v5_tx_to_mempool(self):
         node = self.node
         recipients = [{"address": self.unified_addr, "amount": Decimal('9.99999')}]
-        myopid = node.z_sendmany(get_coinbase_address(node), recipients, 1, Decimal('0.00001'), 'AllowRevealedSenders')
+        myopid = node.z_sendmany(get_coinbase_address(node), recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(node, myopid)
 
     def add_transparent_tx_to_mempool(self):

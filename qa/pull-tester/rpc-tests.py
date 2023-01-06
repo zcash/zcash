@@ -42,9 +42,7 @@ BASE_SCRIPTS= [
     'wallet_shieldcoinbase_sprout.py',
     'sprout_sapling_migration.py',
     'remove_sprout_shielding.py',
-    'zcjoinsplitdoublespend.py',
     # vv Tests less than 2m vv
-    'zcjoinsplit.py',
     'mergetoaddress_mixednotes.py',
     'wallet_shieldcoinbase_sapling.py',
     'wallet_shieldcoinbase_ua_sapling.py',

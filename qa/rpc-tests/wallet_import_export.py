@@ -12,6 +12,8 @@ class WalletImportExportTest (BitcoinTestFramework):
         num_nodes = 3
         extra_args = [([
             "-exportdir={}/export{}".format(self.options.tmpdir, i), 
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
             ] + (["-walletrequirebackup"] if i == 0 else [])) for i in range(num_nodes)] 
         self.nodes = start_nodes(num_nodes, self.options.tmpdir, extra_args)
 

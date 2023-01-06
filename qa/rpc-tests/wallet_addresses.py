@@ -24,8 +24,11 @@ class WalletAddressesTest(BitcoinTestFramework):
 
     def setup_network(self):
         self.nodes = start_nodes(
-            self.num_nodes, self.options.tmpdir,
-            extra_args=[[nuparams(NU5_BRANCH_ID, 2),]] * self.num_nodes)
+            self.num_nodes, self.options.tmpdir, extra_args=[[
+                nuparams(NU5_BRANCH_ID, 2),
+                '-allowdeprecated=getnewaddress',
+                '-allowdeprecated=z_getnewaddress',
+            ]] * self.num_nodes)
         connect_nodes_bi(self.nodes, 0, 1)
         self.is_network_split = False
         self.sync_all()
@@ -86,7 +89,7 @@ class WalletAddressesTest(BitcoinTestFramework):
             res = self.nodes[0].z_validateaddress(addr)
             assert res['isvalid']
             # assert res['ismine'] # this isn't present for unified addresses
-            assert_equal(res['type'], addr_type)
+            assert_equal(res['address_type'], addr_type)
 
         # We should see the following sources:
         # - imported_watchonly (for the previously-imported t-addr)
@@ -147,7 +150,7 @@ class WalletAddressesTest(BitcoinTestFramework):
             res = self.nodes[0].z_validateaddress(addr)
             assert res['isvalid']
             # assert res['ismine'] # this isn't present for unified addresses
-            assert_equal(res['type'], addr_type)
+            assert_equal(res['address_type'], addr_type)
 
         # We should see the same sources (address generation does not change across the NU5 boundary).
         listed_addresses = self.list_addresses(0, ['imported_watchonly', 'legacy_random', 'mnemonic_seed'])

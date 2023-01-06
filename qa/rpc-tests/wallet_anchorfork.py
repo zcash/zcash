@@ -18,7 +18,11 @@ class WalletAnchorForkTest (BitcoinTestFramework):
 
     # Start nodes with -regtestshieldcoinbase to set fCoinbaseMustBeShielded to true.
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[['-regtestshieldcoinbase', '-debug=zrpc']] * 3 )
+        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[[
+            '-regtestshieldcoinbase',
+            '-debug=zrpc',
+            '-allowdeprecated=z_getnewaddress',
+        ]] * 3)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -49,7 +53,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         myzaddr0 = self.nodes[0].z_getnewaddress()
         recipients = []
         recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - DEFAULT_FEE})
-        myopid = self.nodes[0].z_sendmany(mytaddr0, recipients)
+        myopid = self.nodes[0].z_sendmany(mytaddr0, recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Sync up mempools and mine the transaction.  All nodes have the same anchor.
@@ -73,7 +77,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         # Partition A, node 0 creates a joinsplit transaction
         recipients = []
         recipients.append({"address":myzaddr0, "amount": Decimal('10.0') - DEFAULT_FEE})
-        myopid = self.nodes[0].z_sendmany(mytaddr0, recipients)
+        myopid = self.nodes[0].z_sendmany(mytaddr0, recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders')
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         rawhex = self.nodes[0].getrawtransaction(txid)
 

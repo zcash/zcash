@@ -30,6 +30,9 @@ class CoinbaseFundingStreamsTest (BitcoinTestFramework):
             nuparams(HEARTWOOD_BRANCH_ID, 2),
             nuparams(CANOPY_BRANCH_ID, 5),
             "-nurejectoldversions=false",
+            "-allowdeprecated=z_getnewaddress",
+            "-allowdeprecated=z_getbalance",
+            "-allowdeprecated=z_gettotalbalance",
         ]
         return start_node(index, self.options.tmpdir, args + extra_args)
 

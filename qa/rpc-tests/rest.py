@@ -57,7 +57,9 @@ class RESTTest (BitcoinTestFramework):
         self.num_nodes = 3
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            '-allowdeprecated=getnewaddress',
+        ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)

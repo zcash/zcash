@@ -26,8 +26,11 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         self.nodes = start_nodes(1, self.options.tmpdir, extra_args=[[
             '-regtestshieldcoinbase',
             '-debug=zrpc',
-            '-mocktime=%d' % starttime
-            ]] )
+            '-mocktime=%d' % starttime,
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
+        ]])
         self.is_network_split=False
 
     def add_second_node(self):
@@ -35,8 +38,11 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         self.nodes.append(start_node(1, self.options.tmpdir, extra_args=[
             '-regtestshieldcoinbase',
             '-debug=zrpc',
-            '-mocktime=%d' % (starttime + 9000)
-            ]))
+            '-mocktime=%d' % (starttime + 9000),
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
+        ]))
         connect_nodes_bi(self.nodes,0,1)
         self.sync_all()
 
@@ -63,7 +69,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         # Send 10 coins to our zaddr.
         recipients = []
         recipients.append({"address":myzaddr, "amount":Decimal('10.0') - DEFAULT_FEE})
-        myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
+        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.nodes[0].generate(1)
 

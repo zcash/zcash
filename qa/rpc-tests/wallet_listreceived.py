@@ -37,6 +37,8 @@ class ListReceivedTest (BitcoinTestFramework):
             self.num_nodes, self.options.tmpdir,
             extra_args=[[
                 nuparams(NU5_BRANCH_ID, 225),
+                '-allowdeprecated=getnewaddress',
+                '-allowdeprecated=z_getnewaddress',
             ]] * self.num_nodes
             )
         connect_nodes_bi(self.nodes, 0, 1)
@@ -79,7 +81,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(pt['txid'], txid_shielding1)
         assert_equal(len(pt['spends']), 0)
         assert_equal(len(pt['outputs']), 1)
-        assert_equal(pt['outputs'][0]['type'], 'sprout')
+        assert_equal(pt['outputs'][0]['pool'], 'sprout')
         assert_equal(pt['outputs'][0]['js'], 0)
         assert_equal(pt['outputs'][0]['address'], zaddr1)
         assert_equal(pt['outputs'][0]['value'], Decimal('10'))
@@ -99,7 +101,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(pt['txid'], txid_shieldingExt)
         assert_equal(len(pt['spends']), 0)
         assert_equal(len(pt['outputs']), 1)
-        assert_equal(pt['outputs'][0]['type'], 'sprout')
+        assert_equal(pt['outputs'][0]['pool'], 'sprout')
         assert_equal(pt['outputs'][0]['js'], 0)
         assert_equal(pt['outputs'][0]['address'], zaddrExt)
         assert_equal(pt['outputs'][0]['value'], Decimal('10'))
@@ -142,7 +144,7 @@ class ListReceivedTest (BitcoinTestFramework):
 
         taddr = self.nodes[1].getnewaddress()
         # Generate some change by sending part of zaddr1 back to taddr
-        opid = self.nodes[1].z_sendmany(zaddr1, [{'address': taddr, 'amount': 0.6}], 1)
+        opid = self.nodes[1].z_sendmany(zaddr1, [{'address': taddr, 'amount': 0.6}], 1, DEFAULT_FEE, 'AllowRevealedRecipients')
         txid = wait_and_assert_operationid_status(self.nodes[1], opid)
 
         self.generate_and_sync(height+4)
@@ -155,7 +157,7 @@ class ListReceivedTest (BitcoinTestFramework):
         # assert_equal(len(pt['outputs']), 2)
         assert_equal(len(pt['outputs']), 1)
 
-        assert_equal(pt['spends'][0]['type'], 'sprout')
+        assert_equal(pt['spends'][0]['pool'], 'sprout')
         assert_equal(pt['spends'][0]['txidPrev'], txid_shielding1)
         assert_equal(pt['spends'][0]['js'], 0)
         assert_equal(pt['spends'][0]['jsPrev'], 0)
@@ -167,7 +169,7 @@ class ListReceivedTest (BitcoinTestFramework):
         # We expect a transparent output and a Sprout output, but the RPC does
         # not define any particular ordering of these within the returned JSON.
         outputs = [{
-            'type': output['type'],
+            'pool': output['pool'],
             'address': output['address'],
             'value': output['value'],
             'valueZat': output['valueZat'],
@@ -178,13 +180,13 @@ class ListReceivedTest (BitcoinTestFramework):
 
         # TODO: enable once z_viewtransaction displays transparent elements
         # assert({
-        #     'type': 'transparent',
+        #     'pool': 'transparent',
         #     'address': taddr,
         #     'value': Decimal('0.6'),
         #     'valueZat': 60000000,
         # } in outputs)
         assert({
-            'type': 'sprout',
+            'pool': 'sprout',
             'address': zaddr1,
             'value': Decimal('9.4') - DEFAULT_FEE,
             'valueZat': 940000000 - DEFAULT_FEE_ZATS,
@@ -220,7 +222,7 @@ class ListReceivedTest (BitcoinTestFramework):
         opid = self.nodes[1].z_sendmany(taddr, [
             {'address': zaddr1, 'amount': 1, 'memo': my_memo},
             {'address': zaddrExt, 'amount': 2},
-        ], 1)
+        ], 1, DEFAULT_FEE, 'AllowRevealedSenders')
         txid = wait_and_assert_operationid_status(self.nodes[1], opid)
         self.sync_all()
 
@@ -233,7 +235,7 @@ class ListReceivedTest (BitcoinTestFramework):
 
         # Outputs are not returned in a defined order but the amounts are deterministic
         outputs = sorted(pt['outputs'], key=lambda x: x['valueZat'])
-        assert_equal(outputs[0]['type'], 'sapling')
+        assert_equal(outputs[0]['pool'], 'sapling')
         assert_equal(outputs[0]['address'], zaddr1)
         assert_equal(outputs[0]['value'], Decimal('1'))
         assert_equal(outputs[0]['valueZat'], 100000000)
@@ -242,7 +244,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(outputs[0]['memo'], my_memo)
         assert_equal(outputs[0]['memoStr'], my_memo_str)
 
-        assert_equal(outputs[1]['type'], 'sapling')
+        assert_equal(outputs[1]['pool'], 'sapling')
         assert_equal(outputs[1]['address'], zaddrExt)
         assert_equal(outputs[1]['value'], Decimal('2'))
         assert_equal(outputs[1]['valueZat'], 200000000)
@@ -298,7 +300,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(len(pt['spends']), 1)
         assert_equal(len(pt['outputs']), 2)
 
-        assert_equal(pt['spends'][0]['type'], 'sapling')
+        assert_equal(pt['spends'][0]['pool'], 'sapling')
         assert_equal(pt['spends'][0]['txidPrev'], txidPrev)
         assert_equal(pt['spends'][0]['spend'], 0)
         assert_equal(pt['spends'][0]['outputPrev'], 0)
@@ -308,7 +310,7 @@ class ListReceivedTest (BitcoinTestFramework):
 
         # Outputs are not returned in a defined order but the amounts are deterministic
         outputs = sorted(pt['outputs'], key=lambda x: x['valueZat'])
-        assert_equal(outputs[0]['type'], 'sapling')
+        assert_equal(outputs[0]['pool'], 'sapling')
         assert_equal(outputs[0]['address'], zaddr1)
         assert_equal(outputs[0]['value'], Decimal('0.4') - DEFAULT_FEE)
         assert_equal(outputs[0]['valueZat'], 40000000 - DEFAULT_FEE_ZATS)
@@ -317,7 +319,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(outputs[0]['memo'], no_memo)
         assert 'memoStr' not in outputs[0]
 
-        assert_equal(outputs[1]['type'], 'sapling')
+        assert_equal(outputs[1]['pool'], 'sapling')
         assert_equal(outputs[1]['address'], zaddr2)
         assert_equal(outputs[1]['value'], Decimal('0.6'))
         assert_equal(outputs[1]['valueZat'], 60000000)
@@ -476,7 +478,7 @@ class ListReceivedTest (BitcoinTestFramework):
 
         # Outputs are not returned in a defined order but the amounts are deterministic
         outputs = sorted(pt['outputs'], key=lambda x: x['valueZat'])
-        assert_equal(outputs[0]['type'], 'orchard')
+        assert_equal(outputs[0]['pool'], 'orchard')
         assert_equal(outputs[0]['address'], uao)
         assert_equal(outputs[0]['value'], Decimal('1'))
         assert_equal(outputs[0]['valueZat'], 100000000)
@@ -485,7 +487,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(outputs[0]['memoStr'], my_memo_str)
         actionToSpend = outputs[0]['action']
 
-        assert_equal(outputs[1]['type'], 'orchard')
+        assert_equal(outputs[1]['pool'], 'orchard')
         assert_equal(outputs[1]['address'], uaso)
         assert_equal(outputs[1]['value'], Decimal('2'))
         assert_equal(outputs[1]['valueZat'], 200000000)
@@ -509,7 +511,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(len(pt['outputs']), 3) # one output + one change output we can see
 
         spends = pt['spends']
-        assert_equal(spends[0]['type'], 'orchard')
+        assert_equal(spends[0]['pool'], 'orchard')
         assert_equal(spends[0]['txidPrev'], txid0)
         assert_equal(spends[0]['actionPrev'], actionToSpend)
         assert_equal(spends[0]['address'], uao)
@@ -517,7 +519,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(spends[0]['valueZat'], 100000000)
 
         outputs = sorted(pt['outputs'], key=lambda x: x['valueZat'])
-        assert_equal(outputs[0]['type'], 'orchard')
+        assert_equal(outputs[0]['pool'], 'orchard')
         assert_equal(outputs[0]['address'], ua_node0)
         assert_equal(outputs[0]['value'], Decimal('0.2'))
         assert_equal(outputs[0]['valueZat'], 20000000)
@@ -525,7 +527,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(outputs[0]['walletInternal'], False)
         assert_equal(outputs[0]['memo'], no_memo)
 
-        assert_equal(outputs[1]['type'], 'orchard')
+        assert_equal(outputs[1]['pool'], 'orchard')
         assert_equal(outputs[1]['address'], uaso)
         assert_equal(outputs[1]['value'], Decimal('0.3'))
         assert_equal(outputs[1]['valueZat'], 30000000)
@@ -534,7 +536,7 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(outputs[1]['memo'], no_memo)
 
         # Verify that we observe the change output
-        assert_equal(outputs[2]['type'], 'orchard')
+        assert_equal(outputs[2]['pool'], 'orchard')
         assert_equal(outputs[2]['value'], Decimal('0.49999'))
         assert_equal(outputs[2]['valueZat'], 49999000)
         assert_equal(outputs[2]['outgoing'], False)

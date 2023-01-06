@@ -20,7 +20,12 @@ class WalletPersistenceTest (BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 4)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(4, self.options.tmpdir)
+        self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[[
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
+            '-allowdeprecated=z_gettotalbalance',
+            '-allowdeprecated=z_listaddresses',
+        ]] * 4)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,2,3)
@@ -53,7 +58,7 @@ class WalletPersistenceTest (BitcoinTestFramework):
         taddr0 = get_coinbase_address(self.nodes[0])
         recipients = []
         recipients.append({"address": sapling_addr, "amount": Decimal('20')})
-        myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()

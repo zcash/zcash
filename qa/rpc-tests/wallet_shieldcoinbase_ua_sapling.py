@@ -27,11 +27,11 @@ class WalletShieldCoinbaseUASapling(WalletShieldCoinbaseTest):
 
         # While we're at it, check that z_listunspent only shows outputs with
         # the Unified Address (not the Sapling receiver), and of the expected
-        # type.
+        # pool.
         unspent = node.z_listunspent(1, 999999, False, [self.addr])
         assert_equal(
-            [{'type': 'sapling', 'address': self.addr} for _ in unspent],
-            [{'type': x['type'], 'address': x['address']} for x in unspent],
+            [{'pool': 'sapling', 'address': self.addr} for _ in unspent],
+            [{'pool': x['pool'], 'address': x['address']} for x in unspent],
         )
 
         total_balance = node.z_getbalance(self.addr) * COIN

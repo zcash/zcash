@@ -29,7 +29,11 @@ class ZMQTest(BitcoinTestFramework):
         self.zmqSubSocket.setsockopt(zmq.SUBSCRIBE, b"hashtx")
         self.zmqSubSocket.connect("tcp://127.0.0.1:%i" % self.port)
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[
-            ['-zmqpubhashtx=tcp://127.0.0.1:'+str(self.port), '-zmqpubhashblock=tcp://127.0.0.1:'+str(self.port)],
+            [
+                '-zmqpubhashtx=tcp://127.0.0.1:'+str(self.port),
+                '-zmqpubhashblock=tcp://127.0.0.1:'+str(self.port),
+                '-allowdeprecated=getnewaddress',
+            ],
             [],
             [],
             []
