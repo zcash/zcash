@@ -23,9 +23,15 @@ def satoshi_round(amount):
 class MempoolPackagesTest(BitcoinTestFramework):
 
     def setup_network(self):
+        base_args = [
+            "-maxorphantx=1000",
+            "-relaypriority=0",
+            "-debug",
+            "-allowdeprecated=getnewaddress",
+        ]
         self.nodes = []
-        self.nodes.append(start_node(0, self.options.tmpdir, ["-maxorphantx=1000", "-relaypriority=0", "-debug"]))
-        self.nodes.append(start_node(1, self.options.tmpdir, ["-maxorphantx=1000", "-relaypriority=0", "-limitancestorcount=5", "-debug"]))
+        self.nodes.append(start_node(0, self.options.tmpdir, base_args))
+        self.nodes.append(start_node(1, self.options.tmpdir, base_args + ["-limitancestorcount=5"]))
         connect_nodes(self.nodes[0], 1)
         self.is_network_split = False
         self.sync_all()
