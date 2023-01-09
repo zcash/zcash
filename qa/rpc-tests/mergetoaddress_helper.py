@@ -44,6 +44,7 @@ class MergeToAddressHelper:
     def setup_network(self, test, additional_args=[]):
         args = [
             '-debug=zrpcunsafe',
+            '-limitancestorcount=%d' % self.utxos_to_generate,
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',

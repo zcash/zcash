@@ -42,6 +42,7 @@ BASE_SCRIPTS= [
     'wallet_shieldcoinbase_sprout.py',
     'sprout_sapling_migration.py',
     'remove_sprout_shielding.py',
+    'mempool_packages.py',
     # vv Tests less than 2m vv
     'mergetoaddress_mixednotes.py',
     'wallet_shieldcoinbase_sapling.py',
