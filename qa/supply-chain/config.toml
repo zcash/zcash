@@ -1,6 +1,9 @@
 
 # cargo-vet config file
 
+[imports.firefox]
+url = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
+
 [policy.equihash]
 audit-as-crates-io = true
 
@@ -65,10 +68,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.arrayvec]]
 version = "0.7.2"
-criteria = "safe-to-deploy"
-
-[[exemptions.autocfg]]
-version = "1.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.backtrace]]
@@ -263,10 +262,6 @@ criteria = "safe-to-deploy"
 version = "0.7.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.fnv]]
-version = "1.0.7"
-criteria = "safe-to-deploy"
-
 [[exemptions.fpe]]
 version = "0.5.1"
 criteria = "safe-to-deploy"
@@ -319,20 +314,12 @@ criteria = "safe-to-deploy"
 version = "0.8.1"
 criteria = "safe-to-deploy"
 
-[[exemptions.hashbrown]]
-version = "0.12.3"
-criteria = "safe-to-deploy"
-
 [[exemptions.hdwallet]]
 version = "0.3.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.hermit-abi]]
 version = "0.1.19"
-criteria = "safe-to-deploy"
-
-[[exemptions.hex]]
-version = "0.4.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.hmac]]
@@ -411,10 +398,6 @@ criteria = "safe-to-deploy"
 version = "0.4.7"
 criteria = "safe-to-deploy"
 
-[[exemptions.log]]
-version = "0.4.16"
-criteria = "safe-to-deploy"
-
 [[exemptions.mach]]
 version = "0.3.2"
 criteria = "safe-to-deploy"
@@ -473,18 +456,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.nu-ansi-term]]
 version = "0.46.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.num-bigint]]
-version = "0.4.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.num-integer]]
-version = "0.1.44"
-criteria = "safe-to-deploy"
-
-[[exemptions.num-traits]]
-version = "0.2.15"
 criteria = "safe-to-deploy"
 
 [[exemptions.num_cpus]]
@@ -595,10 +566,6 @@ criteria = "safe-to-deploy"
 version = "0.9.3"
 criteria = "safe-to-deploy"
 
-[[exemptions.quote]]
-version = "1.0.21"
-criteria = "safe-to-deploy"
-
 [[exemptions.radium]]
 version = "0.7.0"
 criteria = "safe-to-deploy"
@@ -637,14 +604,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.raw-cpuid]]
 version = "10.6.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.rayon]]
-version = "1.5.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.rayon-core]]
-version = "1.9.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.reddsa]]
@@ -761,10 +720,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.syn]]
 version = "1.0.102"
-criteria = "safe-to-deploy"
-
-[[exemptions.synstructure]]
-version = "0.12.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.tap]]
