@@ -7,6 +7,12 @@ description = "The cryptographic code in this crate has been reviewed for correc
 [criteria.license-reviewed]
 description = "The license of this crate has been reviewed for compatibility with its usage in this repository. If the crate is not available under the MIT license, `contrib/debian/copyright` has been updated with a corresponding copyright notice for files under `depends/*/vendored-sources/CRATE_NAME`."
 
+[[audits.addr2line]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.17.0 -> 0.19.0"
+notes = "Only change to unsafe code is to reduce the scope of some unsafe blocks."
+
 [[audits.aead]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -30,6 +36,16 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.13.0 -> 0.13.1"
 notes = "Adds multi-threaded batch validation, which I checked against the existing single-threaded batch validation."
+
+[[audits.bls12_381]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.7.0 -> 0.7.1"
+
+[[audits.byte-slice-cast]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.2.1 -> 1.2.2"
 
 [[audits.chacha20]]
 who = "Jack Grigg <jack@z.cash>"
@@ -65,6 +81,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.9 -> 1.0.10"
 notes = "Bumps nix and removes some of its default features."
+
+[[audits.clearscreen]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.10 -> 1.0.11"
 
 [[audits.cpufeatures]]
 who = "Jack Grigg <jack@z.cash>"
@@ -151,6 +172,11 @@ criteria = "safe-to-deploy"
 delta = "1.0.78 -> 1.0.79"
 notes = "This is exclusively an update to the `cxxbridge` dependency version."
 
+[[audits.ed25519-zebra]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "3.0.0 -> 3.1.0"
+
 [[audits.equihash]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -168,6 +194,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 version = "0.1.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.ff]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.12.0 -> 0.12.1"
 
 [[audits.getrandom]]
 who = "Jack Grigg <jack@z.cash>"
@@ -219,6 +250,11 @@ criteria = "safe-to-deploy"
 version = "0.1.3"
 notes = "Reviewed in full."
 
+[[audits.ipnet]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "2.5.0 -> 2.7.1"
+
 [[audits.itoa]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -230,10 +266,20 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.2.2 -> 0.2.5"
 
+[[audits.libm]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.2.5 -> 0.2.6"
+
 [[audits.link-cplusplus]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.6 -> 1.0.7"
+
+[[audits.link-cplusplus]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.7 -> 1.0.8"
 
 [[audits.lock_api]]
 who = "Jack Grigg <jack@z.cash>"
@@ -293,11 +339,22 @@ falls into two categories:
   any noteworthy changes other than handling windows-sys API differences).
 """
 
+[[audits.mio]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.8.4 -> 0.8.5"
+notes = "The only unsafe changes are in epoll_create1 failure cases. Usage of epoll_create and fcntl looks fine; it is vulnerable to a race condition in multithreaded programs that fork child processes, but epoll_create1 is how you avoid this problem. See the discussion of the O_CLOEXEC flag in the open(2) man page for details."
+
 [[audits.num-integer]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.1.44 -> 0.1.45"
 notes = "Fixes some argument-handling panic bugs."
+
+[[audits.num_cpus]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.14.0 -> 1.15.0"
 
 [[audits.orchard]]
 who = "Jack Grigg <jack@z.cash>"
@@ -327,6 +384,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.8.5 -> 0.9.3"
 
+[[audits.pasta_curves]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.4.0 -> 0.4.1"
+
 [[audits.poly1305]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -342,6 +404,11 @@ delta = "1.0.37 -> 1.0.41"
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.9.3 -> 0.10.1"
+
+[[audits.regex]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.7.0 -> 1.7.1"
 
 [[audits.serde]]
 who = "Jack Grigg <jack@z.cash>"
@@ -376,6 +443,11 @@ who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.91 -> 1.0.98"
 
+[[audits.syn]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.102 -> 1.0.107"
+
 [[audits.thiserror]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -399,6 +471,22 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.32 -> 1.0.37"
 notes = "Proc macro changes migrating to the Provider API look fine."
+
+[[audits.time-macros]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.2.4 -> 0.2.6"
+
+[[audits.try-lock]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.2.3 -> 0.2.4"
+notes = "Fixes unsoundness."
+
+[[audits.uint]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.9.4 -> 0.9.5"
 
 [[audits.unicode-ident]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -465,6 +553,12 @@ the Windows SDK to avoid a direct dependency on the latter. See
 https://github.com/microsoft/windows-rs/pull/1217 for context. I did not
 audit the binary blob, but the build script looks fine.
 """
+
+[[audits.wyz]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "0.5.0 -> 0.5.1"
+notes = "Only change to unsafe code is to extract a drop impl into a method. I note however that most of the changes in the published 0.5.1 are not present in the v0.5.1 tag on the GitHub repository."
 
 [[audits.zcash_address]]
 who = "Jack Grigg <jack@z.cash>"
@@ -550,3 +644,9 @@ who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "1.4.3 -> 1.5.7"
 notes = "The zeroize_c_string unit test has UB, but that's very unlikely to cause a problem in practice."
+
+[[audits.zeroize_derive]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.3.2 -> 1.3.3"
+notes = "Removes `T: Drop` bound from `impl<T: Zeroize> Drop for SomeType<T>`. I agree it was unnecessary."
