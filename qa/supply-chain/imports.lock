@@ -1,6 +1,173 @@
 
 # cargo-vet imports lock
 
+[[audits.bytecode-alliance.audits.anyhow]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.62 -> 1.0.66"
+notes = """
+This update looks to be related to minor fixes and mostly integrating with a
+nightly feature in the standard library for backtrace integration. No undue
+`unsafe` is added and nothing unsurprising for the `anyhow` crate is happening
+here.
+"""
+
+[[audits.bytecode-alliance.audits.arrayvec]]
+who = "Nick Fitzgerald <fitzgen@gmail.com>"
+criteria = "safe-to-deploy"
+version = "0.7.2"
+notes = """
+Well documented invariants, good assertions for those invariants in unsafe code,
+and tested with MIRI to boot. LGTM.
+"""
+
+[[audits.bytecode-alliance.audits.backtrace]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+version = "0.3.66"
+notes = "I am the author of this crate."
+
+[[audits.bytecode-alliance.audits.block-buffer]]
+who = "Benjamin Bouvier <public@benj.me>"
+criteria = "safe-to-deploy"
+delta = "0.9.0 -> 0.10.2"
+
+[[audits.bytecode-alliance.audits.bumpalo]]
+who = "Nick Fitzgerald <fitzgen@gmail.com>"
+criteria = "safe-to-deploy"
+version = "3.9.1"
+notes = "I am the author of this crate."
+
+[[audits.bytecode-alliance.audits.bumpalo]]
+who = "Nick Fitzgerald <fitzgen@gmail.com>"
+criteria = "safe-to-deploy"
+version = "3.11.1"
+notes = "I am the author of this crate."
+
+[[audits.bytecode-alliance.audits.cc]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+version = "1.0.73"
+notes = "I am the author of this crate."
+
+[[audits.bytecode-alliance.audits.cfg-if]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+version = "1.0.0"
+notes = "I am the author of this crate."
+
+[[audits.bytecode-alliance.audits.crypto-common]]
+who = "Benjamin Bouvier <public@benj.me>"
+criteria = "safe-to-deploy"
+version = "0.1.3"
+
+[[audits.bytecode-alliance.audits.digest]]
+who = "Benjamin Bouvier <public@benj.me>"
+criteria = "safe-to-deploy"
+delta = "0.9.0 -> 0.10.3"
+
+[[audits.bytecode-alliance.audits.libm]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+delta = "0.2.2 -> 0.2.4"
+notes = """
+This diff primarily fixes a few issues with the `fma`-related functions,
+but also contains some other minor fixes as well. Everything looks A-OK and
+as expected.
+"""
+
+[[audits.bytecode-alliance.audits.rustc-demangle]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+version = "0.1.21"
+notes = "I am the author of this crate."
+
+[[audits.bytecode-alliance.audits.sha2]]
+who = "Benjamin Bouvier <public@benj.me>"
+criteria = "safe-to-deploy"
+delta = "0.9.9 -> 0.10.2"
+notes = "This upgrade is mostly a code refactor, as far as I can tell. No new uses of unsafe nor any new ambient capabilities usage."
+
+[[audits.bytecode-alliance.audits.spin]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-run"
+version = "0.9.4"
+notes = """
+I've verified the contents of this crate and that while they contain `unsafe`
+it's exclusively around implementing atomic primitive where some `unsafe` is to
+be expected. Otherwise this crate does not unduly access ambient capabilities
+and does what it says on the tin, providing spin-based synchronization
+primitives.
+"""
+
+[[audits.bytecode-alliance.audits.tinyvec]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+version = "1.6.0"
+notes = """
+This crate, while it implements collections, does so without `std::*` APIs and
+without `unsafe`. Skimming the crate everything looks reasonable and what one
+would expect from idiomatic safe collections in Rust.
+"""
+
+[[audits.bytecode-alliance.audits.tinyvec_macros]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+version = "0.1.0"
+notes = """
+This is a trivial crate which only contains a singular macro definition which is
+intended to multiplex across the internal representation of a tinyvec,
+presumably. This trivially doesn't contain anything bad.
+"""
+
+[[audits.bytecode-alliance.audits.unicode-normalization]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+version = "0.1.19"
+notes = """
+This crate contains one usage of `unsafe` which I have manually checked to see
+it as correct. This crate's size comes in large part due to the generated
+unicode tables that it contains. This crate is additionally widely used
+throughout the ecosystem and skimming the crate shows no usage of `std::*` APIs
+and nothing suspicious.
+"""
+
+[[audits.bytecode-alliance.audits.windows-sys]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.42.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
+[[audits.bytecode-alliance.audits.windows_aarch64_msvc]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.42.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
+[[audits.bytecode-alliance.audits.windows_i686_gnu]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.42.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
+[[audits.bytecode-alliance.audits.windows_i686_msvc]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.42.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
+[[audits.bytecode-alliance.audits.windows_x86_64_gnu]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.42.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
+[[audits.bytecode-alliance.audits.windows_x86_64_msvc]]
+who = "Dan Gohman <dev@sunfishcode.online>"
+criteria = "safe-to-deploy"
+version = "0.42.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
 [[audits.firefox.audits.aho-corasick]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
