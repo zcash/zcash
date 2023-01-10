@@ -168,6 +168,23 @@ criteria = "safe-to-deploy"
 version = "0.42.0"
 notes = "This is a Windows API bindings library maintained by Microsoft themselves."
 
+[[audits.embark-studios.audits.anyhow]]
+who = "Johan Andersson <opensource@embark-studios.com>"
+criteria = "safe-to-deploy"
+version = "1.0.58"
+
+[[audits.embark-studios.audits.anyhow]]
+who = "Johan Andersson <opensource@embark-studios.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.58 -> 1.0.66"
+notes = "New unsafe usage, looks sane. Expert maintainer"
+
+[[audits.embark-studios.audits.tinyvec_macros]]
+who = "Johan Andersson <opensource@embark-studios.com>"
+criteria = "safe-to-deploy"
+version = "0.1.0"
+notes = "Inspected it and is a tiny crate with single safe macro"
+
 [[audits.firefox.audits.aho-corasick]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
