@@ -10,36 +10,6 @@ url = "https://raw.githubusercontent.com/EmbarkStudios/rust-ecosystem/main/audit
 [imports.firefox]
 url = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
 
-[policy.equihash]
-audit-as-crates-io = true
-
-[policy.f4jumble]
-audit-as-crates-io = true
-
-[policy.group]
-audit-as-crates-io = true
-
-[policy.orchard]
-audit-as-crates-io = true
-
-[policy.zcash_address]
-audit-as-crates-io = true
-
-[policy.zcash_encoding]
-audit-as-crates-io = true
-
-[policy.zcash_history]
-audit-as-crates-io = true
-
-[policy.zcash_note_encryption]
-audit-as-crates-io = true
-
-[policy.zcash_primitives]
-audit-as-crates-io = true
-
-[policy.zcash_proofs]
-audit-as-crates-io = true
-
 [[exemptions.addr2line]]
 version = "0.17.0"
 criteria = "safe-to-deploy"
@@ -870,4 +840,3 @@ criteria = "safe-to-deploy"
 [[exemptions.zeroize_derive]]
 version = "1.3.2"
 criteria = "safe-to-deploy"
-

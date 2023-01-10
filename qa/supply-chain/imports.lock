@@ -863,4 +863,3 @@ delta = "0.1.21 -> 0.1.22"
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.2.3 -> 0.2.4"
-
