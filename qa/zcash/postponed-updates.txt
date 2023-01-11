@@ -13,7 +13,6 @@ rustcxx 1.0.80 2022-12-10
 rustcxx 1.0.81 2022-12-10
 rustcxx 1.0.82 2022-12-10
 rustcxx 1.0.83 2022-12-10
-utfcpp 3.2.2 2022-12-10
 
 native_ccache 4.7 2022-12-10
 native_ccache 4.7.1 2022-12-10
