@@ -61,8 +61,8 @@ zcash_address = "0.2"
 zcash_encoding = "0.2"
 zcash_history = "0.3"
 zcash_note_encryption = "0.2"
-zcash_primitives = { version = "0.8.1", features = ["transparent-inputs"] }
-zcash_proofs = { version = "0.8", features = ["directories"] }
+zcash_primitives = { version = "0.9", features = ["transparent-inputs"] }
+zcash_proofs = { version = "0.9", features = ["directories"] }
 ed25519-zebra = "3"
 zeroize = "1.4.2"
 
@@ -97,7 +97,7 @@ uint = "0.9"
 # (also depends on tracing, and tracing-subscriber with "env-filter" and "fmt" features)
 anyhow = "1.0"
 backtrace = "0.3"
-clearscreen = "1.0"
+clearscreen = "2.0"
 rand = "0.8"
 secrecy = "0.8"
 thiserror = "1"
