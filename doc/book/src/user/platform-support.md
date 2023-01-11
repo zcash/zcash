@@ -15,8 +15,7 @@ be removed from tier 1. These dates are subject to change.
 
 | target                  | OS           | End of Support |
 | ----------------------- | ------------ | -------------- |
-| `x86_64-pc-linux-gnu`   | CentOS 8     | TBD            |
-|                         | Debian 10    | June 2024      |
+| `x86_64-pc-linux-gnu`   | Debian 10    | June 2024      |
 |                         | Debian 11    | June 2026      |
 |                         | Ubuntu 18.04 | April 2023     |
 |                         | Ubuntu 20.04 | April 2025     |
