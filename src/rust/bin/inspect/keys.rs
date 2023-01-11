@@ -58,7 +58,8 @@ pub(crate) fn inspect_mnemonic(
                     zip32::ChildIndex::Hardened(account.into()),
                 ],
             );
-            let sapling_extfvk = zip32::ExtendedFullViewingKey::from(&sapling_extsk);
+            #[allow(deprecated)]
+            let sapling_extfvk = sapling_extsk.to_extended_full_viewing_key();
             let sapling_default_addr = sapling_extfvk.default_address();
 
             let mut sapling_extsk_bytes = vec![];
