@@ -391,7 +391,7 @@ version = "0.8.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.nix]]
-version = "0.24.3"
+version = "0.26.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.nom]]
