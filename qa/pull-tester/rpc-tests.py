@@ -30,7 +30,6 @@ SERIAL_SCRIPTS = [
     # These tests involve enough shielded spends (consuming all CPU
     # cores) that we can't run them in parallel.
     'mergetoaddress_sapling.py',
-    'mergetoaddress_sprout.py',
     'wallet_shieldingcoinbase.py',
 ]
 
@@ -39,7 +38,6 @@ BASE_SCRIPTS= [
     # Longest test should go first, to favor running tests in parallel
     # vv Tests less than 5m vv
     'wallet.py',
-    'wallet_shieldcoinbase_sprout.py',
     'sprout_sapling_migration.py',
     'remove_sprout_shielding.py',
     'mempool_packages.py',
