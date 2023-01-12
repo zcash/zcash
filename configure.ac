@@ -896,7 +896,8 @@ if test x$use_boost = xyes; then
 
 dnl Check for boost libs
 dnl We need Boost >= 1.62 to fix a potential security bug (https://github.com/zcash/zcash/issues/1241)
-AX_BOOST_BASE([1.62])
+dnl We need Boost >= 1.77 to fix usage of statx on Docker (https://github.com/zcash/zcash/issues/4945)
+AX_BOOST_BASE([1.77])
 AX_BOOST_SYSTEM
 AX_BOOST_FILESYSTEM
 AX_BOOST_PROGRAM_OPTIONS
