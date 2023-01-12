@@ -33,11 +33,6 @@ import os
 # - g++ version 8.0.1 (https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/28/Everything/x86_64/os/Packages/g/ search for gcc-)
 # - libc6 version 2.27 (https://archives.fedoraproject.org/pub/archive/fedora/linux/releases/28/Everything/x86_64/os/Packages/g/ search for glibc)
 #
-# CentOS 8 (Full update EOL May 2024, Maintenance EOL 2029-05-31) has:
-#
-# - g++ version 8.3.1 (https://centos.pkgs.org/8/centos-baseos-x86_64/ search for libgcc)
-# - libc6 version 2.28 (https://centos.pkgs.org/8/centos-baseos-x86_64/ search for glibc)
-#
 # Fedora 31 (EOL ~November 2020) has:
 #
 # - g++ version 9.2.1 (https://dl.fedoraproject.org/pub/fedora/linux/releases/31/Everything/x86_64/os/Packages/g/ search for gcc-)

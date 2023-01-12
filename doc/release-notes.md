@@ -45,3 +45,9 @@ The following previously-deprecated features have been removed:
 - `zcrawreceive`
 - `zcrawjoinsplit`
 - `zcrawkeygen`
+
+Platform Support
+----------------
+
+- CentOS 8 has been removed from the list of supported platforms. It reached EoL
+  on December 31st 2021, and does not satisfy our Tier 2 policy requirements.
