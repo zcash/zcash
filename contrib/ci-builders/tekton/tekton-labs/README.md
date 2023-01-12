@@ -6,7 +6,7 @@ Examples of CI/CD used to support Zcash build and testing
 https://docs.docker.com/engine/install/ 
 
 #### Setup Docker 
-If you are installing Docker for the first time, to run `docker` without `sudo` priviledge for every docker command:
+If you are installing Docker for the first time, to run `docker` without `sudo` privilege for every docker command:
 
     - Check if Docker group already exists:
         - `cat /etc/group | grep docker`
