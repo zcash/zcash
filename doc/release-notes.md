@@ -4,6 +4,13 @@ release-notes at release time)
 Notable changes
 ===============
 
+Fixes
+-----
+
+This release fixes an issue that could potentially cause a node to crash with the
+log message "The wallet's best block hash `<hash>` was not detected in restored
+chain state. Giving up; please restart with `-rescan`."
+
 RPC Changes
 -----------
 
