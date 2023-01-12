@@ -34,7 +34,7 @@ spec:
         echo $(git rev-parse HEAD)
         echo $(git rev-parse --short HEAD)
         
-        if [ "$(params.BUILD_FOR_HOST)" == "x86_64-apple-darwin11" ]
+        if [ "$(params.BUILD_FOR_HOST)" == "x86_64-apple-darwin18" ]
         then
             mkdir -p depends/SDKs
             curl -fs https://ecc.mypinata.cloud/ipfs/QmeSwckvSCGL9SXGdEHoAyqXdzD7T9HYTwsC34Bj5EVDF5 \
