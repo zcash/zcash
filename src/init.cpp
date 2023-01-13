@@ -87,7 +87,7 @@ static const bool DEFAULT_STOPAFTERBLOCKIMPORT = false;
 
 // The time that the wallet will wait for the block index to load
 // during startup before timing out.
-static const int64_t WALLET_INITIAL_SYNC_TIMEOUT = 1000 * 60 * 5;
+static const int64_t WALLET_INITIAL_SYNC_TIMEOUT = 1000 * 60 * 60 * 2;
 
 #if ENABLE_ZMQ
 static CZMQNotificationInterface* pzmqNotificationInterface = NULL;
