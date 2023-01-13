@@ -2248,7 +2248,7 @@ SpendableInputs CWallet::FindSpendableInputs(
                 if (mine == ISMINE_NO) continue;
                 // skip utxos that for which we don't have the spending keys, if
                 // spending keys are required
-                bool isSpendable = (mine & ISMINE_SPENDABLE) != ISMINE_NO || (mine & ISMINE_WATCH_SOLVABLE) != ISMINE_NO;
+                bool isSpendable = (mine & ISMINE_SPENDABLE_ANY) != ISMINE_NO || (mine & ISMINE_WATCH_SOLVABLE) != ISMINE_NO;
                 if (selector.RequireSpendingKeys() && !isSpendable) continue;
                 // skip locked utxos
                 if (IsLockedCoin(wtxid, i)) continue;
@@ -4775,13 +4775,13 @@ CAmount CWalletTx::GetDebit(const isminefilter& filter) const
         return 0;
 
     CAmount debit = 0;
-    if(filter & ISMINE_SPENDABLE)
+    if (filter & ISMINE_SPENDABLE_ANY)
     {
         if (fDebitCached)
             debit += nDebitCached;
         else
         {
-            nDebitCached = pwallet->GetDebit(*this, ISMINE_SPENDABLE);
+            nDebitCached = pwallet->GetDebit(*this, filter & ISMINE_SPENDABLE_ANY);
             fDebitCached = true;
             debit += nDebitCached;
         }
@@ -4807,14 +4807,14 @@ CAmount CWalletTx::GetCredit(const std::optional<int>& asOfHeight, const isminef
         return 0;
 
     int64_t credit = 0;
-    if (filter & ISMINE_SPENDABLE)
+    if (filter & ISMINE_SPENDABLE_ANY)
     {
         // GetBalance can assume transactions in mapWallet won't change
         if (fCreditCached)
             credit += nCreditCached;
         else
         {
-            nCreditCached = pwallet->GetCredit(*this, ISMINE_SPENDABLE);
+            nCreditCached = pwallet->GetCredit(*this, filter & ISMINE_SPENDABLE_ANY);
             fCreditCached = true;
             credit += nCreditCached;
         }
@@ -4839,7 +4839,7 @@ CAmount CWalletTx::GetImmatureCredit(const std::optional<int>& asOfHeight, bool 
     {
         if (fUseCache && fImmatureCreditCached)
             return nImmatureCreditCached;
-        nImmatureCreditCached = pwallet->GetCredit(*this, ISMINE_SPENDABLE);
+        nImmatureCreditCached = pwallet->GetCredit(*this, ISMINE_SPENDABLE_ANY);
         fImmatureCreditCached = true;
         return nImmatureCreditCached;
     }
@@ -4859,10 +4859,10 @@ CAmount CWalletTx::GetAvailableCredit(const std::optional<int>& asOfHeight, bool
     CAmount* cache = nullptr;
     bool* cache_used = nullptr;
 
-    if (filter == ISMINE_SPENDABLE) {
+    if (filter & ISMINE_SPENDABLE_ANY) {
         cache = &nAvailableCreditCached;
         cache_used = &fAvailableCreditCached;
-    } else if (filter == ISMINE_WATCH_ONLY) {
+    } else if (filter & ISMINE_WATCH_ONLY) {
         cache = &nAvailableWatchCreditCached;
         cache_used = &fAvailableWatchCreditCached;
     }
@@ -4958,7 +4958,7 @@ bool CWalletTx::IsTrusted(const std::optional<int>& asOfHeight) const
         if (parent == NULL)
             return false;
         const CTxOut& parentOut = parent->vout[txin.prevout.n];
-        if (pwallet->IsMine(parentOut) != ISMINE_SPENDABLE)
+        if ((pwallet->IsMine(parentOut) & ISMINE_SPENDABLE_ANY) == ISMINE_NO)
             return false;
     }
     return true;
@@ -5039,7 +5039,7 @@ CAmount CWallet::GetBalance(const std::optional<int>& asOfHeight, const isminefi
     return nTotal;
 }
 
-CAmount CWallet::GetUnconfirmedTransparentBalance() const
+CAmount CWallet::GetUnconfirmedTransparentBalance(const isminefilter& filter) const
 {
     CAmount nTotal = 0;
     {
@@ -5048,7 +5048,7 @@ CAmount CWallet::GetUnconfirmedTransparentBalance() const
         {
             const CWalletTx* pcoin = &entry.second;
             if (!CheckFinalTx(*pcoin) || (!pcoin->IsTrusted(std::nullopt) && pcoin->GetDepthInMainChain(std::nullopt) == 0))
-                nTotal += pcoin->GetAvailableCredit(std::nullopt);
+                nTotal += pcoin->GetAvailableCredit(std::nullopt, true, filter);
         }
     }
     return nTotal;
@@ -5147,8 +5147,8 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
                 const auto& output = pcoin.vout[i];
                 isminetype mine = IsMine(output);
 
-                bool isSpendable = ((mine & ISMINE_SPENDABLE) != ISMINE_NO) ||
-                                    (coinControl && coinControl->fAllowWatchOnly && (mine & ISMINE_WATCH_SOLVABLE) != ISMINE_NO);
+                bool isSpendable = (mine & ISMINE_SPENDABLE_ANY) ||
+                                   (coinControl && coinControl->fAllowWatchOnly && (mine & ISMINE_WATCH_SOLVABLE));
 
                 if (fOnlySpendable && !isSpendable)
                     continue;
