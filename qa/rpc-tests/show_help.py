@@ -25,7 +25,10 @@ Usage:
 Options:
 
   -?
-       This help message
+       Print this help message and exit
+
+  -version
+       Print version and exit
 
   -alerts
        Receive and display P2P network alerts (default: 1)
@@ -53,7 +56,8 @@ Options:
        How thorough the block verification of -checkblocks is (0-4, default: 3)
 
   -conf=<file>
-       Specify configuration file (default: zcash.conf)
+       Specify configuration file. Relative paths will be prefixed by datadir
+       location. (default: zcash.conf)
 
   -daemon
        Run in the background as a daemon and accept commands
@@ -68,8 +72,8 @@ Options:
        Set database cache size in megabytes (4 to 16384, default: 450)
 
   -debuglogfile=<file>
-       Specify location of debug log file: this can be an absolute path or a
-       path relative to the data directory (default: debug.log)
+       Specify location of debug log file. Relative paths will be prefixed by a
+       net-specific datadir location. (default: debug.log)
 
   -exportdir=<dir>
        Specify directory to be used when exporting data
@@ -90,7 +94,8 @@ Options:
        leave that many cores free, default: 0)
 
   -pid=<file>
-       Specify pid file (default: zcashd.pid)
+       Specify pid file. Relative paths will be prefixed by a net-specific
+       datadir location. (default: zcashd.pid)
 
   -prune=<n>
        Reduce storage requirements by pruning (deleting) old blocks. This mode
@@ -348,6 +353,9 @@ Monitoring options:
 
 Debugging/Testing options:
 
+  -uacomment=<cmt>
+       Append comment to the user agent string
+
   -debug=<category>
        Output debugging information (default: 0, supplying <category> is
        optional). If <category> is not supplied or if <category> = 1, output
@@ -438,6 +446,10 @@ RPC server options:
        Bind to given address to listen for JSON-RPC connections. Use
        [host]:port notation for IPv6. This option can be specified multiple
        times (default: bind to all interfaces)
+
+  -rpccookiefile=<loc>
+       Location of the auth cookie. Relative paths will be prefixed by a
+       net-specific datadir location. (default: data dir)
 
   -rpcuser=<user>
        Username for JSON-RPC connections
