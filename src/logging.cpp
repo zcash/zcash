@@ -69,11 +69,7 @@ static void DebugPrintInit()
 fs::path GetDebugLogPath()
 {
     fs::path logfile(GetArg("-debuglogfile", DEFAULT_DEBUGLOGFILE));
-    if (logfile.is_absolute()) {
-        return logfile;
-    } else {
-        return GetDataDir() / logfile;
-    }
+    return AbsPathForConfigVal(logfile);
 }
 
 std::string LogConfigFilter()

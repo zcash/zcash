@@ -367,11 +367,7 @@ void ClearDatadirCache()
 
 fs::path GetConfigFile(const std::string& confPath)
 {
-    fs::path pathConfigFile(confPath);
-    if (!pathConfigFile.is_complete())
-        pathConfigFile = GetDataDir(false) / pathConfigFile;
-
-    return pathConfigFile;
+    return AbsPathForConfigVal(fs::path(confPath), false);
 }
 
 void ReadConfigFile(const std::string& confPath,
@@ -435,9 +431,7 @@ void ReadConfigFile(const std::string& confPath,
 #ifndef WIN32
 fs::path GetPidFile()
 {
-    fs::path pathPidFile(GetArg("-pid", BITCOIN_PID_FILENAME));
-    if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
-    return pathPidFile;
+    return AbsPathForConfigVal(fs::path(GetArg("-pid", BITCOIN_PID_FILENAME)));
 }
 
 void CreatePidFile(const fs::path &path, pid_t pid)
@@ -679,4 +673,9 @@ std::string LicenseInfo()
 int GetNumCores()
 {
     return boost::thread::physical_concurrency();
+}
+
+fs::path AbsPathForConfigVal(const fs::path& path, bool net_specific)
+{
+    return fs::absolute(path, GetDataDir(net_specific));
 }

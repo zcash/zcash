@@ -1758,7 +1758,8 @@ bool CWallet::Verify()
     LogPrintf("Using wallet %s\n", walletFile);
     uiInterface.InitMessage(_("Verifying wallet..."));
 
-    if (walletFile != fs::basename(walletFile) + fs::extension(walletFile)) {
+    fs::path wallet_file_path(walletFile);
+    if (walletFile != wallet_file_path.filename().string()) {
         fs::path path(walletFile);
         if (path.is_absolute()) {
             if (!fs::exists(path.parent_path())) {

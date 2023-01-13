@@ -89,6 +89,16 @@ fs::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 void runCommand(const std::string& strCommand);
 const fs::path GetExportDir();
 
+/**
+ * Most paths passed as configuration arguments are treated as relative to
+ * the datadir if they are not absolute.
+ *
+ * @param path The path to be conditionally prefixed with datadir.
+ * @param net_specific Forwarded to GetDataDir().
+ * @return The normalized path.
+ */
+fs::path AbsPathForConfigVal(const fs::path& path, bool net_specific = true);
+
 /** Returns privacy notice (for -version, -help and metrics screen) */
 std::string PrivacyInfo();
 
