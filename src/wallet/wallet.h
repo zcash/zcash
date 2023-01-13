@@ -684,7 +684,7 @@ public:
     CAmount GetDebit(const isminefilter& filter) const;
     CAmount GetCredit(const std::optional<int>& asOfHeight, const isminefilter& filter) const;
     CAmount GetImmatureCredit(const std::optional<int>& asOfHeight, bool fUseCache=true) const;
-    CAmount GetAvailableCredit(const std::optional<int>& asOfHeight, bool fUseCache=true, const isminefilter& filter=ISMINE_SPENDABLE) const;
+    CAmount GetAvailableCredit(const std::optional<int>& asOfHeight, bool fUseCache, const isminefilter& filter) const;
     CAmount GetImmatureWatchOnlyCredit(const std::optional<int>& asOfHeight, const bool fUseCache=true) const;
     CAmount GetChange() const;
 
@@ -1920,12 +1920,12 @@ public:
     void ResendWalletTransactions(int64_t nBestBlockTime);
     std::vector<uint256> ResendWalletTransactionsBefore(int64_t nTime);
     CAmount GetBalance(const std::optional<int>& asOfHeight,
-                       const isminefilter& filter=ISMINE_SPENDABLE,
-                       const int min_depth=0) const;
+                       const isminefilter& filter,
+                       const int min_depth) const;
     /**
      * Returns the balance taking into account _only_ transactions in the mempool.
      */
-    CAmount GetUnconfirmedTransparentBalance() const;
+    CAmount GetUnconfirmedTransparentBalance(const isminefilter& filter) const;
     CAmount GetImmatureBalance(const std::optional<int>& asOfHeight) const;
     CAmount GetLegacyBalance(const isminefilter& filter, int minDepth) const;
 
