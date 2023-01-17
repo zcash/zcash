@@ -3597,6 +3597,26 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                                block.vtx[0].GetValueOut(), blockReward),
                                REJECT_INVALID, "bad-cb-amount");
 
+    // Ensure that the total chain supply is consistent with the value in each pool.
+    if (!fJustCheck &&
+            pindex->nChainTotalSupply &&
+            pindex->nChainTransparentValue &&
+            pindex->nChainSproutValue &&
+            pindex->nChainSaplingValue &&
+            pindex->nChainOrchardValue)
+    {
+        auto expectedChainSupply =
+            pindex->nChainTransparentValue.value() +
+            pindex->nChainSproutValue.value() +
+            pindex->nChainSaplingValue.value() +
+            pindex->nChainOrchardValue.value();
+        if (expectedChainSupply != pindex->nChainTotalSupply.value()) {
+            // This may be added as a rule to ZIP 209 and return a failure in a future soft-fork.
+            error("ConnectBlock(): chain total supply (%d) does not match sum of pool balances (%d) at height %d",
+                    pindex->nChainTotalSupply.value(), expectedChainSupply, pindex->nHeight);
+        }
+    }
+
     // Ensure Sapling authorizations are valid (if we are checking them)
     if (saplingAuth.has_value() && !saplingAuth.value()->validate()) {
         return state.DoS(100,
