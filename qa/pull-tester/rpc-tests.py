@@ -186,6 +186,7 @@ def main():
     Help text and arguments for individual test script:''',
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('--coverage', action='store_true', help='generate a basic coverage report for the RPC interface')
+    parser.add_argument('--deterministic', '-d', action='store_true', help='make the output a bit closer to deterministic in order to compare runs.')
     parser.add_argument('--exclude', '-x', help='specify a comma-seperated-list of scripts to exclude. Do not include the .py extension in the name.')
     parser.add_argument('--extended', action='store_true', help='run the extended test suite in addition to the basic tests')
     parser.add_argument('--force', '-f', action='store_true', help='run tests even on platforms where they are disabled by default (e.g. windows).')
@@ -295,10 +296,11 @@ def main():
         config["environment"]["EXEEXT"],
         args.jobs,
         args.coverage,
+        args.deterministic,
         passon_args)
     sys.exit(not all_passed)
 
-def run_tests(test_handler, test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=False, args=[]):
+def run_tests(test_handler, test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=False, deterministic=False, args=[]):
     BOLD = ("","")
     if os.name == 'posix':
         # primitive formatting on supported
@@ -333,29 +335,41 @@ def run_tests(test_handler, test_list, src_dir, build_dir, exeext, jobs=1, enabl
     job_queue = test_handler(jobs, tests_dir, test_list, flags)
 
     max_len_name = len(max(test_list, key=len))
-    results = BOLD[1] + "%s | %s | %s\n\n" % ("TEST".ljust(max_len_name), "PASSED", "DURATION") + BOLD[0]
+    results = []
     try:
         for _ in range(len(test_list)):
-            (name, stdout, stderr, passed, duration) = job_queue.get_next()
+            (name, stdout, stderr, passed, duration) = job_queue.get_next(deterministic)
             all_passed = all_passed and passed
             time_sum += duration
 
             print('\n' + BOLD[1] + name + BOLD[0] + ":")
             print('' if passed else stdout + '\n', end='')
             print('' if stderr == '' else 'stderr:\n' + stderr + '\n', end='')
-            print("Pass: %s%s%s, Duration: %s s\n" % (BOLD[1], passed, BOLD[0], duration))
+            print("Pass: %s%s%s" % (BOLD[1], passed, BOLD[0]), end='')
+            if deterministic:
+                print("\n", end='')
+            else:
+                print(", Duration: %s s" % (duration,))
 
-            results += "%s | %s | %s s\n" % (name.ljust(max_len_name), str(passed).ljust(6), duration)
+            new_result = "%s | %s" % (name.ljust(max_len_name), str(passed).ljust(6))
+            if not deterministic:
+                new_result += (" | %s s" % (duration,))
+            results.append(new_result)
     except (InterruptedError, KeyboardInterrupt):
         print('\nThe following tests were running when interrupted:')
         for j in job_queue.jobs:
             print("•", j[0])
         print('\n', end='')
-        raise
 
-    results += BOLD[1] + "\n%s | %s | %s s (accumulated)" % ("ALL".ljust(max_len_name), str(all_passed).ljust(6), time_sum) + BOLD[0]
-    print(results)
-    print("\nRuntime: %s s" % (int(time.time() - time0)))
+    header = "%s | PASSED" % ("TEST".ljust(max_len_name),)
+    footer = "%s | %s" % ("ALL".ljust(max_len_name), str(all_passed).ljust(6))
+    if not deterministic:
+        header += " | DURATION"
+        footer += " | %s s (accumulated)\nRuntime: %s s" % (time_sum, int(time.time() - time0))
+    print(
+        BOLD[1] + header + BOLD[0] + "\n\n"
+        + "\n".join(sorted(results)) + "\n"
+        + BOLD[1] + footer + BOLD[0])
 
     if coverage:
         coverage.report_rpc_coverage()
@@ -390,7 +404,7 @@ class RPCTestHandler:
             stdout=stdout,
             stderr=stderr)
 
-    def get_next(self):
+    def get_next(self, deterministic):
         while self.num_running < self.num_jobs and self.test_list:
             # Add tests
             self.num_running += 1
@@ -424,7 +438,8 @@ class RPCTestHandler:
                     self.num_running -= 1
                     self.jobs.remove(j)
                     return name, stdout, stderr, passed, int(time.time() - time0)
-            print('.', end='', flush=True)
+            if not deterministic:
+                print('.', end='', flush=True)
 
 
 class RPCCoverage(object):
