@@ -352,6 +352,10 @@ CAmount CTransaction::GetShieldedValueIn() const
         }
     }
 
+    if (IsCoinBase() && nValue != 0) {
+        throw std::runtime_error("CTransaction::GetShieldedValueIn(): shielded value of inputs must be zero in coinbase transactions.");
+    }
+
     return nValue;
 }
 

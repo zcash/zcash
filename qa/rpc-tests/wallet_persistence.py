@@ -60,19 +60,20 @@ class WalletPersistenceTest (BitcoinTestFramework):
         addresses = self.nodes[0].z_listaddresses()
         assert_true(sapling_addr in addresses, "Should contain address before restart")
 
-        def check_chain_value(pool, expected_value):
+        def check_chain_value(pool, expected_id, expected_value):
+            assert_equal(pool.get('id', None), expected_id)
+            assert_equal(pool['monitored'], True)
             assert_equal(pool['chainValue'], expected_value)
             assert_equal(pool['chainValueZat'], expected_value * COIN)
 
         # Verify size of pools
         chainInfo = self.nodes[0].getblockchaininfo()
-        print(str(chainInfo))
-        assert_equal(chainInfo['chainSupply']['chainValue'], expected_supply)  # Supply
         pools = chainInfo['valuePools']
-        check_chain_value(pools[0], expected_supply)  # Transparent
-        check_chain_value(pools[1], Decimal('0')) # Sprout
-        check_chain_value(pools[2], Decimal('0')) # Sapling
-        check_chain_value(pools[3], Decimal('0')) # Orchard
+        check_chain_value(chainInfo['chainSupply'], None, expected_supply)
+        check_chain_value(pools[0], 'transparent', expected_supply)
+        check_chain_value(pools[1], 'sprout',  Decimal('0'))
+        check_chain_value(pools[2], 'sapling', Decimal('0'))
+        check_chain_value(pools[3], 'orchard', Decimal('0'))
 
         # Restart the nodes
         stop_nodes(self.nodes)
@@ -87,11 +88,11 @@ class WalletPersistenceTest (BitcoinTestFramework):
         chainInfo = self.nodes[0].getblockchaininfo()
         pools = chainInfo['valuePools']
         # Reenable these test in v5.4.0-rc1
-        # check_chain_value(chainInfo['chainSupply'], expected_supply)  # Supply
-        # check_chain_value(pools[0], expected_supply)                  # Transparent
-        check_chain_value(pools[1], Decimal('0')) # Sprout
-        check_chain_value(pools[2], Decimal('0')) # Sapling
-        check_chain_value(pools[3], Decimal('0')) # Orchard
+        # check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
+        # check_chain_value(pools[0], 'transparent', expected_supply)
+        check_chain_value(pools[1], 'sprout',  Decimal('0'))
+        check_chain_value(pools[2], 'sapling', Decimal('0'))
+        check_chain_value(pools[3], 'orchard', Decimal('0'))
 
         # Node 0 shields funds to Sapling address
         taddr0 = get_coinbase_address(self.nodes[0])
@@ -112,11 +113,11 @@ class WalletPersistenceTest (BitcoinTestFramework):
         chainInfo = self.nodes[0].getblockchaininfo()
         pools = chainInfo['valuePools']
         # Reenable these tests in v5.4.0-rc1
-        # check_chain_value(chainInfo['chainSupply'], expected_supply)  # Supply
-        # check_chain_value(pools[0], expected_supply - Decimal('20'))  # Transparent
-        check_chain_value(pools[1], Decimal('0'))  # Sprout
-        check_chain_value(pools[2], Decimal('20')) # Sapling
-        check_chain_value(pools[3], Decimal('0'))  # Orchard
+        # check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
+        # check_chain_value(pools[0], 'transparent', expected_supply - Decimal('20'))  # Transparent
+        check_chain_value(pools[1], 'sprout',  Decimal('0'))  
+        check_chain_value(pools[2], 'sapling', Decimal('20'))
+        check_chain_value(pools[3], 'orchard', Decimal('0'))
 
         # Restart the nodes
         stop_nodes(self.nodes)
@@ -127,11 +128,11 @@ class WalletPersistenceTest (BitcoinTestFramework):
         chainInfo = self.nodes[0].getblockchaininfo()
         pools = chainInfo['valuePools']
         # Reenable these tests in v5.4.0-rc1
-        # check_chain_value(chainInfo['chainSupply'], expected_supply)  # Supply
-        # check_chain_value(pools[0], expected_supply - Decimal('20'))  # Transparent
-        check_chain_value(pools[1], Decimal('0'))  # Sprout
-        check_chain_value(pools[2], Decimal('20')) # Sapling
-        check_chain_value(pools[3], Decimal('0'))  # Orchard
+        # check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
+        # check_chain_value(pools[0], 'transparent', expected_supply - Decimal('20'))  # Transparent
+        check_chain_value(pools[1], 'sprout',  Decimal('0')) 
+        check_chain_value(pools[2], 'sapling', Decimal('20'))
+        check_chain_value(pools[3], 'orchard', Decimal('0'))
 
         # Node 0 sends some shielded funds to Node 1
         dest_addr = self.nodes[1].z_getnewaddress('sapling')

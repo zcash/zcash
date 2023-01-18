@@ -994,7 +994,6 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
     return GetTransparentValueIn(tx) + tx.GetShieldedValueIn();
 }
 
-// TODO: remove this if it ends up unused
 CAmount CCoinsViewCache::GetTransparentValueIn(const CTransaction& tx) const
 {
     if (tx.IsCoinBase())

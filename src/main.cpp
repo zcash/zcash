@@ -4687,7 +4687,7 @@ bool ReceivedBlockTransactions(
                 // place that we have a valid coins view with which to compute
                 // the transparent input value and fees.
 
-                // calculate the block's effect on the chain's net Sprout value
+                // Calculate the block's effect on the Sprout chain value pool balance.
                 if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
                     pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
                 } else {
