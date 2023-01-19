@@ -1,3 +1,9 @@
+zcash (5.4.0~rc1) stable; urgency=medium
+
+  * 5.4.0-rc1 release.
+
+ -- Electric Coin Company <team@electriccoin.co>  Thu, 19 Jan 2023 22:57:59 +0000
+
 zcash (5.3.2) stable; urgency=medium
 
   * 5.3.2 release.
