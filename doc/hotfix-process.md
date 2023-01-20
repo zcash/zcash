@@ -42,7 +42,7 @@ with a couple of minor differences:
 - When running the release script, use the `--hotfix` flag. Provide the hash of 
   the commit to be released as the first argument:
 
-    $ ./zcutil/make-release.py --hotfix <COMMIT_ID> <RELEASE> <RELEASE_PREV> <APPROX_RELEASE_HEIGHT>
+    $ ./zcutil/make-release.py --hotfix <COMMIT_ID> <RELEASE> <RELEASE_PREV> <RELEASE_FROM> <APPROX_RELEASE_HEIGHT>
 
 - To review the automated changes in git:
 
