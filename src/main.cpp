@@ -3461,8 +3461,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     view.PushAnchor(sapling_tree);
     view.PushAnchor(orchard_tree);
     if (!fJustCheck) {
-        // Update pindex with the net change in transparent value and the chain's total
-        // transparent value.
+        // Update pindex with the net change in value and the chain's total value,
+        // both for the supply and for the transparent pool.
         pindex->nChainSupplyDelta = chainSupplyDelta;
         pindex->nTransparentValue = transparentValueDelta;
         if (pindex->pprev) {
@@ -3599,11 +3599,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     // Ensure that the total chain supply is consistent with the value in each pool.
     if (!fJustCheck &&
-            pindex->nChainTotalSupply &&
-            pindex->nChainTransparentValue &&
-            pindex->nChainSproutValue &&
-            pindex->nChainSaplingValue &&
-            pindex->nChainOrchardValue)
+            pindex->nChainTotalSupply.has_value() &&
+            pindex->nChainTransparentValue.has_value() &&
+            pindex->nChainSproutValue.has_value() &&
+            pindex->nChainSaplingValue.has_value() &&
+            pindex->nChainOrchardValue.has_value())
     {
         auto expectedChainSupply =
             pindex->nChainTransparentValue.value() +
@@ -4694,14 +4694,14 @@ bool ReceivedBlockTransactions(
                     pindex->nChainSproutValue = std::nullopt;
                 }
 
-                // calculate the block's effect on the chain's net Sapling value
+                // Calculate the block's effect on the Sapling chain value pool balance.
                 if (pindex->pprev->nChainSaplingValue) {
                     pindex->nChainSaplingValue = *pindex->pprev->nChainSaplingValue + pindex->nSaplingValue;
                 } else {
                     pindex->nChainSaplingValue = std::nullopt;
                 }
 
-                // calculate the block's effect on the chain's net Orchard value
+                // Calculate the block's effect on the Orchard chain value pool balance.
                 if (pindex->pprev->nChainOrchardValue) {
                     pindex->nChainOrchardValue = *pindex->pprev->nChainOrchardValue + pindex->nOrchardValue;
                 } else {

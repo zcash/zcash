@@ -1,4 +1,5 @@
 import pprint
+import bisect
 
 class SupplyDeltas:
     def __init__(self, zcashd, fr_addrs, miner_deltas, flush_interval = 500):
@@ -23,22 +24,8 @@ class SupplyDeltas:
         self.delta_cache.append((deltaHeight, self.delta_total))
         
     def DeviationAtHeight(self, height):
-        # search for the cached entry at the maximum deltaHeight <= height
-        def binary_search(start, end, max_found):
-            if start >= end:
-                if max_found:
-                    return max_found[1]
-                else:
-                    return 0
-            else:
-                mid = (start + end) // 2
-                item = self.delta_cache[mid]
-                if item[0] <= height:
-                    return binary_search(mid+1, end, item)
-                else:
-                    return binary_search(start, mid, max_found)
-
-        return binary_search(0, len(self.delta_cache), None)
+        i = bisect.bisect(self.delta_cache, height, key=lambda x: x[0])
+        return 0 if i == 0 else self.delta_cache[i - 1][1]
     
     def SaveMismatch(self, block, theoretical, empirical):
         height = block['height']

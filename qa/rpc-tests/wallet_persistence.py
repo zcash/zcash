@@ -41,9 +41,8 @@ class WalletPersistenceTest (BitcoinTestFramework):
         pre_halving_subsidy = Decimal('12.5')
         post_halving_blocks = 57
         post_halving_subsidy = Decimal('6.25')
-        expected_supply = \
-            pre_halving_blocks * pre_halving_subsidy + \
-            post_halving_blocks * post_halving_subsidy
+        expected_supply = (pre_halving_blocks * pre_halving_subsidy +
+                           post_halving_blocks * post_halving_subsidy)
 
         blocks_to_mine = pre_halving_blocks + post_halving_blocks
 

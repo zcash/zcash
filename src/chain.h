@@ -252,8 +252,8 @@ public:
     uint256 hashFinalSproutRoot;
 
     //! The change to the chain supply caused by this block. This is defined as
-    //! the value of the coinbase outputs in this block, minus fees not claimed
-    //! by the miner.
+    //! the value of the coinbase outputs (transparent and shielded) in this block,
+    //! minus fees not claimed by the miner.
     //!
     //! Will be std::nullopt under the following conditions:
     //! - if the block has never been connected to a chain tip
