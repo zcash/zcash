@@ -82,7 +82,7 @@ class WalletListUnspent(BitcoinTestFramework):
         opid = self.nodes[0].z_sendmany(
                 'ANY_TADDR',
                 [{'address': n1uaddr, 'amount': 2}],
-                1, 0, 'AllowRevealedSenders')
+                1, 0, 'AllowFullyTransparent')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.nodes[0].generate(2)
@@ -92,7 +92,7 @@ class WalletListUnspent(BitcoinTestFramework):
         opid = self.nodes[0].z_sendmany(
                 'ANY_TADDR',
                 [{'address': n1uaddr, 'amount': 3}],
-                1, 0, 'AllowRevealedSenders')
+                1, 0, 'AllowFullyTransparent')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.nodes[0].generate(2)
