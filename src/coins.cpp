@@ -991,14 +991,17 @@ const CTxOut &CCoinsViewCache::GetOutputFor(const CTxIn& input) const
 
 CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
 {
+    return GetTransparentValueIn(tx) + tx.GetShieldedValueIn();
+}
+
+CAmount CCoinsViewCache::GetTransparentValueIn(const CTransaction& tx) const
+{
     if (tx.IsCoinBase())
         return 0;
 
     CAmount nResult = 0;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         nResult += GetOutputFor(tx.vin[i]).nValue;
-
-    nResult += tx.GetShieldedValueIn();
 
     return nResult;
 }

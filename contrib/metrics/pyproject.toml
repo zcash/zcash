@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "zcash-metrics"
+version = "0.1.0"
+description = "Zcash Metrics"
+authors = [
+    "Jack Grigg <jack@electriccoin.co>",
+    "Daira Hopwood <daira@jacaranda.org>",
+    "Kris Nuttycombe <kris@nutty.land>",
+]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+homepage = "https://github.com/zcash/zcash/"
+repository = "https://github.com/zcash/zcash/"
+documentation = "https://github.com/zcash/zcash/"
+classifiers = [
+    "Private :: Do Not Upload",
+]
+packages = [
+    { include = "supply_check" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+slick-bitcoinrpc = "0.1.4"
+progressbar2 = "4.2.0"
+
+[tool.poetry.scripts]
+supply-check = "supply_check:main"
+
