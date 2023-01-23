@@ -7,7 +7,6 @@ class SupplyDeltas:
         self.fr_addrs = fr_addrs
         self.miner_deltas = miner_deltas
 
-        self.delta_count = 0
         self.delta_total = 0
         self.delta_cache = []
         self.flush_interval = flush_interval
@@ -19,7 +18,6 @@ class SupplyDeltas:
     def AddSupplyDelta(self, deltaHeight, delta):
         assert len(self.delta_cache) == 0 or deltaHeight > self.delta_cache[-1][0]
 
-        self.delta_count += 1
         self.delta_total += delta
         self.delta_cache.append((deltaHeight, self.delta_total))
         
@@ -46,8 +44,8 @@ class SupplyDeltas:
             if len(miner_addrs) > 0:
                 self.miner_deltas.setdefault(",".join(sorted(miner_addrs)), []).append((height, delta))
                 self.AddSupplyDelta(height, delta)
-                if self.delta_count % 500 == 0:
-                    with open("delta_cache.{}.out".format(self.delta_count), 'w', encoding="utf8") as f:
+                if len(self.delta_cache) % 500 == 0:
+                    with open("delta_cache.{}.out".format(len(self.delta_cache)), 'w', encoding="utf8") as f:
                         pprint.pprint(self.miner_deltas, stream = f, indent = 4)
 
                 return True

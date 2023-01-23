@@ -95,7 +95,7 @@ def main():
     if interrupted:
         print("Supply check was interrupted; supply delta evaluation incomplete.")
     else:
-        print("Blocks with unclaimed balance: {}".format(deltas.delta_count))
+        print("Blocks with unclaimed balance: {}".format(len(deltas.delta_cache)))
         print("Unclaimed total: {} ZEC".format(deltas.delta_total / COIN))
 
 if __name__ == "__main__":
