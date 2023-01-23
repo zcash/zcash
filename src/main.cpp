@@ -3896,7 +3896,7 @@ struct PoolMetrics {
 
     static PoolMetrics Transparent(CBlockIndex *pindex, CCoinsViewCache *view) {
         PoolMetrics stats;
-        // TODO: Collect transparent pool value.
+        stats.value = pindex->nChainTransparentValue;
 
         // TODO: Figure out a way to efficiently collect UTXO set metrics
         // (view->GetStats() is too slow to call during block verification).
