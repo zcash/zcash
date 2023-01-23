@@ -27,7 +27,7 @@ def TheoreticalAndEmpirical(zcashd, deltas, height, flag):
     theoreticalSupply = Network(MAINNET).SupplyAfterHeight(height)
     block = zcashd.getblock(str(height), flag)
     measuredSupply = block['chainSupply']['chainValueZat']
-    empiricalMaximum = measuredSupply + deltas.DeviationAtHeight(height)
+    empiricalMaximum = measuredSupply + deltas.DeviationUpToHeight(height)
     return (theoreticalSupply, empiricalMaximum, block)
 
 # Returns `True` if the theoretical supply matches the empirically
@@ -62,7 +62,7 @@ def main():
     if os.environ.get('ZCASHD_RPC_HOST') is None:
         missing_env.append('  ZCASHD_RPC_HOST: hostname where zcashd is running')
     if os.environ.get('ZCASHD_RPC_PORT') is None:
-        missing_env.append('  ZCASHD_RPC_PORT: zcashd RPC API port (usually 3232 for mainnet)')
+        missing_env.append('  ZCASHD_RPC_PORT: zcashd RPC API port (usually 8232 for mainnet)')
 
     if len(missing_env) > 0:
         print("Please ensure that the following environment variables have been set:")
@@ -78,8 +78,8 @@ def main():
     ))
 
     latestHeight = zcashd.getblockchaininfo()['blocks']
-    deltas = MainnetSupplyDeltas(zcashd)
-    (theoretical, empirical, block) = TheoreticalAndEmpirical(zcashd, deltas, latestHeight, 1)
+    deltas = MainnetSupplyDeltas()
+    (theoretical, empirical, block) = TheoreticalAndEmpirical(zcashd, deltas, latestHeight, TXIDS_ONLY)
     interrupted = False
     if theoretical != empirical:
         with progressbar.ProgressBar(max_value = latestHeight, redirect_stdout = True) as bar:

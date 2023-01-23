@@ -23,7 +23,7 @@ static const int SPROUT_VALUE_VERSION = 1001400;
 static const int SAPLING_VALUE_VERSION = 1010100;
 static const int CHAIN_HISTORY_ROOT_VERSION = 2010200;
 static const int NU5_DATA_VERSION = 4050000;
-static const int TRANSPARENT_VALUE_VERSION = 5040000;
+static const int TRANSPARENT_VALUE_VERSION = 5040026;
 
 /**
  * Maximum amount of time that a block timestamp is allowed to be ahead of the
@@ -262,8 +262,9 @@ public:
 
     //! (memory only) Total chain supply up to and including this block.
     //!
-    //! Will be std::nullopt until a reindex has taken place, if nChainTx is
-    //! zero, or if the block has never been connected to a chain tip.
+    //! Will be std::nullopt until a reindex has taken place.
+    //! Will be std::nullopt if nChainTx is zero, or if the block has never been
+    //! connected to a chain tip.
     std::optional<CAmount> nChainTotalSupply;
 
     //! Change in value in the transparent pool produced by the action of the

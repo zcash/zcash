@@ -40,7 +40,7 @@ class WalletPersistenceTest (BitcoinTestFramework):
         pre_halving_blocks = 143
         pre_halving_subsidy = Decimal('12.5')
         post_halving_blocks = 57
-        post_halving_subsidy = Decimal('6.25')
+        post_halving_subsidy = pre_halving_subsidy / 2
         expected_supply = (pre_halving_blocks * pre_halving_subsidy +
                            post_halving_blocks * post_halving_subsidy)
 
@@ -86,7 +86,7 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Verify size of pools after restarting
         chainInfo = self.nodes[0].getblockchaininfo()
         pools = chainInfo['valuePools']
-        # Reenable these test in v5.4.0-rc1
+        # Reenable these test in v5.4.0-rc2
         # check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
         # check_chain_value(pools[0], 'transparent', expected_supply)
         check_chain_value(pools[1], 'sprout',  Decimal('0'))
@@ -111,7 +111,7 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Verify size of pools
         chainInfo = self.nodes[0].getblockchaininfo()
         pools = chainInfo['valuePools']
-        # Reenable these tests in v5.4.0-rc1
+        # Reenable these tests in v5.4.0-rc2
         # check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
         # check_chain_value(pools[0], 'transparent', expected_supply - Decimal('20'))  # Transparent
         check_chain_value(pools[1], 'sprout',  Decimal('0'))  
@@ -126,7 +126,7 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Verify size of pools
         chainInfo = self.nodes[0].getblockchaininfo()
         pools = chainInfo['valuePools']
-        # Reenable these tests in v5.4.0-rc1
+        # Reenable these tests in v5.4.0-rc2
         # check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
         # check_chain_value(pools[0], 'transparent', expected_supply - Decimal('20'))  # Transparent
         check_chain_value(pools[1], 'sprout',  Decimal('0')) 
