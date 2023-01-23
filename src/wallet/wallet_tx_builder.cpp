@@ -6,7 +6,7 @@
 
 using namespace libzcash;
 
-int GetAnchorHeight(const CChain& chain, int anchorConfirmations)
+int GetAnchorHeight(const CChain& chain, uint32_t anchorConfirmations)
 {
     int nextBlockHeight = chain.Height() + 1;
     return nextBlockHeight - anchorConfirmations;
@@ -23,7 +23,8 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
 {
     assert(fee < MAX_MONEY);
 
-    auto selected = ResolveInputsAndPayments(spendable, payments, chain, strategy, fee, anchorConfirmations);
+    int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);
+    auto selected = ResolveInputsAndPayments(selector, spendable, payments, chain, strategy, fee, anchorHeight);
     if (std::holds_alternative<InputSelectionError>(selected)) {
         return std::get<InputSelectionError>(selected);
     }
@@ -68,7 +69,8 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
                         }
                         break;
                     case ReceiverType::Orchard:
-                        if (!spendable.orchardNoteMetadata.empty() || strategy.AllowRevealedAmounts()) {
+                        if (params.GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5)
+                            && (!spendable.orchardNoteMetadata.empty() || strategy.AllowRevealedAmounts())) {
                             result.insert(OutputPool::Orchard);
                         }
                         break;
@@ -152,7 +154,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
                 }
             },
             [&](const libzcash::UnifiedFullViewingKey& fvk) {
-                auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), fvk);
+                auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(params, fvk);
                 auto sendTo = zufvk.GetChangeAddress(
                         allowedChangeTypes(fvk.GetKnownReceiverTypes()));
                 if (sendTo.has_value()) {
@@ -189,7 +191,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
             fee,
             ovks.first,
             ovks.second,
-            GetAnchorHeight(chain, anchorConfirmations));
+            anchorHeight);
 }
 
 Payments InputSelection::GetPayments() const {
@@ -232,12 +234,13 @@ bool WalletTxBuilder::AllowTransparentCoinbase(
 }
 
 InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
+        const ZTXOSelector& selector,
         SpendableInputs& spendableMut,
         const std::vector<Payment>& payments,
         const CChain& chain,
         TransactionStrategy strategy,
         CAmount fee,
-        uint32_t anchorConfirmations) const
+        int anchorHeight) const
 {
     LOCK2(cs_main, wallet.cs_wallet);
 
@@ -259,10 +262,11 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
 
     // we can only select Orchard addresses if there are sufficient non-Sprout
     // funds to cover the total payments + fee.
-    bool canResolveOrchard = spendableMut.Total() - spendableMut.GetSproutBalance() >= targetAmount;
+    bool canResolveOrchard =
+        params.GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5)
+        && spendableMut.Total() - spendableMut.GetSproutBalance() >= targetAmount;
     std::vector<ResolvedPayment> resolvedPayments;
     std::optional<AddressResolutionError> resolutionError;
-    int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);
     for (const auto& payment : payments) {
         std::visit(match {
             [&](const CKeyID& p2pkh) {
@@ -297,8 +301,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
             },
             [&](const UnifiedAddress& ua) {
                 bool resolved{false};
-                if (Params().GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5)
-                    && canResolveOrchard
+                if (canResolveOrchard
                     && ua.GetOrchardReceiver().has_value()
                     && (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxOrchardAvailable)
                     ) {

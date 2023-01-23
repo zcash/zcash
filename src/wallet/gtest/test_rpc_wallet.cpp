@@ -284,7 +284,7 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     pwalletMain->LoadWalletTx(wtx);
 
     // Context that z_sendmany requires
-    auto builder = WalletTxBuilder(*pwalletMain, minRelayTxFee);
+    auto builder = WalletTxBuilder(Params(), *pwalletMain, minRelayTxFee);
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight, false);
 
     auto selector = pwalletMain->ZTXOSelectorForAddress(taddr, true, false, TransactionStrategy(PrivacyPolicy::FullPrivacy)).value();

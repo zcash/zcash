@@ -4982,7 +4982,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     // Create operation and add to global queue
     auto nAnchorDepth = std::min((unsigned int) nMinDepth, nAnchorConfirmations);
-    WalletTxBuilder builder(*pwalletMain, minRelayTxFee);
+    WalletTxBuilder builder(Params(), *pwalletMain, minRelayTxFee);
 
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation(

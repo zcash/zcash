@@ -292,6 +292,7 @@ typedef std::variant<
 
 class WalletTxBuilder {
 private:
+    const CChainParams& params;
     const CWallet& wallet;
     CFeeRate minRelayFee;
     uint32_t maxOrchardActions;
@@ -307,12 +308,13 @@ private:
      * and the requested transaction strategy.
      */
     InputSelectionResult ResolveInputsAndPayments(
+            const ZTXOSelector& selector,
             SpendableInputs& spendable,
             const std::vector<Payment>& payments,
             const CChain& chain,
             TransactionStrategy strategy,
             CAmount fee,
-            uint32_t anchorConfirmations) const;
+            int anchorHeight) const;
     /**
      * Compute the internal and external OVKs to use in transaction construction, given
      * the spendable inputs.
@@ -322,8 +324,8 @@ private:
             const SpendableInputs& spendable) const;
 
 public:
-    WalletTxBuilder(const CWallet& wallet, CFeeRate minRelayFee):
-        wallet(wallet), minRelayFee(minRelayFee), maxOrchardActions(nOrchardActionLimit) {}
+    WalletTxBuilder(const CChainParams& params, const CWallet& wallet, CFeeRate minRelayFee):
+        params(params), wallet(wallet), minRelayFee(minRelayFee), maxOrchardActions(nOrchardActionLimit) {}
 
     static bool AllowTransparentCoinbase(
             const std::vector<Payment>& payments,
