@@ -86,9 +86,8 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Verify size of pools after restarting
         chainInfo = self.nodes[0].getblockchaininfo()
         pools = chainInfo['valuePools']
-        # Reenable these test in v5.4.0-rc2
-        # check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
-        # check_chain_value(pools[0], 'transparent', expected_supply)
+        check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
+        check_chain_value(pools[0], 'transparent', expected_supply)
         check_chain_value(pools[1], 'sprout',  Decimal('0'))
         check_chain_value(pools[2], 'sapling', Decimal('0'))
         check_chain_value(pools[3], 'orchard', Decimal('0'))
@@ -111,9 +110,8 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Verify size of pools
         chainInfo = self.nodes[0].getblockchaininfo()
         pools = chainInfo['valuePools']
-        # Reenable these tests in v5.4.0-rc2
-        # check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
-        # check_chain_value(pools[0], 'transparent', expected_supply - Decimal('20'))  # Transparent
+        check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
+        check_chain_value(pools[0], 'transparent', expected_supply - Decimal('20'))  # Transparent
         check_chain_value(pools[1], 'sprout',  Decimal('0'))  
         check_chain_value(pools[2], 'sapling', Decimal('20'))
         check_chain_value(pools[3], 'orchard', Decimal('0'))
@@ -126,9 +124,8 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Verify size of pools
         chainInfo = self.nodes[0].getblockchaininfo()
         pools = chainInfo['valuePools']
-        # Reenable these tests in v5.4.0-rc2
-        # check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
-        # check_chain_value(pools[0], 'transparent', expected_supply - Decimal('20'))  # Transparent
+        check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
+        check_chain_value(pools[0], 'transparent', expected_supply - Decimal('20'))  # Transparent
         check_chain_value(pools[1], 'sprout',  Decimal('0')) 
         check_chain_value(pools[2], 'sapling', Decimal('20'))
         check_chain_value(pools[3], 'orchard', Decimal('0'))
