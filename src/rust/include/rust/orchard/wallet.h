@@ -5,7 +5,6 @@
 #ifndef ZCASH_RUST_INCLUDE_RUST_ORCHARD_WALLET_H
 #define ZCASH_RUST_INCLUDE_RUST_ORCHARD_WALLET_H
 
-#include "rust/orchard/incremental_merkle_tree.h"
 #include "rust/orchard/keys.h"
 #include "rust/builder.h"
 
@@ -18,6 +17,10 @@ extern "C" {
  */
 struct OrchardWalletPtr;
 typedef struct OrchardWalletPtr OrchardWalletPtr;
+
+/// Pointer to an Orchard incremental merkle tree frontier
+struct OrchardMerkleFrontierPtr;
+typedef struct OrchardMerkleFrontierPtr OrchardMerkleFrontierPtr;
 
 /**
  * Constructs a new empty Orchard wallet and return a pointer to it.

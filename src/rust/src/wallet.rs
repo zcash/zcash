@@ -26,7 +26,7 @@ use orchard::{
 use crate::{
     builder_ffi::OrchardSpendInfo,
     incremental_merkle_tree::{read_tree, write_tree},
-    incremental_merkle_tree_ffi::MERKLE_DEPTH,
+    merkle_frontier::MERKLE_DEPTH,
     streams_ffi::{CppStreamReader, CppStreamWriter, ReadCb, StreamObj, WriteCb},
     zcashd_orchard::OrderedAddress,
 };
