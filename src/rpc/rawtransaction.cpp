@@ -32,7 +32,7 @@
 #include <boost/assign/list_of.hpp>
 
 #include <univalue.h>
-#include <rust/orchard_bundle.h>
+#include <rust/bridge.h>
 
 using namespace std;
 

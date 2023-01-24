@@ -37,7 +37,7 @@
 #include "validationinterface.h"
 
 #include <librustzcash.h>
-#include <rust/sapling.h>
+#include <rust/bridge.h>
 
 #include <boost/thread.hpp>
 #include <boost/tuple/tuple.hpp>

@@ -21,95 +21,7 @@ use zcash_primitives::{
     },
 };
 
-use crate::{
-    note_encryption::{
-        parse_and_prepare_sapling_ivk, try_sapling_note_decryption, try_sapling_output_recovery,
-        DecryptedSaplingOutput,
-    },
-    params::{network, Network},
-};
-
-#[cxx::bridge]
-pub(crate) mod ffi {
-    #[namespace = "wallet"]
-    pub(crate) struct SaplingShieldedOutput {
-        cv: [u8; 32],
-        cmu: [u8; 32],
-        ephemeral_key: [u8; 32],
-        enc_ciphertext: [u8; 580],
-        out_ciphertext: [u8; 80],
-    }
-
-    #[namespace = "wallet"]
-    struct SaplingDecryptionResult {
-        txid: [u8; 32],
-        output: u32,
-        ivk: [u8; 32],
-        diversifier: [u8; 11],
-        pk_d: [u8; 32],
-    }
-
-    #[namespace = "consensus"]
-    extern "Rust" {
-        type Network;
-
-        fn network(
-            network: &str,
-            overwinter: i32,
-            sapling: i32,
-            blossom: i32,
-            heartwood: i32,
-            canopy: i32,
-            nu5: i32,
-        ) -> Result<Box<Network>>;
-    }
-
-    #[namespace = "wallet"]
-    extern "Rust" {
-        fn try_sapling_note_decryption(
-            network: &Network,
-            height: u32,
-            raw_ivk: &[u8; 32],
-            output: SaplingShieldedOutput,
-        ) -> Result<Box<DecryptedSaplingOutput>>;
-        fn try_sapling_output_recovery(
-            network: &Network,
-            height: u32,
-            ovk: [u8; 32],
-            output: SaplingShieldedOutput,
-        ) -> Result<Box<DecryptedSaplingOutput>>;
-
-        type DecryptedSaplingOutput;
-        fn note_value(self: &DecryptedSaplingOutput) -> u64;
-        fn note_rseed(self: &DecryptedSaplingOutput) -> [u8; 32];
-        fn zip_212_enabled(self: &DecryptedSaplingOutput) -> bool;
-        fn recipient_d(self: &DecryptedSaplingOutput) -> [u8; 11];
-        fn recipient_pk_d(self: &DecryptedSaplingOutput) -> [u8; 32];
-        fn memo(self: &DecryptedSaplingOutput) -> [u8; 512];
-
-        type BatchScanner;
-        type BatchResult;
-
-        fn init_batch_scanner(
-            network: &Network,
-            sapling_ivks: &[[u8; 32]],
-        ) -> Result<Box<BatchScanner>>;
-        fn add_transaction(
-            self: &mut BatchScanner,
-            block_tag: [u8; 32],
-            tx_bytes: &[u8],
-            height: u32,
-        ) -> Result<()>;
-        fn flush(self: &mut BatchScanner);
-        fn collect_results(
-            self: &mut BatchScanner,
-            block_tag: [u8; 32],
-            txid: [u8; 32],
-        ) -> Box<BatchResult>;
-
-        fn get_sapling(self: &BatchResult) -> Vec<SaplingDecryptionResult>;
-    }
-}
+use crate::{bridge::ffi, note_encryption::parse_and_prepare_sapling_ivk, params::Network};
 
 /// The minimum number of outputs to trial decrypt in a batch.
 ///
@@ -641,7 +553,7 @@ type SaplingRunner =
     BatchRunner<[u8; 32], SaplingDomain<Network>, OutputDescription<GrothProofBytes>, WithUsage>;
 
 /// A batch scanner for the `zcashd` wallet.
-struct BatchScanner {
+pub(crate) struct BatchScanner {
     params: Network,
     sapling_runner: Option<SaplingRunner>,
 }
@@ -656,7 +568,7 @@ impl DynamicUsage for BatchScanner {
     }
 }
 
-fn init_batch_scanner(
+pub(crate) fn init_batch_scanner(
     network: &Network,
     sapling_ivks: &[[u8; 32]],
 ) -> Result<Box<BatchScanner>, &'static str> {
@@ -690,7 +602,7 @@ impl BatchScanner {
     /// After adding the outputs, any accumulated batch of sufficient size is run on the
     /// global threadpool. Subsequent calls to `Self::add_transaction` will accumulate
     /// those output kinds into new batches.
-    fn add_transaction(
+    pub(crate) fn add_transaction(
         &mut self,
         block_tag: [u8; 32],
         tx_bytes: &[u8],
@@ -724,7 +636,7 @@ impl BatchScanner {
     /// Runs the currently accumulated batches on the global threadpool.
     ///
     /// Subsequent calls to `Self::add_transaction` will be accumulated into new batches.
-    fn flush(&mut self) {
+    pub(crate) fn flush(&mut self) {
         if let Some(runner) = &mut self.sapling_runner {
             runner.flush();
         }
@@ -737,7 +649,11 @@ impl BatchScanner {
     /// mempool change).
     ///
     /// TODO: Return the `HashMap`s directly once `cxx` supports it.
-    fn collect_results(&mut self, block_tag: [u8; 32], txid: [u8; 32]) -> Box<BatchResult> {
+    pub(crate) fn collect_results(
+        &mut self,
+        block_tag: [u8; 32],
+        txid: [u8; 32],
+    ) -> Box<BatchResult> {
         let block_tag = BlockHash(block_tag);
         let txid = TxId::from_bytes(txid);
 
@@ -754,12 +670,12 @@ impl BatchScanner {
     }
 }
 
-struct BatchResult {
+pub(crate) struct BatchResult {
     sapling: HashMap<(TxId, usize), DecryptedNote<[u8; 32], SaplingDomain<Network>>>,
 }
 
 impl BatchResult {
-    fn get_sapling(&self) -> Vec<ffi::SaplingDecryptionResult> {
+    pub(crate) fn get_sapling(&self) -> Vec<ffi::SaplingDecryptionResult> {
         self.sapling
             .iter()
             .map(

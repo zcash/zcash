@@ -15,8 +15,8 @@
 #include "version.h"
 
 #include "librustzcash.h"
+#include <rust/bridge.h>
 #include <rust/ed25519.h>
-#include <rust/sapling.h>
 
 static void ECDSA(benchmark::State& state)
 {

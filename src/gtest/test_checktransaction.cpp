@@ -11,8 +11,8 @@
 #include "zcash/JoinSplit.hpp"
 
 #include <librustzcash.h>
+#include <rust/bridge.h>
 #include <rust/ed25519.h>
-#include <rust/sapling.h>
 #include <rust/orchard.h>
 
 // Subclass of CTransaction which doesn't call UpdateHash when constructing

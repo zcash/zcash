@@ -8,8 +8,9 @@
 #include "streams.h"
 
 #include <amount.h>
+
+#include <rust/bridge.h>
 #include <rust/orchard.h>
-#include <rust/orchard_bundle.h>
 #include <rust/orchard/wallet.h>
 #include "zcash/address/orchard.hpp"
 
