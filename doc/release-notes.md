@@ -40,7 +40,7 @@ After upgrading to v5.4.0, `zcashd` will start tracking changes in transparent
 pool value and chain supply from the height at which it is restarted. Block
 heights prior to this will not have any information recorded. To track changes
 from genesis, and thus monitor the total transparent pool size and chain supply,
-you will need to restart your node with the `-reindex` option.
+you would need to restart your node with the `-reindex` option.
 
 RPC Changes
 -----------
