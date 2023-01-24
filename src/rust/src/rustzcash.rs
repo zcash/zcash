@@ -72,6 +72,7 @@ mod orchard_bundle;
 mod orchard_ffi;
 mod orchard_keys_ffi;
 mod sapling;
+mod streams;
 mod transaction_ffi;
 mod unified_keys_ffi;
 mod wallet;

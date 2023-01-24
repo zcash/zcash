@@ -317,6 +317,11 @@ public:
     void SetVersion(int n)       { nVersion = n; }
     int GetVersion() const       { return nVersion; }
 
+    void read_u8(unsigned char* pch, size_t nSize)
+    {
+        read(reinterpret_cast<char*>(pch), nSize);
+    }
+
     void read(char* pch, size_t nSize)
     {
         if (nSize == 0) return;
@@ -358,6 +363,11 @@ public:
             return;
         }
         nReadPos = nReadPosNext;
+    }
+
+    void write_u8(const unsigned char* pch, size_t nSize)
+    {
+        write(reinterpret_cast<const char*>(pch), nSize);
     }
 
     void write(const char* pch, size_t nSize)
@@ -423,6 +433,13 @@ public:
             CBaseDataStream(nTypeIn, nVersionIn, args...) { }
 
 };
+
+/**
+ * Concrete instantiation of a data stream, enabling them to be passed into Rust code.
+ *
+ * TODO: Rename this to RustStream once the non-`cxx` usages have been migrated to `cxx`.
+ */
+typedef CBaseDataStream<CSerializeData> RustDataStream;
 
 
 
