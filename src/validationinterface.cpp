@@ -163,8 +163,9 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
         // The stack of blocks we will notify as having been connected.
         // Pushed in reverse, popped in order.
         std::vector<CachedBlockData> blockStack;
-        // Transactions that have been recently conflicted out of the mempool.
-        std::pair<std::map<CBlockIndex*, std::list<CTransaction>>, uint64_t> recentlyConflicted;
+        // Sequence number indicating that we have notified wallets of transactions up to
+        // the ConnectBlock() call that generated this sequence number.
+        std::optional<uint64_t> chainNotifiedSequence;
         // Transactions that have been recently added to the mempool.
         std::pair<std::vector<CTransaction>, uint64_t> recentlyAdded;
 
@@ -176,12 +177,8 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             CBlockIndex *pindex = chainActive.Tip();
             pindexFork = chainActive.FindFork(pindexLastTip);
 
-            // Fetch recently-conflicted transactions. These will include any
-            // block that has been connected since the last cycle, but we only
-            // notify for the conflicts created by the current active chain.
-            recentlyConflicted = DrainRecentlyConflicted();
-
             // Iterate backwards over the connected blocks we need to notify.
+            bool originalTipAtFork = pindex && pindex == pindexFork;
             while (pindex && pindex != pindexFork) {
                 MerkleFrontiers oldFrontiers;
                 // Get the Sprout commitment tree as of the start of this block.
@@ -214,15 +211,38 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
                         OrchardMerkleFrontier::empty_root(), oldFrontiers.orchard));
                 }
 
+                // Fetch recently-conflicted transactions. These will include any
+                // block that has been connected since the last cycle, but we only
+                // notify for the conflicts created by the current active chain.
+                auto recentlyConflicted = TakeRecentlyConflicted(pindex);
+
                 blockStack.emplace_back(
                     pindex,
                     oldFrontiers,
-                    recentlyConflicted.first[pindex]);
+                    recentlyConflicted.first);
+
+                chainNotifiedSequence = recentlyConflicted.second;
 
                 pindex = pindex->pprev;
             }
 
-            recentlyAdded = mempool.DrainRecentlyAdded();
+            // This conditional can be true in the case that in the interval
+            // since the last second-boundary, two reorgs occurred: one that
+            // shifted over to a different chain history, and then a second
+            // that returned the chain to the original pre-reorg tip.  This
+            // should never occur unless a caller has manually used
+            // `invalidateblock` to force the second reorg or we have a long
+            // persistent set of dueling chains. In such a case, wallets may
+            // not be fully notified of conflicted transactions, but they will
+            // still have a correct view of the current main chain, and they
+            // will still be notified properly of the current state of
+            // transactions in the mempool.
+            if (originalTipAtFork) {
+                chainNotifiedSequence = GetChainConnectedSequence();
+            }
+            if (chainNotifiedSequence.has_value()) {
+                recentlyAdded = mempool.DrainRecentlyAdded();
+            }
         }
 
         //
@@ -540,8 +560,12 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
         // Update the notified sequence numbers. We only need this in regtest mode,
         // and should not lock on cs or cs_main here otherwise.
         if (chainParams.NetworkIDString() == "regtest") {
-            SetChainNotifiedSequence(chainParams, recentlyConflicted.second);
-            mempool.SetNotifiedSequence(recentlyAdded.second);
+            if (chainNotifiedSequence.has_value()) {
+                SetChainNotifiedSequence(chainParams, chainNotifiedSequence.value());
+            }
+            if (recentlyAdded.second > 0) {
+                mempool.SetNotifiedSequence(recentlyAdded.second);
+            }
         }
     }
 }

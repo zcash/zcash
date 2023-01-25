@@ -4062,8 +4062,8 @@ static int64_t nTimeChainState = 0;
 static int64_t nTimePostConnect = 0;
 
 // Protected by cs_main
-std::map<CBlockIndex*, std::list<CTransaction>> recentlyConflictedTxs;
-uint64_t nRecentlyConflictedSequence = 0;
+std::map<const CBlockIndex*, std::list<CTransaction>> recentlyConflictedTxs;
+uint64_t nConnectedSequence = 0;
 uint64_t nNotifiedSequence = 0;
 
 /**
@@ -4115,7 +4115,9 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     // Cache the conflicted transactions for subsequent notification.
     // Updates to connected wallets are triggered by ThreadNotifyWallets
     recentlyConflictedTxs.insert(std::make_pair(pindexNew, txConflicted));
-    nRecentlyConflictedSequence += 1;
+
+    // Increment the count of `ConnectTip` calls.
+    nConnectedSequence += 1;
 
     EnforceNodeDeprecation(pindexNew->nHeight);
 
@@ -4126,29 +4128,34 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     return true;
 }
 
-std::pair<std::map<CBlockIndex*, std::list<CTransaction>>, uint64_t> DrainRecentlyConflicted()
+std::pair<std::list<CTransaction>, std::optional<uint64_t>> TakeRecentlyConflicted(const CBlockIndex* pindex)
 {
-    uint64_t recentlyConflictedSequence;
-    std::map<CBlockIndex*, std::list<CTransaction>> txs;
-    {
-        LOCK(cs_main);
-        recentlyConflictedSequence = nRecentlyConflictedSequence;
-        txs.swap(recentlyConflictedTxs);
-    }
+    AssertLockHeld(cs_main);
 
-    return std::make_pair(txs, recentlyConflictedSequence);
+    std::list<CTransaction> conflictedTxs = recentlyConflictedTxs.at(pindex);
+    recentlyConflictedTxs.erase(pindex);
+    if (recentlyConflictedTxs.empty()) {
+        return std::make_pair(conflictedTxs, nConnectedSequence);
+    } else {
+        return std::make_pair(conflictedTxs, std::nullopt);
+    }
 }
 
-void SetChainNotifiedSequence(const CChainParams& chainparams, uint64_t recentlyConflictedSequence) {
+uint64_t GetChainConnectedSequence() {
+    LOCK(cs_main);
+    return nConnectedSequence;
+}
+
+void SetChainNotifiedSequence(const CChainParams& chainparams, uint64_t connectedSequence) {
     assert(chainparams.NetworkIDString() == "regtest");
     LOCK(cs_main);
-    nNotifiedSequence = recentlyConflictedSequence;
+    nNotifiedSequence = connectedSequence;
 }
 
 bool ChainIsFullyNotified(const CChainParams& chainparams) {
     assert(chainparams.NetworkIDString() == "regtest");
     LOCK(cs_main);
-    return nRecentlyConflictedSequence == nNotifiedSequence;
+    return nConnectedSequence == nNotifiedSequence;
 }
 
 /**
