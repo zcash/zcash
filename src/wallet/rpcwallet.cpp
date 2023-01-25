@@ -6029,7 +6029,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "addmultisigaddress",       &addmultisigaddress,       true  },
     { "wallet",             "backupwallet",             &backupwallet,             true  },
     { "wallet",             "dumpprivkey",              &dumpprivkey,              true  },
-    { "wallet",             "dumpwallet",               &dumpwallet,               true  },
+    { "hidden",             "dumpwallet",               &dumpwallet,               true  },
     { "wallet",             "encryptwallet",            &encryptwallet,            true  },
     { "wallet",             "getbalance",               &getbalance,               false },
     { "wallet",             "getnewaddress",            &getnewaddress,            true  },

@@ -99,7 +99,7 @@ _zcash_cli() {
     fi
 
     case "$prev" in
-        backupwallet|dumpwallet|importwallet|z_exportwallet|z_importwallet)
+        backupwallet|importwallet|z_exportwallet|z_importwallet)
             _filedir
             return 0
             ;;
