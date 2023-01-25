@@ -730,7 +730,7 @@ clean-local:
 	-$(MAKE) -C secp256k1 clean
 	-$(MAKE) -C univalue clean
 	rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
-	rm -f rust/gen
+	rm -rf rust/gen
 	rm -f fuzz.cpp
 	rm -rf fuzzing/*/output
 	-rm -f config.h
