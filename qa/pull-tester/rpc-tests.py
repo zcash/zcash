@@ -286,9 +286,18 @@ def main():
         tests_to_run = split_list[args.rpcgroup]
     else:
         tests_to_run = test_list
-    run_tests(tests_to_run, config["environment"]["SRCDIR"], config["environment"]["BUILDDIR"], config["environment"]["EXEEXT"], args.jobs, args.coverage, passon_args)
+    all_passed = run_tests(
+        RPCTestHandler,
+        tests_to_run,
+        config["environment"]["SRCDIR"],
+        config["environment"]["BUILDDIR"],
+        config["environment"]["EXEEXT"],
+        args.jobs,
+        args.coverage,
+        passon_args)
+    sys.exit(not all_passed)
 
-def run_tests(test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=False, args=[]):
+def run_tests(test_handler, test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=False, args=[]):
     BOLD = ("","")
     if os.name == 'posix':
         # primitive formatting on supported
@@ -320,7 +329,7 @@ def run_tests(test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=Fal
     time_sum = 0
     time0 = time.time()
 
-    job_queue = RPCTestHandler(jobs, tests_dir, test_list, flags)
+    job_queue = test_handler(jobs, tests_dir, test_list, flags)
 
     max_len_name = len(max(test_list, key=len))
     results = BOLD[1] + "%s | %s | %s\n\n" % ("TEST".ljust(max_len_name), "PASSED", "DURATION") + BOLD[0]
@@ -346,7 +355,7 @@ def run_tests(test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=Fal
         print("Cleaning up coverage data")
         coverage.cleanup()
 
-    sys.exit(not all_passed)
+    return all_passed
 
 class RPCTestHandler:
     """
@@ -366,6 +375,13 @@ class RPCTestHandler:
         self.portseed_offset = int(time.time() * 1000) % 625
         self.jobs = []
 
+    def start_test(self, args, stdout, stderr):
+        return subprocess.Popen(
+            args,
+            universal_newlines=True,
+            stdout=stdout,
+            stderr=stderr)
+
     def get_next(self):
         while self.num_running < self.num_jobs and self.test_list:
             # Add tests
@@ -376,10 +392,9 @@ class RPCTestHandler:
             log_stderr = tempfile.SpooledTemporaryFile(max_size=2**16)
             self.jobs.append((t,
                               time.time(),
-                              subprocess.Popen((self.tests_dir + t).split() + self.flags + port_seed,
-                                               universal_newlines=True,
-                                               stdout=log_stdout,
-                                               stderr=log_stderr),
+                              self.start_test((self.tests_dir + t).split() + self.flags + port_seed,
+                                               log_stdout,
+                                               log_stderr),
                               log_stdout,
                               log_stderr))
             # Run serial scripts on their own. We always run these first,
