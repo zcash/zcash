@@ -4132,7 +4132,13 @@ std::pair<std::list<CTransaction>, std::optional<uint64_t>> TakeRecentlyConflict
 {
     AssertLockHeld(cs_main);
 
-    std::list<CTransaction> conflictedTxs = recentlyConflictedTxs.at(pindex);
+    // We use bracket notation for retrieving conflict data from recentlyConflictedTxs
+    // here because when a node restarts, the wallet may be behind the node's view of
+    // the current chain tip. The node may continue reindexing from the chain tip, but
+    // no entries will exist in `recentlyConflictedTxs` until the next block after the
+    // node's chain tip at the point of shutdown. In these cases, the wallet cannot learn
+    // about conflicts in those blocks (which should be fine).
+    std::list<CTransaction> conflictedTxs = recentlyConflictedTxs[pindex];
     recentlyConflictedTxs.erase(pindex);
     if (recentlyConflictedTxs.empty()) {
         return std::make_pair(conflictedTxs, nConnectedSequence);
