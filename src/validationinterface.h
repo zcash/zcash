@@ -15,9 +15,10 @@
 #include "miner.h"
 #include "zcash/IncrementalMerkleTree.hpp"
 
-/** Default limit on batch scanner memory usage in MiB. */
-static const size_t DEFAULT_BATCHSCANNERMEMLIMIT = 100;
-/** Limit on batch scanner memory usage in MiB. */
+/**
+ * Limit on the maximum number of blocks that will be staged for
+ * scanning before an interrupt will be handled.
+ */
 static const size_t WALLET_NOTIFY_MAX_BLOCKS = 1000;
 
 class CBlock;

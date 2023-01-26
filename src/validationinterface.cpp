@@ -118,8 +118,6 @@ struct CachedBlockData {
 
 void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 {
-    size_t nBatchScannerMemLimit = DEFAULT_BATCHSCANNERMEMLIMIT * 1024 * 1024;
-
     // If pindexLastTip == nullptr, the wallet is at genesis.
     // However, the genesis block is not loaded synchronously.
     // We need to wait for ThreadImport to finish.
