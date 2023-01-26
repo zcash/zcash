@@ -34,6 +34,7 @@ class MempoolUpgradeActivationTest(BitcoinTestFramework):
             "-debug=mempool",
             "-blockmaxsize=4000",
             '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=legacy_privacy',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
             nuparams(BLOSSOM_BRANCH_ID, 200),
