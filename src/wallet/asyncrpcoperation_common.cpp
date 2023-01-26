@@ -42,7 +42,11 @@ std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::opti
     return std::make_pair(tx, sendResult);
 }
 
-void ThrowInputSelectionError(const InputSelectionError& err) {
+void ThrowInputSelectionError(
+        const InputSelectionError& err,
+        const ZTXOSelector& selector,
+        const TransactionStrategy& strategy)
+{
     std::visit(match {
         [](const AddressResolutionError& err) {
             switch (err) {
@@ -95,26 +99,42 @@ void ThrowInputSelectionError(const InputSelectionError& err) {
                     assert(false);
             }
         },
-        [](const InsufficientFundsError& err) {
+        [&](const InvalidFundsError& err) {
+            bool isFromUa = std::holds_alternative<libzcash::UnifiedAddress>(selector.GetPattern());
             throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
                 strprintf(
-                    "Insufficient funds: have %s, need %s",
-                    FormatMoney(err.available), FormatMoney(err.required))
-                    + (err.transparentCoinbasePermitted ? "" :
-                        "; note that coinbase outputs will not be selected if you specify "
-                        "ANY_TADDR or if any transparent recipients are included."));
-        },
-        [](const DustThresholdError& err) {
-            throw JSONRPCError(
-                RPC_INVALID_PARAMETER,
-                strprintf(
-                    "Insufficient funds: have %s, need %s more to avoid creating invalid change output %s "
-                    "(dust threshold is %s)",
+                    "Insufficient funds: have %s, %s",
                     FormatMoney(err.available),
-                    FormatMoney(err.dustThreshold - err.changeAmount),
-                    FormatMoney(err.changeAmount),
-                    FormatMoney(err.dustThreshold)));
+                    std::visit(match {
+                        [](const InsufficientFundsError& ife) {
+                            return strprintf("need %s", FormatMoney(ife.required));
+                        },
+                        [](const DustThresholdError& dte) {
+                            return strprintf(
+                                    "need %s more to avoid creating invalid change output %s (dust threshold is %s)",
+                                    FormatMoney(dte.dustThreshold - dte.changeAmount),
+                                    FormatMoney(dte.changeAmount),
+                                    FormatMoney(dte.dustThreshold));
+                        }
+                    },
+                    err.reason))
+                    + (err.transparentCoinbasePermitted
+                       ? "" :
+                       "; note that coinbase outputs will not be selected if any transparent "
+                       "recipients are included or if the `privacyPolicy` parameter is not set to "
+                       "`AllowRevealedSenders` or weaker")
+                    + (selector.SelectsTransparentCoinbase()
+                       ? "" :
+                       "; note that coinbase outputs will not be selected if you specify "
+                       "ANY_TADDR")
+                    + (!isFromUa || strategy.AllowLinkingAccountAddresses() ? "." :
+                       ". (This transaction may require selecting transparent coins that were sent "
+                       "to multiple Unified Addresses, which is not enabled by default because "
+                       "it would create a public link between the transparent receivers of these "
+                       "addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
+                       "parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to "
+                       "allow this transaction to proceed anyway.)"));
         },
         [](const ChangeNotAllowedError& err) {
             throw JSONRPCError(
@@ -122,8 +142,7 @@ void ThrowInputSelectionError(const InputSelectionError& err) {
                     strprintf(
                         "When shielding coinbase funds, the wallet does not allow any change. "
                         "The proposed transaction would result in %s in change.",
-                        FormatMoney(err.available - err.required)
-                        ));
+                        FormatMoney(err.available - err.required)));
         },
         [](const ExcessOrchardActionsError& err) {
             throw JSONRPCError(

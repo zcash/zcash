@@ -32,10 +32,10 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
     auto resolvedPayments = resolvedSelection.GetPayments();
 
     if (spendable.Total() < resolvedPayments.Total() + fee) {
-        return InsufficientFundsError(
+        return InvalidFundsError(
                 spendable.Total(),
-                resolvedPayments.Total() + fee,
-                AllowTransparentCoinbase(payments, strategy));
+                AllowTransparentCoinbase(payments, strategy),
+                InsufficientFundsError(resolvedPayments.Total() + fee));
     }
 
     // Determine the account we're sending from.
@@ -363,17 +363,18 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     // construction above.
     if (!spendableMut.LimitToAmount(targetAmount, dustThreshold, resolved.GetRecipientPools())) {
         CAmount changeAmount{spendableMut.Total() - targetAmount};
-        if (changeAmount > 0 && changeAmount < dustThreshold) {
-            // TODO: we should provide the option for the caller to explicitly
-            // forego change (definitionally an amount below the dust amount)
-            // and send the extra to the recipient or the miner fee to avoid
-            // creating dust change, rather than prohibit them from sending
-            // entirely in this circumstance.
-            // (Daira disagrees, as this could leak information to the recipient)
-            return DustThresholdError(dustThreshold, spendableMut.Total(), changeAmount);
-        } else {
-            return InsufficientFundsError(spendableMut.Total(), targetAmount, AllowTransparentCoinbase(payments, strategy));
-        }
+        return InvalidFundsError(
+                spendableMut.Total(),
+                AllowTransparentCoinbase(payments, strategy),
+                changeAmount > 0 && changeAmount < dustThreshold
+                // TODO: we should provide the option for the caller to explicitly
+                // forego change (definitionally an amount below the dust amount)
+                // and send the extra to the recipient or the miner fee to avoid
+                // creating dust change, rather than prohibit them from sending
+                // entirely in this circumstance.
+                // (Daira disagrees, as this could leak information to the recipient)
+                ? InvalidFundsReason(DustThresholdError(dustThreshold, changeAmount))
+                : InvalidFundsReason(InsufficientFundsError(targetAmount)));
     }
 
     // When spending transparent coinbase outputs, all inputs must be fully

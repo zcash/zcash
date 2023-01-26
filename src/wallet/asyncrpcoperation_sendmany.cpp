@@ -155,7 +155,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     uint256 txid;
     std::visit(match {
         [&](const InputSelectionError& err) {
-            ThrowInputSelectionError(err);
+            ThrowInputSelectionError(err, ztxoSelector_, strategy_);
         },
         [&](const TransactionEffects& effects) {
             const auto& spendable = effects.GetSpendable();

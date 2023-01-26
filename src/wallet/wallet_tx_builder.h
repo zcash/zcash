@@ -216,14 +216,35 @@ enum class AddressResolutionError {
     ChangeAddressSelectionError
 };
 
+class InsufficientFundsError {
+public:
+    CAmount required;
+
+    InsufficientFundsError(CAmount required):
+        required(required) { }
+};
+
 class DustThresholdError {
 public:
     CAmount dustThreshold;
-    CAmount available;
     CAmount changeAmount;
 
-    DustThresholdError(CAmount dustThreshold, CAmount available, CAmount changeAmount):
-        dustThreshold(dustThreshold), available(available), changeAmount(changeAmount) { }
+    DustThresholdError(CAmount dustThreshold, CAmount changeAmount):
+        dustThreshold(dustThreshold), changeAmount(changeAmount) { }
+};
+
+typedef std::variant<
+    InsufficientFundsError,
+    DustThresholdError> InvalidFundsReason;
+
+class InvalidFundsError {
+public:
+    CAmount available;
+    bool transparentCoinbasePermitted;
+    const InvalidFundsReason reason;
+
+    InvalidFundsError(CAmount available, bool transparentCoinbasePermitted, const InvalidFundsReason reason):
+        available(available), transparentCoinbasePermitted(transparentCoinbasePermitted), reason(reason) { }
 };
 
 class ChangeNotAllowedError {
@@ -233,16 +254,6 @@ public:
 
     ChangeNotAllowedError(CAmount available, CAmount required):
         available(available), required(required) { }
-};
-
-class InsufficientFundsError {
-public:
-    CAmount available;
-    CAmount required;
-    bool transparentCoinbasePermitted;
-
-    InsufficientFundsError(CAmount available, CAmount required, bool transparentCoinbasePermitted):
-        available(available), required(required), transparentCoinbasePermitted(transparentCoinbasePermitted) { }
 };
 
 class ExcessOrchardActionsError {
@@ -255,8 +266,7 @@ public:
 
 typedef std::variant<
     AddressResolutionError,
-    InsufficientFundsError,
-    DustThresholdError,
+    InvalidFundsError,
     ChangeNotAllowedError,
     ExcessOrchardActionsError> InputSelectionError;
 
