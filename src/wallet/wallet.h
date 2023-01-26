@@ -1859,7 +1859,7 @@ public:
          std::vector<uint256> commitments,
          std::vector<std::optional<SproutWitness>>& witnesses,
          uint256 &final_anchor);
-    int ScanForWalletTransactions(
+    std::optional<int> ScanForWalletTransactions(
         CBlockIndex* pindexStart,
         bool fUpdate,
         bool isInitScan);

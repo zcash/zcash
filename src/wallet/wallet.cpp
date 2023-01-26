@@ -4679,13 +4679,13 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
  * from or to us. If fUpdate is true, found transactions that already
  * exist in the wallet will be updated.
  */
-int CWallet::ScanForWalletTransactions(
+std::optional<int> CWallet::ScanForWalletTransactions(
         CBlockIndex* pindexStart,
         bool fUpdate,
         bool isInitScan)
 {
     assert(pindexStart != nullptr);
-    int ret = 0;
+    int myTransactionsFound = 0;
     int64_t nNow = GetTime();
     const CChainParams& chainParams = Params();
     const auto& consensus = chainParams.GetConsensus();
@@ -4756,6 +4756,9 @@ int CWallet::ScanForWalletTransactions(
         double dProgressTip = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip(), false);
         while (pindex)
         {
+            // Allow the rescan to be interrupted on a block boundary.
+            if (ShutdownRequested()) return std::nullopt;
+
             if (pindex->nHeight % 100 == 0 && dProgressTip - dProgressStart > 0.0)
                 ShowProgress(_("Rescanning..."), std::max(1, std::min(99, (int)((Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), pindex, false) - dProgressStart) / (dProgressTip - dProgressStart) * 100))));
 
@@ -4775,7 +4778,7 @@ int CWallet::ScanForWalletTransactions(
             {
                 if (batchScanner.AddToWalletIfInvolvingMe(consensus, tx, &block, pindex->nHeight, fUpdate)) {
                     myTxHashes.push_back(tx.GetHash());
-                    ret++;
+                    myTransactionsFound++;
                 }
             }
 
@@ -4820,7 +4823,7 @@ int CWallet::ScanForWalletTransactions(
 
         ShowProgress(_("Rescanning..."), 100); // hide progress dialog in GUI
     }
-    return ret;
+    return myTransactionsFound;
 }
 
 void CWallet::ReacceptWalletTransactions()
@@ -6810,7 +6813,10 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
                 chainActive.Height() - pindexRescan->nHeight,
                 pindexRescan->nHeight);
         nStart = GetTimeMillis();
-        walletInstance->ScanForWalletTransactions(pindexRescan, true, true);
+        if (!walletInstance->ScanForWalletTransactions(pindexRescan, true, true).has_value()) {
+            return UIError(_("CWallet::InitLoadWallet: rescan interrupted due to shutdown request."));
+        }
+
         LogPrintf(" rescan      %15dms\n", GetTimeMillis() - nStart);
         walletInstance->SetBestChain(chainActive.GetLocator());
         CWalletDB::IncrementUpdateCounter();
