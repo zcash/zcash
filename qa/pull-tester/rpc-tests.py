@@ -25,6 +25,7 @@ import sys
 import subprocess
 import tempfile
 import re
+import random
 
 SERIAL_SCRIPTS = [
     # These tests involve enough shielded spends (consuming all CPU
@@ -242,7 +243,7 @@ def main():
     else:
         # No individual tests have been specified. Run base tests, and
         # optionally ZMQ tests and extended tests.
-        test_list = SERIAL_SCRIPTS + BASE_SCRIPTS
+        test_list = random.sample(BASE_SCRIPTS, len(BASE_SCRIPTS)) + SERIAL_SCRIPTS
         if enable_zmq:
             test_list += ZMQ_SCRIPTS
         if args.extended:
