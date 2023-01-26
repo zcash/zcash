@@ -17,6 +17,8 @@
 
 /** Default limit on batch scanner memory usage in MiB. */
 static const size_t DEFAULT_BATCHSCANNERMEMLIMIT = 100;
+/** Limit on batch scanner memory usage in MiB. */
+static const size_t WALLET_NOTIFY_MAX_BLOCKS = 1000;
 
 class CBlock;
 class CBlockIndex;
@@ -29,11 +31,6 @@ class uint256;
 
 class BatchScanner {
 public:
-    /**
-     * Returns the current dynamic memory usage of this batch scanner.
-     */
-    virtual size_t RecursiveDynamicUsage() = 0;
-
     /**
      * Adds a transaction to the batch scanner.
      *

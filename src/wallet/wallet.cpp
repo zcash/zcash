@@ -1455,6 +1455,15 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
         DecrementNoteWitnesses(consensus, pindex);
         UpdateSaplingNullifierNoteMapForBlock(pblock);
     }
+
+    auto hash = tfm::format("%s", pindex->GetBlockHash().ToString());
+    auto height = tfm::format("%d", pindex->nHeight);
+    auto kind = tfm::format("%s", added.has_value() ? "connect" : "disconnect");
+
+    TracingInfo("wallet", "CWallet::ChainTip: processed block",
+        "hash", hash.c_str(),
+        "height", height.c_str(),
+        "kind", kind.c_str());
 }
 
 void CWallet::RunSaplingMigration(int blockHeight) {
@@ -3596,11 +3605,6 @@ bool WalletBatchScanner::AddToWalletIfInvolvingMe(
 //
 // BatchScanner APIs
 //
-
-size_t WalletBatchScanner::RecursiveDynamicUsage()
-{
-    return inner->get_dynamic_usage();
-}
 
 void WalletBatchScanner::AddTransaction(
     const CTransaction &tx,

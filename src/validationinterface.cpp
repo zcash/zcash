@@ -72,16 +72,6 @@ void UnregisterAllValidationInterfaces() {
     g_signals.UpdatedBlockTip.disconnect_all_slots();
 }
 
-size_t RecursiveDynamicUsage(
-    std::vector<BatchScanner*> &batchScanners)
-{
-    size_t usage = 0;
-    for (auto& batchScanner : batchScanners) {
-        usage += batchScanner->RecursiveDynamicUsage();
-    }
-    return usage;
-}
-
 void AddTxToBatches(
     std::vector<BatchScanner*> &batchScanners,
     const CTransaction &tx,
@@ -176,6 +166,12 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             // current chain tip.
             CBlockIndex *pindex = chainActive.Tip();
             pindexFork = chainActive.FindFork(pindexLastTip);
+
+            // Iterate backwards over the connected blocks until we have at
+            // most WALLET_NOTIFY_MAX_BLOCKS to process.
+            while (pindex && pindex->nHeight > pindexFork->nHeight + WALLET_NOTIFY_MAX_BLOCKS) {
+                pindex = pindex->pprev;
+            }
 
             // Iterate backwards over the connected blocks we need to notify.
             bool originalTipAtFork = pindex && pindex == pindexFork;
@@ -327,12 +323,6 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
         // for example to add new incoming viewing keys.
         auto batchScanners = GetMainSignals().GetBatchScanner();
 
-        // Closure that returns true if batchScanners is using less memory than
-        // the desired limit.
-        auto belowBatchMemoryLimit = [&]() {
-            return RecursiveDynamicUsage(batchScanners) < nBatchScannerMemLimit;
-        };
-
         // Closure that will add a block from blockStack to batchScanners.
         auto batchScanConnectedBlock = [&](const CachedBlockData& blockData) {
             // Read block from disk.
@@ -423,7 +413,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             //
             // We process blockStack in the same order we do below, so batched
             // work can be completed in roughly the order we need it.
-            for (; blockStackScanned != blockStack.rend() && belowBatchMemoryLimit(); ++blockStackScanned) {
+            for (; blockStackScanned != blockStack.rend(); ++blockStackScanned) {
                 const auto& blockData = *blockStackScanned;
                 batchScanConnectedBlock(blockData);
             }
@@ -480,7 +470,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             // added the rest of blockStack, or have reached the memory limit
             // again. At this point, we know that blockStackScanned has not been
             // invalidated by mutations to blockStack, and can be dereferenced.
-            for (; blockStackScanned != blockStack.rend() && belowBatchMemoryLimit(); ++blockStackScanned) {
+            for (; blockStackScanned != blockStack.rend(); ++blockStackScanned) {
                 const auto& blockData = *blockStackScanned;
                 batchScanConnectedBlock(blockData);
             }
@@ -498,7 +488,7 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             while (!(
                 blockStack.empty() ||
                 blockStack.rbegin() == blockStackScanned ||
-                (blockStackScanned != blockStack.rend() && belowBatchMemoryLimit())
+                (blockStackScanned != blockStack.rend())
             )) {
                 auto& blockData = blockStack.back();
 

@@ -42,6 +42,18 @@ heights prior to this will not have any information recorded. To track changes
 from genesis, and thus monitor the total transparent pool size and chain supply,
 you would need to restart your node with the `-reindex` option.
 
+Wallet Performance Fixes
+------------------------
+
+The 100MiB memory limit for the batch scanner has been replaced by a 1000-block
+limit. This eliminates an expensive call to determine the current memory usage 
+of the batch scanner. 
+
+The following associated metric has been removed from the set of metrics
+reported when `-prometheusport` is set:
+
+- (gauge) `zcashd.wallet.batchscanner.usage.bytes`
+
 RPC Changes
 -----------
 
