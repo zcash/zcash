@@ -20,13 +20,15 @@ class ResolvedPayment : public RecipientMapping {
 public:
     CAmount amount;
     std::optional<Memo> memo;
+    bool isInternal{false};
 
     ResolvedPayment(
             std::optional<libzcash::UnifiedAddress> ua,
             libzcash::RecipientAddress address,
             CAmount amount,
-            std::optional<Memo> memo) :
-        RecipientMapping(ua, address), amount(amount), memo(memo) {}
+            std::optional<Memo> memo,
+            bool isInternal) :
+        RecipientMapping(ua, address), amount(amount), memo(memo), isInternal(isInternal) {}
 };
 
 /**
@@ -38,12 +40,14 @@ private:
     PaymentAddress address;
     CAmount amount;
     std::optional<Memo> memo;
+    bool isInternal;
 public:
     Payment(
             PaymentAddress address,
             CAmount amount,
-            std::optional<Memo> memo) :
-        address(address), amount(amount), memo(memo) {}
+            std::optional<Memo> memo,
+            bool isInternal = false) :
+        address(address), amount(amount), memo(memo), isInternal(isInternal) {}
 
     const PaymentAddress& GetAddress() const {
         return address;
@@ -56,6 +60,10 @@ public:
     const std::optional<Memo>& GetMemo() const {
         return memo;
     }
+
+    bool IsInternal() const {
+        return isInternal;
+    }
 };
 
 class Payments {
@@ -66,27 +74,32 @@ private:
     CAmount sapling_outputs_total{0};
     CAmount orchard_outputs_total{0};
 public:
-    Payments(std::vector<ResolvedPayment> payments): payments(payments) {
+    Payments(std::vector<ResolvedPayment> payments) {
         for (const ResolvedPayment& payment : payments) {
-            std::visit(match {
-                [&](const CKeyID& addr) {
-                    t_outputs_total += payment.amount;
-                    recipientPools.insert(OutputPool::Transparent);
-                },
-                [&](const CScriptID& addr) {
-                    t_outputs_total += payment.amount;
-                    recipientPools.insert(OutputPool::Transparent);
-                },
-                [&](const libzcash::SaplingPaymentAddress& addr) {
-                    sapling_outputs_total += payment.amount;
-                    recipientPools.insert(OutputPool::Sapling);
-                },
-                [&](const libzcash::OrchardRawAddress& addr) {
-                    orchard_outputs_total += payment.amount;
-                    recipientPools.insert(OutputPool::Orchard);
-                }
-            }, payment.address);
+            AddPayment(payment);
         }
+    }
+
+    void AddPayment(ResolvedPayment payment) {
+        std::visit(match {
+            [&](const CKeyID& addr) {
+                t_outputs_total += payment.amount;
+                recipientPools.insert(OutputPool::Transparent);
+            },
+            [&](const CScriptID& addr) {
+                t_outputs_total += payment.amount;
+                recipientPools.insert(OutputPool::Transparent);
+            },
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                sapling_outputs_total += payment.amount;
+                recipientPools.insert(OutputPool::Sapling);
+            },
+            [&](const libzcash::OrchardRawAddress& addr) {
+                orchard_outputs_total += payment.amount;
+                recipientPools.insert(OutputPool::Orchard);
+            }
+        }, payment.address);
+        payments.push_back(payment);
     }
 
     const std::set<OutputPool>& GetRecipientPools() const {
@@ -139,7 +152,7 @@ private:
     uint32_t anchorConfirmations{1};
     SpendableInputs spendable;
     Payments payments;
-    ChangeAddress changeAddr;
+    std::optional<ChangeAddress> changeAddr;
     CAmount fee{0};
     uint256 internalOVK;
     uint256 externalOVK;
@@ -150,7 +163,7 @@ public:
         uint32_t anchorConfirmations,
         SpendableInputs spendable,
         Payments payments,
-        ChangeAddress changeAddr,
+        std::optional<ChangeAddress> changeAddr,
         CAmount fee,
         uint256 internalOVK,
         uint256 externalOVK) :

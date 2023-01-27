@@ -14,6 +14,8 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
         CAmount fee,
         uint32_t anchorConfirmations) const
 {
+    assert(fee < MAX_MONEY);
+
     auto selected = ResolveInputsAndPayments(spendable, payments, strategy, fee);
     if (std::holds_alternative<InputSelectionError>(selected)) {
         return std::get<InputSelectionError>(selected);
@@ -21,103 +23,151 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
 
     auto resolvedPayments = std::get<Payments>(selected);
 
-    auto sendFromAccount = wallet.FindAccountForSelector(selector).value_or(ZCASH_LEGACY_ACCOUNT);
-    auto allowedChangeTypes = [&](const std::set<ReceiverType>& receiverTypes) -> std::set<OutputPool> {
-        std::set<OutputPool> result{resolvedPayments.GetRecipientPools()};
-        if (sendFromAccount != ZCASH_LEGACY_ACCOUNT) {
-            result.insert(OutputPool::Sapling);
-        }
-        for (ReceiverType rtype : receiverTypes) {
-            switch (rtype) {
-                case ReceiverType::P2PKH:
-                case ReceiverType::P2SH:
-                    // TODO: This is the correct policy, but it’s a breaking change from previous
-                    //       behavior, so enable it separately.
-                    // if ((spendable.utxos.empty() && strategy.AllowRevealedRecipients())
-                    //     || strategy.AllowFullyTransparent()) {
-                    if (!spendable.utxos.empty()) {
-                        result.insert(OutputPool::Transparent);
-                    }
-                    break;
-                case ReceiverType::Sapling:
-                    if (!spendable.saplingNoteEntries.empty() || strategy.AllowRevealedAmounts()) {
-                        result.insert(OutputPool::Sapling);
-                    }
-                    break;
-                case ReceiverType::Orchard:
-                    if (!spendable.orchardNoteMetadata.empty() || strategy.AllowRevealedAmounts()) {
-                        result.insert(OutputPool::Orchard);
-                    }
-                    break;
-            }
-        }
-        return result;
-    };
+    if (spendable.Total() < resolvedPayments.Total() + fee) {
+        return InsufficientFundsError(
+                spendable.Total(),
+                resolvedPayments.Total() + fee,
+                AllowTransparentCoinbase(payments, strategy));
+    }
 
+    // Determine the account we're sending from.
+    auto sendFromAccount = wallet.FindAccountForSelector(selector).value_or(ZCASH_LEGACY_ACCOUNT);
+
+    // We do not set a change address if there is no change.
     std::optional<ChangeAddress> changeAddr;
-    std::visit(match {
-        [&](const CKeyID& keyId) {
-            changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                    sendFromAccount,
-                    allowedChangeTypes({ReceiverType::P2PKH}));
-        },
-        [&](const CScriptID& scriptId) {
-            changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                    sendFromAccount,
-                    allowedChangeTypes({ReceiverType::P2SH}));
-        },
-        [&](const libzcash::SproutPaymentAddress& addr) {
-            // for Sprout, we return change to the originating address.
-            changeAddr = addr;
-        },
-        [&](const libzcash::SproutViewingKey& vk) {
-            // for Sprout, we return change to the originating address.
-            changeAddr = vk.address();
-        },
-        [&](const libzcash::SaplingPaymentAddress& addr) {
-            // for Sapling, if using a legacy address, return change to the
-            // originating address; otherwise return it to the Sapling internal
-            // address corresponding to the UFVK.
-            if (sendFromAccount == ZCASH_LEGACY_ACCOUNT) {
+    auto changeAmount = spendable.Total() - resolvedPayments.Total() - fee;
+    if (changeAmount > 0) {
+        auto allowedChangeTypes = [&](const std::set<ReceiverType>& receiverTypes) -> std::set<OutputPool> {
+            std::set<OutputPool> result{resolvedPayments.GetRecipientPools()};
+            if (sendFromAccount != ZCASH_LEGACY_ACCOUNT) {
+                result.insert(OutputPool::Sapling);
+            }
+            for (ReceiverType rtype : receiverTypes) {
+                switch (rtype) {
+                    case ReceiverType::P2PKH:
+                    case ReceiverType::P2SH:
+                        // TODO: This is the correct policy, but it’s a breaking change from
+                        //       previous behavior, so enable it separately.
+                        // if ((spendable.utxos.empty() && strategy.AllowRevealedRecipients())
+                        //     || strategy.AllowFullyTransparent()) {
+                        if (!spendable.utxos.empty()) {
+                            result.insert(OutputPool::Transparent);
+                        }
+                        break;
+                    case ReceiverType::Sapling:
+                        if (!spendable.saplingNoteEntries.empty() || strategy.AllowRevealedAmounts()) {
+                            result.insert(OutputPool::Sapling);
+                        }
+                        break;
+                    case ReceiverType::Orchard:
+                        if (!spendable.orchardNoteMetadata.empty() || strategy.AllowRevealedAmounts()) {
+                            result.insert(OutputPool::Orchard);
+                        }
+                        break;
+                }
+            }
+            return result;
+        };
+
+        std::visit(match {
+            [&](const CKeyID& keyId) {
+                auto sendTo = pwalletMain->GenerateChangeAddressForAccount(
+                        sendFromAccount,
+                        allowedChangeTypes({ReceiverType::P2PKH}));
+                if (sendTo.has_value()) {
+                    resolvedPayments.AddPayment(
+                            ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
+                    changeAddr = sendTo.value();
+                }
+            },
+            [&](const CScriptID& scriptId) {
+                auto sendTo = pwalletMain->GenerateChangeAddressForAccount(
+                        sendFromAccount,
+                        allowedChangeTypes({ReceiverType::P2SH}));
+                assert(sendTo.has_value());
+                resolvedPayments.AddPayment(
+                        ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
+                changeAddr = sendTo.value();
+            },
+            [&](const libzcash::SproutPaymentAddress& addr) {
+                // for Sprout, we return change to the originating address using the tx builder.
                 changeAddr = addr;
-            } else {
-                changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                        sendFromAccount,
-                        allowedChangeTypes({ReceiverType::Sapling}));
+            },
+            [&](const libzcash::SproutViewingKey& vk) {
+                // for Sprout, we return change to the originating address using the tx builder.
+                changeAddr = vk.address();
+            },
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                // for Sapling, if using a legacy address, return change to the
+                // originating address; otherwise return it to the Sapling internal
+                // address corresponding to the UFVK.
+                std::optional<RecipientAddress> sendTo;
+                if (sendFromAccount == ZCASH_LEGACY_ACCOUNT) {
+                    sendTo = addr;
+                } else {
+                    sendTo = pwalletMain->GenerateChangeAddressForAccount(
+                            sendFromAccount,
+                            allowedChangeTypes({ReceiverType::Sapling}));
+                }
+                assert(sendTo.has_value());
+                resolvedPayments.AddPayment(
+                        ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
+                changeAddr = sendTo.value();
+            },
+            [&](const libzcash::SaplingExtendedFullViewingKey& fvk) {
+                // for Sapling, if using a legacy address, return change to the
+                // originating address; otherwise return it to the Sapling internal
+                // address corresponding to the UFVK.
+                std::optional<RecipientAddress> sendTo;
+                if (sendFromAccount == ZCASH_LEGACY_ACCOUNT) {
+                    sendTo = fvk.DefaultAddress();
+                } else {
+                    sendTo = pwalletMain->GenerateChangeAddressForAccount(
+                            sendFromAccount,
+                            allowedChangeTypes({ReceiverType::Sapling}));
+                }
+                assert(sendTo.has_value());
+                resolvedPayments.AddPayment(
+                        ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
+                changeAddr = sendTo.value();
+            },
+            [&](const libzcash::UnifiedAddress& ua) {
+                auto zufvk = pwalletMain->GetUFVKForAddress(ua);
+                if (zufvk.has_value()) {
+                    auto sendTo = zufvk.value().GetChangeAddress(
+                            allowedChangeTypes(ua.GetKnownReceiverTypes()));
+                    if (sendTo.has_value()) {
+                        resolvedPayments.AddPayment(
+                                ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
+                        changeAddr = sendTo.value();
+                    }
+                }
+            },
+            [&](const libzcash::UnifiedFullViewingKey& fvk) {
+                auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), fvk);
+                auto sendTo = zufvk.GetChangeAddress(
+                        allowedChangeTypes(fvk.GetKnownReceiverTypes()));
+                if (sendTo.has_value()) {
+                    resolvedPayments.AddPayment(
+                            ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
+                    changeAddr = sendTo.value();
+                }
+            },
+            [&](const AccountZTXOPattern& acct) {
+                auto sendTo = pwalletMain->GenerateChangeAddressForAccount(
+                        acct.GetAccountId(),
+                        allowedChangeTypes(acct.GetReceiverTypes()));
+                if (sendTo.has_value()) {
+                    resolvedPayments.AddPayment(
+                            ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
+                    changeAddr = sendTo.value();
+                }
             }
-        },
-        [&](const libzcash::SaplingExtendedFullViewingKey& fvk) {
-            // for Sapling, if using a legacy address, return change to the
-            // originating address; otherwise return it to the Sapling internal
-            // address corresponding to the UFVK.
-            if (sendFromAccount == ZCASH_LEGACY_ACCOUNT) {
-                changeAddr = fvk.DefaultAddress();
-            } else {
-                changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                        sendFromAccount,
-                        allowedChangeTypes({ReceiverType::Sapling}));
-            }
-        },
-        [&](const libzcash::UnifiedAddress& ua) {
-            auto zufvk = pwalletMain->GetUFVKForAddress(ua);
-            if (zufvk.has_value()) {
-                changeAddr = zufvk.value().GetChangeAddress(
-                        allowedChangeTypes(ua.GetKnownReceiverTypes()));
-            }
-        },
-        [&](const libzcash::UnifiedFullViewingKey& fvk) {
-            auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), fvk);
-            changeAddr = zufvk.GetChangeAddress(
-                    allowedChangeTypes(fvk.GetKnownReceiverTypes()));
-        },
-        [&](const AccountZTXOPattern& acct) {
-            changeAddr = pwalletMain->GenerateChangeAddressForAccount(
-                    acct.GetAccountId(),
-                    allowedChangeTypes(acct.GetReceiverTypes()));
+        }, selector.GetPattern());
+
+        if (!changeAddr.has_value()) {
+            return AddressResolutionError::ChangeAddressSelectionError;
         }
-    }, selector.GetPattern());
-    if (!changeAddr.has_value()) {
-        return AddressResolutionError::ChangeAddressSelectionError;
     }
 
     auto ovks = SelectOVKs(selector, spendable);
@@ -127,7 +177,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
             anchorConfirmations,
             spendable,
             resolvedPayments,
-            changeAddr.value(),
+            changeAddr,
             fee,
             ovks.first,
             ovks.second);
@@ -201,14 +251,16 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
         std::visit(match {
             [&](const CKeyID& p2pkh) {
                 if (strategy.AllowRevealedRecipients()) {
-                    resolvedPayments.emplace_back(std::nullopt, p2pkh, payment.GetAmount(), payment.GetMemo());
+                    resolvedPayments.emplace_back(
+                            std::nullopt, p2pkh, payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
                 } else {
                     resolutionError = AddressResolutionError::TransparentRecipientNotPermitted;
                 }
             },
             [&](const CScriptID& p2sh) {
                 if (strategy.AllowRevealedRecipients()) {
-                    resolvedPayments.emplace_back(std::nullopt, p2sh, payment.GetAmount(), payment.GetMemo());
+                    resolvedPayments.emplace_back(
+                            std::nullopt, p2sh, payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
                 } else {
                     resolutionError = AddressResolutionError::TransparentRecipientNotPermitted;
                 }
@@ -218,7 +270,8 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
             },
             [&](const SaplingPaymentAddress& addr) {
                 if (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxSaplingAvailable) {
-                    resolvedPayments.emplace_back(std::nullopt, addr, payment.GetAmount(), payment.GetMemo());
+                    resolvedPayments.emplace_back(
+                            std::nullopt, addr, payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
                     if (!strategy.AllowRevealedAmounts()) {
                         maxSaplingAvailable -= payment.GetAmount();
                     }
@@ -231,7 +284,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                 if (canResolveOrchard && ua.GetOrchardReceiver().has_value()) {
                     if (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxOrchardAvailable) {
                         resolvedPayments.emplace_back(
-                            ua, ua.GetOrchardReceiver().value(), payment.GetAmount(), payment.GetMemo());
+                            ua, ua.GetOrchardReceiver().value(), payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
                         if (!strategy.AllowRevealedAmounts()) {
                             maxOrchardAvailable -= payment.GetAmount();
                         }
@@ -243,7 +296,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                 if (!resolved && ua.GetSaplingReceiver().has_value()) {
                     if (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxSaplingAvailable) {
                         resolvedPayments.emplace_back(
-                            ua, ua.GetSaplingReceiver().value(), payment.GetAmount(), payment.GetMemo());
+                            ua, ua.GetSaplingReceiver().value(), payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
                         if (!strategy.AllowRevealedAmounts()) {
                             maxSaplingAvailable -= payment.GetAmount();
                         }
@@ -253,13 +306,13 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
 
                 if (!resolved && ua.GetP2SHReceiver().has_value() && strategy.AllowRevealedRecipients()) {
                     resolvedPayments.emplace_back(
-                        ua, ua.GetP2SHReceiver().value(), payment.GetAmount(), std::nullopt);
+                        ua, ua.GetP2SHReceiver().value(), payment.GetAmount(), std::nullopt, payment.IsInternal());
                     resolved = true;
                 }
 
                 if (!resolved && ua.GetP2PKHReceiver().has_value() && strategy.AllowRevealedRecipients()) {
                     resolvedPayments.emplace_back(
-                        ua, ua.GetP2PKHReceiver().value(), payment.GetAmount(), std::nullopt);
+                        ua, ua.GetP2PKHReceiver().value(), payment.GetAmount(), std::nullopt, payment.IsInternal());
                     resolved = true;
                 }
 
@@ -593,7 +646,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
             },
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 builder.AddSaplingOutput(
-                        externalOVK, addr, r.amount,
+                        r.isInternal ? internalOVK : externalOVK, addr, r.amount,
                         r.memo.has_value() ? r.memo.value().ToBytes() : Memo::NoMemo().ToBytes());
             },
             [&](const libzcash::OrchardRawAddress& addr) {
@@ -655,14 +708,16 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
         }
     }
 
-    std::visit(match {
-        [&](const SproutPaymentAddress& addr) {
-            builder.SendChangeToSprout(addr);
-        },
-        [&](const RecipientAddress& addr) {
-            builder.SendChangeTo(addr, internalOVK);
-        }
-    }, changeAddr);
+    if (changeAddr.has_value()) {
+        std::visit(match {
+            [&](const SproutPaymentAddress& addr) {
+                builder.SendChangeToSprout(addr);
+            },
+            [&](const RecipientAddress& addr) {
+                builder.SendChangeTo(addr, internalOVK);
+            }
+        }, changeAddr.value());
+    }
 
     // Build the transaction
     return builder.Build();
