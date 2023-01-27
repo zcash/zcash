@@ -668,7 +668,8 @@ CMutableTransaction CreateNewContextualCMutableTransaction(
     int nHeight,
     bool requireV4);
 
-std::pair<std::map<CBlockIndex*, std::list<CTransaction>>, uint64_t> DrainRecentlyConflicted();
+std::pair<std::list<CTransaction>, std::optional<uint64_t>> TakeRecentlyConflicted(const CBlockIndex* pindex);
+uint64_t GetChainConnectedSequence();
 void SetChainNotifiedSequence(const CChainParams& chainparams, uint64_t recentlyConflictedSequence);
 bool ChainIsFullyNotified(const CChainParams& chainparams);
 
