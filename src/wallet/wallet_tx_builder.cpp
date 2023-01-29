@@ -48,6 +48,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
     if (changeAmount > 0) {
         auto allowedChangeTypes = [&](const std::set<ReceiverType>& receiverTypes) -> std::set<OutputPool> {
             std::set<OutputPool> result{resolvedPayments.GetRecipientPools()};
+            // We always allow shielded change when not sending from the legacy account.
             if (sendFromAccount != ZCASH_LEGACY_ACCOUNT) {
                 result.insert(OutputPool::Sapling);
             }
@@ -57,9 +58,8 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
                     case ReceiverType::P2SH:
                         // TODO: This is the correct policy, but it’s a breaking change from
                         //       previous behavior, so enable it separately.
-                        // if ((spendable.utxos.empty() && strategy.AllowRevealedRecipients())
-                        //     || strategy.AllowFullyTransparent()) {
-                        if (!spendable.utxos.empty()) {
+                        // if (strategy.AllowRevealedRecipients()) {
+                        if (!spendable.utxos.empty() || strategy.AllowRevealedRecipients()) {
                             result.insert(OutputPool::Transparent);
                         }
                         break;
@@ -544,6 +544,7 @@ PrivacyPolicy TransactionEffects::GetRequiredPrivacyPolicy() const
             // TODO: This is the correct policy, but it’s a breaking change from previous behavior,
             //       so enable it separately.
             // maxPrivacy = PrivacyPolicy::AllowFullyTransparent;
+            maxPrivacy = PrivacyPolicy::AllowRevealedSenders;
         } else {
             maxPrivacy = PrivacyPolicy::AllowRevealedRecipients;
         }
