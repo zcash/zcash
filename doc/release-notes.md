@@ -94,8 +94,6 @@ will be removed in 18 weeks:
 - `legacy_privacy`
 - `getnewaddress`
 - `getrawchangeaddress`
-- `z_getbalance`
-- `z_gettotalbalance`
 - `z_getnewaddress`
 - `z_listaddresses`
 - `addrtype`
