@@ -226,7 +226,8 @@ public:
      */
     void InitNoteCommitmentTree(const OrchardMerkleFrontier& frontier) {
         assert(!GetLastCheckpointHeight().has_value());
-        assert(orchard_wallet_init_from_frontier(inner.get(), frontier.inner.get()));
+        assert(frontier.inner->init_wallet(
+            reinterpret_cast<merkle_frontier::OrchardWallet*>(inner.get())));
     }
 
     /**

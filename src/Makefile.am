@@ -54,22 +54,28 @@ CXXBRIDGE_RS = \
   rust/src/blake2b.rs \
   rust/src/bundlecache.rs \
   rust/src/equihash.rs \
+  rust/src/merkle_frontier.rs \
   rust/src/orchard_bundle.rs \
   rust/src/sapling.rs \
+  rust/src/streams.rs \
   rust/src/wallet_scanner.rs
 CXXBRIDGE_H = \
   rust/gen/include/rust/blake2b.h \
   rust/gen/include/rust/bundlecache.h \
   rust/gen/include/rust/equihash.h \
+  rust/gen/include/rust/merkle_frontier.h \
   rust/gen/include/rust/orchard_bundle.h \
   rust/gen/include/rust/sapling.h \
+  rust/gen/include/rust/streams.h \
   rust/gen/include/rust/wallet_scanner.h
 CXXBRIDGE_CPP = \
   rust/gen/src/blake2b.cpp \
   rust/gen/src/bundlecache.cpp \
   rust/gen/src/equihash.cpp \
+  rust/gen/src/merkle_frontier.cpp \
   rust/gen/src/orchard_bundle.cpp \
   rust/gen/src/sapling.cpp \
+  rust/gen/src/streams.cpp \
   rust/gen/src/wallet_scanner.cpp
 
 # We add a rust/cxx.h include to indicate that we provide this (via the rustcxx depends
