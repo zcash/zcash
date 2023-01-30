@@ -47,7 +47,7 @@ mod ffi {
 
 type Inner<H> = bridgetree::Frontier<H, MERKLE_DEPTH>;
 
-/// A incremental Merkle frontier.
+/// An incremental Merkle frontier.
 #[derive(Clone)]
 struct MerkleFrontier<H>(Inner<H>);
 
