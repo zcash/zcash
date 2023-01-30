@@ -37,6 +37,8 @@ the node, or if an `allowdeprecated=none` line is added to `zcash.conf`.
 
 | `feature`             | Deprecated | Feature details
 |-----------------------|------------|----------------
+| `z_getbalance`        | 5.0.0      | The `z_getbalance` RPC method.
+| `z_gettotalbalance`   | 5.0.0      | The `z_gettotalbalance` RPC method.
 | `gbt_oldhashes`       | 5.4.0      | The `finalsaplingroothash`, `lightclientroothash`, and `blockcommitmentshash` fields in the output of `getblocktemplate`, which are replaced by the `defaultroots` field.
 
 Stage 2
@@ -51,8 +53,6 @@ line to `zcash.conf`.
 | `legacy_privacy`      | 5.0.0      | The default "legacy" privacy policy for `z_sendmany` has been replaced by the `FullPrivacy` directive.
 | `getnewaddress`       | 5.0.0      | The `getnewaddress` RPC method.
 | `getrawchangeaddress` | 5.0.0      | The `getrawchangeaddress` RPC method.
-| `z_getbalance`        | 5.0.0      | The `z_getbalance` RPC method.
-| `z_gettotalbalance`   | 5.0.0      | The `z_gettotalbalance` RPC method.
 | `z_getnewaddress`     | 5.0.0      | The `z_getnewaddress` RPC method.
 | `z_listaddresses`     | 5.0.0      | The `z_listaddresses` RPC method.
 | `addrtype`            | 5.0.0      | The `type` attribute is deprecated in the results of RPC methods that return address metadata. It is recommended that applications using this metadata be updated to use the `pool` or `address_type` attributes, which have replaced the `type` attribute, as appropriate.
