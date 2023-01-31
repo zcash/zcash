@@ -17,7 +17,6 @@
 
 namespace libzcash {
 
-
 typedef uint64_t SubtreeIndex;
 typedef std::array<uint8_t, 32> SubtreeRoot;
 static const uint8_t TRACKED_SUBTREE_HEIGHT = 16;
@@ -391,7 +390,7 @@ public:
         return inner->dynamic_memory_usage();
     }
 
-    bool AppendBundle(const OrchardBundle& bundle) {
+    merkle_frontier::OrchardAppendResult AppendBundle(const OrchardBundle& bundle) {
         return inner->append_bundle(*bundle.GetDetails());
     }
 
@@ -405,6 +404,10 @@ public:
 
     size_t size() const {
         return inner->size();
+    }
+
+    libzcash::SubtreeIndex current_subtree_index() const {
+        return (inner->size() >> libzcash::TRACKED_SUBTREE_HEIGHT);
     }
 };
 

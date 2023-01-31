@@ -5,12 +5,13 @@ use std::io::{self, Read, Write};
 use bridgetree::{BridgeTree, Checkpoint, MerkleBridge};
 use incrementalmerkletree::{Address, Hashable, Level, Position};
 use zcash_encoding::{Optional, Vector};
-use zcash_primitives::merkle_tree::{
-    read_address, read_leu64_usize, read_nonempty_frontier_v1, read_position, write_address,
-    write_nonempty_frontier_v1, write_position, write_usize_leu64, HashSer,
+use zcash_primitives::{
+    merkle_tree::{
+        read_address, read_leu64_usize, read_nonempty_frontier_v1, read_position, write_address,
+        write_nonempty_frontier_v1, write_position, write_usize_leu64, HashSer,
+    },
+    sapling::NOTE_COMMITMENT_TREE_DEPTH,
 };
-
-use crate::merkle_frontier::MERKLE_DEPTH;
 
 pub const SER_V1: u8 = 1;
 pub const SER_V2: u8 = 2;
@@ -241,7 +242,7 @@ pub fn write_checkpoint_v3<W: Write>(
 #[allow(clippy::redundant_closure)]
 pub fn read_tree<H: Hashable + HashSer + Ord + Clone, R: Read>(
     mut reader: R,
-) -> io::Result<BridgeTree<H, u32, MERKLE_DEPTH>> {
+) -> io::Result<BridgeTree<H, u32, NOTE_COMMITMENT_TREE_DEPTH>> {
     let ser_version = reader.read_u8()?;
     let prior_bridges = Vector::read(&mut reader, |r| read_bridge(r))?;
     let current_bridge = Optional::read(&mut reader, |r| read_bridge(r))?;
@@ -298,7 +299,7 @@ pub fn read_tree<H: Hashable + HashSer + Ord + Clone, R: Read>(
 
 pub fn write_tree<H: Hashable + HashSer + Ord, W: Write>(
     mut writer: W,
-    tree: &BridgeTree<H, u32, MERKLE_DEPTH>,
+    tree: &BridgeTree<H, u32, NOTE_COMMITMENT_TREE_DEPTH>,
 ) -> io::Result<()> {
     writer.write_u8(SER_V3)?;
     Vector::write(&mut writer, tree.prior_bridges(), |w, b| write_bridge(w, b))?;
