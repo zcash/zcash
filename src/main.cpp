@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2015-2022 The Zcash developers
+// Copyright (c) 2015-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -3258,6 +3258,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, chainparams.GetConsensus());
     auto prevConsensusBranchId = CurrentEpochBranchId(pindex->nHeight - 1, chainparams.GetConsensus());
 
+    CAmount chainSupplyDelta = 0;
+    CAmount transparentValueDelta = 0;
     size_t total_sapling_tx = 0;
     size_t total_orchard_tx = 0;
 
@@ -3293,7 +3295,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
 
             for (const auto& input : tx.vin) {
-                allPrevOutputs.push_back(view.GetOutputFor(input));
+                const auto prevout = view.GetOutputFor(input);
+                transparentValueDelta -= prevout.nValue;
+                allPrevOutputs.push_back(prevout);
             }
 
             // insightexplorer
@@ -3339,9 +3343,20 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
         txdata.emplace_back(tx, allPrevOutputs);
 
-        if (!tx.IsCoinBase())
+        if (tx.IsCoinBase())
         {
-            nFees += view.GetValueIn(tx)-tx.GetValueOut();
+            // Add the output value of the coinbase transaction to the chain supply
+            // delta. This includes fees, which are then canceled out by the fee
+            // subtractions in the other branch of this conditional.
+            chainSupplyDelta += tx.GetValueOut();
+        } else {
+            const auto txFee = view.GetValueIn(tx) - tx.GetValueOut();
+            nFees += txFee;
+
+            // Fees from a transaction do not go into an output of the transaction,
+            // and therefore decrease the chain supply. If the miner claims them,
+            // they will be re-added in the other branch of this conditional.
+            chainSupplyDelta -= txFee;
 
             std::vector<CScriptCheck> vChecks;
             if (!ContextualCheckInputs(tx, state, view, fExpensiveChecks, flags, fCacheResults, txdata.back(), chainparams.GetConsensus(), consensusBranchId, nScriptCheckThreads ? &vChecks : NULL))
@@ -3415,6 +3430,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 REJECT_INVALID, "orchard-commitment-tree-full");
         };
 
+        for (const auto& out : tx.vout) {
+            transparentValueDelta += out.nValue;
+        }
+
         if (!(tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty())) {
             total_sapling_tx += 1;
         }
@@ -3442,6 +3461,27 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     view.PushAnchor(sapling_tree);
     view.PushAnchor(orchard_tree);
     if (!fJustCheck) {
+        // Update pindex with the net change in value and the chain's total value,
+        // both for the supply and for the transparent pool.
+        pindex->nChainSupplyDelta = chainSupplyDelta;
+        pindex->nTransparentValue = transparentValueDelta;
+        if (pindex->pprev) {
+            if (pindex->pprev->nChainTotalSupply) {
+                pindex->nChainTotalSupply = *pindex->pprev->nChainTotalSupply + chainSupplyDelta;
+            } else {
+                pindex->nChainTotalSupply = std::nullopt;
+            }
+
+            if (pindex->pprev->nChainTransparentValue) {
+                pindex->nChainTransparentValue = *pindex->pprev->nChainTransparentValue + transparentValueDelta;
+            } else {
+                pindex->nChainTransparentValue = std::nullopt;
+            }
+        } else {
+            pindex->nChainTotalSupply = chainSupplyDelta;
+            pindex->nChainTransparentValue = transparentValueDelta;
+        }
+
         pindex->hashFinalSproutRoot = sprout_tree.root();
         // - If this block is before Heartwood activation, then we don't set
         //   hashFinalSaplingRoot here to maintain the invariant documented in
@@ -3556,6 +3596,26 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                          error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
                                block.vtx[0].GetValueOut(), blockReward),
                                REJECT_INVALID, "bad-cb-amount");
+
+    // Ensure that the total chain supply is consistent with the value in each pool.
+    if (!fJustCheck &&
+            pindex->nChainTotalSupply.has_value() &&
+            pindex->nChainTransparentValue.has_value() &&
+            pindex->nChainSproutValue.has_value() &&
+            pindex->nChainSaplingValue.has_value() &&
+            pindex->nChainOrchardValue.has_value())
+    {
+        auto expectedChainSupply =
+            pindex->nChainTransparentValue.value() +
+            pindex->nChainSproutValue.value() +
+            pindex->nChainSaplingValue.value() +
+            pindex->nChainOrchardValue.value();
+        if (expectedChainSupply != pindex->nChainTotalSupply.value()) {
+            // This may be added as a rule to ZIP 209 and return a failure in a future soft-fork.
+            error("ConnectBlock(): chain total supply (%d) does not match sum of pool balances (%d) at height %d",
+                    pindex->nChainTotalSupply.value(), expectedChainSupply, pindex->nHeight);
+        }
+    }
 
     // Ensure Sapling authorizations are valid (if we are checking them)
     if (saplingAuth.has_value() && !saplingAuth.value()->validate()) {
@@ -3836,7 +3896,7 @@ struct PoolMetrics {
 
     static PoolMetrics Transparent(CBlockIndex *pindex, CCoinsViewCache *view) {
         PoolMetrics stats;
-        // TODO: Collect transparent pool value.
+        stats.value = pindex->nChainTransparentValue;
 
         // TODO: Figure out a way to efficiently collect UTXO set metrics
         // (view->GetStats() is too slow to call during block verification).
@@ -4002,8 +4062,8 @@ static int64_t nTimeChainState = 0;
 static int64_t nTimePostConnect = 0;
 
 // Protected by cs_main
-std::map<CBlockIndex*, std::list<CTransaction>> recentlyConflictedTxs;
-uint64_t nRecentlyConflictedSequence = 0;
+std::map<const CBlockIndex*, std::list<CTransaction>> recentlyConflictedTxs;
+uint64_t nConnectedSequence = 0;
 uint64_t nNotifiedSequence = 0;
 
 /**
@@ -4055,7 +4115,9 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     // Cache the conflicted transactions for subsequent notification.
     // Updates to connected wallets are triggered by ThreadNotifyWallets
     recentlyConflictedTxs.insert(std::make_pair(pindexNew, txConflicted));
-    nRecentlyConflictedSequence += 1;
+
+    // Increment the count of `ConnectTip` calls.
+    nConnectedSequence += 1;
 
     EnforceNodeDeprecation(pindexNew->nHeight);
 
@@ -4066,29 +4128,40 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     return true;
 }
 
-std::pair<std::map<CBlockIndex*, std::list<CTransaction>>, uint64_t> DrainRecentlyConflicted()
+std::pair<std::list<CTransaction>, std::optional<uint64_t>> TakeRecentlyConflicted(const CBlockIndex* pindex)
 {
-    uint64_t recentlyConflictedSequence;
-    std::map<CBlockIndex*, std::list<CTransaction>> txs;
-    {
-        LOCK(cs_main);
-        recentlyConflictedSequence = nRecentlyConflictedSequence;
-        txs.swap(recentlyConflictedTxs);
-    }
+    AssertLockHeld(cs_main);
 
-    return std::make_pair(txs, recentlyConflictedSequence);
+    // We use bracket notation for retrieving conflict data from recentlyConflictedTxs
+    // here because when a node restarts, the wallet may be behind the node's view of
+    // the current chain tip. The node may continue reindexing from the chain tip, but
+    // no entries will exist in `recentlyConflictedTxs` until the next block after the
+    // node's chain tip at the point of shutdown. In these cases, the wallet cannot learn
+    // about conflicts in those blocks (which should be fine).
+    std::list<CTransaction> conflictedTxs = recentlyConflictedTxs[pindex];
+    recentlyConflictedTxs.erase(pindex);
+    if (recentlyConflictedTxs.empty()) {
+        return std::make_pair(conflictedTxs, nConnectedSequence);
+    } else {
+        return std::make_pair(conflictedTxs, std::nullopt);
+    }
 }
 
-void SetChainNotifiedSequence(const CChainParams& chainparams, uint64_t recentlyConflictedSequence) {
+uint64_t GetChainConnectedSequence() {
+    LOCK(cs_main);
+    return nConnectedSequence;
+}
+
+void SetChainNotifiedSequence(const CChainParams& chainparams, uint64_t connectedSequence) {
     assert(chainparams.NetworkIDString() == "regtest");
     LOCK(cs_main);
-    nNotifiedSequence = recentlyConflictedSequence;
+    nNotifiedSequence = connectedSequence;
 }
 
 bool ChainIsFullyNotified(const CChainParams& chainparams) {
     assert(chainparams.NetworkIDString() == "regtest");
     LOCK(cs_main);
-    return nRecentlyConflictedSequence == nNotifiedSequence;
+    return nConnectedSequence == nNotifiedSequence;
 }
 
 /**
@@ -4550,10 +4623,24 @@ bool ReceivedBlockTransactions(
 {
     pindexNew->nTx = block.vtx.size();
     pindexNew->nChainTx = 0;
+
+    // the following values are computed here only for the genesis block
+    CAmount chainSupplyDelta = 0;
+    CAmount transparentValueDelta = 0;
+
     CAmount sproutValue = 0;
     CAmount saplingValue = 0;
     CAmount orchardValue = 0;
     for (auto tx : block.vtx) {
+        // For the genesis block only, compute the chain supply delta and the transparent
+        // output total.
+        if (pindexNew->pprev == nullptr) {
+            chainSupplyDelta = tx.GetValueOut();
+            for (const auto& out : tx.vout) {
+                transparentValueDelta += out.nValue;
+            }
+        }
+
         // Negative valueBalanceSapling "takes" money from the transparent value pool
         // and adds it to the Sapling value pool. Positive valueBalanceSapling "gives"
         // money to the transparent value pool, removing from the Sapling value
@@ -4568,12 +4655,27 @@ bool ReceivedBlockTransactions(
             sproutValue -= js.vpub_new;
         }
     }
+
+    // These values can only be computed here for the genesis block.
+    // For all other blocks, we update them in ConnectBlock instead.
+    if (pindexNew->pprev == nullptr) {
+        pindexNew->nChainSupplyDelta = chainSupplyDelta;
+        pindexNew->nTransparentValue = transparentValueDelta;
+    } else {
+        pindexNew->nChainSupplyDelta = std::nullopt;
+        pindexNew->nTransparentValue = std::nullopt;
+    }
+
+    pindexNew->nChainTotalSupply = std::nullopt;
+    pindexNew->nChainTransparentValue = std::nullopt;
+
     pindexNew->nSproutValue = sproutValue;
     pindexNew->nChainSproutValue = std::nullopt;
     pindexNew->nSaplingValue = saplingValue;
     pindexNew->nChainSaplingValue = std::nullopt;
     pindexNew->nOrchardValue = orchardValue;
     pindexNew->nChainOrchardValue = std::nullopt;
+
     pindexNew->nFile = pos.nFile;
     pindexNew->nDataPos = pos.nPos;
     pindexNew->nUndoPos = 0;
@@ -4591,23 +4693,36 @@ bool ReceivedBlockTransactions(
             CBlockIndex *pindex = queue.front();
             queue.pop_front();
             pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
+
             if (pindex->pprev) {
+                // Transparent value and chain total supply are added to the
+                // block index only in `ConnectBlock`, because that's the only
+                // place that we have a valid coins view with which to compute
+                // the transparent input value and fees.
+
+                // Calculate the block's effect on the Sprout chain value pool balance.
                 if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
                     pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
                 } else {
                     pindex->nChainSproutValue = std::nullopt;
                 }
+
+                // Calculate the block's effect on the Sapling chain value pool balance.
                 if (pindex->pprev->nChainSaplingValue) {
                     pindex->nChainSaplingValue = *pindex->pprev->nChainSaplingValue + pindex->nSaplingValue;
                 } else {
                     pindex->nChainSaplingValue = std::nullopt;
                 }
+
+                // Calculate the block's effect on the Orchard chain value pool balance.
                 if (pindex->pprev->nChainOrchardValue) {
                     pindex->nChainOrchardValue = *pindex->pprev->nChainOrchardValue + pindex->nOrchardValue;
                 } else {
                     pindex->nChainOrchardValue = std::nullopt;
                 }
             } else {
+                pindex->nChainTotalSupply = pindex->nChainSupplyDelta;
+                pindex->nChainTransparentValue = pindex->nTransparentValue;
                 pindex->nChainSproutValue = pindex->nSproutValue;
                 pindex->nChainSaplingValue = pindex->nSaplingValue;
                 pindex->nChainOrchardValue = pindex->nOrchardValue;
@@ -5371,16 +5486,31 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
             if (pindex->pprev) {
                 if (pindex->pprev->nChainTx) {
                     pindex->nChainTx = pindex->pprev->nChainTx + pindex->nTx;
+
+                    if (pindex->pprev->nChainTotalSupply && pindex->nChainSupplyDelta) {
+                        pindex->nChainTotalSupply = *pindex->pprev->nChainTotalSupply + *pindex->nChainSupplyDelta;
+                    } else {
+                        pindex->nChainTotalSupply = std::nullopt;
+                    }
+
+                    if (pindex->pprev->nChainTransparentValue && pindex->nTransparentValue) {
+                        pindex->nChainTransparentValue = *pindex->pprev->nChainTransparentValue + *pindex->nTransparentValue;
+                    } else {
+                        pindex->nChainTransparentValue = std::nullopt;
+                    }
+
                     if (pindex->pprev->nChainSproutValue && pindex->nSproutValue) {
                         pindex->nChainSproutValue = *pindex->pprev->nChainSproutValue + *pindex->nSproutValue;
                     } else {
                         pindex->nChainSproutValue = std::nullopt;
                     }
+
                     if (pindex->pprev->nChainSaplingValue) {
                         pindex->nChainSaplingValue = *pindex->pprev->nChainSaplingValue + pindex->nSaplingValue;
                     } else {
                         pindex->nChainSaplingValue = std::nullopt;
                     }
+
                     if (pindex->pprev->nChainOrchardValue) {
                         pindex->nChainOrchardValue = *pindex->pprev->nChainOrchardValue + pindex->nOrchardValue;
                     } else {
@@ -5388,6 +5518,8 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                     }
                 } else {
                     pindex->nChainTx = 0;
+                    pindex->nChainTotalSupply = std::nullopt;
+                    pindex->nChainTransparentValue = std::nullopt;
                     pindex->nChainSproutValue = std::nullopt;
                     pindex->nChainSaplingValue = std::nullopt;
                     pindex->nChainOrchardValue = std::nullopt;
@@ -5395,6 +5527,8 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
                 }
             } else {
                 pindex->nChainTx = pindex->nTx;
+                pindex->nChainTotalSupply = pindex->nChainSupplyDelta;
+                pindex->nChainTransparentValue = pindex->nTransparentValue;
                 pindex->nChainSproutValue = pindex->nSproutValue;
                 pindex->nChainSaplingValue = pindex->nSaplingValue;
                 pindex->nChainOrchardValue = pindex->nOrchardValue;

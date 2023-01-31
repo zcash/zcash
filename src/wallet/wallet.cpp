@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -1455,6 +1455,15 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
         DecrementNoteWitnesses(consensus, pindex);
         UpdateSaplingNullifierNoteMapForBlock(pblock);
     }
+
+    auto hash = tfm::format("%s", pindex->GetBlockHash().ToString());
+    auto height = tfm::format("%d", pindex->nHeight);
+    auto kind = tfm::format("%s", added.has_value() ? "connect" : "disconnect");
+
+    TracingInfo("wallet", "CWallet::ChainTip: processed block",
+        "hash", hash.c_str(),
+        "height", height.c_str(),
+        "kind", kind.c_str());
 }
 
 void CWallet::RunSaplingMigration(int blockHeight) {
@@ -3597,11 +3606,6 @@ bool WalletBatchScanner::AddToWalletIfInvolvingMe(
 // BatchScanner APIs
 //
 
-size_t WalletBatchScanner::RecursiveDynamicUsage()
-{
-    return inner->get_dynamic_usage();
-}
-
 void WalletBatchScanner::AddTransaction(
     const CTransaction &tx,
     const std::vector<unsigned char> &txBytes,
@@ -4679,13 +4683,13 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
  * from or to us. If fUpdate is true, found transactions that already
  * exist in the wallet will be updated.
  */
-int CWallet::ScanForWalletTransactions(
+std::optional<int> CWallet::ScanForWalletTransactions(
         CBlockIndex* pindexStart,
         bool fUpdate,
         bool isInitScan)
 {
     assert(pindexStart != nullptr);
-    int ret = 0;
+    int myTransactionsFound = 0;
     int64_t nNow = GetTime();
     const CChainParams& chainParams = Params();
     const auto& consensus = chainParams.GetConsensus();
@@ -4756,6 +4760,9 @@ int CWallet::ScanForWalletTransactions(
         double dProgressTip = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip(), false);
         while (pindex)
         {
+            // Allow the rescan to be interrupted on a block boundary.
+            if (ShutdownRequested()) return std::nullopt;
+
             if (pindex->nHeight % 100 == 0 && dProgressTip - dProgressStart > 0.0)
                 ShowProgress(_("Rescanning..."), std::max(1, std::min(99, (int)((Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), pindex, false) - dProgressStart) / (dProgressTip - dProgressStart) * 100))));
 
@@ -4775,7 +4782,7 @@ int CWallet::ScanForWalletTransactions(
             {
                 if (batchScanner.AddToWalletIfInvolvingMe(consensus, tx, &block, pindex->nHeight, fUpdate)) {
                     myTxHashes.push_back(tx.GetHash());
-                    ret++;
+                    myTransactionsFound++;
                 }
             }
 
@@ -4820,7 +4827,7 @@ int CWallet::ScanForWalletTransactions(
 
         ShowProgress(_("Rescanning..."), 100); // hide progress dialog in GUI
     }
-    return ret;
+    return myTransactionsFound;
 }
 
 void CWallet::ReacceptWalletTransactions()
@@ -6810,7 +6817,10 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
                 chainActive.Height() - pindexRescan->nHeight,
                 pindexRescan->nHeight);
         nStart = GetTimeMillis();
-        walletInstance->ScanForWalletTransactions(pindexRescan, true, true);
+        if (!walletInstance->ScanForWalletTransactions(pindexRescan, true, true).has_value()) {
+            return UIError(_("CWallet::InitLoadWallet: rescan interrupted due to shutdown request."));
+        }
+
         LogPrintf(" rescan      %15dms\n", GetTimeMillis() - nStart);
         walletInstance->SetBestChain(chainActive.GetLocator());
         CWalletDB::IncrementUpdateCounter();

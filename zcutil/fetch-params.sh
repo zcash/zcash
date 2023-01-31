@@ -5,10 +5,15 @@ set -eu
 
 SCRIPT_NAME=$(basename $0)
 
-[[ -v XDG_CACHE_HOME ]] || XDG_CACHE_HOME="${HOME}/.cache"
+if [[ -z "${XDG_CACHE_HOME:+x}" ]]; then
+    XDG_CACHE_HOME="${HOME}/.cache"
+fi
+
 # We don’t care too much about most of the properties of `XDG_RUNTIME_DIR` in
 # this script, so we just fall back to `XDG_CACHE_HOME`.
-[[ -v XDG_RUNTIME_DIR ]] || XDG_RUNTIME_DIR="${XDG_CACHE_HOME}"
+if [[ -z "${XDG_RUNTIME_DIR:+x}" ]]; then
+    XDG_RUNTIME_DIR="${XDG_CACHE_HOME}";
+fi
 
 uname_S=$(uname -s 2>/dev/null || echo not)
 

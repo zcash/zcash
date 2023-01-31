@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -15,8 +15,11 @@
 #include "miner.h"
 #include "zcash/IncrementalMerkleTree.hpp"
 
-/** Default limit on batch scanner memory usage in MiB. */
-static const size_t DEFAULT_BATCHSCANNERMEMLIMIT = 100;
+/**
+ * Limit on the maximum number of blocks that will be staged for
+ * scanning before an interrupt will be handled.
+ */
+static const size_t WALLET_NOTIFY_MAX_BLOCKS = 1000;
 
 class CBlock;
 class CBlockIndex;
@@ -29,11 +32,6 @@ class uint256;
 
 class BatchScanner {
 public:
-    /**
-     * Returns the current dynamic memory usage of this batch scanner.
-     */
-    virtual size_t RecursiveDynamicUsage() = 0;
-
     /**
      * Adds a transaction to the batch scanner.
      *

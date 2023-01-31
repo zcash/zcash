@@ -1,5 +1,5 @@
 // Copyright (c) 2012-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -991,14 +991,17 @@ const CTxOut &CCoinsViewCache::GetOutputFor(const CTxIn& input) const
 
 CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
 {
+    return GetTransparentValueIn(tx) + tx.GetShieldedValueIn();
+}
+
+CAmount CCoinsViewCache::GetTransparentValueIn(const CTransaction& tx) const
+{
     if (tx.IsCoinBase())
         return 0;
 
     CAmount nResult = 0;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         nResult += GetOutputFor(tx.vin[i]).nValue;
-
-    nResult += tx.GetShieldedValueIn();
 
     return nResult;
 }
