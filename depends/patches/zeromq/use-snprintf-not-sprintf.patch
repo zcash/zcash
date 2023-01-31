@@ -1,0 +1,249 @@
+From f7df6c8599835d6022335d63f37e291514d9a6f4 Mon Sep 17 00:00:00 2001
+From: Arnaud Loonstra <arnaud@sphaero.org>
+Date: Tue, 24 Jan 2023 12:54:48 +0100
+Subject: [PATCH] deprecate sprint and replace with snprintf
+
+---
+ src/tcp_address.cpp              |  3 ++-
+ src/udp_engine.cpp               |  4 ++--
+ tests/test_inproc_connect.cpp    |  4 ++--
+ tests/test_issue_566.cpp         |  2 +-
+ tests/test_proxy.cpp             | 12 ++++++++----
+ tests/test_reqrep_tcp.cpp        |  8 ++++++--
+ tests/test_setsockopt.cpp        |  2 +-
+ tests/test_stream_disconnect.cpp |  4 ++--
+ tests/test_unbind_wildcard.cpp   | 12 ++++++------
+ tests/test_ws_transport.cpp      |  3 ++-
+ tests/testutil.cpp               | 18 +++++++++---------
+ 11 files changed, 41 insertions(+), 31 deletions(-)
+
+diff --git a/src/tcp_address.cpp b/src/tcp_address.cpp
+index bdda66a200..46b4defc79 100644
+--- a/src/tcp_address.cpp
++++ b/src/tcp_address.cpp
+@@ -129,7 +129,8 @@ static std::string make_address_string (const char *hbuf_,
+     pos += hbuf_len;
+     memcpy (pos, ipv6_suffix_, sizeof ipv6_suffix_ - 1);
+     pos += sizeof ipv6_suffix_ - 1;
+-    pos += sprintf (pos, "%d", ntohs (port_));
++    pos += snprintf (pos, max_port_str_length + 1 * sizeof (char), "%d",
++                     ntohs (port_));
+     return std::string (buf, pos - buf);
+ }
+ 
+diff --git a/src/udp_engine.cpp b/src/udp_engine.cpp
+index d09bfe166e..47f1359e1b 100644
+--- a/src/udp_engine.cpp
++++ b/src/udp_engine.cpp
+@@ -367,8 +367,8 @@ void zmq::udp_engine_t::sockaddr_to_msg (zmq::msg_t *msg_,
+     const char *const name = inet_ntoa (addr_->sin_addr);
+ 
+     char port[6];
+-    const int port_len =
+-      sprintf (port, "%d", static_cast<int> (ntohs (addr_->sin_port)));
++    const int port_len = snprintf (port, 6 * sizeof (char), "%d",
++                                   static_cast<int> (ntohs (addr_->sin_port)));
+     zmq_assert (port_len > 0);
+ 
+     const size_t name_len = strlen (name);
+diff --git a/tests/test_inproc_connect.cpp b/tests/test_inproc_connect.cpp
+index 7a3acbda8c..c6437d55bb 100644
+--- a/tests/test_inproc_connect.cpp
++++ b/tests/test_inproc_connect.cpp
+@@ -155,7 +155,7 @@ void test_connect_before_bind_ctx_term ()
+         void *connect_socket = test_context_socket (ZMQ_ROUTER);
+ 
+         char ep[32];
+-        sprintf (ep, "inproc://cbbrr%d", i);
++        snprintf (ep, 32 * sizeof (char), "inproc://cbbrr%d", i);
+         TEST_ASSERT_SUCCESS_ERRNO (zmq_connect (connect_socket, ep));
+ 
+         // Cleanup
+@@ -233,7 +233,7 @@ void test_simultaneous_connect_bind_threads ()
+     // Set up thread arguments: context followed by endpoint string
+     for (unsigned int i = 0; i < no_of_times; ++i) {
+         thr_args[i] = (void *) endpts[i];
+-        sprintf (endpts[i], "inproc://foo_%d", i);
++        snprintf (endpts[i], 20 * sizeof (char), "inproc://foo_%d", i);
+     }
+ 
+     // Spawn all threads as simultaneously as possible
+diff --git a/tests/test_issue_566.cpp b/tests/test_issue_566.cpp
+index 7a8859feba..2495eadfbe 100644
+--- a/tests/test_issue_566.cpp
++++ b/tests/test_issue_566.cpp
+@@ -58,7 +58,7 @@ void test_issue_566 ()
+         void *dealer = zmq_socket (ctx2, ZMQ_DEALER);
+         //  Leave space for NULL char from sprintf, gcc warning
+         char routing_id[11];
+-        sprintf (routing_id, "%09d", cycle);
++        snprintf (routing_id, 11 * sizeof (char), "%09d", cycle);
+         TEST_ASSERT_SUCCESS_ERRNO (
+           zmq_setsockopt (dealer, ZMQ_ROUTING_ID, routing_id, 10));
+         int rcvtimeo = 1000;
+diff --git a/tests/test_proxy.cpp b/tests/test_proxy.cpp
+index 5666721be1..16722e3ce5 100644
+--- a/tests/test_proxy.cpp
++++ b/tests/test_proxy.cpp
+@@ -88,7 +88,8 @@ static void client_task (void *db_)
+     TEST_ASSERT_SUCCESS_ERRNO (
+       zmq_setsockopt (endpoint, ZMQ_LINGER, &linger, sizeof (linger)));
+     char endpoint_source[256];
+-    sprintf (endpoint_source, "inproc://endpoint%d", databag->id);
++    snprintf (endpoint_source, 256 * sizeof (char), "inproc://endpoint%d",
++              databag->id);
+     TEST_ASSERT_SUCCESS_ERRNO (zmq_connect (endpoint, endpoint_source));
+     char *my_endpoint = s_recv (endpoint);
+     TEST_ASSERT_NOT_NULL (my_endpoint);
+@@ -107,7 +108,8 @@ static void client_task (void *db_)
+     char content[CONTENT_SIZE_MAX] = {};
+     // Set random routing id to make tracing easier
+     char routing_id[ROUTING_ID_SIZE] = {};
+-    sprintf (routing_id, "%04X-%04X", rand () % 0xFFFF, rand () % 0xFFFF);
++    snprintf (routing_id, ROUTING_ID_SIZE * sizeof (char), "%04X-%04X",
++              rand () % 0xFFFF, rand () % 0xFFFF);
+     TEST_ASSERT_SUCCESS_ERRNO (zmq_setsockopt (
+       client, ZMQ_ROUTING_ID, routing_id,
+       ROUTING_ID_SIZE)); // includes '\0' as an helper for printf
+@@ -164,7 +166,8 @@ static void client_task (void *db_)
+         }
+ 
+         if (keep_sending) {
+-            sprintf (content, "request #%03d", ++request_nbr); // CONTENT_SIZE
++            snprintf (content, CONTENT_SIZE_MAX * sizeof (char),
++                      "request #%03d", ++request_nbr); // CONTENT_SIZE
+             if (is_verbose)
+                 printf ("client send - routing_id = %s    request #%03d\n",
+                         routing_id, request_nbr);
+@@ -228,7 +231,8 @@ void server_task (void * /*unused_*/)
+         TEST_ASSERT_NOT_NULL (endpoint_receivers[i]);
+         TEST_ASSERT_SUCCESS_ERRNO (zmq_setsockopt (
+           endpoint_receivers[i], ZMQ_LINGER, &linger, sizeof (linger)));
+-        sprintf (endpoint_source, "inproc://endpoint%d", i);
++        snprintf (endpoint_source, 256 * sizeof (char), "inproc://endpoint%d",
++                  i);
+         TEST_ASSERT_SUCCESS_ERRNO (
+           zmq_bind (endpoint_receivers[i], endpoint_source));
+     }
+diff --git a/tests/test_reqrep_tcp.cpp b/tests/test_reqrep_tcp.cpp
+index c1bdf4719b..01d263ab3d 100644
+--- a/tests/test_reqrep_tcp.cpp
++++ b/tests/test_reqrep_tcp.cpp
+@@ -66,8 +66,12 @@ void make_connect_address (char *connect_address_,
+                            const int port_,
+                            const char *bind_address_)
+ {
+-    sprintf (connect_address_, "tcp://%s:%i;%s", ipv6_ ? "[::1]" : "127.0.0.1",
+-             port_, strrchr (bind_address_, '/') + 1);
++    if (ipv6_)
++        snprintf (connect_address_, 30 * sizeof (char), "tcp://[::1]:%i;%s",
++                  port_, strrchr (bind_address_, '/') + 1);
++    else
++        snprintf (connect_address_, 38 * sizeof (char), "tcp://127.0.0.1:%i;%s",
++                  port_, strrchr (bind_address_, '/') + 1);
+ }
+ 
+ void test_multi_connect (int ipv6_)
+diff --git a/tests/test_setsockopt.cpp b/tests/test_setsockopt.cpp
+index 7e51a519c3..50414682b3 100644
+--- a/tests/test_setsockopt.cpp
++++ b/tests/test_setsockopt.cpp
+@@ -120,7 +120,7 @@ void test_setsockopt_bindtodevice ()
+     TEST_ASSERT_EQUAL_INT8 ('\0', devname[0]);
+     TEST_ASSERT_EQUAL_UINT (1, buflen);
+ 
+-    sprintf (devname, "testdev");
++    snprintf (devname, BOUNDDEVBUFSZ * sizeof (char), "testdev");
+     buflen = strlen (devname);
+ 
+     TEST_ASSERT_SUCCESS_ERRNO (
+diff --git a/tests/test_stream_disconnect.cpp b/tests/test_stream_disconnect.cpp
+index d46916f279..2e1e77960c 100644
+--- a/tests/test_stream_disconnect.cpp
++++ b/tests/test_stream_disconnect.cpp
+@@ -78,8 +78,8 @@ void test_stream_disconnect ()
+ 
+     //  Apparently Windows can't connect to 0.0.0.0. A better fix would be welcome.
+ #ifdef ZMQ_HAVE_WINDOWS
+-    sprintf (connect_endpoint, "tcp://127.0.0.1:%s",
+-             strrchr (bind_endpoint, ':') + 1);
++    snprintf (connect_endpoint, MAX_SOCKET_STRING * sizeof (char),
++              "tcp://127.0.0.1:%s", strrchr (bind_endpoint, ':') + 1);
+ #else
+     strcpy (connect_endpoint, bind_endpoint);
+ #endif
+diff --git a/tests/test_unbind_wildcard.cpp b/tests/test_unbind_wildcard.cpp
+index f25d6acc46..92a577d9dd 100644
+--- a/tests/test_unbind_wildcard.cpp
++++ b/tests/test_unbind_wildcard.cpp
+@@ -40,8 +40,8 @@ void test_address_wildcard_ipv4 ()
+ 
+     //  Apparently Windows can't connect to 0.0.0.0. A better fix would be welcome.
+ #ifdef ZMQ_HAVE_WINDOWS
+-    sprintf (connect_endpoint, "tcp://127.0.0.1:%s",
+-             strrchr (bind_endpoint, ':') + 1);
++    snprintf (connect_endpoint, 256 * sizeof (char), "tcp://127.0.0.1:%s",
++              strrchr (bind_endpoint, ':') + 1);
+ #else
+     strcpy (connect_endpoint, bind_endpoint);
+ #endif
+@@ -81,11 +81,11 @@ void test_address_wildcard_ipv6 ()
+ 
+ #ifdef ZMQ_HAVE_WINDOWS
+     if (ipv6)
+-        sprintf (connect_endpoint, "tcp://[::1]:%s",
+-                 strrchr (bind_endpoint, ':') + 1);
++        snprintf (connect_endpoint, 256 * sizeof (char), "tcp://[::1]:%s",
++                  strrchr (bind_endpoint, ':') + 1);
+     else
+-        sprintf (connect_endpoint, "tcp://127.0.0.1:%s",
+-                 strrchr (bind_endpoint, ':') + 1);
++        snprintf (connect_endpoint, 256 * sizeof (char), "tcp://127.0.0.1:%s",
++                  strrchr (bind_endpoint, ':') + 1);
+ #else
+     strcpy (connect_endpoint, bind_endpoint);
+ #endif
+diff --git a/tests/test_ws_transport.cpp b/tests/test_ws_transport.cpp
+index 49b810fec0..6781af4d7d 100644
+--- a/tests/test_ws_transport.cpp
++++ b/tests/test_ws_transport.cpp
+@@ -47,7 +47,8 @@ void test_roundtrip ()
+       zmq_getsockopt (sb, ZMQ_LAST_ENDPOINT, bind_address, &addr_length));
+ 
+     // Windows can't connect to 0.0.0.0
+-    sprintf (connect_address, "ws://127.0.0.1%s", strrchr (bind_address, ':'));
++    snprintf (connect_address, MAX_SOCKET_STRING * sizeof (char),
++              "ws://127.0.0.1%s", strrchr (bind_address, ':'));
+ 
+     TEST_ASSERT_SUCCESS_ERRNO (zmq_connect (sc, connect_address));
+ 
+diff --git a/tests/testutil.cpp b/tests/testutil.cpp
+index 5306aff9b2..ba7eb9b592 100644
+--- a/tests/testutil.cpp
++++ b/tests/testutil.cpp
+@@ -510,16 +510,15 @@
+         addr_len = sizeof (struct sockaddr_storage);
+         TEST_ASSERT_SUCCESS_RAW_ERRNO (
+           getsockname (s_pre, (struct sockaddr *) &addr, &addr_len));
+-        sprintf (my_endpoint_, "%s://%s:%u",
+-                 protocol_ == IPPROTO_TCP
+-                   ? "tcp"
+-                   : protocol_ == IPPROTO_UDP
+-                       ? "udp"
+-                       : protocol_ == IPPROTO_WSS ? "wss" : "ws",
+-                 address_,
+-                 af_ == AF_INET
+-                   ? ntohs ((*(struct sockaddr_in *) &addr).sin_port)
+-                   : ntohs ((*(struct sockaddr_in6 *) &addr).sin6_port));
++        snprintf (
++          my_endpoint_, 6 + strlen (address_) + 7 * sizeof (char), "%s://%s:%u",
++          protocol_ == IPPROTO_TCP   ? "tcp"
++          : protocol_ == IPPROTO_UDP ? "udp"
++          : protocol_ == IPPROTO_WSS ? "wss"
++                                     : "ws",
++          address_,
++          af_ == AF_INET ? ntohs ((*(struct sockaddr_in *) &addr).sin_port)
++                         : ntohs ((*(struct sockaddr_in6 *) &addr).sin6_port));
+     }
+
+     return s_pre;
