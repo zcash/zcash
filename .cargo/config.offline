@@ -4,9 +4,19 @@ linker = "aarch64-linux-gnu-gcc"
 [source.crates-io]
 replace-with = "vendored-sources"
 
+[source."https://github.com/zcash/incrementalmerkletree.git"]
+git = "https://github.com/zcash/incrementalmerkletree.git"
+rev = "62f0c9039b0bee94c16c40c272e19c5922290664"
+replace-with = "vendored-sources"
+
 [source."https://github.com/zcash/librustzcash.git"]
 git = "https://github.com/zcash/librustzcash.git"
-rev = "8db7a071a0b79687d79ffc6894fe573944b16008"
+rev = "36d7222685e65cd8b6335f67dfe619e1a8f13197"
+replace-with = "vendored-sources"
+
+[source."https://github.com/zcash/orchard.git"]
+git = "https://github.com/zcash/orchard.git"
+rev = "11b6858ac81a79675de205980155a49d6f92b71e"
 replace-with = "vendored-sources"
 
 [source.vendored-sources]

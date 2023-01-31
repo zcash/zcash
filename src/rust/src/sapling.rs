@@ -8,19 +8,21 @@ use std::mem;
 
 use bellman::groth16::{prepare_verifying_key, Proof};
 use group::GroupEncoding;
+use incrementalmerkletree::MerklePath;
 use memuse::DynamicUsage;
 use rand_core::OsRng;
 use zcash_encoding::Vector;
 use zcash_primitives::{
     keys::OutgoingViewingKey,
     memo::MemoBytes,
-    merkle_tree::MerklePath,
+    merkle_tree::merkle_path_from_slice,
     sapling::{
         note::ExtractedNoteCommitment,
         prover::TxProver,
         redjubjub::{self, Signature},
         value::{NoteValue, ValueCommitment},
         Diversifier, Node, Note, PaymentAddress, ProofGenerationKey, Rseed,
+        NOTE_COMMITMENT_TREE_DEPTH,
     },
     transaction::{
         components::{sapling, Amount},
@@ -29,9 +31,8 @@ use zcash_primitives::{
     },
     zip32::ExtendedSpendingKey,
 };
-use zcash_proofs::{
-    circuit::sapling::TREE_DEPTH as SAPLING_TREE_DEPTH,
-    sapling::{self as sapling_proofs, SaplingProvingContext, SaplingVerificationContext},
+use zcash_proofs::sapling::{
+    self as sapling_proofs, SaplingProvingContext, SaplingVerificationContext,
 };
 
 use super::GROTH_PROOF_SIZE;
@@ -43,6 +44,8 @@ use crate::{
     bundlecache::{sapling_bundle_validity_cache, sapling_bundle_validity_cache_mut, CacheEntries},
     streams::CppStream,
 };
+
+const SAPLING_TREE_DEPTH: usize = 32;
 
 pub(crate) struct Spend(sapling::SpendDescription<sapling::Authorized>);
 
@@ -364,7 +367,7 @@ impl TxProver for StaticTxProver {
         ar: jubjub::Fr,
         value: u64,
         anchor: bls12_381::Scalar,
-        merkle_path: MerklePath<Node>,
+        merkle_path: MerklePath<Node, NOTE_COMMITMENT_TREE_DEPTH>,
     ) -> Result<
         (
             [u8; GROTH_PROOF_SIZE],
@@ -472,8 +475,8 @@ impl SaplingBuilder {
             .map(Rseed::BeforeZip212)
             .ok_or("Invalid rcm")?;
         let note = Note::from_parts(recipient, value, rseed);
-        let merkle_path = MerklePath::from_slice(&merkle_path)
-            .map_err(|()| "Invalid Sapling Merkle path".to_owned())?;
+        let merkle_path = merkle_path_from_slice(&merkle_path)
+            .map_err(|e| format!("Invalid Sapling Merkle path: {}", e))?;
 
         self.0
             .add_spend(OsRng, extsk, diversifier, note, merkle_path)

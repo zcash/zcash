@@ -2006,9 +2006,20 @@ public:
          unsigned int confirmations,
          std::vector<std::optional<SaplingWitness>>& witnesses,
          uint256 &final_anchor) const;
+    /**
+     * Return the witness and other information required to spend a given
+     * Orchard note. `anchorConfirmations` must be a value in the range
+     * `1..=100`; it is not possible to spend shielded notes with 0
+     * confirmations.
+     *
+     * This method checks the root of the wallet's note commitment tree having
+     * the specified `anchorConfirmations` to ensure that it corresponds to the
+     * specified anchor and will panic if this check fails.
+     */
     std::vector<std::pair<libzcash::OrchardSpendingKey, orchard::SpendInfo>> GetOrchardSpendInfo(
         const std::vector<OrchardNoteMetadata>& orchardNoteMetadata,
-        uint256 anchor) const;
+        unsigned int confirmations,
+        const uint256& anchor) const;
 
     isminetype IsMine(const CTxIn& txin) const;
     CAmount GetDebit(const CTxIn& txin, const isminefilter& filter) const;

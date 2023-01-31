@@ -110,7 +110,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
 
     // If we attempt to get spend info now, it will fail because the note hasn't
     // been witnessed in the Orchard commitment tree.
-    EXPECT_THROW(wallet.GetSpendInfo(notes, wallet.GetLatestAnchor()), std::logic_error);
+    EXPECT_THROW(wallet.GetSpendInfo(notes, 1, wallet.GetLatestAnchor()), std::logic_error);
 
     // Append the bundle to the wallet's commitment tree.
     CBlock fakeBlock;
@@ -119,7 +119,7 @@ TEST(TransactionBuilder, OrchardToOrchard) {
     ASSERT_TRUE(wallet.AppendNoteCommitments(2, fakeBlock));
 
     // Now we can get spend info for the note.
-    auto spendInfo = wallet.GetSpendInfo(notes, wallet.GetLatestAnchor());
+    auto spendInfo = wallet.GetSpendInfo(notes, 1, wallet.GetLatestAnchor());
     EXPECT_EQ(spendInfo[0].second.Value(), 40000);
 
     // Get the root of the commitment tree.

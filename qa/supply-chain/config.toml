@@ -22,7 +22,16 @@ url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
 [policy.equihash]
 audit-as-crates-io = false
 
+[policy.bridgetree]
+audit-as-crates-io = false
+
+[policy.incrementalmerkletree]
+audit-as-crates-io = false
+
 [policy.f4jumble]
+audit-as-crates-io = false
+
+[policy.orchard]
 audit-as-crates-io = false
 
 [policy.zcash_address]
