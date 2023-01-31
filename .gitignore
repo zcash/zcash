@@ -130,3 +130,5 @@ src/fuzzing/*/output
 src/fuzz.cpp
 
 .updatecheck-token
+.env
+poetry.lock

@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -265,12 +265,11 @@ CTransaction& CTransaction::operator=(const CTransaction &tx) {
 CAmount CTransaction::GetValueOut() const
 {
     CAmount nValueOut = 0;
-    for (std::vector<CTxOut>::const_iterator it(vout.begin()); it != vout.end(); ++it)
-    {
-        if (!MoneyRange(it->nValue)) {
+    for (const auto& out : vout) {
+        if (!MoneyRange(out.nValue)) {
             throw std::runtime_error("CTransaction::GetValueOut(): nValue out of range");
         }
-        nValueOut += it->nValue;
+        nValueOut += out.nValue;
         if (!MoneyRange(nValueOut)) {
             throw std::runtime_error("CTransaction::GetValueOut(): nValueOut out of range");
         }
@@ -301,13 +300,12 @@ CAmount CTransaction::GetValueOut() const
         }
     }
 
-    for (std::vector<JSDescription>::const_iterator it(vJoinSplit.begin()); it != vJoinSplit.end(); ++it)
-    {
+    for (const auto& jsDescription : vJoinSplit) {
         // NB: vpub_old "takes" money from the transparent value pool just as outputs do
-        if (!MoneyRange(it->vpub_old)) {
+        if (!MoneyRange(jsDescription.vpub_old)) {
             throw std::runtime_error("CTransaction::GetValueOut(): vpub_old out of range");
         }
-        nValueOut += it->vpub_old;
+        nValueOut += jsDescription.vpub_old;
         if (!MoneyRange(nValueOut)) {
             throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
         }
@@ -343,16 +341,19 @@ CAmount CTransaction::GetShieldedValueIn() const
         }
     }
 
-    for (std::vector<JSDescription>::const_iterator it(vJoinSplit.begin()); it != vJoinSplit.end(); ++it)
-    {
+    for (const auto& jsDescription : vJoinSplit) {
         // NB: vpub_new "gives" money to the transparent value pool just as inputs do
-        if (!MoneyRange(it->vpub_new)) {
+        if (!MoneyRange(jsDescription.vpub_new)) {
             throw std::runtime_error("CTransaction::GetShieldedValueIn(): vpub_new out of range");
         }
-        nValue += it->vpub_new;
+        nValue += jsDescription.vpub_new;
         if (!MoneyRange(nValue)) {
             throw std::runtime_error("CTransaction::GetShieldedValueIn(): value out of range");
         }
+    }
+
+    if (IsCoinBase() && nValue != 0) {
+        throw std::runtime_error("CTransaction::GetShieldedValueIn(): shielded value of inputs must be zero in coinbase transactions.");
     }
 
     return nValue;

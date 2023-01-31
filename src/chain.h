@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -23,6 +23,7 @@ static const int SPROUT_VALUE_VERSION = 1001400;
 static const int SAPLING_VALUE_VERSION = 1010100;
 static const int CHAIN_HISTORY_ROOT_VERSION = 2010200;
 static const int NU5_DATA_VERSION = 4050000;
+static const int TRANSPARENT_VALUE_VERSION = 5040026;
 
 /**
  * Maximum amount of time that a block timestamp is allowed to be ahead of the
@@ -250,6 +251,35 @@ public:
     //! (memory only) The anchor for the tree state up to the end of this block
     uint256 hashFinalSproutRoot;
 
+    //! The change to the chain supply caused by this block. This is defined as
+    //! the value of the coinbase outputs (transparent and shielded) in this block,
+    //! minus fees not claimed by the miner.
+    //!
+    //! Will be std::nullopt under the following conditions:
+    //! - if the block has never been connected to a chain tip
+    //! - for older blocks until a reindex has taken place
+    std::optional<CAmount> nChainSupplyDelta;
+
+    //! (memory only) Total chain supply up to and including this block.
+    //!
+    //! Will be std::nullopt until a reindex has taken place.
+    //! Will be std::nullopt if nChainTx is zero, or if the block has never been
+    //! connected to a chain tip.
+    std::optional<CAmount> nChainTotalSupply;
+
+    //! Change in value in the transparent pool produced by the action of the
+    //! transparent inputs to and outputs from transactions in this block.
+    //!
+    //! Will be std::nullopt for older blocks until a reindex has taken place.
+    std::optional<CAmount> nTransparentValue;
+
+    //! (memory only) Total value of the transparent value pool up to and
+    //! including this block.
+    //!
+    //! Will be std::nullopt until a reindex has taken place.
+    //! Will be std::nullopt if nChainTx is zero.
+    std::optional<CAmount> nChainTransparentValue;
+
     //! Change in value held by the Sprout circuit over this block.
     //! Will be std::nullopt for older blocks on old nodes until a reindex has taken place.
     std::optional<CAmount> nSproutValue;
@@ -342,6 +372,11 @@ public:
         hashFinalOrchardRoot = uint256();
         hashChainHistoryRoot = uint256();
         nSequenceId = 0;
+
+        nChainSupplyDelta = std::nullopt;
+        nChainTotalSupply = std::nullopt;
+        nTransparentValue = std::nullopt;
+        nChainTransparentValue = std::nullopt;
         nSproutValue = std::nullopt;
         nChainSproutValue = std::nullopt;
         nSaplingValue = 0;
@@ -538,6 +573,13 @@ public:
         READWRITE(nBits);
         READWRITE(nNonce);
         READWRITE(nSolution);
+
+        // Only read/write nTransparentValue if the client version used to create
+        // this index was storing them.
+        if ((s.GetType() & SER_DISK) && (nVersion >= TRANSPARENT_VALUE_VERSION)) {
+            READWRITE(nChainSupplyDelta);
+            READWRITE(nTransparentValue);
+        }
 
         // Only read/write nSproutValue if the client version used to create
         // this index was storing them.

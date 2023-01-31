@@ -55,7 +55,6 @@ mod ffi {
             network: &Network,
             sapling_ivks: &[[u8; 32]],
         ) -> Result<Box<BatchScanner>>;
-        fn get_dynamic_usage(self: &BatchScanner) -> usize;
         fn add_transaction(
             self: &mut BatchScanner,
             block_tag: [u8; 32],
@@ -82,7 +81,6 @@ const METRIC_OUTPUTS_SCANNED: &str = "zcashd.wallet.batchscanner.outputs.scanned
 const METRIC_LABEL_KIND: &str = "kind";
 
 const METRIC_SIZE_TXS: &str = "zcashd.wallet.batchscanner.size.transactions";
-const METRIC_USAGE_BYTES: &str = "zcashd.wallet.batchscanner.usage.bytes";
 
 /// Chain parameters for the networks supported by `zcashd`.
 #[derive(Clone, Copy)]
@@ -787,16 +785,6 @@ fn init_batch_scanner(
 }
 
 impl BatchScanner {
-    /// FFI helper to access the `DynamicUsage` trait.
-    fn get_dynamic_usage(&self) -> usize {
-        let usage = self.dynamic_usage();
-
-        // Since we've measured it, we may as well update the metric.
-        metrics::gauge!(METRIC_USAGE_BYTES, usage as f64);
-
-        usage
-    }
-
     /// Adds the given transaction's shielded outputs to the various batch runners.
     ///
     /// `block_tag` is the hash of the block that triggered this txid being added to the
@@ -833,7 +821,6 @@ impl BatchScanner {
 
         // Update the size of the batch scanner.
         metrics::increment_gauge!(METRIC_SIZE_TXS, 1.0);
-        metrics::gauge!(METRIC_USAGE_BYTES, self.dynamic_usage() as f64);
 
         Ok(())
     }
@@ -866,7 +853,6 @@ impl BatchScanner {
 
         // Update the size of the batch scanner.
         metrics::decrement_gauge!(METRIC_SIZE_TXS, 1.0);
-        metrics::gauge!(METRIC_USAGE_BYTES, self.dynamic_usage() as f64);
 
         Box::new(BatchResult { sapling })
     }
