@@ -84,7 +84,6 @@ TEST(MempoolLimitTests, WeightedTxTreeCheckSizeAfterDropping)
 {
     std::set<uint256> testedDropping;
     // Run the test until we have tested dropping each of the elements
-    int trialNum = 0;
     while (testedDropping.size() < 3) {
         WeightedTxTree tree(MIN_TX_COST * 2);
         EXPECT_EQ(0, tree.getTotalWeight().cost);

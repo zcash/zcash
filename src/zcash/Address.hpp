@@ -299,7 +299,7 @@ public:
 class AddressInfoFromSpendingKey {
 public:
     std::pair<std::string, PaymentAddress> operator()(const SproutSpendingKey&) const;
-    std::pair<std::string, PaymentAddress> operator()(const struct SaplingExtendedSpendingKey&) const;
+    std::pair<std::string, PaymentAddress> operator()(const SaplingExtendedSpendingKey&) const;
 };
 
 class AddressInfoFromViewingKey {
@@ -309,7 +309,7 @@ private:
 public:
     AddressInfoFromViewingKey(const KeyConstants& keyConstants): keyConstants(keyConstants) {}
     std::pair<std::string, PaymentAddress> operator()(const SproutViewingKey&) const;
-    std::pair<std::string, PaymentAddress> operator()(const struct SaplingExtendedFullViewingKey&) const;
+    std::pair<std::string, PaymentAddress> operator()(const SaplingExtendedFullViewingKey&) const;
     std::pair<std::string, PaymentAddress> operator()(const UnifiedFullViewingKey&) const;
 };
 

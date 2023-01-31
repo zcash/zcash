@@ -78,8 +78,6 @@ TEST(History, EpochBoundaries) {
 
     view.PushHistoryNode(epoch1, getLeafN(4));
 
-    uint256 h4Root = view.GetHistoryRoot(epoch1);
-
     EXPECT_EQ(view.GetHistoryLength(epoch1), 7);
 
     view.PushHistoryNode(epoch1, getLeafN(5));

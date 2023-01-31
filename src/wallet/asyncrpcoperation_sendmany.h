@@ -69,8 +69,6 @@ private:
     CAmount fee_;
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 
-    bool isfromsprout_{false};
-    bool isfromsapling_{false};
     TransactionStrategy strategy_;
     AccountId sendFromAccount_;
     std::set<OutputPool> recipientPools_;

@@ -180,7 +180,6 @@ UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::FindAddress(
         const diversifier_index_t& j,
         const std::set<ReceiverType>& receiverTypes) const {
     diversifier_index_t j0(j);
-    bool hasTransparent = HasTransparent(receiverTypes);
     do {
         auto addr = Address(j0, receiverTypes);
         if (addr != UnifiedAddressGenerationResult(UnifiedAddressGenerationError::NoAddressForDiversifier)) {

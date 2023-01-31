@@ -120,13 +120,13 @@ public:
 class MockCValidationState : public CValidationState {
 public:
     MOCK_METHOD6(DoS, bool(int level, bool ret,
-             unsigned int chRejectCodeIn, const std::string strRejectReasonIn,
+             unsigned int chRejectCodeIn, const std::string &strRejectReasonIn,
              bool corruptionIn,
              const std::string &strDebugMessageIn));
     MOCK_METHOD4(Invalid, bool(bool ret,
-                 unsigned int _chRejectCode, const std::string _strRejectReason,
+                 unsigned int _chRejectCode, const std::string &_strRejectReason,
                  const std::string &_strDebugMessage));
-    MOCK_METHOD1(Error, bool(std::string strRejectReasonIn));
+    MOCK_METHOD1(Error, bool(const std::string &strRejectReasonIn));
     MOCK_CONST_METHOD0(IsValid, bool());
     MOCK_CONST_METHOD0(IsInvalid, bool());
     MOCK_CONST_METHOD0(IsError, bool());

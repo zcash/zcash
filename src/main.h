@@ -56,9 +56,9 @@ class CInv;
 class CScriptCheck;
 class CValidationInterface;
 class CValidationState;
-class PrecomputedTransactionData;
 
 struct CNodeStateStats;
+struct PrecomputedTransactionData;
 
 /** Default for accepting alerts from the P2P network. */
 static const bool DEFAULT_ALERTS = true;

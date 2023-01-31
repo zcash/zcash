@@ -45,8 +45,8 @@ TEST(SigHashTest, Zip244AcceptsKnownHashTypes) {
     PrecomputedTransactionData txdata(mtx, allPrevOutputs);
     // These aren't used for ZIP 244 sighashes.
     CScript scriptCode;
-    CAmount amount;
-    uint32_t consensusBranchId;
+    CAmount amount{};
+    uint32_t consensusBranchId{};
 
     // Nothing should be thrown for known sighash types.
     std::vector<uint8_t> knownSighashTypes {
@@ -72,8 +72,8 @@ TEST(SigHashTest, Zip244RejectsUnknownHashTypes) {
     PrecomputedTransactionData txdata(mtx, allPrevOutputs);
     // These aren't used for ZIP 244 sighashes.
     CScript scriptCode;
-    CAmount amount;
-    uint32_t consensusBranchId;
+    CAmount amount{};
+    uint32_t consensusBranchId{};
 
     // An error should be thrown for unknown sighash types.
     std::vector<uint8_t> unknownSighashTypes {
@@ -101,8 +101,8 @@ TEST(SigHashTest, Zip244RejectsSingleWithoutCorrespondingOutput) {
     PrecomputedTransactionData txdata(mtx, allPrevOutputs);
     // These aren't used for ZIP 244 sighashes.
     CScript scriptCode;
-    CAmount amount;
-    uint32_t consensusBranchId;
+    CAmount amount{};
+    uint32_t consensusBranchId{};
 
     // Nothing should be thrown for non-single sighash types.
     std::vector<uint8_t> nonSighashSingleTypes {

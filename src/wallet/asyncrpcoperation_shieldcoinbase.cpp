@@ -43,23 +43,6 @@
 
 using namespace libzcash;
 
-static int find_output(UniValue obj, int n) {
-    UniValue outputMapValue = find_value(obj, "outputmap");
-    if (!outputMapValue.isArray()) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Missing outputmap for JoinSplit operation");
-    }
-
-    UniValue outputMap = outputMapValue.get_array();
-    assert(outputMap.size() == ZC_NUM_JS_OUTPUTS);
-    for (size_t i = 0; i < outputMap.size(); i++) {
-        if (outputMap[i].get_int() == n) {
-            return i;
-        }
-    }
-
-    throw std::logic_error("n is not present in outputmap");
-}
-
 AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
         TransactionBuilder builder,
         CMutableTransaction contextualTx,
@@ -67,7 +50,8 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
         PaymentAddress toAddress,
         CAmount fee,
         UniValue contextInfo) :
-        builder_(std::move(builder)), tx_(contextualTx), inputs_(inputs), fee_(fee), contextinfo_(contextInfo)
+  contextinfo_(contextInfo), fee_(fee), inputs_(inputs), builder_(std::move(builder)),
+  tx_(contextualTx)
 {
     assert(contextualTx.nVersion >= 2);  // transaction format version must support vJoinSplit
 
@@ -192,8 +176,6 @@ void AsyncRPCOperation_shieldcoinbase::main() {
 bool AsyncRPCOperation_shieldcoinbase::main_impl() {
 
     CAmount minersFee = fee_;
-
-    size_t numInputs = inputs_.size();
 
     CAmount targetAmount = 0;
     for (ShieldCoinbaseUTXO & utxo : inputs_) {

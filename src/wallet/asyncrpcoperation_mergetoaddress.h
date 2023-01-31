@@ -88,7 +88,6 @@ private:
     bool isUsingBuilder_; // Indicates that no Sprout addresses are involved
     uint32_t consensusBranchId_;
     CAmount fee_;
-    int mindepth_;
     bool isToTaddr_;
     bool isToZaddr_;
     CTxDestination toTaddr_;

@@ -87,7 +87,6 @@ TEST(PoW, MinDifficultyRules) {
     SelectParams(CBaseChainParams::TESTNET);
     const Consensus::Params& params = Params().GetConsensus();
     size_t lastBlk = 2*params.nPowAveragingWindow;
-    size_t firstBlk = lastBlk - params.nPowAveragingWindow;
 
     // Start with blocks evenly-spaced and equal difficulty
     std::vector<CBlockIndex> blocks(lastBlk+1);

@@ -29,11 +29,6 @@ enum class IsMineSigVersion
     P2SH = 1,       //! P2SH redeemScript
 };
 
-bool PermitsUncompressed(IsMineSigVersion sigversion)
-{
-    return sigversion == IsMineSigVersion::TOP || sigversion == IsMineSigVersion::P2SH;
-}
-
 typedef vector<unsigned char> valtype;
 
 unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore)

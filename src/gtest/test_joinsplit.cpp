@@ -49,9 +49,6 @@ bool verifySproutProof(
 
 void test_full_api()
 {
-    // Create verification context.
-    auto verifier = ProofVerifier::Strict();
-
     // The recipient's information.
     SproutSpendingKey recipient_key = SproutSpendingKey::random();
     SproutPaymentAddress recipient_addr = recipient_key.address();
@@ -181,7 +178,7 @@ void invokeAPI(
     std::array<SproutNote, 2> output_notes;
 
     // Groth
-    SproutProof proof = ZCJoinSplit::prove(
+    ZCJoinSplit::prove(
         inputs,
         outputs,
         output_notes,

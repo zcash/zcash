@@ -293,17 +293,17 @@ public:
             READWRITE(anchorSapling);
         }
         if (ser_action.ForRead()) {
-            for (auto &spend : vSpendsSapling) {
+            for ([[maybe_unused]] auto &spend : vSpendsSapling) {
                 libzcash::GrothProof zkproof;
                 READWRITE(zkproof);
                 vSpendProofsSapling.push_back(zkproof);
             }
-            for (auto &spend : vSpendsSapling) {
+            for ([[maybe_unused]] auto &spend : vSpendsSapling) {
                 SpendDescription::spend_auth_sig_t spendAuthSig;
                 READWRITE(spendAuthSig);
                 vSpendAuthSigSapling.push_back(spendAuthSig);
             }
-            for (auto &output : vOutputsSapling) {
+            for ([[maybe_unused]] auto &output : vOutputsSapling) {
                 libzcash::GrothProof zkproof;
                 READWRITE(zkproof);
                 vOutputProofsSapling.push_back(zkproof);

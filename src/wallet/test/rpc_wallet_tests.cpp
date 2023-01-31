@@ -71,22 +71,6 @@ private:
 
 }
 
-static UniValue ValueFromString(const std::string &str)
-{
-    UniValue value;
-    BOOST_CHECK(value.setNumStr(str));
-    return value;
-}
-
-static SaplingPaymentAddress DefaultSaplingAddress(CWallet* pwallet) {
-    auto usk = pwallet->GenerateUnifiedSpendingKeyForAccount(0);
-
-    return usk.value()
-        .ToFullViewingKey()
-        .GetSaplingKey().value()
-        .FindAddress(libzcash::diversifier_index_t(0)).first;
-}
-
 BOOST_FIXTURE_TEST_SUITE(rpc_wallet_tests, WalletTestingSetup)
 
 BOOST_AUTO_TEST_CASE(rpc_addmultisig)
@@ -146,8 +130,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
         pwalletMain->SetAddressBook(demoPubkey.GetID(), "", strPurpose);
     });
 
-    CPubKey setaccountDemoPubkey = pwalletMain->GenerateNewKey(true);
-    CTxDestination setaccountDemoAddress(CTxDestination(setaccountDemoPubkey.GetID()));
+    pwalletMain->GenerateNewKey(true);
 
     /*********************************
      *                  getbalance
@@ -156,7 +139,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_THROW(CallRPC("getbalance " + keyIO.EncodeDestination(demoAddress)), runtime_error);
 
     /*********************************
-     * 			listunspent
+     *              listunspent
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listunspent"));
     BOOST_CHECK_THROW(CallRPC("listunspent string"), runtime_error);
@@ -167,7 +150,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK(r.get_array().empty());
 
     /*********************************
-     * 		listreceivedbyaddress
+     *          listreceivedbyaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listreceivedbyaddress"));
     BOOST_CHECK_NO_THROW(CallRPC("listreceivedbyaddress 0"));
@@ -201,22 +184,22 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_NO_THROW(CallRPC("listaddressgroupings"));
 
     /*********************************
-     * 		walletconfirmbackup
+     *          walletconfirmbackup
      *********************************/
     BOOST_CHECK_THROW(CallRPC(string("walletconfirmbackup \"badmnemonic\"")), runtime_error);
 
     /*********************************
-     * 		getrawchangeaddress
+     *          getrawchangeaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getrawchangeaddress"));
 
     /*********************************
-     * 		getnewaddress
+     *          getnewaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getnewaddress"));
 
     /*********************************
-     * 	signmessage + verifymessage
+     *      signmessage + verifymessage
      *********************************/
     BOOST_CHECK_NO_THROW(retValue = CallRPC("signmessage " + keyIO.EncodeDestination(demoAddress) + " mymessage"));
     BOOST_CHECK_THROW(CallRPC("signmessage"), runtime_error);
@@ -236,7 +219,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK(CallRPC("verifymessage " + keyIO.EncodeDestination(demoAddress) + " " + retValue.get_str() + " mymessage").get_bool() == true);
 
     /*********************************
-     * 		listaddresses
+     *          listaddresses
      *********************************/
     BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
     UniValue arr = retValue.get_array();
@@ -258,7 +241,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     }
 
     /*********************************
-     * 	     fundrawtransaction
+     *           fundrawtransaction
      *********************************/
     BOOST_CHECK_THROW(CallRPC("fundrawtransaction 28z"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("fundrawtransaction 01000000000180969800000000001976a91450ce0a4b0ee0ddeb633da85199728b940ac3fe9488ac00000000"), runtime_error);
@@ -550,7 +533,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     file.open(exportfilepath.string().c_str(), std::ios::in | std::ios::ate);
     BOOST_CHECK(file.is_open());
     bool fVerified = false;
-    int64_t nFilesize = std::max((int64_t)1, (int64_t)file.tellg());
     file.seekg(0, file.beg);
     while (file.good()) {
         std::string line;
@@ -1643,14 +1625,14 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
 
     // Sprout and Sapling inputs -> throw
     try {
-        auto operation = new AsyncRPCOperation_mergetoaddress(std::nullopt, mtx, inputs, sproutNoteInputs, saplingNoteInputs, testnetzaddr, 1);
+        new AsyncRPCOperation_mergetoaddress(std::nullopt, mtx, inputs, sproutNoteInputs, saplingNoteInputs, testnetzaddr, 1);
         BOOST_FAIL("Should have caused an error");
     } catch (const UniValue& objError) {
         BOOST_CHECK(find_error(objError, "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress"));
     }
     // Sprout inputs and TransactionBuilder -> throw
     try {
-        auto operation = new AsyncRPCOperation_mergetoaddress(TransactionBuilder(), mtx, inputs, sproutNoteInputs, {}, testnetzaddr, 1);
+        new AsyncRPCOperation_mergetoaddress(TransactionBuilder(), mtx, inputs, sproutNoteInputs, {}, testnetzaddr, 1);
         BOOST_FAIL("Should have caused an error");
     } catch (const UniValue& objError) {
         BOOST_CHECK(find_error(objError, "Sprout notes are not supported by the TransactionBuilder"));

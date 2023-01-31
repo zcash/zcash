@@ -44,7 +44,7 @@ TEST(Transaction, JSDescriptionRandomized) {
     std::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
 
     {
-        auto jsdesc = JSDescriptionInfo(
+        JSDescriptionInfo(
             joinSplitPubKey, rt,
             inputs, outputs,
             0, 0
@@ -62,7 +62,7 @@ TEST(Transaction, JSDescriptionRandomized) {
     }
 
     {
-        auto jsdesc = JSDescriptionInfo(
+        JSDescriptionInfo(
             joinSplitPubKey, rt,
             inputs, outputs,
             0, 0
@@ -77,7 +77,7 @@ TEST(Transaction, JSDescriptionRandomized) {
     }
 
     {
-        auto jsdesc = JSDescriptionInfo(
+        JSDescriptionInfo(
             joinSplitPubKey, rt,
             inputs, outputs,
             0, 0

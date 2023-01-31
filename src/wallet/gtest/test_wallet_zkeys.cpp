@@ -244,8 +244,7 @@ TEST(WalletZkeysTest, WriteZkeyDirectToDb) {
     wallet.GetSproutPaymentAddresses(addrs);
     ASSERT_EQ(0, addrs.size());
 
-    // Add random key to the wallet
-    auto paymentAddress = wallet.GenerateNewSproutZKey();
+    wallet.GenerateNewSproutZKey();
 
     // wallet should have one key
     wallet.GetSproutPaymentAddresses(addrs);

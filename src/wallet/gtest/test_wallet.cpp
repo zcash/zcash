@@ -501,7 +501,6 @@ TEST(WalletTests, CheckSproutNoteCommitmentAgainstNotePlaintext) {
 
     auto wtx = GetInvalidCommitmentSproutReceive(sk, 10, true);
     auto note = GetSproutNote(sk, wtx, 0, 1);
-    auto nullifier = note.nullifier(sk);
 
     auto hSig = ZCJoinSplit::h_sig(
         wtx.vJoinSplit[0].randomSeed,
@@ -657,7 +656,6 @@ TEST(WalletTests, GetConflictedSproutNotes) {
 
     auto wtx = GetValidSproutReceive(sk, 10, true);
     auto note = GetSproutNote(sk, wtx, 0, 1);
-    auto nullifier = note.nullifier(sk);
 
     auto wtx2 = GetValidSproutSpend(sk, note, 5);
     auto wtx3 = GetValidSproutSpend(sk, note, 10);
@@ -764,7 +762,6 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
         auto spend_note_witness =  wtx.mapSaplingNoteData[sop0].witnesses.front();
         auto maybe_nf = note2.nullifier(extfvk.fvk, spend_note_witness.position());
         ASSERT_EQ(static_cast<bool>(maybe_nf), true);
-        auto nullifier2 = maybe_nf.value();
 
         anchor = frontiers.sapling.root();
 
@@ -1774,7 +1771,7 @@ TEST(WalletTests, ClearNoteWitnessCache) {
 
     // After clearing, we should not have a witness for either note
     wallet.ClearNoteWitnessCache();
-    auto anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
+    GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
     EXPECT_FALSE((bool) sproutWitnesses[0]);
     EXPECT_FALSE((bool) sproutWitnesses[1]);
     EXPECT_FALSE((bool) saplingWitnesses[0]);
@@ -2077,7 +2074,6 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
 
     // Generate dummy recipient Sapling address
     auto sk2 = m.Derive(1);
-    auto expsk2 = sk2.expsk;
     auto extfvk2 = sk2.ToXFVK();
     auto pa2 = extfvk2.DefaultAddress();
 
@@ -2297,7 +2293,6 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     EXPECT_EQ(tx2.GetValueBalanceSapling(), 1000);
 
     CWalletTx wtx2 {&wallet, tx2};
-    auto hash2 = wtx2.GetHash();
 
     wallet.MarkAffectedTransactionsDirty(wtx);
 

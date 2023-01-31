@@ -216,7 +216,6 @@ BOOST_FIXTURE_TEST_SUITE(sighash_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(sighash_test)
 {
-    uint32_t overwinterBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
     SeedInsecureRand(false);
 
     #if defined(PRINT_SIGHASH_JSON)

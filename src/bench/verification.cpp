@@ -89,8 +89,7 @@ static void JoinSplitSig(benchmark::State& state)
     ed25519_sign(&joinSplitPrivKey, dataToBeSigned.begin(), 32, &joinSplitSig);
 
     while (state.KeepRunning()) {
-        // Declared with warn_unused_result.
-        auto res = ed25519_verify(
+        ed25519_verify(
             &joinSplitPubKey,
             &joinSplitSig,
             dataToBeSigned.begin(), 32);

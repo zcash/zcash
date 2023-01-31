@@ -111,7 +111,7 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
 
         {
             UniValue ciphertexts(UniValue::VARR);
-            for (const ZCNoteEncryption::Ciphertext ct : jsdescription.ciphertexts) {
+            for (const ZCNoteEncryption::Ciphertext& ct : jsdescription.ciphertexts) {
                 ciphertexts.push_back(HexStr(ct.begin(), ct.end()));
             }
             joinsplit.pushKV("ciphertexts", ciphertexts);

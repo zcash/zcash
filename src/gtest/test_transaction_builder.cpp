@@ -32,7 +32,6 @@ TEST(TransactionBuilder, TransparentToSapling)
     auto fvk_from = sk_from.full_viewing_key();
 
     auto sk = libzcash::SaplingSpendingKey::random();
-    auto expsk = sk.expanded_spending_key();
     auto fvk = sk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
     libzcash::diversifier_t d = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};

@@ -57,8 +57,8 @@ extern bool bSpendZeroConfChange;
 extern bool fSendFreeTransactions;
 extern bool fPayAtLeastCustomFee;
 extern unsigned int nAnchorConfirmations;
-// The maximum number of Orchard actions permitted within a single transaction.
-// This can be overridden with the -orchardactionlimit config option
+/// The maximum number of Orchard actions permitted within a single transaction.
+/// This can be overridden with the `-orchardactionlimit` config option
 extern unsigned int nOrchardActionLimit;
 
 static const unsigned int DEFAULT_KEYPOOL_SIZE = 100;
@@ -170,7 +170,7 @@ public:
 typedef std::map<std::string, std::string> mapValue_t;
 
 
-static void ReadOrderPos(int64_t& nOrderPos, mapValue_t& mapValue)
+static inline void ReadOrderPos(int64_t& nOrderPos, mapValue_t& mapValue)
 {
     if (!mapValue.count("n"))
     {
@@ -181,7 +181,7 @@ static void ReadOrderPos(int64_t& nOrderPos, mapValue_t& mapValue)
 }
 
 
-static void WriteOrderPos(const int64_t& nOrderPos, mapValue_t& mapValue)
+static inline void WriteOrderPos(const int64_t& nOrderPos, mapValue_t& mapValue)
 {
     if (nOrderPos == -1)
         return;
@@ -322,8 +322,8 @@ public:
      * See the comment in that class for a full description.
      */
     SaplingNoteData() : witnessHeight {-1}, nullifier(), spentHeight() { }
-    SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk) : ivk {ivk}, witnessHeight {-1}, nullifier() { }
-    SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk, uint256 n) : ivk {ivk}, witnessHeight {-1}, nullifier(n) { }
+    SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk) : witnessHeight {-1}, ivk {ivk}, nullifier() { }
+    SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk, uint256 n) : witnessHeight {-1}, ivk {ivk}, nullifier(n) { }
 
     std::list<SaplingWitness> witnesses;
     /**
@@ -1122,7 +1122,7 @@ typedef struct WalletDecryptedNotes {
     std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> saplingNoteDataAndAddressesToAdd;
 } WalletDecryptedNotes;
 
-class WalletBatchScanner : public BatchScanner {
+class WalletBatchScanner final : public BatchScanner {
 private:
     CWallet* pwallet;
     rust::Box<wallet::BatchScanner> inner;
@@ -1171,6 +1171,12 @@ class CWallet : public CCryptoKeyStore, public CValidationInterface
 private:
     friend class CWalletTx;
     friend class WalletBatchScanner;
+
+    /**
+     * Low-level virtual function on the superclass that we don’t want to expose.
+     */
+    bool AddUnifiedFullViewingKey(
+            const libzcash::ZcashdUnifiedFullViewingKey &ufvk);
 
     /**
      * Select a set of coins such that nValueRet >= nTargetValue and at least

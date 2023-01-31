@@ -333,28 +333,8 @@ template<> void AppendRandomLeaf(OrchardMerkleFrontier &tree) {
 }
 
 template<typename Tree> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, Tree &tree);
-template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SproutMerkleTree &tree) { return cache.GetSproutAnchorAt(rt, tree); }
-template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SaplingMerkleTree &tree) { return cache.GetSaplingAnchorAt(rt, tree); }
-template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, OrchardMerkleFrontier &tree) { return cache.GetOrchardAnchorAt(rt, tree); }
 
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
-
-void checkNullifierCache(const CCoinsViewCacheTest &cache, const TxWithNullifiers &txWithNullifiers, bool shouldBeInCache) {
-    // Make sure the nullifiers have not gotten mixed up
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.sproutNullifier, SAPLING));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.sproutNullifier, ORCHARD));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.saplingNullifier, SPROUT));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.saplingNullifier, ORCHARD));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.orchardNullifier, SPROUT));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.orchardNullifier, SAPLING));
-    // Check if the nullifiers either are or are not in the cache
-    bool containsSproutNullifier = cache.GetNullifier(txWithNullifiers.sproutNullifier, SPROUT);
-    bool containsSaplingNullifier = cache.GetNullifier(txWithNullifiers.saplingNullifier, SAPLING);
-    bool containsOrchardNullifier = cache.GetNullifier(txWithNullifiers.orchardNullifier, ORCHARD);
-    BOOST_CHECK(containsSproutNullifier == shouldBeInCache);
-    BOOST_CHECK(containsSaplingNullifier == shouldBeInCache);
-    BOOST_CHECK(containsOrchardNullifier == shouldBeInCache);
-}
 
 BOOST_AUTO_TEST_CASE(chained_joinsplits)
 {

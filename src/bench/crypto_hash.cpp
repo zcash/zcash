@@ -57,7 +57,7 @@ static void SHA512(benchmark::State& state)
         CSHA512().Write(begin_ptr(in), in.size()).Finalize(hash);
 }
 
-static void FastRandom_32bit(benchmark::State& state)
+static uint32_t FastRandom_32bit(benchmark::State& state)
 {
     FastRandomContext rng(true);
     uint32_t x = 0;
@@ -66,9 +66,10 @@ static void FastRandom_32bit(benchmark::State& state)
             x += rng.rand32();
         }
     }
+    return x;
 }
 
-static void FastRandom_1bit(benchmark::State& state)
+static uint32_t FastRandom_1bit(benchmark::State& state)
 {
     FastRandomContext rng(true);
     uint32_t x = 0;
@@ -77,6 +78,7 @@ static void FastRandom_1bit(benchmark::State& state)
             x += rng.randbool();
         }
     }
+    return x;
 }
 
 BENCHMARK(RIPEMD160);

@@ -647,21 +647,28 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
     }
 }
 
+bool CWallet::AddUnifiedFullViewingKey(const libzcash::ZcashdUnifiedFullViewingKey &zufvk)
+{
+    AssertLockHeld(cs_wallet);
+
+    if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {
+        return false;
+    }
+
+    return true;
+}
+
 bool CWallet::AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk)
 {
     AssertLockHeld(cs_wallet);
 
     auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
-    auto keyId = ufvk.GetKeyID(Params());
-    if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {
-        return false;
-    }
 
-    if (!fFileBacked) {
+    if (AddUnifiedFullViewingKey(zufvk) && fFileBacked) {
+        return CWalletDB(strWalletFile).WriteUnifiedFullViewingKey(ufvk);
+    } else {
         return true;
     }
-
-    return CWalletDB(strWalletFile).WriteUnifiedFullViewingKey(ufvk);
 }
 
 std::optional<ZcashdUnifiedFullViewingKey> CWallet::GetUnifiedFullViewingKeyByAccount(libzcash::AccountId accountId) const {
@@ -6059,7 +6066,7 @@ bool CWallet::DelAddressBook(const CTxDestination& address)
         {
             // Delete destdata tuples associated with address
             std::string strAddress = keyIO.EncodeDestination(address);
-            for (const std::pair<string, string> &item : mapAddressBook[address].destdata)
+            for (const std::pair<string, string> item : mapAddressBook[address].destdata)
             {
                 CWalletDB(strWalletFile).EraseDestData(strAddress, item.first);
             }

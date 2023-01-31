@@ -54,8 +54,8 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         CAmount fee,
         UniValue contextInfo) :
         builder_(std::move(builder)), ztxoSelector_(ztxoSelector), recipients_(recipients),
-        mindepth_(minDepth), anchordepth_(anchorDepth), strategy_(strategy), fee_(fee),
-        contextinfo_(contextInfo)
+        mindepth_(minDepth), anchordepth_(anchorDepth), fee_(fee), contextinfo_(contextInfo),
+        strategy_(strategy)
 {
     assert(fee_ >= 0);
     assert(mindepth_ >= 0);
@@ -105,8 +105,6 @@ void AsyncRPCOperation_sendmany::main() {
 
     set_state(OperationStatus::EXECUTING);
     start_execution_clock();
-
-    bool success = false;
 
 #ifdef ENABLE_MINING
     GenerateBitcoins(false, 0, Params());

@@ -930,7 +930,6 @@ void Unserialize(Stream& is, std::list<T, A>& l)
 {
     l.clear();
     unsigned int nSize = ReadCompactSize(is);
-    typename std::list<T, A>::iterator it = l.begin();
     for (unsigned int i = 0; i < nSize; i++)
     {
         T item;
