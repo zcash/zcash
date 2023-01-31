@@ -23,7 +23,6 @@ class WalletSaplingTest(BitcoinTestFramework):
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
-            '-allowdeprecated=z_gettotalbalance',
             '-allowdeprecated=z_listaddresses',
         ]] * self.num_nodes)
 
@@ -149,9 +148,14 @@ class WalletSaplingTest(BitcoinTestFramework):
         assert_equal(saplingAddrInfo1["address"], saplingAddr1)
         assert_equal(self.nodes[3].z_getbalance(saplingAddrInfo1["address"]), Decimal('5'))
 
-        # Verify that z_gettotalbalance only includes watch-only addresses when requested
-        assert_equal(self.nodes[3].z_gettotalbalance()['private'], '0.00')
-        assert_equal(self.nodes[3].z_gettotalbalance(1, True)['private'], '15.00')
+        # Verify that z_getbalances only includes transparent funds + watch-only addresses
+        balances = self.nodes[3].z_getbalances()
+        # total balance is equal to legacy transparent balance
+        assert_equal(Decimal(balances['legacy_transparent']['value']), Decimal('250.00'))
+        assert_equal(Decimal(balances['total']['value']), Decimal('250.00'))
+        # so the shielded balance here is exclusively watch-only
+        assert_equal(Decimal(balances['sapling_watchonly'][saplingAddrInfo0["address"]]['value']), Decimal('10'))
+        assert_equal(Decimal(balances['sapling_watchonly'][saplingAddrInfo1["address"]]['value']), Decimal('5'))
 
         # Make sure we get a useful error when trying to send to both sprout and sapling
         node4_sproutaddr = self.nodes[3].z_getnewaddress('sprout')

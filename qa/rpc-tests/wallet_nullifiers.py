@@ -20,7 +20,6 @@ class WalletNullifiersTest (BitcoinTestFramework):
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
-            '-allowdeprecated=z_gettotalbalance',
             '-allowdeprecated=z_listaddresses',
         ]] * self.num_nodes)
 
@@ -125,11 +124,10 @@ class WalletNullifiersTest (BitcoinTestFramework):
         # Test viewing keys
 
         node3mined = Decimal('250.0')
-        assert_equal({k: Decimal(v) for k, v in self.nodes[3].z_gettotalbalance().items()}, {
-            'transparent': node3mined,
-            'private': zsendmany2notevalue,
-            'total': node3mined + zsendmany2notevalue,
-        })
+        balances = self.nodes[3].z_getbalances()
+        assert_equal(node3mined, Decimal(balances['legacy_transparent']['value']))
+        assert_equal(zsendmany2notevalue, Decimal(balances['legacy_sapling'][myzaddr3]['value']))
+        assert_equal(node3mined + zsendmany2notevalue, Decimal(balances['total']['value']))
 
         # Add node 1 address and node 2 viewing key to node 3
         myzvkey = self.nodes[2].z_exportviewingkey(myzaddr)
@@ -164,23 +162,22 @@ class WalletNullifiersTest (BitcoinTestFramework):
                 if key != 'change' and key != 'blocktime':
                     assert_equal(received2[key], received3[key])
 
-        # Node 3's balances should be unchanged without explicitly requesting
-        # to include watch-only balances
-        assert_equal({k: Decimal(v) for k, v in self.nodes[3].z_gettotalbalance().items()}, {
-            'transparent': node3mined,
-            'private': zsendmany2notevalue,
-            'total': node3mined + zsendmany2notevalue,
-        })
+        # Node 3's balances should be unchanged 
+        balances = self.nodes[3].z_getbalances()
+        assert_equal(node3mined, Decimal(balances['legacy_transparent']['value']))
+        assert_equal(zsendmany2notevalue, Decimal(balances['legacy_sapling'][myzaddr3]['value']))
+        assert_equal(node3mined + zsendmany2notevalue, Decimal(balances['total']['value']))
 
         # Wallet can cache nullifiers for Sapling notes received by addresses it only has a
         # viewing key for.
-        assert_equal({k: Decimal(v) for k, v in self.nodes[3].z_gettotalbalance(1, True).items()}, {
-            'transparent': node3mined + Decimal('1.0'),
-            'private': zsendmany2notevalue + zaddrremaining2,
-            'total': node3mined + Decimal('1.0') + zsendmany2notevalue + zaddrremaining2,
-        })
+        assert_equal(
+                Decimal('1.0'), 
+                Decimal(balances['transparent_watchonly'][mytaddr1]['value']))
+        assert_equal(
+                zaddrremaining2, 
+                Decimal(balances['sapling_watchonly'][myzaddr]['value']))
 
-        # Check individual balances reflect the above
+        # Check that individual balances reflect the above
         assert_equal(self.nodes[3].z_getbalance(mytaddr1), Decimal('1.0'))
         assert_equal(self.nodes[3].z_getbalance(myzaddr), zaddrremaining2)
 

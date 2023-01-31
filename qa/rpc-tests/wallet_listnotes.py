@@ -29,7 +29,6 @@ class WalletListNotes(BitcoinTestFramework):
             nuparams(NU5_BRANCH_ID, 215),
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
-            '-allowdeprecated=z_gettotalbalance',
         ]] * 4)
 
     def run_test(self):

@@ -39,7 +39,6 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
-            '-allowdeprecated=z_gettotalbalance',
         ]
         return start_node(index, self.options.tmpdir, args + extra_args)
 
@@ -97,15 +96,16 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
 
         # Transparent coinbase outputs are subject to coinbase maturity
         assert_equal(self.nodes[0].getbalance(), Decimal('0'))
-        assert_equal(self.nodes[0].z_gettotalbalance()['transparent'], '0.00')
-        assert_equal(self.nodes[0].z_gettotalbalance()['private'], '0.00')
-        assert_equal(self.nodes[0].z_gettotalbalance()['total'], '0.00')
+        assert_equal(self.nodes[0].z_getbalances()['legacy_transparent']['value'], '0.00')
+        assert_equal(self.nodes[0].z_getbalances()['legacy_sapling'], {})
+        assert_equal(self.nodes[0].z_getbalances()['accounts'], [])
+        assert_equal(self.nodes[0].z_getbalances()['total']['value'], '0.00')
 
         # Shielded coinbase outputs are not subject to coinbase maturity
         assert_equal(self.nodes[1].z_getbalance(node1_zaddr, 0), 5)
         assert_equal(self.nodes[1].z_getbalance(node1_zaddr), 5)
-        assert_equal(self.nodes[1].z_gettotalbalance()['private'], '5.00')
-        assert_equal(self.nodes[1].z_gettotalbalance()['total'], '5.00')
+        assert_equal(self.nodes[1].z_getbalances()['legacy_sapling'][node1_zaddr]['value'], '5.00')
+        assert_equal(self.nodes[1].z_getbalances()['total']['value'], '5.00')
 
         # Send from Sapling coinbase to Sapling address and transparent address
         # (to check that a non-empty vout is allowed when spending shielded

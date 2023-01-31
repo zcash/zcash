@@ -758,6 +758,9 @@ public:
             tx(txIn), i(iIn), nDepth(nDepthIn), fSpendable(fSpendableIn), fIsCoinbase(fIsCoinbaseIn){ }
 
     CAmount Value() const { return tx->vout[i].nValue; }
+
+    const CTxOut& TxOut() const { return tx->vout[i]; }
+
     std::string ToString() const;
 };
 

@@ -33,7 +33,6 @@ class WalletZSendmanyTest(BitcoinTestFramework):
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
-            '-allowdeprecated=z_gettotalbalance',
         ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
@@ -56,10 +55,20 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
     def check_balance(self, node, account, address, expected, minconf=1):
         acct_balance = self._check_balance_for_rpc('z_getbalanceforaccount', node, account, expected, minconf)
+
+        # This intentionally continues to test th deprecated & disabled z_getbalance method.
+        # Remove these tests when z_getbalance is removed.
         z_getbalance = self.nodes[node].z_getbalance(address, minconf)
         assert_equal(acct_balance, z_getbalance)
+
         fvk = self.nodes[node].z_exportviewingkey(address)
         self._check_balance_for_rpc('z_getbalanceforviewingkey', node, fvk, expected, minconf)
+
+        acct_records = [a for a in self.nodes[node].z_getbalances(minconf)['accounts'] if a['account'] == account]
+        assert_equal(len(acct_records), 1)
+        acct_record = acct_records[0]
+        for pool in expected:
+            assert_equal(expected[pool] * COIN, acct_record[pool]['valueZat'])
 
     def run_test(self):
         # z_sendmany is expected to fail if tx size breaks limit
@@ -92,7 +101,10 @@ class WalletZSendmanyTest(BitcoinTestFramework):
             errorString = e.error['message']
         assert("size of raw transaction would be larger than limit" in errorString)
 
-        # add zaddr to node 2
+        # get previously existing Sprout address for node 2
+        sproutAddr = self.nodes[2].listaddresses()[0]['sprout']['addresses'][0]
+
+        # add Sapling address to node 2
         myzaddr = self.nodes[2].z_getnewaddress()
 
         # add taddr to node 2
@@ -129,15 +141,14 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance(), node2utxobalance)
         assert_equal(self.nodes[2].getbalance("*"), node2utxobalance)
 
-        # check zaddr balance with z_getbalance
+        # check zaddr balance with z_getbalances
         zbalance = zsendmanynotevalue
-        assert_equal(self.nodes[2].z_getbalance(myzaddr), zbalance)
 
-        # check via z_gettotalbalance
-        resp = self.nodes[2].z_gettotalbalance()
-        assert_equal(Decimal(resp["transparent"]), node2utxobalance)
-        assert_equal(Decimal(resp["private"]), node2sproutbalance + zbalance)
-        assert_equal(Decimal(resp["total"]), node2utxobalance + node2sproutbalance + zbalance)
+        balances = self.nodes[2].z_getbalances()
+        assert_equal(Decimal(balances['legacy_transparent']['value']), node2utxobalance)
+        assert_equal(Decimal(balances['sprout'][sproutAddr]['value']), node2sproutbalance)
+        assert_equal(Decimal(balances['legacy_sapling'][myzaddr]['value']), zbalance)
+        assert_equal(Decimal(balances["total"]['value']), node2utxobalance + node2sproutbalance + zbalance)
 
         # check confirmed shielded balance with getwalletinfo
         wallet_info = self.nodes[2].getwalletinfo()
@@ -273,7 +284,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         zbalance += Decimal('3.0')
         self.check_balance(0, 0, n0ua0, {'sapling': 2})
-        assert_equal(Decimal(self.nodes[2].z_getbalance(myzaddr)), zbalance)
+        assert_equal(Decimal(self.nodes[2].z_getbalances()['legacy_sapling'][myzaddr]['value']), zbalance)
 
         # Send funds back from the legacy taddr to the UA. This requires
         # AllowRevealedSenders, but we can also use any weaker policy that
@@ -301,7 +312,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         zbalance -= Decimal('2.0')
         self.check_balance(0, 0, n0ua0, {'sapling': 8})
-        assert_equal(Decimal(self.nodes[2].z_getbalance(myzaddr)), zbalance)
+        assert_equal(Decimal(self.nodes[2].z_getbalances()['legacy_sapling'][myzaddr]['value']), zbalance)
 
         #
         # Test that z_sendmany avoids UA linkability unless we allow it.
@@ -326,8 +337,13 @@ class WalletZSendmanyTest(BitcoinTestFramework):
             self.nodes[1].z_getbalanceforaccount(n1account)['pools'],
             {'transparent': {'valueZat': 4 * COIN}},
         )
+        assert_equal(
+            Decimal(self.nodes[1].z_getbalances()['accounts'][0]['transparent']['value']), 
+            Decimal('4')
+        )
 
         # The addresses should see only the transparent funds sent to them.
+        # This intentionally tests the not-yet-removed deprecated `z_getbalance` API.
         assert_equal(self.nodes[1].z_getbalance(n1ua0), 2)
         assert_equal(self.nodes[1].z_getbalance(n1ua1), 2)
 
@@ -368,9 +384,14 @@ class WalletZSendmanyTest(BitcoinTestFramework):
             self.nodes[1].z_getbalanceforaccount(n1account)['pools'],
             {'sapling': {'valueZat': 1 * COIN}},
         )
+        assert_equal(
+            Decimal(self.nodes[1].z_getbalances()['accounts'][0]['sapling']['value']), 
+            Decimal('1')
+        )
 
-        # The addresses should both show the same balance, as they both show the
-        # Sapling balance.
+        # The addresses should both show the same balance, as they both show the Sapling balance
+        # for the same unified account even though they're differenct Sapling addresses.
+        # This intentionally tests the not-yet-removed deprecated `z_getbalance` API.
         assert_equal(self.nodes[1].z_getbalance(n1ua0), 1)
         assert_equal(self.nodes[1].z_getbalance(n1ua1), 1)
 
@@ -425,7 +446,6 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # Test sending Sprout funds to Orchard-only UA
         #
 
-        sproutAddr = self.nodes[2].listaddresses()[0]['sprout']['addresses'][0]
         recipients = [{"address":n0orchard_only, "amount":100}]
         for (policy, msg) in [
             ('FullPrivacy', 'Could not send to a shielded receiver of a unified address without spending funds from a different pool, which would reveal transaction amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` or weaker if you wish to allow this transaction to proceed anyway.'),

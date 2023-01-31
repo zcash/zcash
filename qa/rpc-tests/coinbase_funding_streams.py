@@ -32,7 +32,6 @@ class CoinbaseFundingStreamsTest (BitcoinTestFramework):
             "-nurejectoldversions=false",
             "-allowdeprecated=z_getnewaddress",
             "-allowdeprecated=z_getbalance",
-            "-allowdeprecated=z_gettotalbalance",
         ]
         return start_node(index, self.options.tmpdir, args + extra_args)
 
@@ -96,8 +95,8 @@ class CoinbaseFundingStreamsTest (BitcoinTestFramework):
         # funding stream payments
         assert_equal(self.nodes[0].z_getbalance(fs_addr, 0), 5)
         assert_equal(self.nodes[0].z_getbalance(fs_addr), 5)
-        assert_equal(self.nodes[0].z_gettotalbalance()['private'], '5.00')
-        assert_equal(self.nodes[0].z_gettotalbalance()['total'], '5.00')
+        assert_equal(self.nodes[0].z_getbalances()['legacy_sapling'][fs_addr]['value'], '5.00')
+        assert_equal(self.nodes[0].z_getbalances()['total']['value'], '5.00')
 
 if __name__ == '__main__':
     CoinbaseFundingStreamsTest().main()

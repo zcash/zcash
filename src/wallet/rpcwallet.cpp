@@ -118,6 +118,13 @@ void ThrowIfInitialBlockDownload()
     }
 }
 
+UniValue BalancesObject(CAmount balance) {
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("value", FormatMoney(balance));
+    obj.pushKV("valueZat", balance);
+    return obj;
+}
+
 void WalletTxToJSON(const CWalletTx& wtx, UniValue& entry, const std::optional<int>& asOfHeight)
 {
     int confirms = wtx.GetDepthInMainChain(asOfHeight);
@@ -4245,6 +4252,244 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
     return result;
 }
 
+UniValue z_getbalances(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 2)
+        throw runtime_error(
+            "z_getbalances ( minconf )\n"
+            "\nReturns the balances available for each independent spending authority held by the wallet,\n"
+            "and optionally the balances and received amounts associated with imported watch-only addresses\n"
+            "and viewing keys.\n"
+            "This includes the legacy transparent pool of funds, each distinct Sprout and Sapling address\n"
+            "derived using `z_getnewaddress` or from spending keys imported with `z_importkey`, and funds\n"
+            "held by each HD-derived Unified Account in the wallet.\n"
+            "\nArguments:\n"
+            "1. minconf          (numeric, optional, default=1) Only include private and transparent transactions confirmed at least this many times.\n"
+            "2. includeWatchonly (bool, optional, default=false) Also include balance in watchonly addresses (see 'importaddress' and 'z_importviewingkey')\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"legacy_transparent\": {                (object, optional) the balances of transparent funds held by legacy transparent keys,\n"
+            "                                         in " + CURRENCY_UNIT + " and " + MINOR_CURRENCY_UNIT + ". The object format documented\n"
+            "                                         for this value is also used for each object denoted by `{...}` below.\n"
+            "                                         All funds held in legacy transparent addresses are treated as though they are associated\n"
+            "                                         with a single spending authority.\n"
+            "    \"value\": xxxxx,\n                    (numeric) the amount in " + CURRENCY_UNIT + "\n"
+            "    \"valueZat\": xxxxx,\n                 (numeric) the amount in " + MINOR_CURRENCY_UNIT + "\n"
+            "  },\n"
+            "  \"transparent_watchonly\": {             (object, optional) the balances of transparent funds associated with watch-only transparent addresses\n"
+            "                                         Each such address is treated as being associated with an independent spending authority.\n"
+            "    \"<t_addr_1>\": {...},\n"
+            "    \"<t_addr_2>\": {...},\n"
+            "    ...\n"
+            "  },\n"
+            "  \"sprout\": {                            (object, optional) the balances held by each Sprout spending key in the wallet, keyed by address.\n"
+            "                                         Each such address is treated as being associated with an independent spending authority.\n"
+            "    \"<sprout_addr_1>\": {...},\n"
+            "    \"<sprout_addr_2>\": {...},\n"
+            "    ...\n"
+            "  },\n"
+            "  \"sprout_watchonly_received\": {         (object, optional) the received total visible to each Sprout viewing key in the wallet where the wallet\n"
+            "                                         has no corresponding spending authority, keyed by address. Each such address is treated as being \n"
+            "                                         associated with an independent spending authority. Note that these do not represent balances, as Sprout\n"
+            "                                         viewing keys are not capable of detecting when notes are spent.\n"
+            "    \"<sprout_addr_1>\": {...}\n"
+            "    ...\n"
+            "  },\n"
+            "  \"legacy_sapling\": {                    (object, optional) the balances held by each legacy Sapling spending key in the wallet, keyed by address.\n"
+            "                                           Each such address is treated as being associated with an independent spending authority.\n"
+            "    \"<sapling_addr_1>\": {...},\n"
+            "    \"<sapling_addr_2>\": {...},\n"
+            "    ...\n"
+            "  },\n"
+            "  \"sapling_watchonly\": {                 (object, optional) the balance viewable by each Sapling viewing key in the wallet for which the wallet\n"
+            "                                           does not hold spending authority, keyed by the default address corresponding to the associated incoming\n"
+            "                                           viewing key. Each such address is associated with an independent spending authority. \n"
+            "    \"<sapling_addr_1>\": {...},\n"
+            "    \"<sapling_addr_2>\": {...},\n"
+            "    ...\n"
+            "  },\n"
+            "  \"accounts\": [                          (object, optional) the balances held by each Unified Account spending authority in the wallet\n"
+            "    {\n"
+            "      \"account\": xxx, n                  (numeric) the Unified Account identifier\n"
+            "      \"transparent\": {...},              (numeric, optional) the transparent balance held by the account\n"
+            "      \"sapling\": {...},                  (numeric, optional) the Sapling balance held by the account\n"
+            "      \"orchard\": {...},                  (numeric, optional) the Orchard balance held by the account\n"
+            "      \"total\": {...}                     (numeric) the total funds in all pools held by the account\n"
+            "    }\n"
+            "    ...\n"
+            "  ],\n"
+            "  \"total\": {...},                        (object) the total of all funds for which this wallet controls spending keys,\n"
+            "}\n"
+            "\nExamples:\n"
+            "\nThe totals of all funds held by (and optionally watched by) keys in the wallet\n"
+            + HelpExampleCli("z_getbalances", "") +
+            "\nThe totals of all funds held by the wallet at least 5 blocks confirmed\n"
+            + HelpExampleCli("z_getbalances", "5") +
+            "\nAs a JSON RPC call\n"
+            + HelpExampleRpc("z_getbalances", "5")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    int nMinDepth = parseMinconf(1, params, 0, std::nullopt);
+
+    KeyIO keyIO(Params());
+    CAmount nTotalBalance = 0;
+
+    // legacy transparent balance
+    bool hasLegacyTransparent = false;
+    CAmount nLegacyTransparentBalance = 0;
+    vector<COutput> legacyTransparentOutputs = pwalletMain->AvailableCoins(
+            std::nullopt,
+            false,       // fOnlyConfirmed
+            nullptr,     // coinControl
+            false,       // fIncludeZeroValue
+            true,        // fIncludeCoinBase
+            ISMINE_LEGACY_SPENDABLE,
+            nMinDepth);
+    for (const COutput& out : legacyTransparentOutputs) {
+        hasLegacyTransparent = true;
+        nLegacyTransparentBalance += out.tx->vout[out.i].nValue;
+        nTotalBalance += out.tx->vout[out.i].nValue;
+    }
+
+    // transparent watch-only balances
+    bool hasTransparentWatchOnly = false;
+    UniValue transparentWatchOnlyBalances(UniValue::VOBJ);
+    vector<COutput> transparentWatchOnlyOutputs = pwalletMain->AvailableCoins(
+            std::nullopt,
+            false,       // fOnlyConfirmed
+            nullptr,     // coinControl
+            false,       // fIncludeZeroValue
+            true,        // fIncludeCoinBase
+            ISMINE_WATCH_ONLY,
+            nMinDepth);
+    for (const COutput& out : transparentWatchOnlyOutputs) {
+        hasTransparentWatchOnly = true;
+        CTxDestination addr;
+        if (ExtractDestination(out.TxOut().scriptPubKey, addr)) {
+            transparentWatchOnlyBalances.pushKV(
+                    keyIO.EncodeDestination(addr),
+                    BalancesObject(out.Value()));
+        } else {
+            // It's not clear that we could ever encounter this condition given,
+            // how address imports work, but we handle it for completeness.
+            transparentWatchOnlyBalances.pushKV(
+                    "(Address Unknown)",
+                    BalancesObject(out.Value()));
+        }
+    }
+
+    /// sprout balances
+    bool hasSprout = false;
+    bool hasSproutWatchOnly = false;
+    UniValue sproutBalances(UniValue::VOBJ);
+    UniValue sproutWatchOnlyReceived(UniValue::VOBJ);
+    std::set<libzcash::SproutPaymentAddress> sproutAddresses;
+    pwalletMain->GetSproutPaymentAddresses(sproutAddresses);
+    for (const SproutPaymentAddress& addr : sproutAddresses) {
+        auto sproutBalance = getBalanceZaddr(addr, std::nullopt, nMinDepth, INT_MAX, false);
+        if (pwalletMain->HaveSproutSpendingKey(addr)) {
+            hasSprout = true;
+            sproutBalances.pushKV(keyIO.EncodePaymentAddress(addr), BalancesObject(sproutBalance));
+            nTotalBalance += sproutBalance;
+        } else {
+            hasSproutWatchOnly = true;
+            sproutWatchOnlyReceived.pushKV(keyIO.EncodePaymentAddress(addr), BalancesObject(sproutBalance));
+        }
+    }
+
+    /// legacy sapling & sapling watch-only addresses
+    bool hasLegacySapling = false;
+    bool hasSaplingWatchOnly = false;
+    UniValue legacySaplingBalances(UniValue::VOBJ);
+    UniValue saplingWatchOnlyBalances(UniValue::VOBJ);
+    std::set<libzcash::SaplingPaymentAddress> legacySaplingAddrs;
+    pwalletMain->GetSaplingPaymentAddresses(legacySaplingAddrs);
+    for (const SaplingPaymentAddress& addr : legacySaplingAddrs) {
+        // if the address is associated with the legacy HD seed, or if there is no corresponding
+        // unified address metadata, then this is a legacy or watchonly address
+        if (GetSourceForPaymentAddress(pwalletMain)(addr) == PaymentAddressSource::LegacyHDSeed
+                    || !pwalletMain->GetUFVKMetadataForReceiver(addr).has_value()) {
+            auto saplingBalance = getBalanceZaddr(addr, std::nullopt, nMinDepth, INT_MAX, false);
+            if (pwalletMain->HaveSaplingSpendingKeyForAddress(addr)) {
+                hasLegacySapling = true;
+                legacySaplingBalances.pushKV(keyIO.EncodePaymentAddress(addr), BalancesObject(saplingBalance));
+                nTotalBalance += saplingBalance;
+            } else {
+                hasSaplingWatchOnly = true;
+                saplingWatchOnlyBalances.pushKV(keyIO.EncodePaymentAddress(addr), BalancesObject(saplingBalance));
+            }
+        }
+    }
+
+    // unified account balances
+    bool hasUnifiedAccounts = false;
+    UniValue accountBalances(UniValue::VARR);
+    for (const auto& [acctKey, ufvkId] : pwalletMain->mapUnifiedAccountKeys) {
+        hasUnifiedAccounts = true;
+        auto selector = pwalletMain->ZTXOSelectorForAccount(
+                acctKey.second,
+                true,
+                TransparentCoinbasePolicy::Allow
+                );
+        auto spendableInputs = pwalletMain->FindSpendableInputs(selector.value(), nMinDepth, std::nullopt);
+
+        CAmount transparentBalance = 0;
+        CAmount saplingBalance = 0;
+        CAmount orchardBalance = 0;
+        for (const auto& t : spendableInputs.utxos) {
+            transparentBalance += t.Value();
+        }
+        for (const auto& t : spendableInputs.saplingNoteEntries) {
+            saplingBalance += t.note.value();
+        }
+        for (const auto& t : spendableInputs.orchardNoteMetadata) {
+            orchardBalance += t.GetNoteValue();
+        }
+
+        CAmount accountTotal = transparentBalance + saplingBalance + orchardBalance;
+        nTotalBalance += accountTotal;
+
+        UniValue result(UniValue::VOBJ);
+        auto renderBalance = [&](std::string poolName, CAmount balance) {
+            if (balance > 0) {
+                result.pushKV(poolName, BalancesObject(balance));
+            }
+        };
+
+        const libzcash::AccountId accountId = acctKey.second;
+        result.pushKV("account", accountId);
+        renderBalance("transparent", transparentBalance);
+        renderBalance("sapling", saplingBalance);
+        renderBalance("orchard", orchardBalance);
+        renderBalance("total", accountTotal);
+
+        accountBalances.push_back(result);
+    }
+
+    UniValue result(UniValue::VOBJ);
+    if (hasLegacyTransparent)
+        result.pushKV("legacy_transparent", BalancesObject(nLegacyTransparentBalance));
+    if (hasTransparentWatchOnly)
+        result.pushKV("transparent_watchonly", transparentWatchOnlyBalances);
+    if (hasSprout)
+        result.pushKV("sprout", sproutBalances);
+    if (hasSproutWatchOnly)
+        result.pushKV("sprout_watchonly_received", sproutWatchOnlyReceived);
+    if (hasLegacySapling)
+        result.pushKV("legacy_sapling", legacySaplingBalances);
+    if (hasSaplingWatchOnly)
+        result.pushKV("sapling_watchonly", saplingWatchOnlyBalances);
+    if (hasUnifiedAccounts)
+        result.pushKV("accounts", accountBalances);
+    result.pushKV("total", BalancesObject(nTotalBalance));
+    return result;
+}
+
 UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -5985,6 +6230,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "z_listreceivedbyaddress",  &z_listreceivedbyaddress,  false },
     { "wallet",             "z_listunspent",            &z_listunspent,            false },
     { "wallet",             "z_getbalance",             &z_getbalance,             false },
+    { "wallet",             "z_getbalances",            &z_getbalances,            false },
     { "wallet",             "z_gettotalbalance",        &z_gettotalbalance,        false },
     { "wallet",             "z_getbalanceforviewingkey",&z_getbalanceforviewingkey,false },
     { "wallet",             "z_getbalanceforaccount",   &z_getbalanceforaccount,   false },

@@ -7,6 +7,11 @@ Notable changes
 RPC Changes
 -----------
 
+- A new RPC method, `z_getbalances` has been added. This returns complete
+  balance information for the wallet, for each independent spending authority
+  and each watch-only address tracked by the wallet. It supersedes the
+  deprecated `z_gettotalbalance` and `z_getbalance` methods.
+
 - `getbalance` will no longer include transparent value associated with
   transparent receivers of unified addresses belonging to the wallet as part
   of its returned balance; instead, it will only return the balance associated

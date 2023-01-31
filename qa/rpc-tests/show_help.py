@@ -41,8 +41,8 @@ Options:
        Explicitly allow the use of the specified deprecated feature. Multiple
        instances of this parameter are permitted; values for <feature> must be
        selected from among {"none", "deprecationinfo_deprecationheight",
-       "gbt_oldhashes", "z_getbalance", "z_gettotalbalance", "addrtype",
-       "getnewaddress", "getrawchangeaddress", "legacy_privacy",
+       "gbt_oldhashes", "z_getbalance", "z_gettotalbalance", "addrtype", 
+       "getnewaddress", "getrawchangeaddress", "legacy_privacy", 
        "wallettxvjoinsplit", "z_getnewaddress", "z_listaddresses"}
 
   -blocknotify=<cmd>
@@ -97,7 +97,7 @@ Options:
        Keep at most <n> unconnectable transactions in memory (default: 100)
 
   -par=<n>
-       Set the number of script verification threads (IGNORE_NONDETERMINISTIC, 0 = auto, <0 =
+       Set the number of script verification threads (-16 to 16, 0 = auto, <0 =
        leave that many cores free, default: 0)
 
   -pid=<file>

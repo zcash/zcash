@@ -26,7 +26,6 @@ class ShorterBlockTimes(BitcoinTestFramework):
             '-minrelaytxfee=0',
             nuparams(BLOSSOM_BRANCH_ID, 106),
             '-allowdeprecated=z_getnewaddress',
-            '-allowdeprecated=z_gettotalbalance',
         ]] * self.num_nodes)
 
     def run_test(self):
@@ -46,7 +45,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(10, Decimal(self.nodes[0].z_gettotalbalance()['private']))
+        assert_equal(10, Decimal(self.nodes[0].z_getbalances()['legacy_sapling'][node0_zaddr]['value']))
 
         self.nodes[0].generate(2)
         self.sync_all()
@@ -71,7 +70,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
         self.sync_all() # Ensure the transaction has propagated to node 1
         self.nodes[1].generate(1)
         self.sync_all()
-        assert_equal(20, Decimal(self.nodes[0].z_gettotalbalance()['private']))
+        assert_equal(20, Decimal(self.nodes[0].z_getbalances()['legacy_sapling'][node0_zaddr]['value']))
 
 
 if __name__ == '__main__':

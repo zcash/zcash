@@ -42,8 +42,6 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=legacy_privacy',
             '-allowdeprecated=z_getnewaddress',
-            '-allowdeprecated=z_getbalance',
-            '-allowdeprecated=z_gettotalbalance',
         ]] * 4 )
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
@@ -180,10 +178,10 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         assert(initialized_line < finished_line)
 
         # check balances (the z_sendmany consumes 3 coinbase utxos)
-        resp = self.nodes[0].z_gettotalbalance()
-        assert_equal(Decimal(resp["transparent"]), Decimal('20.0'))
-        assert_equal(Decimal(resp["private"]), shieldvalue)
-        assert_equal(Decimal(resp["total"]), Decimal('20.0') + shieldvalue)
+        resp = self.nodes[0].z_getbalances()
+        assert_equal(Decimal(resp['legacy_transparent']['value']), Decimal('20.0'))
+        assert_equal(Decimal(resp['legacy_sapling'][myzaddr]['value']), shieldvalue)
+        assert_equal(Decimal(resp['total']['value']), Decimal('20.0') + shieldvalue)
 
         # The Sapling value pool should reflect the send
         saplingvalue = shieldvalue
@@ -198,10 +196,10 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
-        resp = self.nodes[0].z_gettotalbalance()
-        assert_equal(Decimal(resp["transparent"]), Decimal('20.0'))
-        assert_equal(Decimal(resp["private"]), saplingvalue)
-        assert_equal(Decimal(resp["total"]), Decimal('20.0') + saplingvalue)
+        resp = self.nodes[0].z_getbalances()
+        assert_equal(Decimal(resp['legacy_transparent']['value']), Decimal('20.0'))
+        assert_equal(Decimal(resp['legacy_sapling'][myzaddr]['value']), saplingvalue)
+        assert_equal(Decimal(resp['total']['value']), Decimal('20.0') + saplingvalue)
 
         # The Sapling value pool should be unchanged
         check_value_pool(self.nodes[0], 'sapling', saplingvalue)
@@ -220,10 +218,10 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
 
         # check balances
         saplingvalue -= unshieldvalue + DEFAULT_FEE
-        resp = self.nodes[0].z_gettotalbalance()
-        assert_equal(Decimal(resp["transparent"]), Decimal('30.0'))
-        assert_equal(Decimal(resp["private"]), saplingvalue)
-        assert_equal(Decimal(resp["total"]), Decimal('30.0') + saplingvalue)
+        resp = self.nodes[0].z_getbalances()
+        assert_equal(Decimal(resp['legacy_transparent']['value']), Decimal('30.0'))
+        assert_equal(Decimal(resp['legacy_sapling'][myzaddr]['value']), saplingvalue)
+        assert_equal(Decimal(resp['total']['value']), Decimal('30.0') + saplingvalue)
         check_value_pool(self.nodes[0], 'sapling', saplingvalue)
 
         # z_sendmany will return an error if there is transparent change output considered dust.
@@ -337,16 +335,17 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         node2balance = node2balance + 9
         assert_equal(self.nodes[2].getbalance(), node2balance)
 
-        # Check that chained joinsplits in a single tx are created successfully.
+        # Check that multiple recipients in a single tx are created successfully.
         recipients = []
         num_recipients = 3
         amount_per_recipient = Decimal('0.002')
         minconf = 1
         send_amount = num_recipients * amount_per_recipient
         custom_fee = Decimal('0.00012345')
-        zbalance = self.nodes[0].z_getbalance(myzaddr)
+        zbalance = Decimal(self.nodes[0].z_getbalances()['legacy_sapling'][myzaddr]['value'])
+        account = self.nodes[2].z_getnewaccount()['account']
         for i in range(0,num_recipients):
-            newzaddr = self.nodes[2].z_getnewaddress('sapling')
+            newzaddr = self.nodes[2].z_getaddressforaccount(account, ['sapling'])['address']
             recipients.append({"address":newzaddr, "amount":amount_per_recipient})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients, minconf, custom_fee)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
@@ -355,15 +354,16 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
 
         # check balances and unspent notes
-        resp = self.nodes[2].z_gettotalbalance()
-        assert_equal(Decimal(resp["private"]), send_amount)
+        resp = self.nodes[2].z_getbalances()
+        account_total = Decimal(resp["accounts"][account]['total']['value']);
+        assert_equal(account_total, send_amount)
 
         notes = self.nodes[2].z_listunspent()
         sum_of_notes = sum([note["amount"] for note in notes])
-        assert_equal(Decimal(resp["private"]), sum_of_notes)
+        assert_equal(account_total, sum_of_notes)
 
-        resp = self.nodes[0].z_getbalance(myzaddr)
-        assert_equal(Decimal(resp), zbalance - custom_fee - send_amount)
+        resp= Decimal(self.nodes[0].z_getbalances()['legacy_sapling'][myzaddr]['value'])
+        assert_equal(resp, zbalance - custom_fee - send_amount)
         saplingvalue -= custom_fee
         check_value_pool(self.nodes[0], 'sapling', saplingvalue)
 

@@ -20,7 +20,6 @@ from time import sleep
 BASE_ARGS = [
     '-debug=mempool',
     '-allowdeprecated=z_getnewaddress',
-    '-allowdeprecated=z_gettotalbalance',
 ]
 
 # Test wallet behaviour with Sapling addresses
@@ -60,9 +59,9 @@ class MempoolLimit(BitcoinTestFramework):
         self.sync_all()
         self.nodes[0].generate(100)
         self.sync_all()
-        assert_equal(Decimal("10.00"), Decimal(self.nodes[1].z_gettotalbalance()['transparent']))
-        assert_equal(Decimal("10.00"), Decimal(self.nodes[2].z_gettotalbalance()['transparent']))
-        assert_equal(Decimal("10.00"), Decimal(self.nodes[3].z_gettotalbalance()['transparent']))
+        assert_equal(Decimal("10.00"), Decimal(self.nodes[1].z_getbalances()['legacy_transparent']['value']))
+        assert_equal(Decimal("10.00"), Decimal(self.nodes[2].z_getbalances()['legacy_transparent']['value']))
+        assert_equal(Decimal("10.00"), Decimal(self.nodes[3].z_getbalances()['legacy_transparent']['value']))
 
         zaddr1 = self.nodes[0].z_getnewaddress('sapling')
         zaddr2 = self.nodes[0].z_getnewaddress('sapling')

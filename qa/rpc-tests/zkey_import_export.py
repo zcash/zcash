@@ -28,7 +28,6 @@ class ZkeyImportExportTest (BitcoinTestFramework):
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
-            '-allowdeprecated=z_gettotalbalance',
         ]] * 5)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
@@ -71,9 +70,8 @@ class ZkeyImportExportTest (BitcoinTestFramework):
                     amts, txs)
                 raise
 
-        def get_private_balance(node):
-            balance = node.z_gettotalbalance()
-            return balance['private']
+        def get_legacy_sapling_balance(node, addr):
+            return Decimal(node.z_getbalances()['legacy_sapling'][addr]['value'])
 
         # Seed Alice with some funds
         alice.generate(10)
@@ -99,7 +97,7 @@ class ZkeyImportExportTest (BitcoinTestFramework):
 
         # Internal test consistency assertion:
         assert_greater_than(
-            Decimal(get_private_balance(alice)),
+            Decimal(get_legacy_sapling_balance(alice, alice_zaddr)),
             reduce(Decimal.__add__, amounts))
 
         logging.info("Sending pre-export txns...")
@@ -153,14 +151,14 @@ class ZkeyImportExportTest (BitcoinTestFramework):
 
         bob_balance = sum(amounts[2:]) - int(bob_fee)
         
-        assert_equal(bob.z_getbalance(bob_zaddr), bob_balance)
+        assert_equal(get_legacy_sapling_balance(bob, bob_zaddr), bob_balance)
 
         # z_import onto new node "david" (blockchain rescan, default or True?)
         d_ipk_zaddr = david.z_importkey(bob_privkey)
 
         # Check if amt bob spent is deducted for charlie and david
-        assert_equal(charlie.z_getbalance(ipk_zaddr["address"]), bob_balance)
-        assert_equal(david.z_getbalance(d_ipk_zaddr["address"]), bob_balance)
+        assert_equal(get_legacy_sapling_balance(charlie, ipk_zaddr["address"]), bob_balance)
+        assert_equal(get_legacy_sapling_balance(david, d_ipk_zaddr["address"]), bob_balance)
 
 if __name__ == '__main__':
     ZkeyImportExportTest().main()

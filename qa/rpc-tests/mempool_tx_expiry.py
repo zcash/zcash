@@ -28,7 +28,6 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
             '-debug=mempool',
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
-            '-allowdeprecated=z_gettotalbalance',
         ]] * self.num_nodes)
 
     # Test before, at, and after expiry block
@@ -85,9 +84,9 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         self.sync_all()
 
         # Get balance on node 0
-        bal = self.nodes[0].z_gettotalbalance()
-        print("Balance before zsend, after shielding 10: ", bal)
-        assert_equal(Decimal(bal["private"]), Decimal('10.0') - DEFAULT_FEE)
+        bal = self.nodes[0].z_getbalances()
+        print("Balances before zsend, after shielding 10: ", bal)
+        assert_equal(Decimal(bal['legacy_sapling'][z_alice]['value']), Decimal('10.0') - DEFAULT_FEE)
 
         print("Splitting network...")
         self.split_network()
@@ -120,15 +119,15 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         assert_equal(set(self.nodes[2].getrawmempool()), set())
         print("mempool node 0:", self.nodes[0].getrawmempool())
         print("mempool node 2:", self.nodes[2].getrawmempool())
-        bal = self.nodes[0].z_gettotalbalance()
-        print("Printing balance before persist_shielded & persist_transparent are initially mined from mempool", bal)
+        bal = self.nodes[0].z_getbalances()
+        print("Balances before persist_shielded & persist_transparent are initially mined from mempool", bal)
         # Txs are mined on node 0; will later be rolled back
         self.nodes[0].generate(1)
         print("Node 0 generated 1 block")
         print("Node 0 height:", self.nodes[0].getblockchaininfo()['blocks'])
         print("Node 2 height:", self.nodes[2].getblockchaininfo()['blocks'])
-        bal = self.nodes[0].z_gettotalbalance()
-        print("Printing balance after persist_shielded & persist_transparent are mined:", bal)
+        bal = self.nodes[0].z_getbalances()
+        print("Balances after persist_shielded & persist_transparent are mined:", bal)
         assert_equal(set(self.nodes[0].getrawmempool()), set())
 
         print("Mine 2 competing blocks on Node 2...")
@@ -150,7 +149,6 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print("mempool node 2: ", self.nodes[2].getrawmempool())
         assert(persist_transparent in self.nodes[0].getrawmempool())
         assert(persist_shielded in self.nodes[0].getrawmempool())
-        bal = self.nodes[0].z_gettotalbalance()
         # Mine txs to get them out of the way of mempool sync in split_network()
         print("Generating another block on node 0 to clear txs from mempool")
         self.nodes[0].generate(1)
@@ -189,13 +187,13 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         self.nodes[0].generate(1)
         assert_equal(set(self.nodes[0].getrawmempool()), set())
         sync_blocks(self.nodes)
-        print("Balance after persist_shielded_2 is mined to remove from mempool: ", self.nodes[0].z_gettotalbalance())
+        print("Balances after persist_shielded_2 is mined to remove from mempool: ", self.nodes[0].z_getbalances())
 
         print("Splitting network...")
         self.split_network()
 
         print("\nBlockheight advances to greater than expiry block height. After reorg, txs should expire from mempool")
-        print("Balance before expire_shielded is sent: ", self.nodes[0].z_gettotalbalance())
+        print("Balances before expire_shielded is sent: ", self.nodes[0].z_getbalances())
         myopid = self.nodes[0].z_sendmany(z_alice, recipients, 1)
         expire_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
         expire_transparent = self.nodes[0].sendtoaddress(bob, 0.01)
@@ -218,15 +216,15 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print("mempool node 2: ", self.nodes[2].getrawmempool())
         assert_equal(set(self.nodes[0].getrawmempool()), set())
         print("Ensure balance of node 0 is correct")
-        bal = self.nodes[0].z_gettotalbalance()
+        bal = self.nodes[0].z_getbalances()
         print("Balance after expire_shielded has expired: ", bal)
-        assert_equal(Decimal(bal["private"]), Decimal('8.0') - DEFAULT_FEE)
+        assert_equal(Decimal(bal['legacy_sapling'][z_alice]['value']), Decimal('8.0') - DEFAULT_FEE)
 
         print("Splitting network...")
         self.split_network()
 
         print("\nBlockheight advances to just before expiring soon threshold.  Txs should be rejected from entering mempool.")
-        print("Balance before expire_shielded is sent: ", self.nodes[0].z_gettotalbalance())
+        print("Balances before expire_shielded is sent: ", self.nodes[0].z_getbalances())
         myopid = self.nodes[0].z_sendmany(z_alice, recipients, 1)
         expire_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
         expire_transparent = self.nodes[0].sendtoaddress(bob, 0.01)
