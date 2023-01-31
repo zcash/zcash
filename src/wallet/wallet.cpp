@@ -2550,6 +2550,11 @@ void CWallet::ClearNoteWitnessCache()
         }
     }
     nWitnessCacheSize = 0;
+
+    // This resets spentness information in addition to the Orchard note witness
+    // caches, which is fine because it will be recovered during the reindex or
+    // rescan that called `ClearNoteWitnessCache()`.
+    orchardWallet.Reset();
 }
 
 template<typename NoteDataMap>
