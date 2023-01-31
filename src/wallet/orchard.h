@@ -215,8 +215,8 @@ public:
      * in place with the expectation that they will be overwritten and/or updated in the
      * rescan process.
      */
-    bool Reset() {
-        return orchard_wallet_reset(inner.get());
+    void Reset() {
+        orchard_wallet_reset(inner.get());
     }
 
     /**
