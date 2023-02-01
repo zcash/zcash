@@ -66,34 +66,40 @@ wallet holding live funds.
 A docker-compose.yml has been provided in `./contrib/metrics` that sets up
 local instances of `prometheus` and `grafana` and provides a dashboard that
 charts several of the various metrics exposed by `zcashd`'s `prometheus`
-endpoint.
+endpoint. Note that both `docker` and `docker-compose` must ordinarily be run
+with superuser permissions (use `sudo`) when running on Linux.
 
-`sudo docker-compose up` will start local instances of `prometheus` and `grafana`,
-accessible on ports `9090` and `3030` respectively. 
+`docker-compose up`[^1] will start local instances of `prometheus` and `grafana`,
+accessible over HTTP on ports `9090` and `3030`, respectively. 
 
 ```
-cd $(zcash_root)/contrib/metrics
-sudo docker-compose up -d
+cd <zcash_root>/contrib/metrics
+docker-compose up -d
 ```
+(substitute the root directory where you have checked out the `zcash` git
+repository for `<zcash_root>`)
 
 `~/.zcash/zcash.conf` must be updated to enable `prometheus` and to allow the
 `prometheus` server launched via `docker-compose` to connect to the `zcashd`
-prometheus endpoint. The following script can be used to detect the local IP
+prometheus endpoint. The following commands can be used to detect the local IP
 address for the `prometheus` server and add it to the `~/.zcash/zcash.conf` 
 file. 
 
+First, figure out where `prometheus` is running.
+
 ```
-export PROMETHEUS_DOCKER_IP=$(sudo docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' zcashd-prometheus)
+export PROMETHEUS_DOCKER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' zcashd-prometheus)
+```
+
+Then, update your `~/.zcash/zcash.conf` file to open port `9969` and allow
+connections from the `zcashd-prometheus` docker container.
+
+```
 cat << PROM_CONF >> ~/.zcash/zcash.conf
 prometheusport=9969
 metricsallowip=$PROMETHEUS_DOCKER_IP/32
 PROM_CONF
 ```
-
-If you prefer to update the `~/.zcash/zcash.conf` file manually, make sure
-to add both the `prometheusport` and `metricsallowip` properties, using the
-`docker inspect ...` command above to determine the relevant IP address to
-allow.
 
 You may then (re)start `zcashd` and navigate to
 [http://localhost:9090/targets?search=](http://localhost:9090/targets?search=)
@@ -129,4 +135,7 @@ docker run --detach -p 9090:9090 --volume prometheus-storage:/prometheus --volum
 # Run Grafana
 docker run --detach -p 3030:3030 --env GF_SERVER_HTTP_PORT=3030 --volume grafana-storage:/var/lib/grafana grafana/grafana
 ```
+
+[^1]: This requires a running Docker daemon. See [the relevant section of the
+ Docker Engine manual](https://docs.docker.com/config/daemon/start/).
 
