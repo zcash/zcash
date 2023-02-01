@@ -115,9 +115,9 @@ std::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipient(
     uint256 dhsecret;
 
     // The new consensus rules from ZIP 216 (https://zips.z.cash/zip-0216#specification)
-    // on pk_d are enabled unconditionally, as they MAY be enforced in advance of NU5
-    // activation.
-    if (!librustzcash_sapling_ka_agree(true, pk_d.begin(), esk.begin(), dhsecret.begin())) {
+    // on pk_d were enabled unconditionally, even before we started to apply them
+    // retroactively.
+    if (!librustzcash_sapling_ka_agree(pk_d.begin(), esk.begin(), dhsecret.begin())) {
         return std::nullopt;
     }
 
@@ -150,9 +150,10 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
 {
     uint256 dhsecret;
 
-    // ZIP 216: We can enable the rules unconditionally, because ephemeralKey has always
-    // been required to not be small-order (https://zips.z.cash/zip-0216#specification).
-    if (!librustzcash_sapling_ka_agree(true, epk.begin(), ivk.begin(), dhsecret.begin())) {
+    // We consider ZIP 216 active all of the time because blocks prior to NU5
+    // activation (on mainnet and testnet) did not contain Sapling transactions
+    // that violated its canonicity rule.
+    if (!librustzcash_sapling_ka_agree(epk.begin(), ivk.begin(), dhsecret.begin())) {
         return std::nullopt;
     }
 
@@ -180,7 +181,6 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
 }
 
 std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
-    bool zip216Enabled,
     const SaplingEncCiphertext &ciphertext,
     const uint256 &epk,
     const uint256 &esk,
@@ -189,7 +189,10 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
 {
     uint256 dhsecret;
 
-    if (!librustzcash_sapling_ka_agree(zip216Enabled, pk_d.begin(), esk.begin(), dhsecret.begin())) {
+    // We consider ZIP 216 active all of the time because blocks prior to NU5
+    // activation (on mainnet and testnet) did not contain Sapling transactions
+    // that violated its canonicity rule.
+    if (!librustzcash_sapling_ka_agree(pk_d.begin(), esk.begin(), dhsecret.begin())) {
         return std::nullopt;
     }
 
