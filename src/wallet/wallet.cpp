@@ -5107,13 +5107,13 @@ CAmount CWallet::GetLegacyBalance(const isminefilter& filter, int minDepth) cons
     return balance;
 }
 
-void CWallet::AvailableCoins(vector<COutput>& vCoins,
+std::vector<COutput> CWallet::AvailableCoins(
                              const std::optional<int>& asOfHeight,
                              bool fOnlyConfirmed,
                              const CCoinControl *coinControl,
                              bool fIncludeZeroValue,
                              bool fIncludeCoinBase,
-                             bool fOnlySpendable,
+                             isminefilter filter,
                              int nMinDepth,
                              const std::set<CTxDestination>& onlyFilterByDests) const
 {
@@ -5122,7 +5122,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
     AssertLockHeld(cs_main);
     AssertLockHeld(cs_wallet);
 
-    vCoins.clear();
+    std::vector<COutput> vCoins;
 
     {
         for (const auto& [wtxid, pcoin] : mapWallet) {
@@ -5143,14 +5143,21 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
             if (nDepth < nMinDepth)
                 continue;
 
+            // if coincontrol allows watch-only addresses, add ISMINE_WATCH_SOLVABLE to the filter
+            const auto watchConditionedFilter =
+                (coinControl != nullptr && coinControl->fAllowWatchOnly) ?
+                    (filter | ISMINE_WATCH_SOLVABLE) :
+                    filter;
+
             for (unsigned int i = 0; i < pcoin.vout.size(); i++) {
                 const auto& output = pcoin.vout[i];
                 isminetype mine = IsMine(output);
 
-                bool isSpendable = (mine & ISMINE_SPENDABLE_ANY) ||
-                                   (coinControl && coinControl->fAllowWatchOnly && (mine & ISMINE_WATCH_SOLVABLE));
+                CTxDestination addr;
+                ExtractDestination(output.scriptPubKey, addr);
 
-                if (fOnlySpendable && !isSpendable)
+                bool consideredSpendable = (mine & watchConditionedFilter) != ISMINE_NO;
+                if (!consideredSpendable)
                     continue;
 
                 // Filter by specific destinations if needed
@@ -5163,11 +5170,14 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins,
 
                 if (!(IsSpent(wtxid, i, asOfHeight)) && mine != ISMINE_NO &&
                     !IsLockedCoin(wtxid, i) && (pcoin.vout[i].nValue > 0 || fIncludeZeroValue) &&
-                    (!coinControl || !coinControl->HasSelected() || coinControl->fAllowOtherInputs || coinControl->IsSelected(wtxid, i)))
-                        vCoins.push_back(COutput(&pcoin, i, nDepth, isSpendable, isCoinbase));
+                    (!coinControl || !coinControl->HasSelected() || coinControl->fAllowOtherInputs || coinControl->IsSelected(wtxid, i))) {
+                        vCoins.push_back(COutput(&pcoin, i, nDepth, consideredSpendable, isCoinbase));
+                }
             }
         }
     }
+
+    return vCoins;
 }
 
 static void ApproximateBestSubset(vector<pair<CAmount, pair<const CWalletTx*,unsigned int> > >vValue, const CAmount& nTotalLower, const CAmount& nTargetValue,
@@ -5320,9 +5330,8 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, int nConfMine, int
 bool CWallet::SelectCoins(const CAmount& nTargetValue, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, CAmount& nValueRet,  bool& fOnlyCoinbaseCoinsRet, bool& fNeedCoinbaseCoinsRet, const CCoinControl* coinControl) const
 {
     // Output parameter fOnlyCoinbaseCoinsRet is set to true when the only available coins are coinbase utxos.
-    vector<COutput> vCoinsNoCoinbase, vCoinsWithCoinbase;
-    AvailableCoins(vCoinsNoCoinbase, std::nullopt, true, coinControl, false, false);
-    AvailableCoins(vCoinsWithCoinbase, std::nullopt, true, coinControl, false, true);
+    auto vCoinsNoCoinbase = AvailableCoins(std::nullopt, true, coinControl, false, false, ISMINE_LEGACY_SPENDABLE);
+    auto vCoinsWithCoinbase = AvailableCoins(std::nullopt, true, coinControl, false, true, ISMINE_LEGACY_SPENDABLE);
     fOnlyCoinbaseCoinsRet = vCoinsNoCoinbase.size() == 0 && vCoinsWithCoinbase.size() > 0;
 
     // If coinbase utxos can only be sent to zaddrs, exclude any coinbase utxos from coin selection.
