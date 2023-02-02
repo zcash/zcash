@@ -1547,13 +1547,13 @@ public:
      *
      * **NB**: If `asOfHeight` is specified, then `nMinDepth` must be `> 0`.
      */
-    void AvailableCoins(std::vector<COutput>& vCoins,
+    std::vector<COutput> AvailableCoins(
                         const std::optional<int>& asOfHeight,
-                        bool fOnlyConfirmed=true,
-                        const CCoinControl *coinControl = NULL,
-                        bool fIncludeZeroValue=false,
-                        bool fIncludeCoinBase=true,
-                        bool fOnlySpendable=false,
+                        bool fOnlyConfirmed,
+                        const CCoinControl *coinControl,
+                        bool fIncludeZeroValue,
+                        bool fIncludeCoinBase,
+                        isminefilter filter,
                         int nMinDepth = 0,
                         const std::set<CTxDestination>& onlyFilterByDests = std::set<CTxDestination>()) const;
 

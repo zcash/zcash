@@ -2670,15 +2670,13 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     UniValue results(UniValue::VARR);
-    vector<COutput> vecOutputs;
-    pwalletMain->AvailableCoins(
-            vecOutputs,
+    vector<COutput> vecOutputs = pwalletMain->AvailableCoins(
             asOfHeight,
             false,        // fOnlyConfirmed
             nullptr,      // coinControl
             true,         // fIncludeZeroValue
             true,         // fIncludeCoinBase
-            false,        // fOnlySpendable
+            ISMINE_LEGACY_SPENDABLE,
             nMinDepth,
             destinations);
     for (const COutput& out : vecOutputs) {
@@ -3607,17 +3605,20 @@ UniValue z_listunifiedreceivers(const UniValue& params, bool fHelp)
 }
 
 CAmount getBalanceTaddr(const std::optional<CTxDestination>& taddr, const std::optional<int>& asOfHeight, int minDepth=1, bool ignoreUnspendable=true) {
-    vector<COutput> vecOutputs;
     CAmount balance = 0;
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    pwalletMain->AvailableCoins(vecOutputs, asOfHeight, false, NULL, true);
-    for (const COutput& out : vecOutputs) {
-        if (out.nDepth < minDepth) {
-            continue;
-        }
+    vector<COutput> vecOutputs = pwalletMain->AvailableCoins(
+            asOfHeight,
+            false,        // fOnlyConfirmed
+            nullptr,      // coinControl
+            true,         // fIncludeZeroValue
+            true,         // fIncludeCoinBase
+            ignoreUnspendable ? ISMINE_LEGACY_SPENDABLE : ISMINE_LEGACY_ALL,
+            minDepth);
 
+    for (const COutput& out : vecOutputs) {
         if (ignoreUnspendable && !out.fSpendable) {
             continue;
         }
@@ -5627,8 +5628,13 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     if (useAnyUTXO || taddrs.size() > 0) {
         // Get available utxos
-        vector<COutput> vecOutputs;
-        pwalletMain->AvailableCoins(vecOutputs, std::nullopt, true, NULL, false, false);
+        vector<COutput> vecOutputs = pwalletMain->AvailableCoins(
+            std::nullopt,
+            true,        // fOnlyConfirmed
+            nullptr,     // coinControl
+            false,       // fIncludeZeroValue
+            false,        // fIncludeCoinBase
+            ISMINE_SPENDABLE_ANY);
 
         // Find unspent utxos and update estimated size
         for (const COutput& out : vecOutputs) {
