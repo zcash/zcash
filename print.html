@@ -142,7 +142,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1>Zcash 5.4.0-rc3
+                        <h1>Zcash 5.4.0-rc4
 <img align="right" width="120" height="80" src="doc/imgs/logo.png"></h1>
 <h2 id="what-is-zcash"><a class="header" href="#what-is-zcash">What is Zcash?</a></h2>
 <p><a href="https://z.cash/">Zcash</a> is an implementation of the &quot;Zerocash&quot; protocol.
@@ -966,6 +966,8 @@ be extended beyond this on a case-by-case basis to satisfy user requirements. </
 will be disabled if <code>-allowdeprecated=none</code> is added to the CLI arguments when starting
 the node, or if an <code>allowdeprecated=none</code> line is added to <code>zcash.conf</code>.</p>
 <div class="table-wrapper"><table><thead><tr><th><code>feature</code></th><th>Deprecated</th><th>Feature details</th></tr></thead><tbody>
+<tr><td><code>z_getbalance</code></td><td>5.0.0</td><td>The <code>z_getbalance</code> RPC method.</td></tr>
+<tr><td><code>z_gettotalbalance</code></td><td>5.0.0</td><td>The <code>z_gettotalbalance</code> RPC method.</td></tr>
 <tr><td><code>gbt_oldhashes</code></td><td>5.4.0</td><td>The <code>finalsaplingroothash</code>, <code>lightclientroothash</code>, and <code>blockcommitmentshash</code> fields in the output of <code>getblocktemplate</code>, which are replaced by the <code>defaultroots</code> field.</td></tr>
 </tbody></table>
 </div>
@@ -977,8 +979,6 @@ line to <code>zcash.conf</code>.</p>
 <tr><td><code>legacy_privacy</code></td><td>5.0.0</td><td>The default &quot;legacy&quot; privacy policy for <code>z_sendmany</code> has been replaced by the <code>FullPrivacy</code> directive.</td></tr>
 <tr><td><code>getnewaddress</code></td><td>5.0.0</td><td>The <code>getnewaddress</code> RPC method.</td></tr>
 <tr><td><code>getrawchangeaddress</code></td><td>5.0.0</td><td>The <code>getrawchangeaddress</code> RPC method.</td></tr>
-<tr><td><code>z_getbalance</code></td><td>5.0.0</td><td>The <code>z_getbalance</code> RPC method.</td></tr>
-<tr><td><code>z_gettotalbalance</code></td><td>5.0.0</td><td>The <code>z_gettotalbalance</code> RPC method.</td></tr>
 <tr><td><code>z_getnewaddress</code></td><td>5.0.0</td><td>The <code>z_getnewaddress</code> RPC method.</td></tr>
 <tr><td><code>z_listaddresses</code></td><td>5.0.0</td><td>The <code>z_listaddresses</code> RPC method.</td></tr>
 <tr><td><code>addrtype</code></td><td>5.0.0</td><td>The <code>type</code> attribute is deprecated in the results of RPC methods that return address metadata. It is recommended that applications using this metadata be updated to use the <code>pool</code> or <code>address_type</code> attributes, which have replaced the <code>type</code> attribute, as appropriate.</td></tr>
