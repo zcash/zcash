@@ -174,7 +174,7 @@ TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>&
     boost::shared_ptr<CReserveScript> mAddr(new CReserveScript());
     mAddr->reserveScript = scriptPubKey;
 
-    CBlockTemplate *pblocktemplate = CreateNewBlock(chainparams, mAddr);
+    CBlockTemplate *pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(mAddr);
     CBlock& block = pblocktemplate->block;
 
     // Replace mempool-selected txns with just coinbase plus passed-in txns:

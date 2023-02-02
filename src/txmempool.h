@@ -237,6 +237,10 @@ public:
     }
 };
 
+// Multi_index tag names
+struct descendant_score {};
+struct mining_score {};
+
 class CBlockPolicyEstimator;
 
 /** An inpoint - a combination of a transaction and an index n into its vin */
@@ -376,11 +380,13 @@ public:
             boost::multi_index::hashed_unique<mempoolentry_txid, SaltedTxidHasher>,
             // sorted by fee rate
             boost::multi_index::ordered_non_unique<
+                boost::multi_index::tag<descendant_score>,
                 boost::multi_index::identity<CTxMemPoolEntry>,
                 CompareTxMemPoolEntryByFee
             >,
             // sorted by score (for mining prioritization)
             boost::multi_index::ordered_unique<
+                boost::multi_index::tag<mining_score>,
                 boost::multi_index::identity<CTxMemPoolEntry>,
                 CompareTxMemPoolEntryByScore
             >

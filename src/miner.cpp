@@ -331,18 +331,57 @@ CMutableTransaction CreateCoinbaseTransaction(const CChainParams& chainparams, C
         return mtx;
 }
 
-CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddress& minerAddress, const std::optional<CMutableTransaction>& next_cb_mtx)
+BlockAssembler::BlockAssembler(const CChainParams& _chainparams)
+    : chainparams(_chainparams)
 {
-    // Create new block
-    std::unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
+    // Largest block you're willing to create:
+    nBlockMaxSize = GetArg("-blockmaxsize", DEFAULT_BLOCK_MAX_SIZE);
+    // Limit to between 1K and MAX_BLOCK_SIZE-1K for sanity:
+    nBlockMaxSize = std::max((unsigned int)1000, std::min((unsigned int)(MAX_BLOCK_SIZE-1000), nBlockMaxSize));
+
+    // Minimum block size you want to create; block will be filled with free transactions
+    // until there are no more or the block reaches this size:
+    nBlockMinSize = GetArg("-blockminsize", DEFAULT_BLOCK_MIN_SIZE);
+    nBlockMinSize = std::min(nBlockMaxSize, nBlockMinSize);
+}
+
+void BlockAssembler::resetBlock(const MinerAddress& minerAddress)
+{
+    inBlock.clear();
+
+    // Reserve space for coinbase tx
+    // nBlockMaxSize already includes 1000 bytes for transaction structure overhead.
+    nBlockSize = std::visit(match {
+        [](const libzcash::OrchardRawAddress&) { return 9000; },
+        [](const libzcash::SaplingPaymentAddress&) { return 1000; },
+        [](const boost::shared_ptr<CReserveScript> &) { return 1000; },
+    }, minerAddress);
+    nBlockSigOps = 100;
+
+    // These counters do not include coinbase tx
+    nBlockTx = 0;
+    nFees = 0;
+
+    sproutValue = 0;
+    saplingValue = 0;
+    orchardValue = 0;
+    monitoring_pool_balances = true;
+
+    lastFewTxs = 0;
+    blockFinished = false;
+}
+
+CBlockTemplate* BlockAssembler::CreateNewBlock(
+    const MinerAddress& minerAddress,
+    const std::optional<CMutableTransaction>& next_cb_mtx)
+{
+    resetBlock(minerAddress);
+
+    pblocktemplate.reset(new CBlockTemplate());
+
     if(!pblocktemplate.get())
         return NULL;
-    CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-
-    // -regtest only: allow overriding block.nVersion with
-    // -blockversion=N to test forking scenarios
-    if (chainparams.MineBlocksOnDemand())
-        pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
+    pblock = &pblocktemplate->block; // pointer for convenience
 
     // Add dummy coinbase tx as first transaction
     pblock->vtx.push_back(CTransaction());
@@ -351,26 +390,330 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
 
     // If we're given a coinbase tx, it's been precomputed, its fees are zero,
     // so we can't include any mempool transactions; this will be an empty block.
-    bool nonEmptyBlock = !next_cb_mtx;
+    blockFinished = blockFinished || next_cb_mtx;
 
-    // Largest block you're willing to create:
-    unsigned int nBlockMaxSize = GetArg("-blockmaxsize", DEFAULT_BLOCK_MAX_SIZE);
-    // Limit to between 1K and MAX_BLOCK_SIZE-1K for sanity:
-    nBlockMaxSize = std::max((unsigned int)1000, std::min((unsigned int)(MAX_BLOCK_SIZE-1000), nBlockMaxSize));
+    LOCK2(cs_main, mempool.cs);
+    CBlockIndex* pindexPrev = chainActive.Tip();
+    nHeight = pindexPrev->nHeight + 1;
+    uint32_t consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
 
+    // -regtest only: allow overriding block.nVersion with
+    // -blockversion=N to test forking scenarios
+    if (chainparams.MineBlocksOnDemand())
+        pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
+
+    pblock->nTime = GetTime();
+    const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
+    CCoinsViewCache view(pcoinsTip);
+
+    SaplingMerkleTree sapling_tree;
+    assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
+
+    nLockTimeCutoff = (STANDARD_LOCKTIME_VERIFY_FLAGS & LOCKTIME_MEDIAN_TIME_PAST)
+                       ? nMedianTimePast
+                       : pblock->GetBlockTime();
+
+    // We want to track the value pool, but if the miner gets
+    // invoked on an old block before the hardcoded fallback
+    // is active we don't want to trip up any assertions. So,
+    // we only adhere to the turnstile (as a miner) if we
+    // actually have all of the information necessary to do
+    // so.
+    if (chainparams.ZIP209Enabled()) {
+        if (pindexPrev->nChainSproutValue) {
+            sproutValue = *pindexPrev->nChainSproutValue;
+        } else {
+            monitoring_pool_balances = false;
+        }
+        if (pindexPrev->nChainSaplingValue) {
+            saplingValue = *pindexPrev->nChainSaplingValue;
+        } else {
+            monitoring_pool_balances = false;
+        }
+        if (pindexPrev->nChainOrchardValue) {
+            orchardValue = *pindexPrev->nChainOrchardValue;
+        } else {
+            monitoring_pool_balances = false;
+        }
+    }
+
+    addPriorityTxs();
+    addScoreTxs();
+
+    last_block_num_txs = nBlockTx;
+    last_block_size = nBlockSize;
+    LogPrintf("%s: total size %u (excluding coinbase) txs: %u fees: %ld sigops %d", __func__, nBlockSize, nBlockTx, nFees, nBlockSigOps);
+
+    // Create coinbase tx
+    if (next_cb_mtx) {
+        pblock->vtx[0] = *next_cb_mtx;
+    } else {
+        pblock->vtx[0] = CreateCoinbaseTransaction(chainparams, nFees, minerAddress, nHeight);
+    }
+    pblocktemplate->vTxFees[0] = -nFees;
+
+    // Update the Sapling commitment tree.
+    for (const CTransaction& tx : pblock->vtx) {
+        for (const OutputDescription& odesc : tx.vShieldedOutput) {
+            sapling_tree.append(odesc.cmu);
+        }
+    }
+
+    // Randomise nonce
+    arith_uint256 nonce = UintToArith256(GetRandHash());
+    // Clear the top and bottom 16 bits (for local use as thread flags and counters)
+    nonce <<= 32;
+    nonce >>= 16;
+    pblock->nNonce = ArithToUint256(nonce);
+
+    uint32_t prevConsensusBranchId = CurrentEpochBranchId(pindexPrev->nHeight, chainparams.GetConsensus());
+
+    // Fill in header
+    pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
+    if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
+        // hashBlockCommitments depends on the block transactions, so we have to
+        // update it whenever the coinbase transaction changes.
+        //
+        // - For the internal miner (either directly or via the `generate` RPC), this
+        //   will occur in `IncrementExtraNonce()`, like for `hashMerkleRoot`.
+        // - For `getblocktemplate`, we have two sets of fields to handle:
+        //   - The `defaultroots` fields, which contain both the default value (if
+        //     nothing in the template is altered), and the roots that can be used to
+        //     recalculate it (if some or all of the template is altered).
+        //   - The legacy `finalsaplingroothash`, `lightclientroothash`, and
+        //     `blockcommitmentshash` fields, which had the semantics of "place this
+        //     value into the block header and things will work" (except for in
+        //     v4.6.0 where they were accidentally set to always be the NU5 value).
+        //
+        // To accommodate all use cases, we calculate the `hashBlockCommitments`
+        // default value here (unlike `hashMerkleRoot`), and additionally cache the
+        // values necessary to recalculate it.
+        pblocktemplate->hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
+        pblocktemplate->hashAuthDataRoot = pblock->BuildAuthDataMerkleTree();
+        pblock->hashBlockCommitments = DeriveBlockCommitmentsHash(
+                pblocktemplate->hashChainHistoryRoot,
+                pblocktemplate->hashAuthDataRoot);
+    } else if (IsActivationHeight(nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
+        pblocktemplate->hashChainHistoryRoot.SetNull();
+        pblocktemplate->hashAuthDataRoot.SetNull();
+        pblock->hashBlockCommitments.SetNull();
+    } else if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD)) {
+        pblocktemplate->hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
+        pblocktemplate->hashAuthDataRoot.SetNull();
+        pblock->hashBlockCommitments = pblocktemplate->hashChainHistoryRoot;
+    } else {
+        pblocktemplate->hashChainHistoryRoot.SetNull();
+        pblocktemplate->hashAuthDataRoot.SetNull();
+        pblock->hashBlockCommitments = sapling_tree.root();
+    }
+    UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
+    pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
+    pblock->nSolution.clear();
+    pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
+
+    CValidationState state;
+    if (!TestBlockValidity(state, chainparams, *pblock, pindexPrev, true)) {
+        throw std::runtime_error(strprintf("%s: TestBlockValidity failed: %s", __func__, FormatStateMessage(state)));
+    }
+
+    return pblocktemplate.release();
+}
+
+bool BlockAssembler::isStillDependent(CTxMemPool::txiter iter)
+{
+    for (CTxMemPool::txiter parent : mempool.GetMemPoolParents(iter))
+    {
+        if (!inBlock.count(parent)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+
+bool BlockAssembler::TestForBlock(CTxMemPool::txiter iter)
+{
+    if (nBlockSize + iter->GetTxSize() >= nBlockMaxSize) {
+        // If the block is so close to full that no more txs will fit
+        // or if we've tried more than 50 times to fill remaining space
+        // then flag that the block is finished
+        if (nBlockSize >  nBlockMaxSize - 100 || lastFewTxs > 50) {
+             blockFinished = true;
+             return false;
+        }
+        // Once we're within 1000 bytes of a full block, only look at 50 more txs
+        // to try to fill the remaining space.
+        if (nBlockSize > nBlockMaxSize - 1000) {
+            lastFewTxs++;
+        }
+        LogPrintf("%s: skipping tx %s: exceeded maximum block size %u.",
+                  __func__,
+                  iter->GetTx().GetHash().GetHex(),
+                  nBlockMaxSize);
+        return false;
+    }
+
+    if (nBlockSigOps + iter->GetSigOpCount() >= MAX_BLOCK_SIGOPS) {
+        // If the block has room for no more sig ops then
+        // flag that the block is finished
+        if (nBlockSigOps > MAX_BLOCK_SIGOPS - 2) {
+            blockFinished = true;
+            return false;
+        }
+        // Otherwise attempt to find another tx with fewer sigops
+        // to put in the block.
+        LogPrintf("%s: skipping tx %s: exceeds legacy max sigops %u.",
+                  __func__,
+                  iter->GetTx().GetHash().GetHex(),
+                  MAX_BLOCK_SIGOPS);
+        return false;
+    }
+
+    // Must check that lock times are still valid
+    // This can be removed once MTP is always enforced
+    // as long as reorgs keep the mempool consistent.
+    if (!IsFinalTx(iter->GetTx(), nHeight, nLockTimeCutoff))
+        return false;
+
+    // Must check that expiry heights are still valid.
+    if (IsExpiredTx(iter->GetTx(), nHeight))
+        return false;
+
+    if (chainparams.ZIP209Enabled() && monitoring_pool_balances) {
+        // Does this transaction lead to a turnstile violation?
+
+        CAmount sproutValueDummy = sproutValue;
+        CAmount saplingValueDummy = saplingValue;
+        CAmount orchardValueDummy = orchardValue;
+
+        saplingValueDummy += -iter->GetTx().GetValueBalanceSapling();
+        orchardValueDummy += -iter->GetTx().GetOrchardBundle().GetValueBalance();
+
+        for (auto js : iter->GetTx().vJoinSplit) {
+            sproutValueDummy += js.vpub_old;
+            sproutValueDummy -= js.vpub_new;
+        }
+
+        if (sproutValueDummy < 0) {
+            LogPrintf("CreateNewBlock: tx %s appears to violate Sprout turnstile\n",
+                      iter->GetTx().GetHash().GetHex());
+            return false;
+        }
+        if (saplingValueDummy < 0) {
+            LogPrintf("CreateNewBlock: tx %s appears to violate Sapling turnstile\n",
+                      iter->GetTx().GetHash().GetHex());
+            return false;
+        }
+        if (orchardValueDummy < 0) {
+            LogPrintf("CreateNewBlock: tx %s appears to violate Orchard turnstile\n",
+                      iter->GetTx().GetHash().GetHex());
+            return false;
+        }
+
+        // We update this here instead of in AddToBlock to avoid recalculating
+        // the deltas, because there are no more checks and we know that the
+        // transaction will be added to the block.
+        sproutValue = sproutValueDummy;
+        saplingValue = saplingValueDummy;
+        orchardValue = orchardValueDummy;
+    }
+
+    return true;
+}
+
+void BlockAssembler::AddToBlock(CTxMemPool::txiter iter)
+{
+    pblock->vtx.push_back(iter->GetTx());
+    pblocktemplate->vTxFees.push_back(iter->GetFee());
+    pblocktemplate->vTxSigOps.push_back(iter->GetSigOpCount());
+    nBlockSize += iter->GetTxSize();
+    ++nBlockTx;
+    nBlockSigOps += iter->GetSigOpCount();
+    nFees += iter->GetFee();
+    inBlock.insert(iter);
+
+    bool fPrintPriority = GetBoolArg("-printpriority", DEFAULT_PRINTPRIORITY);
+    if (fPrintPriority) {
+        double dPriority = iter->GetPriority(nHeight);
+        CAmount dummy;
+        mempool.ApplyDeltas(iter->GetTx().GetHash(), dPriority, dummy);
+        LogPrintf("%s: priority %.1f fee %s txid %s\n",
+                  __func__,
+                  dPriority,
+                  CFeeRate(iter->GetModifiedFee(), iter->GetTxSize()).ToString(),
+                  iter->GetTx().GetHash().ToString());
+    }
+}
+
+void BlockAssembler::addScoreTxs()
+{
+    std::priority_queue<CTxMemPool::txiter, std::vector<CTxMemPool::txiter>, ScoreCompare> clearedTxs;
+    CTxMemPool::setEntries waitSet;
+    CTxMemPool::indexed_transaction_set::index<mining_score>::type::iterator mi = mempool.mapTx.get<mining_score>().begin();
+    CTxMemPool::txiter iter;
+    while (!blockFinished && (mi != mempool.mapTx.get<mining_score>().end() || !clearedTxs.empty()))
+    {
+        // If no txs that were previously postponed are available to try
+        // again, then try the next highest score tx
+        if (clearedTxs.empty()) {
+            iter = mempool.mapTx.project<0>(mi);
+            mi++;
+        }
+        // If a previously postponed tx is available to try again, then it
+        // has higher score than all untried so far txs
+        else {
+            iter = clearedTxs.top();
+            clearedTxs.pop();
+        }
+
+        // If tx already in block, skip  (added by addPriorityTxs)
+        if (inBlock.count(iter)) {
+            continue;
+        }
+
+        // If tx is dependent on other mempool txs which haven't yet been included
+        // then put it in the waitSet
+        if (isStillDependent(iter)) {
+            waitSet.insert(iter);
+            continue;
+        }
+
+        // If the fee rate is below the min fee rate for mining, then we're done
+        // adding txs based on score (fee rate)
+        if ((iter->GetModifiedFee() < ::minRelayTxFee.GetFee(iter->GetTxSize())) &&
+            (iter->GetModifiedFee() < DEFAULT_FEE) &&
+            (nBlockSize >= nBlockMinSize)) {
+            return;
+        }
+
+        // If this tx fits in the block add it, otherwise keep looping
+        if (TestForBlock(iter)) {
+            AddToBlock(iter);
+
+            // This tx was successfully added, so
+            // add transactions that depend on this one to the priority queue to try again
+            for (CTxMemPool::txiter child : mempool.GetMemPoolChildren(iter))
+            {
+                if (waitSet.count(child)) {
+                    clearedTxs.push(child);
+                    waitSet.erase(child);
+                }
+            }
+        }
+    }
+}
+
+void BlockAssembler::addPriorityTxs()
+{
     // How much of the block should be dedicated to high-priority transactions,
     // included regardless of the fees they pay
     unsigned int nBlockPrioritySize = GetArg("-blockprioritysize", DEFAULT_BLOCK_PRIORITY_SIZE);
     nBlockPrioritySize = std::min(nBlockMaxSize, nBlockPrioritySize);
 
-    // Minimum block size you want to create; block will be filled with free transactions
-    // until there are no more or the block reaches this size:
-    unsigned int nBlockMinSize = GetArg("-blockminsize", DEFAULT_BLOCK_MIN_SIZE);
-    nBlockMinSize = std::min(nBlockMaxSize, nBlockMinSize);
-
-    // Collect memory pool transactions into the block
-    CTxMemPool::setEntries inBlock;
-    CTxMemPool::setEntries waitSet;
+    if (nBlockPrioritySize == 0) {
+        return;
+    }
 
     // This vector will be sorted into a priority queue:
     vector<TxCoinAgePriority> vecPriority;
@@ -379,304 +722,60 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const MinerAddre
     typedef std::map<CTxMemPool::txiter, double, CTxMemPool::CompareIteratorByHash>::iterator waitPriIter;
     double actualPriority = -1;
 
-    std::priority_queue<CTxMemPool::txiter, std::vector<CTxMemPool::txiter>, ScoreCompare> clearedTxs;
-    bool fPrintPriority = GetBoolArg("-printpriority", DEFAULT_PRINTPRIORITY);
-    uint64_t nBlockSize = 1000;
-    uint64_t nBlockTx = 0;
-    unsigned int nBlockSigOps = 100;
-    int lastFewTxs = 0;
-    CAmount nFees = 0;
-
+    vecPriority.reserve(mempool.mapTx.size());
+    for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
+         mi != mempool.mapTx.end(); ++mi)
     {
-        LOCK2(cs_main, mempool.cs);
-        CBlockIndex* pindexPrev = chainActive.Tip();
-        const int nHeight = pindexPrev->nHeight + 1;
-        uint32_t consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
-        pblock->nTime = GetTime();
-        const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
-        CCoinsViewCache view(pcoinsTip);
+        double dPriority = mi->GetPriority(nHeight);
+        CAmount dummy;
+        mempool.ApplyDeltas(mi->GetTx().GetHash(), dPriority, dummy);
+        vecPriority.push_back(TxCoinAgePriority(dPriority, mi));
+    }
+    std::make_heap(vecPriority.begin(), vecPriority.end(), pricomparer);
 
-        SaplingMerkleTree sapling_tree;
-        assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
+    CTxMemPool::txiter iter;
+    while (!vecPriority.empty() && !blockFinished) { // add a tx from priority queue to fill the blockprioritysize
+        iter = vecPriority.front().second;
+        actualPriority = vecPriority.front().first;
+        std::pop_heap(vecPriority.begin(), vecPriority.end(), pricomparer);
+        vecPriority.pop_back();
 
-        int64_t nLockTimeCutoff = (STANDARD_LOCKTIME_VERIFY_FLAGS & LOCKTIME_MEDIAN_TIME_PAST)
-                                ? nMedianTimePast
-                                : pblock->GetBlockTime();
-
-        bool fPriorityBlock = nBlockPrioritySize > 0;
-        if (nonEmptyBlock && fPriorityBlock) {
-            vecPriority.reserve(mempool.mapTx.size());
-            for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
-                 mi != mempool.mapTx.end(); ++mi)
-            {
-                double dPriority = mi->GetPriority(nHeight);
-                CAmount dummy;
-                mempool.ApplyDeltas(mi->GetTx().GetHash(), dPriority, dummy);
-                vecPriority.push_back(TxCoinAgePriority(dPriority, mi));
-            }
-            std::make_heap(vecPriority.begin(), vecPriority.end(), pricomparer);
+        // If tx already in block, skip
+        if (inBlock.count(iter)) {
+            assert(false); // shouldn't happen for priority txs
+            continue;
         }
 
-        CTxMemPool::indexed_transaction_set::nth_index<2>::type::iterator mi = mempool.mapTx.get<2>().begin();
-        CTxMemPool::txiter iter;
-
-        // We want to track the value pool, but if the miner gets
-        // invoked on an old block before the hardcoded fallback
-        // is active we don't want to trip up any assertions. So,
-        // we only adhere to the turnstile (as a miner) if we
-        // actually have all of the information necessary to do
-        // so.
-        CAmount sproutValue = 0;
-        CAmount saplingValue = 0;
-        CAmount orchardValue = 0;
-        bool monitoring_pool_balances = true;
-        if (chainparams.ZIP209Enabled()) {
-            if (pindexPrev->nChainSproutValue) {
-                sproutValue = *pindexPrev->nChainSproutValue;
-            } else {
-                monitoring_pool_balances = false;
-            }
-            if (pindexPrev->nChainSaplingValue) {
-                saplingValue = *pindexPrev->nChainSaplingValue;
-            } else {
-                monitoring_pool_balances = false;
-            }
-            if (pindexPrev->nChainOrchardValue) {
-                orchardValue = *pindexPrev->nChainOrchardValue;
-            } else {
-                monitoring_pool_balances = false;
-            }
+        // If tx is dependent on other mempool txs which haven't yet been included
+        // then put it in the waitSet
+        if (isStillDependent(iter)) {
+            waitPriMap.insert(std::make_pair(iter, actualPriority));
+            continue;
         }
 
-        while (nonEmptyBlock && (mi != mempool.mapTx.get<2>().end() || !clearedTxs.empty()))
-        {
-            bool priorityTx = false;
-            if (fPriorityBlock && !vecPriority.empty()) { // add a tx from priority queue to fill the blockprioritysize
-                priorityTx = true;
-                iter = vecPriority.front().second;
-                actualPriority = vecPriority.front().first;
-                std::pop_heap(vecPriority.begin(), vecPriority.end(), pricomparer);
-                vecPriority.pop_back();
-            }
-            else if (clearedTxs.empty()) { // add tx with next highest score
-                iter = mempool.mapTx.project<0>(mi);
-                mi++;
-            }
-            else {  // try to add a previously postponed child tx
-                iter = clearedTxs.top();
-                clearedTxs.pop();
+        // If this tx fits in the block add it, otherwise keep looping
+        if (TestForBlock(iter)) {
+            AddToBlock(iter);
+
+            // If now that this txs is added we've surpassed our desired priority size
+            // or have dropped below the AllowFreeThreshold, then we're done adding priority txs
+            if (nBlockSize >= nBlockPrioritySize || !AllowFree(actualPriority)) {
+                return;
             }
 
-            if (inBlock.count(iter))
-                continue; // could have been added to the priorityBlock
-
-            const CTransaction& tx = iter->GetTx();
-            const uint256& hash = tx.GetHash();
-
-            bool fOrphan = false;
-            for (CTxMemPool::txiter parent : mempool.GetMemPoolParents(iter))
-            {
-                if (!inBlock.count(parent)) {
-                    fOrphan = true;
-                    break;
-                }
-            }
-            if (fOrphan) {
-                if (priorityTx)
-                    waitPriMap.insert(std::make_pair(iter,actualPriority));
-                else
-                    waitSet.insert(iter);
-                continue;
-            }
-
-            unsigned int nTxSize = iter->GetTxSize();
-            if (fPriorityBlock &&
-                (nBlockSize + nTxSize >= nBlockPrioritySize || !AllowFree(actualPriority))) {
-                fPriorityBlock = false;
-                waitPriMap.clear();
-            }
-            if (!priorityTx &&
-                (iter->GetModifiedFee() < ::minRelayTxFee.GetFee(nTxSize)) &&
-                (iter->GetModifiedFee() < DEFAULT_FEE) &&
-                (nBlockSize >= nBlockMinSize)) {
-                break;
-            }
-            if (nBlockSize + nTxSize >= nBlockMaxSize) {
-                if (nBlockSize >  nBlockMaxSize - 100 || lastFewTxs > 50) {
-                    break;
-                }
-                // Once we're within 1000 bytes of a full block, only look at 50 more txs
-                // to try to fill the remaining space.
-                if (nBlockSize > nBlockMaxSize - 1000) {
-                    lastFewTxs++;
-                }
-                LogPrintf("%s: skipping tx %s: exceeded maximum block size %u.", __func__, hash.GetHex(), nBlockMaxSize);
-                continue;
-            }
-
-            if (!IsFinalTx(tx, nHeight, nLockTimeCutoff) || IsExpiredTx(tx, nHeight))
-                continue;
-
-            unsigned int nTxSigOps = iter->GetSigOpCount();
-            if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS) {
-                if (nBlockSigOps > MAX_BLOCK_SIGOPS - 2) {
-                    break;
-                }
-                LogPrintf("%s: skipping tx %s: exceeds legacy max sigops %u.", __func__, hash.GetHex(), MAX_BLOCK_SIGOPS);
-                continue;
-            }
-
-            if (chainparams.ZIP209Enabled() && monitoring_pool_balances) {
-                // Does this transaction lead to a turnstile violation?
-
-                CAmount sproutValueDummy = sproutValue;
-                CAmount saplingValueDummy = saplingValue;
-                CAmount orchardValueDummy = orchardValue;
-
-                saplingValueDummy += -tx.GetValueBalanceSapling();
-                orchardValueDummy += -tx.GetOrchardBundle().GetValueBalance();
-
-                for (auto js : tx.vJoinSplit) {
-                    sproutValueDummy += js.vpub_old;
-                    sproutValueDummy -= js.vpub_new;
-                }
-
-                if (sproutValueDummy < 0) {
-                    LogPrintf("%s: tx %s appears to violate Sprout turnstile\n", __func__, hash.GetHex());
-                    continue;
-                }
-                if (saplingValueDummy < 0) {
-                    LogPrintf("%s: tx %s appears to violate Sapling turnstile\n", __func__, hash.GetHex());
-                    continue;
-                }
-                if (orchardValueDummy < 0) {
-                    LogPrintf("%s: tx %s appears to violate Orchard turnstile\n", __func__, hash.GetHex());
-                    continue;
-                }
-
-                sproutValue = sproutValueDummy;
-                saplingValue = saplingValueDummy;
-                orchardValue = orchardValueDummy;
-            }
-
-            CAmount nTxFees = iter->GetFee();
-            // Added
-            pblock->vtx.push_back(tx);
-            pblocktemplate->vTxFees.push_back(nTxFees);
-            pblocktemplate->vTxSigOps.push_back(nTxSigOps);
-            nBlockSize += nTxSize;
-            ++nBlockTx;
-            nBlockSigOps += nTxSigOps;
-            nFees += nTxFees;
-
-            if (fPrintPriority)
-            {
-                double dPriority = iter->GetPriority(nHeight);
-                CAmount dummy;
-                mempool.ApplyDeltas(tx.GetHash(), dPriority, dummy);
-                LogPrintf("%s: priority %.1f fee %s txid %s\n",
-                          __func__, dPriority , CFeeRate(iter->GetModifiedFee(), nTxSize).ToString(), hash.GetHex());
-            }
-
-            inBlock.insert(iter);
-
-            // Add transactions that depend on this one to the priority queue
+            // This tx was successfully added, so
+            // add transactions that depend on this one to the priority queue to try again
             for (CTxMemPool::txiter child : mempool.GetMemPoolChildren(iter))
             {
-                if (fPriorityBlock) {
-                    waitPriIter wpiter = waitPriMap.find(child);
-                    if (wpiter != waitPriMap.end()) {
-                        vecPriority.push_back(TxCoinAgePriority(wpiter->second,child));
-                        std::push_heap(vecPriority.begin(), vecPriority.end(), pricomparer);
-                        waitPriMap.erase(wpiter);
-                    }
-                }
-                else {
-                    if (waitSet.count(child)) {
-                        clearedTxs.push(child);
-                        waitSet.erase(child);
-                    }
+                waitPriIter wpiter = waitPriMap.find(child);
+                if (wpiter != waitPriMap.end()) {
+                    vecPriority.push_back(TxCoinAgePriority(wpiter->second,child));
+                    std::push_heap(vecPriority.begin(), vecPriority.end(), pricomparer);
+                    waitPriMap.erase(wpiter);
                 }
             }
-        }
-        last_block_num_txs = nBlockTx;
-        last_block_size = nBlockSize;
-        LogPrintf("%s: total size %u (excluding coinbase) txs: %u fees: %ld sigops %d", __func__, nBlockSize, nBlockTx, nFees, nBlockSigOps);
-
-        // Create coinbase tx
-        if (next_cb_mtx) {
-            pblock->vtx[0] = *next_cb_mtx;
-        } else {
-            pblock->vtx[0] = CreateCoinbaseTransaction(chainparams, nFees, minerAddress, nHeight);
-        }
-        pblocktemplate->vTxFees[0] = -nFees;
-
-        // Update the Sapling commitment tree.
-        for (const CTransaction& tx : pblock->vtx) {
-            for (const OutputDescription& odesc : tx.vShieldedOutput) {
-                sapling_tree.append(odesc.cmu);
-            }
-        }
-
-        // Randomise nonce
-        arith_uint256 nonce = UintToArith256(GetRandHash());
-        // Clear the top and bottom 16 bits (for local use as thread flags and counters)
-        nonce <<= 32;
-        nonce >>= 16;
-        pblock->nNonce = ArithToUint256(nonce);
-
-        uint32_t prevConsensusBranchId = CurrentEpochBranchId(pindexPrev->nHeight, chainparams.GetConsensus());
-
-        // Fill in header
-        pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-        if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
-            // hashBlockCommitments depends on the block transactions, so we have to
-            // update it whenever the coinbase transaction changes.
-            //
-            // - For the internal miner (either directly or via the `generate` RPC), this
-            //   will occur in `IncrementExtraNonce()`, like for `hashMerkleRoot`.
-            // - For `getblocktemplate`, we have two sets of fields to handle:
-            //   - The `defaultroots` fields, which contain both the default value (if
-            //     nothing in the template is altered), and the roots that can be used to
-            //     recalculate it (if some or all of the template is altered).
-            //   - The legacy `finalsaplingroothash`, `lightclientroothash`, and
-            //     `blockcommitmentshash` fields, which had the semantics of "place this
-            //     value into the block header and things will work" (except for in
-            //     v4.6.0 where they were accidentally set to always be the NU5 value).
-            //
-            // To accommodate all use cases, we calculate the `hashBlockCommitments`
-            // default value here (unlike `hashMerkleRoot`), and additionally cache the
-            // values necessary to recalculate it.
-            pblocktemplate->hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
-            pblocktemplate->hashAuthDataRoot = pblock->BuildAuthDataMerkleTree();
-            pblock->hashBlockCommitments = DeriveBlockCommitmentsHash(
-                    pblocktemplate->hashChainHistoryRoot,
-                    pblocktemplate->hashAuthDataRoot);
-        } else if (IsActivationHeight(nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_HEARTWOOD)) {
-            pblocktemplate->hashChainHistoryRoot.SetNull();
-            pblocktemplate->hashAuthDataRoot.SetNull();
-            pblock->hashBlockCommitments.SetNull();
-        } else if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_HEARTWOOD)) {
-            pblocktemplate->hashChainHistoryRoot = view.GetHistoryRoot(prevConsensusBranchId);
-            pblocktemplate->hashAuthDataRoot.SetNull();
-            pblock->hashBlockCommitments = pblocktemplate->hashChainHistoryRoot;
-        } else {
-            pblocktemplate->hashChainHistoryRoot.SetNull();
-            pblocktemplate->hashAuthDataRoot.SetNull();
-            pblock->hashBlockCommitments = sapling_tree.root();
-        }
-        UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-        pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
-        pblock->nSolution.clear();
-        pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
-
-        CValidationState state;
-        if (!TestBlockValidity(state, chainparams, *pblock, pindexPrev, true)) {
-            throw std::runtime_error(strprintf("%s: TestBlockValidity failed: %s", __func__, FormatStateMessage(state)));
         }
     }
-
-    return pblocktemplate.release();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -874,7 +973,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
                 continue;
             }
 
-            unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(chainparams, minerAddress));
+            unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(chainparams).CreateNewBlock(minerAddress));
             if (!pblocktemplate.get())
             {
                 if (GetArg("-mineraddress", "").empty()) {

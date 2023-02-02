@@ -221,7 +221,7 @@ UniValue generate(const UniValue& params, bool fHelp)
     unsigned int k = Params().GetConsensus().nEquihashK;
     while (nHeight < nHeightEnd)
     {
-        std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(Params(), minerAddress));
+        std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(minerAddress));
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
         CBlock *pblock = &pblocktemplate->block;
@@ -700,7 +700,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
         }
 
-        pblocktemplate = CreateNewBlock(Params(), minerAddress, next_cb_mtx);
+        pblocktemplate = BlockAssembler(Params()).CreateNewBlock(minerAddress, next_cb_mtx);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 
