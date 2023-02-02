@@ -345,12 +345,17 @@ BlockAssembler::BlockAssembler(const CChainParams& _chainparams)
     nBlockMinSize = std::min(nBlockMaxSize, nBlockMinSize);
 }
 
-void BlockAssembler::resetBlock()
+void BlockAssembler::resetBlock(const MinerAddress& minerAddress)
 {
     inBlock.clear();
 
     // Reserve space for coinbase tx
-    nBlockSize = 1000;
+    // nBlockMaxSize already includes 1000 bytes for transaction structure overhead.
+    nBlockSize = std::visit(match {
+        [](const libzcash::OrchardRawAddress&) { return 9000; },
+        [](const libzcash::SaplingPaymentAddress&) { return 1000; },
+        [](const boost::shared_ptr<CReserveScript> &) { return 1000; },
+    }, minerAddress);
     nBlockSigOps = 100;
 
     // These counters do not include coinbase tx
@@ -370,7 +375,7 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
     const MinerAddress& minerAddress,
     const std::optional<CMutableTransaction>& next_cb_mtx)
 {
-    resetBlock();
+    resetBlock(minerAddress);
 
     pblocktemplate.reset(new CBlockTemplate());
 
