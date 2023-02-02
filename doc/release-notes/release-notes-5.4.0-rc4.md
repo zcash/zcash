@@ -1,0 +1,300 @@
+Notable changes
+===============
+
+Fixes
+-----
+
+This release fixes an issue that could potentially cause a node to crash with the
+log message "The wallet's best block hash `<hash>` was not detected in restored
+chain state. Giving up; please restart with `-rescan`."
+
+Additionally, a bug that could cause an assertion failure during reindexing has 
+been fixed. See [#6387](https://github.com/zcash/zcash/pull/6387) for details.
+
+Transparent pool and chain supply tracking
+------------------------------------------
+
+Since v2.0.0, `zcashd` has tracked the change in value within the Sprout and
+Sapling shielded pools for each block; v5.0.0 added the Orchard pool. This
+release completes the set, by tracking the change in value within the
+"transparent" pool (more precisely, the value stored in Bitcoin-style UTXOs).
+
+`zcashd` also now tracks the change in "chain supply" for each block, defined as
+the sum of coinbase output values, minus unclaimed fees. This is precisely equal
+to the sum of the value in the transparent and shielded pools, and equivalent to
+the sum of all unspent coins/notes on the chain. It is bounded above by the
+theoretical maximum supply, but in practice is lower due to, for example, miners
+not claiming transaction fees.
+
+> Bitcoin-style consensus rules implement fees as an imbalance between spent
+> coins/notes and newly-created coins/notes. The consensus rules require that a
+> coinbase transaction's outputs have a total value no greater than the sum of
+> that block's subsidy and the fees made available by the transactions in the
+> block. However, the consensus rules do not require that all of the available
+> funds are claimed, and a miner can create coinbase transactions with lower
+> value in the outputs (though in the case of Zcash, the consensus rules do
+> require the transaction to include [ZIP 1014](https://zips.z.cash/zip-1014)
+> Funding Stream outputs).
+
+After upgrading to v5.4.0, `zcashd` will start tracking changes in transparent
+pool value and chain supply from the height at which it is restarted. Block
+heights prior to this will not have any information recorded. To track changes
+from genesis, and thus monitor the total transparent pool size and chain supply,
+you would need to restart your node with the `-reindex` option.
+
+Wallet Performance Fixes
+------------------------
+
+The 100MiB memory limit for the batch scanner has been replaced by a 1000-block
+limit. This eliminates an expensive call to determine the current memory usage 
+of the batch scanner. 
+
+The following associated metric has been removed from the set of metrics
+reported when `-prometheusport` is set:
+
+- (gauge) `zcashd.wallet.batchscanner.usage.bytes`
+
+RPC Changes
+-----------
+
+- `z_sendmany` will no longer select transparent coinbase when "ANY\_TADDR" is
+  used as the `fromaddress`. It was already documented to do this, but the
+  previous behavior didn’t match. When coinbase notes were selected in this
+  case, they would (properly) require that the transaction didn’t have any
+  change, but this could be confusing, as the documentation stated that these
+  two conditions (using "ANY\_TADDR" and disallowing change) wouldn’t coincide.
+- A new value pool object with `"id": "transparent"` has been added to the
+  `valuePools` list in `getblockchaininfo` and `getblock`.
+- A new `chainSupply` key has been added to `getblockchaininfo` and `getblock`
+  to report the total chain supply as of that block height (if tracked), and the
+  change in chain supply caused by the block (for `getblock`, if measured).
+
+Mining
+-------
+
+- Changes to `getblocktemplate` have been backported from upstream Bitcoin Core,
+  to significantly improve its performance by doing more work ahead of time in
+  the mempool (and reusing the work across multiple `getblocktemplate` calls).
+
+[Deprecations](https://zcash.github.io/zcash/user/deprecation.html)
+--------------
+
+The following features have been deprecated, but remain available by default.
+These features may be disabled by setting `-allowdeprecated=none`. 18 weeks
+after this release, these features will be disabled by default and the following
+flags to `-allowdeprecated` will be required to permit their continued use:
+
+- `gbt_oldhashes`: the `finalsaplingroothash`, `lightclientroothash`, and
+  `blockcommitmentshash` fields in the output of `getblocktemplate` have been
+  replaced by the `defaultroots` field.
+
+The following previously-deprecated features have been disabled by default, and
+will be removed in 18 weeks:
+
+- `legacy_privacy`
+- `getnewaddress`
+- `getrawchangeaddress`
+- `z_getnewaddress`
+- `z_listaddresses`
+- `addrtype`
+- `wallettxvjoinsplit`
+
+The following previously-deprecated features have been removed:
+
+- `dumpwallet`
+- `zcrawreceive`
+- `zcrawjoinsplit`
+- `zcrawkeygen`
+
+Platform Support
+----------------
+
+- CentOS 8 has been removed from the list of supported platforms. It reached EoL
+  on December 31st 2021, and does not satisfy our Tier 2 policy requirements.
+
+Changelog
+=========
+
+Alex Morcos (3):
+      Make accessing mempool parents and children public
+      Expose FormatStateMessage
+      Rewrite CreateNewBlock
+
+Alfredo Garcia (1):
+      Add chain supply and transparent value to block index.
+
+Carl Dong (4):
+      depends: More robust cmake invocation
+      depends: Cleanup CMake invocation
+      depends: Prepend CPPFLAGS to C{,XX}FLAGS for CMake
+      depends: Specify LDFLAGS to cmake as well
+
+Daira Hopwood (7):
+      Add tl::expected. refs #4816
+      The std::expected proposal has unnecessary instances of undefined behaviour for operator->, operator*, and error(). Make these into assertion failures (this still conforms to the proposal).
+      Refactor HaveShieldedRequirements to use tl::expected (example with a void T) and rename it to CheckShieldedRequirements.
+      tl::expected follow-up to address @str4d's comments.
+      Cleanup after removing dumpwallet.
+      Change the time that the wallet will wait for the block index to load from 5 minutes to 2 hours.
+      Postpone updates for 5.4.0.
+
+Dimitris Apostolou (2):
+      Fix typos
+      Fix typos
+
+Greg Pfeil (23):
+      Add PrivacyPolicyMeet
+      Remove trailing whitespace in fetch-params.sh
+      Migrate fetch-params.sh to bash
+      Scope the fetch-params lock file to the user
+      Update comments to match changed tests
+      Put utf8.h in the correct place
+      Don’t select transparent coinbase with ANY_TADDR
+      Update failing tests after fixing ANY_TADDR behavior
+      Apply suggestions from code review
+      Apply suggestions from code review
+      Appease ShellCheck
+      Defer fixing docker/entrypoint.sh lint failure
+      Apply suggestions from code review
+      Fix a minor bug in docker/entrypoint.sh
+      Improve PrivacyPolicy comments
+      Apply suggestions from code review
+      Add release notes
+      Update src/wallet/asyncrpcoperation_sendmany.cpp
+      Fix a missing newline in the RPC docs
+      No longer test_received_sprout
+      Use cached sprout addresses rather than funding
+      Update overwinter test to not shield to Sprout
+      Support Bash 3.2 in fetch-params.sh
+
+Jack Grigg (50):
+      test: Handle mining slow start inside `CreateNewBlock_validity`
+      test: Improve CreateNewBlock_validity exception checks
+      txdb: Remove const annotation from blockinfo iterator type
+      Remove `dumpwallet` RPC method
+      qa: Refactor `wallet_deprecation` test to simplify deprecation changes
+      Remove `zcraw*` RPC methods
+      txdb: Clean up for loop syntax in `WriteBatchSync`
+      Disable previously-deprecated features by default
+      Deprecate old hash fields of `getblocktemplate`
+      qa: Change show_help RPC test to print out differences
+      qa: Update mempool_packages RPC test after deprecation ratcheting
+      qa: Import Rust crate audits from Firefox
+      qa: Import Rust crate audits from the Bytecode Alliance
+      qa: Import Rust crate audits from Embark Studios
+      qa: Remove audit-as-crates-io for non-third-party crates
+      cargo update
+      zcash_primitives 0.9
+      clearscreen 2.0
+      depends: googletest 1.12.1
+      Remove CentOS 8 as a supported platform
+      depends: native_zstd 1.5.2
+      depends: native_ccache 4.6.3
+      depends: Add package for native_cmake 3.25.1
+      depends: Force cmake to install libzstd in lib/
+      build-aux: Update Boost macros to latest serials
+      build: Bump required Boost version
+      depends: Force Boost library to be installed in lib/
+      depends: Add tl_expected to update checker
+      depends: Boost 1.81.0
+      depends: utfcpp 3.2.3
+      qa: Postpone LLVM 15 and CCache 4.7 updates
+      depends: Update cxx to 1.0.83
+      cargo update
+      Document -clockoffset option
+      qa: Update show_help RPC test
+      doc: Fix arguments to make-release.py in hotfix process
+      depends: CMake 3.25.2
+      make-release.py: Versioning changes for 5.4.0-rc1.
+      make-release.py: Updated manpages for 5.4.0-rc1.
+      make-release.py: Updated release notes and changelog for 5.4.0-rc1.
+      qa: Enable RPC test execution to be overridden from Python
+      depends: Postpone cxx update
+      metrics: Update `zcash.pool.value.zatoshis` gauge for transparent pool
+      Update release notes with notable changes for v5.4.0
+      make-release.py: Versioning changes for 5.4.0-rc2.
+      make-release.py: Updated manpages for 5.4.0-rc2.
+      make-release.py: Updated release notes and changelog for 5.4.0-rc2.
+      qa: Add RPC test reproducing the Orchard reindex issue
+      Fix return type of `orchard_wallet_reset`
+      Reset Orchard wallet state in `CWallet::ClearNoteWitnessCache`
+
+James O'Beirne (2):
+      Clarify help messages for path args to mention datadir prefix
+      Add AbsPathForConfigVal to consolidate datadir prefixing for path args
+
+Kris Nuttycombe (32):
+      Add TransactionStrategy::IsCompatibleWith
+      Modify TransactionBuilder to use the standard default fee.
+      Factor out memo parsing from asyncrpcoperation_sendmany
+      Remove mergetoaddress_sprout test as sending to Sprout is no longer supported.
+      Remove wallet_shieldcoinbase_sprout test.
+      Update `mergetoaddress_mixednotes.py` to no longer send to Sprout.
+      Verify sum of pool balances against chain total supply.
+      Apply suggestions from code review
+      Add script for verifying block rewards and fees not claimed by miners.
+      Apply suggestions from code review
+      Remove unnecessary delta_count variable.
+      Replace fix-copyright-headers.py with a script that creates a scripted-diff git commit.
+      scripted-diff: Update Zcash copyrights to 2023
+      Apply suggestions from code review
+      Enable tests of chain supply & transparent pool balance.
+      Update doc/release-notes.md
+      Fixes an error in `zcash-cli help` following the removal of `dumpwallet`.
+      Allow rescan to exit in the case that Ctrl-C is pressed.
+      Fetch recently conflicted transactions incrementally in ThreadNotifyWallet.
+      Bound wallet batch scanner size to 1000 blocks instead of 100 MiB
+      Remove unused DEFAULT_BATCHSCANNERMEMLIMIT constant.
+      Tolerate missing cached conflict data in ThreadNotifyWallets
+      make-release.py: Versioning changes for 5.4.0-rc3.
+      make-release.py: Updated manpages for 5.4.0-rc3.
+      make-release.py: Updated release notes and changelog for 5.4.0-rc3.
+      Defer z_getbalance and z_gettotalbalance disablement.
+      Patch uses of `sprintf` in `zeromq` that break the build on macOS
+      Patch zeromq to check the return value of snprintf where necessary.
+      Postpone rustcxx and native_cxxbridge versions 1.0.89
+      Add #6387 fix to v5.4.0 release notes.
+      make-release.py: Versioning changes for 5.4.0-rc4.
+      make-release.py: Updated manpages for 5.4.0-rc4.
+
+Marco Falke (4):
+      [init] Add missing help for args
+      [init] Help Msg: Use Params(CBaseChainParams::MAIN)
+      Clarify mocktime help message
+      init: Fix help message for checkblockindex
+
+Marius Kjærstad (5):
+      Hardened checkpoint update at block 1860000 for mainnet
+      Update src/chainparams.cpp
+      Some more formatting changes to chainparams.cpp
+      Forgot to add 0x
+      Add some more historical checkpoints
+
+Mark Friedenbach (1):
+      Prevent block.nTime from decreasing
+
+Marshall Gaucher (4):
+      Update zcash-build-bench.yml
+      Update README.md
+      Update contrib/ci-builders/tekton/tekton-labs/tasks/zcash-build.yml
+      Update contrib/ci-builders/tekton/tekton-labs/tasks/zcash-build-test.yml
+
+Michał Janiszewski (1):
+      Update debian/compat to version 13
+
+Russell Yanofsky (2):
+      depends: Add CMake helper for building packages
+      depends: Set CMAKE_INSTALL_RPATH for native packages
+
+Suhas Daftuar (3):
+      Track transaction packages in CTxMemPoolEntry
+      Add test showing bug in mempool packages
+      Fix mempool package tracking edge case
+
+Wladimir J. van der Laan (1):
+      rpc: Write authcookie atomically
+
+Marshall Gaucher (2):
+      add basic tekton zcash env
+      update memory targets with heaptrack
+

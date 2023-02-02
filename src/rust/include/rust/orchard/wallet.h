@@ -42,7 +42,7 @@ void orchard_wallet_free(OrchardWalletPtr* wallet);
  * in place with the expectation that they will be overwritten and/or updated in
  * the rescan process.
  */
-bool orchard_wallet_reset(OrchardWalletPtr* wallet);
+void orchard_wallet_reset(OrchardWalletPtr* wallet);
 
 /**
  * Checkpoint the note commitment tree. This returns `false` and leaves the note

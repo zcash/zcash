@@ -11,6 +11,9 @@ This release fixes an issue that could potentially cause a node to crash with th
 log message "The wallet's best block hash `<hash>` was not detected in restored
 chain state. Giving up; please restart with `-rescan`."
 
+Additionally, a bug that could cause an assertion failure during reindexing has 
+been fixed. See [#6387](https://github.com/zcash/zcash/pull/6387) for details.
+
 Transparent pool and chain supply tracking
 ------------------------------------------
 
@@ -94,8 +97,6 @@ will be removed in 18 weeks:
 - `legacy_privacy`
 - `getnewaddress`
 - `getrawchangeaddress`
-- `z_getbalance`
-- `z_gettotalbalance`
 - `z_getnewaddress`
 - `z_listaddresses`
 - `addrtype`
