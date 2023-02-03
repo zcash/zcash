@@ -20,6 +20,7 @@
  */
 void GetRandBytes(unsigned char* buf, size_t num);
 uint64_t GetRand(uint64_t nMax);
+int64_t GetRandInt64(int64_t nMax);
 int GetRandInt(int nMax);
 uint256 GetRandHash();
 

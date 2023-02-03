@@ -55,6 +55,11 @@ uint64_t GetRand(uint64_t nMax)
     return (nRand % nMax);
 }
 
+int64_t GetRandInt64(int64_t nMax)
+{
+    return GetRand(nMax);
+}
+
 int GetRandInt(int nMax)
 {
     return GetRand(nMax);
