@@ -111,5 +111,3 @@ features = ["ansi", "env-filter", "fmt", "time"]
 [profile.release]
 lto = 'thin'
 panic = 'abort'
-codegen-units = 1
-
