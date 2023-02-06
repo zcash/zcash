@@ -109,7 +109,7 @@ default-features = false
 features = ["ansi", "env-filter", "fmt", "time"]
 
 [profile.release]
-lto = true
+lto = 'thin'
 panic = 'abort'
 codegen-units = 1
 
