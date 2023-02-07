@@ -4390,11 +4390,13 @@ bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams,
         // Sleep briefly to allow other threads a chance at grabbing cs_main if
         // we are connecting a long chain of blocks and would otherwise hold the
         // lock almost continuously. As of 2023-02-03 the Zcash mainnet chain is
-        // around height 1,972,000; this sleep adds ~6.6 minutes to the time
-        // required to activate the best chain from genesis.
+        // around height 1,972,000; the total time slept here while activating
+        // the best chain from genesis to that height is ~6.6 minutes. This helps
+        // the internal wallet, if it is enabled, to keep up with the connected
+        // blocks, reducing the overall time until the node becomes usable.
         //
         // This is defined to be an interruption point.
-        // <https://www.boost.org/doc/libs/1_70_0/doc/html/thread/thread_management.html#interruption_points>
+        // <https://www.boost.org/doc/libs/1_81_0/doc/html/thread/thread_management.html#interruption_points>
         boost::this_thread::sleep_for(boost::chrono::microseconds(200));
 
         bool fInitialDownload;
