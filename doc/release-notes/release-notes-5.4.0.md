@@ -11,6 +11,14 @@ chain state. Giving up; please restart with `-rescan`."
 Additionally, a bug that could cause an assertion failure during reindexing has 
 been fixed. See [#6387](https://github.com/zcash/zcash/pull/6387) for details.
 
+### Known issues
+
+- When `zcashd` is started with `-reindex`, until the node's chain tip catches
+  back up to the main chain, RPC calls might block for long periods of time (or
+  time out), and the wallet's view of the chain may lag significantly behind the
+  node's chain tip. See [#6406](https://github.com/zcash/zcash/pull/6406) for
+  details and the fix (which will be included in the next release).
+
 Transparent pool and chain supply tracking
 ------------------------------------------
 
@@ -47,7 +55,7 @@ Wallet Performance Fixes
 
 The 100MiB memory limit for the batch scanner has been replaced by a 1000-block
 limit. This eliminates an expensive call to determine the current memory usage 
-of the batch scanner. 
+of the batch scanner.
 
 The following associated metric has been removed from the set of metrics
 reported when `-prometheusport` is set:
