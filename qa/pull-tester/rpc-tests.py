@@ -350,7 +350,7 @@ def run_tests(test_handler, test_list, src_dir, build_dir, exeext, jobs=1, enabl
         print('\nThe following tests were running when interrupted:')
         for j in job_queue.jobs:
             print("•", j[0])
-        print('')
+        print('\n', end='')
         raise
 
     results += BOLD[1] + "\n%s | %s | %s s (accumulated)" % ("ALL".ljust(max_len_name), str(all_passed).ljust(6), time_sum) + BOLD[0]
