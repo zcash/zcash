@@ -334,17 +334,24 @@ def run_tests(test_handler, test_list, src_dir, build_dir, exeext, jobs=1, enabl
 
     max_len_name = len(max(test_list, key=len))
     results = BOLD[1] + "%s | %s | %s\n\n" % ("TEST".ljust(max_len_name), "PASSED", "DURATION") + BOLD[0]
-    for _ in range(len(test_list)):
-        (name, stdout, stderr, passed, duration) = job_queue.get_next()
-        all_passed = all_passed and passed
-        time_sum += duration
+    try:
+        for _ in range(len(test_list)):
+            (name, stdout, stderr, passed, duration) = job_queue.get_next()
+            all_passed = all_passed and passed
+            time_sum += duration
 
-        print('\n' + BOLD[1] + name + BOLD[0] + ":")
-        print('' if passed else stdout + '\n', end='')
-        print('' if stderr == '' else 'stderr:\n' + stderr + '\n', end='')
-        print("Pass: %s%s%s, Duration: %s s\n" % (BOLD[1], passed, BOLD[0], duration))
+            print('\n' + BOLD[1] + name + BOLD[0] + ":")
+            print('' if passed else stdout + '\n', end='')
+            print('' if stderr == '' else 'stderr:\n' + stderr + '\n', end='')
+            print("Pass: %s%s%s, Duration: %s s\n" % (BOLD[1], passed, BOLD[0], duration))
 
-        results += "%s | %s | %s s\n" % (name.ljust(max_len_name), str(passed).ljust(6), duration)
+            results += "%s | %s | %s s\n" % (name.ljust(max_len_name), str(passed).ljust(6), duration)
+    except (InterruptedError, KeyboardInterrupt):
+        print('\nThe following tests were running when interrupted:')
+        for j in job_queue.jobs:
+            print("•", j[0])
+        print('')
+        raise
 
     results += BOLD[1] + "\n%s | %s | %s s (accumulated)" % ("ALL".ljust(max_len_name), str(all_passed).ljust(6), time_sum) + BOLD[0]
     print(results)
