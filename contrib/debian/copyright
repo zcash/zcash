@@ -166,7 +166,7 @@ License: Boost-Software-License-1.0
 
 Files: depends/sources/tl-expected-*.tar.gz
  depends/patches/tl_expected/*
-Copyright: 2017-2021 Sy Brand <simonrbrand@gmail.com> (@TartanLlama), 2022 The Zcash developers
+Copyright: 2017-2022 Sy Brand <tartanllama@gmail.com> (@TartanLlama), 2022 The Zcash developers
 License: CC0-1.0
 Comment: Other contributors are Simon Truscott (@bobbleclank), Kévin Alexandre Boissonneault (@KABoissonneault),
  and Björn Fahller (@rollbear).
