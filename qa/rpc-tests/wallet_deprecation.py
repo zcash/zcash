@@ -12,6 +12,8 @@ from test_framework.util import (
 )
 from test_framework.authproxy import JSONRPCException
 
+import os.path
+
 # Pick a subset of the deprecated RPC methods to test with. This test assumes that
 # the deprecation feature name is the same as the RPC method name, and that the RPC
 # method works without any arguments.
@@ -29,6 +31,12 @@ class WalletDeprecationTest(BitcoinTestFramework):
         super().__init__()
         self.num_nodes = 1
 
+    def setup_chain(self):
+        super().setup_chain()
+        # Save a copy of node 0's zcash.conf
+        with open(os.path.join(self.options.tmpdir, "node0", "zcash.conf"), 'r', encoding='utf8') as f:
+            self.conf_lines = f.readlines()
+
     def setup_network(self):
         self.setup_network_with_args([])
 
@@ -38,6 +46,13 @@ class WalletDeprecationTest(BitcoinTestFramework):
         self.nodes = start_nodes(
             self.num_nodes, self.options.tmpdir,
             extra_args=[dep_args] * self.num_nodes)
+
+    def setup_network_with_config(self, allowed_deprecated):
+        conf_lines = self.conf_lines + ["allowdeprecated={}\n".format(v) for v in allowed_deprecated]
+        with open(os.path.join(self.options.tmpdir, "node0", "zcash.conf"), 'w', encoding='utf8') as f:
+            f.writelines(conf_lines)
+
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
 
     def verify_enabled(self, function):
         try:
@@ -80,7 +95,7 @@ class WalletDeprecationTest(BitcoinTestFramework):
         for function in DEFAULT_DISABLED:
             self.verify_disabled(function)
 
-        for start_mode in (self.setup_network_with_args,):
+        for start_mode in (self.setup_network_with_args, self.setup_network_with_config):
             # restart with a specific selection of deprecated methods enabled
             self.test_case(start_mode, DEFAULT_DISABLED, self.verify_enabled)
 
