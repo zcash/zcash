@@ -71,13 +71,13 @@ extern bool fEnableWalletTxVJoinSplit;
 void EnforceNodeDeprecation(int nHeight, bool forceLogging=false, bool fThread=true);
 
 /**
- * Checks command-line arguments for enabling and/or disabling of deprecated
+ * Checks config options for enabling and/or disabling of deprecated
  * features and sets flags that enable deprecated features accordingly.
  *
  * @return std::nullopt if successful, or an error message indicating what
  * values are permitted for `-allowdeprecated`.
  */
-std::optional<std::string> SetAllowedDeprecatedFeaturesFromCLIArgs();
+std::optional<std::string> LoadAllowedDeprecatedFeatures();
 
 /**
  * Returns a comma-separated list of the valid arguments to the -allowdeprecated
