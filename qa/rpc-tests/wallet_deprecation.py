@@ -12,6 +12,17 @@ from test_framework.util import (
 )
 from test_framework.authproxy import JSONRPCException
 
+# Pick a subset of the deprecated RPC methods to test with. This test assumes that
+# the deprecation feature name is the same as the RPC method name, and that the RPC
+# method works without any arguments.
+DEFAULT_ENABLED = [
+    "z_gettotalbalance",
+]
+DEFAULT_DISABLED = [
+    "getnewaddress",
+    "z_getnewaddress",
+]
+
 # Test wallet address behaviour across network upgrades
 class WalletDeprecationTest(BitcoinTestFramework):
     def __init__(self):
@@ -19,9 +30,9 @@ class WalletDeprecationTest(BitcoinTestFramework):
         self.num_nodes = 1
 
     def setup_network(self):
-        self.setup_network_internal([])
+        self.setup_network_with_args([])
 
-    def setup_network_internal(self, allowed_deprecated = []):
+    def setup_network_with_args(self, allowed_deprecated):
         dep_args = ["-allowdeprecated=" + v for v in allowed_deprecated]
 
         self.nodes = start_nodes(
@@ -50,16 +61,17 @@ class WalletDeprecationTest(BitcoinTestFramework):
                 "failed with '%s'" % errorString if len(errorString) > 0 else "succeeded",
             ))
 
-    def run_test(self):
-        # Pick a subset of the deprecated RPC methods to test with. This test assumes that
-        # the deprecation feature name is the same as the RPC method name.
-        DEFAULT_ENABLED = [
-        ]
-        DEFAULT_DISABLED = [
-            "getnewaddress",
-            "z_getnewaddress",
-        ]
+    def test_case(self, start_mode, features_to_allow, expected_state):
+        stop_nodes(self.nodes)
+        wait_bitcoinds()
+        start_mode(features_to_allow)
 
+        for function in DEFAULT_ENABLED:
+            expected_state(function)
+        for function in DEFAULT_DISABLED:
+            expected_state(function)
+
+    def run_test(self):
         # RPC methods that are deprecated but enabled by default should succeed
         for function in DEFAULT_ENABLED:
             self.verify_enabled(function)
@@ -68,25 +80,12 @@ class WalletDeprecationTest(BitcoinTestFramework):
         for function in DEFAULT_DISABLED:
             self.verify_disabled(function)
 
-        # restart with a specific selection of deprecated methods enabled
-        stop_nodes(self.nodes)
-        wait_bitcoinds()
-        self.setup_network_internal(DEFAULT_DISABLED)
+        for start_mode in (self.setup_network_with_args,):
+            # restart with a specific selection of deprecated methods enabled
+            self.test_case(start_mode, DEFAULT_DISABLED, self.verify_enabled)
 
-        for function in DEFAULT_ENABLED:
-            self.verify_enabled(function)
-        for function in DEFAULT_DISABLED:
-            self.verify_enabled(function)
-
-        # restart with no deprecated methods enabled
-        stop_nodes(self.nodes)
-        wait_bitcoinds()
-        self.setup_network_internal(["none"])
-
-        for function in DEFAULT_ENABLED:
-            self.verify_disabled(function)
-        for function in DEFAULT_DISABLED:
-            self.verify_disabled(function)
+            # restart with no deprecated methods enabled
+            self.test_case(start_mode, ["none"], self.verify_disabled)
 
 if __name__ == '__main__':
     WalletDeprecationTest().main()
