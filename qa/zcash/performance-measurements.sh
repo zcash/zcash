@@ -106,7 +106,7 @@ function zcashd_heaptrack_start {
             mkdir -p "$DATADIR/regtest"
             touch "$DATADIR/zcash.conf"
     esac
-    heaptrack ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
+    heaptrack -r ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
     zcash_rpc_wait_for_start
 }
