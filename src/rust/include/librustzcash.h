@@ -97,7 +97,6 @@ extern "C" {
     /// The result is also of length 32 and placed in `result`.
     /// Returns false if the diversifier or pk_d is not valid
     bool librustzcash_sapling_compute_cmu(
-        bool zip216_enabled,
         const unsigned char *diversifier,
         const unsigned char *pk_d,
         const uint64_t value,
@@ -111,7 +110,6 @@ extern "C" {
     /// the result is written to the 32-byte
     /// `result` buffer.
     bool librustzcash_sapling_ka_agree(
-        bool zip216_enabled,
         const unsigned char *p,
         const unsigned char *sk,
         unsigned char *result

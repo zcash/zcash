@@ -4415,8 +4415,6 @@ std::optional<std::pair<
     SaplingPaymentAddress>> CWalletTx::RecoverSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op, std::set<uint256>& ovks) const
 {
     auto output = this->vShieldedOutput[op.n];
-    // ZIP 216: This wallet method is not called from consensus rules.
-    bool zip216Enabled = true;
 
     for (auto ovk : ovks) {
         auto outPt = SaplingOutgoingPlaintext::decrypt(
@@ -4431,14 +4429,13 @@ std::optional<std::pair<
         }
 
         auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(
-            zip216Enabled, output.encCiphertext, output.ephemeralKey, outPt->esk, outPt->pk_d);
+            output.encCiphertext, output.ephemeralKey, outPt->esk, outPt->pk_d);
 
         // The transaction would not have entered the wallet unless
         // its plaintext had been successfully decrypted previously.
         assert(optDeserialized != std::nullopt);
 
         auto maybe_pt = SaplingNotePlaintext::plaintext_checks_without_height(
-            zip216Enabled,
             *optDeserialized,
             output.ephemeralKey,
             outPt->esk,
