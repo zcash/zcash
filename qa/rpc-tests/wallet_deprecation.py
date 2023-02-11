@@ -17,10 +17,8 @@ import os.path
 # Pick a subset of the deprecated RPC methods to test with. This test assumes that
 # the deprecation feature name is the same as the RPC method name, and that the RPC
 # method works without any arguments.
-DEFAULT_ENABLED = [
+TESTABLE_FEATURES = [
     "z_gettotalbalance",
-]
-DEFAULT_DISABLED = [
     "getnewaddress",
     "z_getnewaddress",
 ]
@@ -76,31 +74,39 @@ class WalletDeprecationTest(BitcoinTestFramework):
                 "failed with '%s'" % errorString if len(errorString) > 0 else "succeeded",
             ))
 
-    def test_case(self, start_mode, features_to_allow, expected_state):
+    def test_case(self, start_mode, features_to_allow, expected_state, default_enabled, default_disabled):
         stop_nodes(self.nodes)
         wait_bitcoinds()
         start_mode(features_to_allow)
 
-        for function in DEFAULT_ENABLED:
-            expected_state(function)
-        for function in DEFAULT_DISABLED:
-            expected_state(function)
+        for function in default_enabled:
+            if function in TESTABLE_FEATURES:
+                expected_state(function)
+        for function in default_disabled:
+            if function in TESTABLE_FEATURES:
+                expected_state(function)
 
     def run_test(self):
+        dep_info = self.nodes[0].getdeprecationinfo()
+        default_enabled = dep_info['deprecated_features']
+        default_disabled = dep_info['disabled_features']
+
         # RPC methods that are deprecated but enabled by default should succeed
-        for function in DEFAULT_ENABLED:
-            self.verify_enabled(function)
+        for function in default_enabled:
+            if function in TESTABLE_FEATURES:
+                self.verify_enabled(function)
 
         # RPC methods that are deprecated and not enabled by default should fail
-        for function in DEFAULT_DISABLED:
-            self.verify_disabled(function)
+        for function in default_disabled:
+            if function in TESTABLE_FEATURES:
+                self.verify_disabled(function)
 
         for start_mode in (self.setup_network_with_args, self.setup_network_with_config):
             # restart with a specific selection of deprecated methods enabled
-            self.test_case(start_mode, DEFAULT_DISABLED, self.verify_enabled)
+            self.test_case(start_mode, default_disabled, self.verify_enabled, default_enabled, default_disabled)
 
             # restart with no deprecated methods enabled
-            self.test_case(start_mode, ["none"], self.verify_disabled)
+            self.test_case(start_mode, ["none"], self.verify_disabled, default_enabled, default_disabled)
 
 if __name__ == '__main__':
     WalletDeprecationTest().main()

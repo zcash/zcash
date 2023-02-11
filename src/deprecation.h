@@ -24,6 +24,7 @@ static const int DEPRECATION_WARN_LIMIT = 14 * 24 * EXPECTED_BLOCKS_PER_HOUR;
 static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
     // Node-level features
     "gbt_oldhashes",
+    "deprecationinfo_deprecationheight",
 
     // Wallet-level features
 #ifdef ENABLE_WALLET
@@ -48,6 +49,7 @@ static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
 
 // Flags that enable deprecated functionality.
 extern bool fEnableGbtOldHashes;
+extern bool fEnableDeprecationInfoDeprecationHeight;
 #ifdef ENABLE_WALLET
 extern bool fEnableGetNewAddress;
 extern bool fEnableGetRawChangeAddress;

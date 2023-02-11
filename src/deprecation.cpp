@@ -13,6 +13,7 @@
 
 // Flags that enable deprecated functionality.
 bool fEnableGbtOldHashes = true;
+bool fEnableDeprecationInfoDeprecationHeight = true;
 #ifdef ENABLE_WALLET
 bool fEnableGetNewAddress = true;
 bool fEnableGetRawChangeAddress = true;
@@ -93,6 +94,7 @@ std::optional<std::string> LoadAllowedDeprecatedFeatures() {
     }
 
     fEnableGbtOldHashes = allowdeprecated.count("gbt_oldhashes") > 0;
+    fEnableDeprecationInfoDeprecationHeight = allowdeprecated.count("deprecationinfo_deprecationheight") > 0;
 #ifdef ENABLE_WALLET
     fEnableLegacyPrivacyStrategy = allowdeprecated.count("legacy_privacy") > 0;
     fEnableGetNewAddress = allowdeprecated.count("getnewaddress") > 0;
