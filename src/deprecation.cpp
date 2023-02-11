@@ -61,7 +61,7 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
     }
 }
 
-std::optional<std::string> SetAllowedDeprecatedFeaturesFromCLIArgs() {
+std::optional<std::string> LoadAllowedDeprecatedFeatures() {
     auto args = GetMultiArg("-allowdeprecated");
     std::set<std::string> allowdeprecated(args.begin(), args.end());
 
