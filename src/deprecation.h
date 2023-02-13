@@ -10,7 +10,7 @@
 // Per https://zips.z.cash/zip-0200
 // Shut down nodes running this version of code, 16 weeks' worth of blocks after the estimated
 // release block height. A warning is shown during the 14 days' worth of blocks prior to shut down.
-static const int APPROX_RELEASE_HEIGHT = 1977500;
+static const int APPROX_RELEASE_HEIGHT = 1983000;
 static const int RELEASE_TO_DEPRECATION_WEEKS = 16;
 static const int EXPECTED_BLOCKS_PER_HOUR = 3600 / Consensus::POST_BLOSSOM_POW_TARGET_SPACING;
 static_assert(EXPECTED_BLOCKS_PER_HOUR == 48, "The value of Consensus::POST_BLOSSOM_POW_TARGET_SPACING was chosen such that this assertion holds.");
@@ -71,13 +71,13 @@ extern bool fEnableWalletTxVJoinSplit;
 void EnforceNodeDeprecation(int nHeight, bool forceLogging=false, bool fThread=true);
 
 /**
- * Checks command-line arguments for enabling and/or disabling of deprecated
+ * Checks config options for enabling and/or disabling of deprecated
  * features and sets flags that enable deprecated features accordingly.
  *
  * @return std::nullopt if successful, or an error message indicating what
  * values are permitted for `-allowdeprecated`.
  */
-std::optional<std::string> SetAllowedDeprecatedFeaturesFromCLIArgs();
+std::optional<std::string> LoadAllowedDeprecatedFeatures();
 
 /**
  * Returns a comma-separated list of the valid arguments to the -allowdeprecated

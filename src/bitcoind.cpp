@@ -94,14 +94,6 @@ bool AppInit(int argc, char* argv[])
         return true;
     }
 
-    // Handle setting of allowed-deprecated features as early as possible
-    // so that it's possible for other initialization steps to respect them.
-    auto deprecationError = SetAllowedDeprecatedFeaturesFromCLIArgs();
-    if (deprecationError.has_value()) {
-        fprintf(stderr, "%s", deprecationError.value().c_str());
-        return false;
-    }
-
     try
     {
         if (!fs::is_directory(GetDataDir(false)))
@@ -140,6 +132,14 @@ bool AppInit(int argc, char* argv[])
             SelectParams(ChainNameFromCommandLine());
         } catch(std::exception &e) {
             fprintf(stderr, "Error: %s\n", e.what());
+            return false;
+        }
+
+        // Handle setting of allowed-deprecated features as early as possible
+        // so that it's possible for other initialization steps to respect them.
+        auto deprecationError = LoadAllowedDeprecatedFeatures();
+        if (deprecationError.has_value()) {
+            fprintf(stderr, "%s", deprecationError.value().c_str());
             return false;
         }
 
