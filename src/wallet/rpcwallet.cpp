@@ -4816,9 +4816,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                 true,
                 false,
                 // LegacyCompat does not include AllowLinkingAccountAddresses.
-                maybeStrategy.has_value()
-                    ? maybeStrategy.value()
-                    : TransactionStrategy(PrivacyPolicy::FullPrivacy));
+                maybeStrategy.value_or(TransactionStrategy(PrivacyPolicy::FullPrivacy)));
             if (!ztxoSelectorOpt.has_value()) {
                 throw JSONRPCError(
                         RPC_INVALID_ADDRESS_OR_KEY,

@@ -210,6 +210,7 @@ SpendableInputs WalletTxBuilder::FindAllSpendableInputs(
         bool allowTransparentCoinbase,
         int32_t minDepth) const
 {
+    LOCK2(cs_main, wallet.cs_wallet);
     return wallet.FindSpendableInputs(selector, allowTransparentCoinbase, minDepth, std::nullopt);
 }
 

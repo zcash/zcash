@@ -369,7 +369,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # Send some legacy transparent funds to n1ua0, creating Sapling outputs.
         source = get_coinbase_address(self.nodes[2])
         recipients = [{"address":n1ua0, "amount":10}]
-        # This requires the AllowRevealedSenders policy...
+        # This requires the AllowRevealedSenders policy, but we specify only AllowRevealedAmounts...
         opid = self.nodes[2].z_sendmany(source, recipients, 1, 0, 'AllowRevealedAmounts')
         wait_and_assert_operationid_status(self.nodes[2], opid, 'failed', revealed_senders_msg)
         # ... which we can always override with the NoPrivacy policy.
