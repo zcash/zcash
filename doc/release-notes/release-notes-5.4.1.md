@@ -20,7 +20,7 @@ Config options can be specified either as a `zcashd` argument (`-option=value`)
 or in `zcash.conf` (as a `option=value` line). However, due to a bug in the
 implementation, `allowdeprecated=feature` lines in `zcash.conf` were ignored.
 The bug went unnoticed until v5.4.0, in which the first group of features moved
-from stage 1 to stage 2. This hotfix releases fixes the bug.
+from stage 1 to stage 2. This hotfix release fixes the bug.
 
 Fixed RPC blocking and wallet view lag on reindex
 -------------------------------------------------
