@@ -7895,15 +7895,6 @@ bool ZTXOSelector::SelectsOrchard() const {
     }, this->pattern);
 }
 
-void SpendableInputs::LimitTransparentUtxos(size_t maxUtxoCount)
-{
-    if (utxos.size() > maxUtxoCount) {
-        // this operation will always shrink the utxos vector; the dummy is
-        // just here to keep the compiler happy.
-        utxos.resize(maxUtxoCount, COutput::Dummy());
-    }
-}
-
 bool SpendableInputs::LimitToAmount(
     const CAmount amountRequired,
     const CAmount dustThreshold,

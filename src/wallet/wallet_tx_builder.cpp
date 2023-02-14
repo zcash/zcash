@@ -182,7 +182,6 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
     auto ovks = SelectOVKs(selector, spendable);
 
     return TransactionEffects(
-            sendFromAccount,
             anchorConfirmations,
             spendable,
             resolvedPayments,

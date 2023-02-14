@@ -150,7 +150,6 @@ typedef std::variant<
 
 class TransactionEffects {
 private:
-    AccountId sendFromAccount;
     uint32_t anchorConfirmations{1};
     SpendableInputs spendable;
     Payments payments;
@@ -165,7 +164,6 @@ private:
 
 public:
     TransactionEffects(
-        AccountId sendFromAccount,
         uint32_t anchorConfirmations,
         SpendableInputs spendable,
         Payments payments,
@@ -174,7 +172,6 @@ public:
         uint256 internalOVK,
         uint256 externalOVK,
         int anchorHeight) :
-            sendFromAccount(sendFromAccount),
             anchorConfirmations(anchorConfirmations),
             spendable(spendable),
             payments(payments),
