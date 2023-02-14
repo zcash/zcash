@@ -235,15 +235,15 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     // as possible.  This will also perform opportunistic shielding if the
     // transaction strategy permits.
 
-    CAmount maxSaplingAvailable = spendableMut.GetSaplingBalance();
-    CAmount maxOrchardAvailable = spendableMut.GetOrchardBalance();
+    CAmount maxSaplingAvailable = spendableMut.GetSaplingTotal();
+    CAmount maxOrchardAvailable = spendableMut.GetOrchardTotal();
     uint32_t orchardOutputs{0};
 
     // we can only select Orchard addresses if there are sufficient non-Sprout
     // funds to cover the total payments + fee.
     bool canResolveOrchard =
         params.GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5)
-        && spendableMut.Total() - spendableMut.GetSproutBalance() >= targetAmount;
+        && spendableMut.Total() - spendableMut.GetSproutTotal() >= targetAmount;
     std::vector<ResolvedPayment> resolvedPayments;
     std::optional<AddressResolutionError> resolutionError;
     for (const auto& payment : payments) {
@@ -538,7 +538,7 @@ PrivacyPolicy TransactionEffects::GetRequiredPrivacyPolicy() const
 
 bool TransactionEffects::InvolvesOrchard() const
 {
-    return spendable.GetOrchardBalance() > 0 || payments.HasOrchardRecipient();
+    return spendable.GetOrchardTotal() > 0 || payments.HasOrchardRecipient();
 }
 
 TransactionBuilderResult TransactionEffects::ApproveAndBuild(

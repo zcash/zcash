@@ -164,15 +164,15 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 FormatMoney(spendable.Total()),
                 FormatMoney(effects.GetFee()));
             LogPrint("zrpc", "%s: total transparent input: %s (to choose from)\n", getId(),
-                FormatMoney(spendable.GetTransparentBalance()));
+                FormatMoney(spendable.GetTransparentTotal()));
             LogPrint("zrpcunsafe", "%s: total shielded input: %s (to choose from)\n", getId(),
-                FormatMoney(spendable.GetSaplingBalance() + spendable.GetOrchardBalance()));
+                FormatMoney(spendable.GetSaplingTotal() + spendable.GetOrchardTotal()));
             LogPrint("zrpc", "%s: total transparent output: %s\n", getId(),
-                FormatMoney(payments.GetTransparentBalance()));
+                FormatMoney(payments.GetTransparentTotal()));
             LogPrint("zrpcunsafe", "%s: total shielded Sapling output: %s\n", getId(),
-                FormatMoney(payments.GetSaplingBalance()));
+                FormatMoney(payments.GetSaplingTotal()));
             LogPrint("zrpcunsafe", "%s: total shielded Orchard output: %s\n", getId(),
-                FormatMoney(payments.GetOrchardBalance()));
+                FormatMoney(payments.GetOrchardTotal()));
             LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(effects.GetFee()));
 
             auto buildResult = effects.ApproveAndBuild(

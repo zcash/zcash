@@ -124,15 +124,15 @@ public:
         return payments;
     }
 
-    CAmount GetTransparentBalance() const {
+    CAmount GetTransparentTotal() const {
         return t_outputs_total;
     }
 
-    CAmount GetSaplingBalance() const {
+    CAmount GetSaplingTotal() const {
         return sapling_outputs_total;
     }
 
-    CAmount GetOrchardBalance() const {
+    CAmount GetOrchardTotal() const {
         return orchard_outputs_total;
     }
 

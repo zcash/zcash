@@ -982,14 +982,14 @@ public:
      */
     CAmount Total() const {
         CAmount result = 0;
-        result += GetTransparentBalance();
-        result += GetSproutBalance();
-        result += GetSaplingBalance();
-        result += GetOrchardBalance();
+        result += GetTransparentTotal();
+        result += GetSproutTotal();
+        result += GetSaplingTotal();
+        result += GetOrchardTotal();
         return result;
     }
 
-    CAmount GetTransparentBalance() const {
+    CAmount GetTransparentTotal() const {
         CAmount result = 0;
         for (const auto& t : utxos) {
             result += t.Value();
@@ -997,7 +997,7 @@ public:
         return result;
     }
 
-    CAmount GetSproutBalance() const {
+    CAmount GetSproutTotal() const {
         CAmount result = 0;
         for (const auto& t : sproutNoteEntries) {
             result += t.note.value();
@@ -1005,7 +1005,7 @@ public:
         return result;
     }
 
-    CAmount GetSaplingBalance() const {
+    CAmount GetSaplingTotal() const {
         CAmount result = 0;
         for (const auto& t : saplingNoteEntries) {
             result += t.note.value();
@@ -1013,7 +1013,7 @@ public:
         return result;
     }
 
-    CAmount GetOrchardBalance() const {
+    CAmount GetOrchardTotal() const {
         CAmount result = 0;
         for (const auto& t : orchardNoteMetadata) {
             result += t.GetNoteValue();
