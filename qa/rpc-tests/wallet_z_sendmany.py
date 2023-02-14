@@ -183,7 +183,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # If we attempt to spend with the default privacy policy, z_sendmany
         # fails because it needs to spend transparent coins in a transaction
         # involving a Unified Address.
-        revealed_senders_msg = 'Insufficient funds: have 0.00, need 10.00; note that coinbase outputs will not be selected if any transparent recipients are included or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.'
+        revealed_senders_msg = 'Insufficient funds: have 0.00, need 10.00; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.'
         opid = self.nodes[2].z_sendmany(source, recipients, 1, 0, 'AllowRevealedAmounts')
         wait_and_assert_operationid_status(self.nodes[2], opid, 'failed', revealed_senders_msg)
 
@@ -322,7 +322,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         # If we try to send 3 ZEC from n1ua0, it will fail with too-few funds.
         recipients = [{"address":n0ua0, "amount":3}]
-        linked_addrs_msg = 'Insufficient funds: have 2.00, need 3.00; note that coinbase outputs will not be selected if any transparent recipients are included or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker. (This transaction may require selecting transparent coins that were sent to multiple Unified Addresses, which is not enabled by default because it would create a public link between the transparent receivers of these addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to allow this transaction to proceed anyway.)'
+        linked_addrs_msg = 'Insufficient funds: have 2.00, need 3.00; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker. (This transaction may require selecting transparent coins that were sent to multiple Unified Addresses, which is not enabled by default because it would create a public link between the transparent receivers of these addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to allow this transaction to proceed anyway.)'
         opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, 'AllowRevealedAmounts')
         wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', linked_addrs_msg)
 

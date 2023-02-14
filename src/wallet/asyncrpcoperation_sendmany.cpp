@@ -138,10 +138,7 @@ void AsyncRPCOperation_sendmany::main() {
 //
 // At least #4 differs from the Rust transaction builder.
 uint256 AsyncRPCOperation_sendmany::main_impl() {
-    auto spendable = builder_.FindAllSpendableInputs(
-            ztxoSelector_,
-            WalletTxBuilder::AllowTransparentCoinbase(recipients_, strategy_),
-            mindepth_);
+    auto spendable = builder_.FindAllSpendableInputs(ztxoSelector_, mindepth_);
 
     auto preparedTx = builder_.PrepareTransaction(
             ztxoSelector_,

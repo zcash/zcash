@@ -35,7 +35,6 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
     if (spendable.Total() < resolvedPayments.Total() + fee) {
         return InvalidFundsError(
                 spendable.Total(),
-                AllowTransparentCoinbase(payments, strategy),
                 InsufficientFundsError(resolvedPayments.Total() + fee));
     }
 
@@ -207,31 +206,10 @@ CAmount WalletTxBuilder::DefaultDustThreshold() const {
 
 SpendableInputs WalletTxBuilder::FindAllSpendableInputs(
         const ZTXOSelector& selector,
-        bool allowTransparentCoinbase,
         int32_t minDepth) const
 {
     LOCK2(cs_main, wallet.cs_wallet);
-    return wallet.FindSpendableInputs(selector, allowTransparentCoinbase, minDepth, std::nullopt);
-}
-
-bool WalletTxBuilder::AllowTransparentCoinbase(
-        const std::vector<Payment>& payments,
-        TransactionStrategy strategy)
-{
-    bool allowed = strategy.AllowRevealedSenders();
-    for (const auto& payment : payments) {
-        if (!allowed) break;
-        allowed &= std::visit(match {
-            [](const CKeyID& p2pkh) { return false; },
-            [](const CScriptID& p2sh) { return false; },
-            [](const SproutPaymentAddress& addr) { return false; },
-            [](const SaplingPaymentAddress& addr) { return true; },
-            [](const UnifiedAddress& ua) {
-                return ua.GetSaplingReceiver().has_value() || ua.GetOrchardReceiver().has_value();
-            }
-        }, payment.GetAddress());
-    }
-    return allowed;
+    return wallet.FindSpendableInputs(selector, minDepth, std::nullopt);
 }
 
 InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
@@ -369,7 +347,6 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
         CAmount changeAmount{spendableMut.Total() - targetAmount};
         return InvalidFundsError(
                 spendableMut.Total(),
-                AllowTransparentCoinbase(payments, strategy),
                 changeAmount > 0 && changeAmount < dustThreshold
                 // TODO: we should provide the option for the caller to explicitly
                 // forego change (definitionally an amount below the dust amount)

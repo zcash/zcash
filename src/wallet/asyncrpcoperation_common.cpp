@@ -119,15 +119,11 @@ void ThrowInputSelectionError(
                         }
                     },
                     err.reason))
-                    + (err.transparentCoinbasePermitted
-                       ? "" :
-                       "; note that coinbase outputs will not be selected if any transparent "
-                       "recipients are included or if the `privacyPolicy` parameter is not set to "
-                       "`AllowRevealedSenders` or weaker")
-                    + (selector.SelectsTransparentCoinbase()
+                    + (selector.TransparentCoinbasePolicy() != TransparentCoinbasePolicy::Disallow
                        ? "" :
                        "; note that coinbase outputs will not be selected if you specify "
-                       "ANY_TADDR")
+                       "ANY_TADDR, any transparent recipients are included, or if the "
+                       "`privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker")
                     + (!isFromUa || strategy.AllowLinkingAccountAddresses() ? "." :
                        ". (This transaction may require selecting transparent coins that were sent "
                        "to multiple Unified Addresses, which is not enabled by default because "

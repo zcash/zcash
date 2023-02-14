@@ -1871,7 +1871,7 @@ void CWallet::SyncMetaData(pair<typename TxSpendMap<T>::iterator, typename TxSpe
 std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAccount(
     libzcash::AccountId account,
     bool requireSpendingKey,
-    bool requireTransparentCoinbase,
+    TransparentCoinbasePolicy transparentCoinbasePolicy,
     std::set<libzcash::ReceiverType> receiverTypes) const
 {
     if (mnemonicHDChain.has_value() &&
@@ -1882,7 +1882,7 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAccount(
         return ZTXOSelector(
                 AccountZTXOPattern(account, receiverTypes),
                 requireSpendingKey,
-                requireTransparentCoinbase);
+                transparentCoinbasePolicy);
     } else {
         return std::nullopt;
     }
@@ -1891,7 +1891,7 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAccount(
 std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
         const libzcash::PaymentAddress& addr,
         bool requireSpendingKey,
-        bool requireTransparentCoinbase,
+        TransparentCoinbasePolicy transparentCoinbasePolicy,
         const TransactionStrategy& strategy) const
 {
     auto self = this;
@@ -1942,7 +1942,7 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
     }, addr);
 
     if (pattern.has_value()) {
-        return ZTXOSelector(pattern.value(), requireSpendingKey, requireTransparentCoinbase);
+        return ZTXOSelector(pattern.value(), requireSpendingKey, transparentCoinbasePolicy);
     } else {
         return std::nullopt;
     }
@@ -1951,7 +1951,7 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
 std::optional<ZTXOSelector> CWallet::ZTXOSelectorForViewingKey(
         const libzcash::ViewingKey& vk,
         bool requireSpendingKey,
-        bool requireTransparentCoinbase) const
+        TransparentCoinbasePolicy transparentCoinbasePolicy) const
 {
     auto self = this;
     std::optional<ZTXOPattern> pattern = std::nullopt;
@@ -1978,17 +1978,17 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForViewingKey(
     }, vk);
 
     if (pattern.has_value()) {
-        return ZTXOSelector(pattern.value(), requireSpendingKey, requireTransparentCoinbase);
+        return ZTXOSelector(pattern.value(), requireSpendingKey, transparentCoinbasePolicy);
     } else {
         return std::nullopt;
     }
 }
 
-ZTXOSelector CWallet::LegacyTransparentZTXOSelector(bool requireSpendingKey, bool coinbaseOnly) {
+ZTXOSelector CWallet::LegacyTransparentZTXOSelector(bool requireSpendingKey, TransparentCoinbasePolicy transparentCoinbasePolicy) {
     return ZTXOSelector(
             AccountZTXOPattern(ZCASH_LEGACY_ACCOUNT, {ReceiverType::P2PKH, ReceiverType::P2SH}),
             requireSpendingKey,
-            coinbaseOnly);
+            transparentCoinbasePolicy);
 }
 
 std::optional<libzcash::AccountId> CWallet::FindAccountForSelector(const ZTXOSelector& selector) const {
@@ -2216,7 +2216,6 @@ std::optional<RecipientAddress> CWallet::GenerateChangeAddressForAccount(
 
 SpendableInputs CWallet::FindSpendableInputs(
         ZTXOSelector selector,
-        bool allowTransparentCoinbase,
         uint32_t minDepth,
         const std::optional<int>& asOfHeight) const {
     AssertLockHeld(cs_main);
@@ -2225,7 +2224,6 @@ SpendableInputs CWallet::FindSpendableInputs(
     KeyIO keyIO(Params());
 
     bool selectTransparent{selector.SelectsTransparent()};
-    bool selectTransparentCoinbase{selector.SelectsTransparentCoinbase()};
     bool selectSprout{selector.SelectsSprout()};
     bool selectSapling{selector.SelectsSapling()};
     bool selectOrchard{selector.SelectsOrchard()};
@@ -2241,9 +2239,11 @@ SpendableInputs CWallet::FindSpendableInputs(
 
         if (selectTransparent &&
             // skip transparent utxo selection if coinbase spend restrictions are not met
-            (!isCoinbase || (selectTransparentCoinbase && allowTransparentCoinbase && wtx.GetBlocksToMaturity(asOfHeight) <= 0)) &&
+            (!isCoinbase
+             || (selector.transparentCoinbasePolicy != TransparentCoinbasePolicy::Disallow
+                 && wtx.GetBlocksToMaturity(asOfHeight) <= 0))
             // select only transparent utxos if RequireTransparentCoinbase
-            (isCoinbase || !selector.RequireTransparentCoinbase())) {
+            && (isCoinbase || selector.transparentCoinbasePolicy != TransparentCoinbasePolicy::Require)) {
 
             for (int i = 0; i < wtx.vout.size(); i++) {
                 const auto& output = wtx.vout[i];
@@ -2273,7 +2273,7 @@ SpendableInputs CWallet::FindSpendableInputs(
             }
         }
 
-        if (selectSprout && !selector.RequireTransparentCoinbase()) {
+        if (selectSprout) {
             for (auto const& [jsop, nd] : wtx.mapSproutNoteData) {
                 SproutPaymentAddress pa = nd.address;
 
@@ -2328,7 +2328,7 @@ SpendableInputs CWallet::FindSpendableInputs(
             }
         }
 
-        if (selectSapling && !selector.RequireTransparentCoinbase()) {
+        if (selectSapling) {
             for (auto const& [op, nd] : wtx.mapSaplingNoteData) {
                 auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
 
@@ -2357,7 +2357,7 @@ SpendableInputs CWallet::FindSpendableInputs(
         }
     }
 
-    if (selectOrchard && !selector.RequireTransparentCoinbase()) {
+    if (selectOrchard) {
         // for Orchard, we select both the internal and external IVKs.
         auto orchardIvks = std::visit(match {
             [&](const libzcash::UnifiedAddress& selectorUA) -> std::vector<OrchardIncomingViewingKey> {
@@ -7869,32 +7869,15 @@ bool ZTXOSelector::SelectsTransparent() const {
         [](const AccountZTXOPattern& acct) { return acct.IncludesP2PKH() || acct.IncludesP2SH(); }
     }, this->pattern);
 }
-bool ZTXOSelector::SelectsTransparentCoinbase() const {
-    return std::visit(match {
-        [](const CKeyID& keyId) { return true; },
-        [](const CScriptID& scriptId) { return true; },
-        [](const libzcash::SproutPaymentAddress& addr) { return false; },
-        [](const libzcash::SproutViewingKey& vk) { return false; },
-        [](const libzcash::SaplingPaymentAddress& addr) { return false; },
-        [](const libzcash::SaplingExtendedFullViewingKey& vk) { return false; },
-        [](const libzcash::UnifiedAddress& ua) {
-            return ua.GetP2PKHReceiver().has_value() || ua.GetP2SHReceiver().has_value();
-        },
-        [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetTransparentKey().has_value(); },
-        [](const AccountZTXOPattern& acct) {
-            return (acct.IncludesP2PKH() || acct.IncludesP2SH()) && acct.GetAccountId() != ZCASH_LEGACY_ACCOUNT;
-        }
-    }, this->pattern);
-}
 bool ZTXOSelector::SelectsSprout() const {
-    return std::visit(match {
+    return transparentCoinbasePolicy != TransparentCoinbasePolicy::Require && std::visit(match {
         [](const libzcash::SproutViewingKey& addr) { return true; },
         [](const libzcash::SproutPaymentAddress& extfvk) { return true; },
         [](const auto& addr) { return false; }
     }, this->pattern);
 }
 bool ZTXOSelector::SelectsSapling() const {
-    return std::visit(match {
+    return transparentCoinbasePolicy != TransparentCoinbasePolicy::Require && std::visit(match {
         [](const libzcash::SaplingPaymentAddress& addr) { return true; },
         [](const libzcash::SaplingExtendedSpendingKey& extfvk) { return true; },
         [](const libzcash::UnifiedAddress& ua) { return ua.GetSaplingReceiver().has_value(); },
@@ -7904,7 +7887,7 @@ bool ZTXOSelector::SelectsSapling() const {
     }, this->pattern);
 }
 bool ZTXOSelector::SelectsOrchard() const {
-    return std::visit(match {
+    return transparentCoinbasePolicy != TransparentCoinbasePolicy::Require && std::visit(match {
         [](const libzcash::UnifiedAddress& ua) { return ua.GetOrchardReceiver().has_value(); },
         [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetOrchardKey().has_value(); },
         [](const AccountZTXOPattern& acct) { return acct.IncludesOrchard(); },

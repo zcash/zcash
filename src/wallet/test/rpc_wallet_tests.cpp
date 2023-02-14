@@ -803,7 +803,11 @@ void CheckHaveAddr(const std::optional<libzcash::PaymentAddress>& addr) {
     BOOST_ASSERT(addr_of_type != nullptr);
 
     TransactionStrategy strategy(PrivacyPolicy::FullPrivacy);
-    BOOST_CHECK(pwalletMain->ZTXOSelectorForAddress(*addr_of_type, true, false, strategy).has_value());
+    BOOST_CHECK(pwalletMain->ZTXOSelectorForAddress(
+                        *addr_of_type,
+                        true,
+                        TransparentCoinbasePolicy::Allow,
+                        strategy).has_value());
 }
 
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
@@ -1238,7 +1242,11 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     // there are no utxos to spend
     {
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
-        auto selector = pwalletMain->ZTXOSelectorForAddress(taddr1, true, false, strategy).value();
+        auto selector = pwalletMain->ZTXOSelectorForAddress(
+                taddr1,
+                true,
+                TransparentCoinbasePolicy::Require,
+                strategy).value();
         WalletTxBuilder builder(Params(), *pwalletMain, minRelayTxFee);
         std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
@@ -1251,7 +1259,11 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     // there are no unspent notes to spend
     {
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
-        auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true, false, strategy).value();
+        auto selector = pwalletMain->ZTXOSelectorForAddress(
+                zaddr1,
+                true,
+                TransparentCoinbasePolicy::Disallow,
+                strategy).value();
         WalletTxBuilder builder(Params(), *pwalletMain, minRelayTxFee);
         std::vector<Payment> recipients = { Payment(taddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));

@@ -240,11 +240,10 @@ typedef std::variant<
 class InvalidFundsError {
 public:
     CAmount available;
-    bool transparentCoinbasePermitted;
     const InvalidFundsReason reason;
 
-    InvalidFundsError(CAmount available, bool transparentCoinbasePermitted, const InvalidFundsReason reason):
-        available(available), transparentCoinbasePermitted(transparentCoinbasePermitted), reason(reason) { }
+    InvalidFundsError(CAmount available, const InvalidFundsReason reason):
+        available(available), reason(reason) { }
 };
 
 class ChangeNotAllowedError {
@@ -327,13 +326,8 @@ public:
     WalletTxBuilder(const CChainParams& params, const CWallet& wallet, CFeeRate minRelayFee):
         params(params), wallet(wallet), minRelayFee(minRelayFee), maxOrchardActions(nOrchardActionLimit) {}
 
-    static bool AllowTransparentCoinbase(
-            const std::vector<Payment>& payments,
-            TransactionStrategy strategy);
-
     SpendableInputs FindAllSpendableInputs(
             const ZTXOSelector& selector,
-            bool allowTransparentCoinbase,
             int32_t minDepth) const;
 
     PrepareTransactionResult PrepareTransaction(
