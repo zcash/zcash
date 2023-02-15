@@ -364,38 +364,38 @@ class CCoinsView
 {
 public:
     //! Retrieve the tree (Sprout) at a particular anchored root in the chain
-    virtual bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
+    virtual bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const = 0;
 
     //! Retrieve the tree (Sapling) at a particular anchored root in the chain
-    virtual bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
+    virtual bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const = 0;
 
     //! Retrieve the tree (Orchard) at a particular anchored root in the chain
-    virtual bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const;
+    virtual bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const = 0;
 
     //! Determine whether a nullifier is spent or not
-    virtual bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
+    virtual bool GetNullifier(const uint256 &nullifier, ShieldedType type) const = 0;
 
     //! Retrieve the CCoins (unspent transaction outputs) for a given txid
-    virtual bool GetCoins(const uint256 &txid, CCoins &coins) const;
+    virtual bool GetCoins(const uint256 &txid, CCoins &coins) const = 0;
 
     //! Just check whether we have data for a given txid.
     //! This may (but cannot always) return true for fully spent transactions
-    virtual bool HaveCoins(const uint256 &txid) const;
+    virtual bool HaveCoins(const uint256 &txid) const = 0;
 
     //! Retrieve the block hash whose state this CCoinsView currently represents
-    virtual uint256 GetBestBlock() const;
+    virtual uint256 GetBestBlock() const = 0;
 
     //! Get the current "tip" or the latest anchored tree root in the chain
-    virtual uint256 GetBestAnchor(ShieldedType type) const;
+    virtual uint256 GetBestAnchor(ShieldedType type) const = 0;
 
     //! Get the current chain history length (which should be roughly chain height x2)
-    virtual HistoryIndex GetHistoryLength(uint32_t epochId) const;
+    virtual HistoryIndex GetHistoryLength(uint32_t epochId) const = 0;
 
     //! Get history node at specified index
-    virtual HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const;
+    virtual HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const = 0;
 
     //! Get current history root
-    virtual uint256 GetHistoryRoot(uint32_t epochId) const;
+    virtual uint256 GetHistoryRoot(uint32_t epochId) const = 0;
 
     //! Do a bulk modification (multiple CCoins changes + BestBlock change).
     //! The passed mapCoins can be modified.
@@ -410,15 +410,47 @@ public:
                             CNullifiersMap &mapSproutNullifiers,
                             CNullifiersMap &mapSaplingNullifiers,
                             CNullifiersMap &mapOrchardNullifiers,
-                            CHistoryCacheMap &historyCacheMap);
+                            CHistoryCacheMap &historyCacheMap) = 0;
 
     //! Calculate statistics about the unspent transaction output set
-    virtual bool GetStats(CCoinsStats &stats) const;
+    virtual bool GetStats(CCoinsStats &stats) const = 0;
 
     //! As we use CCoinsViews polymorphically, have a virtual destructor
     virtual ~CCoinsView() {}
 };
 
+class CCoinsViewDummy : public CCoinsView
+{
+public:
+    ~CCoinsViewDummy() {}
+
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return false; }
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return false; }
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const { return false; }
+    bool GetNullifier(const uint256 &nullifier, ShieldedType type) const { return false; }
+    bool GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
+    bool HaveCoins(const uint256 &txid) const { return false; }
+    uint256 GetBestBlock() const { return uint256(); }
+    uint256 GetBestAnchor(ShieldedType type) const { return uint256(); };
+    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }
+
+    bool BatchWrite(CCoinsMap &mapCoins,
+                    const uint256 &hashBlock,
+                    const uint256 &hashSproutAnchor,
+                    const uint256 &hashSaplingAnchor,
+                    const uint256 &hashOrchardAnchor,
+                    CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
+                    CAnchorsOrchardMap &mapOrchardAnchors,
+                    CNullifiersMap &mapSproutNullifiers,
+                    CNullifiersMap &mapSaplingNullifiers,
+                    CNullifiersMap &mapOrchardNullifiers,
+                    CHistoryCacheMap &historyCacheMap) { return false; }
+
+    bool GetStats(CCoinsStats &stats) const { return false; }
+};
 
 /** CCoinsView backed by another CCoinsView */
 class CCoinsViewBacked : public CCoinsView
@@ -428,6 +460,8 @@ protected:
 
 public:
     CCoinsViewBacked(CCoinsView *viewIn);
+    ~CCoinsViewBacked() {}
+
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
     bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const;

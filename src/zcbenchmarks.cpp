@@ -458,6 +458,7 @@ public:
         OrchardMerkleFrontier emptyOrchardTree;
         orchardTrees.push_back(emptyOrchardTree);
     }
+    ~FakeCoinsViewDB() {}
 
     void SetSaplingTrees(std::vector<std::string> trees) {
         saplingTrees.clear();
@@ -545,6 +546,10 @@ public:
                 throw new std::runtime_error("Unknown shielded type");
         }
     }
+
+    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }
 
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,

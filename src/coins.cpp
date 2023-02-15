@@ -45,32 +45,6 @@ bool CCoins::Spend(uint32_t nPos)
     Cleanup();
     return true;
 }
-bool CCoinsView::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return false; }
-bool CCoinsView::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return false; }
-bool CCoinsView::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const { return false; }
-bool CCoinsView::GetNullifier(const uint256 &nullifier, ShieldedType type) const { return false; }
-bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
-bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
-uint256 CCoinsView::GetBestBlock() const { return uint256(); }
-uint256 CCoinsView::GetBestAnchor(ShieldedType type) const { return uint256(); };
-HistoryIndex CCoinsView::GetHistoryLength(uint32_t epochId) const { return 0; }
-HistoryNode CCoinsView::GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
-uint256 CCoinsView::GetHistoryRoot(uint32_t epochId) const { return uint256(); }
-
-bool CCoinsView::BatchWrite(CCoinsMap &mapCoins,
-                            const uint256 &hashBlock,
-                            const uint256 &hashSproutAnchor,
-                            const uint256 &hashSaplingAnchor,
-                            const uint256 &hashOrchardAnchor,
-                            CAnchorsSproutMap &mapSproutAnchors,
-                            CAnchorsSaplingMap &mapSaplingAnchors,
-                            CAnchorsOrchardMap &mapOrchardAnchors,
-                            CNullifiersMap &mapSproutNullifiers,
-                            CNullifiersMap &mapSaplingNullifiers,
-                            CNullifiersMap &mapOrchardNullifiers,
-                            CHistoryCacheMap &historyCacheMap) { return false; }
-bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
-
 
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
 

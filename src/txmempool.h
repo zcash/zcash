@@ -662,6 +662,8 @@ protected:
 
 public:
     CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn);
+    ~CCoinsViewMemPool() {}
+
     bool GetNullifier(const uint256 &txid, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;

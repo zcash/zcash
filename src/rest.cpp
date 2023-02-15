@@ -511,7 +511,7 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
     {
         LOCK2(cs_main, mempool.cs);
 
-        CCoinsView viewDummy;
+        CCoinsViewDummy viewDummy;
         CCoinsViewCache view(&viewDummy);
 
         CCoinsViewCache& viewChain = *pcoinsTip;

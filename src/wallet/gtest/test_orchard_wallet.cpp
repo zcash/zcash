@@ -9,8 +9,6 @@
 #include "wallet/orchard.h"
 #include "zcash/Address.hpp"
 
-#include "gtest/test_transaction_builder.h"
-
 #include <optional>
 
 using namespace libzcash;
@@ -30,9 +28,7 @@ CTransaction FakeOrchardTx(const OrchardSpendingKey& sk, libzcash::diversifier_i
     auto fvk = sk.ToFullViewingKey();
     auto ivk = fvk.ToIncomingViewingKey();
     auto recipient = ivk.Address(j);
-
-    TransactionBuilderCoinsViewDB fakeDB;
-    auto orchardAnchor = fakeDB.GetBestAnchor(ShieldedType::ORCHARD);
+    auto orchardAnchor = uint256();
 
     // Create a shielding transaction from transparent to Orchard
     // 0.0005 t-ZEC in, 0.0004 z-ZEC out, 0.0001 fee

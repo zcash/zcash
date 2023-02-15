@@ -45,6 +45,7 @@ public:
         hashBestSaplingAnchor_ = SaplingMerkleTree::empty_root();
         hashBestOrchardAnchor_ = OrchardMerkleFrontier::empty_root();
     }
+    ~CCoinsViewTest() {}
 
     bool GetSproutAnchorAt(const uint256& rt, SproutMerkleTree &tree) const {
         if (rt == SproutMerkleTree::empty_root()) {
@@ -192,6 +193,10 @@ public:
         }
     }
 
+    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }
+
     bool BatchWrite(CCoinsMap& mapCoins,
                     const uint256& hashBlock,
                     const uint256& hashSproutAnchor,
@@ -243,6 +248,7 @@ class CCoinsViewCacheTest : public CCoinsViewCache
 {
 public:
     CCoinsViewCacheTest(CCoinsView* base) : CCoinsViewCache(base) {}
+    ~CCoinsViewCacheTest() {}
 
     void SelfTest() const
     {
@@ -279,7 +285,7 @@ public:
         JSDescription jsd;
         jsd.nullifiers[0] = sproutNullifier;
         mutableTx.vJoinSplit.emplace_back(jsd);
-        
+
         saplingNullifier = InsecureRand256();
         SpendDescription sd;
         sd.nullifier = saplingNullifier;

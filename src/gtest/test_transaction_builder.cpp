@@ -241,8 +241,7 @@ TEST(TransactionBuilder, TransparentToOrchard)
     libzcash::diversifier_index_t j(0);
     auto recipient = ivk.Address(j);
 
-    TransactionBuilderCoinsViewDB fakeDB;
-    auto orchardAnchor = fakeDB.GetBestAnchor(ShieldedType::ORCHARD);
+    auto orchardAnchor = uint256();
 
     // Create a shielding transaction from transparent to Orchard
     // 0.00005 t-ZEC in, 0.00004 z-ZEC out, default fee
