@@ -235,8 +235,8 @@ pub extern "C" fn orchard_batch_add_bundle(
 pub extern "C" fn orchard_batch_validate(batch: *mut BatchValidator) -> bool {
     if !batch.is_null() {
         let batch = unsafe { Box::from_raw(batch) };
-        let vk =
-            unsafe { crate::ORCHARD_VK.as_ref() }.expect("ORCHARD_VK should have been initialized");
+        let vk = unsafe { crate::ORCHARD_VK.as_ref() }
+            .expect("Parameters not loaded: ORCHARD_VK should have been initialized");
         if batch.validator.validate(vk, OsRng) {
             // `BatchValidator::validate()` is only called if every
             // `BatchValidator::check_bundle()` returned `true`, so at this point

@@ -554,12 +554,11 @@ pub extern "C" fn librustzcash_sprout_prove(
     vpub_new: u64,
 ) {
     // Load parameters from disk
-    let sprout_fs = File::open(
-        unsafe { &SPROUT_GROTH16_PARAMS_PATH }
-            .as_ref()
-            .expect("parameters should have been initialized"),
-    )
-    .expect("couldn't load Sprout groth16 parameters file");
+    let sprout_fs =
+        File::open(unsafe { &SPROUT_GROTH16_PARAMS_PATH }.as_ref().expect(
+            "Parameters not loaded: SPROUT_GROTH16_PARAMS_PATH should have been initialized",
+        ))
+        .expect("couldn't load Sprout groth16 parameters file");
 
     let mut sprout_fs = BufReader::with_capacity(1024 * 1024, sprout_fs);
 
@@ -625,7 +624,8 @@ pub extern "C" fn librustzcash_sprout_verify(
         unsafe { &*cm2 },
         vpub_old,
         vpub_new,
-        unsafe { SPROUT_GROTH16_VK.as_ref() }.expect("parameters should have been initialized"),
+        unsafe { SPROUT_GROTH16_VK.as_ref() }
+            .expect("Parameters not loaded: SPROUT_GROTH16_VK should have been initialized"),
     )
 }
 

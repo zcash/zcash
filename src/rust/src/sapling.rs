@@ -335,8 +335,12 @@ impl Prover {
                 value,
                 anchor,
                 merkle_path,
-                unsafe { SAPLING_SPEND_PARAMS.as_ref() }.unwrap(),
-                &prepare_verifying_key(unsafe { SAPLING_SPEND_VK.as_ref() }.unwrap()),
+                unsafe { SAPLING_SPEND_PARAMS.as_ref() }.expect(
+                    "Parameters not loaded: SAPLING_SPEND_PARAMS should have been initialized",
+                ),
+                &prepare_verifying_key(unsafe { SAPLING_SPEND_VK.as_ref() }.expect(
+                    "Parameters not loaded: SAPLING_SPEND_VK should have been initialized",
+                )),
             )
             .expect("proving should not fail");
 
@@ -387,7 +391,9 @@ impl Prover {
             payment_address,
             rcm,
             value,
-            unsafe { SAPLING_OUTPUT_PARAMS.as_ref() }.unwrap(),
+            unsafe { SAPLING_OUTPUT_PARAMS.as_ref() }.expect(
+                "Parameters not loaded: SAPLING_OUTPUT_PARAMS should have been initialized",
+            ),
         );
 
         // Write the proof out to the caller
@@ -485,7 +491,10 @@ impl Verifier {
             sighash_value,
             spend_auth_sig,
             zkproof,
-            &prepare_verifying_key(unsafe { SAPLING_SPEND_VK.as_ref() }.unwrap()),
+            &prepare_verifying_key(
+                unsafe { SAPLING_SPEND_VK.as_ref() }
+                    .expect("Parameters not loaded: SAPLING_SPEND_VK should have been initialized"),
+            ),
         )
     }
     fn check_output(
@@ -525,7 +534,11 @@ impl Verifier {
             cm,
             epk,
             zkproof,
-            &prepare_verifying_key(unsafe { SAPLING_OUTPUT_VK.as_ref() }.unwrap()),
+            &prepare_verifying_key(
+                unsafe { SAPLING_OUTPUT_VK.as_ref() }.expect(
+                    "Parameters not loaded: SAPLING_OUTPUT_VK should have been initialized",
+                ),
+            ),
         )
     }
     fn final_check(
@@ -625,8 +638,11 @@ impl BatchValidator {
     fn validate(&mut self) -> bool {
         if let Some(inner) = self.0.take() {
             if inner.validator.validate(
-                unsafe { SAPLING_SPEND_VK.as_ref() }.unwrap(),
-                unsafe { SAPLING_OUTPUT_VK.as_ref() }.unwrap(),
+                unsafe { SAPLING_SPEND_VK.as_ref() }
+                    .expect("Parameters not loaded: SAPLING_SPEND_VK should have been initialized"),
+                unsafe { SAPLING_OUTPUT_VK.as_ref() }.expect(
+                    "Parameters not loaded: SAPLING_OUTPUT_VK should have been initialized",
+                ),
                 OsRng,
             ) {
                 // `Self::validate()` is only called if every `Self::check_bundle()`
