@@ -10,6 +10,9 @@ url = "https://raw.githubusercontent.com/EmbarkStudios/rust-ecosystem/main/audit
 [imports.firefox]
 url = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
 
+[imports.isrg]
+url = "https://raw.githubusercontent.com/divviup/libprio-rs/main/supply-chain/audits.toml"
+
 [[exemptions.addr2line]]
 version = "0.17.0"
 criteria = "safe-to-deploy"
@@ -68,10 +71,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.blake2s_simd]]
 version = "1.0.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.block-buffer]]
-version = "0.9.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.block-modes]]
@@ -150,10 +149,6 @@ criteria = "safe-to-deploy"
 version = "0.8.8"
 criteria = "safe-to-deploy"
 
-[[exemptions.crunchy]]
-version = "0.2.2"
-criteria = "safe-to-deploy"
-
 [[exemptions.crypto-mac]]
 version = "0.11.1"
 criteria = "safe-to-deploy"
@@ -192,10 +187,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.ed25519-zebra]]
 version = "3.0.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.either]]
-version = "1.8.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.ff]]
@@ -412,10 +403,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.once_cell]]
 version = "1.17.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.opaque-debug]]
-version = "0.3.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.overload]]
@@ -730,20 +717,8 @@ criteria = "safe-to-deploy"
 version = "0.9.4"
 criteria = "safe-to-deploy"
 
-[[exemptions.unicode-ident]]
-version = "1.0.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.unicode-xid]]
 version = "0.2.4"
-criteria = "safe-to-deploy"
-
-[[exemptions.universal-hash]]
-version = "0.4.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.untrusted]]
-version = "0.7.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.valuable]]
@@ -783,10 +758,6 @@ version = "0.2.83"
 criteria = "safe-to-deploy"
 
 [[exemptions.wasm-bindgen-macro-support]]
-version = "0.2.83"
-criteria = "safe-to-deploy"
-
-[[exemptions.wasm-bindgen-shared]]
 version = "0.2.83"
 criteria = "safe-to-deploy"
 
