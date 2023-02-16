@@ -34,10 +34,6 @@ criteria = "safe-to-deploy"
 version = "0.7.18"
 criteria = "safe-to-deploy"
 
-[[exemptions.arrayref]]
-version = "0.3.6"
-criteria = "safe-to-deploy"
-
 [[exemptions.backtrace]]
 version = "0.3.67"
 criteria = "safe-to-deploy"

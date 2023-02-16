@@ -1,15 +1,13 @@
 
 # cargo-vet imports lock
 
-[[audits.bytecode-alliance.audits.anyhow]]
-who = "Alex Crichton <alex@alexcrichton.com>"
+[[audits.bytecode-alliance.audits.arrayref]]
+who = "Nick Fitzgerald <fitzgen@gmail.com>"
 criteria = "safe-to-deploy"
-delta = "1.0.62 -> 1.0.66"
+version = "0.3.6"
 notes = """
-This update looks to be related to minor fixes and mostly integrating with a
-nightly feature in the standard library for backtrace integration. No undue
-`unsafe` is added and nothing unsurprising for the `anyhow` crate is happening
-here.
+Unsafe code, but its logic looks good to me. Necessary given what it is
+doing. Well tested, has quickchecks.
 """
 
 [[audits.bytecode-alliance.audits.arrayvec]]
@@ -21,12 +19,6 @@ Well documented invariants, good assertions for those invariants in unsafe code,
 and tested with MIRI to boot. LGTM.
 """
 
-[[audits.bytecode-alliance.audits.backtrace]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-version = "0.3.66"
-notes = "I am the author of this crate."
-
 [[audits.bytecode-alliance.audits.block-buffer]]
 who = "Benjamin Bouvier <public@benj.me>"
 criteria = "safe-to-deploy"
@@ -35,19 +27,7 @@ delta = "0.9.0 -> 0.10.2"
 [[audits.bytecode-alliance.audits.bumpalo]]
 who = "Nick Fitzgerald <fitzgen@gmail.com>"
 criteria = "safe-to-deploy"
-version = "3.9.1"
-notes = "I am the author of this crate."
-
-[[audits.bytecode-alliance.audits.bumpalo]]
-who = "Nick Fitzgerald <fitzgen@gmail.com>"
-criteria = "safe-to-deploy"
 version = "3.11.1"
-notes = "I am the author of this crate."
-
-[[audits.bytecode-alliance.audits.cc]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-version = "1.0.73"
 notes = "I am the author of this crate."
 
 [[audits.bytecode-alliance.audits.cfg-if]]
@@ -66,39 +46,11 @@ who = "Benjamin Bouvier <public@benj.me>"
 criteria = "safe-to-deploy"
 delta = "0.9.0 -> 0.10.3"
 
-[[audits.bytecode-alliance.audits.libm]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.2.2 -> 0.2.4"
-notes = """
-This diff primarily fixes a few issues with the `fma`-related functions,
-but also contains some other minor fixes as well. Everything looks A-OK and
-as expected.
-"""
-
 [[audits.bytecode-alliance.audits.rustc-demangle]]
 who = "Alex Crichton <alex@alexcrichton.com>"
 criteria = "safe-to-deploy"
 version = "0.1.21"
 notes = "I am the author of this crate."
-
-[[audits.bytecode-alliance.audits.sha2]]
-who = "Benjamin Bouvier <public@benj.me>"
-criteria = "safe-to-deploy"
-delta = "0.9.9 -> 0.10.2"
-notes = "This upgrade is mostly a code refactor, as far as I can tell. No new uses of unsafe nor any new ambient capabilities usage."
-
-[[audits.bytecode-alliance.audits.spin]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-run"
-version = "0.9.4"
-notes = """
-I've verified the contents of this crate and that while they contain `unsafe`
-it's exclusively around implementing atomic primitive where some `unsafe` is to
-be expected. Otherwise this crate does not unduly access ambient capabilities
-and does what it says on the tin, providing spin-based synchronization
-primitives.
-"""
 
 [[audits.bytecode-alliance.audits.tinyvec]]
 who = "Alex Crichton <alex@alexcrichton.com>"
@@ -185,18 +137,6 @@ who = "Johan Andersson <opensource@embark-studios.com>"
 criteria = "safe-to-deploy"
 version = "1.0.58"
 
-[[audits.embark-studios.audits.anyhow]]
-who = "Johan Andersson <opensource@embark-studios.com>"
-criteria = "safe-to-deploy"
-delta = "1.0.58 -> 1.0.66"
-notes = "New unsafe usage, looks sane. Expert maintainer"
-
-[[audits.embark-studios.audits.tinyvec_macros]]
-who = "Johan Andersson <opensource@embark-studios.com>"
-criteria = "safe-to-deploy"
-version = "0.1.0"
-notes = "Inspected it and is a tiny crate with single safe macro"
-
 [[audits.firefox.audits.aho-corasick]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
@@ -234,45 +174,10 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.10.2 -> 0.10.3"
 
-[[audits.firefox.audits.bumpalo]]
-who = "Bobby Holley <bobbyholley@gmail.com>"
-criteria = "safe-to-run"
-delta = "3.9.1 -> 3.10.0"
-notes = """
-Some nontrivial functional changes but certainly meets the no-malware bar of
-safe-to-run. If we needed safe-to-deploy for this in m-c I'd ask Nick to re-
-certify this version, but we don't, so this is fine for now.
-"""
-
-[[audits.firefox.audits.bytes]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.1.0 -> 1.2.1"
-
 [[audits.firefox.audits.bytes]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.2.1 -> 1.3.0"
-
-[[audits.firefox.audits.cpufeatures]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.2.2 -> 0.2.4"
-
-[[audits.firefox.audits.cpufeatures]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.2.4 -> 0.2.5"
-
-[[audits.firefox.audits.crossbeam-channel]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.5.4 -> 0.5.6"
-
-[[audits.firefox.audits.crossbeam-deque]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.8.1 -> 0.8.2"
 
 [[audits.firefox.audits.crossbeam-epoch]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -294,25 +199,10 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.8.11 -> 0.8.14"
 
-[[audits.firefox.audits.crypto-common]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.1.3 -> 0.1.6"
-
 [[audits.firefox.audits.digest]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.10.3 -> 0.10.6"
-
-[[audits.firefox.audits.either]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.6.1 -> 1.7.0"
-
-[[audits.firefox.audits.either]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.7.0 -> 1.8.0"
 
 [[audits.firefox.audits.fnv]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
@@ -360,16 +250,6 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.3.23 -> 0.3.25"
 
-[[audits.firefox.audits.generic-array]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.14.5 -> 0.14.6"
-
-[[audits.firefox.audits.getrandom]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.2.6 -> 0.2.7"
-
 [[audits.firefox.audits.getrandom]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
@@ -385,31 +265,6 @@ notes = "This version is used in rust's libstd, so effectively we're already tru
 who = "Simon Friedberger <simon@mozilla.com>"
 criteria = "safe-to-deploy"
 version = "0.4.3"
-
-[[audits.firefox.audits.httparse]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-run"
-delta = "1.7.1 -> 1.8.0"
-
-[[audits.firefox.audits.hyper]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-run"
-delta = "0.14.19 -> 0.14.20"
-
-[[audits.firefox.audits.hyper]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-run"
-delta = "0.14.20 -> 0.14.22"
-
-[[audits.firefox.audits.hyper]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-run"
-delta = "0.14.22 -> 0.14.23"
-
-[[audits.firefox.audits.indexmap]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.8.2 -> 1.9.1"
 
 [[audits.firefox.audits.indexmap]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -441,11 +296,6 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.2.138 -> 0.2.139"
 
-[[audits.firefox.audits.lock_api]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.4.7 -> 0.4.9"
-
 [[audits.firefox.audits.log]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
@@ -460,23 +310,6 @@ delta = "0.6.5 -> 0.7.1"
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.5.3 -> 0.6.2"
-
-[[audits.firefox.audits.nix]]
-who = "Gabriele Svelto <gsvelto@mozilla.com>"
-criteria = "safe-to-deploy"
-delta = "0.15.0 -> 0.25.0"
-notes = "Plenty of new bindings but also several important bug fixes (including buffer overflows). New unsafe sections are restricted to wrappers and are no more dangerous than calling the C functions."
-
-[[audits.firefox.audits.nix]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.25.0 -> 0.25.1"
-
-[[audits.firefox.audits.num-bigint]]
-who = "Josh Stone <jistone@redhat.com>"
-criteria = "safe-to-deploy"
-version = "0.2.6"
-notes = "All code written or reviewed by Josh Stone."
 
 [[audits.firefox.audits.num-bigint]]
 who = "Josh Stone <jistone@redhat.com>"
@@ -500,26 +333,6 @@ notes = "All code written or reviewed by Josh Stone."
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.13.1 -> 1.14.0"
-
-[[audits.firefox.audits.object]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.28.4 -> 0.30.0"
-
-[[audits.firefox.audits.once_cell]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.12.0 -> 1.13.1"
-
-[[audits.firefox.audits.once_cell]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.13.1 -> 1.16.0"
-
-[[audits.firefox.audits.parking_lot_core]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.8.5 -> 0.8.6"
 
 [[audits.firefox.audits.ppv-lite86]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -590,24 +403,6 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.21 -> 1.0.23"
 
-[[audits.firefox.audits.radium]]
-who = "Nika Layzell <nika@thelayzells.com>"
-criteria = "safe-to-deploy"
-version = "0.5.3"
-notes = """
-I am no longer the primary maintainer of `radium`, however I have audited the
-code to ensure it is still correct. The implementation contains no `unsafe`
-logic, and will not abstract away `Sync` trait bounds.
-
-The core logic is very simple, and acts as an abstraction trait for `Cell<T>`
-and `AtomicT`.
-"""
-
-[[audits.firefox.audits.rand_core]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.6.3 -> 0.6.4"
-
 [[audits.firefox.audits.rayon]]
 who = "Josh Stone <jistone@redhat.com>"
 criteria = "safe-to-deploy"
@@ -630,25 +425,10 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.9.3 -> 1.10.1"
 
-[[audits.firefox.audits.redox_syscall]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.2.13 -> 0.2.16"
-
-[[audits.firefox.audits.regex]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.5.6 -> 1.6.0"
-
 [[audits.firefox.audits.regex]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.6.0 -> 1.7.0"
-
-[[audits.firefox.audits.regex-syntax]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.6.26 -> 0.6.27"
 
 [[audits.firefox.audits.regex-syntax]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -658,17 +438,7 @@ delta = "0.6.27 -> 0.6.28"
 [[audits.firefox.audits.ryu]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
-delta = "1.0.10 -> 1.0.11"
-
-[[audits.firefox.audits.ryu]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
 delta = "1.0.11 -> 1.0.12"
-
-[[audits.firefox.audits.serde]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.0.137 -> 1.0.143"
 
 [[audits.firefox.audits.serde]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -684,11 +454,6 @@ delta = "1.0.144 -> 1.0.151"
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.151 -> 1.0.152"
-
-[[audits.firefox.audits.serde_derive]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.0.137 -> 1.0.143"
 
 [[audits.firefox.audits.serde_derive]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -720,36 +485,6 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.85 -> 1.0.91"
 
-[[audits.firefox.audits.sha2]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.10.2 -> 0.10.6"
-
-[[audits.firefox.audits.smallvec]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.8.0 -> 1.9.0"
-
-[[audits.firefox.audits.smallvec]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.9.0 -> 1.10.0"
-
-[[audits.firefox.audits.socket2]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.4.4 -> 0.4.7"
-
-[[audits.firefox.audits.syn]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.0.96 -> 1.0.99"
-
-[[audits.firefox.audits.syn]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.0.99 -> 1.0.107"
-
 [[audits.firefox.audits.synstructure]]
 who = "Nika Layzell <nika@thelayzells.com>"
 criteria = "safe-to-deploy"
@@ -763,77 +498,17 @@ harmless. It will be removed in the next version.
 [[audits.firefox.audits.thiserror]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
-delta = "1.0.31 -> 1.0.32"
-
-[[audits.firefox.audits.thiserror]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
 delta = "1.0.32 -> 1.0.38"
 
 [[audits.firefox.audits.thiserror-impl]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
-delta = "1.0.31 -> 1.0.32"
-
-[[audits.firefox.audits.thiserror-impl]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
 delta = "1.0.32 -> 1.0.38"
-
-[[audits.firefox.audits.time]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.1.44 -> 0.1.45"
-
-[[audits.firefox.audits.time]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-run"
-delta = "0.3.9 -> 0.3.17"
-
-[[audits.firefox.audits.time-macros]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-run"
-delta = "0.2.4 -> 0.2.6"
 
 [[audits.firefox.audits.toml]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.5.9 -> 0.5.10"
-
-[[audits.firefox.audits.tower-service]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-run"
-delta = "0.3.1 -> 0.3.2"
-
-[[audits.firefox.audits.tracing]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-run"
-delta = "0.1.35 -> 0.1.36"
-
-[[audits.firefox.audits.tracing]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-run"
-delta = "0.1.36 -> 0.1.37"
-
-[[audits.firefox.audits.tracing-attributes]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-run"
-delta = "0.1.21 -> 0.1.22"
-
-[[audits.firefox.audits.tracing-attributes]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-run"
-delta = "0.1.22 -> 0.1.23"
-
-[[audits.firefox.audits.tracing-core]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-run"
-delta = "0.1.27 -> 0.1.29"
-
-[[audits.firefox.audits.tracing-core]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-run"
-delta = "0.1.29 -> 0.1.30"
 
 [[audits.firefox.audits.typenum]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -870,8 +545,3 @@ delta = "0.1.20 -> 0.1.21"
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.1.21 -> 0.1.22"
-
-[[audits.firefox.audits.unicode-xid]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.2.3 -> 0.2.4"
