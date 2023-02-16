@@ -29,7 +29,7 @@ fi
 SAPLING_SPEND_NAME='sapling-spend.params'
 SAPLING_OUTPUT_NAME='sapling-output.params'
 SAPLING_SPROUT_GROTH16_NAME='sprout-groth16.params'
-DOWNLOAD_URL="https://download.z.cash/downloads"
+DOWNLOAD_URL="${ALTERNATIVE_DOWNLOAD_URL:-https://download.z.cash/downloads}"
 IPFS_HASH="/ipfs/QmXRHVGLQBiKwvNq7c2vPxAKz1zRVmMYbmt7G5TQss7tY7"
 
 SHA256CMD="$(command -v sha256sum || echo shasum)"
