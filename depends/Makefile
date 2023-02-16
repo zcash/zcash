@@ -107,7 +107,7 @@ wallet_packages_$(NO_WALLET) = $(wallet_packages)
 
 packages += $($(host_arch)_$(host_os)_packages) $($(host_os)_packages) $(wallet_packages_)
 native_packages += $($(host_arch)_$(host_os)_native_packages) $($(host_os)_native_packages)
-all_packages = $(packages) $(native_packages)
+all_packages = $(native_packages) $(packages)
 
 meta_depends = Makefile funcs.mk builders/default.mk hosts/default.mk hosts/$(host_os).mk builders/$(build_os).mk
 
