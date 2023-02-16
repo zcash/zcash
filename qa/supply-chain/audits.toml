@@ -135,6 +135,15 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.79 -> 1.0.83"
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.83 -> 1.0.91"
+notes = """
+- Buildscript change is only to bump MSRV.
+- Only change to C++ side is to fix a memory leak.
+"""
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -161,6 +170,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.79 -> 1.0.83"
 
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.83 -> 1.0.91"
+
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -191,6 +205,11 @@ notes = "This is exclusively an update to the `cxxbridge` dependency version."
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.79 -> 1.0.83"
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@z.cash>"
+criteria = "safe-to-deploy"
+delta = "1.0.83 -> 1.0.91"
 
 [[audits.ed25519-zebra]]
 who = "Jack Grigg <jack@z.cash>"
