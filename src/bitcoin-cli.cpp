@@ -340,13 +340,20 @@ int CommandLineRPC(int argc, char *argv[])
         if (args.size() < 1)
             throw std::runtime_error("too few parameters (need at least command)");
         std::string strMethod = args[0];
-        UniValue params = RPCConvertValues(strMethod, std::vector<std::string>(args.begin()+1, args.end()));
+        auto params =
+            RPCConvertValues(strMethod, std::vector<std::string>(args.begin()+1, args.end()));
+
+        if (!params.has_value()) {
+            params.map_error([&](auto failure) {
+                throw std::runtime_error(FormatConversionFailure(strMethod, failure));
+            });
+        }
 
         // Execute and handle connection failures with -rpcwait
         const bool fWait = GetBoolArg("-rpcwait", false);
         do {
             try {
-                const UniValue reply = CallRPC(strMethod, params);
+                const UniValue reply = CallRPC(strMethod, params.value());
 
                 // Parse reply
                 const UniValue& result = find_value(reply, "result");
