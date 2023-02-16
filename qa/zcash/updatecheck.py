@@ -156,6 +156,21 @@ class Version(list):
     def __hash__(self):
         return hash(tuple(self))
 
+    def __gt__(self, other):
+        if type(self) != type(other):
+            raise TypeError
+
+        # If one of the versions is a commit hash and the other is not, treat the commit
+        # hash as being newer (as it indicates we are pinning a specific revision).
+        self_is_commit_hash = len(self) == 1 and len(self[0]) == 40
+        other_is_commit_hash = len(other) == 1 and len(other[0]) == 40
+        if other_is_commit_hash:
+            return False
+        if self_is_commit_hash:
+            return True
+
+        return super().__gt__(other)
+
 class Dependency:
     def __init__(self, name, release_lister, current_getter):
         self.name = name
@@ -259,8 +274,7 @@ class DependsVersionGetter:
             "package\)_version=(\d+)\.(\d+)$",
             "package\)_version=(\d+)_(\d+)_(\d+)$",
             "package\)_version=(\d+)\.(\d+)\.(\d+)([a-z])$",
-            # Workaround for wasi 0.9.0 preview
-            "package\)_version=(\d+)\.(\d+)\.(\d+)\+wasi-snapshot-preview1$",
+            "package\)_version=([0-9a-f]{40})$",
         ]
 
         current_version = None
@@ -271,7 +285,9 @@ class DependsVersionGetter:
                 current_version = Version(match.groups())
 
         if not current_version:
-            raise RuntimeError("Couldn't parse version number from depends .mk file.")
+            raise RuntimeError(
+                "Couldn't parse version number from depends %s.mk file." % (safe_depends(self.name),)
+            )
 
         return current_version
 
