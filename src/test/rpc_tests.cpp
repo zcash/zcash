@@ -166,28 +166,28 @@ BOOST_AUTO_TEST_CASE(rpc_parse_monetary_values)
 BOOST_AUTO_TEST_CASE(json_parse_errors)
 {
     // Valid
-    BOOST_CHECK_EQUAL(ParseNonRFCJSONValue("1.0").get_real(), 1.0);
+    BOOST_CHECK_EQUAL(ParseNonRFCJSONValue("1.0").value().get_real(), 1.0);
     // Valid, with leading or trailing whitespace
-    BOOST_CHECK_EQUAL(ParseNonRFCJSONValue(" 1.0").get_real(), 1.0);
-    BOOST_CHECK_EQUAL(ParseNonRFCJSONValue("1.0 ").get_real(), 1.0);
+    BOOST_CHECK_EQUAL(ParseNonRFCJSONValue(" 1.0").value().get_real(), 1.0);
+    BOOST_CHECK_EQUAL(ParseNonRFCJSONValue("1.0 ").value().get_real(), 1.0);
 
-    BOOST_CHECK_THROW(AmountFromValue(ParseNonRFCJSONValue(".19e-6")), std::runtime_error); //should fail, missing leading 0, therefore invalid JSON
-    BOOST_CHECK_EQUAL(AmountFromValue(ParseNonRFCJSONValue("0.00000000000000000000000000000000000001e+30 ")), 1);
+    BOOST_CHECK(!ParseNonRFCJSONValue(".19e-6").has_value()); //should fail, missing leading 0, therefore invalid JSON
+    BOOST_CHECK_EQUAL(AmountFromValue(ParseNonRFCJSONValue("0.00000000000000000000000000000000000001e+30 ").value()), 1);
     // Invalid, initial garbage
-    BOOST_CHECK_THROW(ParseNonRFCJSONValue("[1.0"), std::runtime_error);
-    BOOST_CHECK_THROW(ParseNonRFCJSONValue("a1.0"), std::runtime_error);
+    BOOST_CHECK(!ParseNonRFCJSONValue("[1.0").has_value());
+    BOOST_CHECK(!ParseNonRFCJSONValue("a1.0").has_value());
     // Invalid, trailing garbage
-    BOOST_CHECK_THROW(ParseNonRFCJSONValue("1.0sds"), std::runtime_error);
-    BOOST_CHECK_THROW(ParseNonRFCJSONValue("1.0]"), std::runtime_error);
+    BOOST_CHECK(!ParseNonRFCJSONValue("1.0sds").has_value());
+    BOOST_CHECK(!ParseNonRFCJSONValue("1.0]").has_value());
     // BTC addresses should fail parsing
-    BOOST_CHECK_THROW(ParseNonRFCJSONValue("175tWpb8K1S7NmH4Zx6rewF9WQrcZv245W"), std::runtime_error);
-    BOOST_CHECK_THROW(ParseNonRFCJSONValue("3J98t1WpEZ73CNmQviecrnyiWrnqRhWNL"), std::runtime_error);
+    BOOST_CHECK(!ParseNonRFCJSONValue("175tWpb8K1S7NmH4Zx6rewF9WQrcZv245W").has_value());
+    BOOST_CHECK(!ParseNonRFCJSONValue("3J98t1WpEZ73CNmQviecrnyiWrnqRhWNL").has_value());
 }
 
 BOOST_AUTO_TEST_CASE(rpc_ban)
 {
     BOOST_CHECK_NO_THROW(CallRPC(string("clearbanned")));
-    
+
     UniValue r;
     BOOST_CHECK_NO_THROW(r = CallRPC(string("setban 127.0.0.0 add")));
     BOOST_CHECK_THROW(r = CallRPC(string("setban 127.0.0.0:8334")), runtime_error); //portnumber for setban not allowed
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
     const string addr = "t1T3G72ToPuCDTiCEytrU1VUBRHsNupEBut";
     BOOST_CHECK_NO_THROW(CallRPC("getaddressmempool \"" + addr + "\""));
     BOOST_CHECK_NO_THROW(CallRPC("getaddressmempool {\"addresses\":[\"" + addr + "\"]}"));
-    BOOST_CHECK_NO_THROW(CallRPC("getaddressmempool {\"addresses\":[\"" + addr + "\",\"" + addr + "\"]}")); 
+    BOOST_CHECK_NO_THROW(CallRPC("getaddressmempool {\"addresses\":[\"" + addr + "\",\"" + addr + "\"]}"));
 
     BOOST_CHECK_NO_THROW(CallRPC("getaddressutxos {\"addresses\":[],\"chainInfo\":true}"));
     CheckRPCThrows("getaddressutxos {}",
@@ -385,9 +385,9 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
 
     // transaction does not exist:
     CheckRPCThrows("getspentinfo {\"txid\":\"b4cc287e58f87cdae59417329f710f3ecd75a4ee1d2872b7248f50977c8493f3\",\"index\":0}",
-        "Unable to get spent info"); 
+        "Unable to get spent info");
     CheckRPCThrows("getspentinfo {\"txid\":\"b4cc287e58f87cdae59417329f710f3ecd75a4ee1d2872b7248f50977c8493f3\"}",
-        "Invalid index, must be an integer"); 
+        "Invalid index, must be an integer");
     CheckRPCThrows("getspentinfo {\"txid\":\"hello\",\"index\":0}",
         "txid must be hexadecimal string (not 'hello')");
 
