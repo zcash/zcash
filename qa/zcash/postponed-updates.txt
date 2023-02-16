@@ -29,28 +29,9 @@ native_ccache 4.7.2 2023-03-01
 native_ccache 4.7.3 2023-03-01
 native_ccache 4.7.4 2023-03-01
 
-# Clang and Rust are currently pinned to LLVM 14
-libcxx 15.0.0 2023-03-01
-libcxx 15.0.1 2023-03-01
-libcxx 15.0.2 2023-03-01
-libcxx 15.0.3 2023-03-01
-libcxx 15.0.4 2023-03-01
-libcxx 15.0.5 2023-03-01
-libcxx 15.0.6 2023-03-01
-libcxx 15.0.7 2023-03-01
-native_clang 15.0.0 2023-03-01
-native_clang 15.0.1 2023-03-01
-native_clang 15.0.2 2023-03-01
-native_clang 15.0.3 2023-03-01
-native_clang 15.0.4 2023-03-01
-native_clang 15.0.5 2023-03-01
-native_clang 15.0.6 2023-03-01
-native_clang 15.0.7 2023-03-01
-native_rust 1.65.0 2023-03-01
-native_rust 1.66.0 2023-03-01
-native_rust 1.66.1 2023-03-01
-native_rust 1.67.0 2023-03-01
-native_rust 1.67.1 2023-03-01
+# Clang and Rust are currently pinned to LLVM 15
+libcxx 15.0.7 2022-04-30
+native_clang 15.0.7 2022-04-30
 
 # We're never updating to this version
 bdb 18.1.40 2024-02-01
