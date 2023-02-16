@@ -76,11 +76,11 @@ pub fn write_tree<H: Hashable + HashSer + Ord, W: Write>(
     tree: &BridgeTree<H, 32>,
 ) -> io::Result<()> {
     writer.write_u8(SER_V2)?;
-    Vector::write(&mut writer, tree.prior_bridges(), |mut w, b| {
-        write_bridge_v1(&mut w, b)
+    Vector::write(&mut writer, tree.prior_bridges(), |w, b| {
+        write_bridge_v1(w, b)
     })?;
-    Optional::write(&mut writer, tree.current_bridge().as_ref(), |mut w, b| {
-        write_bridge_v1(&mut w, b)
+    Optional::write(&mut writer, tree.current_bridge().as_ref(), |w, b| {
+        write_bridge_v1(w, b)
     })?;
     Vector::write_sized(
         &mut writer,
