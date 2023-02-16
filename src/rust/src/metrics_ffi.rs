@@ -210,7 +210,7 @@ pub extern "C" fn metrics_increment_counter(key: *mut FfiKey, value: u64) {
 pub extern "C" fn metrics_static_update_gauge(callsite: *const FfiCallsite, value: c_double) {
     if let Some(recorder) = try_recorder() {
         let callsite = unsafe { callsite.as_ref().unwrap() };
-        recorder.register_gauge(&callsite.key).set(value as f64);
+        recorder.register_gauge(&callsite.key).set(value);
     }
 }
 
@@ -219,7 +219,7 @@ pub extern "C" fn metrics_update_gauge(key: *mut FfiKey, value: c_double) {
     if let Some(recorder) = try_recorder() {
         if !key.is_null() {
             let key = unsafe { Box::from_raw(key) };
-            recorder.register_gauge(&key.inner).set(value as f64);
+            recorder.register_gauge(&key.inner).set(value);
         }
     }
 }
@@ -228,9 +228,7 @@ pub extern "C" fn metrics_update_gauge(key: *mut FfiKey, value: c_double) {
 pub extern "C" fn metrics_static_increment_gauge(callsite: *const FfiCallsite, value: c_double) {
     if let Some(recorder) = try_recorder() {
         let callsite = unsafe { callsite.as_ref().unwrap() };
-        recorder
-            .register_gauge(&callsite.key)
-            .increment(value as f64);
+        recorder.register_gauge(&callsite.key).increment(value);
     }
 }
 
@@ -239,7 +237,7 @@ pub extern "C" fn metrics_increment_gauge(key: *mut FfiKey, value: c_double) {
     if let Some(recorder) = try_recorder() {
         if !key.is_null() {
             let key = unsafe { Box::from_raw(key) };
-            recorder.register_gauge(&key.inner).increment(value as f64);
+            recorder.register_gauge(&key.inner).increment(value);
         }
     }
 }
@@ -248,9 +246,7 @@ pub extern "C" fn metrics_increment_gauge(key: *mut FfiKey, value: c_double) {
 pub extern "C" fn metrics_static_decrement_gauge(callsite: *const FfiCallsite, value: c_double) {
     if let Some(recorder) = try_recorder() {
         let callsite = unsafe { callsite.as_ref().unwrap() };
-        recorder
-            .register_gauge(&callsite.key)
-            .decrement(value as f64);
+        recorder.register_gauge(&callsite.key).decrement(value);
     }
 }
 
@@ -259,7 +255,7 @@ pub extern "C" fn metrics_decrement_gauge(key: *mut FfiKey, value: c_double) {
     if let Some(recorder) = try_recorder() {
         if !key.is_null() {
             let key = unsafe { Box::from_raw(key) };
-            recorder.register_gauge(&key.inner).decrement(value as f64);
+            recorder.register_gauge(&key.inner).decrement(value);
         }
     }
 }
@@ -268,9 +264,7 @@ pub extern "C" fn metrics_decrement_gauge(key: *mut FfiKey, value: c_double) {
 pub extern "C" fn metrics_static_record_histogram(callsite: *const FfiCallsite, value: c_double) {
     if let Some(recorder) = try_recorder() {
         let callsite = unsafe { callsite.as_ref().unwrap() };
-        recorder
-            .register_histogram(&callsite.key)
-            .record(value as f64);
+        recorder.register_histogram(&callsite.key).record(value);
     }
 }
 
@@ -279,7 +273,7 @@ pub extern "C" fn metrics_record_histogram(key: *mut FfiKey, value: c_double) {
     if let Some(recorder) = try_recorder() {
         if !key.is_null() {
             let key = unsafe { Box::from_raw(key) };
-            recorder.register_histogram(&key.inner).record(value as f64);
+            recorder.register_histogram(&key.inner).record(value);
         }
     }
 }
