@@ -52,7 +52,7 @@ We have set up agreements with the following neighboring projects to share vulne
 Specifically, we have agreed to engage in responsible disclosures for security issues affecting this repository with the following contacts:
 
 - Zcash Foundation https://github.com/ZcashFoundation/zebra/security/policy
-- Horizen security@horizen.com via PGP
+- Horizen security@horizen.io https://github.com/HorizenOfficial/zen/blob/master/SECURITY.md
 - Komodo ca333@komodoplatform.com via PGP
 - BitcoinABC https://github.com/Bitcoin-ABC/bitcoin-abc/blob/master/DISCLOSURE_POLICY.md
 
