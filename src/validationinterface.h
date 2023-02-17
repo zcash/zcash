@@ -95,7 +95,6 @@ protected:
     virtual void ResendWalletTransactions(int64_t nBestBlockTime) {}
     virtual void BlockChecked(const CBlock&, const CValidationState&) {}
     virtual void GetAddressForMining(std::optional<MinerAddress>&) {};
-    virtual void ResetRequestCount(const uint256 &hash) {};
     friend void ::RegisterValidationInterface(CValidationInterface*);
     friend void ::UnregisterValidationInterface(CValidationInterface*);
     friend void ::UnregisterAllValidationInterfaces();
@@ -165,8 +164,6 @@ struct CMainSignals {
     boost::signals2::signal<void (const CBlock&, const CValidationState&)> BlockChecked;
     /** Notifies listeners that an address for mining is required (coinbase) */
     boost::signals2::signal<void (std::optional<MinerAddress>&)> AddressForMining;
-    /** Notifies listeners that a block has been successfully mined */
-    boost::signals2::signal<void (const uint256 &)> BlockFound;
 };
 
 CMainSignals& GetMainSignals();

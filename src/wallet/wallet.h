@@ -1970,11 +1970,6 @@ public:
     void UpdatedTransaction(const uint256 &hashTx);
 
     void GetAddressForMining(std::optional<MinerAddress> &minerAddress);
-    void ResetRequestCount(const uint256 &hash)
-    {
-        LOCK(cs_wallet);
-        mapRequestCount[hash] = 0;
-    };
 
     unsigned int GetKeyPoolSize()
     {
