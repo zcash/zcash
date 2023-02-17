@@ -141,12 +141,14 @@ fetch_params() {
         cat "${dlname}.part.1" "${dlname}.part.2" > "${dlname}"
         rm "${dlname}.part.1" "${dlname}.part.2"
 
+        set +e
         "$SHA256CMD" $SHA256ARGS -c <<EOF
 $expectedhash  $dlname
 EOF
 
         # Check the exit code of the shasum command:
         CHECKSUM_RESULT=$?
+        set -e
         if [ $CHECKSUM_RESULT -eq 0 ]; then
             mv -v "$dlname" "$output"
         else
