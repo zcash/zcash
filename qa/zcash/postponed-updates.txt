@@ -15,5 +15,8 @@ native_ccache 4.7.4 2023-03-01
 libcxx 15.0.7 2023-04-30
 native_clang 15.0.7 2023-04-30
 
+# We follow upstream Bitcoin Core's LevelDB updates
+leveldb 1.23 2023-06-01
+
 # We're never updating to this version
 bdb 18.1.40 2024-02-01
