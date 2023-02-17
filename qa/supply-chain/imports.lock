@@ -36,6 +36,12 @@ criteria = "safe-to-deploy"
 version = "1.0.0"
 notes = "I am the author of this crate."
 
+[[audits.bytecode-alliance.audits.constant_time_eq]]
+who = "Nick Fitzgerald <fitzgen@gmail.com>"
+criteria = "safe-to-deploy"
+version = "0.2.4"
+notes = "A few tiny blocks of `unsafe` but each of them is very obviously correct."
+
 [[audits.bytecode-alliance.audits.crypto-common]]
 who = "Benjamin Bouvier <public@benj.me>"
 criteria = "safe-to-deploy"
@@ -89,6 +95,18 @@ who = "Dan Gohman <dev@sunfishcode.online>"
 criteria = "safe-to-deploy"
 version = "0.42.0"
 notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
+[[audits.bytecode-alliance.audits.windows-sys]]
+who = "Pat Hickey <phickey@fastly.com>"
+criteria = "safe-to-deploy"
+delta = "0.42.0 -> 0.45.0"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
+[[audits.bytecode-alliance.audits.windows-targets]]
+who = "Pat Hickey <phickey@fastly.com>"
+criteria = "safe-to-deploy"
+version = "0.42.1"
+notes = "This is a Windows API bindings library maintained by Microsoft themselves. Additionally, this particular crate is empty and just collects a bunch of dependencies, which are not exported, so I don't understand why it exists at all."
 
 [[audits.bytecode-alliance.audits.windows_aarch64_gnullvm]]
 who = "Dan Gohman <dev@sunfishcode.online>"
@@ -424,17 +442,6 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.5.3 -> 1.6.1"
 
-[[audits.firefox.audits.rayon-core]]
-who = "Josh Stone <jistone@redhat.com>"
-criteria = "safe-to-deploy"
-version = "1.9.3"
-notes = "All code written or reviewed by Josh Stone or Niko Matsakis."
-
-[[audits.firefox.audits.rayon-core]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "1.9.3 -> 1.10.1"
-
 [[audits.firefox.audits.regex]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
@@ -515,11 +522,6 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.32 -> 1.0.38"
 
-[[audits.firefox.audits.toml]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.5.9 -> 0.5.10"
-
 [[audits.firefox.audits.typenum]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
@@ -565,6 +567,17 @@ version = "1.6.1"
 who = "David Cook <dcook@divviup.org>"
 criteria = "safe-to-deploy"
 version = "0.3.0"
+
+[[audits.isrg.audits.serde_json]]
+who = "Tim Geoghegan <timg@letsencrypt.org>"
+criteria = "safe-to-deploy"
+delta = "1.0.91 -> 1.0.92"
+notes = "The only changes are to doccomments, a dev-dependency and the project's CI workflow, so there should be no risk to dependents."
+
+[[audits.isrg.audits.serde_json]]
+who = "Brandon Pitman <bran@bran.land>"
+criteria = "safe-to-deploy"
+delta = "1.0.92 -> 1.0.93"
 
 [[audits.isrg.audits.unicode-ident]]
 who = "David Cook <dcook@divviup.org>"
