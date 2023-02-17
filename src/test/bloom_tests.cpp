@@ -538,4 +538,30 @@ BOOST_AUTO_TEST_CASE(rolling_bloom)
     }
 }
 
+BOOST_AUTO_TEST_CASE(rolling_bloom_reset)
+{
+    struct TestRollingBloomFilter : CRollingBloomFilter
+    {
+        TestRollingBloomFilter() : CRollingBloomFilter(100, 0.01) {}
+        bool is_data_empty() const { return CRollingBloomFilter::is_data_empty(); }
+    };
+
+    TestRollingBloomFilter rb;
+    BOOST_CHECK(rb.is_data_empty());
+
+    std::vector<unsigned char> d = RandomData();
+    rb.insert(d);
+    BOOST_CHECK(!rb.is_data_empty());
+    BOOST_CHECK(rb.contains(d));
+
+    // reset() should ensure minimal memory usage.
+    rb.reset();
+    BOOST_CHECK(rb.is_data_empty());
+    BOOST_CHECK(!rb.contains(d));
+
+    rb.insert(d);
+    BOOST_CHECK(!rb.is_data_empty());
+    BOOST_CHECK(rb.contains(d));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
