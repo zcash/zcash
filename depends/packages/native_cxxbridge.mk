@@ -1,17 +1,27 @@
 package=native_cxxbridge
 # The version needs to match cxx in Cargo.toml
-$(package)_version=1.0.83
+$(package)_version=1.0.91
 $(package)_download_path=https://github.com/dtolnay/cxx/archive/refs/tags
 $(package)_file_name=native_cxxbridge-$($(package)_version).tar.gz
 $(package)_download_file=$($(package)_version).tar.gz
-$(package)_sha256_hash=e30cbd34fc8ec2ae78f4f9e546d29c6c92e6d714f30c3c150f7b8c6ea08ea971
+$(package)_sha256_hash=52bc434b6feb375a69bbc58291b19efeb34aa52a3de5d745f4a5e8220078e7f9
 $(package)_build_subdir=gen/cmd
 $(package)_dependencies=native_rust
+# This file is somewhat annoying to update, but can be done like so from the repo base:
+# $ export VERSION=1.0.91
+# $ rm .cargo/config .cargo/.configured-for-offline
+# $ mkdir tmp
+# $ cd tmp
+# $ tar xf ../depends/sources/native_cxxbridge-$VERSION.tar.gz
+# $ cd cxx-$VERSION
+# $ cargo check --release --package=cxxbridge-cmd --bin=cxxbridge
+# $ cp Cargo.lock ../../depends/patches/native_cxxbridge/
+$(package)_patches=Cargo.lock
 $(package)_extra_sources=$(package)-$($(package)_version)-vendored.tar.gz
 
 define $(package)_fetch_cmds
 $(call fetch_file,$(package),$($(package)_download_path),$($(package)_download_file),$($(package)_file_name),$($(package)_sha256_hash)) && \
-$(call vendor_crate_deps,$(package),$($(package)_file_name),third-party/Cargo.lock,Cargo.toml,$(package)-$($(package)_version)-vendored.tar.gz)
+$(call vendor_crate_deps,$(package),$($(package)_file_name),$(PATCHES_PATH)/$(package)/Cargo.lock,Cargo.toml,$(package)-$($(package)_version)-vendored.tar.gz)
 endef
 
 define $(package)_extract_cmds
@@ -23,7 +33,7 @@ define $(package)_extract_cmds
 endef
 
 define $(package)_preprocess_cmds
-  cp third-party/Cargo.lock . && \
+  cp $($(package)_patch_dir)/Cargo.lock . && \
   mkdir -p .cargo && \
   echo "[source.crates-io]" >.cargo/config && \
   echo "replace-with = \"vendored-sources\"" >>.cargo/config && \
