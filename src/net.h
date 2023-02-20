@@ -307,6 +307,10 @@ public:
     CRollingBloomFilter addrKnown;
     mutable CCriticalSection cs_addrKnown;
 
+    // Inventory based relay
+    // This filter is protected by cs_inventory and contains both txids and wtxids.
+    CRollingBloomFilter filterInventoryKnown;
+
     const uint64_t nKeyedNetGroup;
 
     // Stored so we can pass a pointer to it across the Rust FFI for span.
@@ -340,8 +344,6 @@ public:
     int64_t nNextAddrSend;
     int64_t nNextLocalAddrSend;
 
-    // inventory based relay
-    CRollingBloomFilter filterInventoryKnown;
     // Set of transaction ids we still have to announce.
     // They are sorted by the mempool before relay, so the order is not important.
     std::set<uint256> setInventoryTxToSend;
@@ -349,7 +351,7 @@ public:
     // There is no final sorting before sending, as they are always sent immediately
     // and in the order requested.
     std::vector<uint256> vInventoryBlockToSend;
-    CCriticalSection cs_inventory;
+    mutable CCriticalSection cs_inventory;
     std::set<WTxId> setAskFor;
     std::multimap<int64_t, CInv> mapAskFor;
     int64_t nNextInvSend;
@@ -485,12 +487,26 @@ public:
     }
 
 
-    void AddKnownTx(const WTxId& wtxid)
+    void AddKnownWTxId(const WTxId& wtxid)
     {
         LOCK(cs_inventory);
         if (!fDisconnect) {
             filterInventoryKnown.insert(wtxid.ToBytes());
         }
+    }
+
+    void AddKnownTxId(const uint256& txid)
+    {
+        LOCK(cs_inventory);
+        if (!fDisconnect) {
+            filterInventoryKnown.insert(txid);
+        }
+    }
+
+    bool HasKnownTxId(const uint256& txid) const
+    {
+        LOCK(cs_inventory);
+        return filterInventoryKnown.contains(txid);
     }
 
     void PushTxInventory(const WTxId& wtxid)

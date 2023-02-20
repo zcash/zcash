@@ -6757,7 +6757,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             }
             else
             {
-                pfrom->AddKnownTx(WTxId(inv.hash, inv.hashAux));
+                pfrom->AddKnownWTxId(WTxId(inv.hash, inv.hashAux));
                 if (fBlocksOnly)
                     LogPrint("net", "transaction (%s) inv sent in violation of protocol peer=%d\n", inv.hash.ToString(), pfrom->id);
                 else if (!fAlreadyHave && !IsInitialBlockDownload(chainparams.GetConsensus()))
@@ -6906,7 +6906,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
         LOCK(cs_main);
 
-        pfrom->AddKnownTx(wtxid);
+        pfrom->AddKnownWTxId(wtxid);
 
         bool fMissingInputs = false;
         CValidationState state;
@@ -7730,7 +7730,7 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                     if (pto->pfilter) {
                         if (!pto->pfilter->IsRelevantAndUpdate(*txinfo.tx)) continue;
                     }
-                    pto->filterInventoryKnown.insert(hash);
+                    pto->AddKnownTxId(hash);
                     vInv.push_back(inv);
                     if (vInv.size() == MAX_INV_SZ) {
                         pto->PushMessage("inv", vInv);
@@ -7765,7 +7765,7 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                     // Remove it from the to-be-sent set
                     pto->setInventoryTxToSend.erase(it);
                     // Check if not in the filter already
-                    if (pto->filterInventoryKnown.contains(hash)) {
+                    if (pto->HasKnownTxId(hash)) {
                         continue;
                     }
                     // Not in the mempool anymore? don't bother sending it.
@@ -7800,7 +7800,7 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                         pto->PushMessage("inv", vInv);
                         vInv.clear();
                     }
-                    pto->filterInventoryKnown.insert(hash);
+                    pto->AddKnownTxId(hash);
                 }
             }
         }
