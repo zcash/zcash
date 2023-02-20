@@ -440,6 +440,14 @@ void CNode::CloseSocketDisconnect()
             CloseSocket(hSocket);
         }
     }
+    {
+        LOCK(cs_addrKnown);
+        addrKnown.reset();
+    }
+    {
+        LOCK(cs_inventory);
+        filterInventoryKnown.reset();
+    }
 
     // in case this fails, we'll empty the recv buffer when the CNode is deleted
     TRY_LOCK(cs_vRecvMsg, lockRecv);
@@ -2221,7 +2229,6 @@ CNode::CNode(SOCKET hSocketIn, const CAddress& addrIn, const std::string& addrNa
     nSendOffset = 0;
     hashContinue = uint256();
     nStartingHeight = -1;
-    filterInventoryKnown.reset();
     fSendMempool = false;
     fGetAddr = false;
     nNextLocalAddrSend = 0;

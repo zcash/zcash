@@ -304,6 +304,8 @@ public:
     CBloomFilter* pfilter;
     NodeId id;
     std::atomic<int> nRefCount;
+    CRollingBloomFilter addrKnown;
+    mutable CCriticalSection cs_addrKnown;
 
     const uint64_t nKeyedNetGroup;
 
@@ -333,7 +335,6 @@ public:
 
     // flood relay
     std::vector<CAddress> vAddrToSend;
-    CRollingBloomFilter addrKnown;
     bool fGetAddr;
     std::set<uint256> setKnown;
     int64_t nNextAddrSend;
@@ -344,7 +345,7 @@ public:
     // Set of transaction ids we still have to announce.
     // They are sorted by the mempool before relay, so the order is not important.
     std::set<uint256> setInventoryTxToSend;
-    // List of block ids we still have announce.
+    // List of block ids we still have to announce.
     // There is no final sorting before sending, as they are always sent immediately
     // and in the order requested.
     std::vector<uint256> vInventoryBlockToSend;
@@ -448,10 +449,25 @@ public:
     }
 
 
-
-    void AddAddressKnown(const CAddress& addr)
+    bool AddAddressIfNotAlreadyKnown(const CAddress& addr)
     {
-        addrKnown.insert(addr.GetKey());
+        LOCK(cs_addrKnown);
+        // Avoid adding to addrKnown after it has been reset in CloseSocketDisconnect.
+        if (fDisconnect) {
+            return false;
+        }
+        if (!addrKnown.contains(addr.GetKey())) {
+            addrKnown.insert(addr.GetKey());
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool IsAddressKnown(const CAddress& addr) const
+    {
+        LOCK(cs_addrKnown);
+        return addrKnown.contains(addr.GetKey());
     }
 
     void PushAddress(const CAddress& addr, FastRandomContext &insecure_rand)
@@ -459,7 +475,7 @@ public:
         // Known checking here is only to save space from duplicates.
         // SendMessages will filter it again for knowns that were added
         // after addresses were pushed.
-        if (addr.IsValid() && !addrKnown.contains(addr.GetKey())) {
+        if (addr.IsValid() && !IsAddressKnown(addr)) {
             if (vAddrToSend.size() >= MAX_ADDR_TO_SEND) {
                 vAddrToSend[insecure_rand.randrange(vAddrToSend.size())] = addr;
             } else {
@@ -471,8 +487,8 @@ public:
 
     void AddKnownTx(const WTxId& wtxid)
     {
-        {
-            LOCK(cs_inventory);
+        LOCK(cs_inventory);
+        if (!fDisconnect) {
             filterInventoryKnown.insert(wtxid.ToBytes());
         }
     }
@@ -480,7 +496,7 @@ public:
     void PushTxInventory(const WTxId& wtxid)
     {
         LOCK(cs_inventory);
-        if (!filterInventoryKnown.contains(wtxid.ToBytes())) {
+        if (!fDisconnect && !filterInventoryKnown.contains(wtxid.ToBytes())) {
             setInventoryTxToSend.insert(wtxid.hash);
         }
     }
@@ -488,7 +504,9 @@ public:
     void PushBlockInventory(const uint256& hash)
     {
         LOCK(cs_inventory);
-        vInventoryBlockToSend.push_back(hash);
+        if (!fDisconnect) {
+            vInventoryBlockToSend.push_back(hash);
+        }
     }
 
     void AskFor(const CInv& inv);
