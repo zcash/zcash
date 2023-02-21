@@ -10,6 +10,7 @@
 #include "init.h"
 #include "key_io.h"
 #include "random.h"
+#include "rpc/common.h"
 #include "sync.h"
 #include "ui_interface.h"
 #include "util/system.h"
@@ -490,7 +491,21 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
     try
     {
         // Execute
-        return pcmd->actor(params, false);
+        auto paramRange = rpcCvtTable.find(strMethod);
+        if (paramRange != rpcCvtTable.end()) {
+            auto numRequired = paramRange->second.first.size();
+            auto numOptional = paramRange->second.second.size();
+            return pcmd->actor(
+                    params,
+                    params.size() < numRequired || numRequired + numOptional < params.size());
+        } else {
+            throw JSONRPCError(
+                    RPC_METHOD_NOT_FOUND,
+                    "Parameters for "
+                    + strMethod
+                    + " not found – this is an internal error, please report it.");
+        }
+
     }
     catch (const std::exception& e)
     {
