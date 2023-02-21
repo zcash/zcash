@@ -187,15 +187,7 @@ CRollingBloomFilter::CRollingBloomFilter(const unsigned int nElements, const dou
      * =>          nFilterBits = -nHashFuncs * nMaxElements / log(1.0 - pow(fpRate, 1.0 / nHashFuncs))
      * =>          nFilterBits = -nHashFuncs * nMaxElements / log(1.0 - exp(logFpRate / nHashFuncs))
      */
-    uint32_t nFilterBits = (uint32_t)ceil(-1.0 * nHashFuncs * nMaxElements / log(1.0 - exp(logFpRate / nHashFuncs)));
-    data.clear();
-    /* For each data element we need to store 2 bits. If both bits are 0, the
-     * bit is treated as unset. If the bits are (01), (10), or (11), the bit is
-     * treated as set in generation 1, 2, or 3 respectively.
-     * These bits are stored in separate integers: position P corresponds to bit
-     * (P & 63) of the integers data[(P >> 6) * 2] and data[(P >> 6) * 2 + 1]. */
-    data.resize(((nFilterBits + 63) / 64) << 1);
-    reset();
+    nFilterBits = (uint32_t)ceil(-1.0 * nHashFuncs * nMaxElements / log(1.0 - exp(logFpRate / nHashFuncs)));
 }
 
 /* Similar to CBloomFilter::Hash */
@@ -213,6 +205,9 @@ static inline uint32_t FastMod(uint32_t x, size_t n) {
 
 void CRollingBloomFilter::insert(const std::vector<unsigned char>& vKey)
 {
+    if (data.empty()) {
+        initialize();
+    }
     if (nEntriesThisGeneration == nEntriesPerGeneration) {
         nEntriesThisGeneration = 0;
         nGeneration++;
@@ -250,6 +245,9 @@ void CRollingBloomFilter::insert(const uint256& hash)
 
 bool CRollingBloomFilter::contains(const std::vector<unsigned char>& vKey) const
 {
+    if (data.empty()) {
+        return false;
+    }
     for (int n = 0; n < nHashFuncs; n++) {
         uint32_t h = RollingBloomHash(n, nTweak, vKey);
         int bit = h & 0x3F;
@@ -268,8 +266,19 @@ bool CRollingBloomFilter::contains(const uint256& hash) const
     return contains(vData);
 }
 
-void CRollingBloomFilter::reset()
+void CRollingBloomFilter::reset() {
+    std::vector<uint64_t>().swap(data);
+}
+
+void CRollingBloomFilter::initialize()
 {
+    /* For each data element we need to store 2 bits. If both bits are 0, the
+     * bit is treated as unset. If the bits are (01), (10), or (11), the bit is
+     * treated as set in generation 1, 2, or 3 respectively.
+     * These bits are stored in separate integers: position P corresponds to bit
+     * (P & 63) of the integers data[(P >> 6) * 2] and data[(P >> 6) * 2 + 1]. */
+    data.resize(((nFilterBits + 63) / 64) << 1);
+
     nTweak = GetRand(std::numeric_limits<unsigned int>::max());
     nEntriesThisGeneration = 0;
     nGeneration = 1;

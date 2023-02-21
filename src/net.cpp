@@ -440,6 +440,14 @@ void CNode::CloseSocketDisconnect()
             CloseSocket(hSocket);
         }
     }
+    {
+        LOCK(cs_addrKnown);
+        addrKnown.reset();
+    }
+    {
+        LOCK(cs_inventory);
+        filterInventoryKnown.reset();
+    }
 
     // in case this fails, we'll empty the recv buffer when the CNode is deleted
     TRY_LOCK(cs_vRecvMsg, lockRecv);
@@ -699,6 +707,9 @@ void CNode::copyStats(CNodeStats &stats)
     // Raw ping time is in microseconds, but show it to user as whole seconds (Bitcoin users should be well used to small numbers with many decimal places by now :)
     stats.dPingTime = (((double)nPingUsecTime) / 1e6);
     stats.dPingWait = (((double)nPingUsecWait) / 1e6);
+
+    stats.m_addr_processed = m_addr_processed.load();
+    stats.m_addr_rate_limited = m_addr_rate_limited.load();
 
     // Leave string empty if addrLocal invalid (not filled in yet)
     CService addrLocalUnlocked = GetAddrLocal();
@@ -2221,7 +2232,6 @@ CNode::CNode(SOCKET hSocketIn, const CAddress& addrIn, const std::string& addrNa
     nSendOffset = 0;
     hashContinue = uint256();
     nStartingHeight = -1;
-    filterInventoryKnown.reset();
     fSendMempool = false;
     fGetAddr = false;
     nNextLocalAddrSend = 0;
