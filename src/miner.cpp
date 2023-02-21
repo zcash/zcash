@@ -877,9 +877,6 @@ static bool ProcessBlockFound(const CBlock* pblock, const CChainParams& chainpar
             return error("ZcashMiner: generated block is stale");
     }
 
-    // Inform about the new block
-    GetMainSignals().BlockFound(pblock->GetHash());
-
     // Process this block the same as if we had received it from another node
     CValidationState state;
     if (!ProcessNewBlock(state, chainparams, NULL, pblock, true, NULL))

@@ -6395,9 +6395,6 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
                 }
             }
 
-            // Track requests for our stuff.
-            GetMainSignals().Inventory(inv.hash);
-
             if (inv.type == MSG_BLOCK || inv.type == MSG_FILTERED_BLOCK)
                 break;
         }
@@ -6763,9 +6760,6 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                 else if (!fAlreadyHave && !IsInitialBlockDownload(chainparams.GetConsensus()))
                     pfrom->AskFor(inv);
             }
-
-            // Track requests for our stuff
-            GetMainSignals().Inventory(inv.hash);
 
             if (pfrom->nSendSize > (SendBufferSize() * 2)) {
                 Misbehaving(pfrom->GetId(), 50);
