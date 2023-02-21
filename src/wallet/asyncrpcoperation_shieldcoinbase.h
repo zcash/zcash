@@ -27,7 +27,7 @@ struct ShieldCoinbaseUTXO {
     uint256 txid;
     int vout;
     CScript scriptPubKey;
-    CAmount amount;
+    CAmount amount{};
 };
 
 // Package of info which is passed to perform_joinsplit methods.
@@ -145,4 +145,3 @@ public:
 
 
 #endif // ZCASH_WALLET_ASYNCRPCOPERATION_SHIELDCOINBASE_H
-

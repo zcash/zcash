@@ -150,7 +150,7 @@ public:
         const int nHeight,
         const CAmount nFees) : mtx(mtx), chainparams(chainparams), nHeight(nHeight), nFees(nFees) {}
 
-    const libzcash::Zip212Enabled GetZip212Flag() const {
+    libzcash::Zip212Enabled GetZip212Flag() const {
         if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
             return libzcash::Zip212Enabled::AfterZip212;
         } else {
@@ -799,10 +799,10 @@ std::optional<MinerAddress> ExtractMinerAddress::operator()(const CKeyID &keyID)
     mAddr->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
     return mAddr;
 }
-std::optional<MinerAddress> ExtractMinerAddress::operator()(const CScriptID &addr) const {
+std::optional<MinerAddress> ExtractMinerAddress::operator()(const CScriptID &) const {
     return std::nullopt;
 }
-std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::SproutPaymentAddress &addr) const {
+std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::SproutPaymentAddress &) const {
     return std::nullopt;
 }
 std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::SaplingPaymentAddress &addr) const {
@@ -816,7 +816,7 @@ std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::Unif
             [&](const libzcash::OrchardRawAddress addr) { ret = MinerAddress(addr); },
             [&](const libzcash::SaplingPaymentAddress addr) { ret = MinerAddress(addr); },
             [&](const CKeyID keyID) { ret = operator()(keyID); },
-            [&](const auto other) { ret = std::nullopt; }
+            [&](const auto) { ret = std::nullopt; }
         }, preferred.value());
         return ret;
     } else {
@@ -1048,7 +1048,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
 
                     return true;
                 };
-                std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck pos) {
+                std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck) {
                     std::lock_guard<std::mutex> lock{m_cs};
                     return cancelSolver;
                 };

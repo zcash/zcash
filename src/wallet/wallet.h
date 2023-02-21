@@ -662,14 +662,7 @@ public:
         JSOutPoint jsop) const;
     std::optional<std::pair<
         libzcash::SaplingNotePlaintext,
-        libzcash::SaplingPaymentAddress>> DecryptSaplingNote(const Consensus::Params& params, int height, SaplingOutPoint op) const;
-    std::optional<std::pair<
-        libzcash::SaplingNotePlaintext,
         libzcash::SaplingPaymentAddress>> DecryptSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op) const;
-    std::optional<std::pair<
-        libzcash::SaplingNotePlaintext,
-        libzcash::SaplingPaymentAddress>> RecoverSaplingNote(const Consensus::Params& params, int height,
-            SaplingOutPoint op, std::set<uint256>& ovks) const;
     std::optional<std::pair<
         libzcash::SaplingNotePlaintext,
         libzcash::SaplingPaymentAddress>> RecoverSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op, std::set<uint256>& ovks) const;
@@ -792,6 +785,13 @@ public:
     TransactionStrategy() : requestedLevel(PrivacyPolicy::FullPrivacy) {}
     TransactionStrategy(const TransactionStrategy& strategy) : requestedLevel(strategy.requestedLevel) {}
     TransactionStrategy(PrivacyPolicy privacyPolicy) : requestedLevel(privacyPolicy) {}
+    TransactionStrategy& operator=(const TransactionStrategy& other) {
+        if (this == &other)
+            return *this;
+
+        requestedLevel = other.requestedLevel;
+        return *this;
+    }
 
     static std::optional<TransactionStrategy> FromString(std::string privacyPolicy);
     static std::string ToString(PrivacyPolicy policy);

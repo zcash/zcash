@@ -33,7 +33,7 @@ class LogGrabber : public ::testing::EmptyTestEventListener {
 public:
     LogGrabber(fs::path logPathIn) : logPath(logPathIn) {}
 
-    virtual void OnTestStart(const ::testing::TestInfo& test_info) {
+    virtual void OnTestStart(const ::testing::TestInfo&) {
         // Test logs are written synchronously, so we can clear the log file to
         // ensure that at the end of the test, the log lines are all related to
         // the test itself.

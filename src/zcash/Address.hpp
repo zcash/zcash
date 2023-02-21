@@ -103,19 +103,19 @@ public:
         std::set<ReceiverType> result;
         for (const auto& receiver : receivers) {
             std::visit(match {
-                [&](const libzcash::OrchardRawAddress &zaddr) {
+                [&](const libzcash::OrchardRawAddress &) {
                     result.insert(ReceiverType::Orchard);
                 },
-                [&](const libzcash::SaplingPaymentAddress &zaddr) {
+                [&](const libzcash::SaplingPaymentAddress &) {
                     result.insert(ReceiverType::Sapling);
                 },
-                [&](const CScriptID &zaddr) {
+                [&](const CScriptID &) {
                     result.insert(ReceiverType::P2SH);
                 },
-                [&](const CKeyID &zaddr) {
+                [&](const CKeyID &) {
                     result.insert(ReceiverType::P2PKH);
                 },
-                [&](const libzcash::UnknownReceiver &uaddr) {
+                [&](const libzcash::UnknownReceiver &) {
                 }
             }, receiver);
         }
@@ -272,11 +272,11 @@ typedef std::variant<
 
 class IsShieldedRecipient {
 public:
-    bool operator()(const CKeyID& p2pkh) { return false; }
-    bool operator()(const CScriptID& p2sh) { return false; }
-    bool operator()(const SproutPaymentAddress& addr) { return true; }
-    bool operator()(const SaplingPaymentAddress& addr) { return true; }
-    bool operator()(const OrchardRawAddress& addr) { return true; }
+    bool operator()(const CKeyID&) { return false; }
+    bool operator()(const CScriptID&) { return false; }
+    bool operator()(const SproutPaymentAddress&) { return true; }
+    bool operator()(const SaplingPaymentAddress&) { return true; }
+    bool operator()(const OrchardRawAddress&) { return true; }
 };
 
 class SelectRecipientAddress {
@@ -289,7 +289,7 @@ public:
 
     std::optional<RecipientAddress> operator()(const CKeyID& p2pkh) { return p2pkh; }
     std::optional<RecipientAddress> operator()(const CScriptID& p2sh) { return p2sh; }
-    std::optional<RecipientAddress> operator()(const SproutPaymentAddress& addr) { return std::nullopt; }
+    std::optional<RecipientAddress> operator()(const SproutPaymentAddress&) { return std::nullopt; }
     std::optional<RecipientAddress> operator()(const SaplingPaymentAddress& addr) { return addr; }
     std::optional<RecipientAddress> operator()(const UnifiedAddress& addr) {
         return addr.GetPreferredRecipientAddress(consensus, height);

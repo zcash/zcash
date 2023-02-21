@@ -98,6 +98,28 @@ public:
                     bool poolHasNoInputsOf, bool spendsCoinbase,
                     unsigned int nSigOps, uint32_t nBranchId);
     CTxMemPoolEntry(const CTxMemPoolEntry& other);
+    CTxMemPoolEntry& operator=(const CTxMemPoolEntry& other) {
+        if (this == &other)
+            return *this;
+
+        CTxMemPoolEntry tmp(other);
+        std::swap(nFee, tmp.nFee);
+        std::swap(nTxSize, tmp.nTxSize);
+        std::swap(nModSize, tmp.nModSize);
+        std::swap(nUsageSize, tmp.nUsageSize);
+        std::swap(nTime, tmp.nTime);
+        std::swap(dPriority, tmp.dPriority);
+        std::swap(nHeight, tmp.nHeight);
+        std::swap(hadNoDependencies, tmp.hadNoDependencies);
+        std::swap(spendsCoinbase, tmp.spendsCoinbase);
+        std::swap(sigOpCount, tmp.sigOpCount);
+        std::swap(feeDelta, tmp.feeDelta);
+        std::swap(nBranchId, tmp.nBranchId);
+        std::swap(nCountWithDescendants, tmp.nCountWithDescendants);
+        std::swap(nSizeWithDescendants, tmp.nSizeWithDescendants);
+        std::swap(nFeesWithDescendants, tmp.nFeesWithDescendants);
+        return *this;
+    }
 
     const CTransaction& GetTx() const { return *this->tx; }
     std::shared_ptr<const CTransaction> GetSharedTx() const { return this->tx; }

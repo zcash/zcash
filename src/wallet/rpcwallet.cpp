@@ -362,7 +362,7 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
-UniValue listaddresses(const UniValue& params, bool fHelp)
+UniValue listaddresses(const UniValue&, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -458,7 +458,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
             [&](const CScriptID& addr) {
                 source = GetSourceForPaymentAddress(pwalletMain)(addr);
             },
-            [&](const CNoDestination& addr) {}
+            [&](const CNoDestination&) {}
         }, item.first);
         if (source.has_value()) {
             switch (source.value()) {
@@ -499,7 +499,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
                 [&](const CScriptID& addr) {
                     source = GetSourceForPaymentAddress(pwalletMain)(addr);
                 },
-                [&](const CNoDestination& addr) {}
+                [&](const CNoDestination&) {}
             }, item.first);
             if (source.has_value()) {
                 switch (source.value()) {
@@ -2855,7 +2855,7 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
+UniValue zc_sample_joinsplit(const UniValue&, bool fHelp)
 {
     if (fHelp) {
         throw runtime_error(
@@ -3478,7 +3478,7 @@ UniValue z_listunifiedreceivers(const UniValue& params, bool fHelp)
             [&](const CKeyID& addr) {
                 result.pushKV("p2pkh", keyIO.EncodePaymentAddress(addr));
             },
-            [](auto rest) {},
+            [](auto) {},
         }, receiver);
     }
     return result;
@@ -3626,11 +3626,11 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         [&](const libzcash::SaplingPaymentAddress& addr) {
             return pwalletMain->FindUnifiedAddressByReceiver(addr).has_value();
         },
-        [&](const libzcash::SproutPaymentAddress& addr) {
+        [&](const libzcash::SproutPaymentAddress&) {
             // A unified address can't contain a Sprout receiver.
             return false;
         },
-        [&](const libzcash::UnifiedAddress& addr) {
+        [&](const libzcash::UnifiedAddress&) {
             // We allow unified addresses themselves, which cannot recurse.
             return false;
         }
@@ -3791,7 +3791,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                     [&](const libzcash::OrchardRawAddress& addr) {
                         push_orchard_result(addr);
                     },
-                    [&](const UnknownReceiver& unknown) {}
+                    [&](const UnknownReceiver&) {}
 
                 }, receiver);
             }
@@ -4655,15 +4655,15 @@ size_t EstimateTxSize(
             [&](const CScriptID&) {
                 taddrRecipientCount += 1;
             },
-            [&](const libzcash::SaplingPaymentAddress& addr) {
+            [&](const libzcash::SaplingPaymentAddress&) {
                 mtx.vShieldedOutput.push_back(OutputDescription());
             },
-            [&](const libzcash::SproutPaymentAddress& addr) {
+            [&](const libzcash::SproutPaymentAddress&) {
                 JSDescription jsdesc;
                 jsdesc.proof = GrothProof();
                 mtx.vJoinSplit.push_back(jsdesc);
             },
-            [&](const libzcash::OrchardRawAddress& addr) {
+            [&](const libzcash::OrchardRawAddress&) {
                 if (fromSprout) {
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
@@ -4833,7 +4833,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                     involvesUnifiedAddress = true;
                     involvesOrchard = ua.GetOrchardReceiver().has_value();
                 },
-                [&](const auto& other) {
+                [&](const auto&) {
                     if (selectorAccount.has_value() && selectorAccount.value() != ZCASH_LEGACY_ACCOUNT) {
                         throw JSONRPCError(
                                 RPC_INVALID_ADDRESS_OR_KEY,
@@ -5254,16 +5254,16 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     auto destaddress = keyIO.DecodePaymentAddress(destStr);
     if (destaddress.has_value()) {
         std::visit(match {
-            [&](const CKeyID& addr) {
+            [&](const CKeyID&) {
                 throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2pkh address.");
             },
             [&](const CScriptID&) {
                 throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2sh address.");
             },
-            [&](const libzcash::SaplingPaymentAddress& addr) {
+            [&](const libzcash::SaplingPaymentAddress&) {
                 // OK
             },
-            [&](const libzcash::SproutPaymentAddress& addr) {
+            [&](const libzcash::SproutPaymentAddress&) {
                 if (canopyActive) {
                     throw JSONRPCError(RPC_VERIFY_REJECTED, "Sprout shielding is not supported after Canopy activation");
                 }
@@ -5582,20 +5582,20 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     bool isToSaplingZaddr = false;
     if (destaddress.has_value()) {
         std::visit(match {
-            [&](CKeyID addr) {
+            [&](CKeyID) {
                 isToTaddr = true;
             },
-            [&](CScriptID addr) {
+            [&](CScriptID) {
                 isToTaddr = true;
             },
-            [&](libzcash::SaplingPaymentAddress addr) {
+            [&](libzcash::SaplingPaymentAddress) {
                 isToSaplingZaddr = true;
                 // If Sapling is not active, do not allow sending to a sapling addresses.
                 if (!saplingActive) {
                     throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
                 }
             },
-            [&](libzcash::SproutPaymentAddress addr) {
+            [&](libzcash::SproutPaymentAddress) {
                 isToSproutZaddr = true;
             },
             [&](libzcash::UnifiedAddress) {

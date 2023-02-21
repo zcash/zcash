@@ -1245,7 +1245,6 @@ bool ContextualCheckShieldedInputs(
         std::optional<orchard::AuthValidator>& orchardAuth,
         const Consensus::Params& consensus,
         uint32_t consensusBranchId,
-        bool nu5Active,
         bool isMined,
         bool (*isInitBlockDownload)(const Consensus::Params&))
 {
@@ -2017,7 +2016,6 @@ bool AcceptToMemoryPool(
             orchardAuth,
             chainparams.GetConsensus(),
             consensusBranchId,
-            chainparams.GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_NU5),
             false))
         {
             return false;
@@ -2325,7 +2323,7 @@ bool IsInitialBlockDownload(const Consensus::Params& params)
     if (chainActive.Tip()->nChainWork < UintToArith256(params.nMinimumChainWork))
         return true;
     // Don't bother checking Sprout, it is always active.
-    for (int idx = Consensus::BASE_SPROUT + 1; idx < Consensus::MAX_NETWORK_UPGRADES; idx++) {
+    for (size_t idx = Consensus::BASE_SPROUT + 1; idx < Consensus::MAX_NETWORK_UPGRADES; idx++) {
         // If we expect a particular activation block hash, and either the upgrade is not
         // active or it doesn't match the block at that height on the current chain, then
         // we are not on the correct chain. As we have already checked that the current
@@ -3370,7 +3368,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             orchardAuth,
             chainparams.GetConsensus(),
             consensusBranchId,
-            chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5),
             true))
         {
             return error(
@@ -3889,7 +3886,7 @@ struct PoolMetrics {
         return stats;
     }
 
-    static PoolMetrics Transparent(CBlockIndex *pindex, CCoinsViewCache *view) {
+    static PoolMetrics Transparent(CBlockIndex *pindex) {
         PoolMetrics stats;
         stats.value = pindex->nChainTransparentValue;
 
@@ -3958,7 +3955,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     auto sproutPool = PoolMetrics::Sprout(pindexNew, pcoinsTip);
     auto saplingPool = PoolMetrics::Sapling(pindexNew, pcoinsTip);
     auto orchardPool = PoolMetrics::Orchard(pindexNew, pcoinsTip);
-    auto transparentPool = PoolMetrics::Transparent(pindexNew, pcoinsTip);
+    auto transparentPool = PoolMetrics::Transparent(pindexNew);
 
     MetricsGauge("zcash.chain.verified.block.height", pindexNew->nHeight);
     RenderPoolMetrics("sprout", sproutPool);
@@ -4489,7 +4486,7 @@ bool InvalidateBlock(CValidationState& state, const CChainParams& chainparams, C
     return true;
 }
 
-bool ReconsiderBlock(CValidationState& state, CBlockIndex *pindex) {
+bool ReconsiderBlock(CValidationState&, CBlockIndex *pindex) {
     AssertLockHeld(cs_main);
 
     int nHeight = pindex->nHeight;
@@ -4621,7 +4618,6 @@ void FallbackSproutValuePoolBalance(
 /** Mark a block as having its data received and checked (up to BLOCK_VALID_TRANSACTIONS). */
 bool ReceivedBlockTransactions(
     const CBlock &block,
-    CValidationState& state,
     const CChainParams& chainparams,
     CBlockIndex *pindexNew,
     const CDiskBlockPos& pos)
@@ -5204,7 +5200,7 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
         if (dbp == NULL)
             if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
                 AbortNode(state, "Failed to write block");
-        if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos))
+        if (!ReceivedBlockTransactions(block, chainparams, pindex, blockPos))
             return error("AcceptBlock(): ReceivedBlockTransactions failed");
     } catch (const std::runtime_error& e) {
         return AbortNode(state, std::string("System error: ") + e.what());
@@ -6013,7 +6009,7 @@ bool InitBlockIndex(const CChainParams& chainparams)
             if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
                 return error("LoadBlockIndex(): writing genesis block to disk failed");
             CBlockIndex *pindex = AddToBlockIndex(block, chainparams.GetConsensus());
-            if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos))
+            if (!ReceivedBlockTransactions(block, chainparams, pindex, blockPos))
                 return error("LoadBlockIndex(): genesis block not accepted");
             // Before the genesis block, there was an empty tree. We set its root here so
             // that the block import thread doesn't race other methods that need to query

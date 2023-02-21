@@ -113,7 +113,7 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
             toPaymentAddress_ = addr;
             isToZaddr_ = true;
         },
-        [&](const libzcash::UnifiedAddress& addr) {
+        [&](const libzcash::UnifiedAddress&) {
             throw JSONRPCError(
                     RPC_INVALID_ADDRESS_OR_KEY,
                     "z_mergetoaddress does not yet support sending to unified addresses");

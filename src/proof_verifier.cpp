@@ -22,7 +22,7 @@ public:
         const JSDescription& jsdesc
     ) : joinSplitPubKey(joinSplitPubKey), jsdesc(jsdesc) {}
 
-    bool operator()(const libzcash::PHGRProof& proof) const
+    bool operator()(const libzcash::PHGRProof&) const
     {
         // We checkpoint after Sapling activation, so we can skip verification
         // for all Sprout proofs.

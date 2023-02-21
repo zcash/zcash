@@ -67,19 +67,19 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     // Determine the target totals and recipient pools
     for (const ResolvedPayment& recipient : recipients_) {
         std::visit(match {
-            [&](const CKeyID& addr) {
+            [&](const CKeyID&) {
                 txOutputAmounts_.t_outputs_total += recipient.amount;
                 recipientPools_.insert(OutputPool::Transparent);
             },
-            [&](const CScriptID& addr) {
+            [&](const CScriptID&) {
                 txOutputAmounts_.t_outputs_total += recipient.amount;
                 recipientPools_.insert(OutputPool::Transparent);
             },
-            [&](const libzcash::SaplingPaymentAddress& addr) {
+            [&](const libzcash::SaplingPaymentAddress&) {
                 txOutputAmounts_.sapling_outputs_total += recipient.amount;
                 recipientPools_.insert(OutputPool::Sapling);
             },
-            [&](const libzcash::OrchardRawAddress& addr) {
+            [&](const libzcash::OrchardRawAddress&) {
                 txOutputAmounts_.orchard_outputs_total += recipient.amount;
                 recipientPools_.insert(OutputPool::Orchard);
                 // No transaction allows sends from Sprout to Orchard.
@@ -389,14 +389,14 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     };
 
     std::visit(match {
-        [&](const CKeyID& keyId) {
+        [&](const CKeyID&) {
             allowedChangeTypes.insert(OutputPool::Transparent);
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
                     sendFromAccount_, allowedChangeTypes);
             assert(changeAddr.has_value());
             builder_.SendChangeTo(changeAddr.value(), ovks.first);
         },
-        [&](const CScriptID& scriptId) {
+        [&](const CScriptID&) {
             allowedChangeTypes.insert(OutputPool::Transparent);
             auto changeAddr = pwalletMain->GenerateChangeAddressForAccount(
                     sendFromAccount_, allowedChangeTypes);
@@ -652,7 +652,7 @@ std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(const Spendab
                 // an Orchard key.
                 fvk = ufvk.value().GetOrchardKey().value();
             },
-            [&](const auto& other) {
+            [&](const auto&) {
                 throw std::runtime_error("SelectOVKs: Selector cannot select Orchard notes.");
             }
         }, this->ztxoSelector_.GetPattern());
@@ -687,7 +687,7 @@ std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(const Spendab
                 // a Sapling key.
                 dfvk = ufvk.value().GetSaplingKey().value();
             },
-            [&](const auto& other) {
+            [&](const auto&) {
                 throw std::runtime_error("SelectOVKs: Selector cannot select Sapling notes.");
             }
         }, this->ztxoSelector_.GetPattern());
@@ -699,10 +699,10 @@ std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(const Spendab
     } else if (!spendable.utxos.empty()) {
         std::optional<transparent::AccountPubKey> tfvk;
         std::visit(match {
-            [&](const CKeyID& keyId) {
+            [&](const CKeyID&) {
                 tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
             },
-            [&](const CScriptID& keyId) {
+            [&](const CScriptID&) {
                 tfvk = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
             },
             [&](const UnifiedAddress& addr) {
@@ -728,7 +728,7 @@ std::pair<uint256, uint256> AsyncRPCOperation_sendmany::SelectOVKs(const Spendab
                     tfvk = ufvk.GetTransparentKey().value();
                 }
             },
-            [&](const auto& other) {
+            [&](const auto&) {
                 throw std::runtime_error("SelectOVKs: Selector cannot select transparent UTXOs.");
             }
         }, this->ztxoSelector_.GetPattern());

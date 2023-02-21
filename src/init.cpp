@@ -859,7 +859,7 @@ bool InitSanityCheck(void)
 
 
 static void ZC_LoadParams(
-    const CChainParams& chainparams
+    const CChainParams&
 )
 {
     struct timeval tv_start, tv_end;
@@ -911,7 +911,7 @@ static void ZC_LoadParams(
     LogPrintf("Loaded proof system parameters in %fs seconds.\n", elapsed);
 }
 
-bool AppInitServers(boost::thread_group& threadGroup)
+bool AppInitServers(boost::thread_group&)
 {
     RPCServer::OnStopped(&OnRPCStopped);
     RPCServer::OnPreCommand(&OnRPCPreCommand);
@@ -1370,8 +1370,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             if (vStreamParams.size() != 4) {
                 return InitError("Funding stream parameters malformed, expecting streamId:startHeight:endHeight:comma_delimited_addresses");
             }
-            int nFundingStreamId;
-            if (!ParseInt32(vStreamParams[0], &nFundingStreamId) ||
+            uint32_t nFundingStreamId;
+            if (!ParseUint32(vStreamParams[0], &nFundingStreamId) ||
                     nFundingStreamId < Consensus::FIRST_FUNDING_STREAM ||
                     nFundingStreamId >= Consensus::MAX_FUNDING_STREAMS) {
                 return InitError(strprintf("Invalid streamId (%s)", vStreamParams[0]));

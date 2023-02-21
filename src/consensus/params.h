@@ -119,6 +119,16 @@ private:
 public:
     FundingStream(const FundingStream& fs):
         startHeight(fs.startHeight), endHeight(fs.endHeight), addresses(fs.addresses) { }
+    FundingStream& operator=(const FundingStream& fs) {
+        if (this == &fs)
+            return *this;
+
+        FundingStream tmp(fs);
+        std::swap(startHeight, tmp.startHeight);
+        std::swap(endHeight, tmp.endHeight);
+        std::swap(addresses, tmp.addresses);
+        return *this;
+    }
 
     static std::variant<FundingStream, FundingStreamError> ValidateFundingStream(
         const Consensus::Params& params,

@@ -406,6 +406,14 @@ protected:
 public:
     CScript() { }
     CScript(const CScript& b) : CScriptBase(b.begin(), b.end()) { }
+    CScript& operator=(const CScript& b)
+    {
+        if (this == &b)
+            return *this;
+
+        CScriptBase::operator = (b);
+        return *this;
+    }
     CScript(const_iterator pbegin, const_iterator pend) : CScriptBase(pbegin, pend) { }
     CScript(std::vector<unsigned char>::const_iterator pbegin, std::vector<unsigned char>::const_iterator pend) : CScriptBase(pbegin, pend) { }
     CScript(const unsigned char* pbegin, const unsigned char* pend) : CScriptBase(pbegin, pend) { }
@@ -475,7 +483,7 @@ public:
         return *this;
     }
 
-    CScript& operator<<(const CScript& b)
+    CScript& operator<<(const CScript&)
     {
         // I'm not sure if this should push the script or concatenate scripts.
         // If there's ever a use for pushing a script onto a script, delete this member fn

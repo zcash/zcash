@@ -123,7 +123,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 class DescribeAddressVisitor
 {
 public:
-    UniValue operator()(const CNoDestination &dest) const { return UniValue(UniValue::VOBJ); }
+    UniValue operator()(const CNoDestination &) const { return UniValue(UniValue::VOBJ); }
 
     UniValue operator()(const CKeyID &keyID) const {
         UniValue obj(UniValue::VOBJ);
@@ -277,7 +277,7 @@ public:
         return obj;
     }
 
-    UniValue operator()(const libzcash::UnifiedAddress &uaddr) const {
+    UniValue operator()(const libzcash::UnifiedAddress &) const {
         UniValue obj(UniValue::VOBJ);
         pushAddressType(obj, "unified");
         // TODO: More information.

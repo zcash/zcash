@@ -32,7 +32,7 @@ struct FakeCheck {
     {
         return true;
     }
-    void swap(FakeCheck& x){};
+    void swap(FakeCheck&){};
 };
 
 struct FakeCheckCheckCompletion {
@@ -42,7 +42,7 @@ struct FakeCheckCheckCompletion {
         ++n_calls;
         return true;
     }
-    void swap(FakeCheckCheckCompletion& x){};
+    void swap(FakeCheckCheckCompletion&){};
 };
 
 struct FailingCheck {
@@ -83,7 +83,7 @@ struct MemoryCheck {
         return true;
     }
     MemoryCheck(){};
-    MemoryCheck(const MemoryCheck& x)
+    MemoryCheck(const MemoryCheck&)
     {
         // We have to do this to make sure that destructor calls are paired
         //
@@ -97,7 +97,7 @@ struct MemoryCheck {
     };
     ~MemoryCheck(){
         fake_allocated_memory -= b;
-    
+
     };
     void swap(MemoryCheck& x) { std::swap(b, x.b); };
 };
@@ -338,7 +338,7 @@ BOOST_AUTO_TEST_CASE(test_CheckQueue_Memory)
     tg.join_all();
 }
 
-// Test that a new verification cannot occur until all checks 
+// Test that a new verification cannot occur until all checks
 // have been destructed
 BOOST_AUTO_TEST_CASE(test_CheckQueue_FrozenCleanup)
 {
@@ -440,4 +440,3 @@ BOOST_AUTO_TEST_CASE(test_CheckQueueControl_Locks)
     }
 }
 BOOST_AUTO_TEST_SUITE_END()
-

@@ -101,7 +101,7 @@ public:
         batch.Queue(inner.get(), sighash.begin());
     }
 
-    const size_t GetNumActions() const {
+    size_t GetNumActions() const {
         return orchard_bundle_actions_len(inner.get());
     }
 
@@ -136,4 +136,3 @@ public:
 };
 
 #endif // ZCASH_PRIMITIVES_ORCHARD_H
-

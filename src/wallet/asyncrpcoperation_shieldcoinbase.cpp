@@ -65,10 +65,10 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
 
     //  Check the destination address is valid for this network i.e. not testnet being used on mainnet
     std::visit(match {
-        [&](CKeyID addr) {
+        [&](CKeyID) {
             throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2pkh address.");
         },
-        [&](CScriptID addr) {
+        [&](CScriptID) {
             throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2sh address.");
         },
         [&](libzcash::SaplingPaymentAddress addr) {
@@ -218,11 +218,11 @@ void ShieldToAddress::shieldToAddress(const libzcash::RecipientAddress& recipien
     m_op->tx_ = m_op->builder_.Build().GetTxOrThrow();
 }
 
-bool ShieldToAddress::operator()(const CKeyID &addr) const {
+bool ShieldToAddress::operator()(const CKeyID &) const {
     return false;
 }
 
-bool ShieldToAddress::operator()(const CScriptID &addr) const {
+bool ShieldToAddress::operator()(const CScriptID &) const {
     return false;
 }
 

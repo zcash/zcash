@@ -12,7 +12,6 @@
 
 extern bool ReceivedBlockTransactions(
     const CBlock &block,
-    CValidationState& state,
     const CChainParams& chainparams,
     CBlockIndex *pindexNew,
     const CDiskBlockPos& pos);
@@ -34,19 +33,19 @@ public:
         coin(std::make_pair(std::make_pair(blockHash, txid), std::make_pair(txOut, nHeight))) {}
     ~ValidationFakeCoinsViewDB() {}
 
-    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
+    bool GetSproutAnchorAt(const uint256 &, SproutMerkleTree &) const {
         return false;
     }
 
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
+    bool GetSaplingAnchorAt(const uint256 &, SaplingMerkleTree &) const {
         return false;
     }
 
-    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
+    bool GetOrchardAnchorAt(const uint256 &, OrchardMerkleFrontier &) const {
         return false;
     }
 
-    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
+    bool GetNullifier(const uint256 &, ShieldedType) const {
         return false;
     }
 
@@ -80,39 +79,39 @@ public:
         }
     }
 
-    uint256 GetBestAnchor(ShieldedType type) const {
+    uint256 GetBestAnchor(ShieldedType) const {
         uint256 a;
         return a;
     }
 
-    HistoryIndex GetHistoryLength(uint32_t branchId) const {
+    HistoryIndex GetHistoryLength(uint32_t) const {
         return 0;
     }
 
-    HistoryNode GetHistoryAt(uint32_t branchId, HistoryIndex index) const {
+    HistoryNode GetHistoryAt(uint32_t, HistoryIndex) const {
         return HistoryNode();
     }
 
-    uint256 GetHistoryRoot(uint32_t epochId) const {
+    uint256 GetHistoryRoot(uint32_t) const {
         return uint256();
     }
 
-    bool BatchWrite(CCoinsMap &mapCoins,
-                    const uint256 &hashBlock,
-                    const uint256 &hashSproutAnchor,
-                    const uint256 &hashSaplingAnchor,
-                    const uint256 &hashOrchardAnchor,
-                    CAnchorsSproutMap &mapSproutAnchors,
-                    CAnchorsSaplingMap &mapSaplingAnchors,
-                    CAnchorsOrchardMap &mapOrchardAnchors,
-                    CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap &mapSaplingNullifiers,
-                    CNullifiersMap &mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap) {
+    bool BatchWrite(CCoinsMap &,
+                    const uint256 &,
+                    const uint256 &,
+                    const uint256 &,
+                    const uint256 &,
+                    CAnchorsSproutMap &,
+                    CAnchorsSaplingMap &,
+                    CAnchorsOrchardMap &,
+                    CNullifiersMap &,
+                    CNullifiersMap &,
+                    CNullifiersMap &,
+                    CHistoryCacheMap &) {
         return false;
     }
 
-    bool GetStats(CCoinsStats &stats) const {
+    bool GetStats(CCoinsStats &) const {
         return false;
     }
 };
@@ -277,8 +276,7 @@ TEST(Validation, ReceivedBlockTransactions) {
     EXPECT_FALSE((bool)fakeIndex2.nChainSproutValue);
 
     // Mark the second block's transactions as received first
-    CValidationState state;
-    EXPECT_TRUE(ReceivedBlockTransactions(block2, state, chainParams, &fakeIndex2, pos2));
+    EXPECT_TRUE(ReceivedBlockTransactions(block2, chainParams, &fakeIndex2, pos2));
     EXPECT_FALSE(fakeIndex1.IsValid(BLOCK_VALID_TRANSACTIONS));
     EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
 
@@ -293,7 +291,7 @@ TEST(Validation, ReceivedBlockTransactions) {
     EXPECT_FALSE((bool)fakeIndex2.nChainSproutValue);
 
     // Now mark the first block's transactions as received
-    EXPECT_TRUE(ReceivedBlockTransactions(block1, state, chainParams, &fakeIndex1, pos1));
+    EXPECT_TRUE(ReceivedBlockTransactions(block1, chainParams, &fakeIndex1, pos1));
     EXPECT_TRUE(fakeIndex1.IsValid(BLOCK_VALID_TRANSACTIONS));
     EXPECT_TRUE(fakeIndex2.IsValid(BLOCK_VALID_TRANSACTIONS));
 

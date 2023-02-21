@@ -198,7 +198,7 @@ namespace Consensus {
                 [&](const libzcash::SaplingPaymentAddress& zaddr) {
                     addresses.push_back(zaddr);
                 },
-                [&](const auto& zaddr) {
+                [&](const auto&) {
                     throw std::runtime_error("Funding stream address was not a valid transparent P2SH or Sapling address.");
                 }
             }, addr.value());

@@ -179,7 +179,7 @@ UniValue TxActionsToJSON(const rust::Vec<orchard_bundle::Action>& actions)
 }
 
 // See https://zips.z.cash/zip-0225
-UniValue TxOrchardBundleToJSON(const CTransaction& tx, UniValue& entry)
+UniValue TxOrchardBundleToJSON(const CTransaction& tx, UniValue&)
 {
     auto bundle = tx.GetOrchardBundle().GetDetails();
 

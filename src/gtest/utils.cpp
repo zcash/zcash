@@ -4,7 +4,7 @@
 #include "wallet/wallet.h"
 #endif
 
-int GenZero(int n)
+int GenZero(int)
 {
     return 0;
 }

@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(tx_valid)
             UniValue inputs = test[0].get_array();
             bool fValid = true;
             for (size_t inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
-	        const UniValue& input = inputs[inpIdx];
+            const UniValue& input = inputs[inpIdx];
                 if (!input.isArray())
                 {
                     fValid = false;
@@ -177,8 +177,8 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
             map<COutPoint, CScript> mapprevOutScriptPubKeys;
             UniValue inputs = test[0].get_array();
             bool fValid = true;
-	    for (size_t inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
-	        const UniValue& input = inputs[inpIdx];
+        for (size_t inpIdx = 0; inpIdx < inputs.size(); inpIdx++) {
+            const UniValue& input = inputs[inpIdx];
                 if (!input.isArray())
                 {
                     fValid = false;
@@ -296,7 +296,7 @@ SetupDummyInputs(CBasicKeyStore& keystoreRet, CCoinsViewCache& coinsRet)
     return dummyTransactions;
 }
 
-void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransaction tx)
+void test_simple_sapling_invalidity(uint32_t, CMutableTransaction tx)
 {
     {
         CMutableTransaction newTx(tx);
@@ -398,7 +398,7 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
             saplingAuth, orchardAuth,
             Params().GetConsensus(),
             consensusBranchId,
-            false, true));
+            true));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-invalid-joinsplit-signature");
 
         // Empty output script.
@@ -420,7 +420,7 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
             saplingAuth, orchardAuth,
             Params().GetConsensus(),
             consensusBranchId,
-            false, true));
+            true));
         BOOST_CHECK_EQUAL(state.GetRejectReason(), "");
     }
     {

@@ -252,6 +252,22 @@ CTransaction::CTransaction(CMutableTransaction &&tx) : nConsensusBranchId(tx.nCo
     UpdateHash();
 }
 
+CTransaction::CTransaction(const CTransaction &tx) : nConsensusBranchId(tx.nConsensusBranchId),
+                                                     valueBalanceSapling(tx.valueBalanceSapling),
+                                                     orchardBundle(std::move(tx.orchardBundle)),
+                                                     fOverwintered(tx.fOverwintered),
+                                                     nVersion(tx.nVersion),
+                                                     nVersionGroupId(tx.nVersionGroupId),
+                                                     vin(std::move(tx.vin)), vout(std::move(tx.vout)),
+                                                     nLockTime(tx.nLockTime), nExpiryHeight(tx.nExpiryHeight),
+                                                     vShieldedSpend(std::move(tx.vShieldedSpend)), vShieldedOutput(std::move(tx.vShieldedOutput)),
+                                                     vJoinSplit(std::move(tx.vJoinSplit)),
+                                                     joinSplitPubKey(std::move(tx.joinSplitPubKey)), joinSplitSig(std::move(tx.joinSplitSig)),
+                                                     bindingSig(std::move(tx.bindingSig))
+{
+    UpdateHash();
+}
+
 CTransaction& CTransaction::operator=(const CTransaction &tx) {
     *const_cast<bool*>(&fOverwintered) = tx.fOverwintered;
     *const_cast<int*>(&nVersion) = tx.nVersion;

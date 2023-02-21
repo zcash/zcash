@@ -189,7 +189,7 @@ class EhSolverCancelledException : public std::exception
     }
 };
 
-inline constexpr const size_t max(const size_t A, const size_t B) { return A > B ? A : B; }
+inline constexpr size_t max(const size_t A, const size_t B) { return A > B ? A : B; }
 
 template<unsigned int N, unsigned int K>
 class Equihash
@@ -264,7 +264,7 @@ inline bool EhBasicSolveUncancellable(unsigned int n, unsigned int k, const eh_H
                     const std::function<bool(std::vector<unsigned char>)> validBlock)
 {
     return EhBasicSolve(n, k, base_state, validBlock,
-                        [](EhSolverCancelCheck pos) { return false; });
+                        [](EhSolverCancelCheck) { return false; });
 }
 
 inline bool EhOptimisedSolve(unsigned int n, unsigned int k, const eh_HashState& base_state,
@@ -288,7 +288,7 @@ inline bool EhOptimisedSolveUncancellable(unsigned int n, unsigned int k, const 
                     const std::function<bool(std::vector<unsigned char>)> validBlock)
 {
     return EhOptimisedSolve(n, k, base_state, validBlock,
-                            [](EhSolverCancelCheck pos) { return false; });
+                            [](EhSolverCancelCheck) { return false; });
 }
 #endif // ENABLE_MINING
 

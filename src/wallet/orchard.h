@@ -325,7 +325,7 @@ public:
      */
     bool AppendNoteCommitments(const int nBlockHeight, const CBlock& block) {
         assert(nBlockHeight >= 0);
-        for (int txidx = 0; txidx < block.vtx.size(); txidx++) {
+        for (std::vector<CTransaction>::size_type txidx = 0; txidx < block.vtx.size(); txidx++) {
             const CTransaction& tx = block.vtx[txidx];
             if (!orchard_wallet_append_bundle_commitments(
                     inner.get(),

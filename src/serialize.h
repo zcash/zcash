@@ -1038,13 +1038,13 @@ struct CSerActionUnserialize
 };
 
 template<typename Stream, typename T>
-inline void SerReadWrite(Stream& s, const T& obj, CSerActionSerialize ser_action)
+inline void SerReadWrite(Stream& s, const T& obj, CSerActionSerialize)
 {
     ::Serialize(s, obj);
 }
 
 template<typename Stream, typename T>
-inline void SerReadWrite(Stream& s, T& obj, CSerActionUnserialize ser_action)
+inline void SerReadWrite(Stream& s, T& obj, CSerActionUnserialize)
 {
     ::Unserialize(s, obj);
 }
@@ -1078,7 +1078,7 @@ protected:
 public:
     CSizeComputer(int nTypeIn, int nVersionIn) : nSize(0), nType(nTypeIn), nVersion(nVersionIn) {}
 
-    void write(const char *psz, size_t _nSize)
+    void write(const char *, size_t _nSize)
     {
         this->nSize += _nSize;
     }
@@ -1105,7 +1105,7 @@ public:
 };
 
 template<typename Stream>
-void SerializeMany(Stream& s)
+void SerializeMany(Stream&)
 {
 }
 
@@ -1123,7 +1123,7 @@ void SerializeMany(Stream& s, Arg&& arg, Args&&... args)
 }
 
 template<typename Stream>
-inline void UnserializeMany(Stream& s)
+inline void UnserializeMany(Stream&)
 {
 }
 
@@ -1141,13 +1141,13 @@ inline void UnserializeMany(Stream& s, Arg& arg, Args&... args)
 }
 
 template<typename Stream, typename... Args>
-inline void SerReadWriteMany(Stream& s, CSerActionSerialize ser_action, Args&&... args)
+inline void SerReadWriteMany(Stream& s, CSerActionSerialize, Args&&... args)
 {
     ::SerializeMany(s, std::forward<Args>(args)...);
 }
 
 template<typename Stream, typename... Args>
-inline void SerReadWriteMany(Stream& s, CSerActionUnserialize ser_action, Args&... args)
+inline void SerReadWriteMany(Stream& s, CSerActionUnserialize, Args&... args)
 {
     ::UnserializeMany(s, args...);
 }

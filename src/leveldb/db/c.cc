@@ -95,7 +95,7 @@ struct leveldb_comparator_t : public Comparator {
 
   // No-ops since the C binding does not support key shortening methods.
   void FindShortestSeparator(std::string*, const Slice&) const override {}
-  void FindShortSuccessor(std::string* key) const override {}
+  void FindShortSuccessor(std::string*) const override {}
 
   void* state_;
   void (*destructor_)(void*);

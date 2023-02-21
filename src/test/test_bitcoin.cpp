@@ -235,7 +235,7 @@ CTxMemPoolEntry TestMemPoolEntryHelper::FromTx(CMutableTransaction &tx, CTxMemPo
                            hasNoDependencies, spendsCoinbase, sigOpCount, nBranchId);
 }
 
-void Shutdown(void* parg)
+void Shutdown(void*)
 {
   exit(0);
 }

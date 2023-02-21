@@ -42,7 +42,7 @@ public:
         return EncodeBase58Check(data);
     }
 
-    std::string operator()(const CNoDestination& no) const { return {}; }
+    std::string operator()(const CNoDestination&) const { return {}; }
 };
 
 static uint32_t GetTypecode(const void* ua, size_t index)
@@ -56,10 +56,10 @@ class DataLenForReceiver {
 public:
     DataLenForReceiver() {}
 
-    size_t operator()(const libzcash::OrchardRawAddress &zaddr) const { return 43; }
-    size_t operator()(const libzcash::SaplingPaymentAddress &zaddr) const { return 43; }
-    size_t operator()(const CScriptID &p2sh) const { return 20; }
-    size_t operator()(const CKeyID &p2pkh) const { return 20; }
+    size_t operator()(const libzcash::OrchardRawAddress &) const { return 43; }
+    size_t operator()(const libzcash::SaplingPaymentAddress &) const { return 43; }
+    size_t operator()(const CScriptID &) const { return 20; }
+    size_t operator()(const CKeyID &) const { return 20; }
     size_t operator()(const libzcash::UnknownReceiver &unknown) const { return unknown.data.size(); }
 };
 
@@ -477,7 +477,7 @@ std::optional<libzcash::PaymentAddress> KeyIO::DecodePaymentAddress(const std::s
             std::optional<libzcash::PaymentAddress> scriptId = scriptIdIn;
             return scriptId;
         },
-        [](const CNoDestination& d) {
+        [](const CNoDestination&) {
             std::optional<libzcash::PaymentAddress> result = std::nullopt;
             return result;
         }

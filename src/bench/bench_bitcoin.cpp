@@ -16,7 +16,7 @@
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 
 int
-main(int argc, char** argv)
+main(int, char**)
 {
     SHA256AutoDetect();
     ECC_Start();

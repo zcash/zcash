@@ -422,7 +422,7 @@ PedersenHash PedersenHash::EmptyRoot(size_t depth) {
 SHA256Compress SHA256Compress::combine(
     const SHA256Compress& a,
     const SHA256Compress& b,
-    size_t depth
+    size_t
 )
 {
     SHA256Compress res = SHA256Compress();

@@ -206,12 +206,12 @@ std::optional<RecipientAddress> ZcashdUnifiedFullViewingKey::GetChangeAddress(co
                 }
             }
         },
-        [&](const SaplingChangeRequest& req) {
+        [&](const SaplingChangeRequest&) {
             if (saplingKey.has_value()) {
                 addr = saplingKey.value().GetChangeAddress();
             }
         },
-        [&](const OrchardChangeRequest& req) {
+        [&](const OrchardChangeRequest&) {
             if (orchardKey.has_value()) {
                 addr = orchardKey.value().GetChangeAddress();
             }

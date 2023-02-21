@@ -116,8 +116,8 @@ bool CAlert::AppliesTo(int nVersion, const std::string& strSubVerIn) const
 {
     // Get a subversion without comments
     std::string strSubVer = "";
-    auto start = 0;
-    auto end = 0;
+    std::string::size_type start = 0;
+    std::string::size_type end = 0;
     while (start < strSubVerIn.length() && end < strSubVerIn.length()) {
         end = strSubVerIn.find('(', start);
         if (end == std::string::npos) {

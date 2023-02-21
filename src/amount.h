@@ -44,6 +44,14 @@ public:
     explicit CFeeRate(const CAmount& _nSatoshisPerK): nSatoshisPerK(_nSatoshisPerK) { }
     CFeeRate(const CAmount& nFeePaid, size_t nSize);
     CFeeRate(const CFeeRate& other) { nSatoshisPerK = other.nSatoshisPerK; }
+    CFeeRate& operator=(const CFeeRate& other) {
+        if (this == &other)
+            return *this;
+
+        CFeeRate tmp(other.nSatoshisPerK);
+        std::swap(nSatoshisPerK, tmp.nSatoshisPerK);
+        return *this;
+    }
 
     CAmount GetFeeForRelay(size_t size) const; // unit returned is zatoshis
     CAmount GetFee(size_t size) const; // unit returned is zatoshis

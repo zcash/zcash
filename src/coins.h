@@ -424,32 +424,32 @@ class CCoinsViewDummy : public CCoinsView
 public:
     ~CCoinsViewDummy() {}
 
-    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return false; }
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return false; }
-    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const { return false; }
-    bool GetNullifier(const uint256 &nullifier, ShieldedType type) const { return false; }
-    bool GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
-    bool HaveCoins(const uint256 &txid) const { return false; }
+    bool GetSproutAnchorAt(const uint256 &, SproutMerkleTree &) const { return false; }
+    bool GetSaplingAnchorAt(const uint256 &, SaplingMerkleTree &) const { return false; }
+    bool GetOrchardAnchorAt(const uint256 &, OrchardMerkleFrontier &) const { return false; }
+    bool GetNullifier(const uint256 &, ShieldedType) const { return false; }
+    bool GetCoins(const uint256 &, CCoins &) const { return false; }
+    bool HaveCoins(const uint256 &) const { return false; }
     uint256 GetBestBlock() const { return uint256(); }
-    uint256 GetBestAnchor(ShieldedType type) const { return uint256(); };
-    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
-    uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }
+    uint256 GetBestAnchor(ShieldedType) const { return uint256(); };
+    HistoryIndex GetHistoryLength(uint32_t) const { return 0; }
+    HistoryNode GetHistoryAt(uint32_t, HistoryIndex) const { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t) const { return uint256(); }
 
-    bool BatchWrite(CCoinsMap &mapCoins,
-                    const uint256 &hashBlock,
-                    const uint256 &hashSproutAnchor,
-                    const uint256 &hashSaplingAnchor,
-                    const uint256 &hashOrchardAnchor,
-                    CAnchorsSproutMap &mapSproutAnchors,
-                    CAnchorsSaplingMap &mapSaplingAnchors,
-                    CAnchorsOrchardMap &mapOrchardAnchors,
-                    CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap &mapSaplingNullifiers,
-                    CNullifiersMap &mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap) { return false; }
+    bool BatchWrite(CCoinsMap &,
+                    const uint256 &,
+                    const uint256 &,
+                    const uint256 &,
+                    const uint256 &,
+                    CAnchorsSproutMap &,
+                    CAnchorsSaplingMap &,
+                    CAnchorsOrchardMap &,
+                    CNullifiersMap &,
+                    CNullifiersMap &,
+                    CNullifiersMap &,
+                    CHistoryCacheMap &) { return false; }
 
-    bool GetStats(CCoinsStats &stats) const { return false; }
+    bool GetStats(CCoinsStats &) const { return false; }
 };
 
 /** CCoinsView backed by another CCoinsView */

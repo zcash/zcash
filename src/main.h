@@ -417,7 +417,6 @@ bool ContextualCheckShieldedInputs(
         std::optional<orchard::AuthValidator>& orchardAuth,
         const Consensus::Params& consensus,
         uint32_t consensusBranchId,
-        bool nu5Active,
         bool isMined,
         bool (*isInitBlockDownload)(const Consensus::Params&) = IsInitialBlockDownload);
 
