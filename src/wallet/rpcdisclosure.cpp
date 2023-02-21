@@ -49,7 +49,7 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
         disabledMsg = experimentalDisabledHelpMsg("z_getpaymentdisclosure", {"paymentdisclosure"});
     }
 
-    if (fHelp || params.size() < 3 || params.size() > 4 )
+    if (fHelp)
         throw runtime_error(
             "z_getpaymentdisclosure \"txid\" js_index output_index (\"message\") \n"
             "\nGenerate a payment disclosure for a given joinsplit output.\n"
@@ -154,7 +154,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
         disabledMsg = experimentalDisabledHelpMsg("z_validatepaymentdisclosure", {"paymentdisclosure"});
     }
 
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "z_validatepaymentdisclosure \"paymentdisclosure\"\n"
             "\nValidates a payment disclosure.\n"

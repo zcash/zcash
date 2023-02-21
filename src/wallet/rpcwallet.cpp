@@ -170,7 +170,7 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
             "with `-allowdeprecated=getnewaddress` if you require backward compatibility.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
 
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "getnewaddress ( \"\" )\n"
             "\nDEPRECATED. Use z_getnewaccount and z_getaddressforaccount instead.\n"
@@ -226,7 +226,7 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
             "if you require backward compatibility.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
 
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "getrawchangeaddress\n"
             "\nDEPRECATED. Change addresses are a wallet-internal feature. Use a unified"
@@ -302,7 +302,7 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 2 || params.size() > 5)
+    if (fHelp)
         throw runtime_error(
             "sendtoaddress \"zcashaddress\" amount ( \"comment\" \"comment-to\" subtractfeefromamount )\n"
             "\nSend an amount to a given transparent address. The amount is interpreted as a real number\n"
@@ -842,7 +842,7 @@ UniValue listaddressgroupings(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "listaddressgroupings ( asOfHeight )\n"
             "\nLists groups of transparent addresses which have had their common ownership\n"
@@ -898,7 +898,7 @@ UniValue signmessage(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() != 2)
+    if (fHelp)
         throw runtime_error(
             "signmessage \"t-addr\" \"message\"\n"
             "\nSign a message with the private key of a t-addr"
@@ -959,7 +959,7 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 4)
+    if (fHelp)
         throw runtime_error(
             "getreceivedbyaddress \"zcashaddress\" ( minconf inZat asOfHeight )\n"
             "\nReturns the total amount received by the given transparent Zcash address in transactions with at least minconf confirmations.\n"
@@ -1029,7 +1029,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 5)
+    if (fHelp)
         throw runtime_error(
             "getbalance ( \"(dummy)\" minconf includeWatchonly inZat asOfHeight )\n"
             "\nReturns the wallet's available transparent balance. This total\n"
@@ -1083,7 +1083,7 @@ UniValue getunconfirmedbalance(const UniValue &params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 0)
+    if (fHelp)
         throw runtime_error(
             "getunconfirmedbalance\n"
             "Returns the server's total unconfirmed transparent balance\n");
@@ -1099,7 +1099,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 2 || params.size() > 5)
+    if (fHelp)
         throw runtime_error(
             "sendmany \"\" {\"address\":amount,...} ( minconf \"comment\" [\"address\",...] )\n"
             "\nSend to multiple transparent recipients, using funds from the legacy transparent\n"
@@ -1222,7 +1222,7 @@ UniValue addmultisigaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 2 || params.size() > 3)
+    if (fHelp)
     {
         string msg = "addmultisigaddress nrequired [\"key\",...] ( \"\" )\n"
             "\nAdd a nrequired-to-sign transparent multisignature address to the wallet.\n"
@@ -1385,7 +1385,7 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 6)
+    if (fHelp)
         throw runtime_error(
             "listreceivedbyaddress ( minconf includeempty includeWatchonly addressFilter includeImmatureCoinbase asOfHeight )\n"
             "\nList balances by transparent receiving address. This API does not provide\n"
@@ -1516,7 +1516,7 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 5)
+    if (fHelp)
         throw runtime_error(
             "listtransactions ( \"dummy\" count from includeWatchonly asOfHeight)\n"
             "\nReturns up to 'count' of the most recent transactions associated with legacy transparent\n"
@@ -1639,7 +1639,7 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 6)
+    if (fHelp)
         throw runtime_error(
             "listsinceblock ( \"blockhash\" target-confirmations includeWatchonly includeRemoved includeChange asOfHeight )\n"
             "\nGet all transactions in blocks since block [blockhash], or all transactions if omitted\n"
@@ -1753,7 +1753,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 4)
+    if (fHelp)
         throw runtime_error(
             "gettransaction \"txid\" ( includeWatchonly verbose asOfHeight )\n"
             "\nReturns detailed information about in-wallet transaction <txid>. This does not\n"
@@ -1858,7 +1858,7 @@ UniValue backupwallet(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "backupwallet \"destination\"\n"
             "\nSafely copies current wallet file to destination filename\n"
@@ -1901,7 +1901,7 @@ UniValue keypoolrefill(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "keypoolrefill ( newsize )\n"
             "\nFills the keypool associated with the legacy transparent value pool. This should only be\n"
@@ -2012,7 +2012,7 @@ UniValue walletpassphrasechange(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (pwalletMain->IsCrypted() && (fHelp || params.size() != 2))
+    if (pwalletMain->IsCrypted() && fHelp)
         throw runtime_error(
             "walletpassphrasechange \"oldpassphrase\" \"newpassphrase\"\n"
             "\nChanges the wallet passphrase from 'oldpassphrase' to 'newpassphrase'.\n"
@@ -2057,7 +2057,7 @@ UniValue walletconfirmbackup(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "walletconfirmbackup \"emergency recovery phrase\"\n"
             "\nCAUTION: This is an internal method that is not intended to be called directly by\n"
@@ -2097,7 +2097,7 @@ UniValue walletlock(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (pwalletMain->IsCrypted() && (fHelp || params.size() != 0))
+    if (pwalletMain->IsCrypted() && fHelp)
         throw runtime_error(
             "walletlock\n"
             "\nRemoves the wallet encryption key from memory, locking the wallet.\n"
@@ -2141,7 +2141,7 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
         disabledMsg = experimentalDisabledHelpMsg("encryptwallet", {"developerencryptwallet"});
     }
 
-    if (!pwalletMain->IsCrypted() && (fHelp || params.size() != 1))
+    if (!pwalletMain->IsCrypted() && fHelp)
         throw runtime_error(
             "encryptwallet \"passphrase\"\n"
             + disabledMsg +
@@ -2203,7 +2203,7 @@ UniValue lockunspent(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp)
         throw runtime_error(
             "lockunspent unlock [{\"txid\":\"txid\",\"vout\":n},...]\n"
             "\nUpdates list of temporarily unspendable outputs.\n"
@@ -2287,7 +2287,7 @@ UniValue listlockunspent(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 0)
+    if (fHelp)
         throw runtime_error(
             "listlockunspent\n"
             "\nReturns list of temporarily unspendable transparent outputs.\n"
@@ -2336,7 +2336,7 @@ UniValue settxfee(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "settxfee amount\n"
             "\nSet the transaction fee per kB. Overwrites the paytxfee parameter.\n"
@@ -2365,7 +2365,7 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "getwalletinfo ( asOfHeight )\n"
             "Returns wallet state information.\n"
@@ -2434,7 +2434,7 @@ UniValue resendwallettransactions(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "resendwallettransactions\n"
             "Immediately re-broadcast unconfirmed wallet transactions to all peers.\n"
@@ -2459,7 +2459,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 6)
+    if (fHelp)
         throw runtime_error(
             "listunspent ( minconf maxconf [\"address\",...] includeUnsafe queryOptions asOfHeight )\n"
             "\nReturns array of unspent transparent transaction outputs with between minconf and\n"
@@ -2590,7 +2590,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 5)
+    if (fHelp)
         throw runtime_error(
             "z_listunspent ( minconf maxconf includeWatchonly [\"zaddr\",...] asOfHeight )\n"
             "\nReturns an array of unspent shielded notes with between minconf and maxconf (inclusive)\n"
@@ -2797,7 +2797,7 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp)
         throw runtime_error(
             "fundrawtransaction \"hexstring\" includeWatching\n"
             "\nAdd transparent inputs to a transaction until it has enough in value to meet its out value.\n"
@@ -2890,7 +2890,7 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
         return NullUniValue;
     }
 
-    if (fHelp || params.size() < 2) {
+    if (fHelp) {
         throw runtime_error(
             "zcbenchmark benchmarktype samplecount\n"
             "\n"
@@ -3041,7 +3041,7 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
 
     std::string defaultType = ADDR_TYPE_SAPLING;
 
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "z_getnewaddress ( type )\n"
             "\nDEPRECATED. Use z_getnewaccount and z_getaddressforaccount instead.\n"
@@ -3093,7 +3093,7 @@ UniValue z_getnewaccount(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    if (fHelp || params.size() > 0)
+    if (fHelp)
         throw runtime_error(
             "z_getnewaccount\n"
             "\nPrepares and returns a new account.\n"
@@ -3129,7 +3129,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    if (fHelp || params.size() < 1 || params.size() > 3)
+    if (fHelp)
         throw runtime_error(
             "z_getaddressforaccount account ( [\"receiver_type\", ...] diversifier_index )\n"
             "\nFor the given account number, derives a Unified Address in accordance"
@@ -3299,7 +3299,7 @@ UniValue z_listaccounts(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "z_listaccounts\n"
             "\nReturns the list of accounts created with z_getnewaccount.\n"
@@ -3372,7 +3372,7 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
             "if you require backward compatibility.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
 
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "z_listaddresses ( includeWatchonly )\n"
             "\nDEPRECATED. Use `listaddresses` instead.\n"
@@ -3430,7 +3430,7 @@ UniValue z_listunifiedreceivers(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "z_listunifiedreceivers unified_address\n"
             "\nReturns a record of the individual receivers contained within the provided UA,"
@@ -3567,7 +3567,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() == 0 || params.size() > 3)
+    if (fHelp)
         throw runtime_error(
             "z_listreceivedbyaddress \"address\" ( minconf asOfHeight )\n"
             "\nReturn a list of amounts received by a zaddr belonging to the node's wallet.\n"
@@ -3815,7 +3815,7 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
             "if you require backward compatibility.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
 
-    if (fHelp || params.size() == 0 || params.size() > 3)
+    if (fHelp)
         throw runtime_error(
             "z_getbalance \"address\" ( minconf inZat )\n"
             "\nDEPRECATED; please use z_getbalanceforaccount, z_getbalanceforviewingkey,\n"
@@ -3902,7 +3902,7 @@ UniValue z_getbalanceforviewingkey(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 3)
+    if (fHelp)
         throw runtime_error(
             "z_getbalanceforviewingkey \"fvk\" ( minconf asOfHeight )\n"
             "\nReturns the balance viewable by a full viewing key known to the node's wallet"
@@ -4011,7 +4011,7 @@ UniValue z_getbalanceforaccount(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 3)
+    if (fHelp)
         throw runtime_error(
             "z_getbalanceforaccount account ( minconf asOfHeight )\n"
             "\nReturns the account's spendable balance for each value pool (\"transparent\", \"sapling\", and \"orchard\")."
@@ -4113,7 +4113,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
             "restart with `-allowdeprecated=z_gettotalbalance if you require backward compatibility.\n"
             "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
 
-    if (fHelp || params.size() > 2)
+    if (fHelp)
         throw runtime_error(
             "z_gettotalbalance ( minconf includeWatchonly )\n"
             "\nDEPRECATED. Please use z_getbalanceforaccount or getbalance (for legacy transparent balance) instead.\n"
@@ -4167,7 +4167,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "z_viewtransaction \"txid\"\n"
             "\nGet detailed shielded information about in-wallet transaction <txid>\n"
@@ -4531,7 +4531,7 @@ UniValue z_getoperationresult(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "z_getoperationresult ([\"operationid\", ... ]) \n"
             "\nRetrieve the result and status of an operation which has finished, and then remove the operation from memory."
@@ -4554,7 +4554,7 @@ UniValue z_getoperationstatus(const UniValue& params, bool fHelp)
    if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 1)
+   if (fHelp)
         throw runtime_error(
             "z_getoperationstatus ([\"operationid\", ... ]) \n"
             "\nGet operation status and any associated result or error data.  The operation will remain in memory."
@@ -4708,7 +4708,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 2 || params.size() > 5)
+    if (fHelp)
         throw runtime_error(
             "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf ) ( fee ) ( privacyPolicy )\n"
             "\nSend a transaction with multiple recipients. Amounts are decimal numbers with at"
@@ -5048,7 +5048,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 UniValue z_setmigration(const UniValue& params, bool fHelp) {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "z_setmigration enabled\n"
             "When enabled the Sprout to Sapling migration will attempt to migrate all funds from this wallet’s\n"
@@ -5071,7 +5071,7 @@ UniValue z_setmigration(const UniValue& params, bool fHelp) {
 UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "z_getmigrationstatus ( asOfHeight )\n"
             "Returns information about the status of the Sprout to Sapling migration.\n"
@@ -5197,7 +5197,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 2 || params.size() > 4)
+    if (fHelp)
         throw runtime_error(
             "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee ) ( limit )\n"
             "\nShield transparent coinbase funds by sending to a shielded zaddr.  This is an asynchronous operation and utxos"
@@ -5444,7 +5444,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 2 || params.size() > 6)
+    if (fHelp)
         throw runtime_error(
             "z_mergetoaddress [\"fromaddress\", ... ] \"toaddress\" ( fee ) ( transparent_limit ) ( shielded_limit ) ( memo )\n"
             "\nMerge multiple UTXOs and notes into a single UTXO or note.  Coinbase UTXOs are ignored; use `z_shieldcoinbase`"
@@ -5915,7 +5915,7 @@ UniValue z_listoperationids(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "z_listoperationids\n"
             "\nReturns the list of operation ids currently known to the wallet.\n"
@@ -5963,7 +5963,7 @@ UniValue z_getnotescount(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 2)
+    if (fHelp)
         throw runtime_error(
             "z_getnotescount ( minconf asOfHeight )\n"
             "\nReturns the number of notes available in the wallet for each shielded value pool.\n"

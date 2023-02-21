@@ -285,7 +285,7 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
 
 UniValue getblockcount(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "getblockcount\n"
             "\nReturns the number of blocks in the best valid block chain.\n"
@@ -302,7 +302,7 @@ UniValue getblockcount(const UniValue& params, bool fHelp)
 
 UniValue getbestblockhash(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "getbestblockhash\n"
             "\nReturns the hash of the best (tip) block in the longest block chain.\n"
@@ -319,7 +319,7 @@ UniValue getbestblockhash(const UniValue& params, bool fHelp)
 
 UniValue getdifficulty(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "getdifficulty\n"
             "\nReturns the proof-of-work difficulty as a multiple of the minimum difficulty.\n"
@@ -388,7 +388,7 @@ UniValue mempoolToJSON(bool fVerbose = false)
 
 UniValue getrawmempool(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "getrawmempool ( verbose )\n"
             "\nReturns all transaction ids in memory pool as a json array of string transaction ids.\n"
@@ -438,7 +438,7 @@ UniValue getblockdeltas(const UniValue& params, bool fHelp)
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         disabledMsg = experimentalDisabledHelpMsg("getblockdeltas", {"insightexplorer", "lightwalletd"});
     }
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "getblockdeltas \"blockhash\"\n"
             "\nReturns information about the given block and its transactions.\n"
@@ -521,7 +521,7 @@ UniValue getblockhashes(const UniValue& params, bool fHelp)
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         disabledMsg = experimentalDisabledHelpMsg("getblockhashes", {"insightexplorer", "lightwalletd"});
     }
-    if (fHelp || params.size() < 2)
+    if (fHelp)
         throw runtime_error(
             "getblockhashes high low ( {\"noOrphans\": true|false, \"logicalTimes\": true|false} )\n"
             "\nReturns array of hashes of blocks within the timestamp range provided,\n"
@@ -628,7 +628,7 @@ int parseHeightArg(const std::string& strHeight, int currentHeight)
 
 UniValue getblockhash(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "getblockhash index\n"
             "\nReturns hash of block in best-block-chain at index provided.\n"
@@ -649,7 +649,7 @@ UniValue getblockhash(const UniValue& params, bool fHelp)
 
 UniValue getblockheader(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp)
         throw runtime_error(
             "getblockheader \"hash\" ( verbose )\n"
             "\nIf verbose is false, returns a string that is serialized, hex-encoded data for blockheader 'hash'.\n"
@@ -709,7 +709,7 @@ UniValue getblockheader(const UniValue& params, bool fHelp)
 
 UniValue getblock(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp)
         throw runtime_error(
             "getblock \"hash|height\" ( verbosity )\n"
             "\nIf verbosity is 0, returns a string that is serialized, hex-encoded data for the block.\n"
@@ -829,7 +829,7 @@ UniValue getblock(const UniValue& params, bool fHelp)
 
 UniValue gettxoutsetinfo(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "gettxoutsetinfo\n"
             "\nReturns statistics about the unspent transaction output set.\n"
@@ -867,7 +867,7 @@ UniValue gettxoutsetinfo(const UniValue& params, bool fHelp)
 
 UniValue gettxout(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() < 2 || params.size() > 3)
+    if (fHelp)
         throw runtime_error(
             "gettxout \"txid\" n ( includemempool )\n"
             "\nReturns details about an unspent transaction output.\n"
@@ -949,7 +949,7 @@ UniValue verifychain(const UniValue& params, bool fHelp)
 {
     int nCheckLevel = GetArg("-checklevel", DEFAULT_CHECKLEVEL);
     int nCheckDepth = GetArg("-checkblocks", DEFAULT_CHECKBLOCKS);
-    if (fHelp || params.size() > 2)
+    if (fHelp)
         throw runtime_error(
             "verifychain ( checklevel numblocks )\n"
             "\nVerifies blockchain database.\n"
@@ -1037,7 +1037,7 @@ void NetworkUpgradeDescPushBack(
 
 UniValue getblockchaininfo(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "getblockchaininfo\n"
             "Returns an object containing various state info regarding block chain processing.\n"
@@ -1185,7 +1185,7 @@ struct CompareBlocksByHeight
 
 UniValue getchaintips(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "getchaintips\n"
             "Return information about all known tips in the block tree,"
@@ -1275,7 +1275,7 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
 
 UniValue z_gettreestate(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "z_gettreestate \"hash|height\"\n"
             "Return information about the given block's tree state.\n"
@@ -1443,7 +1443,7 @@ UniValue mempoolInfoToJSON()
 
 UniValue getmempoolinfo(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "getmempoolinfo\n"
             "\nReturns details on the active state of the TX memory pool.\n"
@@ -1463,7 +1463,7 @@ UniValue getmempoolinfo(const UniValue& params, bool fHelp)
 
 UniValue invalidateblock(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "invalidateblock \"hash\"\n"
             "\nPermanently marks a block as invalid, as if it violated a consensus rule.\n"
@@ -1501,7 +1501,7 @@ UniValue invalidateblock(const UniValue& params, bool fHelp)
 
 UniValue reconsiderblock(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "reconsiderblock \"hash\"\n"
             "\nRemoves invalidity status of a block and its descendants, reconsider them for activation.\n"

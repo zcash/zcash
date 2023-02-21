@@ -225,7 +225,7 @@ std::string CRPCTable::help(const std::string& strCommand) const
 
 UniValue help(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "help ( \"command\" )\n"
             "\nList all commands, or get help for a specified command.\n"
@@ -245,7 +245,7 @@ UniValue help(const UniValue& params, bool fHelp)
 
 UniValue setlogfilter(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() > 1) {
+    if (fHelp) {
         throw runtime_error(
             "setlogfilter \"directives\"\n"
             "\nSets the filter to be used for selecting events to log.\n"
@@ -287,7 +287,7 @@ UniValue setlogfilter(const UniValue& params, bool fHelp)
 UniValue stop(const UniValue& params, bool fHelp)
 {
     // Accept the deprecated and ignored 'detach' boolean argument
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "stop\n"
             "\nStop Zcash server.");
