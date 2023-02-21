@@ -6,7 +6,6 @@
     crane,
     flake-utils,
     nixpkgs,
-    ...
   }:
     {
       overlays.default = final: prev: {
@@ -153,11 +152,6 @@
     crane = {
       inputs.nixpkgs.follows = "nixpkgs";
       url = github:ipetkov/crane;
-    };
-
-    flake-compat = {
-      flake = false;
-      url = github:edolstra/flake-compat;
     };
 
     flake-utils.url = github:numtide/flake-utils;
