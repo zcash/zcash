@@ -131,7 +131,13 @@ public:
 
     void reset();
 
+protected:
+    bool is_data_empty() const { return data.empty(); }
+
 private:
+    void initialize();
+
+    uint32_t nFilterBits;
     int nEntriesPerGeneration;
     int nEntriesThisGeneration;
     int nGeneration;

@@ -6659,7 +6659,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
             if (addr.nTime <= 100000000 || addr.nTime > nNow + 10 * 60)
                 addr.nTime = nNow - 5 * 24 * 60 * 60;
-            pfrom->AddAddressKnown(addr);
+            pfrom->AddAddressIfNotAlreadyKnown(addr);
             bool fReachable = IsReachable(addr);
             if (addr.nTime > nSince && !pfrom->fGetAddr && vAddr.size() <= 10 && addr.IsRoutable())
             {
@@ -6754,7 +6754,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
             }
             else
             {
-                pfrom->AddKnownTx(WTxId(inv.hash, inv.hashAux));
+                pfrom->AddKnownWTxId(WTxId(inv.hash, inv.hashAux));
                 if (fBlocksOnly)
                     LogPrint("net", "transaction (%s) inv sent in violation of protocol peer=%d\n", inv.hash.ToString(), pfrom->id);
                 else if (!fAlreadyHave && !IsInitialBlockDownload(chainparams.GetConsensus()))
@@ -6900,7 +6900,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
 
         LOCK(cs_main);
 
-        pfrom->AddKnownTx(wtxid);
+        pfrom->AddKnownWTxId(wtxid);
 
         bool fMissingInputs = false;
         CValidationState state;
@@ -7597,9 +7597,8 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
             vAddr.reserve(pto->vAddrToSend.size());
             for (const CAddress& addr : pto->vAddrToSend)
             {
-                if (!pto->addrKnown.contains(addr.GetKey()))
+                if (pto->AddAddressIfNotAlreadyKnown(addr))
                 {
-                    pto->addrKnown.insert(addr.GetKey());
                     vAddr.push_back(addr);
                     // receiver rejects addr messages larger than 1000
                     if (vAddr.size() >= 1000)
@@ -7672,6 +7671,12 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
         vector<CInv> vInv;
         {
             LOCK(pto->cs_inventory);
+            // Avoid possibly adding to pto->filterInventoryKnown after it has been reset in CloseSocketDisconnect.
+            if (pto->fDisconnect) {
+                // We can safely return here because SendMessages would, in any case, do nothing after
+                // this block if pto->fDisconnect is set.
+                return true;
+            }
             vInv.reserve(std::max<size_t>(pto->vInventoryBlockToSend.size(), INVENTORY_BROADCAST_MAX));
 
             // Add blocks
@@ -7719,7 +7724,7 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                     if (pto->pfilter) {
                         if (!pto->pfilter->IsRelevantAndUpdate(*txinfo.tx)) continue;
                     }
-                    pto->filterInventoryKnown.insert(hash);
+                    pto->AddKnownTxId(hash);
                     vInv.push_back(inv);
                     if (vInv.size() == MAX_INV_SZ) {
                         pto->PushMessage("inv", vInv);
@@ -7754,7 +7759,7 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                     // Remove it from the to-be-sent set
                     pto->setInventoryTxToSend.erase(it);
                     // Check if not in the filter already
-                    if (pto->filterInventoryKnown.contains(hash)) {
+                    if (pto->HasKnownTxId(hash)) {
                         continue;
                     }
                     // Not in the mempool anymore? don't bother sending it.
@@ -7789,7 +7794,7 @@ bool SendMessages(const Consensus::Params& params, CNode* pto)
                         pto->PushMessage("inv", vInv);
                         vInv.clear();
                     }
-                    pto->filterInventoryKnown.insert(hash);
+                    pto->AddKnownTxId(hash);
                 }
             }
         }
