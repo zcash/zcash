@@ -181,6 +181,9 @@ public:
             externalOVK(externalOVK),
             anchorHeight(anchorHeight) {}
 
+    /**
+     * Returns the strongest `PrivacyPolicy` that is compatible with the transaction’s effects.
+     */
     PrivacyPolicy GetRequiredPrivacyPolicy() const;
 
     const SpendableInputs& GetSpendable() const {

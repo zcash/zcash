@@ -501,38 +501,26 @@ std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
 
 PrivacyPolicy TransactionEffects::GetRequiredPrivacyPolicy() const
 {
-    PrivacyPolicy maxPrivacy = PrivacyPolicy::FullPrivacy;
-
-    if (!spendable.orchardNoteMetadata.empty() && payments.HasSaplingRecipient()) {
-        maxPrivacy = PrivacyPolicy::AllowRevealedAmounts;
-    }
-
-    if (!spendable.saplingNoteEntries.empty() && payments.HasOrchardRecipient()) {
-        maxPrivacy = PrivacyPolicy::AllowRevealedAmounts;
-    }
-
-    if (!spendable.sproutNoteEntries.empty() && payments.HasSaplingRecipient()) {
-        maxPrivacy = PrivacyPolicy::AllowRevealedAmounts;
-    }
-
-    bool hasTransparentSource = !spendable.utxos.empty();
-    if (payments.HasTransparentRecipient()) {
-        if (hasTransparentSource) {
-            // TODO: This is the correct policy, but it’s a breaking change from previous behavior,
-            //       so enable it separately.
+    if (!spendable.utxos.empty()) {
+        // TODO: Add a check for whether we need AllowLinkingAccountAddresses here.
+        if (payments.HasTransparentRecipient()) {
+            // TODO: AllowFullyTransparent is the correct policy, but it’s a breaking change from
+            //       previous behavior, so enable it separately.
             // maxPrivacy = PrivacyPolicy::AllowFullyTransparent;
-            maxPrivacy = PrivacyPolicy::AllowRevealedSenders;
+            return PrivacyPolicy::AllowRevealedSenders;
         } else {
-            maxPrivacy = PrivacyPolicy::AllowRevealedRecipients;
+            return PrivacyPolicy::AllowRevealedSenders;
         }
-    } else if (hasTransparentSource) {
-        maxPrivacy = PrivacyPolicy::AllowRevealedSenders;
+    } else if (payments.HasTransparentRecipient()) {
+        return PrivacyPolicy::AllowRevealedRecipients;
+    } else if (!spendable.orchardNoteMetadata.empty() && payments.HasSaplingRecipient()
+               || !spendable.saplingNoteEntries.empty() && payments.HasOrchardRecipient()
+               || !spendable.sproutNoteEntries.empty() && payments.HasSaplingRecipient()) {
+        // TODO: This should only trigger when there is a non-zero valueBalance.
+        return PrivacyPolicy::AllowRevealedAmounts;
+    } else {
+        return PrivacyPolicy::FullPrivacy;
     }
-
-    // TODO: Check for conditions where PrivacyPolicy::AllowLinkingAccountAccesses
-    // or PrivacyPolicy::NoPrivacy are required
-
-    return maxPrivacy;
 }
 
 bool TransactionEffects::InvolvesOrchard() const
@@ -550,11 +538,11 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
     if (!strategy.IsCompatibleWith(requiredPrivacy)) {
         return TransactionBuilderResult(strprintf(
             "The specified privacy policy, %s, does not permit the creation of "
-            "the requested transaction. Select %s or weaker to allow this transaction "
+            "the requested transaction. Select %s to allow this transaction "
             "to be constructed.",
             strategy.PolicyName(),
             TransactionStrategy::ToString(requiredPrivacy)
-        ));
+            + (requiredPrivacy == PrivacyPolicy::NoPrivacy ? "" : " or weaker")));
     }
 
     int nextBlockHeight = chain.Height() + 1;
