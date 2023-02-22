@@ -157,7 +157,8 @@ pub extern "C" fn orchard_unauthorized_bundle_prove_and_sign(
     let bundle = unsafe { Box::from_raw(bundle) };
     let keys = unsafe { slice::from_raw_parts(keys, keys_len) };
     let sighash = unsafe { sighash.as_ref() }.expect("sighash pointer may not be null.");
-    let pk = unsafe { ORCHARD_PK.as_ref() }.unwrap();
+    let pk = unsafe { ORCHARD_PK.as_ref() }
+        .expect("Parameters not loaded: ORCHARD_PK should have been initialized");
 
     let signing_keys = keys
         .iter()
