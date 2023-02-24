@@ -54,7 +54,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory sleep | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory sleep | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-createsaplingspend
           image: $(params.BUILD_CONTAINER)
@@ -65,7 +65,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory createsaplingspend | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory createsaplingspend | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-verifysaplingspend
           image: $(params.BUILD_CONTAINER)
@@ -76,7 +76,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory verifysaplingspend | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory verifysaplingspend | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-createsaplingoutput
           image: $(params.BUILD_CONTAINER)
@@ -87,7 +87,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory createsaplingoutput | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory createsaplingoutput | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-verifysaplingoutput
           image: $(params.BUILD_CONTAINER)
@@ -98,7 +98,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory verifysaplingoutput | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory verifysaplingoutput | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-createjoinsplit
           image: $(params.BUILD_CONTAINER)
@@ -109,7 +109,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory createjoinsplit | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory createjoinsplit | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-verifyjoinsplit
           image: $(params.BUILD_CONTAINER)
@@ -120,7 +120,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory verifyjoinsplit | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory verifyjoinsplit | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-verifyequihash
           image: $(params.BUILD_CONTAINER)
@@ -131,7 +131,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory verifyequihash | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory verifyequihash | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-loadwallet-200k-recv
           image: $(params.BUILD_CONTAINER)
@@ -143,7 +143,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory loadwallet 200k-recv | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory loadwallet 200k-recv | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-loadwallet-200k-send
           image: $(params.BUILD_CONTAINER)
@@ -155,7 +155,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory loadwallet 200k-send | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory loadwallet 200k-send | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-listunspent-200k-recv
           image: $(params.BUILD_CONTAINER)
@@ -167,7 +167,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory listunspent 200k-recv | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory listunspent 200k-recv | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-listunspent-200k-send
           image: $(params.BUILD_CONTAINER)
@@ -179,7 +179,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory listunspent 200k-send | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory listunspent 200k-send | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-connectblocksapling
           image: $(params.BUILD_CONTAINER)
@@ -191,7 +191,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory connectblocksapling | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory connectblocksapling | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-connectblockorchard
           image: $(params.BUILD_CONTAINER)
@@ -203,7 +203,7 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory connectblockorchard | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory connectblockorchard | tail -n 7 | python ./mem_metrics.py
     
         - name: bench-connectblockslow
           image: $(params.BUILD_CONTAINER)
@@ -215,4 +215,4 @@
             cp /home/mem_metrics.py /workspace/source
             cd /workspace/source
     
-            ./qa/zcash/performance-measurements.sh memory connectblockslow | python ./mem_metrics.py
+            ./qa/zcash/performance-measurements.sh memory connectblockslow | tail -n 7 | python ./mem_metrics.py
