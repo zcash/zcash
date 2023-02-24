@@ -1,0 +1,97 @@
+---
+    apiVersion: tekton.dev/v1beta1
+    kind: Task
+    metadata:
+      name: zcash-build-bench-mem-diff
+    spec:    
+      params:
+        - name: JOBS
+          default: "4"
+          type: string
+        - name: BUILD_FOR_HOST
+          default: x86_64-pc-linux-gnu
+          type: string
+        - name: CONFIGURE_FLAGS
+          default: ""
+          type: string
+        - name: BUILD_CONTAINER
+          default: electriccoinco/zcashd-bench-ubuntu2004v2
+          type: string
+        - name: TEST_TARGET
+          default: ""
+          type: string
+      resources:
+        inputs:
+          - name: source
+            type: git
+          - name: source2
+            type: git
+      steps:
+        - name: build
+          image: $(params.BUILD_CONTAINER)
+          script: |
+            #!/bin/bash
+            set -o pipefail
+            cd workspace/source
+            echo $(git rev-parse HEAD)
+            echo $(git rev-parse --short HEAD)
+            
+            if [ "$(params.BUILD_FOR_HOST)" == "x86_64-apple-darwin18" ]
+            then
+                mkdir -p depends/SDKs
+                curl -fs https://ecc.mypinata.cloud/ipfs/QmeSwckvSCGL9SXGdEHoAyqXdzD7T9HYTwsC34Bj5EVDF5 \
+                  -o depends/SDKs/Xcode-11.3.1-11C505-extracted-SDK-with-libcxx-headers.tar.gz
+                tar zxvf depends/SDKs/Xcode-11.3.1-11C505-extracted-SDK-with-libcxx-headers.tar.gz \
+                  -C depends/SDKs
+            fi              
+    
+            CONFIGURE_FLAGS=$(params.CONFIGURE_FLAGS) HOST=$(params.BUILD_FOR_HOST) ./zcutil/build.sh -j$(params.JOBS)
+
+        - name: build2
+          image: $(params.BUILD_CONTAINER)
+          script: |
+            #!/bin/bash
+            set -o pipefail
+            cd workspace/source2
+            echo $(git rev-parse HEAD)
+            echo $(git rev-parse --short HEAD)
+            
+            if [ "$(params.BUILD_FOR_HOST)" == "x86_64-apple-darwin18" ]
+            then
+                mkdir -p depends/SDKs
+                curl -fs https://ecc.mypinata.cloud/ipfs/QmeSwckvSCGL9SXGdEHoAyqXdzD7T9HYTwsC34Bj5EVDF5 \
+                  -o depends/SDKs/Xcode-11.3.1-11C505-extracted-SDK-with-libcxx-headers.tar.gz
+                tar zxvf depends/SDKs/Xcode-11.3.1-11C505-extracted-SDK-with-libcxx-headers.tar.gz \
+                  -C depends/SDKs
+            fi              
+    
+            CONFIGURE_FLAGS=$(params.CONFIGURE_FLAGS) HOST=$(params.BUILD_FOR_HOST) ./zcutil/build.sh -j$(params.JOBS)
+
+        - name: bench1
+          image: $(params.BUILD_CONTAINER)
+          script: |
+            #!/bin/bash
+            set -o pipefail
+            cp -a /home/.zcash-params $HOME/
+            cd /workspace/source
+    
+            ./qa/zcash/performance-measurements.sh memory sleep
+
+        - name: bench2
+          image: $(params.BUILD_CONTAINER)
+          script: |
+            #!/bin/bash
+            set -o pipefail
+            cp -a /home/.zcash-params $HOME/
+            cd /workspace/source2
+            ./qa/zcash/performance-measurements.sh memory sleep
+
+        - name: bench-compare
+          image: $(params.BUILD_CONTAINER)
+          script: |
+            #!/bin/bash
+            set -o pipefail
+            cp -a /home/.zcash-params $HOME/
+            cd /workspace
+            heaptrack_print -d ./source/heaptrack*.gz ./source2/heaptrack*.gz | tail -n 7 | python ./mem_metrics.py
+            

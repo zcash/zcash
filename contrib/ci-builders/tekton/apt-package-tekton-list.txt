@@ -5,6 +5,7 @@ cmake
 curl
 g++-aarch64-linux-gnu
 git
+heaptrack
 lcov
 libcap-dev
 libffi-dev
