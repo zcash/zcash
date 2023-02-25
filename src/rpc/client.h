@@ -53,7 +53,7 @@ tl::expected<UniValue, ConversionFailure>
     RPCConvertValues(const std::string& method, const std::vector<std::string>& strArgs);
 
 /** Non-RFC4627 JSON parser, accepts internal values (such as numbers, true, false, null)
- * as well as objects and arrays.
+ * as well as objects and arrays. Returns `std::nullopt` if `strVal` couldn’t be parsed.
  */
 std::optional<UniValue> ParseNonRFCJSONValue(const std::string& strVal);
 
