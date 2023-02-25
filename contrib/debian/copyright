@@ -108,6 +108,7 @@ Copyright: 2014-2015, Brian Davis
 License: BSD-3-clause-Tobias-Klein
 
 Files: depends/sources/libsodium-*.tar.gz
+ depends/patches/libsodium/*
 Copyright: 2013-2022 Frank Denis
 License: ISC
 
@@ -122,6 +123,7 @@ Comment: This entry is specifically for the libc++ library. The libc++ Authors
  are listed in https://github.com/llvm/llvm-project/blob/main/libcxx/CREDITS.TXT .
 
 Files: depends/sources/db-*.tar.gz
+ depends/patches/bdb/*
 Copyright: 1990, 2016 Oracle and/or its affiliates;
  1990, 1993, 1994, 1995 The Regents of the University of California;
  1995, 1996 The President and Fellows of Harvard University;
@@ -129,6 +131,7 @@ Copyright: 1990, 2016 Oracle and/or its affiliates;
 License: BDB
 
 Files: depends/sources/libevent-*.tar.gz
+ depends/patches/libevent/*
 Copyright: 2000-2007 Niels Provos <provos@citi.umich.edu>
  2007-2012 Niels Provos and Nick Mathewson
  2000 Dug Song <dugsong@monkey.org>
@@ -141,6 +144,7 @@ Copyright: 2000-2007 Niels Provos <provos@citi.umich.edu>
 License: BSD-3-clause
 
 Files: depends/sources/zeromq-*.tar.gz
+ depends/patches/zeromq/*
 Copyright: 1994, 1995, 1996, 1999, 2000, 2001, 2002, 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
  2007-2014 iMatix Corporation
  2009-2011 250bpm s.r.o.
@@ -161,7 +165,8 @@ Copyright: 2006 Nemanja Trifunovic
 License: Boost-Software-License-1.0
 
 Files: depends/sources/tl-expected-*.tar.gz
-Copyright: 2017-2021 Sy Brand <simonrbrand@gmail.com> (@TartanLlama), 2022 The Zcash developers
+ depends/patches/tl_expected/*
+Copyright: 2017-2022 Sy Brand <tartanllama@gmail.com> (@TartanLlama), 2022 The Zcash developers
 License: CC0-1.0
 Comment: Other contributors are Simon Truscott (@bobbleclank), Kévin Alexandre Boissonneault (@KABoissonneault),
  and Björn Fahller (@rollbear).
