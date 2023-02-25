@@ -6,6 +6,8 @@
     crane,
     flake-utils,
     nixpkgs,
+    nixpkgs-master,
+    rust-overlay,
   }:
     {
       overlays.default = final: prev: {
@@ -14,14 +16,22 @@
       };
     }
     // flake-utils.lib.eachDefaultSystem (system: let
-      pkgs = import nixpkgs {
-        inherit system;
-        overlays = [
+      # Applies an overlay to a package set, but without the overlay feeding back into the original
+      # package set.
+      afterlay = prev: overlay: rec {
+        final = prev // overlay final prev;
+      }.final;
+
+      pkgs = afterlay
+        (import nixpkgs {
+          inherit system;
+          overlays = [(import rust-overlay)];
+        })
+        (nixpkgs.lib.composeManyExtensions [
           (import ./contrib/nix/dependencies/system.nix)
-          (import ./contrib/nix/dependencies/depends)
+          (import ./contrib/nix/dependencies/depends {inherit nixpkgs-master;})
           (import ./contrib/nix/dependencies/subtrees)
-        ];
-      };
+        ]);
 
       # Specific derivations may further filter the src, but this cuts out all
       # the general cruft to start with (source control info, Nix build info,
@@ -48,7 +58,9 @@
         default = self.packages.${system}.zcash;
 
         librustzcash = callPackage ./contrib/nix/librustzcash.nix {
-          crane = crane.lib.${system};
+          crane =
+            crane.lib.${system}.overrideToolchain
+              pkgs.rust-bin.stable."1.67.1".default;
         };
 
         zk-parameters = callPackage ./contrib/nix/zk-parameters.nix {};
@@ -151,11 +163,23 @@
   inputs = {
     crane = {
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.rust-overlay.follows = "rust-overlay";
       url = github:ipetkov/crane;
     };
 
     flake-utils.url = github:numtide/flake-utils;
 
     nixpkgs.url = github:NixOS/nixpkgs/release-22.11;
+
+    ## LLVM 15 hasn’t made it into a release yet, so we need this until 22.0* is out
+    nixpkgs-master.url = github:NixOS/nixpkgs/master;
+
+    rust-overlay = {
+      inputs = {
+        flake-utils.follows = "flake-utils";
+        nixpkgs.follows = "nixpkgs";
+      };
+      url = "github:oxalica/rust-overlay";
+    };
   };
 }

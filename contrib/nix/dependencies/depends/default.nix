@@ -1,5 +1,8 @@
 ## Dependencies managed by our depends system
-final: previous: let
+{nixpkgs-master}:
+final: prev: let
+  master = import nixpkgs-master {system = final.system;};
+
   mkDependsDerivation = import ./mk-depends-derivation.nix final;
 in {
   db = mkDependsDerivation {
@@ -8,13 +11,18 @@ in {
   };
 
   boost = mkDependsDerivation {
-    pkg = final.boost180;
+    pkg = master.boost181;
     # The URL substitution here is a bit too complex for `mkDependsDerivation`.
     url = pname: version: "https://boostorg.jfrog.io/artifactory/main/release/${builtins.replaceStrings ["_"] ["."] version}/source/${pname}_${version}.tar.bz2";
   };
 
+  cmake = mkDependsDerivation {
+    pkg = prev.cmake;
+    dependsPkgName = "native_cmake";
+  };
+
   gtest = mkDependsDerivation {
-    pkg = previous.gtest;
+    pkg = prev.gtest;
     dependsPkgName = "googletest";
   };
 
@@ -23,30 +31,30 @@ in {
   #        stdenv.
   #
   # This subsumes libcxx, clang
-  llvmPackages = final.llvmPackages_14;
+  llvmPackages = master.llvmPackages_15;
 
-  # libevent = mkDependsDerivation {pkg = previous.libevent;};
+  # libevent = mkDependsDerivation {pkg = prev.libevent;};
 
-  libsodium = mkDependsDerivation {pkg = previous.libsodium;};
+  libsodium = mkDependsDerivation {pkg = prev.libsodium;};
 
   ccache = mkDependsDerivation {
-    pkg = previous.ccache;
+    pkg = prev.ccache;
     dependsPkgName = "native_ccache";
   };
 
   cctools = mkDependsDerivation {
-    pkg = previous.cctools;
+    pkg = prev.cctools;
     dependsPkgName = "native_cctools";
   };
 
   libtapi = mkDependsDerivation {
-    pkg = previous.libtapi;
+    pkg = prev.libtapi;
     dependsPkgName = "native_cctools";
     infix = "_libtapi";
   };
 
   # cxx-rs = mkDependsDerivation {
-  #   pkg = previous.cxx-rs;
+  #   pkg = prev.cxx-rs;
   #   dependsPkgName = "native_cxxbridge";
   # };
 
@@ -55,7 +63,7 @@ in {
   # getting the oldest available version that isn’t older than what’s in
   # depends.
   ncurses =
-    (previous.ncurses.override {
+    (prev.ncurses.override {
       abiVersion = "5";
     })
     .overrideAttrs (old: {
@@ -66,12 +74,15 @@ in {
       };
     });
 
-  # need rust
+  tl-expected = mkDependsDerivation {
+    pkg = prev.tl-expected;
+    dependsPkgName = "tl_expected";
+  };
 
   # utf8cpp = mkDependsDerivation {
-  #   pkg = previous.utf8cpp;
+  #   pkg = prev.utf8cpp;
   #   dependsPkgName = "utfcpp";
   # };
 
-  zeromq = mkDependsDerivation {pkg = previous.zeromq;};
+  zeromq = mkDependsDerivation {pkg = prev.zeromq;};
 }

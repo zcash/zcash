@@ -19,6 +19,7 @@
   secp256k1,
   src,
   tinyformat,
+  tl-expected,
   univalue,
   utf8cpp,
   zeromq,
@@ -42,6 +43,7 @@ llvmPackages.stdenv.mkDerivation {
     openssl
     secp256k1
     tinyformat
+    tl-expected
     univalue
     utf8cpp
     zeromq
@@ -64,12 +66,10 @@ llvmPackages.stdenv.mkDerivation {
     ./patches/autoreconf/make-nix-friendly.patch
     ./patches/zcash/ctaes.patch
     ./patches/zcash/tinyformat.patch
-    ./patches/zcash/utf8cpp.patch
   ];
 
   postPatch = ''
-    # Overrides the paths to libraries provided by the “depends/” build in the
-    # Makefile.
+    # Overrides the paths to libraries provided by Git subtrees in the Makefile.
     substituteInPlace ./src/Makefile.am \
       --subst-var-by NIX_LIBLEVELDB "${leveldb}" \
       --subst-var-by NIX_LIBRUSTZCASH "${librustzcash}" \
@@ -78,7 +78,10 @@ llvmPackages.stdenv.mkDerivation {
     patchShebangs ./contrib/devtools/security-check.py
   '';
 
-  configureFlags = ["--with-boost=${boost}"];
+  configureFlags = [
+    "--with-boost=${boost.dev}"
+    "--with-boost-libdir=${boost}/lib"
+  ];
 
   doCheck = true;
 

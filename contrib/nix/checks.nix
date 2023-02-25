@@ -1,6 +1,12 @@
+## NB: Many of these checks call Bash explicitly rather than relying on the
+##     shebang line. We could alternatively use `patchShebangs`, but that
+##     currently makes the code noisier. I think `patchShebangs` is better
+##     because if the shebang changes, so does the tool used to run it, whereas
+##     this way we have to manually update this file as well.
 {
   bash,
   cargo,
+  git,
   pythonPackages,
   runCommand,
   rustfmt,
@@ -11,7 +17,7 @@
     runCommand "cargo-patches" {
       inherit src;
     } ''
-      $src/test/lint/lint-cargo-patches.sh
+      ${bash}/bin/bash $src/test/lint/lint-cargo-patches.sh
       mkdir $out
     '';
 
@@ -19,7 +25,7 @@
     runCommand "include-guards" {
       inherit src;
     } ''
-      $src/test/lint/lint-include-guards.sh
+      ${bash}/bin/bash $src/test/lint/lint-include-guards.sh
       mkdir $out
     '';
 
@@ -37,7 +43,7 @@
     runCommand "python-utf8-encoding" {
       inherit src;
     } ''
-      $src/test/lint/lint-python-utf8-encoding.sh
+      ${bash}/bin/bash $src/test/lint/lint-python-utf8-encoding.sh
       mkdir $out
     '';
 
@@ -60,10 +66,11 @@
       inherit src;
 
       nativeBuildInputs = [
+        git
         shellcheck
       ];
     } ''
-      $src/test/lint/lint-shell.sh
+      ${bash}/bin/bash $src/test/lint/lint-shell.sh
       mkdir $out
     '';
 }

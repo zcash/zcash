@@ -14,10 +14,5 @@ crane.buildPackage {
     src = src;
   };
 
-  buildInputs = lib.optionals stdenv.isDarwin [
-    darwin.apple_sdk.frameworks.Security
-    libiconv
-  ];
-
   doCheck = true;
 }
