@@ -83,11 +83,10 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
                 auto sendTo = pwalletMain->GenerateChangeAddressForAccount(
                         sendFromAccount,
                         allowedChangeTypes({ReceiverType::P2PKH}));
-                if (sendTo.has_value()) {
-                    resolvedPayments.AddPayment(
-                            ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
-                    changeAddr = sendTo.value();
-                }
+                assert(sendTo.has_value());
+                resolvedPayments.AddPayment(
+                        ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
+                changeAddr = sendTo.value();
             },
             [&](const CScriptID& scriptId) {
                 auto sendTo = pwalletMain->GenerateChangeAddressForAccount(
@@ -110,14 +109,11 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
                 // for Sapling, if using a legacy address, return change to the
                 // originating address; otherwise return it to the Sapling internal
                 // address corresponding to the UFVK.
-                std::optional<RecipientAddress> sendTo;
-                if (sendFromAccount == ZCASH_LEGACY_ACCOUNT) {
-                    sendTo = addr;
-                } else {
-                    sendTo = pwalletMain->GenerateChangeAddressForAccount(
+                std::optional<RecipientAddress> sendTo = sendFromAccount == ZCASH_LEGACY_ACCOUNT
+                    ? addr
+                    : pwalletMain->GenerateChangeAddressForAccount(
                             sendFromAccount,
                             allowedChangeTypes({ReceiverType::Sapling}));
-                }
                 assert(sendTo.has_value());
                 resolvedPayments.AddPayment(
                         ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
@@ -127,14 +123,11 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
                 // for Sapling, if using a legacy address, return change to the
                 // originating address; otherwise return it to the Sapling internal
                 // address corresponding to the UFVK.
-                std::optional<RecipientAddress> sendTo;
-                if (sendFromAccount == ZCASH_LEGACY_ACCOUNT) {
-                    sendTo = fvk.DefaultAddress();
-                } else {
-                    sendTo = pwalletMain->GenerateChangeAddressForAccount(
+                std::optional<RecipientAddress> sendTo = sendFromAccount == ZCASH_LEGACY_ACCOUNT
+                    ? fvk.DefaultAddress()
+                    : pwalletMain->GenerateChangeAddressForAccount(
                             sendFromAccount,
                             allowedChangeTypes({ReceiverType::Sapling}));
-                }
                 assert(sendTo.has_value());
                 resolvedPayments.AddPayment(
                         ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
@@ -145,32 +138,29 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
                 if (zufvk.has_value()) {
                     auto sendTo = zufvk.value().GetChangeAddress(
                             allowedChangeTypes(ua.GetKnownReceiverTypes()));
-                    if (sendTo.has_value()) {
-                        resolvedPayments.AddPayment(
-                                ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
-                        changeAddr = sendTo.value();
-                    }
+                    assert(sendTo.has_value());
+                    resolvedPayments.AddPayment(
+                            ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
+                    changeAddr = sendTo.value();
                 }
             },
             [&](const libzcash::UnifiedFullViewingKey& fvk) {
                 auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(params, fvk);
                 auto sendTo = zufvk.GetChangeAddress(
                         allowedChangeTypes(fvk.GetKnownReceiverTypes()));
-                if (sendTo.has_value()) {
-                    resolvedPayments.AddPayment(
-                            ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
-                    changeAddr = sendTo.value();
-                }
+                assert(sendTo.has_value());
+                resolvedPayments.AddPayment(
+                        ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
+                changeAddr = sendTo.value();
             },
             [&](const AccountZTXOPattern& acct) {
                 auto sendTo = pwalletMain->GenerateChangeAddressForAccount(
                         acct.GetAccountId(),
                         allowedChangeTypes(acct.GetReceiverTypes()));
-                if (sendTo.has_value()) {
-                    resolvedPayments.AddPayment(
-                            ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
-                    changeAddr = sendTo.value();
-                }
+                assert(sendTo.has_value());
+                resolvedPayments.AddPayment(
+                        ResolvedPayment(std::nullopt, sendTo.value(), changeAmount, std::nullopt, true));
+                changeAddr = sendTo.value();
             }
         }, selector.GetPattern());
 

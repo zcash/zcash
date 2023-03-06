@@ -87,7 +87,6 @@ void ThrowInputSelectionError(
                         "`AllowRevealedAmounts` or weaker if you wish to allow this transaction to "
                         "proceed anyway.");
                 case AddressResolutionError::ChangeAddressSelectionError:
-                    // this should be unreachable, but we handle it defensively
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
                         "Could not select a change address that allows this transaction "
