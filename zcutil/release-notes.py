@@ -33,6 +33,7 @@ author_aliases = {
     'MarcoFalke': 'Marco Falke',
     'mdr0id': 'Marshall Gaucher',
     'paveljanik': 'Pavel Janík',
+    'Sasha': 'sasha',
     'Simon': 'Simon Liu',
     'str4d': 'Jack Grigg',
     'zebambam': 'Benjamin Winston',
