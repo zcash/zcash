@@ -168,7 +168,6 @@ check_and_fetch_params() {
     # and unset them at the end of the function.
     filename="$1"
     output="$2"
-    dlname="${output}.dl"
     expectedhash="$3"
 
     if ! [ -f "$output" ]
@@ -196,7 +195,6 @@ EOF
 
     unset -v filename
     unset -v output
-    unset -v dlname
     unset -v expectedhash
 }
 
