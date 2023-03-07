@@ -304,8 +304,8 @@ public:
             (2000000, uint256S("0x00000000010accaf2f87934765dc2e0bf4823a2b1ae2c1395b334acfce52ad68")),
             1677602242,     // * UNIX timestamp of last checkpoint block
             12380742,       // * total number of transactions between genesis and last checkpoint
-            3566            // * estimated number of transactions per day after checkpoint
-                            //   total number of tx / (checkpoint block height / (24 * 24))
+            7131            // * estimated number of transactions per day after checkpoint
+                            //   (total number of tx * 48 * 24) / checkpoint block height
         };
 
         // Hardcoded fallback value for the Sprout shielded value pool balance
