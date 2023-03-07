@@ -242,7 +242,7 @@ public:
         }
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000afb16bd5d58e5be");
+        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000c7da51ec335d66c");
 
         /**
          * The message start string should be awesome! ⓩ❤
@@ -300,11 +300,12 @@ public:
             (1200000, uint256S("0x0000000000347d5011108fdcf667c93e622e8635c94e586556898e41db18d192"))
             (1400000, uint256S("0x0000000001155ecec0ad3924d47ad476c0a5ed7527b8776f53cbda1a780b9f76"))
             (1600000, uint256S("0x0000000000aae69fb228f90e77f34c24b7920667eaca726c3a3939536f03dcfc"))
-            (1860000, uint256S("0x000000000043a968c78af5fb8133e00e6fe340051c19dd969e53ab62bf3dc22a")),
-            1667052073,     // * UNIX timestamp of last checkpoint block
-            11768038,       // * total number of transactions between genesis and last checkpoint
-            3644            // * estimated number of transactions per day after checkpoint
-                            //   total number of tx / (checkpoint block height / (24 * 24))
+            (1860000, uint256S("0x000000000043a968c78af5fb8133e00e6fe340051c19dd969e53ab62bf3dc22a"))
+            (2000000, uint256S("0x00000000010accaf2f87934765dc2e0bf4823a2b1ae2c1395b334acfce52ad68")),
+            1677602242,     // * UNIX timestamp of last checkpoint block
+            12380742,       // * total number of transactions between genesis and last checkpoint
+            7131            // * estimated number of transactions per day after checkpoint
+                            //   (total number of tx * 48 * 24) / checkpoint block height
         };
 
         // Hardcoded fallback value for the Sprout shielded value pool balance
