@@ -141,12 +141,14 @@ fetch_params() {
         cat "${dlname}.part.1" "${dlname}.part.2" > "${dlname}"
         rm "${dlname}.part.1" "${dlname}.part.2"
 
+        set +e
         "$SHA256CMD" $SHA256ARGS -c <<EOF
 $expectedhash  $dlname
 EOF
 
         # Check the exit code of the shasum command:
         CHECKSUM_RESULT=$?
+        set -e
         if [ $CHECKSUM_RESULT -eq 0 ]; then
             mv -v "$dlname" "$output"
         else
@@ -158,6 +160,41 @@ EOF
     unset -v filename
     unset -v output
     unset -v dlname
+    unset -v expectedhash
+}
+
+check_and_fetch_params() {
+    # We only set these variables inside this function,
+    # and unset them at the end of the function.
+    filename="$1"
+    output="$2"
+    expectedhash="$3"
+
+    if ! [ -f "$output" ]
+    then
+        fetch_params "$filename" "$output" "$expectedhash"
+    else
+        # The file in question exists, so we verify its checksum.
+        # If it's not valid, we delete it and fetch it
+        set +e
+        "$SHA256CMD" $SHA256ARGS -c <<EOF
+$expectedhash  $output
+EOF
+
+        # Check the exit code of the shasum command:
+        CHECKSUM_RESULT=$?
+        set -e
+        if [ $CHECKSUM_RESULT -eq 0 ]; then
+            echo "Parameter file ${filename} has a valid checksum, continuing."
+        else
+            echo "Parameter file ${filename} has a invalid checksum, deleting and re-downloading." >&2
+            rm "$output"
+            fetch_params "$filename" "$output" "$expectedhash"
+        fi
+    fi
+
+    unset -v filename
+    unset -v output
     unset -v expectedhash
 }
 
@@ -197,7 +234,10 @@ Zcash - ${SCRIPT_NAME}
 This script will fetch the Zcash zkSNARK parameters and verify their
 integrity with sha256sum.
 
-If they already exist locally, it will exit now and do nothing else.
+If the files are already present and have the correct sha256sum, no
+networking is used. Parameter files with incorrect sha256sums are
+deleted and re-downloaded.
+
 EOF
 
     # Now create PARAMS_DIR and insert a README if necessary:
@@ -234,9 +274,9 @@ EOF
     #fetch_params "$SPROUT_VKEY_NAME" "$PARAMS_DIR/$SPROUT_VKEY_NAME" "4bd498dae0aacfd8e98dc306338d017d9c08dd0918ead18172bd0aec2fc5df82"
 
     # Sapling parameters:
-    fetch_params "$SAPLING_SPEND_NAME" "$PARAMS_DIR/$SAPLING_SPEND_NAME" "8e48ffd23abb3a5fd9c5589204f32d9c31285a04b78096ba40a79b75677efc13"
-    fetch_params "$SAPLING_OUTPUT_NAME" "$PARAMS_DIR/$SAPLING_OUTPUT_NAME" "2f0ebbcbb9bb0bcffe95a397e7eba89c29eb4dde6191c339db88570e3f3fb0e4"
-    fetch_params "$SAPLING_SPROUT_GROTH16_NAME" "$PARAMS_DIR/$SAPLING_SPROUT_GROTH16_NAME" "b685d700c60328498fbde589c8c7c484c722b788b265b72af448a5bf0ee55b50"
+    check_and_fetch_params "$SAPLING_SPEND_NAME" "$PARAMS_DIR/$SAPLING_SPEND_NAME" "8e48ffd23abb3a5fd9c5589204f32d9c31285a04b78096ba40a79b75677efc13"
+    check_and_fetch_params "$SAPLING_OUTPUT_NAME" "$PARAMS_DIR/$SAPLING_OUTPUT_NAME" "2f0ebbcbb9bb0bcffe95a397e7eba89c29eb4dde6191c339db88570e3f3fb0e4"
+    check_and_fetch_params "$SAPLING_SPROUT_GROTH16_NAME" "$PARAMS_DIR/$SAPLING_SPROUT_GROTH16_NAME" "b685d700c60328498fbde589c8c7c484c722b788b265b72af448a5bf0ee55b50"
 }
 
 if [ "${1:-}" = '--testnet' ]
