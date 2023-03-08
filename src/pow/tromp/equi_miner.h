@@ -1,5 +1,5 @@
 // Equihash solver
-// Copyright (c) 2016 John Tromp, The Zcash developers
+// Copyright (c) 2016-2023 John Tromp, The Zcash developers
 
 // Fix N, K, such that n = N/(k+1) is integer
 // Fix M = 2^{n+1} hashes each of length N bits,
@@ -74,6 +74,8 @@ static const u32 NRESTS = 1<<RESTBITS;
 static const u32 NBLOCKS = (NHASHES+HASHESPERBLAKE-1)/HASHESPERBLAKE;
 // nothing larger found in 100000 runs
 static const u32 MAXSOLS = 8;
+
+const char *errstr[] = { "OK", "duplicate index", "indices out of order", "nonzero xor" };
 
 // tree node identifying its children as two different slots in
 // a bucket on previous layer with the same rest bits (x-tra hash)
@@ -644,6 +646,100 @@ void *worker(void *vp) {
   barrier(&eq->barry);
   pthread_exit(NULL);
   return 0;
+}
+
+void genhash(const rust::Box<blake2b::State>& ctx, u32 idx, uchar *hash) {
+  auto state = ctx->box_clone();
+  u32 leb = htole32(idx / HASHESPERBLAKE);
+  state->update({(const uchar *)&leb, sizeof(u32)});
+  uchar blakehash[HASHOUT];
+  state->finalize({blakehash, HASHOUT});
+  memcpy(hash, blakehash + (idx % HASHESPERBLAKE) * WN/8, WN/8);
+}
+
+int verifyrec(const rust::Box<blake2b::State>& ctx, u32 *indices, uchar *hash, int r) {
+  if (r == 0) {
+    genhash(ctx, *indices, hash);
+    return POW_OK;
+  }
+  u32 *indices1 = indices + (1 << (r-1));
+  if (*indices >= *indices1)
+    return POW_OUT_OF_ORDER;
+  uchar hash0[WN/8], hash1[WN/8];
+  int vrf0 = verifyrec(ctx, indices,  hash0, r-1);
+  if (vrf0 != POW_OK)
+    return vrf0;
+  int vrf1 = verifyrec(ctx, indices1, hash1, r-1);
+  if (vrf1 != POW_OK)
+    return vrf1;
+  for (int i=0; i < WN/8; i++)
+    hash[i] = hash0[i] ^ hash1[i];
+  int i, b = r * DIGITBITS;
+  for (i = 0; i < b/8; i++)
+    if (hash[i])
+      return POW_NONZERO_XOR;
+  if ((b%8) && hash[i] >> (8-(b%8)))
+    return POW_NONZERO_XOR;
+  return POW_OK;
+}
+
+int compu32(const void *pa, const void *pb) {
+  u32 a = *(u32 *)pa, b = *(u32 *)pb;
+  return a<b ? -1 : a==b ? 0 : +1;
+}
+
+bool duped(proof prf) {
+  proof sortprf;
+  memcpy(sortprf, prf, sizeof(proof));
+  qsort(sortprf, PROOFSIZE, sizeof(u32), &compu32);
+  for (u32 i=1; i<PROOFSIZE; i++)
+    if (sortprf[i] <= sortprf[i-1])
+      return true;
+  return false;
+}
+
+// verify Wagner conditions
+int verify(u32 indices[PROOFSIZE], const rust::Box<blake2b::State> ctx) {
+  if (duped(indices))
+    return POW_DUPLICATE;
+  uchar hash[WN/8];
+  return verifyrec(ctx, indices, hash, WK);
+}
+
+bool equihash_solve(
+  const rust::Box<blake2b::State>& curr_state,
+  std::function<void()>& incrementRuns,
+  std::function<bool(size_t s, const std::vector<uint32_t>&)>& checkSolution)
+{
+  // Create solver and initialize it.
+  equi eq(1);
+  eq.setstate(curr_state);
+
+  // Initialization done, start algo driver.
+  eq.digit0(0);
+  eq.xfull = eq.bfull = eq.hfull = 0;
+  eq.showbsizes(0);
+  for (u32 r = 1; r < WK; r++) {
+    (r&1) ? eq.digitodd(r, 0) : eq.digiteven(r, 0);
+    eq.xfull = eq.bfull = eq.hfull = 0;
+    eq.showbsizes(r);
+  }
+  eq.digitK(0);
+  incrementRuns();
+
+  // Decompress solution indices and pass to checkSolution.
+  for (size_t s = 0; s < std::min(MAXSOLS, eq.nsols); s++) {
+    std::vector<uint32_t> index_vector(PROOFSIZE);
+    for (size_t i = 0; i < PROOFSIZE; i++) {
+      index_vector[i] = eq.sols[s][i];
+    }
+    if (checkSolution(s, index_vector)) {
+      // If we find a POW solution, do not try other solutions
+      // because they become invalid as we created a new block in blockchain.
+      return true;
+    }
+  }
+  return false;
 }
 
 #endif // ZCASH_POW_TROMP_EQUI_MINER_H

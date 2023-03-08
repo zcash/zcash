@@ -1053,37 +1053,12 @@ void static BitcoinMiner(const CChainParams& chainparams)
 
                 // TODO: factor this out into a function with the same API for each solver.
                 if (solver == "tromp") {
-                    // Create solver and initialize it.
-                    equi eq(1);
-                    eq.setstate(curr_state.inner);
-
-                    // Initialization done, start algo driver.
-                    eq.digit0(0);
-                    eq.xfull = eq.bfull = eq.hfull = 0;
-                    eq.showbsizes(0);
-                    for (u32 r = 1; r < WK; r++) {
-                        (r&1) ? eq.digitodd(r, 0) : eq.digiteven(r, 0);
-                        eq.xfull = eq.bfull = eq.hfull = 0;
-                        eq.showbsizes(r);
-                    }
-                    eq.digitK(0);
-                    ehSolverRuns.increment();
-
-                    // Convert solution indices to byte array (decompress) and pass it to validBlock method.
-                    for (size_t s = 0; s < std::min(MAXSOLS, eq.nsols); s++) {
+                    std::function<void()> incrementRuns = [&]() { ehSolverRuns.increment(); };
+                    std::function<bool(size_t s, const std::vector<uint32_t>&)> checkSolution = [&](size_t s, const std::vector<uint32_t>& index_vector) {
                         LogPrint("pow", "Checking solution %d\n", s+1);
-                        std::vector<eh_index> index_vector(PROOFSIZE);
-                        for (size_t i = 0; i < PROOFSIZE; i++) {
-                            index_vector[i] = eq.sols[s][i];
-                        }
-                        std::vector<unsigned char> sol_char = GetMinimalFromIndices(index_vector, DIGITBITS);
-
-                        if (validBlock(sol_char)) {
-                            // If we find a POW solution, do not try other solutions
-                            // because they become invalid as we created a new block in blockchain.
-                            break;
-                        }
-                    }
+                        return validBlock(GetMinimalFromIndices(index_vector, DIGITBITS));
+                    };
+                    equihash_solve(curr_state.inner, incrementRuns, checkSolution);
                 } else {
                     try {
                         // If we find a valid block, we rebuild

@@ -16,7 +16,7 @@ inline constexpr size_t equihash_solution_size(unsigned int N, unsigned int K) {
 typedef uint32_t eh_index;
 typedef uint8_t eh_trunc;
 
-std::vector<unsigned char> GetMinimalFromIndices(std::vector<eh_index> indices,
+std::vector<unsigned char> GetMinimalFromIndices(const std::vector<eh_index>& indices,
                                                  size_t cBitLen);
 void CompressArray(const unsigned char* in, size_t in_len,
                    unsigned char* out, size_t out_len,

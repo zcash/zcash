@@ -127,7 +127,7 @@ void EhIndexToArray(const eh_index i, unsigned char* array)
     memcpy(array, &bei, sizeof(eh_index));
 }
 
-std::vector<unsigned char> GetMinimalFromIndices(std::vector<eh_index> indices,
+std::vector<unsigned char> GetMinimalFromIndices(const std::vector<eh_index>& indices,
                                                  size_t cBitLen)
 {
     assert(((cBitLen+1)+7)/8 <= sizeof(eh_index));
