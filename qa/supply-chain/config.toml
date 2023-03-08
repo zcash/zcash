@@ -7,11 +7,11 @@ url = "https://raw.githubusercontent.com/bytecodealliance/wasmtime/main/supply-c
 [imports.embark-studios]
 url = "https://raw.githubusercontent.com/EmbarkStudios/rust-ecosystem/main/audits.toml"
 
-[imports.firefox]
-url = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
-
 [imports.isrg]
 url = "https://raw.githubusercontent.com/divviup/libprio-rs/main/supply-chain/audits.toml"
+
+[imports.mozilla]
+url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
 
 [[exemptions.addr2line]]
 version = "0.17.0"
@@ -301,10 +301,6 @@ criteria = "safe-to-deploy"
 version = "0.9.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.lazy_static]]
-version = "1.4.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.libc]]
 version = "0.2.126"
 criteria = "safe-to-deploy"
@@ -503,10 +499,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.raw-cpuid]]
 version = "10.6.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.rayon-core]]
-version = "1.10.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.reddsa]]
