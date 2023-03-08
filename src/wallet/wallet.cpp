@@ -8063,9 +8063,6 @@ bool SpendableInputs::LimitToAmount(
         // Fully shielded.
         selectionOrder = {
             OutputPool::Orchard,
-            // Pools below here are erased.
-            OutputPool::Transparent,
-            OutputPool::Sapling,
         };
     } else if (
         recipientPools.count(OutputPool::Transparent) &&
@@ -8075,9 +8072,6 @@ bool SpendableInputs::LimitToAmount(
         // Fewer pools.
         selectionOrder = {
             OutputPool::Orchard,
-            // Pools below here are erased.
-            OutputPool::Transparent,
-            OutputPool::Sapling,
         };
     } else if (wouldSuffice(availableSapling + availableOrchard)) {
         // Hide sender.
@@ -8087,8 +8081,6 @@ bool SpendableInputs::LimitToAmount(
         selectionOrder = {
             OutputPool::Sapling,
             OutputPool::Orchard,
-            // Pools below here are erased.
-            OutputPool::Transparent,
         };
     } else {
         // Opportunistic shielding.
@@ -8100,14 +8092,25 @@ bool SpendableInputs::LimitToAmount(
         opportunisticShielding = true;
     }
 
-    // Ensure we provided a total selection order (so that all unselected notes
-    // and coins are erased).
+    // Erase all notes and coins from pools that aren’t used in selection.
     for (auto pool : available) {
         bool poolIsPresent = false;
         for (auto entry : selectionOrder) {
             poolIsPresent |= entry == pool;
         }
-        assert(poolIsPresent);
+        if (!poolIsPresent) {
+            switch (pool) {
+                case OutputPool::Transparent:
+                    utxos.clear();
+                    break;
+                case OutputPool::Sapling:
+                    saplingNoteEntries.clear();
+                    break;
+                case OutputPool::Orchard:
+                    orchardNoteMetadata.clear();
+                    break;
+            }
+        }
     }
 
     // Finally, select the remaining notes and coins based on this order.
