@@ -23,6 +23,7 @@ use bellman::groth16::{self, Parameters, PreparedVerifyingKey};
 use blake2s_simd::Params as Blake2sParams;
 use bls12_381::Bls12;
 use group::{cofactor::CofactorGroup, GroupEncoding};
+use incrementalmerkletree::Hashable;
 use libc::{c_uchar, size_t};
 use rand_core::{OsRng, RngCore};
 use std::fs::File;
@@ -43,11 +44,19 @@ use std::ffi::OsString;
 #[cfg(target_os = "windows")]
 use std::os::windows::ffi::OsStringExt;
 
+use zcash_note_encryption::{Domain, EphemeralKeyBytes};
 use zcash_primitives::{
+    consensus::Network,
     constants::{CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR},
+    merkle_tree::HashSer,
     sapling::{
-        keys::FullViewingKey, merkle_hash, note_encryption::sapling_ka_agree, redjubjub, spend_sig,
-        Diversifier, Note, NullifierDerivingKey, Rseed,
+        keys::FullViewingKey,
+        merkle_hash,
+        note::{ExtractedNoteCommitment, NoteCommitment},
+        note_encryption::{PreparedIncomingViewingKey, SaplingDomain},
+        redjubjub, spend_sig,
+        value::NoteValue,
+        Diversifier, Node, Note, NullifierDerivingKey, PaymentAddress, Rseed, SaplingIvk,
     },
     zip32::{self, sapling_address, sapling_derive_internal_fvk, sapling_find_address},
 };
@@ -210,12 +219,12 @@ pub extern "C" fn librustzcash_init_zksnark_params(
 /// `result` must be a valid pointer to 32 bytes which will be written.
 #[no_mangle]
 pub extern "C" fn librustzcash_tree_uncommitted(result: *mut [c_uchar; 32]) {
-    let tmp = Note::uncommitted().to_bytes();
-
     // Should be okay, caller is responsible for ensuring the pointer
     // is a valid pointer to 32 bytes that can be mutated.
     let result = unsafe { &mut *result };
-    *result = tmp;
+    Node::empty_leaf()
+        .write(&mut result[..])
+        .expect("Sapling leaves are 32 bytes");
 }
 
 /// Computes a merkle tree hash for a given depth. The `depth` parameter should
@@ -363,26 +372,24 @@ fn priv_get_note(
     value: u64,
     rcm: *const [c_uchar; 32],
 ) -> Result<Note, ()> {
-    let diversifier = Diversifier(unsafe { *diversifier });
-    let g_d = diversifier.g_d().ok_or(())?;
-
-    let pk_d = de_ct(jubjub::ExtendedPoint::from_bytes(unsafe { &*pk_d })).ok_or(())?;
-
-    let pk_d = de_ct(pk_d.into_subgroup()).ok_or(())?;
+    let recipient_bytes = {
+        let mut tmp = [0; 43];
+        tmp[..11].copy_from_slice(unsafe { &*diversifier });
+        tmp[11..].copy_from_slice(unsafe { &*pk_d });
+        tmp
+    };
+    let recipient = PaymentAddress::from_bytes(&recipient_bytes).ok_or(())?;
 
     // Deserialize randomness
     // If this is after ZIP 212, the caller has calculated rcm, and we don't need to call
     // Note::derive_esk, so we just pretend the note was using this rcm all along.
     let rseed = Rseed::BeforeZip212(de_ct(jubjub::Scalar::from_bytes(unsafe { &*rcm })).ok_or(())?);
 
-    let note = Note {
-        value,
-        g_d,
-        pk_d,
+    Ok(Note::from_parts(
+        recipient,
+        NoteValue::from_raw(value),
         rseed,
-    };
-
-    Ok(note)
+    ))
 }
 
 /// Compute a Sapling nullifier.
@@ -440,45 +447,68 @@ pub extern "C" fn librustzcash_sapling_compute_cmu(
     rcm: *const [c_uchar; 32],
     result: *mut [c_uchar; 32],
 ) -> bool {
-    let note = match priv_get_note(diversifier, pk_d, value, rcm) {
-        Ok(p) => p,
-        Err(_) => return false,
+    let get_cm = || -> Result<NoteCommitment, ()> {
+        let diversifier = Diversifier(unsafe { *diversifier });
+        let g_d = diversifier.g_d().ok_or(())?;
+
+        let pk_d = de_ct(jubjub::ExtendedPoint::from_bytes(unsafe { &*pk_d })).ok_or(())?;
+        let pk_d = de_ct(pk_d.into_subgroup()).ok_or(())?;
+
+        let rcm = de_ct(jubjub::Scalar::from_bytes(unsafe { &*rcm })).ok_or(())?;
+
+        Ok(NoteCommitment::temporary_zcashd_derive(
+            g_d.to_bytes(),
+            pk_d.to_bytes(),
+            NoteValue::from_raw(value),
+            rcm,
+        ))
+    };
+
+    let cmu = match get_cm() {
+        Ok(cm) => ExtractedNoteCommitment::from(cm),
+        Err(()) => return false,
     };
 
     let result = unsafe { &mut *result };
-    *result = note.cmu().to_bytes();
+    *result = cmu.to_bytes();
 
     true
 }
 
-/// Computes \[sk\] \[8\] P for some 32-byte point P, and 32-byte Fs.
+/// Computes KDF^Sapling(KA^Agree(sk, P), ephemeral_key).
 ///
-/// If P or sk are invalid, returns false. Otherwise, the result is written to
-/// the 32-byte `result` buffer.
+/// `p` and `sk` must point to 32-byte buffers. If `p` does not represent a compressed
+/// Jubjub point or `sk` does not represent a canonical Jubjub scalar, this function
+/// returns `false`. Otherwise, it writes the result to the 32-byte `result` buffer and
+/// returns `true`.
 #[no_mangle]
-pub extern "C" fn librustzcash_sapling_ka_agree(
+pub extern "C" fn librustzcash_sapling_ka_derive_symmetric_key(
     p: *const [c_uchar; 32],
     sk: *const [c_uchar; 32],
+    ephemeral_key: *const [c_uchar; 32],
     result: *mut [c_uchar; 32],
 ) -> bool {
-    // Deserialize p
-    let p = match de_ct(jubjub::ExtendedPoint::from_bytes(unsafe { &*p })) {
-        Some(p) => p,
+    // Deserialize p (representing either epk or pk_d; we can handle them identically).
+    let epk = match SaplingDomain::<Network>::epk(&EphemeralKeyBytes(unsafe { *p })) {
+        Some(p) => SaplingDomain::<Network>::prepare_epk(p),
         None => return false,
     };
 
-    // Deserialize sk
-    let sk = match de_ct(jubjub::Scalar::from_bytes(unsafe { &*sk })) {
-        Some(p) => p,
+    // Deserialize sk (either ivk or esk; we can handle them identically).
+    let ivk = match de_ct(jubjub::Scalar::from_bytes(unsafe { &*sk })) {
+        Some(p) => PreparedIncomingViewingKey::new(&SaplingIvk(p)),
         None => return false,
     };
 
     // Compute key agreement
-    let ka = sapling_ka_agree(&sk, &p);
+    let secret = SaplingDomain::<Network>::ka_agree_dec(&ivk, &epk);
 
     // Produce result
     let result = unsafe { &mut *result };
-    *result = ka.to_bytes();
+    result.clone_from_slice(
+        SaplingDomain::<Network>::kdf(secret, &EphemeralKeyBytes(unsafe { *ephemeral_key }))
+            .as_bytes(),
+    );
 
     true
 }

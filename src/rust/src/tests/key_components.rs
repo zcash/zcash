@@ -685,7 +685,7 @@ fn key_components() {
         assert!(librustzcash_check_diversifier(&tv.default_d));
 
         let addr = fvk.to_payment_address(diversifier).unwrap();
-        assert_eq!(&addr.pk_d().to_bytes(), &tv.default_pk_d);
+        assert_eq!(&addr.to_bytes()[11..], &tv.default_pk_d);
         {
             let mut default_pk_d = [0u8; 32];
             librustzcash_ivk_to_pkd(&tv.ivk, &tv.default_d, &mut default_pk_d);
@@ -693,9 +693,7 @@ fn key_components() {
         }
 
         let note_r = jubjub::Scalar::from_bytes(&tv.note_r).unwrap();
-        let note = addr
-            .create_note(tv.note_v, Rseed::BeforeZip212(note_r))
-            .unwrap();
+        let note = addr.create_note(tv.note_v, Rseed::BeforeZip212(note_r));
         assert_eq!(&note.cmu().to_bytes(), &tv.note_cm);
 
         assert_eq!(note.nf(&fvk.nk, tv.note_pos), Nullifier(tv.note_nf));

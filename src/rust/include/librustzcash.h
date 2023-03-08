@@ -104,14 +104,17 @@ extern "C" {
         unsigned char *result
     );
 
-    /// Compute [sk] [8] P for some 32-byte
-    /// point P, and 32-byte Fs. If P or sk
-    /// are invalid, returns false. Otherwise,
-    /// the result is written to the 32-byte
-    /// `result` buffer.
-    bool librustzcash_sapling_ka_agree(
+    /// Compute KDF^Sapling(KA^Agree(sk, P), ephemeral_key).
+    ///
+    /// P and sk must point to 32-byte buffers. If P does not
+    /// represent a Jubjub point or sk does not represent a
+    /// canonical Jubjub scalar, this function returns false.
+    /// Otherwise, it writes the result to the 32-byte `result`
+    /// buffer and returns true.
+    bool librustzcash_sapling_ka_derive_symmetric_key(
         const unsigned char *p,
         const unsigned char *sk,
+        const unsigned char *ephemeral_key,
         unsigned char *result
     );
 

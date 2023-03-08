@@ -1,9 +1,11 @@
-use group::{Group, GroupEncoding};
+use std::convert::TryInto;
+
+use group::Group;
 use rand_core::{OsRng, RngCore};
 use zcash_primitives::sapling::{Diversifier, NullifierDerivingKey, ViewingKey};
 
 use crate::{
-    librustzcash_sapling_generate_r, librustzcash_sapling_ka_agree,
+    librustzcash_sapling_generate_r, librustzcash_sapling_ka_derive_symmetric_key,
     librustzcash_sapling_ka_derivepublic,
 };
 
@@ -39,14 +41,8 @@ fn test_key_agreement() {
     // we randomly generated
     let mut shared_secret_sender = [0u8; 32];
 
-    // Serialize pk_d for the call to librustzcash_sapling_ka_agree
-    let addr_pk_d = addr.pk_d().to_bytes();
-
-    assert!(librustzcash_sapling_ka_agree(
-        &addr_pk_d,
-        &esk,
-        &mut shared_secret_sender
-    ));
+    // Serialize pk_d for the call to librustzcash_sapling_ka_derive_symmetric_key
+    let addr_pk_d = addr.to_bytes()[11..].try_into().unwrap();
 
     // Create epk for the recipient, placed in the transaction. Computed
     // using the diversifier and esk.
@@ -57,11 +53,19 @@ fn test_key_agreement() {
         &mut epk
     ));
 
+    assert!(librustzcash_sapling_ka_derive_symmetric_key(
+        &addr_pk_d,
+        &esk,
+        &epk,
+        &mut shared_secret_sender
+    ));
+
     // Create sharedSecret with ephemeral key
     let mut shared_secret_recipient = [0u8; 32];
-    assert!(librustzcash_sapling_ka_agree(
+    assert!(librustzcash_sapling_ka_derive_symmetric_key(
         &epk,
         &ivk_serialized,
+        &epk,
         &mut shared_secret_recipient
     ));
 

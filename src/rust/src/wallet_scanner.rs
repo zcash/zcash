@@ -1,5 +1,6 @@
 use core::fmt;
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::io;
 use std::mem;
 use std::sync::{
@@ -8,7 +9,6 @@ use std::sync::{
 };
 
 use crossbeam_channel as channel;
-use group::GroupEncoding;
 use memuse::DynamicUsage;
 use zcash_note_encryption::{batch, BatchDomain, Domain, ShieldedOutput, ENC_CIPHERTEXT_SIZE};
 use zcash_primitives::{
@@ -711,7 +711,7 @@ impl BatchScanner {
                 block_tag,
                 txid,
                 || SaplingDomain::for_height(params, height),
-                &bundle.shielded_outputs,
+                bundle.shielded_outputs(),
             );
         }
 
@@ -768,7 +768,9 @@ impl BatchResult {
                     output: *output as u32,
                     ivk: decrypted_note.ivk_tag,
                     diversifier: decrypted_note.recipient.diversifier().0,
-                    pk_d: decrypted_note.recipient.pk_d().to_bytes(),
+                    pk_d: decrypted_note.recipient.to_bytes()[11..]
+                        .try_into()
+                        .unwrap(),
                 },
             )
             .collect()

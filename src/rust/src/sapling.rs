@@ -12,7 +12,9 @@ use zcash_note_encryption::EphemeralKeyBytes;
 use zcash_primitives::{
     merkle_tree::MerklePath,
     sapling::{
+        note::ExtractedNoteCommitment,
         redjubjub::{self, Signature},
+        value::ValueCommitment,
         Diversifier, Nullifier, PaymentAddress, ProofGenerationKey, Rseed,
     },
     transaction::{
@@ -164,7 +166,7 @@ impl BundleAssembler {
         spend_auth_sig: &[u8; 64],
     ) -> bool {
         // Deserialize the value commitment
-        let cv = match de_ct(jubjub::ExtendedPoint::from_bytes(cv)) {
+        let cv = match Option::from(ValueCommitment::from_bytes_not_small_order(cv)) {
             Some(p) => p,
             None => return false,
         };
@@ -188,14 +190,15 @@ impl BundleAssembler {
             Err(_) => return false,
         };
 
-        self.shielded_spends.push(sapling::SpendDescription {
-            cv,
-            anchor,
-            nullifier: Nullifier(nullifier),
-            rk,
-            zkproof,
-            spend_auth_sig,
-        });
+        self.shielded_spends
+            .push(sapling::SpendDescription::temporary_zcashd_from_parts(
+                cv,
+                anchor,
+                Nullifier(nullifier),
+                rk,
+                zkproof,
+                spend_auth_sig,
+            ));
 
         true
     }
@@ -210,26 +213,26 @@ impl BundleAssembler {
         zkproof: [u8; 192], // GROTH_PROOF_SIZE
     ) -> bool {
         // Deserialize the value commitment
-        let cv = match de_ct(jubjub::ExtendedPoint::from_bytes(cv)) {
+        let cv = match Option::from(ValueCommitment::from_bytes_not_small_order(cv)) {
             Some(p) => p,
             None => return false,
         };
 
-        // Deserialize the commitment, which should be an element
-        // of Fr.
-        let cmu = match de_ct(bls12_381::Scalar::from_bytes(cm)) {
+        // Deserialize the extracted note commitment.
+        let cmu = match Option::from(ExtractedNoteCommitment::from_bytes(cm)) {
             Some(a) => a,
             None => return false,
         };
 
-        self.shielded_outputs.push(sapling::OutputDescription {
-            cv,
-            cmu,
-            ephemeral_key: EphemeralKeyBytes(ephemeral_key),
-            enc_ciphertext,
-            out_ciphertext,
-            zkproof,
-        });
+        self.shielded_outputs
+            .push(sapling::OutputDescription::temporary_zcashd_from_parts(
+                cv,
+                cmu,
+                EphemeralKeyBytes(ephemeral_key),
+                enc_ciphertext,
+                out_ciphertext,
+                zkproof,
+            ));
 
         true
     }
@@ -244,12 +247,12 @@ fn finish_bundle_assembly(
     let value_balance = Amount::from_i64(value_balance).expect("parsed elsewhere");
     let binding_sig = redjubjub::Signature::read(&binding_sig[..]).expect("parsed elsewhere");
 
-    Box::new(Bundle(sapling::Bundle {
-        shielded_spends: assembler.shielded_spends,
-        shielded_outputs: assembler.shielded_outputs,
+    Box::new(Bundle(sapling::Bundle::temporary_zcashd_from_parts(
+        assembler.shielded_spends,
+        assembler.shielded_outputs,
         value_balance,
-        authorization: sapling::Authorized { binding_sig },
-    }))
+        sapling::Authorized { binding_sig },
+    )))
 }
 
 struct Prover(SaplingProvingContext);
@@ -453,7 +456,7 @@ impl Verifier {
         sighash_value: &[u8; 32],
     ) -> bool {
         // Deserialize the value commitment
-        let cv = match de_ct(jubjub::ExtendedPoint::from_bytes(cv)) {
+        let cv = match Option::from(ValueCommitment::from_bytes_not_small_order(cv)) {
             Some(p) => p,
             None => return false,
         };
@@ -484,7 +487,7 @@ impl Verifier {
         };
 
         self.0.check_spend(
-            cv,
+            &cv,
             anchor,
             nullifier,
             rk,
@@ -505,14 +508,13 @@ impl Verifier {
         zkproof: &[u8; GROTH_PROOF_SIZE],
     ) -> bool {
         // Deserialize the value commitment
-        let cv = match de_ct(jubjub::ExtendedPoint::from_bytes(cv)) {
+        let cv = match Option::from(ValueCommitment::from_bytes_not_small_order(cv)) {
             Some(p) => p,
             None => return false,
         };
 
-        // Deserialize the commitment, which should be an element
-        // of Fr.
-        let cm = match de_ct(bls12_381::Scalar::from_bytes(cm)) {
+        // Deserialize the extracted note commitment.
+        let cmu = match Option::from(ExtractedNoteCommitment::from_bytes(cm)) {
             Some(a) => a,
             None => return false,
         };
@@ -530,8 +532,8 @@ impl Verifier {
         };
 
         self.0.check_output(
-            cv,
-            cm,
+            &cv,
+            cmu,
             epk,
             zkproof,
             &prepare_verifying_key(

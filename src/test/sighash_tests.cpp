@@ -13,6 +13,7 @@
 #include "test/test_bitcoin.h"
 #include "test/test_util.h"
 #include "util/system.h"
+#include "util/test.h"
 #include "version.h"
 
 #include <iostream>
@@ -149,23 +150,10 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
     if (tx.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
         tx.valueBalanceSapling = InsecureRandRange(100000000);
         for (int spend = 0; spend < shielded_spends; spend++) {
-            SpendDescription sdesc;
-            zcash_test_harness_random_jubjub_point(sdesc.cv.begin());
-            zcash_test_harness_random_jubjub_base(sdesc.anchor.begin());
-            sdesc.nullifier = InsecureRand256();
-            zcash_test_harness_random_jubjub_point(sdesc.rk.begin());
-            GetRandBytes(sdesc.zkproof.begin(), sdesc.zkproof.size());
-            tx.vShieldedSpend.push_back(sdesc);
+            tx.vShieldedSpend.push_back(RandomInvalidSpendDescription());
         }
         for (int out = 0; out < shielded_outs; out++) {
-            OutputDescription odesc;
-            zcash_test_harness_random_jubjub_point(odesc.cv.begin());
-            zcash_test_harness_random_jubjub_base(odesc.cmu.begin());
-            zcash_test_harness_random_jubjub_point(odesc.ephemeralKey.begin());
-            GetRandBytes(odesc.encCiphertext.begin(), odesc.encCiphertext.size());
-            GetRandBytes(odesc.outCiphertext.begin(), odesc.outCiphertext.size());
-            GetRandBytes(odesc.zkproof.begin(), odesc.zkproof.size());
-            tx.vShieldedOutput.push_back(odesc);
+            tx.vShieldedOutput.push_back(RandomInvalidOutputDescription());
         }
     }
     // We have removed pre-Sapling Sprout support.

@@ -309,8 +309,7 @@ void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransact
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vShieldedSpend.push_back(SpendDescription());
-        newTx.vShieldedSpend[0].nullifier = InsecureRand256();
+        newTx.vShieldedSpend.push_back(RandomInvalidSpendDescription());
 
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-no-sink-of-funds");
@@ -320,12 +319,11 @@ void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransact
         CMutableTransaction newTx(tx);
         CValidationState state;
 
-        newTx.vShieldedSpend.push_back(SpendDescription());
-        newTx.vShieldedSpend[0].nullifier = InsecureRand256();
+        newTx.vShieldedSpend.push_back(RandomInvalidSpendDescription());
 
-        newTx.vShieldedOutput.push_back(OutputDescription());
+        newTx.vShieldedOutput.push_back(RandomInvalidOutputDescription());
 
-        newTx.vShieldedSpend.push_back(SpendDescription());
+        newTx.vShieldedSpend.push_back(RandomInvalidSpendDescription());
         newTx.vShieldedSpend[1].nullifier = newTx.vShieldedSpend[0].nullifier;
 
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
@@ -347,7 +345,7 @@ void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransact
         vout.nValue = 1;
         newTx.vout.push_back(vout);
 
-        newTx.vShieldedSpend.push_back(SpendDescription());
+        newTx.vShieldedSpend.push_back(RandomInvalidSpendDescription());
 
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
         BOOST_CHECK(state.GetRejectReason() == "bad-cb-has-spend-description");

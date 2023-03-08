@@ -2363,9 +2363,9 @@ dependencies = [
 
 [[package]]
 name = "zcash_primitives"
-version = "0.9.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f9a45953c4ddd81d68f45920955707f45c8926800671f354dd13b97507edf28"
+checksum = "ec8aed1d098e9f1b2bcd957ceab4188bf343cea30e7d0327fa49cea6ec44b167"
 dependencies = [
  "aes",
  "bip0039",
@@ -2399,9 +2399,9 @@ dependencies = [
 
 [[package]]
 name = "zcash_proofs"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77381adc72286874e563ee36ba99953946abcbd195ada45440a2754ca823d407"
+checksum = "28ca180a8138ae6e2de2b88573ed19dd57798f42a79a00d992b4d727132c7081"
 dependencies = [
  "bellman",
  "blake2b_simd",
