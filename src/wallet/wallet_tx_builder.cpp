@@ -866,11 +866,38 @@ std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
     });
 }
 
+/**
+ * Returns the set of taddrs in a collection of UTXOs.
+ */
+// TODO: Replace `std::vector` with `std::range` once using C++20.
+std::set<CTxDestination> CollectUtxoAddrs(const std::vector<COutput>& utxos) {
+    std::set<CTxDestination> addrs;
+    std::vector<COutput>::size_type numMultisigs{};
+
+    for (const auto& utxo : utxos) {
+        CTxDestination addr;
+        if (ExtractDestination(utxo.Script(), addr)) {
+            addrs.insert(addr);
+        } else {
+            throw std::runtime_error("Can’t spend a multisig UTXO via WalletTxBuilder.");
+        }
+    }
+
+    return addrs;
+}
+
 PrivacyPolicy TransactionEffects::GetRequiredPrivacyPolicy() const
 {
     if (!spendable.utxos.empty()) {
-        // TODO: Add a check for whether we need AllowLinkingAccountAddresses here. (#6467)
-        if (payments.HasTransparentRecipient()) {
+        auto receivedAddrs = CollectUtxoAddrs(spendable.utxos);
+
+        if (receivedAddrs.size() > 1) {
+            if (payments.HasTransparentRecipient()) {
+                return PrivacyPolicy::NoPrivacy;
+            } else {
+                return PrivacyPolicy::AllowLinkingAccountAddresses;
+            }
+        } else if (payments.HasTransparentRecipient()) {
             return PrivacyPolicy::AllowFullyTransparent;
         } else {
             return PrivacyPolicy::AllowRevealedSenders;

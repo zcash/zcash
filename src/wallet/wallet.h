@@ -758,6 +758,7 @@ public:
             tx(txIn), i(iIn), nDepth(nDepthIn), fSpendable(fSpendableIn), fIsCoinbase(fIsCoinbaseIn){ }
 
     CAmount Value() const { return tx->vout[i].nValue; }
+    CScript Script() const { return tx->vout[i].scriptPubKey; }
     std::string ToString() const;
 };
 
