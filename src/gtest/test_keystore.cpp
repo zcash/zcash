@@ -564,7 +564,7 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     auto ufvkmetaUnadded = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
     EXPECT_TRUE(ufvkmetaUnadded.has_value());
     EXPECT_EQ(ufvkmetaUnadded.value().GetUFVKId(), ufvkid);
-    EXPECT_EQ(ufvkmetaUnadded.value().GetDiversifierIndex().value(), addrPair.second);
+    EXPECT_EQ(ufvkmetaUnadded.value().GetDiversifierIndex(), addrPair.second);
 
     // Adding the Sapling addr -> ivk map entry causes us to find the same UFVK,
     // and since we trial-decrypt with both external and internal IVKs to
@@ -575,7 +575,7 @@ TEST(KeystoreTests, StoreAndRetrieveUFVK) {
     auto ufvkmeta = keyStore.GetUFVKMetadataForReceiver(saplingReceiver);
     EXPECT_TRUE(ufvkmeta.has_value());
     EXPECT_EQ(ufvkmeta.value().GetUFVKId(), ufvkid);
-    EXPECT_TRUE(ufvkmeta.value().GetDiversifierIndex().has_value());
+    EXPECT_EQ(ufvkmeta.value().GetDiversifierIndex(), addrPair.second);
 }
 
 TEST(KeystoreTests, StoreAndRetrieveUFVKByOrchard) {
@@ -604,7 +604,7 @@ TEST(KeystoreTests, StoreAndRetrieveUFVKByOrchard) {
     auto ufvkmetaUnadded = keyStore.GetUFVKMetadataForReceiver(orchardReceiver);
     EXPECT_TRUE(ufvkmetaUnadded.has_value());
     EXPECT_EQ(ufvkmetaUnadded.value().GetUFVKId(), ufvkid);
-    EXPECT_EQ(ufvkmetaUnadded.value().GetDiversifierIndex().value(), addrPair.second);
+    EXPECT_EQ(ufvkmetaUnadded.value().GetDiversifierIndex(), addrPair.second);
 }
 
 TEST(KeystoreTests, AddTransparentReceiverForUnifiedAddress) {
