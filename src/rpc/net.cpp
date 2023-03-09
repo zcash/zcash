@@ -470,9 +470,8 @@ UniValue getdeprecationinfo(const UniValue& params, bool fHelp)
         eos.pushKV("block_height", DEPRECATION_HEIGHT);
         {
             LOCK(cs_main);
-            auto blocksToDeprecation = DEPRECATION_HEIGHT - chainActive.Height();
 
-            eos.pushKV("estimated_time", GetTime() + (blocksToDeprecation * EXPECTED_BLOCKS_PER_HOUR * 60 * 60));
+            eos.pushKV("estimated_time", EstimatedNodeDeprecationTime(*GetNodeClock(), chainActive.Height()));
         }
         obj.pushKV("end_of_service", eos);
     }

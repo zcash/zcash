@@ -28,6 +28,12 @@ bool fEnableWalletTxVJoinSplit = true;
 
 static const std::string CLIENT_VERSION_STR = FormatVersion(CLIENT_VERSION);
 
+int64_t EstimatedNodeDeprecationTime(const CClock& clock, int nHeight) {
+    auto blocksToDeprecation = DEPRECATION_HEIGHT - nHeight;
+
+    return clock.GetTime() + (blocksToDeprecation * Consensus::POST_BLOSSOM_POW_TARGET_SPACING);
+}
+
 void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
 
     // Do not enforce deprecation in regtest or on testnet

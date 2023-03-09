@@ -6,6 +6,8 @@
 #define ZCASH_DEPRECATION_H
 
 #include "consensus/params.h"
+#include "util/time.h"
+
 // Deprecation policy:
 // Per https://zips.z.cash/zip-0200
 // Shut down nodes running this version of code, 16 weeks' worth of blocks after the estimated
@@ -61,6 +63,12 @@ extern bool fEnableLegacyPrivacyStrategy;
 extern bool fEnableAddrTypeField;
 extern bool fEnableWalletTxVJoinSplit;
 #endif
+
+/**
+ * Returns the estimated time, in seconds since the epoch, at which deprecation
+ * enforcement will take effect for this node.
+ */
+int64_t EstimatedNodeDeprecationTime(const CClock& clock, int nHeight);
 
 /**
  * Checks whether the node is deprecated based on the current block height, and

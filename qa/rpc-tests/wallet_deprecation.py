@@ -91,6 +91,9 @@ class WalletDeprecationTest(BitcoinTestFramework):
         default_enabled = dep_info['deprecated_features']
         default_disabled = dep_info['disabled_features']
 
+        for function in TESTABLE_FEATURES:
+            assert(function in default_enabled or function in default_disabled)
+
         # RPC methods that are deprecated but enabled by default should succeed
         for function in default_enabled:
             if function in TESTABLE_FEATURES:

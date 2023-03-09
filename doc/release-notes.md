@@ -13,7 +13,8 @@ RPC Changes
   - A new `end_of_service` object that contains both the block height for
     end-of-service and the estimated time that the end-of-service halt is
     expected to occur. Note that this height is just an approximation and
-    should not be relied upon due to the variability in block times. The
+    will change over time as the end-of-service block height approaches,
+    due to the variability in block times. The
     `end_of_service` object is intended to replace the `deprecationheight`
     field; see the [Deprecations](#deprecations) section for additional detail.
   - This RPC method was previously only available for mainnet nodes; it is now
