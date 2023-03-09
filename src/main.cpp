@@ -4121,7 +4121,7 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     // Increment the count of `ConnectTip` calls.
     nConnectedSequence += 1;
 
-    EnforceNodeDeprecation(pindexNew->nHeight);
+    EnforceNodeDeprecation(chainparams, pindexNew->nHeight);
 
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5;
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
@@ -5676,7 +5676,7 @@ bool static LoadBlockIndexDB(const CChainParams& chainparams)
         DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
         Checkpoints::GuessVerificationProgress(chainparams.Checkpoints(), chainActive.Tip()));
 
-    EnforceNodeDeprecation(chainActive.Height(), true);
+    EnforceNodeDeprecation(chainparams, chainActive.Height(), true);
 
     return true;
 }

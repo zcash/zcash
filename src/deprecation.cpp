@@ -9,7 +9,6 @@
 #include "init.h"
 #include "ui_interface.h"
 #include "util/system.h"
-#include "chainparams.h"
 
 // Flags that enable deprecated functionality.
 bool fEnableGbtOldHashes = true;
@@ -34,10 +33,9 @@ int64_t EstimatedNodeDeprecationTime(const CClock& clock, int nHeight) {
     return clock.GetTime() + (blocksToDeprecation * Consensus::POST_BLOSSOM_POW_TARGET_SPACING);
 }
 
-void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
-
+void EnforceNodeDeprecation(const CChainParams& params, int nHeight, bool forceLogging, bool fThread) {
     // Do not enforce deprecation in regtest or on testnet
-    std::string networkID = Params().NetworkIDString();
+    std::string networkID = params.NetworkIDString();
     if (networkID != "main") return;
 
     int blocksToDeprecation = DEPRECATION_HEIGHT - nHeight;

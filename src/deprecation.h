@@ -5,6 +5,7 @@
 #ifndef ZCASH_DEPRECATION_H
 #define ZCASH_DEPRECATION_H
 
+#include "chainparams.h"
 #include "consensus/params.h"
 #include "util/time.h"
 
@@ -78,7 +79,7 @@ int64_t EstimatedNodeDeprecationTime(const CClock& clock, int nHeight);
  *
  * fThread means run -alertnotify in a free-running thread.
  */
-void EnforceNodeDeprecation(int nHeight, bool forceLogging=false, bool fThread=true);
+void EnforceNodeDeprecation(const CChainParams& params, int nHeight, bool forceLogging=false, bool fThread=true);
 
 /**
  * Checks config options for enabling and/or disabling of deprecated
