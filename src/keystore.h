@@ -22,14 +22,14 @@
 class AddressUFVKMetadata {
 private:
     libzcash::UFVKId ufvkId;
-    std::optional<libzcash::diversifier_index_t> j;
+    libzcash::diversifier_index_t j;
     bool externalAddress;
 public:
-    AddressUFVKMetadata(libzcash::UFVKId ufvkId, std::optional<libzcash::diversifier_index_t> j, bool externalAddress)
+    AddressUFVKMetadata(libzcash::UFVKId ufvkId, libzcash::diversifier_index_t j, bool externalAddress)
         : ufvkId(ufvkId), j(j), externalAddress(externalAddress) {}
 
     libzcash::UFVKId GetUFVKId() const { return ufvkId; }
-    std::optional<libzcash::diversifier_index_t> GetDiversifierIndex() const { return j; }
+    libzcash::diversifier_index_t GetDiversifierIndex() const { return j; }
     bool IsExternalAddress() const { return externalAddress; }
 };
 
@@ -145,12 +145,14 @@ public:
     virtual std::optional<AddressUFVKMetadata> GetUFVKMetadataForReceiver(
             const libzcash::Receiver& receiver) const = 0;
 
+    std::optional<AddressUFVKMetadata> GetUFVKMetadataForAddress(
+            const CTxDestination& address) const;
+
     /**
      * If all the receivers of the specified address correspond to a single
-     * UFVK, return that key's metadata. If all the receivers correspond to
-     * the same diversifier index, that diversifier index is also returned.
+     * UFVK, return that key's metadata.
      */
-    virtual std::optional<AddressUFVKMetadata> GetUFVKMetadataForAddress(
+    virtual std::optional<libzcash::UFVKId> GetUFVKIdForAddress(
             const libzcash::UnifiedAddress& addr) const = 0;
 
     virtual std::optional<libzcash::UFVKId> GetUFVKIdForViewingKey(
@@ -405,14 +407,14 @@ public:
         }
     }
 
-    virtual std::optional<AddressUFVKMetadata> GetUFVKMetadataForAddress(
+    virtual std::optional<libzcash::UFVKId> GetUFVKIdForAddress(
             const libzcash::UnifiedAddress& addr) const;
 
     std::optional<libzcash::ZcashdUnifiedFullViewingKey> GetUFVKForAddress(
             const libzcash::UnifiedAddress& addr) const {
-        auto ufvkMeta = GetUFVKMetadataForAddress(addr);
-        if (ufvkMeta.has_value()) {
-            return GetUnifiedFullViewingKey(ufvkMeta.value().GetUFVKId());
+        auto ufvkId = GetUFVKIdForAddress(addr);
+        if (ufvkId.has_value()) {
+            return GetUnifiedFullViewingKey(ufvkId.value());
         } else {
             return std::nullopt;
         }

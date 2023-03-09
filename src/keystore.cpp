@@ -15,6 +15,16 @@ bool CKeyStore::AddKey(const CKey &key) {
     return AddKeyPubKey(key, key.GetPubKey());
 }
 
+std::optional<AddressUFVKMetadata> CKeyStore::GetUFVKMetadataForAddress(
+        const CTxDestination& address) const
+{
+    auto self = this;
+    return std::visit(match {
+            [](const CNoDestination&) -> std::optional<AddressUFVKMetadata> { return std::nullopt; },
+            [&](const auto& addr) { return self->GetUFVKMetadataForReceiver(addr); }
+    }, address);
+}
+
 bool CBasicKeyStore::GetPubKey(const CKeyID &address, CPubKey &vchPubKeyOut) const
 {
     CKey key;
@@ -390,12 +400,10 @@ CBasicKeyStore::GetUFVKMetadataForReceiver(const libzcash::Receiver& receiver) c
     return std::visit(FindUFVKId(*this), receiver);
 }
 
-std::optional<AddressUFVKMetadata>
-CBasicKeyStore::GetUFVKMetadataForAddress(const libzcash::UnifiedAddress& addr) const
+std::optional<libzcash::UFVKId>
+CBasicKeyStore::GetUFVKIdForAddress(const libzcash::UnifiedAddress& addr) const
 {
     std::optional<libzcash::UFVKId> ufvkId;
-    std::optional<libzcash::diversifier_index_t> j;
-    bool jConflict = false;
     for (const auto& receiver : addr) {
         auto rmeta = GetUFVKMetadataForReceiver(receiver);
         if (rmeta.has_value()) {
@@ -408,29 +416,13 @@ CBasicKeyStore::GetUFVKMetadataForAddress(const libzcash::UnifiedAddress& addr) 
                 if (rmeta.value().GetUFVKId() != ufvkId.value()) {
                     return std::nullopt;
                 }
-
-                if (rmeta.value().GetDiversifierIndex().has_value()) {
-                    if (j.has_value()) {
-                        if (rmeta.value().GetDiversifierIndex().value() != j.value()) {
-                            jConflict = true;
-                            j = std::nullopt;
-                        }
-                    } else if (!jConflict) {
-                        j = rmeta.value().GetDiversifierIndex().value();
-                    }
-                }
             } else {
                 ufvkId = rmeta.value().GetUFVKId();
-                j = rmeta.value().GetDiversifierIndex();
             }
         }
     }
 
-    if (ufvkId.has_value()) {
-        return AddressUFVKMetadata(ufvkId.value(), j, true);
-    } else {
-        return std::nullopt;
-    }
+    return ufvkId;
 }
 
 std::optional<libzcash::UFVKId> CBasicKeyStore::GetUFVKIdForViewingKey(const libzcash::ViewingKey& vk) const
