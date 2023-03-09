@@ -2235,14 +2235,18 @@ SpendableInputs CWallet::FindSpendableInputs(
         if (!CheckFinalTx(wtx)) continue;
         if (nDepth < 0 || nDepth < minDepth) continue;
 
-        if (selectTransparent &&
-            // skip transparent utxo selection if coinbase spend restrictions are not met
-            (!isCoinbase
-             || (selector.transparentCoinbasePolicy != TransparentCoinbasePolicy::Disallow
-                 && wtx.GetBlocksToMaturity(asOfHeight) <= 0))
-            // select only transparent utxos if RequireTransparentCoinbase
-            && (isCoinbase || selector.transparentCoinbasePolicy != TransparentCoinbasePolicy::Require)) {
-
+        if (selectTransparent && (
+            (
+                // Only select coinbase transparent utxos if spend restrictions are met.
+                isCoinbase &&
+                selector.transparentCoinbasePolicy != TransparentCoinbasePolicy::Disallow &&
+                wtx.GetBlocksToMaturity(asOfHeight) <= 0
+            ) || (
+                // Only select non-coinbase transparent utxos if we are allowed to.
+                !isCoinbase &&
+                selector.transparentCoinbasePolicy != TransparentCoinbasePolicy::Require
+            )
+        )) {
             for (int i = 0; i < wtx.vout.size(); i++) {
                 const auto& output = wtx.vout[i];
                 isminetype mine = IsMine(output);

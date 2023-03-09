@@ -322,13 +322,14 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         # If we try to send 3 ZEC from n1ua0, it will fail with too-few funds.
         recipients = [{"address":n0ua0, "amount":3}]
-        linked_addrs_msg = 'Insufficient funds: have 2.00, need 3.00; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker. (This transaction may require selecting transparent coins that were sent to multiple Unified Addresses, which is not enabled by default because it would create a public link between the transparent receivers of these addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to allow this transaction to proceed anyway.)'
-        opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, 'AllowRevealedAmounts')
-        wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', linked_addrs_msg)
+        revealed_amounts_msg = 'Could not select a unified address receiver that allows this transaction to proceed without publicly revealing the transaction amount. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` or weaker if you wish to allow this transaction to proceed anyway.'
+        opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0)
+        wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', revealed_amounts_msg)
 
         # If we try it again with any policy that is too strong, it also fails.
         opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, 'FullPrivacy')
-        wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', 'Could not select a unified address receiver that allows this transaction to proceed without publicly revealing the transaction amount. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` or weaker if you wish to allow this transaction to proceed anyway.')
+        wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', revealed_amounts_msg)
+        linked_addrs_msg = 'Insufficient funds: have 2.00, need 3.00; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker. (This transaction may require selecting transparent coins that were sent to multiple Unified Addresses, which is not enabled by default because it would create a public link between the transparent receivers of these addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to allow this transaction to proceed anyway.)'
         for policy in [
             'AllowRevealedAmounts',
             'AllowRevealedRecipients',

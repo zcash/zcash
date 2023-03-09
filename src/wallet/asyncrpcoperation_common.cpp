@@ -73,11 +73,10 @@ void ThrowInputSelectionError(
                 case AddressResolutionError::InsufficientSaplingFunds:
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
-                        "Sending from the Sapling shielded pool to the Orchard "
-                        "shielded pool is not enabled by default because it will "
-                        "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
-                        "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
-                        "or weaker if you wish to allow this transaction to proceed anyway.");
+                        "Could not send to the Sapling shielded pool without revealing transaction "
+                        "amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
+                        "parameter set to `AllowRevealedAmounts` or weaker if you wish to allow this "
+                        "transaction to proceed anyway.");
                 case AddressResolutionError::UnifiedAddressResolutionError:
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
