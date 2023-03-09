@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>DNS Seeders - The zcashd Book</title>
+        <title>Release Support - The zcashd Book</title>
 
 
         <!-- Custom HTML head -->
@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">zcashd</a></li><li class="chapter-item expanded "><a href="../user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../user/release-support.html"><strong aria-hidden="true">1.1.</strong> Release Support</a></li><li class="chapter-item expanded "><a href="../user/platform-support.html"><strong aria-hidden="true">1.2.</strong> Platform Support</a></li><li class="chapter-item expanded "><a href="../user/wallet-backup.html"><strong aria-hidden="true">1.3.</strong> Wallet Backup</a></li><li class="chapter-item expanded "><a href="../user/shield-coinbase.html"><strong aria-hidden="true">1.4.</strong> Shielding Coinbase Outputs</a></li><li class="chapter-item expanded "><a href="../user/files.html"><strong aria-hidden="true">1.5.</strong> Data Directory Structure</a></li><li class="chapter-item expanded "><a href="../user/metrics.html"><strong aria-hidden="true">1.6.</strong> Metrics</a></li><li class="chapter-item expanded "><a href="../user/tor.html"><strong aria-hidden="true">1.7.</strong> Using zcashd with Tor</a></li><li class="chapter-item expanded "><a href="../user/security-warnings.html"><strong aria-hidden="true">1.8.</strong> Security Warnings</a></li><li class="chapter-item expanded "><a href="../user/deprecation.html"><strong aria-hidden="true">1.9.</strong> Deprecated Features</a></li></ol></li><li class="chapter-item expanded "><a href="../dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../dev/dnsseed-policy.html" class="active"><strong aria-hidden="true">2.1.</strong> DNS Seeders</a></li><li class="chapter-item expanded "><a href="../dev/rust.html"><strong aria-hidden="true">2.2.</strong> Rust in zcashd</a></li><li class="chapter-item expanded "><a href="../dev/regtest.html"><strong aria-hidden="true">2.3.</strong> Regtest Tips And Hints</a></li><li class="chapter-item expanded "><a href="../dev/platform-tier-policy.html"><strong aria-hidden="true">2.4.</strong> Platform Tier Policy</a></li><li class="chapter-item expanded "><a href="../dev/deprecation.html"><strong aria-hidden="true">2.5.</strong> Deprecation Procedure</a></li></ol></li><li class="chapter-item expanded "><a href="../design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain State</a></li><li class="chapter-item expanded "><a href="../design/coins-view.html"><strong aria-hidden="true">3.2.</strong> "Coins" View</a></li><li class="chapter-item expanded "><a href="../design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P Data Propagation</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../index.html">zcashd</a></li><li class="chapter-item expanded "><a href="../user.html"><strong aria-hidden="true">1.</strong> User Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../user/release-support.html" class="active"><strong aria-hidden="true">1.1.</strong> Release Support</a></li><li class="chapter-item expanded "><a href="../user/platform-support.html"><strong aria-hidden="true">1.2.</strong> Platform Support</a></li><li class="chapter-item expanded "><a href="../user/wallet-backup.html"><strong aria-hidden="true">1.3.</strong> Wallet Backup</a></li><li class="chapter-item expanded "><a href="../user/shield-coinbase.html"><strong aria-hidden="true">1.4.</strong> Shielding Coinbase Outputs</a></li><li class="chapter-item expanded "><a href="../user/files.html"><strong aria-hidden="true">1.5.</strong> Data Directory Structure</a></li><li class="chapter-item expanded "><a href="../user/metrics.html"><strong aria-hidden="true">1.6.</strong> Metrics</a></li><li class="chapter-item expanded "><a href="../user/tor.html"><strong aria-hidden="true">1.7.</strong> Using zcashd with Tor</a></li><li class="chapter-item expanded "><a href="../user/security-warnings.html"><strong aria-hidden="true">1.8.</strong> Security Warnings</a></li><li class="chapter-item expanded "><a href="../user/deprecation.html"><strong aria-hidden="true">1.9.</strong> Deprecated Features</a></li></ol></li><li class="chapter-item expanded "><a href="../dev.html"><strong aria-hidden="true">2.</strong> Developer Documentation</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../dev/dnsseed-policy.html"><strong aria-hidden="true">2.1.</strong> DNS Seeders</a></li><li class="chapter-item expanded "><a href="../dev/rust.html"><strong aria-hidden="true">2.2.</strong> Rust in zcashd</a></li><li class="chapter-item expanded "><a href="../dev/regtest.html"><strong aria-hidden="true">2.3.</strong> Regtest Tips And Hints</a></li><li class="chapter-item expanded "><a href="../dev/platform-tier-policy.html"><strong aria-hidden="true">2.4.</strong> Platform Tier Policy</a></li><li class="chapter-item expanded "><a href="../dev/deprecation.html"><strong aria-hidden="true">2.5.</strong> Deprecation Procedure</a></li></ol></li><li class="chapter-item expanded "><a href="../design.html"><strong aria-hidden="true">3.</strong> Design</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../design/chain-state.html"><strong aria-hidden="true">3.1.</strong> Chain State</a></li><li class="chapter-item expanded "><a href="../design/coins-view.html"><strong aria-hidden="true">3.2.</strong> "Coins" View</a></li><li class="chapter-item expanded "><a href="../design/p2p-data-propagation.html"><strong aria-hidden="true">3.3.</strong> P2P Data Propagation</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -144,75 +144,56 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="expectations-for-dns-seed-operators"><a class="header" href="#expectations-for-dns-seed-operators">Expectations for DNS Seed operators</a></h1>
-<p>Zcash attempts to minimize the level of trust in DNS seeds,
-but DNS seeds still pose a small amount of risk for the network.
-As such, DNS seeds must be run by entities which have some minimum
-level of trust within the Zcash community.</p>
-<p>Other implementations of Zcash software may also use the same
-seeds and may be more exposed. In light of this exposure, this
-document establishes some basic expectations for operating DNS seeds.</p>
-<ol start="0">
-<li>
-<p>A DNS seed operating organization or person is expected to follow good
-host security practices, maintain control of applicable infrastructure,
-and not sell or transfer control of the DNS seed. Any hosting services
-contracted by the operator are equally expected to uphold these expectations.</p>
-</li>
-<li>
-<p>The DNS seed results must consist exclusively of fairly selected and
-functioning Zcash nodes from the public network to the best of the
-operator's understanding and capability.</p>
-</li>
-<li>
-<p>For the avoidance of doubt, the results may be randomized but must not
-single out any group of hosts to receive different results unless due to an
-urgent technical necessity and disclosed.</p>
-</li>
-<li>
-<p>The results may not be served with a DNS TTL of less than one minute.</p>
-</li>
-<li>
-<p>Any logging of DNS queries should be only that which is necessary
-for the operation of the service or urgent health of the Zcash
-network and must not be retained longer than necessary nor disclosed
-to any third party.</p>
-</li>
-<li>
-<p>Information gathered as a result of the operators node-spidering
-(not from DNS queries) may be freely published or retained, but only
-if this data was not made more complete by biasing node connectivity
-(a violation of expectation (1)).</p>
-</li>
-<li>
-<p>Operators are encouraged, but not required, to publicly document the
-details of their operating practices.</p>
-</li>
-<li>
-<p>A reachable email contact address must be published for inquiries
-related to the DNS seed operation.</p>
-</li>
-</ol>
-<p>If these expectations cannot be satisfied the operator should discontinue
-providing services and contact the active Zcash development team as well as
-creating an issue in the <a href="https://github.com/zcash/zcash">Zcash repository</a>.</p>
-<p>Behavior outside of these expectations may be reasonable in some
-situations but should be discussed in public in advance.</p>
-<h2 id="see-also"><a class="header" href="#see-also">See also</a></h2>
+                        <h1 id="zcashd-release-support"><a class="header" href="#zcashd-release-support"><code>zcashd</code> Release Support</a></h1>
+<h2 id="release-cadence-and-support-window"><a class="header" href="#release-cadence-and-support-window">Release cadence and support window</a></h2>
+<p><code>zcashd</code> releases happen approximately every six weeks, although this may change if a
+particular release is delayed, or if a hotfix release occurs.</p>
+<p>Each <code>zcashd</code> release is generally supported for 16 weeks. Occasionally this changes for
+individual releases (for example, near to a Network Upgrade activation).</p>
+<p>These two policies mean that there are generally at least two separate <code>zcashd</code> versions
+currently supported at any given time.</p>
+<h2 id="end-of-support-halt"><a class="header" href="#end-of-support-halt">End-of-Support halt</a></h2>
+<p>Every <code>zcashd</code> version released by ECC has an End-of-Support height. When the Zcash chain
+reaches this height, <code>zcashd</code> will automatically shut down, and the binary will refuse to
+restart. This is for several reasons:</p>
 <ul>
-<li><a href="https://github.com/zcash/zcash-seeder">zcash-seeder</a> is a reference
-implementation of a DNS seed.</li>
+<li>The <code>zcashd</code> maintainers do not have the resources to maintain old versions of <code>zcashd</code>
+indefinitely.</li>
+<li>Each time a user upgrades their <code>zcashd</code> node, they are re-confirming that they are
+happy to run the Zcash consensus rules encoded in the version of <code>zcashd</code> they are
+running. This is an important part of the overall strategy for changes to the node and
+consensus rules; users who want to follow different rules (or even just have a different
+End-of-Support halt policy) will obtain a <code>zcashd</code> binary from some other source, with
+its own support policies.</li>
+<li>Knowing that old versions will shut down is useful for planning backwards-incompatible
+changes in Network Upgrades. A Network Upgrade activation can be targeted for a height
+where we know that all released <code>zcashd</code> versions which <em>did not</em> support the Network
+Upgrade will have shut down by the time the Network Upgrade activates.</li>
 </ul>
+<h2 id="end-of-support-heights"><a class="header" href="#end-of-support-heights">End-of-Support heights</a></h2>
+<p>The End-of-Support height for a running <code>zcashd</code> can be queried over JSON-RPC using the
+<code>getdeprecationinfo</code> method.</p>
+<p>The following table shows End-of-Support information for recent <code>zcashd</code> releases. It is
+automatically updated during each release. &quot;End of Support&quot; dates are estimated at that
+time, and may shift due to changes in network solution power.</p>
+<!-- RELEASE_SCRIPT_START_MARKER - If you make changes here, check make-release.py -->
+<div class="table-wrapper"><table><thead><tr><th><code>zcashd</code> version</th><th>Release date</th><th>Halt height</th><th>End of Support</th></tr></thead><tbody>
+<tr><td>5.3.1</td><td>2022-12-02</td><td>2027524</td><td>2023-03-24</td></tr>
+<tr><td>5.3.2</td><td>2022-12-03</td><td>2029524</td><td>2023-03-25</td></tr>
+<tr><td>5.4.0</td><td>2023-02-09</td><td>2106524</td><td>2023-06-01</td></tr>
+<tr><td>5.4.1</td><td>2023-02-13</td><td>2112024</td><td>2023-06-05</td></tr>
+</tbody></table>
+</div><!-- RELEASE_SCRIPT_END_MARKER -->
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../dev.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../user.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next" href="../dev/rust.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../user/platform-support.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -222,11 +203,11 @@ implementation of a DNS seed.</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../dev.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../user.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next" href="../dev/rust.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="../user/platform-support.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
