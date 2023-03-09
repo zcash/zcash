@@ -3869,7 +3869,7 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
             nBalance = getBalanceZaddr(addr, std::nullopt, nMinDepth, INT_MAX, false);
         },
         [&](const libzcash::UnifiedAddress& addr) {
-            auto selector = pwalletMain->ZTXOSelectorForAddress(addr, true, TransparentCoinbasePolicy::Allow, TransactionStrategy(PrivacyPolicy::FullPrivacy));
+            auto selector = pwalletMain->ZTXOSelectorForAddress(addr, true, TransparentCoinbasePolicy::Allow, false);
             if (!selector.has_value()) {
                 throw JSONRPCError(
                     RPC_INVALID_ADDRESS_OR_KEY,
@@ -4920,7 +4920,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                 true,
                 tcoinbasePolicy,
                 // LegacyCompat does not include AllowLinkingAccountAddresses.
-                maybeStrategy.value_or(TransactionStrategy(PrivacyPolicy::FullPrivacy)));
+                maybeStrategy.has_value() ? maybeStrategy.value().AllowLinkingAccountAddresses() : false);
             if (!ztxoSelectorOpt.has_value()) {
                 throw JSONRPCError(
                         RPC_INVALID_ADDRESS_OR_KEY,

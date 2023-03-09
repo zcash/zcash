@@ -1892,7 +1892,7 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
         const libzcash::PaymentAddress& addr,
         bool requireSpendingKey,
         TransparentCoinbasePolicy transparentCoinbasePolicy,
-        const TransactionStrategy& strategy) const
+        bool allowAddressLinkability) const
 {
     auto self = this;
     std::optional<ZTXOPattern> pattern = std::nullopt;
@@ -1927,10 +1927,8 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
                 // determine a local account.
                 auto accountId = this->GetUnifiedAccountId(ufvkId.value());
                 if (accountId.has_value()) {
-                    if (strategy.AllowLinkingAccountAddresses()) {
-                        pattern = AccountZTXOPattern(
-                                accountId.value(),
-                                ua.GetKnownReceiverTypes());
+                    if (allowAddressLinkability) {
+                        pattern = AccountZTXOPattern(accountId.value(), ua.GetKnownReceiverTypes());
                     } else {
                         pattern = ua;
                     }

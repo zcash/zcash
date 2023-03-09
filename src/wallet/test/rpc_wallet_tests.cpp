@@ -802,12 +802,11 @@ void CheckHaveAddr(const std::optional<libzcash::PaymentAddress>& addr) {
     auto addr_of_type = std::get_if<ADDR_TYPE>(&(addr.value()));
     BOOST_ASSERT(addr_of_type != nullptr);
 
-    TransactionStrategy strategy(PrivacyPolicy::FullPrivacy);
     BOOST_CHECK(pwalletMain->ZTXOSelectorForAddress(
                         *addr_of_type,
                         true,
                         TransparentCoinbasePolicy::Allow,
-                        strategy).has_value());
+                        false).has_value());
 }
 
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
@@ -1241,14 +1240,14 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // there are no utxos to spend
     {
-        TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
         auto selector = pwalletMain->ZTXOSelectorForAddress(
                 taddr1,
                 true,
                 TransparentCoinbasePolicy::Require,
-                strategy).value();
+                false).value();
         WalletTxBuilder builder(Params(), *pwalletMain, minRelayTxFee);
         std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
+        TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
         operation->main();
         BOOST_CHECK(operation->isFailed());
@@ -1258,14 +1257,14 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // there are no unspent notes to spend
     {
-        TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
         auto selector = pwalletMain->ZTXOSelectorForAddress(
                 zaddr1,
                 true,
                 TransparentCoinbasePolicy::Disallow,
-                strategy).value();
+                false).value();
         WalletTxBuilder builder(Params(), *pwalletMain, minRelayTxFee);
         std::vector<Payment> recipients = { Payment(taddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
+        TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
         operation->main();
         BOOST_CHECK(operation->isFailed());

@@ -1558,7 +1558,7 @@ public:
             const libzcash::PaymentAddress& addr,
             bool requireSpendingKey,
             TransparentCoinbasePolicy transparentCoinbasePolicy,
-            const TransactionStrategy& strategy) const;
+            bool allowAddressLinkability) const;
 
     /**
      * Returns the ZTXO selector for the specified viewing key, if that key
