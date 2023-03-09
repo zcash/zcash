@@ -2,6 +2,7 @@
 
 [zcashd](README.md)
 - [User Documentation](user.md)
+  - [Release Support](user/release-support.md)
   - [Platform Support](user/platform-support.md)
   - [Wallet Backup](user/wallet-backup.md)
   - [Shielding Coinbase Outputs](user/shield-coinbase.md)
