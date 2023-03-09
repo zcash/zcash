@@ -50,19 +50,11 @@ void ThrowInputSelectionError(
     std::visit(match {
         [](const AddressResolutionError& err) {
             switch (err) {
-                case AddressResolutionError::SproutSpendNotPermitted:
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Sending from the Sprout shielded pool to the Sapling "
-                        "shielded pool is not enabled by default because it will "
-                        "publicly reveal transaction amounts. THIS MAY AFFECT YOUR PRIVACY. "
-                        "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
-                        "or weaker if you wish to allow this transaction to proceed anyway.");
-                case AddressResolutionError::SproutRecipientNotPermitted:
+                case AddressResolutionError::SproutRecipientsNotSupported:
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
                         "Sending funds into the Sprout pool is no longer supported.");
-                case AddressResolutionError::TransparentRecipientNotPermitted:
+                case AddressResolutionError::TransparentRecipientNotAllowed:
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
                         "This transaction would have transparent recipients, which is not "
@@ -70,21 +62,31 @@ void ThrowInputSelectionError(
                         "recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
                         "with the `privacyPolicy` parameter set to `AllowRevealedRecipients` "
                         "or weaker if you wish to allow this transaction to proceed anyway.");
-                case AddressResolutionError::InsufficientSaplingFunds:
+                case AddressResolutionError::RevealingSaplingAmountNotAllowed:
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
-                        "Could not send to the Sapling shielded pool without revealing transaction "
-                        "amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
-                        "parameter set to `AllowRevealedAmounts` or weaker if you wish to allow this "
-                        "transaction to proceed anyway.");
-                case AddressResolutionError::UnifiedAddressResolutionError:
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Could not select a unified address receiver that allows this transaction "
-                        "to proceed without publicly revealing transaction amounts. THIS MAY AFFECT "
-                        "YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to "
+                        "Could not send to the Sapling shielded pool without spending non-Sapling "
+                        "funds, which would reveal transaction amounts. THIS MAY AFFECT YOUR "
+                        "PRIVACY. Resubmit with the `privacyPolicy` parameter set to "
                         "`AllowRevealedAmounts` or weaker if you wish to allow this transaction to "
                         "proceed anyway.");
+                case AddressResolutionError::TransparentReceiverNotAllowed:
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "This transaction would send to a transparent receiver of a unified "
+                        "address, which is not enabled by default because it will publicly reveal "
+                        "transaction recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. "
+                        "Resubmit with the `privacyPolicy` parameter set to "
+                        "`AllowRevealedRecipients` or weaker if you wish to allow this transaction "
+                        "to proceed anyway.");
+                case AddressResolutionError::RevealingReceiverAmountsNotAllowed:
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "Could not send to a shielded receiver of a unified address without "
+                        "spending funds from a different pool, which would reveal transaction "
+                        "amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
+                        "parameter set to `AllowRevealedAmounts` or weaker if you wish to allow "
+                        "this transaction to proceed anyway.");
                 default:
                     assert(false);
             }

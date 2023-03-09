@@ -231,7 +231,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                     resolvedPayments.emplace_back(
                             std::nullopt, p2pkh, payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
                 } else {
-                    resolutionError = AddressResolutionError::TransparentRecipientNotPermitted;
+                    resolutionError = AddressResolutionError::TransparentRecipientNotAllowed;
                 }
             },
             [&](const CScriptID& p2sh) {
@@ -239,11 +239,11 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                     resolvedPayments.emplace_back(
                             std::nullopt, p2sh, payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
                 } else {
-                    resolutionError = AddressResolutionError::TransparentRecipientNotPermitted;
+                    resolutionError = AddressResolutionError::TransparentRecipientNotAllowed;
                 }
             },
-            [&](const SproutPaymentAddress& addr) {
-                resolutionError = AddressResolutionError::SproutRecipientNotPermitted;
+            [&](const SproutPaymentAddress&) {
+                resolutionError = AddressResolutionError::SproutRecipientsNotSupported;
             },
             [&](const SaplingPaymentAddress& addr) {
                 if (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxSaplingAvailable) {
@@ -253,11 +253,10 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                         maxSaplingAvailable -= payment.GetAmount();
                     }
                 } else {
-                    resolutionError = AddressResolutionError::InsufficientSaplingFunds;
+                    resolutionError = AddressResolutionError::RevealingSaplingAmountNotAllowed;
                 }
             },
             [&](const UnifiedAddress& ua) {
-                bool resolved{false};
                 if (canResolveOrchard
                     && ua.GetOrchardReceiver().has_value()
                     && (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxOrchardAvailable)
@@ -268,10 +267,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                         maxOrchardAvailable -= payment.GetAmount();
                     }
                     orchardOutputs += 1;
-                    resolved = true;
-                }
-
-                if (!resolved && ua.GetSaplingReceiver().has_value()
+                } else if (ua.GetSaplingReceiver().has_value()
                     && (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxSaplingAvailable)
                     ) {
                     resolvedPayments.emplace_back(
@@ -279,23 +275,23 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                     if (!strategy.AllowRevealedAmounts()) {
                         maxSaplingAvailable -= payment.GetAmount();
                     }
-                    resolved = true;
-                }
-
-                if (!resolved && ua.GetP2SHReceiver().has_value() && strategy.AllowRevealedRecipients()) {
-                    resolvedPayments.emplace_back(
-                        ua, ua.GetP2SHReceiver().value(), payment.GetAmount(), std::nullopt, payment.IsInternal());
-                    resolved = true;
-                }
-
-                if (!resolved && ua.GetP2PKHReceiver().has_value() && strategy.AllowRevealedRecipients()) {
-                    resolvedPayments.emplace_back(
-                        ua, ua.GetP2PKHReceiver().value(), payment.GetAmount(), std::nullopt, payment.IsInternal());
-                    resolved = true;
-                }
-
-                if (!resolved) {
-                    resolutionError = AddressResolutionError::UnifiedAddressResolutionError;
+                } else {
+                    if (strategy.AllowRevealedRecipients()) {
+                        if (ua.GetP2SHReceiver().has_value()) {
+                            resolvedPayments.emplace_back(
+                                    ua, ua.GetP2SHReceiver().value(), payment.GetAmount(), std::nullopt, payment.IsInternal());
+                        } else if (ua.GetP2PKHReceiver().has_value()) {
+                            resolvedPayments.emplace_back(
+                                    ua, ua.GetP2PKHReceiver().value(), payment.GetAmount(), std::nullopt, payment.IsInternal());
+                        } else {
+                            // There are no receivers in this UA, which should be impossible.
+                            assert(false);
+                        }
+                    } else if (strategy.AllowRevealedAmounts()) {
+                        resolutionError = AddressResolutionError::TransparentReceiverNotAllowed;
+                    } else {
+                        resolutionError = AddressResolutionError::RevealingReceiverAmountsNotAllowed;
+                    }
                 }
             }
         }, payment.GetAddress());
@@ -307,7 +303,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     auto resolved = Payments(resolvedPayments);
 
     if (spendableMut.HasTransparentCoinbase() && resolved.HasTransparentRecipient()) {
-        return AddressResolutionError::TransparentRecipientNotPermitted;
+        return AddressResolutionError::TransparentRecipientNotAllowed;
     }
 
     if (orchardOutputs > this->maxOrchardActions) {

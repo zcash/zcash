@@ -208,11 +208,19 @@ public:
 };
 
 enum class AddressResolutionError {
-    SproutSpendNotPermitted,
-    SproutRecipientNotPermitted,
-    TransparentRecipientNotPermitted,
-    InsufficientSaplingFunds,
-    UnifiedAddressResolutionError,
+    //! Zcashd no longer supports sending to Sprout.
+    SproutRecipientsNotSupported,
+    //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedRecipients`
+    TransparentRecipientNotAllowed,
+    //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedAmounts`, but we don’t have enough
+    //! Sapling funds to avoid revealing amounts
+    RevealingSaplingAmountNotAllowed,
+    //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedRecipients`, but we are trying to
+    //! pay a UA with only transparent receivers
+    TransparentReceiverNotAllowed,
+    //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedAmounts`, but we are trying to pay a
+    //! UA where we don’t have enough funds in any single pool that it has a receiver for
+    RevealingReceiverAmountsNotAllowed,
 };
 
 class InsufficientFundsError {
