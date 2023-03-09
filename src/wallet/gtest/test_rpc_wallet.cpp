@@ -111,7 +111,7 @@ TEST(WalletRPCTests, PrepareTransaction)
             TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
 
             SpendableInputs inputs;
-            inputs.utxos.emplace_back(COutput(&wtx, 0, 100, true));
+            inputs.utxos.emplace_back(&wtx, 0, std::nullopt, 100, true);
 
             builder.PrepareTransaction(
                     *pwalletMain,
@@ -199,7 +199,7 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
 
     SpendableInputs inputs;
     auto wtx = FakeWalletTx();
-    inputs.utxos.emplace_back(&wtx, 0, 100, true);
+    inputs.utxos.emplace_back(&wtx, 0, std::nullopt, 100, true);
 
     // Can’t send to Sprout
     builder.PrepareTransaction(
@@ -442,7 +442,9 @@ TEST(WalletRPCTests, ZIP317Fee)
 
             SpendableInputs inputs;
             for (size_t i = 0; i < utxoCount; i++) {
-                inputs.utxos.emplace_back(&wtx, i, 100, true);
+                CTxDestination address;
+                ExtractDestination(scriptPubKey, address);
+                inputs.utxos.emplace_back(&wtx, i, address, 100, true);
             }
 
             auto effects = builder.PrepareTransaction(
@@ -477,7 +479,9 @@ TEST(WalletRPCTests, ZIP317Fee)
 
             SpendableInputs inputs;
             for (size_t i = 0; i < utxoCount; i++) {
-                inputs.utxos.emplace_back(&wtx, i, 100, true);
+                CTxDestination address;
+                ExtractDestination(scriptPubKey, address);
+                inputs.utxos.emplace_back(&wtx, i, address, 100, true);
             }
 
             auto effects = builder.PrepareTransaction(
