@@ -6,6 +6,8 @@
 #define ZCASH_DEPRECATION_H
 
 #include "consensus/params.h"
+#include "util/time.h"
+
 // Deprecation policy:
 // Per https://zips.z.cash/zip-0200
 // Shut down nodes running this version of code, 16 weeks' worth of blocks after the estimated
@@ -24,6 +26,7 @@ static const int DEPRECATION_WARN_LIMIT = 14 * 24 * EXPECTED_BLOCKS_PER_HOUR;
 static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
     // Node-level features
     "gbt_oldhashes",
+    "deprecationinfo_deprecationheight",
 
     // Wallet-level features
 #ifdef ENABLE_WALLET
@@ -48,6 +51,7 @@ static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
 
 // Flags that enable deprecated functionality.
 extern bool fEnableGbtOldHashes;
+extern bool fEnableDeprecationInfoDeprecationHeight;
 #ifdef ENABLE_WALLET
 extern bool fEnableGetNewAddress;
 extern bool fEnableGetRawChangeAddress;
@@ -59,6 +63,12 @@ extern bool fEnableLegacyPrivacyStrategy;
 extern bool fEnableAddrTypeField;
 extern bool fEnableWalletTxVJoinSplit;
 #endif
+
+/**
+ * Returns the estimated time, in seconds since the epoch, at which deprecation
+ * enforcement will take effect for this node.
+ */
+int64_t EstimatedNodeDeprecationTime(const CClock& clock, int nHeight);
 
 /**
  * Checks whether the node is deprecated based on the current block height, and

@@ -13,6 +13,7 @@
 
 // Flags that enable deprecated functionality.
 bool fEnableGbtOldHashes = true;
+bool fEnableDeprecationInfoDeprecationHeight = true;
 #ifdef ENABLE_WALLET
 bool fEnableGetNewAddress = true;
 bool fEnableGetRawChangeAddress = true;
@@ -26,6 +27,12 @@ bool fEnableWalletTxVJoinSplit = true;
 #endif
 
 static const std::string CLIENT_VERSION_STR = FormatVersion(CLIENT_VERSION);
+
+int64_t EstimatedNodeDeprecationTime(const CClock& clock, int nHeight) {
+    auto blocksToDeprecation = DEPRECATION_HEIGHT - nHeight;
+
+    return clock.GetTime() + (blocksToDeprecation * Consensus::POST_BLOSSOM_POW_TARGET_SPACING);
+}
 
 void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
 
@@ -93,6 +100,7 @@ std::optional<std::string> LoadAllowedDeprecatedFeatures() {
     }
 
     fEnableGbtOldHashes = allowdeprecated.count("gbt_oldhashes") > 0;
+    fEnableDeprecationInfoDeprecationHeight = allowdeprecated.count("deprecationinfo_deprecationheight") > 0;
 #ifdef ENABLE_WALLET
     fEnableLegacyPrivacyStrategy = allowdeprecated.count("legacy_privacy") > 0;
     fEnableGetNewAddress = allowdeprecated.count("getnewaddress") > 0;

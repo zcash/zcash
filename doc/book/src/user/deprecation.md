@@ -35,11 +35,12 @@ The following features are deprecated, but remain enabled by default. These feat
 will be disabled if `-allowdeprecated=none` is added to the CLI arguments when starting
 the node, or if an `allowdeprecated=none` line is added to `zcash.conf`.
 
-| `feature`             | Deprecated | Feature details
-|-----------------------|------------|----------------
-| `z_getbalance`        | 5.0.0      | The `z_getbalance` RPC method.
-| `z_gettotalbalance`   | 5.0.0      | The `z_gettotalbalance` RPC method.
-| `gbt_oldhashes`       | 5.4.0      | The `finalsaplingroothash`, `lightclientroothash`, and `blockcommitmentshash` fields in the output of `getblocktemplate`, which are replaced by the `defaultroots` field.
+| `feature`                           | Deprecated | Feature details
+|-------------------------------------|------------|----------------
+| `z_getbalance`                      | 5.0.0      | The `z_getbalance` RPC method.
+| `z_gettotalbalance`                 | 5.0.0      | The `z_gettotalbalance` RPC method.
+| `gbt_oldhashes`                     | 5.4.0      | The `finalsaplingroothash`, `lightclientroothash`, and `blockcommitmentshash` fields in the output of `getblocktemplate`, which are replaced by the `defaultroots` field.
+| `deprecationinfo_deprecationheight` | 5.5.0      | The `deprecationheight` field returned by the `getdeprecationinfo` RPC method has been replaced by the `end_of_service` object.
 
 Stage 2
 -------
