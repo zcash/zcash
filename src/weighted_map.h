@@ -5,7 +5,6 @@
 #ifndef ZCASH_WEIGHTED_MAP_H
 #define ZCASH_WEIGHTED_MAP_H
 
-#include <iostream>
 #include <map>
 #include <optional>
 #include <set>
