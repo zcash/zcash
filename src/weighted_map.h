@@ -144,11 +144,12 @@ public:
     // Otherwise, remove that key's entry and return its associated value.
     std::optional<V> remove(K key)
     {
-        if (indexMap.count(key) == 0) {
+        auto it = indexMap.find(key);
+        if (it == indexMap.end()) {
             return std::nullopt;
         }
 
-        size_t removeIndex = indexMap.at(key);
+        size_t removeIndex = it->second;
         V removeValue = nodes.at(removeIndex).value;
 
         size_t lastIndex = nodes.size()-1;
@@ -165,7 +166,7 @@ public:
             backPropagate(removeIndex, weightDelta);
         }
 
-        indexMap.erase(key);
+        indexMap.erase(it);
         nodes.pop_back();
         return removeValue;
     }
