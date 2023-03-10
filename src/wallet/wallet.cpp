@@ -3533,16 +3533,7 @@ bool CWallet::AddToWalletIfInvolvingMe(
 rust::Box<wallet::BatchScanner> WalletBatchScanner::CreateBatchScanner(CWallet* pwallet) {
     LOCK(pwallet->cs_KeyStore);
 
-    auto chainParams = Params();
-    auto consensus = chainParams.GetConsensus();
-    auto network = wallet::network(
-        chainParams.NetworkIDString(),
-        consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight,
-        consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight,
-        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight,
-        consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight,
-        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
-        consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight);
+    auto network = Params().RustNetwork();
 
     // TODO: Pass the map across the FFI once cxx supports it.
     std::vector<std::array<uint8_t, 32>> ivks;

@@ -14,6 +14,8 @@
 
 #include <vector>
 
+#include <rust/wallet_scanner.h>
+
 struct CDNSSeedData {
     std::string name, host;
     CDNSSeedData(const std::string &strName, const std::string &strHost) : name(strName), host(strHost) {}
@@ -44,6 +46,16 @@ class CChainParams: public KeyConstants
 {
 public:
     const Consensus::Params& GetConsensus() const { return consensus; }
+    const rust::Box<consensus::Network> RustNetwork() const {
+        return consensus::network(
+            NetworkIDString(),
+            consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight,
+            consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight,
+            consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight,
+            consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight,
+            consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
+            consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight);
+    }
     const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
     const std::vector<unsigned char>& AlertKey() const { return vAlertPubKey; }
     int GetDefaultPort() const { return nDefaultPort; }
