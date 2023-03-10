@@ -63,7 +63,7 @@ public:
 //
 // Each transaction also has an *eviction weight*, which is *cost* + *fee_penalty*,
 // where *fee_penalty* is 16000 if the transaction pays a fee less than the
-// ZIP 317 conventional fee, otherwise 0.
+// conventional fee, otherwise 0.
 
 // Calculate cost and eviction weight based on the memory usage and fee.
 std::pair<int64_t, int64_t> MempoolCostAndEvictionWeight(const CTransaction& tx, const CAmount& fee);
