@@ -85,11 +85,11 @@ private:
     size_t findByWeight(size_t fromIndex, W weightToFind) const
     {
         W leftWeight = getWeightAt(leftChild(fromIndex));
-        W rightWeight = getWeightAt(fromIndex) - getWeightAt(rightChild(fromIndex));
         // On Left
         if (weightToFind < leftWeight) {
             return findByWeight(leftChild(fromIndex), weightToFind);
         }
+        W rightWeight = getWeightAt(fromIndex) - getWeightAt(rightChild(fromIndex));
         // Found
         if (weightToFind < rightWeight) {
             return fromIndex;
