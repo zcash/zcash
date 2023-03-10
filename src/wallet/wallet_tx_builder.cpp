@@ -544,25 +544,39 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
     }
 
     // Add outputs
-    for (const auto& r : payments.GetResolvedPayments()) {
-        std::visit(match {
-            [&](const CKeyID& keyId) {
-                builder.AddTransparentOutput(keyId, r.amount);
-            },
-            [&](const CScriptID& scriptId) {
-                builder.AddTransparentOutput(scriptId, r.amount);
-            },
-            [&](const libzcash::SaplingPaymentAddress& addr) {
-                builder.AddSaplingOutput(
-                        r.isInternal ? internalOVK : externalOVK, addr, r.amount,
-                        r.memo.has_value() ? r.memo.value().ToBytes() : Memo::NoMemo().ToBytes());
-            },
-            [&](const libzcash::OrchardRawAddress& addr) {
-                builder.AddOrchardOutput(
-                        r.isInternal ? internalOVK : externalOVK, addr, r.amount,
-                        r.memo.has_value() ? std::optional(r.memo.value().ToBytes()) : std::nullopt);
-            }
-        }, r.address);
+    try {
+        for (const auto& r : payments.GetResolvedPayments()) {
+            std::visit(match {
+                    [&](const CKeyID& keyId) {
+                        if (r.memo.has_value()) {
+                            throw TransactionBuilderResult(
+                                    "Memos cannot be sent to transparent addresses.");
+                        } else {
+                            builder.AddTransparentOutput(keyId, r.amount);
+                        }
+                    },
+                    [&](const CScriptID& scriptId) {
+                        if (r.memo.has_value()) {
+                            throw TransactionBuilderResult(
+                                    "Memos cannot be sent to transparent addresses.");
+                        } else {
+                            builder.AddTransparentOutput(scriptId, r.amount);
+                        }
+                    },
+                    [&](const libzcash::SaplingPaymentAddress& addr) {
+                        builder.AddSaplingOutput(
+                                r.isInternal ? internalOVK : externalOVK, addr, r.amount,
+                                r.memo.has_value() ? r.memo.value().ToBytes() : Memo::NoMemo().ToBytes());
+                    },
+                    [&](const libzcash::OrchardRawAddress& addr) {
+                        builder.AddOrchardOutput(
+                                r.isInternal ? internalOVK : externalOVK, addr, r.amount,
+                                r.memo.has_value() ? std::optional(r.memo.value().ToBytes()) : std::nullopt);
+                    }
+                    }, r.address);
+        }
+    } catch (const TransactionBuilderResult& result) {
+        return result;
     }
 
     // Add transparent utxos

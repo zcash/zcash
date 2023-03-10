@@ -4736,7 +4736,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "    [{\n"
             "      \"address\":address  (string, required) The address is a taddr, zaddr, or Unified Address\n"
             "      \"amount\":amount    (numeric, required) The numeric amount in " + CURRENCY_UNIT + " is the value\n"
-            "      \"memo\":memo        (string, optional) If the address is a zaddr, raw data represented in hexadecimal string format\n"
+            "      \"memo\":memo        (string, optional) If the address is a zaddr, raw data represented in hexadecimal string format. If\n"
+            "                           it’s a taddr, it’s an error to include this field.\n"
             "    }, ... ]\n"
             "3. minconf               (numeric, optional, default=" + strprintf("%u", DEFAULT_NOTE_CONFIRMATIONS) + ") Only use funds confirmed at least this many times.\n"
             "4. fee                   (numeric, optional, default=" + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
@@ -4841,12 +4842,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         std::optional<Memo> memo;
         if (!memoValue.isNull()) {
             auto memoHex = memoValue.get_str();
-            if (!std::visit(libzcash::HasShieldedRecipient(), addr.value())) {
-                throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Invalid parameter, memos cannot be sent to transparent addresses.");
-            }
-
             std::visit(match {
                 [&](MemoError err) {
                     switch (err) {
