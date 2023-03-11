@@ -678,7 +678,6 @@ libzcash_a_SOURCES = \
 
 libzcash_a_CPPFLAGS = $(AM_CPPFLAGS) $(PIC_FLAGS) $(BITCOIN_INCLUDES)
 libzcash_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libzcash_a_LDFLAGS = $(AM_LDFLAGS)
 
 # zcash_script library #
 if BUILD_BITCOIN_LIBS
