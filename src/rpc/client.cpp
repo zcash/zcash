@@ -193,7 +193,7 @@ std::string FormatConversionFailure(const std::string& method, const ConversionF
         }, failure);
 }
 
-optional<pair<vector<bool>, vector<bool>>> paramsToConvertFor(const string& method) {
+optional<pair<vector<bool>, vector<bool>>> ParamsToConvertFor(const string& method) {
     auto search = rpcCvtTable.find(method);
     if (search != rpcCvtTable.end()) {
         return search->second;
@@ -216,7 +216,7 @@ tl::expected<UniValue, ConversionFailure>
 RPCConvertValues(const string &method, const vector<string> &strArgs)
 {
     UniValue params(UniValue::VARR);
-    auto paramsToConvert = paramsToConvertFor(method);
+    auto paramsToConvert = ParamsToConvertFor(method);
     vector<bool> requiredParams{};
     vector<bool> optionalParams{};
     if (paramsToConvert.has_value()) {
