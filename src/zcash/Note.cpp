@@ -188,6 +188,23 @@ std::optional<SaplingNote> SaplingNotePlaintext::note(const SaplingIncomingViewi
     }
 }
 
+std::pair<SaplingNotePlaintext, SaplingPaymentAddress> SaplingNotePlaintext::from_rust(
+    rust::Box<wallet::DecryptedSaplingOutput> decrypted)
+{
+    SaplingPaymentAddress pa(
+        decrypted->recipient_d(),
+        uint256::FromRawBytes(decrypted->recipient_pk_d()));
+    SaplingNote note(
+        pa.d,
+        pa.pk_d,
+        decrypted->note_value(),
+        uint256::FromRawBytes(decrypted->note_rseed()),
+        decrypted->zip_212_enabled() ? Zip212Enabled::AfterZip212 : Zip212Enabled::BeforeZip212);
+    SaplingNotePlaintext notePt(note, decrypted->memo());
+
+    return std::make_pair(notePt, pa);
+}
+
 std::optional<SaplingOutgoingPlaintext> SaplingOutgoingPlaintext::decrypt(
     const SaplingOutCiphertext &ciphertext,
     const uint256& ovk,

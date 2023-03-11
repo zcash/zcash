@@ -4297,7 +4297,7 @@ std::pair<SproutNotePlaintext, SproutPaymentAddress> CWalletTx::DecryptSproutNot
 
 std::optional<std::pair<
     SaplingNotePlaintext,
-    SaplingPaymentAddress>> CWalletTx::DecryptSaplingNote(const Consensus::Params& params, SaplingOutPoint op) const
+    SaplingPaymentAddress>> CWalletTx::DecryptSaplingNote(const CChainParams& params, SaplingOutPoint op) const
 {
     // Check whether we can decrypt this SaplingOutPoint
     if (this->mapSaplingNoteData.count(op) == 0) {
@@ -4307,22 +4307,22 @@ std::optional<std::pair<
     auto output = this->vShieldedOutput[op.n];
     auto nd = this->mapSaplingNoteData.at(op);
 
-    auto maybe_pt = SaplingNotePlaintext::decrypt(
-        params,
-        // Canopy activation is inside the ZIP 212 grace period.
-        params.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
-        output.encCiphertext,
-        nd.ivk,
-        output.ephemeralKey,
-        output.cmu);
-    assert(maybe_pt != std::nullopt);
-    auto notePt = maybe_pt.value();
+    try {
+        auto decrypted = wallet::try_sapling_note_decryption(
+            *params.RustNetwork(),
+            // Canopy activation is inside the ZIP 212 grace period.
+            params.GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
+            nd.ivk.GetRawBytes(),
+            {
+                output.cmu.GetRawBytes(),
+                output.ephemeralKey.GetRawBytes(),
+                output.encCiphertext,
+            });
 
-    auto maybe_pa = nd.ivk.address(notePt.d);
-    assert(maybe_pa != std::nullopt);
-    auto pa = maybe_pa.value();
-
-    return std::make_pair(notePt, pa);
+        return SaplingNotePlaintext::from_rust(std::move(decrypted));
+    } catch (const rust::Error &e) {
+        assert(false);
+    }
 }
 
 std::optional<std::pair<

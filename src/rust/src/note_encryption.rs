@@ -1,0 +1,104 @@
+use group::GroupEncoding;
+use zcash_note_encryption::{Domain, EphemeralKeyBytes, ShieldedOutput, ENC_CIPHERTEXT_SIZE};
+use zcash_primitives::{
+    consensus::BlockHeight,
+    memo::MemoBytes,
+    sapling::{
+        self,
+        note_encryption::{PreparedIncomingViewingKey, SaplingDomain},
+        SaplingIvk,
+    },
+};
+
+use crate::{params::Network, wallet_scanner::ffi::SaplingShieldedOutput};
+
+/// Trial decryption of the full note plaintext by the recipient.
+///
+/// Attempts to decrypt and validate the given shielded output using the given `raw_ivk`.
+/// If successful, the corresponding note and memo are returned, along with the address to
+/// which the note was sent.
+///
+/// Implements section 4.19.2 of the
+/// [Zcash Protocol Specification](https://zips.z.cash/protocol/protocol.pdf#decryptivk).
+pub(crate) fn try_sapling_note_decryption(
+    network: &Network,
+    height: u32,
+    raw_ivk: &[u8; 32],
+    output: SaplingShieldedOutput,
+) -> Result<Box<DecryptedSaplingOutput>, &'static str> {
+    let ivk = parse_and_prepare_sapling_ivk(raw_ivk)
+        .ok_or("Invalid Sapling ivk passed to wallet::try_sapling_note_decryption()")?;
+
+    let (note, recipient, memo) = sapling::note_encryption::try_sapling_note_decryption(
+        network,
+        BlockHeight::from_u32(height),
+        &ivk,
+        &output,
+    )
+    .ok_or("Decryption failed")?;
+
+    Ok(Box::new(DecryptedSaplingOutput {
+        note,
+        recipient,
+        memo,
+    }))
+}
+
+/// Parses and validates a Sapling incoming viewing key, and prepares it for decryption.
+pub(crate) fn parse_and_prepare_sapling_ivk(
+    raw_ivk: &[u8; 32],
+) -> Option<PreparedIncomingViewingKey> {
+    jubjub::Fr::from_bytes(raw_ivk)
+        .map(|scalar_ivk| PreparedIncomingViewingKey::new(&SaplingIvk(scalar_ivk)))
+        .into()
+}
+
+impl ShieldedOutput<SaplingDomain<Network>, ENC_CIPHERTEXT_SIZE> for SaplingShieldedOutput {
+    fn ephemeral_key(&self) -> EphemeralKeyBytes {
+        EphemeralKeyBytes(self.ephemeral_key)
+    }
+
+    fn cmstar_bytes(&self) -> <SaplingDomain<Network> as Domain>::ExtractedCommitmentBytes {
+        self.cmu
+    }
+
+    fn enc_ciphertext(&self) -> &[u8; ENC_CIPHERTEXT_SIZE] {
+        &self.enc_ciphertext
+    }
+}
+
+/// A Sapling output that we successfully decrypted with an `ivk`.
+pub(crate) struct DecryptedSaplingOutput {
+    note: sapling::Note,
+    recipient: sapling::PaymentAddress,
+    memo: MemoBytes,
+}
+
+impl DecryptedSaplingOutput {
+    pub(crate) fn note_value(&self) -> u64 {
+        self.note.value
+    }
+
+    pub(crate) fn note_rseed(&self) -> [u8; 32] {
+        match self.note.rseed {
+            sapling::Rseed::BeforeZip212(rcm) => rcm.to_bytes(),
+            sapling::Rseed::AfterZip212(rseed) => rseed,
+        }
+    }
+
+    pub(crate) fn zip_212_enabled(&self) -> bool {
+        matches!(self.note.rseed, sapling::Rseed::AfterZip212(_))
+    }
+
+    pub(crate) fn recipient_d(&self) -> [u8; 11] {
+        self.recipient.diversifier().0
+    }
+
+    pub(crate) fn recipient_pk_d(&self) -> [u8; 32] {
+        self.recipient.pk_d().to_bytes()
+    }
+
+    pub(crate) fn memo(&self) -> [u8; 512] {
+        *self.memo.as_array()
+    }
+}

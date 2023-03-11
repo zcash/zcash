@@ -673,7 +673,7 @@ public:
      */
     std::optional<std::pair<
         libzcash::SaplingNotePlaintext,
-        libzcash::SaplingPaymentAddress>> DecryptSaplingNote(const Consensus::Params& params, SaplingOutPoint op) const;
+        libzcash::SaplingPaymentAddress>> DecryptSaplingNote(const CChainParams& params, SaplingOutPoint op) const;
     /**
      * Try to recover the specified Sapling output of this wallet transaction
      * using one of the given outgoing viewing keys.

@@ -4368,7 +4368,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         // means the plaintext leadbyte was valid at the block height
         // where the note was received.
         // https://zips.z.cash/zip-0212#changes-to-the-process-of-receiving-sapling-notes
-        auto decrypted = wtxPrev.DecryptSaplingNote(consensusParams, op).value();
+        auto decrypted = wtxPrev.DecryptSaplingNote(Params(), op).value();
         auto notePt = decrypted.first;
         auto pa = decrypted.second;
 
@@ -4415,7 +4415,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         // means the plaintext leadbyte was valid at the block height
         // where the note was received.
         // https://zips.z.cash/zip-0212#changes-to-the-process-of-receiving-sapling-notes
-        auto decrypted = wtx.DecryptSaplingNote(consensusParams, op);
+        auto decrypted = wtx.DecryptSaplingNote(Params(), op);
         if (decrypted) {
             notePt = decrypted->first;
             pa = decrypted->second;

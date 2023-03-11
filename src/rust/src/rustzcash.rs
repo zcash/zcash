@@ -68,6 +68,7 @@ mod history_ffi;
 mod incremental_merkle_tree;
 mod init_ffi;
 mod merkle_frontier;
+mod note_encryption;
 mod orchard_bundle;
 mod orchard_ffi;
 mod orchard_keys_ffi;

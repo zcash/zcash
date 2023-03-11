@@ -14,20 +14,29 @@ use zcash_note_encryption::{batch, BatchDomain, Domain, ShieldedOutput, ENC_CIPH
 use zcash_primitives::{
     block::BlockHash,
     consensus,
-    sapling::{
-        note_encryption::{PreparedIncomingViewingKey, SaplingDomain},
-        SaplingIvk,
-    },
+    sapling::note_encryption::SaplingDomain,
     transaction::{
         components::{sapling::GrothProofBytes, OutputDescription},
         Transaction, TxId,
     },
 };
 
-use crate::params::{network, Network};
+use crate::{
+    note_encryption::{
+        parse_and_prepare_sapling_ivk, try_sapling_note_decryption, DecryptedSaplingOutput,
+    },
+    params::{network, Network},
+};
 
 #[cxx::bridge]
-mod ffi {
+pub(crate) mod ffi {
+    #[namespace = "wallet"]
+    pub(crate) struct SaplingShieldedOutput {
+        cmu: [u8; 32],
+        ephemeral_key: [u8; 32],
+        enc_ciphertext: [u8; 580],
+    }
+
     #[namespace = "wallet"]
     struct SaplingDecryptionResult {
         txid: [u8; 32],
@@ -54,6 +63,21 @@ mod ffi {
 
     #[namespace = "wallet"]
     extern "Rust" {
+        fn try_sapling_note_decryption(
+            network: &Network,
+            height: u32,
+            raw_ivk: &[u8; 32],
+            output: SaplingShieldedOutput,
+        ) -> Result<Box<DecryptedSaplingOutput>>;
+
+        type DecryptedSaplingOutput;
+        fn note_value(self: &DecryptedSaplingOutput) -> u64;
+        fn note_rseed(self: &DecryptedSaplingOutput) -> [u8; 32];
+        fn zip_212_enabled(self: &DecryptedSaplingOutput) -> bool;
+        fn recipient_d(self: &DecryptedSaplingOutput) -> [u8; 11];
+        fn recipient_pk_d(self: &DecryptedSaplingOutput) -> [u8; 32];
+        fn memo(self: &DecryptedSaplingOutput) -> [u8; 512];
+
         type BatchScanner;
         type BatchResult;
 
@@ -633,10 +657,8 @@ fn init_batch_scanner(
         let ivks: Vec<(_, _)> = sapling_ivks
             .iter()
             .map(|raw_ivk| {
-                let ivk: Option<_> = jubjub::Fr::from_bytes(raw_ivk)
-                    .map(|scalar_ivk| PreparedIncomingViewingKey::new(&SaplingIvk(scalar_ivk)))
-                    .into();
-                ivk.map(|prepared_ivk| (*raw_ivk, prepared_ivk))
+                parse_and_prepare_sapling_ivk(raw_ivk)
+                    .map(|prepared_ivk| (*raw_ivk, prepared_ivk))
                     .ok_or("Invalid Sapling ivk passed to wallet::init_batch_scanner()")
             })
             .collect::<Result<_, _>>()?;
