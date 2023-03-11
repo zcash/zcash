@@ -2319,16 +2319,14 @@ SpendableInputs CWallet::FindSpendableInputs(
 
         if (selectSapling) {
             for (auto const& [op, nd] : wtx.mapSaplingNoteData) {
-                auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
+                auto optDecrypted = wtx.DecryptSaplingNote(Params(), op);
 
                 // The transaction would not have entered the wallet unless
                 // its plaintext had been successfully decrypted previously.
-                assert(optDeserialized != std::nullopt);
-
-                auto notePt = optDeserialized.value();
-                auto maybe_pa = nd.ivk.address(notePt.d);
-                assert(maybe_pa.has_value());
-                auto pa = maybe_pa.value();
+                assert(optDecrypted != std::nullopt);
+                SaplingNotePlaintext notePt;
+                SaplingPaymentAddress pa;
+                std::tie(notePt, pa) = optDecrypted.value();
 
                 // skip notes which have been spent
                 if (nd.nullifier.has_value() && IsSaplingSpent(nd.nullifier.value(), asOfHeight)) continue;
@@ -3219,21 +3217,16 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
         else {
             uint64_t position = nd.witnesses.front().position();
             auto extfvk = mapSaplingFullViewingKeys.at(nd.ivk);
-            OutputDescription output = wtx.vShieldedOutput[op.n];
 
-            auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(output.encCiphertext, nd.ivk, output.ephemeralKey);
+            auto optDecrypted = wtx.DecryptSaplingNote(Params(), op);
 
             // The transaction would not have entered the wallet unless
             // its plaintext had been successfully decrypted previously.
-            assert(optDeserialized != std::nullopt);
+            assert(optDecrypted != std::nullopt);
+            SaplingNotePlaintext notePt;
+            std::tie(notePt, std::ignore) = optDecrypted.value();
 
-            auto optPlaintext = SaplingNotePlaintext::plaintext_checks_without_height(*optDeserialized, nd.ivk, output.ephemeralKey, output.cmu);
-
-            // An item in mapSaplingNoteData must have already been successfully decrypted,
-            // otherwise the item would not exist in the first place.
-            assert(optPlaintext != std::nullopt);
-
-            auto optNote = optPlaintext.value().note(nd.ivk);
+            auto optNote = notePt.note(nd.ivk);
             assert(optNote != std::nullopt);
 
             auto optNullifier = optNote.value().nullifier(extfvk.fvk, position);
@@ -7052,16 +7045,14 @@ void CWallet::GetFilteredNotes(
             SaplingOutPoint op = pair.first;
             SaplingNoteData nd = pair.second;
 
-            auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
+            auto optDecrypted = wtx.DecryptSaplingNote(Params(), op);
 
             // The transaction would not have entered the wallet unless
             // its plaintext had been successfully decrypted previously.
-            assert(optDeserialized != std::nullopt);
-
-            auto notePt = optDeserialized.value();
-            auto maybe_pa = nd.ivk.address(notePt.d);
-            assert(static_cast<bool>(maybe_pa));
-            auto pa = maybe_pa.value();
+            assert(optDecrypted != std::nullopt);
+            SaplingNotePlaintext notePt;
+            SaplingPaymentAddress pa;
+            std::tie(notePt, pa) = optDecrypted.value();
 
             // skip notes which do not conform to the filter, if supplied
             if (noteFilter.has_value() && !noteFilter.value().HasSaplingAddress(pa)) {

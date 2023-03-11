@@ -748,15 +748,9 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
         wtx = wallet.mapWallet[hash];
 
         // Decrypt output note B
-        auto maybe_pt = libzcash::SaplingNotePlaintext::decrypt(
-                consensusParams,
-                wtx.nExpiryHeight,
-                wtx.vShieldedOutput[0].encCiphertext,
-                ivk,
-                wtx.vShieldedOutput[0].ephemeralKey,
-                wtx.vShieldedOutput[0].cmu);
+        auto maybe_pt = wtx.DecryptSaplingNote(Params(), SaplingOutPoint(hash, 0));
         ASSERT_EQ(static_cast<bool>(maybe_pt), true);
-        auto maybe_note = maybe_pt.value().note(ivk);
+        auto maybe_note = maybe_pt.value().first.note(ivk);
         ASSERT_EQ(static_cast<bool>(maybe_note), true);
         auto note2 = maybe_note.value();
 
@@ -1276,15 +1270,9 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         ASSERT_FALSE(wallet.mapSaplingNullifiersToNotes.count(nf.value()));
 
         // Decrypt note B
-        auto maybe_pt = libzcash::SaplingNotePlaintext::decrypt(
-            consensusParams,
-            wtx.nExpiryHeight,
-            wtx.vShieldedOutput[0].encCiphertext,
-            ivk,
-            wtx.vShieldedOutput[0].ephemeralKey,
-            wtx.vShieldedOutput[0].cmu);
+        auto maybe_pt = wtx.DecryptSaplingNote(Params(), SaplingOutPoint(wtx.GetHash(), 0));
         ASSERT_EQ(static_cast<bool>(maybe_pt), true);
-        auto maybe_note = maybe_pt.value().note(ivk);
+        auto maybe_note = maybe_pt.value().first.note(ivk);
         ASSERT_EQ(static_cast<bool>(maybe_note), true);
         auto note2 = maybe_note.value();
 
@@ -2274,9 +2262,9 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     wtx = wallet.mapWallet[hash];
 
     // Prepare to spend the note that was just created
-    auto maybe_pt = libzcash::SaplingNotePlaintext::decrypt(consensusParams, fakeIndex.nHeight, tx1.vShieldedOutput[0].encCiphertext, ivk, tx1.vShieldedOutput[0].ephemeralKey, tx1.vShieldedOutput[0].cmu);
+    auto maybe_pt = wtx.DecryptSaplingNote(Params(), SaplingOutPoint(hash, 0));
     ASSERT_EQ(static_cast<bool>(maybe_pt), true);
-    auto maybe_note = maybe_pt.value().note(ivk);
+    auto maybe_note = maybe_pt.value().first.note(ivk);
     ASSERT_EQ(static_cast<bool>(maybe_note), true);
     auto note = maybe_note.value();
     auto anchor = frontiers.sapling.root();
