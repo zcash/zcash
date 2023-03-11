@@ -4253,6 +4253,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         }
     };
 
+    auto& consensusParams = Params().GetConsensus();
     KeyIO keyIO(Params());
     // Sprout spends
     for (size_t i = 0; i < wtx.vJoinSplit.size(); ++i) {
@@ -4361,12 +4362,13 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         auto op = res->second;
         auto wtxPrev = pwalletMain->mapWallet.at(op.hash);
 
-        // We don't need to check the leadbyte here: if wtx exists in
+        // We don't need to constrain the plaintext leadbyte to
+        // satisfy the ZIP 212 grace window: if wtx exists in
         // the wallet, it must have been successfully decrypted. This
         // means the plaintext leadbyte was valid at the block height
         // where the note was received.
         // https://zips.z.cash/zip-0212#changes-to-the-process-of-receiving-sapling-notes
-        auto decrypted = wtxPrev.DecryptSaplingNoteWithoutLeadByteCheck(op).value();
+        auto decrypted = wtxPrev.DecryptSaplingNote(consensusParams, op).value();
         auto notePt = decrypted.first;
         auto pa = decrypted.second;
 
@@ -4407,19 +4409,20 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         SaplingPaymentAddress pa;
         bool isOutgoing;
 
-        // We don't need to check the leadbyte here: if wtx exists in
+        // We don't need to constrain the plaintext leadbyte to
+        // satisfy the ZIP 212 grace window: if wtx exists in
         // the wallet, it must have been successfully decrypted. This
         // means the plaintext leadbyte was valid at the block height
         // where the note was received.
         // https://zips.z.cash/zip-0212#changes-to-the-process-of-receiving-sapling-notes
-        auto decrypted = wtx.DecryptSaplingNoteWithoutLeadByteCheck(op);
+        auto decrypted = wtx.DecryptSaplingNote(consensusParams, op);
         if (decrypted) {
             notePt = decrypted->first;
             pa = decrypted->second;
             isOutgoing = false;
         } else {
             // Try recovering the output
-            auto recovered = wtx.RecoverSaplingNoteWithoutLeadByteCheck(op, ovks);
+            auto recovered = wtx.RecoverSaplingNote(consensusParams, op, ovks);
             if (recovered) {
                 notePt = recovered->first;
                 pa = recovered->second;

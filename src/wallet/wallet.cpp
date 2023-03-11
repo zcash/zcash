@@ -4297,7 +4297,7 @@ std::pair<SproutNotePlaintext, SproutPaymentAddress> CWalletTx::DecryptSproutNot
 
 std::optional<std::pair<
     SaplingNotePlaintext,
-    SaplingPaymentAddress>> CWalletTx::DecryptSaplingNote(const Consensus::Params& params, int height, SaplingOutPoint op) const
+    SaplingPaymentAddress>> CWalletTx::DecryptSaplingNote(const Consensus::Params& params, SaplingOutPoint op) const
 {
     // Check whether we can decrypt this SaplingOutPoint
     if (this->mapSaplingNoteData.count(op) == 0) {
@@ -4309,7 +4309,8 @@ std::optional<std::pair<
 
     auto maybe_pt = SaplingNotePlaintext::decrypt(
         params,
-        height,
+        // Canopy activation is inside the ZIP 212 grace period.
+        params.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
         output.encCiphertext,
         nd.ivk,
         output.ephemeralKey,
@@ -4326,40 +4327,7 @@ std::optional<std::pair<
 
 std::optional<std::pair<
     SaplingNotePlaintext,
-    SaplingPaymentAddress>> CWalletTx::DecryptSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op) const
-{
-    // Check whether we can decrypt this SaplingOutPoint
-    if (this->mapSaplingNoteData.count(op) == 0) {
-        return std::nullopt;
-    }
-
-    auto output = this->vShieldedOutput[op.n];
-    auto nd = this->mapSaplingNoteData.at(op);
-
-    auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(output.encCiphertext, nd.ivk, output.ephemeralKey);
-
-    // The transaction would not have entered the wallet unless
-    // its plaintext had been successfully decrypted previously.
-    assert(optDeserialized != std::nullopt);
-
-    auto maybe_pt = SaplingNotePlaintext::plaintext_checks_without_height(
-        *optDeserialized,
-        nd.ivk,
-        output.ephemeralKey,
-        output.cmu);
-    assert(maybe_pt != std::nullopt);
-    auto notePt = maybe_pt.value();
-
-    auto maybe_pa = nd.ivk.address(notePt.d);
-    assert(static_cast<bool>(maybe_pa));
-    auto pa = maybe_pa.value();
-
-    return std::make_pair(notePt, pa);
-}
-
-std::optional<std::pair<
-    SaplingNotePlaintext,
-    SaplingPaymentAddress>> CWalletTx::RecoverSaplingNote(const Consensus::Params& params, int height, SaplingOutPoint op, std::set<uint256>& ovks) const
+    SaplingPaymentAddress>> CWalletTx::RecoverSaplingNote(const Consensus::Params& params, SaplingOutPoint op, std::set<uint256>& ovks) const
 {
     auto output = this->vShieldedOutput[op.n];
 
@@ -4377,49 +4345,9 @@ std::optional<std::pair<
 
         auto maybe_pt = SaplingNotePlaintext::decrypt(
             params,
-            height,
+            // Canopy activation is inside the ZIP 212 grace period.
+            params.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
             output.encCiphertext,
-            output.ephemeralKey,
-            outPt->esk,
-            outPt->pk_d,
-            output.cmu);
-        assert(static_cast<bool>(maybe_pt));
-        auto notePt = maybe_pt.value();
-
-        return std::make_pair(notePt, SaplingPaymentAddress(notePt.d, outPt->pk_d));
-    }
-
-    // Couldn't recover with any of the provided OutgoingViewingKeys
-    return std::nullopt;
-}
-
-std::optional<std::pair<
-    SaplingNotePlaintext,
-    SaplingPaymentAddress>> CWalletTx::RecoverSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op, std::set<uint256>& ovks) const
-{
-    auto output = this->vShieldedOutput[op.n];
-
-    for (auto ovk : ovks) {
-        auto outPt = SaplingOutgoingPlaintext::decrypt(
-            output.outCiphertext,
-            ovk,
-            output.cv,
-            output.cmu,
-            output.ephemeralKey);
-        if (!outPt) {
-            // Try decrypting with the next ovk
-            continue;
-        }
-
-        auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(
-            output.encCiphertext, output.ephemeralKey, outPt->esk, outPt->pk_d);
-
-        // The transaction would not have entered the wallet unless
-        // its plaintext had been successfully decrypted previously.
-        assert(optDeserialized != std::nullopt);
-
-        auto maybe_pt = SaplingNotePlaintext::plaintext_checks_without_height(
-            *optDeserialized,
             output.ephemeralKey,
             outPt->esk,
             outPt->pk_d,
