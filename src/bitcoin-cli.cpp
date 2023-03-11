@@ -9,6 +9,7 @@
 #include "fs.h"
 #include "rpc/client.h"
 #include "rpc/protocol.h"
+#include "util/match.h"
 #include "util/system.h"
 #include "util/strencodings.h"
 
@@ -197,7 +198,7 @@ static void http_error_cb(enum evhttp_request_error err, void *ctx)
 }
 #endif
 
-UniValue CallRPC(const std::string& strMethod, const UniValue& params)
+UniValue CallRPCParsed(const std::string& strMethod, const UniValue& params)
 {
     std::string host = GetArg("-rpcconnect", DEFAULT_RPCCONNECT);
     int port = GetArg("-rpcport", BaseParams().RPCPort());
@@ -307,6 +308,37 @@ bool SetStdinEcho(bool enable = true)
     return true;
 }
 
+tl::expected<UniValue, UniValue>
+CallRPC(const std::string &method, const std::vector<std::string> &strArgs)
+{
+    auto args =
+        RPCConvertValues(method, strArgs)
+        .map_error([&](auto failure) {
+            throw std::runtime_error(
+                    FormatConversionFailure(method, failure)
+                    + std::visit(match {
+                            [](const UnknownRPCMethod&) { return std::string{}; },
+                            [&](const auto&) {
+                                return "\n\n"
+                                    + (CallRPC("help", std::vector<std::string>{method})
+                                       .map_error([&](const auto& error) {
+                                           throw std::runtime_error(error.get_str());
+                                       })
+                                       .value().get_str());
+                            }
+                    }, failure));
+        })
+        .value();
+
+    const UniValue reply = CallRPCParsed(method, args);
+
+    const UniValue error = find_value(reply, "error");
+
+    return error.isNull()
+        ? tl::expected<UniValue, UniValue>(find_value(reply, "result"))
+        : tl::make_unexpected(error);
+}
+
 int CommandLineRPC(int argc, char *argv[])
 {
     std::string strPrint;
@@ -340,26 +372,15 @@ int CommandLineRPC(int argc, char *argv[])
         if (args.size() < 1)
             throw std::runtime_error("too few parameters (need at least command)");
         std::string strMethod = args[0];
-        auto params =
-            RPCConvertValues(strMethod, std::vector<std::string>(args.begin()+1, args.end()));
-
-        if (!params.has_value()) {
-            params.map_error([&](auto failure) {
-                throw std::runtime_error(FormatConversionFailure(strMethod, failure));
-            });
-        }
 
         // Execute and handle connection failures with -rpcwait
         const bool fWait = GetBoolArg("-rpcwait", false);
         do {
             try {
-                const UniValue reply = CallRPC(strMethod, params.value());
+                auto reply = CallRPC(strMethod, std::vector<std::string>(args.begin()+1, args.end()));
 
-                // Parse reply
-                const UniValue& result = find_value(reply, "result");
-                const UniValue& error  = find_value(reply, "error");
-
-                if (!error.isNull()) {
+                if (!reply.has_value()) {
+                    auto error = reply.error();
                     // Error
                     int code = error["code"].get_int();
                     if (fWait && code == RPC_IN_WARMUP)
@@ -376,6 +397,7 @@ int CommandLineRPC(int argc, char *argv[])
                             strPrint += "error message:\n"+errMsg.get_str();
                     }
                 } else {
+                    auto result = reply.value();
                     // Result
                     if (result.isNull())
                         strPrint = "";
