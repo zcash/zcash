@@ -1,0 +1,34 @@
+name: Checks
+
+on: pull_request_target
+
+permissions:
+  contents: read,write
+
+jobs:
+  recent-base:
+    name: Branch base is sufficiently recent
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Ensure branch contains necessary commits for Tekton CI
+        id: tekton
+        # https://github.com/zcash/zcash/pull/6358
+        run: git merge-base --is-ancestor 267ddf8efe36cc799c4c31772a8883ea332ef55b HEAD
+
+      - name: Tell PR author if they need to rebase
+        if: steps.tekton.outcome == 'failure'
+        run: echo "::error::Branch needs to be rebased so that Tekton CI can run"
+
+      - name: Avoid running Tekton CI if it would provably fail
+        if: steps.tekton.outcome == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: "safe-to-build",
+            })
