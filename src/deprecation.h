@@ -52,6 +52,7 @@ static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
 // Flags that enable deprecated functionality.
 extern bool fEnableGbtOldHashes;
 extern bool fEnableDeprecationInfoDeprecationHeight;
+extern bool fEnableAddrTypeField;
 #ifdef ENABLE_WALLET
 extern bool fEnableGetNewAddress;
 extern bool fEnableGetRawChangeAddress;
@@ -60,7 +61,6 @@ extern bool fEnableZGetBalance;
 extern bool fEnableZGetTotalBalance;
 extern bool fEnableZListAddresses;
 extern bool fEnableLegacyPrivacyStrategy;
-extern bool fEnableAddrTypeField;
 extern bool fEnableWalletTxVJoinSplit;
 #endif
 
