@@ -10,6 +10,11 @@ use std::sync::{
 use crossbeam_channel as channel;
 use group::GroupEncoding;
 use memuse::DynamicUsage;
+use nonempty::NonEmpty;
+use orchard::{
+    note_encryption::OrchardDomain,
+    primitives::redpallas::{self, SpendAuth},
+};
 use zcash_note_encryption::{batch, BatchDomain, Domain, ShieldedOutput, ENC_CIPHERTEXT_SIZE};
 use zcash_primitives::{
     block::BlockHash,
@@ -36,10 +41,19 @@ mod ffi {
     }
 
     #[namespace = "wallet"]
+    struct OrchardDecryptionResult {
+        txid: [u8; 32],
+        output: u32,
+        ivk: [u8; 64],
+        recipient: [u8; 43],
+    }
+
+    #[namespace = "wallet"]
     extern "Rust" {
         type Network;
         type BatchScanner;
         type BatchResult;
+        type OrchardPreparedIncomingViewingKeys;
 
         fn network(
             network: &str,
@@ -51,9 +65,10 @@ mod ffi {
             nu5: i32,
         ) -> Result<Box<Network>>;
 
-        fn init_batch_scanner(
+        unsafe fn init_batch_scanner(
             network: &Network,
             sapling_ivks: &[[u8; 32]],
+            orchard_ivks: *mut OrchardPreparedIncomingViewingKeys,
         ) -> Result<Box<BatchScanner>>;
         fn add_transaction(
             self: &mut BatchScanner,
@@ -69,6 +84,7 @@ mod ffi {
         ) -> Box<BatchResult>;
 
         fn get_sapling(self: &BatchResult) -> Vec<SaplingDecryptionResult>;
+        fn get_orchard(self: &BatchResult) -> Vec<OrchardDecryptionResult>;
     }
 }
 
@@ -230,6 +246,10 @@ trait OutputDomain: BatchDomain {
 
 impl<P: consensus::Parameters> OutputDomain for SaplingDomain<P> {
     const KIND: &'static str = "sapling";
+}
+
+impl OutputDomain for OrchardDomain {
+    const KIND: &'static str = "orchard";
 }
 
 /// A decrypted note.
@@ -520,7 +540,50 @@ where
     }
 }
 
-impl<A, D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE> + Clone>
+/// Helper trait to abstract over how Sapling and Orchard outputs are represented.
+trait OutputSource<'o, Output: 'o> {
+    type Iterator: Iterator<Item = &'o Output>;
+
+    /// Returns the number of outputs in this source.
+    ///
+    /// This enables sources to be used that know their length but don't provide iterators
+    /// that implement `ExactSizeIterator`.
+    fn count(&self) -> usize;
+
+    /// Returns an iterator over references to the outputs.
+    fn get(&'o self) -> Self::Iterator;
+}
+
+impl<'o> OutputSource<'o, OutputDescription<GrothProofBytes>>
+    for Vec<OutputDescription<GrothProofBytes>>
+{
+    type Iterator = std::slice::Iter<'o, OutputDescription<GrothProofBytes>>;
+
+    fn count(&self) -> usize {
+        self.len()
+    }
+
+    fn get(&'o self) -> Self::Iterator {
+        self.iter()
+    }
+}
+
+impl<'o> OutputSource<'o, orchard::Action<redpallas::Signature<SpendAuth>>>
+    for NonEmpty<orchard::Action<redpallas::Signature<SpendAuth>>>
+{
+    type Iterator =
+        Box<dyn Iterator<Item = &'o orchard::Action<redpallas::Signature<SpendAuth>>> + 'o>;
+
+    fn count(&self) -> usize {
+        self.len()
+    }
+
+    fn get(&'o self) -> Self::Iterator {
+        Box::new(self.iter())
+    }
+}
+
+impl<'o, A, D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE> + Clone + 'o>
     Batch<A, D, Output>
 {
     /// Adds the given outputs to this batch.
@@ -528,18 +591,23 @@ impl<A, D: BatchDomain, Output: ShieldedOutput<D, ENC_CIPHERTEXT_SIZE> + Clone>
     /// `replier` will be called with the result of every output.
     fn add_outputs(
         &mut self,
-        domain: impl Fn() -> D,
-        outputs: &[Output],
+        domain: impl Fn(&Output) -> D,
+        outputs: &'o impl OutputSource<'o, Output>,
         replier: channel::Sender<OutputItem<A, D>>,
     ) {
-        self.outputs
-            .extend(outputs.iter().cloned().map(|output| (domain(), output)));
-        self.repliers.extend((0..outputs.len()).map(|output_index| {
-            OutputReplier(OutputIndex {
-                output_index,
-                value: replier.clone(),
-            })
-        }));
+        self.outputs.extend(
+            outputs
+                .get()
+                .cloned()
+                .map(|output| (domain(&output), output)),
+        );
+        self.repliers
+            .extend((0..outputs.count()).map(|output_index| {
+                OutputReplier(OutputIndex {
+                    output_index,
+                    value: replier.clone(),
+                })
+            }));
     }
 }
 
@@ -677,12 +745,12 @@ where
     /// If after adding the given outputs, the accumulated batch size is at least
     /// `BATCH_SIZE_THRESHOLD`, `Self::flush` is called. Subsequent calls to
     /// `Self::add_outputs` will be accumulated into a new batch.
-    fn add_outputs(
+    fn add_outputs<'o>(
         &mut self,
         block_tag: BlockHash,
         txid: TxId,
-        domain: impl Fn() -> D,
-        outputs: &[Output],
+        domain: impl Fn(&Output) -> D,
+        outputs: &'o impl OutputSource<'o, Output>,
     ) {
         let (tx, rx) = channel::unbounded();
         self.acc.add_outputs(domain, outputs, tx);
@@ -742,25 +810,64 @@ where
 type SaplingRunner =
     BatchRunner<[u8; 32], SaplingDomain<Network>, OutputDescription<GrothProofBytes>, WithUsage>;
 
+type OrchardRunner = BatchRunner<
+    [u8; 64],
+    OrchardDomain,
+    orchard::Action<redpallas::Signature<SpendAuth>>,
+    WithUsage,
+>;
+
 /// A batch scanner for the `zcashd` wallet.
 struct BatchScanner {
     params: Network,
     sapling_runner: Option<SaplingRunner>,
+    orchard_runner: Option<OrchardRunner>,
 }
 
 impl DynamicUsage for BatchScanner {
     fn dynamic_usage(&self) -> usize {
-        self.sapling_runner.dynamic_usage()
+        self.params.dynamic_usage()
+            + self.sapling_runner.dynamic_usage()
+            + self.orchard_runner.dynamic_usage()
     }
 
     fn dynamic_usage_bounds(&self) -> (usize, Option<usize>) {
-        self.sapling_runner.dynamic_usage_bounds()
+        let (params_lower, params_upper) = self.params.dynamic_usage_bounds();
+        let (sapling_lower, sapling_upper) = self.sapling_runner.dynamic_usage_bounds();
+        let (orchard_lower, orchard_upper) = self.orchard_runner.dynamic_usage_bounds();
+
+        (
+            params_lower + sapling_lower + orchard_lower,
+            params_upper
+                .zip(sapling_upper)
+                .zip(orchard_upper)
+                .map(|((a, b), c)| a + b + c),
+        )
+    }
+}
+
+pub struct OrchardPreparedIncomingViewingKeys(
+    Vec<([u8; 64], orchard::keys::PreparedIncomingViewingKey)>,
+);
+
+impl OrchardPreparedIncomingViewingKeys {
+    pub(crate) fn new<'a>(
+        ivks: impl Iterator<Item = &'a orchard::keys::IncomingViewingKey>,
+    ) -> Self {
+        Self(
+            ivks.map(|ivk| {
+                let prepared_ivk = orchard::keys::PreparedIncomingViewingKey::new(ivk);
+                (ivk.to_bytes(), prepared_ivk)
+            })
+            .collect(),
+        )
     }
 }
 
 fn init_batch_scanner(
     network: &Network,
     sapling_ivks: &[[u8; 32]],
+    orchard_ivks: *mut OrchardPreparedIncomingViewingKeys,
 ) -> Result<Box<BatchScanner>, &'static str> {
     let sapling_runner = if sapling_ivks.is_empty() {
         None
@@ -778,9 +885,17 @@ fn init_batch_scanner(
         Some(BatchRunner::new(ivks.into_iter()))
     };
 
+    let orchard_runner = if orchard_ivks.is_null() {
+        None
+    } else {
+        let ivks = unsafe { Box::from_raw(orchard_ivks) };
+        Some(BatchRunner::new(ivks.0.into_iter()))
+    };
+
     Ok(Box::new(BatchScanner {
         params: *network,
         sapling_runner,
+        orchard_runner,
     }))
 }
 
@@ -814,8 +929,19 @@ impl BatchScanner {
             runner.add_outputs(
                 block_tag,
                 txid,
-                || SaplingDomain::for_height(params, height),
+                |_| SaplingDomain::for_height(params, height),
                 &bundle.shielded_outputs,
+            );
+        }
+
+        // If we have any Orchard IVKs, and the transaction has any Orchard actions, queue
+        // the actions for trial decryption.
+        if let Some((runner, bundle)) = self.orchard_runner.as_mut().zip(tx.orchard_bundle()) {
+            runner.add_outputs(
+                block_tag,
+                txid,
+                |act| OrchardDomain::for_action(act),
+                bundle.actions(),
             );
         }
 
@@ -830,6 +956,9 @@ impl BatchScanner {
     /// Subsequent calls to `Self::add_transaction` will be accumulated into new batches.
     fn flush(&mut self) {
         if let Some(runner) = &mut self.sapling_runner {
+            runner.flush();
+        }
+        if let Some(runner) = &mut self.orchard_runner {
             runner.flush();
         }
     }
@@ -851,15 +980,22 @@ impl BatchScanner {
             .map(|runner| runner.collect_results(block_tag, txid))
             .unwrap_or_default();
 
+        let orchard = self
+            .orchard_runner
+            .as_mut()
+            .map(|runner| runner.collect_results(block_tag, txid))
+            .unwrap_or_default();
+
         // Update the size of the batch scanner.
         metrics::decrement_gauge!(METRIC_SIZE_TXS, 1.0);
 
-        Box::new(BatchResult { sapling })
+        Box::new(BatchResult { sapling, orchard })
     }
 }
 
 struct BatchResult {
     sapling: HashMap<(TxId, usize), DecryptedNote<[u8; 32], SaplingDomain<Network>>>,
+    orchard: HashMap<(TxId, usize), DecryptedNote<[u8; 64], OrchardDomain>>,
 }
 
 impl BatchResult {
@@ -873,6 +1009,20 @@ impl BatchResult {
                     ivk: decrypted_note.ivk_tag,
                     diversifier: decrypted_note.recipient.diversifier().0,
                     pk_d: decrypted_note.recipient.pk_d().to_bytes(),
+                },
+            )
+            .collect()
+    }
+
+    fn get_orchard(&self) -> Vec<ffi::OrchardDecryptionResult> {
+        self.orchard
+            .iter()
+            .map(
+                |((txid, output), decrypted_note)| ffi::OrchardDecryptionResult {
+                    txid: *txid.as_ref(),
+                    output: *output as u32,
+                    ivk: decrypted_note.ivk_tag,
+                    recipient: decrypted_note.recipient.to_raw_address_bytes(),
                 },
             )
             .collect()
