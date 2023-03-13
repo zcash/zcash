@@ -34,6 +34,12 @@ zcash (5.4.0~rc1) stable; urgency=medium
 
  -- Electric Coin Company <team@electriccoin.co>  Thu, 19 Jan 2023 22:57:59 +0000
 
+zcash (5.3.3) stable; urgency=high
+
+  * 5.3.3 release.
+
+ -- Electric Coin Company <team@electriccoin.co>  Mon, 20 Feb 2023 19:47:26 -0700
+
 zcash (5.3.2) stable; urgency=medium
 
   * 5.3.2 release.

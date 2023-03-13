@@ -158,6 +158,8 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
             }
             obj.pushKV("inflight", heights);
         }
+        obj.pushKV("addr_processed", stats.m_addr_processed);
+        obj.pushKV("addr_rate_limited", stats.m_addr_rate_limited);
         obj.pushKV("whitelisted", stats.fWhitelisted);
 
         ret.push_back(obj);
