@@ -14,6 +14,7 @@
 // Flags that enable deprecated functionality.
 bool fEnableGbtOldHashes = true;
 bool fEnableDeprecationInfoDeprecationHeight = true;
+bool fEnableAddrTypeField = true;
 #ifdef ENABLE_WALLET
 bool fEnableGetNewAddress = true;
 bool fEnableGetRawChangeAddress = true;
@@ -22,7 +23,6 @@ bool fEnableZGetBalance = true;
 bool fEnableZGetTotalBalance = true;
 bool fEnableZListAddresses = true;
 bool fEnableLegacyPrivacyStrategy = true;
-bool fEnableAddrTypeField = true;
 bool fEnableWalletTxVJoinSplit = true;
 #endif
 
@@ -101,6 +101,7 @@ std::optional<std::string> LoadAllowedDeprecatedFeatures() {
 
     fEnableGbtOldHashes = allowdeprecated.count("gbt_oldhashes") > 0;
     fEnableDeprecationInfoDeprecationHeight = allowdeprecated.count("deprecationinfo_deprecationheight") > 0;
+    fEnableAddrTypeField = allowdeprecated.count("addrtype") > 0;
 #ifdef ENABLE_WALLET
     fEnableLegacyPrivacyStrategy = allowdeprecated.count("legacy_privacy") > 0;
     fEnableGetNewAddress = allowdeprecated.count("getnewaddress") > 0;
@@ -109,7 +110,6 @@ std::optional<std::string> LoadAllowedDeprecatedFeatures() {
     fEnableZGetBalance = allowdeprecated.count("z_getbalance") > 0;
     fEnableZGetTotalBalance = allowdeprecated.count("z_gettotalbalance") > 0;
     fEnableZListAddresses = allowdeprecated.count("z_listaddresses") > 0;
-    fEnableAddrTypeField = allowdeprecated.count("addrtype") > 0;
     fEnableWalletTxVJoinSplit = allowdeprecated.count("wallettxvjoinsplit") > 0;
 #endif
 
