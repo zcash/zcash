@@ -15,8 +15,6 @@ SUBDIRS += doc/man
 endif
 .PHONY: deploy FORCE rpc-tests
 
-GZIP_ENV="-9n"
-
 if BUILD_BITCOIN_LIBS
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libzcash_script.pc

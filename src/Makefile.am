@@ -678,7 +678,6 @@ libzcash_a_SOURCES = \
 
 libzcash_a_CPPFLAGS = $(AM_CPPFLAGS) $(PIC_FLAGS) $(BITCOIN_INCLUDES)
 libzcash_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libzcash_a_LDFLAGS = $(AM_LDFLAGS)
 
 # zcash_script library #
 if BUILD_BITCOIN_LIBS
@@ -739,10 +738,6 @@ clean-local:
 .rc.o:
 	@test -f $(WINDRES)
 	$(AM_V_GEN) $(WINDRES) -DWINDRES_PREPROC -i $< -o $@
-
-.mm.o:
-	$(AM_V_CXX) $(OBJCXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	  $(CPPFLAGS) $(AM_CXXFLAGS) $(AM_CXXFLAGS) $(PIE_FLAGS) $(CXXFLAGS) -c -o $@ $<
 
 check-symbols: $(bin_PROGRAMS) $(bin_SCRIPTS)
 if GLIBC_BACK_COMPAT
