@@ -51,6 +51,7 @@ zcash_gtest_SOURCES = \
 	gtest/test_txid.cpp \
 	gtest/test_upgrades.cpp \
 	gtest/test_validation.cpp \
+	gtest/test_weightedmap.cpp \
 	gtest/test_zip32.cpp \
 	gtest/test_coins.cpp
 if ENABLE_WALLET

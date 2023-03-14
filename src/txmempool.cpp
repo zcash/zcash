@@ -337,7 +337,7 @@ CTxMemPool::~CTxMemPool()
 {
     delete minerPolicyEstimator;
     delete recentlyEvicted;
-    delete weightedTxTree;
+    delete limitSet;
 }
 
 void CTxMemPool::pruneSpent(const uint256 &hashTx, CCoins &coins)
@@ -371,7 +371,8 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     // Used by main.cpp AcceptToMemoryPool(), which DOES do
     // all the appropriate checks.
     LOCK(cs);
-    weightedTxTree->add(WeightedTxInfo::from(entry.GetTx(), entry.GetFee()));
+    auto [cost, evictionWeight] = MempoolCostAndEvictionWeight(entry.GetTx(), entry.GetFee());
+    limitSet->add(entry.GetTx().GetHash(), cost, evictionWeight);
     indexed_transaction_set::iterator newit = mapTx.insert(entry).first;
     mapLinks.insert(make_pair(newit, TxLinks()));
 
@@ -637,7 +638,7 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
         }
         RemoveStaged(setAllRemoves);
         for (CTransaction tx : removed) {
-            weightedTxTree->remove(tx.GetHash());
+            limitSet->remove(tx.GetHash());
         }
     }
 }
@@ -1265,7 +1266,7 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
              memusage::DynamicUsage(mapOrchardNullifiers);
 
     // DoS mitigation
-    total += memusage::DynamicUsage(recentlyEvicted) + memusage::DynamicUsage(weightedTxTree);
+    total += memusage::DynamicUsage(recentlyEvicted) + memusage::DynamicUsage(limitSet);
 
     // Insight-related structures
     size_t insight = 0;
@@ -1282,9 +1283,9 @@ void CTxMemPool::SetMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMem
     LOCK(cs);
     LogPrint("mempool", "Setting mempool cost limit: (limit=%d, time=%d)\n", totalCostLimit, evictionMemorySeconds);
     delete recentlyEvicted;
-    delete weightedTxTree;
+    delete limitSet;
     recentlyEvicted = new RecentlyEvictedList(GetNodeClock(), evictionMemorySeconds);
-    weightedTxTree = new WeightedTxTree(totalCostLimit);
+    limitSet = new MempoolLimitTxSet(totalCostLimit);
 }
 
 bool CTxMemPool::IsRecentlyEvicted(const uint256& txId) {
@@ -1295,7 +1296,7 @@ bool CTxMemPool::IsRecentlyEvicted(const uint256& txId) {
 void CTxMemPool::EnsureSizeLimit() {
     AssertLockHeld(cs);
     std::optional<uint256> maybeDropTxId;
-    while ((maybeDropTxId = weightedTxTree->maybeDropRandom()).has_value()) {
+    while ((maybeDropTxId = limitSet->maybeDropRandom()).has_value()) {
         uint256 txId = maybeDropTxId.value();
         recentlyEvicted->add(txId);
         std::list<CTransaction> removed;
