@@ -686,7 +686,7 @@ public:
      */
     std::optional<std::pair<
         libzcash::SaplingNotePlaintext,
-        libzcash::SaplingPaymentAddress>> RecoverSaplingNote(const Consensus::Params& params,
+        libzcash::SaplingPaymentAddress>> RecoverSaplingNote(const CChainParams& params,
             SaplingOutPoint op, std::set<uint256>& ovks) const;
     OrchardActions RecoverOrchardActions(const std::vector<uint256>& ovks) const;
 

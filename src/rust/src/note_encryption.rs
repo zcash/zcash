@@ -1,7 +1,10 @@
 use group::GroupEncoding;
-use zcash_note_encryption::{Domain, EphemeralKeyBytes, ShieldedOutput, ENC_CIPHERTEXT_SIZE};
+use zcash_note_encryption::{
+    try_output_recovery_with_ovk, Domain, EphemeralKeyBytes, ShieldedOutput, ENC_CIPHERTEXT_SIZE,
+};
 use zcash_primitives::{
     consensus::BlockHeight,
+    keys::OutgoingViewingKey,
     memo::MemoBytes,
     sapling::{
         self,
@@ -34,6 +37,42 @@ pub(crate) fn try_sapling_note_decryption(
         BlockHeight::from_u32(height),
         &ivk,
         &output,
+    )
+    .ok_or("Decryption failed")?;
+
+    Ok(Box::new(DecryptedSaplingOutput {
+        note,
+        recipient,
+        memo,
+    }))
+}
+
+/// Recovery of the full note plaintext by the sender.
+///
+/// Attempts to decrypt and validate the given shielded output using the given `ovk`.
+/// If successful, the corresponding note and memo are returned, along with the address to
+/// which the note was sent.
+///
+/// Implements [Zcash Protocol Specification section 4.19.3][decryptovk].
+///
+/// [decryptovk]: https://zips.z.cash/protocol/protocol.pdf#decryptovk
+pub(crate) fn try_sapling_output_recovery(
+    network: &Network,
+    height: u32,
+    ovk: [u8; 32],
+    output: SaplingShieldedOutput,
+) -> Result<Box<DecryptedSaplingOutput>, &'static str> {
+    let domain = SaplingDomain::for_height(*network, BlockHeight::from_u32(height));
+
+    let cv = Option::from(jubjub::ExtendedPoint::from_bytes(&output.cv))
+        .ok_or("Invalid output.cv passed to wallet::try_sapling_note_decryption()")?;
+
+    let (note, recipient, memo) = try_output_recovery_with_ovk(
+        &domain,
+        &OutgoingViewingKey(ovk),
+        &output,
+        &cv,
+        &output.out_ciphertext,
     )
     .ok_or("Decryption failed")?;
 

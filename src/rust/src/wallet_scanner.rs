@@ -23,7 +23,8 @@ use zcash_primitives::{
 
 use crate::{
     note_encryption::{
-        parse_and_prepare_sapling_ivk, try_sapling_note_decryption, DecryptedSaplingOutput,
+        parse_and_prepare_sapling_ivk, try_sapling_note_decryption, try_sapling_output_recovery,
+        DecryptedSaplingOutput,
     },
     params::{network, Network},
 };
@@ -32,9 +33,11 @@ use crate::{
 pub(crate) mod ffi {
     #[namespace = "wallet"]
     pub(crate) struct SaplingShieldedOutput {
+        cv: [u8; 32],
         cmu: [u8; 32],
         ephemeral_key: [u8; 32],
         enc_ciphertext: [u8; 580],
+        out_ciphertext: [u8; 80],
     }
 
     #[namespace = "wallet"]
@@ -67,6 +70,12 @@ pub(crate) mod ffi {
             network: &Network,
             height: u32,
             raw_ivk: &[u8; 32],
+            output: SaplingShieldedOutput,
+        ) -> Result<Box<DecryptedSaplingOutput>>;
+        fn try_sapling_output_recovery(
+            network: &Network,
+            height: u32,
+            ovk: [u8; 32],
             output: SaplingShieldedOutput,
         ) -> Result<Box<DecryptedSaplingOutput>>;
 

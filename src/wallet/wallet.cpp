@@ -3787,9 +3787,11 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
                     height,
                     ivk.GetRawBytes(),
                     {
+                        output.cv.GetRawBytes(),
                         output.cmu.GetRawBytes(),
                         output.ephemeralKey.GetRawBytes(),
                         output.encCiphertext,
+                        output.outCiphertext,
                     });
 
                 SaplingPaymentAddress address(
@@ -4319,9 +4321,11 @@ std::optional<std::pair<
             params.GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
             nd.ivk.GetRawBytes(),
             {
+                output.cv.GetRawBytes(),
                 output.cmu.GetRawBytes(),
                 output.ephemeralKey.GetRawBytes(),
                 output.encCiphertext,
+                output.outCiphertext,
             });
 
         return SaplingNotePlaintext::from_rust(std::move(decrypted));
@@ -4332,35 +4336,29 @@ std::optional<std::pair<
 
 std::optional<std::pair<
     SaplingNotePlaintext,
-    SaplingPaymentAddress>> CWalletTx::RecoverSaplingNote(const Consensus::Params& params, SaplingOutPoint op, std::set<uint256>& ovks) const
+    SaplingPaymentAddress>> CWalletTx::RecoverSaplingNote(const CChainParams& params, SaplingOutPoint op, std::set<uint256>& ovks) const
 {
     auto output = this->vShieldedOutput[op.n];
 
     for (auto ovk : ovks) {
-        auto outPt = SaplingOutgoingPlaintext::decrypt(
-            output.outCiphertext,
-            ovk,
-            output.cv,
-            output.cmu,
-            output.ephemeralKey);
-        if (!outPt) {
+        try {
+            auto decrypted = wallet::try_sapling_output_recovery(
+                *params.RustNetwork(),
+                // Canopy activation is inside the ZIP 212 grace period.
+                params.GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
+                ovk.GetRawBytes(),
+                {
+                    output.cv.GetRawBytes(),
+                    output.cmu.GetRawBytes(),
+                    output.ephemeralKey.GetRawBytes(),
+                    output.encCiphertext,
+                    output.outCiphertext,
+                });
+
+            return SaplingNotePlaintext::from_rust(std::move(decrypted));
+        } catch (const rust::Error &e) {
             // Try decrypting with the next ovk
-            continue;
         }
-
-        auto maybe_pt = SaplingNotePlaintext::decrypt(
-            params,
-            // Canopy activation is inside the ZIP 212 grace period.
-            params.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
-            output.encCiphertext,
-            output.ephemeralKey,
-            outPt->esk,
-            outPt->pk_d,
-            output.cmu);
-        assert(static_cast<bool>(maybe_pt));
-        auto notePt = maybe_pt.value();
-
-        return std::make_pair(notePt, SaplingPaymentAddress(notePt.d, outPt->pk_d));
     }
 
     // Couldn't recover with any of the provided OutgoingViewingKeys

@@ -4253,7 +4253,6 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         }
     };
 
-    auto& consensusParams = Params().GetConsensus();
     KeyIO keyIO(Params());
     // Sprout spends
     for (size_t i = 0; i < wtx.vJoinSplit.size(); ++i) {
@@ -4422,7 +4421,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             isOutgoing = false;
         } else {
             // Try recovering the output
-            auto recovered = wtx.RecoverSaplingNote(consensusParams, op, ovks);
+            auto recovered = wtx.RecoverSaplingNote(Params(), op, ovks);
             if (recovered) {
                 notePt = recovered->first;
                 pa = recovered->second;
