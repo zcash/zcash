@@ -3,7 +3,8 @@ name: Checks
 on: pull_request_target
 
 permissions:
-  contents: read,write
+  contents: read
+  issues: write
 
 jobs:
   recent-base:
