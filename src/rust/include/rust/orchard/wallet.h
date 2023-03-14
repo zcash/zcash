@@ -1,11 +1,10 @@
-// Copyright (c) 2021-2022 The Zcash developers
+// Copyright (c) 2021-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #ifndef ZCASH_RUST_INCLUDE_RUST_ORCHARD_WALLET_H
 #define ZCASH_RUST_INCLUDE_RUST_ORCHARD_WALLET_H
 
-#include "rust/orchard/incremental_merkle_tree.h"
 #include "rust/orchard/keys.h"
 #include "rust/builder.h"
 
@@ -18,6 +17,10 @@ extern "C" {
  */
 struct OrchardWalletPtr;
 typedef struct OrchardWalletPtr OrchardWalletPtr;
+
+/// Pointer to an Orchard incremental merkle tree frontier
+struct OrchardMerkleFrontierPtr;
+typedef struct OrchardMerkleFrontierPtr OrchardMerkleFrontierPtr;
 
 /**
  * Constructs a new empty Orchard wallet and return a pointer to it.
@@ -39,7 +42,7 @@ void orchard_wallet_free(OrchardWalletPtr* wallet);
  * in place with the expectation that they will be overwritten and/or updated in
  * the rescan process.
  */
-bool orchard_wallet_reset(OrchardWalletPtr* wallet);
+void orchard_wallet_reset(OrchardWalletPtr* wallet);
 
 /**
  * Checkpoint the note commitment tree. This returns `false` and leaves the note

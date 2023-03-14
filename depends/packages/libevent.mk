@@ -1,6 +1,6 @@
 package=libevent
 $(package)_version=2.1.12
-$(package)_download_path=https://github.com/libevent/libevent/archive/
+$(package)_download_path=https://github.com/libevent/libevent/archive/refs/tags
 $(package)_file_name=$(package)-$($(package)_version).tar.gz
 $(package)_download_file=release-$($(package)_version)-stable.tar.gz
 $(package)_sha256_hash=7180a979aaa7000e1264da484f712d403fcf7679b1e9212c4e3d09f5c93efc24

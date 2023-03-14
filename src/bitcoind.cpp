@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2013 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -94,14 +94,6 @@ bool AppInit(int argc, char* argv[])
         return true;
     }
 
-    // Handle setting of allowed-deprecated features as early as possible
-    // so that it's possible for other initialization steps to respect them.
-    auto deprecationError = SetAllowedDeprecatedFeaturesFromCLIArgs();
-    if (deprecationError.has_value()) {
-        fprintf(stderr, "%s", deprecationError.value().c_str());
-        return false;
-    }
-
     try
     {
         if (!fs::is_directory(GetDataDir(false)))
@@ -140,6 +132,14 @@ bool AppInit(int argc, char* argv[])
             SelectParams(ChainNameFromCommandLine());
         } catch(std::exception &e) {
             fprintf(stderr, "Error: %s\n", e.what());
+            return false;
+        }
+
+        // Handle setting of allowed-deprecated features as early as possible
+        // so that it's possible for other initialization steps to respect them.
+        auto deprecationError = LoadAllowedDeprecatedFeatures();
+        if (deprecationError.has_value()) {
+            fprintf(stderr, "%s", deprecationError.value().c_str());
             return false;
         }
 

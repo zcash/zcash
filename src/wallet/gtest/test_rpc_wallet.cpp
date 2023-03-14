@@ -11,6 +11,7 @@
 #include "wallet/asyncrpcoperation_mergetoaddress.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
+#include "wallet/memo.h"
 #include "zcash/JoinSplit.hpp"
 
 #include <librustzcash.h>
@@ -287,7 +288,7 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight, false);
 
     auto selector = pwalletMain->ZTXOSelectorForAddress(taddr, true, false).value();
-    std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, pa, 1*COIN, "ABCD") };
+    std::vector<ResolvedPayment> recipients = { ResolvedPayment(std::nullopt, pa, 1*COIN, Memo::FromHexOrThrow("ABCD")) };
     TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
     std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 0, 0, strategy));
     std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);

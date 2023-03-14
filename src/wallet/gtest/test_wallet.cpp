@@ -214,18 +214,18 @@ TEST(WalletTests, FindUnspentSproutNotes) {
 
     wtx.SetSproutNoteData(noteData);
     wallet.LoadWalletTx(wtx);
-    EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSproutSpent(nullifier, std::nullopt));
 
     // We currently have an unspent and unconfirmed note in the wallet (depth of -1)
     std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
     std::vector<OrchardNoteMetadata> orchardEntries;
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 0);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, 0);
     EXPECT_EQ(0, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
     orchardEntries.clear();
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, -1);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, -1);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
@@ -244,21 +244,21 @@ TEST(WalletTests, FindUnspentSproutNotes) {
 
     wtx.SetMerkleBranch(block);
     wallet.LoadWalletTx(wtx);
-    EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSproutSpent(nullifier, std::nullopt));
 
 
     // We now have an unspent and confirmed note in the wallet (depth of 1)
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 0);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, 0);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
     orchardEntries.clear();
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 1);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, 1);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
     orchardEntries.clear();
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 2);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, 2);
     EXPECT_EQ(0, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
@@ -268,7 +268,7 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     // Let's spend the note.
     auto wtx2 = GetValidSproutSpend(sk, note, 5);
     wallet.LoadWalletTx(wtx2);
-    EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSproutSpent(nullifier, std::nullopt));
 
     // Fake-mine a spend transaction
     EXPECT_EQ(0, chainActive.Height());
@@ -286,22 +286,22 @@ TEST(WalletTests, FindUnspentSproutNotes) {
 
     wtx2.SetMerkleBranch(block2);
     wallet.LoadWalletTx(wtx2);
-    EXPECT_TRUE(wallet.IsSproutSpent(nullifier));
+    EXPECT_TRUE(wallet.IsSproutSpent(nullifier, std::nullopt));
 
     // The note has been spent.  By default, GetFilteredNotes() ignores spent notes.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 0);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, 0);
     EXPECT_EQ(0, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
     orchardEntries.clear();
     // Let's include spent notes to retrieve it.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 0, INT_MAX, false);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, 0, INT_MAX, false);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
     orchardEntries.clear();
     // The spent note has two confirmations.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 2, INT_MAX, false);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, 2, INT_MAX, false);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
@@ -328,7 +328,7 @@ TEST(WalletTests, FindUnspentSproutNotes) {
 
         wtx.SetSproutNoteData(noteData);
         wallet.LoadWalletTx(wtx);
-        EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
+        EXPECT_FALSE(wallet.IsSproutSpent(nullifier, std::nullopt));
 
         wtx3 = wtx;
     }
@@ -351,25 +351,25 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     wallet.LoadWalletTx(wtx3);
 
     // We now have an unspent note which has one confirmation, in addition to our spent note.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 1);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, 1);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
     orchardEntries.clear();
     // Let's return the spent note too.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 1, INT_MAX, false);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, 1, INT_MAX, false);
     EXPECT_EQ(2, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
     orchardEntries.clear();
     // Increasing number of confirmations will exclude our new unspent note.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 2, INT_MAX, false);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, 2, INT_MAX, false);
     EXPECT_EQ(1, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
     orchardEntries.clear();
     // If we also ignore spent notes at this depth, we won't find any notes.
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, 2, INT_MAX, true);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, 2, INT_MAX, true);
     EXPECT_EQ(0, sproutEntries.size());
     sproutEntries.clear();
     saplingEntries.clear();
@@ -834,8 +834,8 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
 
     // Generate a bundle containing output note A.
     auto builder = TransactionBuilder(consensusParams, 1, orchardAnchor, &keystore);
-    builder.AddTransparentInput(COutPoint(uint256(), 0), scriptPubKey, 50000);
-    builder.AddOrchardOutput(std::nullopt, recipient, 40000, {});
+    builder.AddTransparentInput(COutPoint(uint256(), 0), scriptPubKey, 5000);
+    builder.AddOrchardOutput(std::nullopt, recipient, 4000, {});
     auto maybeTx = builder.Build();
     EXPECT_TRUE(maybeTx.IsTx());
     if (maybeTx.IsError()) {
@@ -877,7 +877,7 @@ TEST(WalletTests, GetConflictedOrchardNotes) {
     std::vector<SproutNoteEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
     std::vector<OrchardNoteMetadata> orchardEntries;
-    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, -1);
+    wallet.GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, std::nullopt, std::nullopt, -1);
     EXPECT_EQ(0, sproutEntries.size());
     EXPECT_EQ(0, saplingEntries.size());
     EXPECT_EQ(1, orchardEntries.size());
@@ -957,14 +957,14 @@ TEST(WalletTests, SproutNullifierIsSpent) {
     auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSproutSpent(nullifier, std::nullopt));
 
     wallet.LoadWalletTx(wtx);
-    EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSproutSpent(nullifier, std::nullopt));
 
     auto wtx2 = GetValidSproutSpend(sk, note, 5);
     wallet.LoadWalletTx(wtx2);
-    EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSproutSpent(nullifier, std::nullopt));
 
     // Fake-mine the transaction
     EXPECT_EQ(-1, chainActive.Height());
@@ -980,7 +980,7 @@ TEST(WalletTests, SproutNullifierIsSpent) {
 
     wtx2.SetMerkleBranch(block);
     wallet.LoadWalletTx(wtx2);
-    EXPECT_TRUE(wallet.IsSproutSpent(nullifier));
+    EXPECT_TRUE(wallet.IsSproutSpent(nullifier, std::nullopt));
 
     // Tear down
     chainActive.SetTip(NULL);
@@ -1018,7 +1018,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     uint256 nullifier = nf.value();
 
     // Verify note has not been spent
-    EXPECT_FALSE(wallet.IsSaplingSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSaplingSpent(nullifier, std::nullopt));
 
     // Fake-mine the transaction
     EXPECT_EQ(-1, chainActive.Height());
@@ -1036,7 +1036,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     wallet.LoadWalletTx(wtx);
 
     // Verify note has been spent
-    EXPECT_TRUE(wallet.IsSaplingSpent(nullifier));
+    EXPECT_TRUE(wallet.IsSaplingSpent(nullifier, std::nullopt));
 
     // Tear down
     chainActive.SetTip(NULL);
@@ -1107,7 +1107,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     MerkleFrontiers frontiers = { .sapling = testNote.tree };
 
     // Verify dummy note is unspent
-    EXPECT_FALSE(wallet.IsSaplingSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSaplingSpent(nullifier, std::nullopt));
 
     // Fake-mine the transaction
     EXPECT_EQ(-1, chainActive.Height());
@@ -1129,7 +1129,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     wallet.LoadWalletTx(wtx);
 
     // Verify dummy note is now spent, as AddToWallet invokes AddToSpends()
-    EXPECT_TRUE(wallet.IsSaplingSpent(nullifier));
+    EXPECT_TRUE(wallet.IsSaplingSpent(nullifier, std::nullopt));
 
     // Test invariant: no witnesses means no nullifier.
     EXPECT_EQ(0, wallet.mapSaplingNullifiersToNotes.size());
@@ -1221,7 +1221,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         auto pk = extfvk.DefaultAddress();
 
         // Generate Sapling note A
-        libzcash::SaplingNote note(pk, 50000, zip_212_enabled[ver]);
+        libzcash::SaplingNote note(pk, 5000, zip_212_enabled[ver]);
         auto cm = note.cmu().value();
         MerkleFrontiers frontiers;
         frontiers.sapling.append(cm);
@@ -1231,7 +1231,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         // Generate transaction, which sends funds to note B
         auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
         builder.AddSaplingSpend(expsk, note, anchor, witness);
-        builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 25000, {});
+        builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 2500, {});
         auto tx = builder.Build().GetTxOrThrow();
 
         CWalletTx wtx {&wallet, tx};
@@ -1302,14 +1302,14 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         // Create transaction to spend note B
         auto builder2 = TransactionBuilder(consensusParams, 2, std::nullopt);
         builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness);
-        builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 12500, {});
+        builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 1250, {});
         auto tx2 = builder2.Build().GetTxOrThrow();
         EXPECT_EQ(tx2.vin.size(), 0);
         EXPECT_EQ(tx2.vout.size(), 0);
         EXPECT_EQ(tx2.vJoinSplit.size(), 0);
         EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
         EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
-        EXPECT_EQ(tx2.GetValueBalanceSapling(), 10000);
+        EXPECT_EQ(tx2.GetValueBalanceSapling(), 1000);
 
         CWalletTx wtx2 {&wallet, tx2};
 
@@ -1334,7 +1334,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         wallet.LoadWalletTx(wtx2);
 
         // Verify note B is spent. LoadWalletTx invokes AddToSpends which updates mapTxSaplingNullifiers
-        EXPECT_TRUE(wallet.IsSaplingSpent(nullifier2));
+        EXPECT_TRUE(wallet.IsSaplingSpent(nullifier2, std::nullopt));
 
         // Verify note B belongs to wallet.
         EXPECT_TRUE(wallet.IsFromMe(wtx2));
@@ -2231,8 +2231,8 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     // Generate shielding tx from transparent to Sapling
     // 0.0005 t-ZEC in, 0.0004 z-ZEC out, default fee
     auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
-    builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
-    builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 40000, {});
+    builder.AddTransparentInput(COutPoint(), scriptPubKey, 5000);
+    builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 4000, {});
     auto tx1 = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx1.vin.size(), 1);
@@ -2240,7 +2240,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     EXPECT_EQ(tx1.vJoinSplit.size(), 0);
     EXPECT_EQ(tx1.vShieldedSpend.size(), 0);
     EXPECT_EQ(tx1.vShieldedOutput.size(), 1);
-    EXPECT_EQ(tx1.GetValueBalanceSapling(), -40000);
+    EXPECT_EQ(tx1.GetValueBalanceSapling(), -4000);
 
     CWalletTx wtx {&wallet, tx1};
 
@@ -2286,7 +2286,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, default fee, 0.00005 z-ZEC change
     auto builder2 = TransactionBuilder(consensusParams, 2, std::nullopt);
     builder2.AddSaplingSpend(expsk, note, anchor, witness);
-    builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 25000, {});
+    builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 2500, {});
     auto tx2 = builder2.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx2.vin.size(), 0);
@@ -2294,7 +2294,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     EXPECT_EQ(tx2.vJoinSplit.size(), 0);
     EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
-    EXPECT_EQ(tx2.GetValueBalanceSapling(), 10000);
+    EXPECT_EQ(tx2.GetValueBalanceSapling(), 1000);
 
     CWalletTx wtx2 {&wallet, tx2};
     auto hash2 = wtx2.GetHash();

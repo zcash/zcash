@@ -29,6 +29,9 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
             "-nuparams=2bb40e60:200",
             "-debug=zrpcunsafe",
             "-txindex",
+            "-allowdeprecated=getnewaddress",
+            "-allowdeprecated=z_getnewaddress",
+            "-allowdeprecated=z_getbalance",
         ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
@@ -47,9 +50,9 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         taddr0 = get_coinbase_address(self.nodes[0])
         taddr1 = self.nodes[1].getnewaddress()
         taddr2 = self.nodes[2].getnewaddress()
-        zaddr2 = self.nodes[2].z_getnewaddress('sprout')
+        zaddr2 = self.nodes[2].z_getnewaddress('sapling')
         taddr3 = self.nodes[3].getnewaddress()
-        zaddr3 = self.nodes[3].z_getnewaddress('sprout')
+        zaddr3 = self.nodes[3].z_getnewaddress('sapling')
 
         #
         # Currently at block 195. The next block to be mined 196 is a Sapling block
@@ -67,7 +70,7 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         # Node 2 sends the zero-confirmation transparent funds to Node 1 using z_sendmany
         recipients = []
         recipients.append({"address":taddr1, "amount": Decimal('0.5')})
-        myopid = self.nodes[2].z_sendmany(taddr2, recipients, 0)
+        myopid = self.nodes[2].z_sendmany(taddr2, recipients, 0, DEFAULT_FEE, 'AllowFullyTransparent')
         txid_zsendmany = wait_and_assert_operationid_status(self.nodes[2], myopid)
 
         # Node 0 shields to Node 2, a coinbase utxo of value 10.0 less default fee
@@ -136,7 +139,7 @@ class WalletOverwinterTxTest (BitcoinTestFramework):
         # Node 3 sends the zero-confirmation transparent funds to Node 1 using z_sendmany
         recipients = []
         recipients.append({"address":taddr1, "amount": Decimal('0.5')})
-        myopid = self.nodes[3].z_sendmany(taddr3, recipients, 0)
+        myopid = self.nodes[3].z_sendmany(taddr3, recipients, 0, DEFAULT_FEE, 'AllowFullyTransparent')
         txid_zsendmany = wait_and_assert_operationid_status(self.nodes[3], myopid)
 
         # Node 0 shields to Node 3, a coinbase utxo of value 10.0 less default fee

@@ -3,8 +3,7 @@
 # This script checks for updates to zcashd's dependencies.
 #
 # The SOURCE_ROOT constant specifies the location of the zcashd codebase to
-# check, and the GITHUB_API_* constants specify a personal access token for the
-# GitHub API, which need not have any special privileges.
+# check.
 #
 # All dependencies must be specified inside the get_dependency_list() function
 # below. A dependency is specified by:
@@ -36,6 +35,7 @@ import requests
 import os
 import re
 import sys
+import xdg
 import datetime
 
 SOURCE_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..")
@@ -79,6 +79,10 @@ def get_dependency_list():
             GithubTagReleaseLister("llvm", "llvm-project", "^llvmorg-(\d+)\.(\d+).(\d+)$",
                 { "llvmorg-11.0.0": (11, 0, 0), "llvmorg-9.0.1-rc3": None}),
             DependsVersionGetter("native_clang")),
+        Dependency("native_cmake",
+            GithubTagReleaseLister("Kitware", "CMake", "^v?(\d+)\.(\d+)(?:\.(\d+))?$",
+                { "v3.21.2": (3, 21, 2), "v3.20.0-rc4": None}),
+            DependsVersionGetter("native_cmake")),
         Dependency("native_cxxbridge",
             GithubTagReleaseLister("dtolnay", "cxx", "^(\d+)\.(\d+)\.(\d+)$",
                 { "1.0.17": (1, 0, 17) }),
@@ -87,6 +91,10 @@ def get_dependency_list():
             GithubTagReleaseLister("rust-lang", "rust", "^(\d+)\.(\d+)(?:\.(\d+))?$",
                 { "1.33.0": (1, 33, 0), "0.9": (0, 9) }),
             DependsVersionGetter("native_rust")),
+        Dependency("native_zstd",
+            GithubTagReleaseLister("facebook", "zstd", "^v?(\d+)\.(\d+)(?:\.(\d+))?$",
+                { "v1.5.0": (1, 5, 0), "zstd-0.4.2": None}),
+            DependsVersionGetter("native_zstd")),
         # rustcxx matches the cxxbridge version
         Dependency("rustcxx",
             GithubTagReleaseLister("dtolnay", "cxx", "^(\d+)\.(\d+)\.(\d+)$",
@@ -97,9 +105,13 @@ def get_dependency_list():
                 { "v4.3.1": (4, 3, 1), "v4.2.0-rc1": None }),
             DependsVersionGetter("zeromq")),
         Dependency("leveldb",
-            GithubTagReleaseLister("google", "leveldb", "^v(\d+)\.(\d+)$",
-                { "v1.13": (1, 13) }),
+            GithubTagReleaseLister("google", "leveldb", "^v?(\d+)\.(\d+)$",
+                { "v1.13": (1, 13), "1.23": (1, 23) }),
             LevelDbVersionGetter()),
+        Dependency("tl_expected",
+            GithubTagReleaseLister("TartanLlama", "expected", "^v(\d+)\.(\d+)(?:\.(\d+))?$",
+                { "v0.3": (0, 3), "v1.0.0": (1, 0, 0) }),
+            DependsVersionGetter("tl_expected")),
         Dependency("univalue",
             GithubTagReleaseLister("bitcoin-core", "univalue", "^v(\d+)\.(\d+)\.(\d+)$",
                 { "v1.0.1": (1, 0, 1) }),
@@ -112,24 +124,22 @@ def get_dependency_list():
 
     return dependencies
 
-class GitHubToken:
-    def __init__(self):
-        token_path = os.path.join(SOURCE_ROOT, ".updatecheck-token")
-        try:
-            with open(token_path, encoding='utf8') as f:
-                token = f.read().strip()
-                self._user = token.split(":")[0]
-                self._password = token.split(":")[1]
-        except:
-            print("Please make sure a GitHub API token is in .updatecheck-token in the root of this repository.")
-            print("The format is username:hex-token.")
-            sys.exit(1)
+def parse_token():
+    token_path = os.path.realpath(os.path.join(SOURCE_ROOT, ".updatecheck-token"))
+    if not os.path.exists(token_path):
+        token_path = os.path.join(xdg.xdg_data_home(), "zcash/updatecheck/token")
+    try:
+        with open(token_path, encoding='utf8') as f:
+            token = f.read().strip()
+            return token.split(":")[-1]
+    except:
+        print("You are missing a GitHub API token. This script will probably still work, but")
+        print("you are more likely to hit an API rate limit. Create a file named")
+        print(token_path)
+        print("containing the token to silence this warning.")
+        return ()
 
-    def user(self):
-        return self.user
-
-    def password(self):
-        return self.password
+token = parse_token()
 
 class Version(list):
     def __init__(self, version_tuple):
@@ -145,6 +155,21 @@ class Version(list):
 
     def __hash__(self):
         return hash(tuple(self))
+
+    def __gt__(self, other):
+        if type(self) != type(other):
+            raise TypeError
+
+        # If one of the versions is a commit hash and the other is not, treat the commit
+        # hash as being newer (as it indicates we are pinning a specific revision).
+        self_is_commit_hash = len(self) == 1 and len(self[0]) == 40
+        other_is_commit_hash = len(other) == 1 and len(other[0]) == 40
+        if other_is_commit_hash:
+            return False
+        if self_is_commit_hash:
+            return True
+
+        return super().__gt__(other)
 
 class Dependency:
     def __init__(self, name, release_lister, current_getter):
@@ -180,7 +205,6 @@ class GithubTagReleaseLister:
         self.repo = repo
         self.regex = regex
         self.testcases = testcases
-        self.token = GitHubToken()
 
         for tag, expected in testcases.items():
             match = re.match(self.regex, tag)
@@ -206,7 +230,10 @@ class GithubTagReleaseLister:
 
     def all_tag_names(self):
         url = "https://api.github.com/repos/" + safe(self.org) + "/" + safe(self.repo) + "/git/refs/tags"
-        r = requests.get(url, auth=requests.auth.HTTPBasicAuth(self.token.user(), self.token.password()))
+        auth = {}
+        if token:
+            auth = { 'Authorization': 'Bearer ' + token }
+        r = requests.get(url, headers=auth)
         if r.status_code != 200:
             print("API request failed (error %d)" % (r.status_code,), file=sys.stderr)
             print(r.text, file=sys.stderr)
@@ -247,8 +274,7 @@ class DependsVersionGetter:
             "package\)_version=(\d+)\.(\d+)$",
             "package\)_version=(\d+)_(\d+)_(\d+)$",
             "package\)_version=(\d+)\.(\d+)\.(\d+)([a-z])$",
-            # Workaround for wasi 0.9.0 preview
-            "package\)_version=(\d+)\.(\d+)\.(\d+)\+wasi-snapshot-preview1$",
+            "package\)_version=([0-9a-f]{40})$",
         ]
 
         current_version = None
@@ -259,7 +285,9 @@ class DependsVersionGetter:
                 current_version = Version(match.groups())
 
         if not current_version:
-            raise RuntimeError("Couldn't parse version number from depends .mk file.")
+            raise RuntimeError(
+                "Couldn't parse version number from depends %s.mk file." % (safe_depends(self.name),)
+            )
 
         return current_version
 
@@ -411,8 +439,8 @@ def main():
     print("""
 You should also check the Rust dependencies using cargo:
 
-  cargo install cargo-outdated cargo-audit
-  cargo outdated
+  cargo install cargo-upgrades cargo-audit
+  cargo upgrades
   cargo audit
 """)
     if status == 0:

@@ -1,5 +1,5 @@
 // Copyright (c) 2012-2013 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -536,6 +536,32 @@ BOOST_AUTO_TEST_CASE(rolling_bloom)
     for (int i = 0; i < DATASIZE; i++) {
         BOOST_CHECK(rb2.contains(data[i]));
     }
+}
+
+BOOST_AUTO_TEST_CASE(rolling_bloom_reset)
+{
+    struct TestRollingBloomFilter : CRollingBloomFilter
+    {
+        TestRollingBloomFilter() : CRollingBloomFilter(100, 0.01) {}
+        bool is_data_empty() const { return CRollingBloomFilter::is_data_empty(); }
+    };
+
+    TestRollingBloomFilter rb;
+    BOOST_CHECK(rb.is_data_empty());
+
+    std::vector<unsigned char> d = RandomData();
+    rb.insert(d);
+    BOOST_CHECK(!rb.is_data_empty());
+    BOOST_CHECK(rb.contains(d));
+
+    // reset() should ensure minimal memory usage.
+    rb.reset();
+    BOOST_CHECK(rb.is_data_empty());
+    BOOST_CHECK(!rb.contains(d));
+
+    rb.insert(d);
+    BOOST_CHECK(!rb.is_data_empty());
+    BOOST_CHECK(rb.contains(d));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

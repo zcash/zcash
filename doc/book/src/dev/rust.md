@@ -26,7 +26,7 @@ delta between the old and new versions - even if the old version is in the
 ## Adding new dependencies in online-Rust mode
 
 The `zcashd` build system pins all dependencies, and in order to facilitate
-deterministic builds, `cargo` is configured to run in offline mode with vendored
+reproducible builds, `cargo` is configured to run in offline mode with vendored
 crates. This means that if, for example, you add the `foobar` crate to
 `Cargo.toml`, you will likely see an error similar to this:
 
@@ -37,16 +37,32 @@ location searched: registry `https://github.com/rust-lang/crates.io-index`
 required by package `librustzcash v0.2.0 (/path/to/zcash)`
 ```
 
-Instead, you first need to build `zcashd` in online-Rust mode:
-```
-CONFIGURE_FLAGS=--enable-online-rust ./zcutil/build.sh
-```
+To add dependencies that are compatible with the reproducible build system, you need to follow these steps:
 
-After doing so, you can add a new dependency as follows:
-
-1. Add the new dependency to `Cargo.toml`.
-2. Run `cargo check` to update the `Cargo.lock` file.
-3. Commit `Cargo.toml` and `Cargo.lock`.
+1. First, if you've made changes to dependencies in `Cargo.toml`, these must be reverted before the next step:
+    ```
+    git stash
+    ```
+2. Next, reconfigure the build system for "online" mode:
+    ```
+    CONFIGURE_FLAGS=--enable-online-rust ./zcutil/build.sh
+    ```
+3. Now, introduce the dependency changes into `Cargo.toml`. If you saved changes in Step 1 with `git stash`, you can reapply them:
+    ```
+    git stash pop
+    ```
+4. Update `Cargo.lock`:
+    ```
+    cargo check
+    ```
+5. Commit the changes to `Cargo.toml` and `Cargo.lock` together:
+    ```
+    git commit ./Cargo.{toml,lock}
+    ```
+6. Verify the reproducible build works in vendored/offline mode without the `--enable-online-rust` flag:
+    ```
+    ./zcutil/build.sh
+    ```
 
 ## Using a local Rust dependency
 

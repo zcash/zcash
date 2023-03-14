@@ -1,10 +1,15 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2017-2022 The Zcash developers
+// Copyright (c) 2017-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "chain.h"
+
+#include "main.h"
+#include "txdb.h"
+
+#include <rust/metrics.h>
 
 /**
  * CChain implementation
@@ -56,6 +61,50 @@ const CBlockIndex *CChain::FindFork(const CBlockIndex *pindex) const {
     while (pindex && !Contains(pindex))
         pindex = pindex->pprev;
     return pindex;
+}
+
+void CBlockIndex::TrimSolution()
+{
+    AssertLockHeld(cs_main);
+
+    // We can correctly trim a solution as soon as the block index entry has been added
+    // to leveldb. Updates to the block index entry (to update validity status) will be
+    // handled by re-reading the solution from the existing db entry. It does not help to
+    // try to avoid these reads by gating trimming on the validity status: the re-reads are
+    // efficient anyway because of caching in leveldb, and most of them are unavoidable.
+    if (HasSolution()) {
+        MetricsIncrementCounter("zcashd.debug.memory.trimmed_equihash_solutions");
+        std::vector<unsigned char> empty;
+        nSolution.swap(empty);
+    }
+}
+
+CBlockHeader CBlockIndex::GetBlockHeader() const
+{
+    AssertLockHeld(cs_main);
+
+    CBlockHeader header;
+    header.nVersion             = nVersion;
+    if (pprev) {
+        header.hashPrevBlock    = pprev->GetBlockHash();
+    }
+    header.hashMerkleRoot       = hashMerkleRoot;
+    header.hashBlockCommitments = hashBlockCommitments;
+    header.nTime                = nTime;
+    header.nBits                = nBits;
+    header.nNonce               = nNonce;
+    if (HasSolution()) {
+        header.nSolution        = nSolution;
+    } else {
+        MetricsIncrementCounter("zcashd.debug.blocktree.trimmed_equihash_read_dbindex");
+        CDiskBlockIndex dbindex;
+        if (!pblocktree->ReadDiskBlockIndex(GetBlockHash(), dbindex)) {
+            LogPrintf("%s: Failed to read index entry", __func__);
+            throw std::runtime_error("Failed to read index entry");
+        }
+        header.nSolution        = dbindex.GetSolution();
+    }
+    return header;
 }
 
 /** Turn the lowest '1' bit in the binary representation of a number into a '0'. */

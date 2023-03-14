@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -30,6 +30,7 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "miner.h"
 #include "wallet/paymentdisclosuredb.h"
+#include "wallet/wallet_tx_builder.h"
 
 #include <array>
 #include <iostream>
@@ -46,7 +47,7 @@ using namespace libzcash;
 AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         TransactionBuilder builder,
         ZTXOSelector ztxoSelector,
-        std::vector<SendManyRecipient> recipients,
+        std::vector<ResolvedPayment> recipients,
         int minDepth,
         unsigned int anchorDepth,
         TransactionStrategy strategy,
@@ -64,15 +65,13 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     sendFromAccount_ = pwalletMain->FindAccountForSelector(ztxoSelector_).value_or(ZCASH_LEGACY_ACCOUNT);
 
     // Determine the target totals and recipient pools
-    for (const SendManyRecipient& recipient : recipients_) {
+    for (const ResolvedPayment& recipient : recipients_) {
         std::visit(match {
             [&](const CKeyID& addr) {
-                transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
                 recipientPools_.insert(OutputPool::Transparent);
             },
             [&](const CScriptID& addr) {
-                transparentRecipients_ += 1;
                 txOutputAmounts_.t_outputs_total += recipient.amount;
                 recipientPools_.insert(OutputPool::Transparent);
             },
@@ -181,7 +180,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
 
     // Allow transparent coinbase inputs if there are no transparent
     // recipients.
-    bool allowTransparentCoinbase = transparentRecipients_ == 0;
+    bool allowTransparentCoinbase = !recipientPools_.count(OutputPool::Transparent);
 
     // Set the dust threshold so that we can select enough inputs to avoid
     // creating dust change amounts.
@@ -192,45 +191,43 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
     SpendableInputs spendable;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
-        spendable = pwalletMain->FindSpendableInputs(ztxoSelector_, allowTransparentCoinbase, mindepth_);
+        spendable = pwalletMain->FindSpendableInputs(ztxoSelector_, allowTransparentCoinbase, mindepth_, std::nullopt);
     }
     if (!spendable.LimitToAmount(targetAmount, dustThreshold, recipientPools_)) {
         CAmount changeAmount{spendable.Total() - targetAmount};
+        std::string insufficientFundsMessage =
+            strprintf("Insufficient funds: have %s", FormatMoney(spendable.Total()));
         if (changeAmount > 0 && changeAmount < dustThreshold) {
             // TODO: we should provide the option for the caller to explicitly
             // forego change (definitionally an amount below the dust amount)
             // and send the extra to the recipient or the miner fee to avoid
             // creating dust change, rather than prohibit them from sending
             // entirely in this circumstance.
-            // (Daira disagrees, as this could leak information to the recipient)
-            throw JSONRPCError(
-                    RPC_WALLET_INSUFFICIENT_FUNDS,
-                    strprintf(
-                        "Insufficient funds: have %s, need %s more to avoid creating invalid change output %s "
-                        "(dust threshold is %s)",
-                        FormatMoney(spendable.Total()),
-                        FormatMoney(dustThreshold - changeAmount),
-                        FormatMoney(changeAmount),
-                        FormatMoney(dustThreshold)));
+            // (Daira disagrees, as this could leak information to the recipient
+            // or to an external viewing key holder.)
+            insufficientFundsMessage +=
+                strprintf(
+                    ", need %s more to avoid creating invalid change output %s (dust threshold is %s)",
+                    FormatMoney(dustThreshold - changeAmount),
+                    FormatMoney(changeAmount),
+                    FormatMoney(dustThreshold));
         } else {
-            bool isFromUa = std::holds_alternative<libzcash::UnifiedAddress>(ztxoSelector_.GetPattern());
-            throw JSONRPCError(
-                    RPC_WALLET_INSUFFICIENT_FUNDS,
-                    strprintf(
-                        "Insufficient funds: have %s, need %s",
-                        FormatMoney(spendable.Total()), FormatMoney(targetAmount))
-                        + (allowTransparentCoinbase ? "" :
-                            "; note that coinbase outputs will not be selected if you specify "
-                            "ANY_TADDR or if any transparent recipients are included.")
-                        + ((!isFromUa || strategy_.AllowLinkingAccountAddresses()) ? "" :
-                            " (This transaction may require selecting transparent coins that were sent "
-                            "to multiple Unified Addresses, which is not enabled by default because "
-                            "it would create a public link between the transparent receivers of these "
-                            "addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
-                            "parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to "
-                            "allow this transaction to proceed anyway.)")
-                    );
+            insufficientFundsMessage += strprintf(", need %s", FormatMoney(targetAmount));
         }
+        bool isFromUa = std::holds_alternative<libzcash::UnifiedAddress>(ztxoSelector_.GetPattern());
+        throw JSONRPCError(
+                RPC_WALLET_INSUFFICIENT_FUNDS,
+                insufficientFundsMessage
+                + (allowTransparentCoinbase && ztxoSelector_.SelectsTransparentCoinbase() ? "." :
+                   "; note that coinbase outputs will not be selected if you specify "
+                   "ANY_TADDR or if any transparent recipients are included.")
+                + ((!isFromUa || strategy_.AllowLinkingAccountAddresses()) ? "" :
+                   " (This transaction may require selecting transparent coins that were sent "
+                   "to multiple Unified Addresses, which is not enabled by default because "
+                   "it would create a public link between the transparent receivers of these "
+                   "addresses. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
+                   "parameter set to `AllowLinkingAccountAddresses` or weaker if you wish to "
+                   "allow this transaction to proceed anyway.)"));
     }
 
     if (!(spendable.utxos.empty() || strategy_.AllowRevealedSenders())) {
@@ -559,15 +556,14 @@ uint256 AsyncRPCOperation_sendmany::main_impl() {
                 builder_.AddTransparentOutput(scriptId, r.amount);
             },
             [&](const libzcash::SaplingPaymentAddress& addr) {
-                auto value = r.amount;
-                auto memo = get_memo_from_hex_string(r.memo.value_or(""));
-
-                builder_.AddSaplingOutput(ovks.second, addr, value, memo);
+                builder_.AddSaplingOutput(
+                        ovks.second, addr, r.amount,
+                        r.memo.has_value() ? r.memo.value().ToBytes() : Memo::NoMemo().ToBytes());
             },
             [&](const libzcash::OrchardRawAddress& addr) {
-                auto value = r.amount;
-                auto memo = r.memo.has_value() ? std::optional(get_memo_from_hex_string(r.memo.value())) : std::nullopt;
-                builder_.AddOrchardOutput(ovks.second, addr, value, memo);
+                builder_.AddOrchardOutput(
+                        ovks.second, addr, r.amount,
+                        r.memo.has_value() ? std::optional(r.memo.value().ToBytes()) : std::nullopt);
             }
         }, r.address);
     }
@@ -768,32 +764,6 @@ CAmount AsyncRPCOperation_sendmany::DefaultDustThreshold() {
     CTxOut txout(CAmount(1), scriptPubKey);
     // TODO: use a local for minRelayTxFee rather than a global
     return txout.GetDustThreshold(minRelayTxFee);
-}
-
-std::array<unsigned char, ZC_MEMO_SIZE> AsyncRPCOperation_sendmany::get_memo_from_hex_string(std::string s) {
-    // initialize to default memo (no_memo), see section 5.5 of the protocol spec
-    std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};
-
-    std::vector<unsigned char> rawMemo = ParseHex(s.c_str());
-
-    // If ParseHex comes across a non-hex char, it will stop but still return results so far.
-    size_t slen = s.length();
-    if (slen % 2 !=0 || (slen>0 && rawMemo.size()!=slen/2)) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Memo must be in hexadecimal format");
-    }
-
-    if (rawMemo.size() > ZC_MEMO_SIZE) {
-        throw JSONRPCError(
-                RPC_INVALID_PARAMETER,
-                strprintf("Memo size of %d bytes is too big, maximum allowed is %d bytes", rawMemo.size(), ZC_MEMO_SIZE));
-    }
-
-    // copy vector into boost array
-    int lenMemo = rawMemo.size();
-    for (int i = 0; i < ZC_MEMO_SIZE && i < lenMemo; i++) {
-        memo[i] = rawMemo[i];
-    }
-    return memo;
 }
 
 /**

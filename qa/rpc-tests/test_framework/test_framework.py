@@ -56,17 +56,18 @@ class BitcoinTestFramework(object):
         # Connect the nodes as a "chain".  This allows us
         # to split the network between nodes 1 and 2 to get
         # two halves that can work on competing chains.
+        connect_nodes_bi(self.nodes, 0, 1)
 
         # If we joined network halves, connect the nodes from the joint
         # on outward.  This ensures that chains are properly reorganised.
-        if not split:
-            connect_nodes_bi(self.nodes, 1, 2)
-            sync_blocks(self.nodes[1:3])
-            if do_mempool_sync:
-                sync_mempools(self.nodes[1:3])
+        if len(self.nodes) >= 4:
+            connect_nodes_bi(self.nodes, 2, 3)
+            if not split:
+                connect_nodes_bi(self.nodes, 1, 2)
+                sync_blocks(self.nodes[1:3])
+                if do_mempool_sync:
+                    sync_mempools(self.nodes[1:3])
 
-        connect_nodes_bi(self.nodes, 0, 1)
-        connect_nodes_bi(self.nodes, 2, 3)
         self.is_network_split = split
         self.sync_all(do_mempool_sync)
 

@@ -1,0 +1,52 @@
+version: "3.7"
+
+services:
+  grafana:
+    image: grafana/grafana
+    container_name: zcashd-grafana
+    depends_on:
+      - prometheus
+    environment:
+      GF_SERVER_HTTP_PORT: "3030"
+    ports:
+      - "3030:3030"
+    volumes:
+      - type: volume
+        source: grafana-storage
+        target: /var/lib/grafana
+      - type: bind
+        source: ./grafana/grafana.ini
+        target: /etc/grafana/grafana.ini
+      - type: bind
+        source: ./grafana/provisioning
+        target: /etc/grafana/provisioning
+      - type: bind
+        source: ./grafana/dashboards
+        target: /etc/grafana/dashboards
+    networks:
+      - zcashd-metrics
+
+  prometheus:
+    image: prom/prometheus
+    container_name: zcashd-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - type: volume
+        source: prometheus-storage
+        target: /prometheus
+      - type: bind
+        source: ./prometheus.yaml
+        target: /etc/prometheus/prometheus.yml
+        read_only: true
+    networks:
+      - zcashd-metrics
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  grafana-storage:
+  prometheus-storage:
+
+networks:
+  zcashd-metrics:

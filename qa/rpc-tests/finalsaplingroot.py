@@ -19,7 +19,7 @@ from decimal import Decimal
 
 SPROUT_TREE_EMPTY_ROOT = "59d2cde5e65c1414c32ba54f0fe4bdb3d67618125286e6a191317917c812c6d7"
 SAPLING_TREE_EMPTY_ROOT = "3e49b5f954aa9d3545bc6c37744661eea48d7c34e3000d82b7f0010c30f4c2fb"
-ORCHARD_TREE_EMPTY_ROOT = "2fd8e51a03d9bbe2dd809831b1497aeb68a6e37ddf707ced4aa2d8dff13529ae"
+ORCHARD_TREE_EMPTY_ROOT = "ae2935f1dfd8a24aed7c70df7de3a668eb7a49b1319880dde2bbd9031ae5d82f"
 NULL_FIELD = "0000000000000000000000000000000000000000000000000000000000000000"
 
 # Verify block header field 'hashFinalSaplingRoot' (returned in rpc as 'finalsaplingroot')
@@ -37,6 +37,9 @@ class FinalSaplingRootTest(BitcoinTestFramework):
             '-reindex', # Required due to enabling -txindex
             nuparams(NU5_BRANCH_ID, 210),
             '-debug',
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
             ]] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         self.is_network_split=False
@@ -93,7 +96,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         saplingAddr0 = self.nodes[0].z_getnewaddress('sapling')
         recipients = []
         recipients.append({"address": saplingAddr0, "amount": Decimal('10')})
-        myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0, 'AllowRevealedSenders')
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
@@ -193,7 +196,7 @@ class FinalSaplingRootTest(BitcoinTestFramework):
         taddr2 = self.nodes[0].getnewaddress()
         recipients = []
         recipients.append({"address": taddr2, "amount": Decimal('2.34')})
-        myopid = self.nodes[1].z_sendmany(saplingAddr1, recipients, 1, 0)
+        myopid = self.nodes[1].z_sendmany(saplingAddr1, recipients, 1, 0, 'AllowRevealedRecipients')
         mytxid = wait_and_assert_operationid_status(self.nodes[1], myopid)
 
         self.sync_all()

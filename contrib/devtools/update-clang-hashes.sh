@@ -45,4 +45,3 @@ update_clang_hash amd64-unknown-freebsd12 freebsd
 # For Windows cross-compilation
 # update_libcxx_msys2_hash LIBCXX_LIBRARY MAKEFILE_HASH_SUFFIX
 update_libcxx_msys2_hash libc++ sha256_hash
-update_libcxx_msys2_hash libc++abi libcxxabi_sha256_hash

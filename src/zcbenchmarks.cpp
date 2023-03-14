@@ -458,6 +458,7 @@ public:
         OrchardMerkleFrontier emptyOrchardTree;
         orchardTrees.push_back(emptyOrchardTree);
     }
+    ~FakeCoinsViewDB() {}
 
     void SetSaplingTrees(std::vector<std::string> trees) {
         saplingTrees.clear();
@@ -545,6 +546,10 @@ public:
                 throw new std::runtime_error("Unknown shielded type");
         }
     }
+
+    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }
 
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
@@ -760,34 +765,37 @@ double benchmark_create_sapling_spend()
 
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << witness.path();
-    std::vector<unsigned char> witnessChars(ss.begin(), ss.end());
+    std::array<unsigned char, 1065> witnessChars;
+    std::move(ss.begin(), ss.end(), witnessChars.begin());
 
     uint256 alpha;
     librustzcash_sapling_generate_r(alpha.begin());
 
-    auto ctx = librustzcash_sapling_proving_ctx_init();
+    auto ctx = sapling::init_prover();
 
     struct timeval tv_start;
     timer_start(tv_start);
 
+    std::array<unsigned char, 32> cv;
+    std::array<unsigned char, 32> rk;
     SpendDescription sdesc;
     uint256 rcm = note.rcm();
-    bool result = librustzcash_sapling_spend_proof(
-        ctx,
-        expsk.full_viewing_key().ak.begin(),
-        expsk.nsk.begin(),
-        note.d.data(),
-        rcm.begin(),
-        alpha.begin(),
+    bool result = ctx->create_spend_proof(
+        expsk.full_viewing_key().ak.GetRawBytes(),
+        expsk.nsk.GetRawBytes(),
+        note.d,
+        rcm.GetRawBytes(),
+        alpha.GetRawBytes(),
         note.value(),
-        anchor.begin(),
-        witnessChars.data(),
-        sdesc.cv.begin(),
-        sdesc.rk.begin(),
-        sdesc.zkproof.data());
+        anchor.GetRawBytes(),
+        witnessChars,
+        cv,
+        rk,
+        sdesc.zkproof);
+    sdesc.cv = uint256::FromRawBytes(cv);
+    sdesc.rk = uint256::FromRawBytes(rk);
 
     double t = timer_stop(tv_start);
-    librustzcash_sapling_proving_ctx_free(ctx);
     if (!result) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "librustzcash_sapling_spend_proof() should return true");
     }
@@ -813,26 +821,27 @@ double benchmark_create_sapling_output()
 
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << address;
-    std::vector<unsigned char> addressBytes(ss.begin(), ss.end());
+    std::array<unsigned char, 43> addressBytes;
+    std::move(ss.begin(), ss.end(), addressBytes.begin());
 
-    auto ctx = librustzcash_sapling_proving_ctx_init();
+    auto ctx = sapling::init_prover();
 
     struct timeval tv_start;
     timer_start(tv_start);
 
+    std::array<unsigned char, 32> cv;
     OutputDescription odesc;
     uint256 rcm = note.rcm();
-    bool result = librustzcash_sapling_output_proof(
-        ctx,
-        encryptor.get_esk().begin(),
-        addressBytes.data(),
-        rcm.begin(),
+    bool result = ctx->create_output_proof(
+        encryptor.get_esk().GetRawBytes(),
+        addressBytes,
+        rcm.GetRawBytes(),
         note.value(),
-        odesc.cv.begin(),
-        odesc.zkproof.begin());
+        cv,
+        odesc.zkproof);
 
+    odesc.cv = uint256::FromRawBytes(cv);
     double t = timer_stop(tv_start);
-    librustzcash_sapling_proving_ctx_free(ctx);
     if (!result) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "librustzcash_sapling_output_proof() should return true");
     }

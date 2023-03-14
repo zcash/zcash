@@ -24,7 +24,10 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         return start_nodes(self.num_nodes, self.options.tmpdir,
             [[
                 "-txexpirydelta=%d" % TX_EXPIRY_DELTA,
-                "-debug=mempool"
+                "-debug=mempool",
+                "-allowdeprecated=getnewaddress",
+                "-allowdeprecated=z_getnewaddress",
+                "-allowdeprecated=z_gettotalbalance",
             ]] * self.num_nodes)
 
     # Test before, at, and after expiry block

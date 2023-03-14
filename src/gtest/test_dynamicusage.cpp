@@ -1,6 +1,6 @@
-// Copyright (c) 2019-2022 The Zcash developers
+// Copyright (c) 2019-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or https://www.opensource.org/licenses/mit-license.php 
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include <gtest/gtest.h>
 #include <iostream>
@@ -22,8 +22,9 @@ TEST(RecursiveDynamicUsageTests, TestTransactionTransparent)
     CKey tsk = AddTestCKeyToKeyStore(keystore);
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
     CTxDestination taddr = tsk.GetPubKey().GetID();
-    
+
     auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
+    builder.SetFee(10000);
     builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
     builder.AddTransparentOutput(taddr, 40000);
 
@@ -54,14 +55,15 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToSapling)
     LoadProofParameters();
 
     auto consensusParams = RegtestActivateSapling();
-    
+
     auto sk = libzcash::SaplingSpendingKey::random();
     auto testNote = GetTestSaplingNote(sk.default_address(), 50000);
 
     auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
+    builder.SetFee(10000);
     builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
     builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 5000, {});
-    
+
     auto tx = builder.Build().GetTxOrThrow();
     // 1 vShieldedSpend + 2 vShieldedOutput
     // 400 + 1920
@@ -75,16 +77,17 @@ TEST(RecursiveDynamicUsageTests, TestTransactionTransparentToSapling)
     LoadProofParameters();
 
     auto consensusParams = RegtestActivateSapling();
-    
+
     CBasicKeyStore keystore;
     CKey tsk = AddTestCKeyToKeyStore(keystore);
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
     auto sk = libzcash::SaplingSpendingKey::random();
 
     auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
+    builder.SetFee(10000);
     builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
     builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 40000, {});
-    
+
     auto tx = builder.Build().GetTxOrThrow();
     // 1 vin + 1 vShieldedOutput
     // (96 + 128) + 976
@@ -98,7 +101,7 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToTransparent)
     LoadProofParameters();
 
     auto consensusParams = RegtestActivateSapling();
-    
+
     CBasicKeyStore keystore;
     CKey tsk = AddTestCKeyToKeyStore(keystore);
     CTxDestination taddr = tsk.GetPubKey().GetID();
@@ -106,6 +109,7 @@ TEST(RecursiveDynamicUsageTests, TestTransactionSaplingToTransparent)
     auto testNote = GetTestSaplingNote(sk.default_address(), 50000);
 
     auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
+    builder.SetFee(10000);
     builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
     builder.AddTransparentOutput(taddr, 40000);
 

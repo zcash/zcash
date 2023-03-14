@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 The Zcash developers
+// Copyright (c) 2019-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -9,19 +9,21 @@
 #include <map>
 #include <optional>
 #include <set>
-#include <vector>
 
+#include "logging.h"
+#include "random.h"
 #include "primitives/transaction.h"
 #include "policy/fees.h"
 #include "uint256.h"
 #include "util/time.h"
+#include "weighted_map.h"
 
 const size_t DEFAULT_MEMPOOL_TOTAL_COST_LIMIT = 80000000;
 const int64_t DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES = 60;
 
 const size_t EVICTION_MEMORY_ENTRIES = 40000;
-const uint64_t MIN_TX_COST = 4000;
-const uint64_t LOW_FEE_PENALTY = 16000;
+const int64_t MIN_TX_COST = 4000;
+const int64_t LOW_FEE_PENALTY = 16000;
 
 
 // This class keeps track of transactions which have been recently evicted from the mempool
@@ -57,80 +59,62 @@ public:
 
 // The mempool of a node holds a set of transactions. Each transaction has a *cost*,
 // which is an integer defined as:
-//   max(serialized transaction size in bytes, 4000)
+//   max(memory usage in bytes, 4000)
+//
 // Each transaction also has an *eviction weight*, which is *cost* + *fee_penalty*,
-// where *fee_penalty* is 16000 if the transaction pays a fee less than 10000 zatoshi,
-// otherwise 0.
-struct TxWeight {
-    int64_t cost;
-    int64_t evictionWeight; // *cost* + *fee_penalty*
+// where *fee_penalty* is 16000 if the transaction pays a fee less than the
+// conventional fee, otherwise 0.
 
-    TxWeight(int64_t cost_, int64_t evictionWeight_)
-        : cost(cost_), evictionWeight(evictionWeight_) {}
-
-    TxWeight add(const TxWeight& other) const;
-    TxWeight negate() const;
-};
+// Calculate cost and eviction weight based on the memory usage and fee.
+std::pair<int64_t, int64_t> MempoolCostAndEvictionWeight(const CTransaction& tx, const CAmount& fee);
 
 
-// This struct is a pair of txid, cost.
-struct WeightedTxInfo {
-    uint256 txId;
-    TxWeight txWeight;
-
-    WeightedTxInfo(uint256 txId_, TxWeight txWeight_) : txId(txId_), txWeight(txWeight_) {}
-
-    // Factory method which calculates cost based on size in bytes and fee.
-    static WeightedTxInfo from(const CTransaction& tx, const CAmount& fee);
-};
-
-
-// The following class is a collection of transaction ids and their costs.
-// In order to be able to remove transactions randomly weighted by their cost,
-// we keep track of the total cost of all transactions in this collection.
-// For performance reasons, the collection is represented as a complete binary
-// tree where each node knows the sum of the weights of the children. This
-// allows for addition, removal, and random selection/dropping in logarithmic time.
-class WeightedTxTree
+class MempoolLimitTxSet
 {
-    const int64_t capacity;
-    size_t size = 0;
-
-    // The following two vectors are the tree representation of this collection.
-    // We keep track of 3 data points for each node: A transaction's txid, its cost,
-    // and the sum of the weights of all children and descendant of that node.
-    std::vector<WeightedTxInfo> txIdAndWeights;
-    std::vector<TxWeight> childWeights;
-
-    // The following map is to simplify removal. When removing a tx, we do so by txid.
-    // This map allows looking up the transaction's index in the tree.
-    std::map<uint256, size_t> txIdToIndexMap;
-
-    // Returns the sum of a node and all of its children's TxWeights for a given index.
-    TxWeight getWeightAt(size_t index) const;
-
-    // When adding and removing a node we need to update its parent and all of its
-    // ancestors to reflect its cost.
-    void backPropagate(size_t fromIndex, const TxWeight& weightDelta);
-
-    // For a given random cost + fee penalty, this method recursively finds the
-    // correct transaction. This is used by WeightedTxTree::maybeDropRandom().
-    size_t findByEvictionWeight(size_t fromIndex, int64_t weightToFind) const;
+    WeightedMap<uint256, int64_t, int64_t, GetRandInt64> txmap;
+    int64_t capacity;
+    int64_t cost;
 
 public:
-    WeightedTxTree(int64_t capacity_) : capacity(capacity_) {
+    MempoolLimitTxSet(int64_t capacity_) : capacity(capacity_), cost(0) {
         assert(capacity >= 0);
     }
 
-    TxWeight getTotalWeight() const;
+    int64_t getTotalWeight() const
+    {
+        return txmap.getTotalWeight();
+    }
+    bool empty() const
+    {
+        return txmap.empty();
+    }
+    void add(const uint256& txId, int64_t txCost, int64_t txWeight)
+    {
+        if (txmap.add(txId, txCost, txWeight)) {
+            cost += txCost;
+        }
+    }
+    void remove(const uint256& txId)
+    {
+        cost -= txmap.remove(txId).value_or(0);
+    }
 
-    void add(const WeightedTxInfo& weightedTxInfo);
-    void remove(const uint256& txId);
-
-    // If the total cost limit is exceeded, pick a random number based on the total cost
-    // of the collection and remove the associated transaction.
-    std::optional<uint256> maybeDropRandom();
+    // If the total cost limit has not been exceeded, return std::nullopt. Otherwise,
+    // pick a transaction at random with probability proportional to its eviction weight;
+    // remove and return that transaction's txid.
+    std::optional<uint256> maybeDropRandom()
+    {
+        if (cost <= capacity) {
+            return std::nullopt;
+        }
+        LogPrint("mempool", "Mempool cost limit exceeded (cost=%d, limit=%d)\n", cost, capacity);
+        assert(!txmap.empty());
+        auto [txId, txCost, txWeight] = txmap.takeRandom().value();
+        cost -= txCost;
+        LogPrint("mempool", "Evicting transaction (txid=%s, cost=%d, weight=%d)\n",
+            txId.ToString(), txCost, txWeight);
+        return txId;
+    }
 };
-
 
 #endif // ZCASH_MEMPOOL_LIMIT_H

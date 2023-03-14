@@ -1,5 +1,5 @@
 // Copyright (c) 2011-2013 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -174,7 +174,7 @@ TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>&
     boost::shared_ptr<CReserveScript> mAddr(new CReserveScript());
     mAddr->reserveScript = scriptPubKey;
 
-    CBlockTemplate *pblocktemplate = CreateNewBlock(chainparams, mAddr);
+    CBlockTemplate *pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(mAddr);
     CBlock& block = pblocktemplate->block;
 
     // Replace mempool-selected txns with just coinbase plus passed-in txns:

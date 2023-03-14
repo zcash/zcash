@@ -1,5 +1,5 @@
 // Copyright (c) 2012-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -45,32 +45,6 @@ bool CCoins::Spend(uint32_t nPos)
     Cleanup();
     return true;
 }
-bool CCoinsView::GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return false; }
-bool CCoinsView::GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return false; }
-bool CCoinsView::GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const { return false; }
-bool CCoinsView::GetNullifier(const uint256 &nullifier, ShieldedType type) const { return false; }
-bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
-bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
-uint256 CCoinsView::GetBestBlock() const { return uint256(); }
-uint256 CCoinsView::GetBestAnchor(ShieldedType type) const { return uint256(); };
-HistoryIndex CCoinsView::GetHistoryLength(uint32_t epochId) const { return 0; }
-HistoryNode CCoinsView::GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
-uint256 CCoinsView::GetHistoryRoot(uint32_t epochId) const { return uint256(); }
-
-bool CCoinsView::BatchWrite(CCoinsMap &mapCoins,
-                            const uint256 &hashBlock,
-                            const uint256 &hashSproutAnchor,
-                            const uint256 &hashSaplingAnchor,
-                            const uint256 &hashOrchardAnchor,
-                            CAnchorsSproutMap &mapSproutAnchors,
-                            CAnchorsSaplingMap &mapSaplingAnchors,
-                            CAnchorsOrchardMap &mapOrchardAnchors,
-                            CNullifiersMap &mapSproutNullifiers,
-                            CNullifiersMap &mapSaplingNullifiers,
-                            CNullifiersMap &mapOrchardNullifiers,
-                            CHistoryCacheMap &historyCacheMap) { return false; }
-bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
-
 
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
 
@@ -991,6 +965,11 @@ const CTxOut &CCoinsViewCache::GetOutputFor(const CTxIn& input) const
 
 CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
 {
+    return GetTransparentValueIn(tx) + tx.GetShieldedValueIn();
+}
+
+CAmount CCoinsViewCache::GetTransparentValueIn(const CTransaction& tx) const
+{
     if (tx.IsCoinBase())
         return 0;
 
@@ -998,12 +977,10 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction& tx) const
     for (unsigned int i = 0; i < tx.vin.size(); i++)
         nResult += GetOutputFor(tx.vin[i]).nValue;
 
-    nResult += tx.GetShieldedValueIn();
-
     return nResult;
 }
 
-std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(const CTransaction& tx) const
+tl::expected<void, UnsatisfiedShieldedReq> CCoinsViewCache::CheckShieldedRequirements(const CTransaction& tx) const
 {
     boost::unordered_map<uint256, SproutMerkleTree, SaltedTxidHasher> intermediates;
 
@@ -1019,7 +996,7 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
                 TracingWarn("consensus", "Sprout double-spend detected",
                     "txid", txid.c_str(),
                     "nf", nf.c_str());
-                return UnsatisfiedShieldedReq::SproutDuplicateNullifier;
+                return tl::unexpected(UnsatisfiedShieldedReq::SproutDuplicateNullifier);
             }
         }
 
@@ -1033,7 +1010,7 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
             TracingWarn("consensus", "Transaction uses unknown Sprout anchor",
                 "txid", txid.c_str(),
                 "anchor", anchor.c_str());
-            return UnsatisfiedShieldedReq::SproutUnknownAnchor;
+            return tl::unexpected(UnsatisfiedShieldedReq::SproutUnknownAnchor);
         }
 
         for (const uint256& commitment : joinsplit.commitments)
@@ -1051,7 +1028,7 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
             TracingWarn("consensus", "Sapling double-spend detected",
                 "txid", txid.c_str(),
                 "nf", nf.c_str());
-            return UnsatisfiedShieldedReq::SaplingDuplicateNullifier;
+            return tl::unexpected(UnsatisfiedShieldedReq::SaplingDuplicateNullifier);
         }
 
         SaplingMerkleTree tree;
@@ -1061,7 +1038,7 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
             TracingWarn("consensus", "Transaction uses unknown Sapling anchor",
                 "txid", txid.c_str(),
                 "anchor", anchor.c_str());
-            return UnsatisfiedShieldedReq::SaplingUnknownAnchor;
+            return tl::unexpected(UnsatisfiedShieldedReq::SaplingUnknownAnchor);
         }
     }
 
@@ -1072,7 +1049,7 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
             TracingWarn("consensus", "Orchard double-spend detected",
                 "txid", txid.c_str(),
                 "nf", nf.c_str());
-            return UnsatisfiedShieldedReq::OrchardDuplicateNullifier;
+            return tl::unexpected(UnsatisfiedShieldedReq::OrchardDuplicateNullifier);
         }
     }
 
@@ -1085,11 +1062,11 @@ std::optional<UnsatisfiedShieldedReq> CCoinsViewCache::HaveShieldedRequirements(
             TracingWarn("consensus", "Transaction uses unknown Orchard anchor",
                 "txid", txid.c_str(),
                 "anchor", anchor.c_str());
-            return UnsatisfiedShieldedReq::OrchardUnknownAnchor;
+            return tl::unexpected(UnsatisfiedShieldedReq::OrchardUnknownAnchor);
         }
     }
 
-    return std::nullopt;
+    return {};
 }
 
 bool CCoinsViewCache::HaveInputs(const CTransaction& tx) const

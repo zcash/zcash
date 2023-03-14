@@ -9,8 +9,13 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, connect_nodes, \
-    sync_blocks, gather_inputs
+from test_framework.util import (
+    assert_equal,
+    connect_nodes,
+    start_nodes,
+    sync_blocks,
+    gather_inputs,
+)
 
 
 class TxnMallTest(BitcoinTestFramework):
@@ -18,6 +23,11 @@ class TxnMallTest(BitcoinTestFramework):
     def add_options(self, parser):
         parser.add_option("--mineblock", dest="mine_block", default=False, action="store_true",
                           help="Test double-spend of 1-confirmed transaction")
+
+    def setup_nodes(self):
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            '-allowdeprecated=getnewaddress',
+        ]] * self.num_nodes)
 
     def setup_network(self):
         # Start with split network:

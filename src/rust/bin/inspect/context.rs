@@ -4,12 +4,12 @@ use std::str::FromStr;
 
 use serde::{
     de::{Unexpected, Visitor},
-    Deserialize,
+    Deserialize, Serialize, Serializer,
 };
 use zcash_primitives::{
     consensus::Network,
     legacy::Script,
-    transaction::components::{transparent, Amount},
+    transaction::components::{transparent, Amount, TxOut},
     zip32::AccountId,
 };
 
@@ -192,6 +192,12 @@ impl<'de> Deserialize<'de> for ZOutputValue {
     }
 }
 
+impl Serialize for ZOutputValue {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_u64(u64::from(self.0))
+    }
+}
+
 #[derive(Clone, Debug)]
 struct ZScript(Script);
 
@@ -232,10 +238,25 @@ impl<'de> Deserialize<'de> for ZScript {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
-struct ZTxOut {
+impl Serialize for ZScript {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&hex::encode(&self.0 .0))
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub(crate) struct ZTxOut {
     value: ZOutputValue,
     script_pubkey: ZScript,
+}
+
+impl From<TxOut> for ZTxOut {
+    fn from(out: TxOut) -> Self {
+        ZTxOut {
+            value: ZOutputValue(out.value),
+            script_pubkey: ZScript(out.script_pubkey),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]

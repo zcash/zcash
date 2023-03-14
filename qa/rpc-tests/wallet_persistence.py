@@ -3,6 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+from test_framework.mininode import COIN
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal, assert_true,
@@ -20,7 +21,12 @@ class WalletPersistenceTest (BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 4)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(4, self.options.tmpdir)
+        self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[[
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
+            '-allowdeprecated=z_gettotalbalance',
+            '-allowdeprecated=z_listaddresses',
+        ]] * 4)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,2,3)
@@ -28,9 +34,22 @@ class WalletPersistenceTest (BitcoinTestFramework):
         self.sync_all()
 
     def run_test(self):
+        # Slow start is not enabled for regtest, so the expected subsidy starts at the
+        # maximum, but the hardcoded genesis block for regtest does not consume the
+        # available subsidy.
+        pre_halving_blocks = 143
+        pre_halving_subsidy = Decimal('12.5')
+        post_halving_blocks = 57
+        post_halving_subsidy = pre_halving_subsidy / 2
+        expected_supply = (pre_halving_blocks * pre_halving_subsidy +
+                           post_halving_blocks * post_halving_subsidy)
+
+        blocks_to_mine = pre_halving_blocks + post_halving_blocks
+
         # Sanity-check the test harness
-        self.nodes[0].generate(200)
-        assert_equal(self.nodes[0].getblockcount(), 200)
+        # Note that the genesis block is not counted in the result of `getblockcount`
+        self.nodes[0].generate(blocks_to_mine)
+        assert_equal(self.nodes[0].getblockcount(), blocks_to_mine)
         self.sync_all()
 
         # Verify Sapling address is persisted in wallet
@@ -39,6 +58,21 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Make sure the node has the address
         addresses = self.nodes[0].z_listaddresses()
         assert_true(sapling_addr in addresses, "Should contain address before restart")
+
+        def check_chain_value(pool, expected_id, expected_value):
+            assert_equal(pool.get('id', None), expected_id)
+            assert_equal(pool['monitored'], True)
+            assert_equal(pool['chainValue'], expected_value)
+            assert_equal(pool['chainValueZat'], expected_value * COIN)
+
+        # Verify size of pools
+        chainInfo = self.nodes[0].getblockchaininfo()
+        pools = chainInfo['valuePools']
+        check_chain_value(chainInfo['chainSupply'], None, expected_supply)
+        check_chain_value(pools[0], 'transparent', expected_supply)
+        check_chain_value(pools[1], 'sprout',  Decimal('0'))
+        check_chain_value(pools[2], 'sapling', Decimal('0'))
+        check_chain_value(pools[3], 'orchard', Decimal('0'))
 
         # Restart the nodes
         stop_nodes(self.nodes)
@@ -49,34 +83,52 @@ class WalletPersistenceTest (BitcoinTestFramework):
         addresses = self.nodes[0].z_listaddresses()
         assert_true(sapling_addr in addresses, "Should contain address after restart")
 
+        # Verify size of pools after restarting
+        chainInfo = self.nodes[0].getblockchaininfo()
+        pools = chainInfo['valuePools']
+        check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
+        check_chain_value(pools[0], 'transparent', expected_supply)
+        check_chain_value(pools[1], 'sprout',  Decimal('0'))
+        check_chain_value(pools[2], 'sapling', Decimal('0'))
+        check_chain_value(pools[3], 'orchard', Decimal('0'))
+
         # Node 0 shields funds to Sapling address
         taddr0 = get_coinbase_address(self.nodes[0])
         recipients = []
         recipients.append({"address": sapling_addr, "amount": Decimal('20')})
-        myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
         self.nodes[0].generate(1)
+        expected_supply += post_halving_subsidy
         self.sync_all()
 
         # Verify shielded balance
         assert_equal(self.nodes[0].z_getbalance(sapling_addr), Decimal('20'))
 
-        # Verify size of shielded pools
-        pools = self.nodes[0].getblockchaininfo()['valuePools']
-        assert_equal(pools[0]['chainValue'], Decimal('0'))  # Sprout
-        assert_equal(pools[1]['chainValue'], Decimal('20')) # Sapling
+        # Verify size of pools
+        chainInfo = self.nodes[0].getblockchaininfo()
+        pools = chainInfo['valuePools']
+        check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
+        check_chain_value(pools[0], 'transparent', expected_supply - Decimal('20'))  # Transparent
+        check_chain_value(pools[1], 'sprout',  Decimal('0'))  
+        check_chain_value(pools[2], 'sapling', Decimal('20'))
+        check_chain_value(pools[3], 'orchard', Decimal('0'))
 
         # Restart the nodes
         stop_nodes(self.nodes)
         wait_bitcoinds()
         self.setup_network()
 
-        # Verify size of shielded pools
-        pools = self.nodes[0].getblockchaininfo()['valuePools']
-        assert_equal(pools[0]['chainValue'], Decimal('0'))  # Sprout
-        assert_equal(pools[1]['chainValue'], Decimal('20')) # Sapling
+        # Verify size of pools
+        chainInfo = self.nodes[0].getblockchaininfo()
+        pools = chainInfo['valuePools']
+        check_chain_value(chainInfo['chainSupply'], None, expected_supply)  # Supply
+        check_chain_value(pools[0], 'transparent', expected_supply - Decimal('20'))  # Transparent
+        check_chain_value(pools[1], 'sprout',  Decimal('0')) 
+        check_chain_value(pools[2], 'sapling', Decimal('20'))
+        check_chain_value(pools[3], 'orchard', Decimal('0'))
 
         # Node 0 sends some shielded funds to Node 1
         dest_addr = self.nodes[1].z_getnewaddress('sapling')

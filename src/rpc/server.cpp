@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019-2022 The Zcash developers
+// Copyright (c) 2019-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -548,6 +548,55 @@ std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::vecto
         + cmd + "\n\n" +
         "Alternatively add these two lines to the zcash.conf file:\n\n"
         + config;
+}
+
+std::string asOfHeightMessage(bool hasMinconf) {
+    std::string minconfInteraction = hasMinconf
+        ? "                    `minconf` must be at least 1 when `asOfHeight` is provided.\n"
+        : "";
+    return
+        "asOfHeight       (numeric, optional, default=-1) Execute the query as if it\n"
+        "                    were run when the blockchain was at the height specified by\n"
+        "                    this argument. The default is to use the entire blockchain\n"
+        "                    that the node is aware of. -1 can be used as in other RPC\n"
+        "                    calls to indicate the current height (including the\n"
+        "                    mempool), but this does not support negative values in\n"
+        "                    general. A “future” height will fall back to the current\n"
+        "                    height. Any explicit value will cause the mempool to be\n"
+        "                    ignored, meaning no unconfirmed tx will be considered.\n"
+        + minconfInteraction;
+}
+
+std::optional<int> parseAsOfHeight(const UniValue& params, int index) {
+    std::optional<int> asOfHeight;
+    if (params.size() > index) {
+        auto requestedHeight = params[index].get_int();
+        if (requestedHeight == -1) {
+            // the default, do nothing
+        } else if (requestedHeight < 0) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Can not perform the query as of a negative block height");
+        } else if (requestedHeight == 0) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Can not perform the query as of the genesis block");
+        } else {
+            asOfHeight = requestedHeight;
+        }
+    }
+    return asOfHeight;
+}
+
+int parseMinconf(int defaultValue, const UniValue& params, int index, const std::optional<int>& asOfHeight) {
+    int nMinDepth = defaultValue;
+    if (params.size() > index) {
+        auto requestedDepth = params[index].get_int();
+        if (requestedDepth < 0) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Minimum number of confirmations cannot be less than 0");
+        } else if (requestedDepth == 0 && asOfHeight.has_value()) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Require a minimum of 1 confirmation when `asOfHeight` is provided");
+        } else {
+            nMinDepth = requestedDepth;
+        }
+    }
+    return nMinDepth;
 }
 
 void RPCRegisterTimerInterface(RPCTimerInterface *iface)

@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2015-2022 The Zcash developers
+// Copyright (c) 2015-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -299,7 +299,7 @@ const fs::path &ZC_GetParamsDir()
         return path;
 
     if (mapArgs.count("-paramsdir")) {
-        path = fs::system_complete(mapArgs["-paramsdir"]);
+        path = fs::weakly_canonical(fs::system_complete(mapArgs["-paramsdir"]));
         if (!fs::is_directory(path)) {
             throw std::runtime_error(strprintf("The -paramsdir '%s' does not exist or is not a directory", path.string()));
         }
@@ -318,7 +318,7 @@ const fs::path GetExportDir()
     fs::path path;
     LOCK(cs_args);
     if (mapArgs.count("-exportdir")) {
-        path = fs::system_complete(mapArgs["-exportdir"]);
+        path = fs::weakly_canonical(fs::system_complete(mapArgs["-exportdir"]));
         if (fs::exists(path) && !fs::is_directory(path)) {
             throw std::runtime_error(strprintf("The -exportdir '%s' already exists and is not a directory", path.string()));
         }
@@ -342,7 +342,7 @@ const fs::path &GetDataDir(bool fNetSpecific)
         return path;
 
     if (mapArgs.count("-datadir")) {
-        path = fs::system_complete(mapArgs["-datadir"]);
+        path = fs::weakly_canonical(fs::system_complete(mapArgs["-datadir"]));
         if (!fs::is_directory(path)) {
             path = "";
             return path;
@@ -367,11 +367,7 @@ void ClearDatadirCache()
 
 fs::path GetConfigFile(const std::string& confPath)
 {
-    fs::path pathConfigFile(confPath);
-    if (!pathConfigFile.is_complete())
-        pathConfigFile = GetDataDir(false) / pathConfigFile;
-
-    return pathConfigFile;
+    return AbsPathForConfigVal(fs::path(confPath), false);
 }
 
 void ReadConfigFile(const std::string& confPath,
@@ -435,9 +431,7 @@ void ReadConfigFile(const std::string& confPath,
 #ifndef WIN32
 fs::path GetPidFile()
 {
-    fs::path pathPidFile(GetArg("-pid", BITCOIN_PID_FILENAME));
-    if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
-    return pathPidFile;
+    return AbsPathForConfigVal(fs::path(GetArg("-pid", BITCOIN_PID_FILENAME)));
 }
 
 void CreatePidFile(const fs::path &path, pid_t pid)
@@ -679,4 +673,9 @@ std::string LicenseInfo()
 int GetNumCores()
 {
     return boost::thread::physical_concurrency();
+}
+
+fs::path AbsPathForConfigVal(const fs::path& path, bool net_specific)
+{
+    return fs::absolute(path, GetDataDir(net_specific));
 }

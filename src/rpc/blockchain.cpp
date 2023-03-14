@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019-2022 The Zcash developers
+// Copyright (c) 2019-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -84,12 +84,14 @@ double GetNetworkDifficulty(const CBlockIndex* blockindex)
 }
 
 static UniValue ValuePoolDesc(
-    const std::string &name,
+    const std::optional<std::string> name,
     const std::optional<CAmount> chainValue,
     const std::optional<CAmount> valueDelta)
 {
     UniValue rv(UniValue::VOBJ);
-    rv.pushKV("id", name);
+    if (name.has_value()) {
+        rv.pushKV("id", name.value());
+    }
     rv.pushKV("monitored", (bool)chainValue);
     if (chainValue) {
         rv.pushKV("chainValue", ValueFromAmount(*chainValue));
@@ -118,7 +120,7 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     result.pushKV("finalsaplingroot", blockindex->hashFinalSaplingRoot.GetHex());
     result.pushKV("time", (int64_t)blockindex->nTime);
     result.pushKV("nonce", blockindex->nNonce.GetHex());
-    result.pushKV("solution", HexStr(blockindex->nSolution));
+    result.pushKV("solution", HexStr(blockindex->GetBlockHeader().nSolution));
     result.pushKV("bits", strprintf("%08x", blockindex->nBits));
     result.pushKV("difficulty", GetDifficulty(blockindex));
     result.pushKV("chainwork", blockindex->nChainWork.GetHex());
@@ -241,7 +243,8 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.pushKV("authdataroot", blockindex->hashAuthDataRoot.GetHex());
     result.pushKV("finalsaplingroot", blockindex->hashFinalSaplingRoot.GetHex());
     if (nu5Active) {
-        result.pushKV("finalorchardroot", blockindex->hashFinalOrchardRoot.GetHex());
+        auto finalOrchardRootBytes = blockindex->hashFinalOrchardRoot;
+        result.pushKV("finalorchardroot", HexStr(finalOrchardRootBytes.begin(), finalOrchardRootBytes.end()));
     }
     result.pushKV("chainhistoryroot", blockindex->hashChainHistoryRoot.GetHex());
     UniValue txs(UniValue::VARR);
@@ -264,8 +267,9 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.pushKV("difficulty", GetDifficulty(blockindex));
     result.pushKV("chainwork", blockindex->nChainWork.GetHex());
     result.pushKV("anchor", blockindex->hashFinalSproutRoot.GetHex());
-
+    result.pushKV("chainSupply", ValuePoolDesc(std::nullopt, blockindex->nChainTotalSupply, blockindex->nChainSupplyDelta));
     UniValue valuePools(UniValue::VARR);
+    valuePools.push_back(ValuePoolDesc("transparent", blockindex->nChainTransparentValue, blockindex->nTransparentValue));
     valuePools.push_back(ValuePoolDesc("sprout", blockindex->nChainSproutValue, blockindex->nSproutValue));
     valuePools.push_back(ValuePoolDesc("sapling", blockindex->nChainSaplingValue, blockindex->nSaplingValue));
     valuePools.push_back(ValuePoolDesc("orchard", blockindex->nChainOrchardValue, blockindex->nOrchardValue));
@@ -347,6 +351,9 @@ UniValue mempoolToJSON(bool fVerbose = false)
             info.pushKV("height", (int)e.GetHeight());
             info.pushKV("startingpriority", e.GetPriority(e.GetHeight()));
             info.pushKV("currentpriority", e.GetPriority(chainActive.Height()));
+            info.pushKV("descendantcount", e.GetCountWithDescendants());
+            info.pushKV("descendantsize", e.GetSizeWithDescendants());
+            info.pushKV("descendantfees", e.GetFeesWithDescendants());
             const CTransaction& tx = e.GetTx();
             set<string> setDepends;
             for (const CTxIn& txin : tx.vin)
@@ -402,6 +409,9 @@ UniValue getrawmempool(const UniValue& params, bool fHelp)
             "    \"height\" : n,           (numeric) block height when transaction entered pool\n"
             "    \"startingpriority\" : n, (numeric) priority when transaction entered pool\n"
             "    \"currentpriority\" : n,  (numeric) transaction priority now\n"
+            "    \"descendantcount\" : n,  (numeric) number of in-mempool descendant transactions (including this one)\n"
+            "    \"descendantsize\" : n,   (numeric) size of in-mempool descendants (including this one)\n"
+            "    \"descendantfees\" : n,   (numeric) fees of in-mempool descendants (including this one)\n"
             "    \"depends\" : [           (array) unconfirmed transactions used as inputs for this transaction\n"
             "        \"transactionid\",    (string) parent transaction id\n"
             "       ... ]\n"
@@ -683,15 +693,18 @@ UniValue getblockheader(const UniValue& params, bool fHelp)
 
     CBlockIndex* pblockindex = mapBlockIndex[hash];
 
-    if (!fVerbose)
-    {
-        CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION);
-        ssBlock << pblockindex->GetBlockHeader();
-        std::string strHex = HexStr(ssBlock.begin(), ssBlock.end());
-        return strHex;
+    try {
+        if (!fVerbose) {
+            CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION);
+            ssBlock << pblockindex->GetBlockHeader();
+            std::string strHex = HexStr(ssBlock.begin(), ssBlock.end());
+            return strHex;
+        } else {
+            return blockheaderToJSON(pblockindex);
+        }
+    } catch (const runtime_error&) {
+        throw JSONRPCError(RPC_DATABASE_ERROR, "Failed to read index entry");
     }
-
-    return blockheaderToJSON(pblockindex);
 }
 
 UniValue getblock(const UniValue& params, bool fHelp)
@@ -716,9 +729,14 @@ UniValue getblock(const UniValue& params, bool fHelp)
             "  \"version\" : n,         (numeric) The block version\n"
             "  \"merkleroot\" : \"xxxx\", (string) The merkle root\n"
             "  \"finalsaplingroot\" : \"xxxx\", (string) The root of the Sapling commitment tree after applying this block\n"
-            "  \"finalorchardroot\" : \"xxxx\", (string) The root of the Orchard commitment tree after applying this block.\n"
-            "                                        Omitted for blocks prior to NU5 activation. This will be the null\n"
-            "                                        hash if this block has never been connected to a main chain.\n"
+            "  \"finalorchardroot\" : \"xxxx\", (string, optional) The root of the Orchard commitment tree after\n"
+            "                               applying this block. Omitted for blocks prior to NU5 activation. This\n"
+            "                               will be the null hash if this block has never been connected to a\n"
+            "                               main chain.\n"
+            "                               NB: The serialized representation of this field returned by this method\n"
+            "                                   was byte-flipped relative to its representation in the `getrawtransaction`\n"
+            "                                   output in prior releases up to and including v5.2.0. This has now been\n"
+            "                                   rectified.\n"
             "  \"tx\" : [               (array of string) The transaction ids\n"
             "     \"transactionid\"     (string) The transaction id\n"
             "     ,...\n"
@@ -727,6 +745,23 @@ UniValue getblock(const UniValue& params, bool fHelp)
             "  \"nonce\" : n,           (numeric) The nonce\n"
             "  \"bits\" : \"1d00ffff\",   (string) The bits\n"
             "  \"difficulty\" : x.xxx,  (numeric) The difficulty\n"
+            "  \"chainSupply\": {          (object) information about the total supply\n"
+            "      \"monitored\": xx,           (boolean) true if the total supply is being monitored\n"
+            "      \"chainValue\": xxxxxx,      (numeric, optional) total chain supply after this block, in " + CURRENCY_UNIT + "\n"
+            "      \"chainValueZat\": xxxxxx,   (numeric, optional) total chain supply after this block, in " + MINOR_CURRENCY_UNIT + "\n"
+            "      \"valueDelta\": xxxxxx,      (numeric, optional) change to the chain supply produced by this block, in " + CURRENCY_UNIT + "\n"
+            "      \"valueDeltaZat\": xxxxxx,   (numeric, optional) change to the chain supply produced by this block, in " + MINOR_CURRENCY_UNIT + "\n"
+            "  }\n"
+            "  \"valuePools\": [            (array) information about each value pool\n"
+            "      {\n"
+            "          \"id\": \"xxxx\",            (string) name of the pool\n"
+            "          \"monitored\": xx,           (boolean) true if the pool is being monitored\n"
+            "          \"chainValue\": xxxxxx,      (numeric, optional) total amount in the pool, in " + CURRENCY_UNIT + "\n"
+            "          \"chainValueZat\": xxxxxx,   (numeric, optional) total amount in the pool, in " + MINOR_CURRENCY_UNIT + "\n"
+            "          \"valueDelta\": xxxxxx,      (numeric, optional) change to the amount in the pool produced by this block, in " + CURRENCY_UNIT + "\n"
+            "          \"valueDeltaZat\": xxxxxx,   (numeric, optional) change to the amount in the pool produced by this block, in " + MINOR_CURRENCY_UNIT + "\n"
+            "      }, ...\n"
+            "  ]\n"
             "  \"previousblockhash\" : \"hash\",  (string) The hash of the previous block\n"
             "  \"nextblockhash\" : \"hash\"       (string) The hash of the next block\n"
             "}\n"
@@ -1021,6 +1056,19 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
             "  \"chainwork\": \"xxxx\"     (string) total amount of work in active chain, in hexadecimal\n"
             "  \"size_on_disk\": xxxxxx,       (numeric) the estimated size of the block and undo files on disk\n"
             "  \"commitments\": xxxxxx,    (numeric) the current number of note commitments in the commitment tree\n"
+            "  \"chainSupply\": {          (object) information about the total supply\n"
+            "      \"monitored\": xx,           (boolean) true if the total supply is being monitored\n"
+            "      \"chainValue\": xxxxxx,      (numeric, optional) total chain supply after this block, in " + CURRENCY_UNIT + "\n"
+            "      \"chainValueZat\": xxxxxx,   (numeric, optional) total chain supply after this block, in " + MINOR_CURRENCY_UNIT + "\n"
+            "  }\n"
+            "  \"valuePools\": [            (array) information about each value pool\n"
+            "      {\n"
+            "          \"id\": \"xxxx\",            (string) name of the pool\n"
+            "          \"monitored\": xx,           (boolean) true if the pool is being monitored\n"
+            "          \"chainValue\": xxxxxx,      (numeric, optional) total amount in the pool, in " + CURRENCY_UNIT + "\n"
+            "          \"chainValueZat\": xxxxxx,   (numeric, optional) total amount in the pool, in " + MINOR_CURRENCY_UNIT + "\n"
+            "      }, ...\n"
+            "  ]\n"
             "  \"softforks\": [            (array) status of softforks in progress\n"
             "     {\n"
             "        \"id\": \"xxxx\",        (string) name of softfork\n"
@@ -1076,7 +1124,9 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     obj.pushKV("commitments",           static_cast<uint64_t>(tree.size()));
 
     CBlockIndex* tip = chainActive.Tip();
+    obj.pushKV("chainSupply", ValuePoolDesc(std::nullopt, tip->nChainTotalSupply, std::nullopt));
     UniValue valuePools(UniValue::VARR);
+    valuePools.push_back(ValuePoolDesc("transparent", tip->nChainTransparentValue, std::nullopt));
     valuePools.push_back(ValuePoolDesc("sprout", tip->nChainSproutValue, std::nullopt));
     valuePools.push_back(ValuePoolDesc("sapling", tip->nChainSaplingValue, std::nullopt));
     valuePools.push_back(ValuePoolDesc("orchard", tip->nChainOrchardValue, std::nullopt));
@@ -1247,6 +1297,10 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
             "    \"skipHash\": \"hash\",   (string) hash of most recent block with more information\n"
             "    \"commitments\": {\n"
             "      \"finalRoot\": \"hex\", (string)\n"
+            "                          NB: The serialized representation of this field returned by this method\n"
+            "                              was byte-flipped relative to its representation in the `getrawtransaction`\n"
+            "                              output in prior releases up to and including v5.2.0. This has now been\n"
+            "                              rectified.\n"
             "      \"finalState\": \"hex\" (string)\n"
             "    }\n"
             "  },\n"
@@ -1345,7 +1399,8 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
     if (nu5_activation_height.has_value()) {
         UniValue orchard_result(UniValue::VOBJ);
         UniValue orchard_commitments(UniValue::VOBJ);
-        orchard_commitments.pushKV("finalRoot", pindex->hashFinalOrchardRoot.GetHex());
+        auto finalOrchardRootBytes = pindex->hashFinalOrchardRoot;
+        orchard_commitments.pushKV("finalRoot", HexStr(finalOrchardRootBytes.begin(), finalOrchardRootBytes.end()));
         bool need_skiphash = false;
         OrchardMerkleFrontier tree;
         if (pcoinsTip->GetOrchardAnchorAt(pindex->hashFinalOrchardRoot, tree)) {

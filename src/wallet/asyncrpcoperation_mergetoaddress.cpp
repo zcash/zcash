@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2022 The Zcash developers
+// Copyright (c) 2017-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -639,7 +639,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
                     throw JSONRPCError(RPC_WALLET_ERROR, strprintf("mapBlockIndex does not contain block hash %s", wtx.hashBlock.ToString()));
                 }
                 wtxHeight = mapBlockIndex[wtx.hashBlock]->nHeight;
-                wtxDepth = wtx.GetDepthInMainChain();
+                wtxDepth = wtx.GetDepthInMainChain(std::nullopt);
             }
             LogPrint("zrpcunsafe", "%s: spending note (txid=%s, vJoinSplit=%d, jsoutindex=%d, amount=%s, height=%d, confirmations=%d)\n",
                      getId(),

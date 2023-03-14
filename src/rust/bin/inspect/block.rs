@@ -186,8 +186,8 @@ impl Block {
                     mutated = true;
                 }
                 let mut inner_hasher = Sha256::new();
-                inner_hasher.update(&merkle_tree[j + i]);
-                inner_hasher.update(&merkle_tree[j + i2]);
+                inner_hasher.update(merkle_tree[j + i]);
+                inner_hasher.update(merkle_tree[j + i2]);
                 merkle_tree.push(Sha256::digest(&inner_hasher.finalize()));
                 i += 2;
             }

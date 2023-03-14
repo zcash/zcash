@@ -4,27 +4,19 @@
 # bdb 18.1.40 2020-09-01
 #
 
-# Ccache 4.0 requires adding CMake to the depends system.
-native_ccache 4.0 2022-09-01
-native_ccache 4.1 2022-09-01
-native_ccache 4.2 2022-09-01
-native_ccache 4.2.1 2022-09-01
-native_ccache 4.3 2022-09-01
-native_ccache 4.4 2022-09-01
-native_ccache 4.4.1 2022-09-01
-native_ccache 4.4.2 2022-09-01
-native_ccache 4.5 2022-09-01
-native_ccache 4.5.1 2022-09-01
-native_ccache 4.6 2022-09-01
-native_ccache 4.6.1 2022-09-01
+# CCache 4.7 appears to drop support for Ubuntu 18.04
+native_ccache 4.7 2023-03-01
+native_ccache 4.7.1 2023-03-01
+native_ccache 4.7.2 2023-03-01
+native_ccache 4.7.3 2023-03-01
+native_ccache 4.7.4 2023-03-01
 
-# Clang and Rust are currently pinned to LLVM 14
+# Clang and Rust are currently pinned to LLVM 15
+libcxx 15.0.7 2023-04-30
+native_clang 15.0.7 2023-04-30
+
+# We follow upstream Bitcoin Core's LevelDB updates
+leveldb 1.23 2023-06-01
 
 # We're never updating to this version
-bdb 18.1.40 2024-02-01
-
-# Google Test 1.10.0 requires adding CMake to the depends system.
-googletest 1.10.0 2022-09-01
-googletest 1.11.0 2022-09-01
-googletest 1.12.0 2022-09-01
-googletest 1.12.1 2022-09-01
+bdb 18.1.40 2024-03-01

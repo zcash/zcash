@@ -40,7 +40,10 @@ class KeyPoolTest(BitcoinTestFramework):
         nodes[0].encryptwallet('test')
         bitcoind_processes[0].wait()
         # Restart node 0
-        nodes[0] = start_node(0, self.options.tmpdir)
+        nodes[0] = start_node(0, self.options.tmpdir, extra_args=[
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=getrawchangeaddress',
+        ])
         # We can't create any external addresses, which don't use the keypool.
         # We should get an error that we need to unlock the wallet.
         try:

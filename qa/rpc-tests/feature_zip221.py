@@ -57,7 +57,7 @@ class Zip221Test(BitcoinTestFramework):
 
         if height >= 35:
             orchard_root = hex_str_to_bytes(
-                self.nodes[0].getblock(str(height))["finalorchardroot"])[::-1]
+                self.nodes[0].getblock(str(height))["finalorchardroot"])
             v2_data = (orchard_root, 0)
         else:
             v2_data = None

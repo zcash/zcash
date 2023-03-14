@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019-2022 The Zcash developers
+// Copyright (c) 2019-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -14,6 +14,7 @@
 #ifdef ENABLE_MINING
 #include "crypto/equihash.h"
 #endif
+#include "deprecation.h"
 #include "init.h"
 #include "key_io.h"
 #include "main.h"
@@ -220,7 +221,7 @@ UniValue generate(const UniValue& params, bool fHelp)
     unsigned int k = Params().GetConsensus().nEquihashK;
     while (nHeight < nHeightEnd)
     {
-        std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(Params(), minerAddress));
+        std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(minerAddress));
         if (!pblocktemplate.get())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
         CBlock *pblock = &pblocktemplate->block;
@@ -699,7 +700,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INTERNAL_ERROR, "No miner address available (mining requires a wallet or -mineraddress)");
         }
 
-        pblocktemplate = CreateNewBlock(Params(), minerAddress, next_cb_mtx);
+        pblocktemplate = BlockAssembler(Params()).CreateNewBlock(minerAddress, next_cb_mtx);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 
@@ -782,9 +783,11 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     result.pushKV("version", pblock->nVersion);
     result.pushKV("previousblockhash", pblock->hashPrevBlock.GetHex());
     // The following 3 are deprecated; remove in a future release.
-    result.pushKV("blockcommitmentshash", pblock->hashBlockCommitments.GetHex());
-    result.pushKV("lightclientroothash", pblock->hashBlockCommitments.GetHex());
-    result.pushKV("finalsaplingroothash", pblock->hashBlockCommitments.GetHex());
+    if (fEnableGbtOldHashes) {
+        result.pushKV("blockcommitmentshash", pblock->hashBlockCommitments.GetHex());
+        result.pushKV("lightclientroothash", pblock->hashBlockCommitments.GetHex());
+        result.pushKV("finalsaplingroothash", pblock->hashBlockCommitments.GetHex());
+    }
     {
         // These are items in the result object that are valid only if the
         // block template returned by this RPC is used unmodified. Otherwise,

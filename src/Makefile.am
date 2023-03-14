@@ -54,22 +54,28 @@ CXXBRIDGE_RS = \
   rust/src/blake2b.rs \
   rust/src/bundlecache.rs \
   rust/src/equihash.rs \
+  rust/src/merkle_frontier.rs \
   rust/src/orchard_bundle.rs \
   rust/src/sapling.rs \
+  rust/src/streams.rs \
   rust/src/wallet_scanner.rs
 CXXBRIDGE_H = \
   rust/gen/include/rust/blake2b.h \
   rust/gen/include/rust/bundlecache.h \
   rust/gen/include/rust/equihash.h \
+  rust/gen/include/rust/merkle_frontier.h \
   rust/gen/include/rust/orchard_bundle.h \
   rust/gen/include/rust/sapling.h \
+  rust/gen/include/rust/streams.h \
   rust/gen/include/rust/wallet_scanner.h
 CXXBRIDGE_CPP = \
   rust/gen/src/blake2b.cpp \
   rust/gen/src/bundlecache.cpp \
   rust/gen/src/equihash.cpp \
+  rust/gen/src/merkle_frontier.cpp \
   rust/gen/src/orchard_bundle.cpp \
   rust/gen/src/sapling.cpp \
+  rust/gen/src/streams.cpp \
   rust/gen/src/wallet_scanner.cpp
 
 # We add a rust/cxx.h include to indicate that we provide this (via the rustcxx depends
@@ -132,11 +138,12 @@ LIBBITCOIN_CRYPTO_SHANI = crypto/libbitcoin_crypto_shani.a
 LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_SHANI)
 endif
 
-cargo-build-lib: $(CARGO_CONFIGURED)
-	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build --lib $(RUST_BUILD_OPTS) $(cargo_verbose)
+cargo-build: $(CARGO_CONFIGURED) $(LIBSECP256K1)
+	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build $(RUST_BUILD_OPTS) $(cargo_verbose)
 
-cargo-build-bins: $(CARGO_CONFIGURED) $(LIBSECP256K1)
-	$(rust_verbose)$(RUST_ENV_VARS) $(CARGO) build --bins $(RUST_BUILD_OPTS) $(cargo_verbose)
+cargo-build-lib: cargo-build
+
+cargo-build-bins: cargo-build
 
 $(INSPECT_TOOL_BIN): cargo-build-bins
 	$(AM_V_at)cp $(INSPECT_TOOL_BUILD) $@
@@ -322,13 +329,16 @@ BITCOIN_CORE_H = \
   wallet/asyncrpcoperation_shieldcoinbase.h \
   wallet/crypter.h \
   wallet/db.h \
+  wallet/memo.h \
   wallet/orchard.h \
   wallet/paymentdisclosure.h \
   wallet/paymentdisclosuredb.h \
   wallet/rpcwallet.h \
   wallet/wallet.h \
   wallet/walletdb.h \
+  wallet/wallet_tx_builder.h \
   warnings.h \
+  weighted_map.h \
   zmq/zmqabstractnotifier.h \
   zmq/zmqconfig.h\
   zmq/zmqnotificationinterface.h \
@@ -669,7 +679,6 @@ libzcash_a_SOURCES = \
 
 libzcash_a_CPPFLAGS = $(AM_CPPFLAGS) $(PIC_FLAGS) $(BITCOIN_INCLUDES)
 libzcash_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libzcash_a_LDFLAGS = $(AM_LDFLAGS)
 
 # zcash_script library #
 if BUILD_BITCOIN_LIBS
@@ -721,7 +730,7 @@ clean-local:
 	-$(MAKE) -C secp256k1 clean
 	-$(MAKE) -C univalue clean
 	rm -f leveldb/*/*.gcno leveldb/helpers/memenv/*.gcno
-	rm -f rust/gen
+	rm -rf rust/gen
 	rm -f fuzz.cpp
 	rm -rf fuzzing/*/output
 	-rm -f config.h
@@ -730,10 +739,6 @@ clean-local:
 .rc.o:
 	@test -f $(WINDRES)
 	$(AM_V_GEN) $(WINDRES) -DWINDRES_PREPROC -i $< -o $@
-
-.mm.o:
-	$(AM_V_CXX) $(OBJCXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	  $(CPPFLAGS) $(AM_CXXFLAGS) $(AM_CXXFLAGS) $(PIE_FLAGS) $(CXXFLAGS) -c -o $@ $<
 
 check-symbols: $(bin_PROGRAMS) $(bin_SCRIPTS)
 if GLIBC_BACK_COMPAT

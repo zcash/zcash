@@ -1,5 +1,5 @@
 // Copyright (c) 2013-2014 The Bitcoin Core developers
-// Copyright (c) 2020-2022 The Zcash developers
+// Copyright (c) 2020-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -20,6 +20,7 @@
 #include "wallet/asyncrpcoperation_mergetoaddress.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
+#include "wallet/memo.h"
 
 #include "init.h"
 #include "util/test.h"
@@ -1237,7 +1238,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     {
         auto selector = pwalletMain->ZTXOSelectorForAddress(taddr1, true, false).value();
         TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, zaddr1, 100*COIN, "DEADBEEF") };
+        std::vector<ResolvedPayment> recipients = { ResolvedPayment(std::nullopt, zaddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
         TransactionStrategy strategy;
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
         operation->main();
@@ -1250,7 +1251,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     {
         auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true, false).value();
         TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, taddr1, 100*COIN, "DEADBEEF") };
+        std::vector<ResolvedPayment> recipients = { ResolvedPayment(std::nullopt, taddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
         operation->main();
@@ -1258,59 +1259,36 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         std::string msg = operation->getErrorMessage();
         BOOST_CHECK(msg.find("Insufficient funds: have 0.00") != string::npos);
     }
+}
 
-    // get_memo_from_hex_string())
-    {
-        auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true, false).value();
-        TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
-        std::vector<SendManyRecipient> recipients = { SendManyRecipient(std::nullopt, zaddr1, 100*COIN, "DEADBEEF") };
-        TransactionStrategy strategy;
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
-        std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
-        TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
-
-        std::string memo = "DEADBEEF";
-        std::array<unsigned char, ZC_MEMO_SIZE> array = proxy.get_memo_from_hex_string(memo);
-        BOOST_CHECK_EQUAL(array[0], 0xDE);
-        BOOST_CHECK_EQUAL(array[1], 0xAD);
-        BOOST_CHECK_EQUAL(array[2], 0xBE);
-        BOOST_CHECK_EQUAL(array[3], 0xEF);
-        for (int i=4; i<ZC_MEMO_SIZE; i++) {
-            BOOST_CHECK_EQUAL(array[i], 0x00);  // zero padding
-        }
-
-        // memo is longer than allowed
-        std::vector<char> v (2 * (ZC_MEMO_SIZE+1));
-        std::fill(v.begin(),v.end(), 'A');
-        std::string bigmemo(v.begin(), v.end());
-
-        try {
-            proxy.get_memo_from_hex_string(bigmemo);
-        } catch (const UniValue& objError) {
-            BOOST_CHECK( find_error(objError, "too big"));
-        }
-
-        // invalid hexadecimal string
-        std::fill(v.begin(),v.end(), '@'); // not a hex character
-        std::string badmemo(v.begin(), v.end());
-
-        try {
-            proxy.get_memo_from_hex_string(badmemo);
-        } catch (const UniValue& objError) {
-            BOOST_CHECK( find_error(objError, "hexadecimal format"));
-        }
-
-        // odd length hexadecimal string
-        std::fill(v.begin(),v.end(), 'A');
-        v.resize(v.size() - 1);
-        assert(v.size() %2 == 1); // odd length
-        std::string oddmemo(v.begin(), v.end());
-        try {
-            proxy.get_memo_from_hex_string(oddmemo);
-        } catch (const UniValue& objError) {
-            BOOST_CHECK( find_error(objError, "hexadecimal format"));
-        }
+BOOST_AUTO_TEST_CASE(memo_hex_parsing) {
+    std::string memo = "DEADBEEF";
+    MemoBytes memoBytes = Memo::FromHexOrThrow(memo).ToBytes();
+    BOOST_CHECK_EQUAL(memoBytes[0], 0xDE);
+    BOOST_CHECK_EQUAL(memoBytes[1], 0xAD);
+    BOOST_CHECK_EQUAL(memoBytes[2], 0xBE);
+    BOOST_CHECK_EQUAL(memoBytes[3], 0xEF);
+    for (int i=4; i<ZC_MEMO_SIZE; i++) {
+        BOOST_CHECK_EQUAL(memoBytes[i], 0x00);  // zero padding
     }
+
+    // memo is longer than allowed
+    std::vector<char> v (2 * (ZC_MEMO_SIZE+1));
+    std::fill(v.begin(),v.end(), 'A');
+    std::string bigmemo(v.begin(), v.end());
+    BOOST_CHECK(std::get<MemoError>(Memo::FromHex(bigmemo)) == MemoError::MemoTooLong);
+
+    // invalid hexadecimal string
+    std::fill(v.begin(),v.end(), '@'); // not a hex character
+    std::string badmemo(v.begin(), v.end());
+    BOOST_CHECK(std::get<MemoError>(Memo::FromHex(badmemo)) == MemoError::HexDecodeError);
+
+    // odd length hexadecimal string
+    std::fill(v.begin(),v.end(), 'A');
+    v.resize(v.size() - 1);
+    assert(v.size() %2 == 1); // odd length
+    std::string oddmemo(v.begin(), v.end());
+    BOOST_CHECK(std::get<MemoError>(Memo::FromHex(oddmemo)) == MemoError::HexDecodeError);
 }
 
 /*

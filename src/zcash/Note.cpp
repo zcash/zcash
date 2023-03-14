@@ -66,9 +66,10 @@ SaplingNote::SaplingNote(
 std::optional<uint256> SaplingNote::cmu() const {
     uint256 result;
     uint256 rcm_tmp = rcm();
-    // ZIP 216: This method is only called from test code.
+    // We consider ZIP 216 active all of the time because blocks prior to NU5
+    // activation (on mainnet and testnet) did not contain Sapling transactions
+    // that violated its canonicity rule.
     if (!librustzcash_sapling_compute_cmu(
-            true,
             d.data(),
             pk_d.begin(),
             value(),
@@ -85,7 +86,6 @@ std::optional<uint256> SaplingNote::cmu() const {
 // Call librustzcash to compute the nullifier
 std::optional<uint256> SaplingNote::nullifier(const SaplingFullViewingKey& vk, const uint64_t position) const
 {
-    auto ak = vk.ak;
     auto nk = vk.nk;
 
     uint256 result;
@@ -95,7 +95,6 @@ std::optional<uint256> SaplingNote::nullifier(const SaplingFullViewingKey& vk, c
             pk_d.begin(),
             value(),
             rcm_tmp.begin(),
-            ak.begin(),
             nk.begin(),
             position,
             result.begin()
@@ -288,7 +287,6 @@ std::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_witho
     uint256 cmu_expected;
     uint256 rcm = plaintext.rcm();
     if (!librustzcash_sapling_compute_cmu(
-        true,
         plaintext.d.data(),
         pk_d.begin(),
         plaintext.value(),
@@ -330,12 +328,10 @@ std::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     const uint256 &cmu
 )
 {
-    // The nu5Active flag passed in here enables the new consensus rules from ZIP 216
-    // (https://zips.z.cash/zip-0216#specification) on the following fields:
-    //
-    // - pk_d in the outCiphertext field of Sapling coinbase outputs.
-    bool nu5Active = params.NetworkUpgradeActive(height, Consensus::UPGRADE_NU5);
-    auto ret = attempt_sapling_enc_decryption_deserialization(nu5Active, ciphertext, epk, esk, pk_d);
+    // We consider ZIP 216 active all of the time because blocks prior to NU5
+    // activation (on mainnet and testnet) did not contain Sapling transactions
+    // that violated its canonicity rule.
+    auto ret = attempt_sapling_enc_decryption_deserialization(ciphertext, epk, esk, pk_d);
 
     if (!ret) {
         return std::nullopt;
@@ -349,19 +345,18 @@ std::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
             return std::nullopt;
         }
 
-        return plaintext_checks_without_height(nu5Active, plaintext, epk, esk, pk_d, cmu);
+        return plaintext_checks_without_height(plaintext, epk, esk, pk_d, cmu);
     }
 }
 
 std::optional<SaplingNotePlaintext> SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(
-    bool zip216Enabled,
     const SaplingEncCiphertext &ciphertext,
     const uint256 &epk,
     const uint256 &esk,
     const uint256 &pk_d
 )
 {
-    auto encPlaintext = AttemptSaplingEncDecryption(zip216Enabled, ciphertext, epk, esk, pk_d);
+    auto encPlaintext = AttemptSaplingEncDecryption(ciphertext, epk, esk, pk_d);
 
     if (!encPlaintext) {
         return std::nullopt;
@@ -383,7 +378,6 @@ std::optional<SaplingNotePlaintext> SaplingNotePlaintext::attempt_sapling_enc_de
 }
 
 std::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_without_height(
-    bool zip216Enabled,
     const SaplingNotePlaintext &plaintext,
     const uint256 &epk,
     const uint256 &esk,
@@ -413,7 +407,6 @@ std::optional<SaplingNotePlaintext> SaplingNotePlaintext::plaintext_checks_witho
     uint256 cmu_expected;
     uint256 rcm = plaintext.rcm();
     if (!librustzcash_sapling_compute_cmu(
-        zip216Enabled,
         plaintext.d.data(),
         pk_d.begin(),
         plaintext.value(),

@@ -1,10 +1,11 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019-2022 The Zcash developers
+// Copyright (c) 2019-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "clientversion.h"
+#include "deprecation.h"
 #include "init.h"
 #include "key_io.h"
 #include "experimental_features.h"
@@ -93,7 +94,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.pushKV("walletversion", pwalletMain->GetVersion());
-        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance()));
+        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance(std::nullopt)));
     }
 #endif
     obj.pushKV("blocks",        (int)chainActive.Height());
@@ -220,10 +221,17 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 
 class DescribePaymentAddressVisitor
 {
+    void pushAddressType(UniValue& obj, std::string address_type) const {
+        obj.pushKV("address_type", address_type);
+        if (fEnableAddrTypeField) {
+            obj.pushKV("type", address_type); //deprecated
+        }
+    }
+
 public:
     UniValue operator()(const CKeyID &addr) const {
         UniValue obj(UniValue::VOBJ);
-        obj.pushKV("type", "p2pkh");
+        pushAddressType(obj, "p2pkh");
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
             obj.pushKV("ismine", pwalletMain->HaveKey(addr));
@@ -234,7 +242,7 @@ public:
 
     UniValue operator()(const CScriptID &addr) const {
         UniValue obj(UniValue::VOBJ);
-        obj.pushKV("type", "p2sh");
+        pushAddressType(obj, "p2sh");
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
             obj.pushKV("ismine", pwalletMain->HaveCScript(addr));
@@ -245,7 +253,7 @@ public:
 
     UniValue operator()(const libzcash::SproutPaymentAddress &zaddr) const {
         UniValue obj(UniValue::VOBJ);
-        obj.pushKV("type", "sprout");
+        pushAddressType(obj, "sprout");
         obj.pushKV("payingkey", zaddr.a_pk.GetHex());
         obj.pushKV("transmissionkey", zaddr.pk_enc.GetHex());
 #ifdef ENABLE_WALLET
@@ -258,7 +266,7 @@ public:
 
     UniValue operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
         UniValue obj(UniValue::VOBJ);
-        obj.pushKV("type", "sapling");
+        pushAddressType(obj, "sapling");
         obj.pushKV("diversifier", HexStr(zaddr.d));
         obj.pushKV("diversifiedtransmissionkey", zaddr.pk_d.GetHex());
 #ifdef ENABLE_WALLET
@@ -271,7 +279,7 @@ public:
 
     UniValue operator()(const libzcash::UnifiedAddress &uaddr) const {
         UniValue obj(UniValue::VOBJ);
-        obj.pushKV("type", "unified");
+        pushAddressType(obj, "unified");
         // TODO: More information.
         return obj;
     }
@@ -289,7 +297,8 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
             "{\n"
             "  \"isvalid\" : true|false,        (boolean) If the address is valid or not. If not, this is the only property returned.\n"
             "  \"address\" : \"addr\",          (string) The address validated\n"
-            "  \"type\" : \"xxxx\",             (string) \"p2pkh\", \"p2sh\", \"sprout\" or \"sapling\"\n"
+            "  \"address_type\" : \"xxxx\",     (string) \"p2pkh\", \"p2sh\", \"sprout\" or \"sapling\"\n"
+            "  \"type\" : \"xxxx\",             (string) \"p2pkh\", \"p2sh\", \"sprout\" or \"sapling\" (DEPRECATED, legacy attribute)\n"
             "  \"ismine\" : true|false,         (boolean) If the address is yours or not\n"
             "  \"payingkey\" : \"hex\",         (string) [sprout] The hex value of the paying key, a_pk\n"
             "  \"transmissionkey\" : \"hex\",   (string) [sprout] The hex value of the transmission key, pk_enc\n"

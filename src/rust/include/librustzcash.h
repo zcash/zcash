@@ -74,59 +74,10 @@ extern "C" {
         unsigned char *result
     );
 
-    /// Creates a Sapling proving context. Please free this when you're done.
-    void * librustzcash_sapling_proving_ctx_init();
-
-    /// This function (using the proving context) constructs a Spend proof
-    /// given the necessary witness information. It outputs `cv` (the value
-    /// commitment) and `rk` (so that you don't have to compute it) along
-    /// with the proof.
-    bool librustzcash_sapling_spend_proof(
-        void *ctx,
-        const unsigned char *ak,
-        const unsigned char *nsk,
-        const unsigned char *diversifier,
-        const unsigned char *rcm,
-        const unsigned char *ar,
-        const uint64_t value,
-        const unsigned char *anchor,
-        const unsigned char *witness,
-        unsigned char *cv,
-        unsigned char *rk,
-        unsigned char *zkproof
-    );
-
-    /// This function (using the proving context) constructs an Output
-    /// proof given the necessary witness information. It outputs `cv`
-    /// and the `zkproof`.
-    bool librustzcash_sapling_output_proof(
-        void *ctx,
-        const unsigned char *esk,
-        const unsigned char *payment_address,
-        const unsigned char *rcm,
-        const uint64_t value,
-        unsigned char *cv,
-        unsigned char *zkproof
-    );
-
-    /// This function (using the proving context) constructs a binding
-    /// signature. You must provide the intended valueBalance so that
-    /// we can internally check consistency.
-    bool librustzcash_sapling_binding_sig(
-        const void *ctx,
-        int64_t valueBalance,
-        const unsigned char *sighash,
-        unsigned char *result
-    );
-
-    /// Frees a Sapling proving context returned from
-    /// `librustzcash_sapling_proving_ctx_init`.
-    void librustzcash_sapling_proving_ctx_free(void *);
-
     /// Compute a Sapling nullifier.
     ///
     /// The `diversifier` parameter must be 11 bytes in length.
-    /// The `pk_d`, `r`, `ak` and `nk` parameters must be of length 32.
+    /// The `pk_d`, `r`, and `nk` parameters must be of length 32.
     /// The result is also of length 32 and placed in `result`.
     /// Returns false if the diversifier or pk_d is not valid
     bool librustzcash_sapling_compute_nf(
@@ -134,7 +85,6 @@ extern "C" {
         const unsigned char *pk_d,
         const uint64_t value,
         const unsigned char *rcm,
-        const unsigned char *ak,
         const unsigned char *nk,
         const uint64_t position,
         unsigned char *result
@@ -147,7 +97,6 @@ extern "C" {
     /// The result is also of length 32 and placed in `result`.
     /// Returns false if the diversifier or pk_d is not valid
     bool librustzcash_sapling_compute_cmu(
-        bool zip216_enabled,
         const unsigned char *diversifier,
         const unsigned char *pk_d,
         const uint64_t value,
@@ -161,7 +110,6 @@ extern "C" {
     /// the result is written to the 32-byte
     /// `result` buffer.
     bool librustzcash_sapling_ka_agree(
-        bool zip216_enabled,
         const unsigned char *p,
         const unsigned char *sk,
         unsigned char *result

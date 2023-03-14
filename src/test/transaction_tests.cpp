@@ -1,5 +1,5 @@
 // Copyright (c) 2011-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -551,7 +551,7 @@ BOOST_DATA_TEST_CASE(test_Get, boost::unit_test::data::xrange(static_cast<int>(C
     uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
 
     CBasicKeyStore keystore;
-    CCoinsView coinsDummy;
+    CCoinsViewDummy coinsDummy;
     CCoinsViewCache coins(&coinsDummy);
     std::vector<CMutableTransaction> dummyTransactions = SetupDummyInputs(keystore, coins);
 
@@ -675,7 +675,7 @@ BOOST_AUTO_TEST_CASE(test_IsStandard)
     LOCK(cs_main);
     auto chainparams = Params();
     CBasicKeyStore keystore;
-    CCoinsView coinsDummy;
+    CCoinsViewDummy coinsDummy;
     CCoinsViewCache coins(&coinsDummy);
     std::vector<CMutableTransaction> dummyTransactions = SetupDummyInputs(keystore, coins);
 
@@ -769,7 +769,7 @@ BOOST_AUTO_TEST_CASE(test_IsStandardV2)
     LOCK(cs_main);
     auto chainparams = Params();
     CBasicKeyStore keystore;
-    CCoinsView coinsDummy;
+    CCoinsViewDummy coinsDummy;
     CCoinsViewCache coins(&coinsDummy);
     std::vector<CMutableTransaction> dummyTransactions = SetupDummyInputs(keystore, coins);
 

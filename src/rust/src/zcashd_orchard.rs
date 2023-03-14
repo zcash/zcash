@@ -30,6 +30,7 @@ impl PartialOrd for OrderedAddress {
 
 impl Ord for OrderedAddress {
     fn cmp(&self, other: &Self) -> Ordering {
-        (&self.to_raw_address_bytes()).cmp(&other.to_raw_address_bytes())
+        self.to_raw_address_bytes()
+            .cmp(&other.to_raw_address_bytes())
     }
 }

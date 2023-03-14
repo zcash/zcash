@@ -13,8 +13,15 @@ from decimal import Decimal
 class WalletNullifiersTest (BitcoinTestFramework):
 
     def setup_nodes(self):
-        return start_nodes(self.num_nodes, self.options.tmpdir,
-                           extra_args=[['-experimentalfeatures', '-developerencryptwallet']] * self.num_nodes)
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            '-experimentalfeatures',
+            '-developerencryptwallet',
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
+            '-allowdeprecated=z_gettotalbalance',
+            '-allowdeprecated=z_listaddresses',
+        ]] * self.num_nodes)
 
     def run_test (self):
         # add zaddr to node 0
@@ -26,7 +33,10 @@ class WalletNullifiersTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address": myzaddr0, "amount": Decimal('10.0') - DEFAULT_FEE}) # utxo amount less fee
 
-        wait_and_assert_operationid_status(self.nodes[0], self.nodes[0].z_sendmany(mytaddr, recipients), timeout=120)
+        wait_and_assert_operationid_status(
+            self.nodes[0],
+            self.nodes[0].z_sendmany(mytaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders'),
+            timeout=120)
 
         self.sync_all()
         self.nodes[0].generate(1)
@@ -44,7 +54,10 @@ class WalletNullifiersTest (BitcoinTestFramework):
         bitcoind_processes[1].wait()
 
         # restart node 1
-        self.nodes[1] = start_node(1, self.options.tmpdir)
+        self.nodes[1] = start_node(1, self.options.tmpdir, [
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getbalance',
+        ])
         connect_nodes_bi(self.nodes, 0, 1)
         connect_nodes_bi(self.nodes, 1, 2)
         self.sync_all()
@@ -93,7 +106,10 @@ class WalletNullifiersTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":mytaddr1, "amount":1.0})
 
-        wait_and_assert_operationid_status(self.nodes[1], self.nodes[1].z_sendmany(myzaddr, recipients, 1), timeout=120)
+        wait_and_assert_operationid_status(
+            self.nodes[1],
+            self.nodes[1].z_sendmany(myzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedRecipients'),
+            timeout=120)
 
         self.sync_all()
         self.nodes[1].generate(1)
@@ -120,7 +136,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         importvk_result = self.nodes[3].z_importviewingkey(myzvkey, 'whenkeyisnew', 1)
 
         # Check results of z_importviewingkey
-        assert_equal(importvk_result["type"], "sapling")
+        assert_equal(importvk_result["address_type"], "sapling")
         assert_equal(importvk_result["address"], myzaddr)
 
         # Check the address has been imported

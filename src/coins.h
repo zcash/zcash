@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include <boost/unordered_map.hpp>
+#include <tl/expected.hpp>
 #include "zcash/History.hpp"
 #include "zcash/IncrementalMerkleTree.hpp"
 
@@ -363,38 +364,38 @@ class CCoinsView
 {
 public:
     //! Retrieve the tree (Sprout) at a particular anchored root in the chain
-    virtual bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
+    virtual bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const = 0;
 
     //! Retrieve the tree (Sapling) at a particular anchored root in the chain
-    virtual bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
+    virtual bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const = 0;
 
     //! Retrieve the tree (Orchard) at a particular anchored root in the chain
-    virtual bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const;
+    virtual bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const = 0;
 
     //! Determine whether a nullifier is spent or not
-    virtual bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
+    virtual bool GetNullifier(const uint256 &nullifier, ShieldedType type) const = 0;
 
     //! Retrieve the CCoins (unspent transaction outputs) for a given txid
-    virtual bool GetCoins(const uint256 &txid, CCoins &coins) const;
+    virtual bool GetCoins(const uint256 &txid, CCoins &coins) const = 0;
 
     //! Just check whether we have data for a given txid.
     //! This may (but cannot always) return true for fully spent transactions
-    virtual bool HaveCoins(const uint256 &txid) const;
+    virtual bool HaveCoins(const uint256 &txid) const = 0;
 
     //! Retrieve the block hash whose state this CCoinsView currently represents
-    virtual uint256 GetBestBlock() const;
+    virtual uint256 GetBestBlock() const = 0;
 
     //! Get the current "tip" or the latest anchored tree root in the chain
-    virtual uint256 GetBestAnchor(ShieldedType type) const;
+    virtual uint256 GetBestAnchor(ShieldedType type) const = 0;
 
     //! Get the current chain history length (which should be roughly chain height x2)
-    virtual HistoryIndex GetHistoryLength(uint32_t epochId) const;
+    virtual HistoryIndex GetHistoryLength(uint32_t epochId) const = 0;
 
     //! Get history node at specified index
-    virtual HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const;
+    virtual HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const = 0;
 
     //! Get current history root
-    virtual uint256 GetHistoryRoot(uint32_t epochId) const;
+    virtual uint256 GetHistoryRoot(uint32_t epochId) const = 0;
 
     //! Do a bulk modification (multiple CCoins changes + BestBlock change).
     //! The passed mapCoins can be modified.
@@ -409,15 +410,47 @@ public:
                             CNullifiersMap &mapSproutNullifiers,
                             CNullifiersMap &mapSaplingNullifiers,
                             CNullifiersMap &mapOrchardNullifiers,
-                            CHistoryCacheMap &historyCacheMap);
+                            CHistoryCacheMap &historyCacheMap) = 0;
 
     //! Calculate statistics about the unspent transaction output set
-    virtual bool GetStats(CCoinsStats &stats) const;
+    virtual bool GetStats(CCoinsStats &stats) const = 0;
 
     //! As we use CCoinsViews polymorphically, have a virtual destructor
     virtual ~CCoinsView() {}
 };
 
+class CCoinsViewDummy : public CCoinsView
+{
+public:
+    ~CCoinsViewDummy() {}
+
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return false; }
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return false; }
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const { return false; }
+    bool GetNullifier(const uint256 &nullifier, ShieldedType type) const { return false; }
+    bool GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
+    bool HaveCoins(const uint256 &txid) const { return false; }
+    uint256 GetBestBlock() const { return uint256(); }
+    uint256 GetBestAnchor(ShieldedType type) const { return uint256(); };
+    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }
+
+    bool BatchWrite(CCoinsMap &mapCoins,
+                    const uint256 &hashBlock,
+                    const uint256 &hashSproutAnchor,
+                    const uint256 &hashSaplingAnchor,
+                    const uint256 &hashOrchardAnchor,
+                    CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
+                    CAnchorsOrchardMap &mapOrchardAnchors,
+                    CNullifiersMap &mapSproutNullifiers,
+                    CNullifiersMap &mapSaplingNullifiers,
+                    CNullifiersMap &mapOrchardNullifiers,
+                    CHistoryCacheMap &historyCacheMap) { return false; }
+
+    bool GetStats(CCoinsStats &stats) const { return false; }
+};
 
 /** CCoinsView backed by another CCoinsView */
 class CCoinsViewBacked : public CCoinsView
@@ -427,6 +460,8 @@ protected:
 
 public:
     CCoinsViewBacked(CCoinsView *viewIn);
+    ~CCoinsViewBacked() {}
+
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
     bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const;
@@ -600,20 +635,27 @@ public:
     size_t DynamicMemoryUsage() const;
 
     /**
-     * Amount of bitcoins coming in to a transaction
-     * Note that lightweight clients may not know anything besides the hash of previous transactions,
-     * so may not be able to calculate this.
+     * Amount of coins coming in to a transaction
      *
      * @param[in] tx	transaction for which we are checking input total
-     * @return	Sum of value of all inputs (scriptSigs), (positive valueBalance or zero) and JoinSplit vpub_new
+     * @return	Sum of value of all inputs (scriptSigs), JoinSplit vpub_new, and
+     *          positive values of valueBalanceSapling, and valueBalanceOrchard.
      */
     CAmount GetValueIn(const CTransaction& tx) const;
+
+    /**
+     * Amount of coins coming in to a transaction in the transparent inputs.
+     *
+     * @param[in] tx	transaction for which we are checking input total
+     * @return	Sum of value of all inputs (scriptSigs)
+     */
+    CAmount GetTransparentValueIn(const CTransaction& tx) const;
 
     //! Check whether all prevouts of the transaction are present in the UTXO set represented by this view
     bool HaveInputs(const CTransaction& tx) const;
 
     //! Check whether all joinsplit and sapling spend requirements (anchors/nullifiers) are satisfied
-    std::optional<UnsatisfiedShieldedReq> HaveShieldedRequirements(const CTransaction& tx) const;
+    tl::expected<void, UnsatisfiedShieldedReq> CheckShieldedRequirements(const CTransaction& tx) const;
 
     //! Return priority of tx at height nHeight
     double GetPriority(const CTransaction &tx, int nHeight) const;

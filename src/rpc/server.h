@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2018-2022 The Zcash developers
+// Copyright (c) 2018-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -191,6 +191,10 @@ void StopRPC();
 std::string JSONRPCExecBatch(const UniValue& vReq);
 
 extern std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::vector<std::string>& enableArgs);
+
+std::string asOfHeightMessage(bool hasMinconf);
+std::optional<int> parseAsOfHeight(const UniValue& params, int index);
+int parseMinconf(int defaultValue, const UniValue& params, int index, const std::optional<int>& asOfHeight);
 
 extern int interpretHeightArg(int nHeight, int currentHeight);
 extern int parseHeightArg(const std::string& strHeight, int currentHeight);

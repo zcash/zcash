@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2018 The Bitcoin Core developers
-// Copyright (c) 2018-2022 The Zcash developers
+// Copyright (c) 2018-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -69,11 +69,7 @@ static void DebugPrintInit()
 fs::path GetDebugLogPath()
 {
     fs::path logfile(GetArg("-debuglogfile", DEFAULT_DEBUGLOGFILE));
-    if (logfile.is_absolute()) {
-        return logfile;
-    } else {
-        return GetDataDir() / logfile;
-    }
+    return AbsPathForConfigVal(logfile);
 }
 
 std::string LogConfigFilter()

@@ -17,15 +17,21 @@ from test_framework.util import (
 from decimal import Decimal
 from time import sleep
 
+BASE_ARGS = [
+    '-debug=mempool',
+    '-allowdeprecated=z_getnewaddress',
+    '-allowdeprecated=z_gettotalbalance',
+]
+
 # Test wallet behaviour with Sapling addresses
 class MempoolLimit(BitcoinTestFramework):
     def setup_nodes(self):
         extra_args = [
-            ["-debug=mempool", '-mempooltxcostlimit=8000'], # 2 transactions at min cost
-            ["-debug=mempool", '-mempooltxcostlimit=8000'], # 2 transactions at min cost
-            ["-debug=mempool", '-mempooltxcostlimit=8000'], # 2 transactions at min cost
+            BASE_ARGS + ['-mempooltxcostlimit=8000'], # 2 transactions at min cost
+            BASE_ARGS + ['-mempooltxcostlimit=8000'], # 2 transactions at min cost
+            BASE_ARGS + ['-mempooltxcostlimit=8000'], # 2 transactions at min cost
             # Let node 3 hold one more transaction
-            ["-debug=mempool", '-mempooltxcostlimit=12000'], # 3 transactions at min cost
+            BASE_ARGS + ['-mempooltxcostlimit=12000'], # 3 transactions at min cost
         ]
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args)
 
@@ -63,16 +69,25 @@ class MempoolLimit(BitcoinTestFramework):
         zaddr3 = self.nodes[0].z_getnewaddress('sapling')
 
         print("Filling mempool...")
-        opid1 = self.nodes[1].z_sendmany(get_coinbase_address(self.nodes[1]), [{"address": zaddr1, "amount": Decimal('10.0') - DEFAULT_FEE}])
+        opid1 = self.nodes[1].z_sendmany(
+            get_coinbase_address(self.nodes[1]),
+            [{"address": zaddr1, "amount": Decimal('10.0') - DEFAULT_FEE}],
+            1, DEFAULT_FEE, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[1], opid1)
-        opid2 = self.nodes[2].z_sendmany(get_coinbase_address(self.nodes[2]), [{"address": zaddr2, "amount": Decimal('10.0') - DEFAULT_FEE}])
+        opid2 = self.nodes[2].z_sendmany(
+            get_coinbase_address(self.nodes[2]),
+            [{"address": zaddr2, "amount": Decimal('10.0') - DEFAULT_FEE}],
+            1, DEFAULT_FEE, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[2], opid2)
         self.sync_all()
 
         self.check_mempool_sizes(2)
 
         print("Adding one more transaction...")
-        opid3 = self.nodes[3].z_sendmany(get_coinbase_address(self.nodes[3]), [{"address": zaddr3, "amount": Decimal('10.0') - DEFAULT_FEE}])
+        opid3 = self.nodes[3].z_sendmany(
+            get_coinbase_address(self.nodes[3]),
+            [{"address": zaddr3, "amount": Decimal('10.0') - DEFAULT_FEE}],
+            1, DEFAULT_FEE, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[3], opid3)
         # The mempools are no longer guaranteed to be in a consistent state, so we cannot sync
         sleep(5)

@@ -1,4 +1,4 @@
-Zcash 5.2.0
+Zcash 5.4.2
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
@@ -6,19 +6,27 @@ What is Zcash?
 --------------
 
 [Zcash](https://z.cash/) is an implementation of the "Zerocash" protocol.
-Based on Bitcoin's code, Zcash intends to offer a far higher standard of privacy
-through a sophisticated zero-knowledge proving scheme that preserves
-confidentiality of transaction metadata. More technical details are available
-in our [Protocol Specification](https://zips.z.cash/protocol/protocol.pdf).
+Initially based on Bitcoin's design, Zcash intends to offer a far
+higher standard of privacy through a sophisticated zero-knowledge
+proving scheme that preserves confidentiality of transaction
+metadata. More technical details are available in our [Protocol
+Specification](https://zips.z.cash/protocol/protocol.pdf).
 
-This software is the Zcash client. It downloads and stores the entire history
-of Zcash transactions; depending on the speed of your computer and network
-connection, the synchronization process could take a day or more once the
-blockchain has reached a significant size.
+## The `zcashd` Full Node
+
+This repository hosts the `zcashd` software, a Zcash consensus node
+implementation. It downloads and stores the entire history of Zcash
+transactions. Depending on the speed of your computer and network
+connection, the synchronization process could take several days.
 
 <p align="center">
   <img src="doc/imgs/zcashd_screen.gif" height="500">
 </p>
+
+The `zcashd` code is derived from a source fork of
+[Bitcoin Core](https://github.com/bitcoin/bitcoin). The code was forked
+initially from Bitcoin Core v0.11.2, and the two codebases have diverged
+substantially.
 
 #### :lock: Security Warnings
 
@@ -34,9 +42,17 @@ is an automatic deprecation shutdown feature which will halt the node some
 time after this 16-week period. The automatic feature is based on block
 height.
 
+## Other Zcash Implementations
+
+The [Zebra](https://github.com/ZcashFoundation/zebra) project offers a
+different Zcash consensus node implementation, written largely from the
+ground up.
+
 ## Getting Started
 
-Please see our [user guide](https://zcash.readthedocs.io/en/latest/rtd_pages/rtd_docs/user_guide.html) for joining the main Zcash network.
+Please see our [user
+guide](https://zcash.readthedocs.io/en/latest/rtd_pages/rtd_docs/user_guide.html)
+for instructions on joining the main Zcash network.
 
 ### Need Help?
 

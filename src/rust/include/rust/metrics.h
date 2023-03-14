@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 The Zcash developers
+// Copyright (c) 2020-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -24,7 +24,8 @@ bool metrics_run(
     const char* bind_address,
     const char* const* allow_ips,
     size_t allow_ips_len,
-    uint16_t prometheus_port);
+    uint16_t prometheus_port,
+    bool debug_metrics);
 
 struct MetricsCallsite;
 typedef struct MetricsCallsite MetricsCallsite;

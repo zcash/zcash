@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022 The Zcash developers
+// Copyright (c) 2018-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -8,6 +8,7 @@
 #include "coins.h"
 #include "consensus/params.h"
 #include "keystore.h"
+#include "policy/fees.h"
 #include "primitives/transaction.h"
 #include "random.h"
 #include "script/script.h"
@@ -22,6 +23,7 @@
 #include <optional>
 
 #include <rust/builder.h>
+#include <rust/sapling.h>
 
 #define NO_MEMO {{0xF6}}
 
@@ -202,7 +204,7 @@ struct OutputDescriptionInfo {
         libzcash::SaplingNote note,
         std::array<unsigned char, ZC_MEMO_SIZE> memo) : ovk(ovk), note(note), memo(memo) {}
 
-    std::optional<OutputDescription> Build(void* ctx);
+    std::optional<OutputDescription> Build(rust::Box<sapling::Prover>& ctx);
 };
 
 struct JSDescriptionInfo {
@@ -259,7 +261,7 @@ private:
     const CCoinsViewCache* coinsView;
     CCriticalSection* cs_coinsView;
     CMutableTransaction mtx;
-    CAmount fee = 10000;
+    CAmount fee = DEFAULT_FEE;
     std::optional<uint256> orchardAnchor;
     std::optional<orchard::Builder> orchardBuilder;
     CAmount valueBalanceOrchard = 0;
@@ -289,8 +291,8 @@ public:
         const Consensus::Params& consensusParams,
         int nHeight,
         std::optional<uint256> orchardAnchor,
-        CKeyStore* keyStore = nullptr,
-        CCoinsViewCache* coinsView = nullptr,
+        const CKeyStore* keyStore = nullptr,
+        const CCoinsViewCache* coinsView = nullptr,
         CCriticalSection* cs_coinsView = nullptr);
 
     // TransactionBuilder should never be copied

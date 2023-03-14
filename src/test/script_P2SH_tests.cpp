@@ -1,5 +1,5 @@
 // Copyright (c) 2012-2013 The Bitcoin Core developers
-// Copyright (c) 2018-2022 The Zcash developers
+// Copyright (c) 2018-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -281,7 +281,7 @@ BOOST_DATA_TEST_CASE(AreInputsStandard, boost::unit_test::data::xrange(static_ca
 {
     LOCK(cs_main);
     uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
-    CCoinsView coinsDummy;
+    CCoinsViewDummy coinsDummy;
     CCoinsViewCache coins(&coinsDummy);
     CBasicKeyStore keystore;
     CKey key[6];

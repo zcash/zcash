@@ -1,5 +1,5 @@
 // Copyright (c) 2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -45,6 +45,7 @@ public:
         hashBestSaplingAnchor_ = SaplingMerkleTree::empty_root();
         hashBestOrchardAnchor_ = OrchardMerkleFrontier::empty_root();
     }
+    ~CCoinsViewTest() {}
 
     bool GetSproutAnchorAt(const uint256& rt, SproutMerkleTree &tree) const {
         if (rt == SproutMerkleTree::empty_root()) {
@@ -192,6 +193,10 @@ public:
         }
     }
 
+    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }
+
     bool BatchWrite(CCoinsMap& mapCoins,
                     const uint256& hashBlock,
                     const uint256& hashSproutAnchor,
@@ -243,6 +248,7 @@ class CCoinsViewCacheTest : public CCoinsViewCache
 {
 public:
     CCoinsViewCacheTest(CCoinsView* base) : CCoinsViewCache(base) {}
+    ~CCoinsViewCacheTest() {}
 
     void SelfTest() const
     {
@@ -279,7 +285,7 @@ public:
         JSDescription jsd;
         jsd.nullifiers[0] = sproutNullifier;
         mutableTx.vJoinSplit.emplace_back(jsd);
-        
+
         saplingNullifier = InsecureRand256();
         SpendDescription sd;
         sd.nullifier = saplingNullifier;
@@ -387,7 +393,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         CMutableTransaction mtx;
         mtx.vJoinSplit.push_back(js2);
 
-        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::optional<UnsatisfiedShieldedReq>(UnsatisfiedShieldedReq::SproutUnknownAnchor));
+        BOOST_CHECK(cache.CheckShieldedRequirements(mtx) == tl::unexpected(UnsatisfiedShieldedReq::SproutUnknownAnchor));
     }
 
     {
@@ -397,7 +403,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js2);
         mtx.vJoinSplit.push_back(js1);
 
-        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::optional<UnsatisfiedShieldedReq>(UnsatisfiedShieldedReq::SproutUnknownAnchor));
+        BOOST_CHECK(cache.CheckShieldedRequirements(mtx) == tl::unexpected(UnsatisfiedShieldedReq::SproutUnknownAnchor));
     }
 
     {
@@ -405,7 +411,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js1);
         mtx.vJoinSplit.push_back(js2);
 
-        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::nullopt);
+        BOOST_CHECK(cache.CheckShieldedRequirements(mtx).has_value());
     }
 
     {
@@ -414,7 +420,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js2);
         mtx.vJoinSplit.push_back(js3);
 
-        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::nullopt);
+        BOOST_CHECK(cache.CheckShieldedRequirements(mtx).has_value());
     }
 
     {
@@ -424,7 +430,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js2);
         mtx.vJoinSplit.push_back(js3);
 
-        BOOST_CHECK(cache.HaveShieldedRequirements(mtx) == std::nullopt);
+        BOOST_CHECK(cache.CheckShieldedRequirements(mtx).has_value());
     }
 }
 

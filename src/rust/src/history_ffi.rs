@@ -145,7 +145,7 @@ fn librustzcash_mmr_append_inner<V: Version>(
     unsafe {
         *rt_ret = V::hash(root_node.data());
 
-        for (idx, next_buf) in slice::from_raw_parts_mut(buf_ret, return_count as usize)
+        for (idx, next_buf) in slice::from_raw_parts_mut(buf_ret, return_count)
             .iter_mut()
             .enumerate()
         {

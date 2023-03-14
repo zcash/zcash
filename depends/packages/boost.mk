@@ -1,8 +1,8 @@
 package=boost
-$(package)_version=1_79_0
+$(package)_version=1_81_0
 $(package)_download_path=https://boostorg.jfrog.io/artifactory/main/release/$(subst _,.,$($(package)_version))/source/
 $(package)_file_name=boost_$($(package)_version).tar.bz2
-$(package)_sha256_hash=475d589d51a7f8b3ba2ba4eda022b170e562ca3b760ee922c146b6c65856ef39
+$(package)_sha256_hash=71feeed900fbccca04a3b4f2f84a7c217186f28a940ed8b7ed4725986baf99fa
 $(package)_dependencies=native_b2
 
 ifneq ($(host_os),darwin)
@@ -45,7 +45,7 @@ define $(package)_preprocess_cmds
 endef
 
 define $(package)_config_cmds
-  ./bootstrap.sh --without-icu --with-libraries=$($(package)_config_libraries) --with-toolset=$($(package)_toolset_$(host_os)) --with-bjam=b2
+  ./bootstrap.sh --without-icu --with-libraries=$($(package)_config_libraries) --with-toolset=$($(package)_toolset_$(host_os)) --with-bjam=b2 --libdir=lib
 endef
 
 define $(package)_build_cmds

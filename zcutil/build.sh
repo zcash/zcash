@@ -40,7 +40,7 @@ if [ -z "${CONFIGURE_FLAGS-}" ]; then
     CONFIGURE_FLAGS=""
 fi
 
-if [ "x$*" = 'x--help' ]
+if [ "$*" = '--help' ]
 then
     cat <<EOF
 Usage:

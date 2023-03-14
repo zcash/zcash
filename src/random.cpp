@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -53,6 +53,11 @@ uint64_t GetRand(uint64_t nMax)
         GetRandBytes((unsigned char*)&nRand, sizeof(nRand));
     } while (nRand >= nRange);
     return (nRand % nMax);
+}
+
+int64_t GetRandInt64(int64_t nMax)
+{
+    return GetRand(nMax);
 }
 
 int GetRandInt(int nMax)

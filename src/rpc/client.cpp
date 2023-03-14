@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019-2022 The Zcash developers
+// Copyright (c) 2019-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -104,10 +104,6 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "getblockhashes", 1},
     { "getblockhashes", 2},
     { "getblockdeltas", 0},
-    { "zcrawjoinsplit", 1 },
-    { "zcrawjoinsplit", 2 },
-    { "zcrawjoinsplit", 3 },
-    { "zcrawjoinsplit", 4 },
     { "zcbenchmark", 1 },
     { "zcbenchmark", 2 },
     { "getblocksubsidy", 0},

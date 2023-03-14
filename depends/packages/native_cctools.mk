@@ -1,7 +1,8 @@
 package=native_cctools
 $(package)_version=55562e4073dea0fbfd0b20e0bf69ffe6390c7f97
 $(package)_download_path=https://github.com/tpoechtrager/cctools-port/archive
-$(package)_file_name=$($(package)_version).tar.gz
+$(package)_download_file=$($(package)_version).tar.gz
+$(package)_file_name=$(package)_$($(package)_version).tar.gz
 $(package)_sha256_hash=e51995a843533a3dac155dd0c71362dd471597a2d23f13dff194c6285362f875
 $(package)_build_subdir=cctools
 $(package)_dependencies=native_clang
@@ -10,7 +11,7 @@ $(package)_patches=ignore-otool.diff
 $(package)_libtapi_version=3efb201881e7a76a21e0554906cf306432539cef
 $(package)_libtapi_download_path=https://github.com/tpoechtrager/apple-libtapi/archive
 $(package)_libtapi_download_file=$($(package)_libtapi_version).tar.gz
-$(package)_libtapi_file_name=$($(package)_libtapi_version).tar.gz
+$(package)_libtapi_file_name=$(package)_libtapi_$($(package)_libtapi_version).tar.gz
 $(package)_libtapi_sha256_hash=380c1ca37cfa04a8699d0887a8d3ee1ad27f3d08baba78887c73b09485c0fbd3
 
 $(package)_extra_sources += $($(package)_libtapi_file_name)

@@ -40,6 +40,10 @@ from test_framework.util import (
 )
 from decimal import Decimal
 
+BASE_ARGS = [
+    '-allowdeprecated=z_getnewaddress',
+    '-allowdeprecated=z_getbalance',
+]
 TURNSTILE_ARGS = ['-experimentalfeatures',
                   '-developersetpoolsizezero']
 
@@ -48,10 +52,10 @@ class TurnstileTest (BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_nodes = 3
-        self.cache_behavior = 'clean'
+        self.cache_behavior = 'sprout'
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir)
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[BASE_ARGS] * self.num_nodes)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         self.is_network_split=False
@@ -68,7 +72,7 @@ class TurnstileTest (BitcoinTestFramework):
 
     # Helper method to start a single node with extra args and sync to the network
     def start_and_sync_node(self, index, args=[]):
-        self.nodes[index] = start_node(index, self.options.tmpdir, extra_args=args)
+        self.nodes[index] = start_node(index, self.options.tmpdir, extra_args=BASE_ARGS+args)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -82,44 +86,43 @@ class TurnstileTest (BitcoinTestFramework):
 
     def run_test(self):
         # Sanity-check the test harness
-        self.nodes[0].generate(101)
-        assert_equal(self.nodes[0].getblockcount(), 101)
+        assert_equal(self.nodes[0].getblockcount(), 200)
         self.sync_all()
 
-        # Node 0 shields some funds
-        dest_addr = self.nodes[0].z_getnewaddress(POOL_NAME.lower())
         taddr0 = get_coinbase_address(self.nodes[0])
         if (POOL_NAME == "SPROUT"):
-            myopid = self.nodes[0].z_shieldcoinbase(taddr0, dest_addr, 0, 1)['opid']
+            dest_addr = self.nodes[0].listaddresses()[0]['sprout']['addresses'][0]
         elif (POOL_NAME == "SAPLING"):
+            # Node 0 shields some funds
+            dest_addr = self.nodes[0].z_getnewaddress('sapling')
             recipients = []
-            recipients.append({"address": dest_addr, "amount": Decimal('10')})
+            recipients.append({"address": dest_addr, "amount": Decimal('50')})
             myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
+            wait_and_assert_operationid_status(self.nodes[0], myopid)
         else:
             fail("Unrecognized pool name: " + POOL_NAME)
-        wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[0].z_getbalance(dest_addr), Decimal('10'))
+        assert_equal(self.nodes[0].z_getbalance(dest_addr), Decimal('50'))
 
         # Verify size of shielded pool
-        self.assert_pool_balance(self.nodes[0], POOL_NAME.lower(), Decimal('10'))
-        self.assert_pool_balance(self.nodes[1], POOL_NAME.lower(), Decimal('10'))
-        self.assert_pool_balance(self.nodes[2], POOL_NAME.lower(), Decimal('10'))
+        self.assert_pool_balance(self.nodes[0], POOL_NAME.lower(), Decimal('200'))
+        self.assert_pool_balance(self.nodes[1], POOL_NAME.lower(), Decimal('200'))
+        self.assert_pool_balance(self.nodes[2], POOL_NAME.lower(), Decimal('200'))
 
         # Relaunch node 0 with in-memory size of value pools set to zero.
         self.restart_and_sync_node(0, TURNSTILE_ARGS)
 
         # Verify size of shielded pool
         self.assert_pool_balance(self.nodes[0], POOL_NAME.lower(), Decimal('0'))
-        self.assert_pool_balance(self.nodes[1], POOL_NAME.lower(), Decimal('10'))
-        self.assert_pool_balance(self.nodes[2], POOL_NAME.lower(), Decimal('10'))
+        self.assert_pool_balance(self.nodes[1], POOL_NAME.lower(), Decimal('200'))
+        self.assert_pool_balance(self.nodes[2], POOL_NAME.lower(), Decimal('200'))
 
         # Node 0 creates an unshielding transaction
         recipients = []
         recipients.append({"address": taddr0, "amount": Decimal('1')})
-        myopid = self.nodes[0].z_sendmany(dest_addr, recipients, 1, 0)
+        myopid = self.nodes[0].z_sendmany(dest_addr, recipients, 1, 0, 'AllowRevealedRecipients')
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Verify transaction appears in mempool of nodes
@@ -166,8 +169,8 @@ class TurnstileTest (BitcoinTestFramework):
 
         # Verify size of shielded pool
         self.assert_pool_balance(self.nodes[0], POOL_NAME.lower(), Decimal('0'))
-        self.assert_pool_balance(self.nodes[1], POOL_NAME.lower(), Decimal('9'))
-        self.assert_pool_balance(self.nodes[2], POOL_NAME.lower(), Decimal('9'))
+        self.assert_pool_balance(self.nodes[1], POOL_NAME.lower(), Decimal('199'))
+        self.assert_pool_balance(self.nodes[2], POOL_NAME.lower(), Decimal('199'))
 
         # Stop node 0 and check logs to verify the block was rejected as a turnstile violation
         string_to_find1 = "ConnectBlock(): turnstile violation in " + POOL_NAME.capitalize() + " shielded value pool"

@@ -42,14 +42,18 @@ class MergeToAddressHelper:
         initialize_chain_clean(test.options.tmpdir, 4)
 
     def setup_network(self, test, additional_args=[]):
-        args = ['-debug=zrpcunsafe']
+        args = [
+            '-debug=zrpcunsafe',
+            '-limitancestorcount=%d' % self.utxos_to_generate,
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
+        ]
         args += additional_args
         test.nodes = []
         test.nodes.append(start_node(0, test.options.tmpdir, args))
         test.nodes.append(start_node(1, test.options.tmpdir, args))
-        args2 = ['-debug=zrpcunsafe']
-        args2 += additional_args
-        test.nodes.append(start_node(2, test.options.tmpdir, args2))
+        test.nodes.append(start_node(2, test.options.tmpdir, args))
         connect_nodes_bi(test.nodes, 0, 1)
         connect_nodes_bi(test.nodes, 1, 2)
         connect_nodes_bi(test.nodes, 0, 2)
@@ -97,7 +101,7 @@ class MergeToAddressHelper:
             {'address': mytaddr, 'amount': 10},
             {'address': mytaddr2, 'amount': 10},
             {'address': mytaddr3, 'amount': 10},
-            ], 1, 0)
+            ], 1, 0, 'AllowRevealedRecipients')
         wait_and_assert_operationid_status(test.nodes[0], result)
         test.sync_all()
         test.nodes[1].generate(1)

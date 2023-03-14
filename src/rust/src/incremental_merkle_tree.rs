@@ -17,7 +17,7 @@ use zcash_primitives::merkle_tree::{
 
 pub fn write_checkpoint_v2<W: Write>(mut writer: W, checkpoint: &Checkpoint) -> io::Result<()> {
     write_usize_leu64(&mut writer, checkpoint.bridges_len())?;
-    writer.write_u8(if checkpoint.is_witnessed() { 1 } else { 0 })?;
+    writer.write_u8(u8::from(checkpoint.is_witnessed()))?;
     Vector::write_sized(&mut writer, checkpoint.witnessed().iter(), |w, p| {
         write_position(w, *p)
     })?;
@@ -76,11 +76,11 @@ pub fn write_tree<H: Hashable + HashSer + Ord, W: Write>(
     tree: &BridgeTree<H, 32>,
 ) -> io::Result<()> {
     writer.write_u8(SER_V2)?;
-    Vector::write(&mut writer, tree.prior_bridges(), |mut w, b| {
-        write_bridge_v1(&mut w, b)
+    Vector::write(&mut writer, tree.prior_bridges(), |w, b| {
+        write_bridge_v1(w, b)
     })?;
-    Optional::write(&mut writer, tree.current_bridge().as_ref(), |mut w, b| {
-        write_bridge_v1(&mut w, b)
+    Optional::write(&mut writer, tree.current_bridge().as_ref(), |w, b| {
+        write_bridge_v1(w, b)
     })?;
     Vector::write_sized(
         &mut writer,

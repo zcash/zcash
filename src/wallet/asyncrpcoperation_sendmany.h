@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -13,6 +13,7 @@
 #include "zcash/Address.hpp"
 #include "wallet.h"
 #include "wallet/paymentdisclosure.h"
+#include "wallet/wallet_tx_builder.h"
 
 #include <array>
 #include <optional>
@@ -24,15 +25,6 @@
 #include <rust/ed25519/types.h>
 
 using namespace libzcash;
-
-class SendManyRecipient : public RecipientMapping {
-public:
-    CAmount amount;
-    std::optional<std::string> memo;
-
-    SendManyRecipient(std::optional<libzcash::UnifiedAddress> ua_, libzcash::RecipientAddress address_, CAmount amount_, std::optional<std::string> memo_) :
-        RecipientMapping(ua_, address_), amount(amount_), memo(memo_) {}
-};
 
 class TxOutputAmounts {
 public:
@@ -46,7 +38,7 @@ public:
     AsyncRPCOperation_sendmany(
         TransactionBuilder builder,
         ZTXOSelector ztxoSelector,
-        std::vector<SendManyRecipient> recipients,
+        std::vector<ResolvedPayment> recipients,
         int minDepth,
         unsigned int anchorDepth,
         TransactionStrategy strategy,
@@ -71,7 +63,7 @@ private:
 
     TransactionBuilder builder_;
     ZTXOSelector ztxoSelector_;
-    std::vector<SendManyRecipient> recipients_;
+    std::vector<ResolvedPayment> recipients_;
     int mindepth_{1};
     unsigned int anchordepth_{nAnchorConfirmations};
     CAmount fee_;
@@ -80,7 +72,6 @@ private:
     bool isfromsprout_{false};
     bool isfromsapling_{false};
     TransactionStrategy strategy_;
-    uint32_t transparentRecipients_{0};
     AccountId sendFromAccount_;
     std::set<OutputPool> recipientPools_;
     TxOutputAmounts txOutputAmounts_;
@@ -93,8 +84,6 @@ private:
 
     static CAmount DefaultDustThreshold();
 
-    static std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s);
-
     uint256 main_impl();
 };
 
@@ -104,10 +93,6 @@ public:
     std::shared_ptr<AsyncRPCOperation_sendmany> delegate;
 
     TEST_FRIEND_AsyncRPCOperation_sendmany(std::shared_ptr<AsyncRPCOperation_sendmany> ptr) : delegate(ptr) {}
-
-    std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s) {
-        return delegate->get_memo_from_hex_string(s);
-    }
 
     uint256 main_impl() {
         return delegate->main_impl();

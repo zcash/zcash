@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -378,7 +378,7 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& strInput)
     // starts as a clone of the raw tx:
     CMutableTransaction mergedTx(txVariants[0]);
     bool fComplete = true;
-    CCoinsView viewDummy;
+    CCoinsViewDummy viewDummy;
     CCoinsViewCache view(&viewDummy);
 
     if (!registers.count("privatekeys"))

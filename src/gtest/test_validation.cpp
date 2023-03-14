@@ -32,12 +32,17 @@ public:
     ValidationFakeCoinsViewDB() {}
     ValidationFakeCoinsViewDB(uint256 blockHash, uint256 txid, CTxOut txOut, int nHeight) :
         coin(std::make_pair(std::make_pair(blockHash, txid), std::make_pair(txOut, nHeight))) {}
+    ~ValidationFakeCoinsViewDB() {}
 
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
         return false;
     }
 
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
+        return false;
+    }
+
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
         return false;
     }
 
@@ -80,14 +85,30 @@ public:
         return a;
     }
 
+    HistoryIndex GetHistoryLength(uint32_t branchId) const {
+        return 0;
+    }
+
+    HistoryNode GetHistoryAt(uint32_t branchId, HistoryIndex index) const {
+        return HistoryNode();
+    }
+
+    uint256 GetHistoryRoot(uint32_t epochId) const {
+        return uint256();
+    }
+
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
+                    const uint256 &hashOrchardAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CAnchorsSaplingMap &mapSaplingAnchors,
+                    CAnchorsOrchardMap &mapOrchardAnchors,
                     CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap saplingNullifiersMap) {
+                    CNullifiersMap &mapSaplingNullifiers,
+                    CNullifiersMap &mapOrchardNullifiers,
+                    CHistoryCacheMap &historyCacheMap) {
         return false;
     }
 
@@ -162,7 +183,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
     chainActive.SetTip(&fakeIndex);
 
     // Fake a view containing a single coin.
-    CAmount coinValue(50000);
+    CAmount coinValue(5000);
     COutPoint utxo;
     utxo.hash = uint256S("4242424242424242424242424242424242424242424242424242424242424242");
     utxo.n = 0;
@@ -176,7 +197,7 @@ TEST(Validation, ContextualCheckInputsDetectsOldBranchId) {
     // a height during the Overwinter epoch.
     auto builder = TransactionBuilder(consensusParams, 15, std::nullopt, &keystore);
     builder.AddTransparentInput(utxo, scriptPubKey, coinValue);
-    builder.AddTransparentOutput(destination, 40000);
+    builder.AddTransparentOutput(destination, 4000);
     auto tx = builder.Build().GetTxOrThrow();
     ASSERT_FALSE(tx.IsCoinBase());
 

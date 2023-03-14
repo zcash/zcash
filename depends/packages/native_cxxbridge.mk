@@ -1,31 +1,27 @@
 package=native_cxxbridge
 # The version needs to match cxx in Cargo.toml
-$(package)_version=1.0.72
+$(package)_version=1.0.91
 $(package)_download_path=https://github.com/dtolnay/cxx/archive/refs/tags
 $(package)_file_name=native_cxxbridge-$($(package)_version).tar.gz
 $(package)_download_file=$($(package)_version).tar.gz
-$(package)_sha256_hash=22b2ec9b6cbec281f4b4d8dc8e403e7ab276b9d2140d4e7074a1388a252c4c0b
+$(package)_sha256_hash=52bc434b6feb375a69bbc58291b19efeb34aa52a3de5d745f4a5e8220078e7f9
 $(package)_build_subdir=gen/cmd
 $(package)_dependencies=native_rust
 # This file is somewhat annoying to update, but can be done like so from the repo base:
-# $ export VERSION=1.0.72
+# $ export VERSION=1.0.91
 # $ rm .cargo/config .cargo/.configured-for-offline
 # $ mkdir tmp
 # $ cd tmp
 # $ tar xf ../depends/sources/native_cxxbridge-$VERSION.tar.gz
 # $ cd cxx-$VERSION
-# $ cargo build --release --package=cxxbridge-cmd --bin=cxxbridge
-# $ cargo clean
-# $ cd ..
-# $ mv cxx-$VERSION cxx-$VERSION-locked
-# $ tar xf ../depends/sources/native_cxxbridge-$VERSION.tar.gz
-# $ diff -urN cxx-$VERSION cxx-$VERSION-locked >../depends/patches/native_cxxbridge/lockfile.diff
-$(package)_patches=lockfile.diff
+# $ cargo check --release --package=cxxbridge-cmd --bin=cxxbridge
+# $ cp Cargo.lock ../../depends/patches/native_cxxbridge/
+$(package)_patches=Cargo.lock
 $(package)_extra_sources=$(package)-$($(package)_version)-vendored.tar.gz
 
 define $(package)_fetch_cmds
 $(call fetch_file,$(package),$($(package)_download_path),$($(package)_download_file),$($(package)_file_name),$($(package)_sha256_hash)) && \
-$(call vendor_crate_deps,$(package),$($(package)_file_name),lockfile.diff,Cargo.toml,$(package)-$($(package)_version)-vendored.tar.gz)
+$(call vendor_crate_deps,$(package),$($(package)_file_name),$(PATCHES_PATH)/$(package)/Cargo.lock,Cargo.toml,$(package)-$($(package)_version)-vendored.tar.gz)
 endef
 
 define $(package)_extract_cmds
@@ -37,7 +33,7 @@ define $(package)_extract_cmds
 endef
 
 define $(package)_preprocess_cmds
-  patch -p1 < $($(package)_patch_dir)/lockfile.diff && \
+  cp $($(package)_patch_dir)/Cargo.lock . && \
   mkdir -p .cargo && \
   echo "[source.crates-io]" >.cargo/config && \
   echo "replace-with = \"vendored-sources\"" >>.cargo/config && \

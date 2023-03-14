@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -399,7 +399,11 @@ struct SaplingNoteEntry
 class CMerkleTx : public CTransaction
 {
 private:
-    int GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet) const;
+    /**
+     * **NB**: Unlike `GetDepthInMainChain`, this returns 0 for any case where
+     *         it’s not in the chain (including if it’s not in the mempool).
+     */
+    int GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet, const std::optional<int>& asOfHeight) const;
 
 public:
     uint256 hashBlock;
@@ -438,13 +442,16 @@ public:
     /**
      * Return depth of transaction in blockchain:
      * -1  : not in blockchain, and not in memory pool (conflicted transaction)
-     *  0  : in memory pool, waiting to be included in a block
+     *  0  : in memory pool, waiting to be included in a block (never returned if `asOfHeight` is set)
      * >=1 : this many blocks deep in the main chain
      */
-    int GetDepthInMainChain(const CBlockIndex* &pindexRet) const;
-    int GetDepthInMainChain() const { const CBlockIndex *pindexRet; return GetDepthInMainChain(pindexRet); }
-    bool IsInMainChain() const { const CBlockIndex *pindexRet; return GetDepthInMainChainINTERNAL(pindexRet) > 0; }
-    int GetBlocksToMaturity() const;
+    int GetDepthInMainChain(const CBlockIndex* &pindexRet, const std::optional<int>& asOfHeight) const;
+    int GetDepthInMainChain(const std::optional<int>& asOfHeight) const {
+        const CBlockIndex *pindexRet;
+        return GetDepthInMainChain(pindexRet, asOfHeight);
+    }
+    bool IsInMainChain(const std::optional<int>& asOfHeight) const { return GetDepthInMainChain(asOfHeight) > 0; }
+    int GetBlocksToMaturity(const std::optional<int>& asOfHeight) const;
     /** Pass this transaction to the mempool. Fails if absolute fee exceeds maxTxFee. */
     bool AcceptToMemoryPool(CValidationState& state, bool fLimitFree=true, bool fRejectAbsurdFee=true);
 };
@@ -670,10 +677,10 @@ public:
 
     //! filter decides which addresses will count towards the debit
     CAmount GetDebit(const isminefilter& filter) const;
-    CAmount GetCredit(const isminefilter& filter) const;
-    CAmount GetImmatureCredit(bool fUseCache=true) const;
-    CAmount GetAvailableCredit(bool fUseCache=true, const isminefilter& filter=ISMINE_SPENDABLE) const;
-    CAmount GetImmatureWatchOnlyCredit(const bool fUseCache=true) const;
+    CAmount GetCredit(const std::optional<int>& asOfHeight, const isminefilter& filter) const;
+    CAmount GetImmatureCredit(const std::optional<int>& asOfHeight, bool fUseCache=true) const;
+    CAmount GetAvailableCredit(const std::optional<int>& asOfHeight, bool fUseCache=true, const isminefilter& filter=ISMINE_SPENDABLE) const;
+    CAmount GetImmatureWatchOnlyCredit(const std::optional<int>& asOfHeight, const bool fUseCache=true) const;
     CAmount GetChange() const;
 
     void GetAmounts(std::list<COutputEntry>& listReceived,
@@ -681,10 +688,9 @@ public:
 
     bool IsFromMe(const isminefilter& filter) const;
 
-    bool IsTrusted() const;
+    bool IsTrusted(const std::optional<int>& asOfHeight) const;
 
     int64_t GetTxTime() const;
-    int GetRequestCount() const;
 
     bool RelayWalletTransaction();
 
@@ -752,6 +758,9 @@ public:
 
 /**
  * A strategy to use for managing privacy when constructing a transaction.
+ *
+ * **NB**: These are intentionally in an order where `<` will never do the right
+ *         thing. See `PrivacyPolicyMeet` for a correct comparison.
  */
 enum class PrivacyPolicy {
     FullPrivacy,
@@ -763,20 +772,54 @@ enum class PrivacyPolicy {
     NoPrivacy,
 };
 
+/**
+ * Privacy policies form a lattice where the relation is “strictness”. I.e.,
+ * `x ≤ y` means “Policy `x` allows at least everything that policy `y` allows.”
+ *
+ * This function returns the meet (greatest lower bound) of `a` and `b`, i.e.
+ * the strictest policy that allows everything allowed by `a` and also
+ * everything allowed by `b`.
+ *
+ * See #6240 for the graph that this models.
+ */
+PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b);
+
 class TransactionStrategy {
-    PrivacyPolicy privacy;
+    PrivacyPolicy requestedLevel;
 
 public:
-    TransactionStrategy() : privacy(PrivacyPolicy::FullPrivacy) {}
-    TransactionStrategy(const TransactionStrategy& strategy) : privacy(strategy.privacy) {}
-    TransactionStrategy(PrivacyPolicy privacyPolicy) : privacy(privacyPolicy) {}
+    TransactionStrategy() : requestedLevel(PrivacyPolicy::FullPrivacy) {}
+    TransactionStrategy(const TransactionStrategy& strategy) : requestedLevel(strategy.requestedLevel) {}
+    TransactionStrategy(PrivacyPolicy privacyPolicy) : requestedLevel(privacyPolicy) {}
 
     static std::optional<TransactionStrategy> FromString(std::string privacyPolicy);
+    static std::string ToString(PrivacyPolicy policy);
 
-    bool AllowRevealedAmounts();
-    bool AllowRevealedRecipients();
-    bool AllowRevealedSenders();
-    bool AllowLinkingAccountAddresses();
+    std::string PolicyName() const {
+        return ToString(requestedLevel);
+    }
+
+    bool AllowRevealedAmounts() const;
+    bool AllowRevealedRecipients() const;
+    bool AllowRevealedSenders() const;
+    bool AllowFullyTransparent() const;
+    bool AllowLinkingAccountAddresses() const;
+
+    /**
+     * This strategy is compatible with a given policy if it is identical to or
+     * less strict than the policy.
+     *
+     * For example, if a transaction requires a policy no stricter than
+     * `AllowRevealedSenders`, then that transaction can safely be constructed
+     * if the user specifies `AllowLinkingAccountAddresses`, because
+     * `AllowLinkingAccountAddresses` is compatible with `AllowRevealedSenders`
+     * (the transaction will not link addresses anyway). However, if the
+     * transaction required `AllowRevealedRecipients`, it could not be
+     * constructed, because `AllowLinkingAccountAddresses` is _not_ compatible
+     * with `AllowRevealedRecipients` (the transaction reveals recipients, which
+     * is not allowed by `AllowLinkingAccountAddresses`.
+     */
+    bool IsCompatibleWith(PrivacyPolicy policy) const;
 };
 
 /**
@@ -865,6 +908,7 @@ public:
     }
 
     bool SelectsTransparent() const;
+    bool SelectsTransparentCoinbase() const;
     bool SelectsSprout() const;
     bool SelectsSapling() const;
     bool SelectsOrchard() const;
@@ -899,24 +943,48 @@ public:
      * This method must only be called once.
      */
     bool LimitToAmount(
-        CAmount amount,
-        CAmount dustThreshold,
-        std::set<libzcash::OutputPool> recipientPools);
+        const CAmount amount,
+        const CAmount dustThreshold,
+        const std::set<libzcash::OutputPool>& recipientPools);
 
     /**
      * Compute the total ZEC amount of spendable inputs.
      */
     CAmount Total() const {
         CAmount result = 0;
+        result += GetTransparentBalance();
+        result += GetSproutBalance();
+        result += GetSaplingBalance();
+        result += GetOrchardBalance();
+        return result;
+    }
+
+    CAmount GetTransparentBalance() const {
+        CAmount result = 0;
         for (const auto& t : utxos) {
             result += t.Value();
         }
+        return result;
+    }
+
+    CAmount GetSproutBalance() const {
+        CAmount result = 0;
         for (const auto& t : sproutNoteEntries) {
             result += t.note.value();
         }
+        return result;
+    }
+
+    CAmount GetSaplingBalance() const {
+        CAmount result = 0;
         for (const auto& t : saplingNoteEntries) {
             result += t.note.value();
         }
+        return result;
+    }
+
+    CAmount GetOrchardBalance() const {
+        CAmount result = 0;
         for (const auto& t : orchardNoteMetadata) {
             result += t.GetNoteValue();
         }
@@ -1407,7 +1475,6 @@ public:
     TxItems wtxOrdered;
 
     int64_t nOrderPosNext;
-    std::map<uint256, int> mapRequestCount;
 
     std::map<CTxDestination, CAddressBookData> mapAddressBook;
 
@@ -1426,15 +1493,18 @@ public:
 
     /**
      * populate vCoins with vector of available COutputs.
+     *
+     * **NB**: If `asOfHeight` is specified, then `nMinDepth` must be `> 0`.
      */
     void AvailableCoins(std::vector<COutput>& vCoins,
+                        const std::optional<int>& asOfHeight,
                         bool fOnlyConfirmed=true,
                         const CCoinControl *coinControl = NULL,
                         bool fIncludeZeroValue=false,
                         bool fIncludeCoinBase=true,
                         bool fOnlySpendable=false,
                         int nMinDepth = 0,
-                        std::set<CTxDestination>* onlyFilterByDests = nullptr) const;
+                        const std::set<CTxDestination>& onlyFilterByDests = std::set<CTxDestination>()) const;
 
     /**
      * Shuffle and select coins until nTargetValue is reached while avoiding
@@ -1514,16 +1584,17 @@ public:
     SpendableInputs FindSpendableInputs(
             ZTXOSelector paymentSource,
             bool allowTransparentCoinbase,
-            uint32_t minDepth) const;
+            uint32_t minDepth,
+            const std::optional<int>& asOfHeight) const;
 
     bool SelectorMatchesAddress(const ZTXOSelector& source, const CTxDestination& a0) const;
     bool SelectorMatchesAddress(const ZTXOSelector& source, const libzcash::SproutPaymentAddress& a0) const;
     bool SelectorMatchesAddress(const ZTXOSelector& source, const libzcash::SaplingPaymentAddress& a0) const;
 
-    bool IsSpent(const uint256& hash, unsigned int n) const;
-    bool IsSproutSpent(const uint256& nullifier) const;
-    bool IsSaplingSpent(const uint256& nullifier) const;
-    bool IsOrchardSpent(const OrchardOutPoint& outpoint) const;
+    bool IsSpent(const uint256& hash, unsigned int n, const std::optional<int>& asOfHeight) const;
+    bool IsSproutSpent(const uint256& nullifier, const std::optional<int>& asOfHeight) const;
+    bool IsSaplingSpent(const uint256& nullifier, const std::optional<int>& asOfHeight) const;
+    bool IsOrchardSpent(const OrchardOutPoint& outpoint, const std::optional<int>& asOfHeight) const;
 
     bool IsLockedCoin(uint256 hash, unsigned int n) const;
     void LockCoin(COutPoint& output);
@@ -1784,18 +1855,21 @@ public:
          std::vector<uint256> commitments,
          std::vector<std::optional<SproutWitness>>& witnesses,
          uint256 &final_anchor);
-    int ScanForWalletTransactions(
+    std::optional<int> ScanForWalletTransactions(
         CBlockIndex* pindexStart,
         bool fUpdate,
         bool isInitScan);
     void ReacceptWalletTransactions();
     void ResendWalletTransactions(int64_t nBestBlockTime);
     std::vector<uint256> ResendWalletTransactionsBefore(int64_t nTime);
-    CAmount GetBalance(const isminefilter& filter=ISMINE_SPENDABLE, const int min_depth=0) const;
-    CAmount GetUnconfirmedBalance() const;
-    CAmount GetImmatureBalance() const;
-    CAmount GetUnconfirmedWatchOnlyBalance() const;
-    CAmount GetImmatureWatchOnlyBalance() const;
+    CAmount GetBalance(const std::optional<int>& asOfHeight,
+                       const isminefilter& filter=ISMINE_SPENDABLE,
+                       const int min_depth=0) const;
+    /**
+     * Returns the balance taking into account _only_ transactions in the mempool.
+     */
+    CAmount GetUnconfirmedTransparentBalance() const;
+    CAmount GetImmatureBalance(const std::optional<int>& asOfHeight) const;
     CAmount GetLegacyBalance(const isminefilter& filter, int minDepth) const;
 
     /**
@@ -1870,7 +1944,7 @@ public:
     void GetAllReserveKeys(std::set<CKeyID>& setAddress) const;
 
     std::set< std::set<CTxDestination> > GetAddressGroupings();
-    std::map<CTxDestination, CAmount> GetAddressBalances();
+    std::map<CTxDestination, CAmount> GetAddressBalances(const std::optional<int>& asOfHeight);
 
     std::optional<uint256> GetSproutNoteNullifier(
         const JSDescription& jsdesc,
@@ -1955,22 +2029,7 @@ public:
 
     void UpdatedTransaction(const uint256 &hashTx);
 
-    void Inventory(const uint256 &hash)
-    {
-        {
-            LOCK(cs_wallet);
-            std::map<uint256, int>::iterator mi = mapRequestCount.find(hash);
-            if (mi != mapRequestCount.end())
-                (*mi).second++;
-        }
-    }
-
     void GetAddressForMining(std::optional<MinerAddress> &minerAddress);
-    void ResetRequestCount(const uint256 &hash)
-    {
-        LOCK(cs_wallet);
-        mapRequestCount[hash] = 0;
-    };
 
     unsigned int GetKeyPoolSize()
     {
@@ -2077,6 +2136,7 @@ public:
                           std::vector<SaplingNoteEntry>& saplingEntriesRet,
                           std::vector<OrchardNoteMetadata>& orchardNotesRet,
                           const std::optional<NoteFilter>& noteFilter,
+                          const std::optional<int>& asOfHeight,
                           int minDepth,
                           int maxDepth=INT_MAX,
                           bool ignoreSpent=true,

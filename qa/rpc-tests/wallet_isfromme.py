@@ -31,6 +31,8 @@ class WalletIsFromMe(BitcoinTestFramework):
             nuparams(BLOSSOM_BRANCH_ID, 1),
             nuparams(HEARTWOOD_BRANCH_ID, 1),
             nuparams(CANOPY_BRANCH_ID, 1),
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
         ]])
         self.is_network_split=False
 
@@ -53,6 +55,7 @@ class WalletIsFromMe(BitcoinTestFramework):
                 ],
                 0,
                 0,
+                'AllowRevealedSenders',
             ),
         )
         self.sync_all()
@@ -74,6 +77,7 @@ class WalletIsFromMe(BitcoinTestFramework):
                 ],
                 1,
                 0,
+                'AllowRevealedRecipients',
             ),
         )
         self.sync_all()

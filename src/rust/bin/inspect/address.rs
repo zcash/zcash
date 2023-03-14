@@ -1,6 +1,6 @@
 use zcash_address::{
     unified::{self, Container, Encoding},
-    Network, ToAddress, UnsupportedAddress, ZcashAddress,
+    ConversionError, Network, ToAddress, ZcashAddress,
 };
 
 enum AddressKind {
@@ -16,36 +16,50 @@ struct Address {
     kind: AddressKind,
 }
 
-impl zcash_address::FromAddress for Address {
-    fn from_sprout(net: Network, data: [u8; 64]) -> Result<Self, UnsupportedAddress> {
+impl zcash_address::TryFromAddress for Address {
+    type Error = ();
+
+    fn try_from_sprout(net: Network, data: [u8; 64]) -> Result<Self, ConversionError<Self::Error>> {
         Ok(Address {
             net,
             kind: AddressKind::Sprout(data),
         })
     }
 
-    fn from_sapling(net: Network, data: [u8; 43]) -> Result<Self, UnsupportedAddress> {
+    fn try_from_sapling(
+        net: Network,
+        data: [u8; 43],
+    ) -> Result<Self, ConversionError<Self::Error>> {
         Ok(Address {
             net,
             kind: AddressKind::Sapling(data),
         })
     }
 
-    fn from_unified(net: Network, data: unified::Address) -> Result<Self, UnsupportedAddress> {
+    fn try_from_unified(
+        net: Network,
+        data: unified::Address,
+    ) -> Result<Self, ConversionError<Self::Error>> {
         Ok(Address {
             net,
             kind: AddressKind::Unified(data),
         })
     }
 
-    fn from_transparent_p2pkh(net: Network, data: [u8; 20]) -> Result<Self, UnsupportedAddress> {
+    fn try_from_transparent_p2pkh(
+        net: Network,
+        data: [u8; 20],
+    ) -> Result<Self, ConversionError<Self::Error>> {
         Ok(Address {
             net,
             kind: AddressKind::P2pkh(data),
         })
     }
 
-    fn from_transparent_p2sh(net: Network, data: [u8; 20]) -> Result<Self, UnsupportedAddress> {
+    fn try_from_transparent_p2sh(
+        net: Network,
+        data: [u8; 20],
+    ) -> Result<Self, ConversionError<Self::Error>> {
         Ok(Address {
             net,
             kind: AddressKind::P2sh(data),

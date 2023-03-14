@@ -1,0 +1,48 @@
+From 6dc559c0726c2d2d9a928bd8d1ed89773c0b47ea Mon Sep 17 00:00:00 2001
+From: Daira Hopwood <daira@jacaranda.org>
+Date: Wed, 1 Feb 2023 15:15:19 +0000
+Subject: [PATCH] #4494 added calls to snprintf, but did not take into account
+ that snprintf can truncate, and then return the number of characters that
+ would have been written without truncation.
+
+Signed-off-by: Daira Hopwood <daira@jacaranda.org>
+---
+ RELICENSE/daira.md  | 15 +++++++++++++++
+ src/tcp_address.cpp |  5 +++--
+ src/udp_engine.cpp  |  6 +++---
+ 3 files changed, 21 insertions(+), 5 deletions(-)
+ create mode 100644 RELICENSE/daira.md
+
+diff --git a/src/tcp_address.cpp b/src/tcp_address.cpp
+index 46b4defc7..cd8016f64 100644
+--- a/src/tcp_address.cpp
++++ b/src/tcp_address.cpp
+@@ -129,8 +129,9 @@ static std::string make_address_string (const char *hbuf_,
+     pos += hbuf_len;
+     memcpy (pos, ipv6_suffix_, sizeof ipv6_suffix_ - 1);
+     pos += sizeof ipv6_suffix_ - 1;
+-    pos += snprintf (pos, max_port_str_length + 1 * sizeof (char), "%d",
+-                     ntohs (port_));
++    int res = snprintf (pos, max_port_str_length + 1, "%d", ntohs (port_));
++    zmq_assert (res > 0 && res < (int) (max_port_str_length + 1));
++    pos += res;
+     return std::string (buf, pos - buf);
+ }
+ 
+diff --git a/src/udp_engine.cpp b/src/udp_engine.cpp
+index 47f1359e1..5ca03a425 100644
+--- a/src/udp_engine.cpp
++++ b/src/udp_engine.cpp
+@@ -367,9 +367,9 @@ void zmq::udp_engine_t::sockaddr_to_msg (zmq::msg_t *msg_,
+     const char *const name = inet_ntoa (addr_->sin_addr);
+ 
+     char port[6];
+-    const int port_len = snprintf (port, 6 * sizeof (char), "%d",
+-                                   static_cast<int> (ntohs (addr_->sin_port)));
+-    zmq_assert (port_len > 0);
++    const int port_len =
++      snprintf (port, 6, "%d", static_cast<int> (ntohs (addr_->sin_port)));
++    zmq_assert (port_len > 0 && port_len < 6);
+ 
+     const size_t name_len = strlen (name);
+     const int size = static_cast<int> (name_len) + 1 /* colon */

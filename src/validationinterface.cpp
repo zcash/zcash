@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -17,9 +17,13 @@
 #include <chrono>
 #include <thread>
 
+#include <rust/metrics.h>
+
 using namespace boost::placeholders;
 
 static CMainSignals g_signals;
+
+static constexpr const char* METRIC_WALLET_SYNCED_HEIGHT = "zcashd.wallet.synced.block.height";
 
 CMainSignals& GetMainSignals()
 {
@@ -33,19 +37,15 @@ void RegisterValidationInterface(CValidationInterface* pwalletIn) {
     g_signals.EraseTransaction.connect(boost::bind(&CValidationInterface::EraseFromWallet, pwalletIn, _1));
     g_signals.UpdatedTransaction.connect(boost::bind(&CValidationInterface::UpdatedTransaction, pwalletIn, _1));
     g_signals.ChainTip.connect(boost::bind(&CValidationInterface::ChainTip, pwalletIn, _1, _2, _3));
-    g_signals.Inventory.connect(boost::bind(&CValidationInterface::Inventory, pwalletIn, _1));
     g_signals.Broadcast.connect(boost::bind(&CValidationInterface::ResendWalletTransactions, pwalletIn, _1));
     g_signals.BlockChecked.connect(boost::bind(&CValidationInterface::BlockChecked, pwalletIn, _1, _2));
     g_signals.AddressForMining.connect(boost::bind(&CValidationInterface::GetAddressForMining, pwalletIn, _1));
-    g_signals.BlockFound.connect(boost::bind(&CValidationInterface::ResetRequestCount, pwalletIn, _1));
 }
 
 void UnregisterValidationInterface(CValidationInterface* pwalletIn) {
-    g_signals.BlockFound.disconnect(boost::bind(&CValidationInterface::ResetRequestCount, pwalletIn, _1));
     g_signals.AddressForMining.disconnect(boost::bind(&CValidationInterface::GetAddressForMining, pwalletIn, _1));
     g_signals.BlockChecked.disconnect(boost::bind(&CValidationInterface::BlockChecked, pwalletIn, _1, _2));
     g_signals.Broadcast.disconnect(boost::bind(&CValidationInterface::ResendWalletTransactions, pwalletIn, _1));
-    g_signals.Inventory.disconnect(boost::bind(&CValidationInterface::Inventory, pwalletIn, _1));
     g_signals.ChainTip.disconnect(boost::bind(&CValidationInterface::ChainTip, pwalletIn, _1, _2, _3));
     g_signals.UpdatedTransaction.disconnect(boost::bind(&CValidationInterface::UpdatedTransaction, pwalletIn, _1));
     g_signals.EraseTransaction.disconnect(boost::bind(&CValidationInterface::EraseFromWallet, pwalletIn, _1));
@@ -55,11 +55,9 @@ void UnregisterValidationInterface(CValidationInterface* pwalletIn) {
 }
 
 void UnregisterAllValidationInterfaces() {
-    g_signals.BlockFound.disconnect_all_slots();
     g_signals.AddressForMining.disconnect_all_slots();
     g_signals.BlockChecked.disconnect_all_slots();
     g_signals.Broadcast.disconnect_all_slots();
-    g_signals.Inventory.disconnect_all_slots();
     g_signals.ChainTip.disconnect_all_slots();
     g_signals.UpdatedTransaction.disconnect_all_slots();
     g_signals.EraseTransaction.disconnect_all_slots();
@@ -147,8 +145,9 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
         // The stack of blocks we will notify as having been connected.
         // Pushed in reverse, popped in order.
         std::vector<CachedBlockData> blockStack;
-        // Transactions that have been recently conflicted out of the mempool.
-        std::pair<std::map<CBlockIndex*, std::list<CTransaction>>, uint64_t> recentlyConflicted;
+        // Sequence number indicating that we have notified wallets of transactions up to
+        // the ConnectBlock() call that generated this sequence number.
+        std::optional<uint64_t> chainNotifiedSequence;
         // Transactions that have been recently added to the mempool.
         std::pair<std::vector<CTransaction>, uint64_t> recentlyAdded;
 
@@ -160,12 +159,14 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             CBlockIndex *pindex = chainActive.Tip();
             pindexFork = chainActive.FindFork(pindexLastTip);
 
-            // Fetch recently-conflicted transactions. These will include any
-            // block that has been connected since the last cycle, but we only
-            // notify for the conflicts created by the current active chain.
-            recentlyConflicted = DrainRecentlyConflicted();
+            // Iterate backwards over the connected blocks until we have at
+            // most WALLET_NOTIFY_MAX_BLOCKS to process.
+            while (pindex && pindex->nHeight > pindexFork->nHeight + WALLET_NOTIFY_MAX_BLOCKS) {
+                pindex = pindex->pprev;
+            }
 
             // Iterate backwards over the connected blocks we need to notify.
+            bool originalTipAtFork = pindex && pindex == pindexFork;
             while (pindex && pindex != pindexFork) {
                 MerkleFrontiers oldFrontiers;
                 // Get the Sprout commitment tree as of the start of this block.
@@ -198,15 +199,38 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
                         OrchardMerkleFrontier::empty_root(), oldFrontiers.orchard));
                 }
 
+                // Fetch recently-conflicted transactions. These will include any
+                // block that has been connected since the last cycle, but we only
+                // notify for the conflicts created by the current active chain.
+                auto recentlyConflicted = TakeRecentlyConflicted(pindex);
+
                 blockStack.emplace_back(
                     pindex,
                     oldFrontiers,
-                    recentlyConflicted.first[pindex]);
+                    recentlyConflicted.first);
+
+                chainNotifiedSequence = recentlyConflicted.second;
 
                 pindex = pindex->pprev;
             }
 
-            recentlyAdded = mempool.DrainRecentlyAdded();
+            // This conditional can be true in the case that in the interval
+            // since the last second-boundary, two reorgs occurred: one that
+            // shifted over to a different chain history, and then a second
+            // that returned the chain to the original pre-reorg tip.  This
+            // should never occur unless a caller has manually used
+            // `invalidateblock` to force the second reorg or we have a long
+            // persistent set of dueling chains. In such a case, wallets may
+            // not be fully notified of conflicted transactions, but they will
+            // still have a correct view of the current main chain, and they
+            // will still be notified properly of the current state of
+            // transactions in the mempool.
+            if (originalTipAtFork) {
+                chainNotifiedSequence = GetChainConnectedSequence();
+            }
+            if (chainNotifiedSequence.has_value()) {
+                recentlyAdded = mempool.DrainRecentlyAdded();
+            }
         }
 
         //
@@ -291,6 +315,50 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
         // for example to add new incoming viewing keys.
         auto batchScanners = GetMainSignals().GetBatchScanner();
 
+        // Closure that will add a block from blockStack to batchScanners.
+        auto batchScanConnectedBlock = [&](const CachedBlockData& blockData) {
+            // Read block from disk.
+            CBlock block;
+            if (!ReadBlockFromDisk(block, blockData.pindex, chainParams.GetConsensus())) {
+                LogPrintf(
+                        "*** %s: Failed to read block %s while collecting shielded outputs from block connects",
+                        __func__, blockData.pindex->GetBlockHash().GetHex());
+                uiInterface.ThreadSafeMessageBox(
+                    strprintf(_("Error: A fatal internal error occurred, see %s for details"), GetDebugLogPath()),
+                    "", CClientUIInterface::MSG_ERROR);
+                StartShutdown();
+                return;
+            }
+
+            // Batch transactions that went from mempool to conflicted:
+            for (const CTransaction &tx : blockData.txConflicted) {
+                AddTxToBatches(
+                    batchScanners,
+                    tx,
+                    blockData.pindex->GetBlockHash(),
+                    blockData.pindex->nHeight + 1);
+            }
+            // ... and transactions that got confirmed:
+            for (const CTransaction &tx : block.vtx) {
+                AddTxToBatches(
+                    batchScanners,
+                    tx,
+                    blockData.pindex->GetBlockHash(),
+                    blockData.pindex->nHeight);
+            }
+        };
+
+        // Store the iterator pointing to the next block in blockStack that
+        // should be added to the batch scanners. This will always be valid,
+        // because:
+        // - blockStack is only mutated via std::vector::pop_back() below this
+        //   point, which only invalidates std::vector::end() and iterators to
+        //   the last element of the vector.
+        // - We check below that blockStack.rbegin() != blockStackScanned before
+        //   any call to blockStack.pop_back(), which ensures that we never pop
+        //   the block that blockStackScanned is pointing to.
+        auto blockStackScanned = blockStack.rbegin();
+
         if (!batchScanners.empty()) {
             // Batch the shielded outputs across all blocks being processed.
             // TODO: We can probably not bother trial-decrypting transactions
@@ -301,7 +369,12 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             // for now we maintain the previous behaviour of trial-decrypting
             // everything.
 
-            // Batch block disconnects.
+            // Batch block disconnects. We always add every disconnected block
+            // to batchScanners, because this will be at most 100 blocks, which
+            // is at most 2GB, but in practice will be much less than this, and
+            // the growth problem in the interaction between this thread and the
+            // main node is in connected blocks. And per the above TODO, this
+            // might eventually be removed entirely.
             auto pindexScan = pindexLastTip;
             while (pindexScan && pindexScan != pindexFork) {
                 // Read block from disk.
@@ -327,45 +400,23 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
                 pindexScan = pindexScan->pprev;
             }
 
-            // Batch block connections. Process blockStack in the same order we
-            // do below, so batched work can be completed in roughly the order
-            // we need it.
-            for (auto it = blockStack.rbegin(); it != blockStack.rend(); ++it) {
-                const auto& blockData = *it;
-
-                // Read block from disk.
-                CBlock block;
-                if (!ReadBlockFromDisk(block, blockData.pindex, chainParams.GetConsensus())) {
-                    LogPrintf(
-                            "*** %s: Failed to read block %s while collecting shielded outputs from block connects",
-                            __func__, blockData.pindex->GetBlockHash().GetHex());
-                    uiInterface.ThreadSafeMessageBox(
-                        strprintf(_("Error: A fatal internal error occurred, see %s for details"), GetDebugLogPath()),
-                        "", CClientUIInterface::MSG_ERROR);
-                    StartShutdown();
-                    return;
-                }
-
-                // Batch transactions that went from mempool to conflicted:
-                for (const CTransaction &tx : blockData.txConflicted) {
-                    AddTxToBatches(
-                        batchScanners,
-                        tx,
-                        blockData.pindex->GetBlockHash(),
-                        blockData.pindex->nHeight + 1);
-                }
-                // ... and transactions that got confirmed:
-                for (const CTransaction &tx : block.vtx) {
-                    AddTxToBatches(
-                        batchScanners,
-                        tx,
-                        blockData.pindex->GetBlockHash(),
-                        blockData.pindex->nHeight);
-                }
+            // Add block connections to batchScanners until we have either added
+            // the entirety of blockStack, or have reached the memory limit.
+            //
+            // We process blockStack in the same order we do below, so batched
+            // work can be completed in roughly the order we need it.
+            for (; blockStackScanned != blockStack.rend(); ++blockStackScanned) {
+                const auto& blockData = *blockStackScanned;
+                batchScanConnectedBlock(blockData);
             }
 
-            // Batch transactions in the mempool.
-            for (auto tx : recentlyAdded.first) {
+            // Batch transactions in the mempool. It's fine that we always add
+            // these to batchScanners; if we reached the memory limit earlier,
+            // it just means that the mempool results will be completed earlier
+            // than they are required, and will sit in memory for a bit longer.
+            // The ZIP 401 mempool limits are around 80MB, which is well below
+            // the limits we are concerned with here.
+            for (auto& tx : recentlyAdded.first) {
                 AddTxToBatches(batchScanners, tx, uint256(), pindexLastTip->nHeight + 1);
             }
         }
@@ -402,53 +453,81 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
 
             // On to the next block!
             pindexLastTip = pindexLastTip->pprev;
+            MetricsGauge(METRIC_WALLET_SYNCED_HEIGHT, pindexLastTip->nHeight);
         }
 
         // Notify block connections
         while (!blockStack.empty()) {
-            auto blockData = blockStack.back();
-            blockStack.pop_back();
-
-            // Read block from disk.
-            CBlock block;
-            if (!ReadBlockFromDisk(block, blockData.pindex, chainParams.GetConsensus())) {
-                LogPrintf(
-                        "*** %s: Failed to read block %s while notifying wallets of block connects",
-                        __func__, blockData.pindex->GetBlockHash().GetHex());
-                uiInterface.ThreadSafeMessageBox(
-                    strprintf(_("Error: A fatal internal error occurred, see %s for details"), GetDebugLogPath()),
-                    "", CClientUIInterface::MSG_ERROR);
-                StartShutdown();
-                return;
+            // Add more block connections to batchScanners until we have either
+            // added the rest of blockStack, or have reached the memory limit
+            // again. At this point, we know that blockStackScanned has not been
+            // invalidated by mutations to blockStack, and can be dereferenced.
+            for (; blockStackScanned != blockStack.rend(); ++blockStackScanned) {
+                const auto& blockData = *blockStackScanned;
+                batchScanConnectedBlock(blockData);
             }
 
-            // Tell wallet about transactions that went from mempool
-            // to conflicted:
-            for (const CTransaction &tx : blockData.txConflicted) {
-                SyncWithWallets(batchScanners, tx, NULL, blockData.pindex->nHeight + 1);
-            }
-            // ... and about transactions that got confirmed:
-            for (const CTransaction &tx : block.vtx) {
-                SyncWithWallets(batchScanners, tx, &block, blockData.pindex->nHeight);
-            }
-            // Update cached incremental witnesses
-            // This will take the cs_main lock in order to obtain the CBlockLocator
-            // used by `SetBestChain`, but as that write only occurs once every
-            // WRITE_WITNESS_INTERVAL * 1000000 microseconds this should not be
-            // exploitable as a timing channel.
-            GetMainSignals().ChainTip(blockData.pindex, &block, blockData.oldTrees);
+            // Ensure that all pending work has been started.
+            FlushBatches(batchScanners);
 
-            // Notify UI to display prev block's coinbase if it was ours.
-            static uint256 hashPrevBestCoinBase;
-            GetMainSignals().UpdatedTransaction(hashPrevBestCoinBase);
-            hashPrevBestCoinBase = block.vtx[0].GetHash();
+            // Sync with the wallet until either:
+            // - there are no more blocks to sync, and we are done;
+            // - we have synced every block that batchScanners has been given,
+            //   and can make no more forward progress; or
+            // - we have more blocks that we _could_ add to batchScanners, and
+            //   are back below the memory limit (so should create more batches
+            //   before continuing, for optimal pipelining).
+            while (!(
+                blockStack.empty() ||
+                blockStack.rbegin() == blockStackScanned ||
+                (blockStackScanned != blockStack.rend())
+            )) {
+                auto& blockData = blockStack.back();
 
-            // This block is done!
-            pindexLastTip = blockData.pindex;
+                // Read block from disk.
+                CBlock block;
+                if (!ReadBlockFromDisk(block, blockData.pindex, chainParams.GetConsensus())) {
+                    LogPrintf(
+                            "*** %s: Failed to read block %s while notifying wallets of block connects",
+                            __func__, blockData.pindex->GetBlockHash().GetHex());
+                    uiInterface.ThreadSafeMessageBox(
+                        strprintf(_("Error: A fatal internal error occurred, see %s for details"), GetDebugLogPath()),
+                        "", CClientUIInterface::MSG_ERROR);
+                    StartShutdown();
+                    return;
+                }
+
+                // Tell wallet about transactions that went from mempool
+                // to conflicted:
+                for (const CTransaction &tx : blockData.txConflicted) {
+                    SyncWithWallets(batchScanners, tx, NULL, blockData.pindex->nHeight + 1);
+                }
+                // ... and about transactions that got confirmed:
+                for (const CTransaction &tx : block.vtx) {
+                    SyncWithWallets(batchScanners, tx, &block, blockData.pindex->nHeight);
+                }
+                // Update cached incremental witnesses
+                // This will take the cs_main lock in order to obtain the CBlockLocator
+                // used by `SetBestChain`, but as that write only occurs once every
+                // WRITE_WITNESS_INTERVAL * 1000000 microseconds this should not be
+                // exploitable as a timing channel.
+                GetMainSignals().ChainTip(blockData.pindex, &block, blockData.oldTrees);
+
+                // Notify UI to display prev block's coinbase if it was ours.
+                static uint256 hashPrevBestCoinBase;
+                GetMainSignals().UpdatedTransaction(hashPrevBestCoinBase);
+                hashPrevBestCoinBase = block.vtx[0].GetHash();
+
+                // This block is done!
+                pindexLastTip = blockData.pindex;
+                MetricsGauge(METRIC_WALLET_SYNCED_HEIGHT, pindexLastTip->nHeight);
+                assert(blockStack.rbegin() != blockStackScanned);
+                blockStack.pop_back();
+            }
         }
 
         // Notify transactions in the mempool
-        for (auto tx : recentlyAdded.first) {
+        for (auto& tx : recentlyAdded.first) {
             try {
                 SyncWithWallets(batchScanners, tx, NULL, pindexLastTip->nHeight + 1);
             } catch (const boost::thread_interrupted&) {
@@ -463,8 +542,12 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
         // Update the notified sequence numbers. We only need this in regtest mode,
         // and should not lock on cs or cs_main here otherwise.
         if (chainParams.NetworkIDString() == "regtest") {
-            SetChainNotifiedSequence(chainParams, recentlyConflicted.second);
-            mempool.SetNotifiedSequence(recentlyAdded.second);
+            if (chainNotifiedSequence.has_value()) {
+                SetChainNotifiedSequence(chainParams, chainNotifiedSequence.value());
+            }
+            if (recentlyAdded.second > 0) {
+                mempool.SetNotifiedSequence(recentlyAdded.second);
+            }
         }
     }
 }

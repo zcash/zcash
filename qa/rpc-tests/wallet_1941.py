@@ -26,8 +26,11 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         self.nodes = start_nodes(1, self.options.tmpdir, extra_args=[[
             '-regtestshieldcoinbase',
             '-debug=zrpc',
-            '-mocktime=%d' % starttime
-            ]] )
+            '-mocktime=%d' % starttime,
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
+        ]])
         self.is_network_split=False
 
     def add_second_node(self):
@@ -35,8 +38,11 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         self.nodes.append(start_node(1, self.options.tmpdir, extra_args=[
             '-regtestshieldcoinbase',
             '-debug=zrpc',
-            '-mocktime=%d' % (starttime + 9000)
-            ]))
+            '-mocktime=%d' % (starttime + 9000),
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
+        ]))
         connect_nodes_bi(self.nodes,0,1)
         self.sync_all()
 
@@ -63,17 +69,15 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         # Send 10 coins to our zaddr.
         recipients = []
         recipients.append({"address":myzaddr, "amount":Decimal('10.0') - DEFAULT_FEE})
-        myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
+        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.nodes[0].generate(1)
 
         # Ensure the block times of the latest blocks exceed the variability
-        self.nodes[0].setmocktime(starttime + 3000)
-        self.nodes[0].generate(1)
-        self.nodes[0].setmocktime(starttime + 6000)
-        self.nodes[0].generate(1)
-        self.nodes[0].setmocktime(starttime + 9000)
-        self.nodes[0].generate(1)
+        # but fall inside the future timestamp soft fork rule.
+        for i in range(10):
+            self.nodes[0].setmocktime(starttime + (900 * (i + 1)))
+            self.nodes[0].generate(1)
         self.sync_all()
 
         # Confirm the balance on node 0.
@@ -100,7 +104,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         assert_equal(Decimal(resp), 0)
 
         # Re-import the key on node 1, scanning from before the transaction.
-        self.nodes[1].z_importkey(key, 'yes', self.nodes[1].getblockchaininfo()['blocks'] - 110)
+        self.nodes[1].z_importkey(key, 'yes', self.nodes[1].getblockchaininfo()['blocks'] - 120)
 
         # Confirm that the balance on node 1 is valid now (node 1 must
         # have rescanned)

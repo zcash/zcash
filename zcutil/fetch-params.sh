@@ -1,7 +1,19 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 export LC_ALL=C
 set -eu
+
+SCRIPT_NAME=$(basename $0)
+
+if [[ -z "${XDG_CACHE_HOME:+x}" ]]; then
+    XDG_CACHE_HOME="${HOME}/.cache"
+fi
+
+# We don’t care too much about most of the properties of `XDG_RUNTIME_DIR` in
+# this script, so we just fall back to `XDG_CACHE_HOME`.
+if [[ -z "${XDG_RUNTIME_DIR:+x}" ]]; then
+    XDG_RUNTIME_DIR="${XDG_CACHE_HOME}";
+fi
 
 uname_S=$(uname -s 2>/dev/null || echo not)
 
@@ -17,7 +29,7 @@ fi
 SAPLING_SPEND_NAME='sapling-spend.params'
 SAPLING_OUTPUT_NAME='sapling-output.params'
 SAPLING_SPROUT_GROTH16_NAME='sprout-groth16.params'
-DOWNLOAD_URL="https://download.z.cash/downloads"
+DOWNLOAD_URL="${ALTERNATIVE_DOWNLOAD_URL:-https://download.z.cash/downloads}"
 IPFS_HASH="/ipfs/QmXRHVGLQBiKwvNq7c2vPxAKz1zRVmMYbmt7G5TQss7tY7"
 
 SHA256CMD="$(command -v sha256sum || echo shasum)"
@@ -32,7 +44,9 @@ ZC_DISABLE_WGET="${ZC_DISABLE_WGET:-}"
 ZC_DISABLE_IPFS="${ZC_DISABLE_IPFS:-}"
 ZC_DISABLE_CURL="${ZC_DISABLE_CURL:-}"
 
-LOCKFILE=/tmp/fetch_params.lock
+LOCK_DIR="${XDG_RUNTIME_DIR}/zcash"
+mkdir -p "${LOCK_DIR}"
+LOCKFILE="${LOCK_DIR}/fetch-params.lock"
 
 fetch_wget() {
     if [ -z "$WGETCMD" ] || [ -n "$ZC_DISABLE_WGET" ]; then
@@ -127,12 +141,14 @@ fetch_params() {
         cat "${dlname}.part.1" "${dlname}.part.2" > "${dlname}"
         rm "${dlname}.part.1" "${dlname}.part.2"
 
+        set +e
         "$SHA256CMD" $SHA256ARGS -c <<EOF
 $expectedhash  $dlname
 EOF
 
         # Check the exit code of the shasum command:
         CHECKSUM_RESULT=$?
+        set -e
         if [ $CHECKSUM_RESULT -eq 0 ]; then
             mv -v "$dlname" "$output"
         else
@@ -144,6 +160,41 @@ EOF
     unset -v filename
     unset -v output
     unset -v dlname
+    unset -v expectedhash
+}
+
+check_and_fetch_params() {
+    # We only set these variables inside this function,
+    # and unset them at the end of the function.
+    filename="$1"
+    output="$2"
+    expectedhash="$3"
+
+    if ! [ -f "$output" ]
+    then
+        fetch_params "$filename" "$output" "$expectedhash"
+    else
+        # The file in question exists, so we verify its checksum.
+        # If it's not valid, we delete it and fetch it
+        set +e
+        "$SHA256CMD" $SHA256ARGS -c <<EOF
+$expectedhash  $output
+EOF
+
+        # Check the exit code of the shasum command:
+        CHECKSUM_RESULT=$?
+        set -e
+        if [ $CHECKSUM_RESULT -eq 0 ]; then
+            echo "Parameter file ${filename} has a valid checksum, continuing."
+        else
+            echo "Parameter file ${filename} has a invalid checksum, deleting and re-downloading." >&2
+            rm "$output"
+            fetch_params "$filename" "$output" "$expectedhash"
+        fi
+    fi
+
+    unset -v filename
+    unset -v output
     unset -v expectedhash
 }
 
@@ -166,22 +217,27 @@ lock() {
 }
 
 exit_locked_error() {
-    echo "Only one instance of fetch-params.sh can be run at a time." >&2
+    echo "Only one instance of ${SCRIPT_NAME} can be run at a time." >&2
+    echo "If you are certain no other instance is running, you can try removing" >&2
+    echo "${LOCKFILE}" >&2
     exit 1
 }
 
 main() {
 
-    lock fetch-params.sh \
+    lock \
     || exit_locked_error
 
     cat <<EOF
-Zcash - fetch-params.sh
+Zcash - ${SCRIPT_NAME}
 
 This script will fetch the Zcash zkSNARK parameters and verify their
 integrity with sha256sum.
 
-If they already exist locally, it will exit now and do nothing else.
+If the files are already present and have the correct sha256sum, no
+networking is used. Parameter files with incorrect sha256sums are
+deleted and re-downloaded.
+
 EOF
 
     # Now create PARAMS_DIR and insert a README if necessary:
@@ -199,11 +255,9 @@ EOF
         # This may be the first time the user's run this script, so give
         # them some info, especially about bandwidth usage:
         cat <<EOF
-The complete parameters are currently just under 1.7GB in size, so plan 
-accordingly for your bandwidth constraints. If the Sprout parameters are
-already present the additional Sapling parameters required are just under 
-800MB in size. If the files are already present and have the correct 
-sha256sum, no networking is used.
+The complete parameters are currently just under 800MB in size, so plan
+accordingly for your bandwidth constraints. If the files are already
+present and have the correct sha256sum, no networking is used.
 
 Creating params directory. For details about this directory, see:
 $README_PATH
@@ -220,12 +274,12 @@ EOF
     #fetch_params "$SPROUT_VKEY_NAME" "$PARAMS_DIR/$SPROUT_VKEY_NAME" "4bd498dae0aacfd8e98dc306338d017d9c08dd0918ead18172bd0aec2fc5df82"
 
     # Sapling parameters:
-    fetch_params "$SAPLING_SPEND_NAME" "$PARAMS_DIR/$SAPLING_SPEND_NAME" "8e48ffd23abb3a5fd9c5589204f32d9c31285a04b78096ba40a79b75677efc13"
-    fetch_params "$SAPLING_OUTPUT_NAME" "$PARAMS_DIR/$SAPLING_OUTPUT_NAME" "2f0ebbcbb9bb0bcffe95a397e7eba89c29eb4dde6191c339db88570e3f3fb0e4"
-    fetch_params "$SAPLING_SPROUT_GROTH16_NAME" "$PARAMS_DIR/$SAPLING_SPROUT_GROTH16_NAME" "b685d700c60328498fbde589c8c7c484c722b788b265b72af448a5bf0ee55b50"
+    check_and_fetch_params "$SAPLING_SPEND_NAME" "$PARAMS_DIR/$SAPLING_SPEND_NAME" "8e48ffd23abb3a5fd9c5589204f32d9c31285a04b78096ba40a79b75677efc13"
+    check_and_fetch_params "$SAPLING_OUTPUT_NAME" "$PARAMS_DIR/$SAPLING_OUTPUT_NAME" "2f0ebbcbb9bb0bcffe95a397e7eba89c29eb4dde6191c339db88570e3f3fb0e4"
+    check_and_fetch_params "$SAPLING_SPROUT_GROTH16_NAME" "$PARAMS_DIR/$SAPLING_SPROUT_GROTH16_NAME" "b685d700c60328498fbde589c8c7c484c722b788b265b72af448a5bf0ee55b50"
 }
 
-if [ "x${1:-}" = 'x--testnet' ]
+if [ "${1:-}" = '--testnet' ]
 then
     echo "NOTE: testnet now uses the mainnet parameters, so the --testnet argument"
     echo "is no longer needed (ignored)"

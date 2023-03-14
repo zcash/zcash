@@ -4,65 +4,6 @@
 #include "util/test.h"
 #include "zcash/History.hpp"
 
-// Fake an empty view
-class FakeCoinsViewDB : public CCoinsView {
-public:
-    FakeCoinsViewDB() {}
-
-    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
-        return false;
-    }
-
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
-        return false;
-    }
-
-    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
-        return false;
-    }
-
-    bool GetCoins(const uint256 &txid, CCoins &coins) const {
-        return false;
-    }
-
-    bool HaveCoins(const uint256 &txid) const {
-        return false;
-    }
-
-    uint256 GetBestBlock() const {
-        uint256 a;
-        return a;
-    }
-
-    uint256 GetBestAnchor(ShieldedType type) const {
-        uint256 a;
-        return a;
-    }
-
-    bool BatchWrite(CCoinsMap &mapCoins,
-                    const uint256 &hashBlock,
-                    const uint256 &hashSproutAnchor,
-                    const uint256 &hashSaplingAnchor,
-                    CAnchorsSproutMap &mapSproutAnchors,
-                    CAnchorsSaplingMap &mapSaplingAnchors,
-                    CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap saplingNullifiersMap) {
-        return false;
-    }
-
-    bool GetStats(CCoinsStats &stats) const {
-        return false;
-    }
-
-    HistoryIndex GetHistoryLength(uint32_t branchId) const {
-        return 0;
-    }
-
-    HistoryNode GetHistoryAt(uint32_t branchId, HistoryIndex index) const {
-        return HistoryNode();
-    }
-};
-
 HistoryNode getLeafN(uint64_t block_num) {
     HistoryNode node = libzcash::NewV1Leaf(
         uint256(),
@@ -78,7 +19,7 @@ HistoryNode getLeafN(uint64_t block_num) {
 
 TEST(History, Smoky) {
     // Fake an empty view
-    FakeCoinsViewDB fakeDB;
+    CCoinsViewDummy fakeDB;
     CCoinsViewCache view(&fakeDB);
 
     uint32_t epochId = 0;
@@ -116,7 +57,7 @@ TEST(History, Smoky) {
 
 TEST(History, EpochBoundaries) {
     // Fake an empty view
-    FakeCoinsViewDB fakeDB;
+    CCoinsViewDummy fakeDB;
     CCoinsViewCache view(&fakeDB);
 
     // Test with the Heartwood and Canopy epochs
@@ -183,7 +124,7 @@ TEST(History, EpochBoundaries) {
 TEST(History, GarbageMemoryHash) {
     const auto consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_HEARTWOOD].nBranchId;
 
-    FakeCoinsViewDB fakeDB;
+    CCoinsViewDummy fakeDB;
     CCoinsViewCache view(&fakeDB);
 
     // Hash two history nodes
@@ -196,7 +137,7 @@ TEST(History, GarbageMemoryHash) {
     uint256 historyRoot = view.GetHistoryRoot(consensusBranchId);
 
     // Change garbage memory and re-hash nodes
-    FakeCoinsViewDB fakeDBGarbage;
+    CCoinsViewDummy fakeDBGarbage;
     CCoinsViewCache viewGarbage(&fakeDBGarbage);
 
     HistoryNode node0Garbage = getLeafN(1);

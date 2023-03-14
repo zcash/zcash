@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2019-2022 The Zcash developers
+// Copyright (c) 2019-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -158,6 +158,8 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
             }
             obj.pushKV("inflight", heights);
         }
+        obj.pushKV("addr_processed", stats.m_addr_processed);
+        obj.pushKV("addr_rate_limited", stats.m_addr_rate_limited);
         obj.pushKV("whitelisted", stats.fWhitelisted);
 
         ret.push_back(obj);
@@ -427,15 +429,29 @@ static UniValue GetNetworksInfo()
 UniValue getdeprecationinfo(const UniValue& params, bool fHelp)
 {
     const CChainParams& chainparams = Params();
-    if (fHelp || params.size() != 0 || chainparams.NetworkIDString() != "main")
+    if (fHelp || params.size() != 0)
         throw runtime_error(
             "getdeprecationinfo\n"
             "Returns an object containing current version and deprecation block height. Applicable only on mainnet.\n"
             "\nResult:\n"
             "{\n"
-            "  \"version\": xxxxx,                      (numeric) the server version\n"
+            "  \"version\": xxxxx,                          (numeric) the server version\n"
             "  \"subversion\": \"/MagicBean:x.y.z[-v]/\",     (string) the server subversion string\n"
-            "  \"deprecationheight\": xxxxx,            (numeric) the block height at which this version will deprecate and shut down\n"
+            "  \"deprecationheight\": xxxxx,                (numeric, deprecated) the block height at which this version will deprecate and shut down\n"
+            "  \"end_of_service\": {                        (object, optional) information about end-of-service halt, not present for testnet\n"
+            "                                             or regtest nodes\n"
+            "    \"block_height\": xxxxx,                   (numeric) the block height at which this version will reach its the end of its service period and shut down\n"
+            "    \"estimated_time\": xxxxx                  (numeric) the approximate time at which this version is expected to reach the end-of-service height,\n"
+            "                                             in seconds since epoch (midnight Jan 1 1970 GMT). Please note that given the variability of block times,\n"
+            "                                             the actual end-of-service halt may vary from this time by hours or even days; this value is provided\n"
+            "                                             solely for informational purposes and should not be relied upon to remain accurate. If the end-of-service\n"
+            "                                             height for this node has already been reached, this timestamp may be in the past.\n"
+            "  },\n"
+            "  \"deprecated_features\": [...],              (array of string) a list of currently-deprecated but not yet disabled features\n"
+            "  \"disabled_features\": [...]                 (array of string) a list of the deprecated and currently-disabled features that should be expected to be\n"
+            "                                             removed in an upcoming release. These features can be re-enabled via use of the '-allowdeprecated'\n"
+            "                                             configuration option; please see https://zcash.github.io/zcash/user/deprecation.html for additional\n"
+            "                                             information.\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getdeprecationinfo", "")
@@ -446,7 +462,33 @@ UniValue getdeprecationinfo(const UniValue& params, bool fHelp)
     obj.pushKV("version", CLIENT_VERSION);
     obj.pushKV("subversion",
         FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, std::vector<string>()));
-    obj.pushKV("deprecationheight", DEPRECATION_HEIGHT);
+
+    if (chainparams.NetworkIDString() == "main") {
+        if (fEnableDeprecationInfoDeprecationHeight) {
+            obj.pushKV("deprecationheight", DEPRECATION_HEIGHT);
+        }
+
+        UniValue eos(UniValue::VOBJ);
+        eos.pushKV("block_height", DEPRECATION_HEIGHT);
+        {
+            LOCK(cs_main);
+
+            eos.pushKV("estimated_time", EstimatedNodeDeprecationTime(*GetNodeClock(), chainActive.Height()));
+        }
+        obj.pushKV("end_of_service", eos);
+    }
+
+    UniValue deprecated(UniValue::VARR);
+    for (const auto feature : DEFAULT_ALLOW_DEPRECATED) {
+        deprecated.push_back(feature);
+    }
+    obj.pushKV("deprecated_features", deprecated);
+
+    UniValue disabled(UniValue::VARR);
+    for (const auto feature : DEFAULT_DENY_DEPRECATED) {
+        disabled.push_back(feature);
+    }
+    obj.pushKV("disabled_features", disabled);
 
     return obj;
 }

@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2017-2022 The Zcash developers
+// Copyright (c) 2017-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -141,6 +141,7 @@ static bool rest_headers(HTTPRequest* req,
 
     std::vector<const CBlockIndex *> headers;
     headers.reserve(count);
+    CDataStream ssHeader(SER_NETWORK, PROTOCOL_VERSION);
     {
         LOCK(cs_main);
         BlockMap::const_iterator it = mapBlockIndex.find(hash);
@@ -151,11 +152,16 @@ static bool rest_headers(HTTPRequest* req,
                 break;
             pindex = chainActive.Next(pindex);
         }
-    }
 
-    CDataStream ssHeader(SER_NETWORK, PROTOCOL_VERSION);
-    for (const CBlockIndex *pindex : headers) {
-        ssHeader << pindex->GetBlockHeader();
+        if (rf == RF_BINARY || rf == RF_HEX) {
+            try {
+                for (const CBlockIndex *pindex : headers) {
+                    ssHeader << pindex->GetBlockHeader();
+                }
+            } catch (const std::runtime_error&) {
+                return RESTERR(req, HTTP_INTERNAL_SERVER_ERROR, "Failed to read index entry");
+            }
+        }
     }
 
     switch (rf) {
@@ -505,7 +511,7 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
     {
         LOCK2(cs_main, mempool.cs);
 
-        CCoinsView viewDummy;
+        CCoinsViewDummy viewDummy;
         CCoinsViewCache view(&viewDummy);
 
         CCoinsViewCache& viewChain = *pcoinsTip;

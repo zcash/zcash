@@ -30,7 +30,6 @@ SERIAL_SCRIPTS = [
     # These tests involve enough shielded spends (consuming all CPU
     # cores) that we can't run them in parallel.
     'mergetoaddress_sapling.py',
-    'mergetoaddress_sprout.py',
     'wallet_shieldingcoinbase.py',
 ]
 
@@ -39,12 +38,10 @@ BASE_SCRIPTS= [
     # Longest test should go first, to favor running tests in parallel
     # vv Tests less than 5m vv
     'wallet.py',
-    'wallet_shieldcoinbase_sprout.py',
     'sprout_sapling_migration.py',
     'remove_sprout_shielding.py',
-    'zcjoinsplitdoublespend.py',
+    'mempool_packages.py',
     # vv Tests less than 2m vv
-    'zcjoinsplit.py',
     'mergetoaddress_mixednotes.py',
     'wallet_shieldcoinbase_sapling.py',
     'wallet_shieldcoinbase_ua_sapling.py',
@@ -57,10 +54,12 @@ BASE_SCRIPTS= [
     'wallet_listreceived.py',
     'mempool_tx_expiry.py',
     'finalsaplingroot.py',
+    'finalorchardroot.py',
     'wallet_orchard.py',
     'wallet_overwintertx.py',
     'wallet_persistence.py',
     'wallet_listnotes.py',
+    'wallet_listunspent.py',
     # vv Tests less than 60s vv
     'orchard_reorg.py',
     'fundrawtransaction.py',
@@ -80,6 +79,7 @@ BASE_SCRIPTS= [
     'wallet_orchard_change.py',
     'wallet_orchard_init.py',
     'wallet_orchard_persistence.py',
+    'wallet_orchard_reindex.py',
     'wallet_nullifiers.py',
     'wallet_sapling.py',
     'wallet_sendmany_any_taddr.py',
@@ -143,6 +143,7 @@ BASE_SCRIPTS= [
     'wallet_z_sendmany.py',
     'wallet_zero_value.py',
     'threeofthreerestore.py',
+    'show_help.py',
 ]
 
 ZMQ_SCRIPTS = [
@@ -286,9 +287,18 @@ def main():
         tests_to_run = split_list[args.rpcgroup]
     else:
         tests_to_run = test_list
-    run_tests(tests_to_run, config["environment"]["SRCDIR"], config["environment"]["BUILDDIR"], config["environment"]["EXEEXT"], args.jobs, args.coverage, passon_args)
+    all_passed = run_tests(
+        RPCTestHandler,
+        tests_to_run,
+        config["environment"]["SRCDIR"],
+        config["environment"]["BUILDDIR"],
+        config["environment"]["EXEEXT"],
+        args.jobs,
+        args.coverage,
+        passon_args)
+    sys.exit(not all_passed)
 
-def run_tests(test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=False, args=[]):
+def run_tests(test_handler, test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=False, args=[]):
     BOLD = ("","")
     if os.name == 'posix':
         # primitive formatting on supported
@@ -320,21 +330,28 @@ def run_tests(test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=Fal
     time_sum = 0
     time0 = time.time()
 
-    job_queue = RPCTestHandler(jobs, tests_dir, test_list, flags)
+    job_queue = test_handler(jobs, tests_dir, test_list, flags)
 
     max_len_name = len(max(test_list, key=len))
     results = BOLD[1] + "%s | %s | %s\n\n" % ("TEST".ljust(max_len_name), "PASSED", "DURATION") + BOLD[0]
-    for _ in range(len(test_list)):
-        (name, stdout, stderr, passed, duration) = job_queue.get_next()
-        all_passed = all_passed and passed
-        time_sum += duration
+    try:
+        for _ in range(len(test_list)):
+            (name, stdout, stderr, passed, duration) = job_queue.get_next()
+            all_passed = all_passed and passed
+            time_sum += duration
 
-        print('\n' + BOLD[1] + name + BOLD[0] + ":")
-        print('' if passed else stdout + '\n', end='')
-        print('' if stderr == '' else 'stderr:\n' + stderr + '\n', end='')
-        print("Pass: %s%s%s, Duration: %s s\n" % (BOLD[1], passed, BOLD[0], duration))
+            print('\n' + BOLD[1] + name + BOLD[0] + ":")
+            print('' if passed else stdout + '\n', end='')
+            print('' if stderr == '' else 'stderr:\n' + stderr + '\n', end='')
+            print("Pass: %s%s%s, Duration: %s s\n" % (BOLD[1], passed, BOLD[0], duration))
 
-        results += "%s | %s | %s s\n" % (name.ljust(max_len_name), str(passed).ljust(6), duration)
+            results += "%s | %s | %s s\n" % (name.ljust(max_len_name), str(passed).ljust(6), duration)
+    except (InterruptedError, KeyboardInterrupt):
+        print('\nThe following tests were running when interrupted:')
+        for j in job_queue.jobs:
+            print("•", j[0])
+        print('\n', end='')
+        raise
 
     results += BOLD[1] + "\n%s | %s | %s s (accumulated)" % ("ALL".ljust(max_len_name), str(all_passed).ljust(6), time_sum) + BOLD[0]
     print(results)
@@ -346,7 +363,7 @@ def run_tests(test_list, src_dir, build_dir, exeext, jobs=1, enable_coverage=Fal
         print("Cleaning up coverage data")
         coverage.cleanup()
 
-    sys.exit(not all_passed)
+    return all_passed
 
 class RPCTestHandler:
     """
@@ -366,6 +383,13 @@ class RPCTestHandler:
         self.portseed_offset = int(time.time() * 1000) % 625
         self.jobs = []
 
+    def start_test(self, args, stdout, stderr):
+        return subprocess.Popen(
+            args,
+            universal_newlines=True,
+            stdout=stdout,
+            stderr=stderr)
+
     def get_next(self):
         while self.num_running < self.num_jobs and self.test_list:
             # Add tests
@@ -376,10 +400,9 @@ class RPCTestHandler:
             log_stderr = tempfile.SpooledTemporaryFile(max_size=2**16)
             self.jobs.append((t,
                               time.time(),
-                              subprocess.Popen((self.tests_dir + t).split() + self.flags + port_seed,
-                                               universal_newlines=True,
-                                               stdout=log_stdout,
-                                               stderr=log_stderr),
+                              self.start_test((self.tests_dir + t).split() + self.flags + port_seed,
+                                               log_stdout,
+                                               log_stderr),
                               log_stdout,
                               log_stderr))
             # Run serial scripts on their own. We always run these first,

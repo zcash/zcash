@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2016-2022 The Zcash developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -33,7 +33,6 @@ using namespace std;
 void EnsureWalletIsUnlocked();
 bool EnsureWalletIsAvailable(bool avoidException);
 
-UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys);
 UniValue importwallet_impl(const UniValue& params, bool fImportZKeys);
 
 
@@ -348,12 +347,12 @@ UniValue importwallet(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "importwallet \"filename\"\n"
-            "\nImports taddr keys from a wallet dump file (see dumpwallet).\n"
+            "\nImports taddr keys from a wallet dump file (see z_exportwallet).\n"
             "\nArguments:\n"
             "1. \"filename\"    (string, required) The wallet file\n"
             "\nExamples:\n"
             "\nDump the wallet\n"
-            + HelpExampleCli("dumpwallet", "\"nameofbackup\"") +
+            + HelpExampleCli("z_exportwallet", "\"nameofbackup\"") +
             "\nImport the wallet\n"
             + HelpExampleCli("importwallet", "\"path/to/exportdir/nameofbackup\"") +
             "\nImport using the json rpc call\n"
@@ -522,6 +521,10 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
 }
 
 
+UniValue dumpwallet(const UniValue& params, bool fHelp)
+{
+    throw JSONRPCError(RPC_METHOD_NOT_FOUND, "dumpwallet has been removed. Use z_exportwallet instead.");
+}
 
 UniValue z_exportwallet(const UniValue& params, bool fHelp)
 {
@@ -541,40 +544,6 @@ UniValue z_exportwallet(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_exportwallet", "\"test\"")
         );
 
-	return dumpwallet_impl(params, true);
-}
-
-UniValue dumpwallet(const UniValue& params, bool fHelp)
-{
-    if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
-
-    if (!fEnableDumpWallet)
-        throw runtime_error(
-            "dumpwallet is DEPRECATED and will be removed in a future release\n"
-            "\nUse z_exportwallet instead, or restart with `-allowdeprecated=dumpwallet`\n"
-            "if you require backward compatibility.\n"
-            "See https://zcash.github.io/zcash/user/deprecation.html for more information.");
-
-    if (fHelp || params.size() != 1)
-        throw runtime_error(
-            "dumpwallet \"filename\"\n"
-            "\nDEPRECATED. Please use the z_exportwallet RPC instead.\n"
-            "\nDumps taddr wallet keys in a human-readable format.  Overwriting an existing file is not permitted.\n"
-            "\nArguments:\n"
-            "1. \"filename\"    (string, required) The filename, saved in folder set by zcashd -exportdir option\n"
-            "\nResult:\n"
-            "\"path\"           (string) The full path of the destination file\n"
-            "\nExamples:\n"
-            + HelpExampleCli("dumpwallet", "\"test\"")
-            + HelpExampleRpc("dumpwallet", "\"test\"")
-        );
-
-	return dumpwallet_impl(params, false);
-}
-
-UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
-{
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
@@ -676,40 +645,38 @@ UniValue dumpwallet_impl(const UniValue& params, bool fDumpZKeys)
     }
     file << "\n";
 
-    if (fDumpZKeys) {
-        std::set<libzcash::SproutPaymentAddress> sproutAddresses;
-        pwalletMain->GetSproutPaymentAddresses(sproutAddresses);
-        file << "\n";
-        file << "# Zkeys\n";
-        file << "\n";
-        for (auto addr : sproutAddresses) {
-            libzcash::SproutSpendingKey key;
-            if (pwalletMain->GetSproutSpendingKey(addr, key)) {
-                std::string strTime = EncodeDumpTime(pwalletMain->mapSproutZKeyMetadata[addr].nCreateTime);
-                file << strprintf("%s %s # zaddr=%s\n", keyIO.EncodeSpendingKey(key), strTime, keyIO.EncodePaymentAddress(addr));
-            }
+    std::set<libzcash::SproutPaymentAddress> sproutAddresses;
+    pwalletMain->GetSproutPaymentAddresses(sproutAddresses);
+    file << "\n";
+    file << "# Zkeys\n";
+    file << "\n";
+    for (auto addr : sproutAddresses) {
+        libzcash::SproutSpendingKey key;
+        if (pwalletMain->GetSproutSpendingKey(addr, key)) {
+            std::string strTime = EncodeDumpTime(pwalletMain->mapSproutZKeyMetadata[addr].nCreateTime);
+            file << strprintf("%s %s # zaddr=%s\n", keyIO.EncodeSpendingKey(key), strTime, keyIO.EncodePaymentAddress(addr));
         }
-        std::set<libzcash::SaplingPaymentAddress> saplingAddresses;
-        pwalletMain->GetSaplingPaymentAddresses(saplingAddresses);
-        file << "\n";
-        file << "# Sapling keys\n";
-        file << "\n";
-        for (auto addr : saplingAddresses) {
-            libzcash::SaplingExtendedSpendingKey extsk;
-            if (pwalletMain->GetSaplingExtendedSpendingKey(addr, extsk)) {
-                auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
-                CKeyMetadata keyMeta = pwalletMain->mapSaplingZKeyMetadata[ivk];
-                std::string strTime = EncodeDumpTime(keyMeta.nCreateTime);
-                file << strprintf("%s %s", keyIO.EncodeSpendingKey(extsk), strTime);
-                // Keys imported with z_importkey do not have zip32 metadata
-                if (!(keyMeta.hdKeypath.empty() || keyMeta.seedFp.IsNull())) {
-                    file << strprintf(" %s %s", keyMeta.hdKeypath, keyMeta.seedFp.GetHex());
-                }
-                file << strprintf(" # zaddr=%s\n", keyIO.EncodePaymentAddress(addr));
-            }
-        }
-        file << "\n";
     }
+    std::set<libzcash::SaplingPaymentAddress> saplingAddresses;
+    pwalletMain->GetSaplingPaymentAddresses(saplingAddresses);
+    file << "\n";
+    file << "# Sapling keys\n";
+    file << "\n";
+    for (auto addr : saplingAddresses) {
+        libzcash::SaplingExtendedSpendingKey extsk;
+        if (pwalletMain->GetSaplingExtendedSpendingKey(addr, extsk)) {
+            auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
+            CKeyMetadata keyMeta = pwalletMain->mapSaplingZKeyMetadata[ivk];
+            std::string strTime = EncodeDumpTime(keyMeta.nCreateTime);
+            file << strprintf("%s %s", keyIO.EncodeSpendingKey(extsk), strTime);
+            // Keys imported with z_importkey do not have zip32 metadata
+            if (!(keyMeta.hdKeypath.empty() || keyMeta.seedFp.IsNull())) {
+                file << strprintf(" %s %s", keyMeta.hdKeypath, keyMeta.seedFp.GetHex());
+            }
+            file << strprintf(" # zaddr=%s\n", keyIO.EncodePaymentAddress(addr));
+        }
+    }
+    file << "\n";
 
     file << "# End of dump\n";
     file.close();
