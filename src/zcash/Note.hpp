@@ -169,28 +169,6 @@ public:
         const Consensus::Params& params,
         int height,
         const SaplingEncCiphertext &ciphertext,
-        const uint256 &ivk,
-        const uint256 &epk,
-        const uint256 &cmu
-    );
-
-    static std::optional<SaplingNotePlaintext> plaintext_checks_without_height(
-        const SaplingNotePlaintext &plaintext,
-        const uint256 &ivk,
-        const uint256 &epk,
-        const uint256 &cmu
-    );
-
-    static std::optional<SaplingNotePlaintext> attempt_sapling_enc_decryption_deserialization(
-        const SaplingEncCiphertext &ciphertext,
-        const uint256 &ivk,
-        const uint256 &epk
-    );
-
-    static std::optional<SaplingNotePlaintext> decrypt(
-        const Consensus::Params& params,
-        int height,
-        const SaplingEncCiphertext &ciphertext,
         const uint256 &epk,
         const uint256 &esk,
         const uint256 &pk_d,
