@@ -574,13 +574,13 @@ TEST(WalletTests, FindMySaplingNotes) {
     // No Sapling notes can be found in tx which does not belong to the wallet
     CWalletTx wtx {&wallet, tx};
     ASSERT_FALSE(wallet.HaveSaplingSpendingKey(extfvk));
-    auto noteMap = wallet.FindMySaplingNotes(consensusParams, wtx, 1).first;
+    auto noteMap = wallet.FindMySaplingNotes(Params(), wtx, 1).first;
     EXPECT_EQ(0, noteMap.size());
 
     // Add spending key to wallet, so Sapling notes can be found
     ASSERT_TRUE(wallet.AddSaplingZKey(sk));
     ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
-    noteMap = wallet.FindMySaplingNotes(consensusParams, wtx, 1).first;
+    noteMap = wallet.FindMySaplingNotes(Params(), wtx, 1).first;
     EXPECT_EQ(2, noteMap.size());
 
     // Revert to default
@@ -733,7 +733,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
         EXPECT_EQ(0, chainActive.Height());
 
         // Simulate SyncTransaction which calls AddToWalletIfInvolvingMe
-        auto saplingNoteData = wallet.FindMySaplingNotes(consensusParams, wtx,  1).first;
+        auto saplingNoteData = wallet.FindMySaplingNotes(Params(), wtx,  1).first;
         ASSERT_TRUE(saplingNoteData.size() > 0);
         wtx.SetSaplingNoteData(saplingNoteData);
         wtx.SetMerkleBranch(block);
@@ -1117,7 +1117,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
 
     // Simulate SyncTransaction which calls AddToWalletIfInvolvingMe
     wtx.SetMerkleBranch(block);
-    auto saplingNoteData = wallet.FindMySaplingNotes(consensusParams, wtx, chainActive.Height()).first;
+    auto saplingNoteData = wallet.FindMySaplingNotes(Params(), wtx, chainActive.Height()).first;
     ASSERT_TRUE(saplingNoteData.size() > 0);
     wtx.SetSaplingNoteData(saplingNoteData);
     wallet.LoadWalletTx(wtx);
@@ -1244,7 +1244,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         EXPECT_TRUE(chainActive.Contains(&fakeIndex));
         EXPECT_EQ(0, chainActive.Height());
 
-        auto saplingNoteData = wallet.FindMySaplingNotes(consensusParams, wtx, 1).first;
+        auto saplingNoteData = wallet.FindMySaplingNotes(Params(), wtx, 1).first;
         ASSERT_TRUE(saplingNoteData.size() > 0);
         wtx.SetSaplingNoteData(saplingNoteData);
         wtx.SetMerkleBranch(block);
@@ -1315,7 +1315,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         EXPECT_TRUE(chainActive.Contains(&fakeIndex2));
         EXPECT_EQ(1, chainActive.Height());
 
-        auto saplingNoteData2 = wallet.FindMySaplingNotes(consensusParams, wtx2, 2).first;
+        auto saplingNoteData2 = wallet.FindMySaplingNotes(Params(), wtx2, 2).first;
         ASSERT_TRUE(saplingNoteData2.size() > 0);
         wtx2.SetSaplingNoteData(saplingNoteData2);
         wtx2.SetMerkleBranch(block2);
@@ -2098,7 +2098,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     EXPECT_EQ(0, chainActive.Height());
 
     // Simulate SyncTransaction which calls AddToWalletIfInvolvingMe
-    auto saplingNoteData = wallet.FindMySaplingNotes(consensusParams, wtx, chainActive.Height()).first;
+    auto saplingNoteData = wallet.FindMySaplingNotes(Params(), wtx, chainActive.Height()).first;
     ASSERT_TRUE(saplingNoteData.size() == 1); // wallet only has key for change output
     wtx.SetSaplingNoteData(saplingNoteData);
     wtx.SetMerkleBranch(block);
@@ -2116,7 +2116,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     ASSERT_TRUE(wallet.AddSaplingZKey(sk2));
     ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk2));
     CWalletTx wtx2 = wtx;
-    auto saplingNoteData2 = wallet.FindMySaplingNotes(consensusParams, wtx2, chainActive.Height()).first;
+    auto saplingNoteData2 = wallet.FindMySaplingNotes(Params(), wtx2, chainActive.Height()).first;
     ASSERT_TRUE(saplingNoteData2.size() == 2);
     wtx2.SetSaplingNoteData(saplingNoteData2);
 
@@ -2247,7 +2247,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     EXPECT_EQ(0, chainActive.Height());
 
     // Simulate SyncTransaction which calls AddToWalletIfInvolvingMe
-    auto saplingNoteData = wallet.FindMySaplingNotes(consensusParams, wtx, chainActive.Height()).first;
+    auto saplingNoteData = wallet.FindMySaplingNotes(Params(), wtx, chainActive.Height()).first;
     ASSERT_TRUE(saplingNoteData.size() > 0);
     wtx.SetSaplingNoteData(saplingNoteData);
     wtx.SetMerkleBranch(block);

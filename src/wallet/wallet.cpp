@@ -3765,7 +3765,7 @@ mapSproutNoteData_t CWallet::FindMySproutNotes(const CTransaction &tx) const
  * already have been cached in CWalletTx.mapSaplingNoteData.
  */
 std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySaplingNotes(
-    const Consensus::Params& consensus,
+    const CChainParams& params,
     const CTransaction &tx,
     int height) const
 {
@@ -3781,21 +3781,33 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
         for (auto it = mapSaplingFullViewingKeys.begin(); it != mapSaplingFullViewingKeys.end(); ++it) {
             SaplingIncomingViewingKey ivk = it->first;
 
-            auto result = SaplingNotePlaintext::decrypt(consensus, height, output.encCiphertext, ivk, output.ephemeralKey, output.cmu);
-            if (!result) {
+            try {
+                auto decrypted = wallet::try_sapling_note_decryption(
+                    *params.RustNetwork(),
+                    height,
+                    ivk.GetRawBytes(),
+                    {
+                        output.cmu.GetRawBytes(),
+                        output.ephemeralKey.GetRawBytes(),
+                        output.encCiphertext,
+                    });
+
+                SaplingPaymentAddress address(
+                    decrypted->recipient_d(),
+                    uint256::FromRawBytes(decrypted->recipient_pk_d()));
+                if (mapSaplingIncomingViewingKeys.count(address) == 0) {
+                    viewingKeysToAdd[address] = ivk;
+                }
+                // We don't cache the nullifier here as computing it requires knowledge of the note position
+                // in the commitment tree, which can only be determined when the transaction has been mined.
+                SaplingOutPoint op {hash, i};
+                SaplingNoteData nd;
+                nd.ivk = ivk;
+                noteData.insert(std::make_pair(op, nd));
+                break;
+            } catch (const rust::Error &e) {
                 continue;
             }
-            auto address = ivk.address(result.value().d);
-            if (address && mapSaplingIncomingViewingKeys.count(address.value()) == 0) {
-                viewingKeysToAdd[address.value()] = ivk;
-            }
-            // We don't cache the nullifier here as computing it requires knowledge of the note position
-            // in the commitment tree, which can only be determined when the transaction has been mined.
-            SaplingOutPoint op {hash, i};
-            SaplingNoteData nd;
-            nd.ivk = ivk;
-            noteData.insert(std::make_pair(op, nd));
-            break;
         }
     }
 
