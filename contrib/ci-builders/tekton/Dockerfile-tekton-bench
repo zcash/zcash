@@ -1,0 +1,30 @@
+# Used to benchmmark layer for all zcash images
+
+ARG FROMBASEOS
+ARG FROMBASEOS_BUILD_TAG
+ARG BASE_WORKER_IMAGE
+FROM $BASE_WORKER_IMAGE-$FROMBASEOS-$FROMBASEOS_BUILD_TAG
+
+#requires apt packages for heaptrack min to function with zcash binaries
+#libunwind-dev
+#libboost-all-dev
+RUN apt-get install -y libunwind-dev libboost-all-dev 
+RUN git clone https://github.com/KDE/heaptrack.git \ 
+    && cd heaptrack \
+    && git checkout v1.3.0 \
+    && mkdir build \
+    && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release .. \
+    && make -j$(nproc) \
+    && make install \
+    && cd ../.. \
+    && rm -rf ./heaptrack
+
+RUN python -m pip install google-cloud-BigQuery
+COPY ./benchmark-200k-UTXOs.tar.xz /home/benchmark-200k-UTXOs.tar.xz
+COPY ./block-107134.tar.xz /home/block-107134.tar.xz
+COPY ./block-1708048.tar.xz /home/block-1708048.tar.xz
+COPY ./block-1723244.tar.xz /home/block-1723244.tar.xz
+COPY ./perf_metrics.py /home/perf_metrics.py
+COPY ./mem_metrics.py /home/mem_metrics.py
+ADD ./zcash-params /home/.zcash-params
