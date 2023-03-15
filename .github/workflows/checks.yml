@@ -18,7 +18,7 @@ jobs:
       - name: Ensure branch contains necessary commits for Tekton CI
         id: tekton
         # https://github.com/zcash/zcash/pull/6358
-        run: git merge-base --is-ancestor 267ddf8efe36cc799c4c31772a8883ea332ef55b HEAD
+        run: git merge-base --is-ancestor 267ddf8efe36cc799c4c31772a8883ea332ef55b ${{ github.head_ref }}
 
       - name: Tell PR author if they need to rebase
         if: failure() && steps.tekton.outcome == 'failure'
