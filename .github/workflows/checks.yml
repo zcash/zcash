@@ -21,11 +21,11 @@ jobs:
         run: git merge-base --is-ancestor 267ddf8efe36cc799c4c31772a8883ea332ef55b HEAD
 
       - name: Tell PR author if they need to rebase
-        if: steps.tekton.outcome == 'failure'
+        if: failure() && steps.tekton.outcome == 'failure'
         run: echo "::error::Branch needs to be rebased so that Tekton CI can run"
 
       - name: Avoid running Tekton CI if it would provably fail
-        if: steps.tekton.outcome == 'failure'
+        if: failure() && steps.tekton.outcome == 'failure'
         uses: actions/github-script@v6
         with:
           script: |
