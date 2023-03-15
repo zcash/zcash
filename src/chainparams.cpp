@@ -777,14 +777,14 @@ public:
 };
 static CRegTestParams regTestParams;
 
-static CChainParams *pCurrentParams = 0;
+static const CChainParams* pCurrentParams = nullptr;
 
-const CChainParams &Params() {
+const CChainParams& Params() {
     assert(pCurrentParams);
     return *pCurrentParams;
 }
 
-CChainParams& Params(const std::string& chain)
+const CChainParams& Params(const std::string& chain)
 {
     if (chain == CBaseChainParams::MAIN)
             return mainParams;
