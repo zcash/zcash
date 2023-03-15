@@ -682,7 +682,7 @@ public:
      *
      * Decryption is always performed as if the ZIP 212 grace window is active
      * (accepting both v1 and v2 note plaintexts), because the v2 plaintext
-     * format protects against an attack against the recipient, not the sender.
+     * format protects against an attack on the recipient, not the sender.
      */
     std::optional<std::pair<
         libzcash::SaplingNotePlaintext,

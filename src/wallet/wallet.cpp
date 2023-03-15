@@ -4317,7 +4317,8 @@ std::optional<std::pair<
     try {
         auto decrypted = wallet::try_sapling_note_decryption(
             *params.RustNetwork(),
-            // Canopy activation is inside the ZIP 212 grace period.
+            // Canopy activation is inside the ZIP 212 grace period,
+            // and so this allows both v1 and v2 note plaintexts.
             params.GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
             nd.ivk.GetRawBytes(),
             {
@@ -4344,7 +4345,8 @@ std::optional<std::pair<
         try {
             auto decrypted = wallet::try_sapling_output_recovery(
                 *params.RustNetwork(),
-                // Canopy activation is inside the ZIP 212 grace period.
+                // Canopy activation is inside the ZIP 212 grace period,
+                // and so this allows both v1 and v2 note plaintexts.
                 params.GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
                 ovk.GetRawBytes(),
                 {
