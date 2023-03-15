@@ -1,4 +1,3 @@
-#v5.4.2
 wheel
 pyblake2
 pyflakes
