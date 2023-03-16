@@ -6,6 +6,8 @@ curl
 g++-aarch64-linux-gnu
 git
 lcov
+libunwind-dev
+libboost-all-dev 
 libcap-dev
 libffi-dev
 libtinfo5
