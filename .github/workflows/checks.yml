@@ -12,8 +12,15 @@ jobs:
     name: Branch base is sufficiently recent
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out the base branch
+        uses: actions/checkout@v3
         with:
+          fetch-depth: 0
+
+      - name: Check out the PR branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: Ensure branch contains necessary commits for Tekton CI
