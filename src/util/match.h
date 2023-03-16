@@ -21,4 +21,17 @@ template<class... Ts> struct match : Ts... { using Ts::operator()...; };
 // explicit deduction guide (not needed as of C++20)
 template<class... Ts> match(Ts...) -> match<Ts...>;
 
+// A wrapper around two-argument `std::visit` that reverses the arguments, putting the
+// value to be visited first. This is normally used as:
+//
+// examine(specimen, match {
+//     ...
+// })
+//
+// The return type is inferred as it would be for `std::visit`.
+template<class Specimen, class Visitor>
+decltype(auto) examine(Specimen&& specimen, Visitor&& visitor) {
+    return std::visit(visitor, specimen);
+}
+
 #endif // ZCASH_UTIL_MATCH_H
