@@ -2319,16 +2319,14 @@ SpendableInputs CWallet::FindSpendableInputs(
 
         if (selectSapling) {
             for (auto const& [op, nd] : wtx.mapSaplingNoteData) {
-                auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
+                auto optDecrypted = wtx.DecryptSaplingNote(Params(), op);
 
                 // The transaction would not have entered the wallet unless
                 // its plaintext had been successfully decrypted previously.
-                assert(optDeserialized != std::nullopt);
-
-                auto notePt = optDeserialized.value();
-                auto maybe_pa = nd.ivk.address(notePt.d);
-                assert(maybe_pa.has_value());
-                auto pa = maybe_pa.value();
+                assert(optDecrypted != std::nullopt);
+                SaplingNotePlaintext notePt;
+                SaplingPaymentAddress pa;
+                std::tie(notePt, pa) = optDecrypted.value();
 
                 // skip notes which have been spent
                 if (nd.nullifier.has_value() && IsSaplingSpent(nd.nullifier.value(), asOfHeight)) continue;
@@ -3219,21 +3217,16 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
         else {
             uint64_t position = nd.witnesses.front().position();
             auto extfvk = mapSaplingFullViewingKeys.at(nd.ivk);
-            OutputDescription output = wtx.vShieldedOutput[op.n];
 
-            auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(output.encCiphertext, nd.ivk, output.ephemeralKey);
+            auto optDecrypted = wtx.DecryptSaplingNote(Params(), op);
 
             // The transaction would not have entered the wallet unless
             // its plaintext had been successfully decrypted previously.
-            assert(optDeserialized != std::nullopt);
+            assert(optDecrypted != std::nullopt);
+            SaplingNotePlaintext notePt;
+            std::tie(notePt, std::ignore) = optDecrypted.value();
 
-            auto optPlaintext = SaplingNotePlaintext::plaintext_checks_without_height(*optDeserialized, nd.ivk, output.ephemeralKey, output.cmu);
-
-            // An item in mapSaplingNoteData must have already been successfully decrypted,
-            // otherwise the item would not exist in the first place.
-            assert(optPlaintext != std::nullopt);
-
-            auto optNote = optPlaintext.value().note(nd.ivk);
+            auto optNote = notePt.note(nd.ivk);
             assert(optNote != std::nullopt);
 
             auto optNullifier = optNote.value().nullifier(extfvk.fvk, position);
@@ -3533,16 +3526,7 @@ bool CWallet::AddToWalletIfInvolvingMe(
 rust::Box<wallet::BatchScanner> WalletBatchScanner::CreateBatchScanner(CWallet* pwallet) {
     LOCK(pwallet->cs_KeyStore);
 
-    auto chainParams = Params();
-    auto consensus = chainParams.GetConsensus();
-    auto network = wallet::network(
-        chainParams.NetworkIDString(),
-        consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight,
-        consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight,
-        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight,
-        consensus.vUpgrades[Consensus::UPGRADE_HEARTWOOD].nActivationHeight,
-        consensus.vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
-        consensus.vUpgrades[Consensus::UPGRADE_NU5].nActivationHeight);
+    auto network = Params().RustNetwork();
 
     // TODO: Pass the map across the FFI once cxx supports it.
     std::vector<std::array<uint8_t, 32>> ivks;
@@ -3781,7 +3765,7 @@ mapSproutNoteData_t CWallet::FindMySproutNotes(const CTransaction &tx) const
  * already have been cached in CWalletTx.mapSaplingNoteData.
  */
 std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySaplingNotes(
-    const Consensus::Params& consensus,
+    const CChainParams& params,
     const CTransaction &tx,
     int height) const
 {
@@ -3797,21 +3781,35 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
         for (auto it = mapSaplingFullViewingKeys.begin(); it != mapSaplingFullViewingKeys.end(); ++it) {
             SaplingIncomingViewingKey ivk = it->first;
 
-            auto result = SaplingNotePlaintext::decrypt(consensus, height, output.encCiphertext, ivk, output.ephemeralKey, output.cmu);
-            if (!result) {
+            try {
+                auto decrypted = wallet::try_sapling_note_decryption(
+                    *params.RustNetwork(),
+                    height,
+                    ivk.GetRawBytes(),
+                    {
+                        output.cv.GetRawBytes(),
+                        output.cmu.GetRawBytes(),
+                        output.ephemeralKey.GetRawBytes(),
+                        output.encCiphertext,
+                        output.outCiphertext,
+                    });
+
+                SaplingPaymentAddress address(
+                    decrypted->recipient_d(),
+                    uint256::FromRawBytes(decrypted->recipient_pk_d()));
+                if (mapSaplingIncomingViewingKeys.count(address) == 0) {
+                    viewingKeysToAdd[address] = ivk;
+                }
+                // We don't cache the nullifier here as computing it requires knowledge of the note position
+                // in the commitment tree, which can only be determined when the transaction has been mined.
+                SaplingOutPoint op {hash, i};
+                SaplingNoteData nd;
+                nd.ivk = ivk;
+                noteData.insert(std::make_pair(op, nd));
+                break;
+            } catch (const rust::Error &e) {
                 continue;
             }
-            auto address = ivk.address(result.value().d);
-            if (address && mapSaplingIncomingViewingKeys.count(address.value()) == 0) {
-                viewingKeysToAdd[address.value()] = ivk;
-            }
-            // We don't cache the nullifier here as computing it requires knowledge of the note position
-            // in the commitment tree, which can only be determined when the transaction has been mined.
-            SaplingOutPoint op {hash, i};
-            SaplingNoteData nd;
-            nd.ivk = ivk;
-            noteData.insert(std::make_pair(op, nd));
-            break;
         }
     }
 
@@ -4306,7 +4304,7 @@ std::pair<SproutNotePlaintext, SproutPaymentAddress> CWalletTx::DecryptSproutNot
 
 std::optional<std::pair<
     SaplingNotePlaintext,
-    SaplingPaymentAddress>> CWalletTx::DecryptSaplingNote(const Consensus::Params& params, int height, SaplingOutPoint op) const
+    SaplingPaymentAddress>> CWalletTx::DecryptSaplingNote(const CChainParams& params, SaplingOutPoint op) const
 {
     // Check whether we can decrypt this SaplingOutPoint
     if (this->mapSaplingNoteData.count(op) == 0) {
@@ -4316,127 +4314,53 @@ std::optional<std::pair<
     auto output = this->vShieldedOutput[op.n];
     auto nd = this->mapSaplingNoteData.at(op);
 
-    auto maybe_pt = SaplingNotePlaintext::decrypt(
-        params,
-        height,
-        output.encCiphertext,
-        nd.ivk,
-        output.ephemeralKey,
-        output.cmu);
-    assert(maybe_pt != std::nullopt);
-    auto notePt = maybe_pt.value();
+    try {
+        auto decrypted = wallet::try_sapling_note_decryption(
+            *params.RustNetwork(),
+            // Canopy activation is inside the ZIP 212 grace period,
+            // and so this allows both v1 and v2 note plaintexts.
+            params.GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
+            nd.ivk.GetRawBytes(),
+            {
+                output.cv.GetRawBytes(),
+                output.cmu.GetRawBytes(),
+                output.ephemeralKey.GetRawBytes(),
+                output.encCiphertext,
+                output.outCiphertext,
+            });
 
-    auto maybe_pa = nd.ivk.address(notePt.d);
-    assert(maybe_pa != std::nullopt);
-    auto pa = maybe_pa.value();
-
-    return std::make_pair(notePt, pa);
-}
-
-std::optional<std::pair<
-    SaplingNotePlaintext,
-    SaplingPaymentAddress>> CWalletTx::DecryptSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op) const
-{
-    // Check whether we can decrypt this SaplingOutPoint
-    if (this->mapSaplingNoteData.count(op) == 0) {
-        return std::nullopt;
+        return SaplingNotePlaintext::from_rust(std::move(decrypted));
+    } catch (const rust::Error &e) {
+        assert(false);
     }
-
-    auto output = this->vShieldedOutput[op.n];
-    auto nd = this->mapSaplingNoteData.at(op);
-
-    auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(output.encCiphertext, nd.ivk, output.ephemeralKey);
-
-    // The transaction would not have entered the wallet unless
-    // its plaintext had been successfully decrypted previously.
-    assert(optDeserialized != std::nullopt);
-
-    auto maybe_pt = SaplingNotePlaintext::plaintext_checks_without_height(
-        *optDeserialized,
-        nd.ivk,
-        output.ephemeralKey,
-        output.cmu);
-    assert(maybe_pt != std::nullopt);
-    auto notePt = maybe_pt.value();
-
-    auto maybe_pa = nd.ivk.address(notePt.d);
-    assert(static_cast<bool>(maybe_pa));
-    auto pa = maybe_pa.value();
-
-    return std::make_pair(notePt, pa);
 }
 
 std::optional<std::pair<
     SaplingNotePlaintext,
-    SaplingPaymentAddress>> CWalletTx::RecoverSaplingNote(const Consensus::Params& params, int height, SaplingOutPoint op, std::set<uint256>& ovks) const
+    SaplingPaymentAddress>> CWalletTx::RecoverSaplingNote(const CChainParams& params, SaplingOutPoint op, std::set<uint256>& ovks) const
 {
     auto output = this->vShieldedOutput[op.n];
 
     for (auto ovk : ovks) {
-        auto outPt = SaplingOutgoingPlaintext::decrypt(
-            output.outCiphertext,
-            ovk,
-            output.cv,
-            output.cmu,
-            output.ephemeralKey);
-        if (!outPt) {
+        try {
+            auto decrypted = wallet::try_sapling_output_recovery(
+                *params.RustNetwork(),
+                // Canopy activation is inside the ZIP 212 grace period,
+                // and so this allows both v1 and v2 note plaintexts.
+                params.GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
+                ovk.GetRawBytes(),
+                {
+                    output.cv.GetRawBytes(),
+                    output.cmu.GetRawBytes(),
+                    output.ephemeralKey.GetRawBytes(),
+                    output.encCiphertext,
+                    output.outCiphertext,
+                });
+
+            return SaplingNotePlaintext::from_rust(std::move(decrypted));
+        } catch (const rust::Error &e) {
             // Try decrypting with the next ovk
-            continue;
         }
-
-        auto maybe_pt = SaplingNotePlaintext::decrypt(
-            params,
-            height,
-            output.encCiphertext,
-            output.ephemeralKey,
-            outPt->esk,
-            outPt->pk_d,
-            output.cmu);
-        assert(static_cast<bool>(maybe_pt));
-        auto notePt = maybe_pt.value();
-
-        return std::make_pair(notePt, SaplingPaymentAddress(notePt.d, outPt->pk_d));
-    }
-
-    // Couldn't recover with any of the provided OutgoingViewingKeys
-    return std::nullopt;
-}
-
-std::optional<std::pair<
-    SaplingNotePlaintext,
-    SaplingPaymentAddress>> CWalletTx::RecoverSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op, std::set<uint256>& ovks) const
-{
-    auto output = this->vShieldedOutput[op.n];
-
-    for (auto ovk : ovks) {
-        auto outPt = SaplingOutgoingPlaintext::decrypt(
-            output.outCiphertext,
-            ovk,
-            output.cv,
-            output.cmu,
-            output.ephemeralKey);
-        if (!outPt) {
-            // Try decrypting with the next ovk
-            continue;
-        }
-
-        auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(
-            output.encCiphertext, output.ephemeralKey, outPt->esk, outPt->pk_d);
-
-        // The transaction would not have entered the wallet unless
-        // its plaintext had been successfully decrypted previously.
-        assert(optDeserialized != std::nullopt);
-
-        auto maybe_pt = SaplingNotePlaintext::plaintext_checks_without_height(
-            *optDeserialized,
-            output.ephemeralKey,
-            outPt->esk,
-            outPt->pk_d,
-            output.cmu);
-        assert(static_cast<bool>(maybe_pt));
-        auto notePt = maybe_pt.value();
-
-        return std::make_pair(notePt, SaplingPaymentAddress(notePt.d, outPt->pk_d));
     }
 
     // Couldn't recover with any of the provided OutgoingViewingKeys
@@ -7133,16 +7057,14 @@ void CWallet::GetFilteredNotes(
             SaplingOutPoint op = pair.first;
             SaplingNoteData nd = pair.second;
 
-            auto optDeserialized = SaplingNotePlaintext::attempt_sapling_enc_decryption_deserialization(wtx.vShieldedOutput[op.n].encCiphertext, nd.ivk, wtx.vShieldedOutput[op.n].ephemeralKey);
+            auto optDecrypted = wtx.DecryptSaplingNote(Params(), op);
 
             // The transaction would not have entered the wallet unless
             // its plaintext had been successfully decrypted previously.
-            assert(optDeserialized != std::nullopt);
-
-            auto notePt = optDeserialized.value();
-            auto maybe_pa = nd.ivk.address(notePt.d);
-            assert(static_cast<bool>(maybe_pa));
-            auto pa = maybe_pa.value();
+            assert(optDecrypted != std::nullopt);
+            SaplingNotePlaintext notePt;
+            SaplingPaymentAddress pa;
+            std::tie(notePt, pa) = optDecrypted.value();
 
             // skip notes which do not conform to the filter, if supplied
             if (noteFilter.has_value() && !noteFilter.value().HasSaplingAddress(pa)) {

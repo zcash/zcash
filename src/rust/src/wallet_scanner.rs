@@ -13,19 +13,33 @@ use memuse::DynamicUsage;
 use zcash_note_encryption::{batch, BatchDomain, Domain, ShieldedOutput, ENC_CIPHERTEXT_SIZE};
 use zcash_primitives::{
     block::BlockHash,
-    consensus, constants,
-    sapling::{
-        note_encryption::{PreparedIncomingViewingKey, SaplingDomain},
-        SaplingIvk,
-    },
+    consensus,
+    sapling::note_encryption::SaplingDomain,
     transaction::{
         components::{sapling::GrothProofBytes, OutputDescription},
         Transaction, TxId,
     },
 };
 
+use crate::{
+    note_encryption::{
+        parse_and_prepare_sapling_ivk, try_sapling_note_decryption, try_sapling_output_recovery,
+        DecryptedSaplingOutput,
+    },
+    params::{network, Network},
+};
+
 #[cxx::bridge]
-mod ffi {
+pub(crate) mod ffi {
+    #[namespace = "wallet"]
+    pub(crate) struct SaplingShieldedOutput {
+        cv: [u8; 32],
+        cmu: [u8; 32],
+        ephemeral_key: [u8; 32],
+        enc_ciphertext: [u8; 580],
+        out_ciphertext: [u8; 80],
+    }
+
     #[namespace = "wallet"]
     struct SaplingDecryptionResult {
         txid: [u8; 32],
@@ -35,11 +49,9 @@ mod ffi {
         pk_d: [u8; 32],
     }
 
-    #[namespace = "wallet"]
+    #[namespace = "consensus"]
     extern "Rust" {
         type Network;
-        type BatchScanner;
-        type BatchResult;
 
         fn network(
             network: &str,
@@ -50,6 +62,33 @@ mod ffi {
             canopy: i32,
             nu5: i32,
         ) -> Result<Box<Network>>;
+    }
+
+    #[namespace = "wallet"]
+    extern "Rust" {
+        fn try_sapling_note_decryption(
+            network: &Network,
+            height: u32,
+            raw_ivk: &[u8; 32],
+            output: SaplingShieldedOutput,
+        ) -> Result<Box<DecryptedSaplingOutput>>;
+        fn try_sapling_output_recovery(
+            network: &Network,
+            height: u32,
+            ovk: [u8; 32],
+            output: SaplingShieldedOutput,
+        ) -> Result<Box<DecryptedSaplingOutput>>;
+
+        type DecryptedSaplingOutput;
+        fn note_value(self: &DecryptedSaplingOutput) -> u64;
+        fn note_rseed(self: &DecryptedSaplingOutput) -> [u8; 32];
+        fn zip_212_enabled(self: &DecryptedSaplingOutput) -> bool;
+        fn recipient_d(self: &DecryptedSaplingOutput) -> [u8; 11];
+        fn recipient_pk_d(self: &DecryptedSaplingOutput) -> [u8; 32];
+        fn memo(self: &DecryptedSaplingOutput) -> [u8; 512];
+
+        type BatchScanner;
+        type BatchResult;
 
         fn init_batch_scanner(
             network: &Network,
@@ -81,147 +120,6 @@ const METRIC_OUTPUTS_SCANNED: &str = "zcashd.wallet.batchscanner.outputs.scanned
 const METRIC_LABEL_KIND: &str = "kind";
 
 const METRIC_SIZE_TXS: &str = "zcashd.wallet.batchscanner.size.transactions";
-
-/// Chain parameters for the networks supported by `zcashd`.
-#[derive(Clone, Copy)]
-pub enum Network {
-    Consensus(consensus::Network),
-    RegTest {
-        overwinter: Option<consensus::BlockHeight>,
-        sapling: Option<consensus::BlockHeight>,
-        blossom: Option<consensus::BlockHeight>,
-        heartwood: Option<consensus::BlockHeight>,
-        canopy: Option<consensus::BlockHeight>,
-        nu5: Option<consensus::BlockHeight>,
-    },
-}
-
-impl DynamicUsage for Network {
-    fn dynamic_usage(&self) -> usize {
-        match self {
-            Network::Consensus(params) => params.dynamic_usage(),
-            // We know that `Option<BlockHeight>` allocates no memory.
-            Network::RegTest { .. } => 0,
-        }
-    }
-
-    fn dynamic_usage_bounds(&self) -> (usize, Option<usize>) {
-        match self {
-            Network::Consensus(params) => params.dynamic_usage_bounds(),
-            // We know that `Option<BlockHeight>` allocates no memory.
-            Network::RegTest { .. } => (0, Some(0)),
-        }
-    }
-}
-
-/// Constructs a `Network` from the given network string.
-///
-/// The heights are only for constructing a regtest network, and are ignored otherwise.
-fn network(
-    network: &str,
-    overwinter: i32,
-    sapling: i32,
-    blossom: i32,
-    heartwood: i32,
-    canopy: i32,
-    nu5: i32,
-) -> Result<Box<Network>, &'static str> {
-    let i32_to_optional_height = |n: i32| {
-        if n.is_negative() {
-            None
-        } else {
-            Some(consensus::BlockHeight::from_u32(n.unsigned_abs()))
-        }
-    };
-
-    let params = match network {
-        "main" => Network::Consensus(consensus::Network::MainNetwork),
-        "test" => Network::Consensus(consensus::Network::TestNetwork),
-        "regtest" => Network::RegTest {
-            overwinter: i32_to_optional_height(overwinter),
-            sapling: i32_to_optional_height(sapling),
-            blossom: i32_to_optional_height(blossom),
-            heartwood: i32_to_optional_height(heartwood),
-            canopy: i32_to_optional_height(canopy),
-            nu5: i32_to_optional_height(nu5),
-        },
-        _ => return Err("Unsupported network kind"),
-    };
-
-    Ok(Box::new(params))
-}
-
-impl consensus::Parameters for Network {
-    fn activation_height(&self, nu: consensus::NetworkUpgrade) -> Option<consensus::BlockHeight> {
-        match self {
-            Self::Consensus(params) => params.activation_height(nu),
-            Self::RegTest {
-                overwinter,
-                sapling,
-                blossom,
-                heartwood,
-                canopy,
-                nu5,
-            } => match nu {
-                consensus::NetworkUpgrade::Overwinter => *overwinter,
-                consensus::NetworkUpgrade::Sapling => *sapling,
-                consensus::NetworkUpgrade::Blossom => *blossom,
-                consensus::NetworkUpgrade::Heartwood => *heartwood,
-                consensus::NetworkUpgrade::Canopy => *canopy,
-                consensus::NetworkUpgrade::Nu5 => *nu5,
-            },
-        }
-    }
-
-    fn coin_type(&self) -> u32 {
-        match self {
-            Self::Consensus(params) => params.coin_type(),
-            Self::RegTest { .. } => constants::regtest::COIN_TYPE,
-        }
-    }
-
-    fn address_network(&self) -> Option<zcash_address::Network> {
-        match self {
-            Self::Consensus(params) => params.address_network(),
-            Self::RegTest { .. } => Some(zcash_address::Network::Regtest),
-        }
-    }
-
-    fn hrp_sapling_extended_spending_key(&self) -> &str {
-        match self {
-            Self::Consensus(params) => params.hrp_sapling_extended_spending_key(),
-            Self::RegTest { .. } => constants::regtest::HRP_SAPLING_EXTENDED_SPENDING_KEY,
-        }
-    }
-
-    fn hrp_sapling_extended_full_viewing_key(&self) -> &str {
-        match self {
-            Self::Consensus(params) => params.hrp_sapling_extended_full_viewing_key(),
-            Self::RegTest { .. } => constants::regtest::HRP_SAPLING_EXTENDED_FULL_VIEWING_KEY,
-        }
-    }
-
-    fn hrp_sapling_payment_address(&self) -> &str {
-        match self {
-            Self::Consensus(params) => params.hrp_sapling_payment_address(),
-            Self::RegTest { .. } => constants::regtest::HRP_SAPLING_PAYMENT_ADDRESS,
-        }
-    }
-
-    fn b58_pubkey_address_prefix(&self) -> [u8; 2] {
-        match self {
-            Self::Consensus(params) => params.b58_pubkey_address_prefix(),
-            Self::RegTest { .. } => constants::regtest::B58_PUBKEY_ADDRESS_PREFIX,
-        }
-    }
-
-    fn b58_script_address_prefix(&self) -> [u8; 2] {
-        match self {
-            Self::Consensus(params) => params.b58_script_address_prefix(),
-            Self::RegTest { .. } => constants::regtest::B58_SCRIPT_ADDRESS_PREFIX,
-        }
-    }
-}
 
 trait OutputDomain: BatchDomain {
     // The kind of output, for metrics labelling.
@@ -768,10 +666,8 @@ fn init_batch_scanner(
         let ivks: Vec<(_, _)> = sapling_ivks
             .iter()
             .map(|raw_ivk| {
-                let ivk: Option<_> = jubjub::Fr::from_bytes(raw_ivk)
-                    .map(|scalar_ivk| PreparedIncomingViewingKey::new(&SaplingIvk(scalar_ivk)))
-                    .into();
-                ivk.map(|prepared_ivk| (*raw_ivk, prepared_ivk))
+                parse_and_prepare_sapling_ivk(raw_ivk)
+                    .map(|prepared_ivk| (*raw_ivk, prepared_ivk))
                     .ok_or("Invalid Sapling ivk passed to wallet::init_batch_scanner()")
             })
             .collect::<Result<_, _>>()?;

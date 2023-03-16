@@ -11,6 +11,8 @@
 #include <array>
 #include <optional>
 
+#include <rust/wallet_scanner.h>
+
 namespace libzcash {
 
 class BaseNote {
@@ -160,27 +162,8 @@ public:
 
     SaplingNotePlaintext(const SaplingNote& note, std::array<unsigned char, ZC_MEMO_SIZE> memo);
 
-    static std::optional<SaplingNotePlaintext> decrypt(
-        const Consensus::Params& params,
-        int height,
-        const SaplingEncCiphertext &ciphertext,
-        const uint256 &ivk,
-        const uint256 &epk,
-        const uint256 &cmu
-    );
-
-    static std::optional<SaplingNotePlaintext> plaintext_checks_without_height(
-        const SaplingNotePlaintext &plaintext,
-        const uint256 &ivk,
-        const uint256 &epk,
-        const uint256 &cmu
-    );
-
-    static std::optional<SaplingNotePlaintext> attempt_sapling_enc_decryption_deserialization(
-        const SaplingEncCiphertext &ciphertext,
-        const uint256 &ivk,
-        const uint256 &epk
-    );
+    static std::pair<SaplingNotePlaintext, SaplingPaymentAddress> from_rust(
+        rust::Box<wallet::DecryptedSaplingOutput> decrypted);
 
     static std::optional<SaplingNotePlaintext> decrypt(
         const Consensus::Params& params,

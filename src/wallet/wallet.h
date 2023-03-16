@@ -660,19 +660,34 @@ public:
 
     std::pair<libzcash::SproutNotePlaintext, libzcash::SproutPaymentAddress> DecryptSproutNote(
         JSOutPoint jsop) const;
+    /**
+     * Decrypt the specified Sapling output of this wallet transaction.
+     *
+     * Returns `std::nullopt` if we don't know how to decrypt this output
+     * (because it could not be decrypted during wallet scanning).
+     *
+     * Decryption is always performed as if the ZIP 212 grace window is active
+     * (accepting both v1 and v2 note plaintexts), because we know that any
+     * decryptable output will have had its plaintext version checked when it
+     * first entered the wallet.
+     */
     std::optional<std::pair<
         libzcash::SaplingNotePlaintext,
-        libzcash::SaplingPaymentAddress>> DecryptSaplingNote(const Consensus::Params& params, int height, SaplingOutPoint op) const;
+        libzcash::SaplingPaymentAddress>> DecryptSaplingNote(const CChainParams& params, SaplingOutPoint op) const;
+    /**
+     * Try to recover the specified Sapling output of this wallet transaction
+     * using one of the given outgoing viewing keys.
+     *
+     * Returns `std::nullopt` if none of the `ovks` can decrypt this output.
+     *
+     * Decryption is always performed as if the ZIP 212 grace window is active
+     * (accepting both v1 and v2 note plaintexts), because the v2 plaintext
+     * format protects against an attack on the recipient, not the sender.
+     */
     std::optional<std::pair<
         libzcash::SaplingNotePlaintext,
-        libzcash::SaplingPaymentAddress>> DecryptSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op) const;
-    std::optional<std::pair<
-        libzcash::SaplingNotePlaintext,
-        libzcash::SaplingPaymentAddress>> RecoverSaplingNote(const Consensus::Params& params, int height,
+        libzcash::SaplingPaymentAddress>> RecoverSaplingNote(const CChainParams& params,
             SaplingOutPoint op, std::set<uint256>& ovks) const;
-    std::optional<std::pair<
-        libzcash::SaplingNotePlaintext,
-        libzcash::SaplingPaymentAddress>> RecoverSaplingNoteWithoutLeadByteCheck(SaplingOutPoint op, std::set<uint256>& ovks) const;
     OrchardActions RecoverOrchardActions(const std::vector<uint256>& ovks) const;
 
     //! filter decides which addresses will count towards the debit
@@ -1954,7 +1969,7 @@ public:
         uint8_t n) const;
     mapSproutNoteData_t FindMySproutNotes(const CTransaction& tx) const;
     std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> FindMySaplingNotes(
-        const Consensus::Params& consensus,
+        const CChainParams& params,
         const CTransaction& tx,
         int height) const;
     bool IsSproutNullifierFromMe(const uint256& nullifier) const;
