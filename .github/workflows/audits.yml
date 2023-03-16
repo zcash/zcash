@@ -11,20 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
-      - name: Install cargo-vet
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cargo-vet
-
-      - name: Run cargo vet --locked
-        uses: actions-rs/cargo@v1
-        with:
-          command: vet
-          args: --locked
+      - uses: dtolnay/rust-toolchain@stable
+        id: toolchain
+      - run: rustup override set ${{steps.toolchain.outputs.name}}
+      - run: cargo install cargo-vet
+      - run: cargo vet --locked
