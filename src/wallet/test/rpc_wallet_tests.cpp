@@ -1243,7 +1243,10 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         auto selector = pwalletMain->ZTXOSelectorForAddress(
                 taddr1,
                 true,
-                TransparentCoinbasePolicy::Require,
+                // In the real transaction builder we use either Require or Disallow, but here we
+                // are checking that there are no UTXOs at all, so we allow either to be selected to
+                // confirm this.
+                TransparentCoinbasePolicy::Allow,
                 false).value();
         WalletTxBuilder builder(Params(), *pwalletMain, minRelayTxFee);
         std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };

@@ -896,7 +896,7 @@ typedef std::variant<
  */
 enum class TransparentCoinbasePolicy {
     Disallow, //!< Do not select transparent coinbase
-    Allow,    //!< Select all transparent UTXOs, whether or not they’re coinbase
+    Allow,    //!< Make transparent coinbase available to the selector
     Require   //!< Only select transparent coinbase
 };
 

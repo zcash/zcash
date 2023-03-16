@@ -213,7 +213,6 @@ enum class AddressResolutionError {
     TransparentRecipientNotPermitted,
     InsufficientSaplingFunds,
     UnifiedAddressResolutionError,
-    ChangeAddressSelectionError
 };
 
 class InsufficientFundsError {

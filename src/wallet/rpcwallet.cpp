@@ -4670,6 +4670,9 @@ size_t EstimateTxSize(
                     orchardRecipientCount += 1;
                 } else if (addr.GetSaplingReceiver().has_value()) {
                     mtx.vShieldedOutput.push_back(OutputDescription());
+                } else if (addr.GetP2PKHReceiver().has_value()
+                           || addr.GetP2SHReceiver().has_value()) {
+                    taddrRecipientCount += 1;
                 }
             }
         }, recipient.GetAddress());

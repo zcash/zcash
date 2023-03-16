@@ -1933,8 +1933,6 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
                         pattern = ua;
                     }
                 }
-            } else {
-                pattern = ua;
             }
         }
     }, addr);

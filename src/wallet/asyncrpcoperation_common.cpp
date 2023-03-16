@@ -55,7 +55,7 @@ void ThrowInputSelectionError(
                         RPC_INVALID_PARAMETER,
                         "Sending from the Sprout shielded pool to the Sapling "
                         "shielded pool is not enabled by default because it will "
-                        "publicly reveal the transaction amount. THIS MAY AFFECT YOUR PRIVACY. "
+                        "publicly reveal transaction amounts. THIS MAY AFFECT YOUR PRIVACY. "
                         "Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` "
                         "or weaker if you wish to allow this transaction to proceed anyway.");
                 case AddressResolutionError::SproutRecipientNotPermitted:
@@ -81,15 +81,7 @@ void ThrowInputSelectionError(
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
                         "Could not select a unified address receiver that allows this transaction "
-                        "to proceed without publicly revealing the transaction amount. THIS MAY AFFECT "
-                        "YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to "
-                        "`AllowRevealedAmounts` or weaker if you wish to allow this transaction to "
-                        "proceed anyway.");
-                case AddressResolutionError::ChangeAddressSelectionError:
-                    throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Could not select a change address that allows this transaction "
-                        "to proceed without publicly revealing transaction details. THIS MAY AFFECT "
+                        "to proceed without publicly revealing transaction amounts. THIS MAY AFFECT "
                         "YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to "
                         "`AllowRevealedAmounts` or weaker if you wish to allow this transaction to "
                         "proceed anyway.");
