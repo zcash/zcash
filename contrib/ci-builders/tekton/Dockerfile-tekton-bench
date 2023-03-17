@@ -10,7 +10,7 @@ FROM $BASE_WORKER_IMAGE-$FROMBASEOS-$FROMBASEOS_BUILD_TAG
 #libboost-all-dev
 RUN git clone https://github.com/KDE/heaptrack.git \ 
     && cd heaptrack \
-    && git checkout v1.3.0 \
+    && git checkout v1.4.0 \
     && mkdir build \
     && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release .. \
