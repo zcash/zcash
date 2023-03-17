@@ -4,7 +4,7 @@ ARG FROMBASEOS_BUILD_TAG
 FROM $FROMBASEOS:$FROMBASEOS_BUILD_TAG
 ARG DEBIAN_FRONTEND=noninteractive
 
-COPY apt-package-list.txt /tmp/apt-package-list.txt
-RUN apt-get update \
-    && apt-get install -y $(tr "\n" " " < /tmp/apt-package-list.txt) \
+COPY apt-package-list.txt /apt-package-list.txt
+RUN apt update \
+    && apt install -y $(tr "\n" " " < /apt-package-list.txt) \
     && update-alternatives --install /usr/bin/python python /usr/bin/python3 1
