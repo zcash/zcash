@@ -966,6 +966,30 @@ criteria = "safe-to-deploy"
 delta = "0.8.1 -> 0.9.1"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.zcash_primitives]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.9.1 -> 0.10.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.zcash_primitives]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.10.0 -> 0.10.1"
+notes = """
+The ECC core team maintains this crate, and we have reviewed every line.
+This point release temporarily re-exposes some constructors.
+"""
+
+[[audits.zcash_primitives]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.10.1 -> 0.10.2"
+notes = """
+The ECC core team maintains this crate, and we have reviewed every line.
+This point release temporarily re-exposes a constructor.
+"""
+
 [[audits.zcash_proofs]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
@@ -993,6 +1017,12 @@ delta = "0.7.1 -> 0.8.0"
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.8.0 -> 0.9.0"
+
+[[audits.zcash_proofs]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.9.0 -> 0.10.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.zeroize]]
 who = "Daira Hopwood <daira@jacaranda.org>"

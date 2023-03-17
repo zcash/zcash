@@ -19,7 +19,7 @@ use zcash_primitives::{
     memo::{Memo, MemoBytes},
     sapling::note_encryption::SaplingDomain,
     transaction::{
-        components::{orchard as orchard_serialization, sapling, transparent, Amount},
+        components::{sapling, transparent, Amount},
         sighash::{signature_hash, SignableInput, TransparentAuthorizingContext},
         txid::TxIdDigester,
         Authorization, Transaction, TransactionData, TxId, TxVersion,
@@ -139,44 +139,6 @@ impl transparent::MapAuth<transparent::Authorized, TransparentAuth> for MapTrans
     }
 }
 
-// TODO: Move these trait impls into `zcash_primitives` so they can be on `()`.
-struct IdentityMap;
-
-impl sapling::MapAuth<sapling::Authorized, sapling::Authorized> for IdentityMap {
-    fn map_proof(
-        &self,
-        p: <sapling::Authorized as sapling::Authorization>::Proof,
-    ) -> <sapling::Authorized as sapling::Authorization>::Proof {
-        p
-    }
-
-    fn map_auth_sig(
-        &self,
-        s: <sapling::Authorized as sapling::Authorization>::AuthSig,
-    ) -> <sapling::Authorized as sapling::Authorization>::AuthSig {
-        s
-    }
-
-    fn map_authorization(&self, a: sapling::Authorized) -> sapling::Authorized {
-        a
-    }
-}
-
-impl orchard_serialization::MapAuth<orchard::bundle::Authorized, orchard::bundle::Authorized>
-    for IdentityMap
-{
-    fn map_spend_auth(
-        &self,
-        s: <orchard::bundle::Authorized as orchard::bundle::Authorization>::SpendAuth,
-    ) -> <orchard::bundle::Authorized as orchard::bundle::Authorization>::SpendAuth {
-        s
-    }
-
-    fn map_authorization(&self, a: orchard::bundle::Authorized) -> orchard::bundle::Authorized {
-        a
-    }
-}
-
 pub(crate) struct PrecomputedAuth;
 
 impl Authorization for PrecomputedAuth {
@@ -230,8 +192,7 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
         let tx = Transaction::read(&buf[..], tx.consensus_branch_id()).unwrap();
 
         let tx: TransactionData<PrecomputedAuth> =
-            tx.into_data()
-                .map_authorization(f_transparent, IdentityMap, IdentityMap);
+            tx.into_data().map_authorization(f_transparent, (), ());
         let txid_parts = tx.digest(TxIdDigester);
         (tx, txid_parts)
     });
@@ -412,23 +373,23 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
     }
 
     if let Some(bundle) = tx.sapling_bundle() {
-        assert!(!(bundle.shielded_spends.is_empty() && bundle.shielded_outputs.is_empty()));
+        assert!(!(bundle.shielded_spends().is_empty() && bundle.shielded_outputs().is_empty()));
 
         // TODO: Separate into checking proofs, signatures, and other structural details.
         let mut ctx = SaplingVerificationContext::new(true);
 
-        if !bundle.shielded_spends.is_empty() {
-            eprintln!(" - {} Sapling Spend(s)", bundle.shielded_spends.len());
+        if !bundle.shielded_spends().is_empty() {
+            eprintln!(" - {} Sapling Spend(s)", bundle.shielded_spends().len());
             if let Some(sighash) = &common_sighash {
-                for (i, spend) in bundle.shielded_spends.iter().enumerate() {
+                for (i, spend) in bundle.shielded_spends().iter().enumerate() {
                     if !ctx.check_spend(
-                        spend.cv,
-                        spend.anchor,
-                        &spend.nullifier.0,
-                        spend.rk.clone(),
+                        spend.cv(),
+                        *spend.anchor(),
+                        &spend.nullifier().0,
+                        spend.rk().clone(),
                         sighash.as_ref(),
-                        spend.spend_auth_sig,
-                        groth16::Proof::read(&spend.zkproof[..]).unwrap(),
+                        *spend.spend_auth_sig(),
+                        groth16::Proof::read(&spend.zkproof()[..]).unwrap(),
                         &GROTH16_PARAMS.spend_vk,
                     ) {
                         eprintln!("  ⚠️  Spend {} is invalid", i);
@@ -441,9 +402,9 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
             }
         }
 
-        if !bundle.shielded_outputs.is_empty() {
-            eprintln!(" - {} Sapling Output(s)", bundle.shielded_outputs.len());
-            for (i, output) in bundle.shielded_outputs.iter().enumerate() {
+        if !bundle.shielded_outputs().is_empty() {
+            eprintln!(" - {} Sapling Output(s)", bundle.shielded_outputs().len());
+            for (i, output) in bundle.shielded_outputs().iter().enumerate() {
                 if is_coinbase {
                     if let Some((params, addr_net)) = context
                         .as_ref()
@@ -453,17 +414,17 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
                             &SaplingDomain::for_height(params, height.unwrap()),
                             &zcash_primitives::keys::OutgoingViewingKey([0; 32]),
                             output,
-                            &output.cv,
-                            &output.out_ciphertext,
+                            output.cv(),
+                            output.out_ciphertext(),
                         ) {
-                            if note.value == 0 {
+                            if note.value().inner() == 0 {
                                 eprintln!("   - Output {} (dummy output):", i);
                             } else {
                                 let zaddr = ZcashAddress::from_sapling(addr_net, addr.to_bytes());
 
                                 eprintln!("   - Output {}:", i);
                                 eprintln!("     - {}", zaddr);
-                                eprintln!("     - {}", render_value(note.value));
+                                eprintln!("     - {}", render_value(note.value().inner()));
                             }
                             eprintln!("     - {}", render_memo(memo));
                         } else {
@@ -478,10 +439,10 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
                 }
 
                 if !ctx.check_output(
-                    output.cv,
-                    output.cmu,
-                    jubjub::ExtendedPoint::from_bytes(&output.ephemeral_key.0).unwrap(),
-                    groth16::Proof::read(&output.zkproof[..]).unwrap(),
+                    output.cv(),
+                    *output.cmu(),
+                    jubjub::ExtendedPoint::from_bytes(&output.ephemeral_key().0).unwrap(),
+                    groth16::Proof::read(&output.zkproof()[..]).unwrap(),
                     &GROTH16_PARAMS.output_vk,
                 ) {
                     eprintln!("  ⚠️  Output {} is invalid", i);
@@ -491,9 +452,9 @@ pub(crate) fn inspect(tx: Transaction, context: Option<Context>) {
 
         if let Some(sighash) = &common_sighash {
             if !ctx.final_check(
-                bundle.value_balance,
+                *bundle.value_balance(),
                 sighash.as_ref(),
-                bundle.authorization.binding_sig,
+                bundle.authorization().binding_sig,
             ) {
                 eprintln!("⚠️  Sapling bindingSig is invalid");
             }

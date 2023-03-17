@@ -122,6 +122,9 @@ libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey();
 
 CKey AddTestCKeyToKeyStore(CBasicKeyStore& keyStore);
 
+SpendDescription RandomInvalidSpendDescription();
+OutputDescription RandomInvalidOutputDescription();
+
 /**
  * Generate a dummy SaplingNote and a SaplingMerkleTree with that note's commitment.
  */

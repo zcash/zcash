@@ -1,4 +1,5 @@
-use group::GroupEncoding;
+use std::convert::TryInto;
+
 use zcash_note_encryption::{
     try_output_recovery_with_ovk, Domain, EphemeralKeyBytes, ShieldedOutput, ENC_CIPHERTEXT_SIZE,
 };
@@ -9,6 +10,7 @@ use zcash_primitives::{
     sapling::{
         self,
         note_encryption::{PreparedIncomingViewingKey, SaplingDomain},
+        value::ValueCommitment,
         SaplingIvk,
     },
 };
@@ -64,7 +66,7 @@ pub(crate) fn try_sapling_output_recovery(
 ) -> Result<Box<DecryptedSaplingOutput>, &'static str> {
     let domain = SaplingDomain::for_height(*network, BlockHeight::from_u32(height));
 
-    let cv = Option::from(jubjub::ExtendedPoint::from_bytes(&output.cv))
+    let cv = Option::from(ValueCommitment::from_bytes_not_small_order(&output.cv))
         .ok_or("Invalid output.cv passed to wallet::try_sapling_note_decryption()")?;
 
     let (note, recipient, memo) = try_output_recovery_with_ovk(
@@ -115,18 +117,18 @@ pub(crate) struct DecryptedSaplingOutput {
 
 impl DecryptedSaplingOutput {
     pub(crate) fn note_value(&self) -> u64 {
-        self.note.value
+        self.note.value().inner()
     }
 
     pub(crate) fn note_rseed(&self) -> [u8; 32] {
-        match self.note.rseed {
+        match self.note.rseed() {
             sapling::Rseed::BeforeZip212(rcm) => rcm.to_bytes(),
-            sapling::Rseed::AfterZip212(rseed) => rseed,
+            sapling::Rseed::AfterZip212(rseed) => *rseed,
         }
     }
 
     pub(crate) fn zip_212_enabled(&self) -> bool {
-        matches!(self.note.rseed, sapling::Rseed::AfterZip212(_))
+        matches!(self.note.rseed(), sapling::Rseed::AfterZip212(_))
     }
 
     pub(crate) fn recipient_d(&self) -> [u8; 11] {
@@ -134,7 +136,7 @@ impl DecryptedSaplingOutput {
     }
 
     pub(crate) fn recipient_pk_d(&self) -> [u8; 32] {
-        self.recipient.pk_d().to_bytes()
+        self.recipient.to_bytes()[11..].try_into().unwrap()
     }
 
     pub(crate) fn memo(&self) -> [u8; 512] {

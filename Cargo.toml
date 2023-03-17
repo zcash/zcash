@@ -61,8 +61,8 @@ zcash_address = "0.2"
 zcash_encoding = "0.2"
 zcash_history = "0.3"
 zcash_note_encryption = "0.2"
-zcash_primitives = { version = "0.9", features = ["transparent-inputs"] }
-zcash_proofs = { version = "0.9", features = ["directories"] }
+zcash_primitives = { version = "0.10.2", features = ["temporary-zcashd", "transparent-inputs"] }
+zcash_proofs = { version = "0.10", features = ["directories"] }
 ed25519-zebra = "3"
 zeroize = "1.4.2"
 
@@ -112,4 +112,3 @@ features = ["ansi", "env-filter", "fmt", "time"]
 lto = 'thin'
 panic = 'abort'
 codegen-units = 1
-

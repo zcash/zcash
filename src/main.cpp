@@ -981,6 +981,37 @@ bool ContextualCheckTransaction(
             // https://zips.z.cash/zip-0213#specification
             uint256 ovk;
             for (const OutputDescription &output : tx.vShieldedOutput) {
+              bool zip_212_enabled;
+              libzcash::SaplingPaymentAddress zaddr;
+              CAmount value;
+
+              // EoS height for 5.3.3 and 5.4.2 is 2121024 (mainnet).
+              // On testnet this height will be in the past, as of the 5.5.0 release.
+              if (nHeight >= 2121200) {
+                try {
+                    auto decrypted = wallet::try_sapling_output_recovery(
+                        *chainparams.RustNetwork(),
+                        nHeight,
+                        ovk.GetRawBytes(),
+                        {
+                            output.cv.GetRawBytes(),
+                            output.cmu.GetRawBytes(),
+                            output.ephemeralKey.GetRawBytes(),
+                            output.encCiphertext,
+                            output.outCiphertext,
+                        });
+                    zip_212_enabled = decrypted->zip_212_enabled();
+
+                    libzcash::SaplingNotePlaintext notePt;
+                    std::tie(notePt, zaddr) = SaplingNotePlaintext::from_rust(std::move(decrypted));
+                    value = notePt.value();
+                } catch (const rust::Error &e) {
+                    return state.DoS(
+                        DOS_LEVEL_BLOCK,
+                        error("ContextualCheckTransaction(): failed to recover plaintext of coinbase output description"),
+                        REJECT_INVALID, "bad-cb-output-desc-invalid-outct");
+                }
+              } else {
                 auto outPlaintext = SaplingOutgoingPlaintext::decrypt(
                     output.outCiphertext, ovk, output.cv, output.cmu, output.ephemeralKey);
                 if (!outPlaintext) {
@@ -1007,12 +1038,20 @@ bool ContextualCheckTransaction(
                         REJECT_INVALID, "bad-cb-output-desc-invalid-encct");
                 }
 
+                auto leadByte = encPlaintext->get_leadbyte();
+                assert(leadByte == 0x01 || leadByte == 0x02);
+                zip_212_enabled = (leadByte == 0x02);
+
+                zaddr = libzcash::SaplingPaymentAddress(encPlaintext->d, outPlaintext->pk_d);
+                value = encPlaintext->value();
+              }
+
+              {
                 // ZIP 207: detect shielded funding stream elements
                 if (canopyActive) {
-                    libzcash::SaplingPaymentAddress zaddr(encPlaintext->d, outPlaintext->pk_d);
                     for (auto it = fundingStreamElements.begin(); it != fundingStreamElements.end(); ++it) {
                         const libzcash::SaplingPaymentAddress* streamAddr = std::get_if<libzcash::SaplingPaymentAddress>(&(it->first));
-                        if (streamAddr && zaddr == *streamAddr && encPlaintext->value() == it->second) {
+                        if (streamAddr && zaddr == *streamAddr && value == it->second) {
                             fundingStreamElements.erase(it);
                             break;
                         }
@@ -1024,15 +1063,14 @@ bool ContextualCheckTransaction(
                 // to 0x02. This applies even during the grace period, and also applies to
                 // funding stream outputs sent to shielded payment addresses, if any.
                 // https://zips.z.cash/zip-0212#consensus-rule-change-for-coinbase-transactions
-                auto leadByte = encPlaintext->get_leadbyte();
-                assert(leadByte == 0x01 || leadByte == 0x02);
-                if (canopyActive != (leadByte == 0x02)) {
+                if (canopyActive != zip_212_enabled) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
                         error("ContextualCheckTransaction(): coinbase output description has invalid note plaintext version"),
                         REJECT_INVALID,
                         "bad-cb-output-desc-invalid-note-plaintext-version");
                 }
+              }
             }
         }
     } else {

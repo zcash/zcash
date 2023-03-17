@@ -112,18 +112,19 @@ std::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipient(
         throw std::logic_error("already encrypted to the recipient using this key");
     }
 
-    uint256 dhsecret;
-
+    // Construct the symmetric key
     // The new consensus rules from ZIP 216 (https://zips.z.cash/zip-0216#specification)
     // on pk_d were enabled unconditionally, even before we started to apply them
     // retroactively.
-    if (!librustzcash_sapling_ka_agree(pk_d.begin(), esk.begin(), dhsecret.begin())) {
+    unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
+    if (!librustzcash_sapling_ka_derive_symmetric_key(
+        pk_d.begin(),
+        esk.begin(),
+        epk.begin(),
+        K))
+    {
         return std::nullopt;
     }
-
-    // Construct the symmetric key
-    unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
-    KDF_Sapling(K, dhsecret, epk);
 
     // The nonce is zero because we never reuse keys
     unsigned char cipher_nonce[crypto_aead_chacha20poly1305_IETF_NPUBBYTES] = {};
@@ -148,18 +149,18 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
     const uint256 &epk
 )
 {
-    uint256 dhsecret;
-
+    // Construct the symmetric key.
     // We consider ZIP 216 active all of the time because blocks prior to NU5
     // activation (on mainnet and testnet) did not contain Sapling transactions
     // that violated its canonicity rule.
-    if (!librustzcash_sapling_ka_agree(epk.begin(), ivk.begin(), dhsecret.begin())) {
+    unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
+    if (!librustzcash_sapling_ka_derive_symmetric_key(
+        epk.begin(),
+        ivk.begin(),
+        epk.begin(), K))
+    {
         return std::nullopt;
     }
-
-    // Construct the symmetric key
-    unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
-    KDF_Sapling(K, dhsecret, epk);
 
     // The nonce is zero because we never reuse keys
     unsigned char cipher_nonce[crypto_aead_chacha20poly1305_IETF_NPUBBYTES] = {};
@@ -187,18 +188,19 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
     const uint256 &pk_d
 )
 {
-    uint256 dhsecret;
-
+    // Construct the symmetric key.
     // We consider ZIP 216 active all of the time because blocks prior to NU5
     // activation (on mainnet and testnet) did not contain Sapling transactions
     // that violated its canonicity rule.
-    if (!librustzcash_sapling_ka_agree(pk_d.begin(), esk.begin(), dhsecret.begin())) {
+    unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
+    if (!librustzcash_sapling_ka_derive_symmetric_key(
+        pk_d.begin(),
+        esk.begin(),
+        epk.begin(),
+        K))
+    {
         return std::nullopt;
     }
-
-    // Construct the symmetric key
-    unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
-    KDF_Sapling(K, dhsecret, epk);
 
     // The nonce is zero because we never reuse keys
     unsigned char cipher_nonce[crypto_aead_chacha20poly1305_IETF_NPUBBYTES] = {};

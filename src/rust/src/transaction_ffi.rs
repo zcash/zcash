@@ -10,7 +10,7 @@ use zcash_primitives::{
     consensus::BranchId,
     legacy::Script,
     transaction::{
-        components::{orchard as orchard_serialization, sapling, transparent, Amount},
+        components::{sapling, transparent, Amount},
         sighash::{SignableInput, TransparentAuthorizingContext},
         sighash_v5::v5_signature_hash,
         txid::TxIdDigester,
@@ -99,44 +99,6 @@ impl transparent::MapAuth<transparent::Authorized, TransparentAuth> for MapTrans
     fn map_authorization(&self, _: transparent::Authorized) -> TransparentAuth {
         // TODO: This map should consume self, so we can move self.auth
         self.auth.clone()
-    }
-}
-
-// TODO: Move these trait impls into `zcash_primitives` so they can be on `()`.
-struct IdentityMap;
-
-impl sapling::MapAuth<sapling::Authorized, sapling::Authorized> for IdentityMap {
-    fn map_proof(
-        &self,
-        p: <sapling::Authorized as sapling::Authorization>::Proof,
-    ) -> <sapling::Authorized as sapling::Authorization>::Proof {
-        p
-    }
-
-    fn map_auth_sig(
-        &self,
-        s: <sapling::Authorized as sapling::Authorization>::AuthSig,
-    ) -> <sapling::Authorized as sapling::Authorization>::AuthSig {
-        s
-    }
-
-    fn map_authorization(&self, a: sapling::Authorized) -> sapling::Authorized {
-        a
-    }
-}
-
-impl orchard_serialization::MapAuth<orchard::bundle::Authorized, orchard::bundle::Authorized>
-    for IdentityMap
-{
-    fn map_spend_auth(
-        &self,
-        s: <orchard::bundle::Authorized as orchard::bundle::Authorization>::SpendAuth,
-    ) -> <orchard::bundle::Authorized as orchard::bundle::Authorization>::SpendAuth {
-        s
-    }
-
-    fn map_authorization(&self, a: orchard::bundle::Authorized) -> orchard::bundle::Authorized {
-        a
     }
 }
 
@@ -240,9 +202,7 @@ pub extern "C" fn zcash_transaction_precomputed_init(
                 },
             };
 
-            let tx = tx
-                .into_data()
-                .map_authorization(f_transparent, IdentityMap, IdentityMap);
+            let tx = tx.into_data().map_authorization(f_transparent, (), ());
 
             let txid_parts = tx.digest(TxIdDigester);
             Box::into_raw(Box::new(PrecomputedTxParts { tx, txid_parts }))

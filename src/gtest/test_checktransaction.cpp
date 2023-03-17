@@ -6,6 +6,7 @@
 #include "consensus/validation.h"
 #include "transaction_builder.h"
 #include "gtest/utils.h"
+#include "test/test_util.h"
 #include "util/test.h"
 #include "zcash/JoinSplit.hpp"
 
@@ -1150,7 +1151,7 @@ TEST(ChecktransactionTests, InvalidSaplingShieldedCoinbase) {
     // Make it an invalid shielded coinbase (no ciphertexts or commitments).
     mtx.vin.resize(1);
     mtx.vin[0].prevout.SetNull();
-    mtx.vShieldedOutput.resize(1);
+    mtx.vShieldedOutput.push_back(RandomInvalidOutputDescription());
     mtx.vJoinSplit.resize(0);
 
     CTransaction tx(mtx);
