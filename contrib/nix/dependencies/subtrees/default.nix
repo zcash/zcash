@@ -2,9 +2,9 @@
 ##
 ## Use `./find-current-subtrees.sh` to get information about the subtrees that
 ## exist.
-final: previous: {
+final: prev: {
   crc32c =
-    (previous.crc32c.override {
+    (prev.crc32c.override {
       staticOnly = true;
     })
     .overrideAttrs (old: {
@@ -22,7 +22,7 @@ final: previous: {
     '';
 
   leveldb =
-    (previous.leveldb.override {
+    (prev.leveldb.override {
       static = true;
     })
     .overrideAttrs (old: {
@@ -41,7 +41,7 @@ final: previous: {
         '';
     });
 
-  secp256k1 = previous.secp256k1.overrideAttrs (old: {
+  secp256k1 = prev.secp256k1.overrideAttrs (old: {
     version = "subtree";
     src = ../../../../src/secp256k1;
   });
