@@ -229,7 +229,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
             [&](const CKeyID& p2pkh) {
                 if (strategy.AllowRevealedRecipients()) {
                     resolvedPayments.emplace_back(
-                            std::nullopt, p2pkh, payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
+                            std::nullopt, p2pkh, payment.GetAmount(), payment.GetMemo(), false);
                 } else {
                     resolutionError = AddressResolutionError::TransparentRecipientNotAllowed;
                 }
@@ -237,7 +237,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
             [&](const CScriptID& p2sh) {
                 if (strategy.AllowRevealedRecipients()) {
                     resolvedPayments.emplace_back(
-                            std::nullopt, p2sh, payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
+                            std::nullopt, p2sh, payment.GetAmount(), payment.GetMemo(), false);
                 } else {
                     resolutionError = AddressResolutionError::TransparentRecipientNotAllowed;
                 }
@@ -248,7 +248,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
             [&](const SaplingPaymentAddress& addr) {
                 if (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxSaplingAvailable) {
                     resolvedPayments.emplace_back(
-                            std::nullopt, addr, payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
+                            std::nullopt, addr, payment.GetAmount(), payment.GetMemo(), false);
                     if (!strategy.AllowRevealedAmounts()) {
                         maxSaplingAvailable -= payment.GetAmount();
                     }
@@ -262,7 +262,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                     && (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxOrchardAvailable)
                     ) {
                     resolvedPayments.emplace_back(
-                        ua, ua.GetOrchardReceiver().value(), payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
+                        ua, ua.GetOrchardReceiver().value(), payment.GetAmount(), payment.GetMemo(), false);
                     if (!strategy.AllowRevealedAmounts()) {
                         maxOrchardAvailable -= payment.GetAmount();
                     }
@@ -271,7 +271,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                     && (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxSaplingAvailable)
                     ) {
                     resolvedPayments.emplace_back(
-                        ua, ua.GetSaplingReceiver().value(), payment.GetAmount(), payment.GetMemo(), payment.IsInternal());
+                        ua, ua.GetSaplingReceiver().value(), payment.GetAmount(), payment.GetMemo(), false);
                     if (!strategy.AllowRevealedAmounts()) {
                         maxSaplingAvailable -= payment.GetAmount();
                     }
@@ -279,10 +279,10 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                     if (strategy.AllowRevealedRecipients()) {
                         if (ua.GetP2SHReceiver().has_value()) {
                             resolvedPayments.emplace_back(
-                                    ua, ua.GetP2SHReceiver().value(), payment.GetAmount(), std::nullopt, payment.IsInternal());
+                                ua, ua.GetP2SHReceiver().value(), payment.GetAmount(), std::nullopt, false);
                         } else if (ua.GetP2PKHReceiver().has_value()) {
                             resolvedPayments.emplace_back(
-                                    ua, ua.GetP2PKHReceiver().value(), payment.GetAmount(), std::nullopt, payment.IsInternal());
+                                ua, ua.GetP2PKHReceiver().value(), payment.GetAmount(), std::nullopt, false);
                         } else {
                             // There are no receivers in this UA, which should be impossible.
                             assert(false);

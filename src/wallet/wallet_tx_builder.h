@@ -15,14 +15,15 @@ using namespace libzcash;
 int GetAnchorHeight(const CChain& chain, int anchorConfirmations);
 
 /**
- * A payment that has been resolved to send to a specific
- * recipient address in a single pool.
+ * A payment that has been resolved to send to a specific recipient address in a single pool. This
+ * is an internal type that represents both user-requested payment addresses and generated
+ * (internal) payments (like change).
  */
 class ResolvedPayment : public RecipientMapping {
 public:
     CAmount amount;
     std::optional<Memo> memo;
-    bool isInternal{false};
+    bool isInternal;
 
     ResolvedPayment(
             std::optional<libzcash::UnifiedAddress> ua,
@@ -42,14 +43,12 @@ private:
     PaymentAddress address;
     CAmount amount;
     std::optional<Memo> memo;
-    bool isInternal;
 public:
     Payment(
             PaymentAddress address,
             CAmount amount,
-            std::optional<Memo> memo,
-            bool isInternal = false) :
-        address(address), amount(amount), memo(memo), isInternal(isInternal) {}
+            std::optional<Memo> memo) :
+        address(address), amount(amount), memo(memo) {}
 
     const PaymentAddress& GetAddress() const {
         return address;
@@ -61,10 +60,6 @@ public:
 
     const std::optional<Memo>& GetMemo() const {
         return memo;
-    }
-
-    bool IsInternal() const {
-        return isInternal;
     }
 };
 
