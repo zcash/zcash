@@ -70,6 +70,12 @@ void ThrowInputSelectionError(
                         "PRIVACY. Resubmit with the `privacyPolicy` parameter set to "
                         "`AllowRevealedAmounts` or weaker if you wish to allow this transaction to "
                         "proceed anyway.");
+                case AddressResolutionError::CouldNotResolveReceiver:
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "Could not send to an Orchard-only receiver, despite a lax privacy policy. "
+                        "Either there are insufficent non-Sprout funds, or NU5 has not been "
+                        "activated yet.");
                 case AddressResolutionError::TransparentReceiverNotAllowed:
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
@@ -126,11 +132,11 @@ void ThrowInputSelectionError(
         },
         [](const ChangeNotAllowedError& err) {
             throw JSONRPCError(
-                    RPC_WALLET_ERROR,
-                    strprintf(
-                        "When shielding coinbase funds, the wallet does not allow any change. "
-                        "The proposed transaction would result in %s in change.",
-                        FormatMoney(err.available - err.required)));
+                RPC_WALLET_ERROR,
+                strprintf(
+                    "When shielding coinbase funds, the wallet does not allow any change. "
+                    "The proposed transaction would result in %s in change.",
+                    FormatMoney(err.available - err.required)));
         },
         [](const ExcessOrchardActionsError& err) {
             throw JSONRPCError(

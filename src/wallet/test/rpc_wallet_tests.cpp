@@ -150,13 +150,13 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     CTxDestination setaccountDemoAddress(CTxDestination(setaccountDemoPubkey.GetID()));
 
     /*********************************
-     *                  getbalance
+     *          getbalance
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getbalance"));
     BOOST_CHECK_THROW(CallRPC("getbalance " + keyIO.EncodeDestination(demoAddress)), runtime_error);
 
     /*********************************
-     *              listunspent
+     *          listunspent
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listunspent"));
     BOOST_CHECK_THROW(CallRPC("listunspent string"), runtime_error);
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_NO_THROW(CallRPC("getnewaddress"));
 
     /*********************************
-     *      signmessage + verifymessage
+     *          signmessage + verifymessage
      *********************************/
     BOOST_CHECK_NO_THROW(retValue = CallRPC("signmessage " + keyIO.EncodeDestination(demoAddress) + " mymessage"));
     BOOST_CHECK_THROW(CallRPC("signmessage"), runtime_error);
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     }
 
     /*********************************
-     *           fundrawtransaction
+     *          fundrawtransaction
      *********************************/
     BOOST_CHECK_THROW(CallRPC("fundrawtransaction 28z"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("fundrawtransaction 01000000000180969800000000001976a91450ce0a4b0ee0ddeb633da85199728b940ac3fe9488ac00000000"), runtime_error);

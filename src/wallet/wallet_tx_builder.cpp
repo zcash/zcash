@@ -284,8 +284,12 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                             resolvedPayments.emplace_back(
                                 ua, ua.GetP2PKHReceiver().value(), payment.GetAmount(), std::nullopt, false);
                         } else {
-                            // There are no receivers in this UA, which should be impossible.
-                            assert(false);
+                            // This should only occur when we have
+                            // • an Orchard-only UA,
+                            // • `AllowRevealedRecipients`, and
+                            // • can’t resolve Orchard (which means either insufficient non-Sprout
+                            //   funds or pre-NU5).
+                            resolutionError = AddressResolutionError::CouldNotResolveReceiver;
                         }
                     } else if (strategy.AllowRevealedAmounts()) {
                         resolutionError = AddressResolutionError::TransparentReceiverNotAllowed;
@@ -302,12 +306,8 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     }
     auto resolved = Payments(resolvedPayments);
 
-    if (spendableMut.HasTransparentCoinbase() && resolved.HasTransparentRecipient()) {
-        return AddressResolutionError::TransparentRecipientNotAllowed;
-    }
-
     if (orchardOutputs > this->maxOrchardActions) {
-        return ExcessOrchardActionsError(spendableMut.orchardNoteMetadata.size(), this->maxOrchardActions);
+        return ExcessOrchardActionsError(orchardOutputs, this->maxOrchardActions);
     }
 
     // Set the dust threshold so that we can select enough inputs to avoid
@@ -334,8 +334,12 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
 
     // When spending transparent coinbase outputs, all inputs must be fully
     // consumed, and they may only be sent to shielded recipients.
-    if (spendableMut.HasTransparentCoinbase() && spendableMut.Total() != targetAmount) {
-        return ChangeNotAllowedError(spendableMut.Total(), targetAmount);
+    if (spendableMut.HasTransparentCoinbase()) {
+        if (spendableMut.Total() != targetAmount) {
+            return ChangeNotAllowedError(spendableMut.Total(), targetAmount);
+        } else if (resolved.HasTransparentRecipient()) {
+            return AddressResolutionError::TransparentRecipientNotAllowed;
+        }
     }
 
     if (spendableMut.orchardNoteMetadata.size() > this->maxOrchardActions) {
@@ -618,7 +622,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
             },
             [&](const libzcash::OrchardRawAddress& addr) {
                 builder.AddOrchardOutput(
-                        externalOVK, addr, r.amount,
+                        r.isInternal ? internalOVK : externalOVK, addr, r.amount,
                         r.memo.has_value() ? std::optional(r.memo.value().ToBytes()) : std::nullopt);
             }
         }, r.address);
@@ -680,9 +684,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
             [&](const SproutPaymentAddress& addr) {
                 builder.SendChangeToSprout(addr);
             },
-            [&](const RecipientAddress& addr) {
-                builder.SendChangeTo(addr, internalOVK);
-            }
+            [](const RecipientAddress&) { }
         }, changeAddr.value());
     }
 

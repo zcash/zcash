@@ -4872,29 +4872,29 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         }
 
         std::visit(match {
-                [&](const CKeyID &) {
-                    tcoinbasePolicy = TransparentCoinbasePolicy::Disallow;
-                },
-                [&](const CScriptID &) {
-                    tcoinbasePolicy = TransparentCoinbasePolicy::Disallow;
-                },
-                [&](const UnifiedAddress &ua) {
-                    involvesUnifiedAddress = true;
-                    auto preferredRecipient =
-                        ua.GetPreferredRecipientAddress(chainparams.GetConsensus(), nextBlockHeight);
-                    if (preferredRecipient.has_value()) {
-                        std::visit(match {
-                                [&](const CKeyID &) {
-                                    tcoinbasePolicy = TransparentCoinbasePolicy::Disallow;
-                                },
-                                [&](const CScriptID &) {
-                                    tcoinbasePolicy = TransparentCoinbasePolicy::Disallow;
-                                },
-                                [](const auto &) { }
-                        }, preferredRecipient.value());
-                    }
-                },
-                [](const auto &) { }
+            [&](const CKeyID &) {
+                tcoinbasePolicy = TransparentCoinbasePolicy::Disallow;
+            },
+            [&](const CScriptID &) {
+                tcoinbasePolicy = TransparentCoinbasePolicy::Disallow;
+            },
+            [&](const UnifiedAddress &ua) {
+                involvesUnifiedAddress = true;
+                auto preferredRecipient =
+                    ua.GetPreferredRecipientAddress(chainparams.GetConsensus(), nextBlockHeight);
+                if (preferredRecipient.has_value()) {
+                    std::visit(match {
+                        [&](const CKeyID &) {
+                            tcoinbasePolicy = TransparentCoinbasePolicy::Disallow;
+                        },
+                        [&](const CScriptID &) {
+                            tcoinbasePolicy = TransparentCoinbasePolicy::Disallow;
+                        },
+                        [](const auto &) { }
+                    }, preferredRecipient.value());
+                }
+            },
+            [](const auto &) { }
         }, addr.value());
 
         recipients.push_back(Payment(addr.value(), nAmount, memo));
@@ -4931,9 +4931,10 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             }
 
             auto selectorAccount = pwalletMain->FindAccountForSelector(ztxoSelectorOpt.value());
+            bool unknownOrLegacy = !selectorAccount.has_value() || selectorAccount.value() == ZCASH_LEGACY_ACCOUNT;
             std::visit(match {
                 [&](const libzcash::UnifiedAddress& ua) {
-                    if (!selectorAccount.has_value() || selectorAccount.value() == ZCASH_LEGACY_ACCOUNT) {
+                    if (unknownOrLegacy) {
                         throw JSONRPCError(
                                 RPC_INVALID_ADDRESS_OR_KEY,
                                 "Invalid from address, UA does not correspond to a known account.");
@@ -4941,7 +4942,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                     involvesUnifiedAddress = true;
                 },
                 [&](const auto& other) {
-                    if (selectorAccount.has_value() && selectorAccount.value() != ZCASH_LEGACY_ACCOUNT) {
+                    if (!unknownOrLegacy) {
                         throw JSONRPCError(
                                 RPC_INVALID_ADDRESS_OR_KEY,
                                 "Invalid from address: is a bare receiver from a Unified Address in this wallet. Provide the UA as returned by z_getaddressforaccount instead.");

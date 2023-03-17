@@ -210,8 +210,11 @@ enum class AddressResolutionError {
     //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedAmounts`, but we don’t have enough
     //! Sapling funds to avoid revealing amounts
     RevealingSaplingAmountNotAllowed,
+    //! Despite a lax `PrivacyPolicy`, other factors made it impossible to find a receiver for a
+    //! recipient UA
+    CouldNotResolveReceiver,
     //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedRecipients`, but we are trying to
-    //! pay a UA with only transparent receivers
+    //! pay a UA where we can only select a transparent receiver
     TransparentReceiverNotAllowed,
     //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedAmounts`, but we are trying to pay a
     //! UA where we don’t have enough funds in any single pool that it has a receiver for
