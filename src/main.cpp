@@ -985,7 +985,8 @@ bool ContextualCheckTransaction(
               libzcash::SaplingPaymentAddress zaddr;
               CAmount value;
 
-              // EoS height for 5.3.3 and 5.4.2 is 2121024.
+              // EoS height for 5.3.3 and 5.4.2 is 2121024 (mainnet).
+              // On testnet this height will be in the past, as of the 5.5.0 release.
               if (nHeight >= 2121200) {
                 try {
                     auto decrypted = wallet::try_sapling_output_recovery(
