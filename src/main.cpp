@@ -981,12 +981,12 @@ bool ContextualCheckTransaction(
             // https://zips.z.cash/zip-0213#specification
             uint256 ovk;
             for (const OutputDescription &output : tx.vShieldedOutput) {
-                bool zip_212_enabled;
-                libzcash::SaplingPaymentAddress zaddr;
-                CAmount value;
+              bool zip_212_enabled;
+              libzcash::SaplingPaymentAddress zaddr;
+              CAmount value;
 
-            // EoS height for 5.3.3 and 5.4.2 is 2121024.
-            if (nHeight >= 2121200) {
+              // EoS height for 5.3.3 and 5.4.2 is 2121024.
+              if (nHeight >= 2121200) {
                 try {
                     auto decrypted = wallet::try_sapling_output_recovery(
                         *chainparams.RustNetwork(),
@@ -1010,7 +1010,7 @@ bool ContextualCheckTransaction(
                         error("ContextualCheckTransaction(): failed to recover plaintext of coinbase output description"),
                         REJECT_INVALID, "bad-cb-output-desc-invalid-outct");
                 }
-            } else {
+              } else {
                 auto outPlaintext = SaplingOutgoingPlaintext::decrypt(
                     output.outCiphertext, ovk, output.cv, output.cmu, output.ephemeralKey);
                 if (!outPlaintext) {
@@ -1043,8 +1043,9 @@ bool ContextualCheckTransaction(
 
                 zaddr = libzcash::SaplingPaymentAddress(encPlaintext->d, outPlaintext->pk_d);
                 value = encPlaintext->value();
-            }
+              }
 
+              {
                 // ZIP 207: detect shielded funding stream elements
                 if (canopyActive) {
                     for (auto it = fundingStreamElements.begin(); it != fundingStreamElements.end(); ++it) {
@@ -1068,6 +1069,7 @@ bool ContextualCheckTransaction(
                         REJECT_INVALID,
                         "bad-cb-output-desc-invalid-note-plaintext-version");
                 }
+              }
             }
         }
     } else {
