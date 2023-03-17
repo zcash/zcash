@@ -58,9 +58,7 @@
         default = self.packages.${system}.zcash;
 
         librustzcash = callPackage ./contrib/nix/librustzcash.nix {
-          crane =
-            crane.lib.${system}.overrideToolchain
-              pkgs.rust-bin.stable."1.67.1".default;
+          crane = crane.lib.${system}.overrideToolchain pkgs.rust-bin;
         };
 
         zk-parameters = callPackage ./contrib/nix/zk-parameters.nix {};

@@ -3,25 +3,25 @@
 final: prev: let
   master = import nixpkgs-master {system = final.system;};
 
-  mkDependsDerivation = import ./mk-depends-derivation.nix final;
+  lib = import ./lib.nix final;
 in {
-  db = mkDependsDerivation {
+  db = lib.mkDependsDerivation {
     pkg = final.db62;
     dependsPkgName = "bdb";
   };
 
-  boost = mkDependsDerivation {
+  boost = lib.mkDependsDerivation {
     pkg = master.boost181;
-    # The URL substitution here is a bit too complex for `mkDependsDerivation`.
+    # The URL substitution here is a bit too complex for `lib.mkDependsDerivation`.
     url = pname: version: "https://boostorg.jfrog.io/artifactory/main/release/${builtins.replaceStrings ["_"] ["."] version}/source/${pname}_${version}.tar.bz2";
   };
 
-  cmake = mkDependsDerivation {
+  cmake = lib.mkDependsDerivation {
     pkg = prev.cmake;
     dependsPkgName = "native_cmake";
   };
 
-  gtest = mkDependsDerivation {
+  gtest = lib.mkDependsDerivation {
     pkg = prev.gtest;
     dependsPkgName = "googletest";
   };
@@ -33,27 +33,27 @@ in {
   # This subsumes libcxx, clang
   llvmPackages = master.llvmPackages_15;
 
-  # libevent = mkDependsDerivation {pkg = prev.libevent;};
+  # libevent = lib.mkDependsDerivation {pkg = prev.libevent;};
 
-  libsodium = mkDependsDerivation {pkg = prev.libsodium;};
+  libsodium = lib.mkDependsDerivation {pkg = prev.libsodium;};
 
-  ccache = mkDependsDerivation {
+  ccache = lib.mkDependsDerivation {
     pkg = prev.ccache;
     dependsPkgName = "native_ccache";
   };
 
-  cctools = mkDependsDerivation {
+  cctools = lib.mkDependsDerivation {
     pkg = prev.cctools;
     dependsPkgName = "native_cctools";
   };
 
-  libtapi = mkDependsDerivation {
+  libtapi = lib.mkDependsDerivation {
     pkg = prev.libtapi;
     dependsPkgName = "native_cctools";
     infix = "_libtapi";
   };
 
-  # cxx-rs = mkDependsDerivation {
+  # cxx-rs = lib.mkDependsDerivation {
   #   pkg = prev.cxx-rs;
   #   dependsPkgName = "native_cxxbridge";
   # };
@@ -74,15 +74,17 @@ in {
       };
     });
 
-  tl-expected = mkDependsDerivation {
+  rust-bin = prev.rust-bin.stable.${lib.readVersion "" (lib.fileContents "native_rust")}.default;
+
+  tl-expected = lib.mkDependsDerivation {
     pkg = prev.tl-expected;
     dependsPkgName = "tl_expected";
   };
 
-  # utf8cpp = mkDependsDerivation {
+  # utf8cpp = lib.mkDependsDerivation {
   #   pkg = prev.utf8cpp;
   #   dependsPkgName = "utfcpp";
   # };
 
-  zeromq = mkDependsDerivation {pkg = prev.zeromq;};
+  zeromq = lib.mkDependsDerivation {pkg = prev.zeromq;};
 }

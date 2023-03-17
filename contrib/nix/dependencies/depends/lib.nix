@@ -37,8 +37,10 @@ pkgs: let
       (pkgs.lib.splitString " " patchList);
   fileContents = dependsPkgName:
     builtins.readFile ../../../../depends/packages/${dependsPkgName}.mk;
-in
-  {
+in {
+  inherit fileContents readVersion;
+
+  mkDependsDerivation = {
     pkg,
     dependsPkgName ? pkg.pname,
     url ? null,
@@ -56,4 +58,5 @@ in
         sha256 = readSHA infix contents;
       };
       patches = readPatches dependsPkgName infix contents;
-    })
+    });
+}
