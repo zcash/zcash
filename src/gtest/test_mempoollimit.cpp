@@ -150,7 +150,7 @@ TEST(MempoolLimitTests, MempoolCostAndEvictionWeight)
 
         auto result = builder.Build();
         if (result.IsError()) {
-            std::cerr << result.GetError() << std::endl;
+            std::cerr << result.FormatError() << std::endl;
         }
         auto [cost, evictionWeight] = MempoolCostAndEvictionWeight(result.GetTxOrThrow(), DEFAULT_FEE);
         EXPECT_EQ(5168, cost);

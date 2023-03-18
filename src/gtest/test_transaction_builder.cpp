@@ -251,7 +251,7 @@ TEST(TransactionBuilder, TransparentToOrchard)
     auto maybeTx = builder.Build();
     EXPECT_TRUE(maybeTx.IsTx());
     if (maybeTx.IsError()) {
-        std::cerr << "Failed to build transaction: " << maybeTx.GetError() << std::endl;
+        std::cerr << "Failed to build transaction: " << maybeTx.FormatError() << std::endl;
         GTEST_FAIL();
     }
     auto tx = maybeTx.GetTxOrThrow();
@@ -317,18 +317,21 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
     // 0.00005 z-ZEC out, default fee
     auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
     builder.AddSaplingOutput(fvk.ovk, pa, 5000, {});
-    EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
+    EXPECT_EQ(SimpleTransactionBuilderFailure::NegativeChange,
+              std::get<SimpleTransactionBuilderFailure>(builder.Build().GetError()));
 
     // Fail if there is only a transparent output
     // 0.00005 t-ZEC out, default fee
     builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
     builder.AddTransparentOutput(taddr, 5000);
-    EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
+    EXPECT_EQ(SimpleTransactionBuilderFailure::NegativeChange,
+              std::get<SimpleTransactionBuilderFailure>(builder.Build().GetError()));
 
     // Fails if there is insufficient input
     // 0.00005 t-ZEC out, default fee, 0.00005999 z-ZEC in
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
-    EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
+    EXPECT_EQ(SimpleTransactionBuilderFailure::NegativeChange,
+              std::get<SimpleTransactionBuilderFailure>(builder.Build().GetError()));
 
     // Succeeds if there is sufficient input
     builder.AddTransparentInput(COutPoint(), scriptPubKey, 1);
@@ -366,7 +369,8 @@ TEST(TransactionBuilder, ChangeOutput)
     {
         auto builder = TransactionBuilder(consensusParams, 1, std::nullopt, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 2500);
-        EXPECT_EQ("Could not determine change address", builder.Build().GetError());
+        EXPECT_EQ(SimpleTransactionBuilderFailure::CouldNotDetermineChangeAddress,
+                  std::get<SimpleTransactionBuilderFailure>(builder.Build().GetError()));
     }
 
     // Change to the same address as the first Sapling spend
