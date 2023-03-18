@@ -54,6 +54,12 @@ criteria = "safe-to-deploy"
 delta = "1.0.0 -> 1.0.1"
 notes = "Switches to `constant_time_eq 0.2.4`, which bumps its MSRV to 1.59."
 
+[[audits.block-buffer]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = ["crypto-reviewed", "safe-to-deploy"]
+delta = "0.10.3 -> 0.10.4"
+notes = "Adds panics to prevent a block size of zero from causing unsoundness."
+
 [[audits.bls12_381]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -109,6 +115,12 @@ criteria = "safe-to-deploy"
 delta = "0.3.0 -> 0.4.3"
 notes = "Significant rework of (mainly RustCrypto-internal) APIs."
 
+[[audits.cipher]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.4.3 -> 0.4.4"
+notes = "Adds panics to prevent a block size of zero from causing unsoundness."
+
 [[audits.clearscreen]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -125,11 +137,44 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.11 -> 2.0.0"
 
+[[audits.constant_time_eq]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.2.4 -> 0.2.5"
+notes = "No code changes."
+
 [[audits.cpufeatures]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.2.2 -> 0.2.5"
 notes = "Unsafe changes just introduce `#[inline(never)]` wrappers."
+
+[[audits.crossbeam-channel]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.5.6 -> 0.5.7"
+notes = "Fixes wrapping overflows for large timeouts."
+
+[[audits.crossbeam-deque]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.8.2 -> 0.8.3"
+notes = "No new code."
+
+[[audits.crossbeam-epoch]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.9.13 -> 0.9.14"
+notes = "Bumps memoffset to 0.8, and marks some BPF and Sony Vita targets as not having atomics."
+
+[[audits.crossbeam-utils]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.8.14 -> 0.8.15"
+notes = """
+- Fixes a wrapping overflow for large timeouts.
+- Marks some BPF and Sony Vita targets as not having atomics.
+"""
 
 [[audits.crypto-common]]
 who = "Jack Grigg <jack@z.cash>"
@@ -177,6 +222,11 @@ notes = """
 - Only change to C++ side is to fix a memory leak.
 """
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.91 -> 1.0.92"
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -208,6 +258,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.83 -> 1.0.91"
 
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.91 -> 1.0.92"
+
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -243,6 +298,11 @@ delta = "1.0.79 -> 1.0.83"
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.83 -> 1.0.91"
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.91 -> 1.0.92"
 
 [[audits.dirs]]
 who = "Jack Grigg <jack@z.cash>"
@@ -289,16 +349,31 @@ criteria = "safe-to-deploy"
 delta = "0.3.25 -> 0.3.26"
 notes = "Atomics usage in `Stream::size_hint` impls looks fine."
 
+[[audits.futures-channel]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.26 -> 0.3.27"
+
 [[audits.futures-core]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.3.25 -> 0.3.26"
 notes = "Adds optional dependency on `portable-atomic 1` that can be enabled to replace `core::sync::atomic`."
 
+[[audits.futures-core]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.26 -> 0.3.27"
+
 [[audits.futures-task]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.3.25 -> 0.3.26"
+
+[[audits.futures-task]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.26 -> 0.3.27"
 
 [[audits.futures-util]]
 who = "Jack Grigg <jack@z.cash>"
@@ -353,6 +428,11 @@ criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.1.0 -> 0.2.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.http]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.8 -> 0.2.9"
+
 [[audits.hyper]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -361,6 +441,12 @@ notes = """
 Fixes a bug where memory was reserved based on an adversary-controllable size, before the
 corresponding data was received.
 """
+
+[[audits.incrementalmerkletree]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.0 -> 0.3.1"
+notes = "Fixes bug in calculating altitudes from tree positions on 32-bit platforms."
 
 [[audits.indexmap]]
 who = "Jack Grigg <jack@z.cash>"
@@ -384,6 +470,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.1 -> 1.0.3"
 notes = "Update makes no changes to code."
+
+[[audits.itoa]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.5 -> 1.0.6"
 
 [[audits.js-sys]]
 who = "Jack Grigg <jack@z.cash>"
@@ -626,6 +717,12 @@ criteria = "safe-to-deploy"
 delta = "1.2.1 -> 1.3.0"
 notes = "Migrates from `toml` to `toml_edit`."
 
+[[audits.proc-macro-crate]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.3.0 -> 1.3.1"
+notes = "Bumps MSRV to 1.60."
+
 [[audits.proc-macro2]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -636,20 +733,44 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.49 -> 1.0.51"
 
+[[audits.proc-macro2]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.51 -> 1.0.52"
+
 [[audits.quanta]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.9.3 -> 0.10.1"
+
+[[audits.quote]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.23 -> 1.0.26"
 
 [[audits.raw-cpuid]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "10.6.0 -> 10.6.1"
 
+[[audits.raw-cpuid]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "10.6.1 -> 10.7.0"
+notes = """
+Appears to be a move-only change in display code to expose an internal API.
+I did not verify that the change was move-only, but there is no unsafe code affected.
+"""
+
 [[audits.regex]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.7.0 -> 1.7.1"
+
+[[audits.ryu]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.12 -> 1.0.13"
 
 [[audits.serde]]
 who = "Jack Grigg <jack@z.cash>"
@@ -662,6 +783,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.143 -> 1.0.145"
 
+[[audits.serde]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.155 -> 1.0.156"
+
 [[audits.serde_derive]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -672,6 +798,11 @@ notes = "Bumps syn, inverts some build flags."
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.143 -> 1.0.145"
+
+[[audits.serde_derive]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.155 -> 1.0.156"
 
 [[audits.sketches-ddsketch]]
 who = "Jack Grigg <jack@z.cash>"
@@ -688,6 +819,12 @@ delta = "1.0.91 -> 1.0.98"
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.102 -> 1.0.107"
+
+[[audits.syn]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.107 -> 1.0.109"
+notes = "Fixes string literal parsing to only skip specified whitespace characters."
 
 [[audits.terminfo]]
 who = "Jack Grigg <jack@z.cash>"
@@ -734,6 +871,16 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.2.4 -> 0.2.6"
 
+[[audits.time-macros]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.7 -> 0.2.8"
+notes = """
+- Only new `unsafe` code takes a `NonZeroU16` at proc-macro evaluation time and hard-codes
+  its contents into a `NonZeroU16::new_unchecked` constructor, which is safe.
+- Bumps MSRV to 1.63.
+"""
+
 [[audits.tinyvec_macros]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -745,6 +892,12 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 version = "0.5.1"
 notes = "Crate has `#![forbid(unsafe_code)]`, no `unwrap / expect / panic`, no ambient capabilities."
+
+[[audits.toml_datetime]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.5.1 -> 0.6.1"
+notes = "Fixes a bug in parsing negative minutes in datetime string offsets."
 
 [[audits.try-lock]]
 who = "Jack Grigg <jack@z.cash>"
@@ -761,6 +914,11 @@ delta = "0.9.4 -> 0.9.5"
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 version = "1.0.2"
+
+[[audits.unicode-ident]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.6 -> 1.0.8"
 
 [[audits.universal-hash]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -780,6 +938,11 @@ criteria = "safe-to-deploy"
 delta = "4.3.0 -> 4.4.0"
 notes = "New APIs are remixes of existing code."
 
+[[audits.windows-targets]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.42.1 -> 0.42.2"
+
 [[audits.windows_aarch64_gnullvm]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -789,6 +952,12 @@ This is a Windows API bindings library maintained by Microsoft themselves.
 Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
 """
 
+[[audits.windows_aarch64_gnullvm]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.42.1 -> 0.42.2"
+notes = "This is an opaque Windows API bindings library maintained by Microsoft."
+
 [[audits.windows_aarch64_msvc]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-run"
@@ -808,6 +977,12 @@ notes = """
 This is a Windows API bindings library maintained by Microsoft themselves.
 Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
 """
+
+[[audits.windows_aarch64_msvc]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.42.1 -> 0.42.2"
+notes = "This is an opaque Windows API bindings library maintained by Microsoft."
 
 [[audits.windows_i686_gnu]]
 who = "Jack Grigg <jack@z.cash>"
@@ -829,6 +1004,12 @@ This is a Windows API bindings library maintained by Microsoft themselves.
 Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
 """
 
+[[audits.windows_i686_gnu]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.42.1 -> 0.42.2"
+notes = "This is an opaque Windows API bindings library maintained by Microsoft."
+
 [[audits.windows_i686_msvc]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-run"
@@ -849,6 +1030,12 @@ This is a Windows API bindings library maintained by Microsoft themselves.
 Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
 """
 
+[[audits.windows_i686_msvc]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.42.1 -> 0.42.2"
+notes = "This is an opaque Windows API bindings library maintained by Microsoft."
+
 [[audits.windows_x86_64_gnu]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-run"
@@ -868,6 +1055,12 @@ notes = """
 This is a Windows API bindings library maintained by Microsoft themselves.
 Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
 """
+
+[[audits.windows_x86_64_gnu]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.42.1 -> 0.42.2"
+notes = "This is an opaque Windows API bindings library maintained by Microsoft."
 
 [[audits.windows_x86_64_gnullvm]]
 who = "Jack Grigg <jack@z.cash>"
@@ -878,6 +1071,12 @@ This is a Windows API bindings library maintained by Microsoft themselves.
 Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
 """
 
+[[audits.windows_x86_64_gnullvm]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.42.1 -> 0.42.2"
+notes = "This is an opaque Windows API bindings library maintained by Microsoft."
+
 [[audits.windows_x86_64_msvc]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-run"
@@ -897,6 +1096,12 @@ notes = """
 This is a Windows API bindings library maintained by Microsoft themselves.
 Changes are to a bundled binary library; it looks like these were accidentally left out of 0.42.0.
 """
+
+[[audits.windows_x86_64_msvc]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.42.1 -> 0.42.2"
+notes = "This is an opaque Windows API bindings library maintained by Microsoft."
 
 [[audits.wyz]]
 who = "Jack Grigg <jack@z.cash>"
