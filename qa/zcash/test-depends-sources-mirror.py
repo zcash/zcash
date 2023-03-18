@@ -12,32 +12,45 @@ import sys
 import os
 import requests
 
-MIRROR_URL_DIR="https://download.z.cash/depends-sources/"
-DEPENDS_SOURCES_DIR=os.path.realpath(os.path.join(
+MIRROR_URL_DIR = "https://download.z.cash/depends-sources/"
+DEPENDS_SOURCES_DIR = os.path.realpath(os.path.join(
     os.path.dirname(__file__),
     "..", "..", "depends", "sources"
 ))
 
 def get_depends_sources_list():
-    return filter(
-	lambda f: os.path.isfile(os.path.join(DEPENDS_SOURCES_DIR, f)),
-	os.listdir(DEPENDS_SOURCES_DIR)
-    )
+    return filter(os.path.isfile, [os.path.join(DEPENDS_SOURCES_DIR, f) for f in os.listdir(DEPENDS_SOURCES_DIR)])
 
-for filename in get_depends_sources_list():
-    resp = requests.head(MIRROR_URL_DIR + filename)
+def check_sources():
+    passing = True
+    for path in get_depends_sources_list():
+        filename = os.path.basename(path)
+        print("Checking [" + filename + "] ...")
 
-    print("Checking [" + filename + "] ...")
+        resp = requests.head(MIRROR_URL_DIR + filename)
+        if resp.status_code != 200:
+            print("FAIL. File %s not found on server (status code %d)" % (filename, resp.status_code))
+            passing = False
+            continue
 
-    if resp.status_code != 200:
-	    print("FAIL. File not found on server: ", filename)
-	    sys.exit(1)
+        expected_size = os.path.getsize(path)
+        server_size = int(resp.headers['Content-Length'])
+        if expected_size != server_size:
+            print("FAIL. On the server, %s is %d bytes, but locally it is %d bytes." % (filename, server_size, expected_size))
+            passing = False
+            continue
 
-    expected_size = os.path.getsize(os.path.join(DEPENDS_SOURCES_DIR, filename))
-    server_size = int(resp.headers['Content-Length'])
-    if expected_size != server_size:
-        print("FAIL. On the server, %s is %d bytes, but locally it is %d bytes." % (filename, server_size, expected_size))
-        sys.exit(1)
+        with open(path, 'rb') as f:
+            expected_content = f.read()
 
-print("PASS.")
-sys.exit(0)
+        if resp.content != expected_content:
+            print("FAIL. The server and local files for %s have the same length but different contents" % (filename,))
+            passing = False
+            continue
+
+    if passing: print("PASS.")
+    return passing
+
+if __name__ == "__main__":
+    ret = 0 if check_sources() else 1
+    sys.exit(ret)
