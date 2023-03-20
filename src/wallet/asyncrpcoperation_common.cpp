@@ -139,14 +139,24 @@ void ThrowInputSelectionError(
                     FormatMoney(err.available - err.required)));
         },
         [](const ExcessOrchardActionsError& err) {
+            std::string side;
+            switch (err.side) {
+                case ActionSide::Input:
+                    side = "inputs";
+                case ActionSide::Output:
+                    side = "outputs";
+                case ActionSide::Both:
+                    side = "actions";
+            };
             throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
                 strprintf(
-                    "Attempting to spend %u Orchard notes would exceed the current limit "
+                    "Including %u Orchard %s would exceed the current limit "
                     "of %u notes, which exists to prevent memory exhaustion. Restart with "
                     "`-orchardactionlimit=N` where N >= %u to allow the wallet to attempt "
                     "to construct this transaction.",
                     err.orchardNotes,
+                    side,
                     err.maxNotes,
                     err.orchardNotes));
         }

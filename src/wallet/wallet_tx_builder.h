@@ -260,12 +260,20 @@ public:
         available(available), required(required) { }
 };
 
+enum ActionSide {
+    Input,
+    Output,
+    Both,
+};
+
 class ExcessOrchardActionsError {
 public:
+    ActionSide side;
     uint32_t orchardNotes;
     uint32_t maxNotes;
 
-    ExcessOrchardActionsError(uint32_t orchardNotes, uint32_t maxNotes): orchardNotes(orchardNotes), maxNotes(maxNotes) { }
+    ExcessOrchardActionsError(ActionSide side, uint32_t orchardNotes, uint32_t maxNotes):
+        side(side), orchardNotes(orchardNotes), maxNotes(maxNotes) { }
 };
 
 typedef std::variant<

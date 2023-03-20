@@ -339,6 +339,10 @@ class WalletZSendmanyTest(BitcoinTestFramework):
             opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, policy)
             wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', msg)
 
+        # If we try to send just a bit less than we have, it will fail, complaining about dust
+        opid = self.nodes[1].z_sendmany(n1ua0, [{"address":n0ua0, "amount":3.9999999}], 1, 0, 'AllowLinkingAccountAddresses')
+        wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', 'Insufficient funds: have 4.00, need 0.00000044 more to avoid creating invalid change output 0.0000001 (dust threshold is 0.00000054).')
+
         # Once we provide a sufficiently-weak policy, the transaction succeeds.
         opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, 'AllowLinkingAccountAddresses')
         wait_and_assert_operationid_status(self.nodes[1], opid)
@@ -358,6 +362,20 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # Sapling balance.
         assert_equal(self.nodes[1].z_getbalance(n1ua0), 1)
         assert_equal(self.nodes[1].z_getbalance(n1ua1), 1)
+
+        #
+        # Test Orchard-only UA before NU5
+        #
+
+        n0orchard_only = self.nodes[0].z_getaddressforaccount(n0account0, ["orchard"])['address']
+        recipients = [{"address":n0orchard_only, "amount":1}]
+        for (policy, msg) in [
+            ('FullPrivacy', 'Could not send to a shielded receiver of a unified address without spending funds from a different pool, which would reveal transaction amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` or weaker if you wish to allow this transaction to proceed anyway.'),
+            ('AllowRevealedAmounts', 'This transaction would send to a transparent receiver of a unified address, which is not enabled by default because it will publicly reveal transaction recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedRecipients` or weaker if you wish to allow this transaction to proceed anyway.'),
+            ('AllowRevealedRecipients', 'Could not send to an Orchard-only receiver, despite a lax privacy policy. Either there are insufficent non-Sprout funds, or NU5 has not been activated yet.'),
+        ]:
+            opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, policy)
+            wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', msg)
 
         #
         # Test NoPrivacy policy
@@ -391,6 +409,19 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         self.sync_all()
         self.nodes[1].generate(10)
         self.sync_all()
+
+        #
+        # Test Orchard-only UA with insufficient non-Sprout funds
+        #
+
+        recipients = [{"address":n0orchard_only, "amount":100}]
+        for (policy, msg) in [
+            ('FullPrivacy', 'Could not send to a shielded receiver of a unified address without spending funds from a different pool, which would reveal transaction amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` or weaker if you wish to allow this transaction to proceed anyway.'),
+            ('AllowRevealedAmounts', 'This transaction would send to a transparent receiver of a unified address, which is not enabled by default because it will publicly reveal transaction recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedRecipients` or weaker if you wish to allow this transaction to proceed anyway.'),
+            ('AllowRevealedRecipients', 'Could not send to an Orchard-only receiver, despite a lax privacy policy. Either there are insufficent non-Sprout funds, or NU5 has not been activated yet.'),
+        ]:
+            opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, policy)
+            wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', msg)
 
         #
         # Test AllowRevealedAmounts policy

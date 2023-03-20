@@ -307,7 +307,10 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     auto resolved = Payments(resolvedPayments);
 
     if (orchardOutputs > this->maxOrchardActions) {
-        return ExcessOrchardActionsError(orchardOutputs, this->maxOrchardActions);
+        return ExcessOrchardActionsError(
+                ActionSide::Output,
+                orchardOutputs,
+                this->maxOrchardActions);
     }
 
     // Set the dust threshold so that we can select enough inputs to avoid
@@ -343,7 +346,10 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     }
 
     if (spendableMut.orchardNoteMetadata.size() > this->maxOrchardActions) {
-        return ExcessOrchardActionsError(spendableMut.orchardNoteMetadata.size(), this->maxOrchardActions);
+        return ExcessOrchardActionsError(
+                ActionSide::Input,
+                spendableMut.orchardNoteMetadata.size(),
+                this->maxOrchardActions);
     }
 
     return InputSelection(resolved, anchorHeight);
