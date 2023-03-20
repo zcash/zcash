@@ -372,7 +372,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         for (policy, msg) in [
             ('FullPrivacy', 'Could not send to a shielded receiver of a unified address without spending funds from a different pool, which would reveal transaction amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` or weaker if you wish to allow this transaction to proceed anyway.'),
             ('AllowRevealedAmounts', 'This transaction would send to a transparent receiver of a unified address, which is not enabled by default because it will publicly reveal transaction recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedRecipients` or weaker if you wish to allow this transaction to proceed anyway.'),
-            ('AllowRevealedRecipients', 'Could not send to an Orchard-only receiver, despite a lax privacy policy. Either there are insufficent non-Sprout funds, or NU5 has not been activated yet.'),
+            ('AllowRevealedRecipients', 'Could not send to an Orchard-only receiver, despite a lax privacy policy. Either there are insufficient non-Sprout funds (there is no transaction version that supports both Sprout and Orchard), or NU5 has not been activated yet.'),
         ]:
             opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, policy)
             wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', msg)
@@ -418,7 +418,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         for (policy, msg) in [
             ('FullPrivacy', 'Could not send to a shielded receiver of a unified address without spending funds from a different pool, which would reveal transaction amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` or weaker if you wish to allow this transaction to proceed anyway.'),
             ('AllowRevealedAmounts', 'This transaction would send to a transparent receiver of a unified address, which is not enabled by default because it will publicly reveal transaction recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedRecipients` or weaker if you wish to allow this transaction to proceed anyway.'),
-            ('AllowRevealedRecipients', 'Could not send to an Orchard-only receiver, despite a lax privacy policy. Either there are insufficent non-Sprout funds, or NU5 has not been activated yet.'),
+            ('AllowRevealedRecipients', 'Could not send to an Orchard-only receiver, despite a lax privacy policy. Either there are insufficient non-Sprout funds (there is no transaction version that supports both Sprout and Orchard), or NU5 has not been activated yet.'),
         ]:
             opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, policy)
             wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', msg)

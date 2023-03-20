@@ -74,7 +74,8 @@ void ThrowInputSelectionError(
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
                         "Could not send to an Orchard-only receiver, despite a lax privacy policy. "
-                        "Either there are insufficent non-Sprout funds, or NU5 has not been "
+                        "Either there are insufficient non-Sprout funds (there is no transaction "
+                        "version that supports both Sprout and Orchard), or NU5 has not been "
                         "activated yet.");
                 case AddressResolutionError::TransparentReceiverNotAllowed:
                     throw JSONRPCError(
