@@ -232,7 +232,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                 resolutionError = AddressResolutionError::SproutRecipientsNotSupported;
             },
             [&](const SaplingPaymentAddress& addr) {
-                if (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxSaplingAvailable) {
+                if (strategy.AllowRevealedAmounts() || payment.GetAmount() <= maxSaplingAvailable) {
                     resolvedPayments.emplace_back(
                             std::nullopt, addr, payment.GetAmount(), payment.GetMemo(), false);
                     if (!strategy.AllowRevealedAmounts()) {
@@ -245,7 +245,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
             [&](const UnifiedAddress& ua) {
                 if (canResolveOrchard
                     && ua.GetOrchardReceiver().has_value()
-                    && (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxOrchardAvailable)
+                    && (strategy.AllowRevealedAmounts() || payment.GetAmount() <= maxOrchardAvailable)
                     ) {
                     resolvedPayments.emplace_back(
                         ua, ua.GetOrchardReceiver().value(), payment.GetAmount(), payment.GetMemo(), false);
@@ -254,7 +254,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                     }
                     orchardOutputs += 1;
                 } else if (ua.GetSaplingReceiver().has_value()
-                    && (strategy.AllowRevealedAmounts() || payment.GetAmount() < maxSaplingAvailable)
+                    && (strategy.AllowRevealedAmounts() || payment.GetAmount() <= maxSaplingAvailable)
                     ) {
                     resolvedPayments.emplace_back(
                         ua, ua.GetSaplingReceiver().value(), payment.GetAmount(), payment.GetMemo(), false);
@@ -316,7 +316,8 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                 // and send the extra to the recipient or the miner fee to avoid
                 // creating dust change, rather than prohibit them from sending
                 // entirely in this circumstance.
-                // (Daira disagrees, as this could leak information to the recipient)
+                // (Daira disagrees, as this could leak information to the recipient
+                // or publically in the fee.)
                 ? InvalidFundsReason(DustThresholdError(dustThreshold, changeAmount))
                 : InvalidFundsReason(InsufficientFundsError(targetAmount)));
     }
