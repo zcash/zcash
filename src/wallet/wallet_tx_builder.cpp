@@ -543,8 +543,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
 
     // Track the total of notes that we've added to the builder. This
     // shouldn't strictly be necessary, given `spendable.LimitToAmount`
-    CAmount sum = 0;
-    CAmount targetAmount = payments.Total() + fee;
+    CAmount totalSpend = 0;
 
     // Create Sapling outpoints
     std::vector<SaplingOutPoint> saplingOutPoints;
@@ -559,10 +558,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
         assert(wallet.GetSaplingExtendedSpendingKey(t.address, saplingKey));
         saplingKeys.push_back(saplingKey);
 
-        sum += t.note.value();
-        if (sum >= targetAmount) {
-            break;
-        }
+        totalSpend += t.note.value();
     }
 
     // Fetch Sapling anchor and witnesses, and Orchard Merkle paths.
@@ -591,6 +587,8 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
             return TransactionBuilderResult(
                 strprintf("Failed to add Orchard note to transaction (check %s for details)", GetDebugLogPath())
             );
+        } else {
+            totalSpend += spendInfo.second.Value();
         }
     }
 
@@ -633,10 +631,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
         const CTxOut& txOut = out.tx->vout[out.i];
         builder.AddTransparentInput(COutPoint(out.tx->GetHash(), out.i), txOut.scriptPubKey, txOut.nValue);
 
-        sum += txOut.nValue;
-        if (sum >= targetAmount) {
-            break;
-        }
+        totalSpend += txOut.nValue;
     }
 
     // Find Sprout witnesses
@@ -673,18 +668,21 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
 
         builder.AddSproutInput(sk, t.note, vSproutWitnesses[i].value());
 
-        sum += t.note.value();
-        if (sum >= targetAmount) {
-            break;
-        }
+        totalSpend += t.note.value();
     }
 
+    // TODO: We currently can’t store Sprout change in `Payments`, so we only validate the
+    //       spend/output balance in the case that `TransactionBuilder` doesn’t need to
+    //       (re)calculate the change. In future, we shouldn’t rely on `TransactionBuilder` ever
+    //       calculating change.
     if (changeAddr.has_value()) {
         std::visit(match {
             [&](const SproutPaymentAddress& addr) {
                 builder.SendChangeToSprout(addr);
             },
-            [](const RecipientAddress&) { }
+            [&](const RecipientAddress&) {
+                assert(totalSpend == payments.Total() + fee);
+            }
         }, changeAddr.value());
     }
 
