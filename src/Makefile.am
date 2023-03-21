@@ -384,8 +384,12 @@ libbitcoin_server_a_SOURCES = \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
+# This should be referenced in *_CXXFLAGS for targets that include libcxxbridge_a_SOURCES
+# See dtolnay/cxx#722
+libcxxbridge_a_WARNING_CXXFLAGS = -Wno-dollar-in-identifier-extension
+
 libcxxbridge_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
-libcxxbridge_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libcxxbridge_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) $(libcxxbridge_a_WARNING_CXXFLAGS)
 libcxxbridge_a_SOURCES = \
   $(CXXBRIDGE_CPP) \
   $(CXXBRIDGE_H) \
@@ -733,7 +737,7 @@ endif
 libzcash_script_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
 libzcash_script_la_LIBADD = $(LIBRUSTZCASH) $(LIBSECP256K1)
 libzcash_script_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/rust/include -I$(srcdir)/rust/gen/include -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
-libzcash_script_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libzcash_script_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) $(libcxxbridge_a_WARNING_CXXFLAGS)
 
 endif
 #
