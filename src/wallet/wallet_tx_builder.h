@@ -99,7 +99,7 @@ public:
         payments.push_back(payment);
     }
 
-    const std::set<OutputPool>& GetRecipientPools() const {
+    std::set<OutputPool> GetRecipientPools() const {
         return recipientPools;
     }
 
