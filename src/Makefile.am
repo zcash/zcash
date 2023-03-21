@@ -394,7 +394,8 @@ libbitcoin_server_a_SOURCES = \
   $(LIBZCASH_H)
 
 libcxxbridge_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
-libcxxbridge_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libcxxbridge_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) \
+  -Wno-dollar-in-identifier-extension
 libcxxbridge_a_SOURCES = \
   $(CXXBRIDGE_CPP) \
   $(CXXBRIDGE_H)

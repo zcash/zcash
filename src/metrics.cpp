@@ -612,7 +612,7 @@ void ThreadShowMetricsScreen()
 #endif
 
         // Clear screen
-        std::cout << "\e[2J";
+        std::cout << "\033[2J";
 
         // Print art
         std::cout << METRICS_ART << std::endl;
@@ -656,7 +656,7 @@ void ThreadShowMetricsScreen()
 
         if (isScreen) {
             // Erase below current position
-            std::cout << "\e[J";
+            std::cout << "\033[J";
         }
 
         // Miner status
@@ -696,7 +696,7 @@ void ThreadShowMetricsScreen()
 
         if (isScreen) {
             // Return to the top of the updating section
-            std::cout << "\e[" << lines << "A";
+            std::cout << "\033[" << lines << "A";
         }
     }
 }
