@@ -906,15 +906,14 @@ static bool AttemptToEvictConnection(bool fPreferNewConnection) {
                 continue;
             if (node->fDisconnect)
                 continue;
-            NodeEvictionCandidate candidate = {
-                .id = node->id,
-                .nTimeConnected = node->nTimeConnected,
-                .nMinPingUsecTime = node->nMinPingUsecTime,
-                .addr = node->addr,
-                .nKeyedNetGroup = node->nKeyedNetGroup,
-                .nVersion = node->nVersion
-            };
-            vEvictionCandidates.push_back(candidate);
+            vEvictionCandidates.push_back({
+                node->id,
+                node->nTimeConnected,
+                node->nMinPingUsecTime,
+                node->addr,
+                node->nKeyedNetGroup,
+                node->nVersion
+            });
         }
     }
 

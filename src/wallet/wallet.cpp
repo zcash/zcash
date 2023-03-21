@@ -3442,7 +3442,8 @@ WalletDecryptedNotes CWallet::TryDecryptShieldedOutputs(const CTransaction& tx)
     // everything in Rust.
 
     return WalletDecryptedNotes {
-        .sproutNoteData = sproutNoteData,
+        sproutNoteData,
+        {},
     };
 }
 

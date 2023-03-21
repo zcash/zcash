@@ -48,20 +48,20 @@ TEST(FeatureFlagging, FeatureDependencies) {
 
     Consensus::FeatureSet<TestFeature, TestParams> features({
         {
-            .dependsOn = {},
-            .activation = Consensus::BASE_SPROUT
+            {},
+            Consensus::BASE_SPROUT
         },
         {
-            .dependsOn = {TF_1},
-            .activation = Consensus::UPGRADE_OVERWINTER
+            {TF_1},
+            Consensus::UPGRADE_OVERWINTER
         },
         {
-            .dependsOn = {},
-            .activation = Consensus::UPGRADE_BLOSSOM
+            {},
+            Consensus::UPGRADE_BLOSSOM
         },
         {
-            .dependsOn = {TF_2, TF_3},
-            .activation = Consensus::UPGRADE_HEARTWOOD
+            {TF_2, TF_3},
+            Consensus::UPGRADE_HEARTWOOD
         }
     });
 

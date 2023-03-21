@@ -1098,7 +1098,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     ASSERT_TRUE(nf);
     uint256 nullifier = nf.value();
 
-    MerkleFrontiers frontiers = { .sapling = testNote.tree };
+    MerkleFrontiers frontiers = { {}, testNote.tree, {} };
 
     // Verify dummy note is unspent
     EXPECT_FALSE(wallet.IsSaplingSpent(nullifier, std::nullopt));
@@ -1489,7 +1489,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
         block2.vtx.push_back(wtx);
         CBlockIndex index2(block2);
         index2.nHeight = 2;
-        MerkleFrontiers frontiers2 = { .sprout = frontiers.sprout, .sapling = frontiers.sapling };
+        MerkleFrontiers frontiers2 = { frontiers.sprout, frontiers.sapling, {} };
         wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index2, &block2, frontiers2, true);
 
         auto anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
@@ -1629,7 +1629,7 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
     std::vector<uint256> sproutAnchors;
     std::vector<uint256> saplingAnchors;
     MerkleFrontiers frontiers;
-    MerkleFrontiers riFrontiers = { .sprout = frontiers.sprout, .sapling = frontiers.sapling };
+    MerkleFrontiers riFrontiers = { frontiers.sprout, frontiers.sapling, {} };
     std::vector<std::optional<SproutWitness>> sproutWitnesses;
     std::vector<std::optional<SaplingWitness>> saplingWitnesses;
 
@@ -2077,7 +2077,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     builder.AddSaplingOutput(extfvk.fvk.ovk, pa2, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
-    MerkleFrontiers frontiers =  { .sapling = testNote.tree };
+    MerkleFrontiers frontiers =  { {}, testNote.tree, {} };
 
     // Wallet contains extfvk1 but not extfvk2
     CWalletTx wtx {&wallet, tx};

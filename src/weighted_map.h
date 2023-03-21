@@ -133,12 +133,7 @@ public:
             return false;
         }
         size_t index = nodes.size();
-        nodes.push_back(Node {
-            .key = key,
-            .value = value,
-            .weight = weight,
-            .sumOfDescendantWeights = W(),
-        });
+        nodes.push_back(Node { key, value, weight, W() });
         indexMap[key] = index;
         backPropagate(index, weight);
         return true;
