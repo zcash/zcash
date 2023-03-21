@@ -18,8 +18,8 @@ RUN git clone https://github.com/KDE/heaptrack.git \
     && make install \
     && cd ../.. \
     && rm -rf ./heaptrack
-
-RUN python -m pip install Cython google-cloud-BigQuery
+RUN python -m pip install pip --upgrade
+RUN python -m pip install google-cloud-BigQuery
 COPY ./benchmark-200k-UTXOs.tar.xz /home/benchmark-200k-UTXOs.tar.xz
 COPY ./block-107134.tar.xz /home/block-107134.tar.xz
 COPY ./block-1708048.tar.xz /home/block-1708048.tar.xz
