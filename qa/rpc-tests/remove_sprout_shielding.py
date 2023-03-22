@@ -21,7 +21,7 @@ from test_framework.util import (
 import logging
 
 HAS_CANOPY = [
-    '-nurejectoldversions=false', 
+    '-nurejectoldversions=false',
     '-anchorconfirmations=1',
     nuparams(BLOSSOM_BRANCH_ID, 205),
     nuparams(HEARTWOOD_BRANCH_ID, 210),
@@ -88,11 +88,9 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
 
         # Create taddr -> Sprout z_sendmany transaction on node 0. Should fail
         sprout_addr = self.nodes[1].z_getnewaddress('sprout')
-        assert_raises_message(
-            JSONRPCException,
-            "Sending funds into the Sprout value pool is not supported by z_sendmany",
-            self.nodes[0].z_sendmany,
-            taddr_0, [{"address": sprout_addr, "amount": 1}])
+        recipients = [{"address": sprout_addr, "amount": Decimal('1')}]
+        myopid = self.nodes[0].z_sendmany(taddr_0, recipients, 1, 0, 'AllowRevealedSenders')
+        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Sending funds into the Sprout pool is no longer supported.")
         print("taddr -> Sprout z_sendmany tx rejected at Canopy activation on node 0")
 
         # Create z_mergetoaddress [taddr, Sprout] -> Sprout transaction on node 0. Should fail

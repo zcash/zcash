@@ -150,13 +150,13 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     CTxDestination setaccountDemoAddress(CTxDestination(setaccountDemoPubkey.GetID()));
 
     /*********************************
-     *                  getbalance
+     *          getbalance
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getbalance"));
     BOOST_CHECK_THROW(CallRPC("getbalance " + keyIO.EncodeDestination(demoAddress)), runtime_error);
 
     /*********************************
-     * 			listunspent
+     *          listunspent
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listunspent"));
     BOOST_CHECK_THROW(CallRPC("listunspent string"), runtime_error);
@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK(r.get_array().empty());
 
     /*********************************
-     * 		listreceivedbyaddress
+     *          listreceivedbyaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listreceivedbyaddress"));
     BOOST_CHECK_NO_THROW(CallRPC("listreceivedbyaddress 0"));
@@ -201,22 +201,22 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_NO_THROW(CallRPC("listaddressgroupings"));
 
     /*********************************
-     * 		walletconfirmbackup
+     *          walletconfirmbackup
      *********************************/
     BOOST_CHECK_THROW(CallRPC(string("walletconfirmbackup \"badmnemonic\"")), runtime_error);
 
     /*********************************
-     * 		getrawchangeaddress
+     *          getrawchangeaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getrawchangeaddress"));
 
     /*********************************
-     * 		getnewaddress
+     *          getnewaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getnewaddress"));
 
     /*********************************
-     * 	signmessage + verifymessage
+     *          signmessage + verifymessage
      *********************************/
     BOOST_CHECK_NO_THROW(retValue = CallRPC("signmessage " + keyIO.EncodeDestination(demoAddress) + " mymessage"));
     BOOST_CHECK_THROW(CallRPC("signmessage"), runtime_error);
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK(CallRPC("verifymessage " + keyIO.EncodeDestination(demoAddress) + " " + retValue.get_str() + " mymessage").get_bool() == true);
 
     /*********************************
-     * 		listaddresses
+     *          listaddresses
      *********************************/
     BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
     UniValue arr = retValue.get_array();
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     }
 
     /*********************************
-     * 	     fundrawtransaction
+     *          fundrawtransaction
      *********************************/
     BOOST_CHECK_THROW(CallRPC("fundrawtransaction 28z"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("fundrawtransaction 01000000000180969800000000001976a91450ce0a4b0ee0ddeb633da85199728b940ac3fe9488ac00000000"), runtime_error);
@@ -802,7 +802,11 @@ void CheckHaveAddr(const std::optional<libzcash::PaymentAddress>& addr) {
     auto addr_of_type = std::get_if<ADDR_TYPE>(&(addr.value()));
     BOOST_ASSERT(addr_of_type != nullptr);
 
-    BOOST_CHECK(pwalletMain->ZTXOSelectorForAddress(*addr_of_type, true, false).has_value());
+    BOOST_CHECK(pwalletMain->ZTXOSelectorForAddress(
+                        *addr_of_type,
+                        true,
+                        TransparentCoinbasePolicy::Allow,
+                        false).has_value());
 }
 
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_getnewaddress) {
@@ -1236,10 +1240,17 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // there are no utxos to spend
     {
-        auto selector = pwalletMain->ZTXOSelectorForAddress(taddr1, true, false).value();
-        TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
-        std::vector<ResolvedPayment> recipients = { ResolvedPayment(std::nullopt, zaddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
-        TransactionStrategy strategy;
+        auto selector = pwalletMain->ZTXOSelectorForAddress(
+                taddr1,
+                true,
+                // In the real transaction builder we use either Require or Disallow, but here we
+                // are checking that there are no UTXOs at all, so we allow either to be selected to
+                // confirm this.
+                TransparentCoinbasePolicy::Allow,
+                false).value();
+        WalletTxBuilder builder(Params(), *pwalletMain, minRelayTxFee);
+        std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
+        TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
         operation->main();
         BOOST_CHECK(operation->isFailed());
@@ -1249,9 +1260,13 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
     // there are no unspent notes to spend
     {
-        auto selector = pwalletMain->ZTXOSelectorForAddress(zaddr1, true, false).value();
-        TransactionBuilder builder(consensusParams, nHeight + 1, std::nullopt, pwalletMain);
-        std::vector<ResolvedPayment> recipients = { ResolvedPayment(std::nullopt, taddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
+        auto selector = pwalletMain->ZTXOSelectorForAddress(
+                zaddr1,
+                true,
+                TransparentCoinbasePolicy::Disallow,
+                false).value();
+        WalletTxBuilder builder(Params(), *pwalletMain, minRelayTxFee);
+        std::vector<Payment> recipients = { Payment(taddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
         operation->main();

@@ -904,13 +904,27 @@ typedef std::variant<
     libzcash::UnifiedFullViewingKey,
     AccountZTXOPattern> ZTXOPattern;
 
+/**
+ * For transactions, either `Disallow` or `Require` must be used, but `Allow` is generally used when
+ * calculating balances.
+ */
+enum class TransparentCoinbasePolicy {
+    Disallow, //!< Do not select transparent coinbase
+    Allow,    //!< Make transparent coinbase available to the selector
+    Require   //!< Only select transparent coinbase
+};
+
 class ZTXOSelector {
 private:
     ZTXOPattern pattern;
     bool requireSpendingKeys;
+    TransparentCoinbasePolicy transparentCoinbasePolicy;
 
-    ZTXOSelector(ZTXOPattern patternIn, bool requireSpendingKeysIn):
-        pattern(patternIn), requireSpendingKeys(requireSpendingKeysIn) {}
+    ZTXOSelector(ZTXOPattern patternIn, bool requireSpendingKeysIn, TransparentCoinbasePolicy transparentCoinbasePolicy):
+        pattern(patternIn), requireSpendingKeys(requireSpendingKeysIn), transparentCoinbasePolicy(transparentCoinbasePolicy) {
+        // We can’t require transparent coinbase unless we’re selecting transparent funds.
+        assert(SelectsTransparent() || transparentCoinbasePolicy != TransparentCoinbasePolicy::Require);
+}
 
     friend class CWallet;
 public:
@@ -922,8 +936,11 @@ public:
         return requireSpendingKeys;
     }
 
+    TransparentCoinbasePolicy TransparentCoinbasePolicy() const {
+        return transparentCoinbasePolicy;
+    }
+
     bool SelectsTransparent() const;
-    bool SelectsTransparentCoinbase() const;
     bool SelectsSprout() const;
     bool SelectsSapling() const;
     bool SelectsOrchard() const;
@@ -967,14 +984,14 @@ public:
      */
     CAmount Total() const {
         CAmount result = 0;
-        result += GetTransparentBalance();
-        result += GetSproutBalance();
-        result += GetSaplingBalance();
-        result += GetOrchardBalance();
+        result += GetTransparentTotal();
+        result += GetSproutTotal();
+        result += GetSaplingTotal();
+        result += GetOrchardTotal();
         return result;
     }
 
-    CAmount GetTransparentBalance() const {
+    CAmount GetTransparentTotal() const {
         CAmount result = 0;
         for (const auto& t : utxos) {
             result += t.Value();
@@ -982,7 +999,7 @@ public:
         return result;
     }
 
-    CAmount GetSproutBalance() const {
+    CAmount GetSproutTotal() const {
         CAmount result = 0;
         for (const auto& t : sproutNoteEntries) {
             result += t.note.value();
@@ -990,7 +1007,7 @@ public:
         return result;
     }
 
-    CAmount GetSaplingBalance() const {
+    CAmount GetSaplingTotal() const {
         CAmount result = 0;
         for (const auto& t : saplingNoteEntries) {
             result += t.note.value();
@@ -998,7 +1015,7 @@ public:
         return result;
     }
 
-    CAmount GetOrchardBalance() const {
+    CAmount GetOrchardTotal() const {
         CAmount result = 0;
         for (const auto& t : orchardNoteMetadata) {
             result += t.GetNoteValue();
@@ -1541,6 +1558,7 @@ public:
     std::optional<ZTXOSelector> ZTXOSelectorForAccount(
             libzcash::AccountId account,
             bool requireSpendingKey,
+            TransparentCoinbasePolicy transparentCoinbasePolicy,
             std::set<libzcash::ReceiverType> receiverTypes={}) const;
 
     /**
@@ -1552,6 +1570,7 @@ public:
     std::optional<ZTXOSelector> ZTXOSelectorForAddress(
             const libzcash::PaymentAddress& addr,
             bool requireSpendingKey,
+            TransparentCoinbasePolicy transparentCoinbasePolicy,
             bool allowAddressLinkability) const;
 
     /**
@@ -1562,13 +1581,14 @@ public:
      */
     std::optional<ZTXOSelector> ZTXOSelectorForViewingKey(
             const libzcash::ViewingKey& vk,
-            bool requireSpendingKey) const;
+            bool requireSpendingKey,
+            TransparentCoinbasePolicy transparentCoinbasePolicy) const;
 
     /**
      * Returns the ZTXO selector that will select UTXOs sent to legacy
      * transparent addresses managed by this wallet.
      */
-    static ZTXOSelector LegacyTransparentZTXOSelector(bool requireSpendingKey);
+    static ZTXOSelector LegacyTransparentZTXOSelector(bool requireSpendingKey, TransparentCoinbasePolicy transparentCoinbasePolicy);
 
     /**
      * Look up the account for a given selector. This resolves the account ID
@@ -1598,7 +1618,6 @@ public:
 
     SpendableInputs FindSpendableInputs(
             ZTXOSelector paymentSource,
-            bool allowTransparentCoinbase,
             uint32_t minDepth,
             const std::optional<int>& asOfHeight) const;
 

@@ -21,6 +21,9 @@ RPC Changes
     also available for testnet and regtest nodes, in which case it does not
     return end-of-service halt information (as testnet and regtest nodes do not
     have an end-of-service halt feature.)
+- Several `z_sendmany` failures have moved from synchronous to asynchronous, so
+  while you should already be checking the async operation status, there are now
+  more cases that may trigger failure at that stage.
 
 [Deprecations](https://zcash.github.io/zcash/user/deprecation.html)
 --------------

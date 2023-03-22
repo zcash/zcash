@@ -327,6 +327,7 @@ BITCOIN_CORE_H = \
   wallet/asyncrpcoperation_saplingmigration.h \
   wallet/asyncrpcoperation_sendmany.h \
   wallet/asyncrpcoperation_shieldcoinbase.h \
+  wallet/wallet_tx_builder.h \
   wallet/crypter.h \
   wallet/db.h \
   wallet/memo.h \
@@ -418,6 +419,7 @@ libbitcoin_wallet_a_SOURCES = \
   wallet/asyncrpcoperation_saplingmigration.cpp \
   wallet/asyncrpcoperation_sendmany.cpp \
   wallet/asyncrpcoperation_shieldcoinbase.cpp \
+  wallet/wallet_tx_builder.cpp \
   wallet/crypter.cpp \
   wallet/db.cpp \
   wallet/orchard.cpp \
