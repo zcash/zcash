@@ -590,8 +590,10 @@ u32 nc = 0;
           continue;
         for (; cd.nextcollision(); ) {
           const u32 s0 = cd.slot();
-          if (htl.equal(buck[s0].hash, pslot1->hash))
-nc++,       candidate(tree(bucketid, s0, s1));
+          if (htl.equal(buck[s0].hash, pslot1->hash)) {
+nc++;
+              candidate(tree(bucketid, s0, s1));
+          }
         }
       }
     }
