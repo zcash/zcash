@@ -305,7 +305,6 @@ typedef std::variant<
 class WalletTxBuilder {
 private:
     const CChainParams& params;
-    const CWallet& wallet;
     CFeeRate minRelayFee;
     uint32_t maxOrchardActions;
 
@@ -320,6 +319,7 @@ private:
      * and the requested transaction strategy.
      */
     InputSelectionResult ResolveInputsAndPayments(
+            const CWallet& wallet,
             const ZTXOSelector& selector,
             SpendableInputs& spendable,
             const std::vector<Payment>& payments,
@@ -332,18 +332,21 @@ private:
      * the spendable inputs.
      */
     std::pair<uint256, uint256> SelectOVKs(
+            const CWallet& wallet,
             const ZTXOSelector& selector,
             const SpendableInputs& spendable) const;
 
 public:
-    WalletTxBuilder(const CChainParams& params, const CWallet& wallet, CFeeRate minRelayFee):
-        params(params), wallet(wallet), minRelayFee(minRelayFee), maxOrchardActions(nOrchardActionLimit) {}
+    WalletTxBuilder(const CChainParams& params, CFeeRate minRelayFee):
+        params(params), minRelayFee(minRelayFee), maxOrchardActions(nOrchardActionLimit) {}
 
     SpendableInputs FindAllSpendableInputs(
+            const CWallet& wallet,
             const ZTXOSelector& selector,
             int32_t minDepth) const;
 
     PrepareTransactionResult PrepareTransaction(
+            CWallet& wallet,
             const ZTXOSelector& selector,
             SpendableInputs& spendable,
             const std::vector<Payment>& payments,

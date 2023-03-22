@@ -1248,7 +1248,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
                 // confirm this.
                 TransparentCoinbasePolicy::Allow,
                 false).value();
-        WalletTxBuilder builder(Params(), *pwalletMain, minRelayTxFee);
+        WalletTxBuilder builder(Params(), minRelayTxFee);
         std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
@@ -1265,7 +1265,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
                 true,
                 TransparentCoinbasePolicy::Disallow,
                 false).value();
-        WalletTxBuilder builder(Params(), *pwalletMain, minRelayTxFee);
+        WalletTxBuilder builder(Params(), minRelayTxFee);
         std::vector<Payment> recipients = { Payment(taddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
