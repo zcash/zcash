@@ -7,6 +7,7 @@ RUN pacman -Syyu --noconfirm \
     && pacman -S --noconfirm \
       base-devel \
       git \
+      libunwind \
       python3 \
       python-pip \
       ncurses \
