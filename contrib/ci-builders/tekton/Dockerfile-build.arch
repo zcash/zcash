@@ -4,7 +4,7 @@ ARG FROMBASEOS_BUILD_TAG
 FROM $FROMBASEOS:$FROMBASEOS_BUILD_TAG
 
 RUN pacman -Syyu --noconfirm \
-    && pacman -S --noconfirm \
+    && pacman -Syu --noconfirm \
       base-devel \
       git \
       libunwind \
