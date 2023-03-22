@@ -989,7 +989,7 @@ public:
     void SerializeScriptCode(S &s) const {
         auto size = scriptCode.size();
         ::WriteCompactSize(s, size);
-        s.write((char*)&scriptCode.begin()[0], size);
+        s.write((const char*)&scriptCode.begin()[0], size);
     }
 
     /** Serialize an input of txTo */

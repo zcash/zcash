@@ -50,7 +50,7 @@ void TestEquihashSolvers(unsigned int n, unsigned int k, const std::string &I, c
     eh_HashState state = EhInitialiseState(n, k);
     uint256 V = ArithToUint256(nonce);
     BOOST_TEST_MESSAGE("Running solver: n = " << n << ", k = " << k << ", I = " << I << ", V = " << V.GetHex());
-    state.Update((unsigned char*)&I[0], I.size());
+    state.Update((const unsigned char*)&I[0], I.size());
     state.Update(V.begin(), V.size());
 
     // First test the basic solver

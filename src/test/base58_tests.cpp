@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(base58_keys_valid_parse)
             privkey = keyIO.DecodeSecret(exp_base58string);
             BOOST_CHECK_MESSAGE(privkey.IsValid(), "!IsValid:" + strTest);
             BOOST_CHECK_MESSAGE(privkey.IsCompressed() == isCompressed, "compressed mismatch:" + strTest);
-            BOOST_CHECK_MESSAGE(privkey.size() == exp_payload.size() && std::equal(privkey.begin(), privkey.end(), exp_payload.begin()), "key mismatch:" + strTest);
+            BOOST_CHECK_MESSAGE(privkey.size() == exp_payload.size() && std::equal<const unsigned char*>(privkey.begin(), privkey.end(), exp_payload.begin()), "key mismatch:" + strTest);
 
             // Private key must be invalid public key
             destination = keyIO.DecodeDestination(exp_base58string);

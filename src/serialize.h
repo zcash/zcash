@@ -390,7 +390,8 @@ I ReadVarInt(Stream& is)
     }
 }
 
-#define FLATDATA(obj) REF(CFlatData((char*)&(obj), (char*)&(obj) + sizeof(obj)))
+#define FLATDATA(obj) REF(CFlatData((const char*)&(obj), (const char*)&(obj) + sizeof(obj)))
+#define UNFLATDATA(obj) REF(CUnFlatData((char*)&(obj), (const char*)&(obj) + sizeof(obj)))
 #define VARINT(obj) REF(WrapVarInt(REF(obj)))
 #define COMPACTSIZE(obj) REF(CCompactSize(REF(obj)))
 #define LIMITED_STRING(obj,n) REF(LimitedString< n >(REF(obj)))
@@ -401,25 +402,57 @@ I ReadVarInt(Stream& is)
 class CFlatData
 {
 protected:
-    char* pbegin;
-    char* pend;
+    const char* pbegin;
+    const char* pend;
 public:
-    CFlatData(void* pbeginIn, void* pendIn) : pbegin((char*)pbeginIn), pend((char*)pendIn) { }
+    CFlatData(const void* pbeginIn, const void* pendIn) :
+        pbegin((const char*)pbeginIn), pend((const char*)pendIn) { }
     template <class T, class TAl>
     explicit CFlatData(std::vector<T,TAl> &v)
     {
-        pbegin = (char*)begin_ptr(v);
-        pend = (char*)end_ptr(v);
+        pbegin = (const char*)begin_ptr(v);
+        pend = (const char*)end_ptr(v);
     }
     template <unsigned int N, typename T, typename S, typename D>
     explicit CFlatData(prevector<N, T, S, D> &v)
     {
-        pbegin = (char*)begin_ptr(v);
-        pend = (char*)end_ptr(v);
+        pbegin = (const char*)begin_ptr(v);
+        pend = (const char*)end_ptr(v);
     }
-    char* begin() { return pbegin; }
     const char* begin() const { return pbegin; }
-    char* end() { return pend; }
+    const char* end() const { return pend; }
+
+    template<typename Stream>
+    void Serialize(Stream& s) const
+    {
+        s.write(pbegin, pend - pbegin);
+    }
+};
+
+/**
+ * Wrapper for serializing arrays and POD.
+ */
+class CUnFlatData
+{
+protected:
+    char* pbegin;
+    const char* pend;
+public:
+    CUnFlatData(void* pbeginIn, const void* pendIn) :
+        pbegin((char*)pbeginIn), pend((const char*)pendIn) { }
+    template <class T, class TAl>
+    explicit CUnFlatData(std::vector<T,TAl> &v)
+    {
+        pbegin = (char*)begin_ptr(v);
+        pend = (const char*)end_ptr(v);
+    }
+    template <unsigned int N, typename T, typename S, typename D>
+    explicit CUnFlatData(prevector<N, T, S, D> &v)
+    {
+        pbegin = (char*)begin_ptr(v);
+        pend = (const char*)end_ptr(v);
+    }
+    char* begin() const { return pbegin; }
     const char* end() const { return pend; }
 
     template<typename Stream>
@@ -634,7 +667,7 @@ void Serialize(Stream& os, const std::basic_string<C, T, A>& str)
 {
     WriteCompactSize(os, str.size());
     if (!str.empty())
-        os.write((char*)&str[0], str.size() * sizeof(str[0]));
+        os.write((const char*)&str[0], str.size() * sizeof(str[0]));
 }
 
 template<typename Stream, typename C, typename T, typename A>
@@ -656,7 +689,7 @@ void Serialize_impl(Stream& os, const prevector<N, T>& v, const unsigned char&)
 {
     WriteCompactSize(os, v.size());
     if (!v.empty())
-        os.write((char*)&v[0], v.size() * sizeof(T));
+        os.write((const char*)&v[0], v.size() * sizeof(T));
 }
 
 template<typename Stream, unsigned int N, typename T, typename V>
@@ -724,7 +757,7 @@ void Serialize_impl(Stream& os, const std::vector<T, A>& v, const unsigned char&
 {
     WriteCompactSize(os, v.size());
     if (!v.empty())
-        os.write((char*)&v[0], v.size() * sizeof(T));
+        os.write((const char*)&v[0], v.size() * sizeof(T));
 }
 
 template<typename Stream, typename T, typename A, typename V>

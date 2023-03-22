@@ -101,7 +101,7 @@ public:
     template<typename Stream>
     void Serialize(Stream& s) const
     {
-        s.write((char*)data, sizeof(data));
+        s.write((const char*)data, sizeof(data));
     }
 
     template<typename Stream>

@@ -28,7 +28,7 @@ void TestVector(const Hasher &h, const In &in, const Out &out) {
     hash.resize(out.size());
     {
         // Test that writing the whole input string at once works.
-        Hasher(h).Write((unsigned char*)&in[0], in.size()).Finalize(&hash[0]);
+        Hasher(h).Write((const unsigned char*)&in[0], in.size()).Finalize(&hash[0]);
         BOOST_CHECK(hash == out);
     }
     for (int i=0; i<32; i++) {
@@ -37,11 +37,11 @@ void TestVector(const Hasher &h, const In &in, const Out &out) {
         size_t pos = 0;
         while (pos < in.size()) {
             size_t len = InsecureRandRange((in.size() - pos + 1) / 2 + 1);
-            hasher.Write((unsigned char*)&in[pos], len);
+            hasher.Write((const unsigned char*)&in[pos], len);
             pos += len;
             if (pos > 0 && pos + 2 * out.size() > in.size() && pos < in.size()) {
                 // Test that writing the rest at once to a copy of a hasher works.
-                Hasher(hasher).Write((unsigned char*)&in[pos], in.size() - pos).Finalize(&hash[0]);
+                Hasher(hasher).Write((const unsigned char*)&in[pos], in.size() - pos).Finalize(&hash[0]);
                 BOOST_CHECK(hash == out);
             }
         }

@@ -100,13 +100,13 @@ BOOST_AUTO_TEST_CASE(util_ParseParameters)
 {
     const char *argv_test[] = {"-ignored", "-a", "-b", "-ccc=argument", "-ccc=multiple", "f", "-d=e"};
 
-    ParseParameters(0, (char**)argv_test);
+    ParseParameters(0, argv_test);
     BOOST_CHECK(mapArgs.empty() && mapMultiArgs.empty());
 
-    ParseParameters(1, (char**)argv_test);
+    ParseParameters(1, argv_test);
     BOOST_CHECK(mapArgs.empty() && mapMultiArgs.empty());
 
-    ParseParameters(5, (char**)argv_test);
+    ParseParameters(5, argv_test);
     // expectation: -ignored is ignored (program name argument),
     // -a, -b and -ccc end up in map, -d ignored because it is after
     // a non-option argument (non-GNU option parsing)

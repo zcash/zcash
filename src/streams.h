@@ -381,7 +381,7 @@ public:
     {
         // Special case: stream << stream concatenates like stream += stream
         if (!vch.empty())
-            s.write((char*)&vch[0], vch.size() * sizeof(vch[0]));
+            s.write((const char*)&vch[0], vch.size() * sizeof(vch[0]));
     }
 
     template<typename T>
@@ -466,7 +466,7 @@ private:
     const int nType;
     const int nVersion;
 
-    FILE* file;	
+    FILE* file;
 
 public:
     CAutoFile(FILE* filenew, int nTypeIn, int nVersionIn) : nType(nTypeIn), nVersion(nVersionIn)

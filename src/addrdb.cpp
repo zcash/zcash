@@ -98,7 +98,7 @@ bool CBanDB::Read(banmap_t& banSet)
     unsigned char pchMsgTmp[4];
     try {
         // de-serialize file header (network specific magic number) and ..
-        ssBanlist >> FLATDATA(pchMsgTmp);
+        ssBanlist >> UNFLATDATA(pchMsgTmp);
 
         // ... verify the network matches ours
         if (memcmp(pchMsgTmp, Params().MessageStart(), sizeof(pchMsgTmp)))
@@ -200,7 +200,7 @@ bool CAddrDB::Read(CAddrMan& addr, CDataStream& ssPeers)
     unsigned char pchMsgTmp[4];
     try {
         // de-serialize file header (network specific magic number) and ..
-        ssPeers >> FLATDATA(pchMsgTmp);
+        ssPeers >> UNFLATDATA(pchMsgTmp);
 
         // ... verify the network matches ours
         if (memcmp(pchMsgTmp, Params().MessageStart(), sizeof(pchMsgTmp)))

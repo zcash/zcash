@@ -168,7 +168,7 @@ CKey CKey::TestOnlyRandomKey(bool fCompressedIn) {
 
 std::optional<CKey> CKey::FromPrivKey(const CPrivKey &privkey, bool fCompressedIn) {
     CKey key;
-    if (!ec_privkey_import_der(secp256k1_context_sign, (unsigned char*)key.begin(), &privkey[0], privkey.size()))
+    if (!ec_privkey_import_der(secp256k1_context_sign, key.begin(), &privkey[0], privkey.size()))
         return std::nullopt;
     key.fCompressed = fCompressedIn;
     key.fValid = true;
@@ -195,7 +195,7 @@ CPubKey CKey::GetPubKey() const {
     CPubKey result;
     int ret = secp256k1_ec_pubkey_create(secp256k1_context_sign, &pubkey, begin());
     assert(ret);
-    secp256k1_ec_pubkey_serialize(secp256k1_context_sign, (unsigned char*)result.begin(), &clen, &pubkey, fCompressed ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED);
+    secp256k1_ec_pubkey_serialize(secp256k1_context_sign, result.begin(), &clen, &pubkey, fCompressed ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED);
     assert(result.size() == clen);
     assert(result.IsValid());
     return result;
@@ -246,7 +246,7 @@ bool CKey::SignCompact(const uint256 &hash, std::vector<unsigned char>& vchSig) 
 }
 
 bool CKey::Load(CPrivKey &privkey, CPubKey &vchPubKey, bool fSkipCheck=false) {
-    if (!ec_privkey_import_der(secp256k1_context_sign, (unsigned char*)begin(), privkey.data(), privkey.size()))
+    if (!ec_privkey_import_der(secp256k1_context_sign, begin(), privkey.data(), privkey.size()))
         return false;
     fCompressed = vchPubKey.IsCompressed();
     fValid = true;
@@ -270,8 +270,8 @@ bool CKey::Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const
         BIP32Hash(cc, nChild, 0, begin(), vout.data());
     }
     memcpy(ccChild.begin(), vout.data()+32, 32);
-    memcpy((unsigned char*)keyChild.begin(), begin(), 32);
-    bool ret = secp256k1_ec_privkey_tweak_add(secp256k1_context_sign, (unsigned char*)keyChild.begin(), vout.data());
+    memcpy(keyChild.begin(), begin(), 32);
+    bool ret = secp256k1_ec_privkey_tweak_add(secp256k1_context_sign, keyChild.begin(), vout.data());
     keyChild.fCompressed = true;
     keyChild.fValid = ret;
     return ret;

@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(caddrdb_read)
     BOOST_CHECK(addrman1.size() == 0);
     try {
         unsigned char pchMsgTmp[4];
-        ssPeers1 >> FLATDATA(pchMsgTmp);
+        ssPeers1 >> UNFLATDATA(pchMsgTmp);
         ssPeers1 >> addrman1;
     } catch (const std::exception& e) {
         exceptionThrown = true;
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(caddrdb_read_corrupted)
     BOOST_CHECK(addrman1.size() == 0);
     try {
         unsigned char pchMsgTmp[4];
-        ssPeers1 >> FLATDATA(pchMsgTmp);
+        ssPeers1 >> UNFLATDATA(pchMsgTmp);
         ssPeers1 >> addrman1;
     } catch (const std::exception& e) {
         exceptionThrown = true;

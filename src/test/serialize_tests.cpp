@@ -56,7 +56,7 @@ public:
         READWRITE(intval);
         READWRITE(boolval);
         READWRITE(stringval);
-        READWRITE(FLATDATA(charstrval));
+        READWRITE(UNFLATDATA(charstrval));
         READWRITE(txval);
     }
 
@@ -78,7 +78,7 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITEMANY(intval, boolval, stringval, FLATDATA(charstrval), txval);
+        READWRITEMANY(intval, boolval, stringval, UNFLATDATA(charstrval), txval);
     }
 };
 
