@@ -200,8 +200,6 @@ bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, ShieldedType type) 
         case ORCHARD:
             cacheToUse = &cacheOrchardNullifiers;
             break;
-        default:
-            throw std::runtime_error("Unknown shielded type");
     }
     CNullifiersMap::iterator it = cacheToUse->find(nullifier);
     if (it != cacheToUse->end())
@@ -666,8 +664,6 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt, ShieldedType type) {
                 hashOrchardAnchor
             );
             break;
-        default:
-            throw std::runtime_error("Unknown shielded type");
     }
 }
 
@@ -772,8 +768,6 @@ uint256 CCoinsViewCache::GetBestAnchor(ShieldedType type) const {
                 hashOrchardAnchor = base->GetBestAnchor(type);
             return hashOrchardAnchor;
             break;
-        default:
-            throw std::runtime_error("Unknown shielded type");
     }
 }
 

@@ -265,7 +265,7 @@ void CTxMemPool::UpdateForRemoveFromMempool(const setEntries &entriesToRemove)
         // should be a bit faster.
         // However, if we happen to be in the middle of processing a reorg, then
         // the mempool can be in an inconsistent state.  In this case, the set
-        // of ancestors reachable via mapLinks will be the same as the set of 
+        // of ancestors reachable via mapLinks will be the same as the set of
         // ancestors whose packages include this transaction, because when we
         // add a new transaction to the mempool in addUnchecked(), we assume it
         // has no children, and in the case of a reorg where that assumption is
@@ -668,7 +668,7 @@ void CTxMemPool::removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMem
                 if (it2 != mapTx.end())
                     continue;
                 const CCoins *coins = pcoins->AccessCoins(txin.prevout.hash);
-		if (nCheckFrequency != 0) assert(coins);
+                if (nCheckFrequency != 0) assert(coins);
                 if (!coins || (coins->IsCoinBase() && ((signed long)nMemPoolHeight) - coins->nHeight < COINBASE_MATURITY)) {
                     transactionsToRemove.push_back(tx);
                     break;
@@ -719,9 +719,6 @@ void CTxMemPool::removeWithAnchor(const uint256 &invalidRoot, ShieldedType type)
                 }
                 break;
             }
-            default:
-                throw runtime_error("Unknown shielded type");
-            break;
         }
     }
 
@@ -995,8 +992,6 @@ void CTxMemPool::checkNullifiers(ShieldedType type) const
         case ORCHARD:
             mapToUse = &mapOrchardNullifiers;
             break;
-        default:
-            throw runtime_error("Unknown nullifier type");
     }
     for (const auto& entry : *mapToUse) {
         uint256 hash = entry.second->GetHash();
@@ -1151,8 +1146,6 @@ bool CTxMemPool::nullifierExists(const uint256& nullifier, ShieldedType type) co
             return mapSaplingNullifiers.count(nullifier);
         case ORCHARD:
             return mapOrchardNullifiers.count(nullifier);
-        default:
-            throw runtime_error("Unknown nullifier type");
     }
 }
 

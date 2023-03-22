@@ -110,8 +110,6 @@ public:
             case ORCHARD:
                 mapToUse = &mapOrchardNullifiers_;
                 break;
-            default:
-                throw std::runtime_error("Unknown shielded type");
         }
         std::map<uint256, bool>::const_iterator it = mapToUse->find(nf);
         if (it == mapToUse->end()) {
@@ -134,8 +132,6 @@ public:
             case ORCHARD:
                 return hashBestOrchardAnchor_;
                 break;
-            default:
-                throw std::runtime_error("Unknown shielded type");
         }
     }
 

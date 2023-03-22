@@ -4802,8 +4802,6 @@ static std::optional<libzcash::Memo> ParseMemo(const UniValue& memoValue)
                                     strprintf(
                                             "Invalid parameter, memo is longer than the maximum allowed %d bytes.",
                                             libzcash::Memo::SIZE));
-                        default:
-                            assert(false);
                     }
                 })
                 .value();

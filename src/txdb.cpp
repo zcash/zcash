@@ -109,8 +109,6 @@ bool CCoinsViewDB::GetNullifier(const uint256 &nf, ShieldedType type) const {
         case ORCHARD:
             dbChar = DB_ORCHARD_NULLIFIER;
             break;
-        default:
-            throw runtime_error("Unknown shielded type");
     }
     return db.Read(make_pair(dbChar, nf), spent);
 }
@@ -146,8 +144,6 @@ uint256 CCoinsViewDB::GetBestAnchor(ShieldedType type) const {
             if (!db.Read(DB_BEST_ORCHARD_ANCHOR, hashBestAnchor))
                 return OrchardMerkleFrontier::empty_root();
             break;
-        default:
-            throw runtime_error("Unknown shielded type");
     }
 
     return hashBestAnchor;

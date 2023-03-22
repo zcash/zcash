@@ -542,8 +542,6 @@ public:
                 return saplingTrees[0].root();
             case ORCHARD:
                 return orchardTrees[0].root();
-            default:
-                throw new std::runtime_error("Unknown shielded type");
         }
     }
 

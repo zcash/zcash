@@ -165,8 +165,6 @@ namespace Consensus {
                     throw std::runtime_error("Illegal start/end height combination for funding stream.");
                 case FundingStreamError::INSUFFICIENT_ADDRESSES:
                     throw std::runtime_error("Insufficient payment addresses to fully exhaust funding stream.");
-                default:
-                    throw std::runtime_error("Unrecognized error validating funding stream.");
             }
         }
     };

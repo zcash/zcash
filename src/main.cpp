@@ -3087,8 +3087,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // benchmarks.
         fCheckAuthDataRoot = false;
         break;
-    default:
-        assert(false);
     }
 
     // If this block is an ancestor of a checkpoint, disable expensive checks

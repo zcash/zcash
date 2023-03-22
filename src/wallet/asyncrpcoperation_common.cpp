@@ -112,8 +112,6 @@ void ThrowInputSelectionError(
                         "amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` "
                         "parameter set to `AllowRevealedAmounts` or weaker if you wish to allow "
                         "this transaction to proceed anyway.");
-                default:
-                    assert(false);
             }
         },
         [&](const InvalidFundsError& err) {

@@ -7617,7 +7617,6 @@ PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b)
             }
         case PrivacyPolicy::NoPrivacy:
             return a;
-        default: assert(false);
     }
 }
 
@@ -7662,8 +7661,6 @@ std::string TransactionStrategy::ToString(PrivacyPolicy policy) {
             return "AllowLinkingAccountAddresses";
         case PrivacyPolicy::NoPrivacy:
             return "NoPrivacy";
-        default:
-            assert(false);
     }
 }
 
