@@ -320,7 +320,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                 // creating dust change, rather than prohibit them from sending
                 // entirely in this circumstance.
                 // (Daira disagrees, as this could leak information to the recipient
-                // or publically in the fee.)
+                // or publicly in the fee.)
                 ? InvalidFundsReason(DustThresholdError(dustThreshold, changeAmount))
                 : InvalidFundsReason(InsufficientFundsError(targetAmount)));
     }
