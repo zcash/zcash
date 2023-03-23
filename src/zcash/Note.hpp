@@ -22,7 +22,10 @@ protected:
 public:
     BaseNote() {}
     BaseNote(uint64_t value) : value_(value) {};
+    BaseNote(const BaseNote&) = default;
     virtual ~BaseNote() {};
+
+    BaseNote& operator=(const BaseNote&) = default;
 
     inline uint64_t value() const { return value_; };
 };
@@ -38,7 +41,11 @@ public:
 
     SproutNote();
 
+    SproutNote(const SproutNote&) = default;
+
     virtual ~SproutNote() {};
+
+    SproutNote& operator=(const SproutNote&) = default;
 
     uint256 cm() const;
 
@@ -83,7 +90,11 @@ public:
 
     SaplingNote(const SaplingPaymentAddress &address, uint64_t value, Zip212Enabled zip_212_enabled);
 
+    SaplingNote(const SaplingNote&) = default;
+
     virtual ~SaplingNote() {};
+
+    SaplingNote& operator=(const SaplingNote&) = default;
 
     std::optional<uint256> cmu() const;
     std::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
@@ -104,7 +115,10 @@ public:
     BaseNotePlaintext() {}
     BaseNotePlaintext(const BaseNote& note, const std::optional<Memo>& memo)
         : value_(note.value()), memo_(Memo::ToBytes(memo)) {}
+    BaseNotePlaintext(const BaseNotePlaintext&) = default;
     virtual ~BaseNotePlaintext() {}
+
+    BaseNotePlaintext& operator=(const BaseNotePlaintext&) = default;
 
     inline uint64_t value() const { return value_; }
     inline std::optional<Memo> memo() const { return Memo::FromBytes(memo_); }
@@ -118,6 +132,8 @@ public:
     SproutNotePlaintext() {}
 
     SproutNotePlaintext(const SproutNote& note, const std::optional<Memo>& memo);
+
+    SproutNotePlaintext(const SproutNotePlaintext&) = default;
 
     SproutNote note(const SproutPaymentAddress& addr) const;
 
@@ -165,6 +181,8 @@ public:
 
     SaplingNotePlaintext(const SaplingNote& note, const std::optional<Memo>& memo);
 
+    SaplingNotePlaintext(const SaplingNotePlaintext&) = default;
+
     static std::pair<SaplingNotePlaintext, SaplingPaymentAddress> from_rust(
         rust::Box<wallet::DecryptedSaplingOutput> decrypted);
 
@@ -196,6 +214,8 @@ public:
     std::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;
 
     virtual ~SaplingNotePlaintext() {}
+
+    SaplingNotePlaintext& operator=(const SaplingNotePlaintext&) = default;
 
     ADD_SERIALIZE_METHODS;
 

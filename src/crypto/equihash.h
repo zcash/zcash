@@ -88,6 +88,7 @@ protected:
 public:
     StepRow(const unsigned char* hashIn, size_t hInLen,
             size_t hLen, size_t cBitLen);
+    StepRow(const StepRow&) = default;
     ~StepRow() { }
 
     template<size_t W>

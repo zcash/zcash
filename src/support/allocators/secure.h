@@ -34,6 +34,7 @@ struct secure_allocator : public std::allocator<T> {
     {
     }
     ~secure_allocator() throw() {}
+    secure_allocator& operator=(const secure_allocator&) = default;
     template <typename _Other>
     struct rebind {
         typedef secure_allocator<_Other> other;

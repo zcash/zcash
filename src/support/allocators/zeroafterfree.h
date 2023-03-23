@@ -30,6 +30,9 @@ struct zero_after_free_allocator : public std::allocator<T> {
     {
     }
     ~zero_after_free_allocator() throw() {}
+
+    zero_after_free_allocator& operator=(const zero_after_free_allocator&) = default;
+
     template <typename _Other>
     struct rebind {
         typedef zero_after_free_allocator<_Other> other;
