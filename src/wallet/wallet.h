@@ -797,6 +797,8 @@ public:
     TransactionStrategy(const TransactionStrategy& strategy) : requestedLevel(strategy.requestedLevel) {}
     TransactionStrategy(PrivacyPolicy privacyPolicy) : requestedLevel(privacyPolicy) {}
 
+    TransactionStrategy& operator=(const TransactionStrategy& other) = default;
+
     static std::optional<TransactionStrategy> FromString(std::string privacyPolicy);
     static std::string ToString(PrivacyPolicy policy);
 

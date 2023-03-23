@@ -83,6 +83,8 @@ public:
                     unsigned int nSigOps, uint32_t nBranchId);
     CTxMemPoolEntry(const CTxMemPoolEntry& other);
 
+    CTxMemPoolEntry& operator=(const CTxMemPoolEntry& other) = default;
+
     const CTransaction& GetTx() const { return *this->tx; }
     std::shared_ptr<const CTransaction> GetSharedTx() const { return this->tx; }
     const CAmount& GetFee() const { return nFee; }

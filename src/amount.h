@@ -48,6 +48,8 @@ public:
     CFeeRate(const CAmount& nFeePaid, size_t nSize);
     CFeeRate(const CFeeRate& other) { nSatoshisPerK = other.nSatoshisPerK; }
 
+    CFeeRate& operator=(const CFeeRate&) = default;
+
     CAmount GetFeeForRelay(size_t size) const; // unit returned is zatoshis
     CAmount GetFee(size_t size) const; // unit returned is zatoshis
     CAmount GetFeePerK() const { return GetFee(1000); } // zatoshis-per-1000-bytes

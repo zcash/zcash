@@ -356,7 +356,7 @@ DESIRED_WARNING_CXXFLAGS="\
 # • `-Wno-tautological-type-limit-compare`: I think isn’t portable because of numeric type sizing
 DISABLED_WARNING_CXXFLAGS="\
   -Wno-cast-align \
-  -Wno-ctad-maybe-unsupported -Wno-deprecated-copy-with-user-provided-copy \
+  -Wno-ctad-maybe-unsupported \
   -Wno-deprecated-copy-dtor -Wno-deprecated-dynamic-exception-spec -Wno-disabled-macro-expansion \
   -Wno-documentation-unknown-command -Wno-double-promotion -Wno-exit-time-destructors \
   -Wno-extra-semi -Wno-float-conversion -Wno-float-equal \

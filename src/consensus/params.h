@@ -120,6 +120,8 @@ public:
     FundingStream(const FundingStream& fs):
         startHeight(fs.startHeight), endHeight(fs.endHeight), addresses(fs.addresses) { }
 
+    FundingStream& operator=(const FundingStream& fs) = default;
+
     static std::variant<FundingStream, FundingStreamError> ValidateFundingStream(
         const Consensus::Params& params,
         const int startHeight,
