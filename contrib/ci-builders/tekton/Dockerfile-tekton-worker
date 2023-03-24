@@ -4,9 +4,7 @@ ARG FROMBASEOS_BUILD_TAG
 FROM electriccoinco/zcashd-build-$FROMBASEOS-$FROMBASEOS_BUILD_TAG
 
 COPY requirements.txt requirements.txt
-RUN python -m venv venv \
-    && . venv/bin/activate \
-    && pip install --upgrade pip \
+RUN pip install --upgrade pip \
     && pip install -r requirements.txt
 
 ADD ./zcash-params /home/.zcash-params
