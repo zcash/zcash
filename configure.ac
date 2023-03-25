@@ -359,9 +359,9 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-comma -Wno-conditional-uninitialized -Wno-covered-switch-default \
   -Wno-ctad-maybe-unsupported -Wno-delete-non-abstract-non-virtual-dtor -Wno-deprecated-copy \
   -Wno-deprecated-copy-dtor -Wno-deprecated-dynamic-exception-spec -Wno-disabled-macro-expansion \
-  -Wno-documentation -Wno-documentation-unknown-command -Wno-double-promotion \
-  -Wno-exit-time-destructors -Wno-extra-semi -Wno-extra-semi-stmt -Wno-float-conversion \
-  -Wno-float-equal -Wno-format-nonliteral -Wno-global-constructors -Wno-gnu-anonymous-struct \
+  -Wno-documentation-unknown-command -Wno-double-promotion -Wno-exit-time-destructors \
+  -Wno-extra-semi -Wno-extra-semi-stmt -Wno-float-conversion -Wno-float-equal \
+  -Wno-format-nonliteral -Wno-global-constructors -Wno-gnu-anonymous-struct \
   -Wno-gnu-zero-variadic-macro-arguments -Wno-header-hygiene -Wno-ignored-qualifiers \
   -Wno-implicit-fallthrough -Wno-implicit-int-conversion -Wno-implicit-int-float-conversion \
   -Wno-inconsistent-missing-destructor-override -Wno-logical-op-parentheses \
@@ -385,13 +385,12 @@ DISABLED_WARNING_CXXFLAGS="\
 # These are sub-flags of those in `DISABLED_WARNING_CXXFLAGS` that allow us to temporarily
 # re-enable pieces until the disabling flags are removed.
 REENABLED_WARNING_CXXFLAGS="\
-  -Wdocumentation-deprecated-sync -Wdocumentation-html -Wempty-init-stmt \
-  -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wignored-reference-qualifiers \
-  -Wimplicit-const-int-float-conversion -Wimplicit-fallthrough-per-function \
-  -Wobjc-signed-char-bool-implicit-int-conversion -Wpre-c++2b-compat \
-  -Wshadow-field-in-constructor-modified -Wshadow-ivar -Wsometimes-uninitialized \
-  -Wstatic-self-init -Wunneeded-member-function -Wunreachable-code-fallthrough \
-  -Wunreachable-code-generic-assoc -Wunreachable-code-loop-increment"
+  -Wempty-init-stmt -Wfloat-overflow-conversion -Wfloat-zero-conversion \
+  -Wignored-reference-qualifiers -Wimplicit-const-int-float-conversion \
+  -Wimplicit-fallthrough-per-function -Wobjc-signed-char-bool-implicit-int-conversion \
+  -Wpre-c++2b-compat -Wshadow-field-in-constructor-modified -Wshadow-ivar \
+  -Wsometimes-uninitialized -Wstatic-self-init -Wunneeded-member-function \
+  -Wunreachable-code-fallthrough -Wunreachable-code-generic-assoc -Wunreachable-code-loop-increment"
 
 WARNING_CXXFLAGS="$DESIRED_WARNING_CXXFLAGS $DISABLED_WARNING_CXXFLAGS $REENABLED_WARNING_CXXFLAGS"
 
