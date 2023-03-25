@@ -943,7 +943,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
 
         if (hasData) {
             ret.push_back(entry);
-        };
+        }
     }
 
     return ret;

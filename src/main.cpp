@@ -3419,7 +3419,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             return state.DoS(100,
                 error("ConnectBlock(): block would overfill the Orchard commitment tree."),
                 REJECT_INVALID, "orchard-commitment-tree-full");
-        };
+        }
 
         for (const auto& out : tx.vout) {
             transparentValueDelta += out.nValue;

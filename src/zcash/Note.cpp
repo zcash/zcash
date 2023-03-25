@@ -180,7 +180,7 @@ std::optional<SaplingNote> SaplingNotePlaintext::note(const SaplingIncomingViewi
         if (leadbyte != 0x01) {
             assert(leadbyte == 0x02);
             zip_212_enabled = Zip212Enabled::AfterZip212;
-        };
+        }
         auto tmp = SaplingNote(d, addr.value().pk_d, value_, rseed, zip_212_enabled);
         return tmp;
     } else {
@@ -275,7 +275,7 @@ std::optional<SaplingNotePlaintext> SaplingNotePlaintext::attempt_sapling_enc_de
 
     if (!encPlaintext) {
         return std::nullopt;
-    };
+    }
 
     // Deserialize from the plaintext
     SaplingNotePlaintext ret;
