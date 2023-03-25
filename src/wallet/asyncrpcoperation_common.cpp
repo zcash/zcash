@@ -202,10 +202,13 @@ void ThrowInputSelectionError(
             switch (err.side) {
                 case ActionSide::Input:
                     side = "inputs";
+                    break;
                 case ActionSide::Output:
                     side = "outputs";
+                    break;
                 case ActionSide::Both:
                     side = "actions";
+                    break;
             }
             throw JSONRPCError(
                 RPC_INVALID_PARAMETER,

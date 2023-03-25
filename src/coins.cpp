@@ -551,6 +551,7 @@ void CCoinsViewCache::PopHistoryNode(uint32_t epochId) {
             // back.
 
             // Sensible action is to truncate the history cache:
+            [[fallthrough]];
         }
         case 1:
         {
