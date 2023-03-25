@@ -186,10 +186,10 @@ public:
                 params.FeatureRequired(feature)) {
             // Transitively check that if a feature is active, all of the other features
             // that it depends on are also active.
-            auto requires = features[feature].dependsOn;
+            auto dependencies = features[feature].dependsOn;
             assert(std::all_of(
-                requires.begin(),
-                requires.end(),
+                dependencies.begin(),
+                dependencies.end(),
                 [&](Feature feat) {
                     return FeatureActive(params, nHeight, feat);
                 }
