@@ -723,7 +723,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             if (!pwallet->LoadUnifiedAccountMetadata(acct)) {
                 strErr = "Error reading wallet database: account ID mismatch for unified spending key.";
                 return false;
-            };
+            }
         }
         else if (strType == "unifiedaddrmeta")
         {

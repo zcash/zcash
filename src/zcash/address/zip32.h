@@ -156,7 +156,7 @@ public:
         auto addr = Address(j);
         while (!addr.has_value()) {
             if (!j.increment())
-                throw std::runtime_error(std::string(__func__) + ": diversifier index overflow.");;
+                throw std::runtime_error(std::string(__func__) + ": diversifier index overflow.");
             addr = Address(j);
         }
         return std::make_pair(addr.value(), j);
