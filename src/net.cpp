@@ -2324,7 +2324,7 @@ void CNode::AskFor(const CInv& inv)
 
 void CNode::BeginMessage(const char* pszCommand) EXCLUSIVE_LOCK_FUNCTION(cs_vSend)
 {
-    ENTER_CRITICAL_SECTION(cs_vSend);
+    ENTER_CRITICAL_SECTION(cs_vSend)
     assert(ssSend.size() == 0);
     assert(strSendCommand.empty());
     ssSend << CMessageHeader(Params().MessageStart(), pszCommand, 0);
@@ -2337,7 +2337,7 @@ void CNode::AbortMessage() UNLOCK_FUNCTION(cs_vSend)
     ssSend.clear();
     strSendCommand.clear();
 
-    LEAVE_CRITICAL_SECTION(cs_vSend);
+    LEAVE_CRITICAL_SECTION(cs_vSend)
 
     LogPrint("net", "(aborted)\n");
 }
@@ -2359,7 +2359,7 @@ void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
 
     if (ssSend.size() == 0)
     {
-        LEAVE_CRITICAL_SECTION(cs_vSend);
+        LEAVE_CRITICAL_SECTION(cs_vSend)
         return;
     }
     // Set the size
@@ -2385,7 +2385,7 @@ void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
     if (it == vSendMsg.begin())
         SocketSendData(this);
 
-    LEAVE_CRITICAL_SECTION(cs_vSend);
+    LEAVE_CRITICAL_SECTION(cs_vSend)
 }
 
 /* static */ uint64_t CNode::CalculateKeyedNetGroup(const CAddress& ad)

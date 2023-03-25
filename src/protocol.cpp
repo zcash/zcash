@@ -139,7 +139,7 @@ std::vector<unsigned char> CInv::GetWideHash() const
         for (auto byte : hashAux) {
             assert(byte == 0xff);
         }
-    };
+    }
     std::vector<unsigned char> vData(hash.begin(), hash.end());
     vData.insert(vData.end(), hashAux.begin(), hashAux.end());
     return vData;

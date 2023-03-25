@@ -206,7 +206,7 @@ void ThrowInputSelectionError(
                     side = "outputs";
                 case ActionSide::Both:
                     side = "actions";
-            };
+            }
             throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
                 strprintf(

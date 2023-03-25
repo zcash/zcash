@@ -177,7 +177,7 @@ std::pair<SaplingPaymentAddress, bool> CWallet::GenerateLegacySaplingZKey(uint32
         auto addr = extfvk.DefaultAddress();
         if (!AddSaplingPaymentAddress(ivk, addr)) {
             throw std::runtime_error("CWallet::GenerateLegacySaplingZKey(): AddSaplingPaymentAddress failed.");
-        };
+        }
 
         return std::make_pair(addr, true) ;
     } else {
@@ -280,7 +280,7 @@ bool CWallet::AddOrchardRawAddress(
         // We should never add an Orchard raw address for which we don't know
         // the corresponding FVK.
         return false;
-    };
+    }
 
     if (!fFileBacked) {
         return true;
@@ -605,7 +605,7 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
         auto saplingXFVK = saplingEsk.ToXFVK();
         if (!AddSaplingPaymentAddress(saplingXFVK.GetChangeIVK(), saplingXFVK.GetChangeAddress())) {
             throw std::runtime_error("CWallet::GenerateUnifiedSpendingKeyForAccount(): Failed to add Sapling change address to the wallet.");
-        };
+        }
 
         // Add Orchard spending key to the wallet
         auto orchardSk = usk.value().GetOrchardKey();
@@ -618,7 +618,7 @@ std::optional<libzcash::ZcashdUnifiedSpendingKey>
         auto orchardInternalFvk = orchardSk.ToFullViewingKey().ToInternalIncomingViewingKey();
         if (!AddOrchardRawAddress(orchardInternalFvk, orchardInternalFvk.Address(0))) {
             throw std::runtime_error("CWallet::GenerateUnifiedSpendingKeyForAccount(): Failed to add Orchard change address to the wallet.");
-        };
+        }
 
         auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
         if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {
@@ -7572,7 +7572,7 @@ PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b)
                 case PrivacyPolicy::FullPrivacy:
                     return a;
                 default: return b;
-            };
+            }
         case PrivacyPolicy::AllowRevealedRecipients:
             switch (b) {
                 case PrivacyPolicy::FullPrivacy:
@@ -7583,7 +7583,7 @@ PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b)
                 case PrivacyPolicy::AllowLinkingAccountAddresses:
                     return PrivacyPolicy::NoPrivacy;
                 default: return b;
-            };
+            }
         case PrivacyPolicy::AllowRevealedSenders:
             switch (b) {
                 case PrivacyPolicy::FullPrivacy:
@@ -7592,7 +7592,7 @@ PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b)
                 case PrivacyPolicy::AllowRevealedRecipients:
                     return PrivacyPolicy::AllowFullyTransparent;
                 default: return b;
-            };
+            }
         case PrivacyPolicy::AllowFullyTransparent:
             switch (b) {
                 case PrivacyPolicy::FullPrivacy:
@@ -7603,7 +7603,7 @@ PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b)
                 case PrivacyPolicy::AllowLinkingAccountAddresses:
                     return PrivacyPolicy::NoPrivacy;
                 default: return b;
-            };
+            }
         case PrivacyPolicy::AllowLinkingAccountAddresses:
             switch (b) {
                 case PrivacyPolicy::FullPrivacy:
@@ -7614,7 +7614,7 @@ PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b)
                 case PrivacyPolicy::AllowFullyTransparent:
                     return PrivacyPolicy::NoPrivacy;
                 default: return b;
-            };
+            }
         case PrivacyPolicy::NoPrivacy:
             return a;
         default: assert(false);
