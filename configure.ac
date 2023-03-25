@@ -362,7 +362,7 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-documentation-unknown-command -Wno-double-promotion -Wno-exit-time-destructors \
   -Wno-extra-semi -Wno-float-conversion -Wno-float-equal \
   -Wno-format-nonliteral -Wno-global-constructors -Wno-gnu-anonymous-struct \
-  -Wno-gnu-zero-variadic-macro-arguments -Wno-header-hygiene -Wno-ignored-qualifiers \
+  -Wno-gnu-zero-variadic-macro-arguments -Wno-header-hygiene \
   -Wno-implicit-fallthrough -Wno-implicit-int-conversion -Wno-implicit-int-float-conversion \
   -Wno-inconsistent-missing-destructor-override -Wno-logical-op-parentheses \
   -Wno-misleading-indentation -Wno-mismatched-tags -Wno-missing-noreturn -Wno-missing-prototypes \
@@ -386,7 +386,7 @@ DISABLED_WARNING_CXXFLAGS="\
 # re-enable pieces until the disabling flags are removed.
 REENABLED_WARNING_CXXFLAGS="\
   -Wfloat-overflow-conversion -Wfloat-zero-conversion \
-  -Wignored-reference-qualifiers -Wimplicit-const-int-float-conversion \
+  -Wimplicit-const-int-float-conversion \
   -Wimplicit-fallthrough-per-function -Wobjc-signed-char-bool-implicit-int-conversion \
   -Wpre-c++2b-compat -Wshadow-field-in-constructor-modified -Wshadow-ivar \
   -Wsometimes-uninitialized -Wstatic-self-init -Wunneeded-member-function \

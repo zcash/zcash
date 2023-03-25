@@ -102,7 +102,7 @@ public:
         batch.add_bundle(inner->box_clone(), sighash.GetRawBytes());
     }
 
-    const size_t GetNumActions() const {
+    size_t GetNumActions() const {
         return inner->num_actions();
     }
 
@@ -138,4 +138,3 @@ public:
 };
 
 #endif // ZCASH_PRIMITIVES_ORCHARD_H
-
