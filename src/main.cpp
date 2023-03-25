@@ -3081,6 +3081,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         // checking them twice for transactions that were already checked when
         // added to the mempool.
         fExpensiveChecks = false;
+        [[fallthrough]];
     case CheckAs::SlowBenchmark:
         // Disable checking the authDataRoot for block templates and slow block
         // benchmarks.

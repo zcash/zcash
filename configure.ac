@@ -363,7 +363,7 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-extra-semi -Wno-float-conversion -Wno-float-equal \
   -Wno-format-nonliteral -Wno-global-constructors -Wno-gnu-anonymous-struct \
   -Wno-gnu-zero-variadic-macro-arguments -Wno-header-hygiene \
-  -Wno-implicit-fallthrough -Wno-implicit-int-conversion -Wno-implicit-int-float-conversion \
+  -Wno-implicit-int-conversion -Wno-implicit-int-float-conversion \
   -Wno-inconsistent-missing-destructor-override -Wno-logical-op-parentheses \
   -Wno-misleading-indentation -Wno-mismatched-tags -Wno-missing-noreturn -Wno-missing-prototypes \
   -Wno-missing-variable-declarations -Wno-newline-eof -Wno-non-virtual-dtor -Wno-old-style-cast \
@@ -385,9 +385,8 @@ DISABLED_WARNING_CXXFLAGS="\
 # These are sub-flags of those in `DISABLED_WARNING_CXXFLAGS` that allow us to temporarily
 # re-enable pieces until the disabling flags are removed.
 REENABLED_WARNING_CXXFLAGS="\
-  -Wfloat-overflow-conversion -Wfloat-zero-conversion \
-  -Wimplicit-const-int-float-conversion \
-  -Wimplicit-fallthrough-per-function -Wobjc-signed-char-bool-implicit-int-conversion \
+  -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wimplicit-const-int-float-conversion \
+  -Wobjc-signed-char-bool-implicit-int-conversion \
   -Wpre-c++2b-compat -Wshadow-field-in-constructor-modified -Wshadow-ivar \
   -Wsometimes-uninitialized -Wstatic-self-init -Wunneeded-member-function \
   -Wunreachable-code-fallthrough -Wunreachable-code-generic-assoc -Wunreachable-code-loop-increment"

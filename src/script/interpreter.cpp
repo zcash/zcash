@@ -1248,6 +1248,7 @@ uint256 SignatureHash(
                     throw std::logic_error(
                         "ZIP 244: Used SIGHASH_SINGLE without a corresponding output");
                 }
+                [[fallthrough]];
             case SIGHASH_ALL:
             case SIGHASH_NONE:
             case SIGHASH_ANYONECANPAY | SIGHASH_ALL:
