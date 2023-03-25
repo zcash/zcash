@@ -355,7 +355,7 @@ DESIRED_WARNING_CXXFLAGS="\
 # • `-Wno-string-conversion`: currently abused to `assert` on strings
 # • `-Wno-tautological-type-limit-compare`: I think isn’t portable because of numeric type sizing
 DISABLED_WARNING_CXXFLAGS="\
-  -Wno-c++20-compat -Wno-c++20-designator -Wno-c99-extensions -Wno-cast-align -Wno-cast-qual \
+  -Wno-c++20-designator -Wno-c99-extensions -Wno-cast-align -Wno-cast-qual \
   -Wno-comma -Wno-conditional-uninitialized -Wno-covered-switch-default \
   -Wno-ctad-maybe-unsupported -Wno-delete-non-abstract-non-virtual-dtor -Wno-deprecated-copy \
   -Wno-deprecated-copy-dtor -Wno-deprecated-dynamic-exception-spec -Wno-disabled-macro-expansion \
@@ -387,7 +387,7 @@ DISABLED_WARNING_CXXFLAGS="\
 REENABLED_WARNING_CXXFLAGS="\
   -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wimplicit-const-int-float-conversion \
   -Wobjc-signed-char-bool-implicit-int-conversion \
-  -Wpre-c++2b-compat -Wshadow-field-in-constructor-modified -Wshadow-ivar \
+  -Wshadow-field-in-constructor-modified -Wshadow-ivar \
   -Wsometimes-uninitialized -Wstatic-self-init -Wunneeded-member-function \
   -Wunreachable-code-fallthrough -Wunreachable-code-generic-assoc -Wunreachable-code-loop-increment"
 
