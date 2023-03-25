@@ -140,7 +140,7 @@ public:
         const int nHeight,
         const CAmount nFees) : mtx(mtx), chainparams(chainparams), nHeight(nHeight), nFees(nFees) {}
 
-    const libzcash::Zip212Enabled GetZip212Flag() const {
+    libzcash::Zip212Enabled GetZip212Flag() const {
         if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
             return libzcash::Zip212Enabled::AfterZip212;
         } else {

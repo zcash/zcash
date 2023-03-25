@@ -189,7 +189,7 @@ class EhSolverCancelledException : public std::exception
     }
 };
 
-inline constexpr const size_t max(const size_t A, const size_t B) { return A > B ? A : B; }
+inline constexpr size_t max(const size_t A, const size_t B) { return A > B ? A : B; }
 
 template<unsigned int N, unsigned int K>
 class Equihash
