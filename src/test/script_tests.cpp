@@ -224,12 +224,6 @@ public:
         return *this;
     }
 
-    TestBuilder& Push(const std::string& hex)
-    {
-        DoPush(ParseHex(hex));
-        return *this;
-    }
-
     TestBuilder& PushSig(const CKey& key, int nHashType = SIGHASH_ALL, unsigned int lenR = 32, unsigned int lenS = 32)
     {
         const PrecomputedTransactionData txdata(spendTx, creditTx.vout);
