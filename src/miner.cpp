@@ -1055,8 +1055,6 @@ void static BitcoinMiner(const CChainParams& chainparams)
         LogPrintf("ZcashMiner runtime error: %s\n", e.what());
         return;
     }
-    miningTimer.stop();
-    c.disconnect();
 }
 
 void GenerateBitcoins(bool fGenerate, int nThreads, const CChainParams& chainparams)
