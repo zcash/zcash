@@ -133,7 +133,6 @@ BASE_SCRIPTS= [
     'feature_zip221.py',
     'feature_zip239.py',
     'feature_zip244_blockcommitments.py',
-    'upgrade_golden.py',
     'nuparams.py',
     'post_heartwood_rollback.py',
     'feature_logging.py',
