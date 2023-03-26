@@ -375,7 +375,7 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-suggest-override -Wno-switch-enum -Wno-tautological-type-limit-compare \
   -Wno-tautological-unsigned-enum-zero-compare -Wno-tautological-unsigned-zero-compare \
   -Wno-thread-safety-attributes -Wno-thread-safety-negative -Wno-undef \
-  -Wno-undefined-func-template -Wno-uninitialized -Wno-unreachable-code \
+  -Wno-undefined-func-template -Wno-unreachable-code \
   -Wno-unreachable-code-break -Wno-unreachable-code-return -Wno-unused-but-set-variable \
   -Wno-unused-exception-parameter -Wno-unused-function -Wno-unused-macros \
   -Wno-unused-member-function -Wno-unused-parameter -Wno-unused-private-field -Wno-unused-template \
@@ -386,8 +386,7 @@ DISABLED_WARNING_CXXFLAGS="\
 # re-enable pieces until the disabling flags are removed.
 REENABLED_WARNING_CXXFLAGS="\
   -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wimplicit-const-int-float-conversion \
-  -Wobjc-signed-char-bool-implicit-int-conversion \
-  -Wsometimes-uninitialized -Wstatic-self-init -Wunneeded-member-function \
+  -Wobjc-signed-char-bool-implicit-int-conversion -Wunneeded-member-function \
   -Wunreachable-code-fallthrough -Wunreachable-code-generic-assoc -Wunreachable-code-loop-increment"
 
 WARNING_CXXFLAGS="$DESIRED_WARNING_CXXFLAGS $DISABLED_WARNING_CXXFLAGS $REENABLED_WARNING_CXXFLAGS"
