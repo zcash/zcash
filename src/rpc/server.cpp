@@ -496,8 +496,6 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
     {
         throw JSONRPCError(RPC_MISC_ERROR, e.what());
     }
-
-    g_rpcSignals.PostCommand(*pcmd);
 }
 
 std::vector<std::string> CRPCTable::listCommands() const
