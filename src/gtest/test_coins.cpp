@@ -254,24 +254,6 @@ class CCoinsViewCacheTest : public CCoinsViewCache
 {
 public:
     CCoinsViewCacheTest(CCoinsView* base) : CCoinsViewCache(base) {}
-
-    void SelfTest() const
-    {
-        // Manually recompute the dynamic usage of the whole data, and compare it.
-        size_t ret = memusage::DynamicUsage(cacheCoins) +
-                     memusage::DynamicUsage(cacheSproutAnchors) +
-                     memusage::DynamicUsage(cacheSaplingAnchors) +
-                     memusage::DynamicUsage(cacheOrchardAnchors) +
-                     memusage::DynamicUsage(cacheSproutNullifiers) +
-                     memusage::DynamicUsage(cacheSaplingNullifiers) +
-                     memusage::DynamicUsage(cacheOrchardNullifiers) +
-                     memusage::DynamicUsage(historyCacheMap);
-        for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
-            ret += it->second.coins.DynamicMemoryUsage();
-        }
-        EXPECT_EQ(DynamicMemoryUsage(), ret);
-    }
-
 };
 
 class TxWithNullifiers
