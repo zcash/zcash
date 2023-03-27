@@ -355,7 +355,7 @@ DESIRED_WARNING_CXXFLAGS="\
 # • `-Wno-string-conversion`: currently abused to `assert` on strings
 # • `-Wno-tautological-type-limit-compare`: I think isn’t portable because of numeric type sizing
 DISABLED_WARNING_CXXFLAGS="\
-  -Wno-c99-extensions -Wno-cast-align -Wno-cast-qual \
+  -Wno-cast-align -Wno-cast-qual \
   -Wno-comma -Wno-conditional-uninitialized -Wno-covered-switch-default \
   -Wno-ctad-maybe-unsupported -Wno-delete-non-abstract-non-virtual-dtor -Wno-deprecated-copy \
   -Wno-deprecated-copy-dtor -Wno-deprecated-dynamic-exception-spec -Wno-disabled-macro-expansion \
