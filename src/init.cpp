@@ -1701,7 +1701,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     bool clearWitnessCaches = false;
 
     bool fLoaded = false;
-    while (!fLoaded) {
+    do {
         bool fReset = fReindex;
         std::string strLoadError;
 
@@ -1834,7 +1834,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 return InitError(strLoadError);
             }
         }
-    }
+
+    } while (!fLoaded);
 
     // As LoadBlockIndex can take several minutes, it's possible the user
     // requested to kill the GUI during the last operation. If so, exit.

@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(tx_invalid)
     std::string comment("");
 
     auto verifier = ProofVerifier::Strict();
-    ScriptError err;
+    ScriptError err{};
     for (size_t idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
         string strTest = test.write();

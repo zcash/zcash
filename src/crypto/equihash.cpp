@@ -644,8 +644,8 @@ bool Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state,
     LogPrint("pow", "Culling solutions\n");
     for (std::shared_ptr<eh_trunc> partialSoln : partialSolns) {
         std::set<std::vector<unsigned char>> solns;
-        size_t hashLen;
-        size_t lenIndices;
+        size_t hashLen{};
+        size_t lenIndices{};
         unsigned char tmpHash[HashOutput];
         std::vector<std::optional<std::vector<FullStepRow<FinalFullWidth>>>> X;
         X.reserve(K+1);
