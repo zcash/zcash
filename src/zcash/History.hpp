@@ -32,7 +32,7 @@ public:
     uint32_t epoch;
 
     HistoryCache(HistoryIndex initialLength, uint256 initialRoot, uint32_t initialEpoch) :
-        length(initialLength), updateDepth(initialLength), root(initialRoot), epoch(initialEpoch) { };
+        length(initialLength), updateDepth(initialLength), root(initialRoot), epoch(initialEpoch) { }
 
     HistoryCache() { }
 

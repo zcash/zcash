@@ -21,13 +21,13 @@ protected:
     uint64_t value_ = 0;
 public:
     BaseNote() {}
-    BaseNote(uint64_t value) : value_(value) {};
+    BaseNote(uint64_t value) : value_(value) {}
     BaseNote(const BaseNote&) = default;
-    virtual ~BaseNote() {};
+    virtual ~BaseNote() {}
 
     BaseNote& operator=(const BaseNote&) = default;
 
-    inline uint64_t value() const { return value_; };
+    inline uint64_t value() const { return value_; }
 };
 
 class SproutNote : public BaseNote {
@@ -43,7 +43,7 @@ public:
 
     SproutNote(const SproutNote&) = default;
 
-    virtual ~SproutNote() {};
+    virtual ~SproutNote() {}
 
     SproutNote& operator=(const SproutNote&) = default;
 
@@ -92,7 +92,7 @@ public:
 
     SaplingNote(const SaplingNote&) = default;
 
-    virtual ~SaplingNote() {};
+    virtual ~SaplingNote() {}
 
     SaplingNote& operator=(const SaplingNote&) = default;
 
@@ -139,7 +139,7 @@ public:
 
     virtual ~SproutNotePlaintext() {}
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -217,7 +217,7 @@ public:
 
     SaplingNotePlaintext& operator=(const SaplingNotePlaintext&) = default;
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -248,11 +248,11 @@ public:
     uint256 pk_d;
     uint256 esk;
 
-    SaplingOutgoingPlaintext() {};
+    SaplingOutgoingPlaintext() {}
 
     SaplingOutgoingPlaintext(uint256 pk_d, uint256 esk) : pk_d(pk_d), esk(esk) {}
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {

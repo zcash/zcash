@@ -431,7 +431,7 @@ public:
     bool GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
     bool HaveCoins(const uint256 &txid) const { return false; }
     uint256 GetBestBlock() const { return uint256(); }
-    uint256 GetBestAnchor(ShieldedType type) const { return uint256(); };
+    uint256 GetBestAnchor(ShieldedType type) const { return uint256(); }
     HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
     HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
     uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }

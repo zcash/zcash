@@ -30,7 +30,7 @@ public:
     SaplingPaymentAddress() : d(), pk_d() { }
     SaplingPaymentAddress(diversifier_t d, uint256 pk_d) : d(d), pk_d(pk_d) { }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -68,7 +68,7 @@ public:
     SaplingFullViewingKey() : ak(), nk(), ovk() { }
     SaplingFullViewingKey(uint256 ak, uint256 nk, uint256 ovk) : ak(ak), nk(nk), ovk(ovk) { }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -103,7 +103,7 @@ public:
     SaplingExpandedSpendingKey() : ask(), nsk(), ovk() { }
     SaplingExpandedSpendingKey(uint256 ask, uint256 nsk, uint256 ovk) : ask(ask), nsk(nsk), ovk(ovk) { }
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {

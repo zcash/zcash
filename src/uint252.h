@@ -12,7 +12,7 @@ private:
     uint256 contents;
 
 public:
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
@@ -33,7 +33,7 @@ public:
         return contents.end();
     }
 
-    uint252() : contents() {};
+    uint252() : contents() {}
     explicit uint252(const uint256& in) : contents(in) {
         if (*contents.begin() & 0xF0) {
             throw std::domain_error("leading bits are set in argument given to uint252 constructor");

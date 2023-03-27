@@ -76,7 +76,7 @@ public:
 
     static std::optional<UnifiedAddress> Parse(const KeyConstants& keyConstants, const std::string& str);
 
-    ADD_SERIALIZE_METHODS;
+    ADD_SERIALIZE_METHODS
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {

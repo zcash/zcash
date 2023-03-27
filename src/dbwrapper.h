@@ -50,7 +50,7 @@ public:
     /**
      * @param[in] _parent   CDBWrapper that this batch is to be submitted to
      */
-    CDBBatch(const CDBWrapper &_parent) : parent(_parent) { };
+    CDBBatch(const CDBWrapper &_parent) : parent(_parent) { }
 
     template <typename K, typename V>
     void Write(const K& key, const V& value)
@@ -93,7 +93,7 @@ public:
      * @param[in] _piter           The original leveldb iterator.
      */
     CDBIterator(const CDBWrapper &_parent, leveldb::Iterator *_piter) :
-        parent(_parent), piter(_piter) { };
+        parent(_parent), piter(_piter) { }
     ~CDBIterator();
 
     bool Valid();
@@ -258,4 +258,3 @@ public:
 };
 
 #endif // BITCOIN_DBWRAPPER_H
-

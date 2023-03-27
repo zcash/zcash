@@ -92,7 +92,7 @@ protected:
     virtual void UpdatedTransaction(const uint256 &hash) {}
     virtual void ResendWalletTransactions(int64_t nBestBlockTime) {}
     virtual void BlockChecked(const CBlock&, const CValidationState&) {}
-    virtual void GetAddressForMining(std::optional<MinerAddress>&) {};
+    virtual void GetAddressForMining(std::optional<MinerAddress>&) {}
     friend void ::RegisterValidationInterface(CValidationInterface*);
     friend void ::UnregisterValidationInterface(CValidationInterface*);
     friend void ::UnregisterAllValidationInterfaces();

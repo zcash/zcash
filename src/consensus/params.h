@@ -136,11 +136,11 @@ public:
         const int endHeight,
         const std::vector<std::string>& strAddresses);
 
-    int GetStartHeight() const { return startHeight; };
-    int GetEndHeight() const { return endHeight; };
+    int GetStartHeight() const { return startHeight; }
+    int GetEndHeight() const { return endHeight; }
     const std::vector<FundingStreamAddress>& GetAddresses() const {
         return addresses;
-    };
+    }
 
     FundingStreamAddress RecipientAddress(const Params& params, int nHeight) const;
 };

@@ -32,7 +32,7 @@ struct FakeCheck {
     {
         return true;
     }
-    void swap(FakeCheck& x){};
+    void swap(FakeCheck& x){}
 };
 
 struct FakeCheckCheckCompletion {
@@ -42,13 +42,13 @@ struct FakeCheckCheckCompletion {
         ++n_calls;
         return true;
     }
-    void swap(FakeCheckCheckCompletion& x){};
+    void swap(FakeCheckCheckCompletion& x){}
 };
 
 struct FailingCheck {
     bool fails;
-    FailingCheck(bool fails) : fails(fails){};
-    FailingCheck() : fails(true){};
+    FailingCheck(bool fails) : fails(fails){}
+    FailingCheck() : fails(true){}
     bool operator()()
     {
         return !fails;
@@ -56,22 +56,22 @@ struct FailingCheck {
     void swap(FailingCheck& x)
     {
         std::swap(fails, x.fails);
-    };
+    }
 };
 
 struct UniqueCheck {
     static std::mutex m;
     static std::unordered_multiset<size_t> results;
     size_t check_id;
-    UniqueCheck(size_t check_id_in) : check_id(check_id_in){};
-    UniqueCheck() : check_id(0){};
+    UniqueCheck(size_t check_id_in) : check_id(check_id_in){}
+    UniqueCheck() : check_id(0){}
     bool operator()()
     {
         std::lock_guard<std::mutex> l(m);
         results.insert(check_id);
         return true;
     }
-    void swap(UniqueCheck& x) { std::swap(x.check_id, check_id); };
+    void swap(UniqueCheck& x) { std::swap(x.check_id, check_id); }
 };
 
 
@@ -82,7 +82,7 @@ struct MemoryCheck {
     {
         return true;
     }
-    MemoryCheck(){};
+    MemoryCheck(){}
     MemoryCheck(const MemoryCheck& x)
     {
         // We have to do this to make sure that destructor calls are paired
@@ -90,16 +90,16 @@ struct MemoryCheck {
         // Really, copy constructor should be deletable, but CCheckQueue breaks
         // if it is deleted because of internal push_back.
         fake_allocated_memory += b;
-    };
+    }
     MemoryCheck(bool b_) : b(b_)
     {
         fake_allocated_memory += b;
-    };
+    }
     ~MemoryCheck(){
         fake_allocated_memory -= b;
 
-    };
-    void swap(MemoryCheck& x) { std::swap(b, x.b); };
+    }
+    void swap(MemoryCheck& x) { std::swap(b, x.b); }
 };
 
 struct FrozenCleanupCheck {
@@ -124,7 +124,7 @@ struct FrozenCleanupCheck {
             cv.wait(l, []{ return nFrozen == 0;});
         }
     }
-    void swap(FrozenCleanupCheck& x){std::swap(should_freeze, x.should_freeze);};
+    void swap(FrozenCleanupCheck& x){std::swap(should_freeze, x.should_freeze);}
 };
 
 // Static Allocations
