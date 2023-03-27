@@ -27,8 +27,6 @@
 #include <event2/event.h>
 #include <event2/thread.h>
 
-using namespace boost::placeholders;
-
 /** Default control port */
 const std::string DEFAULT_TOR_CONTROL = "127.0.0.1:9051";
 /** Tor cookie size (from control-spec.txt) */
@@ -457,6 +455,8 @@ TorController::TorController(struct event_base* _base, const std::string& _targe
     target(_target), conn(base), reconnect(true), reconnect_ev(0),
     reconnect_timeout(RECONNECT_TIMEOUT_START)
 {
+    using namespace boost::placeholders;
+
     reconnect_ev = event_new(base, -1, 0, reconnect_cb, this);
     if (!reconnect_ev)
         LogPrintf("tor: Failed to create event for reconnection: out of memory?\n");
@@ -522,6 +522,8 @@ void TorController::add_onion_cb(TorControlConnection& _conn, const TorControlRe
 
 void TorController::auth_cb(TorControlConnection& _conn, const TorControlReply& reply)
 {
+    using namespace boost::placeholders;
+
     if (reply.code == 250) {
         LogPrint("tor", "tor: Authentication successful\n");
 
@@ -575,6 +577,8 @@ static std::vector<uint8_t> ComputeResponse(const std::string &key, const std::v
 
 void TorController::authchallenge_cb(TorControlConnection& _conn, const TorControlReply& reply)
 {
+    using namespace boost::placeholders;
+
     if (reply.code == 250) {
         LogPrint("tor", "tor: SAFECOOKIE authentication challenge successful\n");
         std::pair<std::string,std::string> l = SplitTorReplyLine(reply.lines[0]);
@@ -610,6 +614,8 @@ void TorController::authchallenge_cb(TorControlConnection& _conn, const TorContr
 
 void TorController::protocolinfo_cb(TorControlConnection& _conn, const TorControlReply& reply)
 {
+    using namespace boost::placeholders;
+
     if (reply.code == 250) {
         std::set<std::string> methods;
         std::string cookiefile;
@@ -684,6 +690,8 @@ void TorController::protocolinfo_cb(TorControlConnection& _conn, const TorContro
 
 void TorController::connected_cb(TorControlConnection& _conn)
 {
+    using namespace boost::placeholders;
+
     reconnect_timeout = RECONNECT_TIMEOUT_START;
     // First send a PROTOCOLINFO command to figure out what authentication is expected
     if (!_conn.Command("PROTOCOLINFO 1", boost::bind(&TorController::protocolinfo_cb, this, _1, _2)))
@@ -710,6 +718,8 @@ void TorController::disconnected_cb(TorControlConnection& _conn)
 
 void TorController::Reconnect()
 {
+    using namespace boost::placeholders;
+
     /* Try to reconnect and reestablish if we get booted - for example, Tor
      * may be restarting.
      */

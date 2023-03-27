@@ -22,8 +22,6 @@
 
 #include <univalue.h>
 
-using namespace libzcash;
-
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
 public:
     AsyncRPCOperation_sendmany(

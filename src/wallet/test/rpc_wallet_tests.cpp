@@ -84,7 +84,7 @@ static UniValue ValueFromString(const std::string &str)
     return value;
 }
 
-static SaplingPaymentAddress DefaultSaplingAddress(CWallet* pwallet) {
+static libzcash::SaplingPaymentAddress DefaultSaplingAddress(CWallet* pwallet) {
     auto usk = pwallet->GenerateUnifiedSpendingKeyForAccount(0);
 
     return usk.value()

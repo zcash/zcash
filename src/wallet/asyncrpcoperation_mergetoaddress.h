@@ -26,14 +26,12 @@
 
 #include <rust/ed25519.h>
 
-using namespace libzcash;
-
 // Package of info which is passed to perform_joinsplit methods.
 struct MergeToAddressJSInfo {
-    std::vector<JSInput> vjsin;
-    std::vector<JSOutput> vjsout;
-    std::vector<SproutNote> notes;
-    std::vector<SproutSpendingKey> zkeys;
+    std::vector<libzcash::JSInput> vjsin;
+    std::vector<libzcash::JSOutput> vjsout;
+    std::vector<libzcash::SproutNote> notes;
+    std::vector<libzcash::SproutSpendingKey> zkeys;
     CAmount vpub_old = 0;
     CAmount vpub_new = 0;
 };

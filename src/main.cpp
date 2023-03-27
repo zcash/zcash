@@ -1003,7 +1003,7 @@ bool ContextualCheckTransaction(
                     zip_212_enabled = decrypted->zip_212_enabled();
 
                     libzcash::SaplingNotePlaintext notePt;
-                    std::tie(notePt, zaddr) = SaplingNotePlaintext::from_rust(std::move(decrypted));
+                    std::tie(notePt, zaddr) = libzcash::SaplingNotePlaintext::from_rust(std::move(decrypted));
                     value = notePt.value();
                 } catch (const rust::Error &e) {
                     return state.DoS(
@@ -1012,7 +1012,7 @@ bool ContextualCheckTransaction(
                         REJECT_INVALID, "bad-cb-output-desc-invalid-outct");
                 }
               } else {
-                auto outPlaintext = SaplingOutgoingPlaintext::decrypt(
+                auto outPlaintext = libzcash::SaplingOutgoingPlaintext::decrypt(
                     output.outCiphertext, ovk, output.cv, output.cmu, output.ephemeralKey);
                 if (!outPlaintext) {
                     return state.DoS(
@@ -1022,7 +1022,7 @@ bool ContextualCheckTransaction(
                 }
 
                 // SaplingNotePlaintext::decrypt() checks note commitment validity.
-                auto encPlaintext = SaplingNotePlaintext::decrypt(
+                auto encPlaintext = libzcash::SaplingNotePlaintext::decrypt(
                     consensus,
                     nHeight,
                     output.encCiphertext,

@@ -19,7 +19,7 @@
 namespace {
 
 bool find_error(const UniValue& objError, const std::string& expected) {
-    return find_value(objError, "message").get_str().find(expected) != string::npos;
+    return find_value(objError, "message").get_str().find(expected) != std::string::npos;
 }
 
 CWalletTx FakeWalletTx() {
@@ -198,7 +198,7 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     ASSERT_FALSE(tx.vShieldedOutput.empty());
 
     // We shouldn't be able to decrypt with the empty ovk
-    EXPECT_FALSE(AttemptSaplingOutDecryption(
+    EXPECT_FALSE(libzcash::AttemptSaplingOutDecryption(
         tx.vShieldedOutput[0].outCiphertext,
         uint256(),
         tx.vShieldedOutput[0].cv,
@@ -206,9 +206,9 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
         tx.vShieldedOutput[0].ephemeralKey));
 
     // We shouldn't be able to decrypt with a random ovk
-    EXPECT_FALSE(AttemptSaplingOutDecryption(
+    EXPECT_FALSE(libzcash::AttemptSaplingOutDecryption(
         tx.vShieldedOutput[0].outCiphertext,
-        random_uint256(),
+        libzcash::random_uint256(),
         tx.vShieldedOutput[0].cv,
         tx.vShieldedOutput[0].cmu,
         tx.vShieldedOutput[0].ephemeralKey));
@@ -216,14 +216,14 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
     auto accountKey = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
     auto ovks = accountKey.GetOVKsForShielding();
     // We should not be able to decrypt with the internal change OVK for shielding
-    EXPECT_FALSE(AttemptSaplingOutDecryption(
+    EXPECT_FALSE(libzcash::AttemptSaplingOutDecryption(
         tx.vShieldedOutput[0].outCiphertext,
         ovks.first,
         tx.vShieldedOutput[0].cv,
         tx.vShieldedOutput[0].cmu,
         tx.vShieldedOutput[0].ephemeralKey));
     // We should be able to decrypt with the external OVK for shielding
-    EXPECT_TRUE(AttemptSaplingOutDecryption(
+    EXPECT_TRUE(libzcash::AttemptSaplingOutDecryption(
         tx.vShieldedOutput[0].outCiphertext,
         ovks.second,
         tx.vShieldedOutput[0].cv,
