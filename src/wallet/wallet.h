@@ -1148,7 +1148,7 @@ typedef struct WalletDecryptedNotes {
     std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> saplingNoteDataAndAddressesToAdd;
 } WalletDecryptedNotes;
 
-class WalletBatchScanner : public BatchScanner {
+class WalletBatchScanner final : public BatchScanner {
 private:
     CWallet* pwallet;
     rust::Box<wallet::BatchScanner> inner;
