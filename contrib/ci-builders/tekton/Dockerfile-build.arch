@@ -7,6 +7,8 @@ RUN pacman -Syyu --noconfirm \
     && pacman -Syu --noconfirm \
       base-devel \
       git \
+      cmake \
+      boost \
       libunwind \
       python3 \
       python-pip \
