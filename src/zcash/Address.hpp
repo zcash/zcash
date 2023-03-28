@@ -309,7 +309,7 @@ private:
 public:
     AddressInfoFromViewingKey(const KeyConstants& keyConstants): keyConstants(keyConstants) {}
     std::pair<std::string, PaymentAddress> operator()(const SproutViewingKey&) const;
-    std::pair<std::string, PaymentAddress> operator()(const struct SaplingExtendedFullViewingKey&) const;
+    std::pair<std::string, PaymentAddress> operator()(const SaplingExtendedFullViewingKey&) const;
     std::pair<std::string, PaymentAddress> operator()(const UnifiedFullViewingKey&) const;
 };
 

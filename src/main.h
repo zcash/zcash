@@ -56,7 +56,7 @@ class CInv;
 class CScriptCheck;
 class CValidationInterface;
 class CValidationState;
-class PrecomputedTransactionData;
+struct PrecomputedTransactionData;
 
 struct CNodeStateStats;
 
