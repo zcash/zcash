@@ -879,7 +879,7 @@ TEST(ChecktransactionTests, SaplingSproutInputSumsTooLarge) {
         mtx.vJoinSplit.push_back(jsdesc);
     }
 
-    mtx.vShieldedSpend.push_back(SpendDescription());
+    mtx.vShieldedSpend.push_back(RandomInvalidSpendDescription());
 
     mtx.vJoinSplit[0].vpub_new = (MAX_MONEY / 2) + 10;
 

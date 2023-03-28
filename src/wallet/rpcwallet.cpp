@@ -34,6 +34,7 @@
 #include "zcash/Address.hpp"
 #include "zcash/address/zip32.h"
 
+#include "util/test.h"
 #include "util/time.h"
 #include "asyncrpcoperation.h"
 #include "asyncrpcqueue.h"
@@ -4660,7 +4661,7 @@ size_t EstimateTxSize(
                 taddrRecipientCount += 1;
             },
             [&](const libzcash::SaplingPaymentAddress& addr) {
-                mtx.vShieldedOutput.push_back(OutputDescription());
+                mtx.vShieldedOutput.push_back(RandomInvalidOutputDescription());
             },
             [&](const libzcash::SproutPaymentAddress& addr) {
                 JSDescription jsdesc;
@@ -4671,7 +4672,7 @@ size_t EstimateTxSize(
                 if (addr.GetOrchardReceiver().has_value()) {
                     orchardRecipientCount += 1;
                 } else if (addr.GetSaplingReceiver().has_value()) {
-                    mtx.vShieldedOutput.push_back(OutputDescription());
+                    mtx.vShieldedOutput.push_back(RandomInvalidOutputDescription());
                 } else if (addr.GetP2PKHReceiver().has_value()
                            || addr.GetP2SHReceiver().has_value()) {
                     taddrRecipientCount += 1;

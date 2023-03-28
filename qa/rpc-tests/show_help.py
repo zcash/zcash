@@ -40,10 +40,10 @@ Options:
   -allowdeprecated=<feature>
        Explicitly allow the use of the specified deprecated feature. Multiple
        instances of this parameter are permitted; values for <feature> must be
-       selected from among {"none", "gbt_oldhashes", "addrtype",
+       selected from among {"none", "deprecationinfo_deprecationheight",
+       "gbt_oldhashes", "z_getbalance", "z_gettotalbalance", "addrtype",
        "getnewaddress", "getrawchangeaddress", "legacy_privacy",
-       "wallettxvjoinsplit", "z_getbalance", "z_getnewaddress",
-       "z_gettotalbalance", "z_listaddresses"}
+       "wallettxvjoinsplit", "z_getnewaddress", "z_listaddresses"}
 
   -blocknotify=<cmd>
        Execute command when the best block changes (%s in cmd is replaced by
