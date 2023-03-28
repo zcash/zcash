@@ -44,7 +44,7 @@ std::pair<int64_t, int64_t> MempoolCostAndEvictionWeight(const CTransaction& tx,
     size_t memUsage = RecursiveDynamicUsage(tx);
     int64_t cost = std::max((int64_t) memUsage, (int64_t) MIN_TX_COST);
     int64_t evictionWeight = cost;
-    if (fee < DEFAULT_FEE) {
+    if (fee < tx.GetConventionalFee()) {
         evictionWeight += LOW_FEE_PENALTY;
     }
     return std::make_pair(cost, evictionWeight);
