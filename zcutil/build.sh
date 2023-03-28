@@ -40,6 +40,13 @@ if [ -z "${CONFIGURE_FLAGS-}" ]; then
     CONFIGURE_FLAGS=""
 fi
 
+# Adds a prefix to the make command. For example:
+#   MAKE_PREFIX='bear --' ./zcutil/build.sh
+# will use bear (https://github.com/rizsotto/Bear) to create a JSON compilation database.
+if [ -z "${MAKE_PREFIX-}" ]; then
+    MAKE_PREFIX=""
+fi
+
 if [ "$*" = '--help' ]
 then
     cat <<EOF
@@ -87,4 +94,4 @@ fi
 ./zcutil/clean.sh
 ./autogen.sh
 CONFIG_SITE="$PWD/depends/$HOST/share/config.site" ./configure $CONFIGURE_FLAGS
-"$MAKE" "$@"
+$MAKE_PREFIX "$MAKE" "$@"
