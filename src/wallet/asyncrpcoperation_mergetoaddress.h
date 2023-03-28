@@ -50,7 +50,7 @@ public:
             TransactionStrategy strategy,
             TransactionEffects effects,
             UniValue contextInfo = NullUniValue);
-    virtual ~AsyncRPCOperation_mergetoaddress();
+    virtual ~AsyncRPCOperation_mergetoaddress() override;
 
     // We don't want to be copied or moved around
     AsyncRPCOperation_mergetoaddress(AsyncRPCOperation_mergetoaddress const&) = delete;            // Copy construct

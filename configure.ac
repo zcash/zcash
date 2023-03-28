@@ -360,7 +360,7 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-format-nonliteral -Wno-global-constructors \
   -Wno-gnu-zero-variadic-macro-arguments \
   -Wno-implicit-int-conversion -Wno-implicit-int-float-conversion \
-  -Wno-inconsistent-missing-destructor-override -Wno-logical-op-parentheses \
+  -Wno-logical-op-parentheses \
   -Wno-misleading-indentation -Wno-mismatched-tags -Wno-missing-noreturn -Wno-missing-prototypes \
   -Wno-missing-variable-declarations -Wno-non-virtual-dtor -Wno-old-style-cast \
   -Wno-overloaded-virtual -Wno-padded -Wno-range-loop-construct -Wno-redundant-parens \
