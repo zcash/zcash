@@ -849,9 +849,9 @@ PrivacyPolicy TransactionEffects::GetRequiredPrivacyPolicy() const
         }
     } else if (payments.HasTransparentRecipient()) {
         return PrivacyPolicy::AllowRevealedRecipients;
-    } else if (!spendable.orchardNoteMetadata.empty() && payments.HasSaplingRecipient()
-               || !spendable.saplingNoteEntries.empty() && payments.HasOrchardRecipient()
-               || !spendable.sproutNoteEntries.empty() && payments.HasSaplingRecipient()) {
+    } else if ((!spendable.orchardNoteMetadata.empty() && payments.HasSaplingRecipient())
+               || (!spendable.saplingNoteEntries.empty() && payments.HasOrchardRecipient())
+               || (!spendable.sproutNoteEntries.empty() && payments.HasSaplingRecipient())) {
         // TODO: This should only trigger when there is a non-zero valueBalance.
         return PrivacyPolicy::AllowRevealedAmounts;
     } else {
