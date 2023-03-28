@@ -655,7 +655,7 @@ public:
 
 private:
     //! This method should not be called on a CDiskBlockIndex.
-    void TrimSolution()
+    [[noreturn]] void TrimSolution()
     {
         assert(!"called CDiskBlockIndex::TrimSolution");
     }

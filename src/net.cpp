@@ -1091,7 +1091,7 @@ static void AcceptConnection(const ListenSocket& hListenSocket) {
     }
 }
 
-void ThreadSocketHandler()
+[[noreturn]] void ThreadSocketHandler()
 {
     unsigned int nPrevNodeCount = 0;
     while (true)
@@ -1480,7 +1480,7 @@ void static ProcessOneShot()
     }
 }
 
-void ThreadOpenConnections()
+[[noreturn]] void ThreadOpenConnections()
 {
     // Connect to specific addresses
     if (mapArgs.count("-connect") && mapMultiArgs["-connect"].size() > 0)
@@ -1579,7 +1579,7 @@ void ThreadOpenConnections()
     }
 }
 
-void ThreadOpenAddedConnections()
+[[noreturn]] void ThreadOpenAddedConnections()
 {
     {
         LOCK(cs_vAddedNodes);
@@ -1680,7 +1680,7 @@ bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOu
 }
 
 
-void ThreadMessageHandler()
+[[noreturn]] void ThreadMessageHandler()
 {
     const CChainParams& chainparams = Params();
     boost::mutex condition_mutex;
