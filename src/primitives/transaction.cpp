@@ -9,6 +9,7 @@
 #include "hash.h"
 #include "tinyformat.h"
 #include "util/strencodings.h"
+#include "zip317.h"
 
 #include <rust/transaction.h>
 
@@ -383,6 +384,20 @@ unsigned int CTransaction::CalculateModifiedSize(unsigned int nTxSize) const
             nTxSize -= offset;
     }
     return nTxSize;
+}
+
+CAmount CTransaction::GetConventionalFee() const {
+    return CalculateConventionalFee(GetLogicalActionCount());
+}
+
+size_t CTransaction::GetLogicalActionCount() const {
+    return CalculateLogicalActionCount(
+            vin,
+            vout,
+            vJoinSplit.size(),
+            vShieldedSpend.size(),
+            vShieldedOutput.size(),
+            orchardBundle.GetNumActions());
 }
 
 std::string CTransaction::ToString() const

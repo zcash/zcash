@@ -535,6 +535,7 @@ libbitcoin_common_a_SOURCES = \
   transaction_builder.cpp \
   util/test.cpp \
   warnings.cpp \
+  zip317.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
@@ -699,7 +700,8 @@ libzcash_script_la_SOURCES = \
   script/interpreter.cpp \
   script/script.cpp \
   uint256.cpp \
-  util/strencodings.cpp
+  util/strencodings.cpp \
+  zip317.cpp
 
 if GLIBC_BACK_COMPAT
   libzcash_script_la_SOURCES += compat/glibc_compat.cpp

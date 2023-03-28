@@ -977,6 +977,14 @@ public:
     // Compute modified tx size for priority calculation (optionally given tx size)
     unsigned int CalculateModifiedSize(unsigned int nTxSize=0) const;
 
+    // Return the conventional fee for this transaction calculated according to
+    // <https://zips.z.cash/zip-0317#fee-calculation>.
+    CAmount GetConventionalFee() const;
+
+    // Return the number of logical actions calculated according to
+    // <https://zips.z.cash/zip-0317#fee-calculation>.
+    size_t GetLogicalActionCount() const;
+
     bool IsCoinBase() const
     {
         return (vin.size() == 1 && vin[0].prevout.IsNull());
