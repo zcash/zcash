@@ -443,9 +443,9 @@ void TransactionBuilder::AddTransparentOutput(const CTxDestination& to, CAmount 
     mtx.vout.push_back(out);
 }
 
-void TransactionBuilder::SetFee(CAmount fee)
+void TransactionBuilder::SetFee(CAmount newFee)
 {
-    this->fee = fee;
+    this->fee = newFee;
 }
 
 // TODO: remove support for transparent change?

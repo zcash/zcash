@@ -299,10 +299,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 1.25);
     BOOST_CHECK(!obj.exists("fundingstreams"));
 
-    auto check_funding_streams = [](UniValue obj, std::vector<std::string> recipients, std::vector<double> amounts, std::vector<std::string> addresses) {
+    auto check_funding_streams = [](UniValue obj2, std::vector<std::string> recipients, std::vector<double> amounts, std::vector<std::string> addresses) {
         size_t n = recipients.size();
         BOOST_REQUIRE_EQUAL(amounts.size(), n);
-        UniValue fundingstreams = find_value(obj, "fundingstreams");
+        UniValue fundingstreams = find_value(obj2, "fundingstreams");
         BOOST_CHECK_EQUAL(fundingstreams.size(), n);
         if (fundingstreams.size() != n) return;
 

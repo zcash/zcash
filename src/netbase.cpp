@@ -613,8 +613,8 @@ bool ConnectSocketByName(CService &addr, SOCKET& hSocketRet, const char *pszDest
 
     SplitHostPort(std::string(pszDest), port, strDest);
 
-    proxyType nameProxy;
-    GetNameProxy(nameProxy);
+    proxyType outNameProxy;
+    GetNameProxy(outNameProxy);
 
     CService addrResolved(CNetAddr(strDest, fNameLookup && !HaveNameProxy()), port);
     if (addrResolved.IsValid()) {
@@ -626,7 +626,7 @@ bool ConnectSocketByName(CService &addr, SOCKET& hSocketRet, const char *pszDest
 
     if (!HaveNameProxy())
         return false;
-    return ConnectThroughProxy(nameProxy, strDest, port, hSocketRet, nTimeout, outProxyConnectionFailed);
+    return ConnectThroughProxy(outNameProxy, strDest, port, hSocketRet, nTimeout, outProxyConnectionFailed);
 }
 
 void CNetAddr::Init()
@@ -838,13 +838,13 @@ bool CNetAddr::IsValid() const
     if (IsIPv4())
     {
         // INADDR_NONE
-        uint32_t ipNone = INADDR_NONE;
-        if (memcmp(ip+12, &ipNone, 4) == 0)
+        uint32_t outIpNone = INADDR_NONE;
+        if (memcmp(ip+12, &outIpNone, 4) == 0)
             return false;
 
         // 0
-        ipNone = 0;
-        if (memcmp(ip+12, &ipNone, 4) == 0)
+        outIpNone = 0;
+        if (memcmp(ip+12, &outIpNone, 4) == 0)
             return false;
     }
 

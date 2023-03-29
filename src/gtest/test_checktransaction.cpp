@@ -1500,13 +1500,13 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
         std::copy(cmxBad.begin(), cmxBad.end(), txBytes.data() + ORCHARD_BUNDLE_CMX_OFFSET);
 
         CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
-        CTransaction tx;
-        ssBad >> tx;
-        EXPECT_TRUE(tx.IsCoinBase());
+        CTransaction tx2;
+        ssBad >> tx2;
+        EXPECT_TRUE(tx2.IsCoinBase());
 
         MockCValidationState state;
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", false, "")).Times(1);
-        ContextualCheckTransaction(tx, state, chainparams, 10, 57);
+        ContextualCheckTransaction(tx2, state, chainparams, 10, 57);
     }
 
     // Transaction should fail with a bad encCiphertext.
@@ -1517,13 +1517,13 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
         }
 
         CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
-        CTransaction tx;
-        ssBad >> tx;
-        EXPECT_TRUE(tx.IsCoinBase());
+        CTransaction tx3;
+        ssBad >> tx3;
+        EXPECT_TRUE(tx3.IsCoinBase());
 
         MockCValidationState state;
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", false, "")).Times(1);
-        ContextualCheckTransaction(tx, state, chainparams, 10, 57);
+        ContextualCheckTransaction(tx3, state, chainparams, 10, 57);
     }
 
     // Transaction should fail with a bad outCiphertext.
@@ -1536,13 +1536,13 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
         }
 
         CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
-        CTransaction tx;
-        ssBad >> tx;
-        EXPECT_TRUE(tx.IsCoinBase());
+        CTransaction tx4;
+        ssBad >> tx4;
+        EXPECT_TRUE(tx4.IsCoinBase());
 
         MockCValidationState state;
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-action-invalid-ciphertext", false, "")).Times(1);
-        ContextualCheckTransaction(tx, state, chainparams, 10, 57);
+        ContextualCheckTransaction(tx4, state, chainparams, 10, 57);
     }
 
     // Test the success case.
@@ -1627,8 +1627,8 @@ TEST(ChecktransactionTests, NU5EnforcesOrchardRulesOnShieldedCoinbase) {
         std::copy((char*)&valueBalanceBad, (char*)&valueBalanceBad + 8, txBytes.data() + ORCHARD_BUNDLE_VALUEBALANCE_OFFSET);
 
         CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
-        CTransaction tx;
-        EXPECT_THROW((ssBad >> tx), std::ios_base::failure);
+        CTransaction tx2;
+        EXPECT_THROW((ssBad >> tx2), std::ios_base::failure);
 
         // We can't actually reach the CheckTransactionWithoutProofVerification
         // consensus rule, because Rust is doing this validation at parse time.
@@ -1642,8 +1642,8 @@ TEST(ChecktransactionTests, NU5EnforcesOrchardRulesOnShieldedCoinbase) {
         std::copy((char*)&valueBalanceBad, (char*)&valueBalanceBad + 8, txBytes.data() + ORCHARD_BUNDLE_VALUEBALANCE_OFFSET);
 
         CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);
-        CTransaction tx;
-        EXPECT_THROW((ssBad >> tx), std::ios_base::failure);
+        CTransaction tx3;
+        EXPECT_THROW((ssBad >> tx3), std::ios_base::failure);
 
         // We can't actually reach the CheckTransactionWithoutProofVerification
         // consensus rule, because Rust is doing this validation at parse time.

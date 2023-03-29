@@ -368,9 +368,9 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-misleading-indentation -Wno-mismatched-tags -Wno-missing-noreturn -Wno-missing-prototypes \
   -Wno-missing-variable-declarations -Wno-newline-eof -Wno-non-virtual-dtor -Wno-old-style-cast \
   -Wno-overloaded-virtual -Wno-padded -Wno-range-loop-construct -Wno-redundant-parens \
-  -Wno-reorder-ctor -Wno-reserved-id-macro -Wno-reserved-identifier -Wno-return-type -Wno-shadow \
-  -Wno-shadow-field \
-  -Wno-shadow-field-in-constructor -Wno-shift-sign-overflow -Wno-shorten-64-to-32 \
+  -Wno-reorder-ctor -Wno-reserved-id-macro -Wno-reserved-identifier -Wno-return-type \
+  -Wno-shadow-field -Wno-shadow-field-in-constructor \
+  -Wno-shadow-uncaptured-local -Wno-shift-sign-overflow -Wno-shorten-64-to-32 \
   -Wno-sign-compare -Wno-sign-conversion -Wno-string-conversion -Wno-suggest-destructor-override \
   -Wno-suggest-override -Wno-switch-enum -Wno-tautological-type-limit-compare \
   -Wno-tautological-unsigned-enum-zero-compare -Wno-tautological-unsigned-zero-compare \
@@ -387,7 +387,6 @@ DISABLED_WARNING_CXXFLAGS="\
 REENABLED_WARNING_CXXFLAGS="\
   -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wimplicit-const-int-float-conversion \
   -Wobjc-signed-char-bool-implicit-int-conversion \
-  -Wshadow-field-in-constructor-modified -Wshadow-ivar \
   -Wsometimes-uninitialized -Wstatic-self-init -Wunneeded-member-function \
   -Wunreachable-code-fallthrough -Wunreachable-code-generic-assoc -Wunreachable-code-loop-increment"
 

@@ -596,8 +596,8 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     SystemClock::SetGlobal();
     mempool.clear();
 
-    for (CTransaction *tx : txFirst) {
-        delete tx;
+    for (CTransaction *tx3 : txFirst) {
+        delete tx3;
     }
 
     fCheckpointsEnabled = true;

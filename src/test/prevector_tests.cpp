@@ -214,8 +214,8 @@ BOOST_AUTO_TEST_CASE(PrevectorTestInt)
             if (InsecureRandBits(5) == 7) {
                 int values[4];
                 int num = 1 + (InsecureRandBits(2));
-                for (int i = 0; i < num; i++) {
-                    values[i] = InsecureRand32();
+                for (int k = 0; k < num; k++) {
+                    values[k] = InsecureRand32();
                 }
                 test.insert_range(InsecureRandRange(test.size() + 1), values, values + num);
             }

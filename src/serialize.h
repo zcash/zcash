@@ -1079,9 +1079,9 @@ protected:
 public:
     CSizeComputer(int nTypeIn, int nVersionIn) : nSize(0), nType(nTypeIn), nVersion(nVersionIn) {}
 
-    void write_u8(const unsigned char* pch, size_t nSize)
+    void write_u8(const unsigned char* pch, size_t _nSize)
     {
-        write(reinterpret_cast<const char*>(pch), nSize);
+        write(reinterpret_cast<const char*>(pch), _nSize);
     }
 
     void write(const char *psz, size_t _nSize)
