@@ -152,6 +152,11 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # The following assertion might fail nondeterministically
         # assert_equal(node2balance, Decimal('16.99799000'))
 
+        # try sending with a memo to a taddr, which should fail
+        recipients = [{"address":self.nodes[0].getnewaddress(), "amount":1, "memo":"DEADBEEF"}]
+        opid = self.nodes[2].z_sendmany(myzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedRecipients')
+        wait_and_assert_operationid_status(self.nodes[2], opid, 'failed', 'Failed to build transaction: Memos cannot be sent to transparent addresses.')
+
         recipients = []
         recipients.append({"address":self.nodes[0].getnewaddress(), "amount":1})
         recipients.append({"address":self.nodes[2].getnewaddress(), "amount":1.0})
