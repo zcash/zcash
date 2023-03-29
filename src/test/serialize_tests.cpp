@@ -301,8 +301,8 @@ static bool isCanonicalException(const std::ios_base::failure& ex)
 
     // The string returned by what() can be different for different platforms.
     // Instead of directly comparing the ex.what() with an expected string,
-    // create an instance of exception to see if ex.what() matches 
-    // the expected explanatory string returned by the exception instance. 
+    // create an instance of exception to see if ex.what() matches
+    // the expected explanatory string returned by the exception instance.
     return strcmp(expectedException.what(), ex.what()) == 0;
 }
 
@@ -398,7 +398,9 @@ BOOST_AUTO_TEST_CASE(class_methods)
     bool boolval(true);
     std::string stringval("testing");
     const char* charstrval("testing charstr");
-    CMutableTransaction txval;
+    CMutableTransaction mtx;
+    CTransaction txval(mtx);
+
     CSerializeMethodsTestSingle methodtest1(intval, boolval, stringval, charstrval, txval);
     CSerializeMethodsTestMany methodtest2(intval, boolval, stringval, charstrval, txval);
     CSerializeMethodsTestSingle methodtest3;

@@ -406,7 +406,8 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         CMutableTransaction mtx;
         mtx.vJoinSplit.push_back(js2);
 
-        BOOST_CHECK(cache.CheckShieldedRequirements(mtx) == tl::unexpected(UnsatisfiedShieldedReq::SproutUnknownAnchor));
+        CTransaction tx(mtx);
+        BOOST_CHECK(cache.CheckShieldedRequirements(tx) == tl::unexpected(UnsatisfiedShieldedReq::SproutUnknownAnchor));
     }
 
     {
@@ -416,7 +417,8 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js2);
         mtx.vJoinSplit.push_back(js1);
 
-        BOOST_CHECK(cache.CheckShieldedRequirements(mtx) == tl::unexpected(UnsatisfiedShieldedReq::SproutUnknownAnchor));
+        CTransaction tx(mtx);
+        BOOST_CHECK(cache.CheckShieldedRequirements(tx) == tl::unexpected(UnsatisfiedShieldedReq::SproutUnknownAnchor));
     }
 
     {
@@ -424,7 +426,8 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js1);
         mtx.vJoinSplit.push_back(js2);
 
-        BOOST_CHECK(cache.CheckShieldedRequirements(mtx).has_value());
+        CTransaction tx(mtx);
+        BOOST_CHECK(cache.CheckShieldedRequirements(tx).has_value());
     }
 
     {
@@ -433,7 +436,8 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js2);
         mtx.vJoinSplit.push_back(js3);
 
-        BOOST_CHECK(cache.CheckShieldedRequirements(mtx).has_value());
+        CTransaction tx(mtx);
+        BOOST_CHECK(cache.CheckShieldedRequirements(tx).has_value());
     }
 
     {
@@ -443,7 +447,8 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vJoinSplit.push_back(js2);
         mtx.vJoinSplit.push_back(js3);
 
-        BOOST_CHECK(cache.CheckShieldedRequirements(mtx).has_value());
+        CTransaction tx(mtx);
+        BOOST_CHECK(cache.CheckShieldedRequirements(tx).has_value());
     }
 }
 
@@ -626,16 +631,16 @@ BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
 
     for (unsigned int i = 0; i < NUM_SIMULATION_ITERATIONS; i++) {
         {
-            CMutableTransaction tx;
-            tx.vin.resize(1);
-            tx.vout.resize(1);
-            tx.vout[0].nValue = i; //Keep txs unique
+            CMutableTransaction mtx;
+            mtx.vin.resize(1);
+            mtx.vout.resize(1);
+            mtx.vout[0].nValue = i; //Keep txs unique
             unsigned int height = InsecureRand32();
 
             // 1/10 times create a coinbase
             if (InsecureRandRange(10) == 0 || coinbaseids.size() < 10) {
-                coinbaseids[tx.GetHash()] = tx.vout[0].nValue;
-                assert(CTransaction(tx).IsCoinBase());
+                coinbaseids[mtx.GetHash()] = mtx.vout[0].nValue;
+                assert(CTransaction(mtx).IsCoinBase());
             }
             // 9/10 times create a regular tx
             else {
@@ -648,8 +653,8 @@ BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
                 prevouthash = *txIt;
 
                 // Construct the tx to spend the coins of prevouthash
-                tx.vin[0].prevout.hash = prevouthash;
-                tx.vin[0].prevout.n = 0;
+                mtx.vin[0].prevout.hash = prevouthash;
+                mtx.vin[0].prevout.n = 0;
 
                 // Update the expected result of prevouthash to know these coins are spent
                 CCoins& oldcoins = result[prevouthash];
@@ -658,9 +663,10 @@ BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
                 alltxids.erase(prevouthash);
                 coinbaseids.erase(prevouthash);
 
-                assert(!CTransaction(tx).IsCoinBase());
+                assert(!CTransaction(mtx).IsCoinBase());
             }
             // Track this tx to possibly spend later
+            CTransaction tx(mtx);
             alltxids.insert(tx.GetHash());
 
             // Update the expected result to know about the new output coins

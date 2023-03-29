@@ -178,19 +178,20 @@ public:
         // Empty output script.
         uint256 dataToBeSigned;
         try {
-            if (mtx.fOverwintered) {
+            CTransaction ctx(mtx);
+            if (ctx.fOverwintered) {
                 // ProduceShieldedSignatureHash is only usable with v3+ transactions.
                 dataToBeSigned = ProduceShieldedSignatureHash(
                     consensusBranchId,
-                    mtx,
+                    ctx,
                     {},
                     *saplingBundle,
                     orchardBundle);
             } else {
                 CScript scriptCode;
-                PrecomputedTransactionData txdata(mtx, {});
+                PrecomputedTransactionData txdata(ctx, {});
                 dataToBeSigned = SignatureHash(
-                    scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0,
+                    scriptCode, ctx, NOT_AN_INPUT, SIGHASH_ALL, 0,
                     consensusBranchId,
                     txdata);
             }
@@ -416,9 +417,9 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
 
     // Create coinbase tx
     if (next_cb_mtx) {
-        pblock->vtx[0] = *next_cb_mtx;
+        pblock->vtx[0] = CTransaction(*next_cb_mtx);
     } else {
-        pblock->vtx[0] = CreateCoinbaseTransaction(chainparams, nFees, minerAddress, nHeight);
+        pblock->vtx[0] = CTransaction(CreateCoinbaseTransaction(chainparams, nFees, minerAddress, nHeight));
     }
     pblocktemplate->vTxFees[0] = -nFees;
 
@@ -793,7 +794,7 @@ void IncrementExtraNonce(
     txCoinbase.vin[0].scriptSig = (CScript() << nHeight << CScriptNum(nExtraNonce)) + COINBASE_FLAGS;
     assert(txCoinbase.vin[0].scriptSig.size() <= 100);
 
-    pblock->vtx[0] = txCoinbase;
+    pblock->vtx[0] = CTransaction(txCoinbase);
     pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
     if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_NU5)) {
         pblocktemplate->hashAuthDataRoot = pblock->BuildAuthDataMerkleTree();

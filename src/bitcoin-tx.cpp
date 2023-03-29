@@ -372,7 +372,7 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& strInput)
             throw std::runtime_error("unknown sighash flag/sign option");
 
     std::vector<CTransaction> txVariants;
-    txVariants.push_back(tx);
+    txVariants.emplace_back(tx);
 
     // mergedTx will end up with all the signatures; it
     // starts as a clone of the raw tx:
@@ -457,7 +457,7 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& strInput)
     if (mergedTx.nVersion >= ZIP225_TX_VERSION) {
         throw std::runtime_error("v5+ transactions not supported yet");
     }
-    const PrecomputedTransactionData txdata(mergedTx, {});
+    const PrecomputedTransactionData txdata(CTransaction(mergedTx), {});
 
     bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
 
@@ -648,7 +648,7 @@ static int CommandLineRawTx(int argc, char* argv[])
             MutateTx(tx, key, value);
         }
 
-        OutputTx(tx);
+        OutputTx(CTransaction(tx));
     }
     catch (const std::exception& e) {
         strPrint = std::string("error: ") + e.what();

@@ -1886,7 +1886,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     t.vout.resize(1);
     t.vout[0].nValue = 90*CENT;
     t.vout[0].scriptPubKey = scriptPubKey;
-    CWalletTx wtxTransparent {nullptr, t};
+    CWalletTx wtxTransparent {nullptr, CTransaction(t)};
     wallet.LoadWalletTx(wtxTransparent);
 
     // Generate a Sprout transaction that is ours
@@ -1903,7 +1903,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     CMutableTransaction mtx {wtxTmp};
     mtx.vout[0].scriptPubKey = scriptPubKey;
     mtx.vout[0].nValue = CENT;
-    CWalletTx wtxSproutTransparent {nullptr, mtx};
+    CWalletTx wtxSproutTransparent {nullptr, CTransaction(mtx)};
     wallet.LoadWalletTx(wtxSproutTransparent);
 
     // Generate a fake Sapling transaction
@@ -1912,7 +1912,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     mtxSapling.nVersion = SAPLING_TX_VERSION;
     mtxSapling.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtxSapling.saplingBundle = sapling::test_only_invalid_bundle(0, 1, 0);
-    CWalletTx wtxSapling {nullptr, mtxSapling};
+    CWalletTx wtxSapling {nullptr, CTransaction(mtxSapling)};
     SetSaplingNoteData(wtxSapling, 0);
     wallet.LoadWalletTx(wtxSapling);
 
@@ -1922,7 +1922,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     mtxSaplingTransparent.nVersion = SAPLING_TX_VERSION;
     mtxSaplingTransparent.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtxSaplingTransparent.saplingBundle = sapling::test_only_invalid_bundle(0, 1, 0);
-    CWalletTx wtxSaplingTransparent {nullptr, mtxSaplingTransparent};
+    CWalletTx wtxSaplingTransparent {nullptr, CTransaction(mtxSaplingTransparent)};
     wallet.LoadWalletTx(wtxSaplingTransparent);
 
     EXPECT_CALL(walletdb, TxnBegin())
