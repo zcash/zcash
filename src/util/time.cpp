@@ -59,9 +59,9 @@ void FixedClock::SetGlobal() {
     zcashdClock = FixedClock::Instance();
 }
 
-void FixedClock::Set(std::chrono::seconds fixedSeconds) {
+void FixedClock::Set(std::chrono::seconds newFixedSeconds) {
     LOCK(cs_clock);
-    this->fixedSeconds = fixedSeconds;
+    this->fixedSeconds = newFixedSeconds;
 }
 
 int64_t FixedClock::GetTime() const {
@@ -83,9 +83,9 @@ void OffsetClock::SetGlobal() {
     zcashdClock = OffsetClock::Instance();
 }
 
-void OffsetClock::Set(std::chrono::seconds offsetSeconds) {
+void OffsetClock::Set(std::chrono::seconds newOffsetSeconds) {
     LOCK(cs_clock);
-    this->offsetSeconds = offsetSeconds;
+    this->offsetSeconds = newOffsetSeconds;
 }
 
 int64_t OffsetClock::GetTime() const {

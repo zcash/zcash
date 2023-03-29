@@ -95,7 +95,7 @@ void test_full_api()
     ASSERT_TRUE(verifySproutProof(jsdesc, joinSplitPubKey));
 
     {
-        SproutMerkleTree tree;
+        SproutMerkleTree tree2;
         JSDescription jsdesc2;
         // Recipient should decrypt
         // Now the recipient should spend the money again
@@ -115,13 +115,13 @@ void test_full_api()
         ASSERT_TRUE(decrypted_note.value() == 10);
 
         // Insert the commitments from the last tx into the tree
-        tree.append(jsdesc.commitments[0]);
-        auto witness_recipient = tree.witness();
-        tree.append(jsdesc.commitments[1]);
+        tree2.append(jsdesc.commitments[0]);
+        auto witness_recipient = tree2.witness();
+        tree2.append(jsdesc.commitments[1]);
         witness_recipient.append(jsdesc.commitments[1]);
         vpub_old = 0;
         vpub_new = 1;
-        rt = tree.root();
+        rt = tree2.root();
         ed25519::VerificationKey joinSplitPubKey2;
         GetRandBytes(joinSplitPubKey2.bytes.data(), joinSplitPubKey2.bytes.size());
 

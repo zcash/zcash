@@ -1696,9 +1696,9 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
                 continue;  // No conflict if zero or one spends
             }
             range_n = mapTxSproutNullifiers.equal_range(nullifier);
-            for (TxNullifiers::const_iterator it = range_n.first; it != range_n.second; ++it) {
+            for (TxNullifiers::const_iterator nullIt = range_n.first; nullIt != range_n.second; ++nullIt) {
                 // TODO: Take into account transaction expiry for v4 transactions; see #5585
-                result.insert(it->second);
+                result.insert(nullIt->second);
             }
         }
     }
@@ -1711,9 +1711,9 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
             continue;  // No conflict if zero or one spends
         }
         range_o = mapTxSaplingNullifiers.equal_range(nullifier);
-        for (TxNullifiers::const_iterator it = range_o.first; it != range_o.second; ++it) {
+        for (TxNullifiers::const_iterator nullIt = range_o.first; nullIt != range_o.second; ++nullIt) {
             // TODO: Take into account transaction expiry; see #5585
-            result.insert(it->second);
+            result.insert(nullIt->second);
         }
     }
 
@@ -1723,9 +1723,9 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
         if (potential_spends.size() <= 1) {
             continue;  // No conflict if zero or one spends
         }
-        for (const uint256 txid : potential_spends) {
+        for (const uint256 spendTxid : potential_spends) {
             // TODO: Take into account transaction expiry; see #5585
-            result.insert(txid);
+            result.insert(spendTxid);
         }
     }
 
@@ -3072,7 +3072,6 @@ DBErrors CWallet::ReorderTransactions()
     // Probably a bad idea to change the output of this
 
     // First: get all CWalletTx into a sorted-by-time multimap.
-    typedef std::multimap<int64_t, CWalletTx*> TxItems;
     TxItems txByTime;
 
     for (auto &entry : mapWallet)
@@ -3559,11 +3558,11 @@ bool WalletBatchScanner::AddToWalletIfInvolvingMe(
 {
     AssertLockHeld(pwallet->cs_wallet);
 
-    auto decryptedNotesForTx = decryptedNotes.find(tx.GetHash());
-    if (decryptedNotesForTx == decryptedNotes.end()) {
+    auto decryptedNotesEntry = decryptedNotes.find(tx.GetHash());
+    if (decryptedNotesEntry == decryptedNotes.end()) {
         throw std::logic_error("Called WalletBatchScanner::AddToWalletIfInvolvingMe with a tx that wasn't passed to AddTransaction");
     }
-    auto decryptedNotes = decryptedNotesForTx->second;
+    auto decryptedNotesForTx = decryptedNotesEntry->second;
 
     // Fill in the details about decrypted Sapling notes.
     uint256 blockTag;
@@ -3577,20 +3576,20 @@ bool WalletBatchScanner::AddToWalletIfInvolvingMe(
             decrypted.diversifier,
             uint256::FromRawBytes(decrypted.pk_d));
 
-        decryptedNotes.saplingNoteDataAndAddressesToAdd.first.insert(
+        decryptedNotesForTx.saplingNoteDataAndAddressesToAdd.first.insert(
             std::make_pair(
                 SaplingOutPoint(uint256::FromRawBytes(decrypted.txid), decrypted.output),
                 SaplingNoteData(ivk)));
 
         // Only track the recipient -> ivk mappings the wallet doesn't have.
         if (pwallet->mapSaplingIncomingViewingKeys.count(addr) == 0) {
-            decryptedNotes.saplingNoteDataAndAddressesToAdd.second.insert(
+            decryptedNotesForTx.saplingNoteDataAndAddressesToAdd.second.insert(
                 std::make_pair(addr, ivk));
         }
     }
 
     return pwallet->AddToWalletIfInvolvingMe(
-        consensus, tx, pblock, nHeight, decryptedNotes, fUpdate);
+        consensus, tx, pblock, nHeight, decryptedNotesForTx, fUpdate);
 }
 
 //
@@ -3866,7 +3865,7 @@ bool CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
                 mapWallet.at(note.hash).mapSproutNoteData.at(note).witnesses.size() > 0) {
             auto noteWitnesses = mapWallet.at(note.hash).mapSproutNoteData.at(note).witnesses;
             auto it = noteWitnesses.cbegin(), end = noteWitnesses.cend();
-            for (int i = 1; i < confirmations; i++) {
+            for (int j = 1; j < confirmations; j++) {
                 if (it == end) return false;
                 ++it;
             }
@@ -3902,7 +3901,7 @@ bool CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
                 mapWallet.at(note.hash).mapSaplingNoteData.at(note).witnesses.size() > 0) {
             auto noteWitnesses = mapWallet.at(note.hash).mapSaplingNoteData.at(note).witnesses;
             auto it = noteWitnesses.cbegin(), end = noteWitnesses.cend();
-            for (int i = 1; i < confirmations; i++) {
+            for (int j = 1; j < confirmations; j++) {
                 if (it == end) return false;
                 ++it;
             }

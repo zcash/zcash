@@ -715,14 +715,14 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
     // i.e. those that are associated with account IDs that are not the legacy account,
     // will not be included in the entry.
     auto add_sapling = [&](
-            const std::set<SaplingPaymentAddress>& addrs,
+            const std::set<SaplingPaymentAddress>& paymentAddrs,
             const PaymentAddressSource source,
             UniValue& entry
             ) {
         bool hasData = false;
 
         std::map<SaplingIncomingViewingKey, std::vector<SaplingPaymentAddress>> ivkAddrs;
-        for (const SaplingPaymentAddress& addr : addrs) {
+        for (const SaplingPaymentAddress& addr : paymentAddrs) {
             if (GetSourceForPaymentAddress(pwalletMain)(addr) == source) {
                 SaplingIncomingViewingKey ivkRet;
                 if (pwalletMain->GetSaplingIncomingViewingKey(addr, ivkRet)) {
@@ -1454,8 +1454,7 @@ UniValue ListReceived(const UniValue& params)
 
     // Reply
     UniValue ret(UniValue::VARR);
-    for (const std::pair<CTxDestination, CAddressBookData>& item : pwalletMain->mapAddressBook) {
-        const CTxDestination& dest = item.first;
+    for (const auto& [dest, _] : pwalletMain->mapAddressBook) {
         std::map<CTxDestination, tallyitem>::iterator it = mapTally.find(dest);
         if (it == mapTally.end() && !fIncludeEmpty)
             continue;
@@ -4325,12 +4324,9 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
     uint256 txid;
     txid.SetHex(params[0].get_str());
 
-    UniValue entry(UniValue::VOBJ);
     if (!pwalletMain->mapWallet.count(txid))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet transaction id");
     const CWalletTx& wtx = pwalletMain->mapWallet[txid];
-
-    entry.pushKV("txid", txid.GetHex());
 
     UniValue spends(UniValue::VARR);
     UniValue outputs(UniValue::VARR);
@@ -4431,7 +4427,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
     }
 
     // Sapling spends
-    size_t i = 0;
+    size_t spend_index = 0;
     for (const auto& spend : wtx.GetSaplingSpends()) {
         // Fetch the note that is being spent
         auto res = pwalletMain->mapSaplingNullifiersToNotes.find(spend.nullifier());
@@ -4469,7 +4465,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         if (fEnableAddrTypeField) {
             entry.pushKV("type", ADDR_TYPE_SAPLING); //deprecated
         }
-        entry.pushKV("spend", (int)i);
+        entry.pushKV("spend", (int)spend_index);
         entry.pushKV("txidPrev", op.hash.GetHex());
         entry.pushKV("outputPrev", (int)op.n);
         if (addrStr.has_value()) {
@@ -4478,7 +4474,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         entry.pushKV("value", ValueFromAmount(notePt.value()));
         entry.pushKV("valueZat", notePt.value());
         spends.push_back(entry);
-        i++;
+        spend_index++;
     }
 
     // Sapling outputs
@@ -4601,10 +4597,11 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         outputs.push_back(entry);
     }
 
-    entry.pushKV("spends", spends);
-    entry.pushKV("outputs", outputs);
-
-    return entry;
+    UniValue jsonTx(UniValue::VOBJ);
+    jsonTx.pushKV("txid", txid.GetHex());
+    jsonTx.pushKV("spends", spends);
+    jsonTx.pushKV("outputs", outputs);
+    return jsonTx;
 }
 
 UniValue z_getoperationresult(const UniValue& params, bool fHelp)
@@ -6026,9 +6023,9 @@ void OnWalletRPCPreCommand(const CRPCCommand& cmd)
     }
 }
 
-void RegisterWalletRPCCommands(CRPCTable &tableRPC)
+void RegisterWalletRPCCommands(CRPCTable &rpcTable)
 {
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
-        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
+        rpcTable.appendCommand(commands[vcidx].name, &commands[vcidx]);
     RPCServer::OnPreCommand(&OnWalletRPCPreCommand);
 }

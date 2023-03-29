@@ -155,8 +155,8 @@ static bool rest_headers(HTTPRequest* req,
 
         if (rf == RF_BINARY || rf == RF_HEX) {
             try {
-                for (const CBlockIndex *pindex : headers) {
-                    ssHeader << pindex->GetBlockHeader();
+                for (const CBlockIndex *pidx : headers) {
+                    ssHeader << pidx->GetBlockHeader();
                 }
             } catch (const std::runtime_error&) {
                 return RESTERR(req, HTTP_INTERNAL_SERVER_ERROR, "Failed to read index entry");
