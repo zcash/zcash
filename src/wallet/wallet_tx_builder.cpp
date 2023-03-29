@@ -13,6 +13,7 @@ int GetAnchorHeight(const CChain& chain, uint32_t anchorConfirmations)
 }
 
 PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
+        CWallet& wallet,
         const ZTXOSelector& selector,
         SpendableInputs& spendable,
         const std::vector<Payment>& payments,
@@ -24,7 +25,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
     assert(fee < MAX_MONEY);
 
     int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);
-    auto selected = ResolveInputsAndPayments(selector, spendable, payments, chain, strategy, fee, anchorHeight);
+    auto selected = ResolveInputsAndPayments(wallet, selector, spendable, payments, chain, strategy, fee, anchorHeight);
     if (std::holds_alternative<InputSelectionError>(selected)) {
         return std::get<InputSelectionError>(selected);
     }
@@ -81,7 +82,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
 
         auto changeAddressForTransparentSelector = [&](const std::set<ReceiverType>& receiverTypes) {
             return addChangePayment(
-                    pwalletMain->GenerateChangeAddressForAccount(
+                    wallet.GenerateChangeAddressForAccount(
                             sendFromAccount,
                             getAllowedChangePools(receiverTypes)));
         };
@@ -93,7 +94,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
             return addChangePayment(
                     sendFromAccount == ZCASH_LEGACY_ACCOUNT
                     ? addr
-                    : pwalletMain->GenerateChangeAddressForAccount(
+                    : wallet.GenerateChangeAddressForAccount(
                             sendFromAccount,
                             getAllowedChangePools({ReceiverType::Sapling})));
         };
@@ -126,7 +127,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
                 return changeAddressForSaplingAddress(fvk.DefaultAddress());
             },
             [&](const libzcash::UnifiedAddress& ua) -> ChangeAddress {
-                auto zufvk = pwalletMain->GetUFVKForAddress(ua);
+                auto zufvk = wallet.GetUFVKForAddress(ua);
                 assert(zufvk.has_value());
                 return changeAddressForZUFVK(zufvk.value(), ua.GetKnownReceiverTypes());
             },
@@ -137,14 +138,14 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
             },
             [&](const AccountZTXOPattern& acct) -> ChangeAddress {
                 return addChangePayment(
-                        pwalletMain->GenerateChangeAddressForAccount(
+                        wallet.GenerateChangeAddressForAccount(
                                 acct.GetAccountId(),
                                 getAllowedChangePools(acct.GetReceiverTypes())));
             }
         }, selector.GetPattern());
     }
 
-    auto ovks = SelectOVKs(selector, spendable);
+    auto ovks = SelectOVKs(wallet, selector, spendable);
 
     return TransactionEffects(
             anchorConfirmations,
@@ -169,6 +170,7 @@ CAmount WalletTxBuilder::DefaultDustThreshold() const {
 }
 
 SpendableInputs WalletTxBuilder::FindAllSpendableInputs(
+        const CWallet& wallet,
         const ZTXOSelector& selector,
         int32_t minDepth) const
 {
@@ -177,6 +179,7 @@ SpendableInputs WalletTxBuilder::FindAllSpendableInputs(
 }
 
 InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
+        const CWallet& wallet,
         const ZTXOSelector& selector,
         SpendableInputs& spendableMut,
         const std::vector<Payment>& payments,
@@ -370,6 +373,7 @@ GetOVKsForUFVK(const UnifiedFullViewingKey& ufvk, const SpendableInputs& spendab
 }
 
 std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
+        const CWallet& wallet,
         const ZTXOSelector& selector,
         const SpendableInputs& spendable) const
 {
