@@ -1299,9 +1299,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             return InitError("Network upgrade parameters may only be overridden on regtest.");
         }
         const std::vector<std::string>& deployments = mapMultiArgs["-nuparams"];
-        for (auto i : deployments) {
+        for (auto deployment : deployments) {
             std::vector<std::string> vDeploymentParams;
-            boost::split(vDeploymentParams, i, boost::is_any_of(":"));
+            boost::split(vDeploymentParams, deployment, boost::is_any_of(":"));
             if (vDeploymentParams.size() != 2) {
                 return InitError("Network upgrade parameters malformed, expecting hexBranchId:activationHeight");
             }

@@ -322,11 +322,11 @@ WalletTxBuilder::GetChangeAddress(
         if (sendFromAccount == ZCASH_LEGACY_ACCOUNT) {
             return addr;
         } else {
-            auto addr = wallet.GenerateChangeAddressForAccount(
+            auto changeAddr = wallet.GenerateChangeAddressForAccount(
                     sendFromAccount,
                     getAllowedChangePools({ReceiverType::Sapling}));
-            assert(addr.has_value());
-            return addr.value();
+            assert(changeAddr.has_value());
+            return changeAddr.value();
         }
     };
 

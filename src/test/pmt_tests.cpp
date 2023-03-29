@@ -79,8 +79,8 @@ BOOST_AUTO_TEST_CASE(pmt_test1)
             ss << pmt1;
 
             // verify CPartialMerkleTree's size guarantees
-            unsigned int n = std::min<unsigned int>(nTx, 1 + vMatchTxid1.size()*nHeight);
-            BOOST_CHECK(ss.size() <= 10 + (258*n+7)/8);
+            unsigned int m = std::min<unsigned int>(nTx, 1 + vMatchTxid1.size()*nHeight);
+            BOOST_CHECK(ss.size() <= 10 + (258*m+7)/8);
 
             // deserialize into a tester copy
             CPartialMerkleTreeTester pmt2;
