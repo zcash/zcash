@@ -13,6 +13,7 @@ RUN pacman -Syyu --noconfirm \
       python3 \
       python-pip \
       ncurses \
-      wget
+      wget \
+      kubectl
 
 RUN sudo link /lib/libtinfo.so.6 /lib/libtinfo.so.5
