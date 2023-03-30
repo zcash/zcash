@@ -7864,7 +7864,7 @@ bool SpendableInputs::LimitToAmount(
     // - If we have transparent recipients, we prefer to select funds across all
     //   shielded pools before the transparent pool. The address and amount for
     //   these recipients is necessarily revealed, but we can hide the sender.
-    // - If we don't have suffient funds in shielded pools and are required to
+    // - If we don't have sufficient funds in shielded pools and are required to
     //   select transparent coins, we always select all transparent coins first.
     //   Given that the transaction will necessarily reveal sender information,
     //   we use it to opportunistically shield transparent coins.
