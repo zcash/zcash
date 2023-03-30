@@ -36,11 +36,26 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.68 -> 1.0.69"
 
+[[audits.anyhow]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.69 -> 1.0.70"
+
+[[audits.arrayref]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.3.6 -> 0.3.7"
+
 [[audits.bellman]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.13.0 -> 0.13.1"
 notes = "Adds multi-threaded batch validation, which I checked against the existing single-threaded batch validation."
+
+[[audits.bellman]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.13.1 -> 0.14.0"
 
 [[audits.blake2b_simd]]
 who = "Jack Grigg <jack@z.cash>"
@@ -64,6 +79,12 @@ notes = "Adds panics to prevent a block size of zero from causing unsoundness."
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.7.0 -> 0.7.1"
+
+[[audits.bls12_381]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.7.1 -> 0.8.0"
+notes = "I previously reviewed the crypto-sensitive portions of these changes as well."
 
 [[audits.bumpalo]]
 who = "Jack Grigg <jack@z.cash>"
@@ -148,6 +169,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.2.2 -> 0.2.5"
 notes = "Unsafe changes just introduce `#[inline(never)]` wrappers."
+
+[[audits.cpufeatures]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.2.5 -> 0.2.6"
 
 [[audits.crossbeam-channel]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -343,6 +369,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.12.0 -> 0.12.1"
 
+[[audits.ff]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.12.1 -> 0.13.0"
+
 [[audits.futures-channel]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -385,6 +416,11 @@ Changes to `unsafe` usage are to split `Either::project` into `Either::as_pin_re
 documentation.
 """
 
+[[audits.generic-array]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.14.6 -> 0.14.7"
+
 [[audits.getrandom]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -404,6 +440,11 @@ who = "Kris Nuttycombe <kris@nutty.land>"
 criteria = "safe-to-deploy"
 delta = "0.12.0 -> 0.12.1"
 
+[[audits.group]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.12.1 -> 0.13.0"
+
 [[audits.halo2_gadgets]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
@@ -414,6 +455,12 @@ notes = "The ECC core team maintains this crate, and we have reviewed every line
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.1.0 -> 0.2.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.halo2_legacy_pdqsort]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+version = "0.1.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
 [[audits.halo2_proofs]]
@@ -454,6 +501,11 @@ criteria = "safe-to-deploy"
 delta = "1.8.1 -> 1.9.1"
 notes = "I'm satisfied that the assertion guarding the new unsafe block is correct."
 
+[[audits.indexmap]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.9.2 -> 1.9.3"
+
 [[audits.inout]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -464,6 +516,11 @@ notes = "Reviewed in full."
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "2.5.0 -> 2.7.1"
+
+[[audits.ipnet]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "2.7.1 -> 2.7.2"
 
 [[audits.itoa]]
 who = "Jack Grigg <jack@z.cash>"
@@ -485,6 +542,12 @@ notes = """
 - Adds `Array.length` setter and `Intl.RelativeTimeFormat`; I checked these against their
   MDN documentation.
 """
+
+[[audits.jubjub]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.9.0 -> 0.10.0"
+notes = "I previously reviewed the crypto-sensitive portions of these changes as well."
 
 [[audits.libm]]
 who = "Jack Grigg <jack@z.cash>"
@@ -517,6 +580,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.4.16 -> 0.4.17"
 notes = "I confirmed that the unsafe transmutes are fine; NonZeroU128 and NonZeroI128 are `#[repr(transparent)]` wrappers around u128 and i128 respectively."
+
+[[audits.maybe-rayon]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+version = "0.1.1"
 
 [[audits.memuse]]
 who = "Jack Grigg <jack@z.cash>"
@@ -633,6 +701,11 @@ who = "Kris Nuttycombe <kris@nutty.land>"
 criteria = "safe-to-deploy"
 delta = "0.2.0 -> 0.3.0"
 
+[[audits.pairing]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.22.0 -> 0.23.0"
+
 [[audits.parity-scale-codec]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -673,6 +746,11 @@ delta = "0.9.6 -> 0.9.7"
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.4.0 -> 0.4.1"
+
+[[audits.pasta_curves]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.4.1 -> 0.5.1"
 
 [[audits.phf]]
 who = "Jack Grigg <jack@z.cash>"
@@ -762,10 +840,30 @@ Appears to be a move-only change in display code to expose an internal API.
 I did not verify that the change was move-only, but there is no unsafe code affected.
 """
 
+[[audits.reddsa]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.3.0 -> 0.5.0"
+
 [[audits.regex]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.7.0 -> 1.7.1"
+
+[[audits.regex]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.7.1 -> 1.7.3"
+
+[[audits.regex-syntax]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.6.28 -> 0.6.29"
+
+[[audits.rustc-demangle]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.1.21 -> 0.1.22"
 
 [[audits.ryu]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -814,6 +912,11 @@ notes = "I did not review the refactor, but there are no unsafe blocks and I did
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.91 -> 1.0.98"
+
+[[audits.syn]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.0.102 -> 1.0.104"
 
 [[audits.syn]]
 who = "Jack Grigg <jack@z.cash>"
@@ -898,6 +1001,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.5.1 -> 0.6.1"
 notes = "Fixes a bug in parsing negative minutes in datetime string offsets."
+
+[[audits.toml_edit]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.19.7 -> 0.19.8"
 
 [[audits.try-lock]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1235,8 +1343,18 @@ criteria = "safe-to-deploy"
 delta = "1.4.3 -> 1.5.7"
 notes = "The zeroize_c_string unit test has UB, but that's very unlikely to cause a problem in practice."
 
+[[audits.zeroize]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.5.7 -> 1.6.0"
+
 [[audits.zeroize_derive]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.3.2 -> 1.3.3"
 notes = "Removes `T: Drop` bound from `impl<T: Zeroize> Drop for SomeType<T>`. I agree it was unnecessary."
+
+[[audits.zeroize_derive]]
+who = "Sean Bowe <ewillbefull@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "1.3.3 -> 1.4.1"
