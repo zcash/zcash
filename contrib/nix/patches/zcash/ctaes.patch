@@ -1,0 +1,26 @@
+diff --git a/src/crypto/aes.cpp b/src/crypto/aes.cpp
+index d04da5994..cea65c14c 100644
+--- a/src/crypto/aes.cpp
++++ b/src/crypto/aes.cpp
+@@ -10,7 +10,7 @@
+ #include <string.h>
+ 
+ extern "C" {
+-#include "crypto/ctaes/ctaes.c"
++#include <ctaes.c>
+ }
+ 
+ AES128Encrypt::AES128Encrypt(const unsigned char key[16])
+diff --git a/src/crypto/aes.h b/src/crypto/aes.h
+index c7b75c510..809f489f7 100644
+--- a/src/crypto/aes.h
++++ b/src/crypto/aes.h
+@@ -9,7 +9,7 @@
+ #define BITCOIN_CRYPTO_AES_H
+ 
+ extern "C" {
+-#include "crypto/ctaes/ctaes.h"
++#include <ctaes.h>
+ }
+ 
+ static const int AES_BLOCKSIZE = 16;

@@ -1,0 +1,80 @@
+diff --git a/configure.ac b/configure.ac
+index cce1a76d0..e6cfc61fd 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -98,9 +98,6 @@ dnl Required tools and programs:
+ ZC_REQUIRE_TOOL(AR, ar)
+ ZC_REQUIRE_TOOL(RANLIB, ranlib)
+ ZC_REQUIRE_TOOL(STRIP, strip)
+-ZC_REQUIRE_PROG([GIT], [git])
+-ZC_REQUIRE_PROG(RUSTC, rustc)
+-ZC_REQUIRE_PROG(CARGO, cargo)
+ ZC_REQUIRE_PROG(CXXBRIDGE, cxxbridge)
+ dnl This one is still optional and checked by complicated logic below:
+ AC_PATH_PROG(CCACHE,ccache)
+@@ -876,7 +873,7 @@ fi
+ LEVELDB_CPPFLAGS=
+ LIBLEVELDB=
+ LIBMEMENV=
+-AM_CONDITIONAL([EMBEDDED_LEVELDB],[true])
++AM_CONDITIONAL([EMBEDDED_LEVELDB],[false])
+ AC_SUBST(LEVELDB_CPPFLAGS)
+ AC_SUBST(LIBLEVELDB)
+ AC_SUBST(LIBMEMENV)
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 72cff51c9..2f2448dd7 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -4,7 +4,6 @@
+ # Distributed under the MIT software license, see the accompanying
+ # file COPYING or https://www.opensource.org/licenses/mit-license.php .
+ 
+-DIST_SUBDIRS = secp256k1 univalue
+ 
+ AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS) $(HARDENED_LDFLAGS) $(GPROF_LDFLAGS) $(SANITIZER_LDFLAGS)
+ AM_CXXFLAGS = $(DEBUG_CXXFLAGS) $(HARDENED_CXXFLAGS) $(ERROR_CXXFLAGS) $(GPROF_CXXFLAGS) $(SANITIZER_CXXFLAGS)
+@@ -28,16 +28,17 @@ LIBBITCOIN_UTIL=libbitcoin_util.a
+ LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
+ LIBBITCOIN_CRYPTO_SSE41=crypto/libbitcoin_crypto_sse41.a
+ LIBBITCOIN_CRYPTO_AVX2=crypto/libbitcoin_crypto_avx2.a
++LIBLEVELDB=@NIX_LIBLEVELDB@/lib/libleveldb.a
+-LIBRUSTZCASH=$(top_builddir)/target/$(RUST_TARGET)/release/librustzcash.a
++LIBRUSTZCASH=@NIX_LIBRUSTZCASH@/lib/librustzcash.a
+-LIBSECP256K1=secp256k1/libsecp256k1.la
++LIBSECP256K1=@NIX_LIBSECP256K1@/lib/libsecp256k1.la
+-LIBUNIVALUE=univalue/libunivalue.la
++LIBUNIVALUE=@NIX_LIBUNIVALUE@/lib/libunivalue.la
+ LIBZCASH=libzcash.a
+ 
+ INSPECT_TOOL_BIN=zcash-inspect$(EXEEXT)
+-INSPECT_TOOL_BUILD=$(top_builddir)/target/$(RUST_TARGET)/release/zcash-inspect$(EXEEXT)
++INSPECT_TOOL_BUILD=@NIX_LIBRUSTZCASH@/bin/zcash-inspect$(EXEEXT)
+ 
+ WALLET_TOOL_BIN=zcashd-wallet-tool$(EXEEXT)
+-WALLET_TOOL_BUILD=$(top_builddir)/target/$(RUST_TARGET)/release/zcashd-wallet-tool$(EXEEXT)
++WALLET_TOOL_BUILD=@NIX_LIBRUSTZCASH@/bin/zcashd-wallet-tool$(EXEEXT)
+ 
+ if ENABLE_ZMQ
+ LIBBITCOIN_ZMQ=libbitcoin_zmq.a
+@@ -139,19 +139,12 @@ cargo-build-lib: cargo-build
+ 
+ cargo-build-bins: cargo-build
+ 
+-$(INSPECT_TOOL_BIN): cargo-build-bins
++$(INSPECT_TOOL_BIN):
+ 	$(AM_V_at)cp $(INSPECT_TOOL_BUILD) $@
+ 
+-$(WALLET_TOOL_BIN): cargo-build-bins
++$(WALLET_TOOL_BIN):
+ 	$(AM_V_at)cp $(WALLET_TOOL_BUILD) $@
+ 
+-$(LIBRUSTZCASH): cargo-build-lib
+-
+-$(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
+-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
+-
+-$(LIBUNIVALUE): $(wildcard univalue/lib/*) $(wildcard univalue/include/*)
+-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
+ 
+ # Make is not made aware of per-object dependencies to avoid limiting building parallelization
+ # But to build the less dependent modules first, we manually select their order here:

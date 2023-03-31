@@ -1,0 +1,13 @@
+diff --git a/src/chain.h b/src/chain.h
+index 65faca6c6..36abd3bb7 100644
+--- a/src/chain.h
++++ b/src/chain.h
+@@ -10,7 +10,7 @@
+ #include "arith_uint256.h"
+ #include "primitives/block.h"
+ #include "pow.h"
+-#include "tinyformat.h"
++#include <tinyformat.h>
+ #include "uint256.h"
+ 
+ #include <optional>
