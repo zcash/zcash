@@ -279,7 +279,7 @@ struct JSDescException : public std::exception
 {
     JSDescException (const std::string msg_) : msg(msg_) {}
 
-    const char* what() { return msg.c_str(); }
+    const char* what() const noexcept { return msg.c_str(); }
 
 private:
     std::string msg;

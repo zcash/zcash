@@ -1815,6 +1815,7 @@ public:
         const std::set<libzcash::ReceiverType>& receivers,
         std::optional<libzcash::diversifier_index_t> j = std::nullopt);
 
+    using CBasicKeyStore::AddUnifiedFullViewingKey;
     bool AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
 
     bool LoadUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &ufvk);
