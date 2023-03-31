@@ -76,11 +76,11 @@ using namespace std;
 const char * const BITCOIN_CONF_FILENAME = "zcash.conf";
 const char * const BITCOIN_PID_FILENAME = "zcashd.pid";
 
-CCriticalSection cs_args;
+static CCriticalSection cs_args;
 map<string, string> mapArgs;
 map<string, vector<string>> mapMultiArgs;
 bool fDebug = false;
-bool fDaemon = false;
+static bool fDaemon = false;
 bool fServer = false;
 
 /** Interpret string as boolean, for argument parsing */

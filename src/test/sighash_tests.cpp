@@ -99,12 +99,12 @@ void static RandomScript(CScript &script) {
 // Overwinter tx version numbers are selected randomly from current version range.
 // https://en.cppreference.com/w/cpp/numeric/random/uniform_int_distribution
 // https://stackoverflow.com/a/19728404
-std::random_device rd;
-std::mt19937 rng(rd());
-std::uniform_int_distribution<int> overwinter_version_dist(
+static std::random_device rd;
+static std::mt19937 rng(rd());
+static std::uniform_int_distribution<int> overwinter_version_dist(
     CTransaction::OVERWINTER_MIN_CURRENT_VERSION,
     CTransaction::OVERWINTER_MAX_CURRENT_VERSION);
-std::uniform_int_distribution<int> sapling_version_dist(
+static std::uniform_int_distribution<int> sapling_version_dist(
     CTransaction::SAPLING_MIN_CURRENT_VERSION,
     CTransaction::SAPLING_MAX_CURRENT_VERSION);
 

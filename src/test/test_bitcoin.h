@@ -11,6 +11,7 @@
 
 #include <boost/thread.hpp>
 
+extern TracingHandle* pTracingHandle;
 extern uint256 insecure_rand_seed;
 extern FastRandomContext insecure_rand_ctx;
 

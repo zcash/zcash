@@ -21,7 +21,7 @@ BENCHMARK(Sleep100ms);
 // Extremely fast-running benchmark:
 #include <math.h>
 
-volatile double sum = 0.0; // volatile, global so not optimized away
+static volatile double sum = 0.0; // volatile, global so not optimized away
 
 static void Trig(benchmark::State& state)
 {

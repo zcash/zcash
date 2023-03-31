@@ -989,7 +989,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_async_operations)
 
 
 // The CountOperation will increment this global
-std::atomic<int64_t> gCounter(0);
+static std::atomic<int64_t> gCounter(0);
 
 class CountOperation : public AsyncRPCOperation {
 public:

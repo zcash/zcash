@@ -114,7 +114,9 @@ struct COrphanTx {
     CTransaction tx;
     NodeId fromPeer;
 };
+extern map<uint256, COrphanTx> mapOrphanTransactions;;
 map<uint256, COrphanTx> mapOrphanTransactions GUARDED_BY(cs_main);;
+extern map<uint256, set<uint256> > mapOrphanTransactionsByPrev;
 map<uint256, set<uint256> > mapOrphanTransactionsByPrev GUARDED_BY(cs_main);;
 void EraseOrphansFor(NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
 
@@ -4051,9 +4053,9 @@ static int64_t nTimeChainState = 0;
 static int64_t nTimePostConnect = 0;
 
 // Protected by cs_main
-std::map<const CBlockIndex*, std::list<CTransaction>> recentlyConflictedTxs;
-uint64_t nConnectedSequence = 0;
-uint64_t nNotifiedSequence = 0;
+static std::map<const CBlockIndex*, std::list<CTransaction>> recentlyConflictedTxs;
+static uint64_t nConnectedSequence = 0;
+static uint64_t nNotifiedSequence = 0;
 
 /**
  * Connect a new block to chainActive. pblock is either NULL or a pointer to a CBlock

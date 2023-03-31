@@ -69,7 +69,7 @@ uint64_t nLocalHostNonce = 0;
 static std::vector<ListenSocket> vhListenSocket;
 CAddrMan addrman;
 int nMaxConnections = DEFAULT_MAX_PEER_CONNECTIONS;
-bool fAddressesInitialized = false;
+static bool fAddressesInitialized = false;
 std::string strSubVersion;
 
 vector<CNode*> vNodes;

@@ -16,7 +16,7 @@
 #include <boost/thread.hpp>
 
 // This guards accesses to FixedClock and OffsetClock.
-RecursiveMutex cs_clock;
+static RecursiveMutex cs_clock;
 
 static CClock* zcashdClock = SystemClock::Instance();
 

@@ -139,6 +139,7 @@ CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
 // immediately and the parent exits from main().
 //
 
+extern std::atomic<bool> fRequestShutdown;
 std::atomic<bool> fRequestShutdown(false);
 
 void StartShutdown()

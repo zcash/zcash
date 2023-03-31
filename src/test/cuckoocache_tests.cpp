@@ -23,7 +23,7 @@
  *  using BOOST_CHECK_CLOSE to fail.
  *
  */
-FastRandomContext local_rand_ctx(true);
+static FastRandomContext local_rand_ctx(true);
 
 BOOST_AUTO_TEST_SUITE(cuckoocache_tests);
 
