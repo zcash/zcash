@@ -35,6 +35,10 @@ public:
         MAX_BECH32_TYPES
     };
 
+    KeyConstants() = default;
+    KeyConstants(const KeyConstants&) = default;
+    virtual ~KeyConstants() = default;
+
     virtual std::string NetworkIDString() const =0;
     virtual uint32_t BIP44CoinType() const =0;
     virtual const std::vector<unsigned char>& Base58Prefix(Base58Type type) const =0;

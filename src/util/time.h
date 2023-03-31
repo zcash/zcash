@@ -13,6 +13,8 @@
 
 class CClock {
 public:
+    virtual ~CClock() = default;
+
     /** Returns the current time in seconds since the POSIX epoch. */
     virtual int64_t GetTime() const = 0;
     /** Returns the current time in milliseconds since the POSIX epoch. */

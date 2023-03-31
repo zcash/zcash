@@ -361,7 +361,7 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-gnu-zero-variadic-macro-arguments \
   -Wno-implicit-int-conversion -Wno-implicit-int-float-conversion \
   -Wno-missing-prototypes \
-  -Wno-non-virtual-dtor -Wno-old-style-cast \
+  -Wno-old-style-cast \
   -Wno-overloaded-virtual -Wno-padded -Wno-range-loop-construct -Wno-redundant-parens \
   -Wno-reorder-ctor -Wno-reserved-id-macro -Wno-reserved-identifier -Wno-return-type \
   -Wno-shadow-field -Wno-shadow-field-in-constructor \

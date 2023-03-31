@@ -468,7 +468,7 @@ public:
         Clear();
     }
 
-    ~CAddrMan()
+    virtual ~CAddrMan()
     {
         nKey.SetNull();
     }

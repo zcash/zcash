@@ -32,6 +32,8 @@ class uint256;
 
 class BatchScanner {
 public:
+    virtual ~BatchScanner() = default;
+
     /**
      * Adds a transaction to the batch scanner.
      *
@@ -84,6 +86,8 @@ void UnregisterAllValidationInterfaces();
 
 class CValidationInterface {
 protected:
+    virtual ~CValidationInterface() = default;
+
     virtual void UpdatedBlockTip(const CBlockIndex *pindex) {}
     virtual BatchScanner* GetBatchScanner() { return nullptr; }
     virtual void SyncTransaction(const CTransaction &tx, const CBlock *pblock, const int nHeight) {}
