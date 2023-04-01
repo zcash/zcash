@@ -48,7 +48,9 @@ public:
             PaymentAddress address,
             CAmount amount,
             std::optional<Memo> memo) :
-        address(address), amount(amount), memo(memo) {}
+        address(address), amount(amount), memo(memo) {
+        assert(amount >= 0);
+    }
 
     const PaymentAddress& GetAddress() const {
         return address;
@@ -184,6 +186,22 @@ public:
     const SpendableInputs& GetSpendable() const {
         return spendable;
     }
+
+    /**
+     * This should be called upon creating `TransactionEffects`, it locks exactly the notes that
+     * will be spent in the built transaction.
+     */
+    void LockSpendable(CWallet& wallet) const;
+
+    /**
+     * This should be called when we are finished with the transaction (whether it succeeds or
+     * fails).
+     *
+     * TODO: This currently needs to be called while the `TransactionEffects` exists. In future, it
+     *       would be useful to keep these notes locked until we have confirmation that the tx is on
+     *       the chain or not.
+     */
+    void UnlockSpendable(CWallet& wallet) const;
 
     const Payments& GetPayments() const {
         return payments;
