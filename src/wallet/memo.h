@@ -29,7 +29,7 @@ public:
         return Memo();
     }
 
-    static std::variant<MemoError, Memo> FromHex(const std::string& memoHex) {
+    static tl::expected<Memo, MemoError> FromHex(const std::string& memoHex) {
         Memo result;
         std::vector<unsigned char> rawMemo = ParseHex(memoHex.c_str());
 
@@ -49,31 +49,7 @@ public:
         return result;
     }
 
-    static Memo FromHexOrThrow(const std::string& memoHex) {
-        return std::visit(match {
-            [](Memo memo) {
-                return memo;
-            },
-            [&](MemoError err) -> Memo {
-                switch (err) {
-                    case MemoError::HexDecodeError:
-                        throw JSONRPCError(
-                                RPC_INVALID_PARAMETER,
-                                "Invalid parameter, expected memo data in hexadecimal format.");
-                    case MemoError::MemoTooLong:
-                        throw JSONRPCError(
-                                RPC_INVALID_PARAMETER,
-                                strprintf(
-                                        "Invalid parameter, memo is longer than the maximum allowed %d characters.",
-                                        ZC_MEMO_SIZE));
-                }
-            }
-        }, Memo::FromHex(memoHex));
-    }
-
     // This copies, because if it returns a reference to the underlying value,
-    // using an idiom like `Memo::FromHexOrThrow("abcd").ToBytes()` is unsafe
-    // and can result in pointing to memory that has been deallocated.
     MemoBytes ToBytes() const {
         return value;
     }

@@ -1249,7 +1249,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
                 TransparentCoinbasePolicy::Allow,
                 false).value();
         WalletTxBuilder builder(Params(), minRelayTxFee);
-        std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
+        std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromHex("DEADBEEF").value()) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
         operation->main();
@@ -1266,7 +1266,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
                 TransparentCoinbasePolicy::Disallow,
                 false).value();
         WalletTxBuilder builder(Params(), minRelayTxFee);
-        std::vector<Payment> recipients = { Payment(taddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
+        std::vector<Payment> recipients = { Payment(taddr1, 100*COIN, Memo::FromHex("DEADBEEF").value()) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
         operation->main();
@@ -1278,7 +1278,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
 BOOST_AUTO_TEST_CASE(memo_hex_parsing) {
     std::string memo = "DEADBEEF";
-    MemoBytes memoBytes = Memo::FromHexOrThrow(memo).ToBytes();
+    MemoBytes memoBytes = Memo::FromHex(memo).value().ToBytes();
     BOOST_CHECK_EQUAL(memoBytes[0], 0xDE);
     BOOST_CHECK_EQUAL(memoBytes[1], 0xAD);
     BOOST_CHECK_EQUAL(memoBytes[2], 0xBE);
@@ -1291,19 +1291,19 @@ BOOST_AUTO_TEST_CASE(memo_hex_parsing) {
     std::vector<char> v (2 * (ZC_MEMO_SIZE+1));
     std::fill(v.begin(),v.end(), 'A');
     std::string bigmemo(v.begin(), v.end());
-    BOOST_CHECK(std::get<MemoError>(Memo::FromHex(bigmemo)) == MemoError::MemoTooLong);
+    BOOST_CHECK(Memo::FromHex(bigmemo).error() == MemoError::MemoTooLong);
 
     // invalid hexadecimal string
     std::fill(v.begin(),v.end(), '@'); // not a hex character
     std::string badmemo(v.begin(), v.end());
-    BOOST_CHECK(std::get<MemoError>(Memo::FromHex(badmemo)) == MemoError::HexDecodeError);
+    BOOST_CHECK(Memo::FromHex(badmemo).error() == MemoError::HexDecodeError);
 
     // odd length hexadecimal string
     std::fill(v.begin(),v.end(), 'A');
     v.resize(v.size() - 1);
     assert(v.size() %2 == 1); // odd length
     std::string oddmemo(v.begin(), v.end());
-    BOOST_CHECK(std::get<MemoError>(Memo::FromHex(oddmemo)) == MemoError::HexDecodeError);
+    BOOST_CHECK(Memo::FromHex(oddmemo).error() == MemoError::HexDecodeError);
 }
 
 /*
