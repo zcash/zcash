@@ -125,15 +125,13 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         availableFunds -= fromNoteAmount;
         std::optional<libzcash::SproutPaymentAddress> changeAddr;
         for (const SproutNoteEntry& sproutEntry : fromNotes) {
-            std::string data(sproutEntry.memo.begin(), sproutEntry.memo.end());
             LogPrint("zrpcunsafe", "%s: Adding Sprout note input (txid=%s, vJoinSplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
                 getId(),
                 sproutEntry.jsop.hash.ToString().substr(0, 10),
                 sproutEntry.jsop.js,
                 int(sproutEntry.jsop.n),  // uint8_t
                 FormatMoney(sproutEntry.note.value()),
-                HexStr(data).substr(0, 10)
-                );
+                HexStr(libzcash::Memo::ToBytes(sproutEntry.memo)).substr(0, 10));
             libzcash::SproutSpendingKey sproutSk;
             pwalletMain->GetSproutSpendingKey(sproutEntry.address, sproutSk);
             std::vector<JSOutPoint> vOutPoints = {sproutEntry.jsop};
@@ -156,7 +154,11 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         // The amount chosen *includes* the default fee for this transaction, i.e.
         // the value of the Sapling output will be 0.00001 ZEC less.
         builder.SetFee(DEFAULT_FEE);
-        builder.AddSaplingOutput(ovkForShieldingFromTaddr(seed), migrationDestAddress, amountToSend - DEFAULT_FEE);
+        builder.AddSaplingOutput(
+                ovkForShieldingFromTaddr(seed),
+                migrationDestAddress,
+                amountToSend - DEFAULT_FEE,
+                std::nullopt);
         builder.SendChangeToSprout(changeAddr.value());
         CTransaction tx = builder.Build().GetTxOrThrow();
         if (isCancelled()) {

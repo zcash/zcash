@@ -807,10 +807,9 @@ double benchmark_create_sapling_output()
     auto sk = libzcash::SaplingSpendingKey::random();
     auto address = sk.default_address();
 
-    std::array<unsigned char, MEMO_SIZE> memo;
     SaplingNote note(address, GetRand(MAX_MONEY),  libzcash::Zip212Enabled::BeforeZip212);
 
-    libzcash::SaplingNotePlaintext notePlaintext(note, memo);
+    libzcash::SaplingNotePlaintext notePlaintext(note, std::nullopt);
     auto res = notePlaintext.encrypt(note.pk_d);
     if (!res) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "SaplingNotePlaintext::encrypt() failed");

@@ -37,8 +37,8 @@ TEST(NoteEncryption, NotePlaintext)
     auto ivk = fvk.in_viewing_key();
     SaplingPaymentAddress addr = *ivk.address({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
 
-    std::array<unsigned char, MEMO_SIZE> memo;
-    for (size_t i = 0; i < MEMO_SIZE; i++) {
+    Memo::Bytes memo;
+    for (size_t i = 0; i < Memo::SIZE; i++) {
         // Fill the message with dummy data
         memo[i] = (unsigned char) i;
     }
@@ -52,7 +52,7 @@ TEST(NoteEncryption, NotePlaintext)
             FAIL();
         }
         uint256 cmu = cmu_opt.value();
-        SaplingNotePlaintext pt(note, memo);
+        SaplingNotePlaintext pt(note, Memo::FromBytes(memo));
 
         auto res = pt.encrypt(addr.pk_d);
         if (!res) {

@@ -13,13 +13,13 @@
 #include "wallet/wallet.h"
 
 #include "zcash/Address.hpp"
+#include "zcash/memo.h"
 
 #include "asyncrpcqueue.h"
 #include "asyncrpcoperation.h"
 #include "wallet/asyncrpcoperation_common.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
-#include "wallet/memo.h"
 
 #include "init.h"
 #include "util/test.h"
@@ -1191,8 +1191,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
             "1 50.00000001"
             ), runtime_error);
 
-    // memo bigger than allowed length of MEMO_SIZE
-    std::vector<char> v (2 * (MEMO_SIZE+1));     // x2 for hexadecimal string format
+    // memo bigger than allowed length of `Memo::SIZE`
+    std::vector<char> v (2 * (Memo::SIZE+1));     // x2 for hexadecimal string format
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
     auto pa = pwalletMain->GenerateNewSproutZKey();
@@ -1255,7 +1255,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
                 // confirm this.
                 TransparentCoinbasePolicy::Allow,
                 false).value();
-        std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
+        std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromBytes({0xDE, 0xAD, 0xBE, 0xEF})) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy, std::nullopt));
         operation->main();
@@ -1271,7 +1271,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
                 true,
                 TransparentCoinbasePolicy::Disallow,
                 false).value();
-        std::vector<Payment> recipients = { Payment(taddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
+        std::vector<Payment> recipients = { Payment(taddr1, 100*COIN, Memo::FromBytes({0xDE, 0xAD, 0xBE, 0xEF})) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy, std::nullopt));
         operation->main();
@@ -1282,33 +1282,19 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 }
 
 BOOST_AUTO_TEST_CASE(memo_hex_parsing) {
-    std::string memo = "DEADBEEF";
-    MemoBytes memoBytes = Memo::FromHexOrThrow(memo).ToBytes();
+    Memo::Bytes memoBytes = Memo::ToBytes(Memo::FromBytes({0xDE, 0xAD, 0xBE, 0xEF}));
     BOOST_CHECK_EQUAL(memoBytes[0], 0xDE);
     BOOST_CHECK_EQUAL(memoBytes[1], 0xAD);
     BOOST_CHECK_EQUAL(memoBytes[2], 0xBE);
     BOOST_CHECK_EQUAL(memoBytes[3], 0xEF);
-    for (int i=4; i<MEMO_SIZE; i++) {
+    for (int i=4; i<Memo::SIZE; i++) {
         BOOST_CHECK_EQUAL(memoBytes[i], 0x00);  // zero padding
     }
 
     // memo is longer than allowed
-    std::vector<char> v (2 * (MEMO_SIZE+1));
-    std::fill(v.begin(),v.end(), 'A');
-    std::string bigmemo(v.begin(), v.end());
-    BOOST_CHECK(std::get<MemoError>(Memo::FromHex(bigmemo)) == MemoError::MemoTooLong);
-
-    // invalid hexadecimal string
-    std::fill(v.begin(),v.end(), '@'); // not a hex character
-    std::string badmemo(v.begin(), v.end());
-    BOOST_CHECK(std::get<MemoError>(Memo::FromHex(badmemo)) == MemoError::HexDecodeError);
-
-    // odd length hexadecimal string
-    std::fill(v.begin(),v.end(), 'A');
-    v.resize(v.size() - 1);
-    assert(v.size() %2 == 1); // odd length
-    std::string oddmemo(v.begin(), v.end());
-    BOOST_CHECK(std::get<MemoError>(Memo::FromHex(oddmemo)) == MemoError::HexDecodeError);
+    std::vector<Memo::Byte> bigmemo (Memo::SIZE+1);
+    std::fill(bigmemo.begin(), bigmemo.end(), 0x32);
+    BOOST_CHECK(Memo::FromBytes(bigmemo).error() == Memo::ConversionError::MemoTooLong);
 }
 
 /*
@@ -1620,12 +1606,12 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     CheckRPCThrows("z_mergetoaddress [\"ANY_SAPLING\",\"" + aSaplingAddr + "\"] " + taddr2,
         "Cannot specify specific zaddrs when using \"ANY_SPROUT\" or \"ANY_SAPLING\"");
 
-    // memo bigger than allowed length of MEMO_SIZE
-    std::vector<char> v (2 * (MEMO_SIZE+1));     // x2 for hexadecimal string format
+    // memo bigger than allowed length of Memo::size
+    std::vector<char> v (2 * (Memo::SIZE+1));     // x2 for hexadecimal string format
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
     CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + aSproutAddr + " 0.00001 100 100 " + badmemo,
-        strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", MEMO_SIZE));
+        strprintf("Invalid parameter, memo is longer than the maximum allowed %d bytes.", Memo::SIZE));
 
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");
@@ -1635,7 +1621,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     KeyIO keyIO(Params());
     WalletTxBuilder builder(Params(), minRelayTxFee);
     auto saplingKey = pwalletMain->GenerateNewLegacySaplingZKey();
-    NetAmountRecipient testnetzaddr(saplingKey, Memo());
+    NetAmountRecipient testnetzaddr(saplingKey, std::nullopt);
     auto selector = CWallet::LegacyTransparentZTXOSelector(
             true,
             TransparentCoinbasePolicy::Disallow);

@@ -1180,7 +1180,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
     uint256 ovk;
     auto note = libzcash::SaplingNote(
         libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
-    auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
+    auto output = OutputDescriptionInfo(ovk, note, std::nullopt);
 
     auto ctx = sapling::init_prover();
     auto odesc = output.Build(ctx).value();
@@ -1261,7 +1261,7 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     uint256 ovk;
     auto note = libzcash::SaplingNote(
         libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
-    auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
+    auto output = OutputDescriptionInfo(ovk, note, std::nullopt);
 
     CMutableTransaction mtx = GetValidTransaction();
     mtx.fOverwintered = true;

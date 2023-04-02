@@ -9,8 +9,8 @@ https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
 #include "uint256.h"
 #include "uint252.h"
 
-#include "zcash/Zcash.h"
 #include "zcash/Address.hpp"
+#include "zcash/memo.h"
 
 #include <array>
 #include <optional>
@@ -23,13 +23,12 @@ constexpr size_t NOTEPLAINTEXT_LEADING{1};
 constexpr size_t V_SIZE{8};
 constexpr size_t RHO_SIZE{32};
 constexpr size_t R_SIZE{32};
-constexpr size_t MEMO_SIZE{512};
 constexpr size_t JUBJUB_POINT_SIZE{32};
 constexpr size_t JUBJUB_SCALAR_SIZE{32};
 
-constexpr size_t NOTEPLAINTEXT_SIZE{NOTEPLAINTEXT_LEADING + V_SIZE + RHO_SIZE + R_SIZE + MEMO_SIZE};
+constexpr size_t NOTEPLAINTEXT_SIZE{NOTEPLAINTEXT_LEADING + V_SIZE + RHO_SIZE + R_SIZE + Memo::SIZE};
 
-constexpr size_t SAPLING_ENCPLAINTEXT_SIZE{NOTEPLAINTEXT_LEADING + SAPLING_DIVERSIFIER_SIZE + V_SIZE + R_SIZE + MEMO_SIZE};
+constexpr size_t SAPLING_ENCPLAINTEXT_SIZE{NOTEPLAINTEXT_LEADING + SAPLING_DIVERSIFIER_SIZE + V_SIZE + R_SIZE + Memo::SIZE};
 constexpr size_t SAPLING_OUTPLAINTEXT_SIZE{JUBJUB_POINT_SIZE + JUBJUB_SCALAR_SIZE};
 
 constexpr size_t SAPLING_ENCCIPHERTEXT_SIZE{SAPLING_ENCPLAINTEXT_SIZE + NOTEENCRYPTION_AUTH_BYTES};

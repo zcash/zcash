@@ -194,6 +194,7 @@ LIBZCASH_H = \
   zcash/cache.h \
   zcash/History.hpp \
   zcash/JoinSplit.hpp \
+  zcash/memo.h \
   zcash/Note.hpp \
   zcash/prf.h \
   zcash/Proof.hpp \
@@ -324,7 +325,6 @@ BITCOIN_CORE_H = \
   wallet/wallet_tx_builder.h \
   wallet/crypter.h \
   wallet/db.h \
-  wallet/memo.h \
   wallet/orchard.h \
   wallet/paymentdisclosure.h \
   wallet/paymentdisclosuredb.h \
@@ -680,6 +680,7 @@ libzcash_a_SOURCES = \
   zcash/cache.cpp \
   zcash/History.cpp \
   zcash/JoinSplit.cpp \
+  zcash/memo.cpp \
   zcash/Note.cpp \
   zcash/prf.cpp \
   zcash/util.cpp

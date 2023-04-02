@@ -981,13 +981,17 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
             },
             [&](const libzcash::SaplingPaymentAddress& addr) {
                 builder.AddSaplingOutput(
-                        r.isInternal ? internalOVK : externalOVK, addr, r.amount,
-                        r.memo.has_value() ? r.memo.value().ToBytes() : Memo::NoMemo().ToBytes());
+                        r.isInternal ? internalOVK : externalOVK,
+                        addr,
+                        r.amount,
+                        r.memo);
             },
             [&](const libzcash::OrchardRawAddress& addr) {
                 builder.AddOrchardOutput(
-                        r.isInternal ? internalOVK : externalOVK, addr, r.amount,
-                        r.memo.has_value() ? std::optional(r.memo.value().ToBytes()) : std::nullopt);
+                        r.isInternal ? internalOVK : externalOVK,
+                        addr,
+                        r.amount,
+                        r.memo);
             },
         });
         if (result.has_value()) {

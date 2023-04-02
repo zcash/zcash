@@ -117,7 +117,7 @@ public:
     bool operator()(const libzcash::SaplingPaymentAddress& pa) const {
         uint256 ovk;
         auto note = libzcash::SaplingNote(pa, fundingStreamValue, zip212Enabled);
-        auto output = OutputDescriptionInfo(ovk, note, NO_MEMO);
+        auto output = OutputDescriptionInfo(ovk, note, std::nullopt);
 
         auto odesc = output.Build(ctx);
         if (odesc) {
@@ -277,7 +277,7 @@ public:
         uint256 ovk;
 
         auto note = libzcash::SaplingNote(pa, miner_reward, GetZip212Flag());
-        auto output = OutputDescriptionInfo(ovk, note, NO_MEMO);
+        auto output = OutputDescriptionInfo(ovk, note, std::nullopt);
 
         auto odesc = output.Build(ctx);
         if (!odesc) {
