@@ -51,23 +51,22 @@ public:
 
     static Memo FromHexOrThrow(const std::string& memoHex) {
         return std::visit(match {
-            [&](Memo memo) {
+            [](Memo memo) {
                 return memo;
             },
-            [&](MemoError err) {
+            [&](MemoError err) -> Memo {
                 switch (err) {
                     case MemoError::HexDecodeError:
-                        throw std::runtime_error(
+                        throw JSONRPCError(
+                                RPC_INVALID_PARAMETER,
                                 "Invalid parameter, expected memo data in hexadecimal format.");
                     case MemoError::MemoTooLong:
-                        throw std::runtime_error(strprintf(
-                                "Invalid parameter, memo is longer than the maximum allowed %d characters.",
-                                ZC_MEMO_SIZE));
-                    default:
-                        assert(false);
+                        throw JSONRPCError(
+                                RPC_INVALID_PARAMETER,
+                                strprintf(
+                                        "Invalid parameter, memo is longer than the maximum allowed %d characters.",
+                                        ZC_MEMO_SIZE));
                 }
-                // unreachable, but the compiler can't tell
-                return Memo::NoMemo();
             }
         }, Memo::FromHex(memoHex));
     }

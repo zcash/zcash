@@ -4904,26 +4904,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         UniValue memoValue = find_value(o, "memo");
         std::optional<Memo> memo;
         if (!memoValue.isNull()) {
-            auto memoHex = memoValue.get_str();
-            std::visit(match {
-                [&](MemoError err) {
-                    switch (err) {
-                        case MemoError::HexDecodeError:
-                            throw JSONRPCError(
-                                    RPC_INVALID_PARAMETER,
-                                    "Invalid parameter, expected memo data in hexadecimal format.");
-                        case MemoError::MemoTooLong:
-                            throw JSONRPCError(
-                                    RPC_INVALID_PARAMETER,
-                                    strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
-                        default:
-                            assert(false);
-                    }
-                },
-                [&](Memo result) {
-                    memo = result;
-                }
-            }, Memo::FromHex(memoHex));
+            memo = Memo::FromHexOrThrow(memoValue.get_str());
         }
 
         UniValue av = find_value(o, "amount");
