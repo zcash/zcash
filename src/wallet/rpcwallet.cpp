@@ -4813,7 +4813,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "                           the output is being sent to a transparent address, it’s an error to include this field.\n"
             "    }, ... ]\n"
             "3. minconf               (numeric, optional, default=" + strprintf("%u", DEFAULT_NOTE_CONFIRMATIONS) + ") Only use funds confirmed at least this many times.\n"
-            "4. fee                   (numeric, optional, default=" + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
+            "4. fee                   (numeric, optional, default=-1) The fee amount to attach to this transaction. The default behavior\n"
+            "                         is to use a fee calculated according to ZIP 317.\n"
             "5. privacyPolicy         (string, optional, default=\"LegacyCompat\") Policy for what information leakage is acceptable.\n"
             "                         One of the following strings:\n"
             "                               - \"FullPrivacy\": Only allow fully-shielded transactions (involving a single shielded value pool).\n"
@@ -5028,31 +5029,33 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     int nMinDepth = parseMinconf(DEFAULT_NOTE_CONFIRMATIONS, params, 2, std::nullopt);
 
     // Fee in Zatoshis, not currency format)
-    CAmount nFee = DEFAULT_FEE;
-    if (params.size() > 3) {
+    std::optional<CAmount> nFee;
+    if (params.size() > 3 && params[3].get_real() >= 0.0) {
+        CAmount fixedFee;
         if (params[3].get_real() == 0.0) {
-            nFee = 0;
+            fixedFee = 0;
         } else {
-            nFee = AmountFromValue( params[3] );
+            fixedFee = AmountFromValue( params[3] );
         }
 
         // Check that the user specified fee is not absurd.
         // This allows amount=0 (and all amount < DEFAULT_FEE) transactions to use the default network fee
         // or anything less than DEFAULT_FEE instead of being forced to use a custom fee and leak metadata
         if (nTotalOut < DEFAULT_FEE) {
-            if (nFee > DEFAULT_FEE) {
+            if (fixedFee > DEFAULT_FEE) {
                 throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
-                        strprintf("Small transaction amount %s has fee %s that is greater than the default fee %s", FormatMoney(nTotalOut), FormatMoney(nFee), FormatMoney(DEFAULT_FEE)));
+                        strprintf("Small transaction amount %s has fee %s that is greater than the default fee %s", FormatMoney(nTotalOut), FormatMoney(fixedFee), FormatMoney(DEFAULT_FEE)));
             }
         } else {
             // Check that the user specified fee is not absurd.
-            if (nFee > nTotalOut) {
+            if (fixedFee > nTotalOut) {
                 throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
-                        strprintf("Fee %s is greater than the sum of outputs %s and also greater than the default fee", FormatMoney(nFee), FormatMoney(nTotalOut)));
+                        strprintf("Fee %s is greater than the sum of outputs %s and also greater than the default fee", FormatMoney(fixedFee), FormatMoney(nTotalOut)));
             }
         }
+        nFee = fixedFee;
     }
 
     // Use input parameters as the optional context info to be returned by z_getoperationstatus and z_getoperationresult.
@@ -5060,7 +5063,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     o.pushKV("fromaddress", params[0]);
     o.pushKV("amounts", params[1]);
     o.pushKV("minconf", nMinDepth);
-    o.pushKV("fee", std::stod(FormatMoney(nFee)));
+    if (nFee.has_value()) {
+        o.pushKV("fee", std::stod(FormatMoney(nFee.value())));
+    }
     UniValue contextInfo = o;
 
     // Create operation and add to global queue

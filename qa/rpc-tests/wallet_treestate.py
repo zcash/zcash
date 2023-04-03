@@ -7,6 +7,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, connect_nodes_bi, wait_and_assert_operationid_status, \
     get_coinbase_address, DEFAULT_FEE
+from test_framework.zip317 import compute_conventional_fee
 
 import time
 from decimal import Decimal
@@ -79,7 +80,7 @@ class WalletTreeStateTest (BitcoinTestFramework):
         # the z_sendmany implementation because there are only two inputs per joinsplit.
         recipients = []
         recipients.append({"address": self.nodes[2].z_getnewaddress(), "amount": Decimal('18.0')})
-        recipients.append({"address": self.nodes[2].z_getnewaddress(), "amount": Decimal('12.0') - 4*DEFAULT_FEE})
+        recipients.append({"address": self.nodes[2].z_getnewaddress(), "amount": Decimal('12.0') - 4 * compute_conventional_fee(3)})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1)
 
         # Wait for Tx 2 to begin executing...

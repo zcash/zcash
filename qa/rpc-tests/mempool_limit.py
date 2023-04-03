@@ -13,6 +13,7 @@ from test_framework.util import (
     wait_and_assert_operationid_status,
     DEFAULT_FEE
 )
+from test_framework.zip317 import compute_conventional_fee
 
 from decimal import Decimal
 from time import sleep
@@ -105,9 +106,9 @@ class MempoolLimit(BitcoinTestFramework):
         print("Checking mempool size reset after block mined...")
         self.check_mempool_sizes(0)
         zaddr4 = self.nodes[0].z_getnewaddress('sapling')
-        opid4 = self.nodes[0].z_sendmany(zaddr1, [{"address": zaddr4, "amount": Decimal('10.0') - 2*DEFAULT_FEE}], 1)
+        opid4 = self.nodes[0].z_sendmany(zaddr1, [{"address": zaddr4, "amount": Decimal('10.0') - 2*compute_conventional_fee(2)}], 1)
         wait_and_assert_operationid_status(self.nodes[0], opid4)
-        opid5 = self.nodes[0].z_sendmany(zaddr2, [{"address": zaddr4, "amount": Decimal('10.0') - 2*DEFAULT_FEE}], 1)
+        opid5 = self.nodes[0].z_sendmany(zaddr2, [{"address": zaddr4, "amount": Decimal('10.0') - 2*compute_conventional_fee(2)}], 1)
         wait_and_assert_operationid_status(self.nodes[0], opid5)
         self.sync_all()
 

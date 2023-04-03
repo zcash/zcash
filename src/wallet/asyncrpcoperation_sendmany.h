@@ -35,7 +35,7 @@ public:
         int minDepth,
         unsigned int anchorDepth,
         TransactionStrategy strategy,
-        CAmount fee = DEFAULT_FEE,
+        std::optional<CAmount> fee,
         UniValue contextInfo = NullUniValue);
 
     virtual ~AsyncRPCOperation_sendmany();
@@ -61,7 +61,7 @@ private:
     TransactionStrategy strategy_;
     int mindepth_{1};
     unsigned int anchordepth_{nAnchorConfirmations};
-    CAmount fee_;
+    std::optional<CAmount> fee_;
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 
     uint256 main_impl(CWallet& wallet);

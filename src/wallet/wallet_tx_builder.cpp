@@ -3,6 +3,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "wallet/wallet_tx_builder.h"
+#include "zip317.h"
 
 using namespace libzcash;
 
@@ -12,6 +13,22 @@ int GetAnchorHeight(const CChain& chain, uint32_t anchorConfirmations)
     return nextBlockHeight - anchorConfirmations;
 }
 
+/// Returns `std::nullopt` in the case of Sprout, since that isn’t a member of `OutputPool`.
+static std::optional<OutputPool> ChangeAddressPool(const ZTXOSelector& selector) {
+    return std::visit(match {
+        [](const CKeyID&) -> std::optional<OutputPool> { return OutputPool::Transparent; },
+        [](const CScriptID&) -> std::optional<OutputPool> { return OutputPool::Transparent; },
+        [](const libzcash::SproutPaymentAddress&) -> std::optional<OutputPool> { return std::nullopt; },
+        [](const libzcash::SproutViewingKey&) -> std::optional<OutputPool> { return std::nullopt; },
+        [](const libzcash::SaplingPaymentAddress&) -> std::optional<OutputPool> { return OutputPool::Sapling; },
+        [](const libzcash::SaplingExtendedFullViewingKey&) -> std::optional<OutputPool> { return OutputPool::Sapling; },
+        // TODO: These need some real logic
+        [](const libzcash::UnifiedAddress& ua) -> std::optional<OutputPool> { return OutputPool::Orchard; },
+        [](const libzcash::UnifiedFullViewingKey& fvk) -> std::optional<OutputPool> { return OutputPool::Orchard; },
+        [](const AccountZTXOPattern& acct) -> std::optional<OutputPool> { return OutputPool::Orchard; }
+    }, selector.GetPattern());
+}
+
 PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
         CWallet& wallet,
         const ZTXOSelector& selector,
@@ -19,7 +36,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
         const std::vector<Payment>& payments,
         const CChain& chain,
         TransactionStrategy strategy,
-        CAmount fee,
+        std::optional<CAmount> fee,
         uint32_t anchorConfirmations) const
 {
     assert(fee < MAX_MONEY);
@@ -31,11 +48,15 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
     }
 
     auto resolvedSelection = std::get<InputSelection>(selected);
+    // TODO: don’t reassign
+    spendable = resolvedSelection.GetInputs();
     auto resolvedPayments = resolvedSelection.GetPayments();
+    // TODO: don’t reassign
+    auto finalFee = resolvedSelection.GetFee();
 
     // We do not set a change address if there is no change.
     std::optional<ChangeAddress> changeAddr;
-    auto changeAmount = spendable.Total() - resolvedPayments.Total() - fee;
+    auto changeAmount = spendable.Total() - resolvedPayments.Total() - finalFee;
     if (changeAmount > 0) {
         // Determine the account we're sending from.
         auto sendFromAccount = wallet.FindAccountForSelector(selector).value_or(ZCASH_LEGACY_ACCOUNT);
@@ -149,7 +170,7 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
             spendable,
             resolvedPayments,
             changeAddr,
-            fee,
+            finalFee,
             ovks.first,
             ovks.second,
             anchorHeight);
@@ -157,8 +178,16 @@ PrepareTransactionResult WalletTxBuilder::PrepareTransaction(
     return effects;
 }
 
-Payments InputSelection::GetPayments() const {
-    return this->payments;
+const SpendableInputs& InputSelection::GetInputs() const {
+    return inputs;
+}
+
+const Payments& InputSelection::GetPayments() const {
+    return payments;
+}
+
+CAmount InputSelection::GetFee() const {
+    return fee;
 }
 
 CAmount WalletTxBuilder::DefaultDustThreshold() const {
@@ -177,6 +206,182 @@ SpendableInputs WalletTxBuilder::FindAllSpendableInputs(
     return wallet.FindSpendableInputs(selector, minDepth, std::nullopt);
 }
 
+static size_t NotOne(size_t n)
+{
+    return n == 1 ? 2 : n;
+}
+
+/// ISSUES:
+/// • z_shieldcoinbase currently checks the fee in advance of calling PrepareTransaction in order to
+///   determine the payment amount. But that fee possibly isn’t correct. We could perhaps have _no_
+///   payments in z_shieldcoinbase, but provide an explicit change address? (Don’t expose this via
+///   RPC, and give it a different name, e.g. `NetFundsRecipient` in the WalletTxBuilder interface)
+static CAmount
+CalcZIP317Fee(
+        const std::optional<SpendableInputs>& inputs,
+        const std::vector<ResolvedPayment>& payments,
+        const std::optional<std::optional<OutputPool>>& changeAddr)
+{
+    std::vector<CTxOut> vouts{};
+    size_t sproutOutputCount = 0;
+    size_t saplingOutputCount{}, orchardOutputCount{};
+    for (const auto& payment : payments) {
+        std::visit(match {
+            [&](const CKeyID& addr) {
+                vouts.emplace_back(payment.amount, GetScriptForDestination(addr));
+            },
+            [&](const CScriptID& addr) {
+                vouts.emplace_back(payment.amount, GetScriptForDestination(addr));
+            },
+            [&](const libzcash::SaplingPaymentAddress&) {
+                ++saplingOutputCount;
+            },
+            [&](const libzcash::OrchardRawAddress&) {
+                ++orchardOutputCount;
+            }
+        }, payment.address);
+    }
+
+    if (changeAddr.has_value()) {
+        auto changePool = changeAddr.value();
+        if (changePool.has_value()) {
+            switch (changePool.value()) {
+                case OutputPool::Transparent:
+                    // TODO: need to either get an actual change address or make a fake vout here
+                    break;
+                case OutputPool::Sapling:
+                    ++saplingOutputCount;
+                    break;
+                case OutputPool::Orchard:
+                    ++orchardOutputCount;
+                    break;
+            }
+        } else {
+            ++sproutOutputCount;
+        }
+    }
+
+    size_t logicalActionCount;
+    if (inputs.has_value()) {
+        std::vector<CTxIn> vins{};
+        for (const auto& utxo : inputs.value().utxos) {
+            vins.emplace_back(
+                    COutPoint(utxo.tx->GetHash(), utxo.i),
+                    utxo.tx->vout[utxo.i].scriptPubKey);
+        }
+        logicalActionCount = CalculateLogicalActionCount(
+                vins,
+                vouts,
+                std::max(inputs.value().sproutNoteEntries.size(), sproutOutputCount),
+                inputs.value().saplingNoteEntries.size(),
+                NotOne(saplingOutputCount),
+                NotOne(std::max(inputs.value().orchardNoteMetadata.size(), orchardOutputCount)));
+
+    } else {
+        logicalActionCount = CalculateLogicalActionCount(
+                {},
+                vouts,
+                sproutOutputCount,
+                0,
+                NotOne(saplingOutputCount),
+                NotOne(orchardOutputCount));
+    }
+
+    return CalculateConventionalFee(logicalActionCount);
+}
+
+InvalidFundsError ReportInvalidFunds(
+        const SpendableInputs& spendable,
+        bool hasQuasiChange,
+        CAmount fee,
+        CAmount dustThreshold,
+        CAmount targetAmount,
+        CAmount changeAmount)
+{
+    return InvalidFundsError(
+            spendable.Total(),
+            hasQuasiChange
+            // TODO: NEED TESTS TO EXERCISE THIS
+            ? InvalidFundsReason(QuasiChangeError(fee, dustThreshold))
+            : (changeAmount > 0 && changeAmount < dustThreshold
+               // TODO: we should provide the option for the caller to explicitly forego change
+               // (definitionally an amount below the dust amount) and send the extra to the
+               // recipient or the miner fee to avoid creating dust change, rather than prohibit
+               // them from sending entirely in this circumstance. (Daira disagrees, as this could
+               // leak information to the recipient or publicly in the fee.)
+               ? InvalidFundsReason(DustThresholdError(dustThreshold, changeAmount))
+               : InvalidFundsReason(InsufficientFundsError(targetAmount))));
+}
+
+/// On the initial call, we haven’t yet selected inputs, so we assume the outputs dominate the
+/// actions.
+///
+/// 1. calc fee using only resolvedPayments to set a lower bound on the actual fee
+///    • this also needs to know which pool change is going to, so it can determine what the fee is
+///      with change _if_ there is change
+/// 2. iterate over LimitToAmount until the updated fee (now including spends) matches the expected
+///    fee
+tl::expected<std::pair<SpendableInputs, CAmount>, InputSelectionError>
+IterateLimit(
+        CAmount sendAmount,
+        CAmount dustThreshold,
+        const SpendableInputs& spendable,
+        const Payments& resolved,
+        const std::optional<std::optional<OutputPool>>& changePool)
+{
+    SpendableInputs spendableMut;
+
+    auto previousFee = MINIMUM_FEE;
+    auto updatedFee = CalcZIP317Fee(std::nullopt, resolved.GetResolvedPayments(), std::nullopt);
+    // This is used to increase the target amount just enough (generally by 0 or 1) to force
+    // selection of additional notes.
+    CAmount bumpTargetAmount{0};
+
+    do {
+        spendableMut = spendable;
+
+        auto targetAmount{sendAmount + updatedFee};
+
+        // TODO: the set of recipient pools is not quite sufficient information here; we should
+        // probably perform note selection at the same time as we're performing resolved payment
+        // construction above.
+        bool foundSufficientFunds =
+            spendableMut.LimitToAmount(
+                    targetAmount + bumpTargetAmount,
+                    dustThreshold,
+                    resolved.GetRecipientPools());
+        CAmount changeAmount{spendableMut.Total() - targetAmount};
+        if (foundSufficientFunds) {
+            previousFee = updatedFee;
+            updatedFee = CalcZIP317Fee(
+                    spendableMut,
+                    resolved.GetResolvedPayments(),
+                    changeAmount > 0
+                    ? std::optional<std::optional<OutputPool>>(changePool)
+                    : std::nullopt);
+        } else {
+            return tl::make_unexpected(
+                    ReportInvalidFunds(
+                            spendableMut,
+                            bumpTargetAmount != 0,
+                            previousFee,
+                            dustThreshold,
+                            targetAmount,
+                            changeAmount));
+        }
+        // This happens when we have exactly `MARGINAL_FEE` change, then add a change output that
+        // causes the conventional fee to consume that change, leaving us with no change, which then
+        // lowers the fee.
+        if (updatedFee < previousFee) {
+            // Bump the updated fee so that we don’t exit the loop, but should force us to take an
+            // extra note (or fail) in the next `LimitToAmount`.
+            bumpTargetAmount = 1;
+        }
+    } while (updatedFee != previousFee);
+
+    return std::make_pair(spendableMut, updatedFee);
+}
+
 InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
         const CWallet& wallet,
         const ZTXOSelector& selector,
@@ -184,7 +389,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
         const std::vector<Payment>& payments,
         const CChain& chain,
         TransactionStrategy strategy,
-        CAmount fee,
+        std::optional<CAmount> fee,
         int anchorHeight) const
 {
     LOCK2(cs_main, wallet.cs_wallet);
@@ -303,25 +508,38 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     for (const auto& payment : payments) {
         sendAmount += payment.GetAmount();
     }
-    CAmount targetAmount{sendAmount - fee};
 
-    // TODO: the set of recipient pools is not quite sufficient information here; we should
-    // probably perform note selection at the same time as we're performing resolved payment
-    // construction above.
-    if (!spendableMut.LimitToAmount(targetAmount, dustThreshold, resolved.GetRecipientPools())) {
+    CAmount finalFee;
+    CAmount targetAmount;
+    if (fee.has_value()) {
+        finalFee = fee.value();
+        targetAmount = sendAmount + finalFee;
+        // TODO: the set of recipient pools is not quite sufficient information here; we should
+        // probably perform note selection at the same time as we're performing resolved payment
+        // construction above.
+        bool foundSufficientFunds = spendableMut.LimitToAmount(
+                sendAmount + finalFee,
+                dustThreshold,
+                resolved.GetRecipientPools());
         CAmount changeAmount{spendableMut.Total() - targetAmount};
-        return InvalidFundsError(
-                spendableMut.Total(),
-                changeAmount > 0 && changeAmount < dustThreshold
-                // TODO: we should provide the option for the caller to explicitly
-                // forego change (definitionally an amount below the dust amount)
-                // and send the extra to the recipient or the miner fee to avoid
-                // creating dust change, rather than prohibit them from sending
-                // entirely in this circumstance.
-                // (Daira disagrees, as this could leak information to the recipient
-                // or publicly in the fee.)
-                ? InvalidFundsReason(DustThresholdError(dustThreshold, changeAmount))
-                : InvalidFundsReason(InsufficientFundsError(targetAmount)));
+        if (!foundSufficientFunds) {
+            return ReportInvalidFunds(
+                    spendableMut,
+                    false,
+                    finalFee,
+                    dustThreshold,
+                    targetAmount,
+                    changeAmount);
+        }
+    } else {
+        auto limit_result = IterateLimit(sendAmount, dustThreshold, spendableMut, resolved, ChangeAddressPool(selector));
+        if (limit_result.has_value()) {
+            spendableMut = limit_result.value().first;
+            finalFee = limit_result.value().second;
+            targetAmount = sendAmount - finalFee;
+        } else {
+            return limit_result.error();
+        }
     }
 
     // When spending transparent coinbase outputs, all inputs must be fully
@@ -341,7 +559,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
                 this->maxOrchardActions);
     }
 
-    return InputSelection(resolved, anchorHeight);
+    return InputSelection(spendableMut, resolved, finalFee, anchorHeight);
 }
 
 std::pair<uint256, uint256>

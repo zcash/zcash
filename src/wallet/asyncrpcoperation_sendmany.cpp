@@ -49,13 +49,13 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         int minDepth,
         unsigned int anchorDepth,
         TransactionStrategy strategy,
-        CAmount fee,
+        std::optional<CAmount> fee,
         UniValue contextInfo) :
         builder_(std::move(builder)), ztxoSelector_(ztxoSelector), recipients_(recipients),
         mindepth_(minDepth), anchordepth_(anchorDepth), strategy_(strategy), fee_(fee),
         contextinfo_(contextInfo)
 {
-    assert(fee_ >= 0);
+    assert(!fee_.has_value() || fee_.value() >= 0);
     assert(mindepth_ >= 0);
     assert(!recipients_.empty());
     assert(ztxoSelector.RequireSpendingKeys());

@@ -239,6 +239,15 @@ enum class AddressResolutionError {
     RevealingReceiverAmountsNotAllowed,
 };
 
+class QuasiChangeError {
+public:
+    CAmount finalFee;
+    CAmount dustThreshold;
+
+    QuasiChangeError(CAmount finalFee, CAmount dustThreshold):
+        finalFee(finalFee), dustThreshold(dustThreshold) { }
+};
+
 class InsufficientFundsError {
 public:
     CAmount required;
@@ -257,6 +266,7 @@ public:
 };
 
 typedef std::variant<
+    QuasiChangeError,
     InsufficientFundsError,
     DustThresholdError> InvalidFundsReason;
 
@@ -302,14 +312,18 @@ typedef std::variant<
 
 class InputSelection {
 private:
+    SpendableInputs inputs;
     Payments payments;
+    CAmount fee;
     int orchardAnchorHeight;
 
 public:
-    InputSelection(Payments payments, int orchardAnchorHeight):
-        payments(payments), orchardAnchorHeight(orchardAnchorHeight) {}
+    InputSelection(SpendableInputs inputs, Payments payments, CAmount fee, int orchardAnchorHeight):
+        inputs(inputs), payments(payments), fee(fee), orchardAnchorHeight(orchardAnchorHeight) {}
 
-    Payments GetPayments() const;
+    const SpendableInputs& GetInputs() const;
+    const Payments& GetPayments() const;
+    CAmount GetFee() const;
 };
 
 typedef std::variant<
@@ -343,7 +357,7 @@ private:
             const std::vector<Payment>& payments,
             const CChain& chain,
             TransactionStrategy strategy,
-            CAmount fee,
+            std::optional<CAmount> fee,
             int anchorHeight) const;
     /**
      * Compute the internal and external OVKs to use in transaction construction, given
@@ -370,7 +384,8 @@ public:
             const std::vector<Payment>& payments,
             const CChain& chain,
             TransactionStrategy strategy,
-            CAmount fee,
+            /// A fixed fee is used if provided, otherwise it is calculated based on ZIP 317.
+            std::optional<CAmount> fee,
             uint32_t anchorConfirmations) const;
 };
 

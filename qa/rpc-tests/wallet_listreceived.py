@@ -13,10 +13,11 @@ from test_framework.util import (
     connect_nodes_bi,
     nuparams,
     DEFAULT_FEE,
-    DEFAULT_FEE_ZATS,
     NU5_BRANCH_ID,
 )
 from test_framework.util import wait_and_assert_operationid_status, start_nodes
+from test_framework.mininode import COIN
+from test_framework.zip317 import compute_conventional_fee
 from decimal import Decimal
 
 my_memo_str = 'c0ffee' # stay awake
@@ -157,8 +158,8 @@ class ListReceivedTest (BitcoinTestFramework):
         outputs = sorted(pt['outputs'], key=lambda x: x['valueZat'])
         assert_equal(outputs[0]['pool'], 'sapling')
         assert_equal(outputs[0]['address'], zaddr1)
-        assert_equal(outputs[0]['value'], Decimal('0.4') - DEFAULT_FEE)
-        assert_equal(outputs[0]['valueZat'], 40000000 - DEFAULT_FEE_ZATS)
+        assert_equal(outputs[0]['value'], Decimal('0.4') - compute_conventional_fee(2))
+        assert_equal(outputs[0]['valueZat'], 40000000 - compute_conventional_fee(2)*COIN)
         assert_equal(outputs[0]['output'], 1)
         assert_equal(outputs[0]['outgoing'], False)
         assert_equal(outputs[0]['memo'], no_memo)
@@ -178,8 +179,8 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(2, len(r), "zaddr1 Should have received 2 notes")
         r = sorted(r, key = lambda received: received['amount'])
         assert_equal(txid, r[0]['txid'])
-        assert_equal(Decimal('0.4')-DEFAULT_FEE, r[0]['amount'])
-        assert_equal(40000000-DEFAULT_FEE_ZATS, r[0]['amountZat'])
+        assert_equal(Decimal('0.4')-compute_conventional_fee(2), r[0]['amount'])
+        assert_equal(40000000-compute_conventional_fee(2)*COIN, r[0]['amountZat'])
         assert_equal(r[0]['change'], True, "Note valued at (0.4-"+str(DEFAULT_FEE)+") should be change")
         assert_equal(no_memo, r[0]['memo'])
 
@@ -382,8 +383,8 @@ class ListReceivedTest (BitcoinTestFramework):
 
         # Verify that we observe the change output
         assert_equal(outputs[2]['pool'], 'orchard')
-        assert_equal(outputs[2]['value'], Decimal('0.49999'))
-        assert_equal(outputs[2]['valueZat'], 49999000)
+        assert_equal(outputs[2]['value'], Decimal('0.5') - compute_conventional_fee(3))
+        assert_equal(outputs[2]['valueZat'], 50000000 - compute_conventional_fee(3)*COIN)
         assert_equal(outputs[2]['outgoing'], False)
         assert_equal(outputs[2]['walletInternal'], True)
         assert_equal(outputs[2]['memo'], no_memo)

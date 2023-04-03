@@ -1251,7 +1251,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         WalletTxBuilder builder(Params(), minRelayTxFee);
         std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy, std::nullopt));
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
@@ -1268,7 +1268,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         WalletTxBuilder builder(Params(), minRelayTxFee);
         std::vector<Payment> recipients = { Payment(taddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy));
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy, std::nullopt));
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();

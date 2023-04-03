@@ -23,6 +23,9 @@ static const int64_t WEIGHT_RATIO_SCALE = INT64_C(10000000000000000);
 static const int64_t WEIGHT_RATIO_CAP = 4;
 static const size_t BLOCK_UNPAID_ACTION_LIMIT = 50;
 
+/// This is the lowest the conventional fee can be in ZIP 317.
+static const CAmount MINIMUM_FEE = MARGINAL_FEE * GRACE_ACTIONS;
+
 /// Return the conventional fee for the given `logicalActionCount` calculated according to
 /// <https://zips.z.cash/zip-0317#fee-calculation>.
 CAmount CalculateConventionalFee(size_t logicalActionCount);

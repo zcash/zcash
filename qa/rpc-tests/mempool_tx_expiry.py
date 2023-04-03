@@ -12,6 +12,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, \
     connect_nodes_bi, sync_blocks, start_nodes, \
     wait_and_assert_operationid_status, DEFAULT_FEE
+from test_framework.zip317 import compute_conventional_fee
 
 from decimal import Decimal
 
@@ -219,7 +220,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print("Ensure balance of node 0 is correct")
         bal = self.nodes[0].z_gettotalbalance()
         print("Balance after expire_shielded has expired: ", bal)
-        assert_equal(Decimal(bal["private"]), Decimal('8.0') - DEFAULT_FEE)
+        assert_equal(Decimal(bal["private"]), Decimal('8.0') - compute_conventional_fee(2))
 
         print("Splitting network...")
         self.split_network()
