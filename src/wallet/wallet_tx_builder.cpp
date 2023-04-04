@@ -550,39 +550,37 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
     }
 
     // Add outputs
-    try {
-        for (const auto& r : payments.GetResolvedPayments()) {
-            examine(r.address, match {
-                    [&](const CKeyID& keyId) {
-                        if (r.memo.has_value()) {
-                            throw TransactionBuilderResult(
-                                    "Memos cannot be sent to transparent addresses.");
-                        } else {
-                            builder.AddTransparentOutput(keyId, r.amount);
-                        }
-                    },
-                    [&](const CScriptID& scriptId) {
-                        if (r.memo.has_value()) {
-                            throw TransactionBuilderResult(
-                                    "Memos cannot be sent to transparent addresses.");
-                        } else {
-                            builder.AddTransparentOutput(scriptId, r.amount);
-                        }
-                    },
-                    [&](const libzcash::SaplingPaymentAddress& addr) {
-                        builder.AddSaplingOutput(
-                                r.isInternal ? internalOVK : externalOVK, addr, r.amount,
-                                r.memo.has_value() ? r.memo.value().ToBytes() : Memo::NoMemo().ToBytes());
-                    },
-                    [&](const libzcash::OrchardRawAddress& addr) {
-                        builder.AddOrchardOutput(
-                                r.isInternal ? internalOVK : externalOVK, addr, r.amount,
-                                r.memo.has_value() ? std::optional(r.memo.value().ToBytes()) : std::nullopt);
-                    }
-            });
+    for (const auto& r : payments.GetResolvedPayments()) {
+        std::optional<TransactionBuilderResult> result;
+        examine(r.address, match {
+            [&](const CKeyID& keyId) {
+                if (r.memo.has_value()) {
+                    result = TransactionBuilderResult("Memos cannot be sent to transparent addresses.");
+                } else {
+                    builder.AddTransparentOutput(keyId, r.amount);
+                }
+            },
+            [&](const CScriptID& scriptId) {
+                if (r.memo.has_value()) {
+                    result = TransactionBuilderResult("Memos cannot be sent to transparent addresses.");
+                } else {
+                    builder.AddTransparentOutput(scriptId, r.amount);
+                }
+            },
+            [&](const libzcash::SaplingPaymentAddress& addr) {
+                builder.AddSaplingOutput(
+                        r.isInternal ? internalOVK : externalOVK, addr, r.amount,
+                        r.memo.has_value() ? r.memo.value().ToBytes() : Memo::NoMemo().ToBytes());
+            },
+            [&](const libzcash::OrchardRawAddress& addr) {
+                builder.AddOrchardOutput(
+                        r.isInternal ? internalOVK : externalOVK, addr, r.amount,
+                        r.memo.has_value() ? std::optional(r.memo.value().ToBytes()) : std::nullopt);
+            },
+        });
+        if (result.has_value()) {
+            return result.value();
         }
-    } catch (const TransactionBuilderResult& result) {
-        return result;
     }
 
     // Add transparent utxos
