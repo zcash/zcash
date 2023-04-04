@@ -390,7 +390,7 @@ WalletTxBuilder::PrepareTransaction(
         CWallet& wallet,
         const ZTXOSelector& selector,
         const SpendableInputs& spendable,
-        const Recipients& payments,
+        const Recipients& recipients,
         const CChain& chain,
         const TransactionStrategy& strategy,
         const std::optional<CAmount>& fee,
@@ -407,7 +407,7 @@ WalletTxBuilder::PrepareTransaction(
 
     int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);
     bool afterNU5 = params.GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5);
-    auto selected = examine(payments, match {
+    auto selected = examine(recipients, match {
             [&](const std::vector<Payment>& payments) {
                 return ResolveInputsAndPayments(
                         wallet,

@@ -298,7 +298,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     boost::shared_ptr<MinerAddressScript> scriptPubKey(new MinerAddressScript());
     scriptPubKey->reserveScript = CScript() << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f") << OP_CHECKSIG;
     CBlockTemplate *pblocktemplate;
-    CMutableTransaction tx,tx2;
+    CMutableTransaction tx1,tx2;
     CScript script;
     uint256 hash;
 
@@ -384,9 +384,9 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
     delete pblocktemplate;
 
-    TestMemPoolEntryHelper entry;
-    entry.nFee = 0;
-    entry.nHeight = 0;
+    TestMemPoolEntryHelper entryHelper;
+    entryHelper.nFee = 0;
+    entryHelper.nHeight = 0;
 
     // Define a helper function to check the kind of failure from TestBlockValidity.
     auto err_is = [](const std::string& msg) {
@@ -400,29 +400,29 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         // This relies on tx.{vin,vout} having been prepared for the specific check.
         assert(fee >= 0);
         int coinbaseHeight = 20 - 1;
-        tx.vout[0].nValue = -1; // always spend coinbase in the first transaction
+        tx1.vout[0].nValue = -1; // always spend coinbase in the first transaction
 
         for (size_t i = 0; i < numTransactions; ++i)
         {
-            bool spendsCoinbase = tx.vout[0].nValue < fee;
+            bool spendsCoinbase = tx1.vout[0].nValue < fee;
             if (spendsCoinbase) {
                 ++coinbaseHeight;
-                tx.vin[0].prevout.hash = CoinbaseTx(coinbaseHeight)->GetHash();
-                tx.vout[0].nValue = MinerSubsidy(coinbaseHeight);
+                tx1.vin[0].prevout.hash = CoinbaseTx(coinbaseHeight)->GetHash();
+                tx1.vout[0].nValue = MinerSubsidy(coinbaseHeight);
             }
-            assert(tx.vout[0].nValue >= fee);
-            tx.vout[0].nValue -= fee;
-            addTx(i, entry.Fee(fee).Time(GetTime()).SpendsCoinbase(spendsCoinbase), tx);
-            tx.vin[0].prevout.hash = tx.GetHash();
+            assert(tx1.vout[0].nValue >= fee);
+            tx1.vout[0].nValue -= fee;
+            addTx(i, entryHelper.Fee(fee).Time(GetTime()).SpendsCoinbase(spendsCoinbase), tx1);
+            tx1.vin[0].prevout.hash = tx1.GetHash();
         }
     };
 
     // block sigops > limit: 1000 CHECKMULTISIG + 1
-    tx.vin.resize(1);
+    tx1.vin.resize(1);
     // NOTE: OP_NOP is used to force 20 legacy sigops for the CHECKMULTISIG.
-    tx.vin[0].scriptSig = CScript() << OP_0 << OP_0 << OP_0 << OP_NOP << OP_CHECKMULTISIG << OP_1;
-    tx.vin[0].prevout.n = 0;
-    tx.vout.resize(1);
+    tx1.vin[0].scriptSig = CScript() << OP_0 << OP_0 << OP_0 << OP_NOP << OP_CHECKMULTISIG << OP_1;
+    tx1.vin[0].prevout.n = 0;
+    tx1.vout.resize(1);
 
     // If we don't set the # of sigops in the CTxMemPoolEntry, template creation fails.
     PrepareMempool(1000, MINIMUM_FEE, [&](size_t i, auto& entry, auto& tx) {
@@ -445,12 +445,12 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     delete pblocktemplate;
     mempool.clear();
 
-    tx.vin[0].scriptSig = CScript();
+    tx1.vin[0].scriptSig = CScript();
     // 18 * (520char + DROP) + OP_1 = 9433 bytes
     std::vector<unsigned char> vchData(520);
     for (unsigned int i = 0; i < 18; ++i)
-        tx.vin[0].scriptSig << vchData << OP_DROP;
-    tx.vin[0].scriptSig << OP_1;
+        tx1.vin[0].scriptSig << vchData << OP_DROP;
+    tx1.vin[0].scriptSig << OP_1;
 
     // Test block size just under the 2000000-byte limit.
     PrepareMempool(210, CalculateConventionalFee(64), [&](size_t i, auto& entry, auto& tx) {
@@ -475,7 +475,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     delete pblocktemplate;
     mempool.clear();
 
-    tx.vin[0].scriptSig = CScript() << OP_1;
+    tx1.vin[0].scriptSig = CScript() << OP_1;
 
     // Test with an orphan tx in the mempool. Note that this is testing a case that should never occur,
     // because AcceptToMemoryPool would reject the orphan. Using addUnchecked bypasses that rejection.
@@ -486,46 +486,46 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     mempool.clear();
 
     // coinbase in mempool, template creation fails
-    tx.vin.resize(1);
-    tx.vin[0].prevout.SetNull();
-    tx.vin[0].scriptSig = CScript() << OP_0 << OP_1;
-    tx.vout[0].nValue = 0;
-    hash = tx.GetHash();
+    tx1.vin.resize(1);
+    tx1.vin[0].prevout.SetNull();
+    tx1.vin[0].scriptSig = CScript() << OP_0 << OP_1;
+    tx1.vout[0].nValue = 0;
+    hash = tx1.GetHash();
     // give it a fee so it'll get mined
-    mempool.addUnchecked(hash, entry.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(false).FromTx(tx));
+    mempool.addUnchecked(hash, entryHelper.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(false).FromTx(tx1));
     BOOST_CHECK_EXCEPTION(BlockAssembler(chainparams).CreateNewBlock(scriptPubKey), std::runtime_error, err_is("bad-cb-multiple"));
     mempool.clear();
 
     // P2SH txn in mempool (valid, Zcash always had P2SH enabled)
-    tx.vin[0].prevout.hash = CoinbaseTx(1)->GetHash();
-    tx.vin[0].prevout.n = 0;
-    tx.vin[0].scriptSig = CScript() << OP_1;
-    tx.vout[0].nValue = MinerSubsidy(1) - MINIMUM_FEE;
-    assert(tx.vout[0].nValue >= 0);
+    tx1.vin[0].prevout.hash = CoinbaseTx(1)->GetHash();
+    tx1.vin[0].prevout.n = 0;
+    tx1.vin[0].scriptSig = CScript() << OP_1;
+    tx1.vout[0].nValue = MinerSubsidy(1) - MINIMUM_FEE;
+    assert(tx1.vout[0].nValue >= 0);
     script = CScript() << OP_0;
-    tx.vout[0].scriptPubKey = GetScriptForDestination(CScriptID(script));
-    hash = tx.GetHash();
-    mempool.addUnchecked(hash, entry.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx));
-    tx.vin[0].prevout.hash = hash;
-    tx.vin[0].scriptSig = CScript() << std::vector<unsigned char>(script.begin(), script.end());
-    tx.vout[0].nValue -= MINIMUM_FEE;
-    assert(tx.vout[0].nValue >= 0);
-    hash = tx.GetHash();
-    mempool.addUnchecked(hash, entry.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(false).FromTx(tx));
+    tx1.vout[0].scriptPubKey = GetScriptForDestination(CScriptID(script));
+    hash = tx1.GetHash();
+    mempool.addUnchecked(hash, entryHelper.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx1));
+    tx1.vin[0].prevout.hash = hash;
+    tx1.vin[0].scriptSig = CScript() << std::vector<unsigned char>(script.begin(), script.end());
+    tx1.vout[0].nValue -= MINIMUM_FEE;
+    assert(tx1.vout[0].nValue >= 0);
+    hash = tx1.GetHash();
+    mempool.addUnchecked(hash, entryHelper.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(false).FromTx(tx1));
     BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
     delete pblocktemplate;
     mempool.clear();
 
     // double spend txn pair in mempool, template creation fails
-    tx.vin[0].prevout.hash = CoinbaseTx(1)->GetHash();
-    tx.vin[0].scriptSig = CScript() << OP_1;
-    tx.vout[0].nValue = MinerSubsidy(1) - MINIMUM_FEE;
-    tx.vout[0].scriptPubKey = CScript() << OP_1;
-    hash = tx.GetHash();
-    mempool.addUnchecked(hash, entry.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx));
-    tx.vout[0].scriptPubKey = CScript() << OP_2;
-    hash = tx.GetHash();
-    mempool.addUnchecked(hash, entry.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx));
+    tx1.vin[0].prevout.hash = CoinbaseTx(1)->GetHash();
+    tx1.vin[0].scriptSig = CScript() << OP_1;
+    tx1.vout[0].nValue = MinerSubsidy(1) - MINIMUM_FEE;
+    tx1.vout[0].scriptPubKey = CScript() << OP_1;
+    hash = tx1.GetHash();
+    mempool.addUnchecked(hash, entryHelper.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx1));
+    tx1.vout[0].scriptPubKey = CScript() << OP_2;
+    hash = tx1.GetHash();
+    mempool.addUnchecked(hash, entryHelper.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx1));
     BOOST_CHECK_EXCEPTION(BlockAssembler(chainparams).CreateNewBlock(scriptPubKey), std::runtime_error, err_is("bad-txns-inputs-missingorspent"));
     mempool.clear();
 
@@ -546,15 +546,15 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     FixedClock::Instance()->Set(std::chrono::seconds(chainActive.Tip()->GetMedianTimePast()+1));
 
     // height locked
-    tx.vin[0].prevout.hash = CoinbaseTx(1)->GetHash();
-    tx.vin[0].scriptSig = CScript() << OP_1;
-    tx.vin[0].nSequence = 0;
-    tx.vout[0].nValue = MinerSubsidy(1) - MINIMUM_FEE;
-    tx.vout[0].scriptPubKey = CScript() << OP_1;
-    tx.nLockTime = chainActive.Tip()->nHeight+1;
-    hash = tx.GetHash();
-    mempool.addUnchecked(hash, entry.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx));
-    BOOST_CHECK(!CheckFinalTx(tx, LOCKTIME_MEDIAN_TIME_PAST));
+    tx1.vin[0].prevout.hash = CoinbaseTx(1)->GetHash();
+    tx1.vin[0].scriptSig = CScript() << OP_1;
+    tx1.vin[0].nSequence = 0;
+    tx1.vout[0].nValue = MinerSubsidy(1) - MINIMUM_FEE;
+    tx1.vout[0].scriptPubKey = CScript() << OP_1;
+    tx1.nLockTime = chainActive.Tip()->nHeight+1;
+    hash = tx1.GetHash();
+    mempool.addUnchecked(hash, entryHelper.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx1));
+    BOOST_CHECK(!CheckFinalTx(tx1, LOCKTIME_MEDIAN_TIME_PAST));
 
     // time locked
     tx2.vin.resize(1);
@@ -567,7 +567,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx2.vout[0].scriptPubKey = CScript() << OP_1;
     tx2.nLockTime = chainActive.Tip()->GetMedianTimePast()+1;
     hash = tx2.GetHash();
-    mempool.addUnchecked(hash, entry.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx2));
+    mempool.addUnchecked(hash, entryHelper.Fee(MINIMUM_FEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx2));
     BOOST_CHECK(!CheckFinalTx(tx2, LOCKTIME_MEDIAN_TIME_PAST));
 
     BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
@@ -583,7 +583,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     // We can't test this by directly calling CheckFinalTx(tx*, LOCKTIME_MEDIAN_TIME_PAST)
     // because that would use chainActive.Height() which isn't fooled by monkey-patching nHeight.
     // However, this should be equivalent:
-    BOOST_CHECK(IsFinalTx(tx, chainActive.Tip()->nHeight+1, newTime));
+    BOOST_CHECK(IsFinalTx(tx1, chainActive.Tip()->nHeight+1, newTime));
     BOOST_CHECK(IsFinalTx(tx2, chainActive.Tip()->nHeight+1, newTime));
 
     FixedClock::Instance()->Set(std::chrono::seconds(newTime));

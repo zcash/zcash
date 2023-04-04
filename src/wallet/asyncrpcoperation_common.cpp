@@ -44,11 +44,11 @@ std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::opti
 }
 
 void ThrowInputSelectionError(
-        const InputSelectionError& err,
+        const InputSelectionError& error,
         const ZTXOSelector& selector,
         const TransactionStrategy& strategy)
 {
-    examine(err, match {
+    examine(error, match {
         [&](const AddressResolutionError& err) {
             switch (err) {
                 case AddressResolutionError::SproutRecipientsNotSupported:

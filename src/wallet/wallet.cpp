@@ -1882,14 +1882,14 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAccount(
 }
 
 std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
-        const libzcash::PaymentAddress& addr,
+        const libzcash::PaymentAddress& paymentAddr,
         bool requireSpendingKey,
         TransparentCoinbasePolicy transparentCoinbasePolicy,
         bool allowAddressLinkability) const
 {
     auto self = this;
     std::optional<ZTXOPattern> pattern = std::nullopt;
-    examine(addr, match {
+    examine(paymentAddr, match {
         [&](const CKeyID& addr) {
             if (!requireSpendingKey || self->HaveKey(addr)) {
                 pattern = addr;
@@ -1945,14 +1945,14 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForViewingKey(
     auto self = this;
     std::optional<ZTXOPattern> pattern = std::nullopt;
     examine(vk, match {
-        [&](const libzcash::SaplingExtendedFullViewingKey& vk) {
-            if (!requireSpendingKey || self->HaveSaplingSpendingKey(vk)) {
-                pattern = vk;
+        [&](const libzcash::SaplingExtendedFullViewingKey& sefvk) {
+            if (!requireSpendingKey || self->HaveSaplingSpendingKey(sefvk)) {
+                pattern = sefvk;
             }
         },
-        [&](const libzcash::SproutViewingKey& vk) {
-            if (!requireSpendingKey || self->HaveSproutSpendingKey(vk.address())) {
-                pattern = vk;
+        [&](const libzcash::SproutViewingKey& svk) {
+            if (!requireSpendingKey || self->HaveSproutSpendingKey(svk.address())) {
+                pattern = svk;
             }
         },
         [&](const libzcash::UnifiedFullViewingKey& ufvk) {
@@ -2055,9 +2055,9 @@ bool CWallet::SelectorMatchesAddress(
             // that explicitly appear as receivers in the UA.
             for (const auto& receiver : uaSelector) {
                 bool matches = examine(receiver, match {
-                    [&](const libzcash::OrchardRawAddress& orchardAddr) { return false; },
-                    [&](const libzcash::SaplingPaymentAddress& saplingAddr) { return false; },
-                    [&](const libzcash::UnknownReceiver& receiver) { return false; },
+                    [](const libzcash::OrchardRawAddress&) { return false; },
+                    [](const libzcash::SaplingPaymentAddress&) { return false; },
+                    [](const libzcash::UnknownReceiver&) { return false; },
                     [&](const CScriptID& scriptId) {
                         CTxDestination scriptIdDest = scriptId;
                         return address == scriptIdDest;
@@ -6861,8 +6861,8 @@ bool CMerkleTx::AcceptToMemoryPool(CValidationState& state, bool fLimitFree, boo
 
 NoteFilter NoteFilter::ForPaymentAddresses(const std::vector<libzcash::PaymentAddress>& paymentAddrs) {
     NoteFilter addrs;
-    for (const auto& addr: paymentAddrs) {
-        examine(addr, match {
+    for (const auto& paymentAddr: paymentAddrs) {
+        examine(paymentAddr, match {
             [&](const CKeyID& keyId) { },
             [&](const CScriptID& scriptId) { },
             [&](const libzcash::SproutPaymentAddress& addr) {

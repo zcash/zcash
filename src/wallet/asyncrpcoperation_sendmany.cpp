@@ -141,12 +141,12 @@ void AsyncRPCOperation_sendmany::main() {
 // At least #4 differs from the Rust transaction builder.
 tl::expected<uint256, InputSelectionError>
 AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
-    auto spendable = builder_.FindAllSpendableInputs(wallet, ztxoSelector_, mindepth_);
+    auto allSpendable = builder_.FindAllSpendableInputs(wallet, ztxoSelector_, mindepth_);
 
     auto preparedTx = builder_.PrepareTransaction(
             wallet,
             ztxoSelector_,
-            spendable,
+            allSpendable,
             recipients_,
             chainActive,
             strategy_,

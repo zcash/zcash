@@ -3332,9 +3332,9 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
     examine(res, match {
         [&](std::pair<libzcash::UnifiedAddress, libzcash::diversifier_index_t> addr) {
             result.pushKV("address", KeyIO(Params()).EncodePaymentAddress(addr.first));
-            UniValue j;
-            j.setNumStr(ArbitraryIntStr(std::vector(addr.second.begin(), addr.second.end())));
-            result.pushKV("diversifier_index", j);
+            UniValue diversifierIndex;
+            diversifierIndex.setNumStr(ArbitraryIntStr(std::vector(addr.second.begin(), addr.second.end())));
+            result.pushKV("diversifier_index", diversifierIndex);
         },
         [&](WalletUAGenerationError err) {
             std::string strErr;
@@ -3875,25 +3875,22 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         [&](const libzcash::SaplingPaymentAddress& addr) {
             push_sapling_result(addr);
         },
-        [&](const libzcash::UnifiedAddress& addr) {
-            for (const auto& receiver : addr) {
+        [&](const libzcash::UnifiedAddress& ua) {
+            for (const auto& receiver : ua) {
                 examine(receiver, match {
                     [&](const libzcash::SaplingPaymentAddress& addr) {
                         push_sapling_result(addr);
                     },
                     [&](const CScriptID& addr) {
-                        CTxDestination dest = addr;
-                        push_transparent_result(dest);
+                        push_transparent_result(addr);
                     },
                     [&](const CKeyID& addr) {
-                        CTxDestination dest = addr;
-                        push_transparent_result(dest);
+                        push_transparent_result(addr);
                     },
                     [&](const libzcash::OrchardRawAddress& addr) {
                         push_orchard_result(addr);
                     },
-                    [&](const UnknownReceiver& unknown) {}
-
+                    [](const UnknownReceiver& unknown) {}
                 });
             }
         }

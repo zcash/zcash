@@ -1565,7 +1565,7 @@ public:
      * wallet holds the spending keys.
      */
     std::optional<ZTXOSelector> ZTXOSelectorForAddress(
-            const libzcash::PaymentAddress& addr,
+            const libzcash::PaymentAddress& paymentAddr,
             bool requireSpendingKey,
             TransparentCoinbasePolicy transparentCoinbasePolicy,
             bool allowAddressLinkability) const;

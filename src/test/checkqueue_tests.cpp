@@ -413,15 +413,15 @@ BOOST_AUTO_TEST_CASE(test_CheckQueueControl_Locks)
             std::unique_lock<std::mutex> l(m);
             tg.create_thread([&]{
                     CCheckQueueControl<FakeCheck> control(queue.get());
-                    std::unique_lock<std::mutex> l(m);
+                    std::unique_lock<std::mutex> l2(m);
                     has_lock = true;
                     cv.notify_one();
-                    cv.wait(l, [&]{return has_tried;});
+                    cv.wait(l2, [&]{return has_tried;});
                     done = true;
                     cv.notify_one();
                     // Wait until the done is acknowledged
                     //
-                    cv.wait(l, [&]{return done_ack;});
+                    cv.wait(l2, [&]{return done_ack;});
                     });
             // Wait for thread to get the lock
             cv.wait(l, [&](){return has_lock;});

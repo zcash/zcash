@@ -757,8 +757,12 @@ std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::Unif
     auto preferred = addr.GetPreferredRecipientAddress(consensus, height);
     if (preferred.has_value()) {
         return examine(preferred.value(), match {
-            [&](const libzcash::OrchardRawAddress addr) -> std::optional<MinerAddress> { return MinerAddress(addr); },
-            [&](const libzcash::SaplingPaymentAddress addr) -> std::optional<MinerAddress> { return MinerAddress(addr); },
+            [&](const libzcash::OrchardRawAddress ora) -> std::optional<MinerAddress> {
+              return MinerAddress(ora);
+            },
+            [&](const libzcash::SaplingPaymentAddress spa) -> std::optional<MinerAddress> {
+              return MinerAddress(spa);
+            },
             [&](const CKeyID keyID) -> std::optional<MinerAddress> { return operator()(keyID); },
             [&](const auto other) -> std::optional<MinerAddress> { return std::nullopt; }
         });
