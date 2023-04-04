@@ -28,6 +28,7 @@ LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBBITCOIN_CRYPTO_SSE41=crypto/libbitcoin_crypto_sse41.a
 LIBBITCOIN_CRYPTO_AVX2=crypto/libbitcoin_crypto_avx2.a
+LIBCXXBRIDGE=libcxxbridge.a
 LIBRUSTZCASH=$(top_builddir)/target/$(RUST_TARGET)/release/librustzcash.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
 LIBUNIVALUE=univalue/libunivalue.la
@@ -169,6 +170,7 @@ EXTRA_LIBRARIES += \
   $(LIBBITCOIN_CLI) \
   $(LIBBITCOIN_WALLET) \
   $(LIBBITCOIN_ZMQ) \
+  $(LIBCXXBRIDGE) \
   $(LIBZCASH)
 
 lib_LTLIBRARIES = $(LIBZCASH_SCRIPT)
@@ -399,6 +401,12 @@ libbitcoin_server_a_SOURCES = \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
+libcxxbridge_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
+libcxxbridge_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libcxxbridge_a_SOURCES = \
+  $(CXXBRIDGE_CPP) \
+  $(CXXBRIDGE_H)
+
 if ENABLE_ZMQ
 libbitcoin_zmq_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
 libbitcoin_zmq_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
@@ -593,6 +601,7 @@ zcashd_LDADD = \
   $(LIBBITCOIN_SERVER) \
   $(LIBBITCOIN_WALLET) \
   $(LIBBITCOIN_COMMON) \
+  $(LIBCXXBRIDGE) \
   $(LIBUNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_ZMQ) \
@@ -626,6 +635,7 @@ zcash_cli_LDADD = \
   $(LIBBITCOIN_CLI) \
   $(LIBUNIVALUE) \
   $(LIBBITCOIN_UTIL) \
+  $(LIBCXXBRIDGE) \
   $(BOOST_LIBS) \
   $(EVENT_LIBS) \
   $(LIBRUSTZCASH) \
@@ -650,6 +660,7 @@ zcash_tx_LDADD = \
   $(LIBUNIVALUE) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
+  $(LIBCXXBRIDGE) \
   $(LIBSECP256K1) \
   $(LIBRUSTZCASH) \
   $(LIBZCASH) \
@@ -661,7 +672,6 @@ zcash_tx_LDADD += $(BOOST_LIBS)
 
 # zcash protocol primitives #
 libzcash_a_SOURCES = \
-  $(CXXBRIDGE_CPP) \
   zcash/IncrementalMerkleTree.cpp \
   zcash/NoteEncryption.cpp \
   zcash/Address.cpp \
