@@ -28,6 +28,12 @@ AC_CANONICAL_HOST
 
 AH_TOP([#ifndef BITCOIN_CONFIG_H])
 AH_TOP([#define BITCOIN_CONFIG_H])
+AH_TOP([_Pragma("GCC diagnostic push")])
+# NB: This is `-Wreserved-id-macro` instead of `-Wreserved-macro-identifier` because even though
+#     they are synonyms in Clang 15, but on the macOS build (Clang 13), the former flag is the one
+#     that warns.
+AH_TOP([_Pragma("GCC diagnostic ignored \"-Wreserved-id-macro\"")])
+AH_BOTTOM([_Pragma("GCC diagnostic pop")])
 AH_BOTTOM([#endif //BITCOIN_CONFIG_H])
 
 dnl faketime breaks configure and is only needed for make. Disable it here.
@@ -363,7 +369,7 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-missing-prototypes \
   -Wno-old-style-cast \
   -Wno-padded \
-  -Wno-reserved-id-macro -Wno-reserved-identifier -Wno-return-type \
+  -Wno-reserved-identifier -Wno-return-type \
   -Wno-shadow-field -Wno-shadow-field-in-constructor \
   -Wno-shadow-uncaptured-local -Wno-shift-sign-overflow -Wno-shorten-64-to-32 \
   -Wno-sign-compare -Wno-sign-conversion -Wno-string-conversion -Wno-suggest-destructor-override \

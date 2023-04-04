@@ -30,11 +30,14 @@
 // for posix_fallocate
 #ifdef __linux__
 
+_Pragma("GCC diagnostic push")
+_Pragma("GCC diagnostic ignored \"-Wreserved-macro-identifier\"")
 #ifdef _POSIX_C_SOURCE
 #undef _POSIX_C_SOURCE
 #endif
 
 #define _POSIX_C_SOURCE 200112L
+_Pragma("GCC diagnostic pop")
 
 #endif // __linux__
 
