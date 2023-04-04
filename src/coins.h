@@ -422,7 +422,7 @@ public:
 class CCoinsViewDummy : public CCoinsView
 {
 public:
-    ~CCoinsViewDummy() {}
+    ~CCoinsViewDummy() override {}
 
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return false; }
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return false; }
@@ -460,7 +460,7 @@ protected:
 
 public:
     CCoinsViewBacked(CCoinsView *viewIn);
-    ~CCoinsViewBacked() {}
+    ~CCoinsViewBacked() override {}
 
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
     bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
@@ -552,7 +552,7 @@ protected:
 
 public:
     CCoinsViewCache(CCoinsView *baseIn);
-    ~CCoinsViewCache();
+    ~CCoinsViewCache() override;
 
     // Standard CCoinsView methods
     bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;

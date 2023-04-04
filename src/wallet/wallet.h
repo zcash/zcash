@@ -1417,7 +1417,7 @@ public:
         fFileBacked = true;
     }
 
-    ~CWallet()
+    ~CWallet() override
     {
         delete pwalletdbEncryption;
         pwalletdbEncryption = NULL;
@@ -2199,7 +2199,7 @@ public:
         pwallet = pwalletIn;
     }
 
-    ~CReserveKey()
+    ~CReserveKey() override
     {
         ReturnKey();
     }

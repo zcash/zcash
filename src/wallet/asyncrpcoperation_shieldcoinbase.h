@@ -63,7 +63,7 @@ public:
         int nUTXOLimit,
         std::optional<CAmount> fee,
         UniValue contextInfo = NullUniValue);
-    virtual ~AsyncRPCOperation_shieldcoinbase();
+    virtual ~AsyncRPCOperation_shieldcoinbase() override;
 
     // We don't want to be copied or moved around
     AsyncRPCOperation_shieldcoinbase(AsyncRPCOperation_shieldcoinbase const&) = delete;             // Copy construct

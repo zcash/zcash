@@ -26,7 +26,7 @@ public:
 class SystemClock: public CClock {
 private:
     SystemClock() {}
-    ~SystemClock() {}
+    ~SystemClock() override {}
     SystemClock(SystemClock const&) = delete;
     SystemClock& operator=(const SystemClock&) = delete;
 public:

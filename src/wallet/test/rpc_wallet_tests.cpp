@@ -892,7 +892,7 @@ public:
     MockSleepOperation(int t=1000) {
         this->naptime = std::chrono::milliseconds(t);
     }
-    virtual ~MockSleepOperation() {
+    virtual ~MockSleepOperation() override {
     }
     virtual void main() {
         set_state(OperationStatus::EXECUTING);
@@ -994,7 +994,7 @@ static std::atomic<int64_t> gCounter(0);
 class CountOperation : public AsyncRPCOperation {
 public:
     CountOperation() {}
-    virtual ~CountOperation() {}
+    virtual ~CountOperation() override {}
     virtual void main() {
         set_state(OperationStatus::EXECUTING);
         gCounter++;

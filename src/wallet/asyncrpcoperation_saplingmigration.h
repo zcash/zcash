@@ -10,7 +10,7 @@ class AsyncRPCOperation_saplingmigration : public AsyncRPCOperation
 {
 public:
     AsyncRPCOperation_saplingmigration(int targetHeight);
-    virtual ~AsyncRPCOperation_saplingmigration();
+    virtual ~AsyncRPCOperation_saplingmigration() override;
 
     // We don't want to be copied or moved around
     AsyncRPCOperation_saplingmigration(AsyncRPCOperation_saplingmigration const&) = delete;            // Copy construct

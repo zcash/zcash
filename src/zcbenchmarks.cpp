@@ -458,7 +458,7 @@ public:
         OrchardMerkleFrontier emptyOrchardTree;
         orchardTrees.push_back(emptyOrchardTree);
     }
-    ~FakeCoinsViewDB() {}
+    ~FakeCoinsViewDB() override {}
 
     void SetSaplingTrees(std::vector<std::string> trees) {
         saplingTrees.clear();

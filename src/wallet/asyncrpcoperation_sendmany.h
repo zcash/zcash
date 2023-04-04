@@ -34,7 +34,7 @@ public:
         std::optional<CAmount> fee,
         UniValue contextInfo = NullUniValue);
 
-    virtual ~AsyncRPCOperation_sendmany();
+    virtual ~AsyncRPCOperation_sendmany() override;
 
     // We don't want to be copied or moved around
     AsyncRPCOperation_sendmany(AsyncRPCOperation_sendmany const&) = delete;             // Copy construct

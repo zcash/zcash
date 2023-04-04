@@ -43,7 +43,7 @@ public:
 
     SproutNote(const SproutNote&) = default;
 
-    virtual ~SproutNote() {}
+    virtual ~SproutNote() override {}
 
     SproutNote& operator=(const SproutNote&) = default;
 
@@ -91,7 +91,7 @@ public:
 
     SaplingNote(const SaplingNote&) = default;
 
-    virtual ~SaplingNote() {}
+    virtual ~SaplingNote() override {}
 
     SaplingNote& operator=(const SaplingNote&) = default;
 
@@ -136,7 +136,7 @@ public:
 
     SproutNote note(const SproutPaymentAddress& addr) const;
 
-    virtual ~SproutNotePlaintext() {}
+    virtual ~SproutNotePlaintext() override {}
 
     ADD_SERIALIZE_METHODS
 
@@ -212,7 +212,7 @@ public:
 
     std::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;
 
-    virtual ~SaplingNotePlaintext() {}
+    virtual ~SaplingNotePlaintext() override {}
 
     SaplingNotePlaintext& operator=(const SaplingNotePlaintext&) = default;
 

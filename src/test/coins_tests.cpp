@@ -45,7 +45,7 @@ public:
         hashBestSaplingAnchor_ = SaplingMerkleTree::empty_root();
         hashBestOrchardAnchor_ = OrchardMerkleFrontier::empty_root();
     }
-    ~CCoinsViewTest() {}
+    ~CCoinsViewTest() override {}
 
     bool GetSproutAnchorAt(const uint256& rt, SproutMerkleTree &tree) const {
         if (rt == SproutMerkleTree::empty_root()) {
@@ -244,7 +244,7 @@ class CCoinsViewCacheTest : public CCoinsViewCache
 {
 public:
     CCoinsViewCacheTest(CCoinsView* base) : CCoinsViewCache(base) {}
-    ~CCoinsViewCacheTest() {}
+    ~CCoinsViewCacheTest() override {}
 
     void SelfTest() const
     {
