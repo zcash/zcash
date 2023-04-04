@@ -102,7 +102,7 @@ public:
     std::set<ReceiverType> GetKnownReceiverTypes() const {
         std::set<ReceiverType> result;
         for (const auto& receiver : receivers) {
-            std::visit(match {
+            examine(receiver, match {
                 [&](const libzcash::OrchardRawAddress &zaddr) {
                     result.insert(ReceiverType::Orchard);
                 },
@@ -117,7 +117,7 @@ public:
                 },
                 [&](const libzcash::UnknownReceiver &uaddr) {
                 }
-            }, receiver);
+            });
         }
         return result;
     }

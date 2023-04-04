@@ -351,11 +351,11 @@ void BlockAssembler::resetBlock(const MinerAddress& minerAddress)
 
     // Reserve space for coinbase tx
     // nBlockMaxSize already includes 1000 bytes for transaction structure overhead.
-    nBlockSize = std::visit(match {
+    nBlockSize = examine(minerAddress, match {
         [](const libzcash::OrchardRawAddress&) { return 9000; },
         [](const libzcash::SaplingPaymentAddress&) { return 1000; },
         [](const boost::shared_ptr<CReserveScript> &) { return 1000; },
-    }, minerAddress);
+    });
     nBlockSigOps = 100;
 
     // These counters do not include coinbase tx
@@ -812,14 +812,12 @@ std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::Sapl
 std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::UnifiedAddress &addr) const {
     auto preferred = addr.GetPreferredRecipientAddress(consensus, height);
     if (preferred.has_value()) {
-        std::optional<MinerAddress> ret;
-        std::visit(match {
-            [&](const libzcash::OrchardRawAddress addr) { ret = MinerAddress(addr); },
-            [&](const libzcash::SaplingPaymentAddress addr) { ret = MinerAddress(addr); },
-            [&](const CKeyID keyID) { ret = operator()(keyID); },
-            [&](const auto other) { ret = std::nullopt; }
-        }, preferred.value());
-        return ret;
+        return examine(preferred.value(), match {
+            [&](const libzcash::OrchardRawAddress addr) -> std::optional<MinerAddress> { return MinerAddress(addr); },
+            [&](const libzcash::SaplingPaymentAddress addr) -> std::optional<MinerAddress> { return MinerAddress(addr); },
+            [&](const CKeyID keyID) -> std::optional<MinerAddress> { return operator()(keyID); },
+            [&](const auto other) -> std::optional<MinerAddress> { return std::nullopt; }
+        });
     } else {
         return std::nullopt;
     }

@@ -96,7 +96,7 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
     isToTaddr_ = false;
     isToZaddr_ = false;
 
-    std::visit(match {
+    examine(recipient.first, match {
         [&](const CKeyID& keyId) {
             toTaddr_ = keyId;
             isToTaddr_ = true;
@@ -118,7 +118,7 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
                     RPC_INVALID_ADDRESS_OR_KEY,
                     "z_mergetoaddress does not yet support sending to unified addresses");
         },
-    }, recipient.first);
+    });
 
     // Log the context info i.e. the call parameters to z_mergetoaddress
     if (LogAcceptCategory("zrpcunsafe")) {

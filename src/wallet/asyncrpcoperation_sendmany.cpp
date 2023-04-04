@@ -151,7 +151,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
             anchordepth_);
 
     uint256 txid;
-    std::visit(match {
+    examine(preparedTx, match {
         [&](const InputSelectionError& err) {
             ThrowInputSelectionError(err, ztxoSelector_, strategy_);
         },
@@ -194,7 +194,7 @@ uint256 AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
                 throw;
             }
         }
-    }, preparedTx);
+    });
 
     return txid;
 }

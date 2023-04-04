@@ -336,7 +336,7 @@ class CSerializeRecipientAddress {
 
         template<typename Stream>
         void Serialize(Stream& s) const {
-            std::visit(match {
+            examine(recipient, match {
                 [&](const CKeyID& keyId) {
                     ReceiverTypeSer(libzcash::ReceiverType::P2PKH).Serialize(s);
                     s << keyId;
@@ -353,7 +353,7 @@ class CSerializeRecipientAddress {
                     ReceiverTypeSer(libzcash::ReceiverType::Orchard).Serialize(s);
                     s << orchardAddr;
                 }
-            }, recipient);
+            });
         }
 
         template<typename Stream>
