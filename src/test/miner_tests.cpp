@@ -12,9 +12,10 @@
 #include "uint256.h"
 #include "util/system.h"
 #include "crypto/equihash.h"
-//#include "pow/tromp/equi_miner.h"
-
+#include "pow/tromp/equi.h"
 #include "test/test_bitcoin.h"
+
+#include <rust/equihash.h>
 
 #include <boost/test/unit_test.hpp>
 
@@ -170,11 +171,18 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     // Simple block creation, nothing special yet:
     BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
 
-    // We can't make transactions until we have inputs
-    // Therefore, load 100 blocks :)
-    std::vector<CTransaction*>txFirst;
-    for (unsigned int i = 0; i < sizeof(blockinfo)/sizeof(*blockinfo); ++i)
+    // We can't make transactions until we have inputs. Therefore, load 110 blocks.
+    const int nblocks = 110;
+    assert(nblocks < chainparams.GetConsensus().SubsidySlowStartShift());
+
+    auto MinerSubsidy = [](int height) { return height*50000; };
+    auto FoundersReward = [](int height) { return height*12500; };
+
+    std::vector<CTransaction*> txFirst;
+
+    for (unsigned int i = 0; i < nblocks; ++i)
     {
+        int height = i+1;
         CBlock *pblock = &pblocktemplate->block; // pointer for convenience
         pblock->nVersion = 4;
         // Fake the blocks taking at least nPowTargetSpacing to be mined.
@@ -182,99 +190,70 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         // of the next block must be six spacings ahead of that to be at least
         // one spacing ahead of the tip. Within 11 blocks of genesis, the median
         // will be closer to the tip, and blocks will appear slower.
-        pblock->nTime = chainActive.Tip()->GetMedianTimePast()+6*Params().GetConsensus().PoWTargetSpacing(i);
+        pblock->nTime = chainActive.Tip()->GetMedianTimePast() + 6*chainparams.GetConsensus().PoWTargetSpacing(i);
         pblock->nBits = GetNextWorkRequired(chainActive.Tip(), pblock, chainparams.GetConsensus());
         CMutableTransaction txCoinbase(pblock->vtx[0]);
         txCoinbase.nVersion = 1;
         txCoinbase.vin[0].scriptSig = CScript() << (chainActive.Height()+1) << OP_0;
         txCoinbase.vout[0].scriptPubKey = CScript();
-        txCoinbase.vout[0].nValue = 50000 * (i + 1);
-        txCoinbase.vout[1].nValue = 12500 * (i + 1);
+        txCoinbase.vout[0].nValue = MinerSubsidy(height);
+        txCoinbase.vout[1].nValue = FoundersReward(height);
         pblock->vtx[0] = CTransaction(txCoinbase);
         if (txFirst.size() < 2)
             txFirst.push_back(new CTransaction(pblock->vtx[0]));
         pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
-        pblock->nNonce = uint256S(blockinfo[i].nonce_hex);
-        pblock->nSolution = ParseHex(blockinfo[i].solution_hex);
 
-/*
-        {
-        arith_uint256 try_nonce(0);
-        unsigned int n = Params().GetConsensus().nEquihashN;
-        unsigned int k = Params().GetConsensus().nEquihashK;
+        if (i < sizeof(blockinfo)/sizeof(*blockinfo)) {
+            pblock->nNonce = uint256S(blockinfo[i].nonce_hex);
+            pblock->nSolution = ParseHex(blockinfo[i].solution_hex);
+        } else {
+            // If you need to mine more blocks than are currently in blockinfo, this code will do so.
+            // We leave it compiling so that it doesn't bitrot.
+            arith_uint256 try_nonce(0);
+            unsigned int n = chainparams.GetConsensus().nEquihashN;
+            unsigned int k = chainparams.GetConsensus().nEquihashK;
 
-        // Hash state
-        eh_HashState eh_state = EhInitialiseState(n, k);
+            // Hash state
+            eh_HashState eh_state = EhInitialiseState(n, k);
 
-        // I = the block header minus nonce and solution.
-        CEquihashInput I{*pblock};
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << I;
+            // I = the block header minus nonce and solution.
+            CEquihashInput I{*pblock};
+            CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+            ss << I;
 
-        // H(I||...
-        eh_state.Update((unsigned char*)&ss[0], ss.size());
+            // H(I||...
+            eh_state.Update((unsigned char*)&ss[0], ss.size());
 
-        while (true) {
-            pblock->nNonce = ArithToUint256(try_nonce);
+            while (true) {
+                pblock->nNonce = ArithToUint256(try_nonce);
 
-            // H(I||V||...
-            eh_HashState curr_state(eh_state);
-            curr_state.Update(pblock->nNonce.begin(), pblock->nNonce.size());
+                // H(I||V||...
+                eh_HashState curr_state(eh_state);
+                curr_state.Update(pblock->nNonce.begin(), pblock->nNonce.size());
 
-            // Create solver and initialize it.
-            equi eq(1);
-            eq.setstate(curr_state.state);
+                std::function<void()> incrementRuns = [&]() {};
+                std::function<bool(size_t, const std::vector<uint32_t>&)> checkSolution = [&](size_t s, const std::vector<uint32_t>& index_vector) {
+                    auto soln = GetMinimalFromIndices(index_vector, DIGITBITS);
+                    pblock->nSolution = soln;
+                    if (!equihash::is_valid(
+                        n, k,
+                        {(const unsigned char*)ss.data(), ss.size()},
+                        {pblock->nNonce.begin(), pblock->nNonce.size()},
+                        {soln.data(), soln.size()})) {
+                        return false;
+                    }
+                    CValidationState state;
+                    return ProcessNewBlock(state, chainparams, NULL, pblock, true, NULL) && state.IsValid();
+                };
+                if (equihash_solve(curr_state.inner, incrementRuns, checkSolution))
+                    break;
 
-            // Initialization done, start algo driver.
-            eq.digit0(0);
-            eq.xfull = eq.bfull = eq.hfull = 0;
-            eq.showbsizes(0);
-            for (u32 r = 1; r < WK; r++) {
-                (r&1) ? eq.digitodd(r, 0) : eq.digiteven(r, 0);
-                eq.xfull = eq.bfull = eq.hfull = 0;
-                eq.showbsizes(r);
+                try_nonce += 1;
             }
-            eq.digitK(0);
-
-            // Convert solution indices to byte array (decompress) and pass it to validBlock method.
-            std::set<std::vector<unsigned char>> solns;
-            for (size_t s = 0; s < std::min(MAXSOLS, eq.nsols); s++) {
-                LogPrint("pow", "Checking solution %d\n", s+1);
-                std::vector<eh_index> index_vector(PROOFSIZE);
-                for (size_t i = 0; i < PROOFSIZE; i++) {
-                    index_vector[i] = eq.sols[s][i];
-                }
-                std::vector<unsigned char> sol_char = GetMinimalFromIndices(index_vector, DIGITBITS);
-                solns.insert(sol_char);
-            }
-
-            for (auto soln : solns) {
-                if (!equihash::is_valid(
-                    n, k,
-                    {(const unsigned char*)ss.data(), ss.size()},
-                    {pblock->nNonce.begin(), pblock->nNonce.size()},
-                    {soln.data(), soln.size()})) continue;
-                pblock->nSolution = soln;
-
-                CValidationState state;
-
-                if (ProcessNewBlock(state, NULL, pblock, true, NULL) && state.IsValid()) {
-                    goto foundit;
-                }
-
-                //std::cout << state.GetRejectReason() << std::endl;
-            }
-
-            try_nonce += 1;
-        }
-        foundit:
-
             std::cout << "    {\"" << pblock->nNonce.GetHex() << "\", \"";
             std::cout << HexStr(pblock->nSolution.begin(), pblock->nSolution.end());
             std::cout << "\"}," << std::endl;
-
         }
-*/
 
         // These tests assume null hashBlockCommitments (before Sapling)
         pblock->hashBlockCommitments = uint256();
@@ -284,6 +263,9 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         BOOST_CHECK_MESSAGE(state.IsValid(), state.GetRejectReason());
         pblock->hashPrevBlock = pblock->GetHash();
     }
+
+    // Stop here if we needed to mine more blocks.
+    assert(nblocks == sizeof(blockinfo)/sizeof(*blockinfo));
 
     // Set the clock to be just ahead of the last "mined" block, to ensure we satisfy the
     // future timestamp soft fork rule.
