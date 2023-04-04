@@ -86,8 +86,7 @@ public:
     uint256 pk_d;
 
     SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 rseed, Zip212Enabled zip_212_enabled)
-            : BaseNote(value), d(d), pk_d(pk_d), rseed(rseed), zip_212_enabled(zip_212_enabled) {}
-
+            : BaseNote(value), rseed(rseed), zip_212_enabled(zip_212_enabled), d(d), pk_d(pk_d) {}
     SaplingNote(const SaplingPaymentAddress &address, uint64_t value, Zip212Enabled zip_212_enabled);
 
     SaplingNote(const SaplingNote&) = default;

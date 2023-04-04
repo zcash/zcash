@@ -312,8 +312,8 @@ public:
      * See the comment in that class for a full description.
      */
     SaplingNoteData() : witnessHeight {-1}, nullifier(), spentHeight() { }
-    SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk) : ivk {ivk}, witnessHeight {-1}, nullifier() { }
-    SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk, uint256 n) : ivk {ivk}, witnessHeight {-1}, nullifier(n) { }
+    SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk) : witnessHeight {-1}, ivk {ivk}, nullifier() { }
+    SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk, uint256 n) : witnessHeight {-1}, ivk {ivk}, nullifier(n) { }
 
     std::list<SaplingWitness> witnesses;
     /**

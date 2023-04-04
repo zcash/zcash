@@ -363,7 +363,7 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-missing-prototypes \
   -Wno-old-style-cast \
   -Wno-padded \
-  -Wno-reorder-ctor -Wno-reserved-id-macro -Wno-reserved-identifier -Wno-return-type \
+  -Wno-reserved-id-macro -Wno-reserved-identifier -Wno-return-type \
   -Wno-shadow-field -Wno-shadow-field-in-constructor \
   -Wno-shadow-uncaptured-local -Wno-shift-sign-overflow -Wno-shorten-64-to-32 \
   -Wno-sign-compare -Wno-sign-conversion -Wno-string-conversion -Wno-suggest-destructor-override \

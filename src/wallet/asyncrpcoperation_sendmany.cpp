@@ -50,7 +50,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         std::optional<CAmount> fee,
         UniValue contextInfo) :
         builder_(std::move(builder)), ztxoSelector_(ztxoSelector), recipients_(recipients),
-        mindepth_(minDepth), anchordepth_(anchorDepth), strategy_(strategy), fee_(fee),
+        strategy_(strategy), mindepth_(minDepth), anchordepth_(anchorDepth), fee_(fee),
         contextinfo_(contextInfo)
 {
     assert(!fee_.has_value() || fee_.value() >= 0);

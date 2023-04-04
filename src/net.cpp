@@ -2204,9 +2204,9 @@ CNode::CNode(SOCKET hSocketIn, const CAddress& addrIn, const std::string& addrNa
     ssSend(SER_NETWORK, INIT_PROTO_VERSION),
     nTimeConnected(GetTime()),
     addr(addrIn),
-    nKeyedNetGroup(CalculateKeyedNetGroup(addrIn)),
     addrKnown(5000, 0.001),
-    filterInventoryKnown(50000, 0.000001)
+    filterInventoryKnown(50000, 0.000001),
+    nKeyedNetGroup(CalculateKeyedNetGroup(addrIn))
 {
     nServices = 0;
     hSocket = hSocketIn;

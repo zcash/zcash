@@ -168,9 +168,9 @@ public:
     int nVersion;
 
     CBLAKE2bWriter(int nTypeIn, int nVersionIn, const unsigned char* personal) :
+        state(blake2b::init(32, {personal, blake2b::PERSONALBYTES})),
         nType(nTypeIn),
-        nVersion(nVersionIn),
-        state(blake2b::init(32, {personal, blake2b::PERSONALBYTES})) {}
+        nVersion(nVersionIn) {}
 
     int GetType() const { return nType; }
     int GetVersion() const { return nVersion; }
