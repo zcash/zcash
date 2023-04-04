@@ -35,9 +35,9 @@ struct secure_allocator : public std::allocator<T> {
     }
     ~secure_allocator() noexcept {}
     secure_allocator& operator=(const secure_allocator&) = default;
-    template <typename _Other>
+    template <typename Other>
     struct rebind {
-        typedef secure_allocator<_Other> other;
+        typedef secure_allocator<Other> other;
     };
 
     T* allocate(std::size_t n, const void* hint = 0)

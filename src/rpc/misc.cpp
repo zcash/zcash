@@ -338,7 +338,7 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
 /**
  * Used by addmultisigaddress / createmultisig:
  */
-CScript _createmultisig_redeemScript(const UniValue& params)
+CScript createmultisig_redeemScript(const UniValue& params)
 {
     int nRequired = params[0].get_int();
     const UniValue& keys = params[1].get_array();
@@ -433,7 +433,7 @@ UniValue createmultisig(const UniValue& params, bool fHelp)
     }
 
     // Construct using pay-to-script-hash:
-    CScript inner = _createmultisig_redeemScript(params);
+    CScript inner = createmultisig_redeemScript(params);
     CScriptID innerID(inner);
 
     KeyIO keyIO(Params());
