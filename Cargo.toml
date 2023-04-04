@@ -38,16 +38,16 @@ name = "zcashd-wallet-tool"
 path = "src/rust/bin/wallet_tool.rs"
 
 [dependencies]
-bellman = "0.13"
+bellman = "0.14"
 blake2b_simd = "1"
 blake2s_simd = "1"
-bls12_381 = "0.7"
+bls12_381 = "0.8"
 byteorder = "1"
 crossbeam-channel = "0.5"
-group = "0.12"
+group = "0.13"
 incrementalmerkletree = "0.3"
 libc = "0.2"
-jubjub = "0.9"
+jubjub = "0.10"
 memuse = "0.2"
 nonempty = "0.7"
 orchard = "0.3"
@@ -60,7 +60,7 @@ tracing-appender = "0.2"
 zcash_address = "0.2"
 zcash_encoding = "0.2"
 zcash_history = "0.3"
-zcash_note_encryption = "0.2"
+zcash_note_encryption = "0.3"
 zcash_primitives = { version = "0.10.2", features = ["temporary-zcashd", "transparent-inputs"] }
 zcash_proofs = { version = "0.10", features = ["directories"] }
 ed25519-zebra = "3"
@@ -112,3 +112,13 @@ features = ["ansi", "env-filter", "fmt", "time"]
 lto = 'thin'
 panic = 'abort'
 codegen-units = 1
+
+[patch.crates-io]
+equihash = { git = "https://github.com/zcash/librustzcash.git", rev = "4fea57dcac77870a142f15b1f1dfa6d34a0de7b8" }
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "bdcf15ba2141f94f031c195140219a99335d96d5" }
+zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "4fea57dcac77870a142f15b1f1dfa6d34a0de7b8" }
+zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "4fea57dcac77870a142f15b1f1dfa6d34a0de7b8" }
+zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "4fea57dcac77870a142f15b1f1dfa6d34a0de7b8" }
+zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "4fea57dcac77870a142f15b1f1dfa6d34a0de7b8" }
+zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "4fea57dcac77870a142f15b1f1dfa6d34a0de7b8" }
+zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "4fea57dcac77870a142f15b1f1dfa6d34a0de7b8" }

@@ -2,7 +2,7 @@
 # cargo-vet config file
 
 [cargo-vet]
-version = "0.5"
+version = "0.6"
 
 [imports.bytecode-alliance]
 url = "https://raw.githubusercontent.com/bytecodealliance/wasmtime/main/supply-chain/audits.toml"
@@ -201,14 +201,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.funty]]
 version = "2.0.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.futures-channel]]
-version = "0.3.21"
-criteria = "safe-to-deploy"
-
-[[exemptions.futures-core]]
-version = "0.3.21"
 criteria = "safe-to-deploy"
 
 [[exemptions.futures-task]]
@@ -505,10 +497,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.reddsa]]
 version = "0.3.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.redjubjub]]
-version = "0.5.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.redox_syscall]]
