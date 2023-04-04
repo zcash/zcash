@@ -203,14 +203,6 @@ criteria = "safe-to-deploy"
 version = "2.0.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.futures-channel]]
-version = "0.3.21"
-criteria = "safe-to-deploy"
-
-[[exemptions.futures-core]]
-version = "0.3.21"
-criteria = "safe-to-deploy"
-
 [[exemptions.futures-task]]
 version = "0.3.21"
 criteria = "safe-to-deploy"
@@ -505,10 +497,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.reddsa]]
 version = "0.3.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.redjubjub]]
-version = "0.5.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.redox_syscall]]

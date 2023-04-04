@@ -385,6 +385,12 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.3.26 -> 0.3.27"
 
+[[audits.futures-channel]]
+who = "Daira Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "0.3.27 -> 0.3.28"
+notes = "Dependency updates, and an MSRV update to Rust 1.56."
+
 [[audits.futures-core]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -396,6 +402,15 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.3.26 -> 0.3.27"
 
+[[audits.futures-core]]
+who = "Daira Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "0.3.27 -> 0.3.28"
+notes = """
+Adds an optimization in unsafe code (https://github.com/rust-lang/futures-rs/pull/2723).
+The new code in AtomicWaker calls self.waker.get() twice assuming the same resulting pointer, but this appears to be correct because the AtomicWaker is in the required locked state.
+"""
+
 [[audits.futures-task]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -405,6 +420,18 @@ delta = "0.3.25 -> 0.3.26"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.3.26 -> 0.3.27"
+
+[[audits.futures-task]]
+who = "Daira Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "0.3.26 -> 0.3.28"
+notes = "Dependency updates, and an MSRV update to Rust 1.56."
+
+[[audits.futures-task]]
+who = "Daira Emma Hopwood <daira@jacaranda.org>"
+criteria = "safe-to-deploy"
+delta = "0.3.27 -> 0.3.28"
+notes = "Dependency updates, and an MSRV update to Rust 1.56."
 
 [[audits.futures-util]]
 who = "Jack Grigg <jack@z.cash>"
@@ -844,6 +871,23 @@ I did not verify that the change was move-only, but there is no unsafe code affe
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.3.0 -> 0.5.0"
+
+[[audits.redjubjub]]
+who = "Daira Emma Hopwood <daira@jacaranda.org>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+version = "0.7.0"
+notes = """
+This crate is a thin wrapper around the `reddsa` crate, which I did not review. I also
+did not review tests or verify test vectors.
+
+The comment on `batch::Verifier::verify` has an error in the batch verification equation,
+filed as https://github.com/ZcashFoundation/redjubjub/issues/163 . It does not affect the
+implementation which just delegates to `reddsa`. `reddsa` has the same comment bug filed as
+https://github.com/ZcashFoundation/reddsa/issues/52 , but its batch verification implementation
+is correct. (I checked the latter against https://zips.z.cash/protocol/protocol.pdf#reddsabatchvalidate
+which has had previous cryptographic review by NCC group; see finding NCC-Zcash2018-009 in
+https://research.nccgroup.com/wp-content/uploads/2020/07/NCC_Group_Zcash2018_Public_Report_2019-01-30_v1.3.pdf ).
+"""
 
 [[audits.regex]]
 who = "Jack Grigg <jack@z.cash>"
