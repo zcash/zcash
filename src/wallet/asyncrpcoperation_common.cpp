@@ -47,7 +47,7 @@ void ThrowInputSelectionError(
         const ZTXOSelector& selector,
         const TransactionStrategy& strategy)
 {
-    std::visit(match {
+    examine(err, match {
         [](const AddressResolutionError& err) {
             switch (err) {
                 case AddressResolutionError::SproutRecipientsNotSupported:
@@ -105,7 +105,7 @@ void ThrowInputSelectionError(
                 strprintf(
                     "Insufficient funds: have %s, %s",
                     FormatMoney(err.available),
-                    std::visit(match {
+                    examine(err.reason, match {
                         [](const InsufficientFundsError& ife) {
                             return strprintf("need %s", FormatMoney(ife.required));
                         },
@@ -116,8 +116,7 @@ void ThrowInputSelectionError(
                                     FormatMoney(dte.changeAmount),
                                     FormatMoney(dte.dustThreshold));
                         }
-                    },
-                    err.reason))
+                    }))
                     + (selector.TransparentCoinbasePolicy() != TransparentCoinbasePolicy::Disallow
                        ? "" :
                        "; note that coinbase outputs will not be selected if you specify "
@@ -161,5 +160,5 @@ void ThrowInputSelectionError(
                     err.maxNotes,
                     err.orchardNotes));
         }
-    }, err);
+    });
 }

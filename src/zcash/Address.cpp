@@ -178,13 +178,13 @@ std::optional<RecipientAddress> UnifiedAddress::GetPreferredRecipientAddress(
     // order from most-preferred to least.
     std::optional<RecipientAddress> result;
     for (const auto& receiver : *this) {
-        std::visit(match {
+        examine(receiver, match {
             [&](const OrchardRawAddress& addr) { if (nu5Active) result = addr; },
             [&](const SaplingPaymentAddress& addr) { result = addr; },
             [&](const CScriptID& addr) { result = addr; },
             [&](const CKeyID& addr) { result = addr; },
             [&](const UnknownReceiver& addr) { }
-        }, receiver);
+        });
 
         if (result.has_value()) {
             return result;
@@ -194,13 +194,13 @@ std::optional<RecipientAddress> UnifiedAddress::GetPreferredRecipientAddress(
 }
 
 bool HasKnownReceiverType(const Receiver& receiver) {
-    return std::visit(match {
+    return examine(receiver, match {
         [](const OrchardRawAddress& addr) { return true; },
         [](const SaplingPaymentAddress& addr) { return true; },
         [](const CScriptID& addr) { return true; },
         [](const CKeyID& addr) { return true; },
         [](const UnknownReceiver& addr) { return false; }
-    }, receiver);
+    });
 }
 
 std::pair<std::string, PaymentAddress> AddressInfoFromSpendingKey::operator()(const SproutSpendingKey &sk) const {

@@ -50,7 +50,7 @@ public:
     }
 
     static Memo FromHexOrThrow(const std::string& memoHex) {
-        return std::visit(match {
+        return examine(Memo::FromHex(memoHex), match {
             [&](Memo memo) {
                 return memo;
             },
@@ -69,7 +69,7 @@ public:
                 // unreachable, but the compiler can't tell
                 return Memo::NoMemo();
             }
-        }, Memo::FromHex(memoHex));
+        });
     }
 
     // This copies, because if it returns a reference to the underlying value,

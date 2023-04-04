@@ -80,7 +80,7 @@ public:
     }
 
     void AddPayment(ResolvedPayment payment) {
-        std::visit(match {
+        examine(payment.address, match {
             [&](const CKeyID& addr) {
                 t_outputs_total += payment.amount;
                 recipientPools.insert(OutputPool::Transparent);
@@ -97,7 +97,7 @@ public:
                 orchard_outputs_total += payment.amount;
                 recipientPools.insert(OutputPool::Orchard);
             }
-        }, payment.address);
+        });
         payments.push_back(payment);
     }
 

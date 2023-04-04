@@ -457,7 +457,7 @@ void TransactionBuilder::SendChangeTo(
     saplingChangeAddr = std::nullopt;
     sproutChangeAddr = std::nullopt;
 
-    std::visit(match {
+    examine(changeAddr, match {
         [&](const CKeyID& keyId) {
             tChangeAddr = keyId;
         },
@@ -470,7 +470,7 @@ void TransactionBuilder::SendChangeTo(
         [&](const libzcash::OrchardRawAddress& changeDest) {
             orchardChangeAddr = std::make_pair(ovk, changeDest);
         }
-    }, changeAddr);
+    });
 }
 
 void TransactionBuilder::SendChangeToSprout(const libzcash::SproutPaymentAddress& zaddr) {

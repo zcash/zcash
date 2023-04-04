@@ -680,14 +680,14 @@ std::optional<ZcashdUnifiedFullViewingKey> CWallet::GetUnifiedFullViewingKeyByAc
 }
 
 WalletUAGenerationResult ToWalletUAGenerationResult(UnifiedAddressGenerationResult result) {
-    return std::visit(match {
+    return examine(result, match {
         [](const UnifiedAddressGenerationError& err) {
             return WalletUAGenerationResult(err);
         },
         [](const std::pair<UnifiedAddress, diversifier_index_t>& addrPair) {
             return WalletUAGenerationResult(addrPair);
         }
-    }, result);
+    });
 }
 
 WalletUAGenerationResult CWallet::GenerateUnifiedAddress(
@@ -882,7 +882,7 @@ std::pair<PaymentAddress, RecipientType> CWallet::GetPaymentAddressForRecipient(
     }
 
     auto ufvk = self->GetUFVKForReceiver(RecipientAddressToReceiver(recipient));
-    std::pair<PaymentAddress, RecipientType> defaultAddress = std::visit(match {
+    std::pair<PaymentAddress, RecipientType> defaultAddress = examine(recipient, match {
         [&](const CKeyID& addr) {
             auto ua = self->FindUnifiedAddressByReceiver(addr);
             if (ua.has_value()) {
@@ -979,7 +979,7 @@ std::pair<PaymentAddress, RecipientType> CWallet::GetPaymentAddressForRecipient(
 
             return std::make_pair(PaymentAddress{UnifiedAddress::ForSingleReceiver(addr)}, RecipientType::CounterpartyAddress);
         }
-    }, recipient);
+    });
 
     auto recipientsPtr = sendRecipients.find(txid);
     if (recipientsPtr == sendRecipients.end()) {
@@ -1005,7 +1005,7 @@ std::pair<PaymentAddress, RecipientType> CWallet::GetPaymentAddressForRecipient(
 bool CWallet::IsInternalRecipient(const libzcash::RecipientAddress& recipient) const
 {
     auto self = this;
-    return std::visit(match {
+    return examine(recipient, match {
         [&](const CKeyID& addr) {
             // we never send transparent change when sending to or from a
             // unified address
@@ -1035,7 +1035,7 @@ bool CWallet::IsInternalRecipient(const libzcash::RecipientAddress& recipient) c
             }
             return false;
         }
-    }, recipient);
+    });
 }
 
 void CWallet::LoadRecipientMapping(const uint256& txid, const RecipientMapping& mapping) {
@@ -1092,7 +1092,7 @@ bool CWallet::LoadCaches()
                 // restore unified addresses that have been previously generated to the
                 // keystore
                 for (const auto &[j, receiverTypes] : metadata->second.GetKnownReceiverSetsByDiversifierIndex()) {
-                    bool restored = std::visit(match {
+                    bool restored = examine(ufvk.value().Address(j, receiverTypes), match {
                         [&](const UnifiedAddressGenerationError& err) {
                             LogPrintf("%s: Error: Unable to generate a unified address.\n",
                                 __func__);
@@ -1115,7 +1115,7 @@ bool CWallet::LoadCaches()
                             return CCryptoKeyStore::AddTransparentReceiverForUnifiedAddress(
                                     ufvkId, addr.second, addr.first);
                         }
-                    }, ufvk.value().Address(j, receiverTypes));
+                    });
 
                     // failure to restore the generated address is an error
                     if (!restored) return false;
@@ -1896,7 +1896,7 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
 {
     auto self = this;
     std::optional<ZTXOPattern> pattern = std::nullopt;
-    std::visit(match {
+    examine(addr, match {
         [&](const CKeyID& addr) {
             if (!requireSpendingKey || self->HaveKey(addr)) {
                 pattern = addr;
@@ -1935,7 +1935,7 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForAddress(
                 }
             }
         }
-    }, addr);
+    });
 
     if (pattern.has_value()) {
         return ZTXOSelector(pattern.value(), requireSpendingKey, transparentCoinbasePolicy);
@@ -1951,7 +1951,7 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForViewingKey(
 {
     auto self = this;
     std::optional<ZTXOPattern> pattern = std::nullopt;
-    std::visit(match {
+    examine(vk, match {
         [&](const libzcash::SaplingExtendedFullViewingKey& vk) {
             if (!requireSpendingKey || self->HaveSaplingSpendingKey(vk)) {
                 pattern = vk;
@@ -1971,7 +1971,7 @@ std::optional<ZTXOSelector> CWallet::ZTXOSelectorForViewingKey(
                 pattern = ufvk;
             }
         }
-    }, vk);
+    });
 
     if (pattern.has_value()) {
         return ZTXOSelector(pattern.value(), requireSpendingKey, transparentCoinbasePolicy);
@@ -1990,7 +1990,7 @@ ZTXOSelector CWallet::LegacyTransparentZTXOSelector(bool requireSpendingKey, Tra
 std::optional<libzcash::AccountId> CWallet::FindAccountForSelector(const ZTXOSelector& selector) const {
     auto self = this;
     std::optional<libzcash::AccountId> result{};
-    std::visit(match {
+    examine(selector.GetPattern(), match {
         [&](const CKeyID& addr) {
             auto meta = self->GetUFVKMetadataForReceiver(addr);
             if (meta.has_value()) {
@@ -2034,7 +2034,7 @@ std::optional<libzcash::AccountId> CWallet::FindAccountForSelector(const ZTXOSel
                 result = acct.GetAccountId();
             }
         }
-    }, selector.GetPattern());
+    });
     return result;
 }
 
@@ -2044,7 +2044,7 @@ bool CWallet::SelectorMatchesAddress(
         const ZTXOSelector& selector,
         const CTxDestination& address) const {
     auto self = this;
-    return std::visit(match {
+    return examine(selector.GetPattern(), match {
         [&](const CKeyID& keyId) {
             CTxDestination keyIdDest = keyId;
             return address == keyIdDest;
@@ -2061,7 +2061,7 @@ bool CWallet::SelectorMatchesAddress(
             // for a UA selector when matching transparent addresses, we only match addresses
             // that explicitly appear as receivers in the UA.
             for (const auto& receiver : uaSelector) {
-                bool matches = std::visit(match {
+                bool matches = examine(receiver, match {
                     [&](const libzcash::OrchardRawAddress& orchardAddr) { return false; },
                     [&](const libzcash::SaplingPaymentAddress& saplingAddr) { return false; },
                     [&](const libzcash::UnknownReceiver& receiver) { return false; },
@@ -2073,7 +2073,7 @@ bool CWallet::SelectorMatchesAddress(
                         CTxDestination keyIdDest = keyId;
                         return address == keyIdDest;
                     }
-                }, receiver);
+                });
                 if (matches) return true;
             }
             return false;
@@ -2098,24 +2098,24 @@ bool CWallet::SelectorMatchesAddress(
             }
             return false;
         }
-    }, selector.GetPattern());
+    });
 }
 // Sprout
 bool CWallet::SelectorMatchesAddress(
         const ZTXOSelector& selector,
         const libzcash::SproutPaymentAddress& a0) const {
-    return std::visit(match {
+    return examine(selector.GetPattern(), match {
         [&](const libzcash::SproutPaymentAddress& a1) { return a0 == a1; },
         [&](const libzcash::SproutViewingKey& vk) { return a0 == vk.address(); },
         [&](const auto& addr) { return false; },
-    }, selector.GetPattern());
+    });
 }
 // Sapling
 bool CWallet::SelectorMatchesAddress(
         const ZTXOSelector& selector,
         const libzcash::SaplingPaymentAddress& a0) const {
     auto self = this;
-    return std::visit(match {
+    return examine(selector.GetPattern(), match {
         [&](const CKeyID& keyId) { return false; },
         [&](const CScriptID& scriptId) { return false; },
         [&](const libzcash::SproutPaymentAddress& addr) { return false; },
@@ -2162,7 +2162,7 @@ bool CWallet::SelectorMatchesAddress(
             }
             return false;
         }
-    }, selector.GetPattern());
+    });
 }
 
 std::optional<RecipientAddress> CWallet::GenerateChangeAddressForAccount(
@@ -2357,7 +2357,7 @@ SpendableInputs CWallet::FindSpendableInputs(
 
     if (selectOrchard) {
         // for Orchard, we select both the internal and external IVKs.
-        auto orchardIvks = std::visit(match {
+        auto orchardIvks = examine(selector.GetPattern(), match {
             [&](const libzcash::UnifiedAddress& selectorUA) -> std::vector<OrchardIncomingViewingKey> {
                 auto orchardReceiver = selectorUA.GetOrchardReceiver();
                 if (orchardReceiver.has_value()) {
@@ -2392,7 +2392,7 @@ SpendableInputs CWallet::FindSpendableInputs(
                 return {};
             },
             [&](const auto& addr) -> std::vector<OrchardIncomingViewingKey> { return {}; }
-        }, selector.GetPattern());
+        });
 
         for (const auto& ivk : orchardIvks) {
             std::vector<OrchardNoteMetadata> incomingNotes;
@@ -3993,7 +3993,7 @@ bool CWallet::IsChange(const CTxOut& txout) const
     // We look to key metadata to determine whether the address was generated
     // using an internal key path. This could fail to identify some legacy
     // change addresses as change outputs.
-    return std::visit(match {
+    return examine(address, match {
         [&](const CKeyID& key) {
             auto keyMetaIt = mapKeyMetadata.find(key);
             return
@@ -4006,7 +4006,7 @@ bool CWallet::IsChange(const CTxOut& txout) const
                 IsInternalKeyPath(44, BIP44CoinType(), keyMetaIt->second.hdKeypath);
         },
         [&](const auto& other) { return false; }
-    }, address);
+    });
 }
 
 CAmount CWallet::GetChange(const CTxOut& txout) const
@@ -6905,7 +6905,7 @@ bool CMerkleTx::AcceptToMemoryPool(CValidationState& state, bool fLimitFree, boo
 NoteFilter NoteFilter::ForPaymentAddresses(const std::vector<libzcash::PaymentAddress>& paymentAddrs) {
     NoteFilter addrs;
     for (const auto& addr: paymentAddrs) {
-        std::visit(match {
+        examine(addr, match {
             [&](const CKeyID& keyId) { },
             [&](const CScriptID& scriptId) { },
             [&](const libzcash::SproutPaymentAddress& addr) {
@@ -6916,7 +6916,7 @@ NoteFilter NoteFilter::ForPaymentAddresses(const std::vector<libzcash::PaymentAd
             },
             [&](const libzcash::UnifiedAddress& uaddr) {
                 for (auto& receiver : uaddr) {
-                    std::visit(match {
+                    examine(receiver, match {
                         [&](const libzcash::OrchardRawAddress& addr) {
                             addrs.orchardAddresses.insert(addr);
                         },
@@ -6924,10 +6924,10 @@ NoteFilter NoteFilter::ForPaymentAddresses(const std::vector<libzcash::PaymentAd
                             addrs.saplingAddresses.insert(addr);
                         },
                         [&](const auto& other) { }
-                    }, receiver);
+                    });
                 }
             },
-        }, addr);
+        });
     }
     return addrs;
 }
@@ -7735,7 +7735,7 @@ bool TransactionStrategy::IsCompatibleWith(PrivacyPolicy policy) const {
 }
 
 bool ZTXOSelector::SelectsTransparent() const {
-    return std::visit(match {
+    return examine(this->pattern, match {
         [](const CKeyID& keyId) { return true; },
         [](const CScriptID& scriptId) { return true; },
         [](const libzcash::SproutPaymentAddress& addr) { return false; },
@@ -7747,32 +7747,32 @@ bool ZTXOSelector::SelectsTransparent() const {
         },
         [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetTransparentKey().has_value(); },
         [](const AccountZTXOPattern& acct) { return acct.IncludesP2PKH() || acct.IncludesP2SH(); }
-    }, this->pattern);
+    });
 }
 bool ZTXOSelector::SelectsSprout() const {
-    return transparentCoinbasePolicy != TransparentCoinbasePolicy::Require && std::visit(match {
+    return transparentCoinbasePolicy != TransparentCoinbasePolicy::Require && examine(this->pattern, match {
         [](const libzcash::SproutViewingKey& addr) { return true; },
         [](const libzcash::SproutPaymentAddress& extfvk) { return true; },
         [](const auto& addr) { return false; }
-    }, this->pattern);
+    });
 }
 bool ZTXOSelector::SelectsSapling() const {
-    return transparentCoinbasePolicy != TransparentCoinbasePolicy::Require && std::visit(match {
+    return transparentCoinbasePolicy != TransparentCoinbasePolicy::Require && examine(this->pattern, match {
         [](const libzcash::SaplingPaymentAddress& addr) { return true; },
         [](const libzcash::SaplingExtendedSpendingKey& extfvk) { return true; },
         [](const libzcash::UnifiedAddress& ua) { return ua.GetSaplingReceiver().has_value(); },
         [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetSaplingKey().has_value(); },
         [](const AccountZTXOPattern& acct) { return acct.IncludesSapling(); },
         [](const auto& addr) { return false; }
-    }, this->pattern);
+    });
 }
 bool ZTXOSelector::SelectsOrchard() const {
-    return transparentCoinbasePolicy != TransparentCoinbasePolicy::Require && std::visit(match {
+    return transparentCoinbasePolicy != TransparentCoinbasePolicy::Require && examine(this->pattern, match {
         [](const libzcash::UnifiedAddress& ua) { return ua.GetOrchardReceiver().has_value(); },
         [](const libzcash::UnifiedFullViewingKey& ufvk) { return ufvk.GetOrchardKey().has_value(); },
         [](const AccountZTXOPattern& acct) { return acct.IncludesOrchard(); },
         [](const auto& addr) { return false; }
-    }, this->pattern);
+    });
 }
 
 bool SpendableInputs::LimitToAmount(

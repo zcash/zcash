@@ -188,7 +188,7 @@ namespace Consensus {
                 throw std::runtime_error("Funding stream address was not a valid " PACKAGE_NAME " address.");
             }
 
-            std::visit(match {
+            examine(addr.value(), match {
                 [&](const CKeyID& keyId) {
                     addresses.push_back(GetScriptForDestination(keyId));
                 },
@@ -201,7 +201,7 @@ namespace Consensus {
                 [&](const auto& zaddr) {
                     throw std::runtime_error("Funding stream address was not a valid transparent P2SH or Sapling address.");
                 }
-            }, addr.value());
+            });
         }
 
         auto validationResult = FundingStream::ValidateFundingStream(params, startHeight, endHeight, addresses);

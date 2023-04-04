@@ -80,7 +80,7 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
     }
 
     //  Check the destination address is valid for this network i.e. not testnet being used on mainnet
-    std::visit(match {
+    examine(toAddress, match {
         [&](CKeyID addr) {
             throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2pkh address.");
         },
@@ -96,7 +96,7 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
         [&](libzcash::UnifiedAddress addr) {
             tozaddr_ = addr;
         }
-    }, toAddress);
+    });
 
     // Log the context info
     if (LogAcceptCategory("zrpcunsafe")) {

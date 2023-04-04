@@ -19,10 +19,10 @@ std::optional<AddressUFVKMetadata> CKeyStore::GetUFVKMetadataForAddress(
         const CTxDestination& address) const
 {
     auto self = this;
-    return std::visit(match {
+    return examine(address, match {
             [](const CNoDestination&) -> std::optional<AddressUFVKMetadata> { return std::nullopt; },
             [&](const auto& addr) { return self->GetUFVKMetadataForReceiver(addr); }
-    }, address);
+    });
 }
 
 bool CBasicKeyStore::GetPubKey(const CKeyID &address, CPubKey &vchPubKeyOut) const
@@ -428,7 +428,7 @@ CBasicKeyStore::GetUFVKIdForAddress(const libzcash::UnifiedAddress& addr) const
 std::optional<libzcash::UFVKId> CBasicKeyStore::GetUFVKIdForViewingKey(const libzcash::ViewingKey& vk) const
 {
     std::optional<libzcash::UFVKId> result;
-    std::visit(match {
+    examine(vk, match {
         [&](const libzcash::SproutViewingKey& vk) {},
         [&](const libzcash::SaplingExtendedFullViewingKey& extfvk) {
             const auto saplingIvk = extfvk.ToIncomingViewingKey();
@@ -456,7 +456,7 @@ std::optional<libzcash::UFVKId> CBasicKeyStore::GetUFVKIdForViewingKey(const lib
                 }
             }
         }
-    }, vk);
+    });
     return result;
 }
 

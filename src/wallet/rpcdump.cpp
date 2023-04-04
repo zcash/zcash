@@ -929,7 +929,7 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
     }
 
-    std::string result = std::visit(match {
+    std::string result = examine(address.value(), match {
         [&](const CKeyID& addr) {
             CKey key;
             if (pwalletMain->GetKey(addr, key)) {
@@ -969,7 +969,7 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
                     "Use the emergency recovery phrase for this wallet for backup purposes instead.");
             return std::string(); //unreachable, here to make the compiler happy
         }
-    }, address.value());
+    });
     return result;
 }
 
