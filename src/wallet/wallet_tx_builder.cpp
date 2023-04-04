@@ -189,13 +189,6 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
 {
     LOCK2(cs_main, wallet.cs_wallet);
 
-    // Determine the target totals
-    CAmount sendAmount{0};
-    for (const auto& payment : payments) {
-        sendAmount += payment.GetAmount();
-    }
-    CAmount targetAmount = sendAmount + fee;
-
     // This is a simple greedy algorithm to attempt to preserve requested
     // transactional privacy while moving as much value to the most recent pool
     // as possible.  This will also perform opportunistic shielding if the
@@ -209,7 +202,7 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     // funds to cover the total payments + fee.
     bool canResolveOrchard =
         params.GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5)
-        && spendableMut.Total() - spendableMut.GetSproutTotal() >= targetAmount;
+        && !selector.SelectsSprout();
     std::vector<ResolvedPayment> resolvedPayments;
     std::optional<AddressResolutionError> resolutionError;
     for (const auto& payment : payments) {
@@ -304,6 +297,13 @@ InputSelectionResult WalletTxBuilder::ResolveInputsAndPayments(
     // Set the dust threshold so that we can select enough inputs to avoid
     // creating dust change amounts.
     CAmount dustThreshold{this->DefaultDustThreshold()};
+
+    // Determine the target totals
+    CAmount sendAmount{0};
+    for (const auto& payment : payments) {
+        sendAmount += payment.GetAmount();
+    }
+    CAmount targetAmount{sendAmount - fee};
 
     // TODO: the set of recipient pools is not quite sufficient information here; we should
     // probably perform note selection at the same time as we're performing resolved payment

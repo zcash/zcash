@@ -48,7 +48,7 @@ void ThrowInputSelectionError(
         const TransactionStrategy& strategy)
 {
     examine(err, match {
-        [](const AddressResolutionError& err) {
+        [&](const AddressResolutionError& err) {
             switch (err) {
                 case AddressResolutionError::SproutRecipientsNotSupported:
                     throw JSONRPCError(
@@ -73,10 +73,17 @@ void ThrowInputSelectionError(
                 case AddressResolutionError::CouldNotResolveReceiver:
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
-                        "Could not send to an Orchard-only receiver, despite a lax privacy policy. "
-                        "Either there are insufficient non-Sprout funds (there is no transaction "
-                        "version that supports both Sprout and Orchard), or NU5 has not been "
-                        "activated yet.");
+                        strprintf("Could not send to an Orchard-only receiver %s.",
+                                  strategy.AllowRevealedAmounts()
+                                  ? strprintf("despite a lax privacy policy, because %s",
+                                              selector.SelectsSprout()
+                                              ? "you are sending from the Sprout pool"
+                                              : "NU5 has not been activated yet")
+                                  : "without spending non-Orchard funds, which would reveal "
+                                    "transaction amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
+                                    "with the `privacyPolicy` parameter set to "
+                                    "`AllowRevealedAmounts` or weaker if you wish to allow this "
+                                    "transaction to proceed anyway"));
                 case AddressResolutionError::TransparentReceiverNotAllowed:
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
