@@ -479,13 +479,13 @@ UniValue getdeprecationinfo(const UniValue& params, bool fHelp)
     }
 
     UniValue deprecated(UniValue::VARR);
-    for (const auto feature : DEFAULT_ALLOW_DEPRECATED) {
+    for (const auto& feature : DEFAULT_ALLOW_DEPRECATED) {
         deprecated.push_back(feature);
     }
     obj.pushKV("deprecated_features", deprecated);
 
     UniValue disabled(UniValue::VARR);
-    for (const auto feature : DEFAULT_DENY_DEPRECATED) {
+    for (const auto& feature : DEFAULT_DENY_DEPRECATED) {
         disabled.push_back(feature);
     }
     obj.pushKV("disabled_features", disabled);
@@ -546,7 +546,7 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp)
     UniValue localAddresses(UniValue::VARR);
     {
         LOCK(cs_mapLocalHost);
-        for (const std::pair<CNetAddr, LocalServiceInfo> &item : mapLocalHost)
+        for (const std::pair<const CNetAddr, LocalServiceInfo> &item : mapLocalHost)
         {
             UniValue rec(UniValue::VOBJ);
             rec.pushKV("address", item.first.ToString());

@@ -5894,7 +5894,7 @@ bool CWallet::DelAddressBook(const CTxDestination& address)
         {
             // Delete destdata tuples associated with address
             std::string strAddress = keyIO.EncodeDestination(address);
-            for (const std::pair<string, string> &item : mapAddressBook[address].destdata)
+            for (const std::pair<const string, string> &item : mapAddressBook[address].destdata)
             {
                 CWalletDB(strWalletFile).EraseDestData(strAddress, item.first);
             }

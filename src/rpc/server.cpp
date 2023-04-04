@@ -97,7 +97,7 @@ void RPCTypeCheckObj(const UniValue& o,
                   const map<string, UniValue::VType>& typesExpected,
                   bool fAllowNull)
 {
-    for (const std::pair<string, UniValue::VType>& t : typesExpected)
+    for (const std::pair<const string, UniValue::VType>& t : typesExpected)
     {
         const UniValue& v = find_value(o, t.first);
         if (!fAllowNull && v.isNull())
