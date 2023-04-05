@@ -42,7 +42,7 @@
 #include <utility>
 #include <vector>
 
-#include <rust/wallet_scanner.h>
+#include <rust/bridge.h>
 
 #include <boost/shared_ptr.hpp>
 

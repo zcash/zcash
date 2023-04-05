@@ -70,6 +70,8 @@ mod streams_ffi;
 mod tracing_ffi;
 mod zcashd_orchard;
 
+mod bridge;
+
 mod address_ffi;
 mod builder_ffi;
 mod bundlecache;

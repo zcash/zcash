@@ -11,7 +11,7 @@
 #include <array>
 #include <optional>
 
-#include <rust/wallet_scanner.h>
+#include <rust/bridge.h>
 
 namespace libzcash {
 

@@ -11,7 +11,7 @@
 #include <sodium.h>
 #include <tracing.h>
 
-#include <rust/bundlecache.h>
+#include <rust/bridge.h>
 
 #include <boost/filesystem.hpp>
 

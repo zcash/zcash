@@ -43,7 +43,7 @@
 #include <utility>
 #include <vector>
 
-#include <rust/sapling.h>
+#include <rust/bridge.h>
 #include <rust/orchard.h>
 
 #include <boost/unordered_map.hpp>

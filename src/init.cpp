@@ -67,7 +67,7 @@
 #include "zmq/zmqnotificationinterface.h"
 #endif
 
-#include <rust/bundlecache.h>
+#include <rust/bridge.h>
 #include <rust/init.h>
 #include <rust/metrics.h>
 

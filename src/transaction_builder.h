@@ -22,8 +22,8 @@
 
 #include <optional>
 
+#include <rust/bridge.h>
 #include <rust/builder.h>
-#include <rust/sapling.h>
 
 #define NO_MEMO {{0xF6}}
 

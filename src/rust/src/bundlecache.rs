@@ -5,23 +5,7 @@ use std::{
 
 use rand_core::{OsRng, RngCore};
 
-#[cxx::bridge]
-mod ffi {
-    #[namespace = "libzcash"]
-    unsafe extern "C++" {
-        include!("zcash/cache.h");
-
-        type BundleValidityCache;
-
-        fn NewBundleValidityCache(kind: &str, bytes: usize) -> UniquePtr<BundleValidityCache>;
-        fn insert(self: Pin<&mut BundleValidityCache>, entry: [u8; 32]);
-        fn contains(&self, entry: &[u8; 32], erase: bool) -> bool;
-    }
-    #[namespace = "bundlecache"]
-    extern "Rust" {
-        fn init(cache_bytes: usize);
-    }
-}
+use crate::bridge::ffi;
 
 pub(crate) struct CacheEntry([u8; 32]);
 
@@ -114,7 +98,7 @@ static BUNDLE_CACHES_LOADED: Once = Once::new();
 static mut SAPLING_BUNDLE_VALIDITY_CACHE: Option<RwLock<BundleValidityCache>> = None;
 static mut ORCHARD_BUNDLE_VALIDITY_CACHE: Option<RwLock<BundleValidityCache>> = None;
 
-fn init(cache_bytes: usize) {
+pub(crate) fn init(cache_bytes: usize) {
     BUNDLE_CACHES_LOADED.call_once(|| unsafe {
         SAPLING_BUNDLE_VALIDITY_CACHE = Some(RwLock::new(BundleValidityCache::new(
             "Sapling",

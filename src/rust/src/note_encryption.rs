@@ -15,7 +15,7 @@ use zcash_primitives::{
     },
 };
 
-use crate::{params::Network, wallet_scanner::ffi::SaplingShieldedOutput};
+use crate::{bridge::ffi::SaplingShieldedOutput, params::Network};
 
 /// Trial decryption of the full note plaintext by the recipient.
 ///

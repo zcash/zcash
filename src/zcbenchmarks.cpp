@@ -35,8 +35,8 @@
 #include "zcash/Note.hpp"
 #include "librustzcash.h"
 
+#include <rust/bridge.h>
 #include <rust/ed25519/types.h>
-#include <rust/sapling.h>
 
 using namespace libzcash;
 // This method is based on Shutdown from init.cpp
