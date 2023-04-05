@@ -132,7 +132,7 @@ UnifiedAddressGenerationResult ZcashdUnifiedFullViewingKey::Address(
     }
 
     if (receiverTypes.count(ReceiverType::P2SH) > 0) {
-        return UnifiedAddressGenerationError::ReceiverTypeNotAvailable;
+        return UnifiedAddressGenerationError::ReceiverTypeNotSupported;
     }
 
     UnifiedAddress ua;
