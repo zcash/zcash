@@ -20,11 +20,11 @@ public:
 
     static libzcash::SaplingPaymentAddress getMigrationDestAddress(const HDSeed& seed);
 
-    virtual void main();
+    virtual void main() override;
 
     virtual void cancel();
 
-    virtual UniValue getStatus() const;
+    virtual UniValue getStatus() const override;
 
 private:
     int targetHeight_;

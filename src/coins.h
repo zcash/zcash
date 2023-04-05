@@ -424,17 +424,17 @@ class CCoinsViewDummy : public CCoinsView
 public:
     ~CCoinsViewDummy() override {}
 
-    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const { return false; }
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const { return false; }
-    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const { return false; }
-    bool GetNullifier(const uint256 &nullifier, ShieldedType type) const { return false; }
-    bool GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
-    bool HaveCoins(const uint256 &txid) const { return false; }
-    uint256 GetBestBlock() const { return uint256(); }
-    uint256 GetBestAnchor(ShieldedType type) const { return uint256(); }
-    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
-    uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const override { return false; }
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const override { return false; }
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const override { return false; }
+    bool GetNullifier(const uint256 &nullifier, ShieldedType type) const override { return false; }
+    bool GetCoins(const uint256 &txid, CCoins &coins) const override { return false; }
+    bool HaveCoins(const uint256 &txid) const override { return false; }
+    uint256 GetBestBlock() const override { return uint256(); }
+    uint256 GetBestAnchor(ShieldedType type) const override { return uint256(); }
+    HistoryIndex GetHistoryLength(uint32_t epochId) const override { return 0; }
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const override { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t epochId) const override { return uint256(); }
 
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
@@ -447,9 +447,9 @@ public:
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
                     CNullifiersMap &mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap) { return false; }
+                    CHistoryCacheMap &historyCacheMap) override { return false; }
 
-    bool GetStats(CCoinsStats &stats) const { return false; }
+    bool GetStats(CCoinsStats &stats) const override { return false; }
 };
 
 /** CCoinsView backed by another CCoinsView */
@@ -462,17 +462,17 @@ public:
     CCoinsViewBacked(CCoinsView *viewIn);
     ~CCoinsViewBacked() override {}
 
-    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
-    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const;
-    bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
-    bool GetCoins(const uint256 &txid, CCoins &coins) const;
-    bool HaveCoins(const uint256 &txid) const;
-    uint256 GetBestBlock() const;
-    uint256 GetBestAnchor(ShieldedType type) const;
-    HistoryIndex GetHistoryLength(uint32_t epochId) const;
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const;
-    uint256 GetHistoryRoot(uint32_t epochId) const;
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const override;
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const override;
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const override;
+    bool GetNullifier(const uint256 &nullifier, ShieldedType type) const override;
+    bool GetCoins(const uint256 &txid, CCoins &coins) const override;
+    bool HaveCoins(const uint256 &txid) const override;
+    uint256 GetBestBlock() const override;
+    uint256 GetBestAnchor(ShieldedType type) const override;
+    HistoryIndex GetHistoryLength(uint32_t epochId) const override;
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const override;
+    uint256 GetHistoryRoot(uint32_t epochId) const override;
     void SetBackend(CCoinsView &viewIn);
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
@@ -485,8 +485,8 @@ public:
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
                     CNullifiersMap &mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap);
-    bool GetStats(CCoinsStats &stats) const;
+                    CHistoryCacheMap &historyCacheMap) override;
+    bool GetStats(CCoinsStats &stats) const override;
 };
 
 
@@ -555,17 +555,17 @@ public:
     ~CCoinsViewCache() override;
 
     // Standard CCoinsView methods
-    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const;
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const;
-    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const;
-    bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
-    bool GetCoins(const uint256 &txid, CCoins &coins) const;
-    bool HaveCoins(const uint256 &txid) const;
-    uint256 GetBestBlock() const;
-    uint256 GetBestAnchor(ShieldedType type) const;
-    HistoryIndex GetHistoryLength(uint32_t epochId) const;
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const;
-    uint256 GetHistoryRoot(uint32_t epochId) const;
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const override;
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const override;
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const override;
+    bool GetNullifier(const uint256 &nullifier, ShieldedType type) const override;
+    bool GetCoins(const uint256 &txid, CCoins &coins) const override;
+    bool HaveCoins(const uint256 &txid) const override;
+    uint256 GetBestBlock() const override;
+    uint256 GetBestAnchor(ShieldedType type) const override;
+    HistoryIndex GetHistoryLength(uint32_t epochId) const override;
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const override;
+    uint256 GetHistoryRoot(uint32_t epochId) const override;
     void SetBestBlock(const uint256 &hashBlock);
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
@@ -578,7 +578,7 @@ public:
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
                     CNullifiersMap &mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap);
+                    CHistoryCacheMap &historyCacheMap) override;
 
     // Adds the tree to mapSproutAnchors, mapSaplingAnchors, or mapOrchardAnchors
     // based on the type of tree and sets the current commitment root to this root.

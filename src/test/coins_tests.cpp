@@ -47,7 +47,7 @@ public:
     }
     ~CCoinsViewTest() override {}
 
-    bool GetSproutAnchorAt(const uint256& rt, SproutMerkleTree &tree) const {
+    bool GetSproutAnchorAt(const uint256& rt, SproutMerkleTree &tree) const override {
         if (rt == SproutMerkleTree::empty_root()) {
             SproutMerkleTree new_tree;
             tree = new_tree;
@@ -63,7 +63,7 @@ public:
         }
     }
 
-    bool GetSaplingAnchorAt(const uint256& rt, SaplingMerkleTree &tree) const {
+    bool GetSaplingAnchorAt(const uint256& rt, SaplingMerkleTree &tree) const override {
         if (rt == SaplingMerkleTree::empty_root()) {
             SaplingMerkleTree new_tree;
             tree = new_tree;
@@ -79,7 +79,7 @@ public:
         }
     }
 
-    bool GetOrchardAnchorAt(const uint256& rt, OrchardMerkleFrontier &tree) const {
+    bool GetOrchardAnchorAt(const uint256& rt, OrchardMerkleFrontier &tree) const override {
         if (rt == OrchardMerkleFrontier::empty_root()) {
             OrchardMerkleFrontier new_tree;
             tree = new_tree;
@@ -95,7 +95,7 @@ public:
         }
     }
 
-    bool GetNullifier(const uint256 &nf, ShieldedType type) const
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const override
     {
         const std::map<uint256, bool>* mapToUse;
         switch (type) {
@@ -119,7 +119,7 @@ public:
         }
     }
 
-    uint256 GetBestAnchor(ShieldedType type) const {
+    uint256 GetBestAnchor(ShieldedType type) const override {
         switch (type) {
             case SPROUT:
                 return hashBestSproutAnchor_;
@@ -133,7 +133,7 @@ public:
         }
     }
 
-    bool GetCoins(const uint256& txid, CCoins& coins) const
+    bool GetCoins(const uint256& txid, CCoins& coins) const override
     {
         std::map<uint256, CCoins>::const_iterator it = map_.find(txid);
         if (it == map_.end()) {
@@ -147,13 +147,13 @@ public:
         return true;
     }
 
-    bool HaveCoins(const uint256& txid) const
+    bool HaveCoins(const uint256& txid) const override
     {
         CCoins coins;
         return GetCoins(txid, coins);
     }
 
-    uint256 GetBestBlock() const { return hashBestBlock_; }
+    uint256 GetBestBlock() const override { return hashBestBlock_; }
 
     void BatchWriteNullifiers(CNullifiersMap& mapNullifiers, std::map<uint256, bool>& cacheNullifiers)
     {
@@ -189,9 +189,9 @@ public:
         }
     }
 
-    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
-    uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }
+    HistoryIndex GetHistoryLength(uint32_t epochId) const override { return 0; }
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const override { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t epochId) const override { return uint256(); }
 
     bool BatchWrite(CCoinsMap& mapCoins,
                     const uint256& hashBlock,
@@ -204,7 +204,7 @@ public:
                     CNullifiersMap& mapSproutNullifiers,
                     CNullifiersMap& mapSaplingNullifiers,
                     CNullifiersMap& mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap)
+                    CHistoryCacheMap &historyCacheMap) override
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             if (it->second.flags & CCoinsCacheEntry::DIRTY) {
@@ -237,7 +237,7 @@ public:
         return true;
     }
 
-    bool GetStats(CCoinsStats& stats) const { return false; }
+    bool GetStats(CCoinsStats& stats) const override { return false; }
 };
 
 class CCoinsViewCacheTest : public CCoinsViewCache

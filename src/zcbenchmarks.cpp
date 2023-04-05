@@ -490,7 +490,7 @@ public:
         orchardTrees.push_back(emptyTree);
     }
 
-    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const override {
         if (rt == sproutTree.root()) {
             tree = sproutTree;
             return true;
@@ -498,7 +498,7 @@ public:
         return false;
     }
 
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const override {
         for (const auto& saplingTree : saplingTrees) {
             if (rt == saplingTree.root()) {
                 tree = saplingTree;
@@ -508,7 +508,7 @@ public:
         return false;
     }
 
-    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const override {
         for (const auto& orchardTree : orchardTrees) {
             if (rt == orchardTree.root()) {
                 tree = orchardTree;
@@ -518,23 +518,23 @@ public:
         return false;
     }
 
-    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const override {
         return false;
     }
 
-    bool GetCoins(const uint256 &txid, CCoins &coins) const {
+    bool GetCoins(const uint256 &txid, CCoins &coins) const override {
         return db.Read(std::make_pair(DB_COINS, txid), coins);
     }
 
-    bool HaveCoins(const uint256 &txid) const {
+    bool HaveCoins(const uint256 &txid) const override {
         return db.Exists(std::make_pair(DB_COINS, txid));
     }
 
-    uint256 GetBestBlock() const {
+    uint256 GetBestBlock() const override {
         return hash;
     }
 
-    uint256 GetBestAnchor(ShieldedType type) const {
+    uint256 GetBestAnchor(ShieldedType type) const override {
         switch (type) {
             case SPROUT:
                 return sproutTree.root();
@@ -545,9 +545,9 @@ public:
         }
     }
 
-    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const { return HistoryNode(); }
-    uint256 GetHistoryRoot(uint32_t epochId) const { return uint256(); }
+    HistoryIndex GetHistoryLength(uint32_t epochId) const override { return 0; }
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const override { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t epochId) const override { return uint256(); }
 
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
@@ -560,11 +560,11 @@ public:
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
                     CNullifiersMap &mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap) {
+                    CHistoryCacheMap &historyCacheMap) override {
         return false;
     }
 
-    bool GetStats(CCoinsStats &stats) const {
+    bool GetStats(CCoinsStats &stats) const override {
         return false;
     }
 };

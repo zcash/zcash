@@ -41,9 +41,9 @@ public:
      */
     static void SetGlobal();
 
-    int64_t GetTime() const;
-    int64_t GetTimeMillis() const;
-    int64_t GetTimeMicros() const;
+    int64_t GetTime() const override;
+    int64_t GetTimeMillis() const override;
+    int64_t GetTimeMicros() const override;
 };
 
 class FixedClock: public CClock {

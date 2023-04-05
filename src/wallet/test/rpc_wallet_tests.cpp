@@ -894,7 +894,7 @@ public:
     }
     virtual ~MockSleepOperation() override {
     }
-    virtual void main() {
+    virtual void main() override {
         set_state(OperationStatus::EXECUTING);
         start_execution_clock();
         std::this_thread::sleep_for(std::chrono::milliseconds(naptime));
@@ -995,7 +995,7 @@ class CountOperation : public AsyncRPCOperation {
 public:
     CountOperation() {}
     virtual ~CountOperation() override {}
-    virtual void main() {
+    virtual void main() override {
         set_state(OperationStatus::EXECUTING);
         gCounter++;
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));

@@ -58,9 +58,9 @@ public:
     AsyncRPCOperation_mergetoaddress& operator=(AsyncRPCOperation_mergetoaddress const&) = delete; // Copy assign
     AsyncRPCOperation_mergetoaddress& operator=(AsyncRPCOperation_mergetoaddress&&) = delete;      // Move assign
 
-    virtual void main();
+    virtual void main() override;
 
-    virtual UniValue getStatus() const;
+    virtual UniValue getStatus() const override;
 
     /// Set to true to disable sending txs and generating proofs
     bool testmode = false;

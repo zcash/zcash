@@ -1651,7 +1651,7 @@ public:
      */
     CPubKey GenerateNewKey(bool external);
     //! Adds a key to the store, and saves it to disk.
-    bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
+    bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey) override;
     //! Adds a key to the store, without saving it to disk (used by LoadWallet)
     bool LoadKey(const CKey& key, const CPubKey &pubkey) { return CCryptoKeyStore::AddKeyPubKey(key, pubkey); }
     //! Load metadata (used by LoadWallet)
@@ -1660,10 +1660,10 @@ public:
     bool LoadMinVersion(int nVersion) { AssertLockHeld(cs_wallet); nWalletVersion = nVersion; nWalletMaxVersion = std::max(nWalletMaxVersion, nVersion); return true; }
 
     //! Adds an encrypted key to the store, and saves it to disk.
-    bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
+    bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret) override;
     //! Adds an encrypted key to the store, without saving it to disk (used by LoadWallet)
     bool LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
-    bool AddCScript(const CScript& redeemScript);
+    bool AddCScript(const CScript& redeemScript) override;
     bool LoadCScript(const CScript& redeemScript);
 
     //! Erases a destination data tuple in the store and on disk
@@ -1674,8 +1674,8 @@ public:
     bool GetDestData(const CTxDestination &dest, const std::string &key, std::string *value) const;
 
     //! Adds a watch-only address to the store, and saves it to disk.
-    bool AddWatchOnly(const CScript &dest);
-    bool RemoveWatchOnly(const CScript &dest);
+    bool AddWatchOnly(const CScript &dest) override;
+    bool RemoveWatchOnly(const CScript &dest) override;
     //! Adds a watch-only address to the store, without saving it to disk (used by LoadWallet)
     bool LoadWatchOnly(const CScript &dest);
 
@@ -1702,11 +1702,11 @@ public:
     bool AddCryptedSproutSpendingKey(
         const libzcash::SproutPaymentAddress &address,
         const libzcash::ReceivingKey &rk,
-        const std::vector<unsigned char> &vchCryptedSecret);
+        const std::vector<unsigned char> &vchCryptedSecret) override;
 
     //! Adds a Sprout viewing key to the store, and saves it to disk.
-    bool AddSproutViewingKey(const libzcash::SproutViewingKey &vk);
-    bool RemoveSproutViewingKey(const libzcash::SproutViewingKey &vk);
+    bool AddSproutViewingKey(const libzcash::SproutViewingKey &vk) override;
+    bool RemoveSproutViewingKey(const libzcash::SproutViewingKey &vk) override;
     //! Adds a Sprout viewing key to the store, without saving it to disk (used by LoadWallet)
     bool LoadSproutViewingKey(const libzcash::SproutViewingKey &dest);
 
@@ -1731,13 +1731,13 @@ public:
     //! CBasicKeyStore::AddSaplingFullViewingKey is called directly when adding a
     //! full viewing key to the keystore, to avoid this override.
     bool AddSaplingFullViewingKey(
-            const libzcash::SaplingExtendedFullViewingKey &extfvk);
+            const libzcash::SaplingExtendedFullViewingKey &extfvk) override;
     bool AddSaplingPaymentAddress(
         const libzcash::SaplingIncomingViewingKey &ivk,
-        const libzcash::SaplingPaymentAddress &addr);
+        const libzcash::SaplingPaymentAddress &addr) override;
     bool AddCryptedSaplingSpendingKey(
         const libzcash::SaplingExtendedFullViewingKey &extfvk,
-        const std::vector<unsigned char> &vchCryptedSecret);
+        const std::vector<unsigned char> &vchCryptedSecret) override;
     //! Adds spending key to the store, without saving it to disk (used by LoadWallet)
     bool LoadSaplingZKey(const libzcash::SaplingExtendedSpendingKey &key);
     //! Load spending key metadata (used by LoadWallet)
@@ -1873,7 +1873,7 @@ public:
     void UpdateSaplingNullifierNoteMapForBlock(const CBlock* pblock);
     void LoadWalletTx(const CWalletTx& wtxIn);
     bool AddToWallet(const CWalletTx& wtxIn, CWalletDB* pwalletdb);
-    BatchScanner* GetBatchScanner();
+    BatchScanner* GetBatchScanner() override;
     bool AddToWalletIfInvolvingMe(
             const Consensus::Params& consensus,
             const CTransaction& tx,
@@ -1882,7 +1882,7 @@ public:
             WalletDecryptedNotes decryptedNotes,
             bool fUpdate
             );
-    void EraseFromWallet(const uint256 &hash);
+    void EraseFromWallet(const uint256 &hash) override;
     void WitnessNoteCommitment(
          std::vector<uint256> commitments,
          std::vector<std::optional<SproutWitness>>& witnesses,
@@ -1892,7 +1892,7 @@ public:
         bool fUpdate,
         bool isInitScan);
     void ReacceptWalletTransactions();
-    void ResendWalletTransactions(int64_t nBestBlockTime);
+    void ResendWalletTransactions(int64_t nBestBlockTime) override;
     std::vector<uint256> ResendWalletTransactionsBefore(int64_t nTime);
     CAmount GetBalance(const std::optional<int>& asOfHeight,
                        const isminefilter& filter=ISMINE_SPENDABLE,
@@ -2021,7 +2021,7 @@ public:
     void ChainTip(
         const CBlockIndex *pindex,
         const CBlock *pblock,
-        std::optional<MerkleFrontiers> added);
+        std::optional<MerkleFrontiers> added) override;
     void RunSaplingMigration(int blockHeight);
     void AddPendingSaplingMigrationTx(const CTransaction& tx);
     /** Saves witness caches and best block locator to disk. */
@@ -2059,9 +2059,9 @@ public:
 
     bool DelAddressBook(const CTxDestination& address);
 
-    void UpdatedTransaction(const uint256 &hashTx);
+    void UpdatedTransaction(const uint256 &hashTx) override;
 
-    void GetAddressForMining(std::optional<MinerAddress> &minerAddress);
+    void GetAddressForMining(std::optional<MinerAddress> &minerAddress) override;
 
     unsigned int GetKeyPoolSize()
     {
@@ -2127,8 +2127,8 @@ public:
      * before calling this function). */
     void GenerateNewSeed(Language language = English);
 
-    bool SetMnemonicSeed(const MnemonicSeed& seed);
-    bool SetCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
+    bool SetMnemonicSeed(const MnemonicSeed& seed) override;
+    bool SetCryptedMnemonicSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret) override;
     /* Checks the wallet's seed against the specified mnemonic, and marks the
      * wallet's seed as having been backed up if the phrases match. */
     bool VerifyMnemonicSeed(const SecureString& mnemonic);
@@ -2207,7 +2207,7 @@ public:
     void ReturnKey();
     virtual bool GetReservedKey(CPubKey &pubkey);
     void KeepKey();
-    void KeepScript() { KeepKey(); }
+    void KeepScript() override { KeepKey(); }
 };
 
 //

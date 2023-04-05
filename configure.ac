@@ -364,7 +364,7 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-cast-align -Wno-ctad-maybe-unsupported -Wno-disabled-macro-expansion \
   -Wno-exit-time-destructors -Wno-float-conversion -Wno-float-equal \
   -Wno-format-nonliteral -Wno-global-constructors \
-  -Wno-gnu-zero-variadic-macro-arguments -Wno-inconsistent-missing-override \
+  -Wno-gnu-zero-variadic-macro-arguments \
   -Wno-implicit-int-conversion -Wno-implicit-int-float-conversion \
   -Wno-missing-prototypes \
   -Wno-old-style-cast \

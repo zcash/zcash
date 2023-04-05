@@ -73,9 +73,9 @@ public:
 
     Remaining prepare(CWallet& wallet);
 
-    virtual void main();
+    virtual void main() override;
 
-    virtual UniValue getStatus() const;
+    virtual UniValue getStatus() const override;
 
     bool testmode{false};  // Set to true to disable sending txs and generating proofs
 

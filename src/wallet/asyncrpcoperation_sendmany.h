@@ -42,9 +42,9 @@ public:
     AsyncRPCOperation_sendmany& operator=(AsyncRPCOperation_sendmany const&) = delete;  // Copy assign
     AsyncRPCOperation_sendmany& operator=(AsyncRPCOperation_sendmany &&) = delete;      // Move assign
 
-    virtual void main();
+    virtual void main() override;
 
-    virtual UniValue getStatus() const;
+    virtual UniValue getStatus() const override;
 
     bool testmode{false};  // Set to true to disable sending txs and generating proofs
 
