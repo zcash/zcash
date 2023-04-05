@@ -7564,56 +7564,76 @@ std::optional<libzcash::UnifiedAddress> UnifiedAddressForReceiver::operator()(co
 
 PrivacyPolicy PrivacyPolicyMeet(PrivacyPolicy a, PrivacyPolicy b)
 {
+    // Each `case` is split into the following groups
+    // 1. a <= b (`return a`)
+    // 2. b < a (`return b`)
+    // 3. incomparable (`return PrivacyPolicy::…`)
     switch (a) {
         case PrivacyPolicy::FullPrivacy:
             return b;
         case PrivacyPolicy::AllowRevealedAmounts:
             switch (b) {
                 case PrivacyPolicy::FullPrivacy:
-                    return a;
-                default: return b;
-            }
-        case PrivacyPolicy::AllowRevealedRecipients:
-            switch (b) {
-                case PrivacyPolicy::FullPrivacy:
                 case PrivacyPolicy::AllowRevealedAmounts:
                     return a;
+                case PrivacyPolicy::AllowRevealedRecipients:
                 case PrivacyPolicy::AllowRevealedSenders:
-                    return PrivacyPolicy::AllowFullyTransparent;
+                case PrivacyPolicy::AllowFullyTransparent:
                 case PrivacyPolicy::AllowLinkingAccountAddresses:
-                    return PrivacyPolicy::NoPrivacy;
-                default: return b;
+                case PrivacyPolicy::NoPrivacy:
+                    return b;
             }
         case PrivacyPolicy::AllowRevealedSenders:
             switch (b) {
                 case PrivacyPolicy::FullPrivacy:
                 case PrivacyPolicy::AllowRevealedAmounts:
+                case PrivacyPolicy::AllowRevealedSenders:
                     return a;
+                case PrivacyPolicy::AllowFullyTransparent:
+                case PrivacyPolicy::AllowLinkingAccountAddresses:
+                case PrivacyPolicy::NoPrivacy:
+                    return b;
                 case PrivacyPolicy::AllowRevealedRecipients:
                     return PrivacyPolicy::AllowFullyTransparent;
-                default: return b;
+            }
+        case PrivacyPolicy::AllowRevealedRecipients:
+            switch (b) {
+                case PrivacyPolicy::FullPrivacy:
+                case PrivacyPolicy::AllowRevealedAmounts:
+                case PrivacyPolicy::AllowRevealedRecipients:
+                    return a;
+                case PrivacyPolicy::AllowFullyTransparent:
+                case PrivacyPolicy::NoPrivacy:
+                    return b;
+                case PrivacyPolicy::AllowRevealedSenders:
+                    return PrivacyPolicy::AllowFullyTransparent;
+                case PrivacyPolicy::AllowLinkingAccountAddresses:
+                    return PrivacyPolicy::NoPrivacy;
             }
         case PrivacyPolicy::AllowFullyTransparent:
             switch (b) {
                 case PrivacyPolicy::FullPrivacy:
                 case PrivacyPolicy::AllowRevealedAmounts:
-                case PrivacyPolicy::AllowRevealedRecipients:
                 case PrivacyPolicy::AllowRevealedSenders:
+                case PrivacyPolicy::AllowRevealedRecipients:
+                case PrivacyPolicy::AllowFullyTransparent:
                     return a;
+                case PrivacyPolicy::NoPrivacy:
+                    return b;
                 case PrivacyPolicy::AllowLinkingAccountAddresses:
                     return PrivacyPolicy::NoPrivacy;
-                default: return b;
             }
         case PrivacyPolicy::AllowLinkingAccountAddresses:
             switch (b) {
                 case PrivacyPolicy::FullPrivacy:
                 case PrivacyPolicy::AllowRevealedAmounts:
                 case PrivacyPolicy::AllowRevealedSenders:
+                case PrivacyPolicy::AllowLinkingAccountAddresses:
                     return a;
                 case PrivacyPolicy::AllowRevealedRecipients:
                 case PrivacyPolicy::AllowFullyTransparent:
+                case PrivacyPolicy::NoPrivacy:
                     return PrivacyPolicy::NoPrivacy;
-                default: return b;
             }
         case PrivacyPolicy::NoPrivacy:
             return a;

@@ -612,7 +612,8 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
                 case PaymentAddressSource::MnemonicHDSeed:
                     t_mnemonic_dests.insert(item.first);
                     break;
-                default:
+                case PaymentAddressSource::LegacyHDSeed:
+                case PaymentAddressSource::AddressNotFound:
                     // Not going to be in the address book.
                     assert(false);
             }
@@ -638,7 +639,10 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
                     case PaymentAddressSource::MnemonicHDSeed:
                         t_mnemonic_change_dests.insert(item.first);
                         break;
-                    default:
+                    case PaymentAddressSource::Imported:
+                    case PaymentAddressSource::ImportedWatchOnly:
+                    case PaymentAddressSource::LegacyHDSeed:
+                    case PaymentAddressSource::AddressNotFound:
                         // assume that if we didn't add the address to the addrbook
                         // that it's a change address. Ideally we'd have a better way
                         // of checking this by exploring the transaction graph;

@@ -62,7 +62,9 @@ std::string GetNetworkName(enum Network net) {
     case NET_IPV4: return "ipv4";
     case NET_IPV6: return "ipv6";
     case NET_TOR: return "onion";
-    default: return "";
+    case NET_UNROUTABLE:
+    case NET_MAX:
+        return "";
     }
 }
 
@@ -650,7 +652,9 @@ void CNetAddr::SetRaw(Network network, const uint8_t *ip_in)
         case NET_IPV6:
             memcpy(ip, ip_in, 16);
             break;
-        default:
+        case NET_TOR:
+        case NET_UNROUTABLE:
+        case NET_MAX:
             assert(!"invalid network");
     }
 }

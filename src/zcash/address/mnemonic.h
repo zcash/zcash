@@ -63,7 +63,7 @@ public:
                 return "Portuguese";
             case Spanish:
                 return "Spanish";
-            default:
+            case SIZE_HACK:
                 return "INVALID";
         }
     }

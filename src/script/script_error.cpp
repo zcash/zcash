@@ -22,6 +22,8 @@ const char* ScriptErrorString(const ScriptError serror)
             return "Script failed an OP_CHECKMULTISIGVERIFY operation";
         case SCRIPT_ERR_CHECKSIGVERIFY:
             return "Script failed an OP_CHECKSIGVERIFY operation";
+        case SCRIPT_ERR_CLEANSTACK:
+            return "Stack is not empty";
         case SCRIPT_ERR_NUMEQUALVERIFY:
             return "Script failed an OP_NUMEQUALVERIFY operation";
         case SCRIPT_ERR_SCRIPT_SIZE:
@@ -70,7 +72,6 @@ const char* ScriptErrorString(const ScriptError serror)
             return "Public key is neither compressed or uncompressed";
         case SCRIPT_ERR_UNKNOWN_ERROR:
         case SCRIPT_ERR_ERROR_COUNT:
-        default: break;
+            return "unknown error";
     }
-    return "unknown error";
 }

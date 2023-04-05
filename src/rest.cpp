@@ -191,7 +191,7 @@ static bool rest_headers(HTTPRequest* req,
         req->WriteReply(HTTP_OK, strJSON);
         return true;
     }
-    default: {
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: .bin, .hex)");
     }
     }
@@ -259,7 +259,7 @@ static bool rest_block(HTTPRequest* req,
         return true;
     }
 
-    default: {
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: " + AvailableDataFormatsString() + ")");
     }
     }
@@ -297,7 +297,9 @@ static bool rest_chaininfo(HTTPRequest* req, const std::string& strURIPart)
         req->WriteReply(HTTP_OK, strJSON);
         return true;
     }
-    default: {
+    case RF_BINARY:
+    case RF_HEX:
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: json)");
     }
     }
@@ -322,7 +324,9 @@ static bool rest_mempool_info(HTTPRequest* req, const std::string& strURIPart)
         req->WriteReply(HTTP_OK, strJSON);
         return true;
     }
-    default: {
+    case RF_BINARY:
+    case RF_HEX:
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: json)");
     }
     }
@@ -347,7 +351,9 @@ static bool rest_mempool_contents(HTTPRequest* req, const std::string& strURIPar
         req->WriteReply(HTTP_OK, strJSON);
         return true;
     }
-    default: {
+    case RF_BINARY:
+    case RF_HEX:
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: json)");
     }
     }
@@ -400,7 +406,7 @@ static bool rest_tx(HTTPRequest* req, const std::string& strURIPart)
         return true;
     }
 
-    default: {
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: " + AvailableDataFormatsString() + ")");
     }
     }
@@ -495,7 +501,7 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
             return RESTERR(req, HTTP_INTERNAL_SERVER_ERROR, "Error: empty request");
         break;
     }
-    default: {
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: " + AvailableDataFormatsString() + ")");
     }
     }
@@ -597,7 +603,7 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
         req->WriteReply(HTTP_OK, strJSON);
         return true;
     }
-    default: {
+    case RF_UNDEF: {
         return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: " + AvailableDataFormatsString() + ")");
     }
     }

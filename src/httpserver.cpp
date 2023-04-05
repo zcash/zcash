@@ -204,7 +204,7 @@ static std::string RequestMethodString(HTTPRequest::RequestMethod m)
     case HTTPRequest::PUT:
         return "PUT";
         break;
-    default:
+    case HTTPRequest::UNKNOWN:
         return "unknown";
     }
 }
@@ -637,7 +637,11 @@ HTTPRequest::RequestMethod HTTPRequest::GetRequestMethod()
     case EVHTTP_REQ_PUT:
         return PUT;
         break;
-    default:
+    case EVHTTP_REQ_CONNECT:
+    case EVHTTP_REQ_DELETE:
+    case EVHTTP_REQ_OPTIONS:
+    case EVHTTP_REQ_PATCH:
+    case EVHTTP_REQ_TRACE:
         return UNKNOWN;
         break;
     }
