@@ -1370,7 +1370,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             }
             int nFundingStreamId;
             if (!ParseInt32(vStreamParams[0], &nFundingStreamId) ||
-                    nFundingStreamId < Consensus::FIRST_FUNDING_STREAM ||
                     nFundingStreamId >= Consensus::MAX_FUNDING_STREAMS) {
                 return InitError(strprintf("Invalid streamId (%s)", vStreamParams[0]));
             }

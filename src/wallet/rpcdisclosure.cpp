@@ -234,7 +234,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
     }
     o.pushKV("jsIndex", pd.payload.js);
 
-    if (pd.payload.n < 0 || pd.payload.n >= ZC_NUM_JS_OUTPUTS) {
+    if (pd.payload.n >= ZC_NUM_JS_OUTPUTS) {
         errs.push_back("Payment disclosure refers to an invalid output index");
     }
     o.pushKV("outputIndex", pd.payload.n);
