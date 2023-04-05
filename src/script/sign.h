@@ -42,8 +42,8 @@ class TransactionSignatureCreator : public BaseSignatureCreator {
 
 public:
     TransactionSignatureCreator(const CKeyStore* keystoreIn, const CTransaction* txToIn, const PrecomputedTransactionData& txToDataIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn=SIGHASH_ALL);
-    const BaseSignatureChecker& Checker() const { return checker; }
-    bool CreateSig(std::vector<unsigned char>& vchSig, const CKeyID& keyid, const CScript& scriptCode, uint32_t consensusBranchId) const;
+    const BaseSignatureChecker& Checker() const override { return checker; }
+    bool CreateSig(std::vector<unsigned char>& vchSig, const CKeyID& keyid, const CScript& scriptCode, uint32_t consensusBranchId) const override;
 };
 
 class MutableTransactionSignatureCreator : public TransactionSignatureCreator {
@@ -57,8 +57,8 @@ public:
 class DummySignatureCreator : public BaseSignatureCreator {
 public:
     DummySignatureCreator(const CKeyStore* keystoreIn) : BaseSignatureCreator(keystoreIn) {}
-    const BaseSignatureChecker& Checker() const;
-    bool CreateSig(std::vector<unsigned char>& vchSig, const CKeyID& keyid, const CScript& scriptCode, uint32_t consensusBranchId) const;
+    const BaseSignatureChecker& Checker() const override;
+    bool CreateSig(std::vector<unsigned char>& vchSig, const CKeyID& keyid, const CScript& scriptCode, uint32_t consensusBranchId) const override;
 };
 
 struct SignatureData {

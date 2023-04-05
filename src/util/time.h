@@ -65,9 +65,9 @@ public:
     static void SetGlobal();
 
     void Set(std::chrono::seconds fixedSeconds);
-    int64_t GetTime() const;
-    int64_t GetTimeMillis() const;
-    int64_t GetTimeMicros() const;
+    int64_t GetTime() const override;
+    int64_t GetTimeMillis() const override;
+    int64_t GetTimeMicros() const override;
 };
 
 class OffsetClock: public CClock {
@@ -90,9 +90,9 @@ public:
     static void SetGlobal();
 
     void Set(std::chrono::seconds offsetSeconds);
-    int64_t GetTime() const;
-    int64_t GetTimeMillis() const;
-    int64_t GetTimeMicros() const;
+    int64_t GetTime() const override;
+    int64_t GetTimeMillis() const override;
+    int64_t GetTimeMicros() const override;
 };
 
 const CClock* GetNodeClock();

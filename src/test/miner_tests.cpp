@@ -240,7 +240,7 @@ class MinerAddressScript : public CReserveScript
     // important when a block is mined (so it then appears to the user).
     // If -mineraddress is set, the user already knows about and is managing the
     // address, so we don't need to do anything here.
-    void KeepScript() {}
+    void KeepScript() override {}
 };
 
 #ifdef ENABLE_MINING

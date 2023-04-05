@@ -129,7 +129,7 @@ class TestLockedPageAllocator: public LockedPageAllocator
 {
 public:
     TestLockedPageAllocator(int count_in, int lockedcount_in): count(count_in), lockedcount(lockedcount_in) {}
-    void* AllocateLocked(size_t len, bool *lockingSuccess)
+    void* AllocateLocked(size_t len, bool *lockingSuccess) override
     {
         *lockingSuccess = false;
         if (count > 0) {
@@ -144,10 +144,10 @@ public:
         }
         return 0;
     }
-    void FreeLocked(void* addr, size_t len)
+    void FreeLocked(void* addr, size_t len) override
     {
     }
-    size_t GetLimit()
+    size_t GetLimit() override
     {
         return std::numeric_limits<size_t>::max();
     }

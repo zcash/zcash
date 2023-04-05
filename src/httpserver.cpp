@@ -49,7 +49,7 @@ public:
         req(std::move(req)), path(path), func(func)
     {
     }
-    void operator()()
+    void operator()() override
     {
         func(req.get(), path);
     }

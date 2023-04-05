@@ -372,7 +372,7 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-shadow-field -Wno-shadow-field-in-constructor \
   -Wno-shift-sign-overflow -Wno-shorten-64-to-32 \
   -Wno-sign-compare -Wno-sign-conversion -Wno-string-conversion \
-  -Wno-suggest-override -Wno-switch-enum -Wno-tautological-type-limit-compare \
+  -Wno-switch-enum -Wno-tautological-type-limit-compare \
   -Wno-tautological-unsigned-enum-zero-compare -Wno-tautological-unsigned-zero-compare \
   -Wno-thread-safety-attributes -Wno-thread-safety-negative -Wno-undef \
   -Wno-undefined-func-template \

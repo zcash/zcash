@@ -1180,14 +1180,14 @@ public:
         const CTransaction &tx,
         const std::vector<unsigned char> &txBytes,
         const uint256 &blockTag,
-        const int nHeight);
+        const int nHeight) override;
 
-    void Flush();
+    void Flush() override;
 
     void SyncTransaction(
         const CTransaction &tx,
         const CBlock *pblock,
-        const int nHeight);
+        const int nHeight) override;
 };
 
 /**

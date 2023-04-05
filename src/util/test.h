@@ -17,36 +17,36 @@ class AssumeShieldedInputsExistAndAreSpendable : public CCoinsView {
 public:
     AssumeShieldedInputsExistAndAreSpendable() {}
 
-    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const override {
         return true;
     }
 
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const override {
         return true;
     }
 
-    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const {
+    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const override {
         return true;
     }
 
-    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const override {
         // Always return false so we treat every nullifier as being unspent.
         return false;
     }
 
-    bool GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
-    bool HaveCoins(const uint256 &txid) const { return false; }
-    uint256 GetBestBlock() const {
+    bool GetCoins(const uint256 &txid, CCoins &coins) const override { return false; }
+    bool HaveCoins(const uint256 &txid) const override { return false; }
+    uint256 GetBestBlock() const override {
         throw std::runtime_error("`GetBestBlock` unimplemented for mock AssumeShieldedInputsExistAndAreSpendable");
     }
-    uint256 GetBestAnchor(ShieldedType type) const {
+    uint256 GetBestAnchor(ShieldedType type) const override {
         throw std::runtime_error("`GetBestAnchor` unimplemented for mock AssumeShieldedInputsExistAndAreSpendable");
     }
-    HistoryIndex GetHistoryLength(uint32_t epochId) const { return 0; }
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const {
+    HistoryIndex GetHistoryLength(uint32_t epochId) const override { return 0; }
+    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const override {
         throw std::runtime_error("`GetHistoryAt` unimplemented for mock AssumeShieldedInputsExistAndAreSpendable");
     }
-    uint256 GetHistoryRoot(uint32_t epochId) const {
+    uint256 GetHistoryRoot(uint32_t epochId) const override {
         throw std::runtime_error("`GetHistoryRoot` unimplemented for mock AssumeShieldedInputsExistAndAreSpendable");
     }
 
@@ -61,10 +61,10 @@ public:
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers,
                     CNullifiersMap &mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap) {
+                    CHistoryCacheMap &historyCacheMap) override {
         return false;
     }
-    bool GetStats(CCoinsStats &stats) const { return false; }
+    bool GetStats(CCoinsStats &stats) const override { return false; }
 };
 
 // Sprout

@@ -29,7 +29,7 @@ public:
         insecure_rand = FastRandomContext(true);
     }
 
-    int RandomInt(int nMax)
+    int RandomInt(int nMax) override
     {
         assert(nMax >= 0);
         state = (CHashWriter(SER_GETHASH, 0) << state).GetHash().GetCheapHash();
@@ -368,7 +368,7 @@ BOOST_AUTO_TEST_CASE(addrman_getaddr)
     addrman.Add(addr5, source1);
 
     // GetAddr returns 23% of addresses, 23% of 5 is 1 rounded down.
-    BOOST_CHECK(addrman.GetAddr().size() == 1); 
+    BOOST_CHECK(addrman.GetAddr().size() == 1);
 
     // Test 24: Ensure GetAddr works with new and tried addresses.
     addrman.Good(CAddress(addr1));
@@ -382,7 +382,7 @@ BOOST_AUTO_TEST_CASE(addrman_getaddr)
         int octet3 = (i / (256 * 2)) % 256;
         string strAddr = boost::to_string(octet1) + "." + boost::to_string(octet2) + "." + boost::to_string(octet3) + ".23";
         CAddress addr = CAddress(CService(strAddr));
-        
+
         // Ensure that for all addrs in addrman, isTerrible == false.
         addr.nTime = GetTime();
         addrman.Add(addr, CNetAddr(strAddr));

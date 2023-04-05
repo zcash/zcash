@@ -47,7 +47,7 @@ private:
 public:
     CachingTransactionSignatureChecker(const CTransaction* txToIn, PrecomputedTransactionData& txdataIn, unsigned int nInIn, const CAmount& amount, bool storeIn) : TransactionSignatureChecker(txToIn, txdataIn, nInIn, amount), store(storeIn) {}
 
-    bool VerifySignature(const std::vector<unsigned char>& vchSig, const CPubKey& vchPubKey, const uint256& sighash) const;
+    bool VerifySignature(const std::vector<unsigned char>& vchSig, const CPubKey& vchPubKey, const uint256& sighash) const override;
 };
 
 void InitSignatureCache(size_t nMaxCacheSize);

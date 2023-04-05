@@ -81,17 +81,17 @@ public:
     bool TestnetToBeDeprecatedFieldRPC() const { return fTestnetToBeDeprecatedFieldRPC; }
     const std::vector<CDNSSeedData>& DNSSeeds() const { return vSeeds; }
     /** Return the BIP70 network string (main, test or regtest) */
-    std::string NetworkIDString() const {
+    std::string NetworkIDString() const override {
         return keyConstants.NetworkIDString();
     }
     /** Return the BIP44 coin type for addresses created by the zcashd embedded wallet. */
-    uint32_t BIP44CoinType() const {
+    uint32_t BIP44CoinType() const override {
         return keyConstants.BIP44CoinType();
     }
-    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const {
+    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const override {
         return keyConstants.Base58Prefix(type);
     }
-    const std::string& Bech32HRP(Bech32Type type) const {
+    const std::string& Bech32HRP(Bech32Type type) const override {
         return keyConstants.Bech32HRP(type);
     }
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }

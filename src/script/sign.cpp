@@ -347,7 +347,7 @@ public:
         const std::vector<unsigned char>& scriptSig,
         const std::vector<unsigned char>& vchPubKey,
         const CScript& scriptCode,
-        uint32_t consensusBranchId) const
+        uint32_t consensusBranchId) const override
     {
         return true;
     }
