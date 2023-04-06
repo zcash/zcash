@@ -579,7 +579,6 @@ struct equi {
   void digitK(const u32 id) {
     collisiondata cd;
     htlayout htl(this, WK);
-u32 nc = 0;
     for (u32 bucketid = id; bucketid < NBUCKETS; bucketid += nthreads) {
       cd.clear();
       slot0 *buck = htl.hta.trees0[(WK-1)/2][bucketid];
@@ -591,13 +590,11 @@ u32 nc = 0;
         for (; cd.nextcollision(); ) {
           const u32 s0 = cd.slot();
           if (htl.equal(buck[s0].hash, pslot1->hash)) {
-nc++;
               candidate(tree(bucketid, s0, s1));
           }
         }
       }
     }
-//printf(" %d candidates ", nc);
   }
 };
 

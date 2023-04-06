@@ -4895,7 +4895,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     std::set<PaymentAddress> recipientAddrs;
     std::vector<Payment> recipients;
     bool hasTransparentRecipient = false;
-    CAmount nTotalOut = 0;
     size_t nOrchardOutputs = 0;
     for (const UniValue& o : outputs.getValues()) {
         if (!o.isObject())
@@ -4944,7 +4943,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         });
 
         recipients.push_back(Payment(addr.value(), nAmount, memo));
-        nTotalOut += nAmount;
     }
     if (recipients.empty()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "No recipients");
