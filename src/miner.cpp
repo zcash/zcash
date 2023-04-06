@@ -383,7 +383,6 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
     LOCK2(cs_main, mempool.cs);
     CBlockIndex* pindexPrev = chainActive.Tip();
     nHeight = pindexPrev->nHeight + 1;
-    uint32_t consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
 
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios

@@ -99,7 +99,6 @@ static void CheckSubtract(int64_t num1, int64_t num2)
     const CScriptNum10 bignum2(num2);
     const CScriptNum scriptnum1(num1);
     const CScriptNum scriptnum2(num2);
-    bool invalid = false;
 
     if (subtraction_in_range(num1, num2))
     {

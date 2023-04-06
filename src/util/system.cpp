@@ -70,7 +70,6 @@ static CCriticalSection cs_args;
 map<string, string> mapArgs;
 map<string, vector<string>> mapMultiArgs;
 bool fDebug = false;
-static bool fDaemon = false;
 bool fServer = false;
 
 /** Interpret string as boolean, for argument parsing */

@@ -130,7 +130,6 @@ std::vector<double> benchmark_create_joinsplit_threaded(int nThreads)
         tasks.emplace_back(task.get_future());
         threads.emplace_back(std::move(task));
     }
-    std::future_status status;
     for (auto it = tasks.begin(); it != tasks.end(); it++) {
         it->wait();
         ret.push_back(it->get());
@@ -186,7 +185,6 @@ std::vector<double> benchmark_solve_equihash_threaded(int nThreads)
         tasks.emplace_back(task.get_future());
         threads.emplace_back(std::move(task));
     }
-    std::future_status status;
     for (auto it = tasks.begin(); it != tasks.end(); it++) {
         it->wait();
         ret.push_back(it->get());
@@ -332,8 +330,6 @@ CWalletTx CreateSproutTxWithNoteData(const libzcash::SproutSpendingKey& sk) {
 
 double benchmark_increment_sprout_note_witnesses(size_t nTxs)
 {
-    const Consensus::Params& consensusParams = Params().GetConsensus();
-
     CWallet wallet(Params());
     MerkleFrontiers frontiers;
 
@@ -728,7 +724,7 @@ double benchmark_loadwallet()
     bool fFirstRunRet=true;
     timer_start(tv_start);
     pwalletMain = new CWallet(Params(), "wallet.dat");
-    DBErrors nLoadWalletRet = pwalletMain->LoadWallet(fFirstRunRet);
+    pwalletMain->LoadWallet(fFirstRunRet);
     auto res = timer_stop(tv_start);
     post_wallet_load();
     return res;
@@ -902,5 +898,5 @@ double benchmark_verify_sapling_output()
     if (!result) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "librustzcash_sapling_check_output() should return true");
     }
-    return timer_stop(tv_start);
+    return t;
 }

@@ -51,9 +51,6 @@ the bad alert.
 
 #include "alertkeys.h"
 
-
-static const int64_t DAYS = 24 * 60 * 60;
-
 void ThreadSendAlert()
 {
     if (!mapArgs.count("-sendalert") && !mapArgs.count("-printalert"))
@@ -99,7 +96,7 @@ void ThreadSendAlert()
     // alert.setSubVer.insert(std::string("/MagicBean:0.7.2/"));
     const std::vector<std::string> useragents = {}; //{"MagicBean", "BeanStalk", "AppleSeed", "EleosZcash"};
 
-    for (const std::string& useragent : useragents) {
+    for ([[maybe_unused]] const std::string& useragent : useragents) {
     }
 
     // Sanity check

@@ -644,7 +644,6 @@ WalletTxBuilder::ResolveInputsAndPayments(
     // version where both Sprout and Orchard are valid.
     bool canResolveOrchard = afterNU5 && !selector.SelectsSprout();
     std::vector<ResolvedPayment> resolvedPayments;
-    std::optional<AddressResolutionError> resolutionError;
     for (const auto& payment : payments) {
         auto res = ResolvePayment(payment, canResolveOrchard, strategy, maxSaplingAvailable, maxOrchardAvailable, orchardOutputs);
         res.map([&](const ResolvedPayment& rpayment) { resolvedPayments.emplace_back(rpayment); });

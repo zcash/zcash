@@ -640,7 +640,6 @@ bool CWallet::AddUnifiedFullViewingKey(const libzcash::UnifiedFullViewingKey &uf
     AssertLockHeld(cs_wallet);
 
     auto zufvk = ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(Params(), ufvk);
-    auto keyId = ufvk.GetKeyID(Params());
     if (!CCryptoKeyStore::AddUnifiedFullViewingKey(zufvk)) {
         return false;
     }

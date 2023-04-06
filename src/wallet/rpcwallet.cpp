@@ -3427,8 +3427,6 @@ UniValue z_listaccounts(const UniValue& params, bool fHelp)
     KeyIO keyIO(Params());
     UniValue ret(UniValue::VARR);
 
-    auto hdChain = pwalletMain->GetMnemonicHDChain();
-
     for (const auto& [acctKey, ufvkId] : pwalletMain->mapUnifiedAccountKeys) {
         UniValue account(UniValue::VOBJ);
 
@@ -4895,7 +4893,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     std::set<PaymentAddress> recipientAddrs;
     std::vector<Payment> recipients;
     bool hasTransparentRecipient = false;
-    size_t nOrchardOutputs = 0;
     for (const UniValue& o : outputs.getValues()) {
         if (!o.isObject())
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected object");
@@ -5253,7 +5250,6 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     // Validate the from address
     auto fromaddress = params[0].get_str();
     bool isFromWildcard = fromaddress == "*";
-    bool involvesOrchard{false};
     KeyIO keyIO(Params());
 
     // Set of source addresses to filter utxos by
@@ -5511,9 +5507,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     }
 
     const int nextBlockHeight = chainActive.Height() + 1;
-    const bool overwinterActive = chainparams.GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_OVERWINTER);
     const bool saplingActive =  chainparams.GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_SAPLING);
-    const bool canopyActive = chainparams.GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_CANOPY);
 
     // Validate the destination address
     auto destStr = params[1].get_str();

@@ -128,9 +128,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
         pwalletMain->SetAddressBook(demoPubkey.GetID(), "", strPurpose);
     });
 
-    CPubKey setaccountDemoPubkey = pwalletMain->GenerateNewKey(true);
-    CTxDestination setaccountDemoAddress(CTxDestination(setaccountDemoPubkey.GetID()));
-
     /*********************************
      *          getbalance
      *********************************/
@@ -532,7 +529,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     file.open(exportfilepath.string().c_str(), std::ios::in | std::ios::ate);
     BOOST_CHECK(file.is_open());
     bool fVerified = false;
-    int64_t nFilesize = std::max((int64_t)1, (int64_t)file.tellg());
     file.seekg(0, file.beg);
     while (file.good()) {
         std::string line;
@@ -1199,18 +1195,12 @@ BOOST_AUTO_TEST_CASE(asyncrpcoperation_sign_send_raw_transaction) {
 BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 {
     SelectParams(CBaseChainParams::TESTNET);
-    const Consensus::Params& consensusParams = Params().GetConsensus();
     KeyIO keyIO(Params());
     WalletTxBuilder builder(Params(), minRelayTxFee);
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     UniValue retValue;
-
-    // Mutable tx containing contextual information we need to build tx
-    // We removed the ability to create pre-Sapling Sprout proofs, so we can
-    // only create Sapling-onwards transactions.
-    int nHeight = consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
 
     // add keys manually
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));

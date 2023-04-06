@@ -559,7 +559,6 @@ bool Equihash<N,K>::OptimisedSolve(const eh_HashState& base_state,
                 }
 
                 // 2c) Calculate tuples (X_i ^ X_j, (i, j))
-                bool checking_for_zero = (i == 0 && Xt[0].IsZero(hashLen));
                 for (int l = 0; l < j - 1; l++) {
                     for (int m = l + 1; m < j; m++) {
                         // We truncated, so don't check for distinct indices here

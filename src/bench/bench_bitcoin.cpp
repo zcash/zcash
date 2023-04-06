@@ -20,7 +20,6 @@ main(int, char**)
 {
     SHA256AutoDetect();
     ECC_Start();
-    auto globalVerifyHandle = new ECCVerifyHandle();
     SetupEnvironment();
     fPrintToDebugLog = false; // don't want to write to debug log file
 

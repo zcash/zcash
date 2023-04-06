@@ -1367,7 +1367,6 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
         UniValue sapling_result(UniValue::VOBJ);
         UniValue sapling_commitments(UniValue::VOBJ);
         sapling_commitments.pushKV("finalRoot", pindex->hashFinalSaplingRoot.GetHex());
-        bool need_skiphash = false;
         SaplingMerkleTree tree;
         if (pcoinsTip->GetSaplingAnchorAt(pindex->hashFinalSaplingRoot, tree)) {
             CDataStream s(SER_NETWORK, PROTOCOL_VERSION);
@@ -1397,7 +1396,6 @@ UniValue z_gettreestate(const UniValue& params, bool fHelp)
         UniValue orchard_commitments(UniValue::VOBJ);
         auto finalOrchardRootBytes = pindex->hashFinalOrchardRoot;
         orchard_commitments.pushKV("finalRoot", HexStr(finalOrchardRootBytes.begin(), finalOrchardRootBytes.end()));
-        bool need_skiphash = false;
         OrchardMerkleFrontier tree;
         if (pcoinsTip->GetOrchardAnchorAt(pindex->hashFinalOrchardRoot, tree)) {
             CDataStream s(SER_NETWORK, PROTOCOL_VERSION);
