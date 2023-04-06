@@ -1228,7 +1228,6 @@ bool BackupWallet(const CWallet& wallet, const string& strDest)
         }
         MilliSleep(100);
     }
-    return false;
 }
 
 //

@@ -962,12 +962,11 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
                 throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold the private spending key for this Sapling address");
             }
         },
-        [&](const libzcash::UnifiedAddress& ua) {
+        [&](const libzcash::UnifiedAddress& ua) -> std::string {
             throw JSONRPCError(
                     RPC_WALLET_ERROR,
                     "No serialized form is defined for unified spending keys. "
                     "Use the emergency recovery phrase for this wallet for backup purposes instead.");
-            return std::string(); //unreachable, here to make the compiler happy
         }
     });
     return result;

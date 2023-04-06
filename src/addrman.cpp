@@ -389,8 +389,6 @@ CAddrInfo CAddrMan::Select_(bool newOnly)
             fChanceFactor *= 1.2;
         }
     }
-
-    return CAddrInfo();
 }
 
 #ifdef DEBUG_ADDRMAN

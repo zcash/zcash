@@ -434,7 +434,6 @@ bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
                                                             vchCryptedSecret,
                                                             mapKeyMetadata[vchPubKey.GetID()]);
     }
-    return false;
 }
 
 
@@ -461,7 +460,6 @@ bool CWallet::AddCryptedSproutSpendingKey(
                                                              mapSproutZKeyMetadata[address]);
         }
     }
-    return false;
 }
 
 bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk,
@@ -483,7 +481,6 @@ bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullVi
                                                          mapSaplingZKeyMetadata[extfvk.ToIncomingViewingKey()]);
         }
     }
-    return false;
 }
 
 libzcash::transparent::AccountKey CWallet::GetLegacyAccountKey() const {
@@ -4143,7 +4140,6 @@ bool CWallet::SetCryptedMnemonicSeed(const uint256& seedFp, const std::vector<un
         else
             return CWalletDB(strWalletFile).WriteCryptedMnemonicSeed(seedFp, vchCryptedSecret);
     }
-    return false;
 }
 
 bool CWallet::VerifyMnemonicSeed(const SecureString& mnemonic) {
