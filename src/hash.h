@@ -132,6 +132,11 @@ public:
     int GetType() const { return nType; }
     int GetVersion() const { return nVersion; }
 
+    void write_u8(const unsigned char* pch, size_t nSize)
+    {
+        ctx.Write(pch, nSize);
+    }
+
     void write(const char *pch, size_t size) {
         ctx.Write((const unsigned char*)pch, size);
     }
