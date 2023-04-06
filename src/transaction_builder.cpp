@@ -874,7 +874,7 @@ void TransactionBuilder::CreateJSDescriptions()
 
                 LogPrint("zrpcunsafe", "spending change (amount=%s)\n", FormatMoney(plaintext.value()));
 
-            } catch (const std::exception& e) {
+            } catch (const std::exception&) {
                 throw JSDescException("Error decrypting output note of previous JoinSplit");
             }
         }

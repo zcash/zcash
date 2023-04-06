@@ -194,7 +194,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
         ss >> pd;
         // too much data is ignored, but if not enough data, exception of type ios_base::failure is thrown,
         // CBaseDataStream::read(): end of data: iostream error
-    } catch (const std::exception &e) {
+    } catch (const std::exception &) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, payment disclosure data is malformed.");
     }
 

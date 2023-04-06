@@ -2304,7 +2304,7 @@ SpendableInputs CWallet::FindSpendableInputs(
                     unspent.sproutNoteEntries.push_back(SproutNoteEntry {
                         jsop, pa, plaintext.note(pa), plaintext.memo(), nDepth });
 
-                } catch (const note_decryption_failed &err) {
+                } catch (const note_decryption_failed &) {
                     // Couldn't decrypt with this spending key
                     throw std::runtime_error(strprintf(
                             "Could not decrypt note for payment address %s",
@@ -3743,7 +3743,7 @@ mapSproutNoteData_t CWallet::FindMySproutNotes(const CTransaction &tx) const
                         noteData.insert(std::make_pair(jsoutpt, nd));
                     }
                     break;
-                } catch (const note_decryption_failed &err) {
+                } catch (const note_decryption_failed &) {
                     // Couldn't decrypt with this decryptor
                 } catch (const std::exception &exc) {
                     // Unexpected failure
@@ -3808,7 +3808,7 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
                 nd.ivk = ivk;
                 noteData.insert(std::make_pair(op, nd));
                 break;
-            } catch (const rust::Error &e) {
+            } catch (const rust::Error &) {
                 continue;
             }
         }
@@ -4289,7 +4289,7 @@ std::pair<SproutNotePlaintext, SproutPaymentAddress> CWalletTx::DecryptSproutNot
                 (unsigned char) jsop.n);
 
         return std::make_pair(plaintext, pa);
-    } catch (const note_decryption_failed &err) {
+    } catch (const note_decryption_failed &) {
         // Couldn't decrypt with this spending key
         throw std::runtime_error(strprintf(
             "Could not decrypt note for payment address %s",
@@ -4358,7 +4358,7 @@ std::optional<std::pair<
                 });
 
             return SaplingNotePlaintext::from_rust(std::move(decrypted));
-        } catch (const rust::Error &e) {
+        } catch (const rust::Error &) {
             // Try decrypting with the next ovk
         }
     }
@@ -7008,7 +7008,7 @@ void CWallet::GetFilteredNotes(
                 sproutEntriesRet.push_back(SproutNoteEntry {
                     jsop, pa, plaintext.note(pa), plaintext.memo(), wtx.GetDepthInMainChain(asOfHeight) });
 
-            } catch (const note_decryption_failed &err) {
+            } catch (const note_decryption_failed &) {
                 // Couldn't decrypt with this spending key
                 throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", keyIO.EncodePaymentAddress(pa)));
             } catch (const std::exception &exc) {

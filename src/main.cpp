@@ -1007,7 +1007,7 @@ bool ContextualCheckTransaction(
                     libzcash::SaplingNotePlaintext notePt;
                     std::tie(notePt, zaddr) = libzcash::SaplingNotePlaintext::from_rust(std::move(decrypted));
                     value = notePt.value();
-                } catch (const rust::Error &e) {
+                } catch (const rust::Error &) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
                         error("ContextualCheckTransaction(): failed to recover plaintext of coinbase output description"),

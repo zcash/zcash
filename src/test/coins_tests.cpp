@@ -713,7 +713,7 @@ BOOST_AUTO_TEST_CASE(ccoins_serialization)
         CCoins cc4;
         ss4 >> cc4;
         BOOST_CHECK_MESSAGE(false, "We should have thrown");
-    } catch (const std::ios_base::failure& e) {
+    } catch (const std::ios_base::failure&) {
     }
 
     // Very large scriptPubKey (3*10^9 bytes) past the end of the stream
@@ -726,7 +726,7 @@ BOOST_AUTO_TEST_CASE(ccoins_serialization)
         CCoins cc5;
         ss5 >> cc5;
         BOOST_CHECK_MESSAGE(false, "We should have thrown");
-    } catch (const std::ios_base::failure& e) {
+    } catch (const std::ios_base::failure&) {
     }
 }
 

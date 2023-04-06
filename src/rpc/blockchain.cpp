@@ -616,7 +616,7 @@ int parseHeightArg(const std::string& strHeight, int currentHeight)
     try {
         nHeight = std::stoi(strHeight);
     }
-    catch (const std::exception &e) {
+    catch (const std::exception &) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid block height parameter");
     }
     return interpretHeightArg(nHeight, currentHeight);
