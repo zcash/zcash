@@ -123,13 +123,10 @@ public:
         switch (type) {
             case SPROUT:
                 return hashBestSproutAnchor_;
-                break;
             case SAPLING:
                 return hashBestSaplingAnchor_;
-                break;
             case ORCHARD:
                 return hashBestOrchardAnchor_;
-                break;
         }
     }
 

@@ -757,17 +757,14 @@ uint256 CCoinsViewCache::GetBestAnchor(ShieldedType type) const {
             if (hashSproutAnchor.IsNull())
                 hashSproutAnchor = base->GetBestAnchor(type);
             return hashSproutAnchor;
-            break;
         case SAPLING:
             if (hashSaplingAnchor.IsNull())
                 hashSaplingAnchor = base->GetBestAnchor(type);
             return hashSaplingAnchor;
-            break;
         case ORCHARD:
             if (hashOrchardAnchor.IsNull())
                 hashOrchardAnchor = base->GetBestAnchor(type);
             return hashOrchardAnchor;
-            break;
     }
 }
 
