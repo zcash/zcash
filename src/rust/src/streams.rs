@@ -66,12 +66,6 @@ pub(crate) enum CppStream<'a> {
     Size(Pin<&'a mut ffi::CSizeComputer>),
 }
 
-impl<'a> From<Pin<&'a mut ffi::RustStream>> for CppStream<'a> {
-    fn from(inner: Pin<&'a mut ffi::RustStream>) -> Self {
-        Self::Data(inner)
-    }
-}
-
 impl<'a> io::Read for CppStream<'a> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let pch = buf.as_mut_ptr();

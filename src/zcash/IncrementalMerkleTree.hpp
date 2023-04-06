@@ -7,6 +7,7 @@
 
 #include "uint256.h"
 #include "serialize.h"
+#include "streams_rust.h"
 
 #include "Zcash.h"
 #include "zcash/util.h"
@@ -296,7 +297,7 @@ public:
     template<typename Stream>
     void Serialize(Stream& s) const {
         try {
-            inner->serialize(s);
+            inner->serialize(*ToRustStream(s));
         } catch (const std::exception& e) {
             throw std::ios_base::failure(e.what());
         }
@@ -305,7 +306,7 @@ public:
     template<typename Stream>
     void Unserialize(Stream& s) {
         try {
-            inner = merkle_frontier::parse_orchard(s);
+            inner = merkle_frontier::parse_orchard(*ToRustStream(s));
         } catch (const std::exception& e) {
             throw std::ios_base::failure(e.what());
         }
@@ -341,7 +342,7 @@ public:
     template<typename Stream>
     void Serialize(Stream& s) const {
         try {
-            frontier.inner->serialize_legacy(s);
+            frontier.inner->serialize_legacy(*ToRustStream(s));
         } catch (const std::exception& e) {
             throw std::ios_base::failure(e.what());
         }

@@ -220,9 +220,9 @@ pub(crate) mod ffi {
         fn orchard_empty_root() -> [u8; 32];
         fn new_orchard() -> Box<Orchard>;
         fn box_clone(self: &Orchard) -> Box<Orchard>;
-        fn parse_orchard(stream: Pin<&mut RustStream>) -> Result<Box<Orchard>>;
-        fn serialize(self: &Orchard, stream: Pin<&mut RustStream>) -> Result<()>;
-        fn serialize_legacy(self: &Orchard, stream: Pin<&mut RustStream>) -> Result<()>;
+        fn parse_orchard(reader: &mut CppStream<'_>) -> Result<Box<Orchard>>;
+        fn serialize(self: &Orchard, writer: &mut CppStream<'_>) -> Result<()>;
+        fn serialize_legacy(self: &Orchard, writer: &mut CppStream<'_>) -> Result<()>;
         fn dynamic_memory_usage(self: &Orchard) -> usize;
         fn root(self: &Orchard) -> [u8; 32];
         fn size(self: &Orchard) -> u64;
