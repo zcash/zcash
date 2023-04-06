@@ -12,7 +12,7 @@
 struct CTimestampIndexIteratorKey {
     unsigned int timestamp;
 
-    size_t GetSerializeSize(int nType, int nVersion) const {
+    size_t GetSerializeSize(int, int) const {
         return 4;
     }
     template<typename Stream>
@@ -41,7 +41,7 @@ struct CTimestampIndexKey {
     unsigned int timestamp;
     uint256 blockHash;
 
-    size_t GetSerializeSize(int nType, int nVersion) const {
+    size_t GetSerializeSize(int, int) const {
         return 36;
     }
     template<typename Stream>
@@ -73,7 +73,7 @@ struct CTimestampIndexKey {
 struct CTimestampBlockIndexKey {
     uint256 blockHash;
 
-    size_t GetSerializeSize(int nType, int nVersion) const {
+    size_t GetSerializeSize(int, int) const {
         return 32;
     }
 
@@ -102,7 +102,7 @@ struct CTimestampBlockIndexKey {
 
 struct CTimestampBlockIndexValue {
     unsigned int ltimestamp;
-    size_t GetSerializeSize(int nType, int nVersion) const {
+    size_t GetSerializeSize(int, int) const {
         return 4;
     }
 

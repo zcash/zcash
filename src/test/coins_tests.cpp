@@ -186,9 +186,9 @@ public:
         }
     }
 
-    HistoryIndex GetHistoryLength(uint32_t epochId) const override { return 0; }
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const override { return HistoryNode(); }
-    uint256 GetHistoryRoot(uint32_t epochId) const override { return uint256(); }
+    HistoryIndex GetHistoryLength(uint32_t) const override { return 0; }
+    HistoryNode GetHistoryAt(uint32_t, HistoryIndex) const override { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t) const override { return uint256(); }
 
     bool BatchWrite(CCoinsMap& mapCoins,
                     const uint256& hashBlock,
@@ -201,7 +201,7 @@ public:
                     CNullifiersMap& mapSproutNullifiers,
                     CNullifiersMap& mapSaplingNullifiers,
                     CNullifiersMap& mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap) override
+                    CHistoryCacheMap &) override
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             if (it->second.flags & CCoinsCacheEntry::DIRTY) {
@@ -234,7 +234,7 @@ public:
         return true;
     }
 
-    bool GetStats(CCoinsStats& stats) const override { return false; }
+    bool GetStats(CCoinsStats&) const override { return false; }
 };
 
 class CCoinsViewCacheTest : public CCoinsViewCache

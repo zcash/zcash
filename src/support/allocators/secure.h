@@ -40,7 +40,7 @@ struct secure_allocator : public std::allocator<T> {
         typedef secure_allocator<Other> other;
     };
 
-    T* allocate(std::size_t n, const void* hint = 0)
+    T* allocate(std::size_t n, const void* = 0)
     {
         T* allocation = static_cast<T*>(LockedPoolManager::Instance().alloc(sizeof(T) * n));
         if (!allocation) {

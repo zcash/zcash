@@ -424,32 +424,32 @@ class CCoinsViewDummy : public CCoinsView
 public:
     ~CCoinsViewDummy() override {}
 
-    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const override { return false; }
-    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const override { return false; }
-    bool GetOrchardAnchorAt(const uint256 &rt, OrchardMerkleFrontier &tree) const override { return false; }
-    bool GetNullifier(const uint256 &nullifier, ShieldedType type) const override { return false; }
-    bool GetCoins(const uint256 &txid, CCoins &coins) const override { return false; }
-    bool HaveCoins(const uint256 &txid) const override { return false; }
+    bool GetSproutAnchorAt(const uint256 &, SproutMerkleTree &) const override { return false; }
+    bool GetSaplingAnchorAt(const uint256 &, SaplingMerkleTree &) const override { return false; }
+    bool GetOrchardAnchorAt(const uint256 &, OrchardMerkleFrontier &) const override { return false; }
+    bool GetNullifier(const uint256 &, ShieldedType) const override { return false; }
+    bool GetCoins(const uint256 &, CCoins &) const override { return false; }
+    bool HaveCoins(const uint256 &) const override { return false; }
     uint256 GetBestBlock() const override { return uint256(); }
-    uint256 GetBestAnchor(ShieldedType type) const override { return uint256(); }
-    HistoryIndex GetHistoryLength(uint32_t epochId) const override { return 0; }
-    HistoryNode GetHistoryAt(uint32_t epochId, HistoryIndex index) const override { return HistoryNode(); }
-    uint256 GetHistoryRoot(uint32_t epochId) const override { return uint256(); }
+    uint256 GetBestAnchor(ShieldedType) const override { return uint256(); }
+    HistoryIndex GetHistoryLength(uint32_t) const override { return 0; }
+    HistoryNode GetHistoryAt(uint32_t, HistoryIndex) const override { return HistoryNode(); }
+    uint256 GetHistoryRoot(uint32_t) const override { return uint256(); }
 
-    bool BatchWrite(CCoinsMap &mapCoins,
-                    const uint256 &hashBlock,
-                    const uint256 &hashSproutAnchor,
-                    const uint256 &hashSaplingAnchor,
-                    const uint256 &hashOrchardAnchor,
-                    CAnchorsSproutMap &mapSproutAnchors,
-                    CAnchorsSaplingMap &mapSaplingAnchors,
-                    CAnchorsOrchardMap &mapOrchardAnchors,
-                    CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap &mapSaplingNullifiers,
-                    CNullifiersMap &mapOrchardNullifiers,
-                    CHistoryCacheMap &historyCacheMap) override { return false; }
+    bool BatchWrite(CCoinsMap &,
+                    const uint256 &,
+                    const uint256 &,
+                    const uint256 &,
+                    const uint256 &,
+                    CAnchorsSproutMap &,
+                    CAnchorsSaplingMap &,
+                    CAnchorsOrchardMap &,
+                    CNullifiersMap &,
+                    CNullifiersMap &,
+                    CNullifiersMap &,
+                    CHistoryCacheMap &) override { return false; }
 
-    bool GetStats(CCoinsStats &stats) const override { return false; }
+    bool GetStats(CCoinsStats &) const override { return false; }
 };
 
 /** CCoinsView backed by another CCoinsView */

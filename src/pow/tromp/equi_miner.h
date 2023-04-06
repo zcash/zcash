@@ -296,7 +296,7 @@ struct equi {
     if (soli < MAXSOLS)
       listindices1(WK, t, sols[soli]); // assume WK odd
   }
-  void showbsizes(u32 r) {
+  void showbsizes([[maybe_unused]] u32 r) {
 #if defined(HIST) || defined(SPARK) || defined(LOGSPARK)
     u32 binsizes[65];
     memset(binsizes, 0, 65 * sizeof(u32));

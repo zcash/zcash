@@ -496,7 +496,7 @@ static UniValue ReceiverTypesToJSON(const std::set<ReceiverType>& receiverTypes)
     return receiverTypesEntry;
 }
 
-UniValue listaddresses(const UniValue& params, bool fHelp)
+UniValue listaddresses(const UniValue&, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
@@ -589,7 +589,7 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
         [&](const CScriptID& addr) -> std::optional<PaymentAddressSource> {
             return GetSourceForPaymentAddress(pwalletMain)(addr);
         },
-        [&](const CNoDestination& addr) -> std::optional<PaymentAddressSource> {
+        [&](const CNoDestination&) -> std::optional<PaymentAddressSource> {
             return std::nullopt;
         },
     };
@@ -2969,7 +2969,7 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
     return result;
 }
 
-UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
+UniValue zc_sample_joinsplit(const UniValue&, bool fHelp)
 {
     if (fHelp) {
         throw runtime_error(
@@ -3304,7 +3304,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
     }
     if (receiverTypes.empty()) {
         // Default is the best and second-best shielded receiver types, and the transparent (P2PKH) receiver type.
-        receiverTypes = CWallet::DefaultReceiverTypes(chainActive.Height());
+        receiverTypes = CWallet::DefaultReceiverTypes();
     }
 
     std::optional<libzcash::diversifier_index_t> j = std::nullopt;
@@ -3583,7 +3583,7 @@ UniValue z_listunifiedreceivers(const UniValue& params, bool fHelp)
             [&](const CKeyID& addr) {
                 result.pushKV("p2pkh", keyIO.EncodePaymentAddress(addr));
             },
-            [](auto rest) {},
+            [](auto) {},
         });
     }
     return result;
@@ -3732,11 +3732,11 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         [&](const libzcash::SaplingPaymentAddress& addr) {
             return pwalletMain->FindUnifiedAddressByReceiver(addr).has_value();
         },
-        [&](const libzcash::SproutPaymentAddress& addr) {
+        [&](const libzcash::SproutPaymentAddress&) {
             // A unified address can't contain a Sprout receiver.
             return false;
         },
-        [&](const libzcash::UnifiedAddress& addr) {
+        [&](const libzcash::UnifiedAddress&) {
             // We allow unified addresses themselves, which cannot recurse.
             return false;
         }
@@ -3894,7 +3894,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                     [&](const libzcash::OrchardRawAddress& addr) {
                         push_orchard_result(addr);
                     },
-                    [](const UnknownReceiver& unknown) {}
+                    [](const UnknownReceiver&) {}
                 });
             }
         }
@@ -4732,10 +4732,10 @@ size_t EstimateTxSize(
             [&](const CScriptID&) {
                 taddrRecipientCount += 1;
             },
-            [&](const libzcash::SaplingPaymentAddress& addr) {
+            [&](const libzcash::SaplingPaymentAddress&) {
                 mtx.vShieldedOutput.push_back(RandomInvalidOutputDescription());
             },
-            [&](const libzcash::SproutPaymentAddress& addr) {
+            [&](const libzcash::SproutPaymentAddress&) {
                 JSDescription jsdesc;
                 jsdesc.proof = GrothProof();
                 mtx.vJoinSplit.push_back(jsdesc);
@@ -4990,14 +4990,14 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             auto selectorAccount = pwalletMain->FindAccountForSelector(ztxoSelectorOpt.value());
             bool unknownOrLegacy = !selectorAccount.has_value() || selectorAccount.value() == ZCASH_LEGACY_ACCOUNT;
             examine(sender.value(), match {
-                [&](const libzcash::UnifiedAddress& ua) {
+                [&](const libzcash::UnifiedAddress&) {
                     if (unknownOrLegacy) {
                         throw JSONRPCError(
                                 RPC_INVALID_ADDRESS_OR_KEY,
                                 "Invalid from address, UA does not correspond to a known account.");
                     }
                 },
-                [&](const auto& other) {
+                [&](const auto&) {
                     if (!unknownOrLegacy) {
                         throw JSONRPCError(
                                 RPC_INVALID_ADDRESS_OR_KEY,
@@ -5107,7 +5107,7 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
     //  The "destination_address" field MAY be omitted if the "-migrationdestaddress"
     // parameter is not set and no default address has yet been generated.
     // Note: The following function may return the default address even if it has not been added to the wallet
-    auto destinationAddress = AsyncRPCOperation_saplingmigration::getMigrationDestAddress(pwalletMain->GetHDSeedForRPC());
+    auto destinationAddress = AsyncRPCOperation_saplingmigration::getMigrationDestAddress();
     KeyIO keyIO(Params());
     migrationStatus.pushKV("destination_address", keyIO.EncodePaymentAddress(destinationAddress));
     //  The values of "unmigrated_amount" and "migrated_amount" MUST take into
@@ -5523,13 +5523,13 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     if (destaddress.has_value()) {
         examine(destaddress.value(), match {
-            [&](CKeyID addr) {
+            [&](CKeyID) {
                 isToTaddr = true;
             },
-            [&](CScriptID addr) {
+            [&](CScriptID) {
                 isToTaddr = true;
             },
-            [&](libzcash::SaplingPaymentAddress addr) {
+            [&](libzcash::SaplingPaymentAddress) {
                 // If Sapling is not active, do not allow sending to a sapling addresses.
                 if (!saplingActive) {
                     throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");

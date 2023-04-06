@@ -845,9 +845,7 @@ bool InitSanityCheck(void)
 }
 
 
-static void ZC_LoadParams(
-    const CChainParams& chainparams
-)
+static void ZC_LoadParams()
 {
     struct timeval tv_start, tv_end;
     float elapsed;
@@ -898,7 +896,7 @@ static void ZC_LoadParams(
     LogPrintf("Loaded proof system parameters in %fs seconds.\n", elapsed);
 }
 
-bool AppInitServers(boost::thread_group& threadGroup)
+bool AppInitServers()
 {
     RPCServer::OnStopped(&OnRPCStopped);
     RPCServer::OnPreCommand(&OnRPCPreCommand);
@@ -1510,7 +1508,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     // Initialize Zcash circuit parameters
-    ZC_LoadParams(chainparams);
+    ZC_LoadParams();
 
     /* Start the RPC server already.  It will be started in "warmup" mode
      * and not really process calls already (but it will signify connections
@@ -1520,7 +1518,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (fServer)
     {
         uiInterface.InitMessage.connect(SetRPCWarmupStatus);
-        if (!AppInitServers(threadGroup))
+        if (!AppInitServers())
             return InitError(strprintf(_("Unable to start HTTP server. See %s for details."), GetDebugLogPath()));
     }
 

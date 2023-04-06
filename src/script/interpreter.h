@@ -136,15 +136,15 @@ class BaseSignatureChecker
 {
 public:
     virtual bool CheckSig(
-        const std::vector<unsigned char>& scriptSig,
-        const std::vector<unsigned char>& vchPubKey,
-        const CScript& scriptCode,
-        uint32_t consensusBranchId) const
+        const std::vector<unsigned char>&,
+        const std::vector<unsigned char>&,
+        const CScript&,
+        uint32_t) const
     {
         return false;
     }
 
-    virtual bool CheckLockTime(const CScriptNum& nLockTime) const
+    virtual bool CheckLockTime(const CScriptNum&) const
     {
          return false;
     }

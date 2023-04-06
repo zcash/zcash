@@ -800,7 +800,7 @@ std::vector<uint256> CTxMemPool::removeExpired(unsigned int nBlockHeight)
 /**
  * Called when a block is connected. Removes from mempool.
  */
-void CTxMemPool::removeForBlock(const std::vector<CTransaction>& vtx, unsigned int nBlockHeight,
+void CTxMemPool::removeForBlock(const std::vector<CTransaction>& vtx,
                                 std::list<CTransaction>& conflicts)
 {
     LOCK(cs);

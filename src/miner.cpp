@@ -744,10 +744,10 @@ std::optional<MinerAddress> ExtractMinerAddress::operator()(const CKeyID &keyID)
     mAddr->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
     return mAddr;
 }
-std::optional<MinerAddress> ExtractMinerAddress::operator()(const CScriptID &addr) const {
+std::optional<MinerAddress> ExtractMinerAddress::operator()(const CScriptID &) const {
     return std::nullopt;
 }
-std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::SproutPaymentAddress &addr) const {
+std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::SproutPaymentAddress &) const {
     return std::nullopt;
 }
 std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::SaplingPaymentAddress &addr) const {
@@ -764,7 +764,7 @@ std::optional<MinerAddress> ExtractMinerAddress::operator()(const libzcash::Unif
               return MinerAddress(spa);
             },
             [&](const CKeyID keyID) -> std::optional<MinerAddress> { return operator()(keyID); },
-            [&](const auto other) -> std::optional<MinerAddress> { return std::nullopt; }
+            [&](const auto) -> std::optional<MinerAddress> { return std::nullopt; }
         });
     } else {
         return std::nullopt;
@@ -992,7 +992,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
 
                     return true;
                 };
-                std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck pos) {
+                std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck) {
                     std::lock_guard<std::mutex> lock{m_cs};
                     return cancelSolver;
                 };

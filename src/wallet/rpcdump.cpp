@@ -521,7 +521,7 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
 }
 
 
-UniValue dumpwallet(const UniValue& params, bool fHelp)
+UniValue dumpwallet(const UniValue&, bool)
 {
     throw JSONRPCError(RPC_METHOD_NOT_FOUND, "dumpwallet has been removed. Use z_exportwallet instead.");
 }
@@ -962,7 +962,7 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
                 throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold the private spending key for this Sapling address");
             }
         },
-        [&](const libzcash::UnifiedAddress& ua) -> std::string {
+        [&](const libzcash::UnifiedAddress&) -> std::string {
             throw JSONRPCError(
                     RPC_WALLET_ERROR,
                     "No serialized form is defined for unified spending keys. "

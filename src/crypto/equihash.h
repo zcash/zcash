@@ -265,7 +265,7 @@ inline bool EhBasicSolveUncancellable(unsigned int n, unsigned int k, const eh_H
                     const std::function<bool(std::vector<unsigned char>)> validBlock)
 {
     return EhBasicSolve(n, k, base_state, validBlock,
-                        [](EhSolverCancelCheck pos) { return false; });
+                        [](EhSolverCancelCheck) { return false; });
 }
 
 inline bool EhOptimisedSolve(unsigned int n, unsigned int k, const eh_HashState& base_state,
@@ -289,7 +289,7 @@ inline bool EhOptimisedSolveUncancellable(unsigned int n, unsigned int k, const 
                     const std::function<bool(std::vector<unsigned char>)> validBlock)
 {
     return EhOptimisedSolve(n, k, base_state, validBlock,
-                            [](EhSolverCancelCheck pos) { return false; });
+                            [](EhSolverCancelCheck) { return false; });
 }
 #endif // ENABLE_MINING
 

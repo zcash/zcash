@@ -355,14 +355,14 @@ public:
 };
 
 template<typename Stream, typename T>
-inline void SerReadWriteSproutProof(Stream& s, const T& proof, bool useGroth, CSerActionSerialize ser_action)
+inline void SerReadWriteSproutProof(Stream& s, const T& proof, bool useGroth, CSerActionSerialize)
 {
     auto ps = SproutProofSerializer<Stream>(s, useGroth);
     std::visit(ps, proof);
 }
 
 template<typename Stream, typename T>
-inline void SerReadWriteSproutProof(Stream& s, T& proof, bool useGroth, CSerActionUnserialize ser_action)
+inline void SerReadWriteSproutProof(Stream& s, T& proof, bool useGroth, CSerActionUnserialize)
 {
     if (useGroth) {
         libzcash::GrothProof grothProof;

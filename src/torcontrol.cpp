@@ -176,7 +176,7 @@ void TorControlConnection::readcb(struct bufferevent *bev, void *ctx)
     }
 }
 
-void TorControlConnection::eventcb(struct bufferevent *bev, short what, void *ctx)
+void TorControlConnection::eventcb(struct bufferevent *, short what, void *ctx)
 {
     TorControlConnection *self = (TorControlConnection*)ctx;
     if (what & BEV_EVENT_CONNECTED) {
@@ -484,7 +484,7 @@ TorController::~TorController()
     }
 }
 
-void TorController::add_onion_cb(TorControlConnection& _conn, const TorControlReply& reply)
+void TorController::add_onion_cb(TorControlConnection&, const TorControlReply& reply)
 {
     if (reply.code == 250) {
         LogPrint("tor", "tor: ADD_ONION successful\n");
@@ -698,7 +698,7 @@ void TorController::connected_cb(TorControlConnection& _conn)
         LogPrintf("tor: Error sending initial protocolinfo command\n");
 }
 
-void TorController::disconnected_cb(TorControlConnection& _conn)
+void TorController::disconnected_cb(TorControlConnection&)
 {
     // Stop advertizing service when disconnected
     if (service.IsValid())
@@ -734,7 +734,7 @@ fs::path TorController::GetPrivateKeyFile()
     return GetDataDir() / "onion_private_key";
 }
 
-void TorController::reconnect_cb(evutil_socket_t fd, short what, void *arg)
+void TorController::reconnect_cb(evutil_socket_t, short, void *arg)
 {
     TorController *self = (TorController*)arg;
     self->Reconnect();
@@ -751,7 +751,7 @@ static void TorControlThread()
     event_base_dispatch(gBase);
 }
 
-void StartTorControl(boost::thread_group& threadGroup, CScheduler& scheduler)
+void StartTorControl(boost::thread_group&, CScheduler&)
 {
     assert(!gBase);
 #ifdef WIN32
@@ -784,4 +784,3 @@ void StopTorControl()
         gBase = 0;
     }
 }
-

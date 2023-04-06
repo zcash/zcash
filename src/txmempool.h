@@ -502,8 +502,7 @@ public:
     void removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags);
     void removeConflicts(const CTransaction &tx, std::list<CTransaction>& removed);
     std::vector<uint256> removeExpired(unsigned int nBlockHeight);
-    void removeForBlock(const std::vector<CTransaction>& vtx, unsigned int nBlockHeight,
-                        std::list<CTransaction>& conflicts);
+    void removeForBlock(const std::vector<CTransaction>& vtx, std::list<CTransaction>& conflicts);
     void removeWithoutBranchId(uint32_t nMemPoolBranchId);
     void clear();
     void _clear(); // unlocked

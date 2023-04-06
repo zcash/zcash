@@ -206,7 +206,7 @@ static std::string RequestMethodString(HTTPRequest::RequestMethod m)
 }
 
 /** HTTP request callback */
-static void http_request_cb(struct evhttp_request* req, void* arg)
+static void http_request_cb(struct evhttp_request* req, void*)
 {
     // Disable reading to work around a libevent bug, fixed in 2.2.0.
     if (event_get_version_number() >= 0x02010600 && event_get_version_number() < 0x02020001) {
@@ -276,7 +276,7 @@ static void http_reject_request_cb(struct evhttp_request* req, void*)
 }
 
 /** Event dispatcher thread */
-static bool ThreadHTTP(struct event_base* base, struct evhttp* http)
+static bool ThreadHTTP(struct event_base* base, struct evhttp*)
 {
     RenameThread("zc-http-server");
     LogPrint("http", "Entering http event loop\n");

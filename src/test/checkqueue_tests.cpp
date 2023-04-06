@@ -32,7 +32,7 @@ struct FakeCheck {
     {
         return true;
     }
-    void swap(FakeCheck& x){}
+    void swap(FakeCheck&){}
 };
 
 struct FakeCheckCheckCompletion {
@@ -42,7 +42,7 @@ struct FakeCheckCheckCompletion {
         ++n_calls;
         return true;
     }
-    void swap(FakeCheckCheckCompletion& x){}
+    void swap(FakeCheckCheckCompletion&){}
 };
 
 struct FailingCheck {
@@ -83,7 +83,7 @@ struct MemoryCheck {
         return true;
     }
     MemoryCheck(){}
-    MemoryCheck(const MemoryCheck& x)
+    MemoryCheck(const MemoryCheck&)
     {
         // We have to do this to make sure that destructor calls are paired
         //

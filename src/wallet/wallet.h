@@ -1961,9 +1961,9 @@ public:
 
     /**
      * The set of default receiver types used when the wallet generates
-     * unified addresses, as of the specified chain height.
+     * unified addresses.
      */
-    static std::set<libzcash::ReceiverType> DefaultReceiverTypes(int nHeight);
+    static std::set<libzcash::ReceiverType> DefaultReceiverTypes();
 
 private:
     bool NewKeyPool();

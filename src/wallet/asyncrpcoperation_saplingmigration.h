@@ -18,7 +18,7 @@ public:
     AsyncRPCOperation_saplingmigration& operator=(AsyncRPCOperation_saplingmigration const&) = delete; // Copy assign
     AsyncRPCOperation_saplingmigration& operator=(AsyncRPCOperation_saplingmigration&&) = delete;      // Move assign
 
-    static libzcash::SaplingPaymentAddress getMigrationDestAddress(const HDSeed& seed);
+    static libzcash::SaplingPaymentAddress getMigrationDestAddress();
 
     virtual void main() override;
 

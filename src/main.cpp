@@ -1286,7 +1286,6 @@ bool ContextualCheckShieldedInputs(
         std::optional<rust::Box<orchard::BatchValidator>>& orchardAuth,
         const Consensus::Params& consensus,
         uint32_t consensusBranchId,
-        bool nu5Active,
         bool isMined,
         bool (*isInitBlockDownload)(const Consensus::Params&))
 {
@@ -1305,7 +1304,7 @@ bool ContextualCheckShieldedInputs(
     auto dosLevelPotentiallyRelaxing = isMined ? DOS_LEVEL_BLOCK : (
         isInitBlockDownload(consensus) ? 0 : DOS_LEVEL_MEMPOOL);
 
-    auto prevConsensusBranchId = PrevEpochBranchId(consensusBranchId, consensus);
+    auto prevConsensusBranchId = PrevEpochBranchId(consensusBranchId);
     uint256 dataToBeSigned;
     uint256 prevDataToBeSigned;
 
@@ -2008,7 +2007,6 @@ bool AcceptToMemoryPool(
             orchardAuth,
             chainparams.GetConsensus(),
             consensusBranchId,
-            chainparams.GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_NU5),
             false))
         {
             return false;
@@ -2696,7 +2694,7 @@ bool ContextualCheckInputs(
                     // the assumption that users creating transactions will
                     // notice their transactions failing before a second network
                     // upgrade occurs.
-                    auto prevConsensusBranchId = PrevEpochBranchId(consensusBranchId, consensusParams);
+                    auto prevConsensusBranchId = PrevEpochBranchId(consensusBranchId);
                     CScriptCheck checkPrev(*coins, tx, i, flags, cacheStore, prevConsensusBranchId, &txdata);
                     if (checkPrev()) {
                         return state.DoS(
@@ -3361,7 +3359,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             orchardAuth,
             chainparams.GetConsensus(),
             consensusBranchId,
-            chainparams.GetConsensus().NetworkUpgradeActive(pindex->nHeight, Consensus::UPGRADE_NU5),
             true))
         {
             return error(
@@ -3880,7 +3877,7 @@ struct PoolMetrics {
         return stats;
     }
 
-    static PoolMetrics Transparent(CBlockIndex *pindex, CCoinsViewCache *view) {
+    static PoolMetrics Transparent(CBlockIndex *pindex) {
         PoolMetrics stats;
         stats.value = pindex->nChainTransparentValue;
 
@@ -3949,7 +3946,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     auto sproutPool = PoolMetrics::Sprout(pindexNew, pcoinsTip);
     auto saplingPool = PoolMetrics::Sapling(pindexNew, pcoinsTip);
     auto orchardPool = PoolMetrics::Orchard(pindexNew, pcoinsTip);
-    auto transparentPool = PoolMetrics::Transparent(pindexNew, pcoinsTip);
+    auto transparentPool = PoolMetrics::Transparent(pindexNew);
 
     MetricsGauge("zcash.chain.verified.block.height", pindexNew->nHeight);
     RenderPoolMetrics("sprout", sproutPool);
@@ -4086,7 +4083,7 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     LogPrint("bench", "  - Writing chainstate: %.2fms [%.2fs]\n", (nTime5 - nTime4) * 0.001, nTimeChainState * 0.000001);
     // Remove conflicting transactions from the mempool.
     std::list<CTransaction> txConflicted;
-    mempool.removeForBlock(pblock->vtx, pindexNew->nHeight, txConflicted);
+    mempool.removeForBlock(pblock->vtx, txConflicted);
 
     // Remove transactions that expire at new block height from mempool
     auto ids = mempool.removeExpired(pindexNew->nHeight);
@@ -4480,7 +4477,7 @@ bool InvalidateBlock(CValidationState& state, const CChainParams& chainparams, C
     return true;
 }
 
-bool ReconsiderBlock(CValidationState& state, CBlockIndex *pindex) {
+bool ReconsiderBlock(CBlockIndex *pindex) {
     AssertLockHeld(cs_main);
 
     int nHeight = pindex->nHeight;
@@ -4612,7 +4609,6 @@ void FallbackSproutValuePoolBalance(
 /** Mark a block as having its data received and checked (up to BLOCK_VALID_TRANSACTIONS). */
 bool ReceivedBlockTransactions(
     const CBlock &block,
-    CValidationState& state,
     const CChainParams& chainparams,
     CBlockIndex *pindexNew,
     const CDiskBlockPos& pos)
@@ -5195,7 +5191,7 @@ static bool AcceptBlock(const CBlock& block, CValidationState& state, const CCha
         if (dbp == NULL)
             if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
                 AbortNode(state, "Failed to write block");
-        if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos))
+        if (!ReceivedBlockTransactions(block, chainparams, pindex, blockPos))
             return error("AcceptBlock(): ReceivedBlockTransactions failed");
     } catch (const std::runtime_error& e) {
         return AbortNode(state, std::string("System error: ") + e.what());
@@ -6004,7 +6000,7 @@ bool InitBlockIndex(const CChainParams& chainparams)
             if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
                 return error("LoadBlockIndex(): writing genesis block to disk failed");
             CBlockIndex *pindex = AddToBlockIndex(block, chainparams.GetConsensus());
-            if (!ReceivedBlockTransactions(block, state, chainparams, pindex, blockPos))
+            if (!ReceivedBlockTransactions(block, chainparams, pindex, blockPos))
                 return error("LoadBlockIndex(): genesis block not accepted");
             // Before the genesis block, there was an empty tree. We set its root here so
             // that the block import thread doesn't race other methods that need to query

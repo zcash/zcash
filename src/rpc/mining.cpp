@@ -82,7 +82,7 @@ int64_t GetNetworkHashPS(int lookup, int height) {
     return (int64_t)(workDiff.getdouble() / timeDiff);
 }
 
-UniValue getlocalsolps(const UniValue& params, bool fHelp)
+UniValue getlocalsolps(const UniValue&, bool fHelp)
 {
     if (fHelp)
         throw runtime_error(

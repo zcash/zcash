@@ -85,19 +85,19 @@ public:
 
     void AddPayment(ResolvedPayment payment) {
         examine(payment.address, match {
-            [&](const CKeyID& addr) {
+            [&](const CKeyID&) {
                 t_outputs_total += payment.amount;
                 recipientPools.insert(libzcash::OutputPool::Transparent);
             },
-            [&](const CScriptID& addr) {
+            [&](const CScriptID&) {
                 t_outputs_total += payment.amount;
                 recipientPools.insert(libzcash::OutputPool::Transparent);
             },
-            [&](const libzcash::SaplingPaymentAddress& addr) {
+            [&](const libzcash::SaplingPaymentAddress&) {
                 sapling_outputs_total += payment.amount;
                 recipientPools.insert(libzcash::OutputPool::Sapling);
             },
-            [&](const libzcash::OrchardRawAddress& addr) {
+            [&](const libzcash::OrchardRawAddress&) {
                 orchard_outputs_total += payment.amount;
                 recipientPools.insert(libzcash::OutputPool::Orchard);
             }
@@ -413,7 +413,6 @@ private:
             const ZTXOSelector& selector,
             const SpendableInputs& spendable,
             const std::vector<Payment>& payments,
-            const CChain& chain,
             const TransactionStrategy& strategy,
             const std::optional<CAmount>& fee,
             bool afterNU5) const;

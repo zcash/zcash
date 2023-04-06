@@ -414,7 +414,6 @@ WalletTxBuilder::PrepareTransaction(
                         selector,
                         spendable,
                         payments,
-                        chain,
                         strategy,
                         fee,
                         afterNU5);
@@ -626,7 +625,6 @@ WalletTxBuilder::ResolveInputsAndPayments(
         const ZTXOSelector& selector,
         const SpendableInputs& spendable,
         const std::vector<Payment>& payments,
-        const CChain& chain,
         const TransactionStrategy& strategy,
         const std::optional<CAmount>& fee,
         bool afterNU5) const
@@ -795,10 +793,10 @@ std::pair<uint256, uint256> WalletTxBuilder::SelectOVKs(
         const SpendableInputs& spendable) const
 {
     return examine(selector.GetPattern(), match {
-        [&](const CKeyID& keyId) {
+        [&](const CKeyID&) {
             return wallet.GetLegacyAccountKey().ToAccountPubKey().GetOVKsForShielding();
         },
-        [&](const CScriptID& keyId) {
+        [&](const CScriptID&) {
             return wallet.GetLegacyAccountKey().ToAccountPubKey().GetOVKsForShielding();
         },
         [&](const libzcash::SproutPaymentAddress&) {

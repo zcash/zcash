@@ -344,10 +344,10 @@ public:
     DummySignatureChecker() {}
 
     bool CheckSig(
-        const std::vector<unsigned char>& scriptSig,
-        const std::vector<unsigned char>& vchPubKey,
-        const CScript& scriptCode,
-        uint32_t consensusBranchId) const override
+        const std::vector<unsigned char>&,
+        const std::vector<unsigned char>&,
+        const CScript&,
+        uint32_t) const override
     {
         return true;
     }
@@ -362,9 +362,9 @@ const BaseSignatureChecker& DummySignatureCreator::Checker() const
 
 bool DummySignatureCreator::CreateSig(
     std::vector<unsigned char>& vchSig,
-    const CKeyID& keyid,
-    const CScript& scriptCode,
-    uint32_t consensusBranchId) const
+    const CKeyID&,
+    const CScript&,
+    uint32_t) const
 {
     // Create a dummy signature that is a valid DER-encoding
     vchSig.assign(72, '\000');

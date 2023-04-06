@@ -179,7 +179,7 @@ UniValue TxActionsToJSON(const rust::Vec<orchard_bundle::Action>& actions)
 }
 
 // See https://zips.z.cash/zip-0225
-UniValue TxOrchardBundleToJSON(const CTransaction& tx, UniValue& entry)
+UniValue TxOrchardBundleToJSON(const CTransaction& tx)
 {
     const auto& bundle = tx.GetOrchardBundle().GetDetails();
 
@@ -299,7 +299,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
             }
         }
         if (tx.nVersion >= ZIP225_TX_VERSION) {
-            UniValue orchard = TxOrchardBundleToJSON(tx, entry);
+            UniValue orchard = TxOrchardBundleToJSON(tx);
             entry.pushKV("orchard", orchard);
         }
     }

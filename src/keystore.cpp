@@ -535,6 +535,6 @@ std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const CKeyID& keyId) c
         return std::nullopt;
     }
 }
-std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const libzcash::UnknownReceiver& receiver) const {
+std::optional<AddressUFVKMetadata> FindUFVKId::operator()(const libzcash::UnknownReceiver&) const {
     return std::nullopt;
 }

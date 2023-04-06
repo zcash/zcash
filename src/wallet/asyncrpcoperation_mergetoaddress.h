@@ -66,6 +66,8 @@ public:
     bool testmode = false;
 
 private:
+    CWallet& wallet_;
+
     const TransactionStrategy strategy_;
 
     const TransactionEffects effects_;

@@ -44,9 +44,9 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
         TransactionStrategy strategy,
         TransactionEffects effects,
         UniValue contextInfo)
-    : strategy_(strategy), effects_(effects), contextinfo_(contextInfo)
+    : wallet_(wallet), strategy_(strategy), effects_(effects), contextinfo_(contextInfo)
 {
-    effects.LockSpendable(*pwalletMain);
+    effects.LockSpendable(wallet_);
 
     KeyIO keyIO(Params());
 
@@ -74,7 +74,7 @@ main_impl(
 void AsyncRPCOperation_mergetoaddress::main()
 {
     if (isCancelled()) {
-        effects_.UnlockSpendable(*pwalletMain);
+        effects_.UnlockSpendable(wallet_);
         return;
     }
 
@@ -89,7 +89,7 @@ void AsyncRPCOperation_mergetoaddress::main()
     try {
         UniValue sendResult;
         std::tie(txid, sendResult) =
-            main_impl(Params(), *pwalletMain, strategy_, effects_, getId(), testmode);
+            main_impl(Params(), wallet_, strategy_, effects_, getId(), testmode);
         set_result(sendResult);
     } catch (const UniValue& objError) {
         int code = find_value(objError, "code").get_int();

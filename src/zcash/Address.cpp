@@ -183,7 +183,7 @@ std::optional<RecipientAddress> UnifiedAddress::GetPreferredRecipientAddress(
             [&](const SaplingPaymentAddress& addr) { result = addr; },
             [&](const CScriptID& addr) { result = addr; },
             [&](const CKeyID& addr) { result = addr; },
-            [&](const UnknownReceiver& addr) { }
+            [&](const UnknownReceiver&) { }
         });
 
         if (result.has_value()) {
@@ -195,11 +195,11 @@ std::optional<RecipientAddress> UnifiedAddress::GetPreferredRecipientAddress(
 
 bool HasKnownReceiverType(const Receiver& receiver) {
     return examine(receiver, match {
-        [](const OrchardRawAddress& addr) { return true; },
-        [](const SaplingPaymentAddress& addr) { return true; },
-        [](const CScriptID& addr) { return true; },
-        [](const CKeyID& addr) { return true; },
-        [](const UnknownReceiver& addr) { return false; }
+        [](const OrchardRawAddress&) { return true; },
+        [](const SaplingPaymentAddress&) { return true; },
+        [](const CScriptID&) { return true; },
+        [](const CKeyID&) { return true; },
+        [](const UnknownReceiver&) { return false; }
     });
 }
 
@@ -228,23 +228,23 @@ std::pair<std::string, PaymentAddress> AddressInfoFromViewingKey::operator()(con
 } // namespace libzcash
 
 uint32_t TypecodeForReceiver::operator()(
-    const libzcash::OrchardRawAddress &zaddr) const
+    const libzcash::OrchardRawAddress &) const
 {
     return static_cast<uint32_t>(libzcash::ReceiverType::Orchard);
 }
 
 uint32_t TypecodeForReceiver::operator()(
-    const libzcash::SaplingPaymentAddress &zaddr) const
+    const libzcash::SaplingPaymentAddress &) const
 {
     return ZCASH_UA_TYPECODE_SAPLING;
 }
 uint32_t TypecodeForReceiver::operator()(
-    const CScriptID &p2sh) const
+    const CScriptID &) const
 {
     return ZCASH_UA_TYPECODE_P2SH;
 }
 uint32_t TypecodeForReceiver::operator()(
-    const CKeyID &p2sh) const
+    const CKeyID &) const
 {
     return ZCASH_UA_TYPECODE_P2PKH;
 }

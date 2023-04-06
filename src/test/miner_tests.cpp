@@ -270,7 +270,7 @@ void MineBlockForTest(const CChainParams& chainparams, CBlock* pblock) {
         curr_state.Update(pblock->nNonce.begin(), pblock->nNonce.size());
 
         std::function<void()> incrementRuns = [&]() {};
-        std::function<bool(size_t, const std::vector<uint32_t>&)> checkSolution = [&](size_t s, const std::vector<uint32_t>& index_vector) {
+        std::function<bool(size_t, const std::vector<uint32_t>&)> checkSolution = [&](size_t, const std::vector<uint32_t>& index_vector) {
             auto soln = GetMinimalFromIndices(index_vector, DIGITBITS);
             pblock->nSolution = soln;
             if (!equihash::is_valid(
@@ -425,14 +425,14 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx1.vout.resize(1);
 
     // If we don't set the # of sigops in the CTxMemPoolEntry, template creation fails.
-    PrepareMempool(1000, MINIMUM_FEE, [&](size_t i, auto& entry, auto& tx) {
+    PrepareMempool(1000, MINIMUM_FEE, [&](size_t, auto& entry, auto& tx) {
         mempool.addUnchecked(tx.GetHash(), entry.FromTx(tx));
     });
     BOOST_CHECK_EXCEPTION(BlockAssembler(chainparams).CreateNewBlock(scriptPubKey), std::runtime_error, err_is("bad-blk-sigops"));
     mempool.clear();
 
     // If we do set the # of sigops in the CTxMemPoolEntry, template creation passes.
-    PrepareMempool(1000, MINIMUM_FEE, [&](size_t i, auto& entry, auto& tx) {
+    PrepareMempool(1000, MINIMUM_FEE, [&](size_t, auto& entry, auto& tx) {
         mempool.addUnchecked(tx.GetHash(), entry.SigOps(20).FromTx(tx));
     });
     BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
@@ -453,7 +453,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx1.vin[0].scriptSig << OP_1;
 
     // Test block size just under the 2000000-byte limit.
-    PrepareMempool(210, CalculateConventionalFee(64), [&](size_t i, auto& entry, auto& tx) {
+    PrepareMempool(210, CalculateConventionalFee(64), [&](size_t, auto& entry, auto& tx) {
         mempool.addUnchecked(tx.GetHash(), entry.FromTx(tx));
     });
     BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
@@ -463,7 +463,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     mempool.clear();
 
     // ... and just over the limit.
-    PrepareMempool(211, CalculateConventionalFee(64), [&](size_t i, auto& entry, auto& tx) {
+    PrepareMempool(211, CalculateConventionalFee(64), [&](size_t, auto& entry, auto& tx) {
         mempool.addUnchecked(tx.GetHash(), entry.FromTx(tx));
     });
     BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));

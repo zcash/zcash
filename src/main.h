@@ -414,7 +414,6 @@ bool ContextualCheckShieldedInputs(
         std::optional<rust::Box<orchard::BatchValidator>>& orchardAuth,
         const Consensus::Params& consensus,
         uint32_t consensusBranchId,
-        bool nu5Active,
         bool isMined,
         bool (*isInitBlockDownload)(const Consensus::Params&) = IsInitialBlockDownload);
 
@@ -624,7 +623,7 @@ CBlockIndex* FindForkInGlobalIndex(const CChain& chain, const CBlockLocator& loc
 bool InvalidateBlock(CValidationState& state, const CChainParams& chainparams, CBlockIndex *pindex);
 
 /** Remove invalidity status from a block and its descendants. */
-bool ReconsiderBlock(CValidationState& state, CBlockIndex *pindex);
+bool ReconsiderBlock(CBlockIndex *pindex);
 
 /** The currently-connected chain of blocks (protected by cs_main). */
 extern CChain chainActive;
