@@ -12,12 +12,15 @@ use crate::{
     note_encryption::{
         try_sapling_note_decryption, try_sapling_output_recovery, DecryptedSaplingOutput,
     },
-    orchard_bundle::{from_tx_bundle, Action, Bundle, OrchardBundle},
+    orchard_bundle::{
+        none_orchard_bundle, orchard_bundle_from_raw_box, parse_orchard_bundle, Action, Bundle,
+    },
+    orchard_ffi::{orchard_batch_validation_init, BatchValidator as OrchardBatchValidator},
     params::{network, Network},
     sapling::{
-        finish_bundle_assembly, init_batch_validator, init_prover, init_verifier,
-        new_bundle_assembler, BatchValidator, Bundle as SaplingBundle,
-        BundleAssembler as SaplingBundleAssembler, Prover, Verifier,
+        finish_bundle_assembly, init_batch_validator as init_sapling_batch_validator, init_prover,
+        init_verifier, new_bundle_assembler, BatchValidator as SaplingBatchValidator,
+        Bundle as SaplingBundle, BundleAssembler as SaplingBundleAssembler, Prover, Verifier,
     },
     streams::{
         from_auto_file, from_buffered_file, from_data, from_hash_writer, from_size_computer,
@@ -176,21 +179,26 @@ pub(crate) mod ffi {
             sighash_value: &[u8; 32],
         ) -> bool;
 
-        type BatchValidator;
-        fn init_batch_validator(cache_store: bool) -> Box<BatchValidator>;
+        #[cxx_name = "BatchValidator"]
+        type SaplingBatchValidator;
+        #[cxx_name = "init_batch_validator"]
+        fn init_sapling_batch_validator(cache_store: bool) -> Box<SaplingBatchValidator>;
         fn check_bundle(
-            self: &mut BatchValidator,
+            self: &mut SaplingBatchValidator,
             bundle: Box<SaplingBundle>,
             sighash: [u8; 32],
         ) -> bool;
-        fn validate(self: &mut BatchValidator) -> bool;
+        fn validate(self: &mut SaplingBatchValidator) -> bool;
     }
 
+    unsafe extern "C++" {
+        include!("rust/orchard.h");
+        type OrchardBundlePtr;
+    }
     #[namespace = "orchard_bundle"]
     extern "Rust" {
         type Action;
         type Bundle;
-        type OrchardBundle;
 
         fn cv(self: &Action) -> [u8; 32];
         fn nullifier(self: &Action) -> [u8; 32];
@@ -201,7 +209,17 @@ pub(crate) mod ffi {
         fn out_ciphertext(self: &Action) -> [u8; 80];
         fn spend_auth_sig(self: &Action) -> [u8; 64];
 
-        unsafe fn from_tx_bundle(bundle: *const OrchardBundle) -> Box<Bundle>;
+        #[rust_name = "none_orchard_bundle"]
+        fn none() -> Box<Bundle>;
+        #[rust_name = "orchard_bundle_from_raw_box"]
+        unsafe fn from_raw_box(bundle: *mut OrchardBundlePtr) -> Box<Bundle>;
+        fn box_clone(self: &Bundle) -> Box<Bundle>;
+        #[rust_name = "parse_orchard_bundle"]
+        fn parse(stream: &mut CppStream<'_>) -> Result<Box<Bundle>>;
+        fn serialize(self: &Bundle, stream: &mut CppStream<'_>) -> Result<()>;
+        fn as_ptr(self: &Bundle) -> *const OrchardBundlePtr;
+        fn recursive_dynamic_usage(self: &Bundle) -> usize;
+        fn is_present(self: &Bundle) -> bool;
         fn actions(self: &Bundle) -> Vec<Action>;
         fn num_actions(self: &Bundle) -> usize;
         fn enable_spends(self: &Bundle) -> bool;
@@ -210,6 +228,17 @@ pub(crate) mod ffi {
         fn anchor(self: &Bundle) -> [u8; 32];
         fn proof(self: &Bundle) -> Vec<u8>;
         fn binding_sig(self: &Bundle) -> [u8; 64];
+        fn coinbase_outputs_are_valid(self: &Bundle) -> bool;
+    }
+
+    #[namespace = "orchard"]
+    extern "Rust" {
+        #[cxx_name = "BatchValidator"]
+        type OrchardBatchValidator;
+        #[cxx_name = "init_batch_validator"]
+        fn orchard_batch_validation_init(cache_store: bool) -> Box<OrchardBatchValidator>;
+        fn add_bundle(self: &mut OrchardBatchValidator, bundle: Box<Bundle>, sighash: [u8; 32]);
+        fn validate(self: &mut OrchardBatchValidator) -> bool;
     }
 
     #[namespace = "merkle_frontier"]

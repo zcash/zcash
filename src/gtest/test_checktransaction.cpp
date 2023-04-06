@@ -537,7 +537,7 @@ TEST(ContextualCheckShieldedInputsTest, BadTxnsInvalidJoinsplitSignature) {
     SelectParams(CBaseChainParams::REGTEST);
     auto consensus = Params().GetConsensus();
     std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = std::nullopt;
-    auto orchardAuth = orchard::AuthValidator::Disabled();
+    std::optional<rust::Box<orchard::BatchValidator>> orchardAuth = std::nullopt;
 
     CMutableTransaction mtx = GetValidTransaction();
     mtx.joinSplitSig.bytes[0] += 1;
@@ -569,7 +569,7 @@ TEST(ContextualCheckShieldedInputsTest, JoinsplitSignatureDetectsOldBranchId) {
     SelectParams(CBaseChainParams::REGTEST);
     auto consensus = Params().GetConsensus();
     std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = std::nullopt;
-    auto orchardAuth = orchard::AuthValidator::Disabled();
+    std::optional<rust::Box<orchard::BatchValidator>> orchardAuth = std::nullopt;
 
     auto saplingBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
     auto blossomBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_BLOSSOM].nBranchId;
@@ -619,7 +619,7 @@ TEST(ContextualCheckShieldedInputsTest, NonCanonicalEd25519Signature) {
     SelectParams(CBaseChainParams::REGTEST);
     auto consensus = Params().GetConsensus();
     std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = std::nullopt;
-    auto orchardAuth = orchard::AuthValidator::Disabled();
+    std::optional<rust::Box<orchard::BatchValidator>> orchardAuth = std::nullopt;
 
     AssumeShieldedInputsExistAndAreSpendable baseView;
     CCoinsViewCache view(&baseView);
@@ -1325,7 +1325,7 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     EXPECT_TRUE(ContextualCheckTransaction(tx, state, chainparams, 10, 57));
 
     std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = sapling::init_batch_validator(false);
-    auto orchardAuth = orchard::AuthValidator::Disabled();
+    std::optional<rust::Box<orchard::BatchValidator>> orchardAuth = std::nullopt;
     auto heartwoodBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_HEARTWOOD].nBranchId;
 
     // Coinbase transaction does not pass shielded input checks, as bindingSig
