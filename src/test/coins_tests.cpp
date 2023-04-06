@@ -300,8 +300,6 @@ template<> void AppendRandomLeaf(OrchardMerkleFrontier &tree) {
     tree.AppendBundle(bundle);
 }
 
-template<typename Tree> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, Tree &tree);
-
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(chained_joinsplits)
