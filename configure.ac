@@ -375,7 +375,7 @@ DISABLED_WARNING_CXXFLAGS="\
   -Wno-tautological-type-limit-compare \
   -Wno-thread-safety-attributes -Wno-thread-safety-negative \
   -Wno-undefined-func-template \
-  -Wno-unused-function -Wno-unused-macros \
+  -Wno-unused-macros \
   -Wno-unused-parameter -Wno-unused-private-field -Wno-unused-template \
   -Wno-unused-variable -Wno-used-but-marked-unused -Wno-vla-extension -Wno-weak-vtables \
   -Wno-zero-as-null-pointer-constant -Wno-zero-length-array"

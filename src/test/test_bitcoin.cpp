@@ -234,18 +234,3 @@ CTxMemPoolEntry TestMemPoolEntryHelper::FromTx(CMutableTransaction &tx, CTxMemPo
     return CTxMemPoolEntry(txn, nFee, nTime, nHeight,
                            hasNoDependencies, spendsCoinbase, sigOpCount, nBranchId);
 }
-
-[[noreturn]] void Shutdown(void* parg)
-{
-  exit(0);
-}
-
-[[noreturn]] void StartShutdown()
-{
-  exit(0);
-}
-
-bool ShutdownRequested()
-{
-  return false;
-}

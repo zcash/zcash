@@ -67,30 +67,6 @@ public:
 private:
     fs::path old_cwd;
 };
-
-CWalletTx FakeWalletTx() {
-    CMutableTransaction mtx;
-    mtx.vout.resize(1);
-    mtx.vout[0].nValue = 1;
-    return CWalletTx(nullptr, mtx);
-}
-
-}
-
-static UniValue ValueFromString(const std::string &str)
-{
-    UniValue value;
-    BOOST_CHECK(value.setNumStr(str));
-    return value;
-}
-
-static libzcash::SaplingPaymentAddress DefaultSaplingAddress(CWallet* pwallet) {
-    auto usk = pwallet->GenerateUnifiedSpendingKeyForAccount(0);
-
-    return usk.value()
-        .ToFullViewingKey()
-        .GetSaplingKey().value()
-        .FindAddress(libzcash::diversifier_index_t(0)).first;
 }
 
 BOOST_FIXTURE_TEST_SUITE(rpc_wallet_tests, WalletTestingSetup)

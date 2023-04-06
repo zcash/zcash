@@ -41,24 +41,6 @@ void PRF_ock(
     state->finalize({K, NOTEENCRYPTION_CIPHER_KEYSIZE});
 }
 
-void KDF_Sapling(
-    unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
-    const uint256 &dhsecret,
-    const uint256 &epk
-)
-{
-    unsigned char block[64] = {};
-    memcpy(block+0, dhsecret.begin(), 32);
-    memcpy(block+32, epk.begin(), 32);
-
-    unsigned char personalization[blake2b::PERSONALBYTES] = {};
-    memcpy(personalization, "Zcash_SaplingKDF", 16);
-
-    auto state = blake2b::init(NOTEENCRYPTION_CIPHER_KEYSIZE, {personalization, blake2b::PERSONALBYTES});
-    state->update({block, 64});
-    state->finalize({K, NOTEENCRYPTION_CIPHER_KEYSIZE});
-}
-
 void KDF(unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE],
     const uint256 &dhsecret,
     const uint256 &epk,

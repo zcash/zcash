@@ -16,16 +16,6 @@ using namespace std;
 using namespace boost::assign; // bring 'operator+=()' into scope
 using namespace fs;
 
-// Test if a string consists entirely of null characters
-bool is_null_key(const vector<unsigned char>& key) {
-    bool isnull = true;
-
-    for (unsigned int i = 0; i < key.size(); i++)
-        isnull &= (key[i] == '\x00');
-
-    return isnull;
-}
-
 BOOST_FIXTURE_TEST_SUITE(dbwrapper_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(dbwrapper)

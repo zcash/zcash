@@ -54,18 +54,6 @@ static FILE* fileout = NULL;
 static boost::mutex* mutexDebugLog = NULL;
 static list<string> *vMsgsBeforeOpenLog;
 
-static int FileWriteStr(const std::string &str, FILE *fp)
-{
-    return fwrite(str.data(), 1, str.size(), fp);
-}
-
-static void DebugPrintInit()
-{
-    assert(mutexDebugLog == NULL);
-    mutexDebugLog = new boost::mutex();
-    vMsgsBeforeOpenLog = new list<string>;
-}
-
 fs::path GetDebugLogPath()
 {
     fs::path logfile(GetArg("-debuglogfile", DEFAULT_DEBUGLOGFILE));
