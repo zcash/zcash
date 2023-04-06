@@ -12,16 +12,14 @@
 
 class SproutProofVerifier
 {
-    ProofVerifier& verifier;
     const ed25519::VerificationKey& joinSplitPubKey;
     const JSDescription& jsdesc;
 
 public:
     SproutProofVerifier(
-        ProofVerifier& verifier,
         const ed25519::VerificationKey& joinSplitPubKey,
         const JSDescription& jsdesc
-        ) : verifier(verifier), joinSplitPubKey(joinSplitPubKey), jsdesc(jsdesc) {}
+        ) : joinSplitPubKey(joinSplitPubKey), jsdesc(jsdesc) {}
 
     bool operator()(const libzcash::PHGRProof&) const
     {
@@ -66,6 +64,6 @@ bool ProofVerifier::VerifySprout(
         return true;
     }
 
-    auto pv = SproutProofVerifier(*this, joinSplitPubKey, jsdesc);
+    auto pv = SproutProofVerifier(joinSplitPubKey, jsdesc);
     return std::visit(pv, jsdesc.proof);
 }

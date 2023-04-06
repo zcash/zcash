@@ -43,14 +43,10 @@ class CDBBatch
     friend class CDBWrapper;
 
 private:
-    const CDBWrapper &parent;
     leveldb::WriteBatch batch;
 
 public:
-    /**
-     * @param[in] _parent   CDBWrapper that this batch is to be submitted to
-     */
-    CDBBatch(const CDBWrapper &_parent) : parent(_parent) { }
+    CDBBatch() { }
 
     template <typename K, typename V>
     void Write(const K& key, const V& value)
@@ -83,17 +79,15 @@ public:
 class CDBIterator
 {
 private:
-    const CDBWrapper &parent;
     leveldb::Iterator *piter;
 
 public:
 
     /**
-     * @param[in] _parent          Parent CDBWrapper instance.
      * @param[in] _piter           The original leveldb iterator.
      */
-    CDBIterator(const CDBWrapper &_parent, leveldb::Iterator *_piter) :
-        parent(_parent), piter(_piter) { }
+    CDBIterator(leveldb::Iterator *_piter) :
+        piter(_piter) { }
     ~CDBIterator();
 
     bool Valid();
@@ -200,7 +194,7 @@ public:
     template <typename K, typename V>
     bool Write(const K& key, const V& value, bool fSync = false)
     {
-        CDBBatch batch(*this);
+        CDBBatch batch;
         batch.Write(key, value);
         return WriteBatch(batch, fSync);
     }
@@ -227,7 +221,7 @@ public:
     template <typename K>
     bool Erase(const K& key, bool fSync = false)
     {
-        CDBBatch batch(*this);
+        CDBBatch batch;
         batch.Erase(key);
         return WriteBatch(batch, fSync);
     }
@@ -242,13 +236,13 @@ public:
 
     bool Sync()
     {
-        CDBBatch batch(*this);
+        CDBBatch batch;
         return WriteBatch(batch, true);
     }
 
     CDBIterator *NewIterator()
     {
-        return new CDBIterator(*this, pdb->NewIterator(iteroptions));
+        return new CDBIterator(pdb->NewIterator(iteroptions));
     }
 
     /**

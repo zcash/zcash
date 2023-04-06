@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(dbwrapper_batch)
         uint256 in3 = InsecureRand256();
 
         uint256 res;
-        CDBBatch batch(dbw);
+        CDBBatch batch;
 
         batch.Write(key, in);
         batch.Write(key2, in2);
