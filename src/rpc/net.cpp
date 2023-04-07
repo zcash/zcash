@@ -192,7 +192,7 @@ UniValue addnode(const UniValue& params, bool fHelp)
     if (strCommand == "onetry")
     {
         CAddress addr;
-        OpenNetworkConnection(addr, NULL, strNode.c_str());
+        OpenNetworkConnection(addr, nullptr, strNode.c_str());
         return NullUniValue;
     }
 
@@ -232,7 +232,7 @@ UniValue disconnectnode(const UniValue& params, bool fHelp)
         );
 
     CNode* pNode = FindNode(params[0].get_str());
-    if (pNode == NULL)
+    if (pNode == nullptr)
         throw JSONRPCError(RPC_CLIENT_NODE_NOT_CONNECTED, "Node not found in connected nodes");
 
     pNode->fDisconnect = true;

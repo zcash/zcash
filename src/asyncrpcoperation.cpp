@@ -31,7 +31,7 @@ AsyncRPCOperation::AsyncRPCOperation() : error_code_(0), error_message_() {
     // Set a unique reference for each operation
     boost::uuids::uuid uuid = uuidgen();
     id_ = "opid-" + boost::uuids::to_string(uuid);
-    creation_time_ = (int64_t)time(NULL);
+    creation_time_ = (int64_t)time(nullptr);
     set_state(OperationStatus::READY);
 }
 

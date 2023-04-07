@@ -1801,7 +1801,7 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    CBlockIndex *pindex = NULL;
+    CBlockIndex *pindex = nullptr;
     int target_confirms = 1;
     isminefilter filter = ISMINE_SPENDABLE;
 
@@ -3593,7 +3593,7 @@ CAmount getBalanceTaddr(const std::optional<CTxDestination>& taddr, const std::o
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    pwalletMain->AvailableCoins(vecOutputs, asOfHeight, false, NULL, true);
+    pwalletMain->AvailableCoins(vecOutputs, asOfHeight, false, nullptr, true);
     for (const COutput& out : vecOutputs) {
         if (out.nDepth < minDepth) {
             continue;
@@ -5589,7 +5589,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (useAnyUTXO || taddrs.size() > 0) {
         // Get available utxos
         vector<COutput> vecOutputs;
-        pwalletMain->AvailableCoins(vecOutputs, std::nullopt, true, NULL, false, false);
+        pwalletMain->AvailableCoins(vecOutputs, std::nullopt, true, nullptr, false, false);
 
         // Find unspent utxos and update estimated size
         for (const COutput& out : vecOutputs) {

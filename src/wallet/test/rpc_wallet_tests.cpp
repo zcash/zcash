@@ -1678,7 +1678,7 @@ void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
     BOOST_CHECK_EQUAL(find_value(retObj, "status").get_str(), "mined");
 
     // Cleanup
-    chainActive.SetTip(NULL);
+    chainActive.SetTip(nullptr);
     for (auto hash : hashes)
         mapBlockIndex.erase(hash);
 }

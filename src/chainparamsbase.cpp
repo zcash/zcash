@@ -79,7 +79,7 @@ public:
 };
 static CBaseUnitTestParams unitTestParams;
 
-static CBaseChainParams* pCurrentBaseParams = 0;
+static CBaseChainParams* pCurrentBaseParams = nullptr;
 
 const CBaseChainParams& BaseParams()
 {
@@ -115,5 +115,5 @@ std::string ChainNameFromCommandLine()
 
 bool AreBaseParamsConfigured()
 {
-    return pCurrentBaseParams != NULL;
+    return pCurrentBaseParams != nullptr;
 }

@@ -223,7 +223,7 @@ struct equi {
   equi(const u32 n_threads) {
     assert(sizeof(hashunit) == 4);
     nthreads = n_threads;
-    const int err = pthread_barrier_init(&barry, NULL, nthreads);
+    const int err = pthread_barrier_init(&barry, nullptr, nthreads);
     assert(!err);
     hta.alloctrees();
     nslots = (bsizes *)hta.alloc(2 * NBUCKETS, sizeof(au32));
@@ -608,7 +608,7 @@ void barrier(pthread_barrier_t *barry) {
   const int rc = pthread_barrier_wait(barry);
   if (rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD) {
 //    printf("Could not wait on barrier\n");
-    pthread_exit(NULL);
+    pthread_exit(nullptr);
   }
 }
 
@@ -643,8 +643,8 @@ void *worker(void *vp) {
 //    printf("Digit %d\n", WK);
   eq->digitK(tp->id);
   barrier(&eq->barry);
-  pthread_exit(NULL);
-  return 0;
+  pthread_exit(nullptr);
+  return nullptr;
 }
 
 void genhash(const rust::Box<blake2b::State>& ctx, u32 idx, uchar *hash) {

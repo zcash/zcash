@@ -16,7 +16,7 @@ void zmqError(const char *str)
     LogPrint("zmq", "zmq: Error: %s, errno=%s\n", str, zmq_strerror(errno));
 }
 
-CZMQNotificationInterface::CZMQNotificationInterface() : pcontext(NULL)
+CZMQNotificationInterface::CZMQNotificationInterface() : pcontext(nullptr)
 {
 }
 
@@ -32,7 +32,7 @@ CZMQNotificationInterface::~CZMQNotificationInterface()
 
 CZMQNotificationInterface* CZMQNotificationInterface::CreateWithArguments(const std::map<std::string, std::string> &args)
 {
-    CZMQNotificationInterface* notificationInterface = NULL;
+    CZMQNotificationInterface* notificationInterface = nullptr;
     std::map<std::string, CZMQNotifierFactory> factories;
     std::list<CZMQAbstractNotifier*> notifiers;
 
@@ -64,7 +64,7 @@ CZMQNotificationInterface* CZMQNotificationInterface::CreateWithArguments(const 
         if (!notificationInterface->Initialize())
         {
             delete notificationInterface;
-            notificationInterface = NULL;
+            notificationInterface = nullptr;
         }
     }
 
@@ -126,7 +126,7 @@ void CZMQNotificationInterface::Shutdown()
         }
         zmq_ctx_term(pcontext);
 
-        pcontext = 0;
+        pcontext = nullptr;
     }
 }
 

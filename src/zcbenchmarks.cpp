@@ -57,7 +57,7 @@ void pre_wallet_load()
 
     UnregisterValidationInterface(pwalletMain);
     delete pwalletMain;
-    pwalletMain = NULL;
+    pwalletMain = nullptr;
     bitdb.Reset();
     RegisterNodeSignals(GetNodeSignals());
     LogPrintf("%s: done\n", __func__);
@@ -75,14 +75,14 @@ void post_wallet_load(){
 
 void timer_start(timeval &tv_start)
 {
-    gettimeofday(&tv_start, 0);
+    gettimeofday(&tv_start, nullptr);
 }
 
 double timer_stop(timeval &tv_start)
 {
     double elapsed;
     struct timeval tv_end;
-    gettimeofday(&tv_end, 0);
+    gettimeofday(&tv_end, nullptr);
     elapsed = double(tv_end.tv_sec-tv_start.tv_sec) +
         (tv_end.tv_usec-tv_start.tv_usec)/double(1000000);
     return elapsed;

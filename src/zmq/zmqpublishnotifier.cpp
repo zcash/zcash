@@ -122,7 +122,7 @@ void CZMQAbstractPublishNotifier::Shutdown()
         zmq_close(psocket);
     }
 
-    psocket = 0;
+    psocket = nullptr;
 }
 
 bool CZMQAbstractPublishNotifier::SendMessage(const char *command, const void* data, size_t size)
@@ -132,7 +132,7 @@ bool CZMQAbstractPublishNotifier::SendMessage(const char *command, const void* d
     /* send three parts, command & data & a LE 4byte sequence number */
     unsigned char msgseq[sizeof(uint32_t)];
     WriteLE32(&msgseq[0], nSequence);
-    int rc = zmq_send_multipart(psocket, command, strlen(command), data, size, msgseq, (size_t)sizeof(uint32_t), (void*)0);
+    int rc = zmq_send_multipart(psocket, command, strlen(command), data, size, msgseq, (size_t)sizeof(uint32_t), (void*)nullptr);
     if (rc == -1)
         return false;
 

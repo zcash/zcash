@@ -281,7 +281,7 @@ void MineBlockForTest(const CChainParams& chainparams, CBlock* pblock) {
                 return false;
             }
             CValidationState state;
-            return ProcessNewBlock(state, chainparams, NULL, pblock, true, NULL) && state.IsValid();
+            return ProcessNewBlock(state, chainparams, nullptr, pblock, true, nullptr) && state.IsValid();
         };
         if (equihash_solve(curr_state.inner, incrementRuns, checkSolution))
             break;

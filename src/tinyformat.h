@@ -895,7 +895,7 @@ class FormatListN : public FormatList
 // Special 0-arg version - MSVC says zero-sized C array in struct is nonstandard
 template<> class FormatListN<0> : public FormatList
 {
-    public: FormatListN() : FormatList(0, 0) {}
+    public: FormatListN() : FormatList(nullptr, 0) {}
 };
 
 } // namespace detail

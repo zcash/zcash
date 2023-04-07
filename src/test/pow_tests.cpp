@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual_blossom)
 void GetBlockProofEquivalentTimeImpl(const Consensus::Params& params) {
     std::vector<CBlockIndex> blocks(10000);
     for (int i = 0; i < 10000; i++) {
-        blocks[i].pprev = i ? &blocks[i - 1] : NULL;
+        blocks[i].pprev = i ? &blocks[i - 1] : nullptr;
         blocks[i].nHeight = i;
         blocks[i].nTime = i ? blocks[i - 1].nTime + params.PoWTargetSpacing(i) : 1269211443;
         blocks[i].nBits = 0x207fffff; /* target 0x7fffff000... */

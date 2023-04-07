@@ -94,7 +94,7 @@ CWalletTx GetValidSproutReceive(const libzcash::SproutSpendingKey& sk,
         sk, value, randomInputs, versionGroupId, version
     );
     CTransaction tx {mtx};
-    CWalletTx wtx {NULL, tx};
+    CWalletTx wtx {nullptr, tx};
     return wtx;
 }
 
@@ -111,7 +111,7 @@ CWalletTx GetInvalidCommitmentSproutReceive(
     mtx.vJoinSplit[0].commitments[0] = uint256();
     mtx.vJoinSplit[0].commitments[1] = uint256();
     CTransaction tx {mtx};
-    CWalletTx wtx {NULL, tx};
+    CWalletTx wtx {nullptr, tx};
     return wtx;
 }
 
@@ -198,7 +198,7 @@ CWalletTx GetValidSproutSpend(const libzcash::SproutSpendingKey& sk,
         {dataToBeSigned.begin(), 32},
         mtx.joinSplitSig);
     CTransaction tx {mtx};
-    CWalletTx wtx {NULL, tx};
+    CWalletTx wtx {nullptr, tx};
     return wtx;
 }
 
@@ -381,6 +381,6 @@ CWalletTx GetValidSaplingReceive(const Consensus::Params& consensusParams,
     builder.AddSaplingOutput(fvk.ovk, pa, value, {});
 
     CTransaction tx = builder.Build().GetTxOrThrow();
-    CWalletTx wtx {NULL, tx};
+    CWalletTx wtx {nullptr, tx};
     return wtx;
 }

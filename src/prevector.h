@@ -428,7 +428,7 @@ public:
         clear();
         if (!is_direct()) {
             free(_union.indirect.contents);
-            _union.indirect.contents = NULL;
+            _union.indirect.contents = nullptr;
         }
     }
 

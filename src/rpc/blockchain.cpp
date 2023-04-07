@@ -35,9 +35,9 @@ double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficul
 {
     // Floating point number that is a multiple of the minimum difficulty,
     // minimum difficulty = 1.0.
-    if (blockindex == NULL)
+    if (blockindex == nullptr)
     {
-        if (chainActive.Tip() == NULL)
+        if (chainActive.Tip() == nullptr)
             return 1.0;
         else
             blockindex = chainActive.Tip();
@@ -974,7 +974,7 @@ static UniValue SoftForkMajorityDesc(int minVersion, CBlockIndex* pindex, int nR
 {
     int nFound = 0;
     CBlockIndex* pstart = pindex;
-    for (int i = 0; i < consensusParams.nMajorityWindow && pstart != NULL; i++)
+    for (int i = 0; i < consensusParams.nMajorityWindow && pstart != nullptr; i++)
     {
         if (pstart->nVersion >= minVersion)
             ++nFound;

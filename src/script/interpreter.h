@@ -184,13 +184,13 @@ bool EvalScript(
     unsigned int flags,
     const BaseSignatureChecker& checker,
     uint32_t consensusBranchId,
-    ScriptError* error = NULL);
+    ScriptError* error = nullptr);
 bool VerifyScript(
     const CScript& scriptSig,
     const CScript& scriptPubKey,
     unsigned int flags,
     const BaseSignatureChecker& checker,
     uint32_t consensusBranchId,
-    ScriptError* serror = NULL);
+    ScriptError* serror = nullptr);
 
 #endif // BITCOIN_SCRIPT_INTERPRETER_H

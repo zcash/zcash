@@ -169,7 +169,7 @@ static void http_request_done(struct evhttp_request *req, void *ctx)
 {
     HTTPReply *reply = static_cast<HTTPReply*>(ctx);
 
-    if (req == NULL) {
+    if (req == nullptr) {
         /* If req is NULL, it means an error occurred while connecting: the
          * error code will have been passed to http_error_cb.
          */
@@ -238,7 +238,7 @@ tl::expected<UniValue, UniValue> CallRPC(const std::string& strMethod, const Uni
 
     HTTPReply response;
     raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&response);
-    if (req == NULL)
+    if (req == nullptr)
         throw std::runtime_error("create http request failed");
 #if LIBEVENT_VERSION_NUMBER >= 0x02010300
     evhttp_request_set_error_cb(req.get(), http_error_cb);
@@ -307,7 +307,7 @@ bool SetStdinEcho(bool enable = true)
 {
 #ifdef WIN32
     HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
-    if (hStdin == INVALID_HANDLE_VALUE || hStdin == NULL) return false;
+    if (hStdin == INVALID_HANDLE_VALUE || hStdin == nullptr) return false;
     DWORD mode;
     // if it's not a terminal then stdin won't be echoed, so that's not an error
     DWORD dwStdinType = GetFileType(hStdin) & ~FILE_TYPE_REMOTE;
@@ -423,7 +423,7 @@ int CommandLineRPC(int argc, char *argv[])
         nRet = EXIT_FAILURE;
     }
     catch (...) {
-        PrintExceptionContinue(NULL, "CommandLineRPC()");
+        PrintExceptionContinue(nullptr, "CommandLineRPC()");
         throw;
     }
 
@@ -450,7 +450,7 @@ int main(int argc, char* argv[])
         PrintExceptionContinue(&e, "AppInitRPC()");
         return EXIT_FAILURE;
     } catch (...) {
-        PrintExceptionContinue(NULL, "AppInitRPC()");
+        PrintExceptionContinue(nullptr, "AppInitRPC()");
         return EXIT_FAILURE;
     }
 
@@ -461,7 +461,7 @@ int main(int argc, char* argv[])
     catch (const std::exception& e) {
         PrintExceptionContinue(&e, "CommandLineRPC()");
     } catch (...) {
-        PrintExceptionContinue(NULL, "CommandLineRPC()");
+        PrintExceptionContinue(nullptr, "CommandLineRPC()");
     }
     return ret;
 }
