@@ -5,22 +5,32 @@ package=native_clang
 # - Manually fix the versions for packages that don't exist (the LLVM project
 #   doesn't uniformly cut binaries across releases).
 # The Clang compiler should use the same LLVM version as the Rust compiler.
-$(package)_major_version=15
-$(package)_version=15.0.6
+$(package)_default_major_version=15
+$(package)_default_version=15.0.6
+$(package)_version_darwin=15.0.4
+# 2023-02-16: No FreeBSD packages are available for Clang 15.
+# 2023-04-07: Still the case.
+$(package)_major_version_freebsd=14
+$(package)_version_freebsd=14.0.6
+
+# Tolerate split LLVM versions. If an LLVM build is not available for a Tier 3
+# platform, we permit an older LLVM version to be used. This means the version
+# of LLVM used in Clang and Rust will differ on these platforms, preventing LTO
+# from working.
+$(package)_version=$(if $($(package)_version_$(host_arch)_$(host_os)),$($(package)_version_$(host_arch)_$(host_os)),$(if $($(package)_version_$(host_os)),$($(package)_version_$(host_os)),$($(package)_default_version)))
+$(package)_major_version=$(if $($(package)_major_version_$(host_arch)_$(host_os)),$($(package)_major_version_$(host_arch)_$(host_os)),$(if $($(package)_major_version_$(host_os)),$($(package)_major_version_$(host_os)),$($(package)_default_major_version)))
+
 $(package)_download_path_linux=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
 $(package)_download_file_linux=clang+llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
 $(package)_file_name_linux=clang-llvm-$($(package)_version)-x86_64-linux-gnu-ubuntu-18.04.tar.xz
 $(package)_sha256_hash_linux=38bc7f5563642e73e69ac5626724e206d6d539fbef653541b34cae0ba9c3f036
-$(package)_download_path_darwin=https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.4
-$(package)_download_file_darwin=clang+llvm-15.0.4-x86_64-apple-darwin.tar.xz
-$(package)_file_name_darwin=clang-llvm-15.0.4-x86_64-apple-darwin.tar.xz
+$(package)_download_path_darwin=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
+$(package)_download_file_darwin=clang+llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
+$(package)_file_name_darwin=clang-llvm-$($(package)_version)-x86_64-apple-darwin.tar.xz
 $(package)_sha256_hash_darwin=4c98d891c07c8f6661b233bf6652981f28432cfdbd6f07181114195c3536544b
-# 2023-02-16: No FreeBSD packages are available for Clang 15, so we use Clang 14
-# here. This means FreeBSD builds will use two different versions of LLVM, but
-# FreeBSD is only a Tier 3 platform, so that is acceptable.
-$(package)_download_path_freebsd=https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.6
-$(package)_download_file_freebsd=clang+llvm-14.0.6-amd64-unknown-freebsd12.tar.xz
-$(package)_file_name_freebsd=clang-llvm-14.0.6-amd64-unknown-freebsd12.tar.xz
+$(package)_download_path_freebsd=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
+$(package)_download_file_freebsd=clang+llvm-$($(package)_version)-amd64-unknown-freebsd12.tar.xz
+$(package)_file_name_freebsd=clang-llvm-$($(package)_version)-amd64-unknown-freebsd12.tar.xz
 $(package)_sha256_hash_freebsd=b0a7b86dacb12afb8dd2ca99ea1b894d9cce84aab7711cb1964b3005dfb09af3
 $(package)_download_path_aarch64_linux=https://github.com/llvm/llvm-project/releases/download/llvmorg-$($(package)_version)
 $(package)_download_file_aarch64_linux=clang+llvm-$($(package)_version)-aarch64-linux-gnu.tar.xz

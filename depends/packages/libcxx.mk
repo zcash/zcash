@@ -1,5 +1,5 @@
 package=libcxx
-$(package)_version=$(native_clang_version)
+$(package)_version=$(if $(native_clang_version_$(host_arch)_$(host_os)),$(native_clang_version_$(host_arch)_$(host_os)),$(if $(native_clang_version_$(host_os)),$(native_clang_version_$(host_os)),$(native_clang_default_version)))
 $(package)_msys2_version=15.0.7-3
 
 ifneq ($(canonical_host),$(build))
