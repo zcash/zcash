@@ -94,7 +94,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
 
         # Create transactions
         blockheight = self.nodes[0].getblockchaininfo()['blocks']
-        zsendamount = Decimal('1.0') - DEFAULT_FEE
+        zsendamount = Decimal('1.0') - compute_conventional_fee(2)
         recipients = []
         recipients.append({"address": z_bob, "amount": zsendamount})
         myopid = self.nodes[0].z_sendmany(z_alice, recipients, 1)
@@ -220,7 +220,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print("Ensure balance of node 0 is correct")
         bal = self.nodes[0].z_gettotalbalance()
         print("Balance after expire_shielded has expired: ", bal)
-        assert_equal(Decimal(bal["private"]), Decimal('8.0') - compute_conventional_fee(2))
+        assert_equal(Decimal(bal["private"]), Decimal('8.0') - DEFAULT_FEE)
 
         print("Splitting network...")
         self.split_network()

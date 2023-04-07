@@ -84,7 +84,11 @@ void AsyncRPCOperation_sendmany::main() {
 
     std::optional<uint256> txid;
     try {
-        txid = main_impl(*pwalletMain);
+        txid = main_impl(*pwalletMain)
+            .map_error([&](const InputSelectionError& err) {
+                ThrowInputSelectionError(err, ztxoSelector_, strategy_);
+            })
+            .value();
     } catch (const UniValue& objError) {
         int code = find_value(objError, "code").get_int();
         std::string message = find_value(objError, "message").get_str();
@@ -137,7 +141,8 @@ void AsyncRPCOperation_sendmany::main() {
 // 4. #3615 There is no padding of inputs or outputs, which may leak information.
 //
 // At least #4 differs from the Rust transaction builder.
-uint256 AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
+tl::expected<uint256, InputSelectionError>
+AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
     auto spendable = builder_.FindAllSpendableInputs(wallet, ztxoSelector_, mindepth_);
 
     auto preparedTx = builder_.PrepareTransaction(
@@ -150,12 +155,8 @@ uint256 AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
             fee_,
             anchordepth_);
 
-    uint256 txid;
-    examine(preparedTx, match {
-        [&](const InputSelectionError& err) {
-            ThrowInputSelectionError(err, ztxoSelector_, strategy_);
-        },
-        [&](const TransactionEffects& effects) {
+    return preparedTx
+        .map([&](const TransactionEffects& effects) {
             try {
                 const auto& spendable = effects.GetSpendable();
                 const auto& payments = effects.GetPayments();
@@ -187,16 +188,13 @@ uint256 AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
                 UniValue sendResult = SendTransaction(tx, payments.GetResolvedPayments(), std::nullopt, testmode);
                 set_result(sendResult);
 
-                txid = tx.GetHash();
                 effects.UnlockSpendable(wallet);
+                return tx.GetHash();
             } catch (...) {
                 effects.UnlockSpendable(wallet);
                 throw;
             }
-        }
-    });
-
-    return txid;
+        });
 }
 
 /**

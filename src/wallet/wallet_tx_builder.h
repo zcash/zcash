@@ -315,24 +315,17 @@ private:
     SpendableInputs inputs;
     Payments payments;
     CAmount fee;
-    int orchardAnchorHeight;
+    std::optional<ChangeAddress> changeAddr;
 
 public:
-    InputSelection(SpendableInputs inputs, Payments payments, CAmount fee, int orchardAnchorHeight):
-        inputs(inputs), payments(payments), fee(fee), orchardAnchorHeight(orchardAnchorHeight) {}
+    InputSelection(SpendableInputs inputs, Payments payments, CAmount fee, std::optional<ChangeAddress> changeAddr):
+        inputs(inputs), payments(payments), fee(fee), changeAddr(changeAddr) {}
 
     const SpendableInputs& GetInputs() const;
     const Payments& GetPayments() const;
     CAmount GetFee() const;
+    const std::optional<ChangeAddress> GetChangeAddress() const;
 };
-
-typedef std::variant<
-    InputSelectionError,
-    InputSelection> InputSelectionResult;
-
-typedef std::variant<
-    InputSelectionError,
-    TransactionEffects> PrepareTransactionResult;
 
 class WalletTxBuilder {
 private:
@@ -345,20 +338,43 @@ private:
      */
     CAmount DefaultDustThreshold() const;
 
+    ChangeAddress
+    GetChangeAddress(
+            CWallet& wallet,
+            const ZTXOSelector& selector,
+            SpendableInputs& spendable,
+            const Payments& resolvedPayments,
+            const TransactionStrategy& strategy,
+            bool afterNU5) const;
+
+    tl::expected<
+        std::tuple<SpendableInputs, CAmount, std::optional<ChangeAddress>>,
+        InputSelectionError>
+    IterateLimit(
+            CWallet& wallet,
+            const ZTXOSelector& selector,
+            const TransactionStrategy strategy,
+            CAmount sendAmount,
+            CAmount dustThreshold,
+            const SpendableInputs& spendable,
+            Payments& resolved,
+            bool afterNU5) const;
+
     /**
      * Select inputs sufficient to fulfill the specified requested payments,
      * and choose unified address receivers based upon the available inputs
      * and the requested transaction strategy.
      */
-    InputSelectionResult ResolveInputsAndPayments(
-            const CWallet& wallet,
+    tl::expected<InputSelection, InputSelectionError>
+    ResolveInputsAndPayments(
+            CWallet& wallet,
             const ZTXOSelector& selector,
             SpendableInputs& spendable,
             const std::vector<Payment>& payments,
             const CChain& chain,
-            TransactionStrategy strategy,
+            const TransactionStrategy& strategy,
             std::optional<CAmount> fee,
-            int anchorHeight) const;
+            bool afterNU5) const;
     /**
      * Compute the internal and external OVKs to use in transaction construction, given
      * the spendable inputs.
@@ -377,7 +393,8 @@ public:
             const ZTXOSelector& selector,
             int32_t minDepth) const;
 
-    PrepareTransactionResult PrepareTransaction(
+    tl::expected<TransactionEffects, InputSelectionError>
+    PrepareTransaction(
             CWallet& wallet,
             const ZTXOSelector& selector,
             SpendableInputs& spendable,
