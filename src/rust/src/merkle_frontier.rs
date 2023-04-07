@@ -1,5 +1,4 @@
 use core::mem::size_of_val;
-use core::pin::Pin;
 
 use incrementalmerkletree::{bridgetree, Altitude, Frontier, Hashable};
 use orchard::tree::MerkleHashOrchard;
@@ -9,7 +8,7 @@ use zcash_primitives::merkle_tree::{
     CommitmentTree, HashSer,
 };
 
-use crate::{bridge::ffi, orchard_bundle, streams::CppStream, wallet::Wallet};
+use crate::{orchard_bundle, streams::CppStream, wallet::Wallet};
 
 pub const MERKLE_DEPTH: u8 = 32;
 
@@ -26,9 +25,7 @@ impl<H: Copy + Hashable + HashSer> MerkleFrontier<H> {
     }
 
     /// Attempts to parse a Merkle frontier from the given C++ stream.
-    pub(crate) fn parse(stream: Pin<&mut ffi::RustStream>) -> Result<Box<Self>, String> {
-        let reader = CppStream::from(stream);
-
+    pub(crate) fn parse(reader: &mut CppStream<'_>) -> Result<Box<Self>, String> {
         match read_frontier_v1(reader) {
             Ok(parsed) => Ok(Box::new(MerkleFrontier(parsed))),
             Err(e) => Err(format!("Failed to parse v5 Merkle frontier: {}", e)),
@@ -36,15 +33,13 @@ impl<H: Copy + Hashable + HashSer> MerkleFrontier<H> {
     }
 
     /// Serializes the frontier to the given C++ stream.
-    pub(crate) fn serialize(&self, stream: Pin<&mut ffi::RustStream>) -> Result<(), String> {
-        let writer = CppStream::from(stream);
+    pub(crate) fn serialize(&self, writer: &mut CppStream<'_>) -> Result<(), String> {
         write_frontier_v1(writer, &self.0)
             .map_err(|e| format!("Failed to serialize v5 Merkle frontier: {}", e))
     }
 
     /// Serializes the frontier to the given C++ stream in the legacy frontier encoding.
-    pub(crate) fn serialize_legacy(&self, stream: Pin<&mut ffi::RustStream>) -> Result<(), String> {
-        let writer = CppStream::from(stream);
+    pub(crate) fn serialize_legacy(&self, writer: &mut CppStream<'_>) -> Result<(), String> {
         let commitment_tree = CommitmentTree::from_frontier(&self.0);
         commitment_tree.write(writer).map_err(|e| {
             format!(
@@ -93,8 +88,8 @@ pub(crate) fn new_orchard() -> Box<Orchard> {
 }
 
 /// Attempts to parse an Orchard Merkle frontier from the given C++ stream.
-pub(crate) fn parse_orchard(stream: Pin<&mut ffi::RustStream>) -> Result<Box<Orchard>, String> {
-    Orchard::parse(stream)
+pub(crate) fn parse_orchard(reader: &mut CppStream<'_>) -> Result<Box<Orchard>, String> {
+    Orchard::parse(reader)
 }
 
 pub(crate) struct OrchardWallet;

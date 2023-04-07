@@ -509,6 +509,11 @@ public:
     int GetType() const          { return nType; }
     int GetVersion() const       { return nVersion; }
 
+    void read_u8(unsigned char* pch, size_t nSize)
+    {
+        read(reinterpret_cast<char*>(pch), nSize);
+    }
+
     void read(char* pch, size_t nSize)
     {
         if (!file)
@@ -528,6 +533,11 @@ public:
                 throw std::ios_base::failure(feof(file) ? "CAutoFile::ignore: end of file" : "CAutoFile::read: fread failed");
             nSize -= nNow;
         }
+    }
+
+    void write_u8(const unsigned char* pch, size_t nSize)
+    {
+        write(reinterpret_cast<const char*>(pch), nSize);
     }
 
     void write(const char* pch, size_t nSize)
@@ -629,6 +639,11 @@ public:
     // check whether we're at the end of the source file
     bool eof() const {
         return src == NULL || (nReadPos == nSrcPos && feof(src));
+    }
+
+    void read_u8(unsigned char* pch, size_t nSize)
+    {
+        read(reinterpret_cast<char*>(pch), nSize);
     }
 
     // read a number of bytes

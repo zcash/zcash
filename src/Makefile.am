@@ -284,6 +284,7 @@ BITCOIN_CORE_H = \
   serialize.h \
   spentindex.h \
   streams.h \
+  streams_rust.h \
   support/allocators/secure.h \
   support/allocators/zeroafterfree.h \
   support/cleanse.h \
@@ -527,6 +528,7 @@ libbitcoin_common_a_SOURCES = \
   script/script_error.cpp \
   script/sign.cpp \
   script/standard.cpp \
+  streams_rust.cpp \
   transaction_builder.cpp \
   util/test.cpp \
   warnings.cpp \
