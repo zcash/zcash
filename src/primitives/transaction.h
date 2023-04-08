@@ -971,6 +971,23 @@ public:
     // Return sum of (positive valueBalanceSapling or zero) and JoinSplit vpub_new
     CAmount GetShieldedValueIn() const;
 
+    // Return the fee paid by the transaction, given a source of prior chain data.
+    template <typename F>
+    std::optional<CAmount> GetFeePaid(F getPrevoutValue) const {
+        if (IsCoinBase()) {
+            return std::nullopt;
+        } else {
+            CAmount totalIn = GetShieldedValueIn();
+            for (const auto& in : vin) {
+                std::optional<CAmount> prevoutValue = getPrevoutValue(in.prevout);
+                if (!prevoutValue.has_value()) return std::nullopt;
+                totalIn += prevoutValue.value();
+            }
+
+            return totalIn - GetValueOut();
+        }
+    }
+
     // Compute priority, given priority of inputs and (optionally) tx size
     double ComputePriority(double dPriorityInputs, unsigned int nTxSize=0) const;
 

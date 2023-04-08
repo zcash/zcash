@@ -102,14 +102,14 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # send node 2 taddr to zaddr
         recipients = []
         recipients.append({"address":myzaddr, "amount":7})
-        opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders')
+        zsendmanyfee = DEFAULT_FEE * 3
+        opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, zsendmanyfee, 'AllowRevealedSenders')
         mytxid = wait_and_assert_operationid_status(self.nodes[2], opid)
 
         self.sync_all()
 
         # check balances
         zsendmanynotevalue = Decimal('7.0')
-        zsendmanyfee = DEFAULT_FEE
         node2utxobalance = Decimal('260.00000000') - zsendmanynotevalue - zsendmanyfee
 
         # check shielded balance status with getwalletinfo
@@ -143,6 +143,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         assert_greater_than(len(mytxdetails["vShieldedOutput"]), 0)
         # the Sapling output should take in all the public value
         assert_equal(mytxdetails["valueBalance"], -zsendmanynotevalue)
+        assert_equal(Decimal(mytxdetails["feePaid"]), zsendmanyfee)
 
         # send from private note to node 0 and node 2
         node0balance = self.nodes[0].getbalance()
@@ -163,7 +164,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         opid = self.nodes[2].z_sendmany(myzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedRecipients')
         wait_and_assert_operationid_status(self.nodes[2], opid)
-        zbalance -= Decimal('2.0') + zsendmanyfee
+        zbalance -= Decimal('2.0') + DEFAULT_FEE
 
         self.sync_all()
         self.nodes[2].generate(1)

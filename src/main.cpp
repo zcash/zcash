@@ -2172,64 +2172,60 @@ bool GetAddressUnspent(const uint160& addressHash, int type,
  * Return transaction in txOut, and if it was found inside a block, its hash is placed in hashBlock.
  * If blockIndex is provided, the transaction is fetched from the corresponding block.
  */
-bool GetTransaction(const uint256& hash, CTransaction& txOut, const Consensus::Params& consensusParams, uint256& hashBlock, bool fAllowSlow, CBlockIndex* blockIndex)
+bool GetTransaction(const uint256& hash, CTransaction& txOut, const Consensus::Params& consensusParams, uint256& hashBlock, bool fAllowSlow, const CBlockIndex* blockIndex)
 {
-    CBlockIndex* pindexSlow = blockIndex;
-
     LOCK(cs_main);
 
-    if (!blockIndex) {
-        std::shared_ptr<const CTransaction> ptx = mempool.get(hash);
-        if (ptx)
-        {
-            txOut = *ptx;
+    std::shared_ptr<const CTransaction> ptx = mempool.get(hash);
+    if (ptx) {
+        txOut = *ptx;
+        return true;
+    }
+
+    if (fTxIndex) {
+        CDiskTxPos postx;
+        if (pblocktree->ReadTxIndex(hash, postx)) {
+            CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
+            if (file.IsNull())
+                return error("%s: OpenBlockFile failed", __func__);
+            CBlockHeader header;
+            try {
+                file >> header;
+                fseek(file.Get(), postx.nTxOffset, SEEK_CUR);
+                file >> txOut;
+            } catch (const std::exception& e) {
+                return error("%s: Deserialize or I/O error - %s", __func__, e.what());
+            }
+            hashBlock = header.GetHash();
+            if (txOut.GetHash() != hash)
+                return error("%s: txid mismatch", __func__);
             return true;
-        }
-
-        if (fTxIndex) {
-            CDiskTxPos postx;
-            if (pblocktree->ReadTxIndex(hash, postx)) {
-                CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
-                if (file.IsNull())
-                    return error("%s: OpenBlockFile failed", __func__);
-                CBlockHeader header;
-                try {
-                    file >> header;
-                    fseek(file.Get(), postx.nTxOffset, SEEK_CUR);
-                    file >> txOut;
-                } catch (const std::exception& e) {
-                    return error("%s: Deserialize or I/O error - %s", __func__, e.what());
-                }
-                hashBlock = header.GetHash();
-                if (txOut.GetHash() != hash)
-                    return error("%s: txid mismatch", __func__);
-                return true;
-            }
-
-            // transaction not found in index, nothing more can be done
-            return false;
-        }
-
-        if (fAllowSlow) { // use coin database to locate block that contains transaction, and scan it
-            int nHeight = -1;
-            {
-                CCoinsViewCache &view = *pcoinsTip;
-                const CCoins* coins = view.AccessCoins(hash);
-                if (coins)
-                    nHeight = coins->nHeight;
-            }
-            if (nHeight > 0)
-                pindexSlow = chainActive[nHeight];
         }
     }
 
-    if (pindexSlow) {
+    // If a block index pointer is not provided and slow reads are allowed, use
+    // the coins database to locate the block index for the block that includes
+    // the transaction.
+    if (fAllowSlow && !blockIndex) {
+        // use coin database to locate block that contains transaction, and scan it
+        int nHeight = -1;
+        {
+            CCoinsViewCache &view = *pcoinsTip;
+            const CCoins* coins = view.AccessCoins(hash);
+            if (coins)
+                nHeight = coins->nHeight;
+        }
+        if (nHeight > 0)
+            blockIndex = chainActive[nHeight];
+    }
+
+    if (blockIndex) {
         CBlock block;
-        if (ReadBlockFromDisk(block, pindexSlow, consensusParams)) {
+        if (ReadBlockFromDisk(block, blockIndex, consensusParams)) {
             for (const CTransaction &tx : block.vtx) {
                 if (tx.GetHash() == hash) {
                     txOut = tx;
-                    hashBlock = pindexSlow->GetBlockHash();
+                    hashBlock = blockIndex->GetBlockHash();
                     return true;
                 }
             }
@@ -2237,6 +2233,34 @@ bool GetTransaction(const uint256& hash, CTransaction& txOut, const Consensus::P
     }
 
     return false;
+}
+
+std::optional<CTxOut> GetTxOut(
+        const Consensus::Params& params,
+        const TxReadStrategy& readStrategy,
+        const COutPoint& outPoint) {
+    return std::visit(match {
+        [&](const ReadFromIndex& ridx) -> std::optional<CTxOut> {
+            CTransaction txOut;
+            uint256 hashBlockOut;
+            if (GetTransaction(outPoint.hash, txOut, params, hashBlockOut, false, ridx.GetBlockIndex()) &&
+                    txOut.vout.size() > outPoint.n) {
+                return txOut.vout[outPoint.n];
+            }
+
+            return std::nullopt;
+        },
+        [&](const ReadFromCoinsDb&) -> std::optional<CTxOut> {
+            CTransaction txOut;
+            uint256 hashBlockOut;
+            if (GetTransaction(outPoint.hash, txOut, params, hashBlockOut, true, nullptr) &&
+                    txOut.vout.size() > outPoint.n) {
+                return txOut.vout[outPoint.n];
+            }
+
+            return std::nullopt;
+        }
+    }, readStrategy);
 }
 
 //////////////////////////////////////////////////////////////////////////////
