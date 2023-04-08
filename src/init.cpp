@@ -1295,6 +1295,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 #endif
 
+    if (GetArg("-blockprioritysize", 0) != 0) {
+        InitWarning(_("The argument -blockprioritysize is no longer supported."));
+    }
+
     if (!mapMultiArgs["-nuparams"].empty()) {
         // Allow overriding network upgrade parameters for testing
         if (chainparams.NetworkIDString() != "regtest") {
