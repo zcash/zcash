@@ -1941,7 +1941,13 @@ bool AcceptToMemoryPool(
         // No transactions are allowed with modified fee below the minimum relay fee,
         // except from disconnected blocks. The minimum relay fee will never be more
         // than DEFAULT_FEE zatoshis.
-        if (fLimitFree && nModifiedFees < ::minRelayTxFee.GetFeeForRelay(nSize)) {
+        CAmount minRelayFee = ::minRelayTxFee.GetFeeForRelay(nSize);
+        if (fLimitFree && nModifiedFees < minRelayFee) {
+            LogPrint("mempool",
+                    "Not accepting transaction with txid %s, size %d bytes, effective fee %d " + MINOR_CURRENCY_UNIT +
+                    ", and fee delta %d " + MINOR_CURRENCY_UNIT + " to the mempool due to insufficient fee. " +
+                    " The minimum acceptance/relay fee for this transaction is %d " + MINOR_CURRENCY_UNIT,
+                    tx.GetHash().ToString(), nSize, nModifiedFees, nModifiedFees - nFees, minRelayFee);
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "min relay fee not met");
         }
 
