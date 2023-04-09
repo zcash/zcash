@@ -4,7 +4,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-# Test for -rpcbind, as well as -rpcallowip and -rpcconnect
+# Test for -rpcbind and -rpcallowip
 
 # Dependency: python-bitcoinrpc
 
