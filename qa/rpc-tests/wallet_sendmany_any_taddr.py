@@ -77,7 +77,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
             self.nodes[3].z_sendmany(
                 'ANY_TADDR',
                 [{'address': recipient, 'amount': 100}],
-                1, DEFAULT_FEE, 'AllowRevealedSenders'),
+                1, DEFAULT_FEE, 'AllowFullyTransparent'),
         )
 
         self.sync_all()
@@ -97,7 +97,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
             self.nodes[3].z_sendmany(
                 'ANY_TADDR',
                 [{'address': recipient, 'amount': 20}],
-                1, DEFAULT_FEE, 'AllowRevealedSenders'),
+                1, DEFAULT_FEE, 'AllowFullyTransparent'),
         )
 
         self.sync_all()

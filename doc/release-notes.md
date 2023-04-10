@@ -24,6 +24,11 @@ RPC Changes
 - Several `z_sendmany` failures have moved from synchronous to asynchronous, so
   while you should already be checking the async operation status, there are now
   more cases that may trigger failure at that stage.
+- The `AllowRevealedRecipients` privacy policy is now required in order to choose a
+  transparent change address for a transaction. This will only occur when the wallet 
+  is unable to construct the transaction without selecting funds from the transparent 
+  pool, so the impact of this change is that for such transactions, the user must specify
+  `AllowFullyTransparent`.
 
 [Deprecations](https://zcash.github.io/zcash/user/deprecation.html)
 --------------

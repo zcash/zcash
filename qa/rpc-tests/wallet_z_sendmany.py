@@ -102,7 +102,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # send node 2 taddr to zaddr
         recipients = []
         recipients.append({"address":myzaddr, "amount":7})
-        opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders')
+        opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, DEFAULT_FEE, 'AllowFullyTransparent')
         mytxid = wait_and_assert_operationid_status(self.nodes[2], opid)
 
         self.sync_all()

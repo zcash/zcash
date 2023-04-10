@@ -29,11 +29,11 @@ class RegtestSignrawtransactionTest (BitcoinTestFramework):
         self.sync_all()
 
         # Create and sign Sapling transaction.
-        # If the incorrect consensus branch id is selected, there will be a signing error. 
+        # If the incorrect consensus branch id is selected, there will be a signing error.
         opid = self.nodes[1].z_sendmany(
             taddr,
             [{'address': zaddr1, 'amount': 1}],
-            1, DEFAULT_FEE, 'AllowRevealedSenders')
+            1, DEFAULT_FEE, 'AllowFullyTransparent')
         wait_and_assert_operationid_status(self.nodes[1], opid)
 
 if __name__ == '__main__':
