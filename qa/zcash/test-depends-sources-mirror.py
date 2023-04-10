@@ -13,10 +13,15 @@ import os
 import requests
 
 MIRROR_URL_DIR="https://download.z.cash/depends-sources/"
-DEPENDS_SOURCES_DIR=os.path.realpath(os.path.join(
+
+try:
+    DEPENDS_SOURCES_DIR = os.environ['SOURCES_PATH']
+except KeyError:
+    DEPENDS_SOURCES_DIR=os.path.realpath(os.path.join(
     os.path.dirname(__file__),
     "..", "..", "depends", "sources"
-))
+    ))
+
 
 def get_depends_sources_list():
     return filter(
