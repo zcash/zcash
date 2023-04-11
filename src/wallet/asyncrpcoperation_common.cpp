@@ -77,7 +77,9 @@ void ThrowInputSelectionError(
                                   strategy.AllowRevealedAmounts()
                                   ? strprintf("despite a lax privacy policy, because %s",
                                               selector.SelectsSprout()
-                                              ? "you are sending from the Sprout pool"
+                                              ? "you are sending from the Sprout pool and there is "
+                                                "no transaction version that supports both Sprout "
+                                                "and Orchard"
                                               : "NU5 has not been activated yet")
                                   : "without spending non-Orchard funds, which would reveal "
                                     "transaction amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "

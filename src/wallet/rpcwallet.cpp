@@ -5030,13 +5030,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     // Fee in Zatoshis, not currency format)
     std::optional<CAmount> nFee;
-    if (params.size() > 3 && params[3].get_real() >= 0.0) {
-        CAmount fixedFee;
-        if (params[3].get_real() == 0.0) {
-            fixedFee = 0;
-        } else {
-            fixedFee = AmountFromValue( params[3] );
-        }
+    if (params.size() > 3 && params[3].get_real() != -1.0) {
+        CAmount fixedFee = AmountFromValue( params[3] );
 
         // Check that the user specified fee is not absurd.
         // This allows amount=0 (and all amount < DEFAULT_FEE) transactions to use the default network fee

@@ -212,8 +212,7 @@ CalcZIP317Fee(
         const std::optional<ChangeAddress>& changeAddr)
 {
     std::vector<CTxOut> vouts{};
-    size_t sproutOutputCount = 0;
-    size_t saplingOutputCount{}, orchardOutputCount{};
+    size_t sproutOutputCount{}, saplingOutputCount{}, orchardOutputCount{};
     for (const auto& payment : payments) {
         std::visit(match {
             [&](const CKeyID& addr) {
@@ -546,7 +545,7 @@ WalletTxBuilder::ResolveInputsAndPayments(
         // probably perform note selection at the same time as we're performing resolved payment
         // construction above.
         bool foundSufficientFunds = spendableMut.LimitToAmount(
-                sendAmount + finalFee,
+                targetAmount,
                 dustThreshold,
                 resolved.GetRecipientPools());
         CAmount changeAmount{spendableMut.Total() - targetAmount};
@@ -574,7 +573,7 @@ WalletTxBuilder::ResolveInputsAndPayments(
         auto limitResult = IterateLimit(wallet, selector, strategy, sendAmount, dustThreshold, spendableMut, resolved, afterNU5);
         if (limitResult.has_value()) {
             std::tie(spendableMut, finalFee, changeAddr) = limitResult.value();
-            targetAmount = sendAmount - finalFee;
+            targetAmount = sendAmount + finalFee;
         } else {
             return tl::make_unexpected(limitResult.error());
         }

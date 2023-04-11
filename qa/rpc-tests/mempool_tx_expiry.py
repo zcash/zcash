@@ -12,7 +12,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, \
     connect_nodes_bi, sync_blocks, start_nodes, \
     wait_and_assert_operationid_status, DEFAULT_FEE
-from test_framework.zip317 import compute_conventional_fee
+from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
 
@@ -94,7 +94,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
 
         # Create transactions
         blockheight = self.nodes[0].getblockchaininfo()['blocks']
-        zsendamount = Decimal('1.0') - compute_conventional_fee(2)
+        zsendamount = Decimal('1.0') - conventional_fee(2)
         recipients = []
         recipients.append({"address": z_bob, "amount": zsendamount})
         myopid = self.nodes[0].z_sendmany(z_alice, recipients, 1)
