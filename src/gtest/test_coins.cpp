@@ -302,7 +302,7 @@ public:
         uint256 dataToBeSigned;
         auto builder = orchard::Builder(true, true, orchardAnchor);
         mutableTx.orchardBundle = builder.Build().value().ProveAndSign({}, dataToBeSigned).value();
-        orchardNullifier = mutableTx.orchardBundle.GetNullifiers()[0];
+        orchardNullifier = mutableTx.orchardBundle.GetNullifiers().at(0);
 
         tx = CTransaction(mutableTx);
     }
@@ -346,19 +346,19 @@ template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt,
 
 void checkNullifierCache(const CCoinsViewCacheTest &cache, const TxWithNullifiers &txWithNullifiers, bool shouldBeInCache) {
     // Make sure the nullifiers have not gotten mixed up
-    EXPECT_TRUE(!cache.GetNullifier(txWithNullifiers.sproutNullifier, SAPLING));
-    EXPECT_TRUE(!cache.GetNullifier(txWithNullifiers.sproutNullifier, ORCHARD));
-    EXPECT_TRUE(!cache.GetNullifier(txWithNullifiers.saplingNullifier, SPROUT));
-    EXPECT_TRUE(!cache.GetNullifier(txWithNullifiers.saplingNullifier, ORCHARD));
-    EXPECT_TRUE(!cache.GetNullifier(txWithNullifiers.orchardNullifier, SPROUT));
-    EXPECT_TRUE(!cache.GetNullifier(txWithNullifiers.orchardNullifier, SAPLING));
+    EXPECT_FALSE(cache.GetNullifier(txWithNullifiers.sproutNullifier, SAPLING));
+    EXPECT_FALSE(cache.GetNullifier(txWithNullifiers.sproutNullifier, ORCHARD));
+    EXPECT_FALSE(cache.GetNullifier(txWithNullifiers.saplingNullifier, SPROUT));
+    EXPECT_FALSE(cache.GetNullifier(txWithNullifiers.saplingNullifier, ORCHARD));
+    EXPECT_FALSE(cache.GetNullifier(txWithNullifiers.orchardNullifier, SPROUT));
+    EXPECT_FALSE(cache.GetNullifier(txWithNullifiers.orchardNullifier, SAPLING));
     // Check if the nullifiers either are or are not in the cache
     bool containsSproutNullifier = cache.GetNullifier(txWithNullifiers.sproutNullifier, SPROUT);
     bool containsSaplingNullifier = cache.GetNullifier(txWithNullifiers.saplingNullifier, SAPLING);
     bool containsOrchardNullifier = cache.GetNullifier(txWithNullifiers.orchardNullifier, ORCHARD);
-    EXPECT_TRUE(containsSproutNullifier == shouldBeInCache);
-    EXPECT_TRUE(containsSaplingNullifier == shouldBeInCache);
-    EXPECT_TRUE(containsOrchardNullifier == shouldBeInCache);
+    EXPECT_EQ(containsSproutNullifier, shouldBeInCache);
+    EXPECT_EQ(containsSaplingNullifier, shouldBeInCache);
+    EXPECT_EQ(containsOrchardNullifier, shouldBeInCache);
 }
 
 
@@ -656,25 +656,41 @@ TEST(CoinsTests, AnchorRegression)
 
 TEST(CoinsTests, NullifiersTest)
 {
+    LoadProofParameters();
+
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
     TxWithNullifiers txWithNullifiers;
-    checkNullifierCache(cache, txWithNullifiers, false);
+    {
+        SCOPED_TRACE("cache with unspent nullifiers");
+        checkNullifierCache(cache, txWithNullifiers, false);
+    }
     cache.SetNullifiers(txWithNullifiers.tx, true);
-    checkNullifierCache(cache, txWithNullifiers, true);
+    {
+        SCOPED_TRACE("cache with spent nullifiers");
+        checkNullifierCache(cache, txWithNullifiers, true);
+    }
     cache.Flush();
 
     CCoinsViewCacheTest cache2(&base);
 
-    checkNullifierCache(cache2, txWithNullifiers, true);
+    {
+        SCOPED_TRACE("cache2 with spent nullifiers");
+        checkNullifierCache(cache2, txWithNullifiers, true);
+    }
     cache2.SetNullifiers(txWithNullifiers.tx, false);
-    checkNullifierCache(cache2, txWithNullifiers, false);
+    {
+        SCOPED_TRACE("cache2 with unspent nullifiers");
+        checkNullifierCache(cache2, txWithNullifiers, false);
+    }
     cache2.Flush();
 
     CCoinsViewCacheTest cache3(&base);
-
-    checkNullifierCache(cache3, txWithNullifiers, false);
+    {
+        SCOPED_TRACE("cache3 with unspent nullifiers");
+        checkNullifierCache(cache3, txWithNullifiers, false);
+    }
 }
 
 

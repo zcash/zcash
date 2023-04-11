@@ -1286,7 +1286,7 @@ bool ContextualCheckShieldedInputs(
         CValidationState &state,
         const CCoinsViewCache &view,
         std::optional<rust::Box<sapling::BatchValidator>>& saplingAuth,
-        std::optional<orchard::AuthValidator>& orchardAuth,
+        std::optional<rust::Box<orchard::BatchValidator>>& orchardAuth,
         const Consensus::Params& consensus,
         uint32_t consensusBranchId,
         bool nu5Active,
@@ -1411,7 +1411,7 @@ bool ContextualCheckShieldedInputs(
 
     // Queue Orchard bundle to be batch-validated.
     if (orchardAuth.has_value()) {
-        tx.GetOrchardBundle().QueueAuthValidation(orchardAuth.value(), dataToBeSigned);
+        tx.GetOrchardBundle().QueueAuthValidation(*orchardAuth.value(), dataToBeSigned);
     }
 
     return true;
@@ -2049,7 +2049,7 @@ bool AcceptToMemoryPool(
 
         // This will be a single-transaction batch, which is still more efficient as every
         // Orchard bundle contains at least two signatures.
-        std::optional<orchard::AuthValidator> orchardAuth = orchard::AuthValidator::Batch(true);
+        std::optional<rust::Box<orchard::BatchValidator>> orchardAuth = orchard::init_batch_validator(true);
 
         // Check shielded input signatures.
         if (!ContextualCheckShieldedInputs(
@@ -2072,7 +2072,7 @@ bool AcceptToMemoryPool(
         if (!saplingAuth.value()->validate()) {
             return state.DoS(100, false, REJECT_INVALID, "bad-sapling-bundle-authorization");
         }
-        if (!orchardAuth.value().Validate()) {
+        if (!orchardAuth.value()->validate()) {
             return state.DoS(100, false, REJECT_INVALID, "bad-orchard-bundle-authorization");
         }
 
@@ -3155,8 +3155,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // Disable Sapling and Orchard batch validation if possible.
     std::optional<rust::Box<sapling::BatchValidator>> saplingAuth = fExpensiveChecks ?
         std::optional(sapling::init_batch_validator(fCacheResults)) : std::nullopt;
-    std::optional<orchard::AuthValidator> orchardAuth = fExpensiveChecks ?
-        orchard::AuthValidator::Batch(fCacheResults) : orchard::AuthValidator::Disabled();
+    std::optional<rust::Box<orchard::BatchValidator>> orchardAuth = fExpensiveChecks ?
+        std::optional(orchard::init_batch_validator(fCacheResults)) : std::nullopt;
 
     // If in initial block download, and this block is an ancestor of a checkpoint,
     // and -ibdskiptxverification is set, disable all transaction checks.
@@ -3665,7 +3665,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     // Ensure Orchard signatures are valid (if we are checking them)
-    if (orchardAuth.has_value() && !orchardAuth.value().Validate()) {
+    if (orchardAuth.has_value() && !orchardAuth.value()->validate()) {
         return state.DoS(100,
             error("ConnectBlock(): an Orchard bundle within the block is invalid"),
             REJECT_INVALID, "bad-orchard-bundle-authorization");
