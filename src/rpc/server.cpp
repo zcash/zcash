@@ -10,6 +10,7 @@
 #include "init.h"
 #include "key_io.h"
 #include "random.h"
+#include "rpc/common.h"
 #include "sync.h"
 #include "ui_interface.h"
 #include "util/system.h"
@@ -224,7 +225,7 @@ std::string CRPCTable::help(const std::string& strCommand) const
 
 UniValue help(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "help ( \"command\" )\n"
             "\nList all commands, or get help for a specified command.\n"
@@ -244,7 +245,7 @@ UniValue help(const UniValue& params, bool fHelp)
 
 UniValue setlogfilter(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() > 1) {
+    if (fHelp) {
         throw runtime_error(
             "setlogfilter \"directives\"\n"
             "\nSets the filter to be used for selecting events to log.\n"
@@ -286,7 +287,7 @@ UniValue setlogfilter(const UniValue& params, bool fHelp)
 UniValue stop(const UniValue& params, bool fHelp)
 {
     // Accept the deprecated and ignored 'detach' boolean argument
-    if (fHelp || params.size() > 1)
+    if (fHelp)
         throw runtime_error(
             "stop\n"
             "\nStop Zcash server.");
@@ -490,7 +491,21 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
     try
     {
         // Execute
-        return pcmd->actor(params, false);
+        auto paramRange = rpcCvtTable.find(strMethod);
+        if (paramRange != rpcCvtTable.end()) {
+            auto numRequired = paramRange->second.first.size();
+            auto numOptional = paramRange->second.second.size();
+            return pcmd->actor(
+                    params,
+                    params.size() < numRequired || numRequired + numOptional < params.size());
+        } else {
+            throw JSONRPCError(
+                    RPC_METHOD_NOT_FOUND,
+                    "Parameters for "
+                    + strMethod
+                    + " not found – this is an internal error, please report it.");
+        }
+
     }
     catch (const std::exception& e)
     {

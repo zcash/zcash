@@ -46,7 +46,7 @@ using namespace std;
  **/
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "getinfo\n"
             "Returns an object containing various state info.\n"
@@ -163,7 +163,7 @@ public:
 
 UniValue validateaddress(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "validateaddress \"zcashaddress\"\n"
             "\nReturn information about the given Zcash address.\n"
@@ -287,7 +287,7 @@ public:
 
 UniValue z_validateaddress(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "z_validateaddress \"address\"\n"
             "\nReturn information about the given address.\n"
@@ -403,7 +403,7 @@ CScript _createmultisig_redeemScript(const UniValue& params)
 
 UniValue createmultisig(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() < 2 || params.size() > 2)
+    if (fHelp)
     {
         string msg = "createmultisig nrequired [\"key\",...]\n"
             "\nCreates a multi-signature address with n signature of m keys required.\n"
@@ -446,7 +446,7 @@ UniValue createmultisig(const UniValue& params, bool fHelp)
 
 UniValue verifymessage(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 3)
+    if (fHelp)
         throw runtime_error(
             "verifymessage \"zcashaddress\" \"signature\" \"message\"\n"
             "\nVerify a signed message\n"
@@ -503,7 +503,7 @@ UniValue verifymessage(const UniValue& params, bool fHelp)
 
 UniValue setmocktime(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "setmocktime timestamp\n"
             "\nSet the local time to given timestamp (-regtest only).\n"
@@ -539,7 +539,7 @@ UniValue setmocktime(const UniValue& params, bool fHelp)
 
 UniValue getexperimentalfeatures(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "getexperimentalfeatures\n"
             "\nReturns enabled experimental features.\n"
@@ -640,7 +640,7 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         disabledMsg = experimentalDisabledHelpMsg("getaddressmempool", {"insightexplorer", "lightwalletd"});
     }
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "getaddressmempool {\"addresses\": [\"taddr\", ...]}\n"
             "\nReturns all mempool deltas for an address.\n"
@@ -719,7 +719,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         disabledMsg = experimentalDisabledHelpMsg("getaddressutxos", {"insightexplorer", "lightwalletd"});
     }
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "getaddressutxos {\"addresses\": [\"taddr\", ...], (\"chainInfo\": true|false)}\n"
             "\nReturns all unspent outputs for an address.\n"
@@ -876,7 +876,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         disabledMsg = experimentalDisabledHelpMsg("getaddressdeltas", {"insightexplorer", "lightwalletd"});
     }
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "getaddressdeltas {\"addresses\": [\"taddr\", ...], (\"start\": n), (\"end\": n), (\"chainInfo\": true|false)}\n"
             "\nReturns all changes for an address.\n"
@@ -1005,7 +1005,7 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         disabledMsg = experimentalDisabledHelpMsg("getaddressbalance", {"insightexplorer", "lightwalletd"});
     }
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "getaddressbalance {\"addresses\": [\"taddr\", ...]}\n"
             "\nReturns the balance for addresses.\n"
@@ -1062,7 +1062,7 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
     if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         disabledMsg = experimentalDisabledHelpMsg("getaddresstxids", {"insightexplorer", "lightwalletd"});
     }
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "getaddresstxids {\"addresses\": [\"taddr\", ...], (\"start\": n), (\"end\": n)}\n"
             "\nReturns the txids for given transparent addresses within the given (inclusive)\n"
@@ -1131,7 +1131,7 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
     if (!fExperimentalInsightExplorer) {
         disabledMsg = experimentalDisabledHelpMsg("getspentinfo", {"insightexplorer"});
     }
-    if (fHelp || params.size() != 1 || !params[0].isObject())
+    if (fHelp)
         throw runtime_error(
             "getspentinfo {\"txid\": \"txidhex\", \"index\": n}\n"
             "\nReturns the txid and index where an output is spent.\n"
@@ -1202,7 +1202,7 @@ UniValue getmemoryinfo(const UniValue& params, bool fHelp)
     /* Please, avoid using the word "pool" here in the RPC interface or help,
      * as users will undoubtedly confuse it with the other "memory pool"
      */
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "getmemoryinfo\n"
             "Returns an object containing information about memory usage.\n"

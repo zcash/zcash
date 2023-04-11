@@ -94,11 +94,15 @@ UniValue CallRPC(std::string args)
             vArgs[i] = "";
         }
     }
-    UniValue params = RPCConvertValues(strMethod, vArgs);
+    auto params = RPCConvertValues(strMethod, vArgs);
+
+    params.map_error([&](auto failure) {
+        throw std::runtime_error(FormatConversionFailure(strMethod, failure));
+    });
 
     rpcfn_type method = tableRPC[strMethod]->actor;
     try {
-        UniValue result = (*method)(params, false);
+        UniValue result = (*method)(params.value(), false);
         return result;
     }
     catch (const UniValue& objError) {
@@ -117,4 +121,3 @@ void CheckRPCThrows(std::string rpcString, std::string expectedErrorMessage) {
         BOOST_FAIL(std::string("Unexpected exception: ") + typeid(e).name() + ", message=\"" + e.what() + "\"");
     }
 }
-

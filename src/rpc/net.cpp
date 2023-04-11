@@ -23,7 +23,7 @@ using namespace std;
 
 UniValue getconnectioncount(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "getconnectioncount\n"
             "\nReturns the number of connections to other nodes.\n"
@@ -41,7 +41,7 @@ UniValue getconnectioncount(const UniValue& params, bool fHelp)
 
 UniValue ping(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "ping\n"
             "\nRequests that a ping be sent to all other nodes, to measure ping time.\n"
@@ -76,7 +76,7 @@ static void CopyNodeStats(std::vector<CNodeStats>& vstats)
 
 UniValue getpeerinfo(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "getpeerinfo\n"
             "\nReturns data about each connected network node as a json array of objects.\n"
@@ -173,7 +173,7 @@ UniValue addnode(const UniValue& params, bool fHelp)
     string strCommand;
     if (params.size() == 2)
         strCommand = params[1].get_str();
-    if (fHelp || params.size() != 2 ||
+    if (fHelp ||
         (strCommand != "onetry" && strCommand != "add" && strCommand != "remove"))
         throw runtime_error(
             "addnode \"node\" \"add|remove|onetry\"\n"
@@ -220,7 +220,7 @@ UniValue addnode(const UniValue& params, bool fHelp)
 
 UniValue disconnectnode(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp)
         throw runtime_error(
             "disconnectnode \"node\" \n"
             "\nImmediately disconnects from the specified node.\n"
@@ -242,7 +242,7 @@ UniValue disconnectnode(const UniValue& params, bool fHelp)
 
 UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp)
         throw runtime_error(
             "getaddednodeinfo dns ( \"node\" )\n"
             "\nReturns information about the given added node, or all added nodes\n"
@@ -358,7 +358,7 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
 
 UniValue getnettotals(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() > 0)
+    if (fHelp)
         throw runtime_error(
             "getnettotals\n"
             "\nReturns information about network traffic, including bytes in, bytes out,\n"
@@ -429,7 +429,7 @@ static UniValue GetNetworksInfo()
 UniValue getdeprecationinfo(const UniValue& params, bool fHelp)
 {
     const CChainParams& chainparams = Params();
-    if (fHelp || params.size() != 0)
+    if (fHelp || chainparams.NetworkIDString() != "main")
         throw runtime_error(
             "getdeprecationinfo\n"
             "Returns an object containing current version and deprecation block height. Applicable only on mainnet.\n"
@@ -495,7 +495,7 @@ UniValue getdeprecationinfo(const UniValue& params, bool fHelp)
 
 UniValue getnetworkinfo(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
             "getnetworkinfo\n"
             "Returns an object containing various state info regarding P2P networking.\n"
@@ -567,8 +567,7 @@ UniValue setban(const UniValue& params, bool fHelp)
     string strCommand;
     if (params.size() >= 2)
         strCommand = params[1].get_str();
-    if (fHelp || params.size() < 2 ||
-        (strCommand != "add" && strCommand != "remove"))
+    if (fHelp || (strCommand != "add" && strCommand != "remove"))
         throw runtime_error(
                             "setban \"ip(/netmask)\" \"add|remove\" (bantime) (absolute)\n"
                             "\nAttempts to add or remove an IP/Subnet from the banned list.\n"
@@ -623,7 +622,7 @@ UniValue setban(const UniValue& params, bool fHelp)
 
 UniValue listbanned(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
                             "listbanned\n"
                             "\nList all banned IPs/Subnets.\n"
@@ -653,7 +652,7 @@ UniValue listbanned(const UniValue& params, bool fHelp)
 
 UniValue clearbanned(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp)
         throw runtime_error(
                             "clearbanned\n"
                             "\nClear all banned IPs.\n"
