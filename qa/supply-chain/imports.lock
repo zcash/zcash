@@ -64,11 +64,22 @@ criteria = "safe-to-deploy"
 version = "0.3.27"
 notes = "Unsafe used to implement a concurrency primitive AtomicWaker. Well-commented and not obviously incorrect. Like my other audits of these concurrency primitives inside the futures family, I couldn't certify that it is correct without formal methods, but that is out of scope for this vetting."
 
+[[audits.bytecode-alliance.audits.httpdate]]
+who = "Pat Hickey <phickey@fastly.com>"
+criteria = "safe-to-deploy"
+version = "1.0.2"
+notes = "No unsafety, no io"
+
 [[audits.bytecode-alliance.audits.memoffset]]
 who = "Alex Crichton <alex@alexcrichton.com>"
 criteria = "safe-to-deploy"
 delta = "0.7.1 -> 0.8.0"
 notes = "This was a small update to the crate which has to do with Rust language features and compiler versions, no substantial changes."
+
+[[audits.bytecode-alliance.audits.pin-utils]]
+who = "Pat Hickey <phickey@fastly.com>"
+criteria = "safe-to-deploy"
+version = "0.1.0"
 
 [[audits.bytecode-alliance.audits.rustc-demangle]]
 who = "Alex Crichton <alex@alexcrichton.com>"
@@ -96,6 +107,12 @@ intended to multiplex across the internal representation of a tinyvec,
 presumably. This trivially doesn't contain anything bad.
 """
 
+[[audits.bytecode-alliance.audits.try-lock]]
+who = "Pat Hickey <phickey@fastly.com>"
+criteria = "safe-to-deploy"
+version = "0.2.4"
+notes = "Implements a concurrency primitive with atomics, and is not obviously incorrect"
+
 [[audits.bytecode-alliance.audits.unicode-normalization]]
 who = "Alex Crichton <alex@alexcrichton.com>"
 criteria = "safe-to-deploy"
@@ -107,6 +124,11 @@ unicode tables that it contains. This crate is additionally widely used
 throughout the ecosystem and skimming the crate shows no usage of `std::*` APIs
 and nothing suspicious.
 """
+
+[[audits.bytecode-alliance.audits.want]]
+who = "Pat Hickey <phickey@fastly.com>"
+criteria = "safe-to-deploy"
+version = "0.3.0"
 
 [[audits.bytecode-alliance.audits.windows-sys]]
 who = "Dan Gohman <dev@sunfishcode.online>"
@@ -167,6 +189,11 @@ who = "Dan Gohman <dev@sunfishcode.online>"
 criteria = "safe-to-deploy"
 version = "0.42.0"
 notes = "This is a Windows API bindings library maintained by Microsoft themselves."
+
+[[audits.chromeos.audits.cxxbridge-flags]]
+who = "George Burgess IV <gbiv@google.com>"
+criteria = "safe-to-deploy"
+version = "1.0.92"
 
 [[audits.chromeos.audits.version_check]]
 who = "George Burgess IV <gbiv@google.com>"
@@ -405,30 +432,6 @@ who = "Bobby Holley <bobbyholley@gmail.com>"
 criteria = "safe-to-deploy"
 version = "1.0.7"
 notes = "Simple hasher implementation with no unsafe code."
-aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
-
-[[audits.mozilla.audits.futures-channel]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.3.21 -> 0.3.23"
-aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
-
-[[audits.mozilla.audits.futures-channel]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.3.23 -> 0.3.25"
-aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
-
-[[audits.mozilla.audits.futures-core]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.3.21 -> 0.3.23"
-aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
-
-[[audits.mozilla.audits.futures-core]]
-who = "Mike Hommey <mh+mozilla@glandium.org>"
-criteria = "safe-to-deploy"
-delta = "0.3.23 -> 0.3.25"
 aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
 
 [[audits.mozilla.audits.futures-task]]
@@ -716,17 +719,6 @@ aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-ch
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "1.0.91 -> 1.0.93"
-aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
-
-[[audits.mozilla.audits.synstructure]]
-who = "Nika Layzell <nika@thelayzells.com>"
-criteria = "safe-to-deploy"
-version = "0.12.6"
-notes = """
-I am the primary author of the `synstructure` crate, and its current
-maintainer. The one use of `unsafe` is unnecessary, but documented and
-harmless. It will be removed in the next version.
-"""
 aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
 
 [[audits.mozilla.audits.thiserror]]

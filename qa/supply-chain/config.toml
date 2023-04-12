@@ -186,10 +186,6 @@ criteria = "safe-to-deploy"
 version = "1.0.68"
 criteria = "safe-to-deploy"
 
-[[exemptions.cxxbridge-flags]]
-version = "1.0.68"
-criteria = "safe-to-deploy"
-
 [[exemptions.cxxbridge-macro]]
 version = "1.0.68"
 criteria = "safe-to-deploy"
@@ -284,10 +280,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.httparse]]
 version = "1.8.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.httpdate]]
-version = "1.0.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.hyper]]
@@ -468,10 +460,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.pin-project-lite]]
 version = "0.2.9"
-criteria = "safe-to-deploy"
-
-[[exemptions.pin-utils]]
-version = "0.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.poly1305]]
@@ -694,10 +682,6 @@ criteria = "safe-to-deploy"
 version = "0.3.16"
 criteria = "safe-to-deploy"
 
-[[exemptions.try-lock]]
-version = "0.2.3"
-criteria = "safe-to-deploy"
-
 [[exemptions.typenum]]
 version = "1.15.0"
 criteria = "safe-to-deploy"
@@ -706,16 +690,8 @@ criteria = "safe-to-deploy"
 version = "0.9.4"
 criteria = "safe-to-deploy"
 
-[[exemptions.unicode-xid]]
-version = "0.2.4"
-criteria = "safe-to-deploy"
-
 [[exemptions.valuable]]
 version = "0.1.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.want]]
-version = "0.3.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.wasi]]
