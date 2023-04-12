@@ -139,7 +139,7 @@ version = "1.0.79"
 criteria = "safe-to-deploy"
 
 [[exemptions.chacha20]]
-version = "0.8.1"
+version = "0.9.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.chacha20poly1305]]
@@ -651,7 +651,7 @@ version = "0.2.7"
 criteria = "safe-to-deploy"
 
 [[exemptions.tokio]]
-version = "1.26.0"
+version = "1.27.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.toml_edit]]
@@ -739,7 +739,7 @@ version = "0.4.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.winnow]]
-version = "0.3.6"
+version = "0.4.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.wyz]]
