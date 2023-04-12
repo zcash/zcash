@@ -25,9 +25,6 @@ audit-as-crates-io = false
 [policy.f4jumble]
 audit-as-crates-io = false
 
-[policy.orchard]
-audit-as-crates-io = false
-
 [policy.zcash_address]
 audit-as-crates-io = false
 
@@ -59,7 +56,7 @@ version = "0.4.3"
 criteria = "safe-to-deploy"
 
 [[exemptions.aes]]
-version = "0.7.5"
+version = "0.8.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.ahash]]
@@ -106,14 +103,6 @@ criteria = "safe-to-deploy"
 version = "1.0.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.block-modes]]
-version = "0.8.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.block-padding]]
-version = "0.2.1"
-criteria = "safe-to-deploy"
-
 [[exemptions.bls12_381]]
 version = "0.7.0"
 criteria = "safe-to-deploy"
@@ -132,6 +121,10 @@ criteria = "safe-to-deploy"
 
 [[exemptions.bytes]]
 version = "1.2.1"
+criteria = "safe-to-deploy"
+
+[[exemptions.cbc]]
+version = "0.1.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.cc]]
@@ -172,10 +165,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.crossbeam-utils]]
 version = "0.8.8"
-criteria = "safe-to-deploy"
-
-[[exemptions.crypto-mac]]
-version = "0.11.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.curve25519-dalek]]
@@ -219,7 +208,7 @@ version = "0.7.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.fpe]]
-version = "0.5.1"
+version = "0.6.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.funty]]
@@ -267,7 +256,7 @@ version = "0.2.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.hmac]]
-version = "0.11.0"
+version = "0.12.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.http]]
