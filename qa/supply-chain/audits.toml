@@ -51,6 +51,11 @@ who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.3.6 -> 0.3.7"
 
+[[audits.bech32]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.8.1 -> 0.9.1"
+
 [[audits.bellman]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
@@ -61,6 +66,11 @@ notes = "Adds multi-threaded batch validation, which I checked against the exist
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.13.1 -> 0.14.0"
+
+[[audits.bip0039]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.9.0 -> 0.10.1"
 
 [[audits.blake2b_simd]]
 who = "Jack Grigg <jack@z.cash>"
@@ -335,11 +345,25 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.91 -> 1.0.92"
 
+[[audits.directories]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "4.0.1 -> 5.0.0"
+
 [[audits.dirs]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "2.0.2 -> 4.0.0"
 notes = "Some paths change across this upgrade (AFAICT they were bugfixes)."
+
+[[audits.dirs-sys]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.7 -> 0.4.0"
+notes = """
+Changes to `unsafe` code are migrating from `winapi` to `windows-sys`. The APIs
+are equivalent, with the `windows-sys` ones being slightly more type-safe.
+"""
 
 [[audits.ed25519-zebra]]
 who = "Jack Grigg <jack@z.cash>"
@@ -759,6 +783,12 @@ who = "Kris Nuttycombe <kris@nutty.land>"
 criteria = "safe-to-deploy"
 delta = "0.2.0 -> 0.3.0"
 
+[[audits.orchard]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.3.0 -> 0.4.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
 [[audits.pairing]]
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
@@ -809,6 +839,11 @@ delta = "0.4.0 -> 0.4.1"
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.4.1 -> 0.5.1"
+
+[[audits.pbkdf2]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.9.0 -> 0.10.1"
 
 [[audits.phf]]
 who = "Jack Grigg <jack@z.cash>"
