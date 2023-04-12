@@ -19,6 +19,11 @@ criteria = "safe-to-deploy"
 delta = "0.4.3 -> 0.5.1"
 notes = "Adds an AeadCore::generate_nonce function to generate random nonces, given a CryptoRng."
 
+[[audits.aead]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.5.1 -> 0.5.2"
+
 [[audits.anyhow]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -443,6 +448,17 @@ Changes to `unsafe` usage are to split `Either::project` into `Either::as_pin_re
 documentation.
 """
 
+[[audits.futures-util]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.27 -> 0.3.28"
+notes = """
+- MSRV bumped to 1.56.
+- Changes to `unsafe` code are to move a function call outside an `unsafe fn`,
+  and to call the `unsafe fn` earlier. The safety requirement of being in the
+  `POLLING` state appears to be preserved.
+"""
+
 [[audits.generic-array]]
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
@@ -484,6 +500,12 @@ criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.1.0 -> 0.2.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
 
+[[audits.halo2_gadgets]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.2.0 -> 0.3.0"
+notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
 [[audits.halo2_legacy_pdqsort]]
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
@@ -501,6 +523,15 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = ["crypto-reviewed", "safe-to-deploy"]
 delta = "0.1.0 -> 0.2.0"
 notes = "The ECC core team maintains this crate, and we have reviewed every line."
+
+[[audits.halo2_proofs]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = ["safe-to-deploy", "crypto-reviewed"]
+delta = "0.2.0 -> 0.3.0"
+notes = """
+The ECC core team maintains this crate, and we have reviewed every line.
+The crate has `deny(unsafe_code)`.
+"""
 
 [[audits.http]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -843,6 +874,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.51 -> 1.0.52"
 
+[[audits.proc-macro2]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.54 -> 1.0.56"
+
 [[audits.quanta]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -972,6 +1008,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.107 -> 1.0.109"
 notes = "Fixes string literal parsing to only skip specified whitespace characters."
+
+[[audits.syn]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.0.11 -> 2.0.13"
 
 [[audits.terminfo]]
 who = "Jack Grigg <jack@z.cash>"
@@ -1402,3 +1443,8 @@ notes = "Removes `T: Drop` bound from `impl<T: Zeroize> Drop for SomeType<T>`. I
 who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "1.3.3 -> 1.4.1"
+
+[[audits.zeroize_derive]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.4.1 -> 1.4.2"

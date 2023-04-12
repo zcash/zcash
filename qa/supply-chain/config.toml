@@ -7,17 +7,44 @@ version = "0.6"
 [imports.bytecode-alliance]
 url = "https://raw.githubusercontent.com/bytecodealliance/wasmtime/main/supply-chain/audits.toml"
 
-[imports.chromeos]
-url = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/main/cargo-vet/audits.toml?format=TEXT"
-
 [imports.embark-studios]
 url = "https://raw.githubusercontent.com/EmbarkStudios/rust-ecosystem/main/audits.toml"
+
+[imports.google]
+url = "https://raw.githubusercontent.com/google/supply-chain/main/audits.toml"
 
 [imports.isrg]
 url = "https://raw.githubusercontent.com/divviup/libprio-rs/main/supply-chain/audits.toml"
 
 [imports.mozilla]
 url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
+
+[policy.equihash]
+audit-as-crates-io = false
+
+[policy.f4jumble]
+audit-as-crates-io = false
+
+[policy.orchard]
+audit-as-crates-io = false
+
+[policy.zcash_address]
+audit-as-crates-io = false
+
+[policy.zcash_encoding]
+audit-as-crates-io = false
+
+[policy.zcash_history]
+audit-as-crates-io = false
+
+[policy.zcash_note_encryption]
+audit-as-crates-io = false
+
+[policy.zcash_primitives]
+audit-as-crates-io = false
+
+[policy.zcash_proofs]
+audit-as-crates-io = false
 
 [[exemptions.addr2line]]
 version = "0.17.0"
@@ -112,7 +139,7 @@ version = "1.0.79"
 criteria = "safe-to-deploy"
 
 [[exemptions.chacha20]]
-version = "0.8.1"
+version = "0.9.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.chacha20poly1305]]
@@ -156,10 +183,6 @@ version = "3.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.cxx]]
-version = "1.0.68"
-criteria = "safe-to-deploy"
-
-[[exemptions.cxxbridge-flags]]
 version = "1.0.68"
 criteria = "safe-to-deploy"
 
@@ -257,10 +280,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.httparse]]
 version = "1.8.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.httpdate]]
-version = "1.0.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.hyper]]
@@ -441,10 +460,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.pin-project-lite]]
 version = "0.2.9"
-criteria = "safe-to-deploy"
-
-[[exemptions.pin-utils]]
-version = "0.1.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.poly1305]]
@@ -636,7 +651,7 @@ version = "0.2.7"
 criteria = "safe-to-deploy"
 
 [[exemptions.tokio]]
-version = "1.26.0"
+version = "1.27.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.toml_edit]]
@@ -667,10 +682,6 @@ criteria = "safe-to-deploy"
 version = "0.3.16"
 criteria = "safe-to-deploy"
 
-[[exemptions.try-lock]]
-version = "0.2.3"
-criteria = "safe-to-deploy"
-
 [[exemptions.typenum]]
 version = "1.15.0"
 criteria = "safe-to-deploy"
@@ -679,16 +690,8 @@ criteria = "safe-to-deploy"
 version = "0.9.4"
 criteria = "safe-to-deploy"
 
-[[exemptions.unicode-xid]]
-version = "0.2.4"
-criteria = "safe-to-deploy"
-
 [[exemptions.valuable]]
 version = "0.1.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.want]]
-version = "0.3.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.wasi]]
@@ -736,7 +739,7 @@ version = "0.4.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.winnow]]
-version = "0.3.6"
+version = "0.4.1"
 criteria = "safe-to-deploy"
 
 [[exemptions.wyz]]
