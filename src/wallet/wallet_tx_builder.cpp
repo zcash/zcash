@@ -35,10 +35,7 @@ WalletTxBuilder::GetChangeAddress(
             switch (rtype) {
                 case ReceiverType::P2PKH:
                 case ReceiverType::P2SH:
-                    // TODO: This is the correct policy, but it’s a breaking change from
-                    //       previous behavior, so enable it separately. (#6409)
-                    // if (strategy.AllowRevealedRecipients()) {
-                    if (!spendable.utxos.empty() || strategy.AllowRevealedRecipients()) {
+                    if (strategy.AllowRevealedRecipients()) {
                         result.insert(OutputPool::Transparent);
                     }
                     break;
