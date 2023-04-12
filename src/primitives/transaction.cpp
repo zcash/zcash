@@ -5,6 +5,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "primitives/transaction.h"
+#include "policy/policy.h"
 
 #include "hash.h"
 #include "tinyformat.h"
@@ -121,6 +122,22 @@ CTxOut::CTxOut(const CAmount& nValueIn, CScript scriptPubKeyIn)
 {
     nValue = nValueIn;
     scriptPubKey = scriptPubKeyIn;
+}
+
+CAmount CTxOut::GetDustThreshold() const
+{
+    // See the comment on ONE_THIRD_DUST_THRESHOLD_RATE in policy.h.
+    static const CFeeRate oneThirdDustThresholdRate {ONE_THIRD_DUST_THRESHOLD_RATE};
+
+    if (scriptPubKey.IsUnspendable())
+        return 0;
+
+    // A typical spendable txout is 34 bytes, and will need a txin of at
+    // least 148 bytes to spend. With ONE_THIRD_DUST_THRESHOLD_RATE == 100,
+    // the dust threshold for such a txout would be
+    // 3*floor(100*(34 + 148)/1000) zats = 54 zats.
+    size_t nSize = GetSerializeSize(*this, SER_DISK, 0) + 148u;
+    return 3*oneThirdDustThresholdRate.GetFee(nSize);
 }
 
 uint256 CTxOut::GetHash() const
