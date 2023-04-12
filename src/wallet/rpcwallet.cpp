@@ -334,37 +334,32 @@ ReifyPrivacyPolicy(const std::optional<PrivacyPolicy>& defaultPolicy,
     return strategy;
 }
 
+bool
+InvolvesUnifiedAddress(
+        const std::optional<PaymentAddress>& sender,
+        const std::set<PaymentAddress>& recipients)
+{
+    bool hasUASender =
+        sender.has_value() && std::holds_alternative<UnifiedAddress>(sender.value());
+    bool hasUARecipient =
+        std::find_if(recipients.begin(), recipients.end(),
+                     [](const PaymentAddress& addr) {
+                         return std::holds_alternative<UnifiedAddress>(addr);
+                     })
+        != recipients.end();
+
+    return hasUASender || hasUARecipient;
+}
+
 // Determines which `TransactionStrategy` should be used for the “LegacyCompat”
 // policy given the set of addresses involved.
 PrivacyPolicy
-InterpretLegacyCompat(const ZTXOSelector& sender,
+InterpretLegacyCompat(const std::optional<PaymentAddress>& sender,
                       const std::set<PaymentAddress>& recipients)
 {
-    auto legacyCompatPolicy = PrivacyPolicy::FullPrivacy;
-
-    if (fEnableLegacyPrivacyStrategy) {
-        bool hasUASender =
-            std::visit(match {
-                [&](const UnifiedAddress& _) { return true; },
-                [&](const UnifiedFullViewingKey& _) { return true; },
-                [&](const AccountZTXOPattern& acct) {
-                    return acct.GetAccountId() != ZCASH_LEGACY_ACCOUNT;
-                },
-                [&](auto _) { return false; }
-            }, sender.GetPattern());
-        bool hasUARecipient =
-            std::find_if(recipients.begin(), recipients.end(),
-                         [](const PaymentAddress& addr) {
-                             return std::holds_alternative<UnifiedAddress>(addr);
-                         })
-                != recipients.end();
-
-        if (!hasUASender && !hasUARecipient) {
-            legacyCompatPolicy = PrivacyPolicy::AllowFullyTransparent;
-        }
-    }
-
-    return legacyCompatPolicy;
+    return !fEnableLegacyPrivacyStrategy || InvolvesUnifiedAddress(sender, recipients)
+        ? PrivacyPolicy::FullPrivacy
+        : PrivacyPolicy::AllowFullyTransparent;
 }
 
 // Provides the final `TransactionStrategy` to be used for a transaction.
@@ -4855,23 +4850,14 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     KeyIO keyIO(chainparams);
 
-    auto maybeStrategy =
-        ReifyPrivacyPolicy(
-            std::nullopt,
-            params.size() > 4 ? std::optional(params[4].get_str()) : std::nullopt);
-
     UniValue outputs = params[1].get_array();
     if (outputs.size() == 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amounts array is empty.");
     }
 
-    bool involvesUnifiedAddress = false;
-    auto tcoinbasePolicy =
-        maybeStrategy.has_value() && maybeStrategy.value().AllowRevealedSenders()
-        ? TransparentCoinbasePolicy::Allow
-        : TransparentCoinbasePolicy::Disallow;
     std::set<PaymentAddress> recipientAddrs;
     std::vector<Payment> recipients;
+    bool hasTransparentRecipient = false;
     CAmount nTotalOut = 0;
     size_t nOrchardOutputs = 0;
     for (const UniValue& o : outputs.getValues()) {
@@ -4927,30 +4913,20 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, amount must be positive");
         }
 
-        examine(addr.value(), match {
-            [&](const CKeyID &) {
-                tcoinbasePolicy = TransparentCoinbasePolicy::Disallow;
-            },
-            [&](const CScriptID &) {
-                tcoinbasePolicy = TransparentCoinbasePolicy::Disallow;
-            },
+        hasTransparentRecipient = hasTransparentRecipient || examine(addr.value(), match {
+            [](const CKeyID &) { return true; },
+            [](const CScriptID &) { return true; },
             [&](const UnifiedAddress &ua) {
-                involvesUnifiedAddress = true;
                 auto preferredRecipient =
                     ua.GetPreferredRecipientAddress(chainparams.GetConsensus(), nextBlockHeight);
-                if (preferredRecipient.has_value()) {
-                    examine(preferredRecipient.value(), match {
-                        [&](const CKeyID &) {
-                            tcoinbasePolicy = TransparentCoinbasePolicy::Disallow;
-                        },
-                        [&](const CScriptID &) {
-                            tcoinbasePolicy = TransparentCoinbasePolicy::Disallow;
-                        },
-                        [](const auto &) { }
-                    });
-                }
+                return preferredRecipient.has_value()
+                        && examine(preferredRecipient.value(), match {
+                            [](const CKeyID &) { return true; },
+                            [](const CScriptID &) { return true; },
+                            [](const auto &) { return false; }
+                        });
             },
-            [](const auto &) { }
+            [](const auto &) { return false; }
         });
 
         recipients.push_back(Payment(addr.value(), nAmount, memo));
@@ -4963,23 +4939,36 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     // Check that the from address is valid.
     // Unified address (UA) allowed here (#5185)
     auto fromaddress = params[0].get_str();
-    ZTXOSelector ztxoSelector = [&]() {
-        if (fromaddress == "ANY_TADDR") {
+    std::optional<PaymentAddress> sender;
+    if (fromaddress != "ANY_TADDR") {
+        auto decoded = keyIO.DecodePaymentAddress(fromaddress);
+        if (decoded.has_value()) {
+            sender = decoded.value();
+        } else {
+            throw JSONRPCError(
+                    RPC_INVALID_ADDRESS_OR_KEY,
+                    "Invalid from address: should be a taddr, zaddr, UA, or the string 'ANY_TADDR'.");
+        }
+    }
+
+    auto strategy =
+        ResolveTransactionStrategy(
+                ReifyPrivacyPolicy(
+                        std::nullopt,
+                        params.size() > 4 ? std::optional(params[4].get_str()) : std::nullopt),
+                InterpretLegacyCompat(sender, recipientAddrs));
+
+    auto ztxoSelector = [&]() {
+        if (!sender.has_value()) {
             return CWallet::LegacyTransparentZTXOSelector(true, TransparentCoinbasePolicy::Disallow);
         } else {
-            auto decoded = keyIO.DecodePaymentAddress(fromaddress);
-            if (!decoded.has_value()) {
-                throw JSONRPCError(
-                        RPC_INVALID_ADDRESS_OR_KEY,
-                        "Invalid from address: should be a taddr, zaddr, UA, or the string 'ANY_TADDR'.");
-            }
-
             auto ztxoSelectorOpt = pwalletMain->ZTXOSelectorForAddress(
-                decoded.value(),
+                sender.value(),
                 true,
-                tcoinbasePolicy,
-                // LegacyCompat does not include AllowLinkingAccountAddresses.
-                maybeStrategy.has_value() ? maybeStrategy.value().AllowLinkingAccountAddresses() : false);
+                strategy.AllowRevealedSenders() && !hasTransparentRecipient
+                ? TransparentCoinbasePolicy::Allow
+                : TransparentCoinbasePolicy::Disallow,
+                strategy.AllowLinkingAccountAddresses());
             if (!ztxoSelectorOpt.has_value()) {
                 throw JSONRPCError(
                         RPC_INVALID_ADDRESS_OR_KEY,
@@ -4988,14 +4977,13 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
             auto selectorAccount = pwalletMain->FindAccountForSelector(ztxoSelectorOpt.value());
             bool unknownOrLegacy = !selectorAccount.has_value() || selectorAccount.value() == ZCASH_LEGACY_ACCOUNT;
-            examine(decoded.value(), match {
+            examine(sender.value(), match {
                 [&](const libzcash::UnifiedAddress& ua) {
                     if (unknownOrLegacy) {
                         throw JSONRPCError(
                                 RPC_INVALID_ADDRESS_OR_KEY,
                                 "Invalid from address, UA does not correspond to a known account.");
                     }
-                    involvesUnifiedAddress = true;
                 },
                 [&](const auto& other) {
                     if (!unknownOrLegacy) {
@@ -5009,11 +4997,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             return ztxoSelectorOpt.value();
         }
     }();
-
-    auto strategy =
-        ResolveTransactionStrategy(
-                maybeStrategy,
-                InterpretLegacyCompat(ztxoSelector, recipientAddrs));
 
     // Sanity check for transaction size
     // TODO: move this to the builder?
