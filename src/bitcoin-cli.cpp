@@ -206,7 +206,7 @@ UniValue ConvertValues(const std::string &strMethod, const std::vector<std::stri
         .map_error([&](auto failure) {
             throw std::runtime_error(
                     FormatConversionFailure(strMethod, failure)
-                    + std::visit(match {
+                    + examine(failure, match {
                         [](const UnknownRPCMethod&) { return std::string{}; },
                         [&](const auto&) {
                             auto helpMsg = CallRPC("help", ConvertValues("help", {strMethod}));
@@ -219,7 +219,7 @@ UniValue ConvertValues(const std::string &strMethod, const std::vector<std::stri
                                            helpMsg.error().get_str())
                                    : helpMsg->get_str());
                         }
-                    }, failure));
+                    }));
         })
         .value();
 }

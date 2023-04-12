@@ -172,7 +172,7 @@ static const CRPCConvertTable rpcCvtTable =
 };
 
 std::string FormatConversionFailure(const std::string& method, const ConversionFailure& failure) {
-    return std::visit(match {
+    return examine(failure, match {
             [&](const UnknownRPCMethod&) {
                 return tinyformat::format("Unknown RPC method, %s", method);
             },
@@ -190,7 +190,7 @@ std::string FormatConversionFailure(const std::string& method, const ConversionF
             [](const UnparseableArgument& err) {
                 return std::string("Error parsing JSON:") + err.unparsedArg;
             }
-        }, failure);
+        });
 }
 
 std::optional<std::pair<std::vector<bool>, std::vector<bool>>>
