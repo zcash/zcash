@@ -218,17 +218,14 @@ RPCConvertValues(const std::string &method, const std::vector<std::string> &strA
 {
     UniValue params(UniValue::VARR);
     auto paramsToConvert = ParamsToConvertFor(method);
-    std::vector<bool> requiredParams{}, optionalParams{};
-    if (paramsToConvert.has_value()) {
-        std::tie(requiredParams, optionalParams) = paramsToConvert.value();
-    } else {
-        return tl::expected<UniValue, ConversionFailure>(tl::unexpect, UnknownRPCMethod());
+    if (!paramsToConvert.has_value()) {
+        return tl::make_unexpected(UnknownRPCMethod());
     }
+    const auto [requiredParams, optionalParams] = paramsToConvert.value();
 
     if (strArgs.size() < requiredParams.size()
         || requiredParams.size() + optionalParams.size() < strArgs.size()) {
-        return tl::expected<UniValue, ConversionFailure>(
-                tl::unexpect,
+        return tl::make_unexpected(
                 WrongNumberOfArguments(requiredParams.size(), optionalParams.size(), strArgs.size()));
     }
 
@@ -249,9 +246,7 @@ RPCConvertValues(const std::string &method, const std::vector<std::string> &strA
             if (parsedArg.has_value()) {
                 params.push_back(parsedArg.value());
             } else {
-                return tl::expected<UniValue, ConversionFailure>(
-                        tl::unexpect,
-                        UnparseableArgument(strVal));
+                return tl::make_unexpected(UnparseableArgument(strVal));
             }
         }
     }
