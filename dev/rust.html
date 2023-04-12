@@ -196,6 +196,32 @@ required by package `librustzcash v0.2.0 (/path/to/zcash)`
 </code></pre>
 </li>
 </ol>
+<h2 id="using-an-unpublished-rust-dependency"><a class="header" href="#using-an-unpublished-rust-dependency">Using an unpublished Rust dependency</a></h2>
+<p>Occasionally we may need to depend on an unpublished git revision of a crate.
+We sometimes want to prove out API changes to the <code>zcash_*</code> Rust crates by
+migrating <code>zcashd</code> to them first, before making a public crate release. Or we
+might need to cut a <code>zcashd</code> release before some upstream dependency has
+published a fix we need. In these cases, we use patch dependencies.</p>
+<p>For example, to use an unpublished version of the <code>orchard</code> crate that includes
+a new API, add the following patch to <code>Cargo.toml</code>:</p>
+<pre><code>[dependencies]
+# This dependency is listed with a version, meaning it comes from crates.io; the
+# patch goes into a [patch.crates-io] section.
+orchard = &quot;0.4&quot;
+...
+
+[patch.crates-io]
+orchard = { git = &quot;https://github.com/zcash/orchard.git&quot;, rev = &quot;...&quot; }
+</code></pre>
+<p>Note that if the git repository contains a workspace of interconnected crates
+(for example, https://github.com/zcash/librustzcash), you will need to provide
+patches for each of the dependencies that reference the same git revision.</p>
+<p>You also need to update <code>.cargo/config.offline</code> to add a replacement definition
+for each <code>(git, rev)</code> pair. Run <code>./test/lint/lint-cargo-patches.sh</code> to get the
+lines that need to be present.</p>
+<p>Finally, <code>./qa/supply-chain/config.toml</code> needs to be updated to ignore patched
+dependencies. Run <code>cargo vet regenerate audit-as-crates-io</code>, and then ensure the
+newly-added lines are of the form <code>audit-as-crates-io = false</code>.</p>
 <h2 id="using-a-local-rust-dependency"><a class="header" href="#using-a-local-rust-dependency">Using a local Rust dependency</a></h2>
 <p>During development, you can use a locally checked out version of a dependency
 by applying a <a href="https://doc.rust-lang.org/cargo/reference/overriding-dependencies.html#the-patch-section"><code>cargo</code> patch</a>.</p>
