@@ -64,6 +64,40 @@ To add dependencies that are compatible with the reproducible build system, you 
     ./zcutil/build.sh
     ```
 
+## Using an unpublished Rust dependency
+
+Occasionally we may need to depend on an unpublished git revision of a crate.
+We sometimes want to prove out API changes to the `zcash_*` Rust crates by
+migrating `zcashd` to them first, before making a public crate release. Or we
+might need to cut a `zcashd` release before some upstream dependency has
+published a fix we need. In these cases, we use patch dependencies.
+
+For example, to use an unpublished version of the `orchard` crate that includes
+a new API, add the following patch to `Cargo.toml`:
+
+```
+[dependencies]
+# This dependency is listed with a version, meaning it comes from crates.io; the
+# patch goes into a [patch.crates-io] section.
+orchard = "0.4"
+...
+
+[patch.crates-io]
+orchard = { git = "https://github.com/zcash/orchard.git", rev = "..." }
+```
+
+Note that if the git repository contains a workspace of interconnected crates
+(for example, https://github.com/zcash/librustzcash), you will need to provide
+patches for each of the dependencies that reference the same git revision.
+
+You also need to update `.cargo/config.offline` to add a replacement definition
+for each `(git, rev)` pair. Run `./test/lint/lint-cargo-patches.sh` to get the
+lines that need to be present.
+
+Finally, `./qa/supply-chain/config.toml` needs to be updated to ignore patched
+dependencies. Run `cargo vet regenerate audit-as-crates-io`, and then ensure the
+newly-added lines are of the form `audit-as-crates-io = false`.
+
 ## Using a local Rust dependency
 
 During development, you can use a locally checked out version of a dependency
