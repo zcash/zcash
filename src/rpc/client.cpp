@@ -6,6 +6,7 @@
 
 #include "rpc/client.h"
 #include "rpc/protocol.h"
+#include "util/match.h"
 #include "util/system.h"
 
 #include <set>
@@ -13,188 +14,242 @@
 
 #include <univalue.h>
 
-using namespace std;
+typedef std::map<std::string, std::pair<std::vector<bool>, std::vector<bool>>> CRPCConvertTable;
 
-class CRPCConvertParam
+/** A string parameter, should not be converted. */
+static const bool s = false;
+
+/** Something other than a string parameter, should be converted. */
+static const bool o = true;
+
+static const CRPCConvertTable rpcCvtTable =
 {
-public:
-    std::string methodName; //!< method whose params want conversion
-    int paramIdx;           //!< 0-based idx of param to convert
+    // operation {required params, optional params}
+    // blockchain
+    { "getblockcount",               {{}, {}} },
+    { "getbestblockhash",            {{}, {}} },
+    { "getdifficulty",               {{}, {}} },
+    { "getrawmempool",               {{}, {o}} },
+    { "getblockdeltas",              {{o}, {}} },
+    { "getblockhashes",              {{o, o}, {o}} },
+    { "getblockhash",                {{o}, {}} },
+    { "getblockheader",              {{s}, {o}} },
+    { "getblock",                    {{s}, {o}} },
+    { "gettxoutsetinfo",             {{}, {}} },
+    { "gettxout",                    {{s, o}, {o}} },
+    { "verifychain",                 {{}, {o, o}} },
+    { "getblockchaininfo",           {{}, {}} },
+    { "getchaintips",                {{}, {}} },
+    { "z_gettreestate",              {{s}, {}} },
+    { "getmempoolinfo",              {{}, {}} },
+    { "invalidateblock",             {{s}, {}} },
+    { "reconsiderblock",             {{s}, {}} },
+    // mining
+    { "getlocalsolps",               {{}, {}} },
+    { "getnetworksolps",             {{}, {o, o}} },
+    { "getnetworkhashps",            {{}, {o, o}} },
+    { "getgenerate",                 {{}, {}} },
+    { "generate",                    {{o}, {}} },
+    { "setgenerate",                 {{o}, {o}} },
+    { "getmininginfo",               {{}, {}} },
+    { "prioritisetransaction",       {{s, o, o}, {}} },
+    { "getblocktemplate",            {{}, {o}} },
+    // NB: The second argument _should_ be an object, but upstream treats it as a string, so we
+    //     preserve that here.
+    { "submitblock",                 {{s}, {s}} },
+    { "estimatefee",                 {{o}, {}} },
+    { "estimatepriority",            {{o}, {}} },
+    { "getblocksubsidy",             {{o}, {}} },
+    // misc
+    { "getinfo",                     {{}, {}} },
+    { "validateaddress",             {{s}, {}} },
+    { "z_validateaddress",           {{s}, {}} },
+    { "createmultisig",              {{o, o}, {}} },
+    { "verifymessage",               {{s, s ,s}, {}} },
+    { "setmocktime",                 {{o}, {}} },
+    { "getexperimentalfeatures",     {{}, {}} },
+    { "getaddressmempool",           {{o}, {}} },
+    { "getaddressutxos",             {{o}, {}} },
+    { "getaddressdeltas",            {{o}, {}} },
+    { "getaddressbalance",           {{o}, {}} },
+    { "getaddresstxids",             {{o}, {}} },
+    { "getspentinfo",                {{o}, {}} },
+    { "getmemoryinfo",               {{}, {}} },
+    // net
+    { "getconnectioncount",          {{}, {}} },
+    { "ping",                        {{}, {}} },
+    { "getpeerinfo",                 {{}, {}} },
+    { "addnode",                     {{s, s}, {}} },
+    { "disconnectnode",              {{s}, {}} },
+    { "getaddednodeinfo",            {{o}, {s}} },
+    { "getnettotals",                {{}, {}} },
+    { "getdeprecationinfo",          {{}, {}} },
+    { "getnetworkinfo",              {{}, {}} },
+    { "setban",                      {{s, s}, {o, o}} },
+    { "listbanned",                  {{}, {}} },
+    { "clearbanned",                 {{}, {}} },
+    // rawtransaction
+    { "getrawtransaction",           {{s}, {o, s}} },
+    { "gettxoutproof",               {{o}, {s}} },
+    { "verifytxoutproof",            {{s}, {}} },
+    { "createrawtransaction",        {{o, o}, {o, o}} },
+    { "decoderawtransaction",        {{s}, {}} },
+    { "decodescript",                {{s}, {}} },
+    { "signrawtransaction",          {{s}, {o, o, s, s}} },
+    { "sendrawtransaction",          {{s}, {o}} },
+    // rpcdisclosure
+    { "z_getpaymentdisclosure",      {{s, o, o}, {s}} },
+    { "z_validatepaymentdisclosure", {{s}, {}} },
+    // rpcdump
+    { "importprivkey",               {{s}, {s, o}} },
+    { "importaddress",               {{s}, {s, o, o}} },
+    { "importpubkey",                {{s}, {s, o}} },
+    { "z_importwallet",              {{s}, {}} },
+    { "importwallet",                {{s}, {}} },
+    { "dumpprivkey",                 {{s}, {}} },
+    { "z_exportwallet",              {{s}, {}} },
+    { "z_importkey",                 {{s}, {s, o}} },
+    { "z_importviewingkey",          {{s}, {s, o}} },
+    { "z_exportkey",                 {{s}, {}} },
+    { "z_exportviewingkey",          {{s}, {}} },
+    // rpcwallet
+    { "getnewaddress",               {{}, {s}} },
+    { "getrawchangeaddress",         {{}, {}} },
+    { "sendtoaddress",               {{s, o}, {s, s, o}} },
+    { "listaddresses",               {{}, {}} },
+    { "listaddressgroupings",        {{}, {o}} },
+    { "signmessage",                 {{s, s}, {}} },
+    { "getreceivedbyaddress",        {{s}, {o, o, o}} },
+    { "getbalance",                  {{}, {s, o, o, o, o}} },
+    { "sendmany",                    {{s, o}, {o, s, o}} },
+    { "addmultisigaddress",          {{o, o}, {s}} },
+    { "listreceivedbyaddress",       {{}, {o, o, o, s, o, o}} },
+    { "listtransactions",            {{}, {s, o, o, o, o}} },
+    { "listsinceblock",              {{}, {s, o, o, o, o, o}} },
+    { "gettransaction",              {{s}, {o, o, o}} },
+    { "backupwallet",                {{s}, {}} },
+    { "keypoolrefill",               {{}, {o}} },
+    { "walletpassphrase",            {{s, o}, {}} },
+    { "walletpassphrasechange",      {{s, s}, {}} },
+    { "walletconfirmbackup",         {{s}, {}} },
+    { "walletlock",                  {{}, {}} },
+    { "encryptwallet",               {{s}, {}} },
+    { "lockunspent",                 {{o, o}, {}} },
+    { "listlockunspent",             {{}, {}} },
+    { "settxfee",                    {{o}, {}} },
+    { "getwalletinfo",               {{}, {o}} },
+    { "resendwallettransactions",    {{}, {}} },
+    { "listunspent",                 {{}, {o, o, o, o, o, o}} },
+    { "z_listunspent",               {{}, {o, o, o, o, o}} },
+    { "fundrawtransaction",          {{s}, {o}} },
+    { "zcsamplejoinsplit",           {{}, {}} },
+    { "zcbenchmark",                 {{s, o}, {o}} },
+    { "z_getnewaddress",             {{}, {s}} },
+    { "z_getnewaccount",             {{}, {}} },
+    { "z_getaddressforaccount",      {{o}, {o, o}} },
+    { "z_listaccounts",              {{}, {}} },
+    { "z_listaddresses",             {{}, {o}} },
+    { "z_listunifiedreceivers",      {{s}, {}} },
+    { "z_listreceivedbyaddress",     {{s}, {o, o}} },
+    { "z_getbalance",                {{s}, {o, o}} },
+    { "z_getbalanceforviewingkey",   {{s}, {o, o}} },
+    { "z_getbalanceforaccount",      {{o}, {o, o}} },
+    { "z_gettotalbalance",           {{}, {o, o}} },
+    { "z_viewtransaction",           {{s}, {}} },
+    { "z_getoperationresult",        {{}, {o}} },
+    { "z_getoperationstatus",        {{}, {o}} },
+    { "z_sendmany",                  {{s, o}, {o, o, s}} },
+    { "z_setmigration",              {{o}, {}} },
+    { "z_getmigrationstatus",        {{}, {o}} },
+    { "z_shieldcoinbase",            {{s, s}, {o, o}} },
+    { "z_mergetoaddress",            {{o, s}, {o, o, o, s}} },
+    { "z_listoperationids",          {{}, {s}} },
+    { "z_getnotescount",             {{}, {o, o}} },
+    // server
+    { "help",                        {{}, {s}} },
+    { "setlogfilter",                {{s}, {}} },
+    { "stop",                        {{}, {o}} },
 };
 
-static const CRPCConvertParam vRPCConvertParams[] =
+std::string FormatConversionFailure(const std::string& strMethod, const ConversionFailure& failure)
 {
-    { "stop", 0 },
-    { "setmocktime", 0 },
-    { "getaddednodeinfo", 0 },
-    { "setgenerate", 0 },
-    { "setgenerate", 1 },
-    { "generate", 0 },
-    { "getnetworkhashps", 0 },
-    { "getnetworkhashps", 1 },
-    { "getnetworksolps", 0 },
-    { "getnetworksolps", 1 },
-    { "sendtoaddress", 1 },
-    { "sendtoaddress", 4 },
-    { "settxfee", 0 },
-    { "getreceivedbyaddress", 1 },
-    { "getreceivedbyaddress", 2 },
-    { "listreceivedbyaddress", 0 },
-    { "listreceivedbyaddress", 1 },
-    { "listreceivedbyaddress", 2 },
-    { "getbalance", 1 },
-    { "getbalance", 2 },
-    { "getbalance", 3 },
-    { "getblockhash", 0 },
-    { "listtransactions", 1 },
-    { "listtransactions", 2 },
-    { "listtransactions", 3 },
-    { "walletpassphrase", 1 },
-    { "getblocktemplate", 0 },
-    { "listsinceblock", 1 },
-    { "listsinceblock", 2 },
-    { "sendmany", 1 },
-    { "sendmany", 2 },
-    { "sendmany", 4 },
-    { "addmultisigaddress", 0 },
-    { "addmultisigaddress", 1 },
-    { "createmultisig", 0 },
-    { "createmultisig", 1 },
-    { "listunspent", 0 },
-    { "listunspent", 1 },
-    { "listunspent", 2 },
-    { "getblock", 1 },
-    { "getblockheader", 1 },
-    { "gettransaction", 1 },
-    { "getrawtransaction", 1 },
-    { "createrawtransaction", 0 },
-    { "createrawtransaction", 1 },
-    { "createrawtransaction", 2 },
-    { "createrawtransaction", 3 },
-    { "signrawtransaction", 1 },
-    { "signrawtransaction", 2 },
-    { "sendrawtransaction", 1 },
-    { "fundrawtransaction", 1 },
-    { "gettxout", 1 },
-    { "gettxout", 2 },
-    { "gettxoutproof", 0 },
-    { "lockunspent", 0 },
-    { "lockunspent", 1 },
-    { "importprivkey", 2 },
-    { "importaddress", 2 },
-    { "importaddress", 3 },
-    { "importpubkey", 2 },
-    { "verifychain", 0 },
-    { "verifychain", 1 },
-    { "keypoolrefill", 0 },
-    { "getrawmempool", 0 },
-    { "estimatefee", 0 },
-    { "estimatepriority", 0 },
-    { "prioritisetransaction", 1 },
-    { "prioritisetransaction", 2 },
-    { "setban", 2 },
-    { "setban", 3 },
-    { "getspentinfo", 0},
-    { "getaddresstxids", 0},
-    { "getaddressbalance", 0},
-    { "getaddressdeltas", 0},
-    { "getaddressutxos", 0},
-    { "getaddressmempool", 0},
-    { "getblockhashes", 0},
-    { "getblockhashes", 1},
-    { "getblockhashes", 2},
-    { "getblockdeltas", 0},
-    { "zcbenchmark", 1 },
-    { "zcbenchmark", 2 },
-    { "getblocksubsidy", 0},
-    { "z_listaddresses", 0},
-    { "z_listreceivedbyaddress", 1},
-    { "z_listunspent", 0 },
-    { "z_listunspent", 1 },
-    { "z_listunspent", 2 },
-    { "z_listunspent", 3 },
-    { "z_getaddressforaccount", 0},
-    { "z_getaddressforaccount", 1},
-    { "z_getaddressforaccount", 2},
-    { "z_getbalance", 1},
-    { "z_getbalance", 2},
-    { "z_getbalanceforaccount", 0},
-    { "z_getbalanceforaccount", 1},
-    { "z_getbalanceforaddress", 1},
-    { "z_gettotalbalance", 0},
-    { "z_gettotalbalance", 1},
-    { "z_gettotalbalance", 2},
-    { "z_mergetoaddress", 0},
-    { "z_mergetoaddress", 2},
-    { "z_mergetoaddress", 3},
-    { "z_mergetoaddress", 4},
-    { "z_sendmany", 1},
-    { "z_sendmany", 2},
-    { "z_sendmany", 3},
-    { "z_shieldcoinbase", 2},
-    { "z_shieldcoinbase", 3},
-    { "z_getoperationstatus", 0},
-    { "z_getoperationresult", 0},
-    { "z_importkey", 2 },
-    { "z_importviewingkey", 2 },
-    { "z_getpaymentdisclosure", 1},
-    { "z_getpaymentdisclosure", 2},
-    { "z_setmigration", 0},
-    { "z_getnotescount", 0},
-};
+    return examine(failure, match {
+            [&](const UnknownRPCMethod&) {
+                return tinyformat::format("Unknown RPC method, %s", strMethod);
+            },
+            [&](const WrongNumberOfParams& err) {
+                return tinyformat::format(
+                        "%s for method, %s. Needed between %u and %u, but received %u",
+                        err.providedParams < err.requiredParams
+                        ? "Not enough parameters"
+                        : "Too many parameters",
+                        strMethod,
+                        err.requiredParams,
+                        err.requiredParams + err.optionalParams,
+                        err.providedParams);
+            },
+            [](const UnparseableParam& err) {
+                return std::string("Error parsing JSON:") + err.unparsedParam;
+            }
+        });
+}
 
-class CRPCConvertTable
+std::optional<std::pair<std::vector<bool>, std::vector<bool>>>
+ParamsToConvertFor(const std::string& strMethod)
 {
-private:
-    std::set<std::pair<std::string, int> > members;
-
-public:
-    CRPCConvertTable();
-
-    bool convert(const std::string& method, int idx) {
-        return (members.count(std::make_pair(method, idx)) > 0);
-    }
-};
-
-CRPCConvertTable::CRPCConvertTable()
-{
-    const unsigned int n_elem =
-        (sizeof(vRPCConvertParams) / sizeof(vRPCConvertParams[0]));
-
-    for (unsigned int i = 0; i < n_elem; i++) {
-        members.insert(std::make_pair(vRPCConvertParams[i].methodName,
-                                      vRPCConvertParams[i].paramIdx));
+    auto search = rpcCvtTable.find(strMethod);
+    if (search != rpcCvtTable.end()) {
+        return search->second;
+    } else {
+        return std::nullopt;
     }
 }
 
-static CRPCConvertTable rpcCvtTable;
-
-/** Non-RFC4627 JSON parser, accepts internal values (such as numbers, true, false, null)
- * as well as objects and arrays.
- */
-UniValue ParseNonRFCJSONValue(const std::string& strVal)
+std::optional<UniValue> ParseNonRFCJSONValue(const std::string& strVal)
 {
     UniValue jVal;
-    if (!jVal.read(std::string("[")+strVal+std::string("]")) ||
-        !jVal.isArray() || jVal.size()!=1)
-        throw runtime_error(string("Error parsing JSON:")+strVal);
-    return jVal[0];
+    if (jVal.read(std::string("[")+strVal+std::string("]")) && jVal.isArray() && jVal.size() == 1) {
+        return jVal[0];
+    } else {
+        return std::nullopt;
+    }
 }
 
-/** Convert strings to command-specific RPC representation */
-UniValue RPCConvertValues(const std::string &strMethod, const std::vector<std::string> &strParams)
+tl::expected<UniValue, ConversionFailure>
+RPCConvertValues(const std::string &strMethod, const std::vector<std::string> &strParams)
 {
     UniValue params(UniValue::VARR);
+    auto paramsToConvert = ParamsToConvertFor(strMethod);
+    if (!paramsToConvert.has_value()) {
+        return tl::make_unexpected(UnknownRPCMethod());
+    }
+    const auto [requiredParams, optionalParams] = paramsToConvert.value();
 
-    for (unsigned int idx = 0; idx < strParams.size(); idx++) {
+    if (strParams.size() < requiredParams.size()
+        || requiredParams.size() + optionalParams.size() < strParams.size()) {
+        return tl::make_unexpected(
+                WrongNumberOfParams(requiredParams.size(), optionalParams.size(), strParams.size()));
+    }
+
+    std::vector<bool> allParams(requiredParams.begin(), requiredParams.end());
+    allParams.reserve(requiredParams.size() + optionalParams.size());
+    allParams.insert(allParams.end(), optionalParams.begin(), optionalParams.end());
+
+    for (std::vector<std::string>::size_type idx = 0; idx < strParams.size(); idx++) {
+        const bool shouldConvert = allParams[idx];
         const std::string& strVal = strParams[idx];
 
-        if (!rpcCvtTable.convert(strMethod, idx)) {
+        if (!shouldConvert) {
             // insert string value directly
             params.push_back(strVal);
         } else {
             // parse string as JSON, insert bool/number/object/etc. value
-            params.push_back(ParseNonRFCJSONValue(strVal));
+            auto parsedParam = ParseNonRFCJSONValue(strVal);
+            if (parsedParam.has_value()) {
+                params.push_back(parsedParam.value());
+            } else {
+                return tl::make_unexpected(UnparseableParam(strVal));
+            }
         }
     }
 
