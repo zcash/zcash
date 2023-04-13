@@ -15,42 +15,42 @@ class UnknownRPCMethod {
     UnknownRPCMethod() {};
 };
 
-class WrongNumberOfArguments {
+class WrongNumberOfParams {
  public:
     std::vector<bool>::size_type requiredParams;
     std::vector<bool>::size_type optionalParams;
-    std::vector<std::string>::size_type providedArgs;
+    std::vector<std::string>::size_type providedParams;
 
-    WrongNumberOfArguments(
+    WrongNumberOfParams(
             std::vector<bool>::size_type requiredParams,
             std::vector<bool>::size_type optionalParams,
-            std::vector<std::string>::size_type providedArgs) :
+            std::vector<std::string>::size_type providedParams) :
         requiredParams(requiredParams),
         optionalParams(optionalParams),
-        providedArgs(providedArgs) {}
+        providedParams(providedParams) {}
 };
 
-class UnparseableArgument {
+class UnparseableParam {
  public:
-    std::string unparsedArg;
+    std::string unparsedParam;
 
-    UnparseableArgument(std::string unparsedArg) :
-        unparsedArg(unparsedArg) {}
+    UnparseableParam(std::string unparsedParam) :
+        unparsedParam(unparsedParam) {}
 };
 
 typedef std::variant<
     UnknownRPCMethod,
-    WrongNumberOfArguments,
-    UnparseableArgument
+    WrongNumberOfParams,
+    UnparseableParam
     > ConversionFailure;
 
 // TODO: This should be closer to the leaves, but don’t have a good place for it, since it’s
 //       currently shared by bitcoin-cli and tests.
-std::string FormatConversionFailure(const std::string& method, const ConversionFailure& failure);
+std::string FormatConversionFailure(const std::string& strMethod, const ConversionFailure& failure);
 
 /** Convert strings to command-specific RPC representation */
 tl::expected<UniValue, ConversionFailure>
-    RPCConvertValues(const std::string& method, const std::vector<std::string>& strArgs);
+    RPCConvertValues(const std::string& strMethod, const std::vector<std::string>& strParams);
 
 /** Non-RFC4627 JSON parser, accepts internal values (such as numbers, true, false, null)
  * as well as objects and arrays. Returns `std::nullopt` if `strVal` couldn’t be parsed.

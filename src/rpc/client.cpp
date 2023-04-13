@@ -171,31 +171,33 @@ static const CRPCConvertTable rpcCvtTable =
     { "stop",                        {{}, {o}} },
 };
 
-std::string FormatConversionFailure(const std::string& method, const ConversionFailure& failure) {
+std::string FormatConversionFailure(const std::string& strMethod, const ConversionFailure& failure)
+{
     return examine(failure, match {
             [&](const UnknownRPCMethod&) {
-                return tinyformat::format("Unknown RPC method, %s", method);
+                return tinyformat::format("Unknown RPC method, %s", strMethod);
             },
-            [&](const WrongNumberOfArguments& err) {
+            [&](const WrongNumberOfParams& err) {
                 return tinyformat::format(
                         "%s for method, %s. Needed between %u and %u, but received %u",
-                        err.providedArgs < err.requiredParams
-                        ? "Not enough arguments"
-                        : "Too many arguments",
-                        method,
+                        err.providedParams < err.requiredParams
+                        ? "Not enough parameters"
+                        : "Too many parameters",
+                        strMethod,
                         err.requiredParams,
                         err.requiredParams + err.optionalParams,
-                        err.providedArgs);
+                        err.providedParams);
             },
-            [](const UnparseableArgument& err) {
-                return std::string("Error parsing JSON:") + err.unparsedArg;
+            [](const UnparseableParam& err) {
+                return std::string("Error parsing JSON:") + err.unparsedParam;
             }
         });
 }
 
 std::optional<std::pair<std::vector<bool>, std::vector<bool>>>
-ParamsToConvertFor(const std::string& method) {
-    auto search = rpcCvtTable.find(method);
+ParamsToConvertFor(const std::string& strMethod)
+{
+    auto search = rpcCvtTable.find(strMethod);
     if (search != rpcCvtTable.end()) {
         return search->second;
     } else {
@@ -214,39 +216,39 @@ std::optional<UniValue> ParseNonRFCJSONValue(const std::string& strVal)
 }
 
 tl::expected<UniValue, ConversionFailure>
-RPCConvertValues(const std::string &method, const std::vector<std::string> &strArgs)
+RPCConvertValues(const std::string &strMethod, const std::vector<std::string> &strParams)
 {
     UniValue params(UniValue::VARR);
-    auto paramsToConvert = ParamsToConvertFor(method);
+    auto paramsToConvert = ParamsToConvertFor(strMethod);
     if (!paramsToConvert.has_value()) {
         return tl::make_unexpected(UnknownRPCMethod());
     }
     const auto [requiredParams, optionalParams] = paramsToConvert.value();
 
-    if (strArgs.size() < requiredParams.size()
-        || requiredParams.size() + optionalParams.size() < strArgs.size()) {
+    if (strParams.size() < requiredParams.size()
+        || requiredParams.size() + optionalParams.size() < strParams.size()) {
         return tl::make_unexpected(
-                WrongNumberOfArguments(requiredParams.size(), optionalParams.size(), strArgs.size()));
+                WrongNumberOfParams(requiredParams.size(), optionalParams.size(), strParams.size()));
     }
 
     std::vector<bool> allParams(requiredParams.begin(), requiredParams.end());
     allParams.reserve(requiredParams.size() + optionalParams.size());
     allParams.insert(allParams.end(), optionalParams.begin(), optionalParams.end());
 
-    for (std::vector<std::string>::size_type idx = 0; idx < strArgs.size(); idx++) {
+    for (std::vector<std::string>::size_type idx = 0; idx < strParams.size(); idx++) {
         const bool shouldConvert = allParams[idx];
-        const std::string& strVal = strArgs[idx];
+        const std::string& strVal = strParams[idx];
 
         if (!shouldConvert) {
             // insert string value directly
             params.push_back(strVal);
         } else {
             // parse string as JSON, insert bool/number/object/etc. value
-            auto parsedArg = ParseNonRFCJSONValue(strVal);
-            if (parsedArg.has_value()) {
-                params.push_back(parsedArg.value());
+            auto parsedParam = ParseNonRFCJSONValue(strVal);
+            if (parsedParam.has_value()) {
+                params.push_back(parsedParam.value());
             } else {
-                return tl::make_unexpected(UnparseableArgument(strVal));
+                return tl::make_unexpected(UnparseableParam(strVal));
             }
         }
     }
