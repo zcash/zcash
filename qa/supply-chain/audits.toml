@@ -268,6 +268,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.91 -> 1.0.92"
 
+[[audits.cxx]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.92 -> 1.0.94"
+
 [[audits.cxxbridge-flags]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -304,6 +309,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.91 -> 1.0.92"
 
+[[audits.cxxbridge-flags]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.92 -> 1.0.94"
+
 [[audits.cxxbridge-macro]]
 who = "Daira Hopwood <daira@jacaranda.org>"
 criteria = "safe-to-deploy"
@@ -344,6 +354,16 @@ delta = "1.0.83 -> 1.0.91"
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.91 -> 1.0.92"
+
+[[audits.cxxbridge-macro]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.92 -> 1.0.94"
+notes = """
+Migration to `syn 2`. I didn't check the logic, but the changes look reasonable
+and I didn't notice anything that seemed like it would adversely change the
+generated code.
+"""
 
 [[audits.directories]]
 who = "Jack Grigg <jack@electriccoin.co>"
