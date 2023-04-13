@@ -105,7 +105,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":myzaddr, "amount":Decimal('1.23456789')})
 
-        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 10, DEFAULT_FEE, 'AllowRevealedSenders')
+        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 10, DEFAULT_FEE, 'AllowFullyTransparent')
         error_result = wait_and_assert_operationid_status_result(
                 self.nodes[0],
                 myopid, "failed",

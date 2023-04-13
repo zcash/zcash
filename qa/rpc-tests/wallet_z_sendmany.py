@@ -494,5 +494,24 @@ class WalletZSendmanyTest(BitcoinTestFramework):
                 {'pools': {'orchard': {'valueZat': 200000000}}, 'minimum_confirmations': 1},
                 self.nodes[0].z_getbalanceforaccount(n0account0))
 
+
+        self.sync_all()
+        self.nodes[1].generate(1)
+        self.sync_all()
+
+        #
+        # Test transparent change
+        #
+
+        recipients = [{"address":n0ua1, "amount": 4}]
+        # Should fail because this generates transparent change, but we don’t have
+        # `AllowRevealedRecipients`
+        opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, 0, 'AllowRevealedSenders')
+        wait_and_assert_operationid_status(self.nodes[2], opid, 'failed', "This transaction would have transparent change, which is not enabled by default because it will publicly reveal the change address and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedRecipients` or weaker if you wish to allow this transaction to proceed anyway.")
+
+        # Should succeed once we include `AllowRevealedRecipients`
+        opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, 0, 'AllowFullyTransparent')
+        wait_and_assert_operationid_status(self.nodes[2], opid)
+
 if __name__ == '__main__':
     WalletZSendmanyTest().main()

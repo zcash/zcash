@@ -62,6 +62,14 @@ void ThrowInputSelectionError(
                         "recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
                         "with the `privacyPolicy` parameter set to `AllowRevealedRecipients` "
                         "or weaker if you wish to allow this transaction to proceed anyway.");
+                case AddressResolutionError::TransparentChangeNotAllowed:
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "This transaction would have transparent change, which is not "
+                        "enabled by default because it will publicly reveal the change "
+                        "address and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
+                        "with the `privacyPolicy` parameter set to `AllowRevealedRecipients` "
+                        "or weaker if you wish to allow this transaction to proceed anyway.");
                 case AddressResolutionError::RevealingSaplingAmountNotAllowed:
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,

@@ -13,7 +13,7 @@ int GetAnchorHeight(const CChain& chain, uint32_t anchorConfirmations)
     return nextBlockHeight - anchorConfirmations;
 }
 
-ChangeAddress
+tl::expected<ChangeAddress, AddressResolutionError>
 WalletTxBuilder::GetChangeAddress(
         CWallet& wallet,
         const ZTXOSelector& selector,
@@ -55,15 +55,20 @@ WalletTxBuilder::GetChangeAddress(
         return result;
     };
 
-    auto changeAddressForTransparentSelector = [&](const std::set<ReceiverType>& receiverTypes) {
+    auto changeAddressForTransparentSelector = [&](const std::set<ReceiverType>& receiverTypes)
+        -> tl::expected<ChangeAddress, AddressResolutionError> {
         auto addr = wallet.GenerateChangeAddressForAccount(
                 sendFromAccount,
                 getAllowedChangePools(receiverTypes));
-        assert(addr.has_value());
-        return addr.value();
+        if (addr.has_value()) {
+            return {addr.value()};
+        } else {
+            return tl::make_unexpected(AddressResolutionError::TransparentChangeNotAllowed);
+        }
     };
 
-    auto changeAddressForSaplingAddress = [&](const libzcash::SaplingPaymentAddress& addr) -> RecipientAddress {
+    auto changeAddressForSaplingAddress = [&](const libzcash::SaplingPaymentAddress& addr)
+        -> tl::expected<ChangeAddress, AddressResolutionError> {
         // for Sapling, if using a legacy address, return change to the
         // originating address; otherwise return it to the Sapling internal
         // address corresponding to the UFVK.
@@ -80,45 +85,48 @@ WalletTxBuilder::GetChangeAddress(
 
     auto changeAddressForZUFVK = [&](
             const ZcashdUnifiedFullViewingKey& zufvk,
-            const std::set<ReceiverType>& receiverTypes) {
+            const std::set<ReceiverType>& receiverTypes)
+        -> tl::expected<ChangeAddress, AddressResolutionError> {
         auto addr = zufvk.GetChangeAddress(getAllowedChangePools(receiverTypes));
         assert(addr.has_value());
         return addr.value();
     };
 
     return examine(selector.GetPattern(), match {
-        [&](const CKeyID&) -> ChangeAddress {
+        [&](const CKeyID&) {
             return changeAddressForTransparentSelector({ReceiverType::P2PKH});
         },
-        [&](const CScriptID&) -> ChangeAddress {
+        [&](const CScriptID&) {
             return changeAddressForTransparentSelector({ReceiverType::P2SH});
         },
-        [](const libzcash::SproutPaymentAddress& addr) -> ChangeAddress {
+        [](const libzcash::SproutPaymentAddress& addr)
+            -> tl::expected<ChangeAddress, AddressResolutionError> {
             // for Sprout, we return change to the originating address using the tx builder.
             return addr;
         },
-        [](const libzcash::SproutViewingKey& vk) -> ChangeAddress {
+        [](const libzcash::SproutViewingKey& vk)
+            -> tl::expected<ChangeAddress, AddressResolutionError> {
             // for Sprout, we return change to the originating address using the tx builder.
             return vk.address();
         },
-        [&](const libzcash::SaplingPaymentAddress& addr) -> ChangeAddress {
+        [&](const libzcash::SaplingPaymentAddress& addr) {
             return changeAddressForSaplingAddress(addr);
         },
-        [&](const libzcash::SaplingExtendedFullViewingKey& fvk) -> ChangeAddress {
+        [&](const libzcash::SaplingExtendedFullViewingKey& fvk) {
             return changeAddressForSaplingAddress(fvk.DefaultAddress());
         },
-        [&](const libzcash::UnifiedAddress& ua) -> ChangeAddress {
+        [&](const libzcash::UnifiedAddress& ua) {
             auto zufvk = wallet.GetUFVKForAddress(ua);
             assert(zufvk.has_value());
             return changeAddressForZUFVK(zufvk.value(), ua.GetKnownReceiverTypes());
         },
-        [&](const libzcash::UnifiedFullViewingKey& fvk) -> ChangeAddress {
+        [&](const libzcash::UnifiedFullViewingKey& fvk) {
             return changeAddressForZUFVK(
                     ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(params, fvk),
                     fvk.GetKnownReceiverTypes());
         },
-        [&](const AccountZTXOPattern& acct) -> ChangeAddress {
-            auto addr = wallet.GenerateChangeAddressForAccount(
+        [&](const AccountZTXOPattern& acct) -> tl::expected<ChangeAddress, AddressResolutionError> {
+                auto addr = wallet.GenerateChangeAddressForAccount(
                     acct.GetAccountId(),
                     getAllowedChangePools(acct.GetReceiverTypes()));
             assert(addr.has_value());
@@ -297,10 +305,20 @@ InvalidFundsError ReportInvalidFunds(
                : InvalidFundsReason(InsufficientFundsError(targetAmount))));
 }
 
-static void
-AddChangePayment(Payments& resolvedPayments, const ChangeAddress& changeAddr, CAmount changeAmount)
+static tl::expected<void, InputSelectionError>
+AddChangePayment(
+        const SpendableInputs& spendable,
+        Payments& resolvedPayments,
+        const ChangeAddress& changeAddr,
+        CAmount changeAmount,
+        CAmount targetAmount)
 {
     assert(changeAmount > 0);
+
+    // When spending transparent coinbase outputs, all inputs must be fully consumed.
+    if (spendable.HasTransparentCoinbase()) {
+        return tl::make_unexpected(ChangeNotAllowedError(spendable.Total(), targetAmount));
+    }
 
     examine(changeAddr, match {
         // TODO: Once we can add Sprout change to `resolvedPayments`, we don’t need to pass
@@ -312,6 +330,8 @@ AddChangePayment(Payments& resolvedPayments, const ChangeAddress& changeAddr, CA
                     ResolvedPayment(std::nullopt, sendTo, changeAmount, std::nullopt, true));
         }
     });
+
+    return {};
 }
 
 /// On the initial call, we haven’t yet selected inputs, so we assume the outputs dominate the
@@ -344,11 +364,12 @@ WalletTxBuilder::IterateLimit(
     CAmount bumpTargetAmount{0};
     std::optional<ChangeAddress> changeAddr;
     CAmount changeAmount{0};
+    CAmount targetAmount{0};
 
     do {
         spendableMut = spendable;
 
-        auto targetAmount{sendAmount + updatedFee};
+        targetAmount = sendAmount + updatedFee;
 
         // TODO: the set of recipient pools is not quite sufficient information here; we should
         // probably perform note selection at the same time as we're performing resolved payment
@@ -364,13 +385,19 @@ WalletTxBuilder::IterateLimit(
             // fresh) and once we generate it, hold onto it. But we still don’t have a guarantee
             // that we won’t end up discarding it.
             if (changeAmount > 0 && !changeAddr.has_value()) {
-                changeAddr = GetChangeAddress(
+                auto possibleChangeAddr = GetChangeAddress(
                         wallet,
                         selector,
                         spendableMut,
                         resolved,
                         strategy,
                         afterNU5);
+
+                if (possibleChangeAddr.has_value()) {
+                    changeAddr = possibleChangeAddr.value();
+                } else {
+                    return tl::make_unexpected(possibleChangeAddr.error());
+                }
             }
             previousFee = updatedFee;
             updatedFee = CalcZIP317Fee(
@@ -399,7 +426,12 @@ WalletTxBuilder::IterateLimit(
 
     if (changeAmount > 0) {
         assert(changeAddr.has_value());
-        AddChangePayment(resolved, changeAddr.value(), changeAmount);
+
+        auto changeRes =
+            AddChangePayment(spendableMut, resolved, changeAddr.value(), changeAmount, targetAmount);
+        if (!changeRes.has_value()) {
+            return tl::make_unexpected(changeRes.error());
+        }
     }
 
     return std::make_tuple(spendableMut, updatedFee, changeAddr);
@@ -557,14 +589,24 @@ WalletTxBuilder::ResolveInputsAndPayments(
                             changeAmount));
         }
         if (changeAmount > 0) {
-            changeAddr = GetChangeAddress(
+            auto possibleChangeAddr = GetChangeAddress(
                     wallet,
                     selector,
                     spendableMut,
                     resolved,
                     strategy,
                     afterNU5);
-            AddChangePayment(resolved, changeAddr.value(), changeAmount);
+
+            if (possibleChangeAddr.has_value()) {
+                changeAddr = possibleChangeAddr.value();
+            } else {
+                return tl::make_unexpected(possibleChangeAddr.error());
+            }
+            auto changeRes =
+                AddChangePayment(spendableMut, resolved, changeAddr.value(), changeAmount, targetAmount);
+            if (!changeRes.has_value()) {
+                return tl::make_unexpected(changeRes.error());
+            }
         }
     } else {
         auto limitResult = IterateLimit(wallet, selector, strategy, sendAmount, dustThreshold, spendableMut, resolved, afterNU5);
@@ -576,14 +618,9 @@ WalletTxBuilder::ResolveInputsAndPayments(
         }
     }
 
-    // When spending transparent coinbase outputs, all inputs must be fully
-    // consumed, and they may only be sent to shielded recipients.
-    if (spendableMut.HasTransparentCoinbase()) {
-        if (spendableMut.Total() != targetAmount) {
-            return tl::make_unexpected(ChangeNotAllowedError(spendableMut.Total(), targetAmount));
-        } else if (resolved.HasTransparentRecipient()) {
-            return tl::make_unexpected(AddressResolutionError::TransparentRecipientNotAllowed);
-        }
+    // When spending transparent coinbase outputs they may only be sent to shielded recipients.
+    if (spendableMut.HasTransparentCoinbase() && resolved.HasTransparentRecipient()) {
+        return tl::make_unexpected(AddressResolutionError::TransparentRecipientNotAllowed);
     }
 
     if (spendableMut.orchardNoteMetadata.size() > this->maxOrchardActions) {

@@ -225,6 +225,8 @@ enum class AddressResolutionError {
     SproutRecipientsNotSupported,
     //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedRecipients`
     TransparentRecipientNotAllowed,
+    //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedRecipients`
+    TransparentChangeNotAllowed,
     //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedAmounts`, but we don’t have enough
     //! Sapling funds to avoid revealing amounts
     RevealingSaplingAmountNotAllowed,
@@ -338,7 +340,7 @@ private:
      */
     CAmount DefaultDustThreshold() const;
 
-    ChangeAddress
+    tl::expected<ChangeAddress, AddressResolutionError>
     GetChangeAddress(
             CWallet& wallet,
             const ZTXOSelector& selector,
