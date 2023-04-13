@@ -270,6 +270,7 @@ class DependsVersionGetter:
         mk_file = open(mk_file_path, 'r', encoding='utf8').read()
 
         regexp_whitelist = [
+            "package\)_default_version=(\d+)\.(\d+)\.(\d+)$",
             "package\)_version=(\d+)\.(\d+)\.(\d+)$",
             "package\)_version=(\d+)\.(\d+)$",
             "package\)_version=(\d+)_(\d+)_(\d+)$",
