@@ -173,6 +173,11 @@ who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "1.0.11 -> 2.0.0"
 
+[[audits.clearscreen]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.0.0 -> 2.0.1"
+
 [[audits.constant_time_eq]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = ["safe-to-deploy", "crypto-reviewed"]
@@ -423,6 +428,15 @@ who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.12.1 -> 0.13.0"
 
+[[audits.fpe]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.6.0 -> 0.6.1"
+notes = """
+I am the author of this crate. This release fixes a regression bug in 0.6.0, and
+was reviewed by an ECC engineer.
+"""
+
 [[audits.futures-channel]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -517,6 +531,49 @@ Checked that getrandom::wasi::getrandom_inner matches wasi::random_get.
 Checked that getrandom::util_libc::Weak lock ordering matches std::sys::unix::weak::DlsymWeak.
 """
 
+[[audits.getrandom]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.8 -> 0.2.9"
+notes = """
+The new `getrandom_uninit` method is introduced by retrofitting every system
+implementation to take `&mut [MaybeUninit<u8>]` instead of `&mut [u8]`.
+
+Most implementations are only altered to update their signature, and to
+internally cast the slice back to `*mut u8` when writing to it. All of these
+backends appear to write bytes to the full length of the slice, so it should be
+fully initialized afterwards, upholding the invariants of the new `unsafe` code
+in the public APIs.
+
+- I did not check the behaviour of each implementation's system method to ensure
+  they never write uninitialized bytes; the code prior to this change already
+  needed to uphold that invariant as it was writing into `&mut [u8]`.
+
+The following system implementations have additional `unsafe` code modifications:
+
+- `custom`: The slice is zero-filled to ensure the `MaybeUninit<u8>` doesn't
+  escape into a system implementation that might not write initialized bytes
+  into the entire slice. The internal API between registration and usage is also
+  switched from C ABI to Rust ABI, to guard against potential panics.
+
+- `emscripten`: New backend, implementation looks reasonable.
+
+- `hermit`: New backend, writes incrementally to the slice, but ensures that the
+  entire slice has been written to before returning `Ok(())`. I note that it is
+  possible for the implementation to loop indefinitely if `sys_read_entropy`
+  were to always return 0 for some reason.
+
+- `js`: Adds chunking to limit each write to less than 2^31 (but that seems like
+  a bugfix). The safety requirements for `Uint8Array::view_mut_raw` appear to be
+  satisfied.
+
+- `rdrand`: Code changes to better handle CPU families with broken RDRAND.
+
+- `solaris_illumos`: Now uses `GRND_RANDOM`.
+
+- `windows`: Added `RtlGenRandom` fallback for non-UWP Windows.
+"""
+
 [[audits.gimli]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -590,6 +647,11 @@ notes = """
 Fixes a bug where memory was reserved based on an adversary-controllable size, before the
 corresponding data was received.
 """
+
+[[audits.hyper]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.14.25 -> 0.14.26"
 
 [[audits.incrementalmerkletree]]
 who = "Jack Grigg <jack@electriccoin.co>"
@@ -1021,6 +1083,11 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.155 -> 1.0.156"
 
+[[audits.serde]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.159 -> 1.0.160"
+
 [[audits.serde_derive]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
@@ -1037,11 +1104,26 @@ who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "1.0.155 -> 1.0.156"
 
+[[audits.serde_derive]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.159 -> 1.0.160"
+
+[[audits.serde_json]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "1.0.95 -> 1.0.96"
+
 [[audits.sketches-ddsketch]]
 who = "Jack Grigg <jack@z.cash>"
 criteria = "safe-to-deploy"
 delta = "0.1.3 -> 0.2.0"
 notes = "I did not review the refactor, but there are no unsafe blocks and I didn't see any obvious changes that could result in panics."
+
+[[audits.sketches-ddsketch]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.2.0 -> 0.2.1"
 
 [[audits.syn]]
 who = "Daira Hopwood <daira@jacaranda.org>"
@@ -1068,6 +1150,11 @@ notes = "Fixes string literal parsing to only skip specified whitespace characte
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "2.0.11 -> 2.0.13"
+
+[[audits.syn]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "2.0.13 -> 2.0.15"
 
 [[audits.terminfo]]
 who = "Jack Grigg <jack@z.cash>"
