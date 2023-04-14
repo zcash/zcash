@@ -290,6 +290,17 @@ public:
         available(available), required(required) { }
 };
 
+/// Error when a fee is higher than can be useful. This reduces the chance of accidentally
+/// overpaying with explicit fees.
+class AbsurdFeeError {
+public:
+    CAmount conventionalFee;
+    CAmount fixedFee;
+
+    AbsurdFeeError(CAmount conventionalFee, CAmount fixedFee):
+        conventionalFee(conventionalFee), fixedFee(fixedFee) { }
+};
+
 enum ActionSide {
     Input,
     Output,
@@ -310,6 +321,7 @@ typedef std::variant<
     AddressResolutionError,
     InvalidFundsError,
     ChangeNotAllowedError,
+    AbsurdFeeError,
     ExcessOrchardActionsError> InputSelectionError;
 
 class InputSelection {

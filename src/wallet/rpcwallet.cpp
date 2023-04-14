@@ -5031,26 +5031,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     // Fee in Zatoshis, not currency format)
     std::optional<CAmount> nFee;
     if (params.size() > 3 && params[3].get_real() != -1.0) {
-        CAmount fixedFee = AmountFromValue( params[3] );
-
-        // Check that the user specified fee is not absurd.
-        // This allows amount=0 (and all amount < DEFAULT_FEE) transactions to use the default network fee
-        // or anything less than DEFAULT_FEE instead of being forced to use a custom fee and leak metadata
-        if (nTotalOut < DEFAULT_FEE) {
-            if (fixedFee > DEFAULT_FEE) {
-                throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        strprintf("Small transaction amount %s has fee %s that is greater than the default fee %s", FormatMoney(nTotalOut), FormatMoney(fixedFee), FormatMoney(DEFAULT_FEE)));
-            }
-        } else {
-            // Check that the user specified fee is not absurd.
-            if (fixedFee > nTotalOut) {
-                throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        strprintf("Fee %s is greater than the sum of outputs %s and also greater than the default fee", FormatMoney(fixedFee), FormatMoney(nTotalOut)));
-            }
-        }
-        nFee = fixedFee;
+        nFee = AmountFromValue( params[3] );
     }
 
     // Use input parameters as the optional context info to be returned by z_getoperationstatus and z_getoperationresult.

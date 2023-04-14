@@ -70,19 +70,6 @@ class WalletAmountParsingTest(BitcoinTestFramework):
             print(errorString)
             assert(False)
 
-        # This fee is larger than the default fee and since amount=0
-        # it should trigger error
-        fee         = Decimal('0.1')
-        recipients  = [ {"address": myzaddr, "amount": Decimal('0.0') } ]
-        minconf     = 1
-        errorString = ''
-
-        try:
-            myopid = self.nodes[0].z_sendmany(myzaddr, recipients, minconf, fee)
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert('Small transaction amount' in errorString)
-
         # This fee is less than default and greater than amount, but still valid
         fee         = Decimal('0.0000001')
         recipients  = [ {"address": myzaddr, "amount": Decimal('0.00000001') } ]

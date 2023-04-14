@@ -4,6 +4,7 @@
 #include "init.h"
 #include "rpc/protocol.h"
 #include "util/moneystr.h"
+#include "zip317.h"
 
 extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
 
@@ -165,6 +166,18 @@ void ThrowInputSelectionError(
                     "When shielding coinbase funds, the wallet does not allow any change. "
                     "The proposed transaction would result in %s in change.",
                     FormatMoney(err.available - err.required)));
+        },
+        [](const AbsurdFeeError& err) {
+            throw JSONRPCError(
+                RPC_INVALID_PARAMETER,
+                strprintf(
+                    "Fee %s is greater than %d times the conventional fee for this tx (which is "
+                    "%s). There is no prioritization benefit to a fee this large (see "
+                    "https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction) "
+                    "and likely indicates a mistake in setting the fee.",
+                    FormatMoney(err.fixedFee),
+                    WEIGHT_RATIO_CAP,
+                    FormatMoney(err.conventionalFee)));
         },
         [](const ExcessOrchardActionsError& err) {
             std::string side;

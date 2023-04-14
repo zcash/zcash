@@ -602,10 +602,26 @@ WalletTxBuilder::ResolveInputsAndPayments(
             } else {
                 return tl::make_unexpected(possibleChangeAddr.error());
             }
+
+            // TODO: This duplicates the check in the `else` branch of the containing `if`. Until we
+            //       can add Sprout change to `Payments` (#5660), we need to check this before
+            //       adding the change payment. We can remove this check and make the later one
+            //       unconditional once that’s fixed.
+            auto conventionalFee =
+                CalcZIP317Fee(spendableMut, resolved.GetResolvedPayments(), changeAddr);
+            if (finalFee > WEIGHT_RATIO_CAP * conventionalFee) {
+                return tl::make_unexpected(AbsurdFeeError(conventionalFee, finalFee));
+            }
             auto changeRes =
                 AddChangePayment(spendableMut, resolved, changeAddr.value(), changeAmount, targetAmount);
             if (!changeRes.has_value()) {
                 return tl::make_unexpected(changeRes.error());
+            }
+        } else {
+            auto conventionalFee =
+                CalcZIP317Fee(spendableMut, resolved.GetResolvedPayments(), std::nullopt);
+            if (finalFee > WEIGHT_RATIO_CAP * conventionalFee) {
+                return tl::make_unexpected(AbsurdFeeError(resolved.Total(), finalFee));
             }
         }
     } else {
@@ -915,7 +931,7 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
     // TODO: We currently can’t store Sprout change in `Payments`, so we only validate the
     //       spend/output balance in the case that `TransactionBuilder` doesn’t need to
     //       (re)calculate the change. In future, we shouldn’t rely on `TransactionBuilder` ever
-    //       calculating change.
+    //       calculating change. (#5660)
     if (changeAddr.has_value()) {
         examine(changeAddr.value(), match {
             [&](const SproutPaymentAddress& addr) {

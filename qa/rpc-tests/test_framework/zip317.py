@@ -19,6 +19,11 @@ MARGINAL_FEE = 5000
 # https://zips.z.cash/zip-0317#fee-calculation.
 GRACE_ACTIONS = 2
 
+# Limits the relative probability of picking a given transaction to be at most `WEIGHT_RATIO_CAP`
+# times greater than a transaction that pays exactly the conventional fee. See
+# https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction
+WEIGHT_RATIO_CAP = 4
+
 # The Zcashd RPC sentinel value to indicate the conventional_fee when a positional argument is
 # required.
 ZIP_317_FEE = -1

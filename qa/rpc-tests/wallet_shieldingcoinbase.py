@@ -10,7 +10,7 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, connect_nodes_bi, wait_and_assert_operationid_status, \
     wait_and_assert_operationid_status_result, get_coinbase_address, \
     check_node_log, DEFAULT_FEE
-from test_framework.zip317 import conventional_fee, ZIP_317_FEE
+from test_framework.zip317 import conventional_fee, WEIGHT_RATIO_CAP, ZIP_317_FEE
 
 import sys
 import timeit
@@ -299,9 +299,11 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         self.nodes[1].generate(1)
         self.sync_all()
 
+        many_recipient_fee = conventional_fee(2+num_t_recipients) # 2+ for padded Sapling input/change
+
         # check balance
         node2balance = amount_per_recipient * num_t_recipients
-        saplingvalue -= node2balance + conventional_fee(2+num_t_recipients) # 2+ for padded Sapling input/change
+        saplingvalue -= node2balance + many_recipient_fee
         assert_equal(self.nodes[2].getbalance(), node2balance)
         check_value_pool(self.nodes[0], 'sapling', saplingvalue)
 
@@ -320,12 +322,9 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
             errorString = e.error['message']
         assert_equal("Amount out of range" in errorString, True)
 
-        # Send will fail because fee is larger than sum of outputs
-        try:
-            self.nodes[0].z_sendmany(myzaddr, recipients, 1, (amount_per_recipient * num_t_recipients) + Decimal('0.00000001'))
-        except JSONRPCException as e:
-            errorString = e.error['message']
-        assert_equal("is greater than the sum of outputs" in errorString, True)
+        # Send will fail because fee is more than `WEIGHT_RATIO_CAP * conventional_fee`
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, (WEIGHT_RATIO_CAP * many_recipient_fee) + Decimal('0.00000001'))
+        wait_and_assert_operationid_status(self.nodes[0], myopid, 'failed', 'Fee 0.40000001 is greater than 4 times the conventional fee for this tx (which is 0.10). There is no prioritization benefit to a fee this large (see https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction) and likely indicates a mistake in setting the fee.')
 
         # Send will succeed because the balance of non-coinbase utxos is 10.0
         try:
