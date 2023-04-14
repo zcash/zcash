@@ -4813,7 +4813,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "                           the output is being sent to a transparent address, it’s an error to include this field.\n"
             "    }, ... ]\n"
             "3. minconf               (numeric, optional, default=" + strprintf("%u", DEFAULT_NOTE_CONFIRMATIONS) + ") Only use funds confirmed at least this many times.\n"
-            "4. fee                   (numeric, optional, default=-1) The fee amount to attach to this transaction. The default behavior\n"
+            "4. fee                   (numeric, optional, default=-1) The fee amount in " + CURRENCY_UNIT + " to attach to this transaction. The default behavior\n"
             "                         is to use a fee calculated according to ZIP 317.\n"
             "5. privacyPolicy         (string, optional, default=\"LegacyCompat\") Policy for what information leakage is acceptable.\n"
             "                         One of the following strings:\n"

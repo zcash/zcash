@@ -12,7 +12,7 @@
 from test_framework.mininode import COIN
 from decimal import Decimal
 
-# The fee per logical action, in ZAT. See https://zips.z.cash/zip-0317#fee-calculation.
+# The fee per logical action, in zatoshis. See https://zips.z.cash/zip-0317#fee-calculation.
 MARGINAL_FEE = 5000
 
 # The lower bound on the number of logical actions in a tx, for purposes of fee calculation. See
@@ -24,7 +24,7 @@ GRACE_ACTIONS = 2
 # https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction
 WEIGHT_RATIO_CAP = 4
 
-# The Zcashd RPC sentinel value to indicate the conventional_fee when a positional argument is
+# The zcashd RPC sentinel value to indicate the conventional_fee when a positional argument is
 # required.
 ZIP_317_FEE = -1
 

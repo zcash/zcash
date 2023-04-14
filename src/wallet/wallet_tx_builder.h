@@ -241,12 +241,16 @@ enum class AddressResolutionError {
     RevealingReceiverAmountsNotAllowed,
 };
 
-class QuasiChangeError {
+/// Phantom change is change that appears to exist until we add the output for it, at which point it
+/// is consumed by the increase to the conventional fee. When we are at the limit of selectable
+/// notes, this makes it impossible to create the transaction without either creating a 0-valued
+/// output or overpaying the fee.
+class PhantomChangeError {
 public:
     CAmount finalFee;
     CAmount dustThreshold;
 
-    QuasiChangeError(CAmount finalFee, CAmount dustThreshold):
+    PhantomChangeError(CAmount finalFee, CAmount dustThreshold):
         finalFee(finalFee), dustThreshold(dustThreshold) { }
 };
 
@@ -268,7 +272,7 @@ public:
 };
 
 typedef std::variant<
-    QuasiChangeError,
+    PhantomChangeError,
     InsufficientFundsError,
     DustThresholdError> InvalidFundsReason;
 

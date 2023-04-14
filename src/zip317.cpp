@@ -15,9 +15,9 @@ CAmount CalculateConventionalFee(size_t logicalActionCount) {
 }
 
 template<typename T>
-size_t GetUTXOFieldSize(const std::vector<T>& utxos) {
-    auto size = GetSerializeSize(utxos, SER_NETWORK, PROTOCOL_VERSION);
-    auto countSize = GetSizeOfCompactSize(utxos.size());
+static size_t GetTxIOFieldSize(const std::vector<T>& txIOs) {
+    auto size = GetSerializeSize(txIOs, SER_NETWORK, PROTOCOL_VERSION);
+    auto countSize = GetSizeOfCompactSize(txIOs.size());
     return size - countSize;
 }
 
@@ -28,8 +28,8 @@ size_t CalculateLogicalActionCount(
         unsigned int saplingSpendCount,
         unsigned int saplingOutputCount,
         unsigned int orchardActionCount) {
-    const size_t tx_in_total_size = GetUTXOFieldSize(vin);
-    const size_t tx_out_total_size = GetUTXOFieldSize(vout);
+    const size_t tx_in_total_size = GetTxIOFieldSize(vin);
+    const size_t tx_out_total_size = GetTxIOFieldSize(vout);
 
     return std::max(ceil_div(tx_in_total_size, P2PKH_STANDARD_INPUT_SIZE),
                     ceil_div(tx_out_total_size, P2PKH_STANDARD_OUTPUT_SIZE)) +

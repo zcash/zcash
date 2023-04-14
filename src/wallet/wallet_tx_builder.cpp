@@ -200,31 +200,26 @@ SpendableInputs WalletTxBuilder::FindAllSpendableInputs(
     return wallet.FindSpendableInputs(selector, minDepth, std::nullopt);
 }
 
-static size_t NotOne(size_t n)
+static size_t PadCount(size_t n)
 {
     return n == 1 ? 2 : n;
 }
 
-/// ISSUES:
-/// • z_shieldcoinbase currently checks the fee in advance of calling PrepareTransaction in order to
-///   determine the payment amount. But that fee possibly isn’t correct. We could perhaps have _no_
-///   payments in z_shieldcoinbase, but provide an explicit change address? (Don’t expose this via
-///   RPC, and give it a different name, e.g. `NetFundsRecipient` in the WalletTxBuilder interface)
 static CAmount
 CalcZIP317Fee(
         const std::optional<SpendableInputs>& inputs,
         const std::vector<ResolvedPayment>& payments,
         const std::optional<ChangeAddress>& changeAddr)
 {
-    std::vector<CTxOut> vouts{};
+    std::vector<CTxOut> vout{};
     size_t sproutOutputCount{}, saplingOutputCount{}, orchardOutputCount{};
     for (const auto& payment : payments) {
         std::visit(match {
             [&](const CKeyID& addr) {
-                vouts.emplace_back(payment.amount, GetScriptForDestination(addr));
+                vout.emplace_back(payment.amount, GetScriptForDestination(addr));
             },
             [&](const CScriptID& addr) {
-                vouts.emplace_back(payment.amount, GetScriptForDestination(addr));
+                vout.emplace_back(payment.amount, GetScriptForDestination(addr));
             },
             [&](const libzcash::SaplingPaymentAddress&) {
                 ++saplingOutputCount;
@@ -241,10 +236,10 @@ CalcZIP317Fee(
             [&](const RecipientAddress& addr) {
                 examine(addr, match {
                     [&](const CKeyID& taddr) {
-                        vouts.emplace_back(0, GetScriptForDestination(taddr));
+                        vout.emplace_back(0, GetScriptForDestination(taddr));
                     },
                     [&](const CScriptID taddr) {
-                        vouts.emplace_back(0, GetScriptForDestination(taddr));
+                        vout.emplace_back(0, GetScriptForDestination(taddr));
                     },
                     [&](const libzcash::SaplingPaymentAddress&) { ++saplingOutputCount; },
                     [&](const libzcash::OrchardRawAddress&) { ++orchardOutputCount; }
@@ -253,38 +248,34 @@ CalcZIP317Fee(
         });
     }
 
-    size_t logicalActionCount;
+    std::vector<CTxIn> vin{};
+    size_t sproutInputCount = 0;
+    size_t saplingInputCount = 0;
+    size_t orchardInputCount = 0;
     if (inputs.has_value()) {
-        std::vector<CTxIn> vins{};
-        for (const auto& utxo : inputs.value().utxos) {
-            vins.emplace_back(
+        for (const auto& utxo : inputs->utxos) {
+            vin.emplace_back(
                     COutPoint(utxo.tx->GetHash(), utxo.i),
                     utxo.tx->vout[utxo.i].scriptPubKey);
         }
-        logicalActionCount = CalculateLogicalActionCount(
-                vins,
-                vouts,
-                std::max(inputs.value().sproutNoteEntries.size(), sproutOutputCount),
-                inputs.value().saplingNoteEntries.size(),
-                NotOne(saplingOutputCount),
-                NotOne(std::max(inputs.value().orchardNoteMetadata.size(), orchardOutputCount)));
-
-    } else {
-        logicalActionCount = CalculateLogicalActionCount(
-                {},
-                vouts,
-                sproutOutputCount,
-                0,
-                NotOne(saplingOutputCount),
-                NotOne(orchardOutputCount));
+        sproutInputCount = inputs->sproutNoteEntries.size();
+        saplingInputCount = inputs->saplingNoteEntries.size();
+        orchardInputCount = inputs->orchardNoteMetadata.size();
     }
+    size_t logicalActionCount = CalculateLogicalActionCount(
+            vin,
+            vout,
+            std::max(sproutInputCount, sproutOutputCount),
+            saplingInputCount,
+            PadCount(saplingOutputCount),
+            PadCount(std::max(orchardInputCount, orchardOutputCount)));
 
     return CalculateConventionalFee(logicalActionCount);
 }
 
 InvalidFundsError ReportInvalidFunds(
         const SpendableInputs& spendable,
-        bool hasQuasiChange,
+        bool hasPhantomChange,
         CAmount fee,
         CAmount dustThreshold,
         CAmount targetAmount,
@@ -292,9 +283,9 @@ InvalidFundsError ReportInvalidFunds(
 {
     return InvalidFundsError(
             spendable.Total(),
-            hasQuasiChange
+            hasPhantomChange
             // TODO: NEED TESTS TO EXERCISE THIS
-            ? InvalidFundsReason(QuasiChangeError(fee, dustThreshold))
+            ? InvalidFundsReason(PhantomChangeError(fee, dustThreshold))
             : (changeAmount > 0 && changeAmount < dustThreshold
                // TODO: we should provide the option for the caller to explicitly forego change
                // (definitionally an amount below the dust amount) and send the extra to the
@@ -367,6 +358,7 @@ WalletTxBuilder::IterateLimit(
     CAmount targetAmount{0};
 
     do {
+        // NB: This makes a fresh copy so that we start from the full set of notes when we re-limit.
         spendableMut = spendable;
 
         targetAmount = sendAmount + updatedFee;
@@ -459,8 +451,8 @@ WalletTxBuilder::ResolveInputsAndPayments(
     CAmount maxOrchardAvailable = spendableMut.GetOrchardTotal();
     uint32_t orchardOutputs{0};
 
-    // we can only select Orchard addresses if there are sufficient non-Sprout
-    // funds to cover the total payments + fee.
+    // we can only select Orchard addresses if we’re not sending from Sprout, since there is no tx
+    // version where both Sprout and Orchard are valid.
     bool canResolveOrchard = afterNU5 && !selector.SelectsSprout();
     std::vector<ResolvedPayment> resolvedPayments;
     std::optional<AddressResolutionError> resolutionError;

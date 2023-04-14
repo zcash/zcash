@@ -124,7 +124,7 @@ void ThrowInputSelectionError(
                     "Insufficient funds: have %s, %s",
                     FormatMoney(err.available),
                     examine(err.reason, match {
-                        [](const QuasiChangeError& qce) {
+                        [](const PhantomChangeError& qce) {
                             return strprintf(
                                     "need %s more to surpass the dust threshold and avoid being "
                                     "forced to over-pay the fee. Alternatively, you could specify "
@@ -137,7 +137,7 @@ void ThrowInputSelectionError(
                             return strprintf("need %s", FormatMoney(ife.required));
                         },
                         // TODO: Add the fee here, so we can suggest specifying an explicit fee (see
-                        //       `QuasiChangeError`).
+                        //       `PhantomChangeError`).
                         [](const DustThresholdError& dte) {
                             return strprintf(
                                     "need %s more to avoid creating invalid change output %s (dust threshold is %s)",
