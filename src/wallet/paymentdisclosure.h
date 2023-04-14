@@ -18,7 +18,7 @@
 #include <cstdint>
 #include <string>
 
-#include <rust/ed25519/types.h>
+#include <rust/ed25519.h>
 
 
 // Ensure that the two different protocol messages, payment disclosure blobs and transactions,
@@ -38,7 +38,7 @@ typedef JSOutPoint PaymentDisclosureKey;
 struct PaymentDisclosureInfo {
     uint8_t version;          // 0 = experimental, 1 = first production version, etc.
     uint256 esk;              // zcash/NoteEncryption.cpp
-    Ed25519SigningKey joinSplitPrivKey; // primitives/transaction.h
+    ed25519::SigningKey joinSplitPrivKey; // primitives/transaction.h
     // ed25519 - not tied to implementation e.g. libsodium, see ed25519 rfc
 
     libzcash::SproutPaymentAddress zaddr;
@@ -46,7 +46,7 @@ struct PaymentDisclosureInfo {
     PaymentDisclosureInfo() : version(PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL) {
     }
 
-    PaymentDisclosureInfo(uint8_t v, uint256 esk, Ed25519SigningKey key, libzcash::SproutPaymentAddress zaddr) : version(v), esk(esk), joinSplitPrivKey(key), zaddr(zaddr) { }
+    PaymentDisclosureInfo(uint8_t v, uint256 esk, ed25519::SigningKey key, libzcash::SproutPaymentAddress zaddr) : version(v), esk(esk), joinSplitPrivKey(key), zaddr(zaddr) { }
 
     ADD_SERIALIZE_METHODS;
 
@@ -64,10 +64,7 @@ struct PaymentDisclosureInfo {
         return (
             a.version == b.version &&
             a.esk == b.esk &&
-            std::equal(
-                a.joinSplitPrivKey.bytes,
-                a.joinSplitPrivKey.bytes + ED25519_SIGNING_KEY_LEN,
-                b.joinSplitPrivKey.bytes) &&
+            a.joinSplitPrivKey.bytes == b.joinSplitPrivKey.bytes &&
             a.zaddr == b.zaddr);
     }
 
@@ -123,13 +120,13 @@ struct PaymentDisclosurePayload {
 
 struct PaymentDisclosure {
     PaymentDisclosurePayload payload;
-    Ed25519Signature payloadSig;
+    ed25519::Signature payloadSig;
     // We use boost array because serialize doesn't like char buffer, otherwise we could do: unsigned char payloadSig[64];
 
     PaymentDisclosure() {};
-    PaymentDisclosure(const PaymentDisclosurePayload payload, const Ed25519Signature sig) : payload(payload), payloadSig(sig) {};
+    PaymentDisclosure(const PaymentDisclosurePayload payload, const ed25519::Signature sig) : payload(payload), payloadSig(sig) {};
     PaymentDisclosure(
-        const Ed25519VerificationKey& joinSplitPubKey,
+        const ed25519::VerificationKey& joinSplitPubKey,
         const PaymentDisclosureKey& key,
         const PaymentDisclosureInfo& info,
         const std::string& message);
@@ -147,10 +144,7 @@ struct PaymentDisclosure {
     friend bool operator==(const PaymentDisclosure& a, const PaymentDisclosure& b) {
         return (
             a.payload == b.payload &&
-            std::equal(
-                a.payloadSig.bytes,
-                a.payloadSig.bytes + ED25519_SIGNATURE_LEN,
-                b.payloadSig.bytes)
+            a.payloadSig.bytes == b.payloadSig.bytes
         );
     }
 

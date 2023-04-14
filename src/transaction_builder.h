@@ -24,6 +24,7 @@
 
 #include <rust/bridge.h>
 #include <rust/builder.h>
+#include <rust/ed25519.h>
 
 #define NO_MEMO {{0xF6}}
 
@@ -208,7 +209,7 @@ struct OutputDescriptionInfo {
 };
 
 struct JSDescriptionInfo {
-    Ed25519VerificationKey joinSplitPubKey;
+    ed25519::VerificationKey joinSplitPubKey;
     uint256 anchor;
     // We store references to these so they are correctly randomised for the caller.
     std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs;
@@ -217,7 +218,7 @@ struct JSDescriptionInfo {
     CAmount vpub_new;
 
     JSDescriptionInfo(
-        Ed25519VerificationKey joinSplitPubKey,
+        ed25519::VerificationKey joinSplitPubKey,
         uint256 anchor,
         std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
         std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,

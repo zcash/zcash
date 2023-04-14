@@ -97,9 +97,9 @@ TEST(paymentdisclosure, mainnet) {
 
     for (int i=0; i<NUM_TRIES; i++) {
         // Generate an ephemeral keypair for joinsplit sig.
-        Ed25519SigningKey joinSplitPrivKey;
-        Ed25519VerificationKey joinSplitPubKey;
-        ed25519_generate_keypair(&joinSplitPrivKey, &joinSplitPubKey);
+        ed25519::SigningKey joinSplitPrivKey;
+        ed25519::VerificationKey joinSplitPubKey;
+        ed25519::generate_keypair(joinSplitPrivKey, joinSplitPubKey);
 
         // Create payment disclosure key and info data to store in test database
         size_t js = GetRandHash().GetCheapHash() % std::numeric_limits<size_t>::max();
@@ -118,7 +118,7 @@ TEST(paymentdisclosure, mainnet) {
 
         // Modify this local variable and confirm it no longer matches
         info2.esk = GetRandHash();
-        GetRandBytes(info2.joinSplitPrivKey.bytes, ED25519_VERIFICATION_KEY_LEN);
+        GetRandBytes(info2.joinSplitPrivKey.bytes.data(), info2.joinSplitPrivKey.bytes.size());
         info2.zaddr = libzcash::SproutSpendingKey::random().address();        
         ASSERT_NE(info, info2);
 
@@ -136,20 +136,17 @@ TEST(paymentdisclosure, mainnet) {
         uint256 dataToBeSigned = SerializeHash(payload, SER_GETHASH, 0);
 
         // Compute the payload signature
-        Ed25519Signature payloadSig;
-        if (!ed25519_sign(
-            &joinSplitPrivKey,
-            dataToBeSigned.begin(), 32,
-            &payloadSig))
-        {
-            throw std::runtime_error("ed25519_sign failed");
-        }
+        ed25519::Signature payloadSig;
+        ed25519::sign(
+            joinSplitPrivKey,
+            {dataToBeSigned.begin(), 32},
+            payloadSig);
 
         // Sanity check
-        if (!ed25519_verify(
-            &joinSplitPubKey,
-            &payloadSig,
-            dataToBeSigned.begin(), 32))
+        if (!ed25519::verify(
+            joinSplitPubKey,
+            payloadSig,
+            {dataToBeSigned.begin(), 32}))
         {
             throw std::runtime_error("ed25519_verify failed");
         }

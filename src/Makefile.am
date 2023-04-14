@@ -52,16 +52,19 @@ endif
 
 CXXBRIDGE_RS = \
   rust/src/blake2b.rs \
+  rust/src/ed25519.rs \
   rust/src/equihash.rs \
   rust/src/streams.rs \
   rust/src/bridge.rs
 CXXBRIDGE_H = \
   rust/gen/include/rust/blake2b.h \
+  rust/gen/include/rust/ed25519.h \
   rust/gen/include/rust/equihash.h \
   rust/gen/include/rust/streams.h \
   rust/gen/include/rust/bridge.h
 CXXBRIDGE_CPP = \
   rust/gen/src/blake2b.cpp \
+  rust/gen/src/ed25519.cpp \
   rust/gen/src/equihash.cpp \
   rust/gen/src/streams.cpp \
   rust/gen/src/bridge.cpp

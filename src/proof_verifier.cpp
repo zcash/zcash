@@ -13,13 +13,13 @@
 class SproutProofVerifier
 {
     ProofVerifier& verifier;
-    const Ed25519VerificationKey& joinSplitPubKey;
+    const ed25519::VerificationKey& joinSplitPubKey;
     const JSDescription& jsdesc;
 
 public:
     SproutProofVerifier(
         ProofVerifier& verifier,
-        const Ed25519VerificationKey& joinSplitPubKey,
+        const ed25519::VerificationKey& joinSplitPubKey,
         const JSDescription& jsdesc
         ) : jsdesc(jsdesc), verifier(verifier), joinSplitPubKey(joinSplitPubKey) {}
 
@@ -60,7 +60,7 @@ ProofVerifier ProofVerifier::Disabled() {
 
 bool ProofVerifier::VerifySprout(
     const JSDescription& jsdesc,
-    const Ed25519VerificationKey& joinSplitPubKey
+    const ed25519::VerificationKey& joinSplitPubKey
 ) {
     if (!perform_verification) {
         return true;

@@ -80,7 +80,7 @@ uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, un
     }
 
     // Blank out the joinsplit signature.
-    memset(&txTmp.joinSplitSig.bytes, 0, ED25519_SIGNATURE_LEN);
+    txTmp.joinSplitSig.bytes.fill(0);
 
     // Serialize and hash
     CHashWriter ss(SER_GETHASH, 0);
@@ -184,8 +184,8 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
             tx.vJoinSplit.push_back(jsdesc);
         }
 
-        Ed25519SigningKey joinSplitPrivKey;
-        ed25519_generate_keypair(&joinSplitPrivKey, &tx.joinSplitPubKey);
+        ed25519::SigningKey joinSplitPrivKey;
+        ed25519::generate_keypair(joinSplitPrivKey, tx.joinSplitPubKey);
 
         // Empty output script.
         CScript scriptCode;
@@ -193,10 +193,10 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
         PrecomputedTransactionData txdata(signTx, {});
         uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
 
-        assert(ed25519_sign(
-            &joinSplitPrivKey,
-            dataToBeSigned.begin(), 32,
-            &tx.joinSplitSig));
+        ed25519::sign(
+            joinSplitPrivKey,
+            {dataToBeSigned.begin(), 32},
+            tx.joinSplitSig);
     }
 }
 

@@ -365,8 +365,8 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         AssumeShieldedInputsExistAndAreSpendable baseView;
         CCoinsViewCache view(&baseView);
 
-        Ed25519SigningKey joinSplitPrivKey;
-        ed25519_generate_keypair(&joinSplitPrivKey, &newTx.joinSplitPubKey);
+        ed25519::SigningKey joinSplitPrivKey;
+        ed25519::generate_keypair(joinSplitPrivKey, newTx.joinSplitPubKey);
 
         // No joinsplits, vin and vout, means it should be invalid.
         BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
@@ -404,10 +404,10 @@ void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransa
         CTransaction signTx(newTx);
         uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId, txdata);
 
-        assert(ed25519_sign(
-            &joinSplitPrivKey,
-            dataToBeSigned.begin(), 32,
-            &newTx.joinSplitSig));
+        ed25519::sign(
+            joinSplitPrivKey,
+            {dataToBeSigned.begin(), 32},
+            newTx.joinSplitSig);
 
         state = CValidationState();
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));

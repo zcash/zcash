@@ -21,7 +21,7 @@
 
 #include <univalue.h>
 
-#include <rust/ed25519/types.h>
+#include <rust/ed25519.h>
 
 using namespace libzcash;
 
@@ -95,8 +95,8 @@ private:
     PaymentAddress toPaymentAddress_;
     std::string memo_;
 
-    Ed25519VerificationKey joinSplitPubKey_;
-    Ed25519SigningKey joinSplitPrivKey_;
+    ed25519::VerificationKey joinSplitPubKey_;
+    ed25519::SigningKey joinSplitPrivKey_;
 
     // The key is the result string from calling JSOutPoint::ToString()
     std::unordered_map<std::string, MergeToAddressWitnessAnchorData> jsopWitnessAnchorMap;

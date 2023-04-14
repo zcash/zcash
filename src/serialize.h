@@ -26,7 +26,7 @@
 #include <vector>
 
 
-#include <rust/ed25519/types.h>
+#include <rust/ed25519.h>
 
 #include "prevector.h"
 
@@ -588,22 +588,22 @@ template<typename Stream, typename T> void Serialize(Stream& os, const std::uniq
 template<typename Stream, typename T> void Unserialize(Stream& os, std::unique_ptr<const T>& p);
 
 /**
- * Ed25519SigningKey
+ * ed25519::SigningKey
  */
-template<typename Stream> void Serialize(Stream& os, const Ed25519SigningKey& item);
-template<typename Stream> void Unserialize(Stream& is, Ed25519SigningKey& item);
+template<typename Stream> void Serialize(Stream& os, const ed25519::SigningKey& item);
+template<typename Stream> void Unserialize(Stream& is, ed25519::SigningKey& item);
 
 /**
- * Ed25519VerificationKey
+ * ed25519::VerificationKey
  */
-template<typename Stream> void Serialize(Stream& os, const Ed25519VerificationKey& item);
-template<typename Stream> void Unserialize(Stream& is, Ed25519VerificationKey& item);
+template<typename Stream> void Serialize(Stream& os, const ed25519::VerificationKey& item);
+template<typename Stream> void Unserialize(Stream& is, ed25519::VerificationKey& item);
 
 /**
- * Ed25519Signature
+ * ed25519::Signature
  */
-template<typename Stream> void Serialize(Stream& os, const Ed25519Signature& item);
-template<typename Stream> void Unserialize(Stream& is, Ed25519Signature& item);
+template<typename Stream> void Serialize(Stream& os, const ed25519::Signature& item);
+template<typename Stream> void Unserialize(Stream& is, ed25519::Signature& item);
 
 
 
@@ -976,52 +976,52 @@ void Unserialize(Stream& is, std::shared_ptr<const T>& p)
 
 
 /**
- * Ed25519SigningKey
+ * ed25519::SigningKey
  */
 template<typename Stream>
-void Serialize(Stream& os, const Ed25519SigningKey& sk)
+void Serialize(Stream& os, const ed25519::SigningKey& sk)
 {
-    os.write((char*)sk.bytes, ED25519_SIGNING_KEY_LEN);
+    Serialize(os, sk.bytes);
 }
 
 template<typename Stream>
-void Unserialize(Stream& is, Ed25519SigningKey& sk)
+void Unserialize(Stream& is, ed25519::SigningKey& sk)
 {
-    is.read((char*)sk.bytes, ED25519_SIGNING_KEY_LEN);
+    Unserialize(is, sk.bytes);
 }
 
 
 
 /**
- * Ed25519VerificationKey
+ * ed25519::VerificationKey
  */
 template<typename Stream>
-void Serialize(Stream& os, const Ed25519VerificationKey& vk)
+void Serialize(Stream& os, const ed25519::VerificationKey& vk)
 {
-    os.write((char*)vk.bytes, ED25519_VERIFICATION_KEY_LEN);
+    Serialize(os, vk.bytes);
 }
 
 template<typename Stream>
-void Unserialize(Stream& is, Ed25519VerificationKey& vk)
+void Unserialize(Stream& is, ed25519::VerificationKey& vk)
 {
-    is.read((char*)vk.bytes, ED25519_VERIFICATION_KEY_LEN);
+    Unserialize(is, vk.bytes);
 }
 
 
 
 /**
- * Ed25519Signature
+ * ed25519::Signature
  */
 template<typename Stream>
-void Serialize(Stream& os, const Ed25519Signature& sig)
+void Serialize(Stream& os, const ed25519::Signature& sig)
 {
-    os.write((char*)sig.bytes, ED25519_SIGNATURE_LEN);
+    Serialize(os, sig.bytes);
 }
 
 template<typename Stream>
-void Unserialize(Stream& is, Ed25519Signature& sig)
+void Unserialize(Stream& is, ed25519::Signature& sig)
 {
-    is.read((char*)sig.bytes, ED25519_SIGNATURE_LEN);
+    Unserialize(is, sig.bytes);
 }
 
 

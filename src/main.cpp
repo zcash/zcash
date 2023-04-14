@@ -1333,15 +1333,15 @@ bool ContextualCheckShieldedInputs(
 
     if (!tx.vJoinSplit.empty())
     {
-        if (!ed25519_verify(&tx.joinSplitPubKey, &tx.joinSplitSig, dataToBeSigned.begin(), 32)) {
+        if (!ed25519::verify(tx.joinSplitPubKey, tx.joinSplitSig, {dataToBeSigned.begin(), 32})) {
             // Check whether the failure was caused by an outdated consensus
             // branch ID; if so, inform the node that they need to upgrade. We
             // only check the previous epoch's branch ID, on the assumption that
             // users creating transactions will notice their transactions
             // failing before a second network upgrade occurs.
-            if (ed25519_verify(&tx.joinSplitPubKey,
-                               &tx.joinSplitSig,
-                               prevDataToBeSigned.begin(), 32)) {
+            if (ed25519::verify(tx.joinSplitPubKey,
+                                tx.joinSplitSig,
+                                {prevDataToBeSigned.begin(), 32})) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing, false, REJECT_INVALID, strprintf(
                         "old-consensus-branch-id (Expected %s, found %s)",

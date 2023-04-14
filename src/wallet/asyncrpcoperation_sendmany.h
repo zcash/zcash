@@ -22,8 +22,6 @@
 
 #include <univalue.h>
 
-#include <rust/ed25519/types.h>
-
 using namespace libzcash;
 
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {

@@ -20,7 +20,7 @@
 
 #include <array>
 
-#include <rust/ed25519/types.h>
+#include <rust/ed25519.h>
 
 using namespace libzcash;
 
@@ -29,7 +29,7 @@ using namespace libzcash;
 JSDescription makeSproutProof(
         std::array<JSInput, 2>& inputs,
         std::array<JSOutput, 2>& outputs,
-        const Ed25519VerificationKey& joinSplitPubKey,
+        const ed25519::VerificationKey& joinSplitPubKey,
         uint64_t vpub_old,
         uint64_t vpub_new,
         const uint256& rt
@@ -39,7 +39,7 @@ JSDescription makeSproutProof(
 
 bool verifySproutProof(
         const JSDescription& jsdesc,
-        const Ed25519VerificationKey& joinSplitPubKey
+        const ed25519::VerificationKey& joinSplitPubKey
 )
 {
     auto verifier = ProofVerifier::Strict();
@@ -62,8 +62,8 @@ void test_full_api()
     // Set up a JoinSplit description
     uint64_t vpub_old = 10;
     uint64_t vpub_new = 0;
-    Ed25519VerificationKey joinSplitPubKey;
-    GetRandBytes(joinSplitPubKey.bytes, ED25519_VERIFICATION_KEY_LEN);
+    ed25519::VerificationKey joinSplitPubKey;
+    GetRandBytes(joinSplitPubKey.bytes.data(), joinSplitPubKey.bytes.size());
     uint256 rt = tree.root();
     JSDescription jsdesc;
 
@@ -122,8 +122,8 @@ void test_full_api()
         vpub_old = 0;
         vpub_new = 1;
         rt = tree.root();
-        Ed25519VerificationKey joinSplitPubKey2;
-        GetRandBytes(joinSplitPubKey2.bytes, ED25519_VERIFICATION_KEY_LEN);
+        ed25519::VerificationKey joinSplitPubKey2;
+        GetRandBytes(joinSplitPubKey2.bytes.data(), joinSplitPubKey2.bytes.size());
 
         {
             std::array<JSInput, 2> inputs = {
@@ -171,8 +171,8 @@ void invokeAPI(
 ) {
     uint256 ephemeralKey;
     uint256 randomSeed;
-    Ed25519VerificationKey joinSplitPubKey;
-    GetRandBytes(joinSplitPubKey.bytes, ED25519_VERIFICATION_KEY_LEN);
+    ed25519::VerificationKey joinSplitPubKey;
+    GetRandBytes(joinSplitPubKey.bytes.data(), joinSplitPubKey.bytes.size());
     std::array<uint256, 2> macs;
     std::array<uint256, 2> nullifiers;
     std::array<uint256, 2> commitments;
@@ -283,9 +283,9 @@ for test_input in TEST_VECTORS:
     };
 
     for (std::vector<std::string>& v : tests) {
-        Ed25519VerificationKey joinSplitPubKey;
+        ed25519::VerificationKey joinSplitPubKey;
         auto pubKeyBytes = uint256S(v[3]);
-        std::copy(pubKeyBytes.begin(), pubKeyBytes.end(), joinSplitPubKey.bytes);
+        std::copy(pubKeyBytes.begin(), pubKeyBytes.end(), joinSplitPubKey.bytes.begin());
         auto expected = ZCJoinSplit::h_sig(
             uint256S(v[0]),
             {uint256S(v[1]), uint256S(v[2])},
@@ -617,7 +617,7 @@ TEST(Joinsplit, BasicJoinsplitVerification)
     auto witness = merkleTree.witness();
 
     // create JSDescription
-    Ed25519VerificationKey joinSplitPubKey;
+    ed25519::VerificationKey joinSplitPubKey;
     std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
         libzcash::JSInput(witness, note, k),
         libzcash::JSInput() // dummy input of zero value

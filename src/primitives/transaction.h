@@ -23,7 +23,7 @@
 #include "zcash/Zcash.h"
 #include "zcash/Proof.hpp"
 
-#include <rust/ed25519/types.h>
+#include <rust/ed25519.h>
 #include <primitives/orchard.h>
 
 // Overwinter transaction version group id
@@ -772,8 +772,8 @@ public:
     const std::vector<SpendDescription> vShieldedSpend;
     const std::vector<OutputDescription> vShieldedOutput;
     const std::vector<JSDescription> vJoinSplit;
-    const Ed25519VerificationKey joinSplitPubKey;
-    const Ed25519Signature joinSplitSig;
+    const ed25519::VerificationKey joinSplitPubKey;
+    const ed25519::Signature joinSplitSig;
     const binding_sig_t bindingSig = {{0}};
 
     /** Construct a CTransaction that qualifies as IsNull() */
@@ -888,8 +888,8 @@ public:
                 auto os = WithVersion(&s, static_cast<int>(header));
                 ::SerReadWrite(os, *const_cast<std::vector<JSDescription>*>(&vJoinSplit), ser_action);
                 if (vJoinSplit.size() > 0) {
-                    READWRITE(*const_cast<Ed25519VerificationKey*>(&joinSplitPubKey));
-                    READWRITE(*const_cast<Ed25519Signature*>(&joinSplitSig));
+                    READWRITE(*const_cast<ed25519::VerificationKey*>(&joinSplitPubKey));
+                    READWRITE(*const_cast<ed25519::Signature*>(&joinSplitSig));
                 }
             }
             if ((isSaplingV4 || isFuture) && !(vShieldedSpend.empty() && vShieldedOutput.empty())) {
@@ -1021,8 +1021,8 @@ struct CMutableTransaction
     std::vector<OutputDescription> vShieldedOutput;
     OrchardBundle orchardBundle;
     std::vector<JSDescription> vJoinSplit;
-    Ed25519VerificationKey joinSplitPubKey;
-    Ed25519Signature joinSplitSig;
+    ed25519::VerificationKey joinSplitPubKey;
+    ed25519::Signature joinSplitSig;
     CTransaction::binding_sig_t bindingSig = {{0}};
 
     CMutableTransaction();
