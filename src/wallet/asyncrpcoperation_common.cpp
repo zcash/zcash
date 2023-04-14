@@ -172,9 +172,9 @@ void ThrowInputSelectionError(
                 RPC_INVALID_PARAMETER,
                 strprintf(
                     "Fee %s is greater than %d times the conventional fee for this tx (which is "
-                    "%s). There is no prioritization benefit to a fee this large (see "
-                    "https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction) "
-                    "and likely indicates a mistake in setting the fee.",
+                    "%s). There is no prioritisation benefit to a fee this large (see "
+                    "https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction), "
+                    "and it likely indicates a mistake in setting the fee.",
                     FormatMoney(err.fixedFee),
                     WEIGHT_RATIO_CAP,
                     FormatMoney(err.conventionalFee)));

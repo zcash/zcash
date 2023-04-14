@@ -324,7 +324,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
 
         # Send will fail because fee is more than `WEIGHT_RATIO_CAP * conventional_fee`
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, (WEIGHT_RATIO_CAP * many_recipient_fee) + Decimal('0.00000001'))
-        wait_and_assert_operationid_status(self.nodes[0], myopid, 'failed', 'Fee 0.40000001 is greater than 4 times the conventional fee for this tx (which is 0.10). There is no prioritization benefit to a fee this large (see https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction) and likely indicates a mistake in setting the fee.')
+        wait_and_assert_operationid_status(self.nodes[0], myopid, 'failed', 'Fee 0.40000001 is greater than 4 times the conventional fee for this tx (which is 0.10). There is no prioritisation benefit to a fee this large (see https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction), and it likely indicates a mistake in setting the fee.')
 
         # Send will succeed because the balance of non-coinbase utxos is 10.0
         try:
