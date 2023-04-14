@@ -225,6 +225,8 @@ enum class AddressResolutionError {
     SproutRecipientsNotSupported,
     //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedRecipients`
     TransparentRecipientNotAllowed,
+    //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedRecipients`
+    TransparentChangeNotAllowed,
     //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedAmounts`, but we don’t have enough
     //! Sapling funds to avoid revealing amounts
     RevealingSaplingAmountNotAllowed,
@@ -237,6 +239,19 @@ enum class AddressResolutionError {
     //! Requested `PrivacyPolicy` doesn’t include `AllowRevealedAmounts`, but we are trying to pay a
     //! UA where we don’t have enough funds in any single pool that it has a receiver for
     RevealingReceiverAmountsNotAllowed,
+};
+
+/// Phantom change is change that appears to exist until we add the output for it, at which point it
+/// is consumed by the increase to the conventional fee. When we are at the limit of selectable
+/// notes, this makes it impossible to create the transaction without either creating a 0-valued
+/// output or overpaying the fee.
+class PhantomChangeError {
+public:
+    CAmount finalFee;
+    CAmount dustThreshold;
+
+    PhantomChangeError(CAmount finalFee, CAmount dustThreshold):
+        finalFee(finalFee), dustThreshold(dustThreshold) { }
 };
 
 class InsufficientFundsError {
@@ -257,6 +272,7 @@ public:
 };
 
 typedef std::variant<
+    PhantomChangeError,
     InsufficientFundsError,
     DustThresholdError> InvalidFundsReason;
 
@@ -276,6 +292,17 @@ public:
 
     ChangeNotAllowedError(CAmount available, CAmount required):
         available(available), required(required) { }
+};
+
+/// Error when a fee is higher than can be useful. This reduces the chance of accidentally
+/// overpaying with explicit fees.
+class AbsurdFeeError {
+public:
+    CAmount conventionalFee;
+    CAmount fixedFee;
+
+    AbsurdFeeError(CAmount conventionalFee, CAmount fixedFee):
+        conventionalFee(conventionalFee), fixedFee(fixedFee) { }
 };
 
 enum ActionSide {
@@ -298,27 +325,25 @@ typedef std::variant<
     AddressResolutionError,
     InvalidFundsError,
     ChangeNotAllowedError,
+    AbsurdFeeError,
     ExcessOrchardActionsError> InputSelectionError;
 
 class InputSelection {
 private:
+    SpendableInputs inputs;
     Payments payments;
-    int orchardAnchorHeight;
+    CAmount fee;
+    std::optional<ChangeAddress> changeAddr;
 
 public:
-    InputSelection(Payments payments, int orchardAnchorHeight):
-        payments(payments), orchardAnchorHeight(orchardAnchorHeight) {}
+    InputSelection(SpendableInputs inputs, Payments payments, CAmount fee, std::optional<ChangeAddress> changeAddr):
+        inputs(inputs), payments(payments), fee(fee), changeAddr(changeAddr) {}
 
-    Payments GetPayments() const;
+    const SpendableInputs& GetInputs() const;
+    const Payments& GetPayments() const;
+    CAmount GetFee() const;
+    const std::optional<ChangeAddress> GetChangeAddress() const;
 };
-
-typedef std::variant<
-    InputSelectionError,
-    InputSelection> InputSelectionResult;
-
-typedef std::variant<
-    InputSelectionError,
-    TransactionEffects> PrepareTransactionResult;
 
 class WalletTxBuilder {
 private:
@@ -331,20 +356,43 @@ private:
      */
     CAmount DefaultDustThreshold() const;
 
+    tl::expected<ChangeAddress, AddressResolutionError>
+    GetChangeAddress(
+            CWallet& wallet,
+            const ZTXOSelector& selector,
+            SpendableInputs& spendable,
+            const Payments& resolvedPayments,
+            const TransactionStrategy& strategy,
+            bool afterNU5) const;
+
+    tl::expected<
+        std::tuple<SpendableInputs, CAmount, std::optional<ChangeAddress>>,
+        InputSelectionError>
+    IterateLimit(
+            CWallet& wallet,
+            const ZTXOSelector& selector,
+            const TransactionStrategy strategy,
+            CAmount sendAmount,
+            CAmount dustThreshold,
+            const SpendableInputs& spendable,
+            Payments& resolved,
+            bool afterNU5) const;
+
     /**
      * Select inputs sufficient to fulfill the specified requested payments,
      * and choose unified address receivers based upon the available inputs
      * and the requested transaction strategy.
      */
-    InputSelectionResult ResolveInputsAndPayments(
-            const CWallet& wallet,
+    tl::expected<InputSelection, InputSelectionError>
+    ResolveInputsAndPayments(
+            CWallet& wallet,
             const ZTXOSelector& selector,
             SpendableInputs& spendable,
             const std::vector<Payment>& payments,
             const CChain& chain,
-            TransactionStrategy strategy,
-            CAmount fee,
-            int anchorHeight) const;
+            const TransactionStrategy& strategy,
+            std::optional<CAmount> fee,
+            bool afterNU5) const;
     /**
      * Compute the internal and external OVKs to use in transaction construction, given
      * the spendable inputs.
@@ -363,14 +411,16 @@ public:
             const ZTXOSelector& selector,
             int32_t minDepth) const;
 
-    PrepareTransactionResult PrepareTransaction(
+    tl::expected<TransactionEffects, InputSelectionError>
+    PrepareTransaction(
             CWallet& wallet,
             const ZTXOSelector& selector,
             SpendableInputs& spendable,
             const std::vector<Payment>& payments,
             const CChain& chain,
             TransactionStrategy strategy,
-            CAmount fee,
+            /// A fixed fee is used if provided, otherwise it is calculated based on ZIP 317.
+            std::optional<CAmount> fee,
             uint32_t anchorConfirmations) const;
 };
 

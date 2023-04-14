@@ -22,6 +22,10 @@ from decimal import Decimal
 
 # Test wallet address behaviour across network upgrades
 class WalletZSendmanyTest(BitcoinTestFramework):
+    def __init__(self):
+        super().__init__()
+        self.cache_behavior = 'sprout'
+
     def setup_network(self, split=False):
         self.nodes = start_nodes(3, self.options.tmpdir, [[
             nuparams(NU5_BRANCH_ID, 238),
@@ -110,12 +114,13 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # check balances
         zsendmanynotevalue = Decimal('7.0')
         zsendmanyfee = DEFAULT_FEE
-        node2utxobalance = Decimal('260.00000000') - zsendmanynotevalue - zsendmanyfee
+        node2sproutbalance = Decimal('50.00000000')
+        node2utxobalance = Decimal('210.00000000') - zsendmanynotevalue - zsendmanyfee
 
         # check shielded balance status with getwalletinfo
         wallet_info = self.nodes[2].getwalletinfo()
         assert_equal(Decimal(wallet_info["shielded_unconfirmed_balance"]), zsendmanynotevalue)
-        assert_equal(Decimal(wallet_info["shielded_balance"]), Decimal('0.0'))
+        assert_equal(Decimal(wallet_info["shielded_balance"]), node2sproutbalance)
 
         self.nodes[2].generate(10)
         self.sync_all()
@@ -130,13 +135,13 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # check via z_gettotalbalance
         resp = self.nodes[2].z_gettotalbalance()
         assert_equal(Decimal(resp["transparent"]), node2utxobalance)
-        assert_equal(Decimal(resp["private"]), zbalance)
-        assert_equal(Decimal(resp["total"]), node2utxobalance + zbalance)
+        assert_equal(Decimal(resp["private"]), node2sproutbalance + zbalance)
+        assert_equal(Decimal(resp["total"]), node2utxobalance + node2sproutbalance + zbalance)
 
         # check confirmed shielded balance with getwalletinfo
         wallet_info = self.nodes[2].getwalletinfo()
         assert_equal(Decimal(wallet_info["shielded_unconfirmed_balance"]), Decimal('0.0'))
-        assert_equal(Decimal(wallet_info["shielded_balance"]), zsendmanynotevalue)
+        assert_equal(Decimal(wallet_info["shielded_balance"]), node2sproutbalance + zsendmanynotevalue)
 
         # there should be at least one Sapling output
         mytxdetails = self.nodes[2].getrawtransaction(mytxid, 1)
@@ -377,7 +382,7 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         for (policy, msg) in [
             ('FullPrivacy', 'Could not send to a shielded receiver of a unified address without spending funds from a different pool, which would reveal transaction amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` or weaker if you wish to allow this transaction to proceed anyway.'),
             ('AllowRevealedAmounts', 'This transaction would send to a transparent receiver of a unified address, which is not enabled by default because it will publicly reveal transaction recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedRecipients` or weaker if you wish to allow this transaction to proceed anyway.'),
-            ('AllowRevealedRecipients', 'Could not send to an Orchard-only receiver, despite a lax privacy policy. Either there are insufficient non-Sprout funds (there is no transaction version that supports both Sprout and Orchard), or NU5 has not been activated yet.'),
+            ('AllowRevealedRecipients', 'Could not send to an Orchard-only receiver despite a lax privacy policy, because NU5 has not been activated yet.'),
         ]:
             opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, policy)
             wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', msg)
@@ -416,17 +421,18 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         self.sync_all()
 
         #
-        # Test Orchard-only UA with insufficient non-Sprout funds
+        # Test sending Sprout funds to Orchard-only UA
         #
 
+        sproutAddr = self.nodes[2].listaddresses()[0]['sprout']['addresses'][0]
         recipients = [{"address":n0orchard_only, "amount":100}]
         for (policy, msg) in [
             ('FullPrivacy', 'Could not send to a shielded receiver of a unified address without spending funds from a different pool, which would reveal transaction amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedAmounts` or weaker if you wish to allow this transaction to proceed anyway.'),
             ('AllowRevealedAmounts', 'This transaction would send to a transparent receiver of a unified address, which is not enabled by default because it will publicly reveal transaction recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedRecipients` or weaker if you wish to allow this transaction to proceed anyway.'),
-            ('AllowRevealedRecipients', 'Could not send to an Orchard-only receiver, despite a lax privacy policy. Either there are insufficient non-Sprout funds (there is no transaction version that supports both Sprout and Orchard), or NU5 has not been activated yet.'),
+            ('AllowRevealedRecipients', 'Could not send to an Orchard-only receiver despite a lax privacy policy, because you are sending from the Sprout pool and there is no transaction version that supports both Sprout and Orchard.'),
         ]:
-            opid = self.nodes[1].z_sendmany(n1ua0, recipients, 1, 0, policy)
-            wait_and_assert_operationid_status(self.nodes[1], opid, 'failed', msg)
+            opid = self.nodes[2].z_sendmany(sproutAddr, recipients, 1, 0, policy)
+            wait_and_assert_operationid_status(self.nodes[2], opid, 'failed', msg)
 
         #
         # Test AllowRevealedAmounts policy
@@ -487,6 +493,25 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         assert_equal(
                 {'pools': {'orchard': {'valueZat': 200000000}}, 'minimum_confirmations': 1},
                 self.nodes[0].z_getbalanceforaccount(n0account0))
+
+
+        self.sync_all()
+        self.nodes[1].generate(1)
+        self.sync_all()
+
+        #
+        # Test transparent change
+        #
+
+        recipients = [{"address":n0ua1, "amount": 4}]
+        # Should fail because this generates transparent change, but we don’t have
+        # `AllowRevealedRecipients`
+        opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, 0, 'AllowRevealedSenders')
+        wait_and_assert_operationid_status(self.nodes[2], opid, 'failed', "This transaction would have transparent change, which is not enabled by default because it will publicly reveal the change address and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit with the `privacyPolicy` parameter set to `AllowRevealedRecipients` or weaker if you wish to allow this transaction to proceed anyway.")
+
+        # Should succeed once we include `AllowRevealedRecipients`
+        opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, 0, 'AllowFullyTransparent')
+        wait_and_assert_operationid_status(self.nodes[2], opid)
 
 if __name__ == '__main__':
     WalletZSendmanyTest().main()

@@ -7,6 +7,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, bitcoind_processes, \
     connect_nodes_bi, start_node, start_nodes, wait_and_assert_operationid_status, \
     get_coinbase_address, DEFAULT_FEE
+from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
 
@@ -92,7 +93,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
         # check zaddr balance
         zsendmany2notevalue = Decimal('2.0')
-        zsendmanyfee = DEFAULT_FEE
+        zsendmanyfee = conventional_fee(2)
         zaddrremaining = zsendmanynotevalue - zsendmany2notevalue - zsendmanyfee
         assert_equal(self.nodes[3].z_getbalance(myzaddr3), zsendmany2notevalue)
         assert_equal(self.nodes[2].z_getbalance(myzaddr), zaddrremaining)
@@ -117,7 +118,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
         # check zaddr balance
         zsendmany3notevalue = Decimal('1.0')
-        zaddrremaining2 = zaddrremaining - zsendmany3notevalue - zsendmanyfee
+        zaddrremaining2 = zaddrremaining - zsendmany3notevalue - DEFAULT_FEE
         assert_equal(self.nodes[1].z_getbalance(myzaddr), zaddrremaining2)
         assert_equal(self.nodes[2].z_getbalance(myzaddr), zaddrremaining2)
 

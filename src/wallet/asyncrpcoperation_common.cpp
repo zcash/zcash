@@ -4,6 +4,7 @@
 #include "init.h"
 #include "rpc/protocol.h"
 #include "util/moneystr.h"
+#include "zip317.h"
 
 extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
 
@@ -48,7 +49,7 @@ void ThrowInputSelectionError(
         const TransactionStrategy& strategy)
 {
     examine(err, match {
-        [](const AddressResolutionError& err) {
+        [&](const AddressResolutionError& err) {
             switch (err) {
                 case AddressResolutionError::SproutRecipientsNotSupported:
                     throw JSONRPCError(
@@ -62,6 +63,14 @@ void ThrowInputSelectionError(
                         "recipients and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
                         "with the `privacyPolicy` parameter set to `AllowRevealedRecipients` "
                         "or weaker if you wish to allow this transaction to proceed anyway.");
+                case AddressResolutionError::TransparentChangeNotAllowed:
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "This transaction would have transparent change, which is not "
+                        "enabled by default because it will publicly reveal the change "
+                        "address and amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
+                        "with the `privacyPolicy` parameter set to `AllowRevealedRecipients` "
+                        "or weaker if you wish to allow this transaction to proceed anyway.");
                 case AddressResolutionError::RevealingSaplingAmountNotAllowed:
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
@@ -73,10 +82,19 @@ void ThrowInputSelectionError(
                 case AddressResolutionError::CouldNotResolveReceiver:
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
-                        "Could not send to an Orchard-only receiver, despite a lax privacy policy. "
-                        "Either there are insufficient non-Sprout funds (there is no transaction "
-                        "version that supports both Sprout and Orchard), or NU5 has not been "
-                        "activated yet.");
+                        strprintf("Could not send to an Orchard-only receiver %s.",
+                                  strategy.AllowRevealedAmounts()
+                                  ? strprintf("despite a lax privacy policy, because %s",
+                                              selector.SelectsSprout()
+                                              ? "you are sending from the Sprout pool and there is "
+                                                "no transaction version that supports both Sprout "
+                                                "and Orchard"
+                                              : "NU5 has not been activated yet")
+                                  : "without spending non-Orchard funds, which would reveal "
+                                    "transaction amounts. THIS MAY AFFECT YOUR PRIVACY. Resubmit "
+                                    "with the `privacyPolicy` parameter set to "
+                                    "`AllowRevealedAmounts` or weaker if you wish to allow this "
+                                    "transaction to proceed anyway"));
                 case AddressResolutionError::TransparentReceiverNotAllowed:
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
@@ -106,9 +124,20 @@ void ThrowInputSelectionError(
                     "Insufficient funds: have %s, %s",
                     FormatMoney(err.available),
                     examine(err.reason, match {
+                        [](const PhantomChangeError& qce) {
+                            return strprintf(
+                                    "need %s more to surpass the dust threshold and avoid being "
+                                    "forced to over-pay the fee. Alternatively, you could specify "
+                                    "a fee of %s to allow overpayment of the conventional fee and "
+                                    "have this transaction proceed.",
+                                    FormatMoney(qce.dustThreshold),
+                                    FormatMoney(qce.finalFee));
+                        },
                         [](const InsufficientFundsError& ife) {
                             return strprintf("need %s", FormatMoney(ife.required));
                         },
+                        // TODO: Add the fee here, so we can suggest specifying an explicit fee (see
+                        //       `PhantomChangeError`).
                         [](const DustThresholdError& dte) {
                             return strprintf(
                                     "need %s more to avoid creating invalid change output %s (dust threshold is %s)",
@@ -137,6 +166,18 @@ void ThrowInputSelectionError(
                     "When shielding coinbase funds, the wallet does not allow any change. "
                     "The proposed transaction would result in %s in change.",
                     FormatMoney(err.available - err.required)));
+        },
+        [](const AbsurdFeeError& err) {
+            throw JSONRPCError(
+                RPC_INVALID_PARAMETER,
+                strprintf(
+                    "Fee %s is greater than %d times the conventional fee for this tx (which is "
+                    "%s). There is no prioritisation benefit to a fee this large (see "
+                    "https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction), "
+                    "and it likely indicates a mistake in setting the fee.",
+                    FormatMoney(err.fixedFee),
+                    WEIGHT_RATIO_CAP,
+                    FormatMoney(err.conventionalFee)));
         },
         [](const ExcessOrchardActionsError& err) {
             std::string side;
