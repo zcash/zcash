@@ -55,13 +55,6 @@ unsigned int nOrchardActionLimit = DEFAULT_ORCHARD_ACTION_LIMIT;
 
 const char * DEFAULT_WALLET_DAT = "wallet.dat";
 
-/**
- * -mintxfee: the fallback fee rate (in ZEC per 1000 bytes) used by legacy APIs
- * when -paytxfee has not been set and there is insufficient mempool data to
- * estimate a fee according to the -txconfirmtarget option.
- */
-CFeeRate CWallet::minTxFee = CFeeRate(DEFAULT_TRANSACTION_MINFEE);
-
 std::set<ReceiverType> CWallet::DefaultReceiverTypes(int nHeight) {
     // For now, just ignore the height information because the default
     // is always the same.
@@ -6496,20 +6489,16 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
     strUsage += HelpMessageOpt("-keypool=<n>", strprintf(_("Set key pool size to <n> (default: %u)"), DEFAULT_KEYPOOL_SIZE));
     strUsage += HelpMessageOpt("-migration", _("Enable the Sprout to Sapling migration"));
     strUsage += HelpMessageOpt("-migrationdestaddress=<zaddr>", _("Set the Sapling migration address"));
-    strUsage += HelpMessageOpt("-mintxfee=<amt>", strprintf(_("The fallback fee rate (in %s per 1000 bytes) used by legacy APIs (sendtoaddress, sendmany, and fundrawtransaction) when -paytxfee "
-                                                              "has not been set and there is insufficient mempool data to estimate a fee according to the -txconfirmtarget option (default: %s)"),
-                                                            CURRENCY_UNIT, FormatMoney(DEFAULT_TRANSACTION_MINFEE)));
     strUsage += HelpMessageOpt("-orchardactionlimit=<n>", strprintf(_("Set the maximum number of Orchard actions permitted in a transaction (default %u)"), DEFAULT_ORCHARD_ACTION_LIMIT));
     strUsage += HelpMessageOpt("-paytxfee=<amt>", strprintf(_("The preferred fee rate (in %s per 1000 bytes) used for transactions created by legacy APIs (sendtoaddress, sendmany, and fundrawtransaction). "
-                                                              "If the transaction is less than 1000 bytes then the fee rate is applied as though it were 1000 bytes. See the descriptions of -txconfirmtarget "
-                                                              "and -mintxfee options for how the fee is calculated when this option is not set."),
+                                                              "If the transaction is less than 1000 bytes then the fee rate is applied as though it were 1000 bytes. See the description of the -txconfirmtarget "
+                                                              "option for how the fee is calculated when this option is not set."),
                                                             CURRENCY_UNIT));
     strUsage += HelpMessageOpt("-rescan", _("Rescan the block chain for missing wallet transactions on startup"));
     strUsage += HelpMessageOpt("-salvagewallet", _("Attempt to recover private keys from a corrupt wallet on startup (implies -rescan)"));
     strUsage += HelpMessageOpt("-spendzeroconfchange", strprintf(_("Spend unconfirmed change when sending transactions (default: %u)"), DEFAULT_SPEND_ZEROCONF_CHANGE));
     strUsage += HelpMessageOpt("-txconfirmtarget=<n>", strprintf(_("If -paytxfee is not set, include enough fee that transactions created by legacy APIs (sendtoaddress, sendmany, and fundrawtransaction) "
-                                                                   "begin confirmation on average within n blocks. This is only used if there is sufficient mempool data to estimate the fee; if not, the "
-                                                                   "fallback fee set by -mintxfee is used. (default: %u)"),
+                                                                   "begin confirmation on average within n blocks. This is only used if there is sufficient mempool data to estimate the fee. (default: %u)"),
                                                                  DEFAULT_TX_CONFIRM_TARGET));
     strUsage += HelpMessageOpt("-txexpirydelta", strprintf(_("Set the number of blocks after which a transaction that has not been mined will become invalid (min: %u, default: %u (pre-Blossom) or %u (post-Blossom))"), TX_EXPIRING_SOON_THRESHOLD + 1, DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA, DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA));
     strUsage += HelpMessageOpt("-upgradewallet", _("Upgrade wallet to latest format on startup"));
@@ -6715,11 +6704,7 @@ bool CWallet::ParameterInteraction(const CChainParams& params)
 {
     if (mapArgs.count("-mintxfee"))
     {
-        CAmount n = 0;
-        if (ParseMoney(mapArgs["-mintxfee"], n) && n > 0)
-            CWallet::minTxFee = CFeeRate(n);
-        else
-            return UIError(AmountErrMsg("mintxfee", mapArgs["-mintxfee"]));
+        UIWarning(_("The argument -mintxfee is no longer supported."));
     }
     if (mapArgs.count("-paytxfee"))
     {
