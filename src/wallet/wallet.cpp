@@ -5726,7 +5726,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                     return false;
                 }
 
-                CAmount nFeeNeeded = GetMinimumFee(nBytes, nTxConfirmTarget, mempool);
+                CAmount nFeeNeeded = GetMinimumFee(txNew, nBytes);
 
                 // If we made it here and we aren't even able to meet the relay fee on the next pass, give up
                 // because we must be at the maximum allowed fee.
@@ -5800,12 +5800,12 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_
     return true;
 }
 
-CAmount CWallet::GetRequiredFee(unsigned int nTxBytes)
+CAmount CWallet::ConstrainFee(CAmount requestedFee, unsigned int nTxBytes)
 {
-    return std::max(minTxFee.GetFee(nTxBytes), ::minRelayTxFee.GetFeeForRelay(nTxBytes));
+    return std::min(std::max(::minRelayTxFee.GetFeeForRelay(nTxBytes), requestedFee), maxTxFee);
 }
 
-CAmount CWallet::GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool)
+CAmount CWallet::GetMinimumFee(const CTransaction& tx, unsigned int nTxBytes)
 {
     // payTxFee is user-set "I want to pay this much"
     CAmount nFeeNeeded = payTxFee.GetFee(nTxBytes);
@@ -5814,20 +5814,10 @@ CAmount CWallet::GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarge
     // completely.
     if (fPayAtLeastCustomFee && nFeeNeeded > 0 && nFeeNeeded < payTxFee.GetFeePerK())
         nFeeNeeded = payTxFee.GetFeePerK();
-    // User didn't set: use -txconfirmtarget to estimate...
+    // User didn't set: use conventional fee
     if (nFeeNeeded == 0)
-        nFeeNeeded = pool.estimateFee(nConfirmTarget).GetFee(nTxBytes);
-    // ... unless we don't have enough mempool data, in which case fall
-    // back to the required fee
-    if (nFeeNeeded == 0)
-        nFeeNeeded = GetRequiredFee(nTxBytes);
-    // prevent user from paying a non-sense fee (like 1 satoshi): 0 < fee < minRelayFee
-    if (nFeeNeeded < ::minRelayTxFee.GetFeeForRelay(nTxBytes))
-        nFeeNeeded = ::minRelayTxFee.GetFeeForRelay(nTxBytes);
-    // But always obey the maximum
-    if (nFeeNeeded > maxTxFee)
-        nFeeNeeded = maxTxFee;
-    return nFeeNeeded;
+        nFeeNeeded = tx.GetConventionalFee();
+    return ConstrainFee(nFeeNeeded, nTxBytes);
 }
 
 

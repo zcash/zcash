@@ -1950,16 +1950,18 @@ public:
     bool CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_wrapper<CReserveKey>> reservekey, CValidationState& state);
 
     static CFeeRate minTxFee;
+
+    /** Adjust the requested fee by bounding it below to the minimum relay fee required
+     * for a transaction of the given size and bounding it above to the maximum fee
+     * configured using the `-maxtxfee` configuration option.
+     */
+    static CAmount ConstrainFee(CAmount requestedFee, unsigned int nTxBytes);
+
     /**
      * Estimate the minimum fee considering user set parameters
      * and the required fee.
      */
-    static CAmount GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool);
-    /**
-     * Return the minimum required fee taking into account the
-     * floating relay fee rate and user set minimum transaction fee rate.
-     */
-    static CAmount GetRequiredFee(unsigned int nTxBytes);
+    static CAmount GetMinimumFee(const CTransaction& tx, unsigned int nTxBytes);
 
     /**
      * The set of default receiver types used when the wallet generates

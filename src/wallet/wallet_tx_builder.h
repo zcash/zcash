@@ -305,6 +305,15 @@ public:
         conventionalFee(conventionalFee), fixedFee(fixedFee) { }
 };
 
+/// Error when a fee is higher than this instance allows.
+class MaxFeeError {
+public:
+    CAmount fixedFee;
+
+    MaxFeeError(CAmount fixedFee):
+        fixedFee(fixedFee) { }
+};
+
 enum ActionSide {
     Input,
     Output,
@@ -326,6 +335,7 @@ typedef std::variant<
     InvalidFundsError,
     ChangeNotAllowedError,
     AbsurdFeeError,
+    MaxFeeError,
     ExcessOrchardActionsError> InputSelectionError;
 
 class InputSelection {

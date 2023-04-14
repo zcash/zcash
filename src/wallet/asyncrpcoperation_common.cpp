@@ -179,6 +179,15 @@ void ThrowInputSelectionError(
                     WEIGHT_RATIO_CAP,
                     FormatMoney(err.conventionalFee)));
         },
+        [](const MaxFeeError& err) {
+            throw JSONRPCError(
+                RPC_INVALID_PARAMETER,
+                strprintf(
+                    "Fee %s is greater than the maximum fee allowed by this instance (%s). Run "
+                    "zcashd with `-maxtxfee` to adjust this limit.",
+                    FormatMoney(err.fixedFee),
+                    FormatMoney(maxTxFee)));
+        },
         [](const ExcessOrchardActionsError& err) {
             std::string side;
             switch (err.side) {
