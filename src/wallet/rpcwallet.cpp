@@ -5028,7 +5028,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     // Minimum confirmations
     int nMinDepth = parseMinconf(DEFAULT_NOTE_CONFIRMATIONS, params, 2, std::nullopt);
 
-    // Fee in Zatoshis, not currency format)
     std::optional<CAmount> nFee;
     if (params.size() > 3 && params[3].get_real() != -1.0) {
         nFee = AmountFromValue( params[3] );
@@ -5040,7 +5039,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     o.pushKV("amounts", params[1]);
     o.pushKV("minconf", nMinDepth);
     if (nFee.has_value()) {
-        o.pushKV("fee", std::stod(FormatMoney(nFee.value())));
+        o.pushKV("fee", ValueFromAmount(nFee.value()));
     }
     UniValue contextInfo = o;
 

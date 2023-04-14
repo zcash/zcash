@@ -68,7 +68,7 @@ WalletTxBuilder::GetChangeAddress(
     };
 
     auto changeAddressForSaplingAddress = [&](const libzcash::SaplingPaymentAddress& addr)
-        -> tl::expected<ChangeAddress, AddressResolutionError> {
+        -> RecipientAddress {
         // for Sapling, if using a legacy address, return change to the
         // originating address; otherwise return it to the Sapling internal
         // address corresponding to the UFVK.
@@ -85,8 +85,7 @@ WalletTxBuilder::GetChangeAddress(
 
     auto changeAddressForZUFVK = [&](
             const ZcashdUnifiedFullViewingKey& zufvk,
-            const std::set<ReceiverType>& receiverTypes)
-        -> tl::expected<ChangeAddress, AddressResolutionError> {
+            const std::set<ReceiverType>& receiverTypes) {
         auto addr = zufvk.GetChangeAddress(getAllowedChangePools(receiverTypes));
         assert(addr.has_value());
         return addr.value();
@@ -109,18 +108,22 @@ WalletTxBuilder::GetChangeAddress(
             // for Sprout, we return change to the originating address using the tx builder.
             return vk.address();
         },
-        [&](const libzcash::SaplingPaymentAddress& addr) {
+        [&](const libzcash::SaplingPaymentAddress& addr)
+            -> tl::expected<ChangeAddress, AddressResolutionError> {
             return changeAddressForSaplingAddress(addr);
         },
-        [&](const libzcash::SaplingExtendedFullViewingKey& fvk) {
+        [&](const libzcash::SaplingExtendedFullViewingKey& fvk)
+            -> tl::expected<ChangeAddress, AddressResolutionError> {
             return changeAddressForSaplingAddress(fvk.DefaultAddress());
         },
-        [&](const libzcash::UnifiedAddress& ua) {
+        [&](const libzcash::UnifiedAddress& ua)
+            -> tl::expected<ChangeAddress, AddressResolutionError> {
             auto zufvk = wallet.GetUFVKForAddress(ua);
             assert(zufvk.has_value());
             return changeAddressForZUFVK(zufvk.value(), ua.GetKnownReceiverTypes());
         },
-        [&](const libzcash::UnifiedFullViewingKey& fvk) {
+        [&](const libzcash::UnifiedFullViewingKey& fvk)
+            -> tl::expected<ChangeAddress, AddressResolutionError> {
             return changeAddressForZUFVK(
                     ZcashdUnifiedFullViewingKey::FromUnifiedFullViewingKey(params, fvk),
                     fvk.GetKnownReceiverTypes());
@@ -253,14 +256,14 @@ CalcZIP317Fee(
     size_t saplingInputCount = 0;
     size_t orchardInputCount = 0;
     if (inputs.has_value()) {
-        for (const auto& utxo : inputs->utxos) {
+        for (const auto& utxo : inputs.value().utxos) {
             vin.emplace_back(
                     COutPoint(utxo.tx->GetHash(), utxo.i),
                     utxo.tx->vout[utxo.i].scriptPubKey);
         }
-        sproutInputCount = inputs->sproutNoteEntries.size();
-        saplingInputCount = inputs->saplingNoteEntries.size();
-        orchardInputCount = inputs->orchardNoteMetadata.size();
+        sproutInputCount = inputs.value().sproutNoteEntries.size();
+        saplingInputCount = inputs.value().saplingNoteEntries.size();
+        orchardInputCount = inputs.value().orchardNoteMetadata.size();
     }
     size_t logicalActionCount = CalculateLogicalActionCount(
             vin,
@@ -377,7 +380,7 @@ WalletTxBuilder::IterateLimit(
             // fresh) and once we generate it, hold onto it. But we still don’t have a guarantee
             // that we won’t end up discarding it.
             if (changeAmount > 0 && !changeAddr.has_value()) {
-                auto possibleChangeAddr = GetChangeAddress(
+                auto maybeChangeAddr = GetChangeAddress(
                         wallet,
                         selector,
                         spendableMut,
@@ -385,10 +388,10 @@ WalletTxBuilder::IterateLimit(
                         strategy,
                         afterNU5);
 
-                if (possibleChangeAddr.has_value()) {
-                    changeAddr = possibleChangeAddr.value();
+                if (maybeChangeAddr.has_value()) {
+                    changeAddr = maybeChangeAddr.value();
                 } else {
-                    return tl::make_unexpected(possibleChangeAddr.error());
+                    return tl::make_unexpected(maybeChangeAddr.error());
                 }
             }
             previousFee = updatedFee;
@@ -581,7 +584,7 @@ WalletTxBuilder::ResolveInputsAndPayments(
                             changeAmount));
         }
         if (changeAmount > 0) {
-            auto possibleChangeAddr = GetChangeAddress(
+            auto maybeChangeAddr = GetChangeAddress(
                     wallet,
                     selector,
                     spendableMut,
@@ -589,10 +592,10 @@ WalletTxBuilder::ResolveInputsAndPayments(
                     strategy,
                     afterNU5);
 
-            if (possibleChangeAddr.has_value()) {
-                changeAddr = possibleChangeAddr.value();
+            if (maybeChangeAddr.has_value()) {
+                changeAddr = maybeChangeAddr.value();
             } else {
-                return tl::make_unexpected(possibleChangeAddr.error());
+                return tl::make_unexpected(maybeChangeAddr.error());
             }
 
             // TODO: This duplicates the check in the `else` branch of the containing `if`. Until we
