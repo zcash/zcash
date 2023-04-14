@@ -30,15 +30,16 @@ class ShieldCoinbaseTest (BitcoinTestFramework):
 
     def start_node_with(self, index, extra_args=[]):
         args = [
+            '-minrelaytxfee=0',
             nuparams(BLOSSOM_BRANCH_ID, 1),
             nuparams(HEARTWOOD_BRANCH_ID, 10),
             nuparams(CANOPY_BRANCH_ID, 20),
             nuparams(NU5_BRANCH_ID, 20),
-            "-nurejectoldversions=false",
-            "-allowdeprecated=getnewaddress",
-            "-allowdeprecated=z_getnewaddress",
-            "-allowdeprecated=z_getbalance",
-            "-allowdeprecated=z_gettotalbalance",
+            '-nurejectoldversions=false',
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_getbalance',
+            '-allowdeprecated=z_gettotalbalance',
         ]
         return start_node(index, self.options.tmpdir, args + extra_args)
 

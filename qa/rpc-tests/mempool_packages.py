@@ -25,9 +25,10 @@ class MempoolPackagesTest(BitcoinTestFramework):
 
     def setup_network(self):
         base_args = [
-            "-maxorphantx=1000",
-            "-debug",
-            "-allowdeprecated=getnewaddress",
+            '-minrelaytxfee=0',
+            '-maxorphantx=1000',
+            '-debug',
+            '-allowdeprecated=getnewaddress',
         ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, base_args))

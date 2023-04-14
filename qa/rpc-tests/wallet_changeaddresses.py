@@ -25,6 +25,7 @@ class WalletChangeAddressesTest(BitcoinTestFramework):
 
     def setup_network(self):
         args = [
+            '-minrelaytxfee=0',
             nuparams(SAPLING_BRANCH_ID, 1),
             '-txindex',              # Avoid JSONRPC error: No information available about transaction
             '-allowdeprecated=getnewaddress',

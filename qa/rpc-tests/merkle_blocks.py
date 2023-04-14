@@ -24,8 +24,9 @@ class MerkleBlockTest(BitcoinTestFramework):
 
     def setup_network(self):
         base_args = [
-            "-debug",
-            "-allowdeprecated=getnewaddress",
+            '-minrelaytxfee=0',
+            '-debug',
+            '-allowdeprecated=getnewaddress',
         ]
         self.nodes = []
         # Nodes 0/1 are "wallet" nodes

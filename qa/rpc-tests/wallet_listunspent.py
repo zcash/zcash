@@ -20,7 +20,8 @@ def unspent_total(unspent):
 
 class WalletListUnspent(BitcoinTestFramework):
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, [[
+        return start_nodes(4, self.options.tmpdir, extra_args=[[
+            '-minrelaytxfee=0',
             nuparams(NU5_BRANCH_ID, 201),
             '-allowdeprecated=getnewaddress',
         ]] * 4)

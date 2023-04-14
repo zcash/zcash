@@ -27,7 +27,8 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         self.cache_behavior = 'sprout'
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir, [[
+        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[[
+            '-minrelaytxfee=0',
             nuparams(NU5_BRANCH_ID, 238),
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',

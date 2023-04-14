@@ -41,6 +41,7 @@ from test_framework.util import (
 from decimal import Decimal
 
 BASE_ARGS = [
+    '-minrelaytxfee=0',
     '-allowdeprecated=z_getnewaddress',
     '-allowdeprecated=z_getbalance',
 ]

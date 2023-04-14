@@ -24,7 +24,12 @@ class MempoolCoinbaseTest(BitcoinTestFramework):
 
     def setup_network(self):
         # Just need one node for this test
-        args = ["-checkmempool", "-debug=mempool", "-allowdeprecated=getnewaddress"]
+        args = [
+            '-minrelaytxfee=0',
+            '-checkmempool',
+            '-debug=mempool',
+            '-allowdeprecated=getnewaddress',
+        ]
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, args))
         self.is_network_split = False

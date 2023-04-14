@@ -36,6 +36,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
     # Start nodes with -regtestshieldcoinbase to set fCoinbaseMustBeShielded to true.
     def setup_network(self, split=False):
         self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[[
+            '-minrelaytxfee=0',
             '-regtestshieldcoinbase',
             '-debug=zrpcunsafe',
             '-allowdeprecated=getnewaddress',

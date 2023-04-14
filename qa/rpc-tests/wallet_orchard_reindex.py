@@ -21,6 +21,7 @@ from decimal import Decimal
 import time
 
 BASE_ARGS = [
+    '-minrelaytxfee=0',
     nuparams(NU5_BRANCH_ID, 210),
     '-regtestwalletsetbestchaineveryblock',
 ]

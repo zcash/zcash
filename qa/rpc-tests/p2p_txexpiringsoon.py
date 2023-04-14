@@ -21,6 +21,7 @@ class TxExpiringSoonTest(BitcoinTestFramework):
 
     def setup_network(self):
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            '-minrelaytxfee=0',
             '-allowdeprecated=getnewaddress',
         ]] * self.num_nodes)
         connect_nodes_bi(self.nodes, 0, 1)

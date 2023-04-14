@@ -19,6 +19,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
 
     def setup_network(self, split=False):
         args = [
+            '-minrelaytxfee=0',
             '-regtestprotectcoinbase',
             '-debug=zrpcunsafe',
             nuparams(NU5_BRANCH_ID, self.nu5_activation),

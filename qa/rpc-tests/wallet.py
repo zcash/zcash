@@ -20,6 +20,7 @@ class WalletTest (BitcoinTestFramework):
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[[
+            '-minrelaytxfee=0',
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getbalance',
         ]] * 3)

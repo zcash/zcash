@@ -33,6 +33,7 @@ class FinalOrchardRootTest(BitcoinTestFramework):
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            '-minrelaytxfee=0',
             '-txindex', # Avoid JSONRPC error: No information available about transaction
             '-reindex', # Required due to enabling -txindex
             nuparams(NU5_BRANCH_ID, 200),
