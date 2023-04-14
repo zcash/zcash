@@ -516,7 +516,7 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp)
             "  }\n"
             "  ,...\n"
             "  ],\n"
-            "  \"relayfee\": x.xxxxxxxx,                (numeric) minimum relay fee for transactions in " + CURRENCY_UNIT + "/kB\n"
+            "  \"relayfee\": x.xxxxxxxx,                (numeric) minimum relay fee rate for transactions in " + CURRENCY_UNIT + " per 1000 bytes\n"
             "  \"localaddresses\": [                    (array) list of local addresses\n"
             "  {\n"
             "    \"address\": \"xxxx\",                 (string) network address\n"

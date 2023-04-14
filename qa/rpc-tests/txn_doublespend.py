@@ -44,7 +44,7 @@ class TxnMallTest(BitcoinTestFramework):
         # Coins are sent to node1_address
         node1_address = self.nodes[1].getnewaddress("")
 
-        # First: use raw transaction API to send (starting_balance - (mining_reward - 2)) BTC to node1_address,
+        # First: use raw transaction API to send (starting_balance - (mining_reward - 2)) ZEC to node1_address,
         # but don't broadcast:
         (total_in, inputs) = gather_inputs(self.nodes[0], (starting_balance - (mining_reward - 2)))
         change_address = self.nodes[0].getnewaddress("")

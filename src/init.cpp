@@ -482,7 +482,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-maxsigcachesize=<n>", strprintf("Limit total size of signature and bundle caches to <n> MiB (default: %u)", DEFAULT_MAX_SIG_CACHE_SIZE));
         strUsage += HelpMessageOpt("-maxtipage=<n>", strprintf("Maximum tip age in seconds to consider node in initial block download (default: %u)", DEFAULT_MAX_TIP_AGE));
     }
-    strUsage += HelpMessageOpt("-minrelaytxfee=<amt>", strprintf(_("Fees (in %s/kB) smaller than this are considered zero fee for relaying, mining and transaction creation (default: %s)"),
+    strUsage += HelpMessageOpt("-minrelaytxfee=<amt>", strprintf(_("Transactions must have at least this fee rate (in %s per 1000 bytes) for relaying, mining and transaction creation (default: %s). This is not the only fee constraint."),
         CURRENCY_UNIT, FormatMoney(DEFAULT_MIN_RELAY_TX_FEE)));
     strUsage += HelpMessageOpt("-maxtxfee=<amt>", strprintf(_("Maximum total fees (in %s) to use in a single wallet transaction or raw transaction; setting this too low may abort large transactions (default: %s)"),
         CURRENCY_UNIT, FormatMoney(DEFAULT_TRANSACTION_MAXFEE)));
@@ -1225,11 +1225,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (nConnectTimeout <= 0)
         nConnectTimeout = DEFAULT_CONNECT_TIMEOUT;
 
-    // Fee-per-kilobyte amount required for mempool acceptance and relay
-    // If you are mining, be careful setting this:
-    // if you set it to zero then
-    // a transaction spammer can cheaply fill blocks using
-    // 0-fee transactions. It should be set above the real
+    // Fee rate in zatoshis per 1000 bytes required for mempool acceptance and relay.
+    // TODO(update when ZIP 317 is implemented):
+    // If you are mining, be careful setting this. If you set it too low then a
+    // transaction spammer can cheaply fill blocks. It should be set above the real
     // cost to you of processing a transaction.
     if (mapArgs.count("-minrelaytxfee"))
     {

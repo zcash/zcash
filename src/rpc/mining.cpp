@@ -372,7 +372,7 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
 }
 
 
-// NOTE: Unlike wallet RPC (which use BTC values), mining RPCs follow GBT (BIP 22) in using satoshi amounts
+// NOTE: Unlike wallet RPCs (which use ZEC values), mining RPCs follow GBT (BIP 22) in using zatoshi amounts.
 UniValue prioritisetransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 2)
@@ -471,7 +471,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             "             n                       (numeric) transactions before this one (by 1-based index in 'transactions' list) that must be present in the final block if this one is\n"
             "             ,...\n"
             "         ],\n"
-            "         \"fee\": n,                   (numeric) difference in value between transaction inputs and outputs (in Satoshis); for coinbase transactions, this is a negative Number of the total collected block fees (ie, not including the block subsidy); if key is not present, fee is unknown and clients MUST NOT assume there isn't one\n"
+            "         \"fee\": n,                   (numeric) difference in value between transaction inputs and outputs (in " + MINOR_CURRENCY_UNIT + "); for coinbase transactions, this is a negative Number of the total collected block fees (i.e., not including the block subsidy); if key is not present, fee is unknown and clients MUST NOT assume there isn't one\n"
             "         \"sigops\" : n,               (numeric) total number of SigOps, as counted for purposes of block limits; if key is not present, sigop count is unknown and clients MUST NOT assume there aren't any\n"
             "         \"required\" : true|false     (boolean) if provided and true, this transaction must be in the final block\n"
             "      }\n"
@@ -480,7 +480,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
 //            "  \"coinbaseaux\" : {                  (json object) data that should be included in the coinbase's scriptSig content\n"
 //            "      \"flags\" : \"flags\"            (string) \n"
 //            "  },\n"
-//            "  \"coinbasevalue\" : n,               (numeric) maximum allowable input to coinbase transaction, including the generation award and transaction fees (in Satoshis)\n"
+//            "  \"coinbasevalue\" : n,               (numeric) maximum allowable input to coinbase transaction, including the generation award and transaction fees (in " + MINOR_CURRENCY_UNIT + ")\n"
             "  \"coinbasetxn\" : { ... },           (json object) information for coinbase transaction\n"
             "  \"target\" : \"xxxx\",                 (string) The hash target\n"
             "  \"longpollid\" : \"str\",              (string) an id to include with a request to longpoll on an update to this template\n"

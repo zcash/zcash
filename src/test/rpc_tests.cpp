@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(json_parse_errors)
     // Invalid, trailing garbage
     BOOST_CHECK(!ParseNonRFCJSONValue("1.0sds").has_value());
     BOOST_CHECK(!ParseNonRFCJSONValue("1.0]").has_value());
-    // BTC addresses should fail parsing
+    // Bitcoin addresses should fail parsing
     BOOST_CHECK(!ParseNonRFCJSONValue("175tWpb8K1S7NmH4Zx6rewF9WQrcZv245W").has_value());
     BOOST_CHECK(!ParseNonRFCJSONValue("3J98t1WpEZ73CNmQviecrnyiWrnqRhWNL").has_value());
 }

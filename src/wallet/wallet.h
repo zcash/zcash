@@ -1947,12 +1947,12 @@ public:
     static CFeeRate minTxFee;
     /**
      * Estimate the minimum fee considering user set parameters
-     * and the required fee
+     * and the required fee.
      */
     static CAmount GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool);
     /**
      * Return the minimum required fee taking into account the
-     * floating relay fee and user set minimum transaction fee
+     * floating relay fee rate and user set minimum transaction fee rate.
      */
     static CAmount GetRequiredFee(unsigned int nTxBytes);
 

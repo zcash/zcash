@@ -66,7 +66,7 @@ class PruneTest(BitcoinTestFramework):
         self.address[0] = self.nodes[0].getnewaddress()
         self.address[1] = self.nodes[1].getnewaddress()
 
-        # Determine default relay fee
+        # Determine default relay fee rate
         self.relayfee = self.nodes[0].getnetworkinfo()["relayfee"]
 
         connect_nodes(self.nodes[0], 1)

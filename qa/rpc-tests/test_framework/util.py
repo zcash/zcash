@@ -101,10 +101,10 @@ def rpc_port(n):
     return PORT_MIN + PORT_RANGE + n + (MAX_NODES * PortSeed.n) % (PORT_RANGE - 1 - MAX_NODES)
 
 def check_json_precision():
-    """Make sure json library being used does not lose precision converting BTC values"""
+    """Make sure json library being used does not lose precision converting ZEC values"""
     n = Decimal("20000000.00000003")
-    satoshis = int(json.loads(json.dumps(float(n)))*1.0e8)
-    if satoshis != 2000000000000003:
+    zatoshis = int(json.loads(json.dumps(float(n)))*1.0e8)
+    if zatoshis != 2000000000000003:
         raise RuntimeError("JSON encode/decode loses precision")
 
 def bytes_to_hex_str(byte_str):
