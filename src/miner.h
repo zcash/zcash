@@ -9,6 +9,7 @@
 
 #include "primitives/block.h"
 #include "txmempool.h"
+#include "weighted_map.h"
 
 #include <stdint.h>
 #include <memory>
@@ -139,6 +140,12 @@ public:
         const std::optional<CMutableTransaction>& next_coinbase_mtx = std::nullopt);
 
 private:
+    void constructZIP317BlockTemplate();
+    void addTransactions(
+        CTxMemPool::weightedCandidates& candidates,
+        CTxMemPool::queueEntries& waiting,
+        CTxMemPool::queueEntries& cleared);
+
     // utility functions
     /** Clear the block's state and prepare for assembling a new block */
     void resetBlock(const MinerAddress& minerAddress);

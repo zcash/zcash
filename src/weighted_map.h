@@ -13,7 +13,8 @@
 // A WeightedMap represents a map from keys (of type K) to values (of type V),
 // each entry having a weight (of type W). Elements can be randomly selected and
 // removed from the map with probability in proportion to their weight. This is
-// used to implement mempool limiting specified in ZIP 401.
+// used to implement mempool limiting specified in ZIP 401, and the block template
+// construction algorithm specified in ZIP 317.
 //
 // In order to efficiently implement random selection by weight, we keep track
 // of the total weight of all keys in the map. For performance reasons, the

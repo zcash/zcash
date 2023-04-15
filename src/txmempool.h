@@ -21,6 +21,7 @@
 #include "addressindex.h"
 #include "spentindex.h"
 #include "util/time.h"
+#include "weighted_map.h"
 
 #undef foreach
 #include "boost/multi_index_container.hpp"
@@ -433,6 +434,9 @@ public:
         }
     };
     typedef std::set<txiter, CompareIteratorByHash> setEntries;
+    typedef std::deque<txiter> queueEntries;
+    // Type of a set of candidate transactions to be added to a block template.
+    typedef WeightedMap<uint256, txiter, int128_t, GetRandInt128> weightedCandidates;
 
     const setEntries & GetMemPoolParents(txiter entry) const;
     const setEntries & GetMemPoolChildren(txiter entry) const;

@@ -40,19 +40,19 @@ void GetRandBytes(unsigned char* buf, size_t num)
     librustzcash_getrandom(buf, num);
 }
 
+uint128_t GetRandUInt128(uint128_t nMax)
+{
+    return GetRandGeneric(nMax);
+}
+
+int128_t GetRandInt128(int128_t nMax)
+{
+    return GetRandUInt128(nMax);
+}
+
 uint64_t GetRand(uint64_t nMax)
 {
-    if (nMax == 0)
-        return 0;
-
-    // The range of the random source must be a multiple of the modulus
-    // to give every possible output value an equal possibility
-    uint64_t nRange = (std::numeric_limits<uint64_t>::max() / nMax) * nMax;
-    uint64_t nRand = 0;
-    do {
-        GetRandBytes((unsigned char*)&nRand, sizeof(nRand));
-    } while (nRand >= nRange);
-    return (nRand % nMax);
+    return GetRandGeneric(nMax);
 }
 
 int64_t GetRandInt64(int64_t nMax)
