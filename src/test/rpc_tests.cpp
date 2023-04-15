@@ -404,7 +404,7 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
     CheckRPCThrows("getblockhashes 1477641360 1477641360 {\"noOrphans\":true,\"logicalTimes\":1}",
         "JSON value is not a boolean as expected");
     CheckRPCThrows("getblockhashes 1477641360 1477641360 {\"noOrphans\":True,\"logicalTimes\":false}",
-        "Error parsing JSON:{\"noOrphans\":True,\"logicalTimes\":false}");
+        "Error parsing JSON: {\"noOrphans\":True,\"logicalTimes\":false}");
 
     // revert
     fExperimentalInsightExplorer = false;

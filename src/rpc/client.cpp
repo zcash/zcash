@@ -189,7 +189,7 @@ std::string FormatConversionFailure(const std::string& strMethod, const Conversi
                         err.providedParams);
             },
             [](const UnparseableParam& err) {
-                return std::string("Error parsing JSON:") + err.unparsedParam;
+                return std::string("Error parsing JSON: ") + err.unparsedParam;
             }
         });
 }

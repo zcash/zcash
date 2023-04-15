@@ -1570,7 +1570,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
 
     // bad from address
     CheckRPCThrows("z_mergetoaddress ** " + taddr2,
-        "Error parsing JSON:**");
+        "Error parsing JSON: **");
 
     // bad from address
     CheckRPCThrows("z_mergetoaddress [\"**\"] " + taddr2,
@@ -1578,11 +1578,11 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
 
     // bad from address
     CheckRPCThrows("z_mergetoaddress " + taddr1 + " " + taddr2,
-        "Error parsing JSON:" + taddr1);
+        "Error parsing JSON: " + taddr1);
 
     // bad from address
     CheckRPCThrows("z_mergetoaddress [" + taddr1 + "] " + taddr2,
-        "Error parsing JSON:[" + taddr1 + "]");
+        "Error parsing JSON: [" + taddr1 + "]");
 
     // bad to address
     CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] INVALID" + taddr2,
