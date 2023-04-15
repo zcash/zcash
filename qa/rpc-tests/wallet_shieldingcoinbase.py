@@ -309,8 +309,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
 
         # Send will fail because fee is negative
         try:
-            # NB: Using -2 as the fee because -1 is the sentinel for using the conventional fee.
-            self.nodes[0].z_sendmany(myzaddr, recipients, 1, -2)
+            self.nodes[0].z_sendmany(myzaddr, recipients, 1, -1)
         except JSONRPCException as e:
             errorString = e.error['message']
         assert_equal("Amount out of range" in errorString, True)
