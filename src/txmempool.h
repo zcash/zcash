@@ -11,6 +11,7 @@
 #include <memory>
 #include <set>
 
+#include "int128.h"
 #include "amount.h"
 #include "coins.h"
 #include "mempool_limit.h"
@@ -87,6 +88,15 @@ public:
     const CTransaction& GetTx() const { return *this->tx; }
     std::shared_ptr<const CTransaction> GetSharedTx() const { return this->tx; }
     const CAmount& GetFee() const { return nFee; }
+
+    // Return the number of unpaid actions calculated according to ZIP 317.
+    // <https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction>
+    size_t GetUnpaidActionCount() const;
+
+    // Return a fixed-point representation of the entry's weight ratio according
+    // to ZIP 317, where 1 is represented by WEIGHT_RATIO_SCALE.
+    int128_t GetWeightRatio() const;
+
     size_t GetTxSize() const { return nTxSize; }
     int64_t GetTime() const { return nTime; }
     unsigned int GetHeight() const { return nHeight; }

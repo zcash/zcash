@@ -17,6 +17,8 @@
 #include "util/moneystr.h"
 #include "validationinterface.h"
 #include "version.h"
+#include "mempool_limit.h"
+#include "zip317.h"
 
 #include <optional>
 
@@ -296,6 +298,27 @@ void CTxMemPoolEntry::SetDirty()
     nCountWithDescendants = 0;
     nSizeWithDescendants = nTxSize;
     nModFeesWithDescendants = GetModifiedFee();
+}
+
+size_t CTxMemPoolEntry::GetUnpaidActionCount() const
+{
+    if (tx->IsCoinBase()) {
+        return 0;
+    } else {
+        return std::max(
+            int64_t {0},
+            (int64_t) std::max(GRACE_ACTIONS, tx->GetLogicalActionCount()) - (GetModifiedFee() / MARGINAL_FEE));
+    }
+}
+
+// Return a fixed-point representation of the entry's weight ratio, where 1 is represented by WEIGHT_RATIO_SCALE.
+int128_t CTxMemPoolEntry::GetWeightRatio() const
+{
+    // ensure that the result will always be nonzero
+    static_assert(WEIGHT_RATIO_SCALE > MAX_MONEY);
+    return std::min(
+        (int128_t {WEIGHT_RATIO_SCALE} * std::max(CAmount {1}, GetModifiedFee())) / tx->GetConventionalFee(),
+        int128_t {WEIGHT_RATIO_SCALE} * WEIGHT_RATIO_CAP);
 }
 
 void CTxMemPoolEntry::UpdateState(int64_t modifySize, CAmount modifyFee, int64_t modifyCount)
