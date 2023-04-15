@@ -30,6 +30,7 @@
 #include "zcash/Address.hpp"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
+#include "zip317.h"
 #include "crypter.h"
 #include "wallet/asyncrpcoperation_saplingmigration.h"
 
@@ -5801,19 +5802,12 @@ CAmount CWallet::ConstrainFee(CAmount requestedFee, unsigned int nTxBytes)
 CAmount CWallet::GetMinimumFee(const CTransaction& tx, unsigned int nTxBytes)
 {
     // payTxFee is user-set "I want to pay this much"
-    CAmount nFeeNeeded = payTxFee.GetFee(nTxBytes);
-    // TODO: fPayAtLeastCustomFee is always true so we could simplify this by saying
-    // `payTxFee.GetFee(std::max(1000, nTxBytes))` above, if we do not remove this code
-    // completely.
-    if (fPayAtLeastCustomFee && nFeeNeeded > 0 && nFeeNeeded < payTxFee.GetFeePerK())
-        nFeeNeeded = payTxFee.GetFeePerK();
+    CAmount nFeeNeeded = payTxFee.GetFee(std::max((unsigned int)1000, nTxBytes));
     // User didn't set: use conventional fee
     if (nFeeNeeded == 0)
         nFeeNeeded = tx.GetConventionalFee();
     return ConstrainFee(nFeeNeeded, nTxBytes);
 }
-
-
 
 
 DBErrors CWallet::LoadWallet(bool& fFirstRunRet)
@@ -6728,10 +6722,10 @@ bool CWallet::ParameterInteraction(const CChainParams& params)
         if (nMaxFee > HIGH_MAX_TX_FEE)
             UIWarning(_("-maxtxfee is set to a very high fee rate! Fee rates this large could be paid on a single transaction."));
         maxTxFee = nMaxFee;
-        if (CFeeRate(maxTxFee, 1000) < ::minRelayTxFee)
+        if (maxTxFee < CalculateConventionalFee(LOW_LOGICAL_ACTIONS))
         {
-            return UIError(strprintf(_("Invalid amount for -maxtxfee=<amount>: '%s' (must be at least the minimum relay fee rate of %s to prevent stuck transactions)"),
-                                       mapArgs["-maxtxfee"], ::minRelayTxFee.ToString()));
+            return UIError(strprintf(_("Invalid amount for -maxtxfee=<amount>: '%s' (must allow for at least %d logical actions at the conventional fee)"),
+                                       mapArgs["-maxtxfee"], LOW_LOGICAL_ACTIONS));
         }
     }
     nTxConfirmTarget = GetArg("-txconfirmtarget", DEFAULT_TX_CONFIRM_TARGET);

@@ -5,6 +5,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "amount.h"
+#include "consensus/consensus.h"
 #include "policy/fees.h"
 
 #include "tinyformat.h"
@@ -14,10 +15,11 @@ const std::string MINOR_CURRENCY_UNIT = "zatoshis";
 
 CFeeRate::CFeeRate(const CAmount& nFeePaid, size_t nSize)
 {
-    if (nSize > 0)
-        nSatoshisPerK = nFeePaid*1000/nSize;
-    else
+    if (nSize > 0) {
+        nSatoshisPerK = std::min(nFeePaid*1000/nSize, (uint64_t)INT64_MAX / MAX_BLOCK_SIZE);
+    } else {
         nSatoshisPerK = 0;
+    }
 }
 
 CAmount CFeeRate::GetFeeForRelay(size_t nSize) const

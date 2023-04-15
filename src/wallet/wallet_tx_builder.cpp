@@ -2,6 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+#include "util/moneystr.h"
 #include "wallet/wallet_tx_builder.h"
 #include "zip317.h"
 
@@ -962,11 +963,9 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
         if (fee < minRelayFee) {
             return TransactionBuilderResult(
                     strprintf(
-                            "Fee (%s %d) is below the minimum relay fee for this transaction (%s %d)",
-                            CURRENCY_UNIT,
-                            fee,
-                            CURRENCY_UNIT,
-                            minRelayFee));
+                            "Fee (%s) is below the minimum relay fee for this transaction (%s)",
+                            DisplayMoney(fee),
+                            DisplayMoney(minRelayFee)));
         }
     }
 

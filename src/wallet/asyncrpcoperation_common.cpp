@@ -183,10 +183,10 @@ void ThrowInputSelectionError(
             throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
                 strprintf(
-                    "Fee %s is greater than the maximum fee allowed by this instance (%s). Run "
+                    "Fee (%s) is greater than the maximum fee allowed by this instance (%s). Run "
                     "zcashd with `-maxtxfee` to adjust this limit.",
-                    FormatMoney(err.fixedFee),
-                    FormatMoney(maxTxFee)));
+                    DisplayMoney(err.fixedFee),
+                    DisplayMoney(maxTxFee)));
         },
         [](const ExcessOrchardActionsError& err) {
             std::string side;
