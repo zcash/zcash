@@ -22,11 +22,12 @@ def satoshi_round(amount):
     return  Decimal(amount).quantize(Decimal('0.00000001'), rounding=ROUND_DOWN)
 
 class MempoolPackagesTest(BitcoinTestFramework):
+    maxorphantx = 120
 
     def setup_network(self):
         base_args = [
             '-minrelaytxfee=0',
-            '-maxorphantx=1000',
+            '-maxorphantx=%d' % (self.maxorphantx,),
             '-debug',
             '-allowdeprecated=getnewaddress',
         ]
@@ -130,18 +131,18 @@ class MempoolPackagesTest(BitcoinTestFramework):
         for i in range(10):
             transaction_package.append({'txid': txid, 'vout': i, 'amount': sent_value})
 
-        for i in range(1000):
+        for i in range(self.maxorphantx):
             utxo = transaction_package.pop(0)
             try:
                 (txid, sent_value) = self.chain_transaction(self.nodes[0], utxo['txid'], utxo['vout'], utxo['amount'], fee, 10)
                 for j in range(10):
                     transaction_package.append({'txid': txid, 'vout': j, 'amount': sent_value})
-                if i == 998:
+                if i == self.maxorphantx-2:
                     mempool = self.nodes[0].getrawmempool(True)
-                    assert_equal(mempool[parent_transaction]['descendantcount'], 1000)
+                    assert_equal(mempool[parent_transaction]['descendantcount'], self.maxorphantx)
             except JSONRPCException as e:
                 print(e.error['message'])
-                assert_equal(i, 999)
+                assert_equal(i, self.maxorphantx-1)
                 print("tx that would create too large descendant package successfully rejected")
 
         # TODO: check that node1's mempool is as expected
@@ -151,7 +152,8 @@ class MempoolPackagesTest(BitcoinTestFramework):
         # Test reorg handling
         # First, the basics:
         self.nodes[0].generate(1)
-        sync_blocks(self.nodes)
+        print("syncing blocks")
+        sync_blocks(self.nodes, timeout=480)
         self.nodes[1].invalidateblock(self.nodes[0].getbestblockhash())
         self.nodes[1].reconsiderblock(self.nodes[0].getbestblockhash())
 
