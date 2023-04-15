@@ -59,11 +59,11 @@ Removal of Priority Estimation
   these priority estimates. It will automatically be converted to the new format
   which is not readable by prior versions of the software.
 
-Removal of `-mintxfee`
------------
+Removal of obsolete config options
+----------------------------------
 
-- The fee changes for ZIP 317 have made the `-mintxfee` config option obsolete. It has been removed
-  and will now cause a warning if used.
+- The fee changes for ZIP 317 have made the `-mintxfee` and `-txconfirmtarget` config options
+  obsolete. They have been removed and will now cause a warning if used.
 
 [Deprecations](https://zcash.github.io/zcash/user/deprecation.html)
 --------------

@@ -52,7 +52,6 @@ extern CWallet* pwalletMain;
  * Settings
  */
 extern CFeeRate payTxFee;
-extern unsigned int nTxConfirmTarget;
 extern bool bSpendZeroConfChange;
 extern bool fPayAtLeastCustomFee;
 extern unsigned int nAnchorConfirmations;
@@ -67,8 +66,6 @@ static const CAmount DEFAULT_TRANSACTION_FEE = 0;
 static const CAmount MIN_CHANGE = CENT;
 //! Default for -spendzeroconfchange
 static const bool DEFAULT_SPEND_ZEROCONF_CHANGE = true;
-//! -txconfirmtarget default
-static const unsigned int DEFAULT_TX_CONFIRM_TARGET = 2;
 static const bool DEFAULT_WALLETBROADCAST = true;
 //! Size of witness cache
 //  Should be large enough that we can expect not to reorg beyond our cache

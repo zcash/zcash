@@ -265,9 +265,8 @@ Wallet options:
        The preferred fee rate (in ZEC per 1000 bytes) used for transactions
        created by legacy APIs (sendtoaddress, sendmany, and
        fundrawtransaction). If the transaction is less than 1000 bytes then the
-       fee rate is applied as though it were 1000 bytes. See the description
-       of the -txconfirmtarget option for how the fee is calculated when this
-       option is not set.
+       fee rate is applied as though it were 1000 bytes. When this option is
+       not set, the ZIP 317 fee calculation is used.
 
   -rescan
        Rescan the block chain for missing wallet transactions on startup
@@ -278,12 +277,6 @@ Wallet options:
 
   -spendzeroconfchange
        Spend unconfirmed change when sending transactions (default: 1)
-
-  -txconfirmtarget=<n>
-       If -paytxfee is not set, include enough fee that transactions created by
-       legacy APIs (sendtoaddress, sendmany, and fundrawtransaction) begin
-       confirmation on average within n blocks. This is only used if there is
-       sufficient mempool data to estimate the fee. (default: 2)
 
   -txexpirydelta
        Set the number of blocks after which a transaction that has not been

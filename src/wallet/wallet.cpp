@@ -48,7 +48,6 @@ using namespace libzcash;
 CWallet* pwalletMain = NULL;
 /** Transaction fee set by the user */
 CFeeRate payTxFee(DEFAULT_TRANSACTION_FEE);
-unsigned int nTxConfirmTarget = DEFAULT_TX_CONFIRM_TARGET;
 bool bSpendZeroConfChange = DEFAULT_SPEND_ZEROCONF_CHANGE;
 bool fPayAtLeastCustomFee = true;
 unsigned int nAnchorConfirmations = DEFAULT_ANCHOR_CONFIRMATIONS;
@@ -6485,15 +6484,12 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
     strUsage += HelpMessageOpt("-migrationdestaddress=<zaddr>", _("Set the Sapling migration address"));
     strUsage += HelpMessageOpt("-orchardactionlimit=<n>", strprintf(_("Set the maximum number of Orchard actions permitted in a transaction (default %u)"), DEFAULT_ORCHARD_ACTION_LIMIT));
     strUsage += HelpMessageOpt("-paytxfee=<amt>", strprintf(_("The preferred fee rate (in %s per 1000 bytes) used for transactions created by legacy APIs (sendtoaddress, sendmany, and fundrawtransaction). "
-                                                              "If the transaction is less than 1000 bytes then the fee rate is applied as though it were 1000 bytes. See the description of the -txconfirmtarget "
-                                                              "option for how the fee is calculated when this option is not set."),
+                                                              "If the transaction is less than 1000 bytes then the fee rate is applied as though it were 1000 bytes. When this option is not set, "
+                                                              "the ZIP 317 fee calculation is used."),
                                                             CURRENCY_UNIT));
     strUsage += HelpMessageOpt("-rescan", _("Rescan the block chain for missing wallet transactions on startup"));
     strUsage += HelpMessageOpt("-salvagewallet", _("Attempt to recover private keys from a corrupt wallet on startup (implies -rescan)"));
     strUsage += HelpMessageOpt("-spendzeroconfchange", strprintf(_("Spend unconfirmed change when sending transactions (default: %u)"), DEFAULT_SPEND_ZEROCONF_CHANGE));
-    strUsage += HelpMessageOpt("-txconfirmtarget=<n>", strprintf(_("If -paytxfee is not set, include enough fee that transactions created by legacy APIs (sendtoaddress, sendmany, and fundrawtransaction) "
-                                                                   "begin confirmation on average within n blocks. This is only used if there is sufficient mempool data to estimate the fee. (default: %u)"),
-                                                                 DEFAULT_TX_CONFIRM_TARGET));
     strUsage += HelpMessageOpt("-txexpirydelta", strprintf(_("Set the number of blocks after which a transaction that has not been mined will become invalid (min: %u, default: %u (pre-Blossom) or %u (post-Blossom))"), TX_EXPIRING_SOON_THRESHOLD + 1, DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA, DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA));
     strUsage += HelpMessageOpt("-upgradewallet", _("Upgrade wallet to latest format on startup"));
     strUsage += HelpMessageOpt("-wallet=<file>", _("Specify wallet file absolute path or a path relative to the data directory") + " " + strprintf(_("(default: %s)"), DEFAULT_WALLET_DAT));
@@ -6728,7 +6724,9 @@ bool CWallet::ParameterInteraction(const CChainParams& params)
                                        mapArgs["-maxtxfee"], LOW_LOGICAL_ACTIONS));
         }
     }
-    nTxConfirmTarget = GetArg("-txconfirmtarget", DEFAULT_TX_CONFIRM_TARGET);
+    if (mapArgs.count("-txconfirmtarget")) {
+        UIWarning(_("The argument -txconfirmtarget is no longer supported."));
+    }
     if (mapArgs.count("-txexpirydelta")) {
         int64_t expiryDelta = atoi64(mapArgs["-txexpirydelta"]);
         uint32_t minExpiryDelta = TX_EXPIRING_SOON_THRESHOLD + 1;
