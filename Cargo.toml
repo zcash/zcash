@@ -61,8 +61,8 @@ zcash_address = "0.2"
 zcash_encoding = "0.2"
 zcash_history = "0.3"
 zcash_note_encryption = "0.3"
-zcash_primitives = { version = "0.10.2", features = ["temporary-zcashd", "transparent-inputs"] }
-zcash_proofs = { version = "0.10", features = ["directories"] }
+zcash_primitives = { version = "0.11", features = ["temporary-zcashd", "transparent-inputs"] }
+zcash_proofs = { version = "0.11", features = ["directories"] }
 ed25519-zebra = "3"
 zeroize = "1.4.2"
 
@@ -112,12 +112,3 @@ features = ["ansi", "env-filter", "fmt", "time"]
 lto = 'thin'
 panic = 'abort'
 codegen-units = 1
-
-[patch.crates-io]
-equihash = { git = "https://github.com/zcash/librustzcash.git", rev = "edb1941f19d85fb6dff11440e03cd53f2c5494ed" }
-zcash_address = { git = "https://github.com/zcash/librustzcash.git", rev = "edb1941f19d85fb6dff11440e03cd53f2c5494ed" }
-zcash_encoding = { git = "https://github.com/zcash/librustzcash.git", rev = "edb1941f19d85fb6dff11440e03cd53f2c5494ed" }
-zcash_history = { git = "https://github.com/zcash/librustzcash.git", rev = "edb1941f19d85fb6dff11440e03cd53f2c5494ed" }
-zcash_note_encryption = { git = "https://github.com/zcash/librustzcash.git", rev = "edb1941f19d85fb6dff11440e03cd53f2c5494ed" }
-zcash_primitives = { git = "https://github.com/zcash/librustzcash.git", rev = "edb1941f19d85fb6dff11440e03cd53f2c5494ed" }
-zcash_proofs = { git = "https://github.com/zcash/librustzcash.git", rev = "edb1941f19d85fb6dff11440e03cd53f2c5494ed" }
