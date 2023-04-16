@@ -636,23 +636,6 @@ bool CBlockTreeDB::LoadBlockIndexGuts(
                 pindexNew->hashChainHistoryRoot = diskindex.hashChainHistoryRoot;
                 pindexNew->hashAuthDataRoot = diskindex.hashAuthDataRoot;
 
-                // Consistency checks
-                CBlockHeader header;
-                {
-                    LOCK(cs_main);
-                    try {
-                        header = pindexNew->GetBlockHeader();
-                    } catch (const runtime_error&) {
-                        return error("LoadBlockIndex(): failed to read index entry: diskindex hash = %s",
-                            diskindex.GetBlockHash().ToString());
-                    }
-                }
-                if (header.GetHash() != diskindex.GetBlockHash())
-                    return error("LoadBlockIndex(): inconsistent header vs diskindex hash: header hash = %s, diskindex hash = %s",
-                        header.GetHash().ToString(), diskindex.GetBlockHash().ToString());
-                if (header.GetHash() != pindexNew->GetBlockHash())
-                    return error("LoadBlockIndex(): block header inconsistency detected: on-disk = %s, in-memory = %s",
-                        diskindex.ToString(), pindexNew->ToString());
                 if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
                     return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
 
