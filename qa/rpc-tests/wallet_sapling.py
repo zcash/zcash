@@ -173,7 +173,7 @@ class WalletSaplingTest(BitcoinTestFramework):
             taddr1,
             [{'address': node4_sproutaddr, 'amount': Decimal('2.5')},
              {'address': node4_saplingaddr, 'amount': Decimal('2.5') - DEFAULT_FEE}],
-            1, DEFAULT_FEE, 'AllowRevealedSenders'
+            1, DEFAULT_FEE
         )
         wait_and_assert_operationid_status(self.nodes[1], myopid, "failed", "Sending funds into the Sprout pool is no longer supported.")
 

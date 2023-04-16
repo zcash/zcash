@@ -12,7 +12,7 @@
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Address.hpp"
 #include "wallet.h"
-#include "wallet/paymentdisclosure.h"
+#include "wallet/wallet_tx_builder.h"
 
 #include <unordered_map>
 #include <tuple>
@@ -23,29 +23,45 @@
 
 using namespace libzcash;
 
-struct ShieldCoinbaseUTXO {
-    uint256 txid;
-    int vout;
-    CScript scriptPubKey;
-    CAmount amount;
-};
+/**
+When estimating the number of coinbase utxos we can shield in a single transaction:
+1. Joinsplit description is 1802 bytes.
+2. Transaction overhead ~ 100 bytes
+3. Spending a typical P2PKH is >=148 bytes, as defined in CTXIN_SPEND_DUST_SIZE.
+4. Spending a multi-sig P2SH address can vary greatly:
+   https://github.com/bitcoin/bitcoin/blob/c3ad56f4e0b587d8d763af03d743fdfc2d180c9b/src/main.cpp#L517
+   In real-world coinbase utxos, we consider a 3-of-3 multisig, where the size is roughly:
+    (3*(33+1))+3 = 105 byte redeem script
+    105 + 1 + 3*(73+1) = 328 bytes of scriptSig, rounded up to 400 based on testnet experiments.
+*/
+#define CTXIN_SPEND_P2SH_SIZE 400
 
-// Package of info which is passed to perform_joinsplit methods.
-struct ShieldCoinbaseJSInfo
-{
-    std::vector<JSInput> vjsin;
-    std::vector<JSOutput> vjsout;
-    CAmount vpub_old = 0;
-    CAmount vpub_new = 0;
+#define SHIELD_COINBASE_DEFAULT_LIMIT 50
+
+// transaction.h comment: spending taddr output requires CTxIn >= 148 bytes and
+// typical taddr txout is 34 bytes
+#define CTXIN_SPEND_DUST_SIZE   148
+#define CTXOUT_REGULAR_SIZE     34
+
+class Remaining {
+public:
+    Remaining(size_t utxoCounter, size_t numUtxos, CAmount remainingValue, CAmount shieldingValue):
+        utxoCounter(utxoCounter), numUtxos(numUtxos), remainingValue(remainingValue), shieldingValue(shieldingValue) { }
+
+    size_t utxoCounter;
+    size_t numUtxos;
+    CAmount remainingValue;
+    CAmount shieldingValue;
 };
 
 class AsyncRPCOperation_shieldcoinbase : public AsyncRPCOperation {
 public:
     AsyncRPCOperation_shieldcoinbase(
-        TransactionBuilder builder,
-        CMutableTransaction contextualTx,
-        std::vector<ShieldCoinbaseUTXO> inputs,
+        WalletTxBuilder builder,
+        ZTXOSelector ztxoSelector,
         PaymentAddress toAddress,
+        TransactionStrategy strategy,
+        int nUTXOLimit,
         CAmount fee = DEFAULT_FEE,
         UniValue contextInfo = NullUniValue);
     virtual ~AsyncRPCOperation_shieldcoinbase();
@@ -56,62 +72,29 @@ public:
     AsyncRPCOperation_shieldcoinbase& operator=(AsyncRPCOperation_shieldcoinbase const&) = delete;  // Copy assign
     AsyncRPCOperation_shieldcoinbase& operator=(AsyncRPCOperation_shieldcoinbase &&) = delete;      // Move assign
 
+    Remaining prepare();
+
     virtual void main();
 
     virtual UniValue getStatus() const;
 
-    bool testmode = false;  // Set to true to disable sending txs and generating proofs
-
-    bool paymentDisclosureMode = false; // Set to true to save esk for encrypted notes in payment disclosure database.
+    bool testmode{false};  // Set to true to disable sending txs and generating proofs
 
 private:
-    friend class ShieldToAddress;
     friend class TEST_FRIEND_AsyncRPCOperation_shieldcoinbase;    // class for unit testing
+
+    WalletTxBuilder builder_;
+    ZTXOSelector ztxoSelector_;
+    PaymentAddress toAddress_;
+    TransactionStrategy strategy_;
+    int nUTXOLimit_;
+    CAmount fee_;
+    std::optional<TransactionEffects> effects_;
 
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 
-    CAmount fee_;
-    PaymentAddress tozaddr_;
-
-    ed25519::VerificationKey joinSplitPubKey_;
-    ed25519::SigningKey joinSplitPrivKey_;
-
-    std::vector<ShieldCoinbaseUTXO> inputs_;
-
-    TransactionBuilder builder_;
-    CTransaction tx_;
-
-    bool main_impl();
-
-    // JoinSplit without any input notes to spend
-    UniValue perform_joinsplit(ShieldCoinbaseJSInfo &);
-
-    void lock_utxos();
-
-    void unlock_utxos();
-
-    // payment disclosure!
-    std::vector<PaymentDisclosureKeyInfo> paymentDisclosureData_;
+    uint256 main_impl();
 };
-
-class ShieldToAddress
-{
-private:
-    AsyncRPCOperation_shieldcoinbase *m_op;
-    CAmount sendAmount;
-
-    static void shieldToAddress(const libzcash::RecipientAddress& recipient, AsyncRPCOperation_shieldcoinbase *m_op);
-public:
-    ShieldToAddress(AsyncRPCOperation_shieldcoinbase *op, CAmount sendAmount) :
-        m_op(op), sendAmount(sendAmount) {}
-
-    bool operator()(const CKeyID &zaddr) const;
-    bool operator()(const CScriptID &zaddr) const;
-    bool operator()(const libzcash::SproutPaymentAddress &zaddr) const;
-    bool operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
-    bool operator()(const libzcash::UnifiedAddress &uaddr) const;
-};
-
 
 // To test private methods, a friend class can act as a proxy
 class TEST_FRIEND_AsyncRPCOperation_shieldcoinbase {
@@ -120,22 +103,10 @@ public:
 
     TEST_FRIEND_AsyncRPCOperation_shieldcoinbase(std::shared_ptr<AsyncRPCOperation_shieldcoinbase> ptr) : delegate(ptr) {}
 
-    CTransaction getTx() {
-        return delegate->tx_;
-    }
-
-    void setTx(CTransaction tx) {
-        delegate->tx_ = tx;
-    }
-
     // Delegated methods
 
-    bool main_impl() {
+    uint256 main_impl() {
         return delegate->main_impl();
-    }
-
-    UniValue perform_joinsplit(ShieldCoinbaseJSInfo &info) {
-        return delegate->perform_joinsplit(info);
     }
 
     void set_state(OperationStatus state) {
@@ -145,4 +116,3 @@ public:
 
 
 #endif // ZCASH_WALLET_ASYNCRPCOPERATION_SHIELDCOINBASE_H
-

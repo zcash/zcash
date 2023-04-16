@@ -1490,15 +1490,20 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
 
     // bad from address
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
-            "INVALIDtmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+            "INVALIDtmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
+            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"
+            ), runtime_error);
 
     // bad from address
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
-    "** tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+            "** tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"
+            ), runtime_error);
 
     // bad to address
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
-    "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ INVALIDtnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+            "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
+            "INVALIDtnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"
+            ), runtime_error);
 
     // invalid fee amount, cannot be negative
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
@@ -1516,34 +1521,10 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
 
     // invalid limit, must be at least 0
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
-    "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
-    "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
-    "100 -1"
-    ), runtime_error);
-
-    // Mutable tx containing contextual information we need to build tx
-    UniValue retValue = CallRPC("getblockcount");
-    int nHeight = retValue.get_int();
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1, false);
-    if (mtx.nVersion == 1) {
-        mtx.nVersion = 2;
-    }
-
-    // Test constructor of AsyncRPCOperation_shieldcoinbase
-    KeyIO keyIO(Params());
-    auto testnetzaddr = std::get<libzcash::SproutPaymentAddress>(keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value());
-
-    try {
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, {}, testnetzaddr, -1 ));
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Fee is out of range"));
-    }
-
-    try {
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, {}, testnetzaddr, 1));
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Empty inputs"));
-    }
+            "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
+            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
+            "100 -1"
+            ), runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)

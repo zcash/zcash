@@ -5028,7 +5028,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     // Create operation and add to global queue
     auto nAnchorDepth = std::min((unsigned int) nMinDepth, nAnchorConfirmations);
-    WalletTxBuilder builder(Params(), minRelayTxFee);
+    WalletTxBuilder builder(chainparams, minRelayTxFee);
 
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation(
@@ -5172,29 +5172,14 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
     return migrationStatus;
 }
 
-/**
-When estimating the number of coinbase utxos we can shield in a single transaction:
-1. Joinsplit description is 1802 bytes.
-2. Transaction overhead ~ 100 bytes
-3. Spending a typical P2PKH is >=148 bytes, as defined in CTXIN_SPEND_DUST_SIZE.
-4. Spending a multi-sig P2SH address can vary greatly:
-   https://github.com/bitcoin/bitcoin/blob/c3ad56f4e0b587d8d763af03d743fdfc2d180c9b/src/main.cpp#L517
-   In real-world coinbase utxos, we consider a 3-of-3 multisig, where the size is roughly:
-    (3*(33+1))+3 = 105 byte redeem script
-    105 + 1 + 3*(73+1) = 328 bytes of scriptSig, rounded up to 400 based on testnet experiments.
-*/
-#define CTXIN_SPEND_P2SH_SIZE 400
-
-#define SHIELD_COINBASE_DEFAULT_LIMIT 50
-
 UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 2 || params.size() > 4)
+    if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
-            "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee ) ( limit )\n"
+            "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee ) ( limit ) ( privacyPolicy )\n"
             "\nShield transparent coinbase funds by sending to a shielded zaddr.  This is an asynchronous operation and utxos"
             "\nselected for shielding will be locked.  If there is an error, they are unlocked.  The RPC call `listlockunspent`"
             "\ncan be used to return a list of locked utxos.  The number of coinbase utxos selected for shielding can be limited"
@@ -5209,12 +5194,15 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
             "4. limit                 (numeric, optional, default="
             + strprintf("%d", SHIELD_COINBASE_DEFAULT_LIMIT) + ") Limit on the maximum number of utxos to shield.  Set to 0 to use as many as will fit in the transaction.\n"
+            "5. privacyPolicy         (string, optional, default=\"AllowRevealedSenders\") Policy for what information leakage is acceptable.\n"
+            "                         This allows the same values as z_sendmany, but only \"AllowRevealedSenders\" and \"AllowLinkingAccountAddresses\"\n"
+            "                         are relevant.\n"
             "\nResult:\n"
             "{\n"
-            "  \"remainingUTXOs\": xxx       (numeric) Number of coinbase utxos still available for shielding.\n"
-            "  \"remainingValue\": xxx       (numeric) Value of coinbase utxos still available for shielding.\n"
-            "  \"shieldingUTXOs\": xxx        (numeric) Number of coinbase utxos being shielded.\n"
-            "  \"shieldingValue\": xxx        (numeric) Value of coinbase utxos being shielded.\n"
+            "  \"remainingUTXOs\": xxx    (numeric) Number of coinbase utxos still available for shielding.\n"
+            "  \"remainingValue\": xxx    (numeric) Value of coinbase utxos still available for shielding.\n"
+            "  \"shieldingUTXOs\": xxx    (numeric) Number of coinbase utxos being shielded.\n"
+            "  \"shieldingValue\": xxx    (numeric) Value of coinbase utxos being shielded.\n"
             "  \"opid\": xxx          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
             "}\n"
             "\nExamples:\n"
@@ -5225,6 +5213,25 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     ThrowIfInitialBlockDownload();
+    const auto chainparams = Params();
+    const auto consensus = chainparams.GetConsensus();
+    int nextBlockHeight = chainActive.Height() + 1;
+
+    // This API cannot be used to create coinbase shielding transactions before Sapling
+    // activation.
+    if (!consensus.NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_SAPLING)) {
+        throw JSONRPCError(
+            RPC_INVALID_PARAMETER, "Cannot create shielded transactions before Sapling has activated");
+    }
+
+    auto strategy =
+        ResolveTransactionStrategy(
+                ReifyPrivacyPolicy(
+                        PrivacyPolicy::AllowRevealedSenders,
+                        params.size() > 4 ? std::optional(params[4].get_str()) : std::nullopt),
+                // This has identical behavior to `AllowRevealedSenders` for this operation, but
+                // technically, this is what “LegacyCompat” means, so just for consistency.
+                PrivacyPolicy::FullPrivacy);
 
     // Validate the from address
     auto fromaddress = params[0].get_str();
@@ -5233,53 +5240,68 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     KeyIO keyIO(Params());
 
     // Set of source addresses to filter utxos by
-    std::set<CTxDestination> sources = {};
-    if (!isFromWildcard) {
-        CTxDestination taddr = keyIO.DecodeDestination(fromaddress);
-        if (IsValidDestination(taddr)) {
-            sources.insert(taddr);
+    ZTXOSelector ztxoSelector = [&]() {
+        if (isFromWildcard) {
+            return CWallet::LegacyTransparentZTXOSelector(true, TransparentCoinbasePolicy::Require);
         } else {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or \"*\".");
-        }
-    }
+            auto decoded = keyIO.DecodePaymentAddress(fromaddress);
+            if (!decoded.has_value()) {
+                throw JSONRPCError(
+                        RPC_INVALID_ADDRESS_OR_KEY,
+                        "Invalid from address: should be a taddr, zaddr, UA, or the string 'ANY_TADDR'.");
+            }
 
-    int nextBlockHeight = chainActive.Height() + 1;
-    const bool canopyActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_CANOPY);
+            auto ztxoSelectorOpt = pwalletMain->ZTXOSelectorForAddress(
+                decoded.value(),
+                true,
+                TransparentCoinbasePolicy::Require,
+                strategy.AllowLinkingAccountAddresses());
+
+            if (!ztxoSelectorOpt.has_value()) {
+                throw JSONRPCError(
+                        RPC_INVALID_ADDRESS_OR_KEY,
+                        "Invalid from address, no payment source found for address.");
+            }
+
+            auto selectorAccount = pwalletMain->FindAccountForSelector(ztxoSelectorOpt.value());
+            examine(decoded.value(), match {
+                [&](const libzcash::UnifiedAddress&) {
+                    if (!selectorAccount.has_value() || selectorAccount.value() == ZCASH_LEGACY_ACCOUNT) {
+                        throw JSONRPCError(
+                                RPC_INVALID_ADDRESS_OR_KEY,
+                                "Invalid from address, UA does not correspond to a known account.");
+                    }
+                },
+                [&](const auto&) {
+                    if (selectorAccount.has_value() && selectorAccount.value() != ZCASH_LEGACY_ACCOUNT) {
+                        throw JSONRPCError(
+                                RPC_INVALID_ADDRESS_OR_KEY,
+                                "Invalid from address: is a bare receiver from a Unified Address in this wallet. Provide the UA as returned by z_getaddressforaccount instead.");
+                    }
+                }
+            });
+
+            return ztxoSelectorOpt.value();
+        }
+    }();
 
     // Validate the destination address
     auto destStr = params[1].get_str();
     auto destaddress = keyIO.DecodePaymentAddress(destStr);
     if (destaddress.has_value()) {
         examine(destaddress.value(), match {
-            [&](const CKeyID& addr) {
+            [](const CKeyID&) {
                 throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2pkh address.");
             },
-            [&](const CScriptID&) {
+            [](const CScriptID&) {
                 throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2sh address.");
             },
-            [&](const libzcash::SaplingPaymentAddress& addr) {
-                // OK
-            },
-            [&](const libzcash::SproutPaymentAddress& addr) {
-                if (canopyActive) {
-                    throw JSONRPCError(RPC_VERIFY_REJECTED, "Sprout shielding is not supported after Canopy activation");
-                }
-            },
-            [&](const libzcash::UnifiedAddress& ua) {
-                if (!ua.GetSaplingReceiver().has_value()) {
-                    throw JSONRPCError(
-                            RPC_VERIFY_REJECTED,
-                            "Only Sapling shielding is currently supported by z_shieldcoinbase. "
-                            "Use z_sendmany with a transaction amount that results in no change for Orchard shielding.");
-                }
-                involvesOrchard = ua.GetOrchardReceiver().has_value();
-            }
+            [](const auto&) { },
         });
     } else {
         throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destStr);
     }
 
-    // Convert fee from currency format to zatoshis
     CAmount nFee = DEFAULT_FEE;
     if (params.size() > 2) {
         if (params[2].get_real() == 0.0) {
@@ -5289,98 +5311,9 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         }
     }
 
-    int nLimit = SHIELD_COINBASE_DEFAULT_LIMIT;
-    if (params.size() > 3) {
-        nLimit = params[3].get_int();
-        if (nLimit < 0) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Limit on maximum number of utxos cannot be negative");
-        }
-    }
-
-    const bool saplingActive =  Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_SAPLING);
-
-    // We cannot create shielded transactions before Sapling activates.
-    if (!saplingActive) {
-        throw JSONRPCError(
-            RPC_INVALID_PARAMETER, "Cannot create shielded transactions before Sapling has activated");
-    }
-
-    bool overwinterActive = Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_OVERWINTER);
-    assert(overwinterActive);
-    unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
-
-    // Prepare to get coinbase utxos
-    std::vector<ShieldCoinbaseUTXO> inputs;
-    CAmount shieldedValue = 0;
-    CAmount remainingValue = 0;
-    size_t estimatedTxSize = 2000;  // 1802 joinsplit description + tx overhead + wiggle room
-    size_t utxoCounter = 0;
-    bool maxedOutFlag = false;
-    const size_t mempoolLimit = nLimit;
-
-    // Get available utxos
-    vector<COutput> vecOutputs;
-    pwalletMain->AvailableCoins(vecOutputs, std::nullopt, true, NULL, false, true);
-
-    // Find unspent coinbase utxos and update estimated size
-    for (const COutput& out : vecOutputs) {
-        if (!out.fSpendable) {
-            continue;
-        }
-
-        CTxDestination address;
-        if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
-            continue;
-        }
-
-        // If from address was not the wildcard "*", filter utxos
-        if (sources.size() > 0 && !sources.count(address)) {
-            continue;
-        }
-
-        if (!out.tx->IsCoinBase()) {
-            continue;
-        }
-
-        utxoCounter++;
-        auto scriptPubKey = out.tx->vout[out.i].scriptPubKey;
-        CAmount nValue = out.tx->vout[out.i].nValue;
-
-        if (!maxedOutFlag) {
-            size_t increase = (std::get_if<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
-            if (estimatedTxSize + increase >= max_tx_size ||
-                (mempoolLimit > 0 && utxoCounter > mempoolLimit))
-            {
-                maxedOutFlag = true;
-            } else {
-                estimatedTxSize += increase;
-                ShieldCoinbaseUTXO utxo = {out.tx->GetHash(), out.i, scriptPubKey, nValue};
-                inputs.push_back(utxo);
-                shieldedValue += nValue;
-            }
-        }
-
-        if (maxedOutFlag) {
-            remainingValue += nValue;
-        }
-    }
-
-    size_t numUtxos = inputs.size();
-
-    if (numUtxos == 0) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any coinbase funds to shield.");
-    }
-
-    if (shieldedValue < nFee) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
-            strprintf("Insufficient coinbase funds, have %s, which is less than miners fee %s",
-            FormatMoney(shieldedValue), FormatMoney(nFee)));
-    }
-
-    // Check that the user specified fee is sane (if too high, it can result in error -25 absurd fee)
-    CAmount netAmount = shieldedValue - nFee;
-    if (nFee > netAmount) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Fee %s is greater than the net amount to be shielded %s", FormatMoney(nFee), FormatMoney(netAmount)));
+    int nUTXOLimit = params.size() > 3 ? params[3].get_int() : SHIELD_COINBASE_DEFAULT_LIMIT;
+    if (nUTXOLimit < 0) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Limit on maximum number of utxos cannot be negative");
     }
 
     // Keep record of parameters in context object
@@ -5389,42 +5322,26 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     contextInfo.pushKV("toaddress", params[1]);
     contextInfo.pushKV("fee", ValueFromAmount(nFee));
 
-    // Builder (used if Sapling addresses are involved)
-    std::optional<uint256> orchardAnchor;
-    if (nAnchorConfirmations > 0 && (involvesOrchard || nPreferredTxVersion >= ZIP225_MIN_TX_VERSION)) {
-        // Allow Orchard recipients by setting an Orchard anchor.
-        auto orchardAnchorHeight = nextBlockHeight - nAnchorConfirmations;
-        if (Params().GetConsensus().NetworkUpgradeActive(orchardAnchorHeight, Consensus::UPGRADE_NU5)) {
-            auto anchorBlockIndex = chainActive[orchardAnchorHeight];
-            assert(anchorBlockIndex != nullptr);
-            orchardAnchor = anchorBlockIndex->hashFinalOrchardRoot;
-        }
-    }
-    TransactionBuilder builder = TransactionBuilder(
-        Params().GetConsensus(), nextBlockHeight, orchardAnchor, pwalletMain);
+    // Create the wallet builder
+    WalletTxBuilder builder(chainparams, minRelayTxFee);
 
-    // Contextual transaction we will build on
-    // (used if no Sapling addresses are involved)
-    CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
-        Params().GetConsensus(), nextBlockHeight,
-        nPreferredTxVersion < ZIP225_MIN_TX_VERSION);
-    if (contextualTx.nVersion == 1) {
-        contextualTx.nVersion = 2; // Tx format should support vJoinSplit
-    }
+    auto async_shieldcoinbase =
+        new AsyncRPCOperation_shieldcoinbase(
+                std::move(builder), ztxoSelector, destaddress.value(), strategy, nUTXOLimit, nFee, contextInfo);
+    auto results = async_shieldcoinbase->prepare();
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(
-        std::move(builder), contextualTx, inputs, destaddress.value(), nFee, contextInfo) );
+    std::shared_ptr<AsyncRPCOperation> operation(async_shieldcoinbase);
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
 
     // Return continuation information
     UniValue o(UniValue::VOBJ);
-    o.pushKV("remainingUTXOs", static_cast<uint64_t>(utxoCounter - numUtxos));
-    o.pushKV("remainingValue", ValueFromAmount(remainingValue));
-    o.pushKV("shieldingUTXOs", static_cast<uint64_t>(numUtxos));
-    o.pushKV("shieldingValue", ValueFromAmount(shieldedValue));
+    o.pushKV("remainingUTXOs", static_cast<uint64_t>(results.utxoCounter - results.numUtxos));
+    o.pushKV("remainingValue", ValueFromAmount(results.remainingValue));
+    o.pushKV("shieldingUTXOs", static_cast<uint64_t>(results.numUtxos));
+    o.pushKV("shieldingValue", ValueFromAmount(results.shieldingValue));
     o.pushKV("opid", operationId);
     return o;
 }
