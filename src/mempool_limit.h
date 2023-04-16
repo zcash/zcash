@@ -22,8 +22,8 @@ const size_t DEFAULT_MEMPOOL_TOTAL_COST_LIMIT = 80000000;
 const int64_t DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES = 60;
 
 const size_t EVICTION_MEMORY_ENTRIES = 40000;
-const int64_t MIN_TX_COST = 4000;
-const int64_t LOW_FEE_PENALTY = 16000;
+const int64_t MIN_TX_COST = 10000;
+const int64_t LOW_FEE_PENALTY = 40000;
 
 
 // This class keeps track of transactions which have been recently evicted from the mempool
