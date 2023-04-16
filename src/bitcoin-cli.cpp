@@ -212,12 +212,12 @@ UniValue ConvertValues(const std::string &strMethod, const std::vector<std::stri
                             auto helpMsg = CallRPC("help", ConvertValues("help", {strMethod}));
                             return "\n\n"
                                 + (helpMsg.has_value()
-                                   ? strprintf(
+                                   ? "Usage: " + helpMsg.value().get_str()
+                                   : strprintf(
                                            "An error occurred while attempting to retrieve the "
                                            "help text for %s: %s",
                                            strMethod,
-                                           helpMsg.error().get_str())
-                                   : helpMsg->get_str());
+                                           helpMsg.error().get_str()));
                         }
                     }));
         })
