@@ -26,7 +26,7 @@ WEIGHT_RATIO_CAP = 4
 
 # The zcashd RPC sentinel value to indicate the conventional_fee when a positional argument is
 # required.
-ZIP_317_FEE = -1
+ZIP_317_FEE = None
 
 def conventional_fee_zats(logical_actions):
     return MARGINAL_FEE * max(GRACE_ACTIONS, logical_actions)
