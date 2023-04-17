@@ -1490,20 +1490,15 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
 
     // bad from address
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
-            "INVALIDtmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
-            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"
-            ), runtime_error);
+            "INVALIDtmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
 
     // bad from address
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
-            "** tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"
-            ), runtime_error);
+    "** tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
 
     // bad to address
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
-            "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
-            "INVALIDtnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"
-            ), runtime_error);
+    "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ INVALIDtnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
 
     // invalid fee amount, cannot be negative
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
@@ -1521,10 +1516,32 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
 
     // invalid limit, must be at least 0
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
-            "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
-            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
-            "100 -1"
-            ), runtime_error);
+    "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
+    "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
+    "100 -1"
+    ), runtime_error);
+
+    // Test constructor of AsyncRPCOperation_shieldcoinbase
+    KeyIO keyIO(Params());
+    UniValue retValue;
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
+    auto taddr2 = std::get<CKeyID>(keyIO.DecodePaymentAddress(retValue.get_str()).value());
+    auto testnetzaddr = std::get<libzcash::SproutPaymentAddress>(keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value());
+    auto selector = pwalletMain->ZTXOSelectorForAddress(
+            taddr2,
+            true,
+            // In the real transaction builder we use either Require or Disallow, but here we
+            // are checking that there are no UTXOs at all, so we allow either to be selected to
+            // confirm this.
+            TransparentCoinbasePolicy::Allow,
+            false).value();
+    WalletTxBuilder builder(Params(), minRelayTxFee);
+
+    try {
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase(std::move(builder), selector, testnetzaddr, PrivacyPolicy::AllowRevealedSenders, SHIELD_COINBASE_DEFAULT_LIMIT, 1));
+    } catch (const UniValue& objError) {
+        BOOST_CHECK( find_error(objError, "Empty inputs"));
+    }
 }
 
 BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)

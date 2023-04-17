@@ -4700,10 +4700,6 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
     return ret;
 }
 
-// transaction.h comment: spending taddr output requires CTxIn >= 148 bytes and typical taddr txout is 34 bytes
-#define CTXIN_SPEND_DUST_SIZE   148
-#define CTXOUT_REGULAR_SIZE     34
-
 size_t EstimateTxSize(
         const ZTXOSelector& ztxoSelector,
         const std::vector<Payment>& recipients,
@@ -4762,7 +4758,7 @@ size_t EstimateTxSize(
     CTransaction tx(mtx);
     txsize += GetSerializeSize(tx, SER_NETWORK, tx.nVersion);
     if (fromTaddr) {
-        txsize += CTXIN_SPEND_DUST_SIZE;
+        txsize += CTXIN_SPEND_P2PKH_SIZE;
         txsize += CTXOUT_REGULAR_SIZE; // There will probably be taddr change
     }
     txsize += CTXOUT_REGULAR_SIZE * taddrRecipientCount;
@@ -5231,7 +5227,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
                         params.size() > 4 ? std::optional(params[4].get_str()) : std::nullopt),
                 // This has identical behavior to `AllowRevealedSenders` for this operation, but
                 // technically, this is what “LegacyCompat” means, so just for consistency.
-                PrivacyPolicy::FullPrivacy);
+                PrivacyPolicy::AllowFullyTransparent);
 
     // Validate the from address
     auto fromaddress = params[0].get_str();
@@ -5288,17 +5284,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     // Validate the destination address
     auto destStr = params[1].get_str();
     auto destaddress = keyIO.DecodePaymentAddress(destStr);
-    if (destaddress.has_value()) {
-        examine(destaddress.value(), match {
-            [](const CKeyID&) {
-                throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2pkh address.");
-            },
-            [](const CScriptID&) {
-                throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2sh address.");
-            },
-            [](const auto&) { },
-        });
-    } else {
+    if (!destaddress.has_value()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destStr);
     }
 
@@ -5328,7 +5314,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     auto async_shieldcoinbase =
         new AsyncRPCOperation_shieldcoinbase(
                 std::move(builder), ztxoSelector, destaddress.value(), strategy, nUTXOLimit, nFee, contextInfo);
-    auto results = async_shieldcoinbase->prepare();
+    auto results = async_shieldcoinbase->prepare(*pwalletMain);
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
@@ -5622,7 +5608,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             CAmount nValue = out.tx->vout[out.i].nValue;
 
             if (!maxedOutUTXOsFlag) {
-                size_t increase = (std::get_if<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
+                size_t increase = (std::get_if<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_P2PKH_SIZE;
                 if (estimatedTxSize + increase >= max_tx_size ||
                     (mempoolLimit > 0 && utxoCounter > mempoolLimit))
                 {

@@ -157,7 +157,7 @@ WalletTxBuilder::PrepareTransaction(
     return selected.map([&](const InputSelection& resolvedSelection) {
         auto ovks = SelectOVKs(wallet, selector, spendable);
 
-        auto effects = TransactionEffects(
+        return TransactionEffects(
                 anchorConfirmations,
                 resolvedSelection.GetInputs(),
                 resolvedSelection.GetPayments(),
@@ -166,8 +166,6 @@ WalletTxBuilder::PrepareTransaction(
                 ovks.first,
                 ovks.second,
                 anchorHeight);
-        effects.LockSpendable(wallet);
-        return effects;
     });
 }
 

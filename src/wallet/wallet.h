@@ -757,9 +757,6 @@ public:
 
 class COutput
 {
-private:
-    COutput() { }
-
 public:
     const CWalletTx *tx;
     int i;
@@ -769,10 +766,6 @@ public:
 
     COutput(const CWalletTx *txIn, int iIn, int nDepthIn, bool fSpendableIn, bool fIsCoinbaseIn = false) :
             tx(txIn), i(iIn), nDepth(nDepthIn), fSpendable(fSpendableIn), fIsCoinbase(fIsCoinbaseIn){ }
-
-    static COutput Dummy() {
-        return COutput();
-    }
 
     CAmount Value() const { return tx->vout[i].nValue; }
     std::string ToString() const;

@@ -7777,10 +7777,8 @@ bool ZTXOSelector::SelectsOrchard() const {
 
 void SpendableInputs::LimitTransparentUtxos(size_t maxUtxoCount)
 {
-    if (utxos.size() > maxUtxoCount) {
-        // this operation will always shrink the utxos vector; the dummy is
-        // just here to keep the compiler happy.
-        utxos.resize(maxUtxoCount, COutput::Dummy());
+    while (utxos.size() > maxUtxoCount) {
+        utxos.pop_back();
     }
 }
 

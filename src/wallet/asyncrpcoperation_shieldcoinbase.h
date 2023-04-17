@@ -25,9 +25,9 @@ using namespace libzcash;
 
 /**
 When estimating the number of coinbase utxos we can shield in a single transaction:
-1. Joinsplit description is 1802 bytes.
+1. An Orchard receiver is 9165 bytes.
 2. Transaction overhead ~ 100 bytes
-3. Spending a typical P2PKH is >=148 bytes, as defined in CTXIN_SPEND_DUST_SIZE.
+3. Spending a typical P2PKH is >=148 bytes, as defined in CTXIN_SPEND_P2PKH_SIZE.
 4. Spending a multi-sig P2SH address can vary greatly:
    https://github.com/bitcoin/bitcoin/blob/c3ad56f4e0b587d8d763af03d743fdfc2d180c9b/src/main.cpp#L517
    In real-world coinbase utxos, we consider a 3-of-3 multisig, where the size is roughly:
@@ -40,7 +40,7 @@ When estimating the number of coinbase utxos we can shield in a single transacti
 
 // transaction.h comment: spending taddr output requires CTxIn >= 148 bytes and
 // typical taddr txout is 34 bytes
-#define CTXIN_SPEND_DUST_SIZE   148
+#define CTXIN_SPEND_P2PKH_SIZE   148
 #define CTXOUT_REGULAR_SIZE     34
 
 class Remaining {
@@ -72,7 +72,7 @@ public:
     AsyncRPCOperation_shieldcoinbase& operator=(AsyncRPCOperation_shieldcoinbase const&) = delete;  // Copy assign
     AsyncRPCOperation_shieldcoinbase& operator=(AsyncRPCOperation_shieldcoinbase &&) = delete;      // Move assign
 
-    Remaining prepare();
+    Remaining prepare(CWallet& wallet);
 
     virtual void main();
 
@@ -93,7 +93,7 @@ private:
 
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 
-    uint256 main_impl();
+    uint256 main_impl(CWallet& wallet);
 };
 
 // To test private methods, a friend class can act as a proxy
@@ -105,8 +105,8 @@ public:
 
     // Delegated methods
 
-    uint256 main_impl() {
-        return delegate->main_impl();
+    uint256 main_impl(CWallet& wallet) {
+        return delegate->main_impl(wallet);
     }
 
     void set_state(OperationStatus state) {

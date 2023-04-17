@@ -60,6 +60,16 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
     assert(MoneyRange(fee));
     assert(ztxoSelector.RequireSpendingKeys());
 
+    examine(toAddress_, match {
+            [](const CKeyID&) {
+                throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2pkh address.");
+            },
+            [](const CScriptID&) {
+                throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2sh address.");
+            },
+            [](const auto&) { },
+        });
+
     // Log the context info
     if (LogAcceptCategory("zrpcunsafe")) {
         LogPrint("zrpcunsafe", "%s: z_shieldcoinbase initialized (context=%s)\n", getId(), contextInfo.write());
@@ -81,7 +91,7 @@ void AsyncRPCOperation_shieldcoinbase::main() {
 
     std::optional<uint256> txid;
     try {
-        txid = main_impl();
+        txid = main_impl(*pwalletMain);
     } catch (const UniValue& objError) {
         int code = find_value(objError, "code").get_int();
         std::string message = find_value(objError, "message").get_str();
@@ -123,15 +133,14 @@ void AsyncRPCOperation_shieldcoinbase::main() {
 }
 
 
-Remaining AsyncRPCOperation_shieldcoinbase::prepare() {
-    auto spendable = builder_.FindAllSpendableInputs(*pwalletMain, ztxoSelector_, COINBASE_MATURITY);
+Remaining AsyncRPCOperation_shieldcoinbase::prepare(CWallet& wallet) {
+    auto spendable = builder_.FindAllSpendableInputs(wallet, ztxoSelector_, COINBASE_MATURITY);
 
     // Find unspent coinbase utxos and update estimated size
     unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
     CAmount shieldingValue = 0;
     CAmount remainingValue = 0;
-    // FIXME: bump this up to an appropriate size for Orchard
-    size_t estimatedTxSize = 2000;  // 1802 joinsplit description + tx overhead + wiggle room
+    size_t estimatedTxSize = 10000; // per ZIP 401 (https://zips.z.cash/zip-0401#specification)
     size_t utxoCounter = 0;
     size_t numUtxos = 0;
     bool maxedOutFlag = false;
@@ -148,7 +157,7 @@ Remaining AsyncRPCOperation_shieldcoinbase::prepare() {
         utxoCounter++;
         if (!maxedOutFlag) {
             size_t increase =
-                (std::get_if<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
+                (std::get_if<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_P2PKH_SIZE;
 
             if (estimatedTxSize + increase >= max_tx_size || (0 < nUTXOLimit_ && nUTXOLimit_ < utxoCounter)) {
                 maxedOutFlag = true;
@@ -179,7 +188,7 @@ Remaining AsyncRPCOperation_shieldcoinbase::prepare() {
     std::vector<Payment> payments = { Payment(toAddress_, shieldingValue - fee_, std::nullopt) };
 
     auto preparationResult = builder_.PrepareTransaction(
-            *pwalletMain,
+            wallet,
             ztxoSelector_,
             spendable,
             payments,
@@ -193,50 +202,56 @@ Remaining AsyncRPCOperation_shieldcoinbase::prepare() {
             ThrowInputSelectionError(err, ztxoSelector_, strategy_);
         })
         .map([&](const TransactionEffects& effects) {
+            effects.LockSpendable(wallet);
             effects_ = effects;
         });
 
     return Remaining(utxoCounter, numUtxos, remainingValue, shieldingValue);
 }
 
-uint256 AsyncRPCOperation_shieldcoinbase::main_impl() {
+uint256 AsyncRPCOperation_shieldcoinbase::main_impl(CWallet& wallet) {
     uint256 txid;
 
-    const auto& spendable = effects_->GetSpendable();
-    const auto& payments = effects_->GetPayments();
-    spendable.LogInputs(getId());
+    try {
+        const auto& spendable = effects_->GetSpendable();
+        const auto& payments = effects_->GetPayments();
+        spendable.LogInputs(getId());
 
-    LogPrint("zrpcunsafe", "%s: spending %s to send %s with fee %s\n", getId(),
-        FormatMoney(payments.Total()),
-        FormatMoney(spendable.Total()),
-        FormatMoney(effects_->GetFee()));
-    LogPrint("zrpc", "%s: total transparent input: %s (to choose from)\n", getId(),
-        FormatMoney(spendable.GetTransparentTotal()));
-    LogPrint("zrpcunsafe", "%s: total shielded input: %s (to choose from)\n", getId(),
-        FormatMoney(spendable.GetSaplingTotal() + spendable.GetOrchardTotal()));
-    LogPrint("zrpc", "%s: total transparent output: %s\n", getId(),
-        FormatMoney(payments.GetTransparentTotal()));
-    LogPrint("zrpcunsafe", "%s: total shielded Sapling output: %s\n", getId(),
-        FormatMoney(payments.GetSaplingTotal()));
-    LogPrint("zrpcunsafe", "%s: total shielded Orchard output: %s\n", getId(),
-        FormatMoney(payments.GetOrchardTotal()));
-    LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(effects_->GetFee()));
+        LogPrint("zrpcunsafe", "%s: spending %s to send %s with fee %s\n", getId(),
+                 FormatMoney(payments.Total()),
+                 FormatMoney(spendable.Total()),
+                 FormatMoney(effects_->GetFee()));
+        LogPrint("zrpc", "%s: total transparent input: %s (to choose from)\n", getId(),
+                 FormatMoney(spendable.GetTransparentTotal()));
+        LogPrint("zrpcunsafe", "%s: total shielded input: %s (to choose from)\n", getId(),
+                 FormatMoney(spendable.GetSaplingTotal() + spendable.GetOrchardTotal()));
+        LogPrint("zrpc", "%s: total transparent output: %s\n", getId(),
+                 FormatMoney(payments.GetTransparentTotal()));
+        LogPrint("zrpcunsafe", "%s: total shielded Sapling output: %s\n", getId(),
+                 FormatMoney(payments.GetSaplingTotal()));
+        LogPrint("zrpcunsafe", "%s: total shielded Orchard output: %s\n", getId(),
+                 FormatMoney(payments.GetOrchardTotal()));
+        LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(effects_->GetFee()));
 
-    auto buildResult = effects_->ApproveAndBuild(
-            Params().GetConsensus(),
-            *pwalletMain,
-            chainActive,
-            strategy_);
+        auto buildResult = effects_->ApproveAndBuild(
+                Params().GetConsensus(),
+                wallet,
+                chainActive,
+                strategy_);
 
-    auto tx = buildResult.GetTxOrThrow();
+        auto tx = buildResult.GetTxOrThrow();
 
-    UniValue sendResult = SendTransaction(tx, payments.GetResolvedPayments(), std::nullopt, testmode);
-    set_result(sendResult);
+        UniValue sendResult = SendTransaction(tx, payments.GetResolvedPayments(), std::nullopt, testmode);
+        set_result(sendResult);
 
-    txid = tx.GetHash();
+        txid = tx.GetHash();
 
-    effects_->UnlockSpendable(*pwalletMain);
-    return txid;
+        effects_->UnlockSpendable(wallet);
+        return txid;
+    } catch (...) {
+        effects_->UnlockSpendable(wallet);
+        throw;
+    }
 }
 
 /**
