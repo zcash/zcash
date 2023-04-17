@@ -21,6 +21,7 @@ class WalletTreeStateTest (BitcoinTestFramework):
     # Start nodes with -regtestshieldcoinbase to set fCoinbaseMustBeShielded to true.
     def setup_network(self, split=False):
         self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[[
+            '-minrelaytxfee=0',
             '-regtestshieldcoinbase',
             '-debug=zrpc',
             '-allowdeprecated=z_getnewaddress',

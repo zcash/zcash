@@ -191,7 +191,7 @@ CAmount WalletTxBuilder::DefaultDustThreshold() const {
     CKey secret{CKey::TestOnlyRandomKey(true)};
     CScript scriptPubKey = GetScriptForDestination(secret.GetPubKey().GetID());
     CTxOut txout(CAmount(1), scriptPubKey);
-    return txout.GetDustThreshold(minRelayFee);
+    return txout.GetDustThreshold();
 }
 
 SpendableInputs WalletTxBuilder::FindAllSpendableInputs(

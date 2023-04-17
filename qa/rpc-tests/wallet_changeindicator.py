@@ -23,6 +23,7 @@ class WalletChangeIndicatorTest (BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            '-minrelaytxfee=0',
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
         ]] * self.num_nodes)

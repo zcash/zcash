@@ -258,15 +258,22 @@ Wallet options:
        Set the Sapling migration address
 
   -mintxfee=<amt>
-       Fees (in ZEC/kB) smaller than this are considered zero fee for
-       transaction creation (default: 0.00001)
+       The fallback fee rate (in ZEC per 1000 bytes) used by legacy APIs
+       (sendtoaddress, sendmany, and fundrawtransaction) when -paytxfee has not
+       been set and there is insufficient mempool data to estimate a fee
+       according to the -txconfirmtarget option (default: 0.00001)
 
   -orchardactionlimit=<n>
        Set the maximum number of Orchard actions permitted in a transaction
        (default 50)
 
   -paytxfee=<amt>
-       Fee (in ZEC/kB) to add to transactions you send (default: 0.00)
+       The preferred fee rate (in ZEC per 1000 bytes) used for transactions
+       created by legacy APIs (sendtoaddress, sendmany, and
+       fundrawtransaction). If the transaction is less than 1000 bytes then the
+       fee rate is applied as though it were 1000 bytes. See the descriptions
+       of -txconfirmtarget and -mintxfee options for how the fee is calculated
+       when this option is not set.
 
   -rescan
        Rescan the block chain for missing wallet transactions on startup
@@ -275,15 +282,15 @@ Wallet options:
        Attempt to recover private keys from a corrupt wallet on startup
        (implies -rescan)
 
-  -sendfreetransactions
-       Send transactions as zero-fee transactions if possible (default: 0)
-
   -spendzeroconfchange
        Spend unconfirmed change when sending transactions (default: 1)
 
   -txconfirmtarget=<n>
-       If paytxfee is not set, include enough fee so transactions begin
-       confirmation on average within n blocks (default: 2)
+       If -paytxfee is not set, include enough fee that transactions created by
+       legacy APIs (sendtoaddress, sendmany, and fundrawtransaction) begin
+       confirmation on average within n blocks. This is only used if there is
+       sufficient mempool data to estimate the fee; if not, the fallback fee
+       set by -mintxfee is used. (default: 2)
 
   -txexpirydelta
        Set the number of blocks after which a transaction that has not been
@@ -378,8 +385,9 @@ Debugging/Testing options:
        Prepend debug output with timestamp (default: 1)
 
   -minrelaytxfee=<amt>
-       Fees (in ZEC/kB) smaller than this are considered zero fee for relaying,
-       mining and transaction creation (default: 0.000001)
+       Transactions must have at least this fee rate (in ZEC per 1000 bytes)
+       for relaying, mining and transaction creation (default: 0.000001). This
+       is not the only fee constraint.
 
   -maxtxfee=<amt>
        Maximum total fees (in ZEC) to use in a single wallet transaction or raw
@@ -410,10 +418,6 @@ Block creation options:
 
   -blockmaxsize=<n>
        Set maximum block size in bytes (default: 2000000)
-
-  -blockprioritysize=<n>
-       Set maximum size of high-priority/low-fee transactions in bytes
-       (default: 1000000)
 
 Mining options:
 

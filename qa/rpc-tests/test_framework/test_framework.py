@@ -190,6 +190,7 @@ class ComparisonTestFramework(BitcoinTestFramework):
         super().__init__()
         self.num_nodes = 1
         self.cache_behavior = 'clean'
+        self.additional_args = []
 
     def add_options(self, parser):
         parser.add_option("--testbinary", dest="testbinary",
@@ -202,7 +203,7 @@ class ComparisonTestFramework(BitcoinTestFramework):
     def setup_network(self):
         self.nodes = start_nodes(
             self.num_nodes, self.options.tmpdir,
-            extra_args=[['-debug', '-whitelist=127.0.0.1']] * self.num_nodes,
+            extra_args=[['-debug', '-whitelist=127.0.0.1'] + self.additional_args] * self.num_nodes,
             binary=[self.options.testbinary] +
             [self.options.refbinary]*(self.num_nodes-1))
 

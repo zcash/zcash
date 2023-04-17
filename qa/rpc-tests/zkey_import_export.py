@@ -24,6 +24,7 @@ class ZkeyImportExportTest (BitcoinTestFramework):
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(5, self.options.tmpdir, extra_args=[[
+            '-minrelaytxfee=0',
             '-allowdeprecated=getnewaddress',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',

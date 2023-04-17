@@ -27,7 +27,8 @@ class OrchardWalletInitTest(BitcoinTestFramework):
         self.num_nodes = 4
 
     def setup_nodes(self):
-        return start_nodes(self.num_nodes, self.options.tmpdir, [[
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            '-minrelaytxfee=0',
             nuparams(NU5_BRANCH_ID, 205),
             '-regtestwalletsetbestchaineveryblock'
         ]] * self.num_nodes)

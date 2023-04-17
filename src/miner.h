@@ -148,8 +148,6 @@ private:
     // Methods for how to add transactions to a block.
     /** Add transactions based on modified feerate */
     void addScoreTxs();
-    /** Add transactions based on tx "priority" */
-    void addPriorityTxs();
 
     // helper function for addScoreTxs and addPriorityTxs
     /** Test if tx will still "fit" in the block */

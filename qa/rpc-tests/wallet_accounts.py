@@ -22,7 +22,8 @@ from decimal import Decimal
 # Test wallet accounts behaviour
 class WalletAccountsTest(BitcoinTestFramework):
     def setup_nodes(self):
-        return start_nodes(self.num_nodes, self.options.tmpdir, [[
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            '-minrelaytxfee=0',
             nuparams(NU5_BRANCH_ID, 210),
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',

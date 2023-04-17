@@ -29,6 +29,35 @@ RPC Changes
   is unable to construct the transaction without selecting funds from the transparent 
   pool, so the impact of this change is that for such transactions, the user must specify
   `AllowFullyTransparent`.
+- The `estimatepriority` RPC call has been removed.
+- The `priority_delta` argument to the `prioritisetransaction` RPC call now has
+  no effect and must be set to a dummy value (0 or null).
+
+Changes to Transaction Fee Selection
+------------------------------------
+
+- The `-sendfreetransactions` option has been removed. This option used to
+  instruct the wallet's legacy transaction creation APIs (`sendtoaddress`,
+  `sendmany`, and `fundrawtransaction`) to use a zero fee for "small" transactions
+  that spend "old" inputs. It will now cause a warning on node startup if used.
+
+Changes to Block Template Construction
+--------------------------------------
+
+- The block template construction algorithm no longer favours transactions that
+  were previously considered "high priority" because they spent older inputs. The
+  `-blockprioritysize` config option, which configured the portion of the block
+  reserved for these transactions, has been removed and will now cause a warning
+  if used.
+
+Removal of Priority Estimation
+------------------------------
+
+- Estimation of "priority" needed for a transaction to be included within a target
+  number of blocks, and the associated `estimatepriority` RPC call, have been
+  removed. The format for `fee_estimates.dat` has also changed to no longer save
+  these priority estimates. It will automatically be converted to the new format
+  which is not readable by prior versions of the software.
 
 [Deprecations](https://zcash.github.io/zcash/user/deprecation.html)
 --------------

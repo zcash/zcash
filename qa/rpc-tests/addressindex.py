@@ -50,6 +50,7 @@ class AddressIndexTest(BitcoinTestFramework):
 
     def setup_network(self):
         base_args = [
+            '-minrelaytxfee=0',
             '-debug',
             '-txindex',
             '-experimentalfeatures',

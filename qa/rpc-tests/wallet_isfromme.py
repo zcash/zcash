@@ -26,6 +26,7 @@ class WalletIsFromMe(BitcoinTestFramework):
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(1, self.options.tmpdir, extra_args=[[
+            '-minrelaytxfee=0',
             nuparams(OVERWINTER_BRANCH_ID, 1),
             nuparams(SAPLING_BRANCH_ID, 1),
             nuparams(BLOSSOM_BRANCH_ID, 1),

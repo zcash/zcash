@@ -1772,32 +1772,6 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     return true;
 }
 
-CAmount GetMinRelayFee(const CTransaction& tx, const CTxMemPool& pool, unsigned int nBytes, bool fAllowFree)
-{
-    uint256 hash = tx.GetHash();
-    double dPriorityDelta = 0;
-    CAmount nFeeDelta = 0;
-    pool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
-    if (dPriorityDelta > 0 || nFeeDelta > 0)
-        return 0;
-
-    CAmount nMinFee = ::minRelayTxFee.GetFeeForRelay(nBytes);
-
-    if (fAllowFree)
-    {
-        // There is a free transaction area in blocks created by most miners,
-        // * If we are relaying we allow transactions up to DEFAULT_BLOCK_PRIORITY_SIZE - 1000
-        //   to be considered to fall into this category. We don't want to encourage sending
-        //   multiple transactions instead of one big transaction to avoid fees.
-        if (nBytes < (DEFAULT_BLOCK_PRIORITY_SIZE - 1000))
-            nMinFee = 0;
-    }
-
-    if (!MoneyRange(nMinFee))
-        nMinFee = MAX_MONEY;
-    return nMinFee;
-}
-
 /** Convert CValidationState to a human-readable message for logging */
 std::string FormatStateMessage(const CValidationState &state)
 {
@@ -1940,7 +1914,9 @@ bool AcceptToMemoryPool(
 
         CAmount nValueOut = tx.GetValueOut();
         CAmount nFees = nValueIn-nValueOut;
-        double dPriority = view.GetPriority(tx, chainActive.Height());
+        // nModifiedFees includes any fee deltas from PrioritiseTransaction
+        CAmount nModifiedFees = nFees;
+        pool.ApplyDelta(hash, nModifiedFees);
 
         // Keep track of transactions that spend a coinbase, which we re-scan
         // during reorgs to ensure COINBASE_MATURITY is still met.
@@ -1956,46 +1932,20 @@ bool AcceptToMemoryPool(
         // For v1-v4 transactions, we don't yet know if the transaction commits
         // to consensusBranchId, but if the entry gets added to the mempool, then
         // it has passed ContextualCheckInputs and therefore this is correct.
-        CTxMemPoolEntry entry(tx, nFees, GetTime(), dPriority, chainActive.Height(), pool.HasNoInputsOf(tx), fSpendsCoinbase, nSigOps, consensusBranchId);
+        CTxMemPoolEntry entry(tx, nFees, GetTime(), chainActive.Height(), pool.HasNoInputsOf(tx), fSpendsCoinbase, nSigOps, consensusBranchId);
         unsigned int nSize = entry.GetTxSize();
 
-        // Before zcashd 4.2.0, we had a condition here to always accept a tx if it contained
-        // JoinSplits and had at least the default fee. It is no longer necessary to treat
-        // that as a special case, because the fee returned by GetMinRelayFee is always at
-        // most DEFAULT_FEE.
-
-        CAmount txMinFee = GetMinRelayFee(tx, pool, nSize, true);
-        if (fLimitFree && nFees < txMinFee) {
-            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient fee", false,
-                strprintf("%d < %d", nFees, txMinFee));
-        }
-
-        // Require that free transactions have sufficient priority to be mined in the next block.
-        if (GetBoolArg("-relaypriority", DEFAULT_RELAYPRIORITY) && nFees < ::minRelayTxFee.GetFeeForRelay(nSize) && !AllowFree(view.GetPriority(tx, chainActive.Height() + 1))) {
-            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "insufficient priority");
-        }
-
-        // Continuously rate-limit free (really, very-low-fee) transactions
-        // This mitigates 'penny-flooding' -- sending thousands of free transactions just to
-        // be annoying or make others' transactions take longer to confirm.
-        if (fLimitFree && nFees < ::minRelayTxFee.GetFeeForRelay(nSize))
-        {
-            static CCriticalSection csFreeLimiter;
-            static double dFreeCount;
-            static int64_t nLastTime;
-            int64_t nNow = GetTime();
-
-            LOCK(csFreeLimiter);
-
-            // Use an exponentially decaying ~10-minute window:
-            dFreeCount *= pow(1.0 - 1.0/600.0, (double)(nNow - nLastTime));
-            nLastTime = nNow;
-            // -limitfreerelay unit is thousand-bytes-per-minute
-            // At default rate it would take over a month to fill 1GB
-            if (dFreeCount >= GetArg("-limitfreerelay", DEFAULT_LIMITFREERELAY) * 10 * 1000)
-                return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "rate limited free transaction");
-            LogPrint("mempool", "Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
-            dFreeCount += nSize;
+        // No transactions are allowed with modified fee below the minimum relay fee,
+        // except from disconnected blocks. The minimum relay fee will never be more
+        // than DEFAULT_FEE zatoshis.
+        CAmount minRelayFee = ::minRelayTxFee.GetFeeForRelay(nSize);
+        if (fLimitFree && nModifiedFees < minRelayFee) {
+            LogPrint("mempool",
+                    "Not accepting transaction with txid %s, size %d bytes, effective fee %d " + MINOR_CURRENCY_UNIT +
+                    ", and fee delta %d " + MINOR_CURRENCY_UNIT + " to the mempool due to insufficient fee. " +
+                    " The minimum acceptance/relay fee for this transaction is %d " + MINOR_CURRENCY_UNIT,
+                    tx.GetHash().ToString(), nSize, nModifiedFees, nModifiedFees - nFees, minRelayFee);
+            return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "min relay fee not met");
         }
 
         if (fRejectAbsurdFee && nFees > maxTxFee) {
@@ -7207,7 +7157,7 @@ bool static ProcessMessage(const CChainParams& chainparams, CNode* pfrom, string
                             LogPrint("mempool", "   invalid orphan tx %s\n", orphanHash.ToString());
                         }
                         // Has inputs but not accepted to mempool
-                        // Probably non-standard or insufficient fee/priority
+                        // Probably non-standard or insufficient fee
                         LogPrint("mempool", "   removed orphan tx %s\n", orphanHash.ToString());
                         vEraseQueue.push_back(orphanHash);
                         // Add the wtxid of this transaction to our reject filter.

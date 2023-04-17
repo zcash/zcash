@@ -21,6 +21,7 @@ from test_framework.util import (
 import logging
 
 HAS_CANOPY = [
+    '-minrelaytxfee=0',
     '-nurejectoldversions=false',
     '-anchorconfirmations=1',
     nuparams(BLOSSOM_BRANCH_ID, 205),

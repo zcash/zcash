@@ -43,6 +43,7 @@ class MergeToAddressHelper:
 
     def setup_network(self, test, additional_args=[]):
         args = [
+            '-minrelaytxfee=0',
             '-debug=zrpcunsafe',
             '-limitancestorcount=%d' % self.utxos_to_generate,
             '-allowdeprecated=getnewaddress',

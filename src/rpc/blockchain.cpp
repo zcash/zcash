@@ -349,11 +349,9 @@ UniValue mempoolToJSON(bool fVerbose = false)
             info.pushKV("modifiedfee", ValueFromAmount(e.GetModifiedFee()));
             info.pushKV("time", e.GetTime());
             info.pushKV("height", (int)e.GetHeight());
-            info.pushKV("startingpriority", e.GetPriority(e.GetHeight()));
-            info.pushKV("currentpriority", e.GetPriority(chainActive.Height()));
             info.pushKV("descendantcount", e.GetCountWithDescendants());
             info.pushKV("descendantsize", e.GetSizeWithDescendants());
-            info.pushKV("descendantfees", e.GetFeesWithDescendants());
+            info.pushKV("descendantfees", e.GetModFeesWithDescendants());
             const CTransaction& tx = e.GetTx();
             set<string> setDepends;
             for (const CTxIn& txin : tx.vin)
@@ -407,11 +405,9 @@ UniValue getrawmempool(const UniValue& params, bool fHelp)
             "    \"modifiedfee\" : n,      (numeric) transaction fee with fee deltas used for mining priority\n"
             "    \"time\" : n,             (numeric) local time transaction entered pool in seconds since 1 Jan 1970 GMT\n"
             "    \"height\" : n,           (numeric) block height when transaction entered pool\n"
-            "    \"startingpriority\" : n, (numeric) priority when transaction entered pool\n"
-            "    \"currentpriority\" : n,  (numeric) transaction priority now\n"
             "    \"descendantcount\" : n,  (numeric) number of in-mempool descendant transactions (including this one)\n"
             "    \"descendantsize\" : n,   (numeric) size of in-mempool descendants (including this one)\n"
-            "    \"descendantfees\" : n,   (numeric) fees of in-mempool descendants (including this one)\n"
+            "    \"descendantfees\" : n,   (numeric) modified fees (see \"modifiedfee\" above) of in-mempool descendants (including this one)\n"
             "    \"depends\" : [           (array) unconfirmed transactions used as inputs for this transaction\n"
             "        \"transactionid\",    (string) parent transaction id\n"
             "       ... ]\n"

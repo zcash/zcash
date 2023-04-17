@@ -5,6 +5,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "primitives/transaction.h"
+#include "policy/policy.h"
 
 #include "hash.h"
 #include "tinyformat.h"
@@ -121,6 +122,22 @@ CTxOut::CTxOut(const CAmount& nValueIn, CScript scriptPubKeyIn)
 {
     nValue = nValueIn;
     scriptPubKey = scriptPubKeyIn;
+}
+
+CAmount CTxOut::GetDustThreshold() const
+{
+    // See the comment on ONE_THIRD_DUST_THRESHOLD_RATE in policy.h.
+    static const CFeeRate oneThirdDustThresholdRate {ONE_THIRD_DUST_THRESHOLD_RATE};
+
+    if (scriptPubKey.IsUnspendable())
+        return 0;
+
+    // A typical spendable txout is 34 bytes, and will need a txin of at
+    // least 148 bytes to spend. With ONE_THIRD_DUST_THRESHOLD_RATE == 100,
+    // the dust threshold for such a txout would be
+    // 3*floor(100*(34 + 148)/1000) zats = 54 zats.
+    size_t nSize = GetSerializeSize(*this, SER_DISK, 0) + 148u;
+    return 3*oneThirdDustThresholdRate.GetFee(nSize);
 }
 
 uint256 CTxOut::GetHash() const
@@ -358,32 +375,6 @@ CAmount CTransaction::GetShieldedValueIn() const
     }
 
     return nValue;
-}
-
-double CTransaction::ComputePriority(double dPriorityInputs, unsigned int nTxSize) const
-{
-    nTxSize = CalculateModifiedSize(nTxSize);
-    if (nTxSize == 0) return 0.0;
-
-    return dPriorityInputs / nTxSize;
-}
-
-unsigned int CTransaction::CalculateModifiedSize(unsigned int nTxSize) const
-{
-    // In order to avoid disincentivizing cleaning up the UTXO set we don't count
-    // the constant overhead for each txin and up to 110 bytes of scriptSig (which
-    // is enough to cover a compressed pubkey p2sh redemption) for priority.
-    // Providing any more cleanup incentive than making additional inputs free would
-    // risk encouraging people to create junk outputs to redeem later.
-    if (nTxSize == 0)
-        nTxSize = ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION);
-    for (std::vector<CTxIn>::const_iterator it(vin.begin()); it != vin.end(); ++it)
-    {
-        unsigned int offset = 41U + std::min(110U, (unsigned int)it->scriptSig.size());
-        if (nTxSize > offset)
-            nTxSize -= offset;
-    }
-    return nTxSize;
 }
 
 CAmount CTransaction::GetConventionalFee() const {

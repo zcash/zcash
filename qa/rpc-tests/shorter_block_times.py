@@ -23,6 +23,7 @@ class ShorterBlockTimes(BitcoinTestFramework):
 
     def setup_nodes(self):
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[[
+            '-minrelaytxfee=0',
             nuparams(BLOSSOM_BRANCH_ID, 106),
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_gettotalbalance',

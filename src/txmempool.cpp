@@ -23,20 +23,19 @@
 using namespace std;
 
 CTxMemPoolEntry::CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
-                                 int64_t _nTime, double _dPriority,
-                                 unsigned int _nHeight, bool poolHasNoInputsOf,
+                                 int64_t _nTime, unsigned int _nHeight,
+                                 bool poolHasNoInputsOf,
                                  bool _spendsCoinbase, unsigned int _sigOps, uint32_t _nBranchId):
-    tx(std::make_shared<CTransaction>(_tx)), nFee(_nFee), nTime(_nTime), dPriority(_dPriority), nHeight(_nHeight),
+    tx(std::make_shared<CTransaction>(_tx)), nFee(_nFee), nTime(_nTime), nHeight(_nHeight),
     hadNoDependencies(poolHasNoInputsOf),
     spendsCoinbase(_spendsCoinbase), sigOpCount(_sigOps), nBranchId(_nBranchId)
 {
     nTxSize = ::GetSerializeSize(_tx, SER_NETWORK, PROTOCOL_VERSION);
-    nModSize = _tx.CalculateModifiedSize(nTxSize);
     nUsageSize = RecursiveDynamicUsage(*tx) + memusage::DynamicUsage(tx);
 
     nCountWithDescendants = 1;
     nSizeWithDescendants = nTxSize;
-    nFeesWithDescendants = nFee;
+    nModFeesWithDescendants = nFee;
 
     feeDelta = 0;
 }
@@ -46,17 +45,9 @@ CTxMemPoolEntry::CTxMemPoolEntry(const CTxMemPoolEntry& other)
     *this = other;
 }
 
-double
-CTxMemPoolEntry::GetPriority(unsigned int currentHeight) const
-{
-    CAmount nValueIn = tx->GetValueOut()+nFee;
-    double deltaPriority = ((double)(currentHeight-nHeight)*nValueIn)/nModSize;
-    double dResult = dPriority + deltaPriority;
-    return dResult;
-}
-
 void CTxMemPoolEntry::UpdateFeeDelta(int64_t newFeeDelta)
 {
+    nModFeesWithDescendants += newFeeDelta - feeDelta;
     feeDelta = newFeeDelta;
 }
 
@@ -114,7 +105,7 @@ bool CTxMemPool::UpdateForDescendants(txiter updateIt, int maxDescendantsToVisit
     for (txiter cit : setAllDescendants) {
         if (!setExclude.count(cit->GetTx().GetHash())) {
             modifySize += cit->GetTxSize();
-            modifyFee += cit->GetFee();
+            modifyFee += cit->GetModifiedFee();
             modifyCount++;
             cachedDescendants[updateIt].insert(cit);
         }
@@ -244,7 +235,7 @@ void CTxMemPool::UpdateAncestorsOf(bool add, txiter it, setEntries &setAncestors
     }
     const int64_t updateCount = (add ? 1 : -1);
     const int64_t updateSize = updateCount * it->GetTxSize();
-    const CAmount updateFee = updateCount * it->GetFee();
+    const CAmount updateFee = updateCount * it->GetModifiedFee();
     for (txiter ancestorIt : setAncestors) {
         mapTx.modify(ancestorIt, update_descendant_state(updateSize, updateFee, updateCount));
     }
@@ -304,7 +295,7 @@ void CTxMemPoolEntry::SetDirty()
 {
     nCountWithDescendants = 0;
     nSizeWithDescendants = nTxSize;
-    nFeesWithDescendants = nFee;
+    nModFeesWithDescendants = GetModifiedFee();
 }
 
 void CTxMemPoolEntry::UpdateState(int64_t modifySize, CAmount modifyFee, int64_t modifyCount)
@@ -312,8 +303,7 @@ void CTxMemPoolEntry::UpdateState(int64_t modifySize, CAmount modifyFee, int64_t
     if (!IsDirty()) {
         nSizeWithDescendants += modifySize;
         assert(int64_t(nSizeWithDescendants) > 0);
-        nFeesWithDescendants += modifyFee;
-        assert(nFeesWithDescendants >= 0);
+        nModFeesWithDescendants += modifyFee;
         nCountWithDescendants += modifyCount;
         assert(int64_t(nCountWithDescendants) > 0);
     }
@@ -376,6 +366,17 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     indexed_transaction_set::iterator newit = mapTx.insert(entry).first;
     mapLinks.insert(make_pair(newit, TxLinks()));
 
+    // Update transaction for any feeDelta created by PrioritiseTransaction
+    // TODO: refactor so that the fee delta is calculated before inserting
+    // into mapTx.
+    std::map<uint256, CAmount>::const_iterator pos = mapDeltas.find(hash);
+    if (pos != mapDeltas.end()) {
+        const CAmount &delta = pos->second;
+        if (delta) {
+            mapTx.modify(newit, update_fee_delta(delta));
+        }
+    }
+
     // Update cachedInnerUsage to include contained transaction's usage.
     // (When we update the entry for in-mempool parents, memory usage will be
     // further updated.)
@@ -415,15 +416,6 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     }
     for (const uint256 &orchardNullifier : tx.GetOrchardBundle().GetNullifiers()) {
         mapOrchardNullifiers[orchardNullifier] = &tx;
-    }
-
-    // Update transaction's score for any feeDelta created by PrioritiseTransaction
-    std::map<uint256, std::pair<double, CAmount> >::const_iterator pos = mapDeltas.find(hash);
-    if (pos != mapDeltas.end()) {
-        const std::pair<double, CAmount> &deltas = pos->second;
-        if (deltas.second) {
-            mapTx.modify(newit, update_fee_delta(deltas.second));
-        }
     }
 
     nTransactionsUpdated++;
@@ -908,27 +900,24 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         CTxMemPool::setEntries setChildrenCheck;
         std::map<COutPoint, CInPoint>::const_iterator iter = mapNextTx.lower_bound(COutPoint(it->GetTx().GetHash(), 0));
         int64_t childSizes = 0;
-        CAmount childFees = 0;
+        CAmount childModFee = 0;
         for (; iter != mapNextTx.end() && iter->first.hash == it->GetTx().GetHash(); ++iter) {
             txiter childit = mapTx.find(iter->second.ptx->GetHash());
             assert(childit != mapTx.end()); // mapNextTx points to in-mempool transactions
             if (setChildrenCheck.insert(childit).second) {
                 childSizes += childit->GetTxSize();
-                childFees += childit->GetFee();
+                childModFee += childit->GetModifiedFee();
             }
         }
         assert(setChildrenCheck == GetMemPoolChildren(it));
-        // Also check to make sure size/fees is greater than sum with immediate children.
+        // Also check to make sure size is greater than sum with immediate children.
         // just a sanity check, not definitive that this calc is correct...
-        // also check that the size is less than the size of the entire mempool.
         if (!it->IsDirty()) {
             assert(it->GetSizeWithDescendants() >= childSizes + it->GetTxSize());
-            assert(it->GetFeesWithDescendants() >= childFees + it->GetFee());
         } else {
             assert(it->GetSizeWithDescendants() == it->GetTxSize());
-            assert(it->GetFeesWithDescendants() == it->GetFee());
+            assert(it->GetModFeesWithDescendants() == it->GetModifiedFee());
         }
-        assert(it->GetFeesWithDescendants() >= 0);
 
         if (fDependsWait)
             waitingOnDependants.push_back(&(*it));
@@ -1096,19 +1085,14 @@ CFeeRate CTxMemPool::estimateFee(int nBlocks) const
     LOCK(cs);
     return minerPolicyEstimator->estimateFee(nBlocks);
 }
-double CTxMemPool::estimatePriority(int nBlocks) const
-{
-    LOCK(cs);
-    return minerPolicyEstimator->estimatePriority(nBlocks);
-}
 
 bool
 CTxMemPool::WriteFeeEstimates(CAutoFile& fileout) const
 {
     try {
         LOCK(cs);
-        fileout << 109900; // version required to read: 0.10.99 or later
-        fileout << CLIENT_VERSION; // version that wrote the file
+        fileout << FEE_ESTIMATES_WITHOUT_PRIORITY_VERSION; // version required to read
+        fileout << std::max(FEE_ESTIMATES_WITHOUT_PRIORITY_VERSION, CLIENT_VERSION); // version that wrote the file
         minerPolicyEstimator->Write(fileout);
     }
     catch (const std::exception&) {
@@ -1124,11 +1108,10 @@ CTxMemPool::ReadFeeEstimates(CAutoFile& filein)
     try {
         int nVersionRequired, nVersionThatWrote;
         filein >> nVersionRequired >> nVersionThatWrote;
-        if (nVersionRequired > CLIENT_VERSION)
+        if (nVersionRequired > std::max(FEE_ESTIMATES_WITHOUT_PRIORITY_VERSION, CLIENT_VERSION))
             return error("CTxMemPool::ReadFeeEstimates(): up-version (%d) fee estimate file", nVersionRequired);
-
         LOCK(cs);
-        minerPolicyEstimator->Read(filein);
+        minerPolicyEstimator->Read(filein, nVersionThatWrote);
     }
     catch (const std::exception&) {
         LogPrintf("CTxMemPool::ReadFeeEstimates(): unable to read policy estimator data (non-fatal)\n");
@@ -1137,30 +1120,36 @@ CTxMemPool::ReadFeeEstimates(CAutoFile& filein)
     return true;
 }
 
-void CTxMemPool::PrioritiseTransaction(const uint256 hash, const std::string strHash, double dPriorityDelta, const CAmount& nFeeDelta)
+void CTxMemPool::PrioritiseTransaction(const uint256 hash, const std::string strHash, const CAmount& nFeeDelta)
 {
     {
         LOCK(cs);
-        std::pair<double, CAmount> &deltas = mapDeltas[hash];
-        deltas.first += dPriorityDelta;
-        deltas.second += nFeeDelta;
+        CAmount &delta = mapDeltas[hash];
+        delta += nFeeDelta;
         txiter it = mapTx.find(hash);
         if (it != mapTx.end()) {
-            mapTx.modify(it, update_fee_delta(deltas.second));
+            mapTx.modify(it, update_fee_delta(delta));
+            // Now update all ancestors' modified fees with descendants
+            setEntries setAncestors;
+            uint64_t nNoLimit = std::numeric_limits<uint64_t>::max();
+            std::string dummy;
+            CalculateMemPoolAncestors(*it, setAncestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, dummy, false);
+            BOOST_FOREACH(txiter ancestorIt, setAncestors) {
+                mapTx.modify(ancestorIt, update_descendant_state(0, nFeeDelta, 0));
+            }
         }
     }
-    LogPrintf("PrioritiseTransaction: %s priority += %f, fee += %d\n", strHash, dPriorityDelta, FormatMoney(nFeeDelta));
+    LogPrintf("PrioritiseTransaction: %s feerate += %s\n", strHash, FormatMoney(nFeeDelta));
 }
 
-void CTxMemPool::ApplyDeltas(const uint256 hash, double &dPriorityDelta, CAmount &nFeeDelta) const
+void CTxMemPool::ApplyDelta(const uint256 hash, CAmount &nFeeDelta) const
 {
     LOCK(cs);
-    std::map<uint256, std::pair<double, CAmount> >::const_iterator pos = mapDeltas.find(hash);
+    std::map<uint256, CAmount>::const_iterator pos = mapDeltas.find(hash);
     if (pos == mapDeltas.end())
         return;
-    const std::pair<double, CAmount> &deltas = pos->second;
-    dPriorityDelta += deltas.first;
-    nFeeDelta += deltas.second;
+    const CAmount &delta = pos->second;
+    nFeeDelta += delta;
 }
 
 void CTxMemPool::ClearPrioritisation(const uint256 hash)
