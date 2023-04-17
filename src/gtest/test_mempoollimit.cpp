@@ -11,6 +11,8 @@
 #include "util/time.h"
 #include "util/test.h"
 #include "transaction_builder.h"
+#include "zip317.h"
+#include "core_memusage.h"
 
 
 const uint256 TX_ID1 = ArithToUint256(1);
@@ -89,18 +91,18 @@ TEST(MempoolLimitTests, MempoolLimitTxSetCheckSizeAfterDropping)
         MempoolLimitTxSet limitSet(MIN_TX_COST * 2);
         EXPECT_EQ(0, limitSet.getTotalWeight());
         limitSet.add(TX_ID1, MIN_TX_COST, MIN_TX_COST);
-        EXPECT_EQ(4000, limitSet.getTotalWeight());
+        EXPECT_EQ(10000, limitSet.getTotalWeight());
         limitSet.add(TX_ID2, MIN_TX_COST, MIN_TX_COST);
-        EXPECT_EQ(8000, limitSet.getTotalWeight());
+        EXPECT_EQ(20000, limitSet.getTotalWeight());
         EXPECT_FALSE(limitSet.maybeDropRandom().has_value());
         limitSet.add(TX_ID3, MIN_TX_COST, MIN_TX_COST + LOW_FEE_PENALTY);
-        EXPECT_EQ(12000 + LOW_FEE_PENALTY, limitSet.getTotalWeight());
+        EXPECT_EQ(30000 + LOW_FEE_PENALTY, limitSet.getTotalWeight());
         std::optional<uint256> drop = limitSet.maybeDropRandom();
         ASSERT_TRUE(drop.has_value());
         uint256 txid = drop.value();
         testedDropping.insert(txid);
         // Do not continue to test if a particular trial fails
-        ASSERT_EQ(txid == TX_ID3 ? 8000 : 8000 + LOW_FEE_PENALTY, limitSet.getTotalWeight());
+        ASSERT_EQ(txid == TX_ID3 ? 20000 : 20000 + LOW_FEE_PENALTY, limitSet.getTotalWeight());
     }
 }
 
@@ -113,7 +115,8 @@ TEST(MempoolLimitTests, MempoolCostAndEvictionWeight)
     auto consensusParams = RegtestActivateSapling();
 
     auto sk = libzcash::SaplingSpendingKey::random();
-    auto testNote = GetTestSaplingNote(sk.default_address(), 50000);
+    CAmount funds = 66000;
+    auto testNote = GetTestSaplingNote(sk.default_address(), funds);
 
     // Default fee
     {
@@ -121,7 +124,7 @@ TEST(MempoolLimitTests, MempoolCostAndEvictionWeight)
         builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
         builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 25000, {});
 
-        auto [cost, evictionWeight] = MempoolCostAndEvictionWeight(builder.Build().GetTxOrThrow(), DEFAULT_FEE);
+        auto [cost, evictionWeight] = MempoolCostAndEvictionWeight(builder.Build().GetTxOrThrow(), MINIMUM_FEE);
         EXPECT_EQ(MIN_TX_COST, cost);
         EXPECT_EQ(MIN_TX_COST, evictionWeight);
     }
@@ -131,10 +134,10 @@ TEST(MempoolLimitTests, MempoolCostAndEvictionWeight)
         auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
         builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
         builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 25000, {});
-        static_assert(DEFAULT_FEE == 1000);
-        builder.SetFee(DEFAULT_FEE-1);
+        static_assert(MINIMUM_FEE == 10000);
+        builder.SetFee(MINIMUM_FEE-1);
 
-        auto [cost, evictionWeight] = MempoolCostAndEvictionWeight(builder.Build().GetTxOrThrow(), DEFAULT_FEE-1);
+        auto [cost, evictionWeight] = MempoolCostAndEvictionWeight(builder.Build().GetTxOrThrow(), MINIMUM_FEE-1);
         EXPECT_EQ(MIN_TX_COST, cost);
         EXPECT_EQ(MIN_TX_COST + LOW_FEE_PENALTY, evictionWeight);
     }
@@ -143,18 +146,34 @@ TEST(MempoolLimitTests, MempoolCostAndEvictionWeight)
     {
         auto builder = TransactionBuilder(consensusParams, 1, std::nullopt);
         builder.AddSaplingSpend(sk.expanded_spending_key(), testNote.note, testNote.tree.root(), testNote.tree.witness());
-        builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 5000, {});
-        builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 5000, {});
-        builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 5000, {});
-        builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 5000, {});
+        for (int i = 0; i < 10; i++) {
+            builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 1000, {});
+        }
 
         auto result = builder.Build();
         if (result.IsError()) {
             std::cerr << result.GetError() << std::endl;
         }
-        auto [cost, evictionWeight] = MempoolCostAndEvictionWeight(result.GetTxOrThrow(), DEFAULT_FEE);
-        EXPECT_EQ(5168, cost);
-        EXPECT_EQ(5168, evictionWeight);
+        // max(1 input, 10 outputs + 1 change output) => 11 logical actions.
+        CAmount zip317_fee = CalculateConventionalFee(11);
+        ASSERT_GT(funds, 1000*10 + zip317_fee);
+        const CTransaction tx {result.GetTxOrThrow()};
+        EXPECT_EQ(11, tx.GetLogicalActionCount());
+
+        // For the test to be valid, we want the memory usage of this transaction to be more than MIN_TX_COST.
+        // Avoid hard-coding the usage because it might be platform-dependent.
+        ASSERT_GT(GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION), MIN_TX_COST);
+        size_t tx_usage = RecursiveDynamicUsage(tx);
+        EXPECT_GT(tx_usage, MIN_TX_COST);
+
+        auto [cost, evictionWeight] = MempoolCostAndEvictionWeight(tx, zip317_fee);
+        EXPECT_EQ(tx_usage, cost);
+        EXPECT_EQ(tx_usage, evictionWeight);
+
+        // If we pay less than the conventional fee for 11 actions, we should incur a low fee penalty.
+        auto [cost2, evictionWeight2] = MempoolCostAndEvictionWeight(tx, zip317_fee-1);
+        EXPECT_EQ(tx_usage, cost2);
+        EXPECT_EQ(tx_usage + LOW_FEE_PENALTY, evictionWeight2);
     }
 
     RegtestDeactivateSapling();
