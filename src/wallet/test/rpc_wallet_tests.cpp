@@ -1521,26 +1521,24 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
     "100 -1"
     ), runtime_error);
 
-    // Mutable tx containing contextual information we need to build tx
-    UniValue retValue = CallRPC("getblockcount");
-    int nHeight = retValue.get_int();
-    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1, false);
-    if (mtx.nVersion == 1) {
-        mtx.nVersion = 2;
-    }
-
     // Test constructor of AsyncRPCOperation_shieldcoinbase
     KeyIO keyIO(Params());
+    UniValue retValue;
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
+    auto taddr2 = std::get<CKeyID>(keyIO.DecodePaymentAddress(retValue.get_str()).value());
     auto testnetzaddr = std::get<libzcash::SproutPaymentAddress>(keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value());
+    auto selector = pwalletMain->ZTXOSelectorForAddress(
+            taddr2,
+            true,
+            // In the real transaction builder we use either Require or Disallow, but here we
+            // are checking that there are no UTXOs at all, so we allow either to be selected to
+            // confirm this.
+            TransparentCoinbasePolicy::Allow,
+            false).value();
+    WalletTxBuilder builder(Params(), minRelayTxFee);
 
     try {
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, {}, testnetzaddr, -1 ));
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Fee is out of range"));
-    }
-
-    try {
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase(TransactionBuilder(), mtx, {}, testnetzaddr, 1));
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase(std::move(builder), selector, testnetzaddr, PrivacyPolicy::AllowRevealedSenders, SHIELD_COINBASE_DEFAULT_LIMIT, 1));
     } catch (const UniValue& objError) {
         BOOST_CHECK( find_error(objError, "Empty inputs"));
     }

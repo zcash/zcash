@@ -959,6 +959,11 @@ public:
     std::vector<OrchardNoteMetadata> orchardNoteMetadata;
 
     /**
+     * Retain the first `maxUtxoCount` utxos, and discard the rest.
+     */
+    void LimitTransparentUtxos(size_t maxUtxoCount);
+
+    /**
      * Selectively discard notes that are not required to obtain the desired
      * amount. Returns `false` if the available inputs do not add up to the
      * desired amount.

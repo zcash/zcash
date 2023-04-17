@@ -155,6 +155,7 @@ AsyncRPCOperation_sendmany::main_impl(CWallet& wallet) {
 
     return preparedTx
         .map([&](const TransactionEffects& effects) {
+            effects.LockSpendable(wallet);
             try {
                 const auto& spendable = effects.GetSpendable();
                 const auto& payments = effects.GetPayments();

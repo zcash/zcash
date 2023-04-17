@@ -7757,6 +7757,13 @@ bool ZTXOSelector::SelectsOrchard() const {
     });
 }
 
+void SpendableInputs::LimitTransparentUtxos(size_t maxUtxoCount)
+{
+    while (utxos.size() > maxUtxoCount) {
+        utxos.pop_back();
+    }
+}
+
 bool SpendableInputs::LimitToAmount(
     const CAmount amountRequired,
     const CAmount dustThreshold,
