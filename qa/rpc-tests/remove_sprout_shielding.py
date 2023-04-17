@@ -105,7 +105,7 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         n0_sprout_addr1 = self.nodes[0].z_getnewaddress('sprout')
         assert_raises_message(
             JSONRPCException,
-            "Sprout shielding is not supported after Canopy",
+            "Sending funds into the Sprout pool is no longer supported.",
             self.nodes[0].z_shieldcoinbase,
             n0_coinbase_taddr, n0_sprout_addr1, 0)
         print("taddr -> Sprout z_shieldcoinbase tx rejected at Canopy activation on node 0")
