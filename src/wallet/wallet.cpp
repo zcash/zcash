@@ -6664,6 +6664,8 @@ bool CWallet::InitLoadWallet(const CChainParams& params, bool clearWitnessCaches
 
     RegisterValidationInterface(walletInstance);
 
+    LOCK(cs_main);
+
     // chainActive.Genesis() may return null; in this case, we want rescanning
     // to happen automatically as a consequence of the genesis block (and subsequent
     // blocks) being added to the chain.

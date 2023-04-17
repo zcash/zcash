@@ -134,11 +134,11 @@ class CCryptoKeyStore : public CBasicKeyStore
 private:
     std::pair<uint256, std::vector<unsigned char>> cryptedMnemonicSeed;
     std::optional<std::pair<uint256, std::vector<unsigned char>>> cryptedLegacySeed;
-    CryptedKeyMap mapCryptedKeys;
+    CryptedKeyMap mapCryptedKeys GUARDED_BY(cs_KeyStore);
     CryptedSproutSpendingKeyMap mapCryptedSproutSpendingKeys;
     CryptedSaplingSpendingKeyMap mapCryptedSaplingSpendingKeys;
 
-    CKeyingMaterial vMasterKey;
+    CKeyingMaterial vMasterKey GUARDED_BY(cs_KeyStore);
 
     //! if fUseCrypto is true, mapKeys, mapSproutSpendingKeys, and mapSaplingSpendingKeys must be empty
     //! if fUseCrypto is false, vMasterKey must be empty

@@ -84,6 +84,14 @@ void UnregisterAllValidationInterfaces();
 
 class CValidationInterface {
 protected:
+    /**
+     * Notifies listeners when the block chain tip advances.
+     *
+     * When multiple blocks are connected at once, UpdatedBlockTip will be called on the final tip
+     * but may not be called on every intermediate tip.
+     *
+     * Called on a background thread.
+     */
     virtual void UpdatedBlockTip(const CBlockIndex *pindex) {}
     virtual BatchScanner* GetBatchScanner() { return nullptr; }
     virtual void SyncTransaction(const CTransaction &tx, const CBlock *pblock, const int nHeight) {}
@@ -123,6 +131,9 @@ struct aggregate_non_null_values
 
 struct CMainSignals {
     /** Notifies listeners of updated block chain tip */
+    // Dependencies exist that require UpdatedBlockTip events to be delivered in the order in which
+    // the chain actually updates. One way to ensure this is for the caller to invoke this signal
+    // in the same critical section where the chain is updated
     boost::signals2::signal<void (const CBlockIndex *)> UpdatedBlockTip;
     /**
      * Requests a pointer to the listener's batch scanner for shielded outputs,
