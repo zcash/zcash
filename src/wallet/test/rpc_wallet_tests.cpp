@@ -69,6 +69,13 @@ private:
     fs::path old_cwd;
 };
 
+CWalletTx FakeWalletTx() {
+    CMutableTransaction mtx;
+    mtx.vout.resize(1);
+    mtx.vout[0].nValue = 1;
+    return CWalletTx(nullptr, mtx);
+}
+
 }
 
 static UniValue ValueFromString(const std::string &str)
@@ -1620,7 +1627,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
     CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + aSproutAddr + " 0.00001 100 100 " + badmemo,
-        "Invalid parameter, size of memo is larger than maximum allowed 512");
+        strprintf("Invalid parameter, memo is longer than the maximum allowed %d characters.", ZC_MEMO_SIZE));
 
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");
@@ -1631,42 +1638,36 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     KeyIO keyIO(Params());
     MergeToAddressRecipient testnetzaddr(
         keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value(),
-        "testnet memo");
+        Memo());
+    WalletTxBuilder builder(Params(), minRelayTxFee);
+    auto selector = CWallet::LegacyTransparentZTXOSelector(
+            true,
+            TransparentCoinbasePolicy::Disallow);
+    TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
 
     try {
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_mergetoaddress(std::nullopt,  mtx, {}, {}, {}, testnetzaddr, -1 ));
-        BOOST_FAIL("Should have caused an error");
+        auto operation = AsyncRPCOperation_mergetoaddress(builder, selector, {}, testnetzaddr, strategy, -1);
+        BOOST_FAIL("Fee value of -1 expected to be out of the valid range of values.");
     } catch (const UniValue& objError) {
         BOOST_CHECK( find_error(objError, "Fee is out of range"));
     }
 
-    try {
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_mergetoaddress(std::nullopt, mtx, {}, {}, {}, testnetzaddr, 1));
-        BOOST_FAIL("Should have caused an error");
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "No inputs"));
+    {
+        auto operation = AsyncRPCOperation_mergetoaddress(builder, selector, {}, testnetzaddr, strategy, 1);
+        operation.main();
+        BOOST_CHECK_EQUAL(operation.getErrorMessage(), "Insufficient funds: have -0.00000001, need 0.00000001; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.");
     }
 
-    std::vector<MergeToAddressInputUTXO> inputs = { MergeToAddressInputUTXO{ COutPoint{uint256(), 0}, 0, CScript()} };
+    auto wtx = FakeWalletTx();
+    SpendableInputs inputs;
+    inputs.utxos.emplace_back(COutput(&wtx, 0, 100, true));
+    inputs.sproutNoteEntries.emplace_back(SproutNoteEntry {JSOutPoint(), SproutPaymentAddress(), SproutNote(), "", 0});
+    inputs.saplingNoteEntries.emplace_back(SaplingNoteEntry {SaplingOutPoint(), SaplingPaymentAddress(), SaplingNote({}, uint256(), 0, uint256(), Zip212Enabled::BeforeZip212), "", 0});
 
-    std::vector<MergeToAddressInputSproutNote> sproutNoteInputs =
-        {MergeToAddressInputSproutNote{JSOutPoint(), SproutNote(), 0, SproutSpendingKey()}};
-    std::vector<MergeToAddressInputSaplingNote> saplingNoteInputs =
-        {MergeToAddressInputSaplingNote{SaplingOutPoint(), SaplingNote({}, uint256(), 0, uint256(), Zip212Enabled::BeforeZip212), 0, SaplingExpandedSpendingKey()}};
-
-    // Sprout and Sapling inputs -> throw
-    try {
-        auto operation = new AsyncRPCOperation_mergetoaddress(std::nullopt, mtx, inputs, sproutNoteInputs, saplingNoteInputs, testnetzaddr, 1);
-        BOOST_FAIL("Should have caused an error");
-    } catch (const UniValue& objError) {
-        BOOST_CHECK(find_error(objError, "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress"));
-    }
-    // Sprout inputs and TransactionBuilder -> throw
-    try {
-        auto operation = new AsyncRPCOperation_mergetoaddress(TransactionBuilder(), mtx, inputs, sproutNoteInputs, {}, testnetzaddr, 1);
-        BOOST_FAIL("Should have caused an error");
-    } catch (const UniValue& objError) {
-        BOOST_CHECK(find_error(objError, "Sprout notes are not supported by the TransactionBuilder"));
+    {
+        auto operation = AsyncRPCOperation_mergetoaddress(builder, selector, inputs, testnetzaddr, strategy, 1);
+        operation.main();
+        BOOST_CHECK_EQUAL(operation.getErrorMessage(), "Insufficient funds: have 0.00, need 0.00000001; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.");
     }
 }
 

@@ -21,6 +21,7 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
             '-minrelaytxfee=0',
             '-anchorconfirmations=1',
             '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=legacy_privacy',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
             '-allowdeprecated=z_gettotalbalance',

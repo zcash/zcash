@@ -49,7 +49,7 @@ public:
             CAmount amount,
             std::optional<Memo> memo) :
         address(address), amount(amount), memo(memo) {
-        assert(amount >= 0);
+        assert(MoneyRange(amount));
     }
 
     const PaymentAddress& GetAddress() const {

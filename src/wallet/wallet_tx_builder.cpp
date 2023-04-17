@@ -11,7 +11,7 @@ using namespace libzcash;
 int GetAnchorHeight(const CChain& chain, uint32_t anchorConfirmations)
 {
     int nextBlockHeight = chain.Height() + 1;
-    return nextBlockHeight - anchorConfirmations;
+    return std::max(0, nextBlockHeight - (int) anchorConfirmations);
 }
 
 static size_t PadCount(size_t n)

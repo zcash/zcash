@@ -49,7 +49,6 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         self.sync_all()
 
         n0_sprout_addr0 = self.nodes[0].listaddresses()[0]['sprout']['addresses'][0]
-        n2_sprout_addr = self.nodes[2].listaddresses()[0]['sprout']['addresses'][0]
 
         # Attempt to shield coinbase to Sprout on node 0. Should fail;
         # transfers to Sprout are no longer supported
@@ -77,20 +76,21 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
             self.sync_all()
         assert_equal(self.nodes[0].z_getbalance(n0_taddr0), Decimal('3'))
 
-        # Create mergetoaddress taddr -> Sprout transaction and mine on node 0 before it is Canopy-aware. Should pass. This will spend the available funds in taddr0
+        # Create mergetoaddress taddr -> Sprout transaction, should fail
         n1_sprout_addr0 = self.nodes[1].z_getnewaddress('sprout')
-        merge_tx_0 = self.nodes[0].z_mergetoaddress(["ANY_TADDR"], n1_sprout_addr0, 0)
-        wait_and_assert_operationid_status(self.nodes[0], merge_tx_0['opid'])
-        print("taddr -> Sprout z_mergetoaddress tx accepted before Canopy on node 0")
+        assert_raises_message(
+            JSONRPCException,
+            "Sending funds into the Sprout pool is no longer supported.",
+            self.nodes[0].z_mergetoaddress,
+            ["ANY_TADDR"], n1_sprout_addr0, 0)
 
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[1].z_getbalance(n1_sprout_addr0), Decimal('3'))
 
         # Send some funds back to n0_taddr0
         recipients = [{"address": n0_taddr0, "amount": Decimal('1')}]
-        myopid = self.nodes[1].z_sendmany(n1_sprout_addr0, recipients, 1, 0, 'AllowRevealedRecipients')
-        wait_and_assert_operationid_status(self.nodes[1], myopid)
+        myopid = self.nodes[0].z_sendmany(n0_sprout_addr0, recipients, 1, 0, 'AllowRevealedRecipients')
+        wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Mine to one block before Canopy activation on node 0; adding value
         # to the Sprout pool will fail now since the transaction must be
@@ -99,7 +99,7 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         self.nodes[0].generate(4)
         self.sync_all()
         assert_equal(self.nodes[0].getblockchaininfo()['upgrades']['e9ff75a6']['status'], 'pending')
-        assert_equal(self.nodes[0].z_getbalance(n0_taddr0), Decimal('1'))
+        assert_equal(self.nodes[0].z_getbalance(n0_taddr0), Decimal('4'))
 
         # Shield coinbase to Sprout on node 0. Should fail
         n0_coinbase_taddr = get_coinbase_address(self.nodes[0])
@@ -121,15 +121,9 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         # Create z_mergetoaddress [taddr, Sprout] -> Sprout transaction on node 0. Should fail
         assert_raises_message(
             JSONRPCException,
-            "Sprout shielding is not supported after Canopy",
+            "Sending funds into the Sprout pool is no longer supported.",
             self.nodes[0].z_mergetoaddress,
             ["ANY_TADDR", "ANY_SPROUT"], self.nodes[1].z_getnewaddress('sprout'))
-        print("[taddr, Sprout] -> Sprout z_mergetoaddress tx rejected at Canopy activation on node 0")
-
-        # Create z_mergetoaddress Sprout -> Sprout transaction on node 0. Should pass
-        merge_tx_1 = self.nodes[0].z_mergetoaddress(["ANY_SPROUT"], self.nodes[1].z_getnewaddress('sprout'))
-        wait_and_assert_operationid_status(self.nodes[0], merge_tx_1['opid'])
-        print("Sprout -> Sprout z_mergetoaddress tx accepted at Canopy activation on node 0")
 
         # Activate Canopy
         self.nodes[0].generate(1)
@@ -148,18 +142,6 @@ class RemoveSproutShieldingTest (BitcoinTestFramework):
         myopid = self.nodes[0].z_shieldcoinbase(get_coinbase_address(self.nodes[0]), sapling_addr, 0)['opid']
         wait_and_assert_operationid_status(self.nodes[0], myopid)
         print("taddr -> Sapling z_shieldcoinbase tx accepted after Canopy on node 0")
-
-        # Mine to one block before NU5 activation.
-        self.nodes[0].generate(4)
-        self.sync_all()
-
-        # Create z_mergetoaddress Sprout -> Sprout transaction on node 1. Should pass
-        merge_tx_2 = self.nodes[1].z_mergetoaddress(["ANY_SPROUT"], n2_sprout_addr)
-        wait_and_assert_operationid_status(self.nodes[1], merge_tx_2['opid'])
-        print("Sprout -> Sprout z_mergetoaddress tx accepted at NU5 activation on node 1")
-
-        self.nodes[1].generate(1)
-        self.sync_all()
 
 if __name__ == '__main__':
     RemoveSproutShieldingTest().main()

@@ -32,6 +32,13 @@ RPC Changes
 - The `estimatepriority` RPC call has been removed.
 - The `priority_delta` argument to the `prioritisetransaction` RPC call now has
   no effect and must be set to a dummy value (0 or null).
+- The `z_shieldcoinbase` and `z_mergetoaddress` RPC methods no longer support
+  transfers of funds to Sprout recipients. While Sprout change may still be 
+  produced in the process of spending Sprout funds, it is no longer possible
+  to transfer funds between Sprout addresses. Also, some failures have moved 
+  from synchronous to asynchronous, so while you should already be checking 
+  the async operation status, there are now more cases that may trigger 
+  failure at that stage.
 
 Changes to Transaction Fee Selection
 ------------------------------------
