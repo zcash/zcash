@@ -17,6 +17,7 @@ from test_framework.util import (
     sync_mempools,
 )
 from test_framework.mininode import COIN
+from test_framework.zip317 import conventional_fee
 
 def satoshi_round(amount):
     return  Decimal(amount).quantize(Decimal('0.00000001'), rounding=ROUND_DOWN)
@@ -61,7 +62,7 @@ class MempoolPackagesTest(BitcoinTestFramework):
         vout = utxo[0]['vout']
         value = utxo[0]['amount']
 
-        fee = Decimal("0.00005")
+        fee = conventional_fee(2)
         # 100 transactions off a confirmed tx should be fine
         chain = []
         for i in range(100):
