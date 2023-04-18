@@ -9,6 +9,7 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
     start_node, connect_nodes_bi, sync_blocks, sync_mempools, \
     wait_and_assert_operationid_status, get_coinbase_address, DEFAULT_FEE, \
     NU5_BRANCH_ID, nuparams
+from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
 
@@ -117,7 +118,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         # Confirm balances and that do_not_shield_taddr containing funds of 10 was left alone
         assert_equal(self.nodes[0].getbalance(), 10)
         assert_equal(self.nodes[0].z_getbalance(do_not_shield_taddr), Decimal('10.0'))
-        self.test_check_balance_zaddr(self.nodes[0], Decimal('40.0') - DEFAULT_FEE)
+        self.test_check_balance_zaddr(self.nodes[0], Decimal('40.0') - conventional_fee(4))
         assert_equal(self.nodes[1].getbalance(), 20)
         assert_equal(self.nodes[2].getbalance(), 30)
 
@@ -129,7 +130,7 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
 
         assert_equal(self.nodes[0].getbalance(), 10)
-        self.test_check_balance_zaddr(self.nodes[0], Decimal('70.0') - DEFAULT_FEE)
+        self.test_check_balance_zaddr(self.nodes[0], Decimal('70.0') - conventional_fee(4))
         assert_equal(self.nodes[1].getbalance(), 30)
         assert_equal(self.nodes[2].getbalance(), 0)
 

@@ -5188,8 +5188,8 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"fromaddress\"         (string, required) The address is a taddr or \"*\" for all taddrs belonging to the wallet.\n"
             "2. \"toaddress\"           (string, required) The address is a zaddr.\n"
-            "3. fee                   (numeric, optional, default="
-            + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
+            "3. fee                   (numeric, optional, default=null) The fee amount in " + CURRENCY_UNIT + " to attach to this transaction. The default behavior\n"
+            "                         is to use a fee calculated according to ZIP 317.\n"
             "4. limit                 (numeric, optional, default="
             + strprintf("%d", SHIELD_COINBASE_DEFAULT_LIMIT) + ") Limit on the maximum number of utxos to shield.  Set to 0 to use as many as will fit in the transaction.\n"
             "5. privacyPolicy         (string, optional, default=\"AllowRevealedSenders\") Policy for what information leakage is acceptable.\n"
@@ -5290,13 +5290,9 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destStr);
     }
 
-    CAmount nFee = DEFAULT_FEE;
-    if (params.size() > 2) {
-        if (params[2].get_real() == 0.0) {
-            nFee = 0;
-        } else {
-            nFee = AmountFromValue( params[2] );
-        }
+    std::optional<CAmount> nFee;
+    if (params.size() > 2 && !params[2].isNull()) {
+        nFee = AmountFromValue( params[2] );
     }
 
     int nUTXOLimit = params.size() > 3 ? params[3].get_int() : SHIELD_COINBASE_DEFAULT_LIMIT;
@@ -5308,7 +5304,9 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     UniValue contextInfo(UniValue::VOBJ);
     contextInfo.pushKV("fromaddress", params[0]);
     contextInfo.pushKV("toaddress", params[1]);
-    contextInfo.pushKV("fee", ValueFromAmount(nFee));
+    if (nFee.has_value()) {
+        contextInfo.pushKV("fee", ValueFromAmount(nFee.value()));
+    }
 
     // Create the wallet builder
     WalletTxBuilder builder(chainparams, minRelayTxFee);

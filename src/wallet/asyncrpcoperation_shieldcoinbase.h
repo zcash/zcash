@@ -62,7 +62,7 @@ public:
         PaymentAddress toAddress,
         TransactionStrategy strategy,
         int nUTXOLimit,
-        CAmount fee = DEFAULT_FEE,
+        std::optional<CAmount> fee,
         UniValue contextInfo = NullUniValue);
     virtual ~AsyncRPCOperation_shieldcoinbase();
 
@@ -88,7 +88,7 @@ private:
     PaymentAddress toAddress_;
     TransactionStrategy strategy_;
     int nUTXOLimit_;
-    CAmount fee_;
+    std::optional<CAmount> fee_;
     std::optional<TransactionEffects> effects_;
 
     UniValue contextinfo_;     // optional data to include in return value from getStatus()

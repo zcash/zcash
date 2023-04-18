@@ -65,6 +65,12 @@ public:
     }
 };
 
+typedef std::pair<libzcash::PaymentAddress, std::optional<Memo>> NetAmountRecipient;
+
+typedef std::variant<
+    std::vector<Payment>,
+    NetAmountRecipient> Recipients;
+
 class Payments {
 private:
     std::vector<ResolvedPayment> payments;
@@ -426,7 +432,7 @@ public:
             CWallet& wallet,
             const ZTXOSelector& selector,
             SpendableInputs& spendable,
-            const std::vector<Payment>& payments,
+            const Recipients& payments,
             const CChain& chain,
             TransactionStrategy strategy,
             /// A fixed fee is used if provided, otherwise it is calculated based on ZIP 317.
