@@ -6713,15 +6713,23 @@ bool CWallet::ParameterInteraction(const CChainParams& params)
     if (mapArgs.count("-maxtxfee"))
     {
         CAmount nMaxFee = 0;
+        CAmount lowMaxTxFee = CalculateConventionalFee(LOW_LOGICAL_ACTIONS);
         if (!ParseMoney(mapArgs["-maxtxfee"], nMaxFee))
             return UIError(AmountErrMsg("maxtxfee", mapArgs["-maxtxfee"]));
         if (nMaxFee > HIGH_MAX_TX_FEE)
             UIWarning(_("-maxtxfee is set to a very high fee rate! Fee rates this large could be paid on a single transaction."));
         maxTxFee = nMaxFee;
-        if (maxTxFee < CalculateConventionalFee(LOW_LOGICAL_ACTIONS))
+        if (CFeeRate(maxTxFee, 1000) < ::minRelayTxFee)
         {
-            return UIError(strprintf(_("Invalid amount for -maxtxfee=<amount>: '%s' (must allow for at least %d logical actions at the conventional fee)"),
-                                       mapArgs["-maxtxfee"], LOW_LOGICAL_ACTIONS));
+            return UIError(strprintf(_("Invalid amount for -maxtxfee=<amount>: '%s' (must be at least the minimum relay fee of %s for a 1000-byte transaction, to prevent stuck transactions)"),
+                                       mapArgs["-maxtxfee"], ::minRelayTxFee.ToString()));
+        }
+        else if (maxTxFee < lowMaxTxFee)
+        {
+            UIWarning(strprintf(_("-maxtxfee is set to a very low fee (%s). The recommendation is to allow for at least %d logical actions at the conventional fee, which would be %s."),
+                                mapArgs["-maxtxfee"],
+                                LOW_LOGICAL_ACTIONS,
+                                DisplayMoney(lowMaxTxFee)));
         }
     }
     if (mapArgs.count("-txconfirmtarget")) {

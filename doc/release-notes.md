@@ -36,10 +36,11 @@ RPC Changes
 Changes to Transaction Fee Selection
 ------------------------------------
 
-- The `-sendfreetransactions` option has been removed. This option used to
-  instruct the wallet's legacy transaction creation APIs (`sendtoaddress`,
-  `sendmany`, and `fundrawtransaction`) to use a zero fee for "small" transactions
-  that spend "old" inputs. It will now cause a warning on node startup if used.
+- The `-mintxfee` and `-sendfreetransactions` options have been removed. These
+  options used to instruct the wallet's legacy transaction creation APIs
+  (`sendtoaddress`, `sendmany`, and `fundrawtransaction`) to increase fees to
+  this limit and to use a zero fee for "small" transactions that spend "old"
+  inputs, respectively. They will now cause a warning on node startup if used.
 
 Changes to Block Template Construction
 --------------------------------------
@@ -57,13 +58,9 @@ Removal of Priority Estimation
   number of blocks, and the associated `estimatepriority` RPC call, have been
   removed. The format for `fee_estimates.dat` has also changed to no longer save
   these priority estimates. It will automatically be converted to the new format
-  which is not readable by prior versions of the software.
-
-Removal of obsolete config options
-----------------------------------
-
-- The fee changes for ZIP 317 have made the `-mintxfee` and `-txconfirmtarget` config options
-  obsolete. They have been removed and will now cause a warning if used.
+  which is not readable by prior versions of the software. The `-txconfirmtarget`
+  config option is now obsolete and has also been removed. It will cause a
+  warning if used.
 
 [Deprecations](https://zcash.github.io/zcash/user/deprecation.html)
 --------------
