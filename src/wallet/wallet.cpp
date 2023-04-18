@@ -6721,12 +6721,12 @@ bool CWallet::ParameterInteraction(const CChainParams& params)
         maxTxFee = nMaxFee;
         if (CFeeRate(maxTxFee, 1000) < ::minRelayTxFee)
         {
-            return UIError(strprintf(_("Invalid amount for -maxtxfee=<amount>: '%s' (must be at least the minimum relay fee rate of %s to prevent stuck transactions)"),
+            return UIError(strprintf(_("Invalid amount for -maxtxfee=<amount>: '%s' (must be at least the minimum relay fee of %s for a 1000-byte transaction, to prevent stuck transactions)"),
                                        mapArgs["-maxtxfee"], ::minRelayTxFee.ToString()));
         }
         else if (maxTxFee < lowMaxTxFee)
         {
-            UIWarning(strprintf(_("-maxtxfee is set to a very low fee rate (%s). The recommendation is to allow for at least %d logical actions at the conventional fee, which would be %s."),
+            UIWarning(strprintf(_("-maxtxfee is set to a very low fee (%s). The recommendation is to allow for at least %d logical actions at the conventional fee, which would be %s."),
                                 mapArgs["-maxtxfee"],
                                 LOW_LOGICAL_ACTIONS,
                                 DisplayMoney(lowMaxTxFee)));
