@@ -25,8 +25,8 @@ RPC Changes
   while you should already be checking the async operation status, there are now
   more cases that may trigger failure at that stage.
 - The `AllowRevealedRecipients` privacy policy is now required in order to choose a
-  transparent change address for a transaction. This will only occur when the wallet 
-  is unable to construct the transaction without selecting funds from the transparent 
+  transparent change address for a transaction. This will only occur when the wallet
+  is unable to construct the transaction without selecting funds from the transparent
   pool, so the impact of this change is that for such transactions, the user must specify
   `AllowFullyTransparent`.
 - The `estimatepriority` RPC call has been removed.
@@ -58,6 +58,12 @@ Removal of Priority Estimation
   removed. The format for `fee_estimates.dat` has also changed to no longer save
   these priority estimates. It will automatically be converted to the new format
   which is not readable by prior versions of the software.
+
+Removal of obsolete config options
+----------------------------------
+
+- The fee changes for ZIP 317 have made the `-mintxfee` and `-txconfirmtarget` config options
+  obsolete. They have been removed and will now cause a warning if used.
 
 [Deprecations](https://zcash.github.io/zcash/user/deprecation.html)
 --------------

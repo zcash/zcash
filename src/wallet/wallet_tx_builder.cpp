@@ -2,6 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
+#include "util/moneystr.h"
 #include "wallet/wallet_tx_builder.h"
 #include "zip317.h"
 
@@ -149,7 +150,9 @@ WalletTxBuilder::PrepareTransaction(
         std::optional<CAmount> fee,
         uint32_t anchorConfirmations) const
 {
-    assert(fee < MAX_MONEY);
+    if (fee.has_value() && maxTxFee < fee.value()) {
+        return tl::make_unexpected(MaxFeeError(fee.value()));
+    }
 
     int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);
     bool afterNU5 = params.GetConsensus().NetworkUpgradeActive(anchorHeight, Consensus::UPGRADE_NU5);
@@ -274,6 +277,19 @@ CalcZIP317Fee(
     return CalculateConventionalFee(logicalActionCount);
 }
 
+CAmount GetConstrainedFee(
+        const std::optional<SpendableInputs>& inputs,
+        const std::vector<ResolvedPayment>& payments,
+        const std::optional<ChangeAddress>& changeAddr)
+{
+    // We know that minRelayFee <= MINIMUM_FEE <= conventional_fee, so we can use an arbitrary
+    // transaction size when constraining the fee, because we are guaranteed to already satisfy the
+    // lower bound.
+    constexpr unsigned int DUMMY_TX_SIZE = 1;
+
+    return CWallet::ConstrainFee(CalcZIP317Fee(inputs, payments, changeAddr), DUMMY_TX_SIZE);
+}
+
 InvalidFundsError ReportInvalidFunds(
         const SpendableInputs& spendable,
         bool hasPhantomChange,
@@ -350,7 +366,7 @@ WalletTxBuilder::IterateLimit(
     SpendableInputs spendableMut;
 
     auto previousFee = MINIMUM_FEE;
-    auto updatedFee = CalcZIP317Fee(std::nullopt, resolved.GetResolvedPayments(), std::nullopt);
+    auto updatedFee = GetConstrainedFee(std::nullopt, resolved.GetResolvedPayments(), std::nullopt);
     // This is used to increase the target amount just enough (generally by 0 or 1) to force
     // selection of additional notes.
     CAmount bumpTargetAmount{0};
@@ -393,7 +409,7 @@ WalletTxBuilder::IterateLimit(
                 }
             }
             previousFee = updatedFee;
-            updatedFee = CalcZIP317Fee(
+            updatedFee = GetConstrainedFee(
                     spendableMut,
                     resolved.GetResolvedPayments(),
                     changeAmount > 0 ? changeAddr : std::nullopt);
@@ -937,7 +953,23 @@ TransactionBuilderResult TransactionEffects::ApproveAndBuild(
     }
 
     // Build the transaction
-    return builder.Build();
+    auto result = builder.Build();
+
+    if (result.IsTx()) {
+        auto minRelayFee =
+            ::minRelayTxFee.GetFeeForRelay(
+                    ::GetSerializeSize(result.GetTxOrThrow(), SER_NETWORK, PROTOCOL_VERSION));
+        // This should only be possible if a user has provided an explicit fee.
+        if (fee < minRelayFee) {
+            return TransactionBuilderResult(
+                    strprintf(
+                            "Fee (%s) is below the minimum relay fee for this transaction (%s)",
+                            DisplayMoney(fee),
+                            DisplayMoney(minRelayFee)));
+        }
+    }
+
+    return result;
 }
 
 // TODO: Lock Orchard notes (#6226)

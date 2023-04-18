@@ -76,6 +76,8 @@ static const CAmount DEFAULT_TRANSACTION_MAXFEE = 0.1 * COIN;
 static const CAmount HIGH_TX_FEE_PER_KB = 0.01 * COIN;
 /** Warn if -maxtxfee is set to a fee higher than this in zatoshis. */
 static const CAmount HIGH_MAX_TX_FEE = 100 * HIGH_TX_FEE_PER_KB;
+//! -maxtxfee will error if called with a fee that won’t allow tx to have this many actions
+static const unsigned int LOW_LOGICAL_ACTIONS = 10;
 /** Default for -maxorphantx, maximum number of orphan transactions kept in memory */
 static const unsigned int DEFAULT_MAX_ORPHAN_TRANSACTIONS = 100;
 /** Default for -limitancestorcount, max number of in-mempool ancestors */

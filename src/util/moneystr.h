@@ -16,6 +16,9 @@
 #include "amount.h"
 
 std::string FormatMoney(const CAmount& n);
+/// Like `FormatMoney`, but meant to be human-readable, not parseable. E.g., it includes the
+/// `CURRENCY_UNIT` in the result.
+std::string DisplayMoney(const CAmount& n);
 bool ParseMoney(const std::string& str, CAmount& nRet);
 bool ParseMoney(const char* pszIn, CAmount& nRet);
 

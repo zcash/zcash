@@ -257,12 +257,6 @@ Wallet options:
   -migrationdestaddress=<zaddr>
        Set the Sapling migration address
 
-  -mintxfee=<amt>
-       The fallback fee rate (in ZEC per 1000 bytes) used by legacy APIs
-       (sendtoaddress, sendmany, and fundrawtransaction) when -paytxfee has not
-       been set and there is insufficient mempool data to estimate a fee
-       according to the -txconfirmtarget option (default: 0.00001)
-
   -orchardactionlimit=<n>
        Set the maximum number of Orchard actions permitted in a transaction
        (default 50)
@@ -271,9 +265,8 @@ Wallet options:
        The preferred fee rate (in ZEC per 1000 bytes) used for transactions
        created by legacy APIs (sendtoaddress, sendmany, and
        fundrawtransaction). If the transaction is less than 1000 bytes then the
-       fee rate is applied as though it were 1000 bytes. See the descriptions
-       of -txconfirmtarget and -mintxfee options for how the fee is calculated
-       when this option is not set.
+       fee rate is applied as though it were 1000 bytes. When this option is
+       not set, the ZIP 317 fee calculation is used.
 
   -rescan
        Rescan the block chain for missing wallet transactions on startup
@@ -284,13 +277,6 @@ Wallet options:
 
   -spendzeroconfchange
        Spend unconfirmed change when sending transactions (default: 1)
-
-  -txconfirmtarget=<n>
-       If -paytxfee is not set, include enough fee that transactions created by
-       legacy APIs (sendtoaddress, sendmany, and fundrawtransaction) begin
-       confirmation on average within n blocks. This is only used if there is
-       sufficient mempool data to estimate the fee; if not, the fallback fee
-       set by -mintxfee is used. (default: 2)
 
   -txexpirydelta
        Set the number of blocks after which a transaction that has not been

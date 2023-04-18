@@ -52,7 +52,6 @@ extern CWallet* pwalletMain;
  * Settings
  */
 extern CFeeRate payTxFee;
-extern unsigned int nTxConfirmTarget;
 extern bool bSpendZeroConfChange;
 extern bool fPayAtLeastCustomFee;
 extern unsigned int nAnchorConfirmations;
@@ -63,14 +62,10 @@ extern unsigned int nOrchardActionLimit;
 static const unsigned int DEFAULT_KEYPOOL_SIZE = 100;
 //! -paytxfee default
 static const CAmount DEFAULT_TRANSACTION_FEE = 0;
-//! -mintxfee default
-static const CAmount DEFAULT_TRANSACTION_MINFEE = 1000;
 //! minimum change amount
 static const CAmount MIN_CHANGE = CENT;
 //! Default for -spendzeroconfchange
 static const bool DEFAULT_SPEND_ZEROCONF_CHANGE = true;
-//! -txconfirmtarget default
-static const unsigned int DEFAULT_TX_CONFIRM_TARGET = 2;
 static const bool DEFAULT_WALLETBROADCAST = true;
 //! Size of witness cache
 //  Should be large enough that we can expect not to reorg beyond our cache
@@ -1949,17 +1944,17 @@ public:
 
     bool CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_wrapper<CReserveKey>> reservekey, CValidationState& state);
 
-    static CFeeRate minTxFee;
+    /** Adjust the requested fee by bounding it below to the minimum relay fee required
+     * for a transaction of the given size and bounding it above to the maximum fee
+     * configured using the `-maxtxfee` configuration option.
+     */
+    static CAmount ConstrainFee(CAmount requestedFee, unsigned int nTxBytes);
+
     /**
      * Estimate the minimum fee considering user set parameters
      * and the required fee.
      */
-    static CAmount GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool);
-    /**
-     * Return the minimum required fee taking into account the
-     * floating relay fee rate and user set minimum transaction fee rate.
-     */
-    static CAmount GetRequiredFee(unsigned int nTxBytes);
+    static CAmount GetMinimumFee(const CTransaction& tx, unsigned int nTxBytes);
 
     /**
      * The set of default receiver types used when the wallet generates

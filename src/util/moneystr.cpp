@@ -33,6 +33,10 @@ std::string FormatMoney(const CAmount& n)
     return str;
 }
 
+std::string DisplayMoney(const CAmount& zat)
+{
+    return FormatMoney(zat) + " " + CURRENCY_UNIT;
+}
 
 bool ParseMoney(const string& str, CAmount& nRet)
 {

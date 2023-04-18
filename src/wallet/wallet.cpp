@@ -30,6 +30,7 @@
 #include "zcash/Address.hpp"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
+#include "zip317.h"
 #include "crypter.h"
 #include "wallet/asyncrpcoperation_saplingmigration.h"
 
@@ -47,20 +48,12 @@ using namespace libzcash;
 CWallet* pwalletMain = NULL;
 /** Transaction fee set by the user */
 CFeeRate payTxFee(DEFAULT_TRANSACTION_FEE);
-unsigned int nTxConfirmTarget = DEFAULT_TX_CONFIRM_TARGET;
 bool bSpendZeroConfChange = DEFAULT_SPEND_ZEROCONF_CHANGE;
 bool fPayAtLeastCustomFee = true;
 unsigned int nAnchorConfirmations = DEFAULT_ANCHOR_CONFIRMATIONS;
 unsigned int nOrchardActionLimit = DEFAULT_ORCHARD_ACTION_LIMIT;
 
 const char * DEFAULT_WALLET_DAT = "wallet.dat";
-
-/**
- * -mintxfee: the fallback fee rate (in ZEC per 1000 bytes) used by legacy APIs
- * when -paytxfee has not been set and there is insufficient mempool data to
- * estimate a fee according to the -txconfirmtarget option.
- */
-CFeeRate CWallet::minTxFee = CFeeRate(DEFAULT_TRANSACTION_MINFEE);
 
 std::set<ReceiverType> CWallet::DefaultReceiverTypes(int nHeight) {
     // For now, just ignore the height information because the default
@@ -5710,6 +5703,15 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 
                 unsigned int nBytes = ::GetSerializeSize(txNew, SER_NETWORK, PROTOCOL_VERSION);
 
+                // Limit size
+                if (nBytes >= max_tx_size)
+                {
+                    strFailReason = _("Transaction too large");
+                    return false;
+                }
+
+                CAmount nFeeNeeded = GetMinimumFee(txNew, nBytes);
+
                 // Remove scriptSigs if we used dummy signatures for fee calculation
                 if (!sign) {
                     for (CTxIn& vin : txNew.vin)
@@ -5718,15 +5720,6 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 
                 // Embed the constructed transaction data in wtxNew.
                 *static_cast<CTransaction*>(&wtxNew) = CTransaction(txNew);
-
-                // Limit size
-                if (nBytes >= max_tx_size)
-                {
-                    strFailReason = _("Transaction too large");
-                    return false;
-                }
-
-                CAmount nFeeNeeded = GetMinimumFee(nBytes, nTxConfirmTarget, mempool);
 
                 // If we made it here and we aren't even able to meet the relay fee on the next pass, give up
                 // because we must be at the maximum allowed fee.
@@ -5800,37 +5793,20 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_
     return true;
 }
 
-CAmount CWallet::GetRequiredFee(unsigned int nTxBytes)
+CAmount CWallet::ConstrainFee(CAmount requestedFee, unsigned int nTxBytes)
 {
-    return std::max(minTxFee.GetFee(nTxBytes), ::minRelayTxFee.GetFeeForRelay(nTxBytes));
+    return std::min(std::max(::minRelayTxFee.GetFeeForRelay(nTxBytes), requestedFee), maxTxFee);
 }
 
-CAmount CWallet::GetMinimumFee(unsigned int nTxBytes, unsigned int nConfirmTarget, const CTxMemPool& pool)
+CAmount CWallet::GetMinimumFee(const CTransaction& tx, unsigned int nTxBytes)
 {
     // payTxFee is user-set "I want to pay this much"
-    CAmount nFeeNeeded = payTxFee.GetFee(nTxBytes);
-    // TODO: fPayAtLeastCustomFee is always true so we could simplify this by saying
-    // `payTxFee.GetFee(std::max(1000, nTxBytes))` above, if we do not remove this code
-    // completely.
-    if (fPayAtLeastCustomFee && nFeeNeeded > 0 && nFeeNeeded < payTxFee.GetFeePerK())
-        nFeeNeeded = payTxFee.GetFeePerK();
-    // User didn't set: use -txconfirmtarget to estimate...
+    CAmount nFeeNeeded = payTxFee.GetFee(std::max((unsigned int)1000, nTxBytes));
+    // User didn't set: use conventional fee
     if (nFeeNeeded == 0)
-        nFeeNeeded = pool.estimateFee(nConfirmTarget).GetFee(nTxBytes);
-    // ... unless we don't have enough mempool data, in which case fall
-    // back to the required fee
-    if (nFeeNeeded == 0)
-        nFeeNeeded = GetRequiredFee(nTxBytes);
-    // prevent user from paying a non-sense fee (like 1 satoshi): 0 < fee < minRelayFee
-    if (nFeeNeeded < ::minRelayTxFee.GetFeeForRelay(nTxBytes))
-        nFeeNeeded = ::minRelayTxFee.GetFeeForRelay(nTxBytes);
-    // But always obey the maximum
-    if (nFeeNeeded > maxTxFee)
-        nFeeNeeded = maxTxFee;
-    return nFeeNeeded;
+        nFeeNeeded = tx.GetConventionalFee();
+    return ConstrainFee(nFeeNeeded, nTxBytes);
 }
-
-
 
 
 DBErrors CWallet::LoadWallet(bool& fFirstRunRet)
@@ -6506,21 +6482,14 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
     strUsage += HelpMessageOpt("-keypool=<n>", strprintf(_("Set key pool size to <n> (default: %u)"), DEFAULT_KEYPOOL_SIZE));
     strUsage += HelpMessageOpt("-migration", _("Enable the Sprout to Sapling migration"));
     strUsage += HelpMessageOpt("-migrationdestaddress=<zaddr>", _("Set the Sapling migration address"));
-    strUsage += HelpMessageOpt("-mintxfee=<amt>", strprintf(_("The fallback fee rate (in %s per 1000 bytes) used by legacy APIs (sendtoaddress, sendmany, and fundrawtransaction) when -paytxfee "
-                                                              "has not been set and there is insufficient mempool data to estimate a fee according to the -txconfirmtarget option (default: %s)"),
-                                                            CURRENCY_UNIT, FormatMoney(DEFAULT_TRANSACTION_MINFEE)));
     strUsage += HelpMessageOpt("-orchardactionlimit=<n>", strprintf(_("Set the maximum number of Orchard actions permitted in a transaction (default %u)"), DEFAULT_ORCHARD_ACTION_LIMIT));
     strUsage += HelpMessageOpt("-paytxfee=<amt>", strprintf(_("The preferred fee rate (in %s per 1000 bytes) used for transactions created by legacy APIs (sendtoaddress, sendmany, and fundrawtransaction). "
-                                                              "If the transaction is less than 1000 bytes then the fee rate is applied as though it were 1000 bytes. See the descriptions of -txconfirmtarget "
-                                                              "and -mintxfee options for how the fee is calculated when this option is not set."),
+                                                              "If the transaction is less than 1000 bytes then the fee rate is applied as though it were 1000 bytes. When this option is not set, "
+                                                              "the ZIP 317 fee calculation is used."),
                                                             CURRENCY_UNIT));
     strUsage += HelpMessageOpt("-rescan", _("Rescan the block chain for missing wallet transactions on startup"));
     strUsage += HelpMessageOpt("-salvagewallet", _("Attempt to recover private keys from a corrupt wallet on startup (implies -rescan)"));
     strUsage += HelpMessageOpt("-spendzeroconfchange", strprintf(_("Spend unconfirmed change when sending transactions (default: %u)"), DEFAULT_SPEND_ZEROCONF_CHANGE));
-    strUsage += HelpMessageOpt("-txconfirmtarget=<n>", strprintf(_("If -paytxfee is not set, include enough fee that transactions created by legacy APIs (sendtoaddress, sendmany, and fundrawtransaction) "
-                                                                   "begin confirmation on average within n blocks. This is only used if there is sufficient mempool data to estimate the fee; if not, the "
-                                                                   "fallback fee set by -mintxfee is used. (default: %u)"),
-                                                                 DEFAULT_TX_CONFIRM_TARGET));
     strUsage += HelpMessageOpt("-txexpirydelta", strprintf(_("Set the number of blocks after which a transaction that has not been mined will become invalid (min: %u, default: %u (pre-Blossom) or %u (post-Blossom))"), TX_EXPIRING_SOON_THRESHOLD + 1, DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA, DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA));
     strUsage += HelpMessageOpt("-upgradewallet", _("Upgrade wallet to latest format on startup"));
     strUsage += HelpMessageOpt("-wallet=<file>", _("Specify wallet file absolute path or a path relative to the data directory") + " " + strprintf(_("(default: %s)"), DEFAULT_WALLET_DAT));
@@ -6725,11 +6694,7 @@ bool CWallet::ParameterInteraction(const CChainParams& params)
 {
     if (mapArgs.count("-mintxfee"))
     {
-        CAmount n = 0;
-        if (ParseMoney(mapArgs["-mintxfee"], n) && n > 0)
-            CWallet::minTxFee = CFeeRate(n);
-        else
-            return UIError(AmountErrMsg("mintxfee", mapArgs["-mintxfee"]));
+        UIWarning(_("The argument -mintxfee is no longer supported."));
     }
     if (mapArgs.count("-paytxfee"))
     {
@@ -6753,13 +6718,15 @@ bool CWallet::ParameterInteraction(const CChainParams& params)
         if (nMaxFee > HIGH_MAX_TX_FEE)
             UIWarning(_("-maxtxfee is set to a very high fee rate! Fee rates this large could be paid on a single transaction."));
         maxTxFee = nMaxFee;
-        if (CFeeRate(maxTxFee, 1000) < ::minRelayTxFee)
+        if (maxTxFee < CalculateConventionalFee(LOW_LOGICAL_ACTIONS))
         {
-            return UIError(strprintf(_("Invalid amount for -maxtxfee=<amount>: '%s' (must be at least the minimum relay fee rate of %s to prevent stuck transactions)"),
-                                       mapArgs["-maxtxfee"], ::minRelayTxFee.ToString()));
+            return UIError(strprintf(_("Invalid amount for -maxtxfee=<amount>: '%s' (must allow for at least %d logical actions at the conventional fee)"),
+                                       mapArgs["-maxtxfee"], LOW_LOGICAL_ACTIONS));
         }
     }
-    nTxConfirmTarget = GetArg("-txconfirmtarget", DEFAULT_TX_CONFIRM_TARGET);
+    if (mapArgs.count("-txconfirmtarget")) {
+        UIWarning(_("The argument -txconfirmtarget is no longer supported."));
+    }
     if (mapArgs.count("-txexpirydelta")) {
         int64_t expiryDelta = atoi64(mapArgs["-txexpirydelta"]);
         uint32_t minExpiryDelta = TX_EXPIRING_SOON_THRESHOLD + 1;
