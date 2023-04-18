@@ -24,7 +24,9 @@ void GetRandBytes(unsigned char* buf, size_t num);
 template <typename I>
 I GetRandGeneric(I nMax)
 {
+    // I must be an unsigned numeric type.
     static_assert(std::numeric_limits<I>::min() == 0);
+    // I() for primitive signed integer types returns 0.
     if (nMax == I())
         return I();
 

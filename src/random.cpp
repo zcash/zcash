@@ -47,6 +47,7 @@ uint128_t GetRandUInt128(uint128_t nMax)
 
 int128_t GetRandInt128(int128_t nMax)
 {
+    assert(nMax >= 0);
     return GetRandUInt128(nMax);
 }
 
@@ -57,11 +58,13 @@ uint64_t GetRand(uint64_t nMax)
 
 int64_t GetRandInt64(int64_t nMax)
 {
+    assert(nMax >= 0);
     return GetRand(nMax);
 }
 
 int GetRandInt(int nMax)
 {
+    assert(nMax >= 0);
     return GetRand(nMax);
 }
 

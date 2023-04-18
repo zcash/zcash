@@ -31,6 +31,7 @@ public:
 
     int RandomInt(int nMax)
     {
+        assert(nMax >= 0);
         state = (CHashWriter(SER_GETHASH, 0) << state).GetHash().GetCheapHash();
         return (unsigned int)(state % nMax);
     }
