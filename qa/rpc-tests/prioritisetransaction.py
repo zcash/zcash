@@ -12,7 +12,7 @@ from test_framework.util import (
     sync_blocks,
     sync_mempools,
 )
-from test_framework.mininode import COIN
+from test_framework.zip317 import conventional_fee_zats
 
 import time
 
@@ -43,8 +43,6 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
         print("Mining 11kb blocks...")
         self.nodes[0].generate(501)
 
-        base_fee = self.nodes[0].getnetworkinfo()['relayfee']
-
         # 11 kb blocks will only hold about 50 txs, so this will fill mempool with older txs
         taddr = self.nodes[1].getnewaddress()
         for _ in range(900):
@@ -74,7 +72,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
         print("in_block_template =", in_block_template)
         #assert_equal(in_block_template, False)
 
-        priority_success = self.nodes[0].prioritisetransaction(priority_tx_0, 0, int(3 * base_fee * COIN))
+        priority_success = self.nodes[0].prioritisetransaction(priority_tx_0, 0, conventional_fee_zats(2))
         assert(priority_success)
 
         # Check that prioritised transaction is not in getblocktemplate()
@@ -113,7 +111,7 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
 
         # Node 1 doesn't get the next block, so this *shouldn't* be mined despite being prioritised on node 1
         priority_tx_1 = self.nodes[1].sendtoaddress(self.nodes[0].getnewaddress(), 0.1)
-        self.nodes[1].prioritisetransaction(priority_tx_1, 0, int(3 * base_fee * COIN))
+        self.nodes[1].prioritisetransaction(priority_tx_1, 0, conventional_fee_zats(2))
 
         # Mine block on node 0
         blk_hash = self.nodes[0].generate(1)
