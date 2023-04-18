@@ -103,9 +103,17 @@ class MempoolPackagesTest(BitcoinTestFramework):
             print("too-long-ancestor-chain successfully rejected")
 
         # Check that prioritising a tx before it's added to the mempool works
-        self.nodes[0].generate(1)
+        [blockhash] = self.nodes[0].generate(1)
+        # Ensure that node 1 receives this block before we invalidate it. Otherwise there
+        # is a race between node 1 sending a getdata to node 0, and node 0 invalidating
+        # the block, that when triggered causes:
+        # - node 0 to ignore node 1's "old" getdata;
+        # - node 1 to timeout and disconnect node 0;
+        # - node 0 and node 1 to have different chain tips, so sync_blocks times out.
+        self.sync_all()
+        assert_equal(self.nodes[0].getrawmempool(True), {})
         self.nodes[0].prioritisetransaction(chain[-1], None, 2000)
-        self.nodes[0].invalidateblock(self.nodes[0].getbestblockhash())
+        self.nodes[0].invalidateblock(blockhash)
         mempool = self.nodes[0].getrawmempool(True)
 
         descendant_fees = 0
@@ -116,6 +124,11 @@ class MempoolPackagesTest(BitcoinTestFramework):
             assert_equal(mempool[x]['descendantfees'], descendant_fees * COIN + 2000)
 
         # TODO: check that node1's mempool is as expected
+
+        # Reconsider the above block to clear the mempool again before the next test phase.
+        self.nodes[0].reconsiderblock(blockhash)
+        assert_equal(self.nodes[0].getbestblockhash(), blockhash)
+        assert_equal(self.nodes[0].getrawmempool(True), {})
 
         # TODO: test ancestor size limits
 
