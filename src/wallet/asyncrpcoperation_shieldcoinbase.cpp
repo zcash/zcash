@@ -61,14 +61,14 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
     assert(ztxoSelector.RequireSpendingKeys());
 
     examine(toAddress_, match {
-            [](const CKeyID&) {
-                throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2pkh address.");
-            },
-            [](const CScriptID&) {
-                throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2sh address.");
-            },
-            [](const auto&) { },
-        });
+        [](const CKeyID&) {
+            throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2pkh address.");
+        },
+        [](const CScriptID&) {
+            throw JSONRPCError(RPC_VERIFY_REJECTED, "Cannot shield coinbase output to a p2sh address.");
+        },
+        [](const auto&) { },
+    });
 
     // Log the context info
     if (LogAcceptCategory("zrpcunsafe")) {
@@ -140,7 +140,9 @@ Remaining AsyncRPCOperation_shieldcoinbase::prepare(CWallet& wallet) {
     unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
     CAmount shieldingValue = 0;
     CAmount remainingValue = 0;
-    size_t estimatedTxSize = 10000; // per ZIP 401 (https://zips.z.cash/zip-0401#specification)
+    // We start with the estimated size being the most largest recipient, which `MIN_TX_COST`
+    // approximates. This then increases as we add inputs to the tx.
+    size_t estimatedTxSize = MIN_TX_COST;
     size_t utxoCounter = 0;
     size_t numUtxos = 0;
     bool maxedOutFlag = false;
