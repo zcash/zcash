@@ -104,6 +104,13 @@ class MempoolPackagesTest(BitcoinTestFramework):
 
         # Check that prioritising a tx before it's added to the mempool works
         [blockhash] = self.nodes[0].generate(1)
+        # Ensure that node 1 receives this block before we invalidate it. Otherwise there
+        # is a race between node 1 sending a getdata to node 0, and node 0 invalidating
+        # the block, that when triggered causes:
+        # - node 0 to ignore node 1's "old" getdata;
+        # - node 1 to timeout and disconnect node 0;
+        # - node 0 and node 1 to have different chain tips, so sync_blocks times out.
+        self.sync_all()
         assert_equal(self.nodes[0].getrawmempool(True), {})
         self.nodes[0].prioritisetransaction(chain[-1], None, 2000)
         self.nodes[0].invalidateblock(blockhash)
