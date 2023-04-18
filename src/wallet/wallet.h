@@ -1933,14 +1933,26 @@ public:
      * Insert additional inputs into the transaction by
      * calling CreateTransaction();
      */
-    bool FundTransaction(CMutableTransaction& tx, CAmount& nFeeRet, int& nChangePosRet, std::string& strFailReason, bool includeWatching);
+    tl::expected<void, std::string>
+    FundTransaction(
+            CMutableTransaction& tx,
+            CAmount &nFeeRet,
+            int& nChangePosRet,
+            bool includeWatching);
 
     /**
      * Create a new transaction paying the recipients with a set of coins
      * selected by SelectCoins(); Also create the change output, when needed
      */
-    bool CreateTransaction(const std::vector<CRecipient>& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, CAmount& nFeeRet, int& nChangePosRet,
-                           std::string& strFailReason, const CCoinControl *coinControl = NULL, bool sign = true);
+    tl::expected<CWalletTx, std::string>
+    CreateTransaction(
+            const std::vector<CTxIn>& vin,
+            const std::vector<CRecipient>& vecSend,
+            CReserveKey& reservekey,
+            CAmount& nFeeRet,
+            int& nChangePosRet,
+            const CCoinControl *coinControl = NULL,
+            bool sign = true);
 
     /**
      * Save a set of (txid, RecipientAddress, std::optional<UnifiedAddress>) mappings to the wallet.
