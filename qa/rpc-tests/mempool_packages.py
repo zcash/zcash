@@ -23,7 +23,7 @@ def satoshi_round(amount):
     return  Decimal(amount).quantize(Decimal('0.00000001'), rounding=ROUND_DOWN)
 
 class MempoolPackagesTest(BitcoinTestFramework):
-    maxorphantx = 120
+    maxorphantx = 1000
 
     def setup_network(self):
         base_args = [
@@ -145,6 +145,7 @@ class MempoolPackagesTest(BitcoinTestFramework):
         for i in range(10):
             transaction_package.append({'txid': txid, 'vout': i, 'amount': sent_value})
 
+        rejected = 0
         for i in range(self.maxorphantx):
             utxo = transaction_package.pop(0)
             try:
@@ -155,9 +156,13 @@ class MempoolPackagesTest(BitcoinTestFramework):
                     mempool = self.nodes[0].getrawmempool(True)
                     assert_equal(mempool[parent_transaction]['descendantcount'], self.maxorphantx)
             except JSONRPCException as e:
+                rejected += 1
                 print(e.error['message'])
                 assert_equal(i, self.maxorphantx-1)
                 print("tx that would create too large descendant package successfully rejected")
+
+        assert_equal(1, rejected)
+        assert_equal(10 + (self.maxorphantx - 1) * (10 - 1) - rejected, len(transaction_package))
 
         # TODO: check that node1's mempool is as expected
 
