@@ -14,6 +14,188 @@ int GetAnchorHeight(const CChain& chain, uint32_t anchorConfirmations)
     return nextBlockHeight - anchorConfirmations;
 }
 
+static size_t PadCount(size_t n)
+{
+    return n == 1 ? 2 : n;
+}
+
+static CAmount
+CalcZIP317Fee(
+        const std::optional<SpendableInputs>& inputs,
+        const std::vector<ResolvedPayment>& payments,
+        const std::optional<ChangeAddress>& changeAddr)
+{
+    std::vector<CTxOut> vout{};
+    size_t sproutOutputCount{}, saplingOutputCount{}, orchardOutputCount{};
+    for (const auto& payment : payments) {
+        std::visit(match {
+            [&](const CKeyID& addr) {
+                vout.emplace_back(payment.amount, GetScriptForDestination(addr));
+            },
+            [&](const CScriptID& addr) {
+                vout.emplace_back(payment.amount, GetScriptForDestination(addr));
+            },
+            [&](const libzcash::SaplingPaymentAddress&) {
+                ++saplingOutputCount;
+            },
+            [&](const libzcash::OrchardRawAddress&) {
+                ++orchardOutputCount;
+            }
+        }, payment.address);
+    }
+
+    if (changeAddr.has_value()) {
+        examine(changeAddr.value(), match {
+            [&](const SproutPaymentAddress&) { ++sproutOutputCount; },
+            [&](const RecipientAddress& addr) {
+                examine(addr, match {
+                    [&](const CKeyID& taddr) {
+                        vout.emplace_back(0, GetScriptForDestination(taddr));
+                    },
+                    [&](const CScriptID taddr) {
+                        vout.emplace_back(0, GetScriptForDestination(taddr));
+                    },
+                    [&](const libzcash::SaplingPaymentAddress&) { ++saplingOutputCount; },
+                    [&](const libzcash::OrchardRawAddress&) { ++orchardOutputCount; }
+                });
+            }
+        });
+    }
+
+    std::vector<CTxIn> vin{};
+    size_t sproutInputCount = 0;
+    size_t saplingInputCount = 0;
+    size_t orchardInputCount = 0;
+    if (inputs.has_value()) {
+        for (const auto& utxo : inputs.value().utxos) {
+            vin.emplace_back(
+                    COutPoint(utxo.tx->GetHash(), utxo.i),
+                    utxo.tx->vout[utxo.i].scriptPubKey);
+        }
+        sproutInputCount = inputs.value().sproutNoteEntries.size();
+        saplingInputCount = inputs.value().saplingNoteEntries.size();
+        orchardInputCount = inputs.value().orchardNoteMetadata.size();
+    }
+    size_t logicalActionCount = CalculateLogicalActionCount(
+            vin,
+            vout,
+            std::max(sproutInputCount, sproutOutputCount),
+            saplingInputCount,
+            PadCount(saplingOutputCount),
+            PadCount(std::max(orchardInputCount, orchardOutputCount)));
+
+    return CalculateConventionalFee(logicalActionCount);
+}
+
+static tl::expected<ResolvedPayment, AddressResolutionError>
+ResolvePayment(
+        const Payment& payment,
+        bool canResolveOrchard,
+        const TransactionStrategy& strategy,
+        CAmount& maxSaplingAvailable,
+        CAmount& maxOrchardAvailable,
+        uint32_t& orchardOutputs)
+{
+    return examine(payment.GetAddress(), match {
+        [&](const CKeyID& p2pkh) -> tl::expected<ResolvedPayment, AddressResolutionError> {
+            if (strategy.AllowRevealedRecipients()) {
+                return {{std::nullopt, p2pkh, payment.GetAmount(), payment.GetMemo(), false}};
+            } else {
+                return tl::make_unexpected(AddressResolutionError::TransparentRecipientNotAllowed);
+            }
+        },
+        [&](const CScriptID& p2sh) -> tl::expected<ResolvedPayment, AddressResolutionError> {
+            if (strategy.AllowRevealedRecipients()) {
+                return {{std::nullopt, p2sh, payment.GetAmount(), payment.GetMemo(), false}};
+            } else {
+                return tl::make_unexpected(AddressResolutionError::TransparentRecipientNotAllowed);
+            }
+        },
+        [&](const SproutPaymentAddress&) -> tl::expected<ResolvedPayment, AddressResolutionError> {
+            return tl::make_unexpected(AddressResolutionError::SproutRecipientsNotSupported);
+        },
+        [&](const SaplingPaymentAddress& addr)
+            -> tl::expected<ResolvedPayment, AddressResolutionError> {
+            if (strategy.AllowRevealedAmounts() || payment.GetAmount() <= maxSaplingAvailable) {
+                if (!strategy.AllowRevealedAmounts()) {
+                    maxSaplingAvailable -= payment.GetAmount();
+                }
+                return {{std::nullopt, addr, payment.GetAmount(), payment.GetMemo(), false}};
+            } else {
+                return tl::make_unexpected(AddressResolutionError::RevealingSaplingAmountNotAllowed);
+            }
+        },
+        [&](const UnifiedAddress& ua) -> tl::expected<ResolvedPayment, AddressResolutionError> {
+            if (canResolveOrchard
+                && ua.GetOrchardReceiver().has_value()
+                && (strategy.AllowRevealedAmounts() || payment.GetAmount() <= maxOrchardAvailable)
+                ) {
+                if (!strategy.AllowRevealedAmounts()) {
+                    maxOrchardAvailable -= payment.GetAmount();
+                }
+                orchardOutputs += 1;
+                return {{
+                    ua,
+                    ua.GetOrchardReceiver().value(),
+                    payment.GetAmount(),
+                    payment.GetMemo(),
+                    false
+                }};
+            } else if (ua.GetSaplingReceiver().has_value()
+                && (strategy.AllowRevealedAmounts() || payment.GetAmount() <= maxSaplingAvailable)
+                ) {
+                if (!strategy.AllowRevealedAmounts()) {
+                    maxSaplingAvailable -= payment.GetAmount();
+                }
+                return {{ua, ua.GetSaplingReceiver().value(), payment.GetAmount(), payment.GetMemo(), false}};
+            } else {
+                if (strategy.AllowRevealedRecipients()) {
+                    if (ua.GetP2SHReceiver().has_value()) {
+                        return {{
+                            ua, ua.GetP2SHReceiver().value(), payment.GetAmount(), std::nullopt, false}};
+                    } else if (ua.GetP2PKHReceiver().has_value()) {
+                        return {{
+                            ua, ua.GetP2PKHReceiver().value(), payment.GetAmount(), std::nullopt, false}};
+                    } else {
+                        // This should only occur when we have
+                        // • an Orchard-only UA,
+                        // • `AllowRevealedRecipients`, and
+                        // • can’t resolve Orchard (which means either a Sprout selector or pre-NU5).
+                        return tl::make_unexpected(AddressResolutionError::CouldNotResolveReceiver);
+                    }
+                } else if (strategy.AllowRevealedAmounts()) {
+                    return tl::make_unexpected(AddressResolutionError::TransparentReceiverNotAllowed);
+                } else {
+                    return tl::make_unexpected(AddressResolutionError::RevealingReceiverAmountsNotAllowed);
+                }
+            }
+        }
+    });
+}
+
+InvalidFundsError ReportInvalidFunds(
+        const SpendableInputs& spendable,
+        bool hasPhantomChange,
+        CAmount fee,
+        CAmount dustThreshold,
+        CAmount targetAmount,
+        CAmount changeAmount)
+{
+    return InvalidFundsError(
+            spendable.Total(),
+            hasPhantomChange
+            // TODO: NEED TESTS TO EXERCISE THIS
+            ? InvalidFundsReason(PhantomChangeError(fee, dustThreshold))
+            : (changeAmount > 0 && changeAmount < dustThreshold
+               // TODO: we should provide the option for the caller to explicitly forego change
+               // (definitionally an amount below the dust amount) and send the extra to the
+               // recipient or the miner fee to avoid creating dust change, rather than prohibit
+               // them from sending entirely in this circumstance. (Daira disagrees, as this could
+               // leak information to the recipient or publicly in the fee.)
+               ? InvalidFundsReason(DustThresholdError(dustThreshold, changeAmount))
+               : InvalidFundsReason(InsufficientFundsError(targetAmount))));
+}
+
 static tl::expected<void, InputSelectionError>
 ValidateAmount(const SpendableInputs& spendable, const CAmount& fee)
 {
@@ -283,79 +465,6 @@ SpendableInputs WalletTxBuilder::FindAllSpendableInputs(
     return wallet.FindSpendableInputs(selector, minDepth, std::nullopt);
 }
 
-static size_t PadCount(size_t n)
-{
-    return n == 1 ? 2 : n;
-}
-
-static CAmount
-CalcZIP317Fee(
-        const std::optional<SpendableInputs>& inputs,
-        const std::vector<ResolvedPayment>& payments,
-        const std::optional<ChangeAddress>& changeAddr)
-{
-    std::vector<CTxOut> vout{};
-    size_t sproutOutputCount{}, saplingOutputCount{}, orchardOutputCount{};
-    for (const auto& payment : payments) {
-        std::visit(match {
-            [&](const CKeyID& addr) {
-                vout.emplace_back(payment.amount, GetScriptForDestination(addr));
-            },
-            [&](const CScriptID& addr) {
-                vout.emplace_back(payment.amount, GetScriptForDestination(addr));
-            },
-            [&](const libzcash::SaplingPaymentAddress&) {
-                ++saplingOutputCount;
-            },
-            [&](const libzcash::OrchardRawAddress&) {
-                ++orchardOutputCount;
-            }
-        }, payment.address);
-    }
-
-    if (changeAddr.has_value()) {
-        examine(changeAddr.value(), match {
-            [&](const SproutPaymentAddress&) { ++sproutOutputCount; },
-            [&](const RecipientAddress& addr) {
-                examine(addr, match {
-                    [&](const CKeyID& taddr) {
-                        vout.emplace_back(0, GetScriptForDestination(taddr));
-                    },
-                    [&](const CScriptID taddr) {
-                        vout.emplace_back(0, GetScriptForDestination(taddr));
-                    },
-                    [&](const libzcash::SaplingPaymentAddress&) { ++saplingOutputCount; },
-                    [&](const libzcash::OrchardRawAddress&) { ++orchardOutputCount; }
-                });
-            }
-        });
-    }
-
-    std::vector<CTxIn> vin{};
-    size_t sproutInputCount = 0;
-    size_t saplingInputCount = 0;
-    size_t orchardInputCount = 0;
-    if (inputs.has_value()) {
-        for (const auto& utxo : inputs.value().utxos) {
-            vin.emplace_back(
-                    COutPoint(utxo.tx->GetHash(), utxo.i),
-                    utxo.tx->vout[utxo.i].scriptPubKey);
-        }
-        sproutInputCount = inputs.value().sproutNoteEntries.size();
-        saplingInputCount = inputs.value().saplingNoteEntries.size();
-        orchardInputCount = inputs.value().orchardNoteMetadata.size();
-    }
-    size_t logicalActionCount = CalculateLogicalActionCount(
-            vin,
-            vout,
-            std::max(sproutInputCount, sproutOutputCount),
-            saplingInputCount,
-            PadCount(saplingOutputCount),
-            PadCount(std::max(orchardInputCount, orchardOutputCount)));
-
-    return CalculateConventionalFee(logicalActionCount);
-}
-
 CAmount GetConstrainedFee(
         const std::optional<SpendableInputs>& inputs,
         const std::vector<ResolvedPayment>& payments,
@@ -367,29 +476,6 @@ CAmount GetConstrainedFee(
     constexpr unsigned int DUMMY_TX_SIZE = 1;
 
     return CWallet::ConstrainFee(CalcZIP317Fee(inputs, payments, changeAddr), DUMMY_TX_SIZE);
-}
-
-InvalidFundsError ReportInvalidFunds(
-        const SpendableInputs& spendable,
-        bool hasPhantomChange,
-        CAmount fee,
-        CAmount dustThreshold,
-        CAmount targetAmount,
-        CAmount changeAmount)
-{
-    return InvalidFundsError(
-            spendable.Total(),
-            hasPhantomChange
-            // TODO: NEED TESTS TO EXERCISE THIS
-            ? InvalidFundsReason(PhantomChangeError(fee, dustThreshold))
-            : (changeAmount > 0 && changeAmount < dustThreshold
-               // TODO: we should provide the option for the caller to explicitly forego change
-               // (definitionally an amount below the dust amount) and send the extra to the
-               // recipient or the miner fee to avoid creating dust change, rather than prohibit
-               // them from sending entirely in this circumstance. (Daira disagrees, as this could
-               // leak information to the recipient or publicly in the fee.)
-               ? InvalidFundsReason(DustThresholdError(dustThreshold, changeAmount))
-               : InvalidFundsReason(InsufficientFundsError(targetAmount))));
 }
 
 static tl::expected<void, InputSelectionError>
@@ -523,92 +609,6 @@ WalletTxBuilder::IterateLimit(
     }
 
     return std::make_tuple(spendableMut, updatedFee, changeAddr);
-}
-
-static tl::expected<ResolvedPayment, AddressResolutionError>
-ResolvePayment(
-        const Payment& payment,
-        bool canResolveOrchard,
-        const TransactionStrategy& strategy,
-        CAmount& maxSaplingAvailable,
-        CAmount& maxOrchardAvailable,
-        uint32_t& orchardOutputs)
-{
-    return examine(payment.GetAddress(), match {
-        [&](const CKeyID& p2pkh) -> tl::expected<ResolvedPayment, AddressResolutionError> {
-            if (strategy.AllowRevealedRecipients()) {
-                return {{std::nullopt, p2pkh, payment.GetAmount(), payment.GetMemo(), false}};
-            } else {
-                return tl::make_unexpected(AddressResolutionError::TransparentRecipientNotAllowed);
-            }
-        },
-        [&](const CScriptID& p2sh) -> tl::expected<ResolvedPayment, AddressResolutionError> {
-            if (strategy.AllowRevealedRecipients()) {
-                return {{std::nullopt, p2sh, payment.GetAmount(), payment.GetMemo(), false}};
-            } else {
-                return tl::make_unexpected(AddressResolutionError::TransparentRecipientNotAllowed);
-            }
-        },
-        [&](const SproutPaymentAddress&) -> tl::expected<ResolvedPayment, AddressResolutionError> {
-            return tl::make_unexpected(AddressResolutionError::SproutRecipientsNotSupported);
-        },
-        [&](const SaplingPaymentAddress& addr)
-            -> tl::expected<ResolvedPayment, AddressResolutionError> {
-            if (strategy.AllowRevealedAmounts() || payment.GetAmount() <= maxSaplingAvailable) {
-                if (!strategy.AllowRevealedAmounts()) {
-                    maxSaplingAvailable -= payment.GetAmount();
-                }
-                return {{std::nullopt, addr, payment.GetAmount(), payment.GetMemo(), false}};
-            } else {
-                return tl::make_unexpected(AddressResolutionError::RevealingSaplingAmountNotAllowed);
-            }
-        },
-        [&](const UnifiedAddress& ua) -> tl::expected<ResolvedPayment, AddressResolutionError> {
-            if (canResolveOrchard
-                && ua.GetOrchardReceiver().has_value()
-                && (strategy.AllowRevealedAmounts() || payment.GetAmount() <= maxOrchardAvailable)
-                ) {
-                if (!strategy.AllowRevealedAmounts()) {
-                    maxOrchardAvailable -= payment.GetAmount();
-                }
-                orchardOutputs += 1;
-                return {{
-                    ua,
-                    ua.GetOrchardReceiver().value(),
-                    payment.GetAmount(),
-                    payment.GetMemo(),
-                    false
-                }};
-            } else if (ua.GetSaplingReceiver().has_value()
-                && (strategy.AllowRevealedAmounts() || payment.GetAmount() <= maxSaplingAvailable)
-                ) {
-                if (!strategy.AllowRevealedAmounts()) {
-                    maxSaplingAvailable -= payment.GetAmount();
-                }
-                return {{ua, ua.GetSaplingReceiver().value(), payment.GetAmount(), payment.GetMemo(), false}};
-            } else {
-                if (strategy.AllowRevealedRecipients()) {
-                    if (ua.GetP2SHReceiver().has_value()) {
-                        return {{
-                            ua, ua.GetP2SHReceiver().value(), payment.GetAmount(), std::nullopt, false}};
-                    } else if (ua.GetP2PKHReceiver().has_value()) {
-                        return {{
-                            ua, ua.GetP2PKHReceiver().value(), payment.GetAmount(), std::nullopt, false}};
-                    } else {
-                        // This should only occur when we have
-                        // • an Orchard-only UA,
-                        // • `AllowRevealedRecipients`, and
-                        // • can’t resolve Orchard (which means either a Sprout selector or pre-NU5).
-                        return tl::make_unexpected(AddressResolutionError::CouldNotResolveReceiver);
-                    }
-                } else if (strategy.AllowRevealedAmounts()) {
-                    return tl::make_unexpected(AddressResolutionError::TransparentReceiverNotAllowed);
-                } else {
-                    return tl::make_unexpected(AddressResolutionError::RevealingReceiverAmountsNotAllowed);
-                }
-            }
-        }
-    });
 }
 
 tl::expected<InputSelection, InputSelectionError>
