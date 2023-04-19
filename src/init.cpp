@@ -46,6 +46,7 @@
 #include "wallet/walletdb.h"
 #endif
 #include "warnings.h"
+#include "zip317.h"
 #include <chrono>
 #include <stdint.h>
 #include <stdio.h>
@@ -501,6 +502,7 @@ std::string HelpMessage(HelpMessageMode mode)
 
     strUsage += HelpMessageGroup(_("Block creation options:"));
     strUsage += HelpMessageOpt("-blockmaxsize=<n>", strprintf(_("Set maximum block size in bytes (default: %d)"), DEFAULT_BLOCK_MAX_SIZE));
+    strUsage += HelpMessageOpt("-blockunpaidactionlimit=<n>", strprintf(_("Set the limit on unpaid actions that will be accepted in a block for transactions paying less than the ZIP 317 fee (default: %d)"), DEFAULT_BLOCK_UNPAID_ACTION_LIMIT));
     if (GetBoolArg("-help-debug", false))
         strUsage += HelpMessageOpt("-blockversion=<n>", strprintf("Override block version to test forking scenarios (default: %d)", (int)CBlock::CURRENT_VERSION));
 
@@ -1297,6 +1299,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (GetArg("-blockprioritysize", 0) != 0) {
         InitWarning(_("The argument -blockprioritysize is no longer supported."));
+    }
+
+    if (GetArg("-blockunpaidactionlimit", 0) < 0) {
+        return InitError(_("-blockunpaidactionlimit cannot be configured with a negative value."));
     }
 
     if (!mapMultiArgs["-nuparams"].empty()) {

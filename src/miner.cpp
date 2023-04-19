@@ -339,6 +339,9 @@ BlockAssembler::BlockAssembler(const CChainParams& _chainparams)
     nBlockMaxSize = GetArg("-blockmaxsize", DEFAULT_BLOCK_MAX_SIZE);
     // Limit to between 1K and MAX_BLOCK_SIZE-1K for sanity:
     nBlockMaxSize = std::max((unsigned int)1000, std::min((unsigned int)(MAX_BLOCK_SIZE-1000), nBlockMaxSize));
+
+    // Number of unpaid actions allowed in a block:
+    nBlockUnpaidActionLimit = (size_t) GetArg("-blockunpaidactionlimit", DEFAULT_BLOCK_UNPAID_ACTION_LIMIT);
 }
 
 void BlockAssembler::resetBlock(const MinerAddress& minerAddress)
@@ -687,7 +690,7 @@ void BlockAssembler::addTransactions(
         // If the tx would cause the block to exceed the unpaid action limit, skip it.
         // A tx that pays at least the conventional fee will have no unpaid actions.
         size_t txUnpaidActions = iter->GetUnpaidActionCount();
-        if (nBlockUnpaidActions + txUnpaidActions > BLOCK_UNPAID_ACTION_LIMIT) {
+        if (nBlockUnpaidActions + txUnpaidActions > nBlockUnpaidActionLimit) {
             continue;
         }
 

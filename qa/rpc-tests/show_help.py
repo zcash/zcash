@@ -402,6 +402,10 @@ Block creation options:
   -blockmaxsize=<n>
        Set maximum block size in bytes (default: 2000000)
 
+  -blockunpaidactionlimit=<n>
+       Set the limit on unpaid actions that will be accepted in a block for
+       transactions paying less than the ZIP 317 fee (default: 50)
+
 Mining options:
 
   -gen

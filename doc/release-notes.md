@@ -55,6 +55,9 @@ We now use a new block template construction algorithm documented in
 - The `-blockminsize` option, which configured the size of a portion of the block
   to be filled regardless of transaction fees or priority, has also been removed
   and will cause a warning if used.
+- A `-blockunpaidactionlimit` option has been added to control the limit on
+  "unpaid actions" that will be accepted in a block for transactions paying less
+  than the ZIP 317 fee. This defaults to 50.
 
 Removal of Priority Estimation
 ------------------------------

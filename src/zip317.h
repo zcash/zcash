@@ -21,7 +21,7 @@ static const size_t P2PKH_STANDARD_OUTPUT_SIZE = 34;
 // Constants for block template construction.
 static const int64_t WEIGHT_RATIO_SCALE = INT64_C(10000000000000000);
 static const int64_t WEIGHT_RATIO_CAP = 4;
-static const size_t BLOCK_UNPAID_ACTION_LIMIT = 50;
+static const size_t DEFAULT_BLOCK_UNPAID_ACTION_LIMIT = 50;
 
 /// This is the lowest the conventional fee can be in ZIP 317.
 static const CAmount MINIMUM_FEE = MARGINAL_FEE * GRACE_ACTIONS;

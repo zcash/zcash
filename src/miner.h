@@ -107,8 +107,9 @@ private:
     // A convenience pointer that always refers to the CBlock in pblocktemplate
     CBlock* pblock;
 
-    // Configuration parameter for the block size
+    // Configuration parameters for the block size and unpaid action limit
     unsigned int nBlockMaxSize;
+    size_t nBlockUnpaidActionLimit;
 
     // Information on the current status of the block
     uint64_t nBlockSize;
