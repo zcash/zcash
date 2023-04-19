@@ -260,7 +260,7 @@ tl::expected<ChangeAddress, AddressResolutionError>
 WalletTxBuilder::GetChangeAddress(
         CWallet& wallet,
         const ZTXOSelector& selector,
-        SpendableInputs& spendable,
+        const SpendableInputs& spendable,
         const Payments& resolvedPayments,
         const TransactionStrategy& strategy,
         bool afterNU5) const
@@ -385,11 +385,11 @@ tl::expected<TransactionEffects, InputSelectionError>
 WalletTxBuilder::PrepareTransaction(
         CWallet& wallet,
         const ZTXOSelector& selector,
-        SpendableInputs& spendable,
+        const SpendableInputs& spendable,
         const Recipients& payments,
         const CChain& chain,
-        TransactionStrategy strategy,
-        std::optional<CAmount> fee,
+        const TransactionStrategy& strategy,
+        const std::optional<CAmount>& fee,
         uint32_t anchorConfirmations) const
 {
     if (fee.has_value() && maxTxFee < fee.value()) {
@@ -521,7 +521,7 @@ tl::expected<
 WalletTxBuilder::IterateLimit(
         CWallet& wallet,
         const ZTXOSelector& selector,
-        const TransactionStrategy strategy,
+        const TransactionStrategy& strategy,
         CAmount sendAmount,
         CAmount dustThreshold,
         const SpendableInputs& spendable,
@@ -615,11 +615,11 @@ tl::expected<InputSelection, InputSelectionError>
 WalletTxBuilder::ResolveInputsAndPayments(
         CWallet& wallet,
         const ZTXOSelector& selector,
-        SpendableInputs& spendableMut,
+        SpendableInputs spendableMut,
         const std::vector<Payment>& payments,
         const CChain& chain,
         const TransactionStrategy& strategy,
-        std::optional<CAmount> fee,
+        const std::optional<CAmount>& fee,
         bool afterNU5) const
 {
     LOCK2(cs_main, wallet.cs_wallet);

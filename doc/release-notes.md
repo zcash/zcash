@@ -21,24 +21,20 @@ RPC Changes
     also available for testnet and regtest nodes, in which case it does not
     return end-of-service halt information (as testnet and regtest nodes do not
     have an end-of-service halt feature.)
-- Several `z_sendmany` failures have moved from synchronous to asynchronous, so
-  while you should already be checking the async operation status, there are now
-  more cases that may trigger failure at that stage.
+- Several `z_sendmany`, `z_shieldcoinbase` and `z_mergetoaddress` failures have
+  moved from synchronous to asynchronous, so while you should already be
+  checking the async operation status, there are now more cases that may trigger
+  failure at that stage.
 - The `AllowRevealedRecipients` privacy policy is now required in order to choose a
   transparent change address for a transaction. This will only occur when the wallet
   is unable to construct the transaction without selecting funds from the transparent
   pool, so the impact of this change is that for such transactions, the user must specify
   `AllowFullyTransparent`.
+- The `z_shieldcoinbase` and `z_mergetoaddress` RPC methods now support an
+  optional privacy policy.
 - The `estimatepriority` RPC call has been removed.
 - The `priority_delta` argument to the `prioritisetransaction` RPC call now has
   no effect and must be set to a dummy value (0 or null).
-- The `z_shieldcoinbase` and `z_mergetoaddress` RPC methods no longer support
-  transfers of funds to Sprout recipients. While Sprout change may still be 
-  produced in the process of spending Sprout funds, it is no longer possible
-  to transfer funds between Sprout addresses. Also, some failures have moved 
-  from synchronous to asynchronous, so while you should already be checking 
-  the async operation status, there are now more cases that may trigger 
-  failure at that stage.
 
 Changes to Transaction Fee Selection
 ------------------------------------

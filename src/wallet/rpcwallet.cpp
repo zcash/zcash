@@ -5370,8 +5370,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             "      ,...\n"
             "    ]\n"
             "2. \"toaddress\"           (string, required) The taddr or zaddr to send the funds to.\n"
-            "3. fee                   (numeric, optional, default="
-            + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
+            "3. fee                   (numeric, optional, default=null) The fee amount in " + CURRENCY_UNIT + " to attach to this transaction. The default behavior\n"
+            "                         is to use a fee calculated according to ZIP 317.\n"
             "4. transparent_limit     (numeric, optional, default="
             + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT) + ") Limit on the maximum number of UTXOs to merge.  Set to 0 to use as many as will fit in the transaction.\n"
             "5. shielded_limit        (numeric, optional, default="
@@ -5529,14 +5529,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 string("Invalid parameter, unknown address format: ") + destStr);
     }
 
-    // Convert fee from currency format to zatoshis
-    CAmount nFee = DEFAULT_FEE;
-    if (params.size() > 2) {
-        if (params[2].get_real() == 0.0) {
-            nFee = 0;
-        } else {
-            nFee = AmountFromValue( params[2] );
-        }
+    std::optional<CAmount> nFee;
+    if (params.size() > 2 && !params[2].isNull()) {
+        nFee = AmountFromValue( params[2] );
     }
 
     int nUTXOLimit = MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT;
@@ -5563,7 +5558,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         memo = Memo::FromHexOrThrow(params[5].get_str());
     }
 
-    MergeToAddressRecipient recipient(destaddress.value(), memo);
+    NetAmountRecipient recipient(destaddress.value(), memo);
 
     // Prepare to get UTXOs and notes
     SpendableInputs allInputs;
@@ -5737,28 +5732,18 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     // - We only have one from address
     // - It's equal to toaddress
     // - The address only contains a single UTXO or note
+    // TODO: Move this to WalletTxBuilder
     if (setAddress.size() == 1 && setAddress.count(destStr) && (numUtxos + numNotes) == 1) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Destination address is also the only source address, and all its funds are already merged.");
-    }
-
-    CAmount mergedValue = mergedUTXOValue + mergedNoteValue;
-    if (mergedValue < nFee) {
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
-            strprintf("Insufficient funds, have %s, which is less than miners fee %s",
-            FormatMoney(mergedValue), FormatMoney(nFee)));
-    }
-
-    // Check that the user specified fee is sane (if too high, it can result in error -25 absurd fee)
-    CAmount netAmount = mergedValue - nFee;
-    if (nFee > netAmount) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Fee %s is greater than the net amount to be shielded %s", FormatMoney(nFee), FormatMoney(netAmount)));
     }
 
     // Keep record of parameters in context object
     UniValue contextInfo(UniValue::VOBJ);
     contextInfo.pushKV("fromaddresses", params[0]);
     contextInfo.pushKV("toaddress", params[1]);
-    contextInfo.pushKV("fee", ValueFromAmount(nFee));
+    if (nFee.has_value()) {
+        contextInfo.pushKV("fee", ValueFromAmount(nFee.value()));
+    }
 
     // The privacy policy is determined early so as to be able to use it
     // for selector construction.
@@ -5769,37 +5754,14 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                         params.size() > 6 ? std::optional(params[6].get_str()) : std::nullopt),
                 InterpretLegacyCompat(std::nullopt, {recipient.first}));
 
-    bool isSproutShielded = allInputs.sproutNoteEntries.size() > 0;
-    // Contextual transaction we will build on
-    CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
-        chainparams.GetConsensus(),
-        nextBlockHeight,
-        isSproutShielded || nPreferredTxVersion < ZIP225_MIN_TX_VERSION);
-    if (contextualTx.nVersion == 1 && isSproutShielded) {
-        contextualTx.nVersion = 2; // Tx format should support vJoinSplit
-    }
-
-    if (isToSaplingZaddr || allInputs.saplingNoteEntries.size() > 0) {
-        std::optional<uint256> orchardAnchor;
-        if (!isSproutShielded && nPreferredTxVersion >= ZIP225_MIN_TX_VERSION && nAnchorConfirmations > 0) {
-            // Allow Orchard recipients by setting an Orchard anchor.
-            auto orchardAnchorHeight = nextBlockHeight - nAnchorConfirmations;
-            if (chainparams.GetConsensus().NetworkUpgradeActive(orchardAnchorHeight, Consensus::UPGRADE_NU5)) {
-                auto anchorBlockIndex = chainActive[orchardAnchorHeight];
-                assert(anchorBlockIndex != nullptr);
-                orchardAnchor = anchorBlockIndex->hashFinalOrchardRoot;
-            }
-        }
-    }
-
     WalletTxBuilder builder(Params(), minRelayTxFee);
 
-    // This currently isn’t too critical since we don’t yet use it for note selection and we never
-    // need a change address. The one thing this does is indicate whether or not Sprout can be
-    // selected. However, we eventually want a `ZTXOSelector` that can support this operation fully.
-    // I.e., be able to select from multiple pools in the legacy account.
+    // The ZTXOSelector here is only used to determine whether or not Sprout can be selected. It
+    // should not be used for other purposes (e.g., note selection or finding a change address).
+    // TODO: Add a ZTXOSelector that can support the full range of `z_mergetoaddress` behavior and
+    //       use it instead of `GetFilteredNotes`.
     std::optional<ZTXOSelector> ztxoSelector;
-    if (isSproutShielded) {
+    if (allInputs.sproutNoteEntries.size() > 0) {
         ztxoSelector = pwalletMain->ZTXOSelectorForAddress(
                 allInputs.sproutNoteEntries[0].address,
                 true,
@@ -5820,20 +5782,23 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     }
 
     // Create operation and add to global queue
-    std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    auto mergeOp = new AsyncRPCOperation_mergetoaddress(
-                    std::move(builder),
-                    ztxoSelector.value(),
-                    allInputs,
-                    recipient,
-                    strategy,
-                    nFee,
-                    contextInfo);
-    mergeOp->prepare(chainparams, *pwalletMain).map_error([&](const InputSelectionError& err) {
-        ThrowInputSelectionError(err, ztxoSelector.value(), strategy);
-    });
+    auto effects = builder.PrepareTransaction(
+            *pwalletMain,
+            ztxoSelector.value(),
+            allInputs,
+            recipient,
+            chainActive,
+            strategy,
+            nFee,
+            nAnchorConfirmations)
+        .map_error([&](const auto& err) {
+            ThrowInputSelectionError(err, ztxoSelector.value(), strategy);
+        })
+        .value();
 
-    std::shared_ptr<AsyncRPCOperation> operation(mergeOp);
+    std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
+    std::shared_ptr<AsyncRPCOperation> operation(
+            new AsyncRPCOperation_mergetoaddress(*pwalletMain, strategy, effects, contextInfo));
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
 

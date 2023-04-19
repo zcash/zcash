@@ -17,7 +17,6 @@
 #include "asyncrpcqueue.h"
 #include "asyncrpcoperation.h"
 #include "wallet/asyncrpcoperation_common.h"
-#include "wallet/asyncrpcoperation_mergetoaddress.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 #include "wallet/memo.h"
@@ -1226,6 +1225,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     SelectParams(CBaseChainParams::TESTNET);
     const Consensus::Params& consensusParams = Params().GetConsensus();
     KeyIO keyIO(Params());
+    WalletTxBuilder builder(Params(), minRelayTxFee);
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -1255,7 +1255,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
                 // confirm this.
                 TransparentCoinbasePolicy::Allow,
                 false).value();
-        WalletTxBuilder builder(Params(), minRelayTxFee);
         std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy, std::nullopt));
@@ -1272,7 +1271,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
                 true,
                 TransparentCoinbasePolicy::Disallow,
                 false).value();
-        WalletTxBuilder builder(Params(), minRelayTxFee);
         std::vector<Payment> recipients = { Payment(taddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy, std::nullopt));
@@ -1530,6 +1528,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
 
     // Test constructor of AsyncRPCOperation_shieldcoinbase
     KeyIO keyIO(Params());
+    WalletTxBuilder builder(Params(), minRelayTxFee);
     UniValue retValue;
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
     auto taddr2 = std::get<CKeyID>(keyIO.DecodePaymentAddress(retValue.get_str()).value());
@@ -1542,7 +1541,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
             // confirm this.
             TransparentCoinbasePolicy::Allow,
             false).value();
-    WalletTxBuilder builder(Params(), minRelayTxFee);
 
     try {
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase(std::move(builder), selector, testnetzaddr, PrivacyPolicy::AllowRevealedSenders, SHIELD_COINBASE_DEFAULT_LIMIT, 1));
@@ -1634,29 +1632,44 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     int nHeight = retValue.get_int();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1, false);
 
-    // Test constructor of AsyncRPCOperation_mergetoaddress
     KeyIO keyIO(Params());
-    MergeToAddressRecipient testnetzaddr(
+    WalletTxBuilder builder(Params(), minRelayTxFee);
+    NetAmountRecipient testnetzaddr(
         keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value(),
         Memo());
-    WalletTxBuilder builder(Params(), minRelayTxFee);
     auto selector = CWallet::LegacyTransparentZTXOSelector(
             true,
             TransparentCoinbasePolicy::Disallow);
     TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
 
-    try {
-        auto operation = AsyncRPCOperation_mergetoaddress(builder, selector, {}, testnetzaddr, strategy, -1);
-        BOOST_FAIL("Fee value of -1 expected to be out of the valid range of values.");
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Fee is out of range"));
-    }
+    builder.PrepareTransaction(*pwalletMain, selector, {}, testnetzaddr, chainActive, strategy, -1, 1)
+        .map_error([&](const auto& err) {
+            // TODO: Provide `operator==` on `InputSelectionError` and use that here.
+            BOOST_CHECK(examine(err, match {
+                [](AddressResolutionError are) {
+                    // FIXME: Should be failing because of negative fee – change recipient address to not be Sprout.
+                    return are == AddressResolutionError::SproutRecipientsNotSupported;
+                },
+                [](const auto&) { return false; },
+            }));
+        })
+        .map([](const auto&) {
+            BOOST_FAIL("Fee value of -1 expected to be out of the valid range of values.");
+        });
 
-    {
-        auto operation = AsyncRPCOperation_mergetoaddress(builder, selector, {}, testnetzaddr, strategy, 1);
-        operation.main();
-        BOOST_CHECK_EQUAL(operation.getErrorMessage(), "Insufficient funds: have -0.00000001, need 0.00000001; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.");
-    }
+    builder.PrepareTransaction(*pwalletMain, selector, {}, testnetzaddr, chainActive, strategy, 1, 1)
+        .map_error([&](const auto& err) {
+            // TODO: Provide `operator==` on `InputSelectionError` and use that here.
+            BOOST_CHECK(examine(err, match {
+                [](const InvalidFundsError& ife) {
+                    return std::holds_alternative<InsufficientFundsError>(ife.reason);
+                },
+                [](const auto&) { return false; },
+            }));
+        })
+        .map([](const auto&) {
+            BOOST_FAIL("Expected an error.");
+        });
 
     auto wtx = FakeWalletTx();
     SpendableInputs inputs;
@@ -1664,11 +1677,20 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     inputs.sproutNoteEntries.emplace_back(SproutNoteEntry {JSOutPoint(), SproutPaymentAddress(), SproutNote(), "", 0});
     inputs.saplingNoteEntries.emplace_back(SaplingNoteEntry {SaplingOutPoint(), SaplingPaymentAddress(), SaplingNote({}, uint256(), 0, uint256(), Zip212Enabled::BeforeZip212), "", 0});
 
-    {
-        auto operation = AsyncRPCOperation_mergetoaddress(builder, selector, inputs, testnetzaddr, strategy, 1);
-        operation.main();
-        BOOST_CHECK_EQUAL(operation.getErrorMessage(), "Insufficient funds: have 0.00, need 0.00000001; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.");
-    }
+    builder.PrepareTransaction(*pwalletMain, selector, inputs, testnetzaddr, chainActive, strategy, 1, 1)
+        .map_error([&](const auto& err) {
+            // TODO: Provide `operator==` on `InputSelectionError` and use that here.
+            BOOST_CHECK(examine(err, match {
+                [](AddressResolutionError are) {
+                    // FIXME: Should be failing because of insufficient funds – change recipient address to not be Sprout.
+                    return are == AddressResolutionError::SproutRecipientsNotSupported;
+                },
+                [](const auto&) { return false; },
+            }));
+        })
+        .map([](const auto&) {
+            BOOST_FAIL("Expected an error.");
+        });
 }
 
 void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {

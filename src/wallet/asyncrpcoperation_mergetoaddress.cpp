@@ -27,7 +27,6 @@
 #include "util/time.h"
 #include "wallet.h"
 #include "walletdb.h"
-#include "wallet/paymentdisclosuredb.h"
 #include "zcash/IncrementalMerkleTree.hpp"
 
 #include <chrono>
@@ -40,53 +39,16 @@
 
 using namespace libzcash;
 
-int mta_find_output(UniValue obj, int n)
-{
-    UniValue outputMapValue = find_value(obj, "outputmap");
-    if (!outputMapValue.isArray()) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Missing outputmap for JoinSplit operation");
-    }
-
-    UniValue outputMap = outputMapValue.get_array();
-    assert(outputMap.size() == ZC_NUM_JS_OUTPUTS);
-    for (size_t i = 0; i < outputMap.size(); i++) {
-        if (outputMap[i].get_int() == n) {
-            return i;
-        }
-    }
-
-    throw std::logic_error("n is not present in outputmap");
-}
-
 AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
-    WalletTxBuilder builder,
-    ZTXOSelector ztxoSelector,
-    SpendableInputs allInputs,
-    MergeToAddressRecipient recipient,
-    TransactionStrategy strategy,
-    CAmount fee,
-    UniValue contextInfo) :
-    builder_(builder), ztxoSelector_(ztxoSelector), allInputs_(allInputs), toPaymentAddress_(recipient.first), memo_(recipient.second), fee_(fee), strategy_(strategy), contextinfo_(contextInfo)
+        CWallet& wallet,
+        TransactionStrategy strategy,
+        TransactionEffects effects,
+        UniValue contextInfo)
+    : strategy_(strategy), effects_(effects), contextinfo_(contextInfo)
 {
-    if (!MoneyRange(fee)) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Fee is out of range");
-    }
+    effects.LockSpendable(*pwalletMain);
 
     KeyIO keyIO(Params());
-    isToTaddr_ = false;
-
-    examine(toPaymentAddress_, match {
-        [&](const CKeyID&) { isToTaddr_ = true; },
-        [&](const CScriptID&) { isToTaddr_ = true; },
-        [](const SproutPaymentAddress&) { },
-        [](const libzcash::SaplingPaymentAddress&) { },
-        [](const libzcash::UnifiedAddress&) {
-            // TODO: This should be removable with WalletTxBuilder, but need to test it.
-            throw JSONRPCError(
-                    RPC_INVALID_ADDRESS_OR_KEY,
-                    "z_mergetoaddress does not yet support sending to unified addresses");
-        },
-    });
 
     // Log the context info i.e. the call parameters to z_mergetoaddress
     if (LogAcceptCategory("zrpcunsafe")) {
@@ -94,14 +56,20 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
     } else {
         LogPrint("zrpc", "%s: z_mergetoaddress initialized\n", getId());
     }
-
-    // Enable payment disclosure if requested
-    paymentDisclosureMode = fExperimentalPaymentDisclosure;
 }
 
 AsyncRPCOperation_mergetoaddress::~AsyncRPCOperation_mergetoaddress()
 {
 }
+
+std::pair<uint256, UniValue>
+main_impl(
+        const CChainParams& chainparams,
+        CWallet& wallet,
+        const TransactionStrategy& strategy,
+        const TransactionEffects& effects,
+        const std::string& id,
+        bool testmode);
 
 void AsyncRPCOperation_mergetoaddress::main()
 {
@@ -116,7 +84,10 @@ void AsyncRPCOperation_mergetoaddress::main()
 
     std::optional<uint256> txid;
     try {
-        txid = main_impl(*pwalletMain, Params());
+        UniValue sendResult;
+        std::tie(txid, sendResult) =
+            main_impl(Params(), *pwalletMain, strategy_, effects_, getId(), testmode);
+        set_result(sendResult);
     } catch (const UniValue& objError) {
         int code = find_value(objError, "code").get_int();
         std::string message = find_value(objError, "message").get_str();
@@ -157,111 +128,68 @@ void AsyncRPCOperation_mergetoaddress::main()
     LogPrintf("%s", s);
 }
 
-tl::expected<void, InputSelectionError> AsyncRPCOperation_mergetoaddress::prepare(const CChainParams& chainparams, CWallet& wallet) {
-    CAmount minersFee = fee_;
-
-    size_t numInputs = allInputs_.utxos.size();
-
-    CAmount t_inputs_total = 0;
-    for (COutput& t : allInputs_.utxos) {
-        t_inputs_total += t.Value();
-    }
-
-    CAmount z_inputs_total = 0;
-    for (const SproutNoteEntry& t : allInputs_.sproutNoteEntries) {
-        z_inputs_total += t.note.value();
-    }
-
-    for (const SaplingNoteEntry& t : allInputs_.saplingNoteEntries) {
-        z_inputs_total += t.note.value();
-    }
-
-    for (const OrchardNoteMetadata& t : allInputs_.orchardNoteMetadata) {
-        z_inputs_total += t.GetNoteValue();
-    }
-
-    CAmount targetAmount = z_inputs_total + t_inputs_total;
-
-    CAmount sendAmount = targetAmount - minersFee;
-    if (sendAmount <= 0) {
-        return tl::make_unexpected(InvalidFundsError(sendAmount, InsufficientFundsError(minersFee)));
-    }
-
-    // Grab the current consensus branch ID
-    {
-        LOCK(cs_main);
-        consensusBranchId_ = CurrentEpochBranchId(chainActive.Height() + 1, chainparams.GetConsensus());
-    }
-
-    auto payment = Payment(toPaymentAddress_, sendAmount, memo_);
-
-    return builder_.PrepareTransaction(
-                wallet,
-                ztxoSelector_,
-                allInputs_,
-                {payment},
-                chainActive,
-                strategy_,
-                minersFee,
-                nAnchorConfirmations)
-            .map([&](const TransactionEffects& effects) -> void {
-                effects.LockSpendable(wallet);
-                effects_ = effects;
-            });
-}
-
-// Notes:
-// 1. #1359 Currently there is no limit set on the number of joinsplits, so size of tx could be invalid.
-// 2. #1277 Spendable notes are not locked, so an operation running in parallel could also try to use them.
-uint256 AsyncRPCOperation_mergetoaddress::main_impl(CWallet& wallet, const CChainParams& chainparams)
+std::pair<uint256, UniValue>
+main_impl(
+        const CChainParams& chainparams,
+        CWallet& wallet,
+        const TransactionStrategy& strategy,
+        const TransactionEffects& effects,
+        const std::string& id,
+        bool testmode)
 {
-    // The caller must call `prepare` before `main_impl` is invoked.
-    const auto effects = effects_.value();
     try {
         const auto& spendable = effects.GetSpendable();
         const auto& payments = effects.GetPayments();
-        spendable.LogInputs(getId());
+        spendable.LogInputs(id);
 
-        if (allInputs_.sproutNoteEntries.empty()
-            && allInputs_.saplingNoteEntries.empty()
-            && allInputs_.orchardNoteMetadata.empty()
-            && isToTaddr_) {
+        bool sendsToShielded = false;
+        for (const auto& resolvedPayment : payments.GetResolvedPayments()) {
+            sendsToShielded = sendsToShielded || examine(resolvedPayment.address, match {
+                [](const CKeyID&) { return true; },
+                [](const CScriptID&) { return true; },
+                [](const libzcash::SaplingPaymentAddress&) { return false; },
+                [](const libzcash::OrchardRawAddress&) { return false; },
+            });
+        }
+        if (spendable.sproutNoteEntries.empty()
+            && spendable.saplingNoteEntries.empty()
+            && spendable.orchardNoteMetadata.empty()
+            && !sendsToShielded) {
             LogPrint("zrpc", "%s: spending %s to send %s with fee %s\n",
-                getId(),
+                id,
                 FormatMoney(payments.Total()),
                 FormatMoney(spendable.Total()),
                 FormatMoney(effects.GetFee()));
         } else {
             LogPrint("zrpcunsafe", "%s: spending %s to send %s with fee %s\n",
-                getId(),
+                id,
                 FormatMoney(payments.Total()),
                 FormatMoney(spendable.Total()),
                 FormatMoney(effects.GetFee()));
         }
-        LogPrint("zrpc", "%s: total transparent input: %s\n", getId(),
+        LogPrint("zrpc", "%s: total transparent input: %s\n", id,
             FormatMoney(spendable.GetTransparentTotal()));
-        LogPrint("zrpcunsafe", "%s: total shielded input: %s\n", getId(),
+        LogPrint("zrpcunsafe", "%s: total shielded input: %s\n", id,
             FormatMoney(spendable.GetSaplingTotal() + spendable.GetOrchardTotal()));
-        LogPrint("zrpc", "%s: total transparent output: %s\n", getId(),
+        LogPrint("zrpc", "%s: total transparent output: %s\n", id,
             FormatMoney(payments.GetTransparentTotal()));
-        LogPrint("zrpcunsafe", "%s: total shielded Sapling output: %s\n", getId(),
+        LogPrint("zrpcunsafe", "%s: total shielded Sapling output: %s\n", id,
             FormatMoney(payments.GetSaplingTotal()));
-        LogPrint("zrpcunsafe", "%s: total shielded Orchard output: %s\n", getId(),
+        LogPrint("zrpcunsafe", "%s: total shielded Orchard output: %s\n", id,
             FormatMoney(payments.GetOrchardTotal()));
-        LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(effects.GetFee()));
+        LogPrint("zrpc", "%s: fee: %s\n", id, FormatMoney(effects.GetFee()));
 
         auto buildResult = effects.ApproveAndBuild(
                 chainparams.GetConsensus(),
                 wallet,
                 chainActive,
-                strategy_);
+                strategy);
         auto tx = buildResult.GetTxOrThrow();
 
         UniValue sendResult = SendTransaction(tx, payments.GetResolvedPayments(), std::nullopt, testmode);
-        set_result(sendResult);
 
         effects.UnlockSpendable(wallet);
-        return tx.GetHash();
+        return {tx.GetHash(), sendResult};
     } catch (...) {
         effects.UnlockSpendable(wallet);
         throw;

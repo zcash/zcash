@@ -24,7 +24,7 @@ def assert_mergetoaddress_exception(expected_error_msg, merge_to_address_lambda)
     except Exception as e:
         fail("Expected JSONRPCException. Found %s" % repr(e))
     else:
-        fail("Expected exception: %s" % expected_error_msg)
+        fail("Expected exception: “%s”, but didn’t fail" % expected_error_msg)
 
 
 class MergeToAddressHelper:
@@ -129,9 +129,9 @@ class MergeToAddressHelper:
             "Amount out of range",
             lambda: test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, Decimal('21000000.00000001')))
 
-        # Merging will fail because fee is larger than sum of UTXOs
+        # Merging will fail because fee is larger than `-maxtxfee`
         assert_mergetoaddress_exception(
-            "Insufficient funds, have 50.00, which is less than miners fee 999.00",
+            "Fee (999.00 ZEC) is greater than the maximum fee allowed by this instance (0.10 ZEC). Run zcashd with `-maxtxfee` to adjust this limit.",
             lambda: test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, 999))
 
         # Merging will fail because transparent limit parameter must be at least 0
@@ -174,7 +174,7 @@ class MergeToAddressHelper:
         # Confirm balances and that do_not_shield_taddr containing funds of 10 was left alone
         assert_equal(test.nodes[0].getbalance(), Decimal('10'))
         assert_equal(test.nodes[0].z_getbalance(do_not_shield_taddr), Decimal('10'))
-        assert_equal(test.nodes[0].z_getbalance(myzaddr), Decimal('40') - DEFAULT_FEE)
+        assert_equal(test.nodes[0].z_getbalance(myzaddr), Decimal('40') - conventional_fee(4))
         assert_equal(test.nodes[1].getbalance(), Decimal('40'))
         assert_equal(test.nodes[2].getbalance(), Decimal('30'))
 
@@ -191,7 +191,7 @@ class MergeToAddressHelper:
         test.sync_all()
 
         assert_equal(test.nodes[0].z_getbalance(myzaddr), Decimal('0'))
-        assert_equal(test.nodes[0].z_getbalance(myzaddr2), Decimal('40') - DEFAULT_FEE)
+        assert_equal(test.nodes[0].z_getbalance(myzaddr2), Decimal('40') - conventional_fee(4))
 
         # Shield coinbase UTXOs from any node 2 taddr, and set fee to 0
         result = test.nodes[2].z_shieldcoinbase("*", myzaddr, 0)
@@ -202,7 +202,7 @@ class MergeToAddressHelper:
 
         assert_equal(test.nodes[0].getbalance(), Decimal('10'))
         assert_equal(test.nodes[0].z_getbalance(myzaddr), Decimal('30'))
-        assert_equal(test.nodes[0].z_getbalance(myzaddr2), Decimal('40') - DEFAULT_FEE)
+        assert_equal(test.nodes[0].z_getbalance(myzaddr2), Decimal('40') - conventional_fee(4))
         assert_equal(test.nodes[1].getbalance(), Decimal('60'))
         assert_equal(test.nodes[2].getbalance(), Decimal('0'))
 
@@ -213,9 +213,9 @@ class MergeToAddressHelper:
         generate_and_check(test.nodes[1], 2)
         test.sync_all()
 
-        assert_equal(test.nodes[0].getbalance(), Decimal('80') - DEFAULT_FEE)
+        assert_equal(test.nodes[0].getbalance(), Decimal('80') - conventional_fee(4))
         assert_equal(test.nodes[0].z_getbalance(do_not_shield_taddr), Decimal('10'))
-        assert_equal(test.nodes[0].z_getbalance(mytaddr), Decimal('70') - DEFAULT_FEE)
+        assert_equal(test.nodes[0].z_getbalance(mytaddr), Decimal('70') - conventional_fee(4))
         assert_equal(test.nodes[0].z_getbalance(myzaddr), Decimal('0'))
         assert_equal(test.nodes[0].z_getbalance(myzaddr2), Decimal('0'))
         assert_equal(test.nodes[1].getbalance(), Decimal('70'))
@@ -235,8 +235,8 @@ class MergeToAddressHelper:
         assert_equal(test.nodes[0].z_getbalance(do_not_shield_taddr), Decimal('0'))
         assert_equal(test.nodes[0].z_getbalance(mytaddr), Decimal('0'))
         assert_equal(test.nodes[0].z_getbalance(myzaddr), Decimal('0'))
-        assert_equal(test.nodes[1].getbalance(), Decimal('160') - DEFAULT_FEE)
-        assert_equal(test.nodes[1].z_getbalance(n1taddr), Decimal('80') - DEFAULT_FEE)
+        assert_equal(test.nodes[1].getbalance(), Decimal('160') - conventional_fee(4))
+        assert_equal(test.nodes[1].z_getbalance(n1taddr), Decimal('80') - conventional_fee(4))
         assert_equal(test.nodes[2].getbalance(), Decimal('0'))
 
         # Generate 5 regular UTXOs on node 0, and 20 regular UTXOs on node 2.

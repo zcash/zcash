@@ -8,7 +8,6 @@
 #include "transaction_builder.h"
 #include "util/test.h"
 #include "gtest/utils.h"
-#include "wallet/asyncrpcoperation_mergetoaddress.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/memo.h"
@@ -57,9 +56,9 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
     auto taddr = pwalletMain->GenerateNewKey(true).GetID();
     std::string taddr_string = keyIO.EncodeDestination(taddr);
 
-    MergeToAddressRecipient taddr1(keyIO.DecodePaymentAddress(taddr_string).value(), Memo());
+    NetAmountRecipient taddr1(keyIO.DecodePaymentAddress(taddr_string).value(), Memo());
     auto pa = pwalletMain->GenerateNewSproutZKey();
-    MergeToAddressRecipient zaddr1(pa, Memo());
+    NetAmountRecipient zaddr1(pa, Memo());
 
     WalletTxBuilder builder(Params(), minRelayTxFee);
     auto selector = CWallet::LegacyTransparentZTXOSelector(
@@ -72,11 +71,24 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
         SpendableInputs inputs;
         auto wtx = FakeWalletTx();
         inputs.utxos.emplace_back(COutput(&wtx, 0, 100, true));
-        auto operation = AsyncRPCOperation_mergetoaddress(std::move(builder), selector, inputs, zaddr1, strategy, 0);
-        operation.main();
-        EXPECT_TRUE(operation.isFailed());
-        std::string msg = operation.getErrorMessage();
-        EXPECT_EQ(msg, "Sending funds into the Sprout pool is no longer supported.");
+        builder.PrepareTransaction(
+                *pwalletMain,
+                selector,
+                inputs,
+                zaddr1,
+                chainActive,
+                strategy,
+                0,
+                1)
+            .map_error([](const auto& err) {
+                EXPECT_TRUE(examine(err, match {
+                    [](const AddressResolutionError& are) {
+                        return are == AddressResolutionError::SproutRecipientsNotSupported;
+                    },
+                    [](const auto&) { return false; },
+                }));
+            })
+            .map([](const auto&) { EXPECT_TRUE(false); });
     }
     }
     UnloadGlobalWallet();
