@@ -47,7 +47,7 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
         PaymentAddress toAddress,
         TransactionStrategy strategy,
         int nUTXOLimit,
-        CAmount fee,
+        std::optional<CAmount> fee,
         UniValue contextInfo) :
     builder_(std::move(builder)),
     ztxoSelector_(ztxoSelector),
@@ -57,7 +57,7 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
     fee_(fee),
     contextinfo_(contextInfo)
 {
-    assert(MoneyRange(fee));
+    assert(!fee.has_value() || MoneyRange(fee.value()));
     assert(ztxoSelector.RequireSpendingKeys());
 
     examine(toAddress_, match {
@@ -177,23 +177,11 @@ Remaining AsyncRPCOperation_shieldcoinbase::prepare(CWallet& wallet) {
 
     spendable.LimitTransparentUtxos(numUtxos);
 
-    // TODO: Don’t check this outside of `PrepareTransaction`
-    if (shieldingValue < fee_) {
-        ThrowInputSelectionError(
-                InvalidFundsError(shieldingValue, InsufficientFundsError(fee_)),
-                ztxoSelector_,
-                strategy_);
-    }
-
-    // FIXME: This should be internal, and shouldn’t be a payment, but more like a change address,
-    //        as we don’t know the amount at this point.
-    std::vector<Payment> payments = { Payment(toAddress_, shieldingValue - fee_, std::nullopt) };
-
     auto preparationResult = builder_.PrepareTransaction(
             wallet,
             ztxoSelector_,
             spendable,
-            payments,
+            std::make_pair(toAddress_, std::nullopt),
             chainActive,
             strategy_,
             fee_,
