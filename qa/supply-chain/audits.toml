@@ -1062,6 +1062,11 @@ who = "Sean Bowe <ewillbefull@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "0.1.21 -> 0.1.22"
 
+[[audits.rustc-demangle]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.1.22 -> 0.1.23"
+
 [[audits.ryu]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
