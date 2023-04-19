@@ -15,9 +15,8 @@
 class CChainParams;
 class CCoinsViewCache;
 
-/** Default for -blockmaxsize and -blockminsize, which control the range of sizes the mining code will create **/
+/** Default for -blockmaxsize, which controls the maximum block size the mining code will create **/
 static const unsigned int DEFAULT_BLOCK_MAX_SIZE = MAX_BLOCK_SIZE;
-static const unsigned int DEFAULT_BLOCK_MIN_SIZE = 0;
 
 /** Maximum number of signature check operations in an IsStandard() P2SH script */
 static const unsigned int MAX_P2SH_SIGOPS = 15;

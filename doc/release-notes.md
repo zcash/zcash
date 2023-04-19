@@ -52,6 +52,9 @@ We now use a new block template construction algorithm documented in
   "high priority" because they spent older inputs. The `-blockprioritysize` config
   option, which configured the portion of the block reserved for these transactions,
   has been removed and will now cause a warning if used.
+- The `-blockminsize` option, which configured the size of a portion of the block
+  to be filled regardless of transaction fees or priority, has also been removed
+  and will cause a warning if used.
 
 Removal of Priority Estimation
 ------------------------------

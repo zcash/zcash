@@ -399,9 +399,6 @@ Node relay options:
 
 Block creation options:
 
-  -blockminsize=<n>
-       Set minimum block size in bytes (default: 0)
-
   -blockmaxsize=<n>
        Set maximum block size in bytes (default: 2000000)
 
