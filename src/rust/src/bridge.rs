@@ -29,6 +29,7 @@ use crate::{
     wallet_scanner::{init_batch_scanner, BatchResult, BatchScanner},
 };
 
+#[allow(clippy::needless_lifetimes)]
 #[cxx::bridge]
 pub(crate) mod ffi {
     extern "C++" {
