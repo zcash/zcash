@@ -13,12 +13,35 @@
 
 #include <functional>
 #include <limits>
-#include <stdint.h>
+
+#include "int128.h"
 
 /**
  * Functions to gather random data via the rand_core OsRng
  */
 void GetRandBytes(unsigned char* buf, size_t num);
+
+template <typename I>
+I GetRandGeneric(I nMax)
+{
+    // I must be an unsigned numeric type.
+    static_assert(std::numeric_limits<I>::min() == 0);
+    // I() for primitive signed integer types returns 0.
+    if (nMax == I())
+        return I();
+
+    // The range of the random source must be a multiple of the modulus
+    // to give every possible output value an equal possibility
+    I nRange = (std::numeric_limits<I>::max() / nMax) * nMax;
+    I nRand = I();
+    do {
+        GetRandBytes((unsigned char*)&nRand, sizeof(nRand));
+    } while (nRand >= nRange);
+    return (nRand % nMax);
+}
+
+uint128_t GetRandUInt128(uint128_t nMax);
+int128_t GetRandInt128(int128_t nMax);
 uint64_t GetRand(uint64_t nMax);
 int64_t GetRandInt64(int64_t nMax);
 int GetRandInt(int nMax);

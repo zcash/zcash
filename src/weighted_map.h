@@ -13,7 +13,8 @@
 // A WeightedMap represents a map from keys (of type K) to values (of type V),
 // each entry having a weight (of type W). Elements can be randomly selected and
 // removed from the map with probability in proportion to their weight. This is
-// used to implement mempool limiting specified in ZIP 401.
+// used to implement mempool limiting specified in ZIP 401, and the block template
+// construction algorithm specified in ZIP 317.
 //
 // In order to efficiently implement random selection by weight, we keep track
 // of the total weight of all keys in the map. For performance reasons, the
@@ -21,13 +22,17 @@
 // weights of the children. This allows for addition, removal, and random
 // selection/dropping in logarithmic time.
 //
-// random(w) must be defined to return a uniform random value between zero
-// inclusive and w exclusive. The type W must support addition, binary and
-// unary -, and < comparisons, and W() must construct the zero value (these
-// constraints are met for primitive signed integer types).
+// random(w) (which will only be called with positive w) must be defined to
+// return a uniform random value between zero inclusive and w exclusive.
+// The type W must be a signed numeric type that supports addition, binary
+// and unary -, and < and <= comparisons, and W() must construct the zero value
+// (these constraints are met for primitive signed integer types).
 template <typename K, typename V, typename W, W random(W)>
 class WeightedMap
 {
+    // W must be a signed numeric type.
+    static_assert(std::numeric_limits<W>::min() < W());
+
     struct Node {
         K key;
         V value;
@@ -179,6 +184,7 @@ public:
             return std::nullopt;
         }
         W totalWeight = getTotalWeight();
+        assert(W() < totalWeight);
         W randomWeight = random(totalWeight);
         assert(W() <= randomWeight && randomWeight < totalWeight);
         size_t index = findByWeight(0, randomWeight);

@@ -127,6 +127,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         self.nodes[3].z_importviewingkey(myviewingkey, "no")
 
         # This send will succeed.  We send two coinbase utxos totalling 20.0 less a default fee, with no change.
+        # (This tx fits within the block unpaid action limit.)
         shieldvalue = Decimal('20.0') - DEFAULT_FEE
         recipients = []
         recipients.append({"address":myzaddr, "amount": shieldvalue})
@@ -181,16 +182,17 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         # check balances (the z_sendmany consumes 3 coinbase utxos)
         resp = self.nodes[0].z_gettotalbalance()
         assert_equal(Decimal(resp["transparent"]), Decimal('20.0'))
-        assert_equal(Decimal(resp["private"]), Decimal('20.0') - DEFAULT_FEE)
-        assert_equal(Decimal(resp["total"]), Decimal('40.0') - DEFAULT_FEE)
+        assert_equal(Decimal(resp["private"]), shieldvalue)
+        assert_equal(Decimal(resp["total"]), Decimal('20.0') + shieldvalue)
 
-        # The Sprout value pool should reflect the send
+        # The Sapling value pool should reflect the send
         saplingvalue = shieldvalue
         check_value_pool(self.nodes[0], 'sapling', saplingvalue)
 
         # A custom fee of 0 is okay.  Here the node will send the note value back to itself.
+        # (This tx fits within the block unpaid action limit.)
         recipients = []
-        recipients.append({"address":myzaddr, "amount": Decimal('20.0') - conventional_fee(2)})
+        recipients.append({"address":myzaddr, "amount": saplingvalue})
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, Decimal('0.0'))
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
@@ -198,8 +200,8 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
         resp = self.nodes[0].z_gettotalbalance()
         assert_equal(Decimal(resp["transparent"]), Decimal('20.0'))
-        assert_equal(Decimal(resp["private"]), Decimal('20.0') - DEFAULT_FEE)
-        assert_equal(Decimal(resp["total"]), Decimal('40.0') - DEFAULT_FEE)
+        assert_equal(Decimal(resp["private"]), saplingvalue)
+        assert_equal(Decimal(resp["total"]), Decimal('20.0') + saplingvalue)
 
         # The Sapling value pool should be unchanged
         check_value_pool(self.nodes[0], 'sapling', saplingvalue)
@@ -220,8 +222,8 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         saplingvalue -= unshieldvalue + DEFAULT_FEE
         resp = self.nodes[0].z_gettotalbalance()
         assert_equal(Decimal(resp["transparent"]), Decimal('30.0'))
-        assert_equal(Decimal(resp["private"]), Decimal('10.0') - 2*DEFAULT_FEE)
-        assert_equal(Decimal(resp["total"]), Decimal('40.0') - 2*DEFAULT_FEE)
+        assert_equal(Decimal(resp["private"]), saplingvalue)
+        assert_equal(Decimal(resp["total"]), Decimal('30.0') + saplingvalue)
         check_value_pool(self.nodes[0], 'sapling', saplingvalue)
 
         # z_sendmany will return an error if there is transparent change output considered dust.
@@ -256,14 +258,11 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
             errorString = e.error['message']
         assert_equal("Insufficient funds, coinbase funds can only be spent after they have been sent to a zaddr" in errorString, True)
 
-        # Verify that mempools accept tx with joinsplits which have at least the default z_sendmany fee.
-        # If this test passes, it confirms that issue #1851 has been resolved, where sending from
-        # a zaddr to 1385 taddr recipients fails because the default fee was considered too low
-        # given the tx size, resulting in mempool rejection.
+        # Verify that mempools accept tx with shielded outputs and that pay at least the conventional fee.
         errorString = ''
         recipients = []
         num_t_recipients = 1998 # stay just under the absurdly-high-fee error
-        amount_per_recipient = Decimal('0.00000546') # dust threshold
+        amount_per_recipient = Decimal('0.00000054') # dust threshold
         # Note that regtest chainparams does not require standard tx, so setting the amount to be
         # less than the dust threshold, e.g. 0.00000001 will not result in mempool rejection.
         start_time = timeit.default_timer()

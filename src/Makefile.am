@@ -244,6 +244,7 @@ BITCOIN_CORE_H = \
   httprpc.h \
   httpserver.h \
   init.h \
+  int128.h \
   key.h \
   key_constants.h \
   key_io.h \

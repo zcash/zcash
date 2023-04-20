@@ -8,6 +8,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, start_nodes, start_node, \
     connect_nodes_bi, sync_blocks, sync_mempools
+from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
 
@@ -101,7 +102,9 @@ class WalletTest (BitcoinTestFramework):
 
         # Catch an attempt to send a transaction with an absurdly high fee.
         # Send 1.0 ZEC from an utxo of value 10.0 ZEC but don't specify a change output, so then
-        # the change of 9.0 ZEC becomes the fee, which is greater than estimated fee of 0.0021 ZEC.
+        # the change of 9.0 ZEC becomes the fee, which is considered to be absurdly high because
+        # the fee is more than 4 times the conventional fee.
+        assert(Decimal("9.0") > 4*conventional_fee(1))
         inputs = []
         outputs = {}
         for utxo in node2utxos:

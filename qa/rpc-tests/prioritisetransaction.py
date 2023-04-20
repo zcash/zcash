@@ -4,139 +4,143 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import (
-    assert_equal,
-    connect_nodes,
-    initialize_chain_clean,
-    start_node,
-    sync_blocks,
-    sync_mempools,
-)
-from test_framework.zip317 import conventional_fee_zats
+from test_framework.util import assert_equal, start_nodes
+from test_framework.mininode import COIN
+from test_framework.zip317 import DEFAULT_BLOCK_UNPAID_ACTION_LIMIT, MARGINAL_FEE, ZIP_317_FEE
 
 import time
+from decimal import Decimal
 
 
-class PrioritiseTransactionTest (BitcoinTestFramework):
+class PrioritiseTransactionTest(BitcoinTestFramework):
+    def __init__(self):
+        super().__init__()
+        self.cache_behavior = 'clean'
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
-
-    def setup_network(self, split=False):
-        self.nodes = []
-        # Start nodes with tiny block size of 11kb
+    def setup_nodes(self):
         args = [
-            "-blockmaxsize=11000",
-            "-maxorphantx=1000",
-            "-printpriority=1",
-            "-limitancestorcount=900",
-            "-allowdeprecated=getnewaddress",
+            '-paytxfee=0.000001',
+            '-printpriority=1',
+            '-allowdeprecated=getnewaddress',
         ]
-        self.nodes.append(start_node(0, self.options.tmpdir, args))
-        self.nodes.append(start_node(1, self.options.tmpdir, args))
-        connect_nodes(self.nodes[1], 0)
-        self.is_network_split=False
+        return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=[
+            args,
+            args + ['-blockunpaidactionlimit=25'],
+            args,
+            args,
+        ])
+
+    def run_test(self):
+        # Slow start is switched off for regtest, and we're before Blossom,
+        # but the halving interval is only 144 blocks.
+
+        # For the first test the miner subsidy is 10 ZEC.
+        self.test(self.nodes[0], Decimal("10"), DEFAULT_BLOCK_UNPAID_ACTION_LIMIT)
+        assert_equal(152, self.nodes[0].getblockcount())
+
+        # For the second test the miner subsidy is 6.25 ZEC.
+        # (The Founders' Reward has expired and there are no funding streams.)
+        self.test(self.nodes[1], Decimal("6.25"), 25)
+
+    def test(self, mining_node, miner_subsidy, block_unpaid_action_limit):
+        print("Testing with -blockunpaidactionlimit=%d" % (block_unpaid_action_limit,))
+
+        def in_template(block_template, txid):
+            res = any([tx['hash'] == txid for tx in block_template['transactions']])
+            print("Checking block template... %s" % (res,))
+            return res
+
+        def eventually_in_template(txid):
+            for tries in range(2):
+                time.sleep(11)
+                block_template = mining_node.getblocktemplate()
+                if in_template(block_template, txid): return True
+            return False
+
+        # Make sure we have enough mature funds on mining_node.
+        blocks = 100 + block_unpaid_action_limit + 1
+        print("Mining %d blocks..." % (blocks,))
+        mining_node.generate(blocks)
         self.sync_all()
 
-    def run_test (self):
-        print("Mining 11kb blocks...")
-        self.nodes[0].generate(501)
+        node2_initial_balance = self.nodes[2].getbalance()
+        node3_initial_balance = self.nodes[3].getbalance()
 
-        # 11 kb blocks will only hold about 50 txs, so this will fill mempool with older txs
-        taddr = self.nodes[1].getnewaddress()
-        for _ in range(900):
-            self.nodes[0].sendtoaddress(taddr, 0.1)
-        self.nodes[0].generate(1)
-        sync_blocks(self.nodes)
-        # With a rate of either 7tx/s or 14tx/s per peer (depending on whether
-        # the connection is inbound or outbound), syncing this many transactions
-        # could take up to 128s. So use a higher timeout on the mempool sync.
-        sync_mempools(self.nodes, timeout=200)
+        # Create a tx that will not be mined unless prioritised.
+        # We spend `block_unpaid_action_limit` mining rewards, ensuring that
+        # tx has exactly `block_unpaid_action_limit + 1` logical actions,
+        # because one extra input will be needed to pay the fee.
+        # Since we've set -paytxfee to pay only the relay fee rate, the fee
+        # will be less than the marginal fee, so these are all unpaid actions.
+        amount = miner_subsidy * block_unpaid_action_limit
+        assert_equal(amount + miner_subsidy, mining_node.getbalance())
+        tx = mining_node.sendtoaddress(self.nodes[2].getnewaddress(), amount)
 
-        # Create tx to be prioritised on node 0
-        # This tx will not be mined without prioritisation.
-        priority_tx_0 = self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
+        mempool = mining_node.getrawmempool(True)
+        assert(tx in mempool)
+        fee_zats = int(mempool[tx]['fee'] * COIN)
+        assert(fee_zats < MARGINAL_FEE)
+        tx_verbose = mining_node.getrawtransaction(tx, 1)
+        assert_equal(block_unpaid_action_limit + 1, len(tx_verbose['vin']))
 
-        # Check that priority_tx_0 is not in block_template() prior to prioritisation
-        block_template = self.nodes[0].getblocktemplate()
-        in_block_template = False
-        for tx in block_template['transactions']:
-            if tx['hash'] == priority_tx_0:
-                in_block_template = True
-                break
+        # Check that tx is not in a new block template prior to prioritisation.
+        block_template = mining_node.getblocktemplate()
+        assert_equal(in_template(block_template, tx), False)
 
-        # TODO: this doesn't work reliably now, but as part of #6403 it can be made
-        # to work reliably by using a transaction that has unpaid actions over the
-        # block_unpaid_action_limit before prioritisation.
-        print("in_block_template =", in_block_template)
-        #assert_equal(in_block_template, False)
+        def send_fully_paid_transaction():
+            # Sending a new transaction will make getblocktemplate refresh within 5s.
+            # We use z_sendmany so that it will pay the conventional fee (ignoring -paytxfee)
+            # and not take up an unpaid action.
+            recipients = [{'address': self.nodes[3].getnewaddress(), 'amount': Decimal("0.1")}]
+            mining_node.z_sendmany('ANY_TADDR', recipients, 0, ZIP_317_FEE, 'AllowFullyTransparent')
 
-        priority_success = self.nodes[0].prioritisetransaction(priority_tx_0, 0, conventional_fee_zats(2))
+        # Prioritising it on node 2 has no effect on mining_node.
+        self.sync_all()
+        priority_success = self.nodes[2].prioritisetransaction(tx, 0, MARGINAL_FEE)
         assert(priority_success)
+        mempool = self.nodes[2].getrawmempool(True)
+        assert_equal(fee_zats + MARGINAL_FEE, mempool[tx]['modifiedfee'] * COIN)
+        self.sync_all()
+        send_fully_paid_transaction()
+        assert_equal(eventually_in_template(tx), False)
 
-        # Check that prioritised transaction is not in getblocktemplate()
-        # (not updated because no new txns)
-        in_block_template = False
-        block_template = self.nodes[0].getblocktemplate()
-        for tx in block_template['transactions']:
-            if tx['hash'] == priority_tx_0:
-                in_block_template = True
-                break
+        # Now prioritise it on mining_node, but short by one zatoshi.
+        priority_success = mining_node.prioritisetransaction(tx, 0, MARGINAL_FEE - fee_zats - 1)
+        assert(priority_success)
+        mempool = mining_node.getrawmempool(True)
+        assert_equal(MARGINAL_FEE - 1, mempool[tx]['modifiedfee'] * COIN)
+        send_fully_paid_transaction()
+        assert_equal(eventually_in_template(tx), False)
 
-        # See TODO above.
-        print("in_block_template =", in_block_template)
-        #assert_equal(in_block_template, False)
+        # Finally, prioritise it on mining_node by the one extra zatoshi (this also checks
+        # that prioritisation is cumulative).
+        priority_success = mining_node.prioritisetransaction(tx, 0, 1)
+        assert(priority_success)
+        mempool = mining_node.getrawmempool(True)
+        assert_equal(MARGINAL_FEE, mempool[tx]['modifiedfee'] * COIN)
 
-        # Sending a new transaction will make getblocktemplate refresh within 10s
-        self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
+        # The block template will refresh after 1 minute, or after 5 seconds if a new
+        # transaction is added to the mempool. As long as there is less than a minute
+        # between the getblocktemplate() calls, it should not have been updated yet.
+        block_template = mining_node.getblocktemplate()
+        assert_equal(in_template(block_template, tx), False)
 
-        # Check that prioritised transaction is in getblocktemplate()
-        # getblocktemplate() will refresh after 1 min, or after 10 sec if new transaction is added to mempool
-        # Mempool is probed every 10 seconds. We'll give getblocktemplate() a maximum of 30 seconds to refresh
-        block_template = self.nodes[0].getblocktemplate()
-        start = time.time();
-        in_block_template = False
-        while in_block_template == False:
-            for tx in block_template['transactions']:
-                if tx['hash'] == priority_tx_0:
-                    in_block_template = True
-                    break
-            if time.time() - start > 30:
-                raise AssertionError("Test timed out because prioritised transaction was not returned by getblocktemplate within 30 seconds.")
-            time.sleep(1)
-            block_template = self.nodes[0].getblocktemplate()
+        # Check that the prioritised transaction eventually gets into a new block template.
+        send_fully_paid_transaction()
+        assert_equal(eventually_in_template(tx), True)
 
-        assert(in_block_template)
-
-        # Node 1 doesn't get the next block, so this *shouldn't* be mined despite being prioritised on node 1
-        priority_tx_1 = self.nodes[1].sendtoaddress(self.nodes[0].getnewaddress(), 0.1)
-        self.nodes[1].prioritisetransaction(priority_tx_1, 0, conventional_fee_zats(2))
-
-        # Mine block on node 0
-        blk_hash = self.nodes[0].generate(1)
-        block = self.nodes[0].getblock(blk_hash[0])
+        # Mine a block on node 0.
+        blk_hash = mining_node.generate(1)
+        block = mining_node.getblock(blk_hash[0])
+        assert_equal(tx in block['tx'], True)
         self.sync_all()
 
-        # Check that priority_tx_0 was mined
-        mempool = self.nodes[0].getrawmempool()
-        assert_equal(priority_tx_0 in block['tx'], True)
-        assert_equal(priority_tx_0 in mempool, False)
-
-        # Check that priority_tx_1 was not mined
-        assert_equal(priority_tx_1 in mempool, True)
-        # TODO: again this is potentially unreliable.
-        #assert_equal(priority_tx_1 in block['tx'], False)
-
-        # Mine a block on node 1 and sync
-        blk_hash_1 = self.nodes[1].generate(1)
-        block_1 = self.nodes[1].getblock(blk_hash_1[0])
-        self.sync_all()
-
-        # Check to see if priority_tx_1 is now mined
-        mempool_1 = self.nodes[1].getrawmempool()
-        assert_equal(priority_tx_1 in mempool_1, False)
-        assert_equal(priority_tx_1 in block_1['tx'], True)
+        # Check that tx was mined and that node 1 received the funds.
+        mempool = mining_node.getrawmempool()
+        assert_equal(mempool, [])
+        assert_equal(self.nodes[2].getbalance(), node2_initial_balance + amount)
+        # Check that all of the fully paid transactions were mined.
+        assert_equal(self.nodes[3].getbalance(), node3_initial_balance + Decimal("0.3"))
 
 if __name__ == '__main__':
     PrioritiseTransactionTest().main()

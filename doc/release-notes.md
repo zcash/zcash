@@ -45,11 +45,19 @@ Changes to Transaction Fee Selection
 Changes to Block Template Construction
 --------------------------------------
 
-- The block template construction algorithm no longer favours transactions that
-  were previously considered "high priority" because they spent older inputs. The
-  `-blockprioritysize` config option, which configured the portion of the block
-  reserved for these transactions, has been removed and will now cause a warning
-  if used.
+We now use a new block template construction algorithm documented in
+[ZIP 317](https://zips.z.cash/zip-0317#recommended-algorithm-for-block-template-construction).
+
+- This algorithm no longer favours transactions that were previously considered
+  "high priority" because they spent older inputs. The `-blockprioritysize` config
+  option, which configured the portion of the block reserved for these transactions,
+  has been removed and will now cause a warning if used.
+- The `-blockminsize` option, which configured the size of a portion of the block
+  to be filled regardless of transaction fees or priority, has also been removed
+  and will cause a warning if used.
+- A `-blockunpaidactionlimit` option has been added to control the limit on
+  "unpaid actions" that will be accepted in a block for transactions paying less
+  than the ZIP 317 fee. This defaults to 50.
 
 Removal of Priority Estimation
 ------------------------------

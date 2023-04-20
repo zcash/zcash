@@ -35,6 +35,7 @@
 #include "util/system.h"
 #include "util/moneystr.h"
 #include "validationinterface.h"
+#include "zip317.h"
 
 #include <librustzcash.h>
 #include <rust/bridge.h>
@@ -339,10 +340,8 @@ BlockAssembler::BlockAssembler(const CChainParams& _chainparams)
     // Limit to between 1K and MAX_BLOCK_SIZE-1K for sanity:
     nBlockMaxSize = std::max((unsigned int)1000, std::min((unsigned int)(MAX_BLOCK_SIZE-1000), nBlockMaxSize));
 
-    // Minimum block size you want to create; block will be filled with free transactions
-    // until there are no more or the block reaches this size:
-    nBlockMinSize = GetArg("-blockminsize", DEFAULT_BLOCK_MIN_SIZE);
-    nBlockMinSize = std::min(nBlockMaxSize, nBlockMinSize);
+    // Number of unpaid actions allowed in a block:
+    nBlockUnpaidActionLimit = (size_t) GetArg("-blockunpaidactionlimit", DEFAULT_BLOCK_UNPAID_ACTION_LIMIT);
 }
 
 void BlockAssembler::resetBlock(const MinerAddress& minerAddress)
@@ -437,7 +436,7 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
         }
     }
 
-    addScoreTxs();
+    constructZIP317BlockTemplate();
 
     last_block_num_txs = nBlockTx;
     last_block_size = nBlockSize;
@@ -641,63 +640,94 @@ void BlockAssembler::AddToBlock(CTxMemPool::txiter iter)
     }
 }
 
-void BlockAssembler::addScoreTxs()
+void BlockAssembler::constructZIP317BlockTemplate()
 {
-    std::priority_queue<CTxMemPool::txiter, std::vector<CTxMemPool::txiter>, ScoreCompare> clearedTxs;
-    CTxMemPool::setEntries waitSet;
-    CTxMemPool::indexed_transaction_set::index<mining_score>::type::iterator mi = mempool.mapTx.get<mining_score>().begin();
-    CTxMemPool::txiter iter;
-    while (!blockFinished && (mi != mempool.mapTx.get<mining_score>().end() || !clearedTxs.empty()))
+    CTxMemPool::weightedCandidates candidatesPayingConventionalFee;
+    CTxMemPool::weightedCandidates candidatesNotPayingConventionalFee;
+
+    for (auto mi = mempool.mapTx.begin(); mi != mempool.mapTx.end(); ++mi)
     {
-        // If no txs that were previously postponed are available to try
-        // again, then try the next highest score tx
-        if (clearedTxs.empty()) {
-            iter = mempool.mapTx.project<0>(mi);
-            mi++;
+        int128_t weightRatio = mi->GetWeightRatio();
+        if (weightRatio >= WEIGHT_RATIO_SCALE) {
+            candidatesPayingConventionalFee.add(mi->GetTx().GetHash(), mi, weightRatio);
+        } else {
+            candidatesNotPayingConventionalFee.add(mi->GetTx().GetHash(), mi, weightRatio);
         }
-        // If a previously postponed tx is available to try again, then it
-        // has higher score than all untried so far txs
-        else {
-            iter = clearedTxs.top();
-            clearedTxs.pop();
+    }
+
+    CTxMemPool::queueEntries waiting;
+    CTxMemPool::queueEntries cleared;
+    addTransactions(candidatesPayingConventionalFee, waiting, cleared);
+    addTransactions(candidatesNotPayingConventionalFee, waiting, cleared);
+}
+
+void BlockAssembler::addTransactions(
+    CTxMemPool::weightedCandidates& candidates,
+    CTxMemPool::queueEntries& waiting,
+    CTxMemPool::queueEntries& cleared)
+{
+    size_t nBlockUnpaidActions = 0;
+
+    while (!blockFinished && !(candidates.empty() && cleared.empty()))
+    {
+        CTxMemPool::txiter iter;
+        if (cleared.empty()) {
+            // If no txs that were previously postponed are available to try
+            // again, then select the next transaction randomly by weight ratio
+            // from the candidate set.
+            assert(!candidates.empty());
+            iter = std::get<1>(candidates.takeRandom().value());
+        } else {
+            // If a previously postponed tx is available to try again, then it
+            // has already been randomly sampled, so just take it in order.
+            iter = cleared.front();
+            cleared.pop_front();
         }
 
-        // If tx already in block, skip  (added by addPriorityTxs)
-        if (inBlock.count(iter)) {
+        // The tx should never already be in the block for ZIP 317.
+        assert(inBlock.count(iter) == 0);
+
+        // If the tx would cause the block to exceed the unpaid action limit, skip it.
+        // A tx that pays at least the conventional fee will have no unpaid actions.
+        size_t txUnpaidActions = iter->GetUnpaidActionCount();
+        if (nBlockUnpaidActions + txUnpaidActions > nBlockUnpaidActionLimit) {
             continue;
         }
 
-        // If tx is dependent on other mempool txs which haven't yet been included
-        // then put it in the waitSet
+        // If tx is dependent on other mempool transactions that haven't yet been
+        // included then put it in the waiting queue.
         if (isStillDependent(iter)) {
-            waitSet.insert(iter);
+            waiting.push_back(iter);
             continue;
         }
 
-        // If the fee rate is below the min fee rate for mining, then we're done
-        // adding txs based on score (fee rate)
-        if ((iter->GetModifiedFee() < ::minRelayTxFee.GetFee(iter->GetTxSize())) &&
-            (iter->GetModifiedFee() < DEFAULT_FEE) &&
-            (nBlockSize >= nBlockMinSize)) {
-            return;
-        }
-
-        // If this tx fits in the block add it, otherwise keep looping
+        // If this tx fits in the block add it, otherwise keep looping.
         if (TestForBlock(iter)) {
             AddToBlock(iter);
+            nBlockUnpaidActions += txUnpaidActions;
 
-            // This tx was successfully added, so
-            // add transactions that depend on this one to the priority queue to try again
-            for (CTxMemPool::txiter child : mempool.GetMemPoolChildren(iter))
+            // This tx was successfully added, so add waiting transactions that
+            // depend on this one to the cleared queue to try again.
+            //
+            // TODO: This makes the overall algorithm O(n^2 log n) in the worst case
+            // of a linear dependency chain. (children is a std::map; its count method
+            // is O(log n) given the maximum number of children at each step, and is
+            // called O(n^2) times.) Daira conjectures that O(n log n) is possible.
+            auto children = mempool.GetMemPoolChildren(iter);
+            CTxMemPool::queueEntries stillWaiting;
+            for (CTxMemPool::txiter maybeChild : waiting)
             {
-                if (waitSet.count(child)) {
-                    clearedTxs.push(child);
-                    waitSet.erase(child);
+                if (children.count(maybeChild) > 0) {
+                    cleared.push_back(maybeChild);
+                } else {
+                    stillWaiting.push_back(maybeChild);
                 }
             }
+            waiting.swap(stillWaiting);
         }
     }
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 //

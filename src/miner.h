@@ -9,6 +9,7 @@
 
 #include "primitives/block.h"
 #include "txmempool.h"
+#include "weighted_map.h"
 
 #include <stdint.h>
 #include <memory>
@@ -106,8 +107,9 @@ private:
     // A convenience pointer that always refers to the CBlock in pblocktemplate
     CBlock* pblock;
 
-    // Configuration parameters for the block size
-    unsigned int nBlockMaxSize, nBlockMinSize;
+    // Configuration parameters for the block size and unpaid action limit
+    unsigned int nBlockMaxSize;
+    size_t nBlockUnpaidActionLimit;
 
     // Information on the current status of the block
     uint64_t nBlockSize;
@@ -139,6 +141,12 @@ public:
         const std::optional<CMutableTransaction>& next_coinbase_mtx = std::nullopt);
 
 private:
+    void constructZIP317BlockTemplate();
+    void addTransactions(
+        CTxMemPool::weightedCandidates& candidates,
+        CTxMemPool::queueEntries& waiting,
+        CTxMemPool::queueEntries& cleared);
+
     // utility functions
     /** Clear the block's state and prepare for assembling a new block */
     void resetBlock(const MinerAddress& minerAddress);
