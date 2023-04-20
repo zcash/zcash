@@ -615,7 +615,7 @@ tl::expected<InputSelection, InputSelectionError>
 WalletTxBuilder::ResolveInputsAndPayments(
         CWallet& wallet,
         const ZTXOSelector& selector,
-        SpendableInputs spendableMut,
+        const SpendableInputs& spendable,
         const std::vector<Payment>& payments,
         const CChain& chain,
         const TransactionStrategy& strategy,
@@ -629,8 +629,8 @@ WalletTxBuilder::ResolveInputsAndPayments(
     // as possible.  This will also perform opportunistic shielding if the
     // transaction strategy permits.
 
-    CAmount maxSaplingAvailable = spendableMut.GetSaplingTotal();
-    CAmount maxOrchardAvailable = spendableMut.GetOrchardTotal();
+    CAmount maxSaplingAvailable = spendable.GetSaplingTotal();
+    CAmount maxOrchardAvailable = spendable.GetOrchardTotal();
     uint32_t orchardOutputs{0};
 
     // we can only select Orchard addresses if we’re not sending from Sprout, since there is no tx
@@ -665,10 +665,12 @@ WalletTxBuilder::ResolveInputsAndPayments(
         sendAmount += payment.GetAmount();
     }
 
+    SpendableInputs spendableMut;
     CAmount finalFee;
     CAmount targetAmount;
     std::optional<ChangeAddress> changeAddr;
     if (fee.has_value()) {
+        spendableMut = spendable;
         finalFee = fee.value();
         targetAmount = sendAmount + finalFee;
         // TODO: the set of recipient pools is not quite sufficient information here; we should
@@ -726,7 +728,7 @@ WalletTxBuilder::ResolveInputsAndPayments(
             }
         }
     } else {
-        auto limitResult = IterateLimit(wallet, selector, strategy, sendAmount, dustThreshold, spendableMut, resolved, afterNU5);
+        auto limitResult = IterateLimit(wallet, selector, strategy, sendAmount, dustThreshold, spendable, resolved, afterNU5);
         if (limitResult.has_value()) {
             std::tie(spendableMut, finalFee, changeAddr) = limitResult.value();
             targetAmount = sendAmount + finalFee;

@@ -403,7 +403,7 @@ private:
     ResolveInputsAndPayments(
             CWallet& wallet,
             const ZTXOSelector& selector,
-            SpendableInputs spendable,
+            const SpendableInputs& spendable,
             const std::vector<Payment>& payments,
             const CChain& chain,
             const TransactionStrategy& strategy,
