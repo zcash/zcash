@@ -300,6 +300,15 @@ public:
         available(available), required(required) { }
 };
 
+/// Error when a fee is outside `MoneyRange`
+class InvalidFeeError {
+public:
+    CAmount fixedFee;
+
+    InvalidFeeError(CAmount fixedFee):
+        fixedFee(fixedFee) { }
+};
+
 /// Error when a fee is higher than can be useful. This reduces the chance of accidentally
 /// overpaying with explicit fees.
 class AbsurdFeeError {
@@ -340,6 +349,7 @@ typedef std::variant<
     AddressResolutionError,
     InvalidFundsError,
     ChangeNotAllowedError,
+    InvalidFeeError,
     AbsurdFeeError,
     MaxFeeError,
     ExcessOrchardActionsError> InputSelectionError;

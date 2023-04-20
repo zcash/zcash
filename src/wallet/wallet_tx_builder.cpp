@@ -392,8 +392,13 @@ WalletTxBuilder::PrepareTransaction(
         const std::optional<CAmount>& fee,
         uint32_t anchorConfirmations) const
 {
-    if (fee.has_value() && maxTxFee < fee.value()) {
-        return tl::make_unexpected(MaxFeeError(fee.value()));
+    if (fee.has_value()) {
+        if (maxTxFee < fee.value()) {
+            return tl::make_unexpected(MaxFeeError(fee.value()));
+        } else if (!MoneyRange(fee.value())) {
+            // TODO: This check will be obviated by #6579.
+            return tl::make_unexpected(InvalidFeeError(fee.value()));
+        }
     }
 
     int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);

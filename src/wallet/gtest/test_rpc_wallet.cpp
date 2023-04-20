@@ -57,8 +57,11 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
     std::string taddr_string = keyIO.EncodeDestination(taddr);
 
     NetAmountRecipient taddr1(keyIO.DecodePaymentAddress(taddr_string).value(), Memo());
-    auto pa = pwalletMain->GenerateNewSproutZKey();
-    NetAmountRecipient zaddr1(pa, Memo());
+    auto sproutKey = pwalletMain->GenerateNewSproutZKey();
+    NetAmountRecipient zaddr1(sproutKey, Memo());
+
+    auto saplingKey = pwalletMain->GenerateNewLegacySaplingZKey();
+    NetAmountRecipient zaddr2(saplingKey, Memo());
 
     WalletTxBuilder builder(Params(), minRelayTxFee);
     auto selector = CWallet::LegacyTransparentZTXOSelector(
@@ -66,30 +69,49 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
             TransparentCoinbasePolicy::Disallow);
     TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
 
+    SpendableInputs inputs;
+    auto wtx = FakeWalletTx();
+    inputs.utxos.emplace_back(COutput(&wtx, 0, 100, true));
+
+    // Can’t send to Sprout
+    builder.PrepareTransaction(
+            *pwalletMain,
+            selector,
+            inputs,
+            zaddr1,
+            chainActive,
+            strategy,
+            0,
+            1)
+        .map_error([](const auto& err) {
+            EXPECT_TRUE(examine(err, match {
+                [](const AddressResolutionError& are) {
+                    return are == AddressResolutionError::SproutRecipientsNotSupported;
+                },
+                [](const auto&) { return false; },
+            }));
+        })
+        .map([](const auto&) { EXPECT_TRUE(false); });
+
     // Insufficient funds
-    {
-        SpendableInputs inputs;
-        auto wtx = FakeWalletTx();
-        inputs.utxos.emplace_back(COutput(&wtx, 0, 100, true));
-        builder.PrepareTransaction(
-                *pwalletMain,
-                selector,
-                inputs,
-                zaddr1,
-                chainActive,
-                strategy,
-                0,
-                1)
-            .map_error([](const auto& err) {
-                EXPECT_TRUE(examine(err, match {
-                    [](const AddressResolutionError& are) {
-                        return are == AddressResolutionError::SproutRecipientsNotSupported;
-                    },
-                    [](const auto&) { return false; },
-                }));
-            })
-            .map([](const auto&) { EXPECT_TRUE(false); });
-    }
+    builder.PrepareTransaction(
+            *pwalletMain,
+            selector,
+            inputs,
+            zaddr2,
+            chainActive,
+            strategy,
+            std::nullopt,
+            1)
+        .map_error([](const auto& err) {
+            EXPECT_TRUE(examine(err, match {
+                [](const InvalidFundsError& ife) {
+                    return std::holds_alternative<InsufficientFundsError>(ife.reason);
+                },
+                [](const auto&) { return false; },
+            }));
+        })
+        .map([](const auto&) { EXPECT_TRUE(false); });
     }
     UnloadGlobalWallet();
 }

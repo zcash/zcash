@@ -73,10 +73,13 @@ main_impl(
 
 void AsyncRPCOperation_mergetoaddress::main()
 {
+    if (isCancelled()) {
+        effects_.UnlockSpendable(*pwalletMain);
+        return;
+    }
+
     set_state(OperationStatus::EXECUTING);
     start_execution_clock();
-
-    bool success = false;
 
 #ifdef ENABLE_MINING
     GenerateBitcoins(false, 0, Params());
@@ -145,10 +148,10 @@ main_impl(
         bool sendsToShielded = false;
         for (const auto& resolvedPayment : payments.GetResolvedPayments()) {
             sendsToShielded = sendsToShielded || examine(resolvedPayment.address, match {
-                [](const CKeyID&) { return true; },
-                [](const CScriptID&) { return true; },
-                [](const libzcash::SaplingPaymentAddress&) { return false; },
-                [](const libzcash::OrchardRawAddress&) { return false; },
+                [](const CKeyID&) { return false; },
+                [](const CScriptID&) { return false; },
+                [](const libzcash::SaplingPaymentAddress&) { return true; },
+                [](const libzcash::OrchardRawAddress&) { return true; },
             });
         }
         if (spendable.sproutNoteEntries.empty()

@@ -1634,9 +1634,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
 
     KeyIO keyIO(Params());
     WalletTxBuilder builder(Params(), minRelayTxFee);
-    NetAmountRecipient testnetzaddr(
-        keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value(),
-        Memo());
+    auto saplingKey = pwalletMain->GenerateNewLegacySaplingZKey();
+    NetAmountRecipient testnetzaddr(saplingKey, Memo());
     auto selector = CWallet::LegacyTransparentZTXOSelector(
             true,
             TransparentCoinbasePolicy::Disallow);
@@ -1645,13 +1644,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     builder.PrepareTransaction(*pwalletMain, selector, {}, testnetzaddr, chainActive, strategy, -1, 1)
         .map_error([&](const auto& err) {
             // TODO: Provide `operator==` on `InputSelectionError` and use that here.
-            BOOST_CHECK(examine(err, match {
-                [](AddressResolutionError are) {
-                    // FIXME: Should be failing because of negative fee – change recipient address to not be Sprout.
-                    return are == AddressResolutionError::SproutRecipientsNotSupported;
-                },
-                [](const auto&) { return false; },
-            }));
+            BOOST_CHECK(std::holds_alternative<InvalidFeeError>(err));
         })
         .map([](const auto&) {
             BOOST_FAIL("Fee value of -1 expected to be out of the valid range of values.");
@@ -1663,27 +1656,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
             BOOST_CHECK(examine(err, match {
                 [](const InvalidFundsError& ife) {
                     return std::holds_alternative<InsufficientFundsError>(ife.reason);
-                },
-                [](const auto&) { return false; },
-            }));
-        })
-        .map([](const auto&) {
-            BOOST_FAIL("Expected an error.");
-        });
-
-    auto wtx = FakeWalletTx();
-    SpendableInputs inputs;
-    inputs.utxos.emplace_back(COutput(&wtx, 0, 100, true));
-    inputs.sproutNoteEntries.emplace_back(SproutNoteEntry {JSOutPoint(), SproutPaymentAddress(), SproutNote(), "", 0});
-    inputs.saplingNoteEntries.emplace_back(SaplingNoteEntry {SaplingOutPoint(), SaplingPaymentAddress(), SaplingNote({}, uint256(), 0, uint256(), Zip212Enabled::BeforeZip212), "", 0});
-
-    builder.PrepareTransaction(*pwalletMain, selector, inputs, testnetzaddr, chainActive, strategy, 1, 1)
-        .map_error([&](const auto& err) {
-            // TODO: Provide `operator==` on `InputSelectionError` and use that here.
-            BOOST_CHECK(examine(err, match {
-                [](AddressResolutionError are) {
-                    // FIXME: Should be failing because of insufficient funds – change recipient address to not be Sprout.
-                    return are == AddressResolutionError::SproutRecipientsNotSupported;
                 },
                 [](const auto&) { return false; },
             }));

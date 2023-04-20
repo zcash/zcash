@@ -5544,13 +5544,13 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     int sproutNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT;
     int saplingNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT;
-    int shieldedNoteLimit = 0;
     if (params.size() > 4) {
         int nNoteLimit = params[4].get_int();
         if (nNoteLimit < 0) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Limit on maximum number of notes cannot be negative");
         }
-        shieldedNoteLimit = nNoteLimit;
+        sproutNoteLimit = nNoteLimit;
+        saplingNoteLimit = nNoteLimit;
     }
 
     std::optional<Memo> memo;
@@ -5675,8 +5675,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 size_t increase = allInputs.sproutNoteEntries.empty() || allInputs.sproutNoteEntries.size() % 2 == 0 ?
                     JOINSPLIT_SIZE(SAPLING_TX_VERSION) : 0;
                 if (estimatedTxSize + increase >= max_tx_size ||
-                    (sproutNoteLimit > 0 && noteCounter > sproutNoteLimit) ||
-                    (shieldedNoteLimit > 0 && noteCounter > shieldedNoteLimit))
+                    (sproutNoteLimit > 0 && noteCounter > sproutNoteLimit))
                 {
                     maxedOutNotesFlag = true;
                 } else {
@@ -5700,8 +5699,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             if (!maxedOutNotesFlag) {
                 size_t increase = SPENDDESCRIPTION_SIZE;
                 if (estimatedTxSize + increase >= max_tx_size ||
-                    (saplingNoteLimit > 0 && noteCounter > saplingNoteLimit) ||
-                    (shieldedNoteLimit > 0 && noteCounter > shieldedNoteLimit))
+                    (saplingNoteLimit > 0 && noteCounter > saplingNoteLimit))
                 {
                     maxedOutNotesFlag = true;
                 } else {
