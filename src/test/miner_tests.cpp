@@ -23,7 +23,7 @@
 
 BOOST_FIXTURE_TEST_SUITE(miner_tests, TestingSetup)
 
-// Precomputed nonces and Equihash solutions. These were CPU-mined by the code in `CreateNewBlock_validity`.
+// Precomputed nonces and Equihash solutions. These were CPU-mined by the code in MineBlockForTest.
 // CreateNewBlock_validity will recreate blocks from these via ProcessNewBlock, which would fail if they were incorrect.
 static
 struct {
@@ -243,6 +243,52 @@ class MinerAddressScript : public CReserveScript
     void KeepScript() {}
 };
 
+// This is only useful if the test changes to require more blocks, but we keep it
+// compiling to avoid bitrot.
+void MineBlockForTest(const CChainParams& chainparams, CBlock* pblock) {
+    arith_uint256 try_nonce(0);
+    unsigned int n = chainparams.GetConsensus().nEquihashN;
+    unsigned int k = chainparams.GetConsensus().nEquihashK;
+
+    // Hash state
+    eh_HashState eh_state = EhInitialiseState(n, k);
+
+    // I = the block header minus nonce and solution.
+    CEquihashInput I{*pblock};
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << I;
+
+    // H(I||...
+    eh_state.Update((unsigned char*)&ss[0], ss.size());
+
+    while (true) {
+        pblock->nNonce = ArithToUint256(try_nonce);
+
+        // H(I||V||...
+        eh_HashState curr_state(eh_state);
+        curr_state.Update(pblock->nNonce.begin(), pblock->nNonce.size());
+
+        std::function<void()> incrementRuns = [&]() {};
+        std::function<bool(size_t, const std::vector<uint32_t>&)> checkSolution = [&](size_t s, const std::vector<uint32_t>& index_vector) {
+            auto soln = GetMinimalFromIndices(index_vector, DIGITBITS);
+            pblock->nSolution = soln;
+            if (!equihash::is_valid(
+                n, k,
+                {(const unsigned char*)ss.data(), ss.size()},
+                {pblock->nNonce.begin(), pblock->nNonce.size()},
+                {soln.data(), soln.size()})) {
+                return false;
+            }
+            CValidationState state;
+            return ProcessNewBlock(state, chainparams, NULL, pblock, true, NULL) && state.IsValid();
+        };
+        if (equihash_solve(curr_state.inner, incrementRuns, checkSolution))
+            break;
+
+        try_nonce += 1;
+    }
+}
+
 // NOTE: These tests rely on CreateNewBlock doing its own self-validation!
 BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 {
@@ -300,49 +346,9 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
             pblock->nNonce = uint256S(blockinfo[i].nonce_hex);
             pblock->nSolution = ParseHex(blockinfo[i].solution_hex);
         } else {
-            // If you need to mine more blocks than are currently in blockinfo, this code will do so.
-            // We leave it compiling so that it doesn't bitrot.
-            arith_uint256 try_nonce(0);
-            unsigned int n = chainparams.GetConsensus().nEquihashN;
-            unsigned int k = chainparams.GetConsensus().nEquihashK;
-
-            // Hash state
-            eh_HashState eh_state = EhInitialiseState(n, k);
-
-            // I = the block header minus nonce and solution.
-            CEquihashInput I{*pblock};
-            CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-            ss << I;
-
-            // H(I||...
-            eh_state.Update((unsigned char*)&ss[0], ss.size());
-
-            while (true) {
-                pblock->nNonce = ArithToUint256(try_nonce);
-
-                // H(I||V||...
-                eh_HashState curr_state(eh_state);
-                curr_state.Update(pblock->nNonce.begin(), pblock->nNonce.size());
-
-                std::function<void()> incrementRuns = [&]() {};
-                std::function<bool(size_t, const std::vector<uint32_t>&)> checkSolution = [&](size_t s, const std::vector<uint32_t>& index_vector) {
-                    auto soln = GetMinimalFromIndices(index_vector, DIGITBITS);
-                    pblock->nSolution = soln;
-                    if (!equihash::is_valid(
-                        n, k,
-                        {(const unsigned char*)ss.data(), ss.size()},
-                        {pblock->nNonce.begin(), pblock->nNonce.size()},
-                        {soln.data(), soln.size()})) {
-                        return false;
-                    }
-                    CValidationState state;
-                    return ProcessNewBlock(state, chainparams, NULL, pblock, true, NULL) && state.IsValid();
-                };
-                if (equihash_solve(curr_state.inner, incrementRuns, checkSolution))
-                    break;
-
-                try_nonce += 1;
-            }
+            // If you need to mine more blocks than are currently in blockinfo, increase
+            // nblocks and then this code will do so.
+            MineBlockForTest(chainparams, pblock);
             std::cout << "    {\"" << pblock->nNonce.GetHex() << "\", \"";
             std::cout << HexStr(pblock->nSolution.begin(), pblock->nSolution.end());
             std::cout << "\"}," << std::endl;
@@ -384,7 +390,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         };
     };
 
-    auto PrepareTemplate = [&](size_t numTransactions, CAmount fee, std::function<void(size_t i, TestMemPoolEntryHelper& entry, CMutableTransaction& tx)> addTx) {
+    auto PrepareMempool = [&](size_t numTransactions, CAmount fee, std::function<void(size_t i, TestMemPoolEntryHelper& entry, CMutableTransaction& tx)> addTx) {
         // This relies on tx.{vin,vout} having been prepared for the specific check.
         assert(fee >= 0);
         int coinbaseHeight = 20 - 1;
@@ -413,14 +419,14 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vout.resize(1);
 
     // If we don't set the # of sigops in the CTxMemPoolEntry, template creation fails.
-    PrepareTemplate(1000, MINIMUM_FEE, [&](size_t i, auto& entry, auto& tx) {
+    PrepareMempool(1000, MINIMUM_FEE, [&](size_t i, auto& entry, auto& tx) {
         mempool.addUnchecked(tx.GetHash(), entry.FromTx(tx));
     });
     BOOST_CHECK_EXCEPTION(BlockAssembler(chainparams).CreateNewBlock(scriptPubKey), std::runtime_error, err_is("bad-blk-sigops"));
     mempool.clear();
 
     // If we do set the # of sigops in the CTxMemPoolEntry, template creation passes.
-    PrepareTemplate(1000, MINIMUM_FEE, [&](size_t i, auto& entry, auto& tx) {
+    PrepareMempool(1000, MINIMUM_FEE, [&](size_t i, auto& entry, auto& tx) {
         mempool.addUnchecked(tx.GetHash(), entry.SigOps(20).FromTx(tx));
     });
     BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
@@ -441,7 +447,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     tx.vin[0].scriptSig << OP_1;
 
     // Test block size just under the 2000000-byte limit.
-    PrepareTemplate(210, CalculateConventionalFee(64), [&](size_t i, auto& entry, auto& tx) {
+    PrepareMempool(210, CalculateConventionalFee(64), [&](size_t i, auto& entry, auto& tx) {
         mempool.addUnchecked(tx.GetHash(), entry.FromTx(tx));
     });
     BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
@@ -451,12 +457,14 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     mempool.clear();
 
     // ... and just over the limit.
-    PrepareTemplate(211, CalculateConventionalFee(64), [&](size_t i, auto& entry, auto& tx) {
+    PrepareMempool(211, CalculateConventionalFee(64), [&](size_t i, auto& entry, auto& tx) {
         mempool.addUnchecked(tx.GetHash(), entry.FromTx(tx));
     });
     BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
     // only 211 transactions including coinbase, not 212
     BOOST_CHECK_EQUAL(211, pblocktemplate->block.vtx.size());
+    // We can't check the exact block size because which tx will be excluded is nondeterministic,
+    // and they are different sizes.
     BOOST_CHECK_GE(2000000, ::GetSerializeSize(pblocktemplate->block, SER_NETWORK, PROTOCOL_VERSION));
     delete pblocktemplate;
     mempool.clear();
@@ -465,35 +473,11 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 
     // Test with an orphan tx in the mempool. Note that this is testing a case that should never occur,
     // because AcceptToMemoryPool would reject the orphan. Using addUnchecked bypasses that rejection.
-    PrepareTemplate(2, MINIMUM_FEE, [&](size_t i, auto& entry, auto& tx) {
+    PrepareMempool(2, MINIMUM_FEE, [&](size_t i, auto& entry, auto& tx) {
         if (i != 0) mempool.addUnchecked(tx.GetHash(), entry.SigOps(1).FromTx(tx));
     });
     BOOST_CHECK_EXCEPTION(BlockAssembler(chainparams).CreateNewBlock(scriptPubKey), std::runtime_error, err_is("bad-txns-inputs-missingorspent"));
     mempool.clear();
-
-    // child with higher priority than parent
-    // TODO: re-enable this when we have implemented priority logic for ZIP 317 block construction.
-
-    // const CAmount HIGHFEE = MINIMUM_FEE*2;
-    // const CAmount HIGHERFEE = MINIMUM_FEE*3;
-    //
-    // tx.vin[0].scriptSig = CScript() << OP_1;
-    // tx.vin[0].prevout.hash = CoinbaseTx(1)->GetHash();
-    // tx.vin[0].prevout.n = 0;
-    // tx.vout[0].nValue = MinerSubsidy(1) - HIGHFEE;
-    // hash = tx.GetHash();
-    // mempool.addUnchecked(hash, entry.Fee(HIGHFEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx));
-    // tx.vin[0].prevout.hash = hash;
-    // tx.vin.resize(2);
-    // tx.vin[1].scriptSig = CScript() << OP_1;
-    // tx.vin[1].prevout.hash = CoinbaseTx(2)->GetHash();
-    // tx.vin[1].prevout.n = 0;
-    // tx.vout[0].nValue = tx.vout[0].nValue + MinerSubsidy(2) - HIGHERFEE; // First txn output + fresh coinbase - new txn fee
-    // hash = tx.GetHash();
-    // mempool.addUnchecked(hash, entry.Fee(HIGHERFEE).Time(GetTime()).SpendsCoinbase(true).FromTx(tx));
-    // BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
-    // delete pblocktemplate;
-    // mempool.clear();
 
     // coinbase in mempool, template creation fails
     tx.vin.resize(1);
@@ -588,13 +572,15 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 
     // However if we advance height and time by one, both will.
     chainActive.Tip()->nHeight++;
-    FixedClock::Instance()->Set(std::chrono::seconds(chainActive.Tip()->GetMedianTimePast()+2));
+    int64_t newTime = chainActive.Tip()->GetMedianTimePast()+2;
 
-    // FIXME: we should *actually* create a new block so the following test
-    //        works; CheckFinalTx() isn't fooled by monkey-patching nHeight.
-    //BOOST_CHECK(CheckFinalTx(tx));
-    //BOOST_CHECK(CheckFinalTx(tx2));
+    // We can't test this by directly calling CheckFinalTx(tx*, LOCKTIME_MEDIAN_TIME_PAST)
+    // because that would use chainActive.Height() which isn't fooled by monkey-patching nHeight.
+    // However, this should be equivalent:
+    BOOST_CHECK(IsFinalTx(tx, chainActive.Tip()->nHeight+1, newTime));
+    BOOST_CHECK(IsFinalTx(tx2, chainActive.Tip()->nHeight+1, newTime));
 
+    FixedClock::Instance()->Set(std::chrono::seconds(newTime));
     BOOST_CHECK(pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey));
     BOOST_CHECK_EQUAL(pblocktemplate->block.vtx.size(), 2);
     delete pblocktemplate;
