@@ -501,7 +501,8 @@ TransactionBuilderResult TransactionBuilder::Build()
         change -= tOut.nValue;
     }
     if (change < 0) {
-        return TransactionBuilderResult("Change cannot be negative");
+        return TransactionBuilderResult(
+                strprintf("Change cannot be negative: %s", DisplayMoney(change)));
     }
 
     //

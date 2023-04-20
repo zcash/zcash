@@ -167,6 +167,15 @@ void ThrowInputSelectionError(
                     "The proposed transaction would result in %s in change.",
                     FormatMoney(err.available - err.required)));
         },
+        [](const InvalidFeeError& err) {
+            throw JSONRPCError(
+                RPC_INVALID_PARAMETER,
+                strprintf(
+                    "The provided fee, %s, is invalid. Fees must be non-negative, and no greater "
+                    "than the total amount of ZEC that will ever be available.",
+                    DisplayMoney(err.fixedFee),
+                    DisplayMoney(MAX_MONEY)));
+        },
         [](const AbsurdFeeError& err) {
             throw JSONRPCError(
                 RPC_INVALID_PARAMETER,

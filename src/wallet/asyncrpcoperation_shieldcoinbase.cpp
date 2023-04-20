@@ -82,6 +82,11 @@ AsyncRPCOperation_shieldcoinbase::~AsyncRPCOperation_shieldcoinbase() {
 }
 
 void AsyncRPCOperation_shieldcoinbase::main() {
+    if (isCancelled()) {
+        effects_.value().UnlockSpendable(*pwalletMain);
+        return;
+    }
+
     set_state(OperationStatus::EXECUTING);
     start_execution_clock();
 

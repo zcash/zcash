@@ -17,7 +17,6 @@
 #include "asyncrpcqueue.h"
 #include "asyncrpcoperation.h"
 #include "wallet/asyncrpcoperation_common.h"
-#include "wallet/asyncrpcoperation_mergetoaddress.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 #include "wallet/memo.h"
@@ -68,6 +67,13 @@ public:
 private:
     fs::path old_cwd;
 };
+
+CWalletTx FakeWalletTx() {
+    CMutableTransaction mtx;
+    mtx.vout.resize(1);
+    mtx.vout[0].nValue = 1;
+    return CWalletTx(nullptr, mtx);
+}
 
 }
 
@@ -1219,6 +1225,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     SelectParams(CBaseChainParams::TESTNET);
     const Consensus::Params& consensusParams = Params().GetConsensus();
     KeyIO keyIO(Params());
+    WalletTxBuilder builder(Params(), minRelayTxFee);
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -1248,7 +1255,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
                 // confirm this.
                 TransparentCoinbasePolicy::Allow,
                 false).value();
-        WalletTxBuilder builder(Params(), minRelayTxFee);
         std::vector<Payment> recipients = { Payment(zaddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedSenders);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy, std::nullopt));
@@ -1265,7 +1271,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
                 true,
                 TransparentCoinbasePolicy::Disallow,
                 false).value();
-        WalletTxBuilder builder(Params(), minRelayTxFee);
         std::vector<Payment> recipients = { Payment(taddr1, 100*COIN, Memo::FromHexOrThrow("DEADBEEF")) };
         TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 1, 1, strategy, std::nullopt));
@@ -1523,6 +1528,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
 
     // Test constructor of AsyncRPCOperation_shieldcoinbase
     KeyIO keyIO(Params());
+    WalletTxBuilder builder(Params(), minRelayTxFee);
     UniValue retValue;
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
     auto taddr2 = std::get<CKeyID>(keyIO.DecodePaymentAddress(retValue.get_str()).value());
@@ -1535,7 +1541,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
             // confirm this.
             TransparentCoinbasePolicy::Allow,
             false).value();
-    WalletTxBuilder builder(Params(), minRelayTxFee);
 
     try {
         std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase(std::move(builder), selector, testnetzaddr, PrivacyPolicy::AllowRevealedSenders, SHIELD_COINBASE_DEFAULT_LIMIT, 1));
@@ -1620,54 +1625,44 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
     CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + aSproutAddr + " 0.00001 100 100 " + badmemo,
-        "Invalid parameter, size of memo is larger than maximum allowed 512");
+        strprintf("Invalid parameter, memo is longer than the maximum allowed %d characters.", ZC_MEMO_SIZE));
 
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");
     int nHeight = retValue.get_int();
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nHeight + 1, false);
 
-    // Test constructor of AsyncRPCOperation_mergetoaddress
     KeyIO keyIO(Params());
-    MergeToAddressRecipient testnetzaddr(
-        keyIO.DecodePaymentAddress("ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP").value(),
-        "testnet memo");
+    WalletTxBuilder builder(Params(), minRelayTxFee);
+    auto saplingKey = pwalletMain->GenerateNewLegacySaplingZKey();
+    NetAmountRecipient testnetzaddr(saplingKey, Memo());
+    auto selector = CWallet::LegacyTransparentZTXOSelector(
+            true,
+            TransparentCoinbasePolicy::Disallow);
+    TransactionStrategy strategy(PrivacyPolicy::AllowRevealedRecipients);
 
-    try {
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_mergetoaddress(std::nullopt,  mtx, {}, {}, {}, testnetzaddr, -1 ));
-        BOOST_FAIL("Should have caused an error");
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "Fee is out of range"));
-    }
+    builder.PrepareTransaction(*pwalletMain, selector, {}, testnetzaddr, chainActive, strategy, -1, 1)
+        .map_error([&](const auto& err) {
+            // TODO: Provide `operator==` on `InputSelectionError` and use that here.
+            BOOST_CHECK(std::holds_alternative<InvalidFeeError>(err));
+        })
+        .map([](const auto&) {
+            BOOST_FAIL("Fee value of -1 expected to be out of the valid range of values.");
+        });
 
-    try {
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_mergetoaddress(std::nullopt, mtx, {}, {}, {}, testnetzaddr, 1));
-        BOOST_FAIL("Should have caused an error");
-    } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "No inputs"));
-    }
-
-    std::vector<MergeToAddressInputUTXO> inputs = { MergeToAddressInputUTXO{ COutPoint{uint256(), 0}, 0, CScript()} };
-
-    std::vector<MergeToAddressInputSproutNote> sproutNoteInputs =
-        {MergeToAddressInputSproutNote{JSOutPoint(), SproutNote(), 0, SproutSpendingKey()}};
-    std::vector<MergeToAddressInputSaplingNote> saplingNoteInputs =
-        {MergeToAddressInputSaplingNote{SaplingOutPoint(), SaplingNote({}, uint256(), 0, uint256(), Zip212Enabled::BeforeZip212), 0, SaplingExpandedSpendingKey()}};
-
-    // Sprout and Sapling inputs -> throw
-    try {
-        auto operation = new AsyncRPCOperation_mergetoaddress(std::nullopt, mtx, inputs, sproutNoteInputs, saplingNoteInputs, testnetzaddr, 1);
-        BOOST_FAIL("Should have caused an error");
-    } catch (const UniValue& objError) {
-        BOOST_CHECK(find_error(objError, "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress"));
-    }
-    // Sprout inputs and TransactionBuilder -> throw
-    try {
-        auto operation = new AsyncRPCOperation_mergetoaddress(TransactionBuilder(), mtx, inputs, sproutNoteInputs, {}, testnetzaddr, 1);
-        BOOST_FAIL("Should have caused an error");
-    } catch (const UniValue& objError) {
-        BOOST_CHECK(find_error(objError, "Sprout notes are not supported by the TransactionBuilder"));
-    }
+    builder.PrepareTransaction(*pwalletMain, selector, {}, testnetzaddr, chainActive, strategy, 1, 1)
+        .map_error([&](const auto& err) {
+            // TODO: Provide `operator==` on `InputSelectionError` and use that here.
+            BOOST_CHECK(examine(err, match {
+                [](const InvalidFundsError& ife) {
+                    return std::holds_alternative<InsufficientFundsError>(ife.reason);
+                },
+                [](const auto&) { return false; },
+            }));
+        })
+        .map([](const auto&) {
+            BOOST_FAIL("Expected an error.");
+        });
 }
 
 void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {

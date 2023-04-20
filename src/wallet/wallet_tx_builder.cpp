@@ -11,7 +11,7 @@ using namespace libzcash;
 int GetAnchorHeight(const CChain& chain, uint32_t anchorConfirmations)
 {
     int nextBlockHeight = chain.Height() + 1;
-    return nextBlockHeight - anchorConfirmations;
+    return std::max(0, nextBlockHeight - (int) anchorConfirmations);
 }
 
 static size_t PadCount(size_t n)
@@ -260,7 +260,7 @@ tl::expected<ChangeAddress, AddressResolutionError>
 WalletTxBuilder::GetChangeAddress(
         CWallet& wallet,
         const ZTXOSelector& selector,
-        SpendableInputs& spendable,
+        const SpendableInputs& spendable,
         const Payments& resolvedPayments,
         const TransactionStrategy& strategy,
         bool afterNU5) const
@@ -385,15 +385,20 @@ tl::expected<TransactionEffects, InputSelectionError>
 WalletTxBuilder::PrepareTransaction(
         CWallet& wallet,
         const ZTXOSelector& selector,
-        SpendableInputs& spendable,
+        const SpendableInputs& spendable,
         const Recipients& payments,
         const CChain& chain,
-        TransactionStrategy strategy,
-        std::optional<CAmount> fee,
+        const TransactionStrategy& strategy,
+        const std::optional<CAmount>& fee,
         uint32_t anchorConfirmations) const
 {
-    if (fee.has_value() && maxTxFee < fee.value()) {
-        return tl::make_unexpected(MaxFeeError(fee.value()));
+    if (fee.has_value()) {
+        if (maxTxFee < fee.value()) {
+            return tl::make_unexpected(MaxFeeError(fee.value()));
+        } else if (!MoneyRange(fee.value())) {
+            // TODO: This check will be obviated by #6579.
+            return tl::make_unexpected(InvalidFeeError(fee.value()));
+        }
     }
 
     int anchorHeight = GetAnchorHeight(chain, anchorConfirmations);
@@ -521,7 +526,7 @@ tl::expected<
 WalletTxBuilder::IterateLimit(
         CWallet& wallet,
         const ZTXOSelector& selector,
-        const TransactionStrategy strategy,
+        const TransactionStrategy& strategy,
         CAmount sendAmount,
         CAmount dustThreshold,
         const SpendableInputs& spendable,
@@ -615,11 +620,11 @@ tl::expected<InputSelection, InputSelectionError>
 WalletTxBuilder::ResolveInputsAndPayments(
         CWallet& wallet,
         const ZTXOSelector& selector,
-        SpendableInputs& spendableMut,
+        const SpendableInputs& spendable,
         const std::vector<Payment>& payments,
         const CChain& chain,
         const TransactionStrategy& strategy,
-        std::optional<CAmount> fee,
+        const std::optional<CAmount>& fee,
         bool afterNU5) const
 {
     LOCK2(cs_main, wallet.cs_wallet);
@@ -629,8 +634,8 @@ WalletTxBuilder::ResolveInputsAndPayments(
     // as possible.  This will also perform opportunistic shielding if the
     // transaction strategy permits.
 
-    CAmount maxSaplingAvailable = spendableMut.GetSaplingTotal();
-    CAmount maxOrchardAvailable = spendableMut.GetOrchardTotal();
+    CAmount maxSaplingAvailable = spendable.GetSaplingTotal();
+    CAmount maxOrchardAvailable = spendable.GetOrchardTotal();
     uint32_t orchardOutputs{0};
 
     // we can only select Orchard addresses if we’re not sending from Sprout, since there is no tx
@@ -665,10 +670,12 @@ WalletTxBuilder::ResolveInputsAndPayments(
         sendAmount += payment.GetAmount();
     }
 
+    SpendableInputs spendableMut;
     CAmount finalFee;
     CAmount targetAmount;
     std::optional<ChangeAddress> changeAddr;
     if (fee.has_value()) {
+        spendableMut = spendable;
         finalFee = fee.value();
         targetAmount = sendAmount + finalFee;
         // TODO: the set of recipient pools is not quite sufficient information here; we should
@@ -726,7 +733,7 @@ WalletTxBuilder::ResolveInputsAndPayments(
             }
         }
     } else {
-        auto limitResult = IterateLimit(wallet, selector, strategy, sendAmount, dustThreshold, spendableMut, resolved, afterNU5);
+        auto limitResult = IterateLimit(wallet, selector, strategy, sendAmount, dustThreshold, spendable, resolved, afterNU5);
         if (limitResult.has_value()) {
             std::tie(spendableMut, finalFee, changeAddr) = limitResult.value();
             targetAmount = sendAmount + finalFee;

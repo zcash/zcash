@@ -49,7 +49,7 @@ public:
             CAmount amount,
             std::optional<Memo> memo) :
         address(address), amount(amount), memo(memo) {
-        assert(amount >= 0);
+        assert(MoneyRange(amount));
     }
 
     const PaymentAddress& GetAddress() const {
@@ -300,6 +300,15 @@ public:
         available(available), required(required) { }
 };
 
+/// Error when a fee is outside `MoneyRange`
+class InvalidFeeError {
+public:
+    CAmount fixedFee;
+
+    InvalidFeeError(CAmount fixedFee):
+        fixedFee(fixedFee) { }
+};
+
 /// Error when a fee is higher than can be useful. This reduces the chance of accidentally
 /// overpaying with explicit fees.
 class AbsurdFeeError {
@@ -340,6 +349,7 @@ typedef std::variant<
     AddressResolutionError,
     InvalidFundsError,
     ChangeNotAllowedError,
+    InvalidFeeError,
     AbsurdFeeError,
     MaxFeeError,
     ExcessOrchardActionsError> InputSelectionError;
@@ -376,7 +386,7 @@ private:
     GetChangeAddress(
             CWallet& wallet,
             const ZTXOSelector& selector,
-            SpendableInputs& spendable,
+            const SpendableInputs& spendable,
             const Payments& resolvedPayments,
             const TransactionStrategy& strategy,
             bool afterNU5) const;
@@ -387,7 +397,7 @@ private:
     IterateLimit(
             CWallet& wallet,
             const ZTXOSelector& selector,
-            const TransactionStrategy strategy,
+            const TransactionStrategy& strategy,
             CAmount sendAmount,
             CAmount dustThreshold,
             const SpendableInputs& spendable,
@@ -403,11 +413,11 @@ private:
     ResolveInputsAndPayments(
             CWallet& wallet,
             const ZTXOSelector& selector,
-            SpendableInputs& spendable,
+            const SpendableInputs& spendable,
             const std::vector<Payment>& payments,
             const CChain& chain,
             const TransactionStrategy& strategy,
-            std::optional<CAmount> fee,
+            const std::optional<CAmount>& fee,
             bool afterNU5) const;
     /**
      * Compute the internal and external OVKs to use in transaction construction, given
@@ -431,12 +441,12 @@ public:
     PrepareTransaction(
             CWallet& wallet,
             const ZTXOSelector& selector,
-            SpendableInputs& spendable,
+            const SpendableInputs& spendable,
             const Recipients& payments,
             const CChain& chain,
-            TransactionStrategy strategy,
+            const TransactionStrategy& strategy,
             /// A fixed fee is used if provided, otherwise it is calculated based on ZIP 317.
-            std::optional<CAmount> fee,
+            const std::optional<CAmount>& fee,
             uint32_t anchorConfirmations) const;
 };
 
