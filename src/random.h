@@ -16,17 +16,22 @@
 
 #include "int128.h"
 
-/**
+/** @file
  * Functions to gather random data via the rand_core OsRng
  */
+
+/** Fill the buffer buf of length num with random unformly distributed bytes, via the rand_core OsRng. */
 void GetRandBytes(unsigned char* buf, size_t num);
 
+/**
+ * Return a random value of type I uniformly distributed on [0, nMax), unless nMax is 0 in which case return 0.
+ * I must be an unsigned numeric type.
+ */
 template <typename I>
 I GetRandGeneric(I nMax)
 {
-    // I must be an unsigned numeric type.
     static_assert(std::numeric_limits<I>::min() == 0);
-    // I() for primitive signed integer types returns 0.
+    // I() for primitive integer types returns 0.
     if (nMax == I())
         return I();
 
@@ -40,11 +45,17 @@ I GetRandGeneric(I nMax)
     return (nRand % nMax);
 }
 
+/** Return a random uint128_t uniformly distributed on [0, nMax), unless nMax is 0 in which case return 0. */
 uint128_t GetRandUInt128(uint128_t nMax);
+/** Return a random int128_t uniformly distributed on [0, nMax), unless nMax is 0 in which case return 0. nMax must be >= 0. */
 int128_t GetRandInt128(int128_t nMax);
+/** Return a random uint64_t uniformly distributed on [0, nMax), unless nMax is 0 in which case return 0. */
 uint64_t GetRand(uint64_t nMax);
+/** Return a random int64_t uniformly distributed on [0, nMax), unless nMax is 0 in which case return 0. nMax must be >= 0. */
 int64_t GetRandInt64(int64_t nMax);
+/** Return a random int uniformly distributed on [0, nMax), unless nMax is 0 in which case return 0. nMax must be >= 0. */
 int GetRandInt(int nMax);
+/** Return a random uniformly distributed uint256. */
 uint256 GetRandHash();
 
 /**
