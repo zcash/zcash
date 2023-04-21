@@ -634,6 +634,11 @@ The ECC core team maintains this crate, and we have reviewed every line.
 The crate has `deny(unsafe_code)`.
 """
 
+[[audits.hdwallet]]
+who = "Jack Grigg <jack@electriccoin.co>"
+criteria = "safe-to-deploy"
+delta = "0.3.1 -> 0.4.1"
+
 [[audits.http]]
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
