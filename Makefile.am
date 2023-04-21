@@ -1,5 +1,9 @@
 ACLOCAL_AMFLAGS = -I build-aux/m4
 
+# AM_CFLAGS will be automatically prepended to CFLAGS by Automake when compiling some foo
+# which does not have an explicit foo_CFLAGS variable set.
+AM_CFLAGS = $(SECP_CFLAGS)
+
 lib_LTLIBRARIES = libsecp256k1.la
 include_HEADERS = include/secp256k1.h
 include_HEADERS += include/secp256k1_preallocated.h
@@ -129,10 +133,10 @@ CPPFLAGS_FOR_BUILD +=-I$(top_srcdir) -I$(builddir)/src
 gen_context_OBJECTS = gen_context.o
 gen_context_BIN = gen_context$(BUILD_EXEEXT)
 gen_%.o: src/gen_%.c src/libsecp256k1-config.h
-	$(CC_FOR_BUILD) $(DEFS) $(CPPFLAGS_FOR_BUILD) $(CFLAGS_FOR_BUILD) -c $< -o $@
+	$(CC_FOR_BUILD) $(DEFS) $(CPPFLAGS_FOR_BUILD) $(SECP_CFLAGS_FOR_BUILD) $(CFLAGS_FOR_BUILD) -c $< -o $@
 
 $(gen_context_BIN): $(gen_context_OBJECTS)
-	$(CC_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) $^ -o $@
+	$(CC_FOR_BUILD) $(SECP_CFLAGS_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) $^ -o $@
 
 $(libsecp256k1_la_OBJECTS): src/ecmult_static_context.h
 $(tests_OBJECTS): src/ecmult_static_context.h

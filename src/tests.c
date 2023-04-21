@@ -564,6 +564,38 @@ void run_rfc6979_hmac_sha256_tests(void) {
     secp256k1_rfc6979_hmac_sha256_finalize(&rng);
 }
 
+void run_tagged_sha256_tests(void) {
+    int ecount = 0;
+    secp256k1_context *none = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
+    unsigned char tag[32] = { 0 };
+    unsigned char msg[32] = { 0 };
+    unsigned char hash32[32];
+    unsigned char hash_expected[32] = {
+        0x04, 0x7A, 0x5E, 0x17, 0xB5, 0x86, 0x47, 0xC1,
+        0x3C, 0xC6, 0xEB, 0xC0, 0xAA, 0x58, 0x3B, 0x62,
+        0xFB, 0x16, 0x43, 0x32, 0x68, 0x77, 0x40, 0x6C,
+        0xE2, 0x76, 0x55, 0x9A, 0x3B, 0xDE, 0x55, 0xB3
+    };
+
+    secp256k1_context_set_illegal_callback(none, counting_illegal_callback_fn, &ecount);
+
+    /* API test */
+    CHECK(secp256k1_tagged_sha256(none, hash32, tag, sizeof(tag), msg, sizeof(msg)) == 1);
+    CHECK(secp256k1_tagged_sha256(none, NULL, tag, sizeof(tag), msg, sizeof(msg)) == 0);
+    CHECK(ecount == 1);
+    CHECK(secp256k1_tagged_sha256(none, hash32, NULL, 0, msg, sizeof(msg)) == 0);
+    CHECK(ecount == 2);
+    CHECK(secp256k1_tagged_sha256(none, hash32, tag, sizeof(tag), NULL, 0) == 0);
+    CHECK(ecount == 3);
+
+    /* Static test vector */
+    memcpy(tag, "tag", 3);
+    memcpy(msg, "msg", 3);
+    CHECK(secp256k1_tagged_sha256(none, hash32, tag, 3, msg, 3) == 1);
+    CHECK(secp256k1_memcmp_var(hash32, hash_expected, sizeof(hash32)) == 0);
+    secp256k1_context_destroy(none);
+}
+
 /***** RANDOM TESTS *****/
 
 void test_rand_bits(int rand32, int bits) {
@@ -2508,6 +2540,70 @@ void run_field_misc(void) {
     }
 }
 
+void test_fe_mul(const secp256k1_fe* a, const secp256k1_fe* b, int use_sqr)
+{
+    secp256k1_fe c, an, bn;
+    /* Variables in BE 32-byte format. */
+    unsigned char a32[32], b32[32], c32[32];
+    /* Variables in LE 16x uint16_t format. */
+    uint16_t a16[16], b16[16], c16[16];
+    /* Field modulus in LE 16x uint16_t format. */
+    static const uint16_t m16[16] = {
+        0xfc2f, 0xffff, 0xfffe, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+        0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+    };
+    uint16_t t16[32];
+    int i;
+
+    /* Compute C = A * B in fe format. */
+    c = *a;
+    if (use_sqr) {
+        secp256k1_fe_sqr(&c, &c);
+    } else {
+        secp256k1_fe_mul(&c, &c, b);
+    }
+
+    /* Convert A, B, C into LE 16x uint16_t format. */
+    an = *a;
+    bn = *b;
+    secp256k1_fe_normalize_var(&c);
+    secp256k1_fe_normalize_var(&an);
+    secp256k1_fe_normalize_var(&bn);
+    secp256k1_fe_get_b32(a32, &an);
+    secp256k1_fe_get_b32(b32, &bn);
+    secp256k1_fe_get_b32(c32, &c);
+    for (i = 0; i < 16; ++i) {
+        a16[i] = a32[31 - 2*i] + ((uint16_t)a32[30 - 2*i] << 8);
+        b16[i] = b32[31 - 2*i] + ((uint16_t)b32[30 - 2*i] << 8);
+        c16[i] = c32[31 - 2*i] + ((uint16_t)c32[30 - 2*i] << 8);
+    }
+    /* Compute T = A * B in LE 16x uint16_t format. */
+    mulmod256(t16, a16, b16, m16);
+    /* Compare */
+    CHECK(secp256k1_memcmp_var(t16, c16, 32) == 0);
+}
+
+void run_fe_mul(void) {
+    int i;
+    for (i = 0; i < 100 * count; ++i) {
+        secp256k1_fe a, b, c, d;
+        random_fe(&a);
+        random_field_element_magnitude(&a);
+        random_fe(&b);
+        random_field_element_magnitude(&b);
+        random_fe_test(&c);
+        random_field_element_magnitude(&c);
+        random_fe_test(&d);
+        random_field_element_magnitude(&d);
+        test_fe_mul(&a, &a, 1);
+        test_fe_mul(&c, &c, 1);
+        test_fe_mul(&a, &b, 0);
+        test_fe_mul(&a, &c, 0);
+        test_fe_mul(&c, &b, 0);
+        test_fe_mul(&c, &d, 0);
+    }
+}
+
 void run_sqr(void) {
     secp256k1_fe x, s;
 
@@ -2595,7 +2691,7 @@ void test_inverse_scalar(secp256k1_scalar* out, const secp256k1_scalar* x, int v
 {
     secp256k1_scalar l, r, t;
 
-    (var ? secp256k1_scalar_inverse_var : secp256k1_scalar_inverse_var)(&l, x);  /* l = 1/x */
+    (var ? secp256k1_scalar_inverse_var : secp256k1_scalar_inverse)(&l, x);  /* l = 1/x */
     if (out) *out = l;
     if (secp256k1_scalar_is_zero(x)) {
         CHECK(secp256k1_scalar_is_zero(&l));
@@ -2605,9 +2701,9 @@ void test_inverse_scalar(secp256k1_scalar* out, const secp256k1_scalar* x, int v
     CHECK(secp256k1_scalar_is_one(&t));                                          /* x*(1/x) == 1 */
     secp256k1_scalar_add(&r, x, &scalar_minus_one);                              /* r = x-1 */
     if (secp256k1_scalar_is_zero(&r)) return;
-    (var ? secp256k1_scalar_inverse_var : secp256k1_scalar_inverse_var)(&r, &r); /* r = 1/(x-1) */
+    (var ? secp256k1_scalar_inverse_var : secp256k1_scalar_inverse)(&r, &r); /* r = 1/(x-1) */
     secp256k1_scalar_add(&l, &scalar_minus_one, &l);                             /* l = 1/x-1 */
-    (var ? secp256k1_scalar_inverse_var : secp256k1_scalar_inverse_var)(&l, &l); /* l = 1/(1/x-1) */
+    (var ? secp256k1_scalar_inverse_var : secp256k1_scalar_inverse)(&l, &l); /* l = 1/(1/x-1) */
     secp256k1_scalar_add(&l, &l, &secp256k1_scalar_one);                         /* l = 1/(1/x-1)+1 */
     secp256k1_scalar_add(&l, &r, &l);                                            /* l = 1/(1/x-1)+1 + 1/(x-1) */
     CHECK(secp256k1_scalar_is_zero(&l));                                         /* l == 0 */
@@ -6505,6 +6601,7 @@ int main(int argc, char **argv) {
     run_sha256_tests();
     run_hmac_sha256_tests();
     run_rfc6979_hmac_sha256_tests();
+    run_tagged_sha256_tests();
 
     /* scalar tests */
     run_scalar_tests();
@@ -6512,6 +6609,7 @@ int main(int argc, char **argv) {
     /* field tests */
     run_field_misc();
     run_field_convert();
+    run_fe_mul();
     run_sqr();
     run_sqrt();
 
