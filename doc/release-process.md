@@ -171,6 +171,9 @@ final release.
 
 ## Add release notes to GitHub
 
+The following part of the release process applies only to final releases, not
+release candidates.
+
 - Go to the [GitHub tags page](https://github.com/zcash/zcash/tags).
 - Click "Add release notes" beside the tag for this release.
 - Copy the release blog post into the release description, and edit to suit
