@@ -5527,11 +5527,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 }
             },
             [](libzcash::SproutPaymentAddress) { },
-            [](libzcash::UnifiedAddress) {
-                throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Invalid parameter, unified addresses are not yet supported.");
-            }
+            [](libzcash::UnifiedAddress) { },
         });
     } else {
         throw JSONRPCError(

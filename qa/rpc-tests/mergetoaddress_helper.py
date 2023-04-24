@@ -28,8 +28,8 @@ def assert_mergetoaddress_exception(expected_error_msg, merge_to_address_lambda)
 
 class MergeToAddressHelper:
 
-    def __init__(self, addr_type, any_zaddr):
-        self.addr_type = addr_type
+    def __init__(self, new_address, any_zaddr):
+        self.new_address = new_address
         self.any_zaddr = [any_zaddr]
         self.any_zaddr_or_utxo = [any_zaddr, "ANY_TADDR"]
 
@@ -85,7 +85,7 @@ class MergeToAddressHelper:
         assert_equal(test.nodes[2].getbalance(), Decimal('30'))
 
         # Shield the coinbase
-        myzaddr = test.nodes[0].z_getnewaddress(self.addr_type)
+        myzaddr = self.new_address(test, 0)
         result = test.nodes[0].z_shieldcoinbase("*", myzaddr, 0)
         wait_and_assert_operationid_status(test.nodes[0], result['opid'])
         test.sync_all()
@@ -178,7 +178,7 @@ class MergeToAddressHelper:
         assert_equal(test.nodes[2].getbalance(), Decimal('30'))
 
         # Shield all notes to another z-addr
-        myzaddr2 = test.nodes[0].z_getnewaddress(self.addr_type)
+        myzaddr2 = self.new_address(test, 0)
         result = test.nodes[0].z_mergetoaddress(self.any_zaddr, myzaddr2, 0)
         assert_equal(result["mergingUTXOs"], 0)
         assert_equal(result["remainingUTXOs"], 0)
@@ -300,36 +300,47 @@ class MergeToAddressHelper:
         test.sync_all()
         assert_equal(4, len(test.nodes[0].z_listunspent()))
 
-        # Also check that we can set off a second merge before the first one is complete
-        result1 = test.nodes[0].z_mergetoaddress([myzaddr], myzaddr, DEFAULT_FEE, 50, 2)
+        # NB: We can’t yet merge from UAs, so ensure we’re not before running these cases
+        if (myzaddr[0] != 'u'):
+            # Also check that we can set off a second merge before the first one is complete
+            result1 = test.nodes[0].z_mergetoaddress([myzaddr], myzaddr, DEFAULT_FEE, 50, 2)
 
-        # First merge should select from all notes
-        assert_equal(result1["mergingUTXOs"], 0)
-        # Remaining UTXOs are only counted if we are trying to merge any UTXOs
-        assert_equal(result1["remainingUTXOs"], 0)
-        assert_equal(result1["mergingNotes"], 2)
-        assert_equal(result1["remainingNotes"], 2)
+            # First merge should select from all notes
+            assert_equal(result1["mergingUTXOs"], 0)
+            # Remaining UTXOs are only counted if we are trying to merge any UTXOs
+            assert_equal(result1["remainingUTXOs"], 0)
+            assert_equal(result1["mergingNotes"], 2)
+            assert_equal(result1["remainingNotes"], 2)
 
-        # Second merge should ignore locked notes
-        result2 = test.nodes[0].z_mergetoaddress([myzaddr], myzaddr, DEFAULT_FEE, 50, 2)
-        assert_equal(result2["mergingUTXOs"], 0)
-        assert_equal(result2["remainingUTXOs"], 0)
-        assert_equal(result2["mergingNotes"], 2)
-        assert_equal(result2["remainingNotes"], 0)
-        wait_and_assert_operationid_status(test.nodes[0], result1['opid'])
-        wait_and_assert_operationid_status(test.nodes[0], result2['opid'])
+            # Second merge should ignore locked notes
+            result2 = test.nodes[0].z_mergetoaddress([myzaddr], myzaddr, DEFAULT_FEE, 50, 2)
+            assert_equal(result2["mergingUTXOs"], 0)
+            assert_equal(result2["remainingUTXOs"], 0)
+            assert_equal(result2["mergingNotes"], 2)
+            assert_equal(result2["remainingNotes"], 0)
+            wait_and_assert_operationid_status(test.nodes[0], result1['opid'])
+            wait_and_assert_operationid_status(test.nodes[0], result2['opid'])
 
-        test.sync_all()
-        generate_and_check(test.nodes[1], 3)
-        test.sync_all()
+            test.sync_all()
+            generate_and_check(test.nodes[1], 3)
+            test.sync_all()
 
-        # Shield both UTXOs and notes to a z-addr
-        result = test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, DEFAULT_FEE, 10, 2, None, 'AllowRevealedSenders')
-        assert_equal(result["mergingUTXOs"], 10)
-        assert_equal(result["remainingUTXOs"], 7)
-        assert_equal(result["mergingNotes"], 2)
-        assert_equal(result["remainingNotes"], 0)
-        wait_and_assert_operationid_status(test.nodes[0], result['opid'])
+            # Shield both UTXOs and notes to a z-addr
+            result = test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, DEFAULT_FEE, 10, 2, None, 'AllowRevealedSenders')
+            assert_equal(result["mergingUTXOs"], 10)
+            assert_equal(result["remainingUTXOs"], 7)
+            assert_equal(result["mergingNotes"], 2)
+            assert_equal(result["remainingNotes"], 0)
+            wait_and_assert_operationid_status(test.nodes[0], result['opid'])
+        else:
+            # Shield both UTXOs and notes to a z-addr
+            result = test.nodes[0].z_mergetoaddress(self.any_zaddr_or_utxo, myzaddr, DEFAULT_FEE, 10, 2, None, 'AllowRevealedSenders')
+            assert_equal(result["mergingUTXOs"], 10)
+            assert_equal(result["remainingUTXOs"], 7)
+            assert_equal(result["mergingNotes"], 2)
+            assert_equal(result["remainingNotes"], 2)
+            wait_and_assert_operationid_status(test.nodes[0], result['opid'])
+
         test.sync_all()
         generate_and_check(test.nodes[1], 2)
         test.sync_all()
