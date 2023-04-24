@@ -60,6 +60,7 @@ public:
         WalletTxBuilder builder,
         ZTXOSelector ztxoSelector,
         PaymentAddress toAddress,
+        std::optional<Memo> memo,
         TransactionStrategy strategy,
         int nUTXOLimit,
         std::optional<CAmount> fee,
@@ -86,6 +87,7 @@ private:
     WalletTxBuilder builder_;
     ZTXOSelector ztxoSelector_;
     PaymentAddress toAddress_;
+    std::optional<Memo> memo_;
     TransactionStrategy strategy_;
     int nUTXOLimit_;
     std::optional<CAmount> fee_;

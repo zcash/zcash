@@ -5180,7 +5180,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
-            "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee ) ( limit ) ( privacyPolicy )\n"
+            "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee ) ( limit ) ( memo ) ( privacyPolicy )\n"
             "\nShield transparent coinbase funds by sending to a shielded zaddr.  This is an asynchronous operation and utxos"
             "\nselected for shielding will be locked.  If there is an error, they are unlocked.  The RPC call `listlockunspent`"
             "\ncan be used to return a list of locked utxos.  The number of coinbase utxos selected for shielding can be limited"
@@ -5195,7 +5195,8 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             "                         is to use a fee calculated according to ZIP 317.\n"
             "4. limit                 (numeric, optional, default="
             + strprintf("%d", SHIELD_COINBASE_DEFAULT_LIMIT) + ") Limit on the maximum number of utxos to shield.  Set to 0 to use as many as will fit in the transaction.\n"
-            "5. privacyPolicy         (string, optional, default=\"AllowRevealedSenders\") Policy for what information leakage is acceptable.\n"
+            "5. \"memo\"                (string, optional) Encoded as hex. This will be stored in the memo field of the new note.\n"
+            "6. privacyPolicy         (string, optional, default=\"AllowRevealedSenders\") Policy for what information leakage is acceptable.\n"
             "                         This allows the same values as z_sendmany, but only \"AllowRevealedSenders\" and \"AllowLinkingAccountAddresses\"\n"
             "                         are relevant.\n"
             "\nResult:\n"
@@ -5225,11 +5226,16 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             RPC_INVALID_PARAMETER, "Cannot create shielded transactions before Sapling has activated");
     }
 
+    std::optional<Memo> memo;
+    if (params.size() > 4) {
+        memo = ParseMemo(params[4]);
+    }
+
     auto strategy =
         ResolveTransactionStrategy(
                 ReifyPrivacyPolicy(
                         PrivacyPolicy::AllowRevealedSenders,
-                        params.size() > 4 ? std::optional(params[4].get_str()) : std::nullopt),
+                        params.size() > 5 ? std::optional(params[5].get_str()) : std::nullopt),
                 // This has identical behavior to `AllowRevealedSenders` for this operation, but
                 // technically, this is what “LegacyCompat” means, so just for consistency.
                 PrivacyPolicy::AllowFullyTransparent);
@@ -5318,7 +5324,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     auto async_shieldcoinbase =
         new AsyncRPCOperation_shieldcoinbase(
-                std::move(builder), ztxoSelector, destaddress.value(), strategy, nUTXOLimit, nFee, contextInfo);
+                std::move(builder), ztxoSelector, destaddress.value(), memo, strategy, nUTXOLimit, nFee, contextInfo);
     auto results = async_shieldcoinbase->prepare(*pwalletMain);
 
     // Create operation and add to global queue

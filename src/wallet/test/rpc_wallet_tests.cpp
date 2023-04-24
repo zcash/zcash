@@ -1543,7 +1543,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
             false).value();
 
     try {
-        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase(std::move(builder), selector, testnetzaddr, PrivacyPolicy::AllowRevealedSenders, SHIELD_COINBASE_DEFAULT_LIMIT, 1));
+        std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_shieldcoinbase(std::move(builder), selector, testnetzaddr, std::nullopt, PrivacyPolicy::AllowRevealedSenders, SHIELD_COINBASE_DEFAULT_LIMIT, 1));
     } catch (const UniValue& objError) {
         BOOST_CHECK( find_error(objError, "Empty inputs"));
     }
