@@ -1625,7 +1625,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
     CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + aSproutAddr + " 0.00001 100 100 " + badmemo,
-        strprintf("Invalid parameter, memo is longer than the maximum allowed %d characters.", ZC_MEMO_SIZE));
+        strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE));
 
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");

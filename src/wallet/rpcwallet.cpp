@@ -4773,6 +4773,31 @@ size_t EstimateTxSize(
     return txsize;
 }
 
+static std::optional<Memo> ParseMemo(const UniValue& memoValue)
+{
+    if (memoValue.isNull()) {
+        return std::nullopt;
+    } else {
+        return examine(Memo::FromHex(memoValue.get_str()), match {
+            [](MemoError err) -> Memo {
+                switch (err) {
+                    case MemoError::HexDecodeError:
+                        throw JSONRPCError(
+                                RPC_INVALID_PARAMETER,
+                                "Invalid parameter, expected memo data in hexadecimal format.");
+                    case MemoError::MemoTooLong:
+                        throw JSONRPCError(
+                                RPC_INVALID_PARAMETER,
+                                strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
+                    default:
+                        assert(false);
+                }
+            },
+            [](Memo result) { return result; }
+        });
+    }
+}
+
 UniValue z_sendmany(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -4882,30 +4907,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated recipient address: ") + addrStr);
         }
 
-        UniValue memoValue = find_value(o, "memo");
-        std::optional<Memo> memo;
-        if (!memoValue.isNull()) {
-            auto memoHex = memoValue.get_str();
-            examine(Memo::FromHex(memoHex), match {
-                [&](MemoError err) {
-                    switch (err) {
-                        case MemoError::HexDecodeError:
-                            throw JSONRPCError(
-                                    RPC_INVALID_PARAMETER,
-                                    "Invalid parameter, expected memo data in hexadecimal format.");
-                        case MemoError::MemoTooLong:
-                            throw JSONRPCError(
-                                    RPC_INVALID_PARAMETER,
-                                    strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
-                        default:
-                            assert(false);
-                    }
-                },
-                [&](Memo result) {
-                    memo = result;
-                }
-            });
-        }
+        auto memo = ParseMemo(find_value(o, "memo"));
 
         UniValue av = find_value(o, "amount");
         CAmount nAmount = AmountFromValue( av );
@@ -5296,7 +5298,9 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         nFee = AmountFromValue( params[2] );
     }
 
-    int nUTXOLimit = params.size() > 3 ? params[3].get_int() : SHIELD_COINBASE_DEFAULT_LIMIT;
+    int nUTXOLimit = params.size() > 3 && !params[3].isNull()
+        ? params[3].get_int()
+        : SHIELD_COINBASE_DEFAULT_LIMIT;
     if (nUTXOLimit < 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Limit on maximum number of utxos cannot be negative");
     }
@@ -5535,7 +5539,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     }
 
     int nUTXOLimit = MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT;
-    if (params.size() > 3) {
+    if (params.size() > 3 && !params[3].isNull()) {
         nUTXOLimit = params[3].get_int();
         if (nUTXOLimit < 0) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Limit on maximum number of UTXOs cannot be negative");
@@ -5544,7 +5548,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     int sproutNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT;
     int saplingNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT;
-    if (params.size() > 4) {
+    if (params.size() > 4 && !params[4].isNull()) {
         int nNoteLimit = params[4].get_int();
         if (nNoteLimit < 0) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Limit on maximum number of notes cannot be negative");
@@ -5555,7 +5559,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     std::optional<Memo> memo;
     if (params.size() > 5) {
-        memo = Memo::FromHexOrThrow(params[5].get_str());
+        memo = ParseMemo(params[5]);
     }
 
     NetAmountRecipient recipient(destaddress.value(), memo);

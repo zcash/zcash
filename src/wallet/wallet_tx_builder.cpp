@@ -228,12 +228,16 @@ ResolveNetPayment(
     auto initialFee = fee.value_or(MINIMUM_FEE);
     return ValidateAmount(spendable, initialFee)
         .and_then([&](void) {
+            // Needed so that the initial call to `ResolvePayment` (which is just a placeholder used
+            // to help calculate the fee) doesn’t accidentally decrement funds.
+            CAmount tempMaxSapling = maxSaplingAvailable;
+            CAmount tempMaxOrchard = maxOrchardAvailable;
             return ResolvePayment(
                     Payment(netpay.first, spendable.Total() - initialFee, netpay.second),
                     canResolveOrchard,
                     strategy,
-                    maxSaplingAvailable,
-                    maxOrchardAvailable,
+                    tempMaxSapling,
+                    tempMaxOrchard,
                     orchardOutputs)
                 .map_error([](const auto& error) -> InputSelectionError { return error; })
                 .and_then([&](const auto& rpayment) {
