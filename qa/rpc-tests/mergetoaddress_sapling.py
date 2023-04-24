@@ -16,7 +16,6 @@ class MergeToAddressSapling (BitcoinTestFramework):
     def setup_network(self, split=False):
         self.helper.setup_network(self, [
             '-anchorconfirmations=1',
-            '-allowdeprecated=legacy_privacy',
         ])
 
     def run_test(self):
