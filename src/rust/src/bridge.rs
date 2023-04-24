@@ -1,11 +1,12 @@
-//! FFI bridges between `zcashd`'s Rust and C++ code.
-//!
-//! These are all collected into a single file because we can't use the same Rust type
-//! across multiple bridges until https://github.com/dtolnay/cxx/issues/496 is closed.
-//!
-//! The bridges that we leave separate are either standalone Rust code, or exporting C++
-//! types to Rust (because we _can_ use the same C++ type across multiple bridges).
-
+/// FFI bridges between `zcashd`'s Rust and C++ code.
+///
+/// These are all collected into a single file because we can't use the same Rust type
+/// across multiple bridges until https://github.com/dtolnay/cxx/issues/496 is closed.
+///
+/// The bridges that we leave separate are either standalone Rust code, or exporting C++
+/// types to Rust (because we _can_ use the same C++ type across multiple bridges).
+//
+// This file can't use a module comment (`//! comment`) because it causes compilation issues in zcash_script.
 use crate::{
     bundlecache::init as bundlecache_init,
     merkle_frontier::{new_orchard, orchard_empty_root, parse_orchard, Orchard, OrchardWallet},
