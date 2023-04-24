@@ -199,36 +199,36 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
 
     // We shouldn't be able to decrypt with the empty ovk
     EXPECT_FALSE(AttemptSaplingOutDecryption(
-        tx.vShieldedOutput[0].outCiphertext,
+        tx.vShieldedOutput[0].out_ciphertext(),
         uint256(),
-        tx.vShieldedOutput[0].cv,
-        tx.vShieldedOutput[0].cmu,
-        tx.vShieldedOutput[0].ephemeralKey));
+        tx.vShieldedOutput[0].cv(),
+        tx.vShieldedOutput[0].cmu(),
+        tx.vShieldedOutput[0].ephemeral_key()));
 
     // We shouldn't be able to decrypt with a random ovk
     EXPECT_FALSE(AttemptSaplingOutDecryption(
-        tx.vShieldedOutput[0].outCiphertext,
+        tx.vShieldedOutput[0].out_ciphertext(),
         random_uint256(),
-        tx.vShieldedOutput[0].cv,
-        tx.vShieldedOutput[0].cmu,
-        tx.vShieldedOutput[0].ephemeralKey));
+        tx.vShieldedOutput[0].cv(),
+        tx.vShieldedOutput[0].cmu(),
+        tx.vShieldedOutput[0].ephemeral_key()));
 
     auto accountKey = pwalletMain->GetLegacyAccountKey().ToAccountPubKey();
     auto ovks = accountKey.GetOVKsForShielding();
     // We should not be able to decrypt with the internal change OVK for shielding
     EXPECT_FALSE(AttemptSaplingOutDecryption(
-        tx.vShieldedOutput[0].outCiphertext,
+        tx.vShieldedOutput[0].out_ciphertext(),
         ovks.first,
-        tx.vShieldedOutput[0].cv,
-        tx.vShieldedOutput[0].cmu,
-        tx.vShieldedOutput[0].ephemeralKey));
+        tx.vShieldedOutput[0].cv(),
+        tx.vShieldedOutput[0].cmu(),
+        tx.vShieldedOutput[0].ephemeral_key()));
     // We should be able to decrypt with the external OVK for shielding
     EXPECT_TRUE(AttemptSaplingOutDecryption(
-        tx.vShieldedOutput[0].outCiphertext,
+        tx.vShieldedOutput[0].out_ciphertext(),
         ovks.second,
-        tx.vShieldedOutput[0].cv,
-        tx.vShieldedOutput[0].cmu,
-        tx.vShieldedOutput[0].ephemeralKey));
+        tx.vShieldedOutput[0].cv(),
+        tx.vShieldedOutput[0].cmu(),
+        tx.vShieldedOutput[0].ephemeral_key()));
 
     // Tear down
     chainActive.SetTip(NULL);

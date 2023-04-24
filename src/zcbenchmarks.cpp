@@ -778,8 +778,9 @@ double benchmark_create_sapling_spend()
 
     std::array<unsigned char, 32> cv;
     std::array<unsigned char, 32> rk;
-    SpendDescription sdesc;
     uint256 rcm = note.rcm();
+    libzcash::GrothProof zkproof;
+    SpendDescription::spend_auth_sig_t spendAuthSig;
     bool result = ctx->create_spend_proof(
         expsk.full_viewing_key().ak.GetRawBytes(),
         expsk.nsk.GetRawBytes(),
@@ -791,9 +792,14 @@ double benchmark_create_sapling_spend()
         witnessChars,
         cv,
         rk,
-        sdesc.zkproof);
-    sdesc.cv = uint256::FromRawBytes(cv);
-    sdesc.rk = uint256::FromRawBytes(rk);
+        zkproof);
+    SpendDescription sdesc(
+        uint256::FromRawBytes(cv),
+        anchor,
+        maybe_nf.value(),
+        uint256::FromRawBytes(rk),
+        zkproof,
+        spendAuthSig);
 
     double t = timer_stop(tv_start);
     if (!result) {
@@ -829,7 +835,7 @@ double benchmark_create_sapling_output()
     timer_start(tv_start);
 
     std::array<unsigned char, 32> cv;
-    OutputDescription odesc;
+    libzcash::GrothProof zkproof;
     uint256 rcm = note.rcm();
     bool result = ctx->create_output_proof(
         encryptor.get_esk().GetRawBytes(),
@@ -837,9 +843,15 @@ double benchmark_create_sapling_output()
         rcm.GetRawBytes(),
         note.value(),
         cv,
-        odesc.zkproof);
+        zkproof);
+    OutputDescription odesc(
+        uint256::FromRawBytes(cv),
+        uint256(),
+        uint256(),
+        {{}},
+        {{}},
+        zkproof);
 
-    odesc.cv = uint256::FromRawBytes(cv);
     double t = timer_stop(tv_start);
     if (!result) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "librustzcash_sapling_output_proof() should return true");
@@ -863,12 +875,12 @@ double benchmark_verify_sapling_spend()
     timer_start(tv_start);
 
     bool result = ctx->check_spend(
-        spend.cv.GetRawBytes(),
-        spend.anchor.GetRawBytes(),
-        spend.nullifier.GetRawBytes(),
-        spend.rk.GetRawBytes(),
-        spend.zkproof,
-        spend.spendAuthSig,
+        spend.cv().GetRawBytes(),
+        spend.anchor().GetRawBytes(),
+        spend.nullifier().GetRawBytes(),
+        spend.rk().GetRawBytes(),
+        spend.zkproof(),
+        spend.spend_auth_sig(),
         dataToBeSigned.GetRawBytes()
     );
 
@@ -894,10 +906,10 @@ double benchmark_verify_sapling_output()
     timer_start(tv_start);
 
     bool result = ctx->check_output(
-        output.cv.GetRawBytes(),
-        output.cmu.GetRawBytes(),
-        output.ephemeralKey.GetRawBytes(),
-        output.zkproof
+        output.cv().GetRawBytes(),
+        output.cmu().GetRawBytes(),
+        output.ephemeral_key().GetRawBytes(),
+        output.zkproof()
     );
 
     double t = timer_stop(tv_start);

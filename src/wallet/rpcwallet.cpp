@@ -4435,7 +4435,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         auto spend = wtx.vShieldedSpend[i];
 
         // Fetch the note that is being spent
-        auto res = pwalletMain->mapSaplingNullifiersToNotes.find(spend.nullifier);
+        auto res = pwalletMain->mapSaplingNullifiersToNotes.find(spend.nullifier());
         if (res == pwalletMain->mapSaplingNullifiersToNotes.end()) {
             continue;
         }

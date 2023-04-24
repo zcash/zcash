@@ -1621,7 +1621,7 @@ bool CWallet::IsNoteSaplingChange(
     //   z_mergetoaddress).
     // - Notes sent from one address to itself.
     for (const SpendDescription &spend : mapWallet[op.hash].vShieldedSpend) {
-        if (nullifierSet.count(std::make_pair(address, spend.nullifier))) {
+        if (nullifierSet.count(std::make_pair(address, spend.nullifier()))) {
             return true;
         }
     }
@@ -1706,7 +1706,7 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
     std::pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range_o;
 
     for (const SpendDescription &spend : wtx.vShieldedSpend) {
-        uint256 nullifier = spend.nullifier;
+        const uint256& nullifier = spend.nullifier();
         if (mapTxSaplingNullifiers.count(nullifier) <= 1) {
             continue;  // No conflict if zero or one spends
         }
@@ -2523,7 +2523,7 @@ void CWallet::AddToSpends(const uint256& wtxid)
         }
     }
     for (const SpendDescription &spend : thisTx.vShieldedSpend) {
-        AddToSaplingSpends(spend.nullifier, wtxid);
+        AddToSaplingSpends(spend.nullifier(), wtxid);
     }
 
     // for Orchard, the effects of this operation are performed by
@@ -2787,10 +2787,10 @@ void CWallet::IncrementNoteWitnesses(
         }
         // Sapling
         for (const auto& spend : tx.vShieldedSpend) {
-            nullifiersSapling.emplace_back(spend.nullifier);
+            nullifiersSapling.emplace_back(spend.nullifier());
         }
         for (uint32_t i = 0; i < tx.vShieldedOutput.size(); i++) {
-            const uint256& note_commitment = tx.vShieldedOutput[i].cmu;
+            const uint256& note_commitment = tx.vShieldedOutput[i].cmu();
             frontiers.sapling.append(note_commitment);
             noteCommitmentsSapling.emplace_back(note_commitment);
 
@@ -3654,7 +3654,7 @@ void CWallet::MarkAffectedTransactionsDirty(const CTransaction& tx)
     }
 
     for (const SpendDescription &spend : tx.vShieldedSpend) {
-        uint256 nullifier = spend.nullifier;
+        const uint256& nullifier = spend.nullifier();
         if (mapSaplingNullifiersToNotes.count(nullifier) &&
             mapWallet.count(mapSaplingNullifiersToNotes[nullifier].hash)) {
             mapWallet[mapSaplingNullifiersToNotes[nullifier].hash].MarkDirty();
@@ -3791,11 +3791,11 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
                     height,
                     ivk.GetRawBytes(),
                     {
-                        output.cv.GetRawBytes(),
-                        output.cmu.GetRawBytes(),
-                        output.ephemeralKey.GetRawBytes(),
-                        output.encCiphertext,
-                        output.outCiphertext,
+                        output.cv().GetRawBytes(),
+                        output.cmu().GetRawBytes(),
+                        output.ephemeral_key().GetRawBytes(),
+                        output.enc_ciphertext(),
+                        output.out_ciphertext(),
                     });
 
                 SaplingPaymentAddress address(
@@ -4030,7 +4030,7 @@ bool CWallet::IsFromMe(const CTransaction& tx) const
         }
     }
     for (const SpendDescription &spend : tx.vShieldedSpend) {
-        if (IsSaplingNullifierFromMe(spend.nullifier)) {
+        if (IsSaplingNullifierFromMe(spend.nullifier())) {
             return true;
         }
     }
@@ -4326,11 +4326,11 @@ std::optional<std::pair<
             params.GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
             nd.ivk.GetRawBytes(),
             {
-                output.cv.GetRawBytes(),
-                output.cmu.GetRawBytes(),
-                output.ephemeralKey.GetRawBytes(),
-                output.encCiphertext,
-                output.outCiphertext,
+                output.cv().GetRawBytes(),
+                output.cmu().GetRawBytes(),
+                output.ephemeral_key().GetRawBytes(),
+                output.enc_ciphertext(),
+                output.out_ciphertext(),
             });
 
         return SaplingNotePlaintext::from_rust(std::move(decrypted));
@@ -4354,11 +4354,11 @@ std::optional<std::pair<
                 params.GetConsensus().vUpgrades[Consensus::UPGRADE_CANOPY].nActivationHeight,
                 ovk.GetRawBytes(),
                 {
-                    output.cv.GetRawBytes(),
-                    output.cmu.GetRawBytes(),
-                    output.ephemeralKey.GetRawBytes(),
-                    output.encCiphertext,
-                    output.outCiphertext,
+                    output.cv().GetRawBytes(),
+                    output.cmu().GetRawBytes(),
+                    output.ephemeral_key().GetRawBytes(),
+                    output.enc_ciphertext(),
+                    output.out_ciphertext(),
                 });
 
             return SaplingNotePlaintext::from_rust(std::move(decrypted));
@@ -4927,7 +4927,7 @@ bool CWalletTx::IsFromMe(const isminefilter& filter) const
         }
     }
     for (const SpendDescription &spend : vShieldedSpend) {
-        if (pwallet->IsSaplingNullifierFromMe(spend.nullifier)) {
+        if (pwallet->IsSaplingNullifierFromMe(spend.nullifier())) {
             return true;
         }
     }

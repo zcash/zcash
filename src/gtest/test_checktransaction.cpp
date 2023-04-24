@@ -1197,8 +1197,13 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
 
     // Transaction should fail with a bad public cmu.
     {
-        auto cmOrig = mtx.vShieldedOutput[0].cmu;
-        mtx.vShieldedOutput[0].cmu = uint256S("1234");
+        mtx.vShieldedOutput[0] = OutputDescription(
+            odesc.cv(),
+            uint256S("1234"),
+            odesc.ephemeral_key(),
+            odesc.enc_ciphertext(),
+            odesc.out_ciphertext(),
+            odesc.zkproof());
         CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
 
@@ -1206,13 +1211,18 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
 
-        mtx.vShieldedOutput[0].cmu = cmOrig;
+        mtx.vShieldedOutput[0] = odesc;
     }
 
     // Transaction should fail with a bad outCiphertext.
     {
-        auto outCtOrig = mtx.vShieldedOutput[0].outCiphertext;
-        mtx.vShieldedOutput[0].outCiphertext = {{}};
+        mtx.vShieldedOutput[0] = OutputDescription(
+            odesc.cv(),
+            odesc.cmu(),
+            odesc.ephemeral_key(),
+            odesc.enc_ciphertext(),
+            {{}},
+            odesc.zkproof());
         CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
 
@@ -1220,13 +1230,18 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-outct", false, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
 
-        mtx.vShieldedOutput[0].outCiphertext = outCtOrig;
+        mtx.vShieldedOutput[0] = odesc;
     }
 
     // Transaction should fail with a bad encCiphertext.
     {
-        auto encCtOrig = mtx.vShieldedOutput[0].encCiphertext;
-        mtx.vShieldedOutput[0].encCiphertext = {{}};
+        mtx.vShieldedOutput[0] = OutputDescription(
+            odesc.cv(),
+            odesc.cmu(),
+            odesc.ephemeral_key(),
+            {{}},
+            odesc.out_ciphertext(),
+            odesc.zkproof());
         CTransaction tx(mtx);
         EXPECT_TRUE(tx.IsCoinBase());
 
@@ -1234,7 +1249,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-output-desc-invalid-encct", false, "")).Times(1);
         ContextualCheckTransaction(tx, state, chainparams, 10, 57);
 
-        mtx.vShieldedOutput[0].encCiphertext = encCtOrig;
+        mtx.vShieldedOutput[0] = odesc;
     }
 
     // Test the success case.

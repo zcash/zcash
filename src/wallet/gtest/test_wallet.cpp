@@ -1922,8 +1922,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     mtxSapling.fOverwintered = true;
     mtxSapling.nVersion = SAPLING_TX_VERSION;
     mtxSapling.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-    mtxSapling.vShieldedOutput.resize(1);
-    zcash_test_harness_random_jubjub_point(mtxSapling.vShieldedOutput[0].cv.begin());
+    mtxSapling.vShieldedOutput.push_back(RandomInvalidOutputDescription());
     CWalletTx wtxSapling {nullptr, mtxSapling};
     SetSaplingNoteData(wtxSapling);
     wallet.LoadWalletTx(wtxSapling);
@@ -1933,8 +1932,7 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     mtxSaplingTransparent.fOverwintered = true;
     mtxSaplingTransparent.nVersion = SAPLING_TX_VERSION;
     mtxSaplingTransparent.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
-    mtxSaplingTransparent.vShieldedOutput.resize(1);
-    zcash_test_harness_random_jubjub_point(mtxSaplingTransparent.vShieldedOutput[0].cv.begin());
+    mtxSaplingTransparent.vShieldedOutput.push_back(RandomInvalidOutputDescription());
     CWalletTx wtxSaplingTransparent {nullptr, mtxSaplingTransparent};
     wallet.LoadWalletTx(wtxSaplingTransparent);
 

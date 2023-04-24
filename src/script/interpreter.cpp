@@ -1111,11 +1111,11 @@ uint256 GetJoinSplitsHash(const CTransaction& txTo) {
 uint256 GetShieldedSpendsHash(const CTransaction& txTo) {
     CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_SHIELDED_SPENDS_HASH_PERSONALIZATION);
     for (unsigned int n = 0; n < txTo.vShieldedSpend.size(); n++) {
-        ss << txTo.vShieldedSpend[n].cv;
-        ss << txTo.vShieldedSpend[n].anchor;
-        ss << txTo.vShieldedSpend[n].nullifier;
-        ss << txTo.vShieldedSpend[n].rk;
-        ss << txTo.vShieldedSpend[n].zkproof;
+        ss << txTo.vShieldedSpend[n].cv();
+        ss << txTo.vShieldedSpend[n].anchor();
+        ss << txTo.vShieldedSpend[n].nullifier();
+        ss << txTo.vShieldedSpend[n].rk();
+        ss << txTo.vShieldedSpend[n].zkproof();
     }
     return ss.GetHash();
 }

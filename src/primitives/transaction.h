@@ -99,22 +99,34 @@ static inline size_t JOINSPLIT_SIZE(int transactionVersion) {
 class SpendDescriptionV5
 {
 public:
-    uint256 cv;                    //!< A value commitment to the value of the input note.
-    uint256 nullifier;             //!< The nullifier of the input note.
-    uint256 rk;                    //!< The randomized public key for spendAuthSig.
+    uint256 inner_cv;                    //!< A value commitment to the value of the input note.
+    uint256 inner_nullifier;             //!< The nullifier of the input note.
+    uint256 inner_rk;                    //!< The randomized public key for spendAuthSig.
 
     SpendDescriptionV5() { }
 
     SpendDescriptionV5(uint256 cv, uint256 nullifier, uint256 rk)
-        : cv(cv), nullifier(nullifier), rk(rk) { }
+        : inner_cv(cv), inner_nullifier(nullifier), inner_rk(rk) { }
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(cv);
-        READWRITE(nullifier);
-        READWRITE(rk);
+        READWRITE(inner_cv);
+        READWRITE(inner_nullifier);
+        READWRITE(inner_rk);
+    }
+
+    const uint256& cv() const {
+        return inner_cv;
+    }
+
+    const uint256& nullifier() const {
+        return inner_nullifier;
+    }
+
+    const uint256& rk() const {
+        return inner_rk;
     }
 };
 
@@ -126,9 +138,9 @@ class SpendDescription : public SpendDescriptionV5
 public:
     typedef std::array<unsigned char, 64> spend_auth_sig_t;
 
-    uint256 anchor;                //!< A Merkle root of the Sapling note commitment tree at some block height in the past.
-    libzcash::GrothProof zkproof;  //!< A zero-knowledge proof using the spend circuit.
-    spend_auth_sig_t spendAuthSig; //!< A signature authorizing this spend.
+    uint256 inner_anchor;                //!< A Merkle root of the Sapling note commitment tree at some block height in the past.
+    libzcash::GrothProof inner_zkproof;  //!< A zero-knowledge proof using the spend circuit.
+    spend_auth_sig_t inner_spendAuthSig; //!< A signature authorizing this spend.
 
     SpendDescription() { }
 
@@ -139,35 +151,51 @@ public:
         uint256 rk,
         libzcash::GrothProof zkproof,
         spend_auth_sig_t spendAuthSig)
-        : SpendDescriptionV5(cv, nullifier, rk), anchor(anchor), zkproof(zkproof), spendAuthSig(spendAuthSig) { }
+        : SpendDescriptionV5(cv, nullifier, rk), inner_anchor(anchor), inner_zkproof(zkproof), inner_spendAuthSig(spendAuthSig) { }
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(cv);
-        READWRITE(anchor);
-        READWRITE(nullifier);
-        READWRITE(rk);
-        READWRITE(zkproof);
-        READWRITE(spendAuthSig);
+        READWRITE(inner_cv);
+        READWRITE(inner_anchor);
+        READWRITE(inner_nullifier);
+        READWRITE(inner_rk);
+        READWRITE(inner_zkproof);
+        READWRITE(inner_spendAuthSig);
     }
 
     friend bool operator==(const SpendDescription& a, const SpendDescription& b)
     {
         return (
-            a.cv == b.cv &&
-            a.anchor == b.anchor &&
-            a.nullifier == b.nullifier &&
-            a.rk == b.rk &&
-            a.zkproof == b.zkproof &&
-            a.spendAuthSig == b.spendAuthSig
+            a.inner_cv == b.inner_cv &&
+            a.inner_anchor == b.inner_anchor &&
+            a.inner_nullifier == b.inner_nullifier &&
+            a.inner_rk == b.inner_rk &&
+            a.inner_zkproof == b.inner_zkproof &&
+            a.inner_spendAuthSig == b.inner_spendAuthSig
             );
     }
 
     friend bool operator!=(const SpendDescription& a, const SpendDescription& b)
     {
         return !(a == b);
+    }
+
+    const uint256& anchor() const {
+        return inner_anchor;
+    }
+
+    const libzcash::GrothProof& zkproof() const {
+        return inner_zkproof;
+    }
+
+    const spend_auth_sig_t& spend_auth_sig() const {
+        return inner_spendAuthSig;
+    }
+
+    spend_auth_sig_t& spend_auth_sig_mut() {
+        return inner_spendAuthSig;
     }
 };
 
@@ -177,11 +205,11 @@ public:
 class OutputDescriptionV5
 {
 public:
-    uint256 cv;                     //!< A value commitment to the value of the output note.
-    uint256 cmu;                     //!< The u-coordinate of the note commitment for the output note.
-    uint256 ephemeralKey;           //!< A Jubjub public key.
-    libzcash::SaplingEncCiphertext encCiphertext; //!< A ciphertext component for the encrypted output note.
-    libzcash::SaplingOutCiphertext outCiphertext; //!< A ciphertext component for the encrypted output note.
+    uint256 inner_cv;                     //!< A value commitment to the value of the output note.
+    uint256 inner_cmu;                     //!< The u-coordinate of the note commitment for the output note.
+    uint256 inner_ephemeralKey;           //!< A Jubjub public key.
+    libzcash::SaplingEncCiphertext inner_encCiphertext; //!< A ciphertext component for the encrypted output note.
+    libzcash::SaplingOutCiphertext inner_outCiphertext; //!< A ciphertext component for the encrypted output note.
 
     OutputDescriptionV5() { }
 
@@ -191,17 +219,37 @@ public:
         uint256 ephemeralKey,
         libzcash::SaplingEncCiphertext encCiphertext,
         libzcash::SaplingOutCiphertext outCiphertext)
-        : cv(cv), cmu(cmu), ephemeralKey(ephemeralKey), encCiphertext(encCiphertext), outCiphertext(outCiphertext) { }
+        : inner_cv(cv), inner_cmu(cmu), inner_ephemeralKey(ephemeralKey), inner_encCiphertext(encCiphertext), inner_outCiphertext(outCiphertext) { }
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(cv);
-        READWRITE(cmu);
-        READWRITE(ephemeralKey);
-        READWRITE(encCiphertext);
-        READWRITE(outCiphertext);
+        READWRITE(inner_cv);
+        READWRITE(inner_cmu);
+        READWRITE(inner_ephemeralKey);
+        READWRITE(inner_encCiphertext);
+        READWRITE(inner_outCiphertext);
+    }
+
+    const uint256& cv() const {
+        return inner_cv;
+    }
+
+    const uint256& cmu() const {
+        return inner_cmu;
+    }
+
+    const uint256& ephemeral_key() const {
+        return inner_ephemeralKey;
+    }
+
+    const libzcash::SaplingEncCiphertext& enc_ciphertext() const {
+        return inner_encCiphertext;
+    }
+
+    const libzcash::SaplingOutCiphertext& out_ciphertext() const {
+        return inner_outCiphertext;
     }
 };
 
@@ -211,7 +259,7 @@ public:
 class OutputDescription : public OutputDescriptionV5
 {
 public:
-    libzcash::GrothProof zkproof;   //!< A zero-knowledge proof using the output circuit.
+    libzcash::GrothProof inner_zkproof;   //!< A zero-knowledge proof using the output circuit.
 
     OutputDescription() { }
 
@@ -222,31 +270,35 @@ public:
         libzcash::SaplingEncCiphertext encCiphertext,
         libzcash::SaplingOutCiphertext outCiphertext,
         libzcash::GrothProof zkproof)
-        : OutputDescriptionV5(cv, cmu, ephemeralKey, encCiphertext, outCiphertext), zkproof(zkproof) { }
+        : OutputDescriptionV5(cv, cmu, ephemeralKey, encCiphertext, outCiphertext), inner_zkproof(zkproof) { }
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
         OutputDescriptionV5::SerializationOp(s, ser_action);
-        READWRITE(zkproof);
+        READWRITE(inner_zkproof);
     }
 
     friend bool operator==(const OutputDescription& a, const OutputDescription& b)
     {
         return (
-            a.cv == b.cv &&
-            a.cmu == b.cmu &&
-            a.ephemeralKey == b.ephemeralKey &&
-            a.encCiphertext == b.encCiphertext &&
-            a.outCiphertext == b.outCiphertext &&
-            a.zkproof == b.zkproof
+            a.inner_cv == b.inner_cv &&
+            a.inner_cmu == b.inner_cmu &&
+            a.inner_ephemeralKey == b.inner_ephemeralKey &&
+            a.inner_encCiphertext == b.inner_encCiphertext &&
+            a.inner_outCiphertext == b.inner_outCiphertext &&
+            a.inner_zkproof == b.inner_zkproof
             );
     }
 
     friend bool operator!=(const OutputDescription& a, const OutputDescription& b)
     {
         return !(a == b);
+    }
+
+    const libzcash::GrothProof& zkproof() const {
+        return inner_zkproof;
     }
 };
 

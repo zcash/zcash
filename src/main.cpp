@@ -994,11 +994,11 @@ bool ContextualCheckTransaction(
                         nHeight,
                         ovk.GetRawBytes(),
                         {
-                            output.cv.GetRawBytes(),
-                            output.cmu.GetRawBytes(),
-                            output.ephemeralKey.GetRawBytes(),
-                            output.encCiphertext,
-                            output.outCiphertext,
+                            output.cv().GetRawBytes(),
+                            output.cmu().GetRawBytes(),
+                            output.ephemeral_key().GetRawBytes(),
+                            output.enc_ciphertext(),
+                            output.out_ciphertext(),
                         });
                     zip_212_enabled = decrypted->zip_212_enabled();
 
@@ -1013,7 +1013,7 @@ bool ContextualCheckTransaction(
                 }
               } else {
                 auto outPlaintext = SaplingOutgoingPlaintext::decrypt(
-                    output.outCiphertext, ovk, output.cv, output.cmu, output.ephemeralKey);
+                    output.out_ciphertext(), ovk, output.cv(), output.cmu(), output.ephemeral_key());
                 if (!outPlaintext) {
                     return state.DoS(
                         DOS_LEVEL_BLOCK,
@@ -1025,11 +1025,11 @@ bool ContextualCheckTransaction(
                 auto encPlaintext = SaplingNotePlaintext::decrypt(
                     consensus,
                     nHeight,
-                    output.encCiphertext,
-                    output.ephemeralKey,
+                    output.enc_ciphertext(),
+                    output.ephemeral_key(),
                     outPlaintext->esk,
                     outPlaintext->pk_d,
-                    output.cmu);
+                    output.cmu());
 
                 if (!encPlaintext) {
                     return state.DoS(
@@ -1362,12 +1362,12 @@ bool ContextualCheckShieldedInputs(
 
         for (const SpendDescription &spend : tx.vShieldedSpend) {
             if (!assembler->add_spend(
-                spend.cv.GetRawBytes(),
-                spend.anchor.GetRawBytes(),
-                spend.nullifier.GetRawBytes(),
-                spend.rk.GetRawBytes(),
-                spend.zkproof,
-                spend.spendAuthSig
+                spend.cv().GetRawBytes(),
+                spend.anchor().GetRawBytes(),
+                spend.nullifier().GetRawBytes(),
+                spend.rk().GetRawBytes(),
+                spend.zkproof(),
+                spend.spend_auth_sig()
             )) {
                 return state.DoS(
                     dosLevelPotentiallyRelaxing,
@@ -1378,12 +1378,12 @@ bool ContextualCheckShieldedInputs(
 
         for (const OutputDescription &output : tx.vShieldedOutput) {
             if (!assembler->add_output(
-                output.cv.GetRawBytes(),
-                output.cmu.GetRawBytes(),
-                output.ephemeralKey.GetRawBytes(),
-                output.encCiphertext,
-                output.outCiphertext,
-                output.zkproof
+                output.cv().GetRawBytes(),
+                output.cmu().GetRawBytes(),
+                output.ephemeral_key().GetRawBytes(),
+                output.enc_ciphertext(),
+                output.out_ciphertext(),
+                output.zkproof()
             )) {
                 // This should be a non-contextual check, but we check it here
                 // as we need to pass over the outputs anyway in order to then
@@ -1722,11 +1722,11 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         set<uint256> vSaplingNullifiers;
         for (const SpendDescription& spend_desc : tx.vShieldedSpend)
         {
-            if (vSaplingNullifiers.count(spend_desc.nullifier))
+            if (vSaplingNullifiers.count(spend_desc.nullifier()))
                 return state.DoS(100, error("CheckTransaction(): duplicate nullifiers"),
                             REJECT_INVALID, "bad-spend-description-nullifiers-duplicate");
 
-            vSaplingNullifiers.insert(spend_desc.nullifier);
+            vSaplingNullifiers.insert(spend_desc.nullifier());
         }
     }
 
@@ -3411,7 +3411,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
 
         for (const OutputDescription &outputDescription : tx.vShieldedOutput) {
-            sapling_tree.append(outputDescription.cmu);
+            sapling_tree.append(outputDescription.cmu());
         }
 
         if (!orchard_tree.AppendBundle(tx.GetOrchardBundle())) {

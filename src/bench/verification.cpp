@@ -111,12 +111,12 @@ static void SaplingSpend(benchmark::State& state)
 
     while (state.KeepRunning()) {
         ctx->check_spend(
-            spend.cv.GetRawBytes(),
-            spend.anchor.GetRawBytes(),
-            spend.nullifier.GetRawBytes(),
-            spend.rk.GetRawBytes(),
-            spend.zkproof,
-            spend.spendAuthSig,
+            spend.cv().GetRawBytes(),
+            spend.anchor().GetRawBytes(),
+            spend.nullifier().GetRawBytes(),
+            spend.rk().GetRawBytes(),
+            spend.zkproof(),
+            spend.spend_auth_sig(),
             dataToBeSigned.GetRawBytes()
         );
     }
@@ -135,10 +135,10 @@ static void SaplingOutput(benchmark::State& state)
 
     while (state.KeepRunning()) {
         ctx->check_output(
-            output.cv.GetRawBytes(),
-            output.cmu.GetRawBytes(),
-            output.ephemeralKey.GetRawBytes(),
-            output.zkproof
+            output.cv().GetRawBytes(),
+            output.cmu().GetRawBytes(),
+            output.ephemeral_key().GetRawBytes(),
+            output.zkproof()
         );
     }
 }
