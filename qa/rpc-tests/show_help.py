@@ -477,7 +477,9 @@ Debugging/Testing options:
        Send trace/debug info to console instead of the debug log
 
 |  -printpriority
-|       Log transaction fee per kB when mining blocks (default: 0)
+|       Log the modified fee, conventional fee, size, number of logical actions,
+|       and number of unpaid actions for each transaction when mining blocks
+|       (default: 0)
 |
 Chain selection options:
 
