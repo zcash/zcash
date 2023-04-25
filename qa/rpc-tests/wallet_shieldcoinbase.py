@@ -170,13 +170,13 @@ class WalletShieldCoinbaseTest (BitcoinTestFramework):
         self.nodes[0].generate(200)
         self.sync_all()
         mytaddr = get_coinbase_address(self.nodes[0], 100)
-        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, DEFAULT_FEE)
+        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, DEFAULT_FEE, None, 'DEADBEEF')
         assert_equal(result["shieldingUTXOs"], Decimal('50'))
         assert_equal(result["remainingUTXOs"], Decimal('50'))
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
 
         # Verify maximum number of utxos which node 0 can shield can be set by the limit parameter
-        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, DEFAULT_FEE, 33)
+        result = self.nodes[0].z_shieldcoinbase(mytaddr, myzaddr, DEFAULT_FEE, 33, None)
         assert_equal(result["shieldingUTXOs"], Decimal('33'))
         assert_equal(result["remainingUTXOs"], Decimal('17'))
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
