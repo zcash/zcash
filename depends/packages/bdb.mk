@@ -42,6 +42,9 @@ define $(package)_build_cmds
   $(MAKE) libdb_cxx-6.2.a libdb-6.2.a
 endef
 
+ifneq ($(build_os),darwin)
+# Install the BDB utilities as well, so that we have the specific compatible
+# versions for recovery purposes (https://github.com/zcash/zcash/issues/4537).
 define $(package)_stage_cmds
   $(MAKE) DESTDIR=$($(package)_staging_dir) install
 endef
@@ -51,3 +54,11 @@ define $(package)_postprocess_cmds
   mkdir -p bin && \
   mv -f $($(package)_staging_dir)$(host_prefix)/bin/db_* bin
 endef
+else
+# The BDB utilities silently fail to link on native macOS, causing the rest of
+# the install to fail due to missing binaries. Until we can figure out how to
+# make them work, avoid building them.
+define $(package)_stage_cmds
+  $(MAKE) DESTDIR=$($(package)_staging_dir) install_lib install_include
+endef
+endif

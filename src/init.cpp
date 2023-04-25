@@ -12,6 +12,7 @@
 #include "addrman.h"
 #include "amount.h"
 #include "checkpoints.h"
+#include "compat.h"
 #include "compat/sanity.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
@@ -21,7 +22,7 @@
 #include "httpserver.h"
 #include "httprpc.h"
 #include "key.h"
-#if defined(ENABLE_MINING) || defined(ENABLE_WALLET)
+#ifdef ENABLE_MINING
 #include "key_io.h"
 #endif
 #include "main.h"
@@ -490,7 +491,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-printtoconsole", _("Send trace/debug info to console instead of the debug log"));
     if (showDebug)
     {
-        strUsage += HelpMessageOpt("-printpriority", strprintf("Log transaction fee per kB when mining blocks (default: %u)", DEFAULT_PRINTPRIORITY));
+        strUsage += HelpMessageOpt("-printpriority", strprintf("Log the modified fee, conventional fee, size, number of logical actions, and number of unpaid actions for each transaction when mining blocks (default: %u)", DEFAULT_PRINTPRIORITY));
     }
     // strUsage += HelpMessageOpt("-shrinkdebugfile", _("Shrink the debug log on client startup (default: 1 when no -debug)"));
 
@@ -1279,9 +1280,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     nMaxTipAge = GetArg("-maxtipage", DEFAULT_MAX_TIP_AGE);
 
-    KeyIO keyIO(chainparams);
 #ifdef ENABLE_MINING
     if (mapArgs.count("-mineraddress")) {
+        KeyIO keyIO(chainparams);
         auto addr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
         auto consensus = chainparams.GetConsensus();
         int height = consensus.HeightOfLatestSettledUpgrade();
@@ -1894,6 +1895,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
  #ifdef ENABLE_WALLET
         bool minerAddressInLocalWallet = false;
         if (pwalletMain) {
+            KeyIO keyIO(chainparams);
             auto zaddr = keyIO.DecodePaymentAddress(mapArgs["-mineraddress"]);
             if (!zaddr.has_value()) {
                 return InitError(_("-mineraddress is not a valid " PACKAGE_NAME " address."));

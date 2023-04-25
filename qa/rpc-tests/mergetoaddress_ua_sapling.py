@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018 The Zcash developers
+# Copyright (c) 2023 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 from test_framework.test_framework import BitcoinTestFramework
+from test_framework.util import NU5_BRANCH_ID, nuparams
 from mergetoaddress_helper import MergeToAddressHelper
 
 def get_new_address(test, node):
-    return test.nodes[node].z_getnewaddress('sapling')
+    account = test.nodes[node].z_getnewaccount()['account']
+    return test.nodes[node].z_getaddressforaccount(account)['address']
 
-class MergeToAddressSapling (BitcoinTestFramework):
+class MergeToAddressUASapling (BitcoinTestFramework):
     helper = MergeToAddressHelper(get_new_address, 'ANY_SAPLING')
 
     def setup_chain(self):
@@ -18,6 +20,7 @@ class MergeToAddressSapling (BitcoinTestFramework):
     def setup_network(self, split=False):
         self.helper.setup_network(self, [
             '-anchorconfirmations=1',
+            nuparams(NU5_BRANCH_ID, 99999),
         ])
 
     def run_test(self):
@@ -25,4 +28,4 @@ class MergeToAddressSapling (BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    MergeToAddressSapling().main()
+    MergeToAddressUASapling().main()
