@@ -490,7 +490,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-printtoconsole", _("Send trace/debug info to console instead of the debug log"));
     if (showDebug)
     {
-        strUsage += HelpMessageOpt("-printpriority", strprintf("Log transaction fee per kB when mining blocks (default: %u)", DEFAULT_PRINTPRIORITY));
+        strUsage += HelpMessageOpt("-printpriority", strprintf("Log the modified fee, conventional fee, size, number of logical actions, and number of unpaid actions for each transaction when mining blocks (default: %u)", DEFAULT_PRINTPRIORITY));
     }
     // strUsage += HelpMessageOpt("-shrinkdebugfile", _("Shrink the debug log on client startup (default: 1 when no -debug)"));
 

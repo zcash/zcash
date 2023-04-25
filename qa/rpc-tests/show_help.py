@@ -49,6 +49,13 @@ Options:
        Execute command when the best block changes (%s in cmd is replaced by
        block hash)
 
+|  -blocksonly
+|       Whether to reject transactions from network peers. Automatic broadcast
+|       and rebroadcast of any transactions from inbound peers is disabled,
+|       unless '-whitelistforcerelay' is '1', in which case whitelisted peers'
+|       transactions will be relayed. RPC transactions are not affected.
+|       (default: 0)
+|
   -checkblocks=<n>
        How many blocks to check at startup (default: 288, 0 = all)
 
@@ -198,6 +205,10 @@ Connection options:
        Support filtering of blocks and transaction with bloom filters (default:
        1)
 
+|  -enforcenodebloom
+|       Enforce minimum protocol version to limit use of bloom filters (default:
+|       0)
+|
   -port=<port>
        Listen for connections on <port> (default: 8233 or testnet: 18233)
 
@@ -309,6 +320,18 @@ Wallet options:
        with `-walletrequirebackup=false` to allow generation of spending keys
        even if the backup has not yet been confirmed.
 
+|Wallet debugging/testing options:
+|
+|  -dblogsize=<n>
+|       Flush wallet database activity from memory to disk log every <n>
+|       megabytes (default: 100)
+|
+|  -flushwallet
+|       Run a thread to flush wallet periodically (default: 1)
+|
+|  -privdb
+|       Sets the DB_PRIVATE flag in the wallet db environment (default: 1)
+|
 ZeroMQ notification options:
 
   -zmqpubhashblock=<address>
@@ -349,6 +372,58 @@ Debugging/Testing options:
   -uacomment=<cmt>
        Append comment to the user agent string
 
+|  -checkblockindex
+|       Do a full consistency check for mapBlockIndex, setBlockIndexCandidates,
+|       chainActive and mapBlocksUnlinked occasionally. (default: 0)
+|
+|  -checkmempool=<n>
+|       Run checks every <n> transactions (default: 0)
+|
+|  -checkpoints
+|       Disable expensive verification for known chain history (default: 1)
+|
+|  -disablesafemode
+|       Disable safemode, override a real safe mode event (default: 0)
+|
+|  -testsafemode
+|       Force safe mode (default: 0)
+|
+|  -dropmessagestest=<n>
+|       Randomly drop 1 of every <n> network messages
+|
+|  -fuzzmessagestest=<n>
+|       Randomly fuzz 1 of every <n> network messages
+|
+|  -stopafterblockimport
+|       Stop running after importing blocks from disk (default: 0)
+|
+|  -limitancestorcount=<n>
+|       Do not accept transactions if number of in-mempool ancestors is <n> or
+|       more (default: 100)
+|
+|  -limitancestorsize=<n>
+|       Do not accept transactions whose size with all in-mempool ancestors
+|       exceeds <n> kilobytes (default: 1800)
+|
+|  -limitdescendantcount=<n>
+|       Do not accept transactions if any ancestor would have <n> or more
+|       in-mempool descendants (default: 1000)
+|
+|  -limitdescendantsize=<n>
+|       Do not accept transactions if any ancestor would have more than <n>
+|       kilobytes of in-mempool descendants (default: 5000).
+|
+|  -nuparams=hexBranchId:activationHeight
+|       Use given activation height for specified network upgrade (regtest-only)
+|
+|  -nurejectoldversions
+|       Reject peers that don't know about the current epoch (regtest-only)
+|       (default: 1)
+|
+|  -fundingstream=streamId:startHeight:endHeight:comma_delimited_addresses
+|       Use given addresses for block subsidy share paid to the funding stream
+|       with id <streamId> (regtest-only)
+|
   -debug=<category>
        Output debugging information (default: 0, supplying <category> is
        optional). If <category> is not supplied or if <category> = 1, output
@@ -361,6 +436,9 @@ Debugging/Testing options:
   -experimentalfeatures
        Enable use of experimental features
 
+|  -nodebug
+|       Turn off debugging messages, same as -debug=0
+|
   -help-debug
        Show all debugging options (usage: --help -help-debug)
 
@@ -370,6 +448,21 @@ Debugging/Testing options:
   -logtimestamps
        Prepend debug output with timestamp (default: 1)
 
+|  -clockoffset=<n>
+|       Applies offset of <n> seconds to the actual time. Incompatible with
+|       -mocktime (default: 0)
+|
+|  -mocktime=<n>
+|       Replace actual time with <n> seconds since epoch. Incompatible with
+|       -clockoffset (default: 0)
+|
+|  -maxsigcachesize=<n>
+|       Limit total size of signature and bundle caches to <n> MiB (default: 32)
+|
+|  -maxtipage=<n>
+|       Maximum tip age in seconds to consider node in initial block download
+|       (default: 86400)
+|
   -minrelaytxfee=<amt>
        Transactions must have at least this fee rate (in ZEC per 1000 bytes)
        for relaying, mining and transaction creation (default: 0.000001). This
@@ -383,11 +476,21 @@ Debugging/Testing options:
   -printtoconsole
        Send trace/debug info to console instead of the debug log
 
+|  -printpriority
+|       Log the modified fee, conventional fee, size, number of logical actions,
+|       and number of unpaid actions for each transaction when mining blocks
+|       (default: 0)
+|
 Chain selection options:
 
   -testnet
        Use the test chain
 
+|  -regtest
+|       Enter regression test mode, which uses a special chain in which blocks
+|       can be solved instantly. This is intended for regression testing tools
+|       and app development.
+|
 Node relay options:
 
   -datacarrier
@@ -406,6 +509,9 @@ Block creation options:
        Set the limit on unpaid actions that will be accepted in a block for
        transactions paying less than the ZIP 317 fee (default: 50)
 
+|  -blockversion=<n>
+|       Override block version to test forking scenarios (default: 4)
+|
 Mining options:
 
   -gen
@@ -467,6 +573,12 @@ RPC server options:
   -rpcthreads=<n>
        Set the number of threads to service RPC calls (default: 4)
 
+|  -rpcworkqueue=<n>
+|       Set the depth of the work queue to service RPC calls (default: 16)
+|
+|  -rpcservertimeout=<n>
+|       Timeout during HTTP requests (default: 30)
+|
 Metrics Options (only if -daemon and -printtoconsole are not set):
 
   -showmetrics
@@ -493,16 +605,15 @@ class ShowHelpTest(BitcoinTestFramework):
     def setup_network(self):
         self.nodes = []
 
-    def show_help(self):
+    def show_help(self, expected, extra_args):
         with tempfile.SpooledTemporaryFile(max_size=2**16) as log_stdout:
-            args = [ zcashd_binary(), "--help" ]
+            args = [ zcashd_binary(), "--help" ] + extra_args
             process = subprocess.run(args, stdout=log_stdout)
             assert_equal(process.returncode, 0)
             log_stdout.seek(0)
             stdout = log_stdout.read().decode('utf-8')
             # Skip the first line which contains version information.
             actual = stdout.split('\n', 1)[1]
-            expected = help_message
 
             changed = False
 
@@ -527,10 +638,14 @@ class ShowHelpTest(BitcoinTestFramework):
                     'expected',
                     'actual',
                 ))
-                raise AssertionError('Help text has changed:\n' + diff)
+                raise AssertionError("'%s' text has changed:\n%s" % (' '.join(args), diff))
 
     def run_test(self):
-        self.show_help()
+        expected = "".join([line + "\n" for line in help_message.splitlines() if not line.startswith("|")])
+        self.show_help(expected, [])
+
+        expected_debug = "".join([line.lstrip("|") + "\n" for line in help_message.splitlines()])
+        self.show_help(expected_debug, ["-help-debug"])
 
 if __name__ == '__main__':
     ShowHelpTest().main()
