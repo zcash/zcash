@@ -81,7 +81,32 @@ jobs:
             ${{ matrix.name }}-ccache-
 
       - name: Build zcashd
+        id: build
         run: >
+          ${{ matrix.host }}
+          ./zcutil/build.sh
+          -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)"
+
+      - name: Build zcashd with libraries enabled
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        run: >
+          CONFIGURE_FLAGS="--with-libs"
+          ${{ matrix.host }}
+          ./zcutil/build.sh
+          -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)"
+
+      - name: Build zcashd with wallet disabled
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        run: >
+          CONFIGURE_FLAGS="--disable-wallet"
+          ${{ matrix.host }}
+          ./zcutil/build.sh
+          -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)"
+
+      - name: Build zcashd with mining disabled
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        run: >
+          CONFIGURE_FLAGS="--disable-mining"
           ${{ matrix.host }}
           ./zcutil/build.sh
           -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)"
