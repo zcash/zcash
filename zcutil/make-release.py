@@ -426,12 +426,21 @@ def patch_book_release_support(release, releaseheight):
 
         # Add a row for this release.
         with open('src/deprecation.h', 'r', encoding='utf8') as f:
-            prefix = 'RELEASE_TO_DEPRECATION_WEEKS = '
+            weeks_prefix = 'RELEASE_TO_DEPRECATION_WEEKS = '
+            halt_prefix = 'DEPRECATION_HEIGHT = '
             for line in f:
-                if prefix in line:
-                    weeks_to_eos = int(line.split(prefix)[1].split(';')[0])
-        eos = today + timedelta(weeks=weeks_to_eos)
-        table_rows.append((release.novtext, today, releaseheight, eos))
+                if weeks_prefix in line:
+                    weeks_to_eos = int(line.split(weeks_prefix)[1].split(';')[0])
+                if halt_prefix in line:
+                    val = line.split(halt_prefix)[1].split(';')[0]
+                    if val == 'APPROX_RELEASE_HEIGHT + ACTIVATION_TO_DEPRECATION_BLOCKS':
+                        halt_height = None
+                    else:
+                        halt_height = int(val)
+        if halt_height is None:
+            halt_height = releaseheight + (weeks_to_eos * 7 * 24 * 48)
+        eos_date = today + timedelta(weeks=weeks_to_eos)
+        table_rows.append((release.novtext, today, halt_height, eos_date))
 
         # Write out the updated table rows.
         for row in table_rows:
