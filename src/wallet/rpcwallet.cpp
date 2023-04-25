@@ -5524,7 +5524,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 if (!saplingActive) {
                     throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
                 }
-                estimatedTxSize += OUTPUTDESCRIPTION_SIZE;
+                estimatedTxSize += OUTPUTDESCRIPTION_SIZE * 2;
             },
             [](libzcash::SproutPaymentAddress) { },
             [&](libzcash::UnifiedAddress) {
