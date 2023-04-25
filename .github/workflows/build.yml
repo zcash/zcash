@@ -1,0 +1,112 @@
+name: Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Tier ${{ matrix.tier }} platform ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.tier == 3 }}
+    strategy:
+      matrix:
+        include:
+          - name: ubuntu-20.04
+            tier: 1
+            platform: Ubuntu 20.04
+            os: ubuntu-20.04
+
+          - name: macos-11
+            tier: 3
+            platform: macOS Big Sur 11
+            os: macos-11
+            brew_deps: >
+              autoconf
+              automake
+              coreutils
+              libtool
+              pkgconfig
+
+          - name: mingw32
+            tier: 3
+            platform: Windows (64-bit MinGW)
+            os: ubuntu-latest
+            cross_deps: >
+              mingw-w64
+            host: HOST=x86_64-w64-mingw32
+
+          - name: aarch64-linux
+            tier: 3
+            platform: ARM64 Linux
+            os: ubuntu-latest
+            cross_deps: >
+              g++-aarch64-linux-gnu
+            host: HOST=aarch64-linux-gnu
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Homebrew build dependencies
+        if: matrix.brew_deps != ''
+        run: brew install ${{ matrix.brew_deps }}
+
+      - name: Install cross-compilation build dependencies
+        if: matrix.cross_deps != ''
+        run: sudo apt install ${{ matrix.cross_deps }}
+
+      - name: Configure MinGW to use POSIX variant
+        if: matrix.name == 'mingw32'
+        run: |
+          sudo update-alternatives --set x86_64-w64-mingw32-gcc $(update-alternatives --query x86_64-w64-mingw32-gcc | grep Alternative | grep posix | cut -d' ' -f2)
+          sudo update-alternatives --set x86_64-w64-mingw32-g++ $(update-alternatives --query x86_64-w64-mingw32-g++ | grep Alternative | grep posix | cut -d' ' -f2)
+
+      - name: Cache built dependencies
+        uses: actions/cache@v3
+        with:
+          path: depends/built
+          key: ${{ matrix.name }}-built-${{ hashFiles('depends/Makefile', 'depends/funcs.mk') }}-${{ hashFiles('depends/packages/*.mk', 'depends/patches/**/*') }}
+          restore-keys: |
+            ${{ matrix.name }}-built-${{ hashFiles('depends/Makefile', 'depends/funcs.mk') }}-
+
+      - name: Prepare ccache timestamp
+        id: ccache_cache_timestamp
+        shell: bash
+        run: echo "timestamp=$(date +'%Y-%m-%d-%H;%M;%S')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache ccache files
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ccache
+          key: ${{ matrix.name }}-ccache-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
+          restore-keys: |
+            ${{ matrix.name }}-ccache-
+
+      - name: Build zcashd
+        id: build
+        run: >
+          ${{ matrix.host }}
+          ./zcutil/build.sh
+          -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)"
+
+      - name: Build zcashd with libraries enabled
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        run: >
+          CONFIGURE_FLAGS="--with-libs"
+          ${{ matrix.host }}
+          ./zcutil/build.sh
+          -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)"
+
+      - name: Build zcashd with wallet disabled
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        run: >
+          CONFIGURE_FLAGS="--disable-wallet"
+          ${{ matrix.host }}
+          ./zcutil/build.sh
+          -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)"
+
+      - name: Build zcashd with mining disabled
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        run: >
+          CONFIGURE_FLAGS="--disable-mining"
+          ${{ matrix.host }}
+          ./zcutil/build.sh
+          -j"$(nproc 2> /dev/null || sysctl -n hw.ncpu)"

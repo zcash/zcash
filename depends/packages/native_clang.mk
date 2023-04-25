@@ -51,6 +51,11 @@ endif
 
 define $(package)_stage_cmds
   mkdir -p $($(package)_staging_prefix_dir)/bin && \
+  rm -r include/flang && \
+  rm -r include/lldb && \
+  rm lib/libflang* && \
+  rm lib/libFortran* && \
+  rm lib/liblldb* && \
   cp bin/clang-$($(package)_major_version) $($(package)_staging_prefix_dir)/bin && \
   cp bin/lld $($(package)_staging_prefix_dir)/bin && \
   cp bin/llvm-ar $($(package)_staging_prefix_dir)/bin && \
