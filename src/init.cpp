@@ -12,6 +12,7 @@
 #include "addrman.h"
 #include "amount.h"
 #include "checkpoints.h"
+#include "compat.h"
 #include "compat/sanity.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
