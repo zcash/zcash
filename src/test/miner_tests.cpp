@@ -243,6 +243,7 @@ class MinerAddressScript : public CReserveScript
     void KeepScript() {}
 };
 
+#ifdef ENABLE_MINING
 // This is only useful if the test changes to require more blocks, but we keep it
 // compiling to avoid bitrot.
 void MineBlockForTest(const CChainParams& chainparams, CBlock* pblock) {
@@ -288,6 +289,7 @@ void MineBlockForTest(const CChainParams& chainparams, CBlock* pblock) {
         try_nonce += 1;
     }
 }
+#endif
 
 // NOTE: These tests rely on CreateNewBlock doing its own self-validation!
 BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
@@ -346,12 +348,16 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
             pblock->nNonce = uint256S(blockinfo[i].nonce_hex);
             pblock->nSolution = ParseHex(blockinfo[i].solution_hex);
         } else {
+#ifdef ENABLE_MINING
             // If you need to mine more blocks than are currently in blockinfo, increase
             // nblocks and then this code will do so.
             MineBlockForTest(chainparams, pblock);
             std::cout << "    {\"" << pblock->nNonce.GetHex() << "\", \"";
             std::cout << HexStr(pblock->nSolution.begin(), pblock->nSolution.end());
             std::cout << "\"}," << std::endl;
+#else
+            assert(false);
+#endif
         }
 
         // These tests assume null hashBlockCommitments (before Sapling)
