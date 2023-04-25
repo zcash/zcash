@@ -315,7 +315,6 @@ def initialize_chain(test_dir, num_nodes, cachedir, cache_behavior='current'):
             os.remove(node_file(cachedir, i, "debug.log"))
             os.remove(node_file(cachedir, i, "db.log"))
             os.remove(node_file(cachedir, i, "peers.dat"))
-            os.remove(node_file(cachedir, i, "fee_estimates.dat"))
 
     def init_from_cache():
         for i in range(num_nodes):

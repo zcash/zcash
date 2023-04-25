@@ -7,7 +7,6 @@
 #include "main.h"
 #include "primitives/transaction.h"
 #include "txmempool.h"
-#include "policy/fees.h"
 #include "util/system.h"
 
 // Implementation is in test_checktransaction.cpp

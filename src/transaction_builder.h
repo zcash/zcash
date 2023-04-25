@@ -8,7 +8,6 @@
 #include "coins.h"
 #include "consensus/params.h"
 #include "keystore.h"
-#include "policy/fees.h"
 #include "primitives/transaction.h"
 #include "random.h"
 #include "script/script.h"

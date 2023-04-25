@@ -6,7 +6,6 @@
 
 #include "amount.h"
 #include "consensus/consensus.h"
-#include "policy/fees.h"
 
 #include "tinyformat.h"
 

@@ -2028,7 +2028,7 @@ bool AcceptToMemoryPool(
 
         {
             // Store transaction in memory
-            pool.addUnchecked(hash, entry, setAncestors, !IsInitialBlockDownload(chainparams.GetConsensus()));
+            pool.addUnchecked(hash, entry, setAncestors);
 
             // Add memory address index
             if (fAddressIndex) {
@@ -4090,7 +4090,7 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     LogPrint("bench", "  - Writing chainstate: %.2fms [%.2fs]\n", (nTime5 - nTime4) * 0.001, nTimeChainState * 0.000001);
     // Remove conflicting transactions from the mempool.
     std::list<CTransaction> txConflicted;
-    mempool.removeForBlock(pblock->vtx, pindexNew->nHeight, txConflicted, !IsInitialBlockDownload(chainparams.GetConsensus()));
+    mempool.removeForBlock(pblock->vtx, pindexNew->nHeight, txConflicted);
 
     // Remove transactions that expire at new block height from mempool
     auto ids = mempool.removeExpired(pindexNew->nHeight);
