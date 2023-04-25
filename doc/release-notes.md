@@ -42,11 +42,17 @@ RPC Changes
 Changes to Transaction Fee Selection
 ------------------------------------
 
+- The zcashd wallet now uses the conventional transaction fee calculated according
+  to [ZIP 317](https://zips.z.cash/zip-0317) by default. This conventional fee
+  will be used unless a fee is explicitly specified in an RPC call, or for the
+  wallet's legacy transaction creation APIs (`sendtoaddress`, `sendmany`, and
+  `fundrawtransaction`) when the `-paytxfee` option is set.
 - The `-mintxfee` and `-sendfreetransactions` options have been removed. These
-  options used to instruct the wallet's legacy transaction creation APIs
-  (`sendtoaddress`, `sendmany`, and `fundrawtransaction`) to increase fees to
-  this limit and to use a zero fee for "small" transactions that spend "old"
-  inputs, respectively. They will now cause a warning on node startup if used.
+  options previously instructed the legacy transaction creation APIs to increase
+  fees to this limit and to use a zero fee for "small" transactions that spend
+  "old" inputs, respectively. They will now cause a warning on node startup if
+  used.
+
 
 Changes to Block Template Construction
 --------------------------------------
@@ -65,16 +71,28 @@ We now use a new block template construction algorithm documented in
   "unpaid actions" that will be accepted in a block for transactions paying less
   than the ZIP 317 fee. This defaults to 50.
 
+Change to Transaction Relay Policy
+----------------------------------
+
+The allowance for "free transactions" in mempool acceptance and relay has been
+removed. All transactions must pay at least the minimum relay threshold, currently
+100 zatoshis per 1000 bytes up to a maximum of 1000 zatoshis, in order to be
+accepted and relayed. (Individual nodes can change this using `-minrelaytxfee`
+but in practice the network default needs to be adhered to.) This policy is under
+review and [might be made stricter](https://zips.z.cash/zip-0317#transaction-relaying);
+if that happens then the ZIP 317 conventional fee will still be sufficient for
+mempool acceptance and relay.
+
 Removal of Priority Estimation
 ------------------------------
 
-- Estimation of "priority" needed for a transaction to be included within a target
-  number of blocks, and the associated `estimatepriority` RPC call, have been
-  removed. The format for `fee_estimates.dat` has also changed to no longer save
-  these priority estimates. It will automatically be converted to the new format
-  which is not readable by prior versions of the software. The `-txconfirmtarget`
-  config option is now obsolete and has also been removed. It will cause a
-  warning if used.
+Estimation of "priority" needed for a transaction to be included within a target
+number of blocks, and the associated `estimatepriority` RPC call, have been
+removed. The format for `fee_estimates.dat` has also changed to no longer save
+these priority estimates. It will automatically be converted to the new format
+which is not readable by prior versions of the software. The `-txconfirmtarget`
+config option is now obsolete and has also been removed. It will cause a
+warning if used.
 
 [Deprecations](https://zcash.github.io/zcash/user/deprecation.html)
 --------------
