@@ -3,7 +3,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     BLOSSOM_BRANCH_ID,
-    DEFAULT_FEE,
+    LEGACY_DEFAULT_FEE,
     assert_equal,
     assert_true,
     initialize_chain_clean,
@@ -49,7 +49,7 @@ class SignOfflineTest (BitcoinTestFramework):
         create_inputs = [{'txid': txid, 'vout': 0}]
         sign_inputs = [{'txid': txid, 'vout': 0, 'scriptPubKey': scriptpubkey, 'amount': 10}]
 
-        create_hex = self.nodes[0].createrawtransaction(create_inputs, {taddr: Decimal('10.0') - DEFAULT_FEE})
+        create_hex = self.nodes[0].createrawtransaction(create_inputs, {taddr: Decimal('10.0') - LEGACY_DEFAULT_FEE})
 
         # An offline regtest node does not rely on the approx release height of the software
         # to determine the consensus rules to be used for signing.

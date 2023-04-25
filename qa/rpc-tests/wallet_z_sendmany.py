@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
-    DEFAULT_FEE,
+    LEGACY_DEFAULT_FEE,
     NU5_BRANCH_ID,
     assert_equal,
     assert_greater_than,
@@ -107,14 +107,14 @@ class WalletZSendmanyTest(BitcoinTestFramework):
         # send node 2 taddr to zaddr
         recipients = []
         recipients.append({"address":myzaddr, "amount":7})
-        opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, DEFAULT_FEE, 'AllowFullyTransparent')
+        opid = self.nodes[2].z_sendmany(mytaddr, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowFullyTransparent')
         mytxid = wait_and_assert_operationid_status(self.nodes[2], opid)
 
         self.sync_all()
 
         # check balances
         zsendmanynotevalue = Decimal('7.0')
-        zsendmanyfee = DEFAULT_FEE
+        zsendmanyfee = LEGACY_DEFAULT_FEE
         node2sproutbalance = Decimal('50.00000000')
         node2utxobalance = Decimal('210.00000000') - zsendmanynotevalue - zsendmanyfee
 
@@ -160,14 +160,14 @@ class WalletZSendmanyTest(BitcoinTestFramework):
 
         # try sending with a memo to a taddr, which should fail
         recipients = [{"address":self.nodes[0].getnewaddress(), "amount":1, "memo":"DEADBEEF"}]
-        opid = self.nodes[2].z_sendmany(myzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedRecipients')
+        opid = self.nodes[2].z_sendmany(myzaddr, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedRecipients')
         wait_and_assert_operationid_status(self.nodes[2], opid, 'failed', 'Failed to build transaction: Memos cannot be sent to transparent addresses.')
 
         recipients = []
         recipients.append({"address":self.nodes[0].getnewaddress(), "amount":1})
         recipients.append({"address":self.nodes[2].getnewaddress(), "amount":1.0})
 
-        opid = self.nodes[2].z_sendmany(myzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedRecipients')
+        opid = self.nodes[2].z_sendmany(myzaddr, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedRecipients')
         wait_and_assert_operationid_status(self.nodes[2], opid)
         zbalance -= Decimal('2.0') + zsendmanyfee
 

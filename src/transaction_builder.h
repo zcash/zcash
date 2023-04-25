@@ -261,7 +261,7 @@ private:
     const CCoinsViewCache* coinsView;
     CCriticalSection* cs_coinsView;
     CMutableTransaction mtx;
-    CAmount fee = DEFAULT_FEE;
+    CAmount fee = LEGACY_DEFAULT_FEE;
     std::optional<uint256> orchardAnchor;
     std::optional<orchard::Builder> orchardBuilder;
     CAmount valueBalanceOrchard = 0;

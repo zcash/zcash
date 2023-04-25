@@ -1937,7 +1937,7 @@ bool AcceptToMemoryPool(
 
         // No transactions are allowed with modified fee below the minimum relay fee,
         // except from disconnected blocks. The minimum relay fee will never be more
-        // than DEFAULT_FEE zatoshis.
+        // than LEGACY_DEFAULT_FEE zatoshis.
         CAmount minRelayFee = ::minRelayTxFee.GetFeeForRelay(nSize);
         if (fLimitFree && nModifiedFees < minRelayFee) {
             LogPrint("mempool",

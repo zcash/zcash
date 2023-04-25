@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
-    DEFAULT_FEE,
+    LEGACY_DEFAULT_FEE,
     assert_equal,
     connect_nodes_bi,
     start_nodes,
@@ -58,7 +58,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
                     {'address': node3taddr2, 'amount': 75},
                 ],
                 1,
-                DEFAULT_FEE,
+                LEGACY_DEFAULT_FEE,
                 'AllowRevealedRecipients',
             ),
         )
@@ -77,7 +77,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
             self.nodes[3].z_sendmany(
                 'ANY_TADDR',
                 [{'address': recipient, 'amount': 100}],
-                1, DEFAULT_FEE, 'AllowFullyTransparent'),
+                1, LEGACY_DEFAULT_FEE, 'AllowFullyTransparent'),
         )
 
         self.sync_all()
@@ -97,7 +97,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
             self.nodes[3].z_sendmany(
                 'ANY_TADDR',
                 [{'address': recipient, 'amount': 20}],
-                1, DEFAULT_FEE, 'AllowFullyTransparent'),
+                1, LEGACY_DEFAULT_FEE, 'AllowFullyTransparent'),
         )
 
         self.sync_all()
@@ -111,7 +111,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
         myopid = self.nodes[3].z_sendmany(
             'ANY_TADDR',
             [{'address': recipient, 'amount': 20}],
-            1, DEFAULT_FEE, 'AllowRevealedSenders')
+            1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "Insufficient funds: have 14.99998, need 20.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.")
 
         # Create an expired transaction on node 3.
@@ -143,7 +143,7 @@ class WalletSendManyAnyTaddr(BitcoinTestFramework):
             self.nodes[2].z_sendmany(
                 'ANY_TADDR',
                 [{'address': recipient, 'amount': 13}],
-                1, DEFAULT_FEE, 'AllowRevealedSenders'),
+                1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders'),
             "failed", "Insufficient funds: have 0.00, need 13.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.")
 
 if __name__ == '__main__':

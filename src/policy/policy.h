@@ -67,8 +67,8 @@ static const unsigned int STANDARD_NOT_MANDATORY_VERIFY_FLAGS = STANDARD_SCRIPT_
  * zcashd v1.0.7-1 (#2141). The relaying problem for shielded transactions (#1969)
  * that prompted the latter change was fixed more thoroughly by the addition of
  * `CFeeRate::GetFeeForRelay` in #4916, ensuring that a transaction paying
- * `DEFAULT_FEE` can always be relayed. At the same time the default fee was set
- * to 1000 zats, per ZIP 313.
+ * `LEGACY_DEFAULT_FEE` can always be relayed. At the same time the default fee was
+ * set to 1000 zats, per ZIP 313.
  *
  * #6542 changed relaying policy to be more strict about enforcing minRelayTxFee.
  * It also allowed `-minrelaytxfee=0`, which we are using to avoid some test

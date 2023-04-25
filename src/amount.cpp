@@ -23,7 +23,7 @@ CFeeRate::CFeeRate(const CAmount& nFeePaid, size_t nSize)
 
 CAmount CFeeRate::GetFeeForRelay(size_t nSize) const
 {
-    return std::min(GetFee(nSize), DEFAULT_FEE);
+    return std::min(GetFee(nSize), LEGACY_DEFAULT_FEE);
 }
 
 CAmount CFeeRate::GetFee(size_t nSize) const

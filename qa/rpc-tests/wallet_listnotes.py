@@ -12,7 +12,7 @@ from test_framework.util import (
     nuparams,
     start_nodes,
     wait_and_assert_operationid_status,
-    DEFAULT_FEE
+    LEGACY_DEFAULT_FEE
 )
 
 from decimal import Decimal
@@ -46,10 +46,10 @@ class WalletListNotes(BitcoinTestFramework):
         # Send 1.0 minus default fee from sproutzaddr to a new Sapling zaddr
         saplingzaddr = self.nodes[0].z_getnewaddress('sapling')
         receive_amount_2 = Decimal('1.0')
-        change_amount_2 = receive_amount_1 - receive_amount_2 - DEFAULT_FEE
+        change_amount_2 = receive_amount_1 - receive_amount_2 - LEGACY_DEFAULT_FEE
         assert_equal('sapling', self.nodes[0].z_validateaddress(saplingzaddr)['address_type'])
         recipients = [{"address": saplingzaddr, "amount":receive_amount_2}]
-        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedAmounts')
+        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedAmounts')
         txid_2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
 
@@ -86,9 +86,9 @@ class WalletListNotes(BitcoinTestFramework):
         # Send 2.0 minus default fee to a new sapling zaddr
         saplingzaddr2 = self.nodes[0].z_getnewaddress('sapling')
         receive_amount_3 = Decimal('2.0')
-        change_amount_3 = change_amount_2 - receive_amount_3 - DEFAULT_FEE
+        change_amount_3 = change_amount_2 - receive_amount_3 - LEGACY_DEFAULT_FEE
         recipients = [{"address": saplingzaddr2, "amount":receive_amount_3}]
-        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedAmounts')
+        myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedAmounts')
         txid_3 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
         unspent_tx = self.nodes[0].z_listunspent(0)
