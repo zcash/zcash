@@ -30,9 +30,11 @@ RPC Changes
   is unable to construct the transaction without selecting funds from the transparent
   pool, so the impact of this change is that for such transactions, the user must specify
   `AllowFullyTransparent`.
-- The `z_shieldcoinbase` and RPC method now supports an optional memo.
+- The `z_shieldcoinbase` RPC method now supports an optional memo.
 - The `z_shieldcoinbase` and `z_mergetoaddress` RPC methods now support an
   optional privacy policy.
+- The `z_mergetoaddress` RPC method can now merge _to_ UAs and can also send
+  between different shielded pools (when `AllowRevealedAmounts` is specified).
 - The `estimatepriority` RPC call has been removed.
 - The `priority_delta` argument to the `prioritisetransaction` RPC call now has
   no effect and must be set to a dummy value (0 or null).

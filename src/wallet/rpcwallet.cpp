@@ -5509,7 +5509,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     auto destStr = params[1].get_str();
     auto destaddress = keyIO.DecodePaymentAddress(destStr);
     bool isToTaddr = false;
-    bool isToSaplingZaddr = false;
+    size_t estimatedTxSize = 200;  // tx overhead + wiggle room
 
     if (destaddress.has_value()) {
         examine(destaddress.value(), match {
@@ -5520,17 +5520,15 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 isToTaddr = true;
             },
             [&](libzcash::SaplingPaymentAddress addr) {
-                isToSaplingZaddr = true;
                 // If Sapling is not active, do not allow sending to a sapling addresses.
                 if (!saplingActive) {
                     throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
                 }
+                estimatedTxSize += OUTPUTDESCRIPTION_SIZE * 2;
             },
             [](libzcash::SproutPaymentAddress) { },
-            [](libzcash::UnifiedAddress) {
-                throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Invalid parameter, unified addresses are not yet supported.");
+            [&](libzcash::UnifiedAddress) {
+                estimatedTxSize += ZC_ZIP225_ORCHARD_BASE_SIZE + ZC_ZIP225_ORCHARD_MARGINAL_SIZE * 2;
             }
         });
     } else {
@@ -5583,10 +5581,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     const size_t mempoolLimit = nUTXOLimit;
 
     unsigned int max_tx_size = saplingActive ? MAX_TX_SIZE_AFTER_SAPLING : MAX_TX_SIZE_BEFORE_SAPLING;
-    size_t estimatedTxSize = 200;  // tx overhead + wiggle room
-    if (isToSaplingZaddr) {
-        estimatedTxSize += OUTPUTDESCRIPTION_SIZE;
-    }
 
     if (useAnyUTXO || taddrs.size() > 0) {
         // Get available utxos
@@ -5666,12 +5660,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
                 "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress");
-        }
-        // If sending between shielded addresses, they must be within the same value pool
-        if (sproutCandidateNotes.size() > 0 && isToSaplingZaddr) {
-            throw JSONRPCError(
-                RPC_INVALID_PARAMETER,
-                "Cannot send between Sprout and Sapling addresses using z_mergetoaddress");
         }
 
         // Find unspent notes and update estimated size
