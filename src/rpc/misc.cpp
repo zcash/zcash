@@ -92,7 +92,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.pushKV("subversion", strSubVersion);
     obj.pushKV("protocolversion", PROTOCOL_VERSION);
 #ifdef ENABLE_WALLET
-    if (pwalletMain) {
+    if (pwalletMain && fEnableGetinfoWalletMetadata) {
         obj.pushKV("walletversion", pwalletMain->GetVersion());
         obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance(std::nullopt, ISMINE_SPENDABLE_ANY, 0)));
     }
@@ -104,13 +104,15 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.pushKV("difficulty",    (double)GetDifficulty());
     obj.pushKV("testnet",       Params().TestnetToBeDeprecatedFieldRPC());
 #ifdef ENABLE_WALLET
-    if (pwalletMain) {
-        obj.pushKV("keypoololdest", pwalletMain->GetOldestKeyPoolTime());
-        obj.pushKV("keypoolsize",   (int)pwalletMain->GetKeyPoolSize());
+    if (fEnableGetinfoWalletMetadata) {
+        if (pwalletMain) {
+            obj.pushKV("keypoololdest", pwalletMain->GetOldestKeyPoolTime());
+            obj.pushKV("keypoolsize",   (int)pwalletMain->GetKeyPoolSize());
+        }
+        if (pwalletMain && pwalletMain->IsCrypted())
+            obj.pushKV("unlocked_until", nWalletUnlockTime);
+        obj.pushKV("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK()));
     }
-    if (pwalletMain && pwalletMain->IsCrypted())
-        obj.pushKV("unlocked_until", nWalletUnlockTime);
-    obj.pushKV("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK()));
 #endif
     obj.pushKV("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK()));
     auto warnings = GetWarnings("statusbar");

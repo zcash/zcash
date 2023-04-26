@@ -2461,15 +2461,17 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"walletversion\": xxxxx,     (numeric) the wallet version\n"
-            "  \"balance\": xxxxxxx,         (numeric) the total confirmed transparent balance of the wallet in " + CURRENCY_UNIT + "\n"
+            "  \"balance\": xxxxxxx,         (numeric, deprecated) the total confirmed transparent balance of the wallet in " + CURRENCY_UNIT + ".\n"
             "                              This includes all value controlled by keys in the wallet, irrespective of what unified \n"
-            "                              account the funds may be associated with (if any).\n"
-            "  \"unconfirmed_balance\": xxx, (numeric, optional) the total unconfirmed transparent balance of the wallet in " + CURRENCY_UNIT + ".\n"
-            "                              Not included if `asOfHeight` is specified.\n"
-            "  \"immature_balance\": xxxxxx, (numeric) the total immature transparent balance of the wallet in " + CURRENCY_UNIT + "\n"
-            "  \"shielded_balance\": xxxxxxx,  (numeric) the total confirmed shielded balance of the wallet in " + CURRENCY_UNIT + "\n"
-            "  \"shielded_unconfirmed_balance\": xxx, (numeric, optional) the total unconfirmed shielded balance of the wallet in " + CURRENCY_UNIT + ".\n"
-            "                              Not included if `asOfHeight` is specified.\n"
+            "                              account the funds may be associated with (if any). Deprecated, use `z_getbalances` instead.\n"
+            "  \"unconfirmed_balance\": xxx, (numeric, optional, deprecated) the total unconfirmed transparent balance of the wallet in " + CURRENCY_UNIT + ".\n"
+            "                              Not included if `asOfHeight` is specified. Depreceated, use `z_getbalances` instead.\n"
+            "  \"immature_balance\": xxxxxxx,  (numeric, deprecated) the total immature transparent balance of the wallet in " + CURRENCY_UNIT + ".\n"
+            "                              Deprecated, use `z_getbalances` instead.\n"
+            "  \"shielded_balance\": xxxxxxx,  (numeric, deprecated) the total confirmed shielded balance of the wallet in " + CURRENCY_UNIT + ".\n"
+            "                              Deprecated, use `z_getbalances` instead.\n"
+            "  \"shielded_unconfirmed_balance\": xxx, (numeric, optional, deprecated) the total unconfirmed shielded balance of the wallet in " + CURRENCY_UNIT + ".\n"
+            "                              Not included if `asOfHeight` is specified. Deprecated, use `z_getbalances` instead.\n"
             "  \"txcount\": xxxxxxx,         (numeric) the total number of transactions in the wallet\n"
             "  \"keypoololdest\": xxxxxx,    (numeric) the timestamp (seconds since GMT epoch) of the oldest pre-generated key in the key pool\n"
             "  \"keypoolsize\": xxxx,        (numeric) how many new keys are pre-generated\n"
@@ -2491,14 +2493,16 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
 
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("walletversion", pwalletMain->GetVersion());
-    obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance(asOfHeight, ISMINE_SPENDABLE_ANY, 0)));
-    if (!asOfHeight.has_value()) {
-        obj.pushKV("unconfirmed_balance", ValueFromAmount(pwalletMain->GetUnconfirmedTransparentBalance(ISMINE_SPENDABLE_ANY)));
-    }
-    obj.pushKV("immature_balance",    ValueFromAmount(pwalletMain->GetImmatureBalance(asOfHeight)));
-    obj.pushKV("shielded_balance",    FormatMoney(getBalanceZaddr(std::nullopt, asOfHeight, 1, INT_MAX)));
-    if (!asOfHeight.has_value()) {
-        obj.pushKV("shielded_unconfirmed_balance", FormatMoney(getBalanceZaddr(std::nullopt, asOfHeight, 0, 0)));
+    if (fEnableWalletinfoBalances) {
+        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance(asOfHeight, ISMINE_SPENDABLE_ANY, 0)));
+        if (!asOfHeight.has_value()) {
+            obj.pushKV("unconfirmed_balance", ValueFromAmount(pwalletMain->GetUnconfirmedTransparentBalance(ISMINE_SPENDABLE_ANY)));
+        }
+        obj.pushKV("immature_balance",    ValueFromAmount(pwalletMain->GetImmatureBalance(asOfHeight)));
+        obj.pushKV("shielded_balance",    FormatMoney(getBalanceZaddr(std::nullopt, asOfHeight, 1, INT_MAX)));
+        if (!asOfHeight.has_value()) {
+            obj.pushKV("shielded_unconfirmed_balance", FormatMoney(getBalanceZaddr(std::nullopt, asOfHeight, 0, 0)));
+        }
     }
     obj.pushKV("txcount",       (int)pwalletMain->mapWallet.size());
     obj.pushKV("keypoololdest", pwalletMain->GetOldestKeyPoolTime());
