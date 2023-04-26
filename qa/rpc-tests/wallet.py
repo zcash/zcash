@@ -6,6 +6,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
+from test_framework.mininode import COIN
 from test_framework.util import assert_equal, start_nodes, start_node, \
     connect_nodes_bi, sync_blocks, sync_mempools
 from test_framework.zip317 import conventional_fee
@@ -249,7 +250,7 @@ class WalletTest (BitcoinTestFramework):
         # the balance returned by the legacy getbalance method is unchanged
         assert_equal(
                 self.nodes[0].z_getbalanceforaccount(acct0)['pools']['transparent']['valueZat'], 
-                Decimal(500000000))
+                Decimal(5) * COIN)
         assert_equal(self.nodes[0].getbalance("*", 1, False, True), pre_balance)
 
 if __name__ == '__main__':
