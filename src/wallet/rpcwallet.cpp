@@ -2653,7 +2653,6 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     return results;
 }
 
-
 UniValue z_listunspent(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -2690,7 +2689,8 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "    \"account\" : n,                     (numeric, optional) the unified account ID, if applicable\n"
             "    \"address\" : \"address\",             (string, optional) the shielded address, omitted if this note was sent to an internal receiver\n"
             "    \"amount\": xxxxx,                   (numeric) the amount of value in the note\n"
-            "    \"memo\": xxxxx,                     (string) hexadecimal string representation of memo field\n"
+            "    \"memo\": \"hexmemo\",                 (string) hexadecimal string representation of memo field\n"
+            "    \"memoStr\": \"memo\",                 (string, optional) UTF-8 string representation of memo field (if it contains valid UTF-8).\n"
             "    \"change\": true|false,              (boolean) true if the address that received the note is also one of the sending addresses\n"
             "  }\n"
             "  ,...\n"
@@ -2789,7 +2789,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         obj.pushKV("spendable", hasSproutSpendingKey);
         obj.pushKV("address", keyIO.EncodePaymentAddress(entry.address));
         obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
-        obj.pushKV("memo", HexStr(libzcash::Memo::ToBytes(entry.memo)));
+        AddMemo(obj, entry.memo);
         if (hasSproutSpendingKey) {
             obj.pushKV("change", pwalletMain->IsNoteSproutChange(sproutNullifiers, entry.address, entry.jsop));
         }
@@ -2816,7 +2816,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             obj.pushKV("address", keyIO.EncodePaymentAddress(addr.first));
         }
         obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value()))); // note.value() is equivalent to plaintext.value()
-        obj.pushKV("memo", HexStr(libzcash::Memo::ToBytes(entry.memo)));
+        AddMemo(obj, entry.memo);
         if (hasSaplingSpendingKey) {
             obj.pushKV(
                     "change",
@@ -2849,7 +2849,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             obj.pushKV("address", keyIO.EncodePaymentAddress(addr.first));
         }
         obj.pushKV("amount", ValueFromAmount(entry.GetNoteValue()));
-        obj.pushKV("memo", HexStr(libzcash::Memo::ToBytes(entry.GetMemo())));
+        AddMemo(obj, entry.GetMemo());
         if (haveSpendingKey) {
             obj.pushKV("change", isInternal);
         }
@@ -3650,7 +3650,8 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "    \"txid\": \"txid\",               (string) the transaction id\n"
             "    \"amount\": xxxxx,              (numeric) the amount of value in the note\n"
             "    \"amountZat\" : xxxx            (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
-            "    \"memo\": xxxxx,                (string) hexadecimal string representation of memo field\n"
+            "    \"memo\": \"hexmemo\",            (string) hexadecimal string representation of memo field\n"
+            "    \"memoStr\": \"memo\",            (string, optional) UTF-8 string representation of memo field (if it contains valid UTF-8).\n"
             "    \"confirmations\" : n,          (numeric) the number of confirmations\n"
             "    \"blockheight\": n,             (numeric) The block height containing the transaction\n"
             "    \"blockindex\": n,              (numeric) The block index containing the transaction.\n"
@@ -3764,7 +3765,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             obj.pushKV("txid", entry.op.hash.ToString());
             obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
             obj.pushKV("amountZat", CAmount(entry.note.value()));
-            obj.pushKV("memo", HexStr(libzcash::Memo::ToBytes(entry.memo)));
+            AddMemo(obj, entry.memo);
             obj.pushKV("outindex", (int)entry.op.n);
             obj.pushKV("confirmations", entry.confirmations);
 
@@ -3791,7 +3792,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             obj.pushKV("txid", op.hash.ToString());
             obj.pushKV("amount", ValueFromAmount(entry.GetNoteValue()));
             obj.pushKV("amountZat", CAmount(entry.GetNoteValue()));
-            obj.pushKV("memo", HexStr(libzcash::Memo::ToBytes(entry.GetMemo())));
+            AddMemo(obj, entry.GetMemo());
             obj.pushKV("outindex", (int)op.n);
             obj.pushKV("confirmations", entry.GetConfirmations());
 
@@ -3824,7 +3825,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                 obj.pushKV("txid", entry.jsop.hash.ToString());
                 obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
                 obj.pushKV("amountZat", CAmount(entry.note.value()));
-                obj.pushKV("memo", HexStr(libzcash::Memo::ToBytes(entry.memo)));
+                AddMemo(obj, entry.memo);
                 obj.pushKV("jsindex", entry.jsop.js);
                 obj.pushKV("jsoutindex", entry.jsop.n);
                 obj.pushKV("confirmations", entry.confirmations);
@@ -4276,7 +4277,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "      \"value\" : x.xxx                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
             "      \"valueZat\" : xxxx               (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
             "      \"memo\" : \"hexmemo\",             (string) hexadecimal string representation of the memo field\n"
-            "      \"memoStr\" : \"memo\",             (string) Only returned if memo contains valid UTF-8 text.\n"
+            "      \"memoStr\" : \"memo\",             (string, optional) UTF-8 string representation of memo field (if it contains valid UTF-8).\n"
             "    }\n"
             "    ,...\n"
             "  ],\n"
@@ -4301,21 +4302,6 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
     UniValue spends(UniValue::VARR);
     UniValue outputs(UniValue::VARR);
-
-    auto addMemo = [](UniValue &entry, const std::optional<libzcash::Memo> &memo) {
-        entry.pushKV("memo", HexStr(libzcash::Memo::ToBytes(memo)));
-
-        if (memo.has_value()) {
-            auto interpMemo = memo.value().Interpret();
-            // TODO: Indicate when the memo should have been valid UTF8, but wasn’t.
-            if (interpMemo.has_value()) {
-                examine(interpMemo.value(), match {
-                    [&](const std::string& memoStr) { entry.pushKV("memoStr", memoStr); },
-                    [](const auto&) {},
-                });
-            }
-        }
-    };
 
     KeyIO keyIO(Params());
     // Sprout spends
@@ -4370,7 +4356,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         entry.pushKV("address", keyIO.EncodePaymentAddress(pa));
         entry.pushKV("value", ValueFromAmount(notePt.value()));
         entry.pushKV("valueZat", notePt.value());
-        addMemo(entry, notePt.memo());
+        AddMemo(entry, notePt.memo());
         outputs.push_back(entry);
     }
 
@@ -4516,7 +4502,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         }
         entry.pushKV("value", ValueFromAmount(notePt.value()));
         entry.pushKV("valueZat", notePt.value());
-        addMemo(entry, notePt.memo());
+        AddMemo(entry, notePt.memo());
         outputs.push_back(entry);
     }
 
@@ -4579,7 +4565,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         }
         entry.pushKV("value", ValueFromAmount(noteValue));
         entry.pushKV("valueZat", noteValue);
-        addMemo(entry, orchardActionOutput.GetMemo());
+        AddMemo(entry, orchardActionOutput.GetMemo());
         outputs.push_back(entry);
     }
 
