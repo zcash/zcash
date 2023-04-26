@@ -4779,7 +4779,7 @@ static std::optional<Memo> ParseMemo(const UniValue& memoValue)
         return std::nullopt;
     } else {
         return examine(Memo::FromHex(memoValue.get_str()), match {
-            [](MemoError err) -> Memo {
+            [](MemoError err) -> std::optional<Memo> {
                 switch (err) {
                     case MemoError::HexDecodeError:
                         throw JSONRPCError(
@@ -4793,7 +4793,13 @@ static std::optional<Memo> ParseMemo(const UniValue& memoValue)
                         assert(false);
                 }
             },
-            [](Memo result) { return result; }
+            [](Memo result) -> std::optional<Memo> {
+                if (result.ToBytes() == Memo::NoMemo().ToBytes()) {
+                    return std::nullopt;
+                } else {
+                    return result;
+                }
+            }
         });
     }
 }
