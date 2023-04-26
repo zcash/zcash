@@ -633,10 +633,14 @@ void BlockAssembler::AddToBlock(CTxMemPool::txiter iter)
 
     bool fPrintPriority = GetBoolArg("-printpriority", DEFAULT_PRINTPRIORITY);
     if (fPrintPriority) {
-        LogPrintf("%s: fee %s txid %s\n",
+        LogPrintf("%s: txid %s; modified fee %s; conventional fee %s; size %d bytes; logical actions %d; unpaid actions %d\n",
                   __func__,
-                  CFeeRate(iter->GetModifiedFee(), iter->GetTxSize()).ToString(),
-                  iter->GetTx().GetHash().ToString());
+                  iter->GetTx().GetHash().ToString(),
+                  FormatMoney(iter->GetModifiedFee()),
+                  FormatMoney(iter->GetTx().GetConventionalFee()),
+                  iter->GetTxSize(),
+                  iter->GetTx().GetLogicalActionCount(),
+                  iter->GetUnpaidActionCount());
     }
 }
 

@@ -4773,6 +4773,31 @@ size_t EstimateTxSize(
     return txsize;
 }
 
+static std::optional<Memo> ParseMemo(const UniValue& memoValue)
+{
+    if (memoValue.isNull()) {
+        return std::nullopt;
+    } else {
+        return examine(Memo::FromHex(memoValue.get_str()), match {
+            [](MemoError err) -> Memo {
+                switch (err) {
+                    case MemoError::HexDecodeError:
+                        throw JSONRPCError(
+                                RPC_INVALID_PARAMETER,
+                                "Invalid parameter, expected memo data in hexadecimal format.");
+                    case MemoError::MemoTooLong:
+                        throw JSONRPCError(
+                                RPC_INVALID_PARAMETER,
+                                strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
+                    default:
+                        assert(false);
+                }
+            },
+            [](Memo result) { return result; }
+        });
+    }
+}
+
 UniValue z_sendmany(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -4882,30 +4907,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated recipient address: ") + addrStr);
         }
 
-        UniValue memoValue = find_value(o, "memo");
-        std::optional<Memo> memo;
-        if (!memoValue.isNull()) {
-            auto memoHex = memoValue.get_str();
-            examine(Memo::FromHex(memoHex), match {
-                [&](MemoError err) {
-                    switch (err) {
-                        case MemoError::HexDecodeError:
-                            throw JSONRPCError(
-                                    RPC_INVALID_PARAMETER,
-                                    "Invalid parameter, expected memo data in hexadecimal format.");
-                        case MemoError::MemoTooLong:
-                            throw JSONRPCError(
-                                    RPC_INVALID_PARAMETER,
-                                    strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
-                        default:
-                            assert(false);
-                    }
-                },
-                [&](Memo result) {
-                    memo = result;
-                }
-            });
-        }
+        auto memo = ParseMemo(find_value(o, "memo"));
 
         UniValue av = find_value(o, "amount");
         CAmount nAmount = AmountFromValue( av );
@@ -5178,7 +5180,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
-            "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee ) ( limit ) ( privacyPolicy )\n"
+            "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee ) ( limit ) ( memo ) ( privacyPolicy )\n"
             "\nShield transparent coinbase funds by sending to a shielded zaddr.  This is an asynchronous operation and utxos"
             "\nselected for shielding will be locked.  If there is an error, they are unlocked.  The RPC call `listlockunspent`"
             "\ncan be used to return a list of locked utxos.  The number of coinbase utxos selected for shielding can be limited"
@@ -5193,7 +5195,8 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             "                         is to use a fee calculated according to ZIP 317.\n"
             "4. limit                 (numeric, optional, default="
             + strprintf("%d", SHIELD_COINBASE_DEFAULT_LIMIT) + ") Limit on the maximum number of utxos to shield.  Set to 0 to use as many as will fit in the transaction.\n"
-            "5. privacyPolicy         (string, optional, default=\"AllowRevealedSenders\") Policy for what information leakage is acceptable.\n"
+            "5. \"memo\"                (string, optional) Encoded as hex. This will be stored in the memo field of the new note.\n"
+            "6. privacyPolicy         (string, optional, default=\"AllowRevealedSenders\") Policy for what information leakage is acceptable.\n"
             "                         This allows the same values as z_sendmany, but only \"AllowRevealedSenders\" and \"AllowLinkingAccountAddresses\"\n"
             "                         are relevant.\n"
             "\nResult:\n"
@@ -5223,11 +5226,16 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             RPC_INVALID_PARAMETER, "Cannot create shielded transactions before Sapling has activated");
     }
 
+    std::optional<Memo> memo;
+    if (params.size() > 4) {
+        memo = ParseMemo(params[4]);
+    }
+
     auto strategy =
         ResolveTransactionStrategy(
                 ReifyPrivacyPolicy(
                         PrivacyPolicy::AllowRevealedSenders,
-                        params.size() > 4 ? std::optional(params[4].get_str()) : std::nullopt),
+                        params.size() > 5 ? std::optional(params[5].get_str()) : std::nullopt),
                 // This has identical behavior to `AllowRevealedSenders` for this operation, but
                 // technically, this is what “LegacyCompat” means, so just for consistency.
                 PrivacyPolicy::AllowFullyTransparent);
@@ -5296,7 +5304,9 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         nFee = AmountFromValue( params[2] );
     }
 
-    int nUTXOLimit = params.size() > 3 ? params[3].get_int() : SHIELD_COINBASE_DEFAULT_LIMIT;
+    int nUTXOLimit = params.size() > 3 && !params[3].isNull()
+        ? params[3].get_int()
+        : SHIELD_COINBASE_DEFAULT_LIMIT;
     if (nUTXOLimit < 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Limit on maximum number of utxos cannot be negative");
     }
@@ -5314,7 +5324,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     auto async_shieldcoinbase =
         new AsyncRPCOperation_shieldcoinbase(
-                std::move(builder), ztxoSelector, destaddress.value(), strategy, nUTXOLimit, nFee, contextInfo);
+                std::move(builder), ztxoSelector, destaddress.value(), memo, strategy, nUTXOLimit, nFee, contextInfo);
     auto results = async_shieldcoinbase->prepare(*pwalletMain);
 
     // Create operation and add to global queue
@@ -5499,7 +5509,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     auto destStr = params[1].get_str();
     auto destaddress = keyIO.DecodePaymentAddress(destStr);
     bool isToTaddr = false;
-    bool isToSaplingZaddr = false;
+    size_t estimatedTxSize = 200;  // tx overhead + wiggle room
 
     if (destaddress.has_value()) {
         examine(destaddress.value(), match {
@@ -5510,17 +5520,15 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 isToTaddr = true;
             },
             [&](libzcash::SaplingPaymentAddress addr) {
-                isToSaplingZaddr = true;
                 // If Sapling is not active, do not allow sending to a sapling addresses.
                 if (!saplingActive) {
                     throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
                 }
+                estimatedTxSize += OUTPUTDESCRIPTION_SIZE * 2;
             },
             [](libzcash::SproutPaymentAddress) { },
-            [](libzcash::UnifiedAddress) {
-                throw JSONRPCError(
-                        RPC_INVALID_PARAMETER,
-                        "Invalid parameter, unified addresses are not yet supported.");
+            [&](libzcash::UnifiedAddress) {
+                estimatedTxSize += ZC_ZIP225_ORCHARD_BASE_SIZE + ZC_ZIP225_ORCHARD_MARGINAL_SIZE * 2;
             }
         });
     } else {
@@ -5535,7 +5543,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     }
 
     int nUTXOLimit = MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT;
-    if (params.size() > 3) {
+    if (params.size() > 3 && !params[3].isNull()) {
         nUTXOLimit = params[3].get_int();
         if (nUTXOLimit < 0) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Limit on maximum number of UTXOs cannot be negative");
@@ -5544,7 +5552,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     int sproutNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SPROUT_LIMIT;
     int saplingNoteLimit = MERGE_TO_ADDRESS_DEFAULT_SAPLING_LIMIT;
-    if (params.size() > 4) {
+    if (params.size() > 4 && !params[4].isNull()) {
         int nNoteLimit = params[4].get_int();
         if (nNoteLimit < 0) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Limit on maximum number of notes cannot be negative");
@@ -5555,7 +5563,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     std::optional<Memo> memo;
     if (params.size() > 5) {
-        memo = Memo::FromHexOrThrow(params[5].get_str());
+        memo = ParseMemo(params[5]);
     }
 
     NetAmountRecipient recipient(destaddress.value(), memo);
@@ -5573,10 +5581,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     const size_t mempoolLimit = nUTXOLimit;
 
     unsigned int max_tx_size = saplingActive ? MAX_TX_SIZE_AFTER_SAPLING : MAX_TX_SIZE_BEFORE_SAPLING;
-    size_t estimatedTxSize = 200;  // tx overhead + wiggle room
-    if (isToSaplingZaddr) {
-        estimatedTxSize += OUTPUTDESCRIPTION_SIZE;
-    }
 
     if (useAnyUTXO || taddrs.size() > 0) {
         // Get available utxos
@@ -5656,12 +5660,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(
                 RPC_INVALID_PARAMETER,
                 "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress");
-        }
-        // If sending between shielded addresses, they must be within the same value pool
-        if (sproutCandidateNotes.size() > 0 && isToSaplingZaddr) {
-            throw JSONRPCError(
-                RPC_INVALID_PARAMETER,
-                "Cannot send between Sprout and Sapling addresses using z_mergetoaddress");
         }
 
         // Find unspent notes and update estimated size

@@ -334,6 +334,7 @@ BITCOIN_CORE_H = \
   wallet/wallet_tx_builder.h \
   warnings.h \
   weighted_map.h \
+  zip317.h \
   zmq/zmqabstractnotifier.h \
   zmq/zmqconfig.h\
   zmq/zmqnotificationinterface.h \

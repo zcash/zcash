@@ -3,5 +3,3 @@ release-notes at release time)
 
 Notable changes
 ===============
-
-
