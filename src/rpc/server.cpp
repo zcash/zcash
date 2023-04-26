@@ -495,12 +495,33 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
         if (paramRange != rpcCvtTable.end()) {
             auto numRequired = paramRange->second.first.size();
             auto numOptional = paramRange->second.second.size();
-            return pcmd->actor(
-                    params,
-                    params.size() < numRequired || numRequired + numOptional < params.size());
+            if (params.size() < numRequired || numRequired + numOptional < params.size()) {
+                std::string helpMsg;
+                try {
+                    // help gets thrown – if it doesn’t throw, then no help message
+                    pcmd->actor(params, true);
+                } catch (const std::runtime_error& err) {
+                    helpMsg = std::string("\n\n") + err.what();
+                }
+                throw JSONRPCError(
+                    RPC_INVALID_PARAMS,
+                    strprintf(
+                            "%s for method `%s`. Needed %s, but received %u%s",
+                            params.size() < numRequired
+                            ? "Not enough parameters"
+                            : "Too many parameters",
+                            strMethod,
+                            numOptional == 0
+                            ? strprintf("exactly %u", numRequired)
+                            : strprintf("from %u to %u", numRequired, numRequired + numOptional),
+                            params.size(),
+                            helpMsg));
+            } else {
+                return pcmd->actor(params, false);
+            }
         } else {
             throw JSONRPCError(
-                    RPC_METHOD_NOT_FOUND,
+                    RPC_INTERNAL_ERROR,
                     "Parameters for "
                     + strMethod
                     + " not found – this is an internal error, please report it.");

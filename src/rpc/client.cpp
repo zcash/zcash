@@ -23,13 +23,17 @@ std::string FormatConversionFailure(const std::string& strMethod, const Conversi
             },
             [&](const WrongNumberOfParams& err) {
                 return tinyformat::format(
-                        "%s for method, %s. Needed between %u and %u, but received %u",
+                        "%s for method `%s`. Needed %s, but received %u",
                         err.providedParams < err.requiredParams
                         ? "Not enough parameters"
                         : "Too many parameters",
                         strMethod,
-                        err.requiredParams,
-                        err.requiredParams + err.optionalParams,
+                        err.optionalParams == 0
+                        ? tinyformat::format("exactly %u", err.requiredParams)
+                        : tinyformat::format(
+                                "from %u to %u",
+                                err.requiredParams,
+                                err.requiredParams + err.optionalParams),
                         err.providedParams);
             },
             [](const UnparseableParam& err) {
