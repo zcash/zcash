@@ -1,5 +1,4 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-//
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
@@ -1108,7 +1107,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             "possible.\n"
             "NOTE: starting in zcashd v4.7.0, this method incorrectly returned\n"
             "transparent value associated with transparent receivers of the wallet's\n"
-            "unified addresses. This error was corrected in zcashd v5.4.0.\n"
+            "unified addresses. This error was corrected in zcashd v5.6.0.\n"
             "\nArguments:\n"
             "1. (dummy)          (string, optional) Remains for backward compatibility. Must be excluded or set to \"*\" or \"\".\n"
             "2. minconf          (numeric, optional, default=0) Only include transactions confirmed at least this many times.\n"

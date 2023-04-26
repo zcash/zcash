@@ -249,7 +249,7 @@ class WalletTest (BitcoinTestFramework):
         # the balance returned by the legacy getbalance method is unchanged
         assert_equal(
                 self.nodes[0].z_getbalanceforaccount(acct0)['pools']['transparent']['valueZat'], 
-                Decimal(500000000))
+                Decimal(5) * COIN)
         assert_equal(self.nodes[0].getbalance("*", 1, False, True), pre_balance)
 
 if __name__ == '__main__':
