@@ -437,7 +437,7 @@ def transaction_chain(zcash):
         check_z_sendmany(
             results, '4w', zcash,  sapling_zaddr_2,[
                 (taddr_3, starting_balance / Decimal('10')),
-                (sapling_zaddr_1, starting_balance / Decimal('10'))], "AllowRevealedSenders")[0]
+                (sapling_zaddr_1, starting_balance / Decimal('10'))], "AllowRevealedRecipients")[0]
         
         sapling_balance -= (starting_balance / Decimal('10')) + LEGACY_DEFAULT_FEE
         taddr_balance += starting_balance / Decimal('10')
