@@ -226,7 +226,7 @@ def z_sendmany(results, case, zcash, from_addr, recipients, privacy_policy):
             'amount': amount,
         } for (to_addr, amount) in recipients],
         1, # minconf
-        0.00001, # fee
+        DEFAULT_FEE, # fee
         privacy_policy
     ])
 
