@@ -9,7 +9,7 @@ from test_framework.mininode import COIN
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, connect_nodes_bi, wait_and_assert_operationid_status, \
     wait_and_assert_operationid_status_result, get_coinbase_address, \
-    check_node_log, DEFAULT_FEE
+    check_node_log, LEGACY_DEFAULT_FEE
 from test_framework.zip317 import conventional_fee, WEIGHT_RATIO_CAP, ZIP_317_FEE
 
 import sys
@@ -106,7 +106,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":myzaddr, "amount":Decimal('1.23456789')})
 
-        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 10, DEFAULT_FEE, 'AllowFullyTransparent')
+        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 10, LEGACY_DEFAULT_FEE, 'AllowFullyTransparent')
         error_result = wait_and_assert_operationid_status_result(
                 self.nodes[0],
                 myopid, "failed",
@@ -116,7 +116,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         # Test that the returned status object contains a params field with the operation's input parameters
         assert_equal(error_result["method"], "z_sendmany")
         params = error_result["params"]
-        assert_equal(params["fee"], DEFAULT_FEE) # default
+        assert_equal(params["fee"], LEGACY_DEFAULT_FEE) # default
         assert_equal(params["minconf"], Decimal('10')) # default
         assert_equal(params["fromaddress"], mytaddr)
         assert_equal(params["amounts"][0]["address"], myzaddr)
@@ -128,10 +128,10 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
 
         # This send will succeed.  We send two coinbase utxos totalling 20.0 less a default fee, with no change.
         # (This tx fits within the block unpaid action limit.)
-        shieldvalue = Decimal('20.0') - DEFAULT_FEE
+        shieldvalue = Decimal('20.0') - LEGACY_DEFAULT_FEE
         recipients = []
         recipients.append({"address":myzaddr, "amount": shieldvalue})
-        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 10, DEFAULT_FEE, 'AllowRevealedSenders')
+        myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 10, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders')
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
 
@@ -210,7 +210,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         unshieldvalue = Decimal('10.0')
         recipients = []
         recipients.append({"address":mytaddr, "amount": unshieldvalue})
-        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedRecipients')
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedRecipients')
         mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
         assert(mytxid is not None)
 
@@ -219,7 +219,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         self.sync_all()
 
         # check balances
-        saplingvalue -= unshieldvalue + DEFAULT_FEE
+        saplingvalue -= unshieldvalue + LEGACY_DEFAULT_FEE
         resp = self.nodes[0].z_gettotalbalance()
         assert_equal(Decimal(resp["transparent"]), Decimal('30.0'))
         assert_equal(Decimal(resp["private"]), saplingvalue)
@@ -248,7 +248,7 @@ class WalletShieldingCoinbaseTest (BitcoinTestFramework):
         recipients.append({"address":self.nodes[1].getnewaddress(), "amount":Decimal('10000.0')})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients, 1)
         wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 10.00, need 10000.0001; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.")
-        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedRecipients')
+        myopid = self.nodes[0].z_sendmany(myzaddr, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedRecipients')
         wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient funds: have 9.99998, need 10000.00001; note that coinbase outputs will not be selected if you specify ANY_TADDR, any transparent recipients are included, or if the `privacyPolicy` parameter is not set to `AllowRevealedSenders` or weaker.")
 
         # Send will fail because of insufficient funds unless sender uses coinbase utxos

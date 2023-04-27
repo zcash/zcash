@@ -6,7 +6,7 @@
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
-    DEFAULT_FEE,
+    LEGACY_DEFAULT_FEE,
     NU5_BRANCH_ID,
     assert_equal,
     get_coinbase_address,
@@ -43,11 +43,11 @@ class WalletUnifiedChangeTest(BitcoinTestFramework):
 
         # Fund both of ua0_sapling and ua0_orchard
         recipients = [{'address': ua0_sapling, 'amount': Decimal('9.99999000')}]
-        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders')
+        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         recipients = [{'address': ua0_orchard, 'amount': Decimal('9.99999000')}]
-        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders')
+        opid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders')
         wait_and_assert_operationid_status(self.nodes[0], opid)
 
         self.sync_all()
@@ -62,11 +62,11 @@ class WalletUnifiedChangeTest(BitcoinTestFramework):
         # in account1 having both Sapling and Orchard balances.
 
         recipients = [{'address': ua1_sapling, 'amount': 5}]
-        opid = self.nodes[0].z_sendmany(ua0_sapling, recipients, 1, DEFAULT_FEE)
+        opid = self.nodes[0].z_sendmany(ua0_sapling, recipients, 1, LEGACY_DEFAULT_FEE)
         txid_sapling = wait_and_assert_operationid_status(self.nodes[0], opid)
 
         recipients = [{'address': ua1, 'amount': 5}]
-        opid = self.nodes[0].z_sendmany(ua0_orchard, recipients, 1, DEFAULT_FEE)
+        opid = self.nodes[0].z_sendmany(ua0_orchard, recipients, 1, LEGACY_DEFAULT_FEE)
         txid_orchard = wait_and_assert_operationid_status(self.nodes[0], opid)
 
         assert_equal(set([txid_sapling, txid_orchard]), set(self.nodes[0].getrawmempool()))

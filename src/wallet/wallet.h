@@ -1951,7 +1951,7 @@ public:
     static CAmount ConstrainFee(CAmount requestedFee, unsigned int nTxBytes);
 
     /**
-     * Estimate the minimum fee considering user set parameters
+     * Decide on the minimum fee considering user set parameters
      * and the required fee.
      */
     static CAmount GetMinimumFee(const CTransaction& tx, unsigned int nTxBytes);

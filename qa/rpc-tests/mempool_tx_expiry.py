@@ -11,7 +11,7 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, \
     connect_nodes_bi, sync_blocks, start_nodes, \
-    wait_and_assert_operationid_status, DEFAULT_FEE
+    wait_and_assert_operationid_status, LEGACY_DEFAULT_FEE
 from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
@@ -79,7 +79,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         assert_equal(set(self.nodes[2].getrawmempool()), set())
 
         ## Shield one of Alice's coinbase funds to her zaddr
-        res = self.nodes[0].z_shieldcoinbase("*", z_alice, DEFAULT_FEE, 1)
+        res = self.nodes[0].z_shieldcoinbase("*", z_alice, LEGACY_DEFAULT_FEE, 1)
         wait_and_assert_operationid_status(self.nodes[0], res['opid'])
         self.nodes[0].generate(1)
         self.sync_all()
@@ -87,7 +87,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         # Get balance on node 0
         bal = self.nodes[0].z_gettotalbalance()
         print("Balance before zsend, after shielding 10: ", bal)
-        assert_equal(Decimal(bal["private"]), Decimal('10.0') - DEFAULT_FEE)
+        assert_equal(Decimal(bal["private"]), Decimal('10.0') - LEGACY_DEFAULT_FEE)
 
         print("Splitting network...")
         self.split_network()
@@ -220,7 +220,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print("Ensure balance of node 0 is correct")
         bal = self.nodes[0].z_gettotalbalance()
         print("Balance after expire_shielded has expired: ", bal)
-        assert_equal(Decimal(bal["private"]), Decimal('8.0') - DEFAULT_FEE)
+        assert_equal(Decimal(bal["private"]), Decimal('8.0') - LEGACY_DEFAULT_FEE)
 
         print("Splitting network...")
         self.split_network()

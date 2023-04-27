@@ -910,38 +910,6 @@ UniValue submitblock(const UniValue& params, bool fHelp)
     return BIP22ValidationResult(state);
 }
 
-UniValue estimatefee(const UniValue& params, bool fHelp)
-{
-    if (fHelp || params.size() != 1)
-        throw runtime_error(
-            "estimatefee nblocks\n"
-            "\nEstimates the approximate fee per kilobyte\n"
-            "needed for a transaction to begin confirmation\n"
-            "within nblocks blocks.\n"
-            "\nArguments:\n"
-            "1. nblocks     (numeric)\n"
-            "\nResult:\n"
-            "n :    (numeric) estimated fee-per-kilobyte\n"
-            "\n"
-            "-1.0 is returned if not enough transactions and\n"
-            "blocks have been observed to make an estimate.\n"
-            "\nExample:\n"
-            + HelpExampleCli("estimatefee", "6")
-            );
-
-    RPCTypeCheck(params, boost::assign::list_of(UniValue::VNUM));
-
-    int nBlocks = params[0].get_int();
-    if (nBlocks < 1)
-        nBlocks = 1;
-
-    CFeeRate feeRate = mempool.estimateFee(nBlocks);
-    if (feeRate == CFeeRate(0))
-        return -1.0;
-
-    return ValueFromAmount(feeRate.GetFeePerK());
-}
-
 UniValue getblocksubsidy(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
@@ -1046,8 +1014,6 @@ static const CRPCCommand commands[] =
     { "generating",         "setgenerate",            &setgenerate,            true  },
     { "generating",         "generate",               &generate,               true  },
 #endif
-
-    { "util",               "estimatefee",            &estimatefee,            true  },
 };
 
 void RegisterMiningRPCCommands(CRPCTable &tableRPC)

@@ -64,17 +64,6 @@ using namespace std;
 std::optional<uint64_t> last_block_num_txs;
 std::optional<uint64_t> last_block_size;
 
-class ScoreCompare
-{
-public:
-    ScoreCompare() {}
-
-    bool operator()(const CTxMemPool::txiter a, const CTxMemPool::txiter b)
-    {
-        return CompareTxMemPoolEntryByScore()(*b,*a); // Convert to less than
-    }
-};
-
 int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
     int64_t nOldTime = pblock->nTime;
