@@ -250,7 +250,7 @@ def z_mergetoaddress(results, case, zcash, from_addrs, to_addr, privacy_policy):
         balance = Decimal(zcash.z_getbalance(addr, 0)).quantize(Decimal('1.00000000'))
         if balance > 0:
             wait_for_balance(zcash, addr, balance, minconf=4)
-    return async_txid_cmd(results, case, zcash, 'z_mergetoaddress', [from_addrs, to_addr, DEFAULT_FEE, 50, 20, None, privacy_policy])
+    return async_txid_cmd(results, case, zcash, 'z_mergetoaddress', [from_addrs, to_addr, DEFAULT_FEE, None, None, None, privacy_policy])
 
 def check_z_mergetoaddress(results, case, zcash, from_addrs, to_addr, amount, privacy_policy):
     txid = z_mergetoaddress(results, case, zcash, from_addrs, to_addr, privacy_policy)
