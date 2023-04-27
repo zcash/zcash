@@ -120,11 +120,7 @@ TIME_STARTED = datetime.datetime.now()
 
 def run_cmd(results, case, zcash, name, args=[]):
     print('----- %s -----' % (datetime.datetime.now() - TIME_STARTED))
-    print('%s $ zcash-cli %s %s' % (
-        case.ljust(3),
-        name,
-        ' '.join([str(arg) for arg in args],
-    )))
+    print('%s: %s %r' % (case.ljust(3), name, args))
     try:
         res = zcash.__getattr__(name)(*args)
         print(res)
