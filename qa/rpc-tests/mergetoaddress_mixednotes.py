@@ -24,7 +24,6 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
             '-allowdeprecated=legacy_privacy',
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
-            '-allowdeprecated=z_gettotalbalance',
         ]] * self.num_nodes)
 
     def run_test(self):
@@ -36,7 +35,7 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
 
         assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('50'))
         assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('0'))
-        assert_equal(Decimal(self.nodes[1].z_gettotalbalance()["transparent"]), Decimal('200'))
+        assert_equal(Decimal(self.nodes[1].z_getbalances()["legacy_transparent"]['value']), Decimal('200'))
         # Make sure we cannot use "ANY_SPROUT" and "ANY_SAPLING" even if we only have Sprout Notes
         assert_mergetoaddress_exception(
             "Cannot send from both Sprout and Sapling addresses using z_mergetoaddress",
@@ -46,7 +45,7 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        assert_equal(Decimal(self.nodes[1].z_gettotalbalance()["transparent"]), Decimal('200'))
+        assert_equal(Decimal(self.nodes[1].z_getbalances()['legacy_transparent']['value']), Decimal('200'))
 
         # Merge Sprout -> taddr
         result = self.nodes[0].z_mergetoaddress(["ANY_SPROUT"], t_addr, 0)
@@ -56,7 +55,7 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
 
         assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('0'))
         assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('10'))
-        assert_equal(Decimal(self.nodes[1].z_gettotalbalance()["transparent"]), Decimal('250'))
+        assert_equal(Decimal(self.nodes[1].z_getbalances()['legacy_transparent']['value']), Decimal('250'))
 
         # Make sure we cannot use "ANY_SPROUT" and "ANY_SAPLING" even if we only have Sapling Notes
         assert_mergetoaddress_exception(
@@ -70,7 +69,7 @@ class MergeToAddressMixedNotes(BitcoinTestFramework):
 
         assert_equal(self.nodes[0].z_getbalance(sproutAddr), Decimal('0'))
         assert_equal(self.nodes[0].z_getbalance(saplingAddr), Decimal('0'))
-        assert_equal(Decimal(self.nodes[1].z_gettotalbalance()["transparent"]), Decimal('260'))
+        assert_equal(Decimal(self.nodes[1].z_getbalances()['legacy_transparent']['value']), Decimal('260'))
 
 
 if __name__ == '__main__':

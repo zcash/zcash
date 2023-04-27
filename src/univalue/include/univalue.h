@@ -128,6 +128,10 @@ public:
         UniValue tmpVal(val_);
         return pushKV(key, tmpVal);
     }
+    bool pushKV(const std::string& key, uint32_t val_) {
+        UniValue tmpVal((uint64_t) val_);
+        return pushKV(key, tmpVal);
+    }
     bool pushKV(const std::string& key, uint64_t val_) {
         UniValue tmpVal(val_);
         return pushKV(key, tmpVal);

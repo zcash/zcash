@@ -21,8 +21,11 @@ enum isminetype
     //! Indicates that we know how to create a scriptSig that would solve this if we were given the appropriate private keys
     ISMINE_WATCH_SOLVABLE = 2,
     ISMINE_WATCH_ONLY = ISMINE_WATCH_SOLVABLE | ISMINE_WATCH_UNSOLVABLE,
-    ISMINE_SPENDABLE = 4,
-    ISMINE_ALL = ISMINE_WATCH_ONLY | ISMINE_SPENDABLE
+    ISMINE_LEGACY_SPENDABLE = 4,
+    ISMINE_LEGACY_ALL = ISMINE_WATCH_ONLY | ISMINE_LEGACY_SPENDABLE,
+    ISMINE_ACCOUNT_SPENDABLE = 8,
+    ISMINE_SPENDABLE_ANY = ISMINE_LEGACY_SPENDABLE | ISMINE_ACCOUNT_SPENDABLE,
+    ISMINE_ALL = ISMINE_WATCH_ONLY | ISMINE_SPENDABLE_ANY
 };
 /** used for bitflags of isminetype */
 typedef uint8_t isminefilter;

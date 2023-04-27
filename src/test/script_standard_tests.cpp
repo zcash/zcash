@@ -365,7 +365,7 @@ BOOST_AUTO_TEST_CASE(script_standard_IsMine)
         // Keystore has key
         keystore.AddKey(keys[0]);
         result = IsMine(keystore, scriptPubKey);
-        BOOST_CHECK_EQUAL(result, ISMINE_SPENDABLE);
+        BOOST_CHECK_EQUAL(result, ISMINE_LEGACY_SPENDABLE);
     }
 
     // P2PK uncompressed
@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE(script_standard_IsMine)
         // Keystore has key
         keystore.AddKey(uncompressedKey);
         result = IsMine(keystore, scriptPubKey);
-        BOOST_CHECK_EQUAL(result, ISMINE_SPENDABLE);
+        BOOST_CHECK_EQUAL(result, ISMINE_LEGACY_SPENDABLE);
     }
 
     // P2PKH compressed
@@ -397,7 +397,7 @@ BOOST_AUTO_TEST_CASE(script_standard_IsMine)
         // Keystore has key
         keystore.AddKey(keys[0]);
         result = IsMine(keystore, scriptPubKey);
-        BOOST_CHECK_EQUAL(result, ISMINE_SPENDABLE);
+        BOOST_CHECK_EQUAL(result, ISMINE_LEGACY_SPENDABLE);
     }
 
     // P2PKH uncompressed
@@ -413,7 +413,7 @@ BOOST_AUTO_TEST_CASE(script_standard_IsMine)
         // Keystore has key
         keystore.AddKey(uncompressedKey);
         result = IsMine(keystore, scriptPubKey);
-        BOOST_CHECK_EQUAL(result, ISMINE_SPENDABLE);
+        BOOST_CHECK_EQUAL(result, ISMINE_LEGACY_SPENDABLE);
     }
 
     // P2SH
@@ -438,7 +438,7 @@ BOOST_AUTO_TEST_CASE(script_standard_IsMine)
         // Keystore has redeemScript and key
         keystore.AddKey(keys[0]);
         result = IsMine(keystore, scriptPubKey);
-        BOOST_CHECK_EQUAL(result, ISMINE_SPENDABLE);
+        BOOST_CHECK_EQUAL(result, ISMINE_LEGACY_SPENDABLE);
     }
 
     // scriptPubKey multisig
@@ -496,7 +496,7 @@ BOOST_AUTO_TEST_CASE(script_standard_IsMine)
         // Keystore has redeemScript
         keystore.AddCScript(redeemScript);
         result = IsMine(keystore, scriptPubKey);
-        BOOST_CHECK_EQUAL(result, ISMINE_SPENDABLE);
+        BOOST_CHECK_EQUAL(result, ISMINE_LEGACY_SPENDABLE);
     }
 
     // OP_RETURN

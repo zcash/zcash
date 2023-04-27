@@ -23,6 +23,8 @@ bool fEnableZGetTotalBalance = true;
 bool fEnableZListAddresses = true;
 bool fEnableLegacyPrivacyStrategy = true;
 bool fEnableWalletTxVJoinSplit = true;
+bool fEnableGetinfoWalletMetadata = true;
+bool fEnableWalletinfoBalances = true;
 #endif
 
 static const std::string CLIENT_VERSION_STR = FormatVersion(CLIENT_VERSION);
@@ -109,6 +111,8 @@ std::optional<std::string> LoadAllowedDeprecatedFeatures() {
     fEnableZGetTotalBalance = allowdeprecated.count("z_gettotalbalance") > 0;
     fEnableZListAddresses = allowdeprecated.count("z_listaddresses") > 0;
     fEnableWalletTxVJoinSplit = allowdeprecated.count("wallettxvjoinsplit") > 0;
+    fEnableGetinfoWalletMetadata = allowdeprecated.count("getinfo_wallet_metadata") > 0;
+    fEnableWalletinfoBalances = allowdeprecated.count("walletinfo_balances") > 0;
 #endif
 
     return std::nullopt;

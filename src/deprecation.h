@@ -33,6 +33,8 @@ static const std::set<std::string> DEFAULT_ALLOW_DEPRECATED{{
 #ifdef ENABLE_WALLET
     "z_getbalance",
     "z_gettotalbalance",
+    "getinfo_wallet_metadata",
+    "walletinfo_balances",
 #endif
 }};
 static const std::set<std::string> DEFAULT_DENY_DEPRECATED{{
@@ -63,6 +65,8 @@ extern bool fEnableZGetTotalBalance;
 extern bool fEnableZListAddresses;
 extern bool fEnableLegacyPrivacyStrategy;
 extern bool fEnableWalletTxVJoinSplit;
+extern bool fEnableGetinfoWalletMetadata;
+extern bool fEnableWalletinfoBalances;
 #endif
 
 /**

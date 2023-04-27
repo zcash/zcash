@@ -27,7 +27,6 @@ class WalletAccountsTest(BitcoinTestFramework):
             nuparams(NU5_BRANCH_ID, 210),
             '-allowdeprecated=z_getnewaddress',
             '-allowdeprecated=z_getbalance',
-            '-allowdeprecated=z_gettotalbalance',
             '-allowdeprecated=z_listaddresses',
         ]] * self.num_nodes)
 
@@ -210,8 +209,8 @@ class WalletAccountsTest(BitcoinTestFramework):
         self.check_balance(0, 0, ua0, {'sapling': 9, 'orchard': 10}, 0)
 
         # The total balance with the default minconf should be just the Sapling balance
-        assert_equal('9.00', self.nodes[0].z_gettotalbalance()['private'])
-        assert_equal('19.00', self.nodes[0].z_gettotalbalance(0)['private'])
+        assert_equal('9.00', self.nodes[0].z_getbalances()['accounts'][0]['total']['value'])
+        assert_equal('19.00', self.nodes[0].z_getbalances(0)['accounts'][0]['total']['value'])
 
         self.nodes[2].generate(1)
         self.sync_all()
