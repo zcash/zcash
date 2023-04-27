@@ -384,12 +384,12 @@ def transaction_chain(zcash):
         # taddr -> Sapling
         # Send it all here because z_sendmany pick a new t-addr for change
         sapling_balance = check_z_sendmany(
-            results, '4f', zcash, taddr_1, [(sapling_zaddr_1, taddr_balance - DEFAULT_FEE)], "NoPrivacy")[0]
+            results, '4f', zcash, taddr_1, [(sapling_zaddr_1, taddr_balance - DEFAULT_FEE)], "AllowRevealedSenders")[0]
         taddr_balance = Decimal('0')
 
         # Sapling -> taddr
         taddr_balance = check_z_sendmany(
-            results, '4i', zcash, sapling_zaddr_1, [(taddr_1, (starting_balance / Decimal('10')) * Decimal('3'))], "NoPrivacy")[0]
+            results, '4i', zcash, sapling_zaddr_1, [(taddr_1, (starting_balance / Decimal('10')) * Decimal('3'))], "AllowRevealedRecipients")[0]
         sapling_balance -= taddr_balance + DEFAULT_FEE
 
         #
@@ -398,13 +398,13 @@ def transaction_chain(zcash):
 
         # Sapling -> same Sapling
         sapling_balance = check_z_sendmany(
-            results, '4g',zcash, sapling_zaddr_1, [(sapling_zaddr_1, sapling_balance - DEFAULT_FEE)], "NoPrivacy")[0]
+            results, '4g',zcash, sapling_zaddr_1, [(sapling_zaddr_1, sapling_balance - DEFAULT_FEE)], "FullPrivacy")[0]
 
         # taddr -> different taddr
         # Sapling -> different Sapling
         (taddr_balance, sapling_balance) = check_z_sendmany_parallel(results, zcash, [
-            ('4e', taddr_1, [(taddr_2, taddr_balance - DEFAULT_FEE)], "NoPrivacy"),
-            ('4h', sapling_zaddr_1, [(sapling_zaddr_2, sapling_balance - DEFAULT_FEE)], "NoPrivacy"),
+            ('4e', taddr_1, [(taddr_2, taddr_balance - DEFAULT_FEE)], "AllowFullyTransparent"),
+            ('4h', sapling_zaddr_1, [(sapling_zaddr_2, sapling_balance - DEFAULT_FEE)], "FullPrivacy"),
         ])
 
         # taddr -> multiple taddr
@@ -413,11 +413,11 @@ def transaction_chain(zcash):
             ('4p', taddr_2, [
                 (taddr_1, starting_balance / Decimal('10')),
                 (taddr_3, taddr_balance - (starting_balance / Decimal('10')) - DEFAULT_FEE),
-            ], "NoPrivacy"),
+            ], "AllowFullyTransparent"),
             ('4t', sapling_zaddr_2, [
                 (sapling_zaddr_1, starting_balance / Decimal('10')),
                 (sapling_zaddr_3, starting_balance / Decimal('10')),
-            ], "NoPrivacy"),
+            ], "FullPrivacy"),
         ])
 
         taddr_balance -= DEFAULT_FEE
@@ -426,8 +426,8 @@ def transaction_chain(zcash):
         # multiple Sapling -> Sapling
         # multiple taddr -> taddr
         check_z_mergetoaddress_parallel(results, zcash, [
-            ('4gg', [sapling_zaddr_1, sapling_zaddr_3], sapling_zaddr_2, sapling_balance - DEFAULT_FEE, "NoPrivacy"),
-            ('', [taddr_1, taddr_3], taddr_2, taddr_balance - DEFAULT_FEE, "NoPrivacy"),
+            ('4gg', [sapling_zaddr_1, sapling_zaddr_3], sapling_zaddr_2, sapling_balance - DEFAULT_FEE, "FullPrivacy"),
+            ('', [taddr_1, taddr_3], taddr_2, taddr_balance - DEFAULT_FEE, "AllowFullyTransparent"),
         ])
         sapling_balance -= DEFAULT_FEE
         taddr_balance -= DEFAULT_FEE
@@ -441,13 +441,13 @@ def transaction_chain(zcash):
         check_z_sendmany(
             results, '4w', zcash,  sapling_zaddr_2,[
                 (taddr_3, starting_balance / Decimal('10')),
-                (sapling_zaddr_1, starting_balance / Decimal('10'))], "NoPrivacy")[0]
+                (sapling_zaddr_1, starting_balance / Decimal('10'))], "AllowRevealedSenders")[0]
         
         sapling_balance -= (starting_balance / Decimal('10')) + DEFAULT_FEE
         taddr_balance += starting_balance / Decimal('10')
 
         # taddr and Sapling -> Sapling
-        check_z_mergetoaddress(results, '4ee', zcash, [taddr_3, sapling_zaddr_1], sapling_zaddr_2, sapling_balance + (starting_balance / Decimal('10')) - DEFAULT_FEE, "NoPrivacy")
+        check_z_mergetoaddress(results, '4ee', zcash, [taddr_3, sapling_zaddr_1], sapling_zaddr_2, sapling_balance + (starting_balance / Decimal('10')) - DEFAULT_FEE, "AllowRevealedSenders")
     
         sapling_balance += (starting_balance / Decimal('10')) - DEFAULT_FEE
         taddr_balance -= starting_balance / Decimal('10')
@@ -455,18 +455,18 @@ def transaction_chain(zcash):
         # Sapling -> multiple taddr
         check_z_sendmany(results, '4v', zcash, sapling_zaddr_2, [
                 (taddr_4, (starting_balance / Decimal('10'))),
-                (taddr_5, (starting_balance / Decimal('10')))], "NoPrivacy")[0]
+                (taddr_5, (starting_balance / Decimal('10')))], "AllowRevealedRecipients")[0]
             
         sapling_balance -= ((starting_balance / Decimal('10')) * Decimal('2')) + DEFAULT_FEE
         taddr_balance += (starting_balance / Decimal('10')) * Decimal('2')
 
         # multiple taddr -> Sapling
-        check_z_mergetoaddress(results, '4bb',zcash, [taddr_4, taddr_5], sapling_zaddr_2, sapling_balance + ((starting_balance / Decimal('10')) * Decimal('2')) - DEFAULT_FEE, "NoPrivacy")
+        check_z_mergetoaddress(results, '4bb',zcash, [taddr_4, taddr_5], sapling_zaddr_2, sapling_balance + ((starting_balance / Decimal('10')) * Decimal('2')) - DEFAULT_FEE, "AllowRevealedSenders")
         sapling_balance += ((starting_balance / Decimal('10')) * Decimal('2')) - DEFAULT_FEE
         taddr_balance -= (starting_balance / Decimal('10')) * Decimal('2')
 
         # multiple Sapling -> taddr
-        check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2, sapling_zaddr_3], taddr_2, taddr_2_balance + sapling_balance - DEFAULT_FEE, "NoPrivacy")
+        check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2, sapling_zaddr_3], taddr_2, taddr_2_balance + sapling_balance - DEFAULT_FEE, "AllowRevealedRecipients")
         taddr_balance += sapling_balance - DEFAULT_FEE
         sapling_balance = Decimal('0')
 
@@ -474,19 +474,19 @@ def transaction_chain(zcash):
         taddr_2_balance = Decimal(zcash.z_getbalance(taddr_2)).quantize(Decimal('1.00000000'))
         check_z_sendmany(results, '4r', zcash, taddr_2, [
                 (sapling_zaddr_1, (starting_balance / Decimal('10'))),
-                (sapling_zaddr_2, taddr_2_balance - (starting_balance / Decimal('10')) - DEFAULT_FEE)], "NoPrivacy")[0]
+                (sapling_zaddr_2, taddr_2_balance - (starting_balance / Decimal('10')) - DEFAULT_FEE)], "AllowFullyTransparent")[0]
 
         sapling_balance = taddr_2_balance - DEFAULT_FEE
         taddr_balance -= taddr_2_balance
 
         # multiple Sapling -> taddr
-        check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2], taddr_2, sapling_balance - DEFAULT_FEE, "NoPrivacy")
+        check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2], taddr_2, sapling_balance - DEFAULT_FEE, "AllowRevealedRecipients")
         taddr_balance += sapling_balance -  DEFAULT_FEE
         sapling_balance = Decimal('0')
 
         # z_mergetoaddress taddr -> Sapling
         taddr_2_balance = Decimal(zcash.z_getbalance(taddr_2)).quantize(Decimal('1.00000000'))
-        check_z_mergetoaddress(results, '4cc', zcash,  [taddr_2], sapling_zaddr_1, taddr_2_balance - DEFAULT_FEE, "NoPrivacy")
+        check_z_mergetoaddress(results, '4cc', zcash,  [taddr_2], sapling_zaddr_1, taddr_2_balance - DEFAULT_FEE, "AllowFullyTransparent")
         sapling_balance = taddr_2_balance - DEFAULT_FEE
         taddr_balance -= taddr_2_balance
     except Exception as e:
