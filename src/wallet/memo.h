@@ -15,7 +15,7 @@ enum class MemoError {
     MemoTooLong
 };
 
-typedef std::array<unsigned char, ZC_MEMO_SIZE> MemoBytes;
+typedef std::array<unsigned char, libzcash::MEMO_SIZE> MemoBytes;
 
 class Memo {
 private:
@@ -39,7 +39,7 @@ public:
             return MemoError::HexDecodeError;
         }
 
-        if (rawMemo.size() > ZC_MEMO_SIZE) {
+        if (rawMemo.size() > libzcash::MEMO_SIZE) {
             return MemoError::MemoTooLong;
         }
 
@@ -62,7 +62,7 @@ public:
                     case MemoError::MemoTooLong:
                         throw std::runtime_error(strprintf(
                                 "Invalid parameter, memo is longer than the maximum allowed %d characters.",
-                                ZC_MEMO_SIZE));
+                                libzcash::MEMO_SIZE));
                     default:
                         assert(false);
                 }

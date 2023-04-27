@@ -3271,11 +3271,11 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "diversifier index must be a decimal integer.");
         }
         auto parsed_diversifier_index = parsed_diversifier_index_opt.value();
-        if (parsed_diversifier_index.size() > ZC_DIVERSIFIER_SIZE) {
+        if (parsed_diversifier_index.size() > SAPLING_DIVERSIFIER_SIZE) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "diversifier index is too large.");
         }
         // Extend the byte array to the correct length for diversifier_index_t.
-        parsed_diversifier_index.resize(ZC_DIVERSIFIER_SIZE);
+        parsed_diversifier_index.resize(SAPLING_DIVERSIFIER_SIZE);
         j = libzcash::diversifier_index_t(parsed_diversifier_index);
     }
 
@@ -4305,7 +4305,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
     UniValue spends(UniValue::VARR);
     UniValue outputs(UniValue::VARR);
 
-    auto addMemo = [](UniValue &entry, std::array<unsigned char, ZC_MEMO_SIZE> &memo) {
+    auto addMemo = [](UniValue &entry, std::array<unsigned char, MEMO_SIZE> &memo) {
         entry.pushKV("memo", HexStr(memo));
 
         // If the leading byte is 0xF4 or lower, the memo field should be interpreted as a
@@ -4788,7 +4788,7 @@ static std::optional<Memo> ParseMemo(const UniValue& memoValue)
                     case MemoError::MemoTooLong:
                         throw JSONRPCError(
                                 RPC_INVALID_PARAMETER,
-                                strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
+                                strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", MEMO_SIZE ));
                     default:
                         assert(false);
                 }

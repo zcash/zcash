@@ -7,18 +7,19 @@
 
 #include "serialize.h"
 #include "uint256.h"
-#include "zcash/Zcash.h"
 
 #include <optional>
 
 namespace libzcash {
+
+constexpr size_t SAPLING_DIVERSIFIER_SIZE = 11;
 
 const size_t SerializedSaplingPaymentAddressSize = 43;
 const size_t SerializedSaplingFullViewingKeySize = 96;
 const size_t SerializedSaplingExpandedSpendingKeySize = 96;
 const size_t SerializedSaplingSpendingKeySize = 32;
 
-typedef std::array<unsigned char, ZC_DIVERSIFIER_SIZE> diversifier_t;
+typedef std::array<unsigned char, SAPLING_DIVERSIFIER_SIZE> diversifier_t;
 
 //! Sapling functions.
 class SaplingPaymentAddress {

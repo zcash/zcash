@@ -1512,7 +1512,7 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
     // Transaction should fail with a bad encCiphertext.
     {
         std::vector<char> txBytes(ss.begin(), ss.end());
-        for (int i = 0; i < ZC_SAPLING_ENCCIPHERTEXT_SIZE; i++) {
+        for (int i = 0; i < libzcash::SAPLING_ENCCIPHERTEXT_SIZE; i++) {
             txBytes[ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + i] = 0;
         }
 
@@ -1529,8 +1529,10 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
     // Transaction should fail with a bad outCiphertext.
     {
         std::vector<char> txBytes(ss.begin(), ss.end());
-        for (int i = 0; i < ZC_SAPLING_OUTCIPHERTEXT_SIZE; i++) {
-            txBytes[ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + ZC_SAPLING_ENCCIPHERTEXT_SIZE + i] = 0;
+        auto byteOffset =
+            ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + libzcash::SAPLING_ENCCIPHERTEXT_SIZE;
+        for (int i = 0; i < libzcash::SAPLING_OUTCIPHERTEXT_SIZE; i++) {
+            txBytes[byteOffset + i] = 0;
         }
 
         CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);

@@ -108,7 +108,7 @@ std::optional<uint256> SaplingNote::nullifier(const SaplingFullViewingKey& vk, c
 
 SproutNotePlaintext::SproutNotePlaintext(
     const SproutNote& note,
-    std::array<unsigned char, ZC_MEMO_SIZE> memo) : BaseNotePlaintext(note, memo)
+    std::array<unsigned char, MEMO_SIZE> memo) : BaseNotePlaintext(note, memo)
 {
     rho = note.rho;
     r = note.r;
@@ -160,7 +160,7 @@ ZCNoteEncryption::Ciphertext SproutNotePlaintext::encrypt(ZCNoteEncryption& encr
 // Construct and populate SaplingNotePlaintext for a given note and memo.
 SaplingNotePlaintext::SaplingNotePlaintext(
     const SaplingNote& note,
-    std::array<unsigned char, ZC_MEMO_SIZE> memo) : BaseNotePlaintext(note, memo)
+    std::array<unsigned char, MEMO_SIZE> memo) : BaseNotePlaintext(note, memo)
 {
     d = note.d;
     rseed = note.rseed;

@@ -371,7 +371,7 @@ struct SproutNoteEntry
     JSOutPoint jsop;
     libzcash::SproutPaymentAddress address;
     libzcash::SproutNote note;
-    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    std::array<unsigned char, libzcash::MEMO_SIZE> memo;
     int confirmations;
 };
 
@@ -381,7 +381,7 @@ struct SaplingNoteEntry
     SaplingOutPoint op;
     libzcash::SaplingPaymentAddress address;
     libzcash::SaplingNote note;
-    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    std::array<unsigned char, libzcash::MEMO_SIZE> memo;
     int confirmations;
 };
 

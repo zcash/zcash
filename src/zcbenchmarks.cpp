@@ -807,7 +807,7 @@ double benchmark_create_sapling_output()
     auto sk = libzcash::SaplingSpendingKey::random();
     auto address = sk.default_address();
 
-    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    std::array<unsigned char, MEMO_SIZE> memo;
     SaplingNote note(address, GetRand(MAX_MONEY),  libzcash::Zip212Enabled::BeforeZip212);
 
     libzcash::SaplingNotePlaintext notePlaintext(note, memo);

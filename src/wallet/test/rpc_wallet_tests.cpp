@@ -1191,8 +1191,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
             "1 50.00000001"
             ), runtime_error);
 
-    // memo bigger than allowed length of ZC_MEMO_SIZE
-    std::vector<char> v (2 * (ZC_MEMO_SIZE+1));     // x2 for hexadecimal string format
+    // memo bigger than allowed length of MEMO_SIZE
+    std::vector<char> v (2 * (MEMO_SIZE+1));     // x2 for hexadecimal string format
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
     auto pa = pwalletMain->GenerateNewSproutZKey();
@@ -1288,12 +1288,12 @@ BOOST_AUTO_TEST_CASE(memo_hex_parsing) {
     BOOST_CHECK_EQUAL(memoBytes[1], 0xAD);
     BOOST_CHECK_EQUAL(memoBytes[2], 0xBE);
     BOOST_CHECK_EQUAL(memoBytes[3], 0xEF);
-    for (int i=4; i<ZC_MEMO_SIZE; i++) {
+    for (int i=4; i<MEMO_SIZE; i++) {
         BOOST_CHECK_EQUAL(memoBytes[i], 0x00);  // zero padding
     }
 
     // memo is longer than allowed
-    std::vector<char> v (2 * (ZC_MEMO_SIZE+1));
+    std::vector<char> v (2 * (MEMO_SIZE+1));
     std::fill(v.begin(),v.end(), 'A');
     std::string bigmemo(v.begin(), v.end());
     BOOST_CHECK(std::get<MemoError>(Memo::FromHex(bigmemo)) == MemoError::MemoTooLong);
@@ -1620,12 +1620,12 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     CheckRPCThrows("z_mergetoaddress [\"ANY_SAPLING\",\"" + aSaplingAddr + "\"] " + taddr2,
         "Cannot specify specific zaddrs when using \"ANY_SPROUT\" or \"ANY_SAPLING\"");
 
-    // memo bigger than allowed length of ZC_MEMO_SIZE
-    std::vector<char> v (2 * (ZC_MEMO_SIZE+1));     // x2 for hexadecimal string format
+    // memo bigger than allowed length of MEMO_SIZE
+    std::vector<char> v (2 * (MEMO_SIZE+1));     // x2 for hexadecimal string format
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
     CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + aSproutAddr + " 0.00001 100 100 " + badmemo,
-        strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE));
+        strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", MEMO_SIZE));
 
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");

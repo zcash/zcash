@@ -25,14 +25,14 @@ private:
     OrchardOutPoint op;
     libzcash::OrchardRawAddress address;
     CAmount noteValue;
-    std::array<uint8_t, ZC_MEMO_SIZE> memo;
+    std::array<uint8_t, libzcash::MEMO_SIZE> memo;
     int confirmations;
 public:
     OrchardNoteMetadata(
         OrchardOutPoint op,
         const libzcash::OrchardRawAddress& address,
         CAmount noteValue,
-        const std::array<unsigned char, ZC_MEMO_SIZE>& memo):
+        const std::array<unsigned char, libzcash::MEMO_SIZE>& memo):
         op(op), address(address), noteValue(noteValue), memo(memo), confirmations(0) {}
 
     const OrchardOutPoint& GetOutPoint() const {
@@ -55,7 +55,7 @@ public:
         return noteValue;
     }
 
-    const std::array<uint8_t, ZC_MEMO_SIZE>& GetMemo() const {
+    const std::array<uint8_t, libzcash::MEMO_SIZE>& GetMemo() const {
         return memo;
     }
 };
@@ -386,7 +386,7 @@ public:
         uint256 txid;
         std::move(std::begin(rawNoteMeta.txid), std::end(rawNoteMeta.txid), txid.begin());
         OrchardOutPoint op(txid, rawNoteMeta.actionIdx);
-        std::array<uint8_t, ZC_MEMO_SIZE> memo;
+        std::array<uint8_t, libzcash::MEMO_SIZE> memo;
         std::move(std::begin(rawNoteMeta.memo), std::end(rawNoteMeta.memo), memo.begin());
         OrchardNoteMetadata noteMeta(
                 op,

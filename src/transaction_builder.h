@@ -115,7 +115,7 @@ public:
         const std::optional<uint256>& ovk,
         const libzcash::OrchardRawAddress& to,
         CAmount value,
-        const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo);
+        const std::optional<std::array<unsigned char, libzcash::MEMO_SIZE>>& memo);
 
     /// Returns `true` if any spends or outputs have been added to this builder. This can
     /// be used to avoid calling `Build()` and creating a dummy Orchard bundle.
@@ -198,12 +198,12 @@ struct SpendDescriptionInfo {
 struct OutputDescriptionInfo {
     uint256 ovk;
     libzcash::SaplingNote note;
-    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    std::array<unsigned char, libzcash::MEMO_SIZE> memo;
 
     OutputDescriptionInfo(
         uint256 ovk,
         libzcash::SaplingNote note,
-        std::array<unsigned char, ZC_MEMO_SIZE> memo) : ovk(ovk), note(note), memo(memo) {}
+        std::array<unsigned char, libzcash::MEMO_SIZE> memo) : ovk(ovk), note(note), memo(memo) {}
 
     std::optional<OutputDescription> Build(rust::Box<sapling::Prover>& ctx);
 };
@@ -358,7 +358,7 @@ public:
         const std::optional<uint256>& ovk,
         const libzcash::OrchardRawAddress& to,
         CAmount value,
-        const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo);
+        const std::optional<std::array<unsigned char, libzcash::MEMO_SIZE>>& memo);
 
     // Throws if the anchor does not match the anchor used by
     // previously-added Sapling spends.
@@ -372,7 +372,7 @@ public:
         uint256 ovk,
         libzcash::SaplingPaymentAddress to,
         CAmount value,
-        std::array<unsigned char, ZC_MEMO_SIZE> memo = NO_MEMO);
+        std::array<unsigned char, libzcash::MEMO_SIZE> memo = NO_MEMO);
 
     // Throws if the anchor does not match the anchor used by
     // previously-added Sprout inputs.
@@ -384,7 +384,7 @@ public:
     void AddSproutOutput(
         libzcash::SproutPaymentAddress to,
         CAmount value,
-        std::array<unsigned char, ZC_MEMO_SIZE> memo = NO_MEMO);
+        std::array<unsigned char, libzcash::MEMO_SIZE> memo = NO_MEMO);
 
     // Assumes that the value correctly corresponds to the provided UTXO.
     void AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value);

@@ -532,7 +532,7 @@ TEST(Joinsplit, NotePlaintexts)
               random_uint256()
              );
 
-    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    std::array<unsigned char, MEMO_SIZE> memo;
 
     SproutNotePlaintext note_pt(note, memo);
 

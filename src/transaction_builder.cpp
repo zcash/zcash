@@ -63,7 +63,7 @@ void Builder::AddOutput(
     const std::optional<uint256>& ovk,
     const libzcash::OrchardRawAddress& to,
     CAmount value,
-    const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo)
+    const std::optional<std::array<unsigned char, libzcash::MEMO_SIZE>>& memo)
 {
     if (!inner) {
         throw std::logic_error("orchard::Builder has already been used");
@@ -334,7 +334,7 @@ void TransactionBuilder::AddOrchardOutput(
     const std::optional<uint256>& ovk,
     const libzcash::OrchardRawAddress& to,
     CAmount value,
-    const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo)
+    const std::optional<std::array<unsigned char, libzcash::MEMO_SIZE>>& memo)
 {
     if (!orchardBuilder.has_value()) {
         // Try to give a useful error.
@@ -375,7 +375,7 @@ void TransactionBuilder::AddSaplingOutput(
     uint256 ovk,
     libzcash::SaplingPaymentAddress to,
     CAmount value,
-    std::array<unsigned char, ZC_MEMO_SIZE> memo)
+    std::array<unsigned char, libzcash::MEMO_SIZE> memo)
 {
     // Sanity check: cannot add Sapling output to pre-Sapling transaction
     if (mtx.nVersion < SAPLING_TX_VERSION) {
@@ -413,7 +413,7 @@ void TransactionBuilder::AddSproutInput(
 void TransactionBuilder::AddSproutOutput(
     libzcash::SproutPaymentAddress to,
     CAmount value,
-    std::array<unsigned char, ZC_MEMO_SIZE> memo)
+    std::array<unsigned char, libzcash::MEMO_SIZE> memo)
 {
     CheckOrSetUsingSprout();
 
