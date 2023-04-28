@@ -4779,7 +4779,7 @@ static std::optional<Memo> ParseMemo(const UniValue& memoValue)
         return std::nullopt;
     } else {
         return examine(Memo::FromHex(memoValue.get_str()), match {
-            [](MemoError err) -> Memo {
+            [](MemoError err) -> std::optional<Memo> {
                 switch (err) {
                     case MemoError::HexDecodeError:
                         throw JSONRPCError(
@@ -4793,7 +4793,13 @@ static std::optional<Memo> ParseMemo(const UniValue& memoValue)
                         assert(false);
                 }
             },
-            [](Memo result) { return result; }
+            [](Memo result) -> std::optional<Memo> {
+                if (result.ToBytes() == Memo::NoMemo().ToBytes()) {
+                    return std::nullopt;
+                } else {
+                    return result;
+                }
+            }
         });
     }
 }
@@ -5178,7 +5184,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 2 || params.size() > 5)
+    if (fHelp || params.size() < 2 || params.size() > 6)
         throw runtime_error(
             "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee ) ( limit ) ( memo ) ( privacyPolicy )\n"
             "\nShield transparent coinbase funds by sending to a shielded zaddr.  This is an asynchronous operation and utxos"
