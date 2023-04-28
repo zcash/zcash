@@ -19,6 +19,8 @@
 #include "mempool_limit.h"
 #include "zip317.h"
 
+#include <rust/metrics.h>
+
 #include <optional>
 
 using namespace std;
@@ -1229,6 +1231,14 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
     total += insight;
 
     return total;
+}
+
+void CTxMemPool::UpdateMetrics() const {
+    LOCK(cs);
+
+    MetricsGauge("zcash.mempool.size.transactions", size());
+    MetricsGauge("zcash.mempool.size.bytes", GetTotalTxSize());
+    MetricsGauge("zcash.mempool.usage.bytes", DynamicMemoryUsage());
 }
 
 void CTxMemPool::SetMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds) {

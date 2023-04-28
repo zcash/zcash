@@ -558,13 +558,13 @@ public:
     void SetNotifiedSequence(uint64_t recentlyAddedSequence);
     bool IsFullyNotified();
 
-    unsigned long size()
+    unsigned long size() const
     {
         LOCK(cs);
         return mapTx.size();
     }
 
-    uint64_t GetTotalTxSize()
+    uint64_t GetTotalTxSize() const
     {
         LOCK(cs);
         return totalTxSize;
@@ -581,6 +581,8 @@ public:
     std::vector<TxMempoolInfo> infoAll() const;
 
     size_t DynamicMemoryUsage() const;
+
+    void UpdateMetrics() const;
 
     /** Return nCheckFrequency */
     uint32_t GetCheckFrequency() const {
