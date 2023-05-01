@@ -4335,7 +4335,7 @@ std::optional<std::pair<
 
         return SaplingNotePlaintext::from_rust(std::move(decrypted));
     } catch (const rust::Error &e) {
-        assert(false);
+        throw std::runtime_error(e.what());
     }
 }
 
