@@ -25,6 +25,7 @@
 #include "util/match.h"
 #include "util/moneystr.h"
 #include "util/strencodings.h"
+#include "util/string.h"
 #include "wallet.h"
 #include "walletdb.h"
 #include "primitives/transaction.h"
@@ -3289,8 +3290,14 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
                 throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
                         strprintf(
-                            "\"%s\" is an invalid receiver type. Arguments must be \"p2pkh\", \"sapling\", or \"orchard\"",
-                            *invalidReceivers.begin()));
+                            "%s %s. Arguments must be “p2pkh”, “sapling”, or “orchard”",
+                            FormatList(
+                                    invalidReceivers,
+                                    "and",
+                                    [](const auto& receiver) { return "“" + receiver + "”"; }),
+                            invalidReceivers.size() == 1
+                            ? "is an invalid receiver type"
+                            : "are invalid receiver types"));
             })
             .value();
     }
@@ -3373,7 +3380,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
                     break;
                 case UnifiedAddressGenerationError::ReceiverTypeNotSupported:
                     strErr = tfm::format(
-                        "Error: P2SH addresses can not be created by zcashd.");
+                        "Error: P2SH addresses can not be created using this RPC method.");
                     break;
                 case UnifiedAddressGenerationError::DiversifierSpaceExhausted:
                     strErr = tfm::format(
