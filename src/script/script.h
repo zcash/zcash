@@ -410,6 +410,8 @@ public:
     CScript(std::vector<unsigned char>::const_iterator pbegin, std::vector<unsigned char>::const_iterator pend) : CScriptBase(pbegin, pend) { }
     CScript(const unsigned char* pbegin, const unsigned char* pend) : CScriptBase(pbegin, pend) { }
 
+    CScript& operator=(const CScript& b) = default;
+
     CScript& operator+=(const CScript& b)
     {
         insert(end(), b.begin(), b.end());
