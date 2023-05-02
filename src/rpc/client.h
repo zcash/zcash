@@ -9,6 +9,7 @@
 
 #include <tl/expected.hpp>
 #include <univalue.h>
+#include <variant>
 
 class UnknownRPCMethod {
  public:

@@ -5,6 +5,8 @@
 #ifndef ZCASH_UTIL_MATCH_H
 #define ZCASH_UTIL_MATCH_H
 
+#include <variant>
+
 // Helper for using `std::visit` with Rust-style match syntax.
 //
 // This can be used in place of defining an explicit visitor. `std::visit` requires an
