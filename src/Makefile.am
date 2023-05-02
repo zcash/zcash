@@ -311,6 +311,7 @@ BITCOIN_CORE_H = \
   util/match.h \
   util/moneystr.h \
   util/strencodings.h \
+  util/string.h \
   util/test.h \
   util/time.h \
   validationinterface.h \

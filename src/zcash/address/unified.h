@@ -41,6 +41,7 @@ enum class OutputPool {
 enum class UnifiedAddressGenerationError {
     ShieldedReceiverNotFound,
     ReceiverTypeNotAvailable,
+    ReceiverTypeNotSupported,
     NoAddressForDiversifier,
     DiversifierSpaceExhausted,
     InvalidTransparentChildIndex
@@ -288,4 +289,3 @@ public:
 } //namespace libzcash
 
 #endif // ZCASH_ZCASH_ADDRESS_UNIFIED_H
-
