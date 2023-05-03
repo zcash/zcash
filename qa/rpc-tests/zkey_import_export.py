@@ -7,14 +7,14 @@ from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_greater_than, start_nodes,\
     initialize_chain_clean, connect_nodes_bi, wait_and_assert_operationid_status, \
-    DEFAULT_FEE
+    LEGACY_DEFAULT_FEE
 from functools import reduce
 import logging
 import sys
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO, stream=sys.stdout)
 
-fee = DEFAULT_FEE # constant (but can be changed within reason)
+fee = LEGACY_DEFAULT_FEE # constant (but can be changed within reason)
 
 class ZkeyImportExportTest (BitcoinTestFramework):
 

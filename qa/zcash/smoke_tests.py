@@ -22,7 +22,7 @@ from decimal import Decimal
 from slickrpc import Proxy
 from slickrpc.exc import RpcException
 
-DEFAULT_FEE = Decimal('0.00001')
+LEGACY_DEFAULT_FEE = Decimal('0.00001')
 URL_FAUCET_DONATION = 'https://faucet.testnet.z.cash/donations'
 URL_FAUCET_TAP = 'https://faucet.testnet.z.cash/'
 
@@ -120,11 +120,7 @@ TIME_STARTED = datetime.datetime.now()
 
 def run_cmd(results, case, zcash, name, args=[]):
     print('----- %s -----' % (datetime.datetime.now() - TIME_STARTED))
-    print('%s $ zcash-cli %s %s' % (
-        case.ljust(3),
-        name,
-        ' '.join([str(arg) for arg in args],
-    )))
+    print('%s: %s %r' % (case.ljust(3), name, args))
     try:
         res = zcash.__getattr__(name)(*args)
         print(res)
@@ -218,47 +214,49 @@ def async_txid_cmd(results, case, zcash, name, args=[]):
             results[case] = False
     return txid
 
-def z_sendmany(results, case, zcash, from_addr, recipients):
+def z_sendmany(results, case, zcash, from_addr, recipients, privacy_policy):
     return async_txid_cmd(results, case, zcash, 'z_sendmany', [
         from_addr,
         [{
             'address': to_addr,
             'amount': amount,
         } for (to_addr, amount) in recipients],
-        1 # minconf
+        1, # minconf
+        LEGACY_DEFAULT_FEE, # fee
+        privacy_policy
     ])
 
-def check_z_sendmany(results, case, zcash, from_addr, recipients):
-    txid = z_sendmany(results, case, zcash, from_addr, recipients)
+def check_z_sendmany(results, case, zcash, from_addr, recipients, privacy_policy):
+    txid = z_sendmany(results, case, zcash, from_addr, recipients, privacy_policy)
     if txid is None:
         return [Decimal('0')]
     return [wait_and_check_balance(results, case, zcash, to_addr, amount) for (to_addr, amount) in recipients]
 
 def check_z_sendmany_parallel(results, zcash, runs):
     # First attempt to create all the transactions
-    txids = [(run, z_sendmany(results, run[0], zcash, run[1], run[2])) for run in runs]
+    txids = [(run, z_sendmany(results, run[0], zcash, run[1], run[2], run[3])) for run in runs]
     # Then wait for balance updates caused by successful transactions
     return [
         wait_and_check_balance(results, run[0], zcash, to_addr, amount) if txid is not None else Decimal('0')
         for (run, txid) in txids
         for (to_addr, amount) in run[2]]
 
-def z_mergetoaddress(results, case, zcash, from_addrs, to_addr):
+def z_mergetoaddress(results, case, zcash, from_addrs, to_addr, privacy_policy):
     for addr in from_addrs:
         balance = Decimal(zcash.z_getbalance(addr, 0)).quantize(Decimal('1.00000000'))
         if balance > 0:
             wait_for_balance(zcash, addr, balance, minconf=4)
-    return async_txid_cmd(results, case, zcash, 'z_mergetoaddress', [from_addrs, to_addr])
+    return async_txid_cmd(results, case, zcash, 'z_mergetoaddress', [from_addrs, to_addr, LEGACY_DEFAULT_FEE, None, None, None, privacy_policy])
 
-def check_z_mergetoaddress(results, case, zcash, from_addrs, to_addr, amount):
-    txid = z_mergetoaddress(results, case, zcash, from_addrs, to_addr)
+def check_z_mergetoaddress(results, case, zcash, from_addrs, to_addr, amount, privacy_policy):
+    txid = z_mergetoaddress(results, case, zcash, from_addrs, to_addr, privacy_policy)
     if txid is None:
         return Decimal('0')
     return wait_and_check_balance(results, case, zcash, to_addr, amount)
 
 def check_z_mergetoaddress_parallel(results, zcash, runs):
     # First attempt to create all the transactions
-    txids = [(run, z_mergetoaddress(results, run[0], zcash, run[1], run[2])) for run in runs]
+    txids = [(run, z_mergetoaddress(results, run[0], zcash, run[1], run[2], run[4])) for run in runs]
     # Then wait for balance updates caused by successful transactions
     return [
         wait_and_check_balance(results, run[0], zcash, run[2], run[3]) if txid is not None else Decimal('0')
@@ -341,7 +339,7 @@ def transaction_chain(zcash):
 
     # Validate the addresses
     ret = run_cmd(results, '5c', zcash, 'z_validateaddress', [sapling_zaddr_1])
-    if not ret['isvalid'] or ret['type'] != 'sapling':
+    if not ret['isvalid'] or ret['address_type'] != 'sapling':
         results['5c'] = False
 
     # Set up beginning and end of the chain
@@ -382,13 +380,13 @@ def transaction_chain(zcash):
         # taddr -> Sapling
         # Send it all here because z_sendmany pick a new t-addr for change
         sapling_balance = check_z_sendmany(
-            results, '4f', zcash, taddr_1, [(sapling_zaddr_1, taddr_balance - DEFAULT_FEE)])[0]
+            results, '4f', zcash, taddr_1, [(sapling_zaddr_1, taddr_balance - LEGACY_DEFAULT_FEE)], "AllowRevealedSenders")[0]
         taddr_balance = Decimal('0')
 
         # Sapling -> taddr
         taddr_balance = check_z_sendmany(
-            results, '4i', zcash, sapling_zaddr_1, [(taddr_1, (starting_balance / Decimal('10')) * Decimal('3'))])[0]
-        sapling_balance -= taddr_balance + DEFAULT_FEE
+            results, '4i', zcash, sapling_zaddr_1, [(taddr_1, (starting_balance / Decimal('10')) * Decimal('3'))], "AllowRevealedRecipients")[0]
+        sapling_balance -= taddr_balance + LEGACY_DEFAULT_FEE
 
         #
         # Intra-pool tests
@@ -396,13 +394,13 @@ def transaction_chain(zcash):
 
         # Sapling -> same Sapling
         sapling_balance = check_z_sendmany(
-            results, '4g',zcash, sapling_zaddr_1, [(sapling_zaddr_1, sapling_balance - DEFAULT_FEE)])[0]
+            results, '4g',zcash, sapling_zaddr_1, [(sapling_zaddr_1, sapling_balance - LEGACY_DEFAULT_FEE)], "FullPrivacy")[0]
 
         # taddr -> different taddr
         # Sapling -> different Sapling
         (taddr_balance, sapling_balance) = check_z_sendmany_parallel(results, zcash, [
-            ('4e', taddr_1, [(taddr_2, taddr_balance - DEFAULT_FEE)]),
-            ('4h', sapling_zaddr_1, [(sapling_zaddr_2, sapling_balance - DEFAULT_FEE)]),
+            ('4e', taddr_1, [(taddr_2, taddr_balance - LEGACY_DEFAULT_FEE)], "AllowFullyTransparent"),
+            ('4h', sapling_zaddr_1, [(sapling_zaddr_2, sapling_balance - LEGACY_DEFAULT_FEE)], "FullPrivacy"),
         ])
 
         # taddr -> multiple taddr
@@ -410,25 +408,25 @@ def transaction_chain(zcash):
         check_z_sendmany_parallel(results, zcash, [
             ('4p', taddr_2, [
                 (taddr_1, starting_balance / Decimal('10')),
-                (taddr_3, taddr_balance - (starting_balance / Decimal('10')) - DEFAULT_FEE),
-            ]),
+                (taddr_3, taddr_balance - (starting_balance / Decimal('10')) - LEGACY_DEFAULT_FEE),
+            ], "AllowFullyTransparent"),
             ('4t', sapling_zaddr_2, [
                 (sapling_zaddr_1, starting_balance / Decimal('10')),
                 (sapling_zaddr_3, starting_balance / Decimal('10')),
-            ]),
+            ], "FullPrivacy"),
         ])
 
-        taddr_balance -= DEFAULT_FEE
-        sapling_balance -= DEFAULT_FEE
+        taddr_balance -= LEGACY_DEFAULT_FEE
+        sapling_balance -= LEGACY_DEFAULT_FEE
 
         # multiple Sapling -> Sapling
         # multiple taddr -> taddr
         check_z_mergetoaddress_parallel(results, zcash, [
-            ('4gg', [sapling_zaddr_1, sapling_zaddr_3], sapling_zaddr_2, sapling_balance - DEFAULT_FEE),
-            ('', [taddr_1, taddr_3], taddr_2, taddr_balance - DEFAULT_FEE),
+            ('4gg', [sapling_zaddr_1, sapling_zaddr_3], sapling_zaddr_2, sapling_balance - LEGACY_DEFAULT_FEE, "FullPrivacy"),
+            ('', [taddr_1, taddr_3], taddr_2, taddr_balance - LEGACY_DEFAULT_FEE, "AllowFullyTransparent"),
         ])
-        sapling_balance -= DEFAULT_FEE
-        taddr_balance -= DEFAULT_FEE
+        sapling_balance -= LEGACY_DEFAULT_FEE
+        taddr_balance -= LEGACY_DEFAULT_FEE
         taddr_2_balance = taddr_balance
 
         #
@@ -439,53 +437,53 @@ def transaction_chain(zcash):
         check_z_sendmany(
             results, '4w', zcash,  sapling_zaddr_2,[
                 (taddr_3, starting_balance / Decimal('10')),
-                (sapling_zaddr_1, starting_balance / Decimal('10'))])[0]
+                (sapling_zaddr_1, starting_balance / Decimal('10'))], "AllowRevealedRecipients")[0]
         
-        sapling_balance -= (starting_balance / Decimal('10')) + DEFAULT_FEE
+        sapling_balance -= (starting_balance / Decimal('10')) + LEGACY_DEFAULT_FEE
         taddr_balance += starting_balance / Decimal('10')
 
         # taddr and Sapling -> Sapling
-        check_z_mergetoaddress(results, '4ee', zcash, [taddr_3, sapling_zaddr_1], sapling_zaddr_2, sapling_balance + (starting_balance / Decimal('10')) - DEFAULT_FEE)
+        check_z_mergetoaddress(results, '4ee', zcash, [taddr_3, sapling_zaddr_1], sapling_zaddr_2, sapling_balance + (starting_balance / Decimal('10')) - LEGACY_DEFAULT_FEE, "AllowRevealedSenders")
     
-        sapling_balance += (starting_balance / Decimal('10')) - DEFAULT_FEE
+        sapling_balance += (starting_balance / Decimal('10')) - LEGACY_DEFAULT_FEE
         taddr_balance -= starting_balance / Decimal('10')
 
         # Sapling -> multiple taddr
         check_z_sendmany(results, '4v', zcash, sapling_zaddr_2, [
                 (taddr_4, (starting_balance / Decimal('10'))),
-                (taddr_5, (starting_balance / Decimal('10')))])[0]
+                (taddr_5, (starting_balance / Decimal('10')))], "AllowRevealedRecipients")[0]
             
-        sapling_balance -= ((starting_balance / Decimal('10')) * Decimal('2')) + DEFAULT_FEE
+        sapling_balance -= ((starting_balance / Decimal('10')) * Decimal('2')) + LEGACY_DEFAULT_FEE
         taddr_balance += (starting_balance / Decimal('10')) * Decimal('2')
 
         # multiple taddr -> Sapling
-        check_z_mergetoaddress(results, '4bb',zcash, [taddr_4, taddr_5], sapling_zaddr_2, sapling_balance + ((starting_balance / Decimal('10')) * Decimal('2')) - DEFAULT_FEE)
-        sapling_balance += ((starting_balance / Decimal('10')) * Decimal('2')) - DEFAULT_FEE
+        check_z_mergetoaddress(results, '4bb',zcash, [taddr_4, taddr_5], sapling_zaddr_2, sapling_balance + ((starting_balance / Decimal('10')) * Decimal('2')) - LEGACY_DEFAULT_FEE, "AllowRevealedSenders")
+        sapling_balance += ((starting_balance / Decimal('10')) * Decimal('2')) - LEGACY_DEFAULT_FEE
         taddr_balance -= (starting_balance / Decimal('10')) * Decimal('2')
 
         # multiple Sapling -> taddr
-        check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2, sapling_zaddr_3], taddr_2, taddr_2_balance + sapling_balance - DEFAULT_FEE)
-        taddr_balance += sapling_balance - DEFAULT_FEE
+        check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2, sapling_zaddr_3], taddr_2, taddr_2_balance + sapling_balance - LEGACY_DEFAULT_FEE, "AllowRevealedRecipients")
+        taddr_balance += sapling_balance - LEGACY_DEFAULT_FEE
         sapling_balance = Decimal('0')
 
         # taddr -> multiple Sapling
         taddr_2_balance = Decimal(zcash.z_getbalance(taddr_2)).quantize(Decimal('1.00000000'))
         check_z_sendmany(results, '4r', zcash, taddr_2, [
                 (sapling_zaddr_1, (starting_balance / Decimal('10'))),
-                (sapling_zaddr_2, taddr_2_balance - (starting_balance / Decimal('10')) - DEFAULT_FEE)])[0]
+                (sapling_zaddr_2, taddr_2_balance - (starting_balance / Decimal('10')) - LEGACY_DEFAULT_FEE)], "AllowFullyTransparent")[0]
 
-        sapling_balance = taddr_2_balance - DEFAULT_FEE
+        sapling_balance = taddr_2_balance - LEGACY_DEFAULT_FEE
         taddr_balance -= taddr_2_balance
 
         # multiple Sapling -> taddr
-        check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2], taddr_2, sapling_balance - DEFAULT_FEE)
-        taddr_balance += sapling_balance -  DEFAULT_FEE
+        check_z_mergetoaddress(None, '', zcash, [sapling_zaddr_1, sapling_zaddr_2], taddr_2, sapling_balance - LEGACY_DEFAULT_FEE, "AllowRevealedRecipients")
+        taddr_balance += sapling_balance -  LEGACY_DEFAULT_FEE
         sapling_balance = Decimal('0')
 
         # z_mergetoaddress taddr -> Sapling
         taddr_2_balance = Decimal(zcash.z_getbalance(taddr_2)).quantize(Decimal('1.00000000'))
-        check_z_mergetoaddress(results, '4cc', zcash,  [taddr_2], sapling_zaddr_1, taddr_2_balance - DEFAULT_FEE)
-        sapling_balance = taddr_2_balance - DEFAULT_FEE
+        check_z_mergetoaddress(results, '4cc', zcash,  [taddr_2], sapling_zaddr_1, taddr_2_balance - LEGACY_DEFAULT_FEE, "AllowFullyTransparent")
+        sapling_balance = taddr_2_balance - LEGACY_DEFAULT_FEE
         taddr_balance -= taddr_2_balance
     except Exception as e:
         print('Error: %s' % e)
@@ -515,7 +513,7 @@ def transaction_chain(zcash):
         for addr in all_addrs:
             balance = Decimal(zcash.z_getbalance(addr)).quantize(Decimal('1.00000000'))
             if balance > 0:
-                z_sendmany(None, '', zcash, addr, [(chain_end, balance - DEFAULT_FEE)])
+                z_sendmany(None, '', zcash, addr, [(chain_end, balance - LEGACY_DEFAULT_FEE)], "NoPrivacy")
 
     return results
 
@@ -592,7 +590,10 @@ class ZcashNode(object):
             '-showmetrics=0',
             '-experimentalfeatures',
             '-zmergetoaddress',
-            '-walletrequirebackup=false'
+            '-walletrequirebackup=false',
+            '-allowdeprecated=getnewaddress',
+            '-allowdeprecated=z_getnewaddress',
+            '-allowdeprecated=z_listaddresses'
         ]
         if self.__testnet:
             args.append('-testnet=1')

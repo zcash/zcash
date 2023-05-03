@@ -13,7 +13,6 @@
 #include "logging.h"
 #include "random.h"
 #include "primitives/transaction.h"
-#include "policy/fees.h"
 #include "uint256.h"
 #include "util/time.h"
 #include "weighted_map.h"

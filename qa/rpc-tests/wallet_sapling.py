@@ -9,7 +9,7 @@ from test_framework.util import (
     get_coinbase_address,
     start_nodes,
     wait_and_assert_operationid_status,
-    DEFAULT_FEE
+    LEGACY_DEFAULT_FEE
 )
 
 from decimal import Decimal
@@ -159,8 +159,8 @@ class WalletSaplingTest(BitcoinTestFramework):
         myopid = self.nodes[1].z_sendmany(
             taddr1,
             [{'address': node4_sproutaddr, 'amount': Decimal('2.5')},
-             {'address': node4_saplingaddr, 'amount': Decimal('2.5') - DEFAULT_FEE}],
-            1, DEFAULT_FEE, 'AllowRevealedSenders'
+             {'address': node4_saplingaddr, 'amount': Decimal('2.5') - LEGACY_DEFAULT_FEE}],
+            1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders'
         )
         wait_and_assert_operationid_status(self.nodes[1], myopid, "failed", "Sending funds into the Sprout pool is no longer supported.")
 

@@ -14,13 +14,24 @@
 
 #include <univalue.h>
 
-typedef std::map<std::string, std::pair<std::vector<bool>, std::vector<bool>>> CRPCConvertTable;
+enum class Conversion {
+    ///< passed as a JSON string, verbatim
+    None,
+    /// the literal string `null` is passed as JSON `null`, otherwise passed as a verbatim string
+    /// NB: This needs to be used carefully, as it could discard the valid string “null”.
+    NullableString,
+    /// parsed as a JSON value
+    JSON,
+};
 
-/** A string parameter, should not be converted. */
-static const bool s = false;
+typedef std::pair<std::vector<Conversion>, std::vector<Conversion>> ParameterSpec;
 
-/** Something other than a string parameter, should be converted. */
-static const bool o = true;
+typedef std::map<std::string, ParameterSpec> CRPCConvertTable;
+
+// Single-character aliases for alignment and scannability in the table.
+static constexpr Conversion s = Conversion::None;
+static constexpr Conversion n = Conversion::NullableString;
+static constexpr Conversion o = Conversion::JSON;
 
 static const CRPCConvertTable rpcCvtTable =
 {
@@ -57,7 +68,6 @@ static const CRPCConvertTable rpcCvtTable =
     // NB: The second argument _should_ be an object, but upstream treats it as a string, so we
     //     preserve that here.
     { "submitblock",                 {{s}, {s}} },
-    { "estimatefee",                 {{o}, {}} },
     { "getblocksubsidy",             {{o}, {}} },
     // misc
     { "getinfo",                     {{}, {}} },
@@ -160,8 +170,8 @@ static const CRPCConvertTable rpcCvtTable =
     { "z_sendmany",                  {{s, o}, {o, o, s}} },
     { "z_setmigration",              {{o}, {}} },
     { "z_getmigrationstatus",        {{}, {o}} },
-    { "z_shieldcoinbase",            {{s, s}, {o, o}} },
-    { "z_mergetoaddress",            {{o, s}, {o, o, o, s}} },
+    { "z_shieldcoinbase",            {{s, s}, {o, o, n, s}} },
+    { "z_mergetoaddress",            {{o, s}, {o, o, o, n, s}} },
     { "z_listoperationids",          {{}, {s}} },
     { "z_getnotescount",             {{}, {o, o}} },
     // server
@@ -193,7 +203,7 @@ std::string FormatConversionFailure(const std::string& strMethod, const Conversi
         });
 }
 
-std::optional<std::pair<std::vector<bool>, std::vector<bool>>>
+std::optional<ParameterSpec>
 ParamsToConvertFor(const std::string& strMethod)
 {
     auto search = rpcCvtTable.find(strMethod);
@@ -230,25 +240,35 @@ RPCConvertValues(const std::string &strMethod, const std::vector<std::string> &s
                 WrongNumberOfParams(requiredParams.size(), optionalParams.size(), strParams.size()));
     }
 
-    std::vector<bool> allParams(requiredParams.begin(), requiredParams.end());
+    std::vector<Conversion> allParams(requiredParams.begin(), requiredParams.end());
     allParams.reserve(requiredParams.size() + optionalParams.size());
     allParams.insert(allParams.end(), optionalParams.begin(), optionalParams.end());
 
     for (std::vector<std::string>::size_type idx = 0; idx < strParams.size(); idx++) {
-        const bool shouldConvert = allParams[idx];
+        const Conversion conversion = allParams[idx];
         const std::string& strVal = strParams[idx];
+        auto parsedParam = ParseNonRFCJSONValue(strVal);
 
-        if (!shouldConvert) {
-            // insert string value directly
-            params.push_back(strVal);
-        } else {
-            // parse string as JSON, insert bool/number/object/etc. value
-            auto parsedParam = ParseNonRFCJSONValue(strVal);
-            if (parsedParam.has_value()) {
-                params.push_back(parsedParam.value());
-            } else {
-                return tl::make_unexpected(UnparseableParam(strVal));
-            }
+        switch (conversion) {
+            case Conversion::None:
+                params.push_back(strVal);
+                break;
+            case Conversion::NullableString:
+                if (parsedParam.has_value() && parsedParam.value().isNull()) {
+                    params.push_back(parsedParam.value());
+                } else {
+                    params.push_back(strVal);
+                }
+                break;
+            case Conversion::JSON:
+                if (parsedParam.has_value()) {
+                    params.push_back(parsedParam.value());
+                } else {
+                    return tl::make_unexpected(UnparseableParam(strVal));
+                }
+                break;
+            default:
+                assert(false);
         }
     }
 

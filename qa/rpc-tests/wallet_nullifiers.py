@@ -6,7 +6,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, bitcoind_processes, \
     connect_nodes_bi, start_node, start_nodes, wait_and_assert_operationid_status, \
-    get_coinbase_address, DEFAULT_FEE
+    get_coinbase_address, LEGACY_DEFAULT_FEE
 from test_framework.zip317 import conventional_fee
 
 from decimal import Decimal
@@ -32,11 +32,11 @@ class WalletNullifiersTest (BitcoinTestFramework):
         # Tests using the default cached chain have one address per coinbase output
         mytaddr = get_coinbase_address(self.nodes[0])
         recipients = []
-        recipients.append({"address": myzaddr0, "amount": Decimal('10.0') - DEFAULT_FEE}) # utxo amount less fee
+        recipients.append({"address": myzaddr0, "amount": Decimal('10.0') - LEGACY_DEFAULT_FEE}) # utxo amount less fee
 
         wait_and_assert_operationid_status(
             self.nodes[0],
-            self.nodes[0].z_sendmany(mytaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedSenders'),
+            self.nodes[0].z_sendmany(mytaddr, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedSenders'),
             timeout=120)
 
         self.sync_all()
@@ -109,7 +109,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
         wait_and_assert_operationid_status(
             self.nodes[1],
-            self.nodes[1].z_sendmany(myzaddr, recipients, 1, DEFAULT_FEE, 'AllowRevealedRecipients'),
+            self.nodes[1].z_sendmany(myzaddr, recipients, 1, LEGACY_DEFAULT_FEE, 'AllowRevealedRecipients'),
             timeout=120)
 
         self.sync_all()
@@ -118,7 +118,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
         # check zaddr balance
         zsendmany3notevalue = Decimal('1.0')
-        zaddrremaining2 = zaddrremaining - zsendmany3notevalue - DEFAULT_FEE
+        zaddrremaining2 = zaddrremaining - zsendmany3notevalue - LEGACY_DEFAULT_FEE
         assert_equal(self.nodes[1].z_getbalance(myzaddr), zaddrremaining2)
         assert_equal(self.nodes[2].z_getbalance(myzaddr), zaddrremaining2)
 

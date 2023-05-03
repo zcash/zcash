@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
-    DEFAULT_FEE,
+    LEGACY_DEFAULT_FEE,
     start_nodes,
     wait_and_assert_operationid_status,
 )
@@ -33,7 +33,7 @@ class RegtestSignrawtransactionTest (BitcoinTestFramework):
         opid = self.nodes[1].z_sendmany(
             taddr,
             [{'address': zaddr1, 'amount': 1}],
-            1, DEFAULT_FEE, 'AllowFullyTransparent')
+            1, LEGACY_DEFAULT_FEE, 'AllowFullyTransparent')
         wait_and_assert_operationid_status(self.nodes[1], opid)
 
 if __name__ == '__main__':

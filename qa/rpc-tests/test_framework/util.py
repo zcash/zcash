@@ -31,8 +31,7 @@ from .authproxy import AuthServiceProxy, JSONRPCException
 
 ZCASHD_BINARY = os.path.join('src', 'zcashd')
 
-DEFAULT_FEE = Decimal('0.00001')
-DEFAULT_FEE_ZATS = 1000
+LEGACY_DEFAULT_FEE = Decimal('0.00001')
 
 COVERAGE_DIR = None
 PRE_BLOSSOM_BLOCK_TARGET_SPACING = 150
@@ -315,7 +314,6 @@ def initialize_chain(test_dir, num_nodes, cachedir, cache_behavior='current'):
             os.remove(node_file(cachedir, i, "debug.log"))
             os.remove(node_file(cachedir, i, "db.log"))
             os.remove(node_file(cachedir, i, "peers.dat"))
-            os.remove(node_file(cachedir, i, "fee_estimates.dat"))
 
     def init_from_cache():
         for i in range(num_nodes):

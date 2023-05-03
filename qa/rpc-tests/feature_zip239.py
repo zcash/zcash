@@ -21,7 +21,7 @@ from test_framework.util import (
     HEARTWOOD_BRANCH_ID,
     CANOPY_BRANCH_ID,
     NU5_BRANCH_ID,
-    DEFAULT_FEE,
+    LEGACY_DEFAULT_FEE,
     assert_equal,
     assert_false,
     assert_true,
@@ -201,7 +201,7 @@ class Zip239Test(BitcoinTestFramework):
         opid = self.nodes[0].z_sendmany(sproutzaddr, [{
             'address': node1_taddr,
             'amount': 1,
-        }], 1, DEFAULT_FEE, 'AllowRevealedRecipients')
+        }], 1, LEGACY_DEFAULT_FEE, 'AllowRevealedRecipients')
         v4_txid = uint256_from_str(hex_str_to_bytes(
             wait_and_assert_operationid_status(self.nodes[0], opid)
         )[::-1])

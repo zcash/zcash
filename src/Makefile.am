@@ -261,7 +261,6 @@ BITCOIN_CORE_H = \
   net.h \
   netbase.h \
   noui.h \
-  policy/fees.h \
   policy/policy.h \
   pow.h \
   prevector.h \
@@ -313,6 +312,7 @@ BITCOIN_CORE_H = \
   util/match.h \
   util/moneystr.h \
   util/strencodings.h \
+  util/string.h \
   util/test.h \
   util/time.h \
   validationinterface.h \
@@ -373,7 +373,6 @@ libbitcoin_server_a_SOURCES = \
   miner.cpp \
   net.cpp \
   noui.cpp \
-  policy/fees.cpp \
   policy/policy.cpp \
   pow.cpp \
   rest.cpp \

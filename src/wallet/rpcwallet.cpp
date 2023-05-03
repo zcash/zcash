@@ -25,6 +25,7 @@
 #include "util/match.h"
 #include "util/moneystr.h"
 #include "util/strencodings.h"
+#include "util/string.h"
 #include "wallet.h"
 #include "walletdb.h"
 #include "primitives/transaction.h"
@@ -434,6 +435,65 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
     SendMoney(dest, nAmount, fSubtractFeeFromAmount, wtx);
 
     return wtx.GetHash().GetHex();
+}
+
+static std::optional<ReceiverType> ReceiverTypeFromString(const std::string& p)
+{
+    if (p == "p2pkh") {
+        return ReceiverType::P2PKH;
+    } else if (p == "p2sh") {
+        return ReceiverType::P2SH;
+    } else if (p == "sapling") {
+        return ReceiverType::Sapling;
+    } else if (p == "orchard") {
+        return ReceiverType::Orchard;
+    } else {
+        return std::nullopt;
+    }
+}
+
+static std::string ReceiverTypeToString(ReceiverType t)
+{
+    switch(t) {
+        case ReceiverType::P2PKH: return "p2pkh";
+        case ReceiverType::P2SH: return "p2sh";
+        case ReceiverType::Sapling: return "sapling";
+        case ReceiverType::Orchard: return "orchard";
+    }
+}
+
+/// On failure, returns a non-empty set of the strings that don’t represent valid receiver types.
+static tl::expected<std::set<ReceiverType>, std::set<std::string>>
+ReceiverTypesFromJSON(const UniValue& json)
+{
+    assert(json.isArray());
+
+    std::set<ReceiverType> receiverTypes;
+    std::set<std::string> invalidReceivers;
+    for (size_t i = 0; i < json.size(); i++) {
+        const std::string& p = json[i].get_str();
+        auto t = ReceiverTypeFromString(p);
+        if (t.has_value()) {
+            receiverTypes.insert(t.value());
+        } else {
+            invalidReceivers.insert(p);
+        }
+    }
+
+    if (invalidReceivers.empty()) {
+        return {receiverTypes};
+    } else {
+        return tl::make_unexpected(invalidReceivers);
+    }
+}
+
+static UniValue ReceiverTypesToJSON(const std::set<ReceiverType>& receiverTypes)
+{
+    UniValue receiverTypesEntry(UniValue::VARR);
+    for (auto t : receiverTypes) {
+        receiverTypesEntry.push_back(ReceiverTypeToString(t));
+    }
+    return receiverTypesEntry;
 }
 
 UniValue listaddresses(const UniValue& params, bool fHelp)
@@ -861,29 +921,12 @@ UniValue listaddresses(const UniValue& params, bool fHelp)
                         auto addr = std::get<std::pair<libzcash::UnifiedAddress, diversifier_index_t>>(
                             ufvk.Address(j, receiverTypes)
                         );
-                        UniValue receiverTypesEntry(UniValue::VARR);
-                        for (auto t : receiverTypes) {
-                            switch(t) {
-                                case ReceiverType::P2PKH:
-                                    receiverTypesEntry.push_back("p2pkh");
-                                    break;
-                                case ReceiverType::P2SH:
-                                    receiverTypesEntry.push_back("p2sh");
-                                    break;
-                                case ReceiverType::Sapling:
-                                    receiverTypesEntry.push_back("sapling");
-                                    break;
-                                case ReceiverType::Orchard:
-                                    receiverTypesEntry.push_back("orchard");
-                                    break;
-                            }
-                        }
                         {
                             UniValue jVal;
                             jVal.setNumStr(ArbitraryIntStr(std::vector(j.begin(), j.end())));
                             addrEntry.pushKV("diversifier_index", jVal);
                         }
-                        addrEntry.pushKV("receiver_types", receiverTypesEntry);
+                        addrEntry.pushKV("receiver_types", ReceiverTypesToJSON(receiverTypes));
                         addrEntry.pushKV("address", keyIO.EncodePaymentAddress(addr.first));
                         unified_addrs.push_back(addrEntry);
                     }
@@ -3240,19 +3283,21 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
 
     std::set<libzcash::ReceiverType> receiverTypes;
     if (params.size() >= 2) {
-        const auto& parsed = params[1].get_array();
-        for (size_t i = 0; i < parsed.size(); i++) {
-            const std::string& p = parsed[i].get_str();
-            if (p == "p2pkh") {
-                receiverTypes.insert(ReceiverType::P2PKH);
-            } else if (p == "sapling") {
-                receiverTypes.insert(ReceiverType::Sapling);
-            } else if (p == "orchard") {
-                receiverTypes.insert(ReceiverType::Orchard);
-            } else {
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "receiver type arguments must be \"p2pkh\", \"sapling\", or \"orchard\"");
-            }
-        }
+        receiverTypes = ReceiverTypesFromJSON(params[1].get_array())
+            .map_error([](const std::set<std::string>& invalidReceivers) {
+                throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        strprintf(
+                            "%s %s. Arguments must be “p2pkh”, “sapling”, or “orchard”",
+                            FormatList(
+                                    invalidReceivers,
+                                    "and",
+                                    [](const auto& receiver) { return "“" + receiver + "”"; }),
+                            invalidReceivers.size() == 1
+                            ? "is an invalid receiver type"
+                            : "are invalid receiver types"));
+            })
+            .value();
     }
     if (receiverTypes.empty()) {
         // Default is the best and second-best shielded receiver types, and the transparent (P2PKH) receiver type.
@@ -3331,6 +3376,10 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
                     strErr = tfm::format(
                         "Error: one or more of the requested receiver types does not have a corresponding spending key in this account.");
                     break;
+                case UnifiedAddressGenerationError::ReceiverTypeNotSupported:
+                    strErr = tfm::format(
+                        "Error: P2SH addresses can not be created using this RPC method.");
+                    break;
                 case UnifiedAddressGenerationError::DiversifierSpaceExhausted:
                     strErr = tfm::format(
                         "Error: ran out of diversifier indices. Generate a new account with z_getnewaccount");
@@ -3340,24 +3389,7 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
         },
     });
 
-    UniValue receiver_types(UniValue::VARR);
-    for (const auto& receiverType : receiverTypes) {
-        switch (receiverType) {
-            case ReceiverType::P2PKH:
-                receiver_types.push_back("p2pkh");
-                break;
-            case ReceiverType::Sapling:
-                receiver_types.push_back("sapling");
-                break;
-            case ReceiverType::Orchard:
-                receiver_types.push_back("orchard");
-                break;
-            default:
-                // Unreachable
-                assert(false);
-        }
-    }
-    result.pushKV("receiver_types", receiver_types);
+    result.pushKV("receiver_types", ReceiverTypesToJSON(receiverTypes));
 
     return result;
 }
@@ -5162,7 +5194,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 2 || params.size() > 5)
+    if (fHelp || params.size() < 2 || params.size() > 6)
         throw runtime_error(
             "z_shieldcoinbase \"fromaddress\" \"tozaddress\" ( fee ) ( limit ) ( memo ) ( privacyPolicy )\n"
             "\nShield transparent coinbase funds by sending to a shielded zaddr.  This is an asynchronous operation and utxos"
