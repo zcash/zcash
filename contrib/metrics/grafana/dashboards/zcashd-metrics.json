@@ -338,7 +338,7 @@
             "uid": "T9XAoUn4k"
           },
           "editorMode": "builder",
-          "expr": "avg_over_time(zcashd_wallet_batchscanner_usage_byes[$__interval])",
+          "expr": "avg_over_time(zcashd_wallet_batchscanner_usage_bytes[$__interval])",
           "hide": false,
           "legendFormat": "Heap usage",
           "range": true,
@@ -618,7 +618,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 50,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -631,11 +631,11 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -648,14 +648,10 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
-          "unit": "ZEC"
+          "unit": "bytes"
         },
         "overrides": []
       },
@@ -665,7 +661,7 @@
         "x": 12,
         "y": 16
       },
-      "id": 8,
+      "id": 18,
       "options": {
         "legend": {
           "calcs": [],
@@ -678,20 +674,21 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "9.1.6",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "T9XAoUn4k"
           },
-          "expr": "zcash_pool_value_zatoshis/100000000",
-          "interval": "",
-          "legendFormat": "{{name}}",
-          "refId": "A"
+          "editorMode": "code",
+          "expr": "zcash_mempool_size_weighted",
+          "hide": false,
+          "legendFormat": "{{bk}}",
+          "range": true,
+          "refId": "Size"
         }
       ],
-      "title": "Shielded pools",
+      "title": "Mempool composition by weight",
       "type": "timeseries"
     },
     {
@@ -814,6 +811,200 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
+            "fillOpacity": 50,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "T9XAoUn4k"
+          },
+          "editorMode": "code",
+          "expr": "zcash_mempool_actions_unpaid",
+          "legendFormat": "{{bk}}",
+          "range": true,
+          "refId": "Unpaid"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "T9XAoUn4k"
+          },
+          "editorMode": "code",
+          "expr": "zcash_mempool_actions_paid",
+          "hide": false,
+          "legendFormat": "Paid",
+          "range": true,
+          "refId": "Paid"
+        }
+      ],
+      "title": "Mempool unpaid actions by weight",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "T9XAoUn4k"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ZEC"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.1.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "T9XAoUn4k"
+          },
+          "expr": "zcash_pool_value_zatoshis/100000000",
+          "interval": "",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Shielded pools",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "T9XAoUn4k"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
@@ -859,7 +1050,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 24
+        "y": 32
       },
       "id": 14,
       "options": {
@@ -906,6 +1097,6 @@
   "timezone": "",
   "title": "zcashd metrics",
   "uid": "U4U58t-Gk",
-  "version": 1,
+  "version": 8,
   "weekStart": ""
 }
