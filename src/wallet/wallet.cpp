@@ -8019,34 +8019,30 @@ void SpendableInputs::LogInputs(const AsyncRPCOperationId& id) const {
     }
 
     for (const auto& entry : sproutNoteEntries) {
-        std::string data(entry.memo.begin(), entry.memo.end());
         LogPrint("zrpcunsafe", "%s: found unspent Sprout note (txid=%s, vJoinSplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
             id,
             entry.jsop.hash.ToString().substr(0, 10),
             entry.jsop.js,
             int(entry.jsop.n),  // uint8_t
             FormatMoney(entry.note.value()),
-            HexStr(data).substr(0, 10)
-            );
+            HexStr(Memo::ToBytes(entry.memo)).substr(0, 10));
     }
 
     for (const auto& entry : saplingNoteEntries) {
-        std::string data(entry.memo.begin(), entry.memo.end());
         LogPrint("zrpcunsafe", "%s: found unspent Sapling note (txid=%s, vShieldedSpend=%d, amount=%s, memo=%s)\n",
             id,
             entry.op.hash.ToString().substr(0, 10),
             entry.op.n,
             FormatMoney(entry.note.value()),
-            HexStr(data).substr(0, 10));
+            HexStr(Memo::ToBytes(entry.memo)).substr(0, 10));
     }
 
     for (const auto& entry : orchardNoteMetadata) {
-        std::string data(entry.GetMemo().begin(), entry.GetMemo().end());
         LogPrint("zrpcunsafe", "%s: found unspent Orchard note (txid=%s, vActionsOrchard=%d, amount=%s, memo=%s)\n",
             id,
             entry.GetOutPoint().hash.ToString().substr(0, 10),
             entry.GetOutPoint().n,
             FormatMoney(entry.GetNoteValue()),
-            HexStr(data).substr(0, 10));
+            HexStr(Memo::ToBytes(entry.GetMemo())).substr(0, 10));
     }
 }

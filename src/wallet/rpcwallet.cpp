@@ -50,7 +50,6 @@
 
 #include <boost/assign/list_of.hpp>
 #include <boost/algorithm/string/trim.hpp>
-#include <utf8cpp/utf8.h>
 
 #include <univalue.h>
 
@@ -2697,7 +2696,6 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     return results;
 }
 
-
 UniValue z_listunspent(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -2734,7 +2732,8 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "    \"account\" : n,                     (numeric, optional) the unified account ID, if applicable\n"
             "    \"address\" : \"address\",             (string, optional) the shielded address, omitted if this note was sent to an internal receiver\n"
             "    \"amount\": xxxxx,                   (numeric) the amount of value in the note\n"
-            "    \"memo\": xxxxx,                     (string) hexadecimal string representation of memo field\n"
+            "    \"memo\": \"hexmemo\",                 (string) hexadecimal string representation of memo field\n"
+            "    \"memoStr\": \"memo\",                 (string, optional) UTF-8 string representation of memo field (if it contains valid UTF-8).\n"
             "    \"change\": true|false,              (boolean) true if the address that received the note is also one of the sending addresses\n"
             "  }\n"
             "  ,...\n"
@@ -2833,8 +2832,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         obj.pushKV("spendable", hasSproutSpendingKey);
         obj.pushKV("address", keyIO.EncodePaymentAddress(entry.address));
         obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
-        std::string data(entry.memo.begin(), entry.memo.end());
-        obj.pushKV("memo", HexStr(data));
+        AddMemo(obj, entry.memo);
         if (hasSproutSpendingKey) {
             obj.pushKV("change", pwalletMain->IsNoteSproutChange(sproutNullifiers, entry.address, entry.jsop));
         }
@@ -2861,7 +2859,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             obj.pushKV("address", keyIO.EncodePaymentAddress(addr.first));
         }
         obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value()))); // note.value() is equivalent to plaintext.value()
-        obj.pushKV("memo", HexStr(entry.memo));
+        AddMemo(obj, entry.memo);
         if (hasSaplingSpendingKey) {
             obj.pushKV(
                     "change",
@@ -2894,7 +2892,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             obj.pushKV("address", keyIO.EncodePaymentAddress(addr.first));
         }
         obj.pushKV("amount", ValueFromAmount(entry.GetNoteValue()));
-        obj.pushKV("memo", HexStr(entry.GetMemo()));
+        AddMemo(obj, entry.GetMemo());
         if (haveSpendingKey) {
             obj.pushKV("change", isInternal);
         }
@@ -3316,11 +3314,11 @@ UniValue z_getaddressforaccount(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "diversifier index must be a decimal integer.");
         }
         auto parsed_diversifier_index = parsed_diversifier_index_opt.value();
-        if (parsed_diversifier_index.size() > ZC_DIVERSIFIER_SIZE) {
+        if (parsed_diversifier_index.size() > SAPLING_DIVERSIFIER_SIZE) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "diversifier index is too large.");
         }
         // Extend the byte array to the correct length for diversifier_index_t.
-        parsed_diversifier_index.resize(ZC_DIVERSIFIER_SIZE);
+        parsed_diversifier_index.resize(SAPLING_DIVERSIFIER_SIZE);
         j = libzcash::diversifier_index_t(parsed_diversifier_index);
     }
 
@@ -3684,7 +3682,8 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "    \"txid\": \"txid\",               (string) the transaction id\n"
             "    \"amount\": xxxxx,              (numeric) the amount of value in the note\n"
             "    \"amountZat\" : xxxx            (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
-            "    \"memo\": xxxxx,                (string) hexadecimal string representation of memo field\n"
+            "    \"memo\": \"hexmemo\",            (string) hexadecimal string representation of memo field\n"
+            "    \"memoStr\": \"memo\",            (string, optional) UTF-8 string representation of memo field (if it contains valid UTF-8).\n"
             "    \"confirmations\" : n,          (numeric) the number of confirmations\n"
             "    \"blockheight\": n,             (numeric) The block height containing the transaction\n"
             "    \"blockindex\": n,              (numeric) The block index containing the transaction.\n"
@@ -3798,7 +3797,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             obj.pushKV("txid", entry.op.hash.ToString());
             obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
             obj.pushKV("amountZat", CAmount(entry.note.value()));
-            obj.pushKV("memo", HexStr(entry.memo));
+            AddMemo(obj, entry.memo);
             obj.pushKV("outindex", (int)entry.op.n);
             obj.pushKV("confirmations", entry.confirmations);
 
@@ -3825,7 +3824,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             obj.pushKV("txid", op.hash.ToString());
             obj.pushKV("amount", ValueFromAmount(entry.GetNoteValue()));
             obj.pushKV("amountZat", CAmount(entry.GetNoteValue()));
-            obj.pushKV("memo", HexStr(entry.GetMemo()));
+            AddMemo(obj, entry.GetMemo());
             obj.pushKV("outindex", (int)op.n);
             obj.pushKV("confirmations", entry.GetConfirmations());
 
@@ -3858,8 +3857,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
                 obj.pushKV("txid", entry.jsop.hash.ToString());
                 obj.pushKV("amount", ValueFromAmount(CAmount(entry.note.value())));
                 obj.pushKV("amountZat", CAmount(entry.note.value()));
-                std::string data(entry.memo.begin(), entry.memo.end());
-                obj.pushKV("memo", HexStr(data));
+                AddMemo(obj, entry.memo);
                 obj.pushKV("jsindex", entry.jsop.js);
                 obj.pushKV("jsoutindex", entry.jsop.n);
                 obj.pushKV("confirmations", entry.confirmations);
@@ -4311,7 +4309,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
             "      \"value\" : x.xxx                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
             "      \"valueZat\" : xxxx               (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
             "      \"memo\" : \"hexmemo\",             (string) hexadecimal string representation of the memo field\n"
-            "      \"memoStr\" : \"memo\",             (string) Only returned if memo contains valid UTF-8 text.\n"
+            "      \"memoStr\" : \"memo\",             (string, optional) UTF-8 string representation of memo field (if it contains valid UTF-8).\n"
             "    }\n"
             "    ,...\n"
             "  ],\n"
@@ -4336,24 +4334,6 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
 
     UniValue spends(UniValue::VARR);
     UniValue outputs(UniValue::VARR);
-
-    auto addMemo = [](UniValue &entry, std::array<unsigned char, ZC_MEMO_SIZE> &memo) {
-        entry.pushKV("memo", HexStr(memo));
-
-        // If the leading byte is 0xF4 or lower, the memo field should be interpreted as a
-        // UTF-8-encoded text string.
-        if (memo[0] <= 0xf4) {
-            // Trim off trailing zeroes
-            auto end = std::find_if(
-                memo.rbegin(),
-                memo.rend(),
-                [](unsigned char v) { return v != 0; });
-            std::string memoStr(memo.begin(), end.base());
-            if (utf8::is_valid(memoStr)) {
-                entry.pushKV("memoStr", memoStr);
-            }
-        }
-    };
 
     KeyIO keyIO(Params());
     // Sprout spends
@@ -4397,7 +4377,6 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         auto decrypted = wtx.DecryptSproutNote(jsop);
         auto notePt = decrypted.first;
         auto pa = decrypted.second;
-        auto memo = notePt.memo();
 
         UniValue entry(UniValue::VOBJ);
         entry.pushKV("pool", ADDR_TYPE_SPROUT);
@@ -4409,7 +4388,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         entry.pushKV("address", keyIO.EncodePaymentAddress(pa));
         entry.pushKV("value", ValueFromAmount(notePt.value()));
         entry.pushKV("valueZat", notePt.value());
-        addMemo(entry, memo);
+        AddMemo(entry, notePt.memo());
         outputs.push_back(entry);
     }
 
@@ -4533,7 +4512,6 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
                 continue;
             }
         }
-        auto memo = notePt.memo();
 
         // Show the address that was cached at transaction construction as the
         // recipient.
@@ -4556,7 +4534,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         }
         entry.pushKV("value", ValueFromAmount(notePt.value()));
         entry.pushKV("valueZat", notePt.value());
-        addMemo(entry, memo);
+        AddMemo(entry, notePt.memo());
         outputs.push_back(entry);
     }
 
@@ -4597,7 +4575,6 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
     for (const auto& [actionIdx, orchardActionOutput]  : orchardActions.GetOutputs()) {
         auto noteValue = orchardActionOutput.GetNoteValue();
         auto recipient = orchardActionOutput.GetRecipient();
-        auto memo = orchardActionOutput.GetMemo();
 
         // Show the address that was cached at transaction construction as the
         // recipient.
@@ -4620,7 +4597,7 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         }
         entry.pushKV("value", ValueFromAmount(noteValue));
         entry.pushKV("valueZat", noteValue);
-        addMemo(entry, memo);
+        AddMemo(entry, orchardActionOutput.GetMemo());
         outputs.push_back(entry);
     }
 
@@ -4805,34 +4782,35 @@ size_t EstimateTxSize(
     return txsize;
 }
 
-static std::optional<Memo> ParseMemo(const UniValue& memoValue)
+static std::optional<libzcash::Memo> ParseMemo(const UniValue& memoValue)
 {
     if (memoValue.isNull()) {
         return std::nullopt;
     } else {
-        return examine(Memo::FromHex(memoValue.get_str()), match {
-            [](MemoError err) -> std::optional<Memo> {
-                switch (err) {
-                    case MemoError::HexDecodeError:
-                        throw JSONRPCError(
-                                RPC_INVALID_PARAMETER,
-                                "Invalid parameter, expected memo data in hexadecimal format.");
-                    case MemoError::MemoTooLong:
-                        throw JSONRPCError(
-                                RPC_INVALID_PARAMETER,
-                                strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
-                    default:
-                        assert(false);
-                }
-            },
-            [](Memo result) -> std::optional<Memo> {
-                if (result.ToBytes() == Memo::NoMemo().ToBytes()) {
-                    return std::nullopt;
-                } else {
-                    return result;
-                }
-            }
-        });
+        auto memoStr = memoValue.get_str();
+        auto rawMemo = ParseHex(memoStr);
+
+        // If ParseHex comes across a non-hex char, it will stop but still return results so far.
+        if (memoStr.size() != rawMemo.size() * 2) {
+            throw JSONRPCError(
+                    RPC_INVALID_PARAMETER,
+                    "Invalid parameter, expected memo data in hexadecimal format.");
+        } else {
+            return libzcash::Memo::FromBytes(rawMemo)
+                .map_error([](auto err) {
+                    switch (err) {
+                        case libzcash::Memo::ConversionError::MemoTooLong:
+                            throw JSONRPCError(
+                                    RPC_INVALID_PARAMETER,
+                                    strprintf(
+                                            "Invalid parameter, memo is longer than the maximum allowed %d bytes.",
+                                            libzcash::Memo::SIZE));
+                        default:
+                            assert(false);
+                    }
+                })
+                .value();
+        }
     }
 }
 
@@ -5599,7 +5577,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         saplingNoteLimit = nNoteLimit;
     }
 
-    std::optional<Memo> memo;
+    std::optional<libzcash::Memo> memo;
     if (params.size() > 5) {
         memo = ParseMemo(params[5]);
     }

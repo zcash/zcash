@@ -16,6 +16,7 @@
 #include "zcash/Address.hpp"
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "zcash/JoinSplit.hpp"
+#include "zcash/memo.h"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
@@ -24,8 +25,6 @@
 #include <rust/bridge.h>
 #include <rust/builder.h>
 #include <rust/ed25519.h>
-
-#define NO_MEMO {{0xF6}}
 
 class OrchardWallet;
 namespace orchard { class UnauthorizedBundle; }
@@ -114,7 +113,7 @@ public:
         const std::optional<uint256>& ovk,
         const libzcash::OrchardRawAddress& to,
         CAmount value,
-        const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo);
+        const std::optional<libzcash::Memo>& memo);
 
     /// Returns `true` if any spends or outputs have been added to this builder. This can
     /// be used to avoid calling `Build()` and creating a dummy Orchard bundle.
@@ -197,12 +196,12 @@ struct SpendDescriptionInfo {
 struct OutputDescriptionInfo {
     uint256 ovk;
     libzcash::SaplingNote note;
-    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    std::optional<libzcash::Memo> memo;
 
     OutputDescriptionInfo(
         uint256 ovk,
         libzcash::SaplingNote note,
-        std::array<unsigned char, ZC_MEMO_SIZE> memo) : ovk(ovk), note(note), memo(memo) {}
+        std::optional<libzcash::Memo> memo) : ovk(ovk), note(note), memo(memo) {}
 
     std::optional<OutputDescription> Build(rust::Box<sapling::Prover>& ctx);
 };
@@ -357,7 +356,7 @@ public:
         const std::optional<uint256>& ovk,
         const libzcash::OrchardRawAddress& to,
         CAmount value,
-        const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo);
+        const std::optional<libzcash::Memo>& memo);
 
     // Throws if the anchor does not match the anchor used by
     // previously-added Sapling spends.
@@ -369,9 +368,9 @@ public:
 
     void AddSaplingOutput(
         uint256 ovk,
-        libzcash::SaplingPaymentAddress to,
+        const libzcash::SaplingPaymentAddress& to,
         CAmount value,
-        std::array<unsigned char, ZC_MEMO_SIZE> memo = NO_MEMO);
+        const std::optional<libzcash::Memo>& memo);
 
     // Throws if the anchor does not match the anchor used by
     // previously-added Sprout inputs.
@@ -381,9 +380,9 @@ public:
         SproutWitness witness);
 
     void AddSproutOutput(
-        libzcash::SproutPaymentAddress to,
+        const libzcash::SproutPaymentAddress& to,
         CAmount value,
-        std::array<unsigned char, ZC_MEMO_SIZE> memo = NO_MEMO);
+        const std::optional<libzcash::Memo>& memo);
 
     // Assumes that the value correctly corresponds to the provided UTXO.
     void AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value);

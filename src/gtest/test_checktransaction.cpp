@@ -1180,7 +1180,7 @@ TEST(ChecktransactionTests, HeartwoodAcceptsSaplingShieldedCoinbase) {
     uint256 ovk;
     auto note = libzcash::SaplingNote(
         libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
-    auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
+    auto output = OutputDescriptionInfo(ovk, note, std::nullopt);
 
     auto ctx = sapling::init_prover();
     auto odesc = output.Build(ctx).value();
@@ -1261,7 +1261,7 @@ TEST(ChecktransactionTests, HeartwoodEnforcesSaplingRulesOnShieldedCoinbase) {
     uint256 ovk;
     auto note = libzcash::SaplingNote(
         libzcash::SaplingSpendingKey::random().default_address(), CAmount(123456), libzcash::Zip212Enabled::BeforeZip212);
-    auto output = OutputDescriptionInfo(ovk, note, {{0xF6}});
+    auto output = OutputDescriptionInfo(ovk, note, std::nullopt);
 
     CMutableTransaction mtx = GetValidTransaction();
     mtx.fOverwintered = true;
@@ -1512,7 +1512,7 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
     // Transaction should fail with a bad encCiphertext.
     {
         std::vector<char> txBytes(ss.begin(), ss.end());
-        for (int i = 0; i < ZC_SAPLING_ENCCIPHERTEXT_SIZE; i++) {
+        for (int i = 0; i < libzcash::SAPLING_ENCCIPHERTEXT_SIZE; i++) {
             txBytes[ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + i] = 0;
         }
 
@@ -1529,8 +1529,10 @@ TEST(ChecktransactionTests, NU5AcceptsOrchardShieldedCoinbase) {
     // Transaction should fail with a bad outCiphertext.
     {
         std::vector<char> txBytes(ss.begin(), ss.end());
-        for (int i = 0; i < ZC_SAPLING_OUTCIPHERTEXT_SIZE; i++) {
-            txBytes[ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + ZC_SAPLING_ENCCIPHERTEXT_SIZE + i] = 0;
+        auto byteOffset =
+            ORCHARD_BUNDLE_CMX_OFFSET + ORCHARD_CMX_SIZE + libzcash::SAPLING_ENCCIPHERTEXT_SIZE;
+        for (int i = 0; i < libzcash::SAPLING_OUTCIPHERTEXT_SIZE; i++) {
+            txBytes[byteOffset + i] = 0;
         }
 
         CDataStream ssBad(txBytes, SER_DISK, PROTOCOL_VERSION);

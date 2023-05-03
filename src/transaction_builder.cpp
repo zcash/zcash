@@ -63,7 +63,7 @@ void Builder::AddOutput(
     const std::optional<uint256>& ovk,
     const libzcash::OrchardRawAddress& to,
     CAmount value,
-    const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo)
+    const std::optional<libzcash::Memo>& memo)
 {
     if (!inner) {
         throw std::logic_error("orchard::Builder has already been used");
@@ -74,7 +74,7 @@ void Builder::AddOutput(
         ovk.has_value() ? ovk->begin() : nullptr,
         to.inner.get(),
         value,
-        memo.has_value() ? memo->data() : nullptr);
+        memo.has_value() ? memo.value().ToBytes().data() : nullptr);
 
     hasActions = true;
 }
@@ -334,7 +334,7 @@ void TransactionBuilder::AddOrchardOutput(
     const std::optional<uint256>& ovk,
     const libzcash::OrchardRawAddress& to,
     CAmount value,
-    const std::optional<std::array<unsigned char, ZC_MEMO_SIZE>>& memo)
+    const std::optional<libzcash::Memo>& memo)
 {
     if (!orchardBuilder.has_value()) {
         // Try to give a useful error.
@@ -373,9 +373,9 @@ void TransactionBuilder::AddSaplingSpend(
 
 void TransactionBuilder::AddSaplingOutput(
     uint256 ovk,
-    libzcash::SaplingPaymentAddress to,
+    const libzcash::SaplingPaymentAddress& to,
     CAmount value,
-    std::array<unsigned char, ZC_MEMO_SIZE> memo)
+    const std::optional<libzcash::Memo>& memo)
 {
     // Sanity check: cannot add Sapling output to pre-Sapling transaction
     if (mtx.nVersion < SAPLING_TX_VERSION) {
@@ -411,9 +411,9 @@ void TransactionBuilder::AddSproutInput(
 }
 
 void TransactionBuilder::AddSproutOutput(
-    libzcash::SproutPaymentAddress to,
+    const libzcash::SproutPaymentAddress& to,
     CAmount value,
-    std::array<unsigned char, ZC_MEMO_SIZE> memo)
+    const std::optional<libzcash::Memo>& memo)
 {
     CheckOrSetUsingSprout();
 
@@ -517,9 +517,9 @@ TransactionBuilderResult TransactionBuilder::Build()
         if (orchardChangeAddr) {
             AddOrchardOutput(orchardChangeAddr->first, orchardChangeAddr->second, change, std::nullopt);
         } else if (saplingChangeAddr) {
-            AddSaplingOutput(saplingChangeAddr->first, saplingChangeAddr->second, change);
+            AddSaplingOutput(saplingChangeAddr->first, saplingChangeAddr->second, change, std::nullopt);
         } else if (sproutChangeAddr) {
-            AddSproutOutput(sproutChangeAddr.value(), change);
+            AddSproutOutput(sproutChangeAddr.value(), change, std::nullopt);
         } else if (tChangeAddr) {
             // tChangeAddr has already been validated.
             AddTransparentOutput(tChangeAddr.value(), change);
@@ -530,10 +530,10 @@ TransactionBuilderResult TransactionBuilder::Build()
             auto fvk = spends[0].expsk.full_viewing_key();
             auto note = spends[0].note;
             libzcash::SaplingPaymentAddress changeAddr(note.d, note.pk_d);
-            AddSaplingOutput(fvk.ovk, changeAddr, change);
+            AddSaplingOutput(fvk.ovk, changeAddr, change, std::nullopt);
         } else if (!jsInputs.empty()) {
             auto changeAddr = jsInputs[0].key.address();
-            AddSproutOutput(changeAddr, change);
+            AddSproutOutput(changeAddr, change, std::nullopt);
         } else {
             return TransactionBuilderResult("Could not determine change address");
         }

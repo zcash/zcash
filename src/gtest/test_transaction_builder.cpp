@@ -119,7 +119,7 @@ TEST(TransactionBuilder, SaplingToSprout) {
     //                              - default t-ZEC fee
     auto builder = TransactionBuilder(consensusParams, 2, std::nullopt, nullptr);
     builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
-    builder.AddSproutOutput(sproutAddr, 2500);
+    builder.AddSproutOutput(sproutAddr, 2500, std::nullopt);
     auto tx = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx.vin.size(), 0);
@@ -174,9 +174,9 @@ TEST(TransactionBuilder, SproutToSproutAndSapling) {
     auto builder = TransactionBuilder(consensusParams, 2, std::nullopt, nullptr, &view);
     builder.SetFee(5000);
     builder.AddSproutInput(sproutSk, sproutNote, sproutWitness);
-    builder.AddSproutOutput(sproutAddr, 6000);
-    builder.AddSproutOutput(sproutAddr, 4000);
-    builder.AddSaplingOutput(fvk.ovk, pa, 5000);
+    builder.AddSproutOutput(sproutAddr, 6000, std::nullopt);
+    builder.AddSproutOutput(sproutAddr, 4000, std::nullopt);
+    builder.AddSaplingOutput(fvk.ovk, pa, 5000, std::nullopt);
     auto tx = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx.vin.size(), 0);

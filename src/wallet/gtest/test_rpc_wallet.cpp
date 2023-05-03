@@ -10,8 +10,8 @@
 #include "gtest/utils.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
-#include "wallet/memo.h"
 #include "zcash/JoinSplit.hpp"
+#include "zcash/memo.h"
 
 #include <librustzcash.h>
 #include <rust/ed25519.h>
@@ -56,12 +56,12 @@ TEST(WalletRPCTests, RPCZMergeToAddressInternals)
     auto taddr = pwalletMain->GenerateNewKey(true).GetID();
     std::string taddr_string = keyIO.EncodeDestination(taddr);
 
-    NetAmountRecipient taddr1(keyIO.DecodePaymentAddress(taddr_string).value(), Memo());
+    NetAmountRecipient taddr1(keyIO.DecodePaymentAddress(taddr_string).value(), std::nullopt);
     auto sproutKey = pwalletMain->GenerateNewSproutZKey();
-    NetAmountRecipient zaddr1(sproutKey, Memo());
+    NetAmountRecipient zaddr1(sproutKey, std::nullopt);
 
     auto saplingKey = pwalletMain->GenerateNewLegacySaplingZKey();
-    NetAmountRecipient zaddr2(saplingKey, Memo());
+    NetAmountRecipient zaddr2(saplingKey, std::nullopt);
 
     WalletTxBuilder builder(Params(), minRelayTxFee);
     auto selector = CWallet::LegacyTransparentZTXOSelector(
@@ -175,7 +175,7 @@ TEST(WalletRPCTests, RPCZsendmanyTaddrToSapling)
             true,
             TransparentCoinbasePolicy::Disallow,
             false).value();
-    std::vector<Payment> recipients = { Payment(pa, 1*COIN, Memo::FromHexOrThrow("ABCD")) };
+    std::vector<Payment> recipients = { Payment(pa, 1*COIN, Memo::FromBytes({0xAB, 0xCD})) };
     std::shared_ptr<AsyncRPCOperation> operation(new AsyncRPCOperation_sendmany(std::move(builder), selector, recipients, 0, 0, strategy, std::nullopt));
     std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
 

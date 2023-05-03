@@ -628,3 +628,19 @@ std::shared_ptr<AsyncRPCQueue> getAsyncRPCQueue()
 {
     return AsyncRPCQueue::sharedInstance();
 }
+
+void AddMemo(UniValue &obj, const std::optional<libzcash::Memo> &memo)
+{
+    obj.pushKV("memo", HexStr(libzcash::Memo::ToBytes(memo)));
+
+    if (memo.has_value()) {
+        auto interpMemo = memo.value().Interpret();
+        // TODO: Indicate when the memo should have been valid UTF8, but wasn’t.
+        if (interpMemo.has_value()) {
+            examine(interpMemo.value(), match {
+                [&](const std::string& memoStr) { obj.pushKV("memoStr", memoStr); },
+                [](const auto&) {},
+            });
+        }
+    }
+}

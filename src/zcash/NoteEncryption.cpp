@@ -133,7 +133,7 @@ std::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipient(
 
     crypto_aead_chacha20poly1305_ietf_encrypt(
         ciphertext.begin(), NULL,
-        message.begin(), ZC_SAPLING_ENCPLAINTEXT_SIZE,
+        message.begin(), SAPLING_ENCPLAINTEXT_SIZE,
         NULL, 0, // no "additional data"
         NULL, cipher_nonce, K
     );
@@ -170,7 +170,7 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
     if (crypto_aead_chacha20poly1305_ietf_decrypt(
         plaintext.begin(), NULL,
         NULL,
-        ciphertext.begin(), ZC_SAPLING_ENCCIPHERTEXT_SIZE,
+        ciphertext.begin(), SAPLING_ENCCIPHERTEXT_SIZE,
         NULL,
         0,
         cipher_nonce, K) != 0)
@@ -210,7 +210,7 @@ std::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
     if (crypto_aead_chacha20poly1305_ietf_decrypt(
         plaintext.begin(), NULL,
         NULL,
-        ciphertext.begin(), ZC_SAPLING_ENCCIPHERTEXT_SIZE,
+        ciphertext.begin(), SAPLING_ENCCIPHERTEXT_SIZE,
         NULL,
         0,
         cipher_nonce, K) != 0)
@@ -244,7 +244,7 @@ SaplingOutCiphertext SaplingNoteEncryption::encrypt_to_ourselves(
 
     crypto_aead_chacha20poly1305_ietf_encrypt(
         ciphertext.begin(), NULL,
-        message.begin(), ZC_SAPLING_OUTPLAINTEXT_SIZE,
+        message.begin(), SAPLING_OUTPLAINTEXT_SIZE,
         NULL, 0, // no "additional data"
         NULL, cipher_nonce, K
     );
@@ -274,7 +274,7 @@ std::optional<SaplingOutPlaintext> AttemptSaplingOutDecryption(
     if (crypto_aead_chacha20poly1305_ietf_decrypt(
         plaintext.begin(), NULL,
         NULL,
-        ciphertext.begin(), ZC_SAPLING_OUTCIPHERTEXT_SIZE,
+        ciphertext.begin(), SAPLING_OUTCIPHERTEXT_SIZE,
         NULL,
         0,
         cipher_nonce, K) != 0)
@@ -453,9 +453,9 @@ uint252 random_uint252()
     return uint252(rand);
 }
 
-template class NoteEncryption<ZC_NOTEPLAINTEXT_SIZE>;
-template class NoteDecryption<ZC_NOTEPLAINTEXT_SIZE>;
+template class NoteEncryption<NOTEPLAINTEXT_SIZE>;
+template class NoteDecryption<NOTEPLAINTEXT_SIZE>;
 
-template class PaymentDisclosureNoteDecryption<ZC_NOTEPLAINTEXT_SIZE>;
+template class PaymentDisclosureNoteDecryption<NOTEPLAINTEXT_SIZE>;
 
 }
