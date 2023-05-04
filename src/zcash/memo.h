@@ -7,6 +7,12 @@
 
 #include <tl/expected.hpp>
 
+#include <array>
+#include <optional>
+#include <string>
+#include <variant>
+#include <vector>
+
 namespace libzcash
 {
 
