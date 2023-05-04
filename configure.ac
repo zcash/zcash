@@ -384,6 +384,12 @@ DISABLED_WARNING_CXXFLAGS="\
 
 # These are sub-flags of those in `DISABLED_WARNING_CXXFLAGS` that allow us to temporarily
 # re-enable pieces until the disabling flags are removed.
+#
+# Each flag here should be removed when its parent flag is enabled.
+# • `-Wfloat-overflow-conversion`: `-Wfloat-conversion`
+# • `-Wfloat-zero-conversion`: `-Wfloat-conversion`
+# • `-Wimplicit-const-int-float-conversion`: `-Wimplicit-int-float-conversion`
+# • `-Wobjc-signed-char-bool-implicit-int-conversion`: `-Wimplicit-int-conversion`
 REENABLED_WARNING_CXXFLAGS="\
   -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wimplicit-const-int-float-conversion \
   -Wobjc-signed-char-bool-implicit-int-conversion"
