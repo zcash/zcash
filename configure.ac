@@ -342,8 +342,8 @@ DESIRED_WARNING_CXXFLAGS="\
 #
 # Guidelines for fixing warnings:
 # • fix a small number (perhaps one) at a time
-# • remove `-Werror` locally to get the full report of the warning you enabled (but be careful, as
-#   re-running `make` will not recompile files that only warned).
+# • change `-Wno-foo` to `-Wno-error=foo` locally to get the full report of the warning you enabled
+#   (but be careful, as re-running `make` will not recompile files that only warned).
 #
 # Potential justifications:
 # • `-Wno-format-nonliteral`: Bitcoin i18n
@@ -775,9 +775,9 @@ if test x$use_hardening != xno; then
     if test x$BUILD_OS = xdarwin; then
       AX_CHECK_LINK_FLAG([[-Wl,-pie]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,-pie"],[AC_MSG_ERROR(Cannot enable -Wl,-pie)])
       # Justifications:
-      # • `-Wno-return-std-move-in-c++11`: This causes failure in CI, despite not being documented
-      #    to exist in any version of Clang (it does not exist on the Clang used by our other
-      #    builds).
+      # • `-Wno-return-std-move-in-c++11`: This causes failure in CI if treated as an error,
+      #    despite not being documented to exist in any version of Clang (it does not exist on the
+      #    Clang used by our other builds).
       # • `-Wno-unknown-warning-option`: The macOS build uses Xcode’s clang, which is relatively old
       #    and doesn’t support all the warnings that other platforms do, so we ignore complaints
       #    about unsupported warnings.
