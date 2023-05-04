@@ -11,6 +11,7 @@
 #endif
 
 #include "compat.h"
+#include "ptr_cast.h"
 #include "serialize.h"
 
 #include <stdint.h>

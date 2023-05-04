@@ -161,13 +161,13 @@ bool static LookupIntern(const char *pszName, std::vector<CNetAddr>& vIP, unsign
         if (aiTrav->ai_family == AF_INET)
         {
             assert(aiTrav->ai_addrlen >= sizeof(sockaddr_in));
-            vIP.push_back(CNetAddr(((struct sockaddr_in*)(aiTrav->ai_addr))->sin_addr));
+            vIP.push_back(CNetAddr(ptr_cast_checking_alignment<struct sockaddr_in>(aiTrav->ai_addr)->sin_addr));
         }
 
         if (aiTrav->ai_family == AF_INET6)
         {
             assert(aiTrav->ai_addrlen >= sizeof(sockaddr_in6));
-            vIP.push_back(CNetAddr(((struct sockaddr_in6*)(aiTrav->ai_addr))->sin6_addr));
+            vIP.push_back(CNetAddr(ptr_cast_checking_alignment<struct sockaddr_in6>(aiTrav->ai_addr)->sin6_addr));
         }
 
         aiTrav = aiTrav->ai_next;
@@ -1111,10 +1111,10 @@ bool CService::SetSockAddr(const struct sockaddr *paddr)
 {
     switch (paddr->sa_family) {
     case AF_INET:
-        *this = CService(*(const struct sockaddr_in*)paddr);
+        *this = CService(*const_ptr_cast_checking_alignment<struct sockaddr_in>(paddr));
         return true;
     case AF_INET6:
-        *this = CService(*(const struct sockaddr_in6*)paddr);
+        *this = CService(*const_ptr_cast_checking_alignment<struct sockaddr_in6>(paddr));
         return true;
     default:
         return false;
@@ -1179,7 +1179,7 @@ bool CService::GetSockAddr(struct sockaddr* paddr, socklen_t *addrlen) const
         if (*addrlen < (socklen_t)sizeof(struct sockaddr_in))
             return false;
         *addrlen = sizeof(struct sockaddr_in);
-        struct sockaddr_in *paddrin = (struct sockaddr_in*)paddr;
+        struct sockaddr_in *paddrin = ptr_cast_checking_alignment<struct sockaddr_in>(paddr);
         memset(paddrin, 0, *addrlen);
         if (!GetInAddr(&paddrin->sin_addr))
             return false;
@@ -1191,7 +1191,7 @@ bool CService::GetSockAddr(struct sockaddr* paddr, socklen_t *addrlen) const
         if (*addrlen < (socklen_t)sizeof(struct sockaddr_in6))
             return false;
         *addrlen = sizeof(struct sockaddr_in6);
-        struct sockaddr_in6 *paddrin6 = (struct sockaddr_in6*)paddr;
+        struct sockaddr_in6 *paddrin6 = ptr_cast_checking_alignment<struct sockaddr_in6>(paddr);
         memset(paddrin6, 0, *addrlen);
         if (!GetIn6Addr(&paddrin6->sin6_addr))
             return false;

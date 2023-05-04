@@ -20,6 +20,7 @@
 #include "crypto/sha256.h"
 #include "hash.h"
 #include "primitives/transaction.h"
+#include "ptr_cast.h"
 #include "scheduler.h"
 #include "ui_interface.h"
 
@@ -1882,14 +1883,14 @@ void static Discover(boost::thread_group& threadGroup)
             if (strcmp(ifa->ifa_name, "lo0") == 0) continue;
             if (ifa->ifa_addr->sa_family == AF_INET)
             {
-                struct sockaddr_in* s4 = (struct sockaddr_in*)(ifa->ifa_addr);
+                struct sockaddr_in* s4 = ptr_cast_checking_alignment<struct sockaddr_in>(ifa->ifa_addr);
                 CNetAddr addr(s4->sin_addr);
                 if (AddLocal(addr, LOCAL_IF))
                     LogPrintf("%s: IPv4 %s: %s\n", __func__, ifa->ifa_name, addr.ToString());
             }
             else if (ifa->ifa_addr->sa_family == AF_INET6)
             {
-                struct sockaddr_in6* s6 = (struct sockaddr_in6*)(ifa->ifa_addr);
+                struct sockaddr_in6* s6 = ptr_cast_checking_alignment<struct sockaddr_in6>(ifa->ifa_addr);
                 CNetAddr addr(s6->sin6_addr);
                 if (AddLocal(addr, LOCAL_IF))
                     LogPrintf("%s: IPv6 %s: %s\n", __func__, ifa->ifa_name, addr.ToString());

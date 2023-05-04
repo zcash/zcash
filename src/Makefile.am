@@ -269,6 +269,7 @@ BITCOIN_CORE_H = \
   primitives/transaction.h \
   proof_verifier.h \
   protocol.h \
+  ptr_cast.h \
   pubkey.h \
   random.h \
   reverse_iterator.h \
