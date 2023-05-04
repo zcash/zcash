@@ -362,21 +362,13 @@ DESIRED_WARNING_CXXFLAGS="\
 # • `-Wno-tautological-type-limit-compare`: I think isn’t portable because of numeric type sizing
 DISABLED_WARNING_CXXFLAGS="\
   -Wno-cast-align -Wno-ctad-maybe-unsupported -Wno-disabled-macro-expansion \
-  -Wno-exit-time-destructors -Wno-float-conversion -Wno-float-equal \
-  -Wno-format-nonliteral -Wno-global-constructors \
-  -Wno-gnu-zero-variadic-macro-arguments \
-  -Wno-implicit-int-conversion -Wno-implicit-int-float-conversion \
-  -Wno-missing-prototypes \
-  -Wno-old-style-cast \
-  -Wno-padded \
-  -Wno-shadow-field -Wno-shadow-field-in-constructor \
-  -Wno-shift-sign-overflow -Wno-shorten-64-to-32 \
-  -Wno-sign-compare -Wno-sign-conversion -Wno-string-conversion \
-  -Wno-tautological-type-limit-compare \
-  -Wno-thread-safety-attributes -Wno-thread-safety-negative \
-  -Wno-undefined-func-template \
-  -Wno-used-but-marked-unused -Wno-weak-vtables \
-  -Wno-zero-length-array"
+  -Wno-exit-time-destructors -Wno-float-conversion -Wno-float-equal -Wno-format-nonliteral \
+  -Wno-global-constructors -Wno-gnu-zero-variadic-macro-arguments -Wno-implicit-int-conversion \
+  -Wno-implicit-int-float-conversion -Wno-missing-prototypes -Wno-old-style-cast -Wno-padded \
+  -Wno-shadow-field -Wno-shadow-field-in-constructor -Wno-shift-sign-overflow \
+  -Wno-shorten-64-to-32 -Wno-sign-compare -Wno-sign-conversion -Wno-string-conversion \
+  -Wno-tautological-type-limit-compare -Wno-thread-safety-attributes -Wno-thread-safety-negative \
+  -Wno-undefined-func-template -Wno-used-but-marked-unused -Wno-weak-vtables -Wno-zero-length-array"
 
 # These are sub-flags of those in `DISABLED_WARNING_CXXFLAGS` that allow us to temporarily
 # re-enable pieces until the disabling flags are removed.
