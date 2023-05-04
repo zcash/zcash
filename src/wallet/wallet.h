@@ -2116,6 +2116,9 @@ public:
     /* Returns true if HD is enabled for all address types, false if only for Sapling */
     bool IsHDFullyEnabled() const;
 
+    /* Initializes a wallet using the given mnemonic seed */
+    void InitWithSeed(MnemonicSeed seed);
+
     /* Generates a new HD seed (will reset the chain child index counters)
      * by randomly generating a mnemonic phrase that can be used for wallet
      * recovery, and deriving the HD seed from that phrase in accordance with
@@ -2177,6 +2180,9 @@ public:
 
     /* Initializes the wallet, returns a new CWallet instance or a null pointer in case of an error */
     static bool InitLoadWallet(const CChainParams& params, bool clearWitnessCaches);
+
+    /* Recover the wallet from a recovery file */
+    bool RecoverFromFile(const std::string& recoverPath);
 
     /* Wallets parameter interaction */
     static bool ParameterInteraction(const CChainParams& params);

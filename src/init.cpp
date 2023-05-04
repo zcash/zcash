@@ -959,6 +959,11 @@ void InitParameterInteraction()
             LogPrintf("%s: parameter interaction: -externalip set -> setting -discover=0\n", __func__);
     }
 
+    if (mapArgs.count("-recoverwallet")) {
+        if (SoftSetBoolArg("-rescan", true))
+            LogPrintf("%s: parameter interaction: -recoverwallet=1 -> setting -rescan=1\n", __func__);
+    }
+
     if (GetBoolArg("-salvagewallet", false)) {
         // Rewrite just private keys: rescan to find transactions
         if (SoftSetBoolArg("-rescan", true))

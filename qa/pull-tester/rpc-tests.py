@@ -83,6 +83,7 @@ BASE_SCRIPTS= [
     'wallet_orchard_persistence.py',
     'wallet_orchard_reindex.py',
     'wallet_nullifiers.py',
+    'wallet_recover.py',
     'wallet_sapling.py',
     'wallet_sendmany_any_taddr.py',
     'wallet_treestate.py',
