@@ -441,7 +441,7 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(
 
     // Update the Sapling commitment tree.
     for (const CTransaction& tx : pblock->vtx) {
-        for (const OutputDescription& odesc : tx.vShieldedOutput) {
+        for (const auto& odesc : tx.GetSaplingOutputs()) {
             sapling_tree.append(odesc.cmu());
         }
     }

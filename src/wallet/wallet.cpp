@@ -1620,7 +1620,7 @@ bool CWallet::IsNoteSaplingChange(
     // - Notes created by consolidation transactions (e.g. using
     //   z_mergetoaddress).
     // - Notes sent from one address to itself.
-    for (const SpendDescription &spend : mapWallet[op.hash].vShieldedSpend) {
+    for (const auto& spend : mapWallet[op.hash].GetSaplingSpends()) {
         if (nullifierSet.count(std::make_pair(address, spend.nullifier()))) {
             return true;
         }
@@ -1705,7 +1705,7 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
 
     std::pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range_o;
 
-    for (const SpendDescription &spend : wtx.vShieldedSpend) {
+    for (const auto& spend : wtx.GetSaplingSpends()) {
         const uint256& nullifier = spend.nullifier();
         if (mapTxSaplingNullifiers.count(nullifier) <= 1) {
             continue;  // No conflict if zero or one spends
@@ -2522,7 +2522,7 @@ void CWallet::AddToSpends(const uint256& wtxid)
             AddToSproutSpends(nullifier, wtxid);
         }
     }
-    for (const SpendDescription &spend : thisTx.vShieldedSpend) {
+    for (const auto& spend : thisTx.GetSaplingSpends()) {
         AddToSaplingSpends(spend.nullifier(), wtxid);
     }
 
@@ -2753,7 +2753,7 @@ void CWallet::IncrementNoteWitnesses(
     // 1) Loop over the block txs and gather the note commitments ordered.
     // If the tx is from this wallet, witness it and append the next block note commitments on top.
     for (const CTransaction& tx : pblock->vtx) {
-        if (tx.vJoinSplit.empty() && tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty()) continue;
+        if (tx.vJoinSplit.empty() && tx.GetSaplingSpendsCount() == 0 && tx.GetSaplingOutputsCount() == 0) continue;
         auto hash = tx.GetHash();
         auto txInWallet = mapWallet.find(hash);
 
@@ -2786,11 +2786,12 @@ void CWallet::IncrementNoteWitnesses(
             }
         }
         // Sapling
-        for (const auto& spend : tx.vShieldedSpend) {
+        for (const auto& spend : tx.GetSaplingSpends()) {
             nullifiersSapling.emplace_back(spend.nullifier());
         }
-        for (uint32_t i = 0; i < tx.vShieldedOutput.size(); i++) {
-            const uint256& note_commitment = tx.vShieldedOutput[i].cmu();
+        uint32_t i = 0;
+        for (const auto& output : tx.GetSaplingOutputs()) {
+            const uint256& note_commitment = output.cmu();
             frontiers.sapling.append(note_commitment);
             noteCommitmentsSapling.emplace_back(note_commitment);
 
@@ -2811,6 +2812,7 @@ void CWallet::IncrementNoteWitnesses(
                     inBlockNotesSapling.emplace_back(std::make_pair(wtx, nd));
                 }
             }
+            i++;
         }
     }
 
@@ -3653,7 +3655,7 @@ void CWallet::MarkAffectedTransactionsDirty(const CTransaction& tx)
         }
     }
 
-    for (const SpendDescription &spend : tx.vShieldedSpend) {
+    for (const auto& spend : tx.GetSaplingSpends()) {
         const uint256& nullifier = spend.nullifier();
         if (mapSaplingNullifiersToNotes.count(nullifier) &&
             mapWallet.count(mapSaplingNullifiersToNotes[nullifier].hash)) {
@@ -3780,8 +3782,8 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
     SaplingIncomingViewingKeyMap viewingKeysToAdd;
 
     // Protocol Spec: 4.19 Block Chain Scanning (Sapling)
-    for (uint32_t i = 0; i < tx.vShieldedOutput.size(); ++i) {
-        const OutputDescription output = tx.vShieldedOutput[i];
+    uint32_t i = 0;
+    for (const auto& output : tx.GetSaplingOutputs()) {
         for (auto it = mapSaplingFullViewingKeys.begin(); it != mapSaplingFullViewingKeys.end(); ++it) {
             SaplingIncomingViewingKey ivk = it->first;
 
@@ -3815,6 +3817,7 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
                 continue;
             }
         }
+        ++i;
     }
 
     return std::make_pair(noteData, viewingKeysToAdd);
@@ -4029,7 +4032,7 @@ bool CWallet::IsFromMe(const CTransaction& tx) const
             }
         }
     }
-    for (const SpendDescription &spend : tx.vShieldedSpend) {
+    for (const auto& spend : tx.GetSaplingSpends()) {
         if (IsSaplingNullifierFromMe(spend.nullifier())) {
             return true;
         }
@@ -4238,7 +4241,7 @@ void CWalletTx::SetSaplingNoteData(const mapSaplingNoteData_t& noteData)
 {
     mapSaplingNoteData.clear();
     for (const std::pair<SaplingOutPoint, SaplingNoteData> nd : noteData) {
-        if (nd.first.n < vShieldedOutput.size()) {
+        if (nd.first.n < GetSaplingOutputsCount()) {
             mapSaplingNoteData[nd.first] = nd.second;
         } else {
             throw std::logic_error("CWalletTx::SetSaplingNoteData(): Invalid note");
@@ -4315,7 +4318,7 @@ std::optional<std::pair<
         return std::nullopt;
     }
 
-    auto output = this->vShieldedOutput[op.n];
+    auto output = GetSaplingOutputs()[op.n];
     auto nd = this->mapSaplingNoteData.at(op);
 
     try {
@@ -4343,7 +4346,7 @@ std::optional<std::pair<
     SaplingNotePlaintext,
     SaplingPaymentAddress>> CWalletTx::RecoverSaplingNote(const CChainParams& params, SaplingOutPoint op, std::set<uint256>& ovks) const
 {
-    auto output = this->vShieldedOutput[op.n];
+    auto output = GetSaplingOutputs()[op.n];
 
     for (auto ovk : ovks) {
         try {
@@ -4926,7 +4929,7 @@ bool CWalletTx::IsFromMe(const isminefilter& filter) const
             }
         }
     }
-    for (const SpendDescription &spend : vShieldedSpend) {
+    for (const auto& spend : GetSaplingSpends()) {
         if (pwallet->IsSaplingNullifierFromMe(spend.nullifier())) {
             return true;
         }

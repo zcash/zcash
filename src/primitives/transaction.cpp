@@ -386,8 +386,8 @@ size_t CTransaction::GetLogicalActionCount() const {
             vin,
             vout,
             vJoinSplit.size(),
-            vShieldedSpend.size(),
-            vShieldedOutput.size(),
+            GetSaplingSpendsCount(),
+            GetSaplingOutputsCount(),
             orchardBundle.GetNumActions());
 }
 
@@ -412,8 +412,8 @@ std::string CTransaction::ToString() const
             nLockTime,
             nExpiryHeight,
             valueBalanceSapling,
-            vShieldedSpend.size(),
-            vShieldedOutput.size());
+            GetSaplingSpendsCount(),
+            GetSaplingOutputsCount());
         if (nVersion >= ZIP225_MIN_TX_VERSION) {
             str += strprintf(", nConsensusBranchId=%08x, valueBalanceOrchard=%u, vOrchardAction.size=%u",
                 nConsensusBranchId.value_or(0),

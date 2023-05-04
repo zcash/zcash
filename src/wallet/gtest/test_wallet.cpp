@@ -1295,8 +1295,8 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         EXPECT_EQ(tx2.vin.size(), 0);
         EXPECT_EQ(tx2.vout.size(), 0);
         EXPECT_EQ(tx2.vJoinSplit.size(), 0);
-        EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
-        EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
+        EXPECT_EQ(tx2.GetSaplingSpendsCount(), 1);
+        EXPECT_EQ(tx2.GetSaplingOutputsCount(), 2);
         EXPECT_EQ(tx2.GetValueBalanceSapling(), 1000);
 
         CWalletTx wtx2 {&wallet, tx2};
@@ -2224,8 +2224,8 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     EXPECT_EQ(tx1.vin.size(), 1);
     EXPECT_EQ(tx1.vout.size(), 0);
     EXPECT_EQ(tx1.vJoinSplit.size(), 0);
-    EXPECT_EQ(tx1.vShieldedSpend.size(), 0);
-    EXPECT_EQ(tx1.vShieldedOutput.size(), 1);
+    EXPECT_EQ(tx1.GetSaplingSpendsCount(), 0);
+    EXPECT_EQ(tx1.GetSaplingOutputsCount(), 1);
     EXPECT_EQ(tx1.GetValueBalanceSapling(), -4000);
 
     CWalletTx wtx {&wallet, tx1};
@@ -2278,8 +2278,8 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     EXPECT_EQ(tx2.vin.size(), 0);
     EXPECT_EQ(tx2.vout.size(), 0);
     EXPECT_EQ(tx2.vJoinSplit.size(), 0);
-    EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
-    EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
+    EXPECT_EQ(tx2.GetSaplingSpendsCount(), 1);
+    EXPECT_EQ(tx2.GetSaplingOutputsCount(), 2);
     EXPECT_EQ(tx2.GetValueBalanceSapling(), 1000);
 
     CWalletTx wtx2 {&wallet, tx2};

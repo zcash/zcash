@@ -124,7 +124,7 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
 
 UniValue TxShieldedSpendsToJSON(const CTransaction& tx) {
     UniValue vdesc(UniValue::VARR);
-    for (const SpendDescription& spendDesc : tx.vShieldedSpend) {
+    for (const auto& spendDesc : tx.GetSaplingSpends()) {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("cv", spendDesc.cv().GetHex());
         obj.pushKV("anchor", spendDesc.anchor().GetHex());
@@ -139,7 +139,7 @@ UniValue TxShieldedSpendsToJSON(const CTransaction& tx) {
 
 UniValue TxShieldedOutputsToJSON(const CTransaction& tx) {
     UniValue vdesc(UniValue::VARR);
-    for (const OutputDescription& outputDesc : tx.vShieldedOutput) {
+    for (const auto& outputDesc : tx.GetSaplingOutputs()) {
         UniValue obj(UniValue::VOBJ);
         obj.pushKV("cv", outputDesc.cv().GetHex());
         obj.pushKV("cmu", outputDesc.cmu().GetHex());

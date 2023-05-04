@@ -975,6 +975,22 @@ public:
         return nConsensusBranchId;
     }
 
+    size_t GetSaplingSpendsCount() const {
+        return vShieldedSpend.size();
+    }
+
+    size_t GetSaplingOutputsCount() const {
+        return vShieldedOutput.size();
+    }
+
+    const std::vector<SpendDescription>& GetSaplingSpends() const {
+        return vShieldedSpend;
+    }
+
+    const std::vector<OutputDescription> GetSaplingOutputs() const {
+        return vShieldedOutput;
+    }
+
     /**
      * Returns the Sapling value balance for the transaction.
      */

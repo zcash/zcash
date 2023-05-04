@@ -4431,9 +4431,8 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
     }
 
     // Sapling spends
-    for (size_t i = 0; i < wtx.vShieldedSpend.size(); ++i) {
-        auto spend = wtx.vShieldedSpend[i];
-
+    size_t i = 0;
+    for (const auto& spend : wtx.GetSaplingSpends()) {
         // Fetch the note that is being spent
         auto res = pwalletMain->mapSaplingNullifiersToNotes.find(spend.nullifier());
         if (res == pwalletMain->mapSaplingNullifiersToNotes.end()) {
@@ -4479,10 +4478,11 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
         entry.pushKV("value", ValueFromAmount(notePt.value()));
         entry.pushKV("valueZat", notePt.value());
         spends.push_back(entry);
+        i++;
     }
 
     // Sapling outputs
-    for (uint32_t i = 0; i < wtx.vShieldedOutput.size(); ++i) {
+    for (uint32_t i = 0; i < wtx.GetSaplingOutputsCount(); ++i) {
         auto op = SaplingOutPoint(txid, i);
 
         SaplingNotePlaintext notePt;
@@ -5146,7 +5146,7 @@ UniValue z_getmigrationstatus(const UniValue& params, bool fHelp) {
         // * one or more Sprout JoinSplits with nonzero vpub_new field; and
         // * no Sapling Spends, and;
         // * one or more Sapling Outputs.
-        if (tx.vJoinSplit.size() > 0 && tx.vShieldedSpend.empty() && tx.vShieldedOutput.size() > 0) {
+        if (tx.vJoinSplit.size() > 0 && tx.GetSaplingSpendsCount() == 0 && tx.GetSaplingOutputsCount() > 0) {
             bool nonZeroVPubNew = false;
             for (const auto& js : tx.vJoinSplit) {
                 if (js.vpub_new > 0) {

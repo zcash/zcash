@@ -431,7 +431,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
             mapSproutNullifiers[nf] = &tx;
         }
     }
-    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+    for (const auto& spendDescription : tx.GetSaplingSpends()) {
         mapSaplingNullifiers[spendDescription.nullifier()] = &tx;
     }
     for (const uint256 &orchardNullifier : tx.GetOrchardBundle().GetNullifiers()) {
@@ -562,7 +562,7 @@ void CTxMemPool::removeUnchecked(txiter it)
             mapSproutNullifiers.erase(nf);
         }
     }
-    for (const SpendDescription &spendDescription : it->GetTx().vShieldedSpend) {
+    for (const auto& spendDescription : it->GetTx().GetSaplingSpends()) {
         mapSaplingNullifiers.erase(spendDescription.nullifier());
     }
     for (const uint256 &orchardNullifier : it->GetTx().GetOrchardBundle().GetNullifiers()) {
@@ -704,7 +704,7 @@ void CTxMemPool::removeWithAnchor(const uint256 &invalidRoot, ShieldedType type)
                 }
             break;
             case SAPLING:
-                for (const SpendDescription& spendDescription : tx.vShieldedSpend) {
+                for (const auto& spendDescription : tx.GetSaplingSpends()) {
                     if (spendDescription.anchor() == invalidRoot) {
                         transactionsToRemove.push_back(tx);
                         break;
@@ -758,7 +758,7 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
             }
         }
     }
-    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+    for (const auto& spendDescription : tx.GetSaplingSpends()) {
         std::map<uint256, const CTransaction*>::iterator it = mapSaplingNullifiers.find(spendDescription.nullifier());
         if (it != mapSaplingNullifiers.end()) {
             const CTransaction &txConflict = *it->second;
