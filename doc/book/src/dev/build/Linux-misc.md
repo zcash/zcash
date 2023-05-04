@@ -1,6 +1,6 @@
 # Building Zcashd & Zcash-cli on Linux
 
-Zcashd & Zcash-cli are "best effort" supported for non-Debian/Ubuntu Linux OSes.  It's ok to use it and develop on it--we sure do. The level of testing and integration is not up to par with our standards to call this [officially supported](supported_platform_policy.html#supported-platform-policy).
+Zcashd & Zcash-cli are "best effort" supported for non-Debian/Ubuntu Linux OSes.  It's ok to use it and develop on it--we sure do. The level of testing and integration is not up to par with our standards to call this [officially supported](../platform-tier-policy.md#tier-3-platform-policy).
 
 ## Instructions
 
@@ -56,4 +56,4 @@ Currently, the only way to install Zcashd & Zcash-cli on Linux is to build from 
     If you don't have ``nproc``, then substitute the number of cores on your system. If the build runs out of memory, try again without the ``-j`` argument, i.e. just ``./zcutil/build.sh``
 
 ## Next steps
-Now that you've built Zcashd & Zcash-cli, we can move on to the next steps of: configuration, sync, and use. Refer back to the [Zcashd & Zcash-cli page](zcashd.html) for further instructions.
+Now that you've built Zcashd & Zcash-cli, we can move on to the next steps of: configuration, sync, and use. Refer back to the [Zcashd & Zcash-cli page](https://zcash.readthedocs.io/en/latest/rtd_pages/zcashd.html) for further instructions.

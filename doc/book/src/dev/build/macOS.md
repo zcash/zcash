@@ -51,4 +51,4 @@ Currently, the only way to install Zcashd & Zcash-cli on macOS is to build from 
 
 
 ## Next steps
-Now that you've built Zcashd & Zcash-cli, we can move on to the next steps of: configuration, sync, and use. Refer back to the [Zcashd & Zcash-cli page](zcashd.html) for further instructions.
+Now that you've built Zcashd & Zcash-cli, we can move on to the next steps of: configuration, sync, and use. Refer back to the [Zcashd & Zcash-cli page](https://zcash.readthedocs.io/en/latest/rtd_pages/zcashd.html) for further instructions.
