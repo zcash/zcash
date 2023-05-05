@@ -15,6 +15,11 @@ jobs:
             platform: Ubuntu 20.04
             os: ubuntu-20.04
 
+          - name: ubuntu-22.04
+            tier: 3
+            platform: Ubuntu 22.04
+            os: ubuntu-22.04
+
           - name: macos-11
             tier: 3
             platform: macOS Big Sur 11
